@@ -4,7 +4,7 @@ import datetime
 from collections.abc import AsyncIterator
 
 import pytest
-from reflex_build_sdk import APIResponseValidationError, AsyncReflexCloud
+from reflex_build_sdk import APIResponseValidationError, AsyncReflexBuild
 from reflex_build_sdk.types import ManagedDatabase
 
 from tests.units.reflex_build_sdk.conftest import AsyncMockTransport, MockAPI, reply
@@ -33,7 +33,7 @@ MANAGED_DATABASE = ManagedDatabase(
 
 
 @pytest.fixture
-async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
+async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -42,31 +42,31 @@ async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
     Yields:
         The client.
     """
-    async with AsyncReflexCloud(
+    async with AsyncReflexBuild(
         token="test-token", transport=AsyncMockTransport(mock_api)
     ) as client:
         yield client
 
 
-async def test_get(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_get(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", DATABASE_PATH, reply(200, json=DATABASE))
     assert await client.apps.database.get(APP_ID) == MANAGED_DATABASE
 
 
-async def test_get_without_a_database(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_get_without_a_database(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", DATABASE_PATH, reply(200, json={"has_database": False}))
     assert await client.apps.database.get(APP_ID) is None
 
 
 async def test_get_rejects_an_incomplete_database(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     mock_api.add("GET", DATABASE_PATH, reply(200, json={"has_database": True}))
     with pytest.raises(APIResponseValidationError):
         await client.apps.database.get(APP_ID)
 
 
-async def test_create_is_retried(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_create_is_retried(client: AsyncReflexBuild, mock_api: MockAPI):
     # Creating again converges on the database the first attempt made.
     mock_api.add(
         "POST",
@@ -80,6 +80,6 @@ async def test_create_is_retried(client: AsyncReflexCloud, mock_api: MockAPI):
 
 
 @pytest.mark.parametrize("deleted", [True, False])
-async def test_delete(client: AsyncReflexCloud, mock_api: MockAPI, deleted: bool):
+async def test_delete(client: AsyncReflexBuild, mock_api: MockAPI, deleted: bool):
     mock_api.add("DELETE", DATABASE_PATH, reply(200, json={"deleted": deleted}))
     assert await client.apps.database.delete(APP_ID) is deleted

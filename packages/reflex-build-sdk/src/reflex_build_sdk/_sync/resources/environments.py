@@ -19,7 +19,7 @@ from reflex_build_sdk.types import (
 )
 
 if TYPE_CHECKING:
-    from reflex_build_sdk._sync._client import ReflexCloud
+    from reflex_build_sdk._sync._client import ReflexBuild
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -53,7 +53,7 @@ class Environments:
     Creating and promoting environments needs the Enterprise plan.
     """
 
-    def __init__(self, client: ReflexCloud) -> None:
+    def __init__(self, client: ReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:

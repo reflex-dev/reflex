@@ -196,7 +196,7 @@ def docs_sidebar_section(
             *(
                 (
                     rx.el.li(
-                        class_name="pointer-events-none absolute bottom-0 left-[3rem] top-0 -z-10 m-0 w-px list-none !rounded-none bg-border-subtle p-0",
+                        class_name="pointer-events-none absolute bottom-0 left-[2.5rem] top-0 -z-10 m-0 w-px list-none !rounded-none bg-border-subtle p-0",
                     ),
                 )
                 if connected_line
@@ -205,7 +205,7 @@ def docs_sidebar_section(
             *children,
             class_name=ui.cn(
                 "m-0 ml-0 flex w-full list-none flex-col rounded-none p-0 pl-0 !bg-transparent !shadow-none",
-                "relative gap-0" if connected_line else "gap-1",
+                "relative gap-1" if connected_line else "gap-1",
             ),
         ),
         class_name="m-0 ml-0 flex w-full list-none flex-col items-start p-0",

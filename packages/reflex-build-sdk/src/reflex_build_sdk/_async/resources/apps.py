@@ -9,6 +9,7 @@ from collections.abc import AsyncIterator, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NoReturn
 
+from reflex_build_sdk._async.resources.connections import AsyncConnections
 from reflex_build_sdk._async.resources.databases import AsyncDatabase
 from reflex_build_sdk._async.resources.environments import AsyncEnvironments
 from reflex_build_sdk._async.resources.sign_in import AsyncSignIn
@@ -30,7 +31,7 @@ from reflex_build_sdk.types import (
 )
 
 if TYPE_CHECKING:
-    from reflex_build_sdk._async._client import AsyncReflexCloud
+    from reflex_build_sdk._async._client import AsyncReflexBuild
 
 
 # The name under which the secrets route reads every secret at once, which a single
@@ -81,7 +82,7 @@ class AsyncSecrets:
     deployments are built for: the first environment of an app that has several.
     """
 
-    def __init__(self, client: AsyncReflexCloud) -> None:
+    def __init__(self, client: AsyncReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:
@@ -210,7 +211,7 @@ class AsyncSecrets:
 class AsyncDomains:
     """Serve apps at custom domains."""
 
-    def __init__(self, client: AsyncReflexCloud) -> None:
+    def __init__(self, client: AsyncReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:
@@ -287,12 +288,14 @@ class AsyncApps:
     domains: AsyncDomains
     # Deploy apps through a pipeline of environments, such as dev and production.
     environments: AsyncEnvironments
-    # Give apps a Postgres database hosted by Reflex Cloud.
+    # Give apps a Postgres database hosted by Reflex Build.
     database: AsyncDatabase
     # Sign an app's users in with their Reflex accounts.
     sign_in: AsyncSignIn
+    # Call third-party services an app is connected to.
+    connections: AsyncConnections
 
-    def __init__(self, client: AsyncReflexCloud) -> None:
+    def __init__(self, client: AsyncReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:
@@ -304,6 +307,7 @@ class AsyncApps:
         self.environments = AsyncEnvironments(client)
         self.database = AsyncDatabase(client)
         self.sign_in = AsyncSignIn(client)
+        self.connections = AsyncConnections(client)
 
     async def list(
         self, *, project_id: uuid.UUID | str | None = None
@@ -670,7 +674,7 @@ class AsyncApps:
 
         Args:
             app_id: The app.
-            provider: ``"fly"`` for Reflex Cloud, or ``"gcp"`` for the organization's
+            provider: ``"fly"`` for Reflex Build, or ``"gcp"`` for the organization's
                 Google Cloud.
             provider_account_id: The Google Cloud connection to deploy to. Defaults
                 to the organization's default connection.

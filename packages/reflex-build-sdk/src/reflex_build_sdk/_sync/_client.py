@@ -1,5 +1,5 @@
 # Generated from packages/reflex-build-sdk/src/reflex_build_sdk/_async/_client.py by packages/reflex-build-sdk/scripts/unasync.py. Do not edit.
-"""The synchronous Reflex Cloud client."""
+"""The synchronous Reflex Build client."""
 
 from __future__ import annotations
 
@@ -29,8 +29,8 @@ from reflex_build_sdk.transports._defaults import DefaultTransport
 T = TypeVar("T")
 
 
-class ReflexCloud(BaseClient):
-    """Client for the Reflex Cloud API.
+class ReflexBuild(BaseClient):
+    """Client for the Reflex Build API.
 
     Use it as a context manager, or call ``close()``, to release its connections.
     """
@@ -64,8 +64,9 @@ class ReflexCloud(BaseClient):
         Args:
             token: The access token. Defaults to the ``REFLEX_ACCESS_TOKEN`` environment
                 variable, then to the token saved by ``reflex login``.
-            base_url: The Reflex Cloud URL. Defaults to the ``REFLEX_CLOUD_BACKEND_URL``
-                environment variable, then to ``https://build.reflex.dev``.
+            base_url: The Reflex Build URL. Defaults to the ``REFLEX_BUILD_BACKEND_URL``
+                environment variable, then to ``REFLEX_CLOUD_BACKEND_URL``, which
+                ``reflex-hosting-cli`` reads, then to ``https://build.reflex.dev``.
             timeout: The timeout of each network operation (connecting, or any single
                 read or write), in seconds. Defaults to the transport's timeouts: 10
                 seconds to connect and 60 for a read or write for the transports the
@@ -94,7 +95,7 @@ class ReflexCloud(BaseClient):
         self.security_reviews = SecurityReviews(self)
         self.usage = Usage(self)
 
-    def __enter__(self) -> ReflexCloud:
+    def __enter__(self) -> ReflexBuild:
         """Enter the client's context.
 
         Returns:
@@ -134,6 +135,7 @@ class ReflexCloud(BaseClient):
         form: Mapping[str, str] | None = None,
         authenticated: bool = True,
         idempotent: bool | None = None,
+        extra_headers: Mapping[str, str] | None = None,
     ) -> T: ...
 
     @overload
@@ -148,6 +150,7 @@ class ReflexCloud(BaseClient):
         form: Mapping[str, str] | None = None,
         authenticated: bool = True,
         idempotent: bool | None = None,
+        extra_headers: Mapping[str, str] | None = None,
     ) -> None: ...
 
     def _request(
@@ -161,6 +164,7 @@ class ReflexCloud(BaseClient):
         form: Mapping[str, str] | None = None,
         authenticated: bool = True,
         idempotent: bool | None = None,
+        extra_headers: Mapping[str, str] | None = None,
     ) -> Any:
         """Send an API request, retrying transient failures that are safe to retry.
 
@@ -177,6 +181,7 @@ class ReflexCloud(BaseClient):
             idempotent: Whether repeating the request is harmless, which decides
                 whether it is retried after it may have reached the server. Defaults
                 to whether the method is idempotent.
+            extra_headers: Headers to send beside the ones every request carries.
 
         Returns:
             The decoded response body.
@@ -193,6 +198,7 @@ class ReflexCloud(BaseClient):
             json=json,
             form=form,
             authenticated=authenticated,
+            extra_headers=extra_headers,
         )
         attempt = 0
         while True:

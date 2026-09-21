@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 from reflex_build_sdk import (
-    AsyncReflexCloud,
+    AsyncReflexBuild,
     SecurityReviewFailedError,
     SecurityReviewTimeoutError,
 )
@@ -39,7 +39,7 @@ VIOLATION = {
 
 
 @pytest.fixture
-async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
+async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -48,13 +48,13 @@ async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
     Yields:
         The client.
     """
-    async with AsyncReflexCloud(
+    async with AsyncReflexBuild(
         token="test-token", transport=AsyncMockTransport(mock_api)
     ) as client:
         yield client
 
 
-async def test_submit(client: AsyncReflexCloud, mock_api: MockAPI, tmp_path: Path):
+async def test_submit(client: AsyncReflexBuild, mock_api: MockAPI, tmp_path: Path):
     archive = tmp_path / "source.zip"
     archive.write_bytes(b"z" * 1234)
     mock_api.add(
@@ -95,7 +95,7 @@ def _job(status: str, **fields) -> dict:
     return {"job_id": JOB_ID, "status": status, "result": None, "error": None, **fields}
 
 
-async def test_get(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_get(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         JOB_PATH,
@@ -115,7 +115,7 @@ async def test_get(client: AsyncReflexCloud, mock_api: MockAPI):
     )
 
 
-async def test_wait(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_wait(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         JOB_PATH,
@@ -128,7 +128,7 @@ async def test_wait(client: AsyncReflexCloud, mock_api: MockAPI):
 
 
 async def test_wait_raises_when_the_review_fails(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     mock_api.add(
         "GET", JOB_PATH, reply(200, json=_job("error", error="Security review failed."))
@@ -141,7 +141,7 @@ async def test_wait_raises_when_the_review_fails(
 
 
 async def test_wait_raises_when_a_review_completes_without_a_result(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     mock_api.add("GET", JOB_PATH, reply(200, json=_job("complete")))
     with pytest.raises(SecurityReviewFailedError, match="without a result"):
@@ -149,7 +149,7 @@ async def test_wait_raises_when_a_review_completes_without_a_result(
     assert len(mock_api.requests) == 1
 
 
-async def test_wait_timeout(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_wait_timeout(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", JOB_PATH, reply(200, json=_job("pending")))
     with pytest.raises(SecurityReviewTimeoutError):
         await client.security_reviews.wait(JOB_ID, timeout=0.05, poll_interval=60)

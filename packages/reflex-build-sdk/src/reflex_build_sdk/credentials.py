@@ -1,6 +1,6 @@
 """The access token saved on this machine, shared with ``reflex login``.
 
-``ReflexCloud`` and ``AsyncReflexCloud`` use the saved token when neither a
+``ReflexBuild`` and ``AsyncReflexBuild`` use the saved token when neither a
 ``token`` argument nor ``REFLEX_ACCESS_TOKEN`` gives one.
 """
 

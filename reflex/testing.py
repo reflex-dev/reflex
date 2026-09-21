@@ -408,9 +408,8 @@ class AppHarness:
                 "dev",
             ],
             cwd=self.app_path / reflex.utils.prerequisites.get_web_dir(),
-            # The development condition keeps react-router's dev CLI from
-            # re-executing itself, which trips its restart guard on node-less
-            # (bun-only) installs.
+            # The development condition lets react-router's dev CLI skip the
+            # relaunch it otherwise needs to enable that condition.
             env=_with_development_condition({
                 **os.environ,
                 "PORT": "0",

@@ -9,18 +9,23 @@ import io
 import json
 import logging
 import multiprocessing
+import os
 import pickle
 import re
+import tempfile
+import threading
 import unittest.mock
 import uuid
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import nullcontext as does_not_raise
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+import pytest_asyncio
 import reflex_base
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
@@ -68,11 +73,12 @@ from reflex.app import (
 from reflex.compiler.compiler import (
     _compile_app,
     _memoize_stateful_app_wraps,
+    _read_stateful_pages_marker,
     _resolve_app_wrap_components,
 )
 from reflex.compiler.plugins import default_page_plugins
 from reflex.environment import environment
-from reflex.istate.data import RouterData
+from reflex.istate.data import RouterData, URLData
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
@@ -369,9 +375,9 @@ def test_add_page_set_route_dynamic(index_page: ComponentCallable):
     assert app._pages.keys() == {"test/[dynamic]"}
     assert "dynamic" in app._state.computed_vars
     assert app._state.computed_vars["dynamic"]._deps(objclass=EmptyState) == {
-        EmptyState.get_full_name(): {constants.ROUTER},
+        EmptyState.get_full_name(): {"rx_router_page"},
     }
-    assert constants.ROUTER in app._state()._var_dependencies
+    assert "rx_router_page" in app._state()._var_dependencies
 
 
 def test_add_page_set_route_nested(app: App, index_page: ComponentCallable):
@@ -2063,9 +2069,9 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     assert arg_name in app._state.vars
     assert arg_name in app._state.computed_vars
     assert app._state.computed_vars[arg_name]._deps(objclass=DynamicState) == {
-        DynamicState.get_full_name(): {constants.ROUTER},
+        DynamicState.get_full_name(): {"rx_router_page"},
     }
-    assert constants.ROUTER in app._state()._var_dependencies
+    assert "rx_router_page" in app._state()._var_dependencies
 
     substate_token = BaseStateToken(ident=token, cls=DynamicState)
     exp_vals = ["foo", "foobar", "baz"]
@@ -2099,6 +2105,16 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             val=exp_val,
         )
         exp_router = RouterData.from_router_data(on_load_internal.router_data)
+        # Only the navigation-scoped router vars change (no session/headers in
+        # the router_data), so only those land in the delta.
+        exp_router_delta = {
+            "rx_router_page" + FIELD_MARKER: exp_router._page,
+            "rx_router_url" + FIELD_MARKER: URLData.from_url(exp_router.url),
+        }
+        if exp_index == 0:
+            # Every navigation here matches the same route, so the route_id
+            # only changes on the first one.
+            exp_router_delta["rx_router_route_id" + FIELD_MARKER] = exp_router.route_id
         async with mock_base_state_event_processor as processor:
             await processor.enqueue(
                 token,
@@ -2112,7 +2128,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     State.get_full_name(): {
                         arg_name + FIELD_MARKER: exp_val,
                         constants.CompileVars.IS_HYDRATED + FIELD_MARKER: False,
-                        "router" + FIELD_MARKER: exp_router,
+                        **exp_router_delta,
                     },
                     DynamicState.get_full_name(): {
                         f"comp_{arg_name}" + FIELD_MARKER: exp_val,
@@ -3048,6 +3064,34 @@ def test_minimal_static_app_wrap_omits_state_providers(
     assert EVENT_LOOP_CONTEXT_HOOK not in root_contents
     assert "jsx(StateProvider" not in root_contents
     assert "jsx(EventLoopProvider" not in root_contents
+
+
+def test_sticky_badge_wrap_keeps_lower_priority_wrap_renderable(
+    mocker: MockerFixture,
+) -> None:
+    """The badge and the lower-priority portal must be Fragment siblings.
+
+    ``_app_root`` nests each lower-priority wrap inside the previous one, and
+    the badge compiles to a memo that never reads ``props.children``. A wrap
+    below it -- ``rx.data_editor`` registers its ``<div id="portal">`` at
+    priority -1 -- would therefore be emitted into the app root but never
+    reach the DOM, so the badge wrap has to keep it as a sibling.
+    """
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app = App(theme=None, enable_state=False)
+    app._setup_sticky_badge()
+    app.extra_app_wraps[-1, "DataEditorPortal"] = lambda _: rx.el.div(id="portal")
+
+    root_contents = compile_app_root_from_page_wraps(app, {})
+    chain = root_contents[root_contents.index("function AppWrap({children})") :]
+    badge_symbol = _find_mirrored_memo_symbol(chain, "MemoizedBadge")
+
+    # Neither the badge nor the portal may become the other's parent.
+    assert (
+        f"jsx(Fragment,{{}},jsx({badge_symbol},{{}},),"
+        'jsx("div",{id:"portal",ref:ref_portal},))'
+    ) in chain
 
 
 def test_event_triggers_collect_state_providers_via_var_app_wrap() -> None:
@@ -4753,6 +4797,210 @@ def test_client_error_constants_match_frontend():
     )
 
 
+@pytest_asyncio.fixture
+async def event_namespace_with_processor_mock() -> AsyncGenerator[EventNamespace, None]:
+    """An EventNamespace whose app has a mocked event processor.
+
+    Yields:
+        The EventNamespace instance.
+    """
+    app = App()
+    app._event_processor = Mock(enqueue=AsyncMock())
+    event_namespace = EventNamespace("/event", app)
+    yield event_namespace
+    # The token manager is backed by redis when one is configured; drop the
+    # tokens these tests link so they do not show up in another test's
+    # enumeration of the shared instance. Awaited rather than run in a fresh
+    # loop via asyncio.run: the redis client is bound to the test's loop.
+    await event_namespace._token_manager.disconnect_all()
+
+
+def _connect_environ(token: str) -> dict[str, Any]:
+    return {
+        "QUERY_STRING": f"token={token}",
+        "asgi.scope": {
+            "headers": [
+                (b"origin", b"http://localhost:3000"),
+                (b"user-agent", b"test-agent"),
+            ],
+            "client": ("127.0.0.1", 1234),
+        },
+    }
+
+
+def _client_event_payload() -> dict[str, Any]:
+    return {
+        "name": "state.hydrate",
+        "router_data": {"pathname": "/", "query": {}, "asPath": "/"},
+        "payload": {},
+    }
+
+
+@pytest.mark.asyncio
+async def test_on_event_uses_connect_time_router_data(
+    token: str,
+    event_namespace_with_processor_mock: EventNamespace,
+):
+    """on_event merges the connection-scoped router_data gathered at connect.
+
+    Headers, client IP, and session id are computed once in on_connect; the
+    per-event path must not re-read the connection environ at all.
+
+    Args:
+        token: A token.
+        event_namespace_with_processor_mock: The event namespace fixture.
+    """
+    event_namespace = event_namespace_with_processor_mock
+    await event_namespace.on_connect("sid1", _connect_environ(token))
+    assert "sid1" in event_namespace._static_router_data
+
+    # The per-event path must not re-read the connection environ.
+    event_namespace.app.sio = Mock(
+        get_environ=Mock(side_effect=AssertionError("environ must not be consulted"))
+    )
+    await event_namespace.on_event("sid1", _client_event_payload())
+
+    enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
+    enqueue_mock.assert_called_once()
+    enqueued_token, event = enqueue_mock.call_args[0]
+    assert enqueued_token == token
+    assert event.router_data[constants.RouteVar.CLIENT_TOKEN] == token
+    assert event.router_data[constants.RouteVar.SESSION_ID] == "sid1"
+    assert event.router_data[constants.RouteVar.CLIENT_IP] == "127.0.0.1"
+    assert event.router_data[constants.RouteVar.HEADERS] == {
+        "origin": "http://localhost:3000",
+        "user-agent": "test-agent",
+        "asgi-scope-client": "127.0.0.1",
+    }
+    assert event.router_data[constants.RouteVar.PATH] == "/404"
+    assert event.router_data[constants.RouteVar.QUERY] == {}
+
+    # Disconnect drops the cached connection data.
+    event_namespace.on_disconnect("sid1")
+    assert "sid1" not in event_namespace._static_router_data
+
+
+@pytest.mark.asyncio
+async def test_link_token_to_sid_records_the_connecting_identity(
+    token: str,
+    event_namespace_with_processor_mock: EventNamespace,
+    mocker: MockerFixture,
+):
+    """The session var carries the token the state was loaded under.
+
+    Duplicate-token handling hands back a fresh token, and the state is loaded
+    under it. Leaving `rx_router_session.client_token` empty until the first event
+    would let anything reading it in between -- a background task, a
+    shared-state link -- address the wrong state tree.
+
+    Args:
+        token: A token.
+        event_namespace_with_processor_mock: The event namespace fixture.
+        mocker: pytest-mock fixture.
+    """
+    event_namespace = event_namespace_with_processor_mock
+    state = Mock()
+    state.router_data = {}
+    mocker.patch.object(
+        event_namespace.app.state_manager,
+        "modify_state",
+        Mock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=state))),
+    )
+
+    # No duplicate: the connecting token is recorded.
+    await event_namespace.link_token_to_sid("sid1", token)
+    assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == token
+    assert state.rx_router_session.client_token == token
+    assert state.rx_router_session.session_id == "sid1"
+
+    # Duplicate: the *new* token is recorded, not the one the client sent.
+    # The duplicate branch emits the replacement token to the client, which
+    # needs a server the bare namespace does not have.
+    event_namespace.emit = AsyncMock()  # pyright: ignore[reportAttributeAccessIssue]
+    new_token = "a-fresh-token"
+    mocker.patch.object(
+        event_namespace._token_manager,
+        "link_token_to_sid",
+        AsyncMock(return_value=new_token),
+    )
+    await event_namespace.link_token_to_sid("sid2", token)
+    assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == new_token
+    assert state.rx_router_session.client_token == new_token
+    assert state.rx_router_session.session_id == "sid2"
+
+
+@pytest.mark.asyncio
+async def test_on_event_does_not_share_the_cached_headers(
+    token: str,
+    event_namespace_with_processor_mock: EventNamespace,
+):
+    """Each event gets its own headers mapping, not the cached one.
+
+    The headers reach `state.router_data`, a plain mutable dict, so sharing
+    the cached mapping would let a handler mutating it corrupt the connection
+    cache for every later event on the socket.
+
+    Args:
+        token: A token.
+        event_namespace_with_processor_mock: The event namespace fixture.
+    """
+    event_namespace = event_namespace_with_processor_mock
+    await event_namespace.on_connect("sid1", _connect_environ(token))
+    cached_headers = event_namespace._static_router_data["sid1"][
+        constants.RouteVar.HEADERS
+    ]
+
+    await event_namespace.on_event("sid1", _client_event_payload())
+    enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
+    _, event = enqueue_mock.call_args[0]
+    event_headers = event.router_data[constants.RouteVar.HEADERS]
+
+    assert event_headers == cached_headers
+    assert event_headers is not cached_headers
+    # Mutating what the handler sees must not reach the connection cache.
+    event_headers["user-agent"] = "mutated"
+    assert cached_headers["user-agent"] == "test-agent"
+
+    enqueue_mock.reset_mock()
+    await event_namespace.on_event("sid1", _client_event_payload())
+    _, next_event = enqueue_mock.call_args[0]
+    assert (
+        next_event.router_data[constants.RouteVar.HEADERS]["user-agent"] == "test-agent"
+    )
+
+
+@pytest.mark.asyncio
+async def test_on_event_falls_back_to_environ_without_connect(
+    token: str,
+    event_namespace_with_processor_mock: EventNamespace,
+):
+    """on_event computes and caches the static router_data if connect was missed.
+
+    Args:
+        token: A token.
+        event_namespace_with_processor_mock: The event namespace fixture.
+    """
+    event_namespace = event_namespace_with_processor_mock
+    await event_namespace._token_manager.link_token_to_sid(token, "sid1")
+    event_namespace.app.sio = Mock(
+        get_environ=Mock(return_value=_connect_environ(token))
+    )
+
+    await event_namespace.on_event("sid1", _client_event_payload())
+    await event_namespace.on_event("sid1", _client_event_payload())
+
+    # The environ is only consulted once; the result is cached for the sid.
+    event_namespace.app.sio.get_environ.assert_called_once()
+    enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
+    assert enqueue_mock.call_count == 2
+    for call in enqueue_mock.call_args_list:
+        _, event = call[0]
+        assert event.router_data[constants.RouteVar.SESSION_ID] == "sid1"
+        assert (
+            event.router_data[constants.RouteVar.HEADERS]["user-agent"] == "test-agent"
+        )
+
+
 @pytest.mark.parametrize("compile_raises", [False, True])
 def test_compile_releases_memo_naming_caches(
     mocker: MockerFixture, compile_raises: bool
@@ -5032,3 +5280,172 @@ def test_compile_emits_stage_spans(
         parent = spans[name].parent
         assert parent is not None
         assert parent.span_id == root.get_span_context().span_id
+
+
+def test_write_stateful_pages_marker_never_truncates_final_path(
+    tmp_path: Path, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """The marker is swapped into place atomically, never opened for writing."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    marker = tmp_path / constants.Dirs.STATEFUL_PAGES
+    original_open = Path.open
+    write_opens: list[str] = []
+
+    def spy_open(self: Path, mode: str = "r", *args, **kwargs):
+        if self == marker and mode != "r":
+            write_opens.append(mode)
+        return original_open(self, mode, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", spy_open)
+    app = App(_state=rx.State)
+    app._stateful_pages = dict.fromkeys(["index", "about"])
+
+    app._write_stateful_pages_marker()
+
+    assert write_opens == []
+    assert json.loads(marker.read_text()) == ["index", "about"]
+    assert [p.name for p in tmp_path.iterdir()] == [constants.Dirs.STATEFUL_PAGES]
+
+
+def test_write_stateful_pages_marker_is_always_written(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Stateless apps write an empty marker so backend workers skip page evaluation."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    app = App(enable_state=False)
+
+    app._write_stateful_pages_marker()
+
+    assert json.loads((tmp_path / constants.Dirs.STATEFUL_PAGES).read_text()) == []
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Unix file permissions")
+def test_write_stateful_pages_marker_is_shared_readable(tmp_path, mocker):
+    """Backend workers running as another user can read the compiled marker."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    app = App(enable_state=False)
+    app._write_stateful_pages_marker()
+    assert (tmp_path / constants.Dirs.STATEFUL_PAGES).stat().st_mode & 0o777 == 0o644
+
+
+def test_write_stateful_pages_marker_closes_descriptor_on_open_failure(
+    tmp_path, mocker
+):
+    """Failure to open the temporary marker must not leak its raw descriptor."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    created = mocker.spy(tempfile, "mkstemp")
+    mocker.patch("os.fdopen", side_effect=OSError("open failed"))
+    mocker.patch.object(Path, "open", side_effect=OSError("open failed"))
+    with pytest.raises(OSError, match="open failed"):
+        App(enable_state=False)._write_stateful_pages_marker()
+    descriptor, _ = created.spy_return
+    try:
+        with pytest.raises(OSError):
+            os.fstat(descriptor)
+    finally:
+        with contextlib.suppress(OSError):
+            os.close(descriptor)
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize(("windows", "failures"), [(True, 1), (True, 100), (False, 1)])
+def test_write_stateful_pages_marker_sharing_violation(
+    tmp_path, mocker, windows, failures
+):
+    """Windows sharing violations are retried without hiding persistent failures."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    mocker.patch("reflex.app.constants.IS_WINDOWS", windows)
+    sleep = mocker.patch("reflex.app.time.sleep")
+    original_replace = Path.replace
+    attempts = 0
+
+    def replace(path, target):
+        """Simulate a reader holding the Windows marker open.
+
+        Args:
+            path: The temporary marker.
+            target: The final marker.
+
+        Returns:
+            The replacement path.
+
+        Raises:
+            PermissionError: While the simulated reader has the marker open.
+        """
+        nonlocal attempts
+        attempts += 1
+        if attempts <= failures:
+            msg = "marker is open"
+            raise PermissionError(msg)
+        return original_replace(path, target)
+
+    mocker.patch.object(Path, "replace", replace)
+    app = App(enable_state=False)
+    if windows and failures == 1:
+        app._write_stateful_pages_marker()
+        assert json.loads((tmp_path / constants.Dirs.STATEFUL_PAGES).read_text()) == []
+        assert attempts == 2
+        sleep.assert_called_once_with(0.01)
+    else:
+        with pytest.raises(PermissionError, match="marker is open"):
+            app._write_stateful_pages_marker()
+        assert attempts == (100 if windows else 1)
+        assert sleep.call_count == attempts - 1
+        assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("existing", [False, True])
+def test_compile_dry_run_preserves_stateful_marker(compilable_app, mocker, existing):
+    """A dry compile neither creates nor replaces the backend route marker."""
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    marker = web_dir / constants.Dirs.BACKEND / constants.Dirs.STATEFUL_PAGES
+    if existing:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text('["previous"]')
+    app._compile(dry_run=True)
+    assert marker.exists() == existing
+    if existing:
+        assert marker.read_text() == '["previous"]'
+
+
+def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Concurrent writers and readers of the marker never observe a partial file."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    marker = tmp_path / constants.Dirs.STATEFUL_PAGES
+    routes = [f"route-{i}" for i in range(4000)]
+    app = App(_state=rx.State)
+    app._stateful_pages = dict.fromkeys(routes)
+    app._write_stateful_pages_marker()
+    round_started = threading.Barrier(8, timeout=10)
+
+    def writer():
+        """Repeatedly replace the marker."""
+        for _ in range(50):
+            round_started.wait()
+            app._write_stateful_pages_marker()
+
+    def reader():
+        """Check that every observed marker is complete."""
+        # Backend workers read on startup; an infinite read storm can starve
+        # Windows replacement because its readers do not share delete access.
+        for _ in range(50):
+            round_started.wait()
+            content = _read_stateful_pages_marker()
+            if content is None:
+                continue
+            assert content == routes
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        readers = [pool.submit(reader) for _ in range(4)]
+        try:
+            writers = [pool.submit(writer) for _ in range(4)]
+            for future in writers:
+                future.result()
+        finally:
+            round_started.abort()
+        for future in readers:
+            future.result()
+    assert json.loads(marker.read_text()) == routes

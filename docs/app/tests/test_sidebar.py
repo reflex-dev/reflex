@@ -3,6 +3,15 @@
 import pytest
 
 
+def test_mobile_navigation_auth_links_directly_to_enterprise_docs():
+    """The shared mobile menu must not send readers through the legacy alias."""
+    from reflex_site_shared.views.sidebar import solutions_panel
+
+    rendered = str(solutions_panel())
+    assert "/docs/enterprise/auth/overview/" in rendered
+    assert "/docs/authentication/authentication-overview/" not in rendered
+
+
 @pytest.mark.parametrize("label", ["APIs", "URLs"])
 def test_ai_integration_group_and_page_use_matching_acronyms(label):
     """Keep plural acronyms consistent between sidebar groups and their pages."""

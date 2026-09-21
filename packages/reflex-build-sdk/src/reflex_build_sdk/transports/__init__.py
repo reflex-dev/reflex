@@ -1,6 +1,6 @@
-"""Transports that send the Reflex Cloud clients' requests over HTTP.
+"""Transports that send the Reflex Build clients' requests over HTTP.
 
-``AsyncReflexCloud`` uses ``AiohttpTransport`` and ``ReflexCloud`` uses
+``AsyncReflexBuild`` uses ``AiohttpTransport`` and ``ReflexBuild`` uses
 ``HttpxTransport`` unless a transport is passed in. Implement ``Transport`` or
 ``AsyncTransport`` to send requests through another HTTP library.
 """

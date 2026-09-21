@@ -8,7 +8,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
-from reflex_build_sdk import InternalServerError, PermissionDeniedError, ReflexCloud
+from reflex_build_sdk import InternalServerError, PermissionDeniedError, ReflexBuild
 from reflex_build_sdk.types import (
     AuditLogEntry,
     PendingTeamChange,
@@ -41,7 +41,7 @@ TIER = {"name": "pro", "cpu_quota": 8.0, "ram_quota": 16.0, "deployment_quota": 
 
 
 @pytest.fixture
-def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
+def client(mock_api: MockAPI) -> Iterator[ReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -50,11 +50,11 @@ def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
     Yields:
         The client.
     """
-    with ReflexCloud(token="test-token", transport=MockTransport(mock_api)) as client:
+    with ReflexBuild(token="test-token", transport=MockTransport(mock_api)) as client:
         yield client
 
 
-def test_list(client: ReflexCloud, mock_api: MockAPI):
+def test_list(client: ReflexBuild, mock_api: MockAPI):
     project = {
         "id": PROJECT_ID,
         "name": "default",
@@ -80,12 +80,12 @@ def test_list(client: ReflexCloud, mock_api: MockAPI):
     ]
 
 
-def test_list_null(client: ReflexCloud, mock_api: MockAPI):
+def test_list_null(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", "/api/v1/project/", reply(200, json=None))
     assert client.projects.list() == []
 
 
-def test_search(client: ReflexCloud, mock_api: MockAPI):
+def test_search(client: ReflexBuild, mock_api: MockAPI):
     found = {
         "id": PROJECT_ID,
         "name": "default",
@@ -103,7 +103,7 @@ def test_search(client: ReflexCloud, mock_api: MockAPI):
     }
 
 
-def test_search_without_results(client: ReflexCloud, mock_api: MockAPI):
+def test_search_without_results(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         "/api/v1/project/search",
@@ -112,7 +112,7 @@ def test_search_without_results(client: ReflexCloud, mock_api: MockAPI):
     assert client.projects.search("missing") == []
 
 
-def test_get(client: ReflexCloud, mock_api: MockAPI):
+def test_get(client: ReflexBuild, mock_api: MockAPI):
     info = {
         "id": PROJECT_ID,
         "name": "default",
@@ -143,7 +143,7 @@ def test_get(client: ReflexCloud, mock_api: MockAPI):
     assert [app.name for app in project.apps] == ["dashboard"]
 
 
-def test_create(client: ReflexCloud, mock_api: MockAPI):
+def test_create(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         "/api/v1/project/create",
@@ -155,7 +155,7 @@ def test_create(client: ReflexCloud, mock_api: MockAPI):
     assert json_body(mock_api.requests[0]) == {"name": "staging"}
 
 
-def test_roles_list(client: ReflexCloud, mock_api: MockAPI):
+def test_roles_list(client: ReflexBuild, mock_api: MockAPI):
     role = {
         "id": ROLE_ID,
         "name": "Editor",
@@ -186,7 +186,7 @@ def test_roles_list(client: ReflexCloud, mock_api: MockAPI):
     ],
 )
 def test_roles_permissions(
-    client: ReflexCloud,
+    client: ReflexBuild,
     mock_api: MockAPI,
     body: list[dict[str, Any]] | None,
     permissions: list[str],
@@ -195,7 +195,7 @@ def test_roles_permissions(
     assert client.projects.roles.permissions(PROJECT_ID, ROLE_ID) == permissions
 
 
-def test_members_list(client: ReflexCloud, mock_api: MockAPI):
+def test_members_list(client: ReflexBuild, mock_api: MockAPI):
     member = {
         "user_id": USER_ID,
         "email": "dev@example.com",
@@ -218,7 +218,7 @@ def test_members_list(client: ReflexCloud, mock_api: MockAPI):
     ]
 
 
-def test_members_list_null(client: ReflexCloud, mock_api: MockAPI):
+def test_members_list_null(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", f"{PROJECT_PATH}/users", reply(200, json=None))
     assert client.projects.members.list(PROJECT_ID) == []
 
@@ -232,7 +232,7 @@ def test_members_list_null(client: ReflexCloud, mock_api: MockAPI):
     ],
 )
 def test_members_set_role(
-    client: ReflexCloud,
+    client: ReflexBuild,
     mock_api: MockAPI,
     body: dict[str, Any] | None,
     result: str,
@@ -248,7 +248,7 @@ def test_members_set_role(
     }
 
 
-def test_members_set_role_denied(client: ReflexCloud, mock_api: MockAPI):
+def test_members_set_role_denied(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         "/api/v1/project/users/invite",
@@ -258,18 +258,18 @@ def test_members_set_role_denied(client: ReflexCloud, mock_api: MockAPI):
         client.projects.members.set_role(user_id=USER_ID, role_id=ROLE_ID)
 
 
-def test_rename(client: ReflexCloud, mock_api: MockAPI):
+def test_rename(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("POST", f"{PROJECT_PATH}/update_name", reply(200, json=None))
     client.projects.rename(PROJECT_ID, "staging")
     assert json_body(mock_api.requests[0]) == {"name": "staging"}
 
 
-def test_delete(client: ReflexCloud, mock_api: MockAPI):
+def test_delete(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("DELETE", PROJECT_PATH, reply(200, json=None))
     assert client.projects.delete(PROJECT_ID) is None
 
 
-def test_audit_logs(client: ReflexCloud, mock_api: MockAPI):
+def test_audit_logs(client: ReflexBuild, mock_api: MockAPI):
     entry = {
         "id": ROLE_ID,
         "timestamp": "2026-09-16T12:00:00Z",
@@ -318,7 +318,7 @@ ROLE_BODY = {
 }
 
 
-def test_roles_create(client: ReflexCloud, mock_api: MockAPI):
+def test_roles_create(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{PROJECT_PATH}/roles",
@@ -341,7 +341,7 @@ def test_roles_create(client: ReflexCloud, mock_api: MockAPI):
     assert json_body(mock_api.requests[0]) == ROLE_BODY
 
 
-def test_roles_update(client: ReflexCloud, mock_api: MockAPI):
+def test_roles_update(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("PATCH", f"{PROJECT_PATH}/roles/{ROLE_ID}", reply(200, json=None))
     client.projects.roles.update(
         PROJECT_ID,
@@ -353,7 +353,7 @@ def test_roles_update(client: ReflexCloud, mock_api: MockAPI):
     assert json_body(mock_api.requests[0]) == ROLE_BODY
 
 
-def test_roles_preview_update(client: ReflexCloud, mock_api: MockAPI):
+def test_roles_preview_update(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{PROJECT_PATH}/roles/{ROLE_ID}/preview",
@@ -396,17 +396,17 @@ def test_roles_preview_update(client: ReflexCloud, mock_api: MockAPI):
     assert json_body(mock_api.requests[0]) == ROLE_BODY
 
 
-def test_roles_delete(client: ReflexCloud, mock_api: MockAPI):
+def test_roles_delete(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("DELETE", f"{PROJECT_PATH}/roles/{ROLE_ID}", reply(200, json=None))
     assert client.projects.roles.delete(PROJECT_ID, ROLE_ID) is None
 
 
-def test_members_remove(client: ReflexCloud, mock_api: MockAPI):
+def test_members_remove(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("DELETE", f"{PROJECT_PATH}/user/{USER_ID}", reply(200, json=None))
     assert client.projects.members.remove(PROJECT_ID, USER_ID) is None
 
 
-def test_members_permissions(client: ReflexCloud, mock_api: MockAPI):
+def test_members_permissions(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         f"{PROJECT_PATH}/users/{USER_ID}/permissions",
@@ -420,7 +420,7 @@ def test_members_permissions(client: ReflexCloud, mock_api: MockAPI):
     ]
 
 
-def test_teams_list(client: ReflexCloud, mock_api: MockAPI):
+def test_teams_list(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         f"{PROJECT_PATH}/teams",
@@ -468,7 +468,7 @@ def test_teams_list(client: ReflexCloud, mock_api: MockAPI):
 
 
 @pytest.mark.parametrize("status", ["granted", "pending_approval"])
-def test_teams_grant(client: ReflexCloud, mock_api: MockAPI, status: str):
+def test_teams_grant(client: ReflexBuild, mock_api: MockAPI, status: str):
     mock_api.add(
         "PUT",
         f"{PROJECT_PATH}/teams/{TEAM_ID}",
@@ -478,7 +478,7 @@ def test_teams_grant(client: ReflexCloud, mock_api: MockAPI, status: str):
     assert json_body(mock_api.requests[0]) == {"role": "editor"}
 
 
-def test_teams_revoke_is_retried(client: ReflexCloud, mock_api: MockAPI):
+def test_teams_revoke_is_retried(client: ReflexBuild, mock_api: MockAPI):
     # Revoking again reports the outcome without changing anything.
     mock_api.add(
         "DELETE",
@@ -525,7 +525,7 @@ def test_teams_revoke_is_retried(client: ReflexCloud, mock_api: MockAPI):
     ],
 )
 def test_repeatable_calls_are_retried(
-    client: ReflexCloud,
+    client: ReflexBuild,
     mock_api: MockAPI,
     http_method: str,
     suffix: str,
@@ -549,7 +549,7 @@ def test_repeatable_calls_are_retried(
     ],
 )
 def test_deletions_are_not_retried(
-    client: ReflexCloud, mock_api: MockAPI, suffix: str, call: Any
+    client: ReflexBuild, mock_api: MockAPI, suffix: str, call: Any
 ):
     mock_api.add("DELETE", PROJECT_PATH + suffix, reply(503))
     with pytest.raises(InternalServerError):

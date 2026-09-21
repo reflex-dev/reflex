@@ -18,7 +18,7 @@ from reflex_build_sdk._errors import (
 from reflex_build_sdk.types import SecurityReviewJob, SecurityReviewResult
 
 if TYPE_CHECKING:
-    from reflex_build_sdk._async._client import AsyncReflexCloud
+    from reflex_build_sdk._async._client import AsyncReflexBuild
 
 # How often wait() checks a security review, in seconds.
 _POLL_INTERVAL = 3.0
@@ -42,7 +42,7 @@ class _UploadUrl:
 class AsyncSecurityReviews:
     """Review an app's source code for security and logic issues."""
 
-    def __init__(self, client: AsyncReflexCloud) -> None:
+    def __init__(self, client: AsyncReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:

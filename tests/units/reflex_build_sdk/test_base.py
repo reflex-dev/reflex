@@ -56,9 +56,16 @@ def test_base_url_precedence(monkeypatch: pytest.MonkeyPatch):
     assert _client().base_url == DEFAULT_BASE_URL
     monkeypatch.setenv("REFLEX_CLOUD_BACKEND_URL", "https://cloud.example.com/")
     assert _client().base_url == "https://cloud.example.com"
+    monkeypatch.setenv("REFLEX_BUILD_BACKEND_URL", "https://build.example.com/")
+    assert _client().base_url == "https://build.example.com"
     assert _client(base_url="https://explicit.example.com").base_url == (
         "https://explicit.example.com"
     )
+
+
+def test_base_url_from_build_env_alone(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("REFLEX_BUILD_BACKEND_URL", "https://build.example.com/")
+    assert _client().base_url == "https://build.example.com"
 
 
 @pytest.mark.parametrize("setting", ["token", "base_url", "max_retries"])
@@ -294,3 +301,17 @@ def test_decode_response_invalid_body(kwargs: dict[str, Any]):
         decode_response(response, Me)
     assert exc_info.value.response is response
     assert "POST https://example.com/api/v1/authenticate/me" in str(exc_info.value)
+
+
+def test_build_request_keeps_its_own_headers():
+    request = _client()._build_request(
+        "GET",
+        "apps",
+        params=None,
+        json=None,
+        authenticated=False,
+        extra_headers={"X-End-User": "visitor", "X-Request-ID": "caller-chosen"},
+    )
+    assert request.headers["X-End-User"] == "visitor"
+    # The request id an error is traced by is the client's, not the caller's.
+    assert request.headers["X-Request-ID"] != "caller-chosen"

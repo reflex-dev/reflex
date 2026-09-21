@@ -6,7 +6,7 @@ import uuid
 from collections.abc import Iterator
 
 import pytest
-from reflex_build_sdk import APIResponseValidationError, ReflexCloud
+from reflex_build_sdk import APIResponseValidationError, ReflexBuild
 from reflex_build_sdk.types import (
     CopiedSecrets,
     Environment,
@@ -32,7 +32,7 @@ UTC = datetime.timezone.utc
 
 
 @pytest.fixture
-def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
+def client(mock_api: MockAPI) -> Iterator[ReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -41,11 +41,11 @@ def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
     Yields:
         The client.
     """
-    with ReflexCloud(token="test-token", transport=MockTransport(mock_api)) as client:
+    with ReflexBuild(token="test-token", transport=MockTransport(mock_api)) as client:
         yield client
 
 
-def test_list(client: ReflexCloud, mock_api: MockAPI):
+def test_list(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         ENVIRONMENTS_PATH,
@@ -111,7 +111,7 @@ def test_list(client: ReflexCloud, mock_api: MockAPI):
     )
 
 
-def test_enable(client: ReflexCloud, mock_api: MockAPI):
+def test_enable(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{ENVIRONMENTS_PATH}/enable",
@@ -134,7 +134,7 @@ def test_enable(client: ReflexCloud, mock_api: MockAPI):
     assert mock_api.requests[0].content is None
 
 
-def test_create(client: ReflexCloud, mock_api: MockAPI):
+def test_create(client: ReflexBuild, mock_api: MockAPI):
     staging_id = "1f2e3d4c-5b6a-4978-8695-a4b3c2d1e0f9"
     mock_api.add(
         "POST",
@@ -151,7 +151,7 @@ def test_create(client: ReflexCloud, mock_api: MockAPI):
     }
 
 
-def test_update_sends_only_the_changed_settings(client: ReflexCloud, mock_api: MockAPI):
+def test_update_sends_only_the_changed_settings(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "PATCH", f"{ENVIRONMENTS_PATH}/{DEV_ID}", reply(200, json={"id": DEV_ID})
     )
@@ -159,7 +159,7 @@ def test_update_sends_only_the_changed_settings(client: ReflexCloud, mock_api: M
     assert json_body(mock_api.requests[0]) == {"requires_approval": False}
 
 
-def test_update_is_retried(client: ReflexCloud, mock_api: MockAPI):
+def test_update_is_retried(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "PATCH",
         f"{ENVIRONMENTS_PATH}/{DEV_ID}",
@@ -172,7 +172,7 @@ def test_update_is_retried(client: ReflexCloud, mock_api: MockAPI):
     assert first.headers["X-Request-ID"] == retry.headers["X-Request-ID"]
 
 
-def test_reorder(client: ReflexCloud, mock_api: MockAPI):
+def test_reorder(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{ENVIRONMENTS_PATH}/reorder",
@@ -193,7 +193,7 @@ PROMOTION = {
 }
 
 
-def test_promote(client: ReflexCloud, mock_api: MockAPI):
+def test_promote(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST", f"{ENVIRONMENTS_PATH}/{APP_ID}/promote", reply(202, json=PROMOTION)
     )
@@ -216,7 +216,7 @@ def test_promote(client: ReflexCloud, mock_api: MockAPI):
 
 
 def test_promote_sends_an_object_without_options(
-    client: ReflexCloud, mock_api: MockAPI
+    client: ReflexBuild, mock_api: MockAPI
 ):
     # The route requires a JSON object body.
     mock_api.add(
@@ -241,7 +241,7 @@ def test_promote_sends_an_object_without_options(
     ],
 )
 def test_copy_missing_secrets(
-    client: ReflexCloud,
+    client: ReflexBuild,
     mock_api: MockAPI,
     body: dict,
     copied: CopiedSecrets,
@@ -255,7 +255,7 @@ def test_copy_missing_secrets(
 
 
 def test_copy_missing_secrets_rejects_a_body_without_a_count(
-    client: ReflexCloud, mock_api: MockAPI
+    client: ReflexBuild, mock_api: MockAPI
 ):
     mock_api.add(
         "POST",
@@ -266,7 +266,7 @@ def test_copy_missing_secrets_rejects_a_body_without_a_count(
         client.apps.environments.copy_missing_secrets(APP_ID, APP_ID)
 
 
-def test_delete(client: ReflexCloud, mock_api: MockAPI):
+def test_delete(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "DELETE", f"{ENVIRONMENTS_PATH}/{DEV_ID}", reply(200, json={"id": DEV_ID})
     )
