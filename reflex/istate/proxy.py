@@ -16,6 +16,7 @@ from types import MethodType
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, SupportsIndex, TypeVar, cast
 
 import wrapt
+from reflex_base import constants
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
 from reflex_base.utils.exceptions import ImmutableStateError
@@ -165,16 +166,12 @@ class StateProxy(wrapt.ObjectProxy):
             ImmutableStateError: If the state is already mutable.
         """
         if self._self_parent_state_proxy is not None:
-            from reflex.state import State
-
             parent_state = (
                 await self._self_parent_state_proxy.__aenter__()
             ).__wrapped__
             super().__setattr__(
                 "__wrapped__",
-                await parent_state.get_state(
-                    State.get_class_substate(self._self_substate_path)
-                ),
+                await parent_state.get_state(self._self_substate_token.cls),
             )
             self._self_entered_context = True
             return self
@@ -267,6 +264,19 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             ImmutableStateError: If the state is not in mutable mode.
         """
+        if name == constants.ROUTER:
+            from reflex.state import _router_fget
+
+            # Router fields belong to the root. A linked proxy keeps their dirty
+            # tracking there while enforcing the calling proxy's mutation guard.
+            root_state = self.__wrapped__._get_root_state()
+            router_proxy = (
+                self
+                if root_state is self.__wrapped__
+                else type(self)(root_state, parent_state_proxy=self)
+            )
+            return _router_fget(cast("BaseState", router_proxy))
+
         if name in ["substates", "parent_state"] and not self._is_mutable():
             msg = (
                 "Background task StateProxy is immutable outside of a context "
