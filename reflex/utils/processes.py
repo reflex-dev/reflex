@@ -10,6 +10,8 @@ import signal
 import socket
 import subprocess
 import sys
+import threading
+from _thread import interrupt_main
 from collections.abc import Callable, Generator, Sequence
 from concurrent import futures
 from contextlib import closing
@@ -262,11 +264,32 @@ def new_process(
     return fn(non_empty_args, **kwargs)
 
 
+def _interrupt_main_thread():
+    """Deliver a SIGINT to the main thread to break it out of a blocking call.
+
+    A real signal is required on POSIX so the main thread's blocking C call
+    (e.g. a lock wait or a server loop) returns with EINTR and runs the SIGINT
+    handler; `interrupt_main` alone only sets a pending flag there. On Windows
+    `interrupt_main` sets the SIGINT event that blocking waits monitor.
+    """
+    if sys.platform == "win32":
+        interrupt_main()
+    else:
+        main_ident = threading.main_thread().ident
+        if main_ident is not None:
+            signal.pthread_kill(main_ident, signal.SIGINT)
+
+
 @contextlib.contextmanager
 def run_concurrently_context(
     *fns: Callable[..., Any] | tuple[Callable[..., Any], ...],
 ) -> Generator[list[futures.Future], None, None]:
     """Run functions concurrently in a thread pool.
+
+    If a function fails while the with-body is still executing, the main
+    thread is interrupted so the failure propagates promptly instead of being
+    swallowed while the body blocks (e.g. a fatal frontend preflight error
+    raising SystemExit while the backend serves on the main thread).
 
     Args:
         *fns: The functions to run.
@@ -282,20 +305,75 @@ def run_concurrently_context(
     # Convert the functions to tuples.
     fns = tuple(fn if isinstance(fn, tuple) else (fn,) for fn in fns)
 
+    in_body = True
+    interrupt_lock = threading.Lock()
+    interrupt_sent = False
+
+    def wake_main_thread(task: futures.Future):
+        """Interrupt the main thread once when a task fails during the body.
+
+        Args:
+            task: The completed future to inspect.
+        """
+        nonlocal interrupt_sent
+        if task.cancelled() or task.exception() is None:
+            return
+        if threading.current_thread() is threading.main_thread():
+            # Invoked inline on an already-failed task; the main thread is not
+            # blocked, so the pre-yield failure check below surfaces the error.
+            return
+        with interrupt_lock:
+            if in_body and not interrupt_sent:
+                interrupt_sent = True
+                _interrupt_main_thread()
+
+    def raise_first_failure(tasks: list[futures.Future]):
+        """Re-raise the first exception found among the completed tasks.
+
+        Args:
+            tasks: The futures to inspect.
+        """
+        for task in tasks:
+            if (
+                task.done()
+                and not task.cancelled()
+                and (exc := task.exception()) is not None
+            ):
+                raise exc from None
+
     # Run the functions concurrently.
     executor = None
     try:
         executor = futures.ThreadPoolExecutor(max_workers=len(fns))
         # Submit the tasks.
         tasks = [executor.submit(*fn) for fn in fns]
+        for task in tasks:
+            task.add_done_callback(wake_main_thread)
 
-        # Yield control back to the main thread while tasks are running.
-        yield tasks
+        try:
+            try:
+                # Don't enter (and block in) the body if a task has already
+                # failed.
+                raise_first_failure(tasks)
 
-        # Get the results in the order completed to check any exceptions.
-        for task in futures.as_completed(tasks):
-            # if task throws something, we let it bubble up immediately
-            task.result()
+                # Yield control back to the main thread while tasks are running.
+                yield tasks
+            finally:
+                # Whether the pre-check or the body raised, stop interrupting
+                # the main thread: tasks outlive this context (shutdown below
+                # does not wait).
+                with interrupt_lock:
+                    in_body = False
+
+            # Get the results in the order completed to check any exceptions.
+            for task in futures.as_completed(tasks):
+                # if task throws something, we let it bubble up immediately
+                task.result()
+        except KeyboardInterrupt:
+            # Raised by wake_main_thread for a failed task, or a real Ctrl+C;
+            # surface the task's own error when there is one.
+            raise_first_failure(tasks)
+            raise
     finally:
         # Shutdown the executor
         if executor:
@@ -362,12 +440,24 @@ def stream_logs(
                 raise
             # If the process exited, break out of the loop for post processing.
 
-    # Check if the process failed (not printing the logs for SIGINT).
-
-    # Windows uvicorn bug
-    # https://github.com/reflex-dev/reflex/issues/2335
-    # 130 is the exit code that react router returns when it is interrupted by a signal.
-    accepted_return_codes = [0, -2, 15, 130] if constants.IS_WINDOWS else [0, -2, 130]
+    # A child torn down by the user's own interrupt is not a failure.
+    if constants.IS_WINDOWS:
+        # Windows has no POSIX signal exit codes. os.kill(pid, SIGTERM) calls
+        # TerminateProcess with the signal number, so SIGTERM surfaces as a
+        # bare 15, and Node reports Ctrl+C as 130 by convention. -15 and 143
+        # are ordinary application exit codes here and must stay failures.
+        # https://github.com/reflex-dev/reflex/issues/2335
+        accepted_return_codes = {0, -2, 15, 130}
+    else:
+        # On POSIX each signal shows up two ways: negative when Popen saw it
+        # directly, 128+N when a shell wrapper such as react router reported
+        # it (130 for SIGINT, 143 for SIGTERM).
+        interrupt_signals = (int(signal.SIGINT), int(signal.SIGTERM))
+        accepted_return_codes = {
+            0,
+            *(-sig for sig in interrupt_signals),
+            *(128 + sig for sig in interrupt_signals),
+        }
     if process.returncode not in accepted_return_codes and not suppress_errors:
         logger.error(f"{message} failed with exit code {process.returncode}")
         if "".join(logs).count("CERT_HAS_EXPIRED") > 0:

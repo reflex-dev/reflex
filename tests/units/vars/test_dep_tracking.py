@@ -303,6 +303,27 @@ def test_get_var_value_functionality():
 @pytest.mark.skipif(
     sys.version_info < (3, 11), reason="Requires Python 3.11+ for positions"
 )
+def test_get_var_value_tracks_all_composed_fields():
+    """Composed get_var_value arguments register every state field they read."""
+    composed_var = DependencyTestState.count + DependencyTestState.items.length()
+
+    async def composed(self: DependencyTestState):
+        """Read a composite expression.
+
+        Returns:
+            The combined field value.
+        """
+        return await self.get_var_value(composed_var)
+
+    tracker = DependencyTracker(composed, DependencyTestState)
+    assert tracker.dependencies == {
+        DependencyTestState.get_full_name(): {"count", "items"}
+    }
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="Requires Python 3.11+ for positions"
+)
 def test_get_var_value_multiple_lines_functionality():
     """Test tracking dependencies when using get_var_value spread out on multiple lines."""
 
@@ -472,7 +493,7 @@ def test_hybrid_property_with_custom_var_dependencies():
             return "yes" if self.last_name else "no"
 
         @has_last_name.var
-        def has_last_name(cls) -> Var[str]:
+        def _has_last_name_var(cls) -> Var[str]:
             # Reference an unrelated field here to confirm the tracker uses fget, not this.
             return cls.unrelated  # pyright: ignore[reportReturnType]
 

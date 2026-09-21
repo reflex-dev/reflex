@@ -328,20 +328,20 @@ class Document:
 
     @property
     def metadata(self) -> Mapping[str, object]:
-        """Return the raw frontmatter mapping, or an empty mapping if absent."""
+        """The raw frontmatter mapping, or an empty mapping if absent."""
         return self.frontmatter.metadata if self.frontmatter is not None else {}
 
     @property
     def headings(self) -> tuple[HeadingBlock, ...]:
-        """Return all headings in the document."""
+        """All headings in the document."""
         return tuple(b for b in self.blocks if isinstance(b, HeadingBlock))
 
     @property
     def code_blocks(self) -> tuple[CodeBlock, ...]:
-        """Return all code blocks in the document."""
+        """All code blocks in the document."""
         return tuple(b for b in self.blocks if isinstance(b, CodeBlock))
 
     @property
     def directives(self) -> tuple[DirectiveBlock, ...]:
-        """Return all directive blocks in the document."""
+        """All directive blocks in the document."""
         return tuple(b for b in self.blocks if isinstance(b, DirectiveBlock))

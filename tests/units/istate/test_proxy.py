@@ -3,24 +3,123 @@
 import asyncio
 import dataclasses
 import pickle
+import subprocess
+import sys
 from asyncio import CancelledError
+from collections.abc import Mapping
 from contextlib import asynccontextmanager
-from typing import Any
+from operator import attrgetter
+from typing import Any, ClassVar
 
 import pytest
+from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event.context import EventContext
 from reflex_base.utils.exceptions import ImmutableStateError
 
 import reflex as rx
-from reflex.istate.data import RouterData
+from reflex.istate.data import HeaderData, PageData, RouterData
+from reflex.istate.manager import StateManager
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import (
     ImmutableMutableProxy,
     MutableProxy,
     ReadOnlyStateProxy,
     StateProxy,
+    is_mutable_type,
 )
 from reflex.state import BaseState
+
+
+def test_proxy_does_not_import_sqlalchemy() -> None:
+    """State mutation tracking must not load an unused database integration."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            """
+import sys
+from reflex.istate.proxy import is_mutable_type
+
+assert is_mutable_type(list)
+assert not is_mutable_type(str)
+assert "sqlalchemy" not in sys.modules
+""",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize("models_first", [False, True])
+def test_mutable_models_with_either_import_order(models_first: bool) -> None:
+    """Model classification works before or after importing state tracking."""
+    pytest.importorskip("sqlalchemy")
+    pytest.importorskip("sqlmodel")
+    script = """
+from pydantic import BaseModel
+from pydantic.v1 import BaseModel as LegacyPydanticBase
+from sqlalchemy.orm import DeclarativeBase, DeclarativeBaseNoMeta, declarative_base
+from sqlmodel import SQLModel
+"""
+    proxy_import = "from reflex.istate import proxy\n"
+    script = script + proxy_import if models_first else proxy_import + script
+    script += """
+class DatabaseBase(DeclarativeBase):
+    pass
+
+class PydanticModel(BaseModel):
+    value: int = 1
+
+class SQLModelSubclass(SQLModel):
+    value: int = 1
+
+for cls in (DeclarativeBase, DatabaseBase, BaseModel, PydanticModel, SQLModel, SQLModelSubclass):
+    assert proxy.is_mutable_type(cls), cls
+    assert proxy.is_mutable_type(cls), cls  # Exercise the cached result too.
+
+for cls in (LegacyPydanticBase, DeclarativeBaseNoMeta, declarative_base()):
+    assert not proxy.is_mutable_type(cls), cls
+
+Impostor = type("DeclarativeBase", (), {"__module__": "sqlalchemy.orm.decl_api"})
+assert not proxy.is_mutable_type(Impostor)
+assert proxy.MUTABLE_TYPES == (list, dict, set, DeclarativeBase, BaseModel)
+assert "MUTABLE_TYPES" not in dir(proxy)
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize(
+    ("type_", "expected"),
+    [
+        (list, True),
+        (dict, True),
+        (set, True),
+        (type("ListSubclass", (list,), {}), True),
+        (type("DictSubclass", (dict,), {}), True),
+        (type("SetSubclass", (set,), {}), True),
+        (dataclasses.make_dataclass("Data", []), True),
+        (dataclasses.make_dataclass("FrozenData", [], frozen=True), True),
+        (rx.Var, False),
+        (int, False),
+        (str, False),
+        (tuple, False),
+        (frozenset, False),
+        (object, False),
+    ],
+)
+def test_is_mutable_type(type_: type, expected: bool) -> None:
+    """Keep the existing container, dataclass, and Var classification rules."""
+    assert is_mutable_type(type_) is expected
 
 
 @dataclasses.dataclass
@@ -113,6 +212,159 @@ class DataclassMutableProxyState(BaseState):
     """A test state with a dataclass field holding a mutable attribute."""
 
     dc: TaggedModel = TaggedModel(ls=[{"tag": 1}])
+
+
+class RouterProxyState(BaseState):
+    """A root state for testing the composed router through state proxies."""
+
+
+class RouterProxySubState(RouterProxyState):
+    """A substate inheriting its router fields from the root state."""
+
+
+@pytest.mark.parametrize("state_cls", [RouterProxyState, RouterProxySubState])
+@pytest.mark.parametrize("proxy_cls", [StateProxy, ReadOnlyStateProxy])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "rx_router_page.params",
+        "router._page.params",
+        "router.page.params",
+        "rx_router_headers.raw_headers",
+        "router.headers.raw_headers",
+    ],
+)
+def test_router_proxy_rejects_mutation(
+    attached_mock_event_context: EventContext,
+    state_cls: type[BaseState],
+    proxy_cls: type[StateProxy],
+    path: str,
+) -> None:
+    """Router containers preserve the calling proxy's mutation guard.
+
+    Args:
+        attached_mock_event_context: The attached event context.
+        state_cls: The root or substate to proxy.
+        proxy_cls: The background or read-only proxy type.
+        path: The access path to a router container.
+    """
+    root = RouterProxyState()
+    root.router = RouterData(
+        _page=PageData(params={"x": "before", "parts": ["before"]}),
+        headers=HeaderData(raw_headers={"x": "before"}),
+    )
+    root._clean()
+    proxy = proxy_cls(root.get_substate(state_cls.get_full_name().split(".")))
+    container = attrgetter(path)(proxy)
+
+    with pytest.raises(ImmutableStateError):
+        container["x"] = "after"
+    with pytest.raises(ImmutableStateError):
+        container.update(x="after")
+    with pytest.raises(ImmutableStateError):
+        del container["x"]
+    if path.endswith("params"):
+        with pytest.raises(ImmutableStateError):
+            container["parts"].append("after")
+
+    assert root.router._page.params == {"x": "before", "parts": ["before"]}
+    assert root.router.headers.raw_headers == {"x": "before"}
+    assert not root.dirty_vars
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("state_cls", [RouterProxyState, RouterProxySubState])
+async def test_router_proxy_mutable_context(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    state_cls: type[BaseState],
+) -> None:
+    """Router writes require the owning proxy's lock and dirty the backing field.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+        emitted_deltas: The captured state updates.
+        state_cls: The root or substate to proxy.
+    """
+    state_token = BaseStateToken(ident=token, cls=state_cls)
+    async with state_manager.modify_state(state_token) as root:
+        root.router = RouterData(_page=PageData(params={"x": "before"}))
+        root._clean()
+        proxy = StateProxy(root.get_substate(state_cls.get_full_name().split(".")))
+
+    async with proxy:
+        router = proxy.router
+        router._page.params["x"] = "after"
+        assert proxy.__wrapped__._get_root_state().dirty_vars == {"rx_router_page"}
+        read_only = ReadOnlyStateProxy(proxy.__wrapped__)
+        with pytest.raises(ImmutableStateError):
+            read_only.router._page.params["x"] = "read-only write"
+
+    with pytest.raises(ImmutableStateError):
+        router._page.params["x"] = "unlocked write"
+
+    assert emitted_deltas == [
+        (
+            token,
+            {
+                RouterProxyState.get_full_name(): {
+                    "rx_router_page" + FIELD_MARKER: PageData(params={"x": "after"}),
+                },
+            },
+        ),
+    ]
+    async with state_manager.modify_state(state_token) as root:
+        assert root.router._page.params == {"x": "after"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("proxy_cls", [StateProxy, ReadOnlyStateProxy])
+@pytest.mark.parametrize("state_cls", [RouterProxyState, RouterProxySubState])
+async def test_router_proxy_nested_context(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+    proxy_cls: type[StateProxy],
+    state_cls: type[BaseState],
+) -> None:
+    """Nested router contexts refresh the backing field and respect read-only access.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+        proxy_cls: The background or read-only proxy type.
+        state_cls: The root or substate to proxy.
+    """
+    state_token = BaseStateToken(ident=token, cls=state_cls)
+    async with state_manager.modify_state(state_token) as root:
+        root.router = RouterData(_page=PageData(params={"x": "before"}))
+        proxy = proxy_cls(root.get_substate(state_cls.get_full_name().split(".")))
+        params = proxy.router._page.params
+
+    async with state_manager.modify_state(state_token) as root:
+        root.router = RouterData(_page=PageData(params={"x": "refreshed"}))
+
+    if proxy_cls is ReadOnlyStateProxy:
+        with pytest.raises(ImmutableStateError, match="read-only"):
+            async with params:
+                pass
+    else:
+        async with params:
+            assert params["x"] == "refreshed"
+            params["x"] = "after"
+
+    with pytest.raises(ImmutableStateError):
+        params["x"] = "unlocked write"
+
+    async with state_manager.modify_state(state_token) as root:
+        assert root.router._page.params["x"] == (
+            "refreshed" if proxy_cls is ReadOnlyStateProxy else "after"
+        )
 
 
 @pytest.mark.asyncio
@@ -713,3 +965,228 @@ async def test_mutable_proxy_custom_get_method_path_tracking(
     ) as state:
         assert isinstance(state, CustomGetState)
         assert state.registry.entries == {"a": [1, 2]}
+
+
+@dataclasses.dataclass(frozen=True)
+class FrozenTaggedModel:
+    """A frozen dataclass for dataclass-protocol tests."""
+
+    tag: str = "a"
+
+
+@dataclasses.dataclass(match_args=False)
+class UnmatchableModel:
+    """A dataclass declared without `__match_args__`."""
+
+    tag: str = "a"
+
+
+@dataclasses.dataclass(slots=True)
+class SlottedModel:
+    """A slots dataclass, whose layout must not leak onto the proxy class."""
+
+    tag: str = "default"
+    ls: list[int] = dataclasses.field(default_factory=list)
+
+
+def _dataclass_proxy(model: Any) -> Any:
+    """Build a proxy for a dataclass value held by a state field.
+
+    Args:
+        model: The dataclass instance to proxy.
+
+    Returns:
+        The MutableProxy wrapping the model.
+    """
+    return MutableProxy(model, DataclassMutableProxyState(), "dc")
+
+
+@pytest.mark.parametrize(
+    ("model", "frozen"),
+    [
+        (TaggedModel(ls=[{"tag": 1}]), False),
+        (FrozenTaggedModel(), True),
+        (SlottedModel(), False),
+    ],
+)
+def test_dataclass_proxy_class_carries_dataclass_metadata(
+    model: Any, frozen: bool
+) -> None:
+    """The proxy class synthesized per dataclass type exposes its metadata."""
+    proxy_cls = type(_dataclass_proxy(model))
+    model_cls = type(model)
+
+    assert proxy_cls is not model_cls
+    assert dataclasses.is_dataclass(proxy_cls)
+    assert dataclasses.fields(proxy_cls) == dataclasses.fields(model_cls)
+    assert proxy_cls.__dataclass_params__ is model_cls.__dataclass_params__  # pyright: ignore [reportAttributeAccessIssue]
+    assert proxy_cls.__dataclass_params__.frozen is frozen  # pyright: ignore [reportAttributeAccessIssue]
+    assert proxy_cls.__match_args__ == model_cls.__match_args__  # pyright: ignore [reportAttributeAccessIssue]
+
+
+def test_dataclass_proxy_class_omits_absent_metadata() -> None:
+    """Metadata the wrapped dataclass was declared without is not invented."""
+    proxy_cls = type(_dataclass_proxy(UnmatchableModel()))
+
+    assert not hasattr(UnmatchableModel, "__match_args__")
+    assert not hasattr(proxy_cls, "__match_args__")
+
+
+def test_dataclass_proxy_class_copies_no_behavior() -> None:
+    """Only metadata is copied: everything else resolves through the wrapped object."""
+    model = SlottedModel(tag="instance", ls=[1])
+    proxy = _dataclass_proxy(model)
+    proxy_cls = type(proxy)
+
+    for attr in (
+        "__init__",
+        "__repr__",
+        "__eq__",
+        "__setattr__",
+        "__delattr__",
+        "__slots__",
+        "tag",
+    ):
+        assert attr not in vars(proxy_cls)
+
+    assert proxy.tag == "instance"
+    assert dataclasses.asdict(proxy) == {"tag": "instance", "ls": [1]}
+
+    proxy.ls.append(2)
+    assert model.ls == [1, 2]
+
+    proxy.tag = "mutated"
+    assert model.tag == "mutated"
+
+
+@dataclasses.dataclass
+class DunderFieldModel:
+    """A dataclass whose field names collide with the copied metadata."""
+
+    __match_args__: tuple[str, ...] = ()
+    __dataclass_params__: int = 0
+
+
+def test_dataclass_proxy_class_never_shadows_a_field() -> None:
+    """A field named like copied metadata keeps its instance value through the proxy."""
+    model = DunderFieldModel(__match_args__=("live",), __dataclass_params__=7)
+    proxy = _dataclass_proxy(model)
+
+    assert "__match_args__" not in vars(type(proxy))
+    assert "__dataclass_params__" not in vars(type(proxy))
+    assert proxy.__match_args__ == ("live",)
+    assert proxy.__dataclass_params__ == 7
+    assert dataclasses.asdict(proxy) == dataclasses.asdict(model)
+
+
+@dataclasses.dataclass
+class DunderClassVarModel:
+    """A dataclass declaring the copied metadata names as class-level entries."""
+
+    __match_args__: ClassVar[tuple[str, ...]] = ("custom",)
+    __dataclass_fields__: ClassVar[dict[str, Any]] = {}
+    other: int = 0
+
+
+@dataclasses.dataclass
+class DunderInitVarModel:
+    """A dataclass declaring a copied metadata name as an InitVar."""
+
+    __match_args__: dataclasses.InitVar[tuple[str, ...]] = ("initvar",)
+    other: int = 0
+
+    def __post_init__(self, __match_args__: tuple[str, ...]) -> None:
+        """Accept the InitVar.
+
+        Args:
+            __match_args__: The InitVar value, unused.
+        """
+
+
+@pytest.mark.parametrize(
+    ("model", "match_args"),
+    [
+        (DunderClassVarModel(other=1), ("custom",)),
+        (DunderInitVarModel(other=1), ("initvar",)),
+    ],
+)
+def test_dataclass_proxy_class_copies_class_level_pseudo_fields(
+    model: Any, match_args: tuple[str, ...]
+) -> None:
+    """ClassVar and InitVar entries keep their value on the class, so they are copied."""
+    proxy = _dataclass_proxy(model)
+    proxy_cls = type(proxy)
+
+    assert dataclasses.is_dataclass(proxy_cls)
+    assert proxy_cls.__match_args__ == match_args  # pyright: ignore [reportAttributeAccessIssue]
+    assert proxy.__match_args__ == match_args
+    assert dataclasses.asdict(proxy) == {"other": 1}
+
+
+def test_frozen_dataclass_proxy_rejects_mutation() -> None:
+    """A frozen dataclass stays frozen through its proxy."""
+    proxy = _dataclass_proxy(FrozenTaggedModel())
+
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        proxy.tag = "b"
+
+
+def test_interval_computed_vars_resolve_through_state_proxy(
+    attached_mock_event_context: EventContext,
+):
+    """Marking dirty through a StateProxy resolves the class cache on the wrapped state.
+
+    `_expired_computed_vars` caches the interval-var names per class; looked up
+    via `type(self)` that would hit the proxy class and fail.
+
+    Args:
+        attached_mock_event_context: The attached mock event context fixture.
+    """
+    import datetime
+
+    from reflex.state import State
+    from reflex.vars.base import computed_var
+
+    class IntervalState(State):
+        base: int = 0
+
+        @computed_var(interval=datetime.timedelta(seconds=30))
+        def timed(self) -> int:
+            return self.base
+
+    state = IntervalState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    proxy = StateProxy(state)
+    assert proxy._expired_computed_vars() == {"timed"}
+    assert IntervalState._interval_computed_var_names == frozenset({"timed"})
+
+
+def test_fast_path_skips_names_a_subclass_defines():
+    """A subclass defining a fast-pathed framework name keeps the full lookup for it.
+
+    The fast path bypasses var resolution, so it must not apply to a name the
+    state itself defines (here a marked override of a BaseState method). The
+    class is a detached root (not a substate of ``State``) so the shadowed
+    method never reaches the framework paths that other tests exercise on the
+    shared state tree.
+    """
+    from reflex.state import BaseState
+
+    def get_value(self, key: str):
+        return f"shadow:{key}"
+
+    get_value.__override_base_method__ = True  # pyright: ignore [reportFunctionMemberAccess]
+
+    ShadowState = type(
+        "ShadowState",
+        (BaseState,),
+        {
+            "__module__": __name__,
+            "__qualname__": "ShadowState",
+            "get_value": get_value,
+        },
+    )
+    assert "get_value" in BaseState._fast_attr_names
+    assert "get_value" not in ShadowState._fast_attr_names
+    assert "dirty_vars" in ShadowState._fast_attr_names
+    state = ShadowState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert state.get_value("k") == "shadow:k"

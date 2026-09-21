@@ -11,12 +11,14 @@ from reflex_base.context.base import BaseContext
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
     from reflex.app import App
     from reflex.state import BaseState
     from reflex_base.config import Config
-    from reflex_base.event import EventHandler
+    from reflex_base.event import EventChain, EventHandler
+    from reflex_base.utils.types import ArgsSpec
+    from reflex_base.vars.base import Var
 
 
 def _default_bundled_libraries() -> list[str]:
@@ -68,11 +70,23 @@ class RegistrationContext(BaseContext):
         default_factory=_default_bundled_libraries,
         repr=False,
     )
+    _explicit_bundled_libraries: dict[str, None] = dataclasses.field(
+        default_factory=dict, repr=False
+    )
     _app: App | None = dataclasses.field(default=None, repr=False)
+    _memoized_event_triggers: dict[tuple[str, int], tuple[Any, Var]] = (
+        dataclasses.field(default_factory=dict, repr=False)
+    )
+    # (handler id, args_spec id, trigger key) -> the handler, spec and their
+    # bound chain. The referents keep the ids valid for the map's lifetime.
+    _bound_event_chains: dict[
+        tuple[int, int, str | None],
+        tuple[EventHandler, ArgsSpec | Sequence[ArgsSpec], EventChain],
+    ] = dataclasses.field(default_factory=dict, repr=False)
 
     @property
     def app(self) -> App:
-        """Get the App instance associated with this context.
+        """The App instance associated with this context.
 
         Returns:
             The App instance.
@@ -87,7 +101,7 @@ class RegistrationContext(BaseContext):
 
     @property
     def config(self) -> Config:
-        """Get the Config associated with this context.
+        """The Config associated with this context.
 
         Returns:
             The Config instance.
@@ -140,6 +154,7 @@ class RegistrationContext(BaseContext):
             },
             decorated_pages=list(self.decorated_pages),
             bundled_libraries=list(self.bundled_libraries),
+            _explicit_bundled_libraries=dict(self._explicit_bundled_libraries),
         )
 
     def _set_config(self, config: Config) -> None:

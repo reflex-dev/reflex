@@ -7,7 +7,7 @@ import time
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, TypeVar
 
-from reflex_base.constants import ROUTER_DATA
+from reflex_base.constants import ROUTER_DATA, ROUTER_VARS
 from reflex_base.environment import environment
 from reflex_base.event import Event, get_hydrate_event
 from reflex_base.registry import RegistrationContext
@@ -15,7 +15,12 @@ from reflex_base.utils.exceptions import ReflexRuntimeError
 from typing_extensions import Self
 
 from reflex.istate.manager.token import BaseStateToken
-from reflex.state import BaseState, State, _override_base_method
+from reflex.state import (
+    BaseState,
+    State,
+    _override_base_method,
+    _suppress_delta_recording,
+)
 
 if TYPE_CHECKING:
     from reflex.app import App
@@ -197,10 +202,13 @@ async def _patch_state(
             linked_state._mark_dirty()
         # Apply the updates into the existing state tree for rehydrate.
         root_state = original_state._get_root_state()
-        root_state.dirty_vars.add("router")
+        root_state.dirty_vars.update(ROUTER_VARS)
         root_state.dirty_vars.add(ROUTER_DATA)
         root_state._mark_dirty()
-        await root_state._get_resolved_delta()
+        # The delta is discarded: it is only resolved to refresh computed vars,
+        # so its values must not count as sent to the client.
+        with _suppress_delta_recording():
+            await root_state._get_resolved_delta()
         yield
     finally:
         original_parent_state.substates[state_name] = original_state
@@ -328,7 +336,7 @@ class SharedStateBaseInternal(State):
             return self  # already linked to this token
         if self._linked_to and self._linked_to != token:
             # Disassociate from previous linked token since unlink will not be called.
-            self._linked_from.discard(self.router.session.client_token)
+            self._linked_from.discard(self.rx_router_session.client_token)
         # TODO: Change StateManager to accept token + class instead of combining them in a string.
         if "_" in token:
             msg = f"Invalid token {token} for linking state {self.get_full_name()}, cannot use underscore (_) in the token name."
@@ -363,12 +371,12 @@ class SharedStateBaseInternal(State):
 
         # Break the linkage for future events.
         self._reflex_internal_links.pop(state_name)
-        self._linked_from.discard(self.router.session.client_token)
+        self._linked_from.discard(self.rx_router_session.client_token)
 
         # Patch in the original state, apply updates, then rehydrate.
         private_root_state = await get_state_manager().get_state(
             BaseStateToken(
-                ident=self.router.session.client_token,
+                ident=self.rx_router_session.client_token,
                 cls=type(self),
             )
         )
@@ -417,14 +425,13 @@ class SharedStateBaseInternal(State):
                     # Set client_token on the linked root so that subsequent get_state
                     # calls when directly modifying a linked token will load the
                     # associated instance.
-                    if linked_root_state.router.session.client_token != token:
+                    if (
+                        session := linked_root_state.rx_router_session
+                    ).client_token != token:
                         import dataclasses as dc
 
-                        linked_root_state.router = dc.replace(
-                            linked_root_state.router,
-                            session=dc.replace(
-                                linked_root_state.router.session, client_token=token
-                            ),
+                        linked_root_state.rx_router_session = dc.replace(
+                            session, client_token=token
                         )
         if linked_root_state is None:
             linked_root_state = await get_state_manager().get_state(
@@ -437,8 +444,8 @@ class SharedStateBaseInternal(State):
         # Avoid unnecessary dirtiness of shared state when there are no changes.
         if type(self) not in self._held_locks[token]:
             self._held_locks[token][type(self)] = linked_state
-        if self.router.session.client_token not in linked_state._linked_from:
-            linked_state._linked_from.add(self.router.session.client_token)
+        if self.rx_router_session.client_token not in linked_state._linked_from:
+            linked_state._linked_from.add(self.rx_router_session.client_token)
         if linked_state._linked_to != token:
             linked_state._linked_to = token
         await self._exit_stack.enter_async_context(
@@ -523,13 +530,13 @@ class SharedStateBaseInternal(State):
                             linked_state._previous_dirty_vars
                         )
                     if (
-                        linked_state._get_was_touched()
+                        BaseState._get_was_touched(linked_state)
                         or linked_state._previous_dirty_vars is not None
                     ):
                         affected_tokens.update(
                             token
                             for token in linked_state._linked_from
-                            if token != self.router.session.client_token
+                            if token != self.rx_router_session.client_token
                         )
                 # When modifying a shared token directly (empty _reflex_internal_links),
                 # the held locks will be empty. Check SharedState substates for linked
@@ -582,7 +589,10 @@ class SharedStateBaseInternal(State):
                     current_dirty_vars[substate.get_full_name()] = set(
                         substate._previous_dirty_vars
                     )
-                if substate._get_was_touched() or substate._previous_dirty_vars:
+                if (
+                    BaseState._get_was_touched(substate)
+                    or substate._previous_dirty_vars
+                ):
                     affected_tokens.update(substate._linked_from)
             substate._collect_shared_token_updates(affected_tokens, current_dirty_vars)
 

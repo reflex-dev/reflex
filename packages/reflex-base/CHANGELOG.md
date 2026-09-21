@@ -1,3 +1,145 @@
+## v0.9.11 (2026-09-11)
+
+### Breaking Changes
+
+- Bundled Bun moves to 1.4.0, and the minimum supported Bun version rises to 1.4.0 with it. Bun 1.4 creates new lockfiles at `lockfileVersion: 2`, which Bun 1.3.x cannot parse at all — so once a project's `reflex.lock/bun.lock` has been generated under 1.4, everyone building it (teammates, CI, Docker images) needs Bun 1.4 too. An existing `lockfileVersion: 1` lockfile is kept at v1 by Bun 1.4, even across dependency changes, so already-initialized projects are unaffected until their lockfile is regenerated from scratch. Reflex installs and manages its own Bun, so this only needs action if you point `bun_path` at your own Bun or rely on one from `PATH`. ([#7019](https://github.com/reflex-dev/reflex/issues/7019))
+
+### Deprecations
+
+- `reflex_base.config._load_config()` is deprecated in favor of `_get_config()`; use `get_config()` to read the cached config. ([#6933](https://github.com/reflex-dev/reflex/issues/6933))
+
+### Features
+
+- Add inert OpenTelemetry trace points and metrics around event handler execution, state acquisition, socket messages and compile stages (`reflex_base.otel`) and `window.__reflex_otel` hooks in the frontend event loop and upload helper; they cost one boolean check, and import nothing from `opentelemetry`, until the `reflex-otel` package enables them (`reflex-base` itself does not depend on `opentelemetry-api`). ([#6227](https://github.com/reflex-dev/reflex/issues/6227))
+- `hybrid_property` remains a `property` subclass at runtime, but type checkers now resolve class-level access to the frontend var's type instead of the descriptor: without a var function it follows the var equivalent of the getter's return type, and a var function may declare a type of its own. The var function may be a `classmethod` or `staticmethod`, may return `None` to declare that the property has no frontend value on a class, and — like `getter`, `setter` and `deleter` — may be defined under a name of its own instead of shadowing the property's declaration. ([#6812](https://github.com/reflex-dev/reflex/issues/6812))
+- `reflex_base.utils.log.reserve_stdout()` reserves stdout for a machine-readable document, rendering log records, tables, rules, prompts, spinners and progress bars to stderr for as long as it is set. ([#6917](https://github.com/reflex-dev/reflex/issues/6917))
+
+### Bug Fixes
+
+- A hybrid property a state inherits from a base class is no longer shadowed by state storage when the state annotates its name, which made such a state fail to instantiate. ([#6812](https://github.com/reflex-dev/reflex/issues/6812))
+- Attribute probes on vars (e.g. `inspect.iscoroutinefunction` via `unittest.mock`) no longer trigger ForwardRef resolution of unrelated annotations, silencing spurious "Failed to resolve ForwardRefs" warnings and avoiding `NameError` under PEP 649 lazy annotations on Python 3.14. ([#6929](https://github.com/reflex-dev/reflex/issues/6929))
+- Avoid ModuleNotFoundError when loading `rxconfig.py` in a multi-threaded context. ([#6933](https://github.com/reflex-dev/reflex/issues/6933))
+- Auto-memoized components that render identically no longer share a generated memo name, which silently dropped one of the two compiled bodies. The name now accounts for:
+
+  - module-level code emitted by `add_custom_code`
+  - dynamic imports
+  - app-wrap components, including `rx.text` and the other `MarkdownComponentMap` components that all hashed alike
+  - the defining module, so same-named components from different modules stay apart
+  - the identity of dataclasses and enum members, which previously hashed by shape and by `str()`
+
+  ([#6947](https://github.com/reflex-dev/reflex/issues/6947))
+- The compatibility delta flush for background handlers that never enter `async with self` now also runs when the handler raises, so uncached computed vars and preamble-dirty vars (like `router_data`) reach the client regardless of how the task ended. The exception still propagates to the backend exception handler afterwards; if the flush itself fails in that case, the flush error is logged instead of masking the handler's exception. ([#6995](https://github.com/reflex-dev/reflex/issues/6995))
+- `rx.Config` now rejects a `frontend_path` whose segments are not plain directory names (`..`, backslashes, or drive letters), which would otherwise relocate the production build output outside of `.web/build/client`. ([#7044](https://github.com/reflex-dev/reflex/issues/7044))
+- Fix the Safari dev-server cache-busting plugin rendering pages as comma-separated byte values with React Router 8. The rewritten HTML now streams through instead of being buffered, and multibyte characters split across response chunks stay intact. ([#7048](https://github.com/reflex-dev/reflex/issues/7048))
+- Keep the frontend runtime stable across hot updates in `reflex run`. React contexts, event dispatchers, and element refs now survive a recompile, and the state and event-loop providers are no longer remounted on every compile, so a component refreshed before its provider no longer crashes with `Cannot read properties of null`, drops events, or reconnects the websocket. ([#7071](https://github.com/reflex-dev/reflex/issues/7071))
+- Fix the post-eviction rehydrate fallback not running under `StateManagerRedis`. ([#7072](https://github.com/reflex-dev/reflex/issues/7072))
+- Prevent runaway page-load event chains when backend-initiated events encounter expired state. ([#7073](https://github.com/reflex-dev/reflex/issues/7073))
+- Reject `frontend_path` segments with trailing dots or spaces that Windows trims, and empty segments from repeated slashes, before they can produce inconsistent build paths. A single leading or trailing slash remains supported. ([#7105](https://github.com/reflex-dev/reflex/issues/7105))
+- Preserve class-level `hybrid_property` frontend types on Pyright 1.1.412 and later instead of resolving them to `Any`. ([#7106](https://github.com/reflex-dev/reflex/issues/7106))
+- `bundle_library()` bundles subpaths without an unused package root; explicit subpath strings also work without registering the package root. ([#7109](https://github.com/reflex-dev/reflex/issues/7109))
+- Passing a component to `bundle_library()` prebundles the rendered library imports of its entire tree, including children and component-valued props, before initial rendering. ([#7109](https://github.com/reflex-dev/reflex/issues/7109))
+- Invalid `bundle_library()` arguments now raise a clear `TypeError` directing callers to pass a library name string or a prototype component instance. ([#7109](https://github.com/reflex-dev/reflex/issues/7109))
+- Preserve default exports when dynamic components use a bundled package root as well as a subpath. ([#7109](https://github.com/reflex-dev/reflex/issues/7109))
+- Keep explicit `bundle_library()` registrations across compiler resets and registration-context forks without duplicates. ([#7109](https://github.com/reflex-dev/reflex/issues/7109))
+
+### Performance
+
+- Component content hashing, which auto-memoization runs for every memoized component during a compile, encodes roughly 1.2-1.3x faster on large pages. Generated memo module names change as a result; nothing outside the compiled output refers to them. ([#6947](https://github.com/reflex-dev/reflex/issues/6947))
+- New opt-in dev-server knobs: `REFLEX_DEV_PROD_REACT=1` serves React's production build under the Vite dev server (navigation CPU on a large app 54 → 36 ms, prod build 24 ms; edits become a full reload since Fast Refresh needs dev React), and `REFLEX_VITE_WARMUP_ROUTES=1` pre-transforms route modules at startup so the first visit to a page no longer waits on Vite (105–131 → 43–69 ms, or 20–32 ms with both). ([#7021](https://github.com/reflex-dev/reflex/issues/7021))
+- Trimmed the framework overhead around every event handler: the state fast-paths its own bookkeeping attributes, foreground handler tasks start eagerly on Python 3.12+, the computed-var expiry check only looks at interval vars, route matching is memoized per path, and socket.io handlers run inline. About 28% less CPU per trivial event and 20% more events per second per worker under concurrent load. ([#7025](https://github.com/reflex-dev/reflex/issues/7025))
+- Reduce CLI startup time and memory by loading compiler plugins and optional SQLAlchemy property support only when used. ([#7050](https://github.com/reflex-dev/reflex/issues/7050))
+
+### Miscellaneous
+
+- Bump bundled frontend pins: react-router 8.3.1, isbot 5.2.2, postcss 8.5.26, postcss-import 17.0.0, and vite 8.2.2. postcss-import 17 requires Node 22+, which already matches the Reflex minimum. ([#7019](https://github.com/reflex-dev/reflex/issues/7019))
+
+
+## v0.9.10.post1 (2026-09-01)
+
+### Deprecations
+
+- `reflex_base.config._load_config()` is deprecated in favor of `_get_config()`; use `get_config()` to read the cached config. ([#6933](https://github.com/reflex-dev/reflex/issues/6933))
+
+### Bug Fixes
+
+- Avoid ModuleNotFoundError when loading `rxconfig.py` in a multi-threaded context. ([#6933](https://github.com/reflex-dev/reflex/issues/6933))
+
+
+## v0.9.10 (2026-09-01)
+
+### Bug Fixes
+
+- Enqueuing an event chained from a parent event that has already finished no longer raises `RuntimeError: Cannot add a child to an EventFuture that is already done.`. Such a late-chained event skips registration under the completed parent and is processed normally. ([#6801](https://github.com/reflex-dev/reflex/issues/6801))
+- Compiling unchanged source twice now produces the same files. Import order came from a `set`, whose iteration order varies with `PYTHONHASHSEED`, and a library's imports were not deduplicated against themselves; both fed the content hash a memoized component is named from, so each compile renamed those components and invalidated downstream build caches for no reason. ([#7012](https://github.com/reflex-dev/reflex/issues/7012))
+
+### Performance
+
+- Compiling an app with many components is substantially faster. Imports are now deduplicated as they are merged rather than only at the end, so naming a memoized component no longer costs work proportional to the size of its subtree. An app with 80 routes and 42,268 components went from 263s to 48s. ([#7012](https://github.com/reflex-dev/reflex/issues/7012))
+
+
+## v0.9.9.post1 (2026-09-01)
+
+### Deprecations
+
+- `reflex_base.config._load_config()` is deprecated in favor of `_get_config()`; use `get_config()` to read the cached config. ([#6933](https://github.com/reflex-dev/reflex/issues/6933))
+
+### Bug Fixes
+
+- Avoid ModuleNotFoundError when loading `rxconfig.py` in a multi-threaded context. ([#6933](https://github.com/reflex-dev/reflex/issues/6933))
+
+
+## v0.9.9 (2026-08-28)
+
+### Breaking Changes
+
+- `get_config(reload=True)` has been replaced by `reload_config()`, and the module-level `bundled_libraries` list in `reflex_base.components.dynamic` has moved onto the active `RegistrationContext` (use `bundle_library()` / `reset_bundled_libraries()` as before). Reading `reflex_base.components.dynamic.bundled_libraries` (or `DEFAULT_BUNDLED_LIBRARIES`) still works as a deprecated shim that resolves against the active context; the shims are removed in 1.0. ([#6382](https://github.com/reflex-dev/reflex/issues/6382))
+- `pydantic` is no longer a hard dependency; pydantic model support activates when it is installed. Use the `reflex-base[pydantic]` extra (or `reflex[db]`) to keep it. ([#6786](https://github.com/reflex-dev/reflex/issues/6786))
+- Upgraded the frontend to React Router 8.3.0 (from 7.18.2). Its new baseline requires Node 22.22.0+, so `Node.MIN_VERSION` moves from 22.12.0 to 22.22.0; the already-pinned React 19.2.8 and Vite 8.0.16 satisfy the React 19.2.7+ and Vite 7+ floors. React Router 8 dropped the `react-router-dom` re-export package, so it is no longer installed: components that declare `library = "react-router-dom"` must import from `react-router` instead (`RouterProvider`/`HydratedRouter` come from `react-router/dom`). Existing projects have the stale entry pruned from `package.json` on the next install. ([#6854](https://github.com/reflex-dev/reflex/issues/6854))
+
+### Deprecations
+
+- The `console.debug/info/success/log/warn/error/timing` helpers are deprecated (removal in 1.0) but keep working as shims; use `logging.getLogger(__name__)` and the pipeline in `reflex_base.utils.log` instead. The interactive Rich features (`print`/`rule`/`status`/`ask`/`progress`) remain first-class. ([#6867](https://github.com/reflex-dev/reflex/issues/6867))
+- `get_config(reload=True)` is deprecated (removal in 1.0) but keeps working: passing `reload=True` emits a deprecation warning and delegates to `reload_config()`, which forces a fresh load of the config into the current `RegistrationContext`. ([#6985](https://github.com/reflex-dev/reflex/issues/6985))
+
+### Features
+
+- `RegistrationContext` now carries the loaded `Config`, the registered `App`, decorated pages, and bundled libraries, and provides `fork()` to derive a fresh context that preserves existing registrations while resetting the app and config. ([#6382](https://github.com/reflex-dev/reflex/issues/6382))
+- Validate incoming state deltas in the frontend before dispatching and report unprocessable updates to the backend via a new `client_error` socket event instead of failing silently in the browser console. Values reported by a client are escaped and bounded before reaching the backend logs. ([#6827](https://github.com/reflex-dev/reflex/issues/6827))
+- Added `reflex_base.utils.log`: a standard python logging pipeline with a rich-rendering console handler (legacy colors preserved), a JSON-lines handler behind `REFLEX_LOG_JSON`, record deduplication, and file logging. `LogLevel` gained a correct total ordering and `to_logging_level()`, and the interactive console helpers (`print`/`rule`/`status`/`progress`) now respect JSON mode. ([#6863](https://github.com/reflex-dev/reflex/issues/6863))
+- Compiled components are now named for React DevTools: memoized components take a `displayName` from the Python class or `@rx.memo` function they came from instead of showing as `Anonymous`, generated contexts are named (`StateContext(reflex___state____state.my_state).Provider` rather than an unlabelled `Context.Provider`), pages are labelled with their route (`Component(blog/[slug])`), and client-only (`NoSSRComponent`) wrappers render as `ClientSide(<Tag>)`. ([#6945](https://github.com/reflex-dev/reflex/issues/6945))
+- Add the `REFLEX_REFERRER_PARAM` environment variable, read at compile time to append a `ref` query parameter to the "Built with Reflex" badge link. ([#6951](https://github.com/reflex-dev/reflex/issues/6951))
+
+### Bug Fixes
+
+- Event handlers marked with `@rx.event(supersedes=True)` now use latest-wins semantics: enqueuing a new invocation cancels the previous unfinished event chain for the same client token. `on_load_internal` uses this to cancel stale `on_load` chains on navigation. ([#6593](https://github.com/reflex-dev/reflex/issues/6593))
+- `@rx.memo` functions that forward props through `rx.RestProp` now classify those props the same way a regular component does: a forwarded prop that is not a declared prop of the target (e.g. `font_weight=`) joins the component's `style` and renders as `css`, instead of being passed through as an unrecognized prop and silently dropped. Such props merge with an explicit `style=` rather than replacing it, and props the target actually declares are still forwarded normally. ([#6605](https://github.com/reflex-dev/reflex/issues/6605))
+- Declare `rx.plugins.RadixThemesPlugin()` in the `rxconfig.py` written by `reflex init`, so freshly scaffolded apps no longer emit the implicit Radix Themes enablement deprecation warning. ([#6776](https://github.com/reflex-dev/reflex/issues/6776))
+- Qualify annotations whose bare builtin name is shadowed by a member of the same class, so `Var.create` is no longer inferred as `LiteralBooleanVar` for every argument type. `Var.bool`, `BaseComponent.set` and `PropsBase.dict` shadowed `bool`, `set` and `dict` for annotations elsewhere in their own class bodies, which type checkers resolve against the class namespace. ([#6846](https://github.com/reflex-dev/reflex/issues/6846))
+- The `vite preview` server that react-router prerendering fetches pages from is now pinned to `127.0.0.1`, fixing `reflex export` failing with `Prerender: Request failed for /: ECONNREFUSED` in environments where `localhost` resolves to both IPv4 and IPv6 loopback addresses (such as docker containers). ([#6857](https://github.com/reflex-dev/reflex/issues/6857))
+- Resolve event handler annotations before runtime state-class patches can shadow builtin names on Python 3.14. ([#6890](https://github.com/reflex-dev/reflex/issues/6890))
+- Chained events (those yielded by an event handler) now inherit the routing data of the event being processed, so `router` and dynamic route args resolve against the view that produced them instead of whichever view the last client-sent event left on the root state. ([#6919](https://github.com/reflex-dev/reflex/issues/6919))
+- Stop background event handlers from computing a delta and cleaning the root state after the state lock is dropped. On a shared state tree (opportunistic locking, in-memory state manager) a concurrent foreground write landing between the background task's dirty-var snapshot and its `_clean()` was silently discarded and never reached any delta. ([#6920](https://github.com/reflex-dev/reflex/issues/6920))
+- Resolve `TypeAliasType` annotations (PEP 695 `type` statements and the `typing_extensions` backport) to their underlying value in `Var.guess_type`, `_isinstance` and `typehint_issubclass`. A state var annotated with an alias like `type Key = Literal["day", "week"]` now compiles and can be assigned to, and event handlers with alias-annotated arguments can be passed uncalled to event triggers. Parameterized generic aliases (`Keys[str]` for `type Keys[T] = list[T]`) and aliases nested in unions (`Key | None`) are resolved as well. ([#6944](https://github.com/reflex-dev/reflex/issues/6944), [#6986](https://github.com/reflex-dev/reflex/issues/6986))
+- The generated `vite.config.js` no longer passes options rejected or deprecated by rolldown-vite 8.x: the no-op `rollupOptions.jsx` key is dropped and `output.advancedChunks` migrated to `output.codeSplitting` (same shape), removing the "Invalid input options" and "advancedChunks option is deprecated" warnings from every prod build/export. ([#6987](https://github.com/reflex-dev/reflex/issues/6987))
+- Console warnings and errors no longer print literal backslash-escaped brackets (e.g. `dict\[str, str]`). The rich-markup escapes were left over from the legacy console helpers, but the logging pipeline renders messages with markup disabled, so bracketed type names now print verbatim. `VarAttributeError` messages drop the same escapes. ([#6989](https://github.com/reflex-dev/reflex/issues/6989))
+- A custom component declaring `library = "react-router-dom"` (including versioned and subpath forms) now fails compilation with an actionable error naming the component, instead of silently installing the removed package — which pulled in a second, unpinned React Router 7 copy that worked in dev by accident and broke production builds. React Router 8 dropped `react-router-dom`: use `library = "react-router"` instead, or `"react-router/dom"` for `RouterProvider`/`HydratedRouter`. ([#6991](https://github.com/reflex-dev/reflex/issues/6991))
+- With `REFLEX_ENABLE_FULL_LOGGING`, granian worker records reach the log file again: the file handler now opens in append mode (truncating once up front), so it reopens after the worker's post-fork `logging.config.dictConfig` closes it instead of silently dropping every worker-side record. The legacy console file writer follows the reopened stream through a proxy, so its timestamped lines no longer leak to stdout and break `--json` output. ([#6992](https://github.com/reflex-dev/reflex/issues/6992))
+
+### Performance
+
+- Dev mode no longer pays for React's per-element owner-stack capture: navigation clicks in a large app dropped from ~350ms to ~83ms of main-thread CPU (5.6x prod down to ~1.3x). In exchange `React.captureOwnerStack()` returns no owner frames in dev, which affects React DevTools' owner-stack view and custom error overlays built on that API; set `REFLEX_REACT_OWNER_STACKS=1` to restore them. ([#6905](https://github.com/reflex-dev/reflex/issues/6905))
+- `MemoComponent` instances no longer opt out of compiler auto-memoization wholesale. Only the passthrough wrappers the auto-memoize pass generates do, tracked by the new `auto_memo_wrapper` flag on `MemoComponentDefinition`, so state-bound props and event handlers on a `@rx.memo` call site compile their hooks into a generated wrapper instead of the enclosing page. ([#6949](https://github.com/reflex-dev/reflex/issues/6949))
+- Speed up prop validation and JSON serialization on hot paths: `_isinstance` now reads `__origin__` once per type, memoizes `get_args`, and caches the deferred `Var`/`LiteralVar`/`Field` imports instead of re-importing on every call, and `json_dumps` caches its deferred `serializers.serialize` lookup. ([#6862](https://github.com/reflex-dev/reflex/issues/6862))
+- `vite_config_template` declares a `resolveId` hook filter (`{ id: /react-dom\/server/ }`) on `vite-plugin-always-use-react-dom-server-node`. The plugin runs with `enforce: "pre"`, so without a filter rolldown invoked its JS handler for every import specifier in the graph (~15,800 calls on the Reflex docs build) to redirect the one specifier imported by `entry.server.node.tsx`. The template also imports `./vite-plugin-safari-cachebust.js` with its extension, which Vite's `configLoader: "native"` requires. ([#6959](https://github.com/reflex-dev/reflex/issues/6959))
+
+### Miscellaneous
+
+- Removed the `postcss` entry from `PackageJson.OVERRIDES`, leaving that mapping empty. `postcss` is pinned directly in `DEV_DEPENDENCIES` (8.5.23), and that top-level pin already dedupes every transitive requirer (`autoprefixer`, `postcss-import`, and `vite`'s own `^8.5.15`). Projects that already installed 0.9.8 keep an inert `"postcss": "8.5.23"` override in `reflex.lock/package.json`; it matches the dev-dependency pin and can be deleted by hand. ([#6854](https://github.com/reflex-dev/reflex/issues/6854))
+- Bump bundled `vite` from 8.0.16 to 8.2.0. ([#6857](https://github.com/reflex-dev/reflex/issues/6857))
+- Internal logging in reflex-base migrated from the legacy console helpers to standard python `logging` per-module loggers. ([#6864](https://github.com/reflex-dev/reflex/issues/6864))
+- Property docstrings are now noun phrases rather than "Get the ..." / "Return the ..." (ruff 0.16's new `D421`). `Field.default`, `Field.default_factory` and `Field.default_value()` now admit `None`, matching what they already hold for a field whose annotated type has no computed default, and `chain_updates()` declares its `events` parameter as `Any`, matching the runtime validation it delegates to. ([#6893](https://github.com/reflex-dev/reflex/issues/6893))
+
+
 ## v0.9.8 (2026-08-04)
 
 ### Features

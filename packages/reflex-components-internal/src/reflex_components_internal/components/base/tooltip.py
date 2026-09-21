@@ -31,7 +31,7 @@ class TooltipBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the tooltip component."""
+        """The import variable for the tooltip component."""
         return ImportVar(tag="Tooltip", package_path="", install=False)
 
 

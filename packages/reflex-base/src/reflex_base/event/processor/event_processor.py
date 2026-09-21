@@ -7,6 +7,7 @@ import collections
 import contextlib
 import dataclasses
 import inspect
+import itertools
 import logging
 import sys
 import time
@@ -14,11 +15,11 @@ from collections.abc import AsyncGenerator, Callable, Coroutine, Mapping, Sequen
 from contextvars import Token, copy_context
 from typing import TYPE_CHECKING, Any, TypeVar
 
-import rich.markup
 from typing_extensions import Self
 
 from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager
+from reflex_base import otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.event.processor.timeout import DrainTimeoutManager
@@ -123,6 +124,16 @@ class EventProcessor:
     )
     _futures: dict[str, EventFuture] = dataclasses.field(
         default_factory=dict, init=False
+    )
+    # Latest-wins tracking for superseding handlers: (event name, token) -> the
+    # live invocation futures of the newest root generation, keyed by txid.
+    _superseded: dict[tuple[str, str], dict[str, EventFuture]] = dataclasses.field(
+        default_factory=dict, init=False
+    )
+    # Monotonic stamp handed to each root enqueue; a global counter keeps
+    # per-token ordering without per-token state.
+    _root_gen_counter: itertools.count = dataclasses.field(
+        default_factory=lambda: itertools.count(1), init=False, repr=False
     )
     _token_queues: dict[
         str,
@@ -322,6 +333,7 @@ class EventProcessor:
             self._queue_task = None
         # Discard any pending per-token queue entries.
         self._token_queues.clear()
+        self._superseded.clear()
         # Cancel any remaining unresolved futures.
         for future in self._futures.values():
             if not future.done():
@@ -383,6 +395,10 @@ class EventProcessor:
 
         Returns:
             An EventFuture that resolves to the result of the associated task.
+            If the event was chained from an already-cancelled chain, or is a
+            superseding handler enqueued by a chain older than one that
+            already enqueued it, the returned future is already cancelled and
+            the event is dropped.
         """
         if ev_ctx is None:
             try:
@@ -404,13 +420,39 @@ class EventProcessor:
             if ev_ctx.parent_txid is not None
             else None
         )
-        tracked = EventFuture(parent=parent_future, txid=txid)
+        tracked = EventFuture(
+            parent=parent_future,
+            txid=txid,
+            root_gen=(
+                parent_future.root_gen
+                if parent_future is not None
+                else next(self._root_gen_counter)
+            ),
+            # A late-chained event (done parent) is not attached to the
+            # parent's cancellation tree, so it must not count as covered by
+            # a registered ancestor or a newer generation could not cancel it.
+            covered_supersede_keys=(
+                parent_future.covered_supersede_keys
+                if parent_future is not None and not parent_future.done()
+                else frozenset()
+            ),
+        )
         self._futures[txid] = tracked
         tracked.add_done_callback(self._try_clean_future)
         tracked.add_done_callback(self._on_future_done)
         # If this context has a parent, register as a child of the parent's future.
         if parent_future is not None:
-            parent_future.add_child(tracked)
+            if parent_future.cancelled():
+                # The chain this event belongs to was cancelled, so cancel the
+                # tracker since this event will never enter the queue.
+                tracked.cancel()
+                return tracked
+            # Skip registration if the parent is already done (late-chained
+            # event) so the child runs instead of crashing.
+            if not parent_future.done():
+                parent_future.add_child(tracked)
+        if not self._supersede_previous(token=token, event=event, tracked=tracked):
+            return tracked
         await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
         return tracked
 
@@ -477,6 +519,9 @@ class EventProcessor:
                 self._root_context,
                 token=token,
                 emit_delta_impl=_emit_delta_impl,
+                # Like fork(): the handler span nests under the caller's span
+                # (the upload request, a custom route).
+                otel_context=otel.capture_context(),
             ),
         )
 
@@ -497,6 +542,8 @@ class EventProcessor:
 
         After popping, cascade the check upward: if the parent future is also
         done and all its immediate children are done, pop the parent as well.
+        The cascade is a loop rather than recursion because a self-chaining
+        handler nests its futures one level deeper per event.
 
         This keeps parent futures alive in ``_futures`` while any child still
         needs them for ``wait_all`` and cleanup.
@@ -504,15 +551,91 @@ class EventProcessor:
         Args:
             future: The EventFuture to check.
         """
-        if not future.done():
-            return
-        # Not checking future.all_done() to avoid waiting for grandchildren here.
-        if not all(c.done() for c in future.children):
-            return
-        parent = future.parent
-        self._futures.pop(future.txid, None)
-        if parent is not None and parent.txid:
-            self._try_clean_future(parent)
+        while True:
+            if not future.done():
+                return
+            if future.cancelled() and future.txid in self._tasks:
+                # The cancelled handler task is still unwinding; keep the future
+                # so late-chained events can find their cancelled parent. Failed
+                # futures are not retained, so a backend exception handler task
+                # reusing the txid can chain recovery events normally.
+                return
+            # Not checking future.all_done() to avoid waiting for grandchildren here.
+            if not all(c.done() for c in future.children):
+                return
+            parent = future.parent
+            self._futures.pop(future.txid, None)
+            if (
+                (key := future.supersede_key) is not None
+                and (slot := self._superseded.get(key)) is not None
+                and slot.get(future.txid) is future
+                and future.all_done()
+            ):
+                del slot[future.txid]
+                if not slot:
+                    del self._superseded[key]
+            if parent is None or not parent.txid:
+                return
+            future = parent
+
+    def _supersede_previous(
+        self, *, token: str, event: Event, tracked: EventFuture
+    ) -> bool:
+        """Apply latest-wins supersession for a superseding event handler.
+
+        Handlers marked with ``supersedes`` use latest-wins semantics ordered
+        by root generation: the invocation belonging to the newest
+        user-initiated chain wins. Enqueuing from a newer chain cancels every
+        live invocation of an older chain, invocations of the same chain
+        (self-chains and sibling fan-out from one parent) coexist, and an
+        older chain enqueuing after a newer chain already has is dropped
+        instead of cancelling the newer work.
+
+        Args:
+            token: The client token associated with the event.
+            event: The event being enqueued.
+            tracked: The future of the event being enqueued.
+
+        Returns:
+            True if the event should be queued, False if it was dropped as a
+            stale invocation (``tracked`` is cancelled in that case).
+        """
+        try:
+            registered = RegistrationContext.get().event_handlers.get(event.name)
+        except LookupError:
+            return True
+        if registered is None or not registered.handler.supersedes:
+            return True
+        key = (event.name, token)
+        slot = self._superseded.get(key)
+        if slot:
+            current_gen = next(iter(slot.values())).root_gen
+            if tracked.root_gen < current_gen:
+                logger.debug(
+                    f"Dropping stale {event.name} invocation for token {token}, "
+                    f"already superseded by a newer chain."
+                )
+                tracked.cancel()
+                return False
+            if tracked.root_gen > current_gen:
+                logger.debug(
+                    f"Cancelling the previous unfinished {event.name} chain for "
+                    f"token {token}, superseded by a newer invocation."
+                )
+                for previous in slot.values():
+                    previous.cancel()
+                slot.clear()
+            elif key in tracked.covered_supersede_keys:
+                # Same chain, and an ancestor invocation is already
+                # registered: cancelling that ancestor cascades here, so
+                # re-registering would only grow the slot per self-chain tick.
+                return True
+        elif slot is None:
+            slot = self._superseded[key] = {}
+        slot[tracked.txid] = tracked
+        tracked.supersede_key = key
+        tracked.covered_supersede_keys |= {key}
+        return True
 
     def _on_future_done(self, future: EventFuture) -> None:  # type: ignore[override]
         """Callback invoked when an enqueued future completes.
@@ -577,7 +700,15 @@ class EventProcessor:
         """
         # Set up the event context for this task.
         EventContext.set(entry.ctx)
-        await self._execute_event(entry=entry, registered_handler=registered_handler)
+        if not otel.enabled:
+            await self._execute_event(
+                entry=entry, registered_handler=registered_handler
+            )
+            return
+        with otel.event_span(entry.event, entry.ctx, registered_handler):
+            await self._execute_event(
+                entry=entry, registered_handler=registered_handler
+            )
 
     def _create_event_task(
         self,
@@ -594,12 +725,25 @@ class EventProcessor:
         Returns:
             The created asyncio.Task.
         """
-        task = asyncio.create_task(
-            self._process_event_queue_entry(
-                entry=entry, registered_handler=registered_handler
-            ),
-            name=f"reflex_event|{entry.event.name}|{entry.ctx.token}|{time.time()}",
+        coro = self._process_event_queue_entry(
+            entry=entry, registered_handler=registered_handler
         )
+        name = f"reflex_event|{entry.event.name}|{entry.ctx.token}|{time.time()}"
+        loop = asyncio.get_running_loop()
+        if (
+            sys.version_info >= (3, 12)
+            and not registered_handler.handler.is_background
+            and loop.get_task_factory() is None
+        ):
+            # Start a foreground handler synchronously instead of after another
+            # loop iteration: the common event runs its handler and emits its
+            # delta before its first real suspension point. Background tasks
+            # keep the deferred start so their interleaving with later events
+            # is unchanged, and a loop with a custom task factory keeps going
+            # through it.
+            task = asyncio.Task(coro, loop=loop, name=name, eager_start=True)
+        else:
+            task = asyncio.create_task(coro, name=name)
         if sys.version_info < (3, 12):
             task._event_ctx = entry.ctx  # pyright: ignore[reportAttributeAccessIssue]
         self._tasks[entry.ctx.txid] = task
@@ -640,10 +784,12 @@ class EventProcessor:
         if not token_queue:
             return
         entry, registered_handler = token_queue[0]
-        # Skip cancelled futures.
+        # Skip cancelled futures. Before a task exists, the only way a future
+        # can be done is cancellation, and its _try_clean_future done callback
+        # removes it from _futures, so a missing future also means the entry
+        # was cancelled.
         future = self._futures.get(entry.ctx.txid)
-        if future is not None and future.cancelled():
-            self._try_clean_future(future)
+        if future is None or future.cancelled():
             token_queue.popleft()
             if token_queue:
                 self._dispatch_next_for_token(token)
@@ -660,10 +806,10 @@ class EventProcessor:
         with contextlib.suppress(*_QUEUE_SHUTDOWN_ERRORS):
             while True:
                 entry = await queue.get()
-                if (
-                    future := self._futures.get(entry.ctx.txid)
-                ) is not None and future.cancelled():
-                    self._try_clean_future(future)
+                # A missing future means the entry was cancelled and already
+                # cleaned up (see _dispatch_next_for_token).
+                future = self._futures.get(entry.ctx.txid)
+                if future is None or future.cancelled():
                     queue.task_done()
                     continue
                 try:
@@ -689,9 +835,7 @@ class EventProcessor:
                 except Exception:
                     # Log the error and continue processing the next events.
                     logger.exception(
-                        rich.markup.escape(
-                            f"Error processing event queue entry for {entry.event} [txid={entry.ctx.txid}]:"
-                        )
+                        f"Error processing event queue entry for {entry.event} [txid={entry.ctx.txid}]:"
                     )
                 queue.task_done()
         if self._queue_task is asyncio.current_task():
@@ -721,8 +865,6 @@ class EventProcessor:
         Args:
             task: The task that finished.
         """
-        from reflex.utils import telemetry
-
         if sys.version_info < (3, 12):
             # py3.11 compat
             task_ctx = task._event_ctx  # type: ignore[attr-defined]
@@ -738,40 +880,59 @@ class EventProcessor:
             else:
                 del self._token_queues[task_ctx.token]
         future = self._futures.get(task_ctx.txid)
-        if task.done():
-            try:
-                result = task.result()
-            except asyncio.CancelledError:
-                if future is not None and not future.done():
-                    future.cancel()
-            except Exception as ex:
-                if future is not None and not future.done():
-                    future.set_exception(ex)
-                    with contextlib.suppress(BaseException):
-                        # Trigger the future to avoid warnings if the caller didn't wait.
-                        future.result()
-                telemetry.send_error(ex, context="backend")
-                if (
-                    not task.get_name().startswith("reflex_backend_exception_handler|")
-                    and self.backend_exception_handler is not None
-                ):
-                    # Create a new task in the same context to invoke the exception handler.
-                    t = self._tasks[task_ctx.txid] = asyncio.create_task(
-                        self._handle_backend_exception(ex, ev_ctx=task_ctx),
-                        name=f"reflex_backend_exception_handler|task=[{task.get_name()}]|{time.time()}",
-                    )
-                    if sys.version_info < (3, 12):
-                        t._event_ctx = task_ctx  # pyright: ignore[reportAttributeAccessIssue]
-                    t.add_done_callback(self._finish_task)
-                    return
-                logger.exception(
-                    rich.markup.escape(
-                        f"Error in {task.get_name()} [txid={task_ctx.txid}]:"
-                    )
+        if task.done() and self._resolve_future(task, task_ctx, future):
+            return
+        if future is not None:
+            # The task is gone; clean up now in case the future resolved
+            # earlier (e.g. external cancellation) and cleanup was deferred.
+            self._try_clean_future(future)
+
+    def _resolve_future(
+        self, task: asyncio.Task, task_ctx: EventContext, future: EventFuture | None
+    ) -> bool:
+        """Propagate a finished task's outcome to its tracked future.
+
+        Args:
+            task: The finished task.
+            task_ctx: The event context the task ran in.
+            future: The future tracking the task, if still registered.
+
+        Returns:
+            True if a backend exception handler task was spawned and now owns
+            the future's lifecycle, False otherwise.
+        """
+        from reflex.utils import telemetry
+
+        try:
+            result = task.result()
+        except asyncio.CancelledError:
+            if future is not None and not future.done():
+                future.cancel()
+        except Exception as ex:
+            if future is not None and not future.done():
+                future.set_exception(ex)
+                with contextlib.suppress(BaseException):
+                    # Trigger the future to avoid warnings if the caller didn't wait.
+                    future.result()
+            telemetry.send_error(ex, context="backend")
+            if (
+                not task.get_name().startswith("reflex_backend_exception_handler|")
+                and self.backend_exception_handler is not None
+            ):
+                # Create a new task in the same context to invoke the exception handler.
+                t = self._tasks[task_ctx.txid] = asyncio.create_task(
+                    self._handle_backend_exception(ex, ev_ctx=task_ctx),
+                    name=f"reflex_backend_exception_handler|task=[{task.get_name()}]|{time.time()}",
                 )
-            else:
-                if future is not None and not future.done():
-                    future.set_result(result)
+                if sys.version_info < (3, 12):
+                    t._event_ctx = task_ctx  # pyright: ignore[reportAttributeAccessIssue]
+                t.add_done_callback(self._finish_task)
+                return True
+            logger.exception(f"Error in {task.get_name()} [txid={task_ctx.txid}]:")
+        else:
+            if future is not None and not future.done():
+                future.set_result(result)
+        return False
 
 
 __all__ = [
