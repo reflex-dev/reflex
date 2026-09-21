@@ -130,6 +130,51 @@ The `self.router` attribute has several sub-attributes that provide various info
   - `accept_language`: The accepted languages.
   - `raw_headers`: A mapping of all HTTP headers as a frozen dictionary. This provides access to any header that was sent with the request, not just the common ones listed above.
 
+## Serialized State and Deltas
+
+Starting in Reflex 0.9.12, `State.router` is a view over five state vars. Python
+access such as `self.router.session.client_token` and component expressions such
+as `State.router.url.path` continue to work. However, `state.dict()` and
+`state.get_delta()` no longer include a `router` entry. Integrations that inspect
+these mappings must read the individual vars instead:
+
+| Router attribute | State var |
+| :--- | :--- |
+| `router.session` | `rx_router_session` |
+| `router.headers` | `rx_router_headers` |
+| `router.page` | `rx_router_page` |
+| `router.url` | `rx_router_url` |
+| `router.route_id` | `rx_router_route_id` |
+
+These entries belong to the root state's mapping, keyed by
+`rx.State.get_full_name()`. Raw state dictionaries and deltas append
+`reflex_base.constants.state.FIELD_MARKER` to each var name. Their values can
+still be dataclass instances until JSON serialization. For example, to read the
+client IP from a state snapshot:
+
+```python
+from reflex_base.constants.state import FIELD_MARKER
+
+root_values = state.dict()[rx.State.get_full_name()]
+session = root_values["rx_router_session" + FIELD_MARKER]
+client_ip = session.client_ip
+```
+
+A delta contains only changed vars. Navigation can update `rx_router_url` without
+including `rx_router_session` or `rx_router_headers`; consumers must preserve
+previous values for omitted keys.
+
+Before exposing state through a REST, MCP, or agent API, redact `client_token`
+and `session_id` from `rx_router_session`. Integrations supporting Reflex versions
+before 0.9.12 must also redact those fields under `router.session`. Redact copies
+of the returned values so the server's live session remains intact, and apply
+redaction to both full state reads and event deltas. If the API removes field
+markers, perform marker-keyed redaction before that step.
+
+Reflex Enterprise 0.9.5 only redacts the old `router.session` layout. Apps using
+its REST, MCP, or agent APIs must upgrade to a release that supports the split
+router layout before using Reflex 0.9.12.
+
 ## URL Attributes
 
 `self.router.url` is the full URL of the page currently displayed in the browser, parsed into its components using Python's standard `urllib.parse.urlsplit`. It is a string subclass, so it can be used anywhere a string is expected (for example, passed to `rx.text(self.router.url)` to render the whole URL), and additionally exposes the following attributes:
