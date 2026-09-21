@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from reflex_base.components.component import Component, field
 from reflex_base.constants import EventTriggers
@@ -26,6 +26,11 @@ class DebounceInput(Component):
     tag = "DebounceInput"
     is_default = True
     _is_form_control = True
+
+    # DebounceInput is a class component: a plain ``ref`` resolves to the
+    # instance (``_render`` strips it), and the real ``<input>`` is exposed
+    # through ``inputRef``. Runtime-injected refs are routed there.
+    _dom_ref_prop: ClassVar[str | None] = "input_ref"
 
     min_length: Var[int] = field(
         doc="Minimum input characters before triggering the on_change event"

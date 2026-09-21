@@ -31,6 +31,28 @@ from reflex.state import BaseState
 from reflex.utils import prerequisites
 
 
+@pytest.mark.parametrize("content", ["", '["index",'])
+def test_read_stateful_pages_marker_recovers_legacy_corruption(
+    tmp_path, mocker, content
+):
+    """A marker truncated by an older writer requests full page evaluation."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    (tmp_path / constants.Dirs.STATEFUL_PAGES).write_text(content)
+    assert compiler._read_stateful_pages_marker() is None
+
+
+@pytest.mark.parametrize("windows", [False, True])
+def test_read_stateful_pages_marker_sharing_violation(mocker, windows):
+    """An unavailable Windows marker requests evaluation without hiding POSIX errors."""
+    mocker.patch.object(constants, "IS_WINDOWS", windows)
+    mocker.patch.object(Path, "read_text", side_effect=PermissionError)
+    if windows:
+        assert compiler._read_stateful_pages_marker() is None
+    else:
+        with pytest.raises(PermissionError):
+            compiler._read_stateful_pages_marker()
+
+
 @pytest.mark.parametrize(
     ("fields", "test_default", "test_rest"),
     [
@@ -922,7 +944,37 @@ def test_compile_registers_plugin_routes_on_backend_early_return(
     if with_stateful_marker:
         compile_page.assert_called_once_with("plugin-page", save_page=False)
     else:
-        compile_page.assert_not_called()
+        compile_page.assert_any_call("plugin-page", save_page=False)
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_backend_compile_evaluates_all_pages_when_marker_missing(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """A backend dir without a complete marker falls through to evaluating every page.
+
+    Another worker may have created the backend dir but not yet swapped its
+    marker into place, so a missing marker must not be mistaken for "no
+    stateful pages".
+    """
+    app = rx.App(enable_state=False)
+    app.add_page(lambda: rx.fragment(), route="index")
+    mocker.patch.object(app, "_apply_decorated_pages")
+    mocker.patch.object(app, "_should_compile", return_value=False)
+    compile_page = mocker.patch.object(app, "_compile_page")
+    mocker.patch.object(app, "_add_optional_endpoints")
+    mocker.patch.object(prerequisites, "get_backend_dir", return_value=tmp_path)
+    mocker.patch.object(
+        compiler, "get_config", return_value=rx.Config(app_name="testing", plugins=[])
+    )
+
+    assert compiler.compile_app(app, use_rich=False) is False
+
+    assert {call.args[0] for call in compile_page.call_args_list} == {
+        "index",
+        constants.Page404.SLUG,
+    }
+    assert json.loads((tmp_path / constants.Dirs.STATEFUL_PAGES).read_text()) == []
 
 
 @pytest.mark.usefixtures("clean_registration_context")
@@ -1669,6 +1721,39 @@ def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
     assert "captureOwnerStack" in rendered
 
 
+def test_context_template_one_provider_per_substate():
+    """Each substate gets its own provider so one delta re-renders one context.
+
+    A single provider owning every reducer means any delta recreates every
+    ``StateContexts`` element; nesting one ``SubstateProvider`` per substate
+    keeps the untouched providers memoized.
+    """
+    from reflex_base.compiler.templates import context_template
+
+    rendered = context_template(
+        is_dev_mode=True,
+        default_color_mode='"light"',
+        initial_state={
+            "reflex___state____state": {},
+            "reflex___state____state__sub": {},
+        },
+        state_name="reflex___state____state",
+    )
+
+    assert (
+        "createElement(SubstateProvider, {substateName: 'reflex___state____state', "
+        "contextName: 'reflex___state____state'}," in rendered
+    )
+    assert (
+        "createElement(SubstateProvider, {substateName: 'reflex___state____state__sub', "
+        "contextName: 'reflex___state____state__sub'}," in rendered
+    )
+    # The reducers moved into SubstateProvider; StateProvider only composes.
+    provider_body = rendered[rendered.index("export function StateProvider") :]
+    assert "useReducer" not in provider_body
+    assert "createElement(DispatchProvider, {}," in provider_body
+
+
 def test_context_template_client_side_component_is_named():
     """``ClientSide`` returns a named component, not an anonymous arrow."""
     from reflex_base.compiler.templates import context_template
@@ -1765,3 +1850,29 @@ def test_no_ssr_dynamic_import_names_the_client_side_wrapper():
     from reflex_components_plotly.plotly import Plotly
 
     assert Plotly.create()._get_dynamic_imports().endswith(', "Plot")')
+
+
+def test_compile_app_drops_event_caches_from_earlier_compiles(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """Chains and wrappers cached by an earlier compile do not outlive it.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+    """
+    monkeypatch.chdir(tmp_path)
+    with RegistrationContext() as context:
+        config = rx.Config(app_name="event_cache_test", plugins=[])
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+        app = rx.App()
+        app.add_page(lambda: rx.el.div("hello"), route="/")
+        stale = object()
+        context._bound_event_chains[0, 0, None] = stale  # pyright: ignore[reportArgumentType]
+        context._memoized_event_triggers["on_click", 0] = stale  # pyright: ignore[reportArgumentType]
+
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+        assert (0, 0, None) not in context._bound_event_chains
+        assert ("on_click", 0) not in context._memoized_event_triggers

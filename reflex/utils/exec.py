@@ -22,7 +22,7 @@ from reflex_base.config import get_config
 from reflex_base.constants.base import LogLevel
 from reflex_base.environment import environment
 from reflex_base.telemetry_context import CompileTrigger
-from reflex_base.utils import console
+from reflex_base.utils import console, log
 from reflex_base.utils.decorator import once
 
 from reflex.utils import path_ops
@@ -224,12 +224,13 @@ _DEV_CONDITION_FLAG = "--conditions=development"
 def _with_development_condition(environ: Mapping[str, str]) -> dict[str, str]:
     """Copy an environment with the `development` export condition enabled.
 
-    react-router's dev CLI requires the condition and re-executes itself with
-    NODE_OPTIONS to enable it; bun does not apply NODE_OPTIONS when it runs
-    the CLI on node-less installs, so the restarted process trips the CLI's
-    restart guard and exits. Enabling the condition for both runtimes in the
-    dev server's environment lets it start under either, without leaking the
-    setting into the parent process.
+    react-router's dev CLI requires the condition and relaunches itself to
+    enable it. Setting it up front skips that relaunch under node, which reads
+    NODE_OPTIONS. Bun applies neither variable to the process it spawns for a
+    package script, so a node-less install relaunches anyway and relies on the
+    CLI passing the condition along as a flag; BUN_OPTIONS still covers bun
+    invoked directly on a script. The setting does not leak into the parent
+    process.
 
     Args:
         environ: The base environment.
@@ -685,6 +686,22 @@ HOTRELOAD_IGNORE_PATTERNS = (
 )
 
 
+def _granian_log_dictconfig() -> dict[str, Any] | None:
+    """Get the Granian logging config override for the active log mode.
+
+    Granian replaces top-level keys of its default config, so both of its
+    handlers are redefined.
+
+    Returns:
+        A config routing Granian records through the JSON handler in JSON
+        mode, otherwise None to keep the Granian defaults.
+    """
+    if not log.is_json_mode():
+        return None
+    json_handler = {"()": "reflex_base.utils.log.JsonHandler"}
+    return {"handlers": {"console": json_handler, "access": json_handler}}
+
+
 def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     """Run the backend in development mode using Granian.
 
@@ -733,6 +750,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         port=port,
         interface=Interfaces.ASGI,
         log_level=LogLevels(loglevel.value),
+        log_dictconfig=_granian_log_dictconfig(),
         reload=True,
         reload_paths=get_reload_paths(),
         reload_ignore_worker_failure=True,
@@ -860,6 +878,7 @@ def run_granian_backend_prod(
         port=port,
         interface=Interfaces.ASGI,
         log_level=LogLevels(os.getenv("GRANIAN_LOG_LEVEL", loglevel.value)),
+        log_dictconfig=_granian_log_dictconfig(),
         workers=int(os.getenv("GRANIAN_WORKERS", str(_get_backend_workers()))),
     )
 
