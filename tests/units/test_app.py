@@ -3035,7 +3035,7 @@ def test_minimal_static_app_wrap_omits_state_providers(
 def test_sticky_badge_wrap_keeps_lower_priority_wrap_renderable(
     mocker: MockerFixture,
 ) -> None:
-    """The sticky badge wrap must not adopt a lower-priority wrap as its child.
+    """The badge and the lower-priority portal must be Fragment siblings.
 
     ``_app_root`` nests each lower-priority wrap inside the previous one, and
     the badge compiles to a memo that never reads ``props.children``. A wrap
@@ -3053,9 +3053,11 @@ def test_sticky_badge_wrap_keeps_lower_priority_wrap_renderable(
     chain = root_contents[root_contents.index("function AppWrap({children})") :]
     badge_symbol = _find_mirrored_memo_symbol(chain, "MemoizedBadge")
 
-    assert 'id:"portal"' in chain
-    # The badge memo renders no children, so it must be childless in the chain.
-    assert f"jsx({badge_symbol},{{}},)" in chain
+    # Neither the badge nor the portal may become the other's parent.
+    assert (
+        f"jsx(Fragment,{{}},jsx({badge_symbol},{{}},),"
+        'jsx("div",{id:"portal",ref:ref_portal},))'
+    ) in chain
 
 
 def test_event_triggers_collect_state_providers_via_var_app_wrap() -> None:
