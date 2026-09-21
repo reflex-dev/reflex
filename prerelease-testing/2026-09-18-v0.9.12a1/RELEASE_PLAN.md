@@ -1,6 +1,9 @@
 # Release plan — what blocks reflex 0.9.12a1 → 0.9.12 vs what gets filed
 
-**Status: FINAL (2026-09-19 06:00 UTC)** — every cluster and every adversarial verifier has reported; nothing below is pending. Rubric (from the campaign playbook):
+**Status: FINAL (2026-09-19 06:00 UTC); re-verified READY on reflex 0.9.12a2 + reflex-enterprise 0.9.6a1 (2026-09-21)** — every
+cluster and every adversarial verifier has reported; all five fix-before-release items are fixed, merged, republished and
+re-verified against the published packages with the original campaign repros (FINDINGS.md, Phase 7). What is left is in
+"What remains before 0.9.12 final" at the end of this file. Rubric (from the campaign playbook):
 fix before release = confirmed regression vs 0.9.11.post1, OR security-relevant, OR significant user
 impact / trivially small. Everything else is filed as an issue and fixed after. Each entry names the
 arm of the rubric that put it there, so a maintainer can disagree with a specific judgment.
@@ -32,9 +35,12 @@ Fix agents (Opus, xhigh) worked in `/home/user/wt/<name>` worktrees from `origin
 reports, patches and evidence under `fixes/<name>/`, overview in `fixes/README.md`. All five fixes are done and passed
 an independent adversarial review (f003 after one follow-up). PRs for maintainer review: reflex #7215, #7216, #7217,
 #7218 and reflex-enterprise #232 (all against `main`); the reflex commits are also cherry-picked onto
-`claude/upbeat-feynman-m41a1u` and every fix is exported as `fixes/<name>/patches/*.patch`. Remaining release work:
-merge the four reflex PRs and cut 0.9.12a2, and release reflex-enterprise 0.9.6 from #232 no later than reflex 0.9.12
-(see `fixes/README.md`, "Release sequencing").
+`claude/upbeat-feynman-m41a1u` and every fix is exported as `fixes/<name>/patches/*.patch`. Done since (2026-09-20/21): the four
+reflex PRs merged to `main` (`006543ab3`) and were republished as reflex/reflex-base 0.9.12a2 (release branch
+`f223a0bff`, changelog entries #7215, #7216, #7217, #7218, #7230); reflex-enterprise #232 merged and 0.9.6a1 was built as an
+offline wheel. Phase 7 re-ran every original failing repro on the published packages: 11/11 PASS, no new reflex defect
+(FINDINGS.md, Phase 7). Still to do: release reflex-enterprise 0.9.6 from #232 no later than reflex 0.9.12 (see
+`fixes/README.md`, "Release sequencing", and the last section of this file).
 
 ## Fix before release
 
@@ -224,9 +230,33 @@ merge the four reflex PRs and cut 0.9.12a2, and release reflex-enterprise 0.9.6 
 
 ## Suggested sequencing
 
+(Steps 1 and 2 were completed on 2026-09-20/21 and re-verified on the published 0.9.12a2 — see the tracking table
+above and FINDINGS.md, Phase 7. Step 3 remains open as listed under "Decisions needed from a maintainer".)
+
 1. FINDING-001 framework fix first (one PR, regression test from `orch_probes/metaclass_probe.py`), then
    re-run `orch_probes/ent_import_probe.py` and the `ent_mcp_oidc` harness without the shim.
 2. FINDING-003 (both verifiers have reported; independent files: `reflex/state.py` delta path vs
    `reflex/istate/validation.py`, so it can land in parallel with 1).
 3. The changelog decisions (002, 007, the metaclass note, the #7156 line behind FINDING-015) can ride one
    docs/changelog PR; the FINDING-004 one-liner is optional.
+
+## What remains before 0.9.12 final (2026-09-21)
+
+Re-verification verdict: **READY**. Nothing in reflex itself blocks the release; the remaining items are release
+mechanics and downstream coordination.
+
+1. **Publish reflex-enterprise 0.9.6 (from #232, the 0.9.6a1 content) no later than reflex 0.9.12.** The published
+   rxe 0.9.5 has no upper bound on reflex (`Requires-Dist: reflex[db]>=0.9.6`), so a user who upgrades only reflex
+   lands on the broken 0.9.12 + 0.9.5 pair (FINDING-001's metaclass conflict, FINDING-011's redaction no-op) with no
+   resolver warning. Put "reflex 0.9.12 requires reflex-enterprise >= 0.9.6" in both release notes.
+2. **Stock-install smoke after the finals publish**: `pip install reflex==0.9.12` with no prerelease flag, init,
+   run, browser; confirm the resolved graph is all-final (the nine component packages must move from their `a1`
+   versions to finals in the same batch — a bare `reflex==0.9.12a2` pin today upgrades only reflex/reflex-base).
+3. Maintainer decisions carried over unchanged from the list above (FINDING-002's changelog entry, #7077's hard
+   error, #7115/#7131 wording, the #7156 line behind FINDING-015). The "metaclass Breaking Changes entry" decision is
+   moot: #7215 restored `type(rx.State) is BaseStateMeta`. #7215's breaking-change note about the removed
+   `reflex.istate.validation` module stands.
+4. reflex-enterprise follow-ups surfaced by the re-verification, neither blocking and both for that repo's tracker:
+   the `TYPE_CHECKING` import of the removed `reflex.istate.validation._StateMeta` in `auth/oidc/state.py`
+   (static-only; import `reflex_base.vars.BaseStateMeta` instead), and `GET /_reflex/events/openapi.yaml` answering
+   500 unless `pyyaml` is installed (pre-existing in 0.9.5; declare the dependency or answer 501).

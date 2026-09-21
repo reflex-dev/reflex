@@ -150,3 +150,11 @@ They touch only framework files, so each can be cherry-picked from there onto `m
 The fix agents' commits end with `Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>` (the model
 that wrote them) and the shared `Claude-Session:` trailer; the orchestrator's commits carry `Claude Fable 5.1`.
 Both are accurate. Unify at cherry-pick time if the release tooling cares.
+
+## Outcome (2026-09-21)
+
+All five fixes merged (reflex #7215, #7216, #7217, #7218 → `main` `006543ab3`; reflex-enterprise #232) and shipped as
+reflex/reflex-base 0.9.12a2 (release branch `f223a0bff`) and a reflex-enterprise 0.9.6a1 offline wheel. Phase 7
+re-verification against the published packages: every original failing repro passes, 96 checks / 0 failures across
+the five re-verification clusters, no new reflex defect. Verdict READY; conditions in `../RELEASE_PLAN.md`, "What
+remains before 0.9.12 final", details in `../FINDINGS.md`, Phase 7, artifacts under `../reverify-0.9.12a2/`.

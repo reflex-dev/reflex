@@ -1,0 +1,28 @@
+{
+  "console": [],
+  "page_errors": [],
+  "failed": [],
+  "bad_status": [],
+  "steps": [
+    {
+      "step": "after_load_hidden",
+      "secret": "secret-0",
+      "n": "0"
+    },
+    {
+      "step": "after_2_bumps_hidden",
+      "secret": "secret-0",
+      "n": "2"
+    },
+    {
+      "step": "after_show",
+      "secret": "secret-2",
+      "n": "2"
+    },
+    {
+      "step": "after_bump_visible",
+      "secret": "secret-3",
+      "n": "3"
+    }
+  ]
+}

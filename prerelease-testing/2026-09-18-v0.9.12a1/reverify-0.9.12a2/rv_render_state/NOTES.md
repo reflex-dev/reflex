@@ -265,3 +265,111 @@ out/*.json                  every driver result JSON (a2, and the a1 baselines)
 logs/*.log                  trimmed server logs and driver stdout
 shots/                      screenshots; memo_dev_a2/ and memo_prod_a2/ are the 52-check driver's own
 ```
+
+## VERIFICATION
+
+Independent adversarial re-verification of the one NEW issue this cluster claimed (anomaly **A-2**,
+"`get_delta` cannot be overridden by declaring it on a State subclass"), run 2026-09-21 against the same
+PyPI-only venvs (`envs/a2` = 0.9.12a2, `envs/enta2` = 0.9.12a2 + reflex-enterprise 0.9.6a1,
+`envs/shared` = 0.9.12a1, `envs/prev` = 0.9.11.post1, `envs/driver` = playwright 1.63). Ports used:
+frontend 3680, backend 8680 (both released; `bin/ports.py 3680..3683 8680..8683` reports nothing
+listening). `REFLEX_TELEMETRY_ENABLED=false` on the server; `NO_PROXY=localhost,127.0.0.1` on the client.
+Everything ran from a neutral cwd with a scratch app copy; nothing was installed into the read-only venvs.
+
+**Verdict: the observable behaviour reproduces exactly and is pre-existing — but the claim's headline is
+wrong, and its server-log evidence pointer does not hold up. Not a defect for release purposes; at most a
+one-line docs/error-message nit. Nothing here touches the 0.9.12 release decision.**
+
+### What reproduces
+
+`scripts/getdelta_probe.py` verbatim, from a neutral cwd, on all three venvs
+(`verification/2026-09-21-adversarial/logs/probe3.log`): a plain `def get_delta(self)` in an `rx.State`
+class body raises `EventHandlerShadowsBuiltInStateMethodError: The event handler name \`get_delta\` shadows
+a builtin State method; use a different name instead` — **identically on 0.9.12a2, 0.9.12a1 and
+0.9.11.post1**. A plain (unmarked) mixin base fails the same way; post-hoc `S.get_delta = fn` is accepted.
+End to end, `reflex run` on such an app dies during `get_and_validate_app` before any server binds
+(`logs/gdapp_plain_a2.tail.log`, real evidence this cluster did not have — see below).
+
+Only the raise *site* moved across the train, not the behaviour:
+
+| version | raised from |
+|---|---|
+| 0.9.11.post1 | `reflex/state.py:1083` `_check_overridden_methods`, via `__init_subclass__` |
+| 0.9.12a1 | `reflex/istate/validation.py:64` `_validate_state_name` |
+| 0.9.12a2 | `reflex_base/vars/base.py:4088` `_validate_state_name`, via `_validate_state_declaration` at `:4129`, called from `BaseStateMeta.__new__` at `:4181` |
+
+The line numbers the claim cites for a2 are accurate.
+
+### Three refutations of the claim as written
+
+**1. The override is not blocked — it needs a one-line marker, and that marker is the framework's own
+supported mechanism.** `reflex/state.py:486` defines `_override_base_method`, which sets
+`__override_base_method__ = True`; `_validate_state_name` returns early for any function carrying it
+(`reflex_base/vars/base.py:4085`), and `State._item_is_event_handler` (`reflex/state.py:1171`) excludes it
+from event-handler registration. Decorated, the **class-body declaration the claim says is impossible works
+on all four venvs** (`scripts/getdelta_probe5.py`, `logs/probe5.log`): the class is created, `get_delta`
+stays a plain function (not an `EventHandler`, not in `event_handlers`), and the override is actually
+invoked. It also works on a substate and on a mixin base shared by two states
+(`scripts/getdelta_probe6.py`, `logs/probe6.log`). Reflex itself uses the marker for
+`State._get_state_from_redis` (`reflex/state.py:2909`) and for `_clean`/`_mark_dirty` in
+`reflex/istate/shared.py:150,163`.
+
+**2. The claim's own counter-example contradicts it.** A-2 says reflex-enterprise "reaches it another way"
+at `reflex_enterprise/auth/oidc/state.py:2542`. It does not reach it another way — in the 0.9.6a1 wheel that
+is a **class-body `def get_delta(self)` declaration**, made legal by `@rx.state._override_base_method` on the
+line directly above it (`:2541`). Enterprise's dynamic path does the same thing:
+`auth/enforcement.py:1522` `_mark_override()` stamps `__override_base_method__` onto the wrapper before
+`install_delta_filter` assigns it (`:1563-1564`), and `mcp.py:38` names the same marker. So the exact
+declaration form the claim calls impossible is what the flagship downstream package ships.
+
+**3. `get_delta` is not special, and it is not a documented extension point.** Real class bodies on a2
+(`scripts/getdelta_probe4.py`, `logs/probe4.log`) reject `get_delta`, `_get_resolved_delta`, `get_value`,
+`reset`, `dict`, `get_state`, `_clean` and `_mark_dirty` with the same message — a blanket "do not shadow a
+framework member unmarked" rule, byte-identical on prev except `setvar` (allowed on 0.9.11.post1, rejected
+on both a1 and a2; that widening belongs to the #7132/#7136 family of FINDING-002 and is unchanged a1→a2).
+`grep -rn get_delta docs/` returns nothing: the method is documented only by its own docstring
+(`reflex/state.py:2441`), which says it "is monkeypatched downstream with a signature accepting only `self`"
+— i.e. it documents the post-hoc assignment that works, not a subclass declaration. Calling this "the
+documented extension point" overstates. The claim's "`_get_delta` is accepted" is also vacuous:
+`BaseState` has no `_get_delta` (`logs/probe6.log`), so declaring one overrides nothing; the real internal
+counterpart, `_get_resolved_delta`, is rejected unmarked like everything else.
+
+### Evidence-quality correction
+
+A-2's evidence line says "Server log: … `logs/delta_dev_mem_a2.log` first attempt ends in that traceback
+instead of 'App running at'." That is not what the file contains: `logs/delta_dev_mem_a2.log` is the
+**successful** deltaapp run (`App running at: http://localhost:3181/` at line 35), and
+`grep -rl EventHandlerShadows` over the whole cluster directory matches only `NOTES.md` itself. No server
+log in this cluster ever showed the failure. Supplied here instead:
+`verification/2026-09-21-adversarial/logs/gdapp_plain_a2.tail.log`, a genuine `reflex run` traceback from
+`verification/2026-09-21-adversarial/app/gdapp.py` on a2.
+
+### Four channels on the supported path (a2, dev, frontend 3680 / backend 8680)
+
+The same app with `GDAPP_MARKED=1` (the only difference is the `_override_base_method` decorator) compiles
+and serves normally, and a browser run over the filtering override is clean
+(`out/out_gdapp_marked_a2.json`): `console: []`, `page_errors: []`, `failed: []`, `bad_status: []`.
+Its value sequence independently re-confirms check 4.1 / #7216 through a code path the cluster did not use
+(class-body declaration rather than post-hoc assignment):
+
+| step | a2 (browser) | a1 (in-process, `logs/probe5.log`) | prev |
+|---|---|---|---|
+| after load, hidden | `secret-0` | `secret-0` | `secret-0` |
+| 2 bumps, hidden | `secret-0` | `secret-0` | `secret-0` |
+| **show** | **`secret-2`** | **withheld — key absent from the delta** | delivered |
+| bump, visible | `secret-3` | — | — |
+
+### Classification and severity
+
+- **Reproduces:** yes, exactly as written, from the written repro alone.
+- **Classification:** **pre-existing** — identical on 0.9.11.post1, 0.9.12a1 and 0.9.12a2. Not new in a2,
+  not introduced by #7216 or #7218, and not a member of FINDING-002's "newly rejected" set.
+- **Severity:** downgraded from the claim's "low" to **cosmetic / not a defect for the release**. Nothing is
+  blocked: the framework, reflex-enterprise 0.9.6a1 and a plain user app all override `get_delta` in a class
+  body today. What survives is a DX nit worth at most one line of documentation — the escape hatch
+  `_override_base_method` is private and undocumented, and the error message says "event handler name …
+  use a different name instead" to someone who deliberately wrote an override, without naming the marker.
+  Suggested (post-release) wording: mention `__override_base_method__` in the message when the shadowed
+  member is a method rather than a var. A-2's recommendation ("worth one line of documentation") stands;
+  its title and its claim that enterprise avoids the declaration form do not.
+- **Release impact:** none.

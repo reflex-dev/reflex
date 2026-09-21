@@ -1,0 +1,34 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+────────────────────────────── Initializing gdapp ──────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized gdapp. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/a2/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 426, in compile_or_validate_app
+    get_compiled_app(
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/a2/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 335, in get_compiled_app
+    app, app_module = get_and_validate_app(
+                      ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/a2/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 302, in get_and_validate_app
+    app_module = get_app(reload=reload)
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/a2/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 262, in get_app
+    __import__(module, fromlist=(constants.CompileVars.APP,))
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_render_state-verify/gdapp/gdapp/gdapp.py", line 13, in <module>
+    class Root(rx.State):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/a2/lib/python3.11/site-packages/reflex_base/vars/base.py", line 4181, in __new__
+    _validate_state_declaration(root, lookup_order, namespace)
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/a2/lib/python3.11/site-packages/reflex_base/vars/base.py", line 4129, in _validate_state_declaration
+    _validate_state_name(root, member, namespace.get(member))
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/a2/lib/python3.11/site-packages/reflex_base/vars/base.py", line 4088, in _validate_state_name
+    raise EventHandlerShadowsBuiltInStateMethodError(msg)
+reflex_base.utils.exceptions.EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_delta` shadows a builtin State method; use a different name instead
