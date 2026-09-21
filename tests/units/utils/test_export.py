@@ -237,7 +237,7 @@ def test_backend_archive_waits_for_frontend_compilation(
     marker.write_text('["old"]')
     temporary = marker.with_suffix(".tmp")
     temporary.write_text('["new"]')
-    (tmp_path / "app.py").write_text("# Backend source\n")
+    (tmp_path / "app.py").write_text("# Backend source\n", newline="\r\n")
     context = multiprocessing.get_context("spawn")
     attempted, finished = context.Event(), context.Event()
     child = context.Process(
@@ -261,7 +261,7 @@ def test_backend_archive_waits_for_frontend_compilation(
     with zipfile.ZipFile(tmp_path / constants.ComponentName.BACKEND.zip()) as archive:
         assert archive.read(marker.relative_to(tmp_path).as_posix()) == b'["new"]'
         assert temporary.relative_to(tmp_path).as_posix() not in archive.namelist()
-        assert archive.read("app.py") == b"# Backend source\n"
+        assert archive.read("app.py") == (tmp_path / "app.py").read_bytes()
 
 
 @pytest.mark.parametrize(
