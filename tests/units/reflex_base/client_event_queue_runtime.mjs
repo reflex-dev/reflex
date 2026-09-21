@@ -5,6 +5,13 @@ export async function createQueueRuntime(source, { uploadFiles } = {}) {
   const unused = () => {
     throw new Error("Unexpected frontend dependency in queue test");
   };
+  const app = {
+    initialEvents: () => [],
+    initialState: {},
+    onLoadInternalEvent: unused,
+    state_name: "test_state",
+    exception_state_name: "test_exception_state",
+  };
   const dependencies = {
     "test:browser": {
       window: {
@@ -15,6 +22,7 @@ export async function createQueueRuntime(source, { uploadFiles } = {}) {
       sessionStorage: { clear() {}, removeItem() {} },
     },
     "socket.io-client": { default: unused },
+    mergician: { mergician: unused },
     "$/env.json": { default: {} },
     "$/reflex.json": { default: {} },
     "universal-cookie": {
@@ -34,14 +42,13 @@ export async function createQueueRuntime(source, { uploadFiles } = {}) {
       useSearchParams: unused,
       useParams: unused,
     },
-    "$/utils/context": {
-      initialEvents: () => [],
-      initialState: {},
-      onLoadInternalEvent: unused,
-      state_name: "test_state",
-      exception_state_name: "test_exception_state",
+    "$/utils/context": app,
+    "$/utils/context-registry": {
+      app,
+      eventLoop: { addEvents: unused },
     },
     "$/utils/helpers/debounce": { default: unused },
+    "$/utils/helpers/json": { parseJson: unused },
     "$/utils/helpers/throttle": { default: unused },
     "$/utils/helpers/upload": {
       uploadFiles: uploadFiles ?? unused,
