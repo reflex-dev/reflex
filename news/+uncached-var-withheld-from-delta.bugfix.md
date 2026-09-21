@@ -1,1 +1,0 @@
-An `@rx.var(cache=False)` value that a downstream `get_delta` override keeps out of the delta is now delivered as soon as the override stops withholding it, instead of being deduplicated away until the value changes again. Uncached var values only count as sent to the client once the delta that carries them is actually delivered.
