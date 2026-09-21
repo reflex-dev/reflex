@@ -118,15 +118,28 @@ def test_introduction_counter_uses_high_contrast_buttons():
     class Buttons(HTMLParser):
         def __init__(self):
             super().__init__()
-            self.colors = set()
+            self.buttons = []
+            self.current = None
+            self.label = []
 
         def handle_starttag(self, tag, attrs):
-            attrs = dict(attrs)
-            accent = attrs.get("data-accent-color")
-            if tag == "button" and accent in {"ruby", "grass"}:
-                assert "rt-high-contrast" in attrs.get("class", "").split()
-                self.colors.add(accent)
+            if tag == "button":
+                self.current = dict(attrs)
+                self.label = []
+
+        def handle_data(self, data):
+            if self.current is not None:
+                self.label.append(data)
+
+        def handle_endtag(self, tag):
+            if tag == "button" and self.current is not None:
+                self.buttons.append(("".join(self.label).strip(), self.current))
+                self.current = None
 
     buttons = Buttons()
     buttons.feed(page.read_text())
-    assert buttons.colors == {"ruby", "grass"}
+    for label, color in {"Decrement": "ruby", "Increment": "grass"}.items():
+        matches = [attrs for text, attrs in buttons.buttons if text == label]
+        assert len(matches) == 1, (label, matches)
+        assert matches[0].get("data-accent-color") == color
+        assert "rt-high-contrast" in matches[0].get("class", "").split()
