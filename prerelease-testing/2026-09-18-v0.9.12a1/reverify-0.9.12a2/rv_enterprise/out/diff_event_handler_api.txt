@@ -1,0 +1,240 @@
+--- /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_enterprise/work/whl95/reflex_enterprise/plugins/event_handler_api.py	2020-02-02 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_enterprise/work/whl96/reflex_enterprise/plugins/event_handler_api.py	2020-02-02 00:00:00.000000000 +0000
+@@ -15,6 +15,7 @@
+ from __future__ import annotations
+ 
+ import contextlib
++import dataclasses
+ import inspect
+ import json
+ from collections.abc import AsyncIterator, Iterator, Mapping
+@@ -23,6 +24,14 @@
+ from urllib.parse import urlencode
+ 
+ from reflex.plugins.base import Plugin as PluginBase
++from reflex_base.constants import route as _route_constants
++
++# reflex >= 0.9.12 splits the root ``router`` var into per-field vars and names
++# the session one in ``ROUTER_SESSION``; reflex < 0.9.12 keeps a single
++# ``router`` var and has no such constant.
++_ROUTER_SESSION_VAR: str = getattr(
++    _route_constants, "ROUTER_SESSION", "rx_router_session"
++)
+ 
+ if TYPE_CHECKING:
+     from reflex.app import App
+@@ -313,9 +322,11 @@
+     """
+     from reflex_base.registry import RegistrationContext
+ 
+-    # Snapshot before filtering: ``is_public_event_handler`` imports the auth
+-    # provider module on first use, which defines framework states and thereby
+-    # registers their handlers into the registry being iterated.
++    # Snapshot before filtering, so a filter that ends up defining a state (and
++    # thereby registering its handlers) cannot mutate the registry mid-iteration.
++    # ``is_public_event_handler`` deliberately does NOT import the auth provider
++    # module for this reason -- see ``enforcement.is_exempt``: this runs from
++    # ``post_compile``, after the frontend's state list is already compiled.
+     for reh in list(RegistrationContext.get().event_handlers.values()):
+         if is_public_event_handler(reh):
+             yield reh
+@@ -683,14 +694,39 @@
+             state.router = RouterData.from_router_data(state.router_data)
+ 
+ 
+-# The server-side session identifiers carried inside the serialized ``router``
+-# var. For an app-issued API session the client token is generated server-side
+-# and MUST NOT be handed back to the caller (the websocket path keys on it, so
+-# leaking it is a session-takeover vector) -- redact these from any state dict
+-# returned to an API client. ``client_ip`` and the page/url data stay.
++# The server-side session identifiers carried by the router data. For an
++# app-issued API session the client token is generated server-side and MUST NOT
++# be handed back to the caller (the websocket path keys on it, so leaking it is
++# a session-takeover vector) -- redact these from any state dict returned to an
++# API client. ``client_ip`` and the page/url data stay.
+ _ROUTER_SESSION_SECRETS = ("client_token", "session_id")
+ 
+ 
++def _redact_session_value(session: Any) -> Any:
++    """Return ``session`` with its ``client_token`` / ``session_id`` blanked.
++
++    Handles both shapes session data takes in a resolved state dict: a plain
++    ``dict`` (already-serialized), or a ``SessionData`` dataclass, possibly
++    wrapped in reflex's immutable proxy. Unknown shapes are returned unchanged.
++
++    Args:
++        session: The session data to redact.
++
++    Returns:
++        A redacted copy (or the original when there is nothing to redact).
++    """
++    if isinstance(session, dict):
++        blanks = {f: "" for f in _ROUTER_SESSION_SECRETS if f in session}
++        return {**session, **blanks} if blanks else session
++    unwrapped: Any = getattr(session, "__wrapped__", session)
++    if dataclasses.is_dataclass(unwrapped) and not isinstance(unwrapped, type):
++        names = {f.name for f in dataclasses.fields(unwrapped)}
++        blanks = {f: "" for f in _ROUTER_SESSION_SECRETS if f in names}
++        if blanks:
++            return dataclasses.replace(unwrapped, **blanks)
++    return session
++
++
+ def _redact_router_value(router: Any) -> Any:
+     """Return ``router`` with its session ``client_token`` / ``session_id`` blanked.
+ 
+@@ -708,50 +744,53 @@
+     if isinstance(router, dict):
+         session = router.get("session")
+         if isinstance(session, dict):
+-            router = {
+-                **router,
+-                "session": {
+-                    **session,
+-                    **{f: "" for f in _ROUTER_SESSION_SECRETS if f in session},
+-                },
+-            }
++            return {**router, "session": _redact_session_value(session)}
+         return router
+     # A ``RouterData`` dataclass (unwrap reflex's immutable proxy first).
+-    import dataclasses
+-
+     unwrapped: Any = getattr(router, "__wrapped__", router)
+     session: Any = getattr(unwrapped, "session", None)
+     if session is not None and dataclasses.is_dataclass(session):
+-        session = getattr(session, "__wrapped__", session)
+-        blanked = dataclasses.replace(
+-            session, **dict.fromkeys(_ROUTER_SESSION_SECRETS, "")
+-        )
+-        return dataclasses.replace(unwrapped, session=blanked)
++        return dataclasses.replace(unwrapped, session=_redact_session_value(session))
+     return router
+ 
+ 
+ def redact_router_session(state_dict: dict[str, Any]) -> dict[str, Any]:
+     """Blank the session's server-side identifiers in a resolved state dict.
+ 
+-    Walks every state's ``router`` var and clears ``session.client_token`` /
+-    ``session.session_id``, so an API read never discloses the
+-    server-generated session token (the websocket path keys on it, so leaking
+-    it would be a session-takeover vector). Other router fields (the URL, page
+-    params, headers, client IP) are preserved -- handlers legitimately read
+-    them.
++    Clears ``client_token`` / ``session_id`` wherever the session data lives,
++    so an API read never discloses the server-generated session token (the
++    websocket path keys on it, so leaking it would be a session-takeover
++    vector). Other router fields (the URL, page params, headers, client IP) are
++    preserved -- handlers legitimately read them.
++
++    reflex < 0.9.12 stores the whole router in one ``router`` base var; reflex
++    >= 0.9.12 splits it, and the session lands in ``rx_router_session``, so
++    both names are handled. Values are matched on their ``RouterData`` /
++    ``SessionData`` type as well, so a further rename in the framework still
++    redacts instead of silently no-opping -- the failure mode this function
++    must never have.
+ 
+     Args:
+-        state_dict: A flat ``.dict()`` mapping (mutated in place).
++        state_dict: A flat ``.dict()`` mapping or delta (mutated in place).
+ 
+     Returns:
+         The same dict, with the router session secrets blanked.
+     """
++    from reflex.istate.data import RouterData, SessionData
+     from reflex_base.constants.state import FIELD_MARKER
+ 
+     router_key = "router" + FIELD_MARKER
++    session_key = _ROUTER_SESSION_VAR + FIELD_MARKER
+     for sub in state_dict.values():
+-        if isinstance(sub, dict) and router_key in sub:
+-            sub[router_key] = _redact_router_value(sub[router_key])
++        if not isinstance(sub, dict):
++            continue
++        for key, value in sub.items():
++            # ``isinstance`` sees through reflex's mutable proxies, so a proxied
++            # value matches its wrapped dataclass without unwrapping here.
++            if key == router_key or isinstance(value, RouterData):
++                sub[key] = _redact_router_value(value)
++            elif key == session_key or isinstance(value, SessionData):
++                sub[key] = _redact_session_value(value)
+     return state_dict
+ 
+ 
+@@ -805,7 +844,8 @@
+     the JSON handed to an MCP/REST client. The ``{state_name: {var: value}}``
+     shape is preserved (non-dict values pass through unchanged), and a new
+     mapping is returned. Apply *after* any marker-keyed post-processing (e.g.
+-    :func:`redact_router_session`, which looks up ``router`` by its marked key).
++    :func:`redact_router_session`, which looks the router vars up by their
++    marked keys).
+ 
+     Args:
+         state_dict: A ``{state_name: {var_name: value}}`` mapping (or delta).
+@@ -834,14 +874,14 @@
+     :func:`resolve_state_dict` already applies to a full state read.
+ 
+     :func:`redact_router_session` runs *first* (it keys on the still-marked
+-    ``router`` var) to blank the ``router`` var's ``session.client_token`` /
+-    ``session_id``. The event processor re-populates the root ``router`` var on
+-    the first event of a session (its ``router_data`` path differs from the
+-    seeded one), so an un-redacted delta would hand the caller the server-side
+-    session token -- a session-takeover credential, since the Reflex websocket
+-    authenticates a session by that token alone. :func:`strip_field_markers`
+-    then removes the ``FIELD_MARKER`` suffix (applying it first would rename the
+-    ``router`` key and silently no-op the redaction).
++    router vars) to blank the session's ``client_token`` / ``session_id``. The
++    event processor re-populates the root router vars on the first event of a
++    session (its ``router_data`` path differs from the seeded one), so an
++    un-redacted delta would hand the caller the server-side session token -- a
++    session-takeover credential, since the Reflex websocket authenticates a
++    session by that token alone. :func:`strip_field_markers` then removes the
++    ``FIELD_MARKER`` suffix (applying it first would rename the router keys and
++    silently no-op the redaction).
+ 
+     Args:
+         delta: A raw ``{state_name: {var: value}}`` state delta (marker-keyed).
+@@ -861,7 +901,7 @@
+     existing state without resetting client storage vars. ``.dict()`` is a flat
+     mapping of each state's fully-qualified name to its vars, covering the state
+     and all its descendants. The session's server-side identifiers (the
+-    ``router`` var's ``client_token`` / ``session_id``) are redacted, since this
++    router session's ``client_token`` / ``session_id``) are redacted, since this
+     dict is returned to an API caller that must not learn the session token.
+ 
+     Args:
+@@ -906,7 +946,7 @@
+             if name not in exempt_names
+         }
+     # Strip the field markers last -- after ``redact_router_session`` (which
+-    # keys on the marked ``router`` var) and the exempt-state filter.
++    # keys on the marked router vars) and the exempt-state filter.
+     state_dict = strip_field_markers(state_dict)
+     if root_state_name is None:
+         return state_dict
+@@ -1007,8 +1047,9 @@
+ 
+     Unlike the streaming REST endpoint, this collapses every delta the handler
+     (and any chained/background updates routed back to ``token``) emits into a
+-    single dict, then normalises it through reflex's JSON encoder so
+-    state-native values (datetimes, enums, ...) survive a plain JSON transport.
++    single dict, redacts it, then normalises it through reflex's JSON encoder
++    so state-native values (datetimes, enums, ...) survive a plain JSON
++    transport.
+ 
+     Args:
+         app: The reflex app.
+@@ -1034,8 +1075,12 @@
+             merged.setdefault(state_name, {}).update(changed)
+ 
+     # Redact the session token and drop the ``FIELD_MARKER`` var-name suffix
+-    # before the delta reaches the agent (see :func:`sanitize_agent_delta`).
+-    return sanitize_agent_delta(json.loads(json_dumps(merged)))
++    # before the delta reaches the agent (see :func:`sanitize_agent_delta`) --
++    # and before the JSON round-trip: the redaction also matches router values
++    # by their ``RouterData`` / ``SessionData`` type, which the encoder turns
++    # into plain dicts. Normalising first would leave a computed var that hands
++    # the session back under another name to reach the agent with its token.
++    return json.loads(json_dumps(sanitize_agent_delta(merged)))
+ 
+ 
+ _UNAUTHORIZED_HINT = (

@@ -1,0 +1,36 @@
+{
+ "sent": [
+  "40/_event,",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.tickets___tickets____ticket_state.seed\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ "recv": [
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"tGL0U5rW65QOrhzhAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"DytjSXVeNsL5CaVEAAAB\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8140\",\"origin\":\"http://localhost:3140\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"+RuJ2W5y1bjDRybhIiQi9Q==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8140\",\"origin\":\"http://localhost:3140\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"+RuJ2W5y1bjDRybhIiQi9Q==\",\"sec-websocket-protocol\":\"0.9.12a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3140\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3140/index\",\"full_raw_path\":\"http://localhost:3140/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"eee3b458-f7",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"status_filter_rx_state_\":\"all\",\"q_rx_state_\":\"\",\"sort_dir_rx_state_\":\"desc\",\"open_count_rx_state_\":4,\"priority_filter_rx_state_\":\"all\",\"sort_by_rx_state_\":\"created_at\",\"has_prev_page_rx_state_\":false,\"page_count_rx_state_\":1,\"has_active_filters_rx_state_\":false,\"page_rx_state_\":1,\"total_count_rx_state_\":4,\"page_size_rx_state_\":20,\"has_next_page_rx_state_\":false,\"tickets_rx_state_\":[{\"status\":\"open\",\"id\":4,\"description\":\"Cannot reach printer on 3rd floor.\",\"priority\":\"medium\",\"assignee\":\"carol\",\"created_at\":\"2026-09-21T21:33:27.044257+00:00\",\"title\":\"Printer offline\",\"ticket_id\":\"787fca7f-6383-4663-a4cf-fe297ab1607c\",\"updated_at\":\"2026-09-21T21:33:27.044257+00:00\"},{\"status\":\"open\",\"id\":3,\"description\":\"Corporate logo image is missing.\",\"priority\":\"low\",\"assignee\":\"\",\"created_at\":\"2026-09-21T21:33:27.044183+00:00\",\"title\":\"Email signature broken\",\"ticket_id\":\"3990837d-92ee-4894-921c-aeb7ad3b59a6\",\"updated_at\":\"2026-09-21T21:33:27.044183+00:00\"},{\"status\":\"open\",\"id\":2,\"description\":\"RTT > 500ms over the corporate tunnel.\",\"priority\":\"medium\",\"assignee\":\"bob\",\"created_at\":\"2026-09-21T21:33:27.044011+00:00\",\"title\":\"VPN slow from home\",\"ticket_id\":\"8c7c1929-c62f-459f-b6be-3e2866778702\",\"updated_at\":\"2026-09-21T21:33:27.044011+00:00\"},{\"status\":\"open\",\"id\":1,\"description\":\"Blue screen on startup.\",\"priority\":\"high\",\"assignee\":\"alice\",\"created_at\":\"2026-09-21T21:33:27.043675+00:00\",\"title\":\"",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"page_rx_state_\":1,\"total_count_rx_state_\":4,\"has_next_page_rx_state_\":false,\"tickets_rx_state_\":[{\"status\":\"open\",\"id\":8,\"description\":\"Cannot reach printer on 3rd floor.\",\"priority\":\"medium\",\"assignee\":\"carol\",\"created_at\":\"2026-09-21T21:35:15.537183+00:00\",\"title\":\"Printer offline\",\"ticket_id\":\"6c3497d1-a514-4ba4-9f0b-d38f9908362d\",\"updated_at\":\"2026-09-21T21:35:15.537183+00:00\"},{\"status\":\"open\",\"id\":7,\"description\":\"Corporate logo image is missing.\",\"priority\":\"low\",\"assignee\":\"\",\"created_at\":\"2026-09-21T21:35:15.537111+00:00\",\"title\":\"Email signature broken\",\"ticket_id\":\"fc89fd7d-9297-4e34-b81d-ee6687664dac\",\"updated_at\":\"2026-09-21T21:35:15.537111+00:00\"},{\"status\":\"open\",\"id\":6,\"description\":\"RTT > 500ms over the corporate tunnel.\",\"priority\":\"medium\",\"assignee\":\"bob\",\"created_at\":\"2026-09-21T21:35:15.537003+00:00\",\"title\":\"VPN slow from home\",\"ticket_id\":\"6d377d38-8b42-49e0-8a61-55c6877e34f0\",\"updated_at\":\"2026-09-21T21:35:15.537003+00:00\"},{\"status\":\"open\",\"id\":5,\"description\":\"Blue screen on startup.\",\"priority\":\"high\",\"assignee\":\"alice\",\"created_at\":\"2026-09-21T21:35:15.536693+00:00\",\"title\":\"Laptop won't boot\",\"ticket_id\":\"337fc272-4b60-4860-9be8-17d53e686a02\",\"updated_at\":\"2026-09-21T21:35:15.536693+00:00\"}],\"open_count_rx_state_\":4,\"page_count_rx_state_\":1,\"has_prev_page_rx_state_\":false}}}]"
+ ],
+ "console": [
+  [
+   "log",
+   "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  ],
+  [
+   "debug",
+   "[vite] connecting..."
+  ],
+  [
+   "debug",
+   "[vite] connected."
+  ],
+  [
+   "info",
+   "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ]
+ ]
+}

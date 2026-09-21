@@ -1,0 +1,37 @@
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+version 0.8.28. pass Plugin classes directly instead, e.g. 
+disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. 
+(rxconfig.py:3)
+─────────────────────────────── Initializing map ───────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized map. Install dependencies from `requirements.txt` with `uv 
+pip install -r requirements.txt` (or your preferred installer) before running 
+`uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_enterprise/venv_a2tk/lib/python3.11/site-packages/reflex_components
+_radix/plugin.py:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:3142/
+Backend running at: http://0.0.0.0:8144
+Starting frontend failed with exit code -9
+$ react-router dev --host
+  ➜  Local:   http://localhost:3142/
+  ➜  Network: http://192.0.2.2:3142/  eth0
+9:43:17 PM [vite] (ssr) connected.
+Files in the public directory are served at the root path.
+Instead of 
+/public/external/reflex_enterprise/components/map/base/MapLazyComponents.jsx, 
+use /external/reflex_enterprise/components/map/base/MapLazyComponents.jsx.
+error: script "dev" was terminated by signal SIGKILL (Forced quit)
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

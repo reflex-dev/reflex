@@ -1,0 +1,128 @@
+{
+ "label": "a2",
+ "steps": [
+  {
+   "step": "anon_initial",
+   "shared": "shared=default-shared",
+   "secret": "secret=top-secret",
+   "email": "no-user",
+   "hits": "hits=0"
+  },
+  {
+   "step": "anon_after_poison_shared",
+   "shared": "shared=default-shared",
+   "secret": "secret=top-secret",
+   "email": "no-user",
+   "hits": "hits=1"
+  },
+  {
+   "step": "right_after_login",
+   "url": "http://localhost:3141/",
+   "shared": "shared=SERVER-ONLY-SECRET",
+   "secret": "secret=top-secret",
+   "email": "alice@example.test",
+   "hits": "hits=1"
+  },
+  {
+   "step": "after_unrelated_event",
+   "shared": "shared=SERVER-ONLY-SECRET",
+   "secret": "secret=top-secret",
+   "email": "alice@example.test",
+   "hits": "hits=2"
+  },
+  {
+   "step": "after_second_event",
+   "shared": "shared=SERVER-ONLY-SECRET",
+   "secret": "secret=top-secret",
+   "email": "alice@example.test",
+   "hits": "hits=3"
+  },
+  {
+   "step": "after_reload",
+   "shared": "shared=SERVER-ONLY-SECRET",
+   "secret": "secret=top-secret",
+   "email": "alice@example.test",
+   "hits": "hits=3"
+  }
+ ],
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module"
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module"
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module"
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module"
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "pageerrors": [],
+ "http_errors": []
+}
