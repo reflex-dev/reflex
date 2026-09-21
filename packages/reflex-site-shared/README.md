@@ -103,3 +103,31 @@ The default renderer uses the same `reflex-docgen` pipeline as Reflex's main
 documentation, including executable example fences, directives, tables, and
 the shared documentation component map. Generated component API pages can call
 the exported `render_docgen_document` helper directly.
+
+## App-owned HTTP routing
+
+`HttpRoutingPlugin(redirects={"/old": "/new/"})` exports Caddy fragments from
+Reflex's registered pages, including client-only and noindex pages. Paths in the
+redirect mapping are public URLs; registered page routes receive the configured
+`frontend_path` prefix. Local destinations must be registered pages. Chains are
+flattened, cycles and missing destinations fail the build, and queries/fragments
+are preserved. External destinations retain their path shape.
+
+The plugin writes `__http_routing__/app-redirects.caddy` and `app-pages.caddy`
+inside the frontend export. The frontend Dockerfile must move this directory to
+`/etc/caddy/app-routing` **outside the web root**, and fail if either file is
+missing. The internal Helm chart imports these optional fragments before slash
+normalization and before the HTML/SPA fallback, respectively. Its `querySuffix`
+map supplies the original query string. Existing images without fragments retain
+their existing behavior; new images require the matching chart to activate rules.
+
+Unknown extensionless page requests return 404 before JavaScript. Exact registered
+client routes may still use the SPA shell. Static assets and Markdown negotiation
+keep their separate handlers. A sitemap is not a routing inventory: pages can be
+valid while intentionally excluded from indexing.
+
+Dynamic parameters are not converted to permissive wildcards. Apps with catalog
+routes should register every concrete slug, then explicitly list the replaced
+parameter route in `excluded_dynamic_routes`. Other dynamic routes cause a build
+error until the app supplies an explicit policy. This plugin is opt-in; it does
+not change framework routing or enable itself for other sites.
