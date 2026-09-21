@@ -520,8 +520,8 @@ export const queueEvents = async (
  * @param params The params object from React Router
  */
 export const processEvent = async (socket, navigate, params) => {
-  // Only proceed if the socket is up or no event in the queue uses state, otherwise we throw the event into the void
-  if (isStateful() && !(socket && socket.connected)) {
+  // A connected socket can dispatch without inspecting the queued event types.
+  if (!(socket && socket.connected) && isStateful()) {
     return;
   }
 

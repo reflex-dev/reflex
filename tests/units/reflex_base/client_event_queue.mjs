@@ -4,19 +4,13 @@ import { test } from "node:test";
 import { createQueueRuntime } from "./client_event_queue_runtime.mjs";
 
 const source = fs.readFileSync(process.argv[2], "utf8");
-const createRuntime = (options) => createQueueRuntime(source, options);
-const params = { current: {} };
 const stateful = (id) => ({
   name: "reflex___state.test.event",
   payload: { id },
 });
-const local = (id, output) => ({
+const call = (fn, callback) => ({
   name: "_call_function",
-  payload: { function: () => output.push(id) },
-});
-const socketFor = (output, connected = true) => ({
-  connected,
-  emit: (_, event) => output.push(event.payload.id),
+  payload: { function: fn, callback },
 });
 const deferred = () => {
   let resolve;
@@ -26,391 +20,244 @@ const deferred = () => {
   return { promise, resolve };
 };
 
-const loaderFixture = `
-const event_queue = [];
-let backend_state_mismatch = false;
-export const isStateful = () => {
-  return false;
-};
-export const queueEventIfSocketExists = async () => {
-};
-export const applyEvent = async () => {
-};
-export const applyRestEvent = async () => {
-};
-const resolveSocket = (socket) => {
-  return socket;
-};
-export const processEvent = async () => {
-};
-function urlFrom(string) {
-  return new URL(string);
+/** Bind dispatch arguments while keeping the real queue and handlers intact. */
+async function createQueue(connected = true) {
+  const output = [];
+  const runtime = await createQueueRuntime(source, {
+    uploadFiles: () => output.push("upload"),
+  });
+  const socket = {
+    connected,
+    emit: (_, event) => output.push(event.payload.id),
+  };
+  const navigate = (path, options) => output.push([path, options]);
+  const params = { current: {} };
+  return {
+    runtime,
+    socket,
+    output,
+    local: (id) => call(() => output.push(id)),
+    enqueue: (events, prepend = false, target = socket) =>
+      runtime.queueEvents(events, target, prepend, navigate, params),
+    drain: () => runtime.processEvent(socket, navigate, params),
+  };
 }
-`;
 
-for (const [name, declaration] of [
-  [
-    "normally formatted declarations",
-    `export const queueEvents = async (events) => {
-  event_queue.push(...events);
-  return event_queue.length;
-};`,
-  ],
-  [
-    "compact declarations",
-    "export const queueEvents=async(events)=>{event_queue.push(...events);return event_queue.length};",
-  ],
-  [
-    "function declarations",
-    `export async function queueEvents(events) {
-  event_queue.push(...events);
-  return event_queue.length;
-}`,
-  ],
-  [
-    "nested closures with unindented braces",
-    `export const queueEvents = async (events) => {
-const enqueue = (event) => {
-event_queue.push(event);
-};
-events.forEach(enqueue);
-return event_queue.length;
-};`,
-  ],
-]) {
-  test(`runtime loads ${name} without rewriting functions`, async () => {
-    const runtime = await createQueueRuntime(loaderFixture + declaration);
-    const event = { name: "test.event" };
-    assert.equal(await runtime.queueEvents([event]), 1);
-    assert.equal(runtime.event_queue[0], event);
+for (const ref of [false, true]) {
+  test(
+    "FIFO filtering with " + (ref ? "reference" : "raw") + " sockets",
+    async () => {
+      const q = await createQueue();
+      await q.enqueue(
+        [null, stateful(1), undefined, q.local(2), stateful(3)],
+        false,
+        ref ? { current: q.socket } : q.socket,
+      );
+      assert.deepEqual(q.output, [1, 2, 3]);
+      assert.equal(q.runtime.event_queue.length, 0);
+      assert.equal(q.runtime.isStateful(), false);
+    },
+  );
+}
+
+test("offline stateful events hold the whole queue until reconnect", async () => {
+  const q = await createQueue(false);
+  await q.enqueue([q.local(1), stateful(2), q.local(3)]);
+  assert.deepEqual(q.output, []);
+  assert.equal(q.runtime.event_queue.length, 3);
+  assert.equal(q.runtime.isStateful(), true);
+  q.socket.connected = true;
+  await q.drain();
+  assert.deepEqual(q.output, [1, 2, 3]);
+  assert.equal(q.runtime.event_queue.length, 0);
+});
+
+test("empty and local-only queues work with absent or disconnected sockets", async () => {
+  for (const socket of [null, { current: null }, { connected: false }]) {
+    const q = await createQueue();
+    await q.enqueue([], false, socket);
+    await q.enqueue([null, undefined], false, socket);
+    await q.enqueue([q.local(1), q.local(2)], false, socket);
+    assert.deepEqual(q.output, [1, 2]);
+    assert.equal(q.runtime.event_queue.length, 0);
+  }
+});
+
+test("prepend preserves order, queue identity, and input without extra shifts", async (t) => {
+  const q = await createQueue(false);
+  const pending = q.runtime.event_queue;
+  const shift = (pending.shift = t.mock.fn(pending.shift));
+  const existing = [stateful(3), q.local(4)];
+  await q.enqueue(existing);
+  const incoming = Object.freeze([stateful(1), null, q.local(2), undefined]);
+  await q.enqueue(incoming, true);
+  await q.enqueue([], true);
+  await q.enqueue([null, undefined], true);
+  assert.equal(q.runtime.event_queue, pending);
+  assert.deepEqual([...pending], [incoming[0], incoming[2], ...existing]);
+  assert.equal(shift.mock.callCount(), 0);
+  q.socket.connected = true;
+  await q.drain();
+  assert.deepEqual(q.output, [1, 2, 3, 4]);
+  assert.equal(shift.mock.callCount(), 4);
+  assert.equal(pending.length, 0);
+});
+
+for (const prepend of [false, true]) {
+  test(
+    "connected dispatch skips stateful scans, prepend=" + prepend,
+    async (t) => {
+      const q = await createQueue();
+      const pending = q.runtime.event_queue;
+      const scan = (pending.some = t.mock.fn(pending.some));
+      for (const event of [q.local, stateful]) {
+        await q.enqueue([event(1)], prepend);
+        await q.drain();
+        assert.equal(q.output.pop(), 1);
+        assert.equal(q.output.length, 0);
+        const ids = Array.from({ length: 32 }, (_, id) => id);
+        await q.enqueue(ids.map(event), prepend);
+        assert.deepEqual(q.output.splice(0), ids);
+      }
+      assert.equal(q.runtime.event_queue.length, 0);
+      assert.equal(scan.mock.callCount(), 0);
+    },
+  );
+}
+
+test("disconnect during an event pauses remaining stateful events", async () => {
+  const q = await createQueue();
+  await q.enqueue([
+    call(() => {
+      q.output.push(1);
+      q.socket.connected = false;
+    }),
+    q.local(2),
+    stateful(3),
+  ]);
+  assert.deepEqual(q.output, [1]);
+  assert.equal(q.runtime.event_queue.length, 2);
+  q.socket.connected = true;
+  await q.drain();
+  assert.deepEqual(q.output, [1, 2, 3]);
+});
+
+for (const prepend of [false, true]) {
+  test("reentrant dispatch preserves order, prepend=" + prepend, async () => {
+    const q = await createQueue();
+    let nested;
+    await q.enqueue([
+      call(() => {
+        q.output.push(1);
+        nested = q.enqueue([q.local(2)], prepend);
+      }),
+      q.local(3),
+    ]);
+    await nested;
+    assert.deepEqual(q.output, prepend ? [1, 2, 3] : [1, 3, 2]);
+    assert.equal(q.runtime.event_queue.length, 0);
   });
 }
 
-test("FIFO filtering and both raw and reference sockets", async () => {
-  for (const ref of [false, true]) {
-    const runtime = await createRuntime(),
-      output = [],
-      socket = socketFor(output);
-    await runtime.queueEvents(
-      [null, stateful(1), undefined, local(2, output), stateful(3)],
-      ref ? { current: socket } : socket,
-      false,
-      () => {},
-      params,
-    );
-    assert.deepEqual(output, [1, 2, 3]);
-    assert.equal(runtime.event_queue.length, 0);
-    assert.equal(runtime.isStateful(), false);
-  }
-});
-
-test("offline stateful events hold the entire queue until reconnect", async () => {
-  const runtime = await createRuntime(),
-    output = [],
-    socket = socketFor(output, false);
-  await runtime.queueEvents(
-    [local(1, output), stateful(2), local(3, output)],
-    socket,
-    false,
-    () => {},
-    params,
-  );
-  assert.deepEqual(output, []);
-  assert.equal(runtime.event_queue.length, 3);
-  assert.equal(runtime.isStateful(), true);
-  socket.connected = true;
-  await runtime.processEvent(socket, () => {}, params);
-  assert.deepEqual(output, [1, 2, 3]);
-  assert.equal(runtime.event_queue.length, 0);
-});
-
-test("local events run without a socket, including an empty queue", async () => {
-  const runtime = await createRuntime(),
-    output = [];
-  await runtime.queueEvents([], null, false, () => {}, params);
-  await runtime.queueEvents(
-    [local(1, output), local(2, output)],
-    null,
-    false,
-    () => {},
-    params,
-  );
-  assert.deepEqual(output, [1, 2]);
-});
-
-test("prepend preserves new and pending order and does not mutate the input", async () => {
-  const runtime = await createRuntime(),
-    output = [],
-    socket = socketFor(output, false);
-  await runtime.queueEvents(
-    [stateful(3), local(4, output)],
-    socket,
-    false,
-    () => {},
-    params,
-  );
-  const front = [stateful(1), null, local(2, output), undefined];
-  const original = front.slice();
-  await runtime.queueEvents(front, socket, true, () => {}, params);
-  assert.deepEqual(front, original);
-  socket.connected = true;
-  await runtime.processEvent(socket, () => {}, params);
-  assert.deepEqual(output, [1, 2, 3, 4]);
-  assert.equal(runtime.event_queue.length, 0);
-});
-
-test("disconnect during an event pauses remaining stateful events", async () => {
-  const runtime = await createRuntime(),
-    output = [],
-    socket = socketFor(output);
-  const disconnect = {
-    name: "_call_function",
-    payload: {
-      function: () => {
-        output.push(1);
-        socket.connected = false;
-      },
-    },
-  };
-  await runtime.queueEvents(
-    [disconnect, local(2, output), stateful(3)],
-    socket,
-    false,
-    () => {},
-    params,
-  );
-  assert.deepEqual(output, [1]);
-  assert.equal(runtime.event_queue.length, 2);
-  socket.connected = true;
-  await runtime.processEvent(socket, () => {}, params);
-  assert.deepEqual(output, [1, 2, 3]);
-});
-
-test("reentrant enqueue and prepend retain FIFO semantics", async () => {
-  const runtime = await createRuntime(),
-    output = [],
-    socket = socketFor(output);
-  let nested;
-  const enqueue = {
-    name: "_call_function",
-    payload: {
-      function: () => {
-        output.push(1);
-        nested = runtime.queueEvents(
-          [local(2, output)],
-          socket,
-          true,
-          () => {},
-          params,
-        );
-      },
-    },
-  };
-  await runtime.queueEvents(
-    [enqueue, local(3, output)],
-    socket,
-    false,
-    () => {},
-    params,
-  );
-  await nested;
-  assert.deepEqual(output, [1, 2, 3]);
-  assert.equal(runtime.event_queue.length, 0);
-});
-
-test("overlapping calls and promise settling preserve async handler behavior", async () => {
-  const runtime = await createRuntime(),
-    output = [],
-    socket = socketFor(output),
-    wait = deferred();
-  let firstSettled = false;
-  const asynchronous = {
-    name: "_call_function",
-    payload: {
-      function: () => {
-        output.push(1);
-        return wait.promise;
-      },
-      callback: () => output.push(4),
-    },
-  };
-  const first = runtime
-    .queueEvents(
-      [asynchronous, local(2, output)],
-      socket,
-      false,
-      () => {},
-      params,
-    )
+test("overlapping calls retain async callback and promise settling order", async () => {
+  const q = await createQueue();
+  const wait = deferred();
+  let settled = false;
+  const first = q
+    .enqueue([
+      call(
+        () => {
+          q.output.push(1);
+          return wait.promise;
+        },
+        () => q.output.push(4),
+      ),
+      q.local(2),
+    ])
     .then(() => {
-      firstSettled = true;
+      settled = true;
     });
-  const second = runtime.queueEvents(
-    [local(3, output)],
-    socket,
-    false,
-    () => {},
-    params,
-  );
-  await second;
-  assert.deepEqual(output, [1, 2, 3]);
-  assert.equal(firstSettled, false);
+  await q.enqueue([q.local(3)]);
+  assert.deepEqual(q.output, [1, 2, 3]);
+  await new Promise(setImmediate);
+  assert.equal(settled, false);
   wait.resolve();
   await first;
-  assert.deepEqual(output, [1, 2, 3, 4]);
-  assert.equal(firstSettled, true);
+  assert.deepEqual(q.output, [1, 2, 3, 4]);
+  assert.equal(settled, true);
 });
 
-test("fatal mismatch clears pending events and lets drain promises settle", async () => {
-  const runtime = await createRuntime(),
-    output = [],
-    socket = socketFor(output, false);
-  await runtime.queueEvents(
-    [stateful(1), local(2, output)],
-    socket,
-    false,
-    () => {},
-    params,
+for (const alreadyMismatched of [false, true]) {
+  test(
+    "mismatch clears pending work after reconnect, already set=" +
+      alreadyMismatched,
+    async () => {
+      const q = await createQueue(false);
+      q.runtime.setMismatch(alreadyMismatched);
+      await q.enqueue([stateful(1), q.local(2)]);
+      q.runtime.setMismatch(true);
+      await q.drain();
+      assert.equal(q.runtime.event_queue.length, 2);
+      q.socket.connected = true;
+      await q.drain();
+      assert.deepEqual(q.output, []);
+      assert.equal(q.runtime.event_queue.length, 0);
+      q.socket.connected = false;
+      await q.enqueue([q.local(3)]);
+      assert.deepEqual(q.output, []);
+      assert.equal(q.runtime.event_queue.length, 0);
+    },
   );
-  runtime.setMismatch(true);
-  socket.connected = true;
-  await runtime.processEvent(socket, () => {}, params);
-  assert.deepEqual(output, []);
-  assert.equal(runtime.event_queue.length, 0);
+}
+
+test("redirect and REST events retain ordering", async () => {
+  const q = await createQueue();
+  await q.enqueue([
+    { name: "_redirect", payload: { path: "/next", replace: true } },
+    {
+      name: "reflex___state.test.upload",
+      handler: "uploadFiles",
+      payload: { files: [] },
+    },
+    q.local("last"),
+  ]);
+  assert.deepEqual(q.output, [["/next", { replace: true }], "upload", "last"]);
+  assert.equal(q.runtime.event_queue.length, 0);
 });
 
-test("redirect and REST events retain the ordering of pending work", async () => {
-  const output = [];
-  const runtime = await createRuntime({
-      uploadFiles: () => output.push("upload"),
-    }),
-    socket = socketFor(output);
-  await runtime.queueEvents(
-    [
-      { name: "_redirect", payload: { path: "/next", replace: true } },
-      {
-        name: "reflex___state.test.upload",
-        handler: "uploadFiles",
-        payload: { files: [] },
-      },
-      local("last", output),
-    ],
-    socket,
-    false,
-    (path, options) => output.push([path, options]),
-    params,
-  );
-  assert.deepEqual(output, [["/next", { replace: true }], "upload", "last"]);
-  assert.equal(runtime.event_queue.length, 0);
-});
-
-test("prepend shifts pending events only when they are dispatched", async () => {
-  const runtime = await createRuntime(),
-    output = [],
-    socket = socketFor(output, false);
-  await runtime.queueEvents(
-    [stateful(2), local(3, output)],
-    socket,
-    false,
-    () => {},
-    params,
-  );
-  let shifts = 0;
-  runtime.event_queue.shift = () => {
-    shifts++;
-    return Array.prototype.shift.call(runtime.event_queue);
-  };
-  socket.connected = true;
-  await runtime.queueEvents([local(1, output)], socket, true, () => {}, params);
-  assert.deepEqual(output, [1, 2, 3]);
-  assert.equal(shifts, 3);
-});
-
-test("dispatch rejection leaves pending work available to a later drain", async () => {
-  const runtime = await createRuntime(),
-    output = [],
-    socket = socketFor(output);
-  socket.emit = () => {
+test("dispatch rejection leaves pending work for retry", async (t) => {
+  const q = await createQueue();
+  const emit = t.mock.method(q.socket, "emit", () => {
     throw new Error("socket write failed");
-  };
+  });
   await assert.rejects(
-    runtime.queueEvents(
-      [stateful(1), local(2, output)],
-      socket,
-      false,
-      () => {},
-      params,
-    ),
+    q.enqueue([stateful(1), q.local(2)]),
     /socket write failed/,
   );
-  assert.equal(runtime.event_queue.length, 1);
-  socket.emit = (_, event) => output.push(event.payload.id);
-  await runtime.queueEvents([stateful(3)], socket, false, () => {}, params);
-  assert.deepEqual(output, [2, 3]);
-  assert.equal(runtime.event_queue.length, 0);
+  assert.equal(q.runtime.event_queue.length, 1);
+  emit.mock.restore();
+  await q.enqueue([stateful(3)]);
+  assert.deepEqual(q.output, [2, 3]);
+  assert.equal(q.runtime.event_queue.length, 0);
 });
 
 test("stateful arrival during an offline local await pauses the later drain", async () => {
-  const runtime = await createRuntime(),
-    output = [],
-    socket = socketFor(output, false),
-    wait = deferred();
-  const asynchronous = {
-    name: "_call_function",
-    payload: { function: () => wait.promise, callback: () => output.push(1) },
-  };
-  const first = runtime.queueEvents(
-    [asynchronous],
-    socket,
-    false,
-    () => {},
-    params,
-  );
-  await runtime.queueEvents(
-    [local(2, output), stateful(3)],
-    socket,
-    false,
-    () => {},
-    params,
-  );
-  assert.deepEqual(output, []);
+  const q = await createQueue(false);
+  const wait = deferred();
+  const first = q.enqueue([
+    call(
+      () => wait.promise,
+      () => q.output.push(1),
+    ),
+  ]);
+  await q.enqueue([q.local(2), stateful(3)]);
+  assert.deepEqual(q.output, []);
   wait.resolve();
   await first;
-  assert.deepEqual(output, [1]);
-  assert.equal(runtime.event_queue.length, 2);
-  socket.connected = true;
-  await runtime.processEvent(socket, () => {}, params);
-  assert.deepEqual(output, [1, 2, 3]);
-});
-
-test("mismatch retains the existing offline stateful guard until reconnect", async () => {
-  const runtime = await createRuntime(),
-    output = [],
-    socket = socketFor(output, false);
-  runtime.setMismatch(true);
-  await runtime.queueEvents([stateful(1)], socket, false, () => {}, params);
-  assert.equal(runtime.event_queue.length, 1);
-  assert.deepEqual(output, []);
-  socket.connected = true;
-  await runtime.processEvent(socket, () => {}, params);
-  assert.equal(runtime.event_queue.length, 0);
-  assert.deepEqual(output, []);
-});
-
-test("one-event queues drain exactly once for both local and stateful handlers", async () => {
-  for (const makeEvent of [local, (id) => stateful(id)]) {
-    const runtime = await createRuntime(),
-      output = [],
-      socket = socketFor(output);
-    await runtime.queueEvents(
-      [makeEvent(1, output)],
-      socket,
-      false,
-      () => {},
-      params,
-    );
-    await runtime.processEvent(socket, () => {}, params);
-    assert.deepEqual(output, [1]);
-    assert.equal(runtime.event_queue.length, 0);
-  }
+  assert.deepEqual(q.output, [1]);
+  assert.equal(q.runtime.event_queue.length, 2);
+  q.socket.connected = true;
+  await q.drain();
+  assert.deepEqual(q.output, [1, 2, 3]);
+  assert.equal(q.runtime.event_queue.length, 0);
 });

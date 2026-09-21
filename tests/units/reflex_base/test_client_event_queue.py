@@ -9,7 +9,7 @@ import pytest
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
 def test_client_event_queue() -> None:
-    """Verify queue ordering, reconnect handling, and prepend processing cost."""
+    """Verify queue behavior and prepend/connected dispatch processing cost."""
     tests = Path(__file__).parent
     source = (
         tests.parents[2]

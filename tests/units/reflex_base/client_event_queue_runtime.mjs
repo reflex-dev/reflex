@@ -1,27 +1,25 @@
 import { SourceTextModule, SyntheticModule } from "node:vm";
 
 /** Evaluate the complete frontend module with isolated dependency stubs. */
-export async function createQueueRuntime(source, options = {}) {
+export async function createQueueRuntime(source, { uploadFiles } = {}) {
   const unused = () => {
     throw new Error("Unexpected frontend dependency in queue test");
   };
   const dependencies = {
     "test:browser": {
-      window: options.window ?? {
+      window: {
         location: { host: "localhost", pathname: "/", search: "", hash: "" },
       },
-      document: options.document ?? {},
-      localStorage: options.localStorage ?? { clear() {}, removeItem() {} },
-      sessionStorage: options.sessionStorage ?? { clear() {}, removeItem() {} },
+      document: {},
+      localStorage: { clear() {}, removeItem() {} },
+      sessionStorage: { clear() {}, removeItem() {} },
     },
     "socket.io-client": { default: unused },
     "$/env.json": { default: {} },
     "$/reflex.json": { default: {} },
     "universal-cookie": {
       default: class {
-        constructor() {
-          return options.cookies ?? { remove() {} };
-        }
+        remove() {}
       },
     },
     react: {
@@ -37,7 +35,7 @@ export async function createQueueRuntime(source, options = {}) {
       useParams: unused,
     },
     "$/utils/context": {
-      initialEvents: options.initialEvents ?? (() => []),
+      initialEvents: () => [],
       initialState: {},
       onLoadInternalEvent: unused,
       state_name: "test_state",
@@ -46,7 +44,7 @@ export async function createQueueRuntime(source, options = {}) {
     "$/utils/helpers/debounce": { default: unused },
     "$/utils/helpers/throttle": { default: unused },
     "$/utils/helpers/upload": {
-      uploadFiles: options.uploadFiles ?? unused,
+      uploadFiles: uploadFiles ?? unused,
     },
   };
   // Let Node parse the unchanged module; only expose private state to tests.
