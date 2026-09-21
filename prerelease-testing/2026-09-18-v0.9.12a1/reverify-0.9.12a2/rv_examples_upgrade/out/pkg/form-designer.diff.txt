@@ -1,0 +1,34 @@
+--- /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_examples_upgrade/out/pkg/form-designer.base.json	2026-09-21 21:33:15.654868269 +0000
++++ /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_examples_upgrade/out/pkg/form-designer.a2.json	2026-09-21 21:41:11.264469210 +0000
+@@ -9,9 +9,10 @@
+     "@radix-ui/react-accordion": "1.2.20",
+     "@radix-ui/react-form": "0.1.16",
+     "@radix-ui/themes": "3.3.0",
+-    "@react-router/node": "8.3.1",
++    "@react-router/node": "8.4.0",
+     "isbot": "5.2.2",
+     "lucide-react": "1.26.0",
++    "mergician": "v2.0.2",
+     "moment": "2.30.1",
+     "react": "19.2.8",
+     "react-debounce-input": "3.3.0",
+@@ -20,7 +21,7 @@
+     "react-helmet": "6.1.0",
+     "react-markdown": "10.1.0",
+     "react-moment": "2.0.2",
+-    "react-router": "8.3.1",
++    "react-router": "8.4.0",
+     "react-syntax-highlighter": "16.1.1",
+     "rehype-katex": "7.0.1",
+     "rehype-raw": "7.0.0",
+@@ -33,8 +34,8 @@
+   },
+   "devDependencies": {
+     "@emotion/react": "11.14.0",
+-    "@react-router/dev": "8.3.1",
+-    "@react-router/fs-routes": "8.3.1",
++    "@react-router/dev": "8.4.0",
++    "@react-router/fs-routes": "8.4.0",
+     "autoprefixer": "10.5.4",
+     "postcss": "8.5.26",
+     "postcss-import": "17.0.0",

@@ -1,0 +1,12 @@
+────────────────────────── Initializing form_designer ──────────────────────────
+Info: Initializing the web directory.
+Success: Initialized form_designer. Install dependencies from `requirements.txt`
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 33/32 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:3260/
+Backend running at: http://0.0.0.0:8260
+[ERROR] Unexpected exit from worker-1
+Info: Reflex app stopped.

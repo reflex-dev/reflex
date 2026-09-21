@@ -1,0 +1,24 @@
+1 products found
+
+(W-001) Widget
+
+Stock:42
+
+Category:tools
+
+Seller:acme
+
+Sender:qa
+
+Query:
+
+DELETE
+
+Body:
+
+Clear
+Send
+
+Status: 200
+
+null
