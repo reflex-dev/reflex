@@ -1,0 +1,1034 @@
+From fbcdb33a192d4b09273b8e9c0b1aa0191926259c Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Mon, 21 Sep 2026 17:42:58 +0000
+Subject: [PATCH 3/3] refactor: validate state declarations from BaseStateMeta
+ without module globals
+
+The reserved-state-name check moves from reflex.istate.validation into
+reflex_base.vars.base, next to the metaclass that runs it. BaseState declares
+itself the root of its hierarchy with `state_root=True`; BaseStateMeta.__new__
+stores the root on that class, finds it again on the bases of every class
+created later and validates against the root's namespace. Nothing has to be
+installed after the class body, and nothing is shared between roots: a second
+root in the same process reserves only its own members. Classes with no root
+among their bases (the root itself, EvenMoreBasicBaseState, plain models) are
+left alone, as before.
+
+Refs #7211
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01NeyxWsuC9hqSKq8YcEwZyY
+---
+ news/+state-metaclass-conflict.bugfix.md      |   2 +-
+ .../news/+state-metaclass-conflict.bugfix.md  |   2 +-
+ .../reflex-base/src/reflex_base/vars/base.py  | 128 ++++++--
+ reflex/istate/validation.py                   | 130 --------
+ reflex/state.py                               |  15 +-
+ tests/units/istate/test_validation.py         | 253 ---------------
+ tests/units/reflex_base/vars/test_base.py     | 297 +++++++++++++++++-
+ 7 files changed, 412 insertions(+), 415 deletions(-)
+ delete mode 100644 reflex/istate/validation.py
+ delete mode 100644 tests/units/istate/test_validation.py
+
+diff --git a/news/+state-metaclass-conflict.bugfix.md b/news/+state-metaclass-conflict.bugfix.md
+index 0ffdfd86c..927e4f5d1 100644
+--- a/news/+state-metaclass-conflict.bugfix.md
++++ b/news/+state-metaclass-conflict.bugfix.md
+@@ -1 +1 @@
+-`type(rx.State)` is `reflex.vars.BaseStateMeta` again, so a state declared with its own metaclass derived from `BaseStateMeta` (`class MyState(rx.State, metaclass=MyMeta)`) no longer raises `TypeError: metaclass conflict`. The reserved-state-name validation is unchanged; it now runs from `BaseStateMeta` itself instead of from a subclass of it.
++`type(rx.State)` is `reflex.vars.BaseStateMeta` again, so a state declared with its own metaclass derived from `BaseStateMeta` (`class MyState(rx.State, metaclass=MyMeta)`) no longer raises `TypeError: metaclass conflict`. The reserved-state-name validation is unchanged: it now runs from `BaseStateMeta` itself for every subclass of `rx.State`.
+diff --git a/packages/reflex-base/news/+state-metaclass-conflict.bugfix.md b/packages/reflex-base/news/+state-metaclass-conflict.bugfix.md
+index 28fcd883c..799644d51 100644
+--- a/packages/reflex-base/news/+state-metaclass-conflict.bugfix.md
++++ b/packages/reflex-base/news/+state-metaclass-conflict.bugfix.md
+@@ -1 +1 @@
+-`BaseStateMeta` now runs the reserved-state-name check that `reflex` installs on it, so `reflex` no longer needs a `BaseStateMeta` subclass as the metaclass of `BaseState` and a third-party metaclass derived from `BaseStateMeta` composes with state classes again.
++`BaseStateMeta` validates the declarations of every class descending from a state declared with `state_root=True` (`reflex`'s `BaseState`), so `reflex` no longer needs a `BaseStateMeta` subclass as the metaclass of its states and a third-party metaclass derived from `BaseStateMeta` composes with state classes again.
+diff --git a/packages/reflex-base/src/reflex_base/vars/base.py b/packages/reflex-base/src/reflex_base/vars/base.py
+index ee6d8db1c..3118afb00 100644
+--- a/packages/reflex-base/src/reflex_base/vars/base.py
++++ b/packages/reflex-base/src/reflex_base/vars/base.py
+@@ -49,7 +49,9 @@ from reflex_base.utils.compat import MISSING_TYPE, annotations_from_namespace
+ from reflex_base.utils.decorator import once
+ from reflex_base.utils.exceptions import (
+     ComputedVarSignatureError,
++    EventHandlerShadowsBuiltInStateMethodError,
+     ReflexRuntimeError,
++    StateValueError,
+     UntypedComputedVarError,
+     VarAttributeError,
+     VarDependencyError,
+@@ -4032,25 +4034,103 @@ def _inherited_value(lookup_order: list[type], name: str) -> Any:
+     return MISSING
+ 
+ 
+-# Check run on every class this metaclass creates, installed by `reflex` once
+-# its BaseState exists (see `reflex.istate.validation`). It is a hook rather
+-# than a `BaseStateMeta` subclass so that `BaseStateMeta` stays the metaclass
+-# of every state and downstream metaclasses derived from it keep composing.
+-_state_declaration_validator: (
+-    Callable[[tuple[type, ...], dict[str, Any]], None] | None
+-) = None
++_FIELD_MAP_NAMES = frozenset({"__fields__", "__own_fields__", "__inherited_fields__"})
+ 
+ 
+-def _set_state_declaration_validator(
+-    validator: Callable[[tuple[type, ...], dict[str, Any]], None],
++@functools.cache
++def _reserved_state_members(root: BaseStateMeta) -> dict[str, Any]:
++    """Return the framework members of a root state, without its vars or Python protocols.
++
++    Args:
++        root: The state class declared with ``state_root=True``.
++
++    Returns:
++        Reserved names and their original descriptors, without invoking them.
++    """
++    members = {}
++    for base in reversed(root.__mro__[:-1]):
++        namespace = vars(base)
++        members.update(
++            (name, namespace.get(name))
++            for name in namespace.keys() | annotations_from_namespace(namespace).keys()
++            if not name.startswith("__") or name in _FIELD_MAP_NAMES
++        )
++    for name, field_ in root.__fields__.items():
++        if field_.is_var:
++            members.pop(name, None)
++    return members
++
++
++def _validate_state_name(root: BaseStateMeta, name: str, value: Any = None) -> None:
++    """Reject declarations that replace framework methods or bookkeeping.
++
++    Args:
++        root: The state class whose namespace is reserved.
++        name: The declared or dynamically registered name.
++        value: The raw class declaration, when available.
++
++    Raises:
++        StateValueError: If a declaration uses a reserved name.
++        EventHandlerShadowsBuiltInStateMethodError: If a method overrides a builtin.
++    """
++    members = _reserved_state_members(root)
++    if name not in members:
++        return
++    method = value.__func__ if isinstance(value, (classmethod, staticmethod)) else value
++    if isinstance(method, FunctionType):
++        if value is members[name] or getattr(method, "__override_base_method__", False):
++            return
++        msg = f"The event handler name `{name}` shadows a builtin State method; use a different name instead"
++        raise EventHandlerShadowsBuiltInStateMethodError(msg)
++    msg = f"State name `{name}` is reserved by {root.__name__}; use a different name instead."
++    raise StateValueError(msg)
++
++
++def _validate_inherited_members(
++    root: BaseStateMeta, base: type, seen: set[str]
+ ) -> None:
+-    """Install the check run before any class of this metaclass is constructed.
++    """Check the members a Python mixin or model base adds to a state.
+ 
+     Args:
+-        validator: Called with the bases and the unmodified class namespace.
++        root: The state class whose namespace is reserved.
++        base: A base class that is not itself a state of that root.
++        seen: Names an earlier base already provides in the MRO.
+     """
+-    global _state_declaration_validator
+-    _state_declaration_validator = validator
++    is_model = isinstance(base, BaseStateMeta)
++    if is_model:
++        # Model fields are inherited even when an earlier base masks their
++        # class attributes in the MRO.
++        for member in base.__own_fields__:
++            _validate_state_name(root, member)
++        seen.update(base.__own_fields__)
++    for member, value in vars(base).items():
++        if member not in seen and not (
++            is_model and (member in _FIELD_MAP_NAMES or member == "_mixin")
++        ):
++            _validate_state_name(root, member, value)
++
++
++def _validate_state_declaration(
++    root: BaseStateMeta, lookup_order: list[type], namespace: dict[str, Any]
++) -> None:
++    """Check a state's declarations and Python mixins before it is constructed.
++
++    Args:
++        root: The state class whose namespace the new class may not shadow.
++        lookup_order: The bases of the new class in method resolution order.
++        namespace: The unmodified class namespace.
++    """
++    seen = namespace.keys() | annotations_from_namespace(namespace).keys()
++    for member in seen:
++        _validate_state_name(root, member, namespace.get(member))
++    for base in lookup_order:
++        if (
++            not issubclass(base, root)
++            and base is not EvenMoreBasicBaseState
++            and base is not object
++        ):
++            _validate_inherited_members(root, base, seen)
++        seen.update(vars(base))
+ 
+ 
+ @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
+@@ -4065,12 +4145,17 @@ class BaseStateMeta(ABCMeta):
+         # Whether this state class is a mixin and should not be instantiated.
+         _mixin: bool = False
+ 
++        # The state declared with ``state_root=True`` that this class descends
++        # from; its namespace is reserved for the whole hierarchy.
++        _reflex_state_root: BaseStateMeta
++
+     def __new__(
+         cls,
+         name: str,
+         bases: tuple[type, ...],
+         namespace: dict[str, Any],
+         mixin: bool = False,
++        state_root: bool = False,
+     ) -> type:
+         """Create a new class.
+ 
+@@ -4079,12 +4164,18 @@ class BaseStateMeta(ABCMeta):
+             bases: The bases of the class.
+             namespace: The namespace of the class.
+             mixin: Whether the class is a mixin and should not be instantiated.
++            state_root: Whether the class defines the framework namespace that
++                its subclasses may not shadow.
+ 
+         Returns:
+             The new class.
+         """
+-        if _state_declaration_validator is not None:
+-            _state_declaration_validator(bases, namespace)
++        lookup_order = _linearize_bases(bases)
++        for base in bases:
++            root = getattr(base, "_reflex_state_root", None)
++            if root is not None:
++                _validate_state_declaration(root, lookup_order, namespace)
++                break
+ 
+         state_bases = [
+             base for base in bases if issubclass(base, EvenMoreBasicBaseState)
+@@ -4148,8 +4239,6 @@ class BaseStateMeta(ABCMeta):
+ 
+             own_fields[key] = new_value
+ 
+-        lookup_order = _linearize_bases(bases)
+-
+         for key, annotation in resolved_annotations.items():
+             value = namespace.get(key, MISSING)
+ 
+@@ -4195,7 +4284,10 @@ class BaseStateMeta(ABCMeta):
+         namespace["__inherited_fields__"] = inherited_fields
+         namespace["__fields__"] = inherited_fields | own_fields
+         namespace["_mixin"] = mixin
+-        return super().__new__(cls, name, bases, namespace)
++        new_cls = super().__new__(cls, name, bases, namespace)
++        if state_root:
++            new_cls._reflex_state_root = new_cls
++        return new_cls
+ 
+ 
+ class EvenMoreBasicBaseState(metaclass=BaseStateMeta):
+diff --git a/reflex/istate/validation.py b/reflex/istate/validation.py
+deleted file mode 100644
+index c9a5e3e94..000000000
+--- a/reflex/istate/validation.py
++++ /dev/null
+@@ -1,130 +0,0 @@
+-"""Validate the framework namespace before constructing or extending a state."""
+-
+-from functools import cache
+-from types import FunctionType
+-from typing import Any
+-
+-from reflex_base.utils.compat import annotations_from_namespace
+-from reflex_base.utils.exceptions import (
+-    EventHandlerShadowsBuiltInStateMethodError,
+-    StateValueError,
+-)
+-from reflex_base.vars.base import (
+-    BaseStateMeta,
+-    EvenMoreBasicBaseState,
+-    _linearize_bases,
+-    _set_state_declaration_validator,
+-)
+-
+-_FIELD_MAP_NAMES = frozenset({"__fields__", "__own_fields__", "__inherited_fields__"})
+-
+-# The state class whose subclasses are validated, set by `_install_state_validation`.
+-_validated_state_base: type | None = None
+-
+-
+-@cache
+-def _reserved_state_members() -> dict[str, Any]:
+-    """Return framework members, excluding state vars and Python protocols.
+-
+-    Returns:
+-        Reserved names and their original descriptors, without invoking them.
+-    """
+-    # BaseState must exist before its namespace can be inspected.
+-    from reflex.state import BaseState
+-
+-    members = {}
+-    for base in reversed(BaseState.__mro__[:-1]):
+-        namespace = vars(base)
+-        members.update(
+-            (name, namespace.get(name))
+-            for name in namespace.keys() | annotations_from_namespace(namespace).keys()
+-            if not name.startswith("__") or name in _FIELD_MAP_NAMES
+-        )
+-    for name, field in BaseState.__fields__.items():
+-        if field.is_var:
+-            members.pop(name, None)
+-    return members
+-
+-
+-def _validate_state_name(name: str, value: Any = None) -> None:
+-    """Reject declarations that replace framework methods or bookkeeping.
+-
+-    Args:
+-        name: The declared or dynamically registered name.
+-        value: The raw class declaration, when available.
+-
+-    Raises:
+-        StateValueError: If a declaration uses a reserved name.
+-        EventHandlerShadowsBuiltInStateMethodError: If a method overrides a builtin.
+-    """
+-    members = _reserved_state_members()
+-    if name not in members:
+-        return
+-    method = value.__func__ if isinstance(value, (classmethod, staticmethod)) else value
+-    if isinstance(method, FunctionType):
+-        if value is members[name] or getattr(method, "__override_base_method__", False):
+-            return
+-        msg = f"The event handler name `{name}` shadows a builtin State method; use a different name instead"
+-        raise EventHandlerShadowsBuiltInStateMethodError(msg)
+-    msg = f"State name `{name}` is reserved by BaseState; use a different name instead."
+-    raise StateValueError(msg)
+-
+-
+-def _validate_inherited_members(base: type, seen: set[str]) -> None:
+-    """Check the members a Python mixin or model base adds to a state.
+-
+-    Args:
+-        base: A base class that is not itself a validated state.
+-        seen: Names an earlier base already provides in the MRO.
+-    """
+-    is_model = isinstance(base, BaseStateMeta)
+-    if is_model:
+-        # Model fields are inherited even when an earlier base masks their
+-        # class attributes in the MRO.
+-        for member in base.__own_fields__:
+-            _validate_state_name(member)
+-        seen.update(base.__own_fields__)
+-    for member, value in vars(base).items():
+-        if member not in seen and not (
+-            is_model and (member in _FIELD_MAP_NAMES or member == "_mixin")
+-        ):
+-            _validate_state_name(member, value)
+-
+-
+-def _validate_state_declaration(
+-    bases: tuple[type, ...], namespace: dict[str, Any]
+-) -> None:
+-    """Check a state's declarations and Python mixins before it is constructed.
+-
+-    Classes that do not inherit from the validated state base, such as plain
+-    models built on the same metaclass, keep their own namespace.
+-
+-    Args:
+-        bases: The parent classes of the class being created.
+-        namespace: The unmodified class namespace.
+-    """
+-    base_state = _validated_state_base
+-    if base_state is None or not any(issubclass(base, base_state) for base in bases):
+-        return
+-    seen = namespace.keys() | annotations_from_namespace(namespace).keys()
+-    for member in seen:
+-        _validate_state_name(member, namespace.get(member))
+-    for base in _linearize_bases(bases):
+-        if (
+-            not issubclass(base, base_state)
+-            and base is not EvenMoreBasicBaseState
+-            and base is not object
+-        ):
+-            _validate_inherited_members(base, seen)
+-        seen.update(vars(base))
+-
+-
+-def _install_state_validation(base_state: type) -> None:
+-    """Validate every state declared after this call.
+-
+-    Args:
+-        base_state: The state class whose subclasses must be validated.
+-    """
+-    global _validated_state_base
+-    _validated_state_base = base_state
+-    _set_state_declaration_validator(_validate_state_declaration)
+diff --git a/reflex/state.py b/reflex/state.py
+index eb3be12fc..782a285f3 100644
+--- a/reflex/state.py
++++ b/reflex/state.py
+@@ -66,6 +66,7 @@ from reflex_base.vars.base import (
+     EvenMoreBasicBaseState,
+     ToOperation,
+     Var,
++    _validate_state_name,
+     computed_var,
+     dispatch,
+     is_computed_var,
+@@ -88,7 +89,6 @@ from reflex.istate.data import (
+ from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
+ from reflex.istate.proxy import MutableProxy, is_mutable_type
+ from reflex.istate.storage import ClientStorageBase
+-from reflex.istate.validation import _install_state_validation, _validate_state_name
+ from reflex.utils import console, format, types
+ from reflex.utils.exec import is_testing_env
+ 
+@@ -626,7 +626,7 @@ CLASS_VAR_NAMES = frozenset({
+ })
+ 
+ 
+-class BaseState(EvenMoreBasicBaseState):
++class BaseState(EvenMoreBasicBaseState, state_root=True):
+     """The state of the app."""
+ 
+     # A map from the var name to the var.
+@@ -1031,7 +1031,7 @@ class BaseState(EvenMoreBasicBaseState):
+             name: The name of the event handler.
+             fn: The function to call when the event is triggered.
+         """
+-        _validate_state_name(name)
++        _validate_state_name(cls._reflex_state_root, name)
+         handler = cls._create_event_handler(fn)
+         cls.event_handlers[name] = handler
+         setattr(cls, name, handler)
+@@ -1544,7 +1544,7 @@ class BaseState(EvenMoreBasicBaseState):
+             var: The variable to add a field for.
+             default_value: The default value of the field.
+         """
+-        _validate_state_name(name)
++        _validate_state_name(cls._reflex_state_root, name)
+         super().add_field(name, var, default_value)
+ 
+     @classmethod
+@@ -1750,7 +1750,7 @@ class BaseState(EvenMoreBasicBaseState):
+             return
+ 
+         for name in args:
+-            _validate_state_name(name)
++            _validate_state_name(cls._reflex_state_root, name)
+         cls._check_overwritten_dynamic_args(list(args.keys()))
+ 
+         def argsingle_factory(param: str):
+@@ -2733,11 +2733,6 @@ class BaseState(EvenMoreBasicBaseState):
+         return state
+ 
+ 
+-# Installed after the class body: BaseState's own namespace is what defines
+-# the names its subclasses may not shadow.
+-_install_state_validation(BaseState)
+-
+-
+ def _serialize_type(type_: Any) -> str:
+     """Serialize a type.
+ 
+diff --git a/tests/units/istate/test_validation.py b/tests/units/istate/test_validation.py
+deleted file mode 100644
+index daa5c3ac0..000000000
+--- a/tests/units/istate/test_validation.py
++++ /dev/null
+@@ -1,253 +0,0 @@
+-"""Tests for reserved state names at class creation and dynamic registration."""
+-
+-from typing import Any
+-
+-import pytest
+-from reflex_base.constants import RouteArgType
+-from reflex_base.utils.exceptions import StateValueError
+-from reflex_base.vars.base import (
+-    BaseStateMeta,
+-    EvenMoreBasicBaseState,
+-    LiteralVar,
+-    computed_var,
+-)
+-
+-from reflex.state import BaseState, State, _override_base_method
+-
+-
+-@pytest.mark.parametrize(
+-    "name",
+-    [
+-        "_get_was_touched",
+-        "_update_was_touched",
+-        "_was_touched",
+-        "dirty_vars",
+-        "get_fields",
+-        "get_full_name",
+-        "backend_vars",
+-        "__fields__",
+-        "setvar",
+-    ],
+-)
+-@pytest.mark.parametrize("annotated", [False, True])
+-def test_reserved_state_var(name: str, annotated: bool, clean_registration_context):
+-    """Reject framework names before state initialization can call them.
+-
+-    Args:
+-        name: The reserved member to shadow.
+-        annotated: Whether to explicitly annotate the variable.
+-        clean_registration_context: An isolated state registry.
+-    """
+-    namespace = {"__module__": __name__, "__qualname__": "ShadowState", name: 7}
+-    if annotated:
+-        namespace["__annotations__"] = {name: int}
+-    with pytest.raises(StateValueError, match=name):
+-        type("ShadowState", (BaseState,), namespace)
+-
+-
+-def test_reserved_annotation_only(clean_registration_context):
+-    """Reject a reserved var even when no default is declared.
+-
+-    Args:
+-        clean_registration_context: An isolated state registry.
+-    """
+-    with pytest.raises(StateValueError, match="_get_was_touched"):
+-
+-        class ShadowState(BaseState):
+-            _get_was_touched: int
+-
+-
+-@pytest.mark.parametrize("state_mixin", [False, True])
+-def test_reserved_mixin_var(state_mixin: bool, clean_registration_context):
+-    """Reject collisions from both ordinary Python mixins and state mixins.
+-
+-    Args:
+-        state_mixin: Whether the mixin subclasses BaseState.
+-        clean_registration_context: An isolated state registry.
+-    """
+-    with pytest.raises(StateValueError, match="_update_was_touched"):
+-        mixin = type(
+-            "Mixin",
+-            (BaseState,) if state_mixin else (),
+-            {"__module__": __name__, "_update_was_touched": 7},
+-            **({"mixin": True} if state_mixin else {}),
+-        )
+-        type("MixedState", (mixin, BaseState), {"__module__": __name__})
+-
+-
+-@pytest.mark.parametrize("name", ["_get_was_touched", "get_fields"])
+-def test_reserved_computed_var(name: str, clean_registration_context):
+-    """Reject computed vars that replace framework methods.
+-
+-    Args:
+-        name: The reserved method to replace.
+-        clean_registration_context: An isolated state registry.
+-    """
+-
+-    def value(self) -> int:
+-        """Return a constant computed value."""
+-        return 7
+-
+-    value.__name__ = name
+-    with pytest.raises(StateValueError, match=name):
+-        type(
+-            "ComputedState",
+-            (BaseState,),
+-            {"__module__": __name__, name: computed_var(value)},
+-        )
+-
+-
+-@pytest.mark.parametrize("registration", ["var", "route", "event", "field"])
+-def test_dynamic_reserved_name(registration: str, clean_registration_context):
+-    """Reject dynamic collisions before any field or event map is changed.
+-
+-    Args:
+-        registration: The dynamic registration path to exercise.
+-        clean_registration_context: An isolated state registry.
+-    """
+-
+-    class DynamicState(BaseState):
+-        """State receiving a dynamic declaration."""
+-
+-    fields = dict(DynamicState.get_fields())
+-    with pytest.raises(StateValueError, match="get_state"):
+-        if registration == "var":
+-            DynamicState.add_var("get_state", int, 7)
+-        elif registration == "route":
+-            DynamicState.setup_dynamic_args({"get_state": RouteArgType.SINGLE})
+-        elif registration == "event":
+-            DynamicState._add_event_handler("get_state", lambda self: None)
+-        else:
+-            DynamicState.add_field("get_state", LiteralVar.create(7), 7)
+-    assert DynamicState.get_fields() == fields
+-    assert "get_state" not in DynamicState.vars
+-    assert "get_state" not in DynamicState.event_handlers
+-    assert "get_state" not in DynamicState.__dict__
+-
+-
+-def test_user_vars_and_marked_override(clean_registration_context):
+-    """Keep normal vars, inherited vars, and explicitly marked method overrides.
+-
+-    Args:
+-        clean_registration_context: An isolated state registry.
+-    """
+-
+-    class Parent(BaseState):
+-        value: int = 1
+-        _backend: int = 2
+-
+-    class Child(Parent):
+-        @_override_base_method
+-        def get_value(self, key: str):
+-            """Return a value through a supported framework override."""
+-            return f"override:{key}"
+-
+-    parent = Parent()
+-    child = parent.substates[Child.get_name()]
+-    assert isinstance(child, Child)
+-    assert child.value == 1
+-    assert child._backend == 2
+-    assert child.get_value("value") == "override:value"
+-
+-
+-def test_non_state_models_keep_their_namespace():
+-    """Do not reserve Reflex state names on unrelated base models."""
+-
+-    class Model(EvenMoreBasicBaseState):
+-        get_state: int = 7
+-
+-    assert Model().get_state == 7
+-
+-
+-@pytest.mark.parametrize("name", ["get_fields", "_get_was_touched"])
+-@pytest.mark.parametrize("state_first", [False, True])
+-def test_reserved_model_mixin(name: str, state_first: bool, clean_registration_context):
+-    """Reject inherited model fields before the field collector sees them.
+-
+-    Args:
+-        name: The framework name declared as a model field.
+-        state_first: Whether BaseState precedes the model in the MRO.
+-        clean_registration_context: An isolated state registry.
+-    """
+-    model = type("Model", (EvenMoreBasicBaseState,), {"__module__": __name__, name: 7})
+-    bases = (BaseState, model) if state_first else (model, BaseState)
+-    with pytest.raises(StateValueError, match=name):
+-        type("MixedState", bases, {"__module__": __name__})
+-
+-
+-def test_reserved_descriptor(clean_registration_context):
+-    """Reject a descriptor without executing its class access behavior.
+-
+-    Args:
+-        clean_registration_context: An isolated state registry.
+-    """
+-
+-    class Descriptor:
+-        def __get__(self, instance, owner):
+-            """Fail if validation invokes this descriptor."""
+-            pytest.fail("Reserved descriptor was evaluated")
+-
+-    with pytest.raises(StateValueError, match="get_fields"):
+-        type(
+-            "DescriptorState",
+-            (BaseState,),
+-            {"__module__": __name__, "get_fields": Descriptor()},
+-        )
+-
+-
+-class _CookieMeta(BaseStateMeta):
+-    """A downstream-style metaclass that injects fields into the declaration."""
+-
+-    def __new__(
+-        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwargs
+-    ):
+-        """Add an annotated backend var before the state is constructed.
+-
+-        Args:
+-            name: The class name.
+-            bases: The parent classes.
+-            namespace: The class namespace.
+-            **kwargs: Class creation keywords, e.g. `mixin`.
+-
+-        Returns:
+-            The new state class.
+-        """
+-        namespace.setdefault("__annotations__", {})["_injected"] = str
+-        namespace["_injected"] = "by the metaclass"
+-        return super().__new__(cls, name, bases, namespace, **kwargs)
+-
+-
+-def test_state_metaclass_is_base_state_meta():
+-    """Keep the exported `BaseStateMeta` as the metaclass of every state."""
+-    assert type(BaseState) is BaseStateMeta
+-    assert type(State) is BaseStateMeta
+-
+-
+-@pytest.mark.parametrize("mixin", [False, True])
+-def test_custom_state_metaclass(mixin: bool, clean_registration_context):
+-    """Allow a `BaseStateMeta` subclass as the metaclass of a state.
+-
+-    Args:
+-        mixin: Whether the state is declared as a state mixin.
+-        clean_registration_context: An isolated state registry.
+-    """
+-
+-    class CustomState(State, mixin=mixin, metaclass=_CookieMeta):
+-        value: int = 1
+-
+-    assert type(CustomState) is _CookieMeta
+-    assert CustomState._mixin is mixin
+-    assert CustomState.__fields__["_injected"].default == "by the metaclass"
+-    assert CustomState.__fields__["value"].default == 1
+-
+-
+-def test_custom_state_metaclass_validates_reserved_names(clean_registration_context):
+-    """Keep rejecting reserved names declared through a custom metaclass.
+-
+-    Args:
+-        clean_registration_context: An isolated state registry.
+-    """
+-    with pytest.raises(StateValueError, match="get_fields"):
+-
+-        class ShadowState(BaseState, metaclass=_CookieMeta):
+-            get_fields: int = 7
+diff --git a/tests/units/reflex_base/vars/test_base.py b/tests/units/reflex_base/vars/test_base.py
+index f8eb80e82..57944cb0f 100644
+--- a/tests/units/reflex_base/vars/test_base.py
++++ b/tests/units/reflex_base/vars/test_base.py
+@@ -10,12 +10,14 @@ import weakref
+ from typing import Any, Literal, TypeVar
+ 
+ import pytest
++from reflex_base.constants import RouteArgType
+ from reflex_base.utils import serializers
+-from reflex_base.utils.exceptions import ReflexRuntimeError
++from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
+ from reflex_base.utils.imports import ImportVar
+ from reflex_base.utils.types import get_field_type
+ from reflex_base.vars.base import (
+     GLOBAL_CACHE,
++    BaseStateMeta,
+     CachedVarOperation,
+     EvenMoreBasicBaseState,
+     LiteralVar,
+@@ -25,6 +27,7 @@ from reflex_base.vars.base import (
+     _linearize_bases,
+     cached_property,
+     cached_property_no_lock,
++    computed_var,
+     field,
+     var_operation,
+     var_operation_return,
+@@ -34,7 +37,7 @@ from reflex_base.vars.object import ObjectVar
+ from reflex_base.vars.sequence import ArrayVar, StringVar
+ from typing_extensions import TypeAliasType, TypeVarTuple, Unpack
+ 
+-from reflex.state import State
++from reflex.state import BaseState, State, _override_base_method
+ 
+ _MARKER_ATTR = "_marker"
+ 
+@@ -671,3 +674,293 @@ def test_var_operation_str_interpolation_matches_tagged_form() -> None:
+     untagged = Var(_js_expr=f"wrap({operand!s})").to(int)
+ 
+     assert str(tagged) == str(untagged) == "wrap(operandValue)"
++
++
++@pytest.mark.parametrize(
++    "name",
++    [
++        "_get_was_touched",
++        "_update_was_touched",
++        "_was_touched",
++        "dirty_vars",
++        "get_fields",
++        "get_full_name",
++        "backend_vars",
++        "__fields__",
++        "setvar",
++    ],
++)
++@pytest.mark.parametrize("annotated", [False, True])
++def test_reserved_state_var(name: str, annotated: bool, clean_registration_context):
++    """Reject framework names before state initialization can call them.
++
++    Args:
++        name: The reserved member to shadow.
++        annotated: Whether to explicitly annotate the variable.
++        clean_registration_context: An isolated state registry.
++    """
++    namespace = {"__module__": __name__, "__qualname__": "ShadowState", name: 7}
++    if annotated:
++        namespace["__annotations__"] = {name: int}
++    with pytest.raises(StateValueError, match=name):
++        type("ShadowState", (BaseState,), namespace)
++
++
++def test_reserved_annotation_only(clean_registration_context):
++    """Reject a reserved var even when no default is declared.
++
++    Args:
++        clean_registration_context: An isolated state registry.
++    """
++    with pytest.raises(StateValueError, match="_get_was_touched"):
++
++        class ShadowState(BaseState):
++            _get_was_touched: int
++
++
++@pytest.mark.parametrize("state_mixin", [False, True])
++def test_reserved_mixin_var(state_mixin: bool, clean_registration_context):
++    """Reject collisions from both ordinary Python mixins and state mixins.
++
++    Args:
++        state_mixin: Whether the mixin subclasses BaseState.
++        clean_registration_context: An isolated state registry.
++    """
++    with pytest.raises(StateValueError, match="_update_was_touched"):
++        mixin = type(
++            "Mixin",
++            (BaseState,) if state_mixin else (),
++            {"__module__": __name__, "_update_was_touched": 7},
++            **({"mixin": True} if state_mixin else {}),
++        )
++        type("MixedState", (mixin, BaseState), {"__module__": __name__})
++
++
++@pytest.mark.parametrize("name", ["_get_was_touched", "get_fields"])
++def test_reserved_computed_var(name: str, clean_registration_context):
++    """Reject computed vars that replace framework methods.
++
++    Args:
++        name: The reserved method to replace.
++        clean_registration_context: An isolated state registry.
++    """
++
++    def value(self) -> int:
++        """Return a constant computed value."""
++        return 7
++
++    value.__name__ = name
++    with pytest.raises(StateValueError, match=name):
++        type(
++            "ComputedState",
++            (BaseState,),
++            {"__module__": __name__, name: computed_var(value)},
++        )
++
++
++@pytest.mark.parametrize("registration", ["var", "route", "event", "field"])
++def test_dynamic_reserved_name(registration: str, clean_registration_context):
++    """Reject dynamic collisions before any field or event map is changed.
++
++    Args:
++        registration: The dynamic registration path to exercise.
++        clean_registration_context: An isolated state registry.
++    """
++
++    class DynamicState(BaseState):
++        """State receiving a dynamic declaration."""
++
++    fields = dict(DynamicState.get_fields())
++    with pytest.raises(StateValueError, match="get_state"):
++        if registration == "var":
++            DynamicState.add_var("get_state", int, 7)
++        elif registration == "route":
++            DynamicState.setup_dynamic_args({"get_state": RouteArgType.SINGLE})
++        elif registration == "event":
++            DynamicState._add_event_handler("get_state", lambda self: None)
++        else:
++            DynamicState.add_field("get_state", LiteralVar.create(7), 7)
++    assert DynamicState.get_fields() == fields
++    assert "get_state" not in DynamicState.vars
++    assert "get_state" not in DynamicState.event_handlers
++    assert "get_state" not in DynamicState.__dict__
++
++
++def test_user_vars_and_marked_override(clean_registration_context):
++    """Keep normal vars, inherited vars, and explicitly marked method overrides.
++
++    Args:
++        clean_registration_context: An isolated state registry.
++    """
++
++    class Parent(BaseState):
++        value: int = 1
++        _backend: int = 2
++
++    class Child(Parent):
++        @_override_base_method
++        def get_value(self, key: str):
++            """Return a value through a supported framework override."""
++            return f"override:{key}"
++
++    parent = Parent()
++    child = parent.substates[Child.get_name()]
++    assert isinstance(child, Child)
++    assert child.value == 1
++    assert child._backend == 2
++    assert child.get_value("value") == "override:value"
++
++
++def test_non_state_models_keep_their_namespace():
++    """Do not reserve Reflex state names on unrelated base models."""
++
++    class Model(EvenMoreBasicBaseState):
++        get_state: int = 7
++
++    assert Model().get_state == 7
++
++
++@pytest.mark.parametrize("name", ["get_fields", "_get_was_touched"])
++@pytest.mark.parametrize("state_first", [False, True])
++def test_reserved_model_mixin(name: str, state_first: bool, clean_registration_context):
++    """Reject inherited model fields before the field collector sees them.
++
++    Args:
++        name: The framework name declared as a model field.
++        state_first: Whether BaseState precedes the model in the MRO.
++        clean_registration_context: An isolated state registry.
++    """
++    model = type("Model", (EvenMoreBasicBaseState,), {"__module__": __name__, name: 7})
++    bases = (BaseState, model) if state_first else (model, BaseState)
++    with pytest.raises(StateValueError, match=name):
++        type("MixedState", bases, {"__module__": __name__})
++
++
++def test_reserved_descriptor(clean_registration_context):
++    """Reject a descriptor without executing its class access behavior.
++
++    Args:
++        clean_registration_context: An isolated state registry.
++    """
++
++    class Descriptor:
++        def __get__(self, instance, owner):
++            """Fail if validation invokes this descriptor."""
++            pytest.fail("Reserved descriptor was evaluated")
++
++    with pytest.raises(StateValueError, match="get_fields"):
++        type(
++            "DescriptorState",
++            (BaseState,),
++            {"__module__": __name__, "get_fields": Descriptor()},
++        )
++
++
++class _CookieMeta(BaseStateMeta):
++    """A downstream-style metaclass that injects fields into the declaration."""
++
++    def __new__(
++        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwargs
++    ):
++        """Add an annotated backend var before the state is constructed.
++
++        Args:
++            name: The class name.
++            bases: The parent classes.
++            namespace: The class namespace.
++            **kwargs: Class creation keywords, e.g. `mixin`.
++
++        Returns:
++            The new state class.
++        """
++        namespace.setdefault("__annotations__", {})["_injected"] = str
++        namespace["_injected"] = "by the metaclass"
++        return super().__new__(cls, name, bases, namespace, **kwargs)
++
++
++def test_state_metaclass_is_base_state_meta():
++    """Keep the exported `BaseStateMeta` as the metaclass of every state."""
++    assert type(BaseState) is BaseStateMeta
++    assert type(State) is BaseStateMeta
++    assert BaseState._reflex_state_root is BaseState
++    assert State._reflex_state_root is BaseState
++
++
++@pytest.mark.parametrize("mixin", [False, True])
++def test_custom_state_metaclass(mixin: bool, clean_registration_context):
++    """Allow a `BaseStateMeta` subclass as the metaclass of a state.
++
++    Args:
++        mixin: Whether the state is declared as a state mixin.
++        clean_registration_context: An isolated state registry.
++    """
++
++    class CustomState(State, mixin=mixin, metaclass=_CookieMeta):
++        value: int = 1
++
++    assert type(CustomState) is _CookieMeta
++    assert CustomState._mixin is mixin
++    assert CustomState.__fields__["_injected"].default == "by the metaclass"
++    assert CustomState.__fields__["value"].default == 1
++
++
++def test_custom_state_metaclass_validates_reserved_names(clean_registration_context):
++    """Keep rejecting reserved names declared through a custom metaclass.
++
++    Args:
++        clean_registration_context: An isolated state registry.
++    """
++    with pytest.raises(StateValueError, match="get_fields"):
++
++        class ShadowState(BaseState, metaclass=_CookieMeta):
++            get_fields: int = 7
++
++
++def test_state_root_reserves_its_own_namespace():
++    """Reserve the members of a `state_root=True` class for its whole hierarchy."""
++
++    class Root(EvenMoreBasicBaseState, state_root=True):
++        def bookkeeping(self) -> int:
++            """Return a framework-style member subclasses may not shadow."""
++            return 1
++
++    class Child(Root):
++        value: int = 5
++
++    assert Child._reflex_state_root is Root
++    assert Child().value == 5
++    with pytest.raises(StateValueError, match="bookkeeping"):
++
++        class ShadowMethod(Root):
++            bookkeeping: int = 7
++
++    with pytest.raises(StateValueError, match="_reflex_state_root"):
++        type("ShadowMarker", (Root,), {"__module__": __name__, "_reflex_state_root": 7})
++
++
++def test_state_roots_do_not_share_reserved_names():
++    """Keep one root's reserved namespace out of another root's hierarchy."""
++
++    class RootA(EvenMoreBasicBaseState, state_root=True):
++        def alpha(self) -> int:
++            """Return a member reserved for RootA's subclasses only."""
++            return 1
++
++    class RootB(EvenMoreBasicBaseState, state_root=True):
++        def beta(self) -> int:
++            """Return a member reserved for RootB's subclasses only."""
++            return 2
++
++    class A(RootA):
++        beta: int = 1
++
++    class B(RootB):
++        alpha: int = 2
++
++    assert (A().beta, B().alpha) == (1, 2)
++    assert A._reflex_state_root is RootA
++    assert B._reflex_state_root is RootB
++    with pytest.raises(StateValueError, match="alpha"):
++
++        class ShadowA(RootA):
++            alpha: int = 3
+-- 
+2.43.0
+

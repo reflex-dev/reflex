@@ -1,7 +1,7 @@
 From 4290548fe328e0ca010e3cbb106c6ac263116826 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Sat, 19 Sep 2026 16:53:06 +0000
-Subject: [PATCH 2/2] docs: note the router state-dict shape change from #7068
+Subject: [PATCH 2/3] docs: note the router state-dict shape change from #7068
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit

@@ -18,7 +18,7 @@ commits are in `patches/*.patch` here and, for reflex, cherry-picked onto `claud
 
 | fix | finding / issue | repo | pushed branch | commits on the branch | review | PR |
 |---|---|---|---|---|---|---|
-| `f001/` | FINDING-001 · [#7211](https://github.com/reflex-dev/reflex/issues/7211) | reflex | `claude/fix-finding-001-state-metaclass` | `6ab3edbc9` fix; `4290548fe` docs: router dict-shape breaking note (for #7214) | approved, no blocking issues | [#7215](https://github.com/reflex-dev/reflex/pull/7215) |
+| `f001/` | FINDING-001 · [#7211](https://github.com/reflex-dev/reflex/issues/7211) | reflex | `claude/fix-finding-001-state-metaclass` | `6ab3edbc9` fix; `4290548fe` docs: router dict-shape breaking note (for #7214); `fbcdb33a1` rework: validation lives in `BaseStateMeta`, `state_root=True` marker, no module globals (maintainer review) | approved, no blocking issues; rework requested and applied in review | [#7215](https://github.com/reflex-dev/reflex/pull/7215) |
 | `f003/` | FINDING-003 · [#7212](https://github.com/reflex-dev/reflex/issues/7212) | reflex | `claude/fix-finding-003-delta-memo` | `91020caec` (amended after review) | blocked once — two pyright errors and two vacuous tests — follow-up fixed both | [#7216](https://github.com/reflex-dev/reflex/pull/7216) |
 | `f017/` | FINDING-017 · [#7213](https://github.com/reflex-dev/reflex/issues/7213) | reflex | `claude/fix-finding-017-supervisor-socket` | `eaf3f4822` | approved, no blocking issues | [#7217](https://github.com/reflex-dev/reflex/pull/7217) |
 | `f012/` | FINDING-012 · [#6143](https://github.com/reflex-dev/reflex/issues/6143) | reflex | `claude/fix-finding-012-badge-portal` | `94554d771` | approved, no blocking issues | [#7218](https://github.com/reflex-dev/reflex/pull/7218) |
@@ -32,11 +32,14 @@ orchestrator from the agents' final responses; the text is theirs.
 ## What each fix does
 
 - **f001 — `rx.State` gets `BaseStateMeta` back as its metaclass.** #7136's reserved-name validation moves out of
-  the `_StateMeta` subclass (deleted) into `BaseStateMeta.__new__`, behind a private validator slot that
-  `reflex.state` installs right after the `BaseState` class body. `class M(BaseStateMeta)` + `metaclass=M` works
-  again with and without `mixin=True`; the 34 existing #7136 tests stay green; reflex-enterprise 0.9.5 imports and
-  its MCPPlugin-only app answers `/ping` on the fixed tree. Files: `reflex/state.py`, `reflex/istate/validation.py`,
-  `packages/reflex-base/src/reflex_base/vars/base.py`, `tests/units/istate/test_validation.py`, two news fragments.
+  the `_StateMeta` subclass (deleted) into reflex-base, and `BaseStateMeta.__new__` always runs it: `BaseState`
+  declares itself the root of its hierarchy with the class keyword `state_root=True`, the metaclass stores that
+  root on the class, and every later class is validated against the root its bases inherit. No module-level
+  state, nothing installed after the class body, and separate roots in one process stay independent. `class
+  M(BaseStateMeta)` + `metaclass=M` works again with and without `mixin=True`; the 34 existing #7136 tests stay
+  green; reflex-enterprise 0.9.5 imports and its MCPPlugin-only app answers `/ping` on the fixed tree. Files:
+  `reflex/state.py`, `packages/reflex-base/src/reflex_base/vars/base.py`, `tests/units/reflex_base/vars/test_base.py`
+  (`reflex/istate/validation.py` and its test module removed), two news fragments.
   Second commit: `news/+router-split-dict-shape.breaking.md` (no existing fragment told a reader of a serialized
   state that `router` became five `rx_router_*` keys).
 - **f003 — the #6946 "last sent" memo is committed only for values the delivered delta still carries.** `get_delta`
@@ -94,6 +97,7 @@ campaign artifacts, as:
 `  - `4b6508cd6 docs: note the router state-dict shape change from #7068
 `  - `29800e39a fix: keep BaseStateMeta as the metaclass of State
 
+The f001 rework (`fbcdb33a1`) is cherry-picked there as `b9f8f518a` and checked with the same suite.
 They touch only framework files, so each can be cherry-picked from there onto `main` or a fresh branch; the
 `patches/` directories carry the same content for `git am`. The reflex-enterprise commits are in
 `rxe/patches/` only (that repository has no designated branch in this session).
@@ -103,7 +107,8 @@ They touch only framework files, so each can be cherry-picked from there onto `m
 - f001: because the validator now runs inside `BaseStateMeta.__new__`, names *injected* by a downstream
   metaclass's `__new__` are validated too — stricter than #7136 for a previously impossible case; harmless for
   reflex-enterprise's injected cookie names. `type(rx.State) is BaseStateMeta` is again an implicit contract —
-  document it in the `BaseStateMeta` docstring if intended. The extension point is a single validator slot.
+  document it in the `BaseStateMeta` docstring if intended. `_reflex_state_root` is itself a reserved name and
+  `state_root=` joins `mixin=` as a class keyword understood by `BaseStateMeta`.
 - f003: a downstream package that filters *after* `_get_resolved_delta` (rather than inside `get_delta`) would
   still get values recorded — reflex-enterprise 0.9.5 does not do that (verified from the wheel). The commit still
   happens before `emit_update`, so a delta the socket never delivers counts as sent (pre-existing; a reconnect

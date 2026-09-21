@@ -22,7 +22,7 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 
 | finding | issue | fix work |
 |---|---|---|
-| FINDING-001 State metaclass conflict (CRITICAL, regression) | [#7211](https://github.com/reflex-dev/reflex/issues/7211) | **FIXED, reviewed** — reflex [#7215](https://github.com/reflex-dev/reflex/pull/7215) (`6ab3edbc9`, `4290548fe`); reflex-enterprise [#232](https://github.com/reflex-dev/reflex-enterprise/pull/232) (`038c613`) |
+| FINDING-001 State metaclass conflict (CRITICAL, regression) | [#7211](https://github.com/reflex-dev/reflex/issues/7211) | **FIXED, reviewed** — reflex [#7215](https://github.com/reflex-dev/reflex/pull/7215) (`6ab3edbc9`, `4290548fe`, rework `fbcdb33a1`); reflex-enterprise [#232](https://github.com/reflex-dev/reflex-enterprise/pull/232) (`038c613`) |
 | FINDING-003 withheld uncached var never re-sent (HIGH, regression) | [#7212](https://github.com/reflex-dev/reflex/issues/7212) | **FIXED, reviewed (after one follow-up)** — reflex [#7216](https://github.com/reflex-dev/reflex/pull/7216) (`91020caec`) |
 | FINDING-011 REST session-token redaction no-op (HIGH, security, regression) | [#7214](https://github.com/reflex-dev/reflex/issues/7214) | **FIXED, reviewed** — reflex-enterprise [#232](https://github.com/reflex-dev/reflex-enterprise/pull/232) (`c0e6b5d`); reflex breaking-change note in [#7215](https://github.com/reflex-dev/reflex/pull/7215) |
 | FINDING-017 supervisor socket hang in dev (MEDIUM, regression) | [#7213](https://github.com/reflex-dev/reflex/issues/7213) | **FIXED, reviewed** — reflex [#7217](https://github.com/reflex-dev/reflex/pull/7217) (`eaf3f4822`) |
