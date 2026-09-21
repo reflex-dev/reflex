@@ -14,6 +14,7 @@ import json
 import logging
 import re
 import string
+import sys
 import warnings
 from abc import ABCMeta
 from collections.abc import Callable, Coroutine, Iterable, Mapping, Sequence
@@ -4062,6 +4063,16 @@ class BaseStateMeta(ABCMeta):
         Returns:
             The new class.
         """
+        lookup_order = _linearize_bases(bases)
+        # Do not import reflex while creating standalone models or BaseState itself.
+        base_state = getattr(sys.modules.get("reflex.state"), "BaseState", None)
+        if base_state is not None and any(
+            issubclass(base, base_state) for base in bases
+        ):
+            from reflex.istate.validation import _validate_state_namespace
+
+            _validate_state_namespace(namespace, lookup_order)
+
         state_bases = [
             base for base in bases if issubclass(base, EvenMoreBasicBaseState)
         ]
@@ -4123,8 +4134,6 @@ class BaseStateMeta(ABCMeta):
                 continue
 
             own_fields[key] = new_value
-
-        lookup_order = _linearize_bases(bases)
 
         for key, annotation in resolved_annotations.items():
             value = namespace.get(key, MISSING)

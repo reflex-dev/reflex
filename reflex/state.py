@@ -88,7 +88,7 @@ from reflex.istate.data import (
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
 from reflex.istate.proxy import MutableProxy, is_mutable_type
 from reflex.istate.storage import ClientStorageBase
-from reflex.istate.validation import _StateMeta, _validate_state_name
+from reflex.istate.validation import _validate_state_name
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
 
@@ -626,7 +626,7 @@ CLASS_VAR_NAMES = frozenset({
 })
 
 
-class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
+class BaseState(EvenMoreBasicBaseState):
     """The state of the app."""
 
     # A map from the var name to the var.

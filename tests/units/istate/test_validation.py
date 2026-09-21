@@ -5,7 +5,98 @@ from reflex_base.constants import RouteArgType
 from reflex_base.utils.exceptions import StateValueError
 from reflex_base.vars.base import EvenMoreBasicBaseState, LiteralVar, computed_var
 
+import reflex as rx
 from reflex.state import BaseState, _override_base_method
+from reflex.vars import BaseStateMeta
+
+
+@pytest.mark.parametrize("mixin", [False, True])
+@pytest.mark.parametrize("base", [BaseState, rx.State])
+def test_custom_state_metaclass(
+    base: type[BaseState], mixin: bool, clean_registration_context
+):
+    """Support downstream metaclasses derived from the public BaseStateMeta.
+
+    Args:
+        base: The framework state class to extend.
+        mixin: Whether the custom state is a mixin.
+        clean_registration_context: An isolated state registry.
+    """
+
+    class CookieMeta(BaseStateMeta):
+        """Add a field before the framework collects state declarations."""
+
+        def __new__(mcs, name, bases, namespace, **kwargs):
+            """Create a state with an injected field.
+
+            Args:
+                name: The class name.
+                bases: The parent classes.
+                namespace: The class declarations.
+                **kwargs: Class creation options.
+
+            Returns:
+                The state class with the injected field.
+            """
+            namespace.setdefault("added_by_meta", "yes")
+            return super().__new__(mcs, name, bases, namespace, **kwargs)
+
+    class CookieState(base, mixin=mixin, metaclass=CookieMeta):
+        x: int = 0
+
+    assert type(base) is BaseStateMeta
+    assert type(CookieState) is CookieMeta
+    assert CookieState._mixin is mixin
+    if mixin:
+
+        class ConcreteState(CookieState, base):
+            """Use the custom metaclass through state mixin inheritance."""
+
+        state = ConcreteState
+    else:
+        state = CookieState
+    assert type(state) is CookieMeta
+    assert not state._mixin
+    assert state.get_fields()["added_by_meta"].default_value() == "yes"
+    assert "added_by_meta" in state.base_vars
+    assert "x" in state.base_vars
+
+
+@pytest.mark.parametrize("mixin", [False, True])
+@pytest.mark.parametrize("reserved_name", ["get_fields", "__fields__"])
+def test_custom_metaclass_reserved_name(
+    reserved_name: str, mixin: bool, clean_registration_context
+):
+    """Validate declarations injected by downstream metaclasses.
+
+    Args:
+        reserved_name: The reserved name injected by the metaclass.
+        mixin: Whether the custom state is a mixin.
+        clean_registration_context: An isolated state registry.
+    """
+
+    class ReservedMeta(BaseStateMeta):
+        """Inject a reserved field before delegating to the framework."""
+
+        def __new__(mcs, name, bases, namespace, **kwargs):
+            """Attempt to create a state with a reserved field.
+
+            Args:
+                name: The class name.
+                bases: The parent classes.
+                namespace: The class declarations.
+                **kwargs: Class creation options.
+
+            Returns:
+                The state class if validation permits it.
+            """
+            namespace[reserved_name] = 7
+            return super().__new__(mcs, name, bases, namespace, **kwargs)
+
+    with pytest.raises(StateValueError, match=reserved_name):
+
+        class ShadowState(rx.State, mixin=mixin, metaclass=ReservedMeta):
+            """Reject the injected declaration before state initialization."""
 
 
 @pytest.mark.parametrize(

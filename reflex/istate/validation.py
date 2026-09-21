@@ -9,11 +9,7 @@ from reflex_base.utils.exceptions import (
     EventHandlerShadowsBuiltInStateMethodError,
     StateValueError,
 )
-from reflex_base.vars.base import (
-    BaseStateMeta,
-    EvenMoreBasicBaseState,
-    _linearize_bases,
-)
+from reflex_base.vars.base import BaseStateMeta, EvenMoreBasicBaseState
 
 _FIELD_MAP_NAMES = frozenset({"__fields__", "__own_fields__", "__inherited_fields__"})
 
@@ -87,36 +83,24 @@ def _validate_inherited_members(base: type, seen: set[str]) -> None:
             _validate_state_name(member, value)
 
 
-class _StateMeta(BaseStateMeta):
-    """Check state declarations before field collection and subclass initialization."""
+def _validate_state_namespace(
+    namespace: dict[str, Any], lookup_order: list[type]
+) -> None:
+    """Check state declarations before field collection and subclass initialization.
 
-    def __new__(
-        cls,
-        name: str,
-        bases: tuple[type, ...],
-        namespace: dict[str, Any],
-        mixin: bool = False,
-    ) -> type:
-        """Construct a state after checking its declarations and Python mixins.
+    Args:
+        namespace: The unmodified class namespace.
+        lookup_order: The parent classes in method resolution order.
+    """
+    from reflex.state import BaseState
 
-        Args:
-            name: The class name.
-            bases: The parent classes.
-            namespace: The unmodified class namespace.
-            mixin: Whether the class is a state mixin.
-
-        Returns:
-            The validated state class.
-        """
-        if any(isinstance(base, _StateMeta) for base in bases):
-            seen = namespace.keys() | annotations_from_namespace(namespace).keys()
-            for member in seen:
-                _validate_state_name(member, namespace.get(member))
-            for base in _linearize_bases(bases):
-                if not isinstance(base, _StateMeta) and base not in (
-                    EvenMoreBasicBaseState,
-                    object,
-                ):
-                    _validate_inherited_members(base, seen)
-                seen.update(vars(base))
-        return super().__new__(cls, name, bases, namespace, mixin=mixin)
+    seen = namespace.keys() | annotations_from_namespace(namespace).keys()
+    for member in seen:
+        _validate_state_name(member, namespace.get(member))
+    for base in lookup_order:
+        if not issubclass(base, BaseState) and base not in (
+            EvenMoreBasicBaseState,
+            object,
+        ):
+            _validate_inherited_members(base, seen)
+        seen.update(vars(base))
