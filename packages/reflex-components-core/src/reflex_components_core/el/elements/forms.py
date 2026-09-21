@@ -361,7 +361,15 @@ class Form(BaseHTML):
     def _get_form_refs(self) -> dict[str, Any]:
         # Send all the input refs to the handler.
         form_refs = {}
-        for ref in self._get_all_refs():
+        refs = {
+            ref
+            for component in _iter_form_components(self)
+            if component is not self
+            and isinstance(component, Component)
+            and getattr(component, "_is_form_control", False)
+            and (ref := component.get_ref()) is not None
+        }
+        for ref in refs:
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):

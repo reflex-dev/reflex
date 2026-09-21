@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import TypedDict, cast
 
 import pytest
 from reflex_base.event import EventChain, prevent_default
@@ -35,6 +35,32 @@ def test_render_no_on_submit():
     assert isinstance(f.event_triggers["on_submit"], EventChain)
     assert len(f.event_triggers["on_submit"].events) == 1
     assert f.event_triggers["on_submit"].events[0] == prevent_default
+
+
+def test_form_refs_only_include_form_controls():
+    """IDs on non-input descendants must not add null form payload fields."""
+
+    class FormState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: dict):
+            pass
+
+    form = cast(
+        HTMLForm,
+        HTMLForm.create(
+            rx.box(
+                Input.create(id="email"),
+                rx.text("Email", id="email_label"),
+                rx.button("Submit", id="submit_button"),
+            ),
+            on_submit=FormState.on_submit,
+        ),
+    )
+
+    submit_hook = form.add_hooks()[0]
+    assert "ref_email" in submit_hook
+    assert "ref_email_label" not in submit_hook
+    assert "ref_submit_button" not in submit_hook
 
 
 @pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
