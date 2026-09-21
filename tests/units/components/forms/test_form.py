@@ -60,8 +60,9 @@ def test_form_submit_filters_null_ref_values():
 
     submit_hook = form.add_hooks()[0]
     assert "ref_email" in submit_hook
-    assert "ref_email_label" not in submit_hook
-    assert "ref_submit_button" not in submit_hook
+    assert "document.getElementById(key)" in submit_hook
+    assert "ref_email_label" in submit_hook
+    assert "ref_submit_button" in submit_hook
 
 
 def test_form_refs_include_debounced_controls():
