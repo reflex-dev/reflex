@@ -1,0 +1,72 @@
+PASS forms: #inp_name exists :: count=1
+INP_NAME_ATTRS={"tag": "INPUT", "spellcheck": "false", "title": "", "id": "inp_name", "type": "text", "class": "rt-reset rt-TextFieldInput", "name": "full_name", "value": "", "aria-describedby": "radix-_R_2j1gsqj5_ radix-_R_2n1gsqj5_", "_computedBorder": "rgb(28, 32, 36)", "_computedBorderWidth": "0px"}
+PASS forms/#6850: slot-injected name= reaches memoized input :: {'tag': 'INPUT', 'spellcheck': 'false', 'title': '', 'id': 'inp_name', 'type': 'text', 'class': 'rt-reset rt-TextFieldInput', 'name': 'full_name', 'value': '', 'aria-describedby': 'radix-_R_2j1gsqj5_ radix-_R_2n1gsqj5_', '_computedBorder': 'rgb(28, 32, 36)', '_computedBorderWidth': '0px'}
+FAIL forms/#6850: own class_name preserved and radix class merged :: rt-reset rt-TextFieldInput
+FAIL forms/#6850: own style survives slot merge (teal 2px border) :: rgb(28, 32, 36)
+PASS forms/#6850: aria-describedby injected by radix Field :: radix-_R_2j1gsqj5_ radix-_R_2n1gsqj5_
+PASS forms/#7133: no forceMatch attribute on DOM :: []
+PASS forms: typing into as_child input updates State :: Ada Lovelace
+PASS forms: fully-controlled (debounce) input updates State :: ctl-typed
+PASS forms: client_state-bound as_child input updates ClientStateVar :: nick-typed
+PASS forms: @rx.memo-wrapped input inside form field updates State :: memo-typed
+SUBMITTED={"full_name":"Ada Lovelace","controlled":"ctl-typed","nickname":"nick-typed","bio":"bio text","fruit":"banana","agree":"on","notify":"on","color":"green","volume":"30","the_form":"banana","field_full_name":"None","inp_name":"Ada Lovelace","inp_ctl":"ctl-typed","inp_nick":"nick-typed","inp_bio":"bio text","inp_fruit":"None","inp_agree":"True","inp_notify":"True","inp_color":"green","inp_volume":"30","btn_submit":"None"}
+PASS forms/#6850: submitted form data contains as_child input value :: {"full_name":"Ada Lovelace","controlled":"ctl-typed","nickname":"nick-typed","bio":"bio text","fruit":"banana","agree":"on","notify":"on","color":"green","volume":"30","the_form":"banana","field_full_name":"None","inp_name":"Ada Lovelace","inp_ctl":"ctl-typed","inp_nick":"nick-typed","inp_bio":"bio text","inp_fruit":"None","inp_agree":"True","inp_notify":"True","inp_color":"green","inp_volume":"30
+PASS forms: submitted contains controlled :: {"full_name":"Ada Lovelace","controlled":"ctl-typed","nickname":"nick-typed","bio":"bio text","fruit":"banana","agree":"on","notify":"on","color":"green","volume":"30","the_form":"banana","field_full_name":"None","inp_name":"Ada Lovelace","inp_ctl":"ctl-typed","inp_nick":"nick-typed","inp_bio":"bio text","inp_fruit":"None","inp_agree":"True","inp_notify":"True","inp_color":"green","inp_volume":"30
+PASS forms: submitted contains client_state nickname :: {"full_name":"Ada Lovelace","controlled":"ctl-typed","nickname":"nick-typed","bio":"bio text","fruit":"banana","agree":"on","notify":"on","color":"green","volume":"30","the_form":"banana","field_full_name":"None","inp_name":"Ada Lovelace","inp_ctl":"ctl-typed","inp_nick":"nick-typed","inp_bio":"bio text","inp_fruit":"None","inp_agree":"True","inp_notify":"True","inp_color":"green","inp_volume":"30
+PASS forms: submitted contains non-control fields (bio/fruit/agree) :: {"full_name":"Ada Lovelace","controlled":"ctl-typed","nickname":"nick-typed","bio":"bio text","fruit":"banana","agree":"on","notify":"on","color":"green","volume":"30","the_form":"banana","field_full_name":"None","inp_name":"Ada Lovelace","inp_ctl":"ctl-typed","inp_nick":"nick-typed","inp_bio":"bio text","inp_fruit":"None","inp_agree":"True","inp_notify":"True","inp_color":"green","inp_volume":"30
+PASS triggers/#6850: dialog.trigger opens overlay :: 
+PASS triggers/#6850: dialog.trigger also runs child on_click :: 0->1
+PASS triggers: popover.trigger opens :: 
+PASS triggers: popover.trigger runs on_click :: 1->2
+PASS triggers: tooltip shows on hover :: 
+PASS triggers: tooltip child on_click runs :: 2->3
+PASS triggers: dropdown_menu opens :: 
+FAIL triggers: dropdown trigger on_click runs :: 3->3
+PASS triggers: hover_card opens on hover :: 
+PASS triggers: hover_card trigger on_click runs :: 3->4
+PASS triggers: foreach popover trigger runs handler with right arg :: ["dialog","popover","tooltip","hovercard","foreach-b"]
+PASS triggers: ComponentState dialog trigger opens + increments :: 'cs-0'->'cs-1' dialog=True
+PASS triggers: state-var label re-renders inside as_child trigger :: label-5
+PASS memoapp/#7176: selected_files populated for upload[plain] in memo :: ["sample_upload.txt"]
+PASS memoapp/#7176: upload_files handler received file for [plain] :: ["sample_upload.txt:69"]
+PASS memoapp/#7176: selected_files populated for upload[nested] in memo :: ["sample_upload.txt"]
+PASS memoapp/#7176: upload_files handler received file for [nested] :: ["sample_upload.txt:69","sample_upload.txt:69"]
+PASS memoapp/#7176: selected_files populated for upload[cs_up] in memo :: ["sample_upload.txt"]
+PASS memoapp/#7176: upload_files handler received file for [cs_up] :: ["sample_upload.txt:69","sample_upload.txt:69","sample_upload.txt:69"]
+PASS memoapp/#7176: toast from inside a memo renders (toaster provider wrap) :: toast elements=1
+PASS memoapp: foreach-rendered memo row button works :: 2
+PASS memoapp: color_mode_cond inside memo flips with color mode :: LIGHT->DARK
+SVG_INFO={"top": {"found": true, "gradInSameSvg": true, "gradStops": 2, "fill": null, "w": 120, "h": 40, "stop0": "#ff0000"}, "memo": {"found": true, "gradInSameSvg": true, "gradStops": 2, "fill": null, "w": 120, "h": 40, "stop0": "#ff00ff"}, "feCount": 5, "feRects": [null, null, null, null, null], "defsCount": 5}
+PASS svg/#6708: top-level gradient defs live in the same <svg> as the rect :: {'found': True, 'gradInSameSvg': True, 'gradStops': 2, 'fill': None, 'w': 120, 'h': 40, 'stop0': '#ff0000'}
+PASS svg/#6708: memo-wrapped svg keeps defs in the same <svg> :: {'found': True, 'gradInSameSvg': True, 'gradStops': 2, 'fill': None, 'w': 120, 'h': 40, 'stop0': '#ff00ff'}
+PASS svg/#6708: foreach svgs each render a linearGradient :: 5
+PASS svg: rect renders with non-zero size :: {'found': True, 'gradInSameSvg': True, 'gradStops': 2, 'fill': None, 'w': 120, 'h': 40, 'stop0': '#ff0000'}
+PASS svg: state-driven stop-color updates inside memoized svg scope :: #0000ff
+PASS chains/#7122: shared bare chain fires from first and last call site :: 0->2 last=bare
+PASS chains/#7122: arg-bearing chain passes its own call-site arg (i=7) :: count=7 last=by-7
+PASS chains/#7122: second arg call-site does not leak the first's arg :: count=49 last=by-42
+PASS chains: stop_propagation / prevent_default variants still dispatch :: 2
+PASS chains: throttle(500) collapses 5 rapid clicks :: count=1
+PASS chains: debounce(300) collapses 5 rapid clicks :: count=1
+PASS chains/#7122: same handler on on_click AND on_mouse_enter fires for both :: hover=1 click=2
+BOOM_CONSOLE=[]
+PASS boom/#7130: no 'Invalid DOM property' warnings from fallback SVG :: []
+PASS boom: error boundary fallback rendered :: error boundary (#7130)
+< indexexplode
+
+boom disabled (set QA_BOOM=1)
+PASS nav: client-side navigation to /memoapp keeps upload working :: http://localhost:3186/memoapp
+PASS nav: selected_files after client-side nav :: ["sample_upload.txt"]
+
+==== 49/52 passed ====
+PAGE_ERRORS: []
+CONSOLE_ERR_WARN_COUNT: 1
+[
+ {
+  "type": "error",
+  "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "url": "http://localhost:3186/forms/"
+ }
+]
+FAILED_REQS: []
+BAD_RESPS: []

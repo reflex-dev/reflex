@@ -1,0 +1,266 @@
+{
+  "label": "a2_prod",
+  "base": "http://localhost:3189",
+  "events": [
+    {
+      "name": "bumpA_x5",
+      "delta": {
+        "A": 5,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 0,
+        "PAGE": 0,
+        "colormode": 0,
+        "componentstate": 0,
+        "dual": 5,
+        "evloop": 0,
+        "foreach_row": 0,
+        "late": 0
+      }
+    },
+    {
+      "name": "bumpC_x5",
+      "delta": {
+        "A": 0,
+        "B": 0,
+        "C": 5,
+        "D": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 0,
+        "PAGE": 0,
+        "colormode": 0,
+        "componentstate": 0,
+        "dual": 0,
+        "evloop": 0,
+        "foreach_row": 0,
+        "late": 0
+      }
+    },
+    {
+      "name": "chain_H_C_A",
+      "delta": {
+        "A": 1,
+        "B": 0,
+        "C": 1,
+        "D": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 1,
+        "PAGE": 0,
+        "colormode": 0,
+        "componentstate": 0,
+        "dual": 1,
+        "evloop": 0,
+        "foreach_row": 0,
+        "late": 0
+      }
+    },
+    {
+      "name": "componentstate_clicks",
+      "delta": {
+        "A": 0,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 0,
+        "PAGE": 0,
+        "colormode": 0,
+        "componentstate": 0,
+        "dual": 0,
+        "evloop": 0,
+        "foreach_row": 0,
+        "late": 0
+      }
+    },
+    {
+      "name": "storm_B_5s_plus_10_A_clicks",
+      "delta": {
+        "A": 10,
+        "B": 50,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 0,
+        "PAGE": 0,
+        "colormode": 0,
+        "componentstate": 0,
+        "dual": 60,
+        "evloop": 0,
+        "foreach_row": 0,
+        "late": 0
+      }
+    },
+    {
+      "name": "colormode_toggle_x4",
+      "delta": {
+        "A": 0,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 0,
+        "PAGE": 0,
+        "colormode": 4,
+        "componentstate": 0,
+        "dual": 0,
+        "evloop": 0,
+        "foreach_row": 0,
+        "late": 0
+      }
+    },
+    {
+      "name": "late_mount_and_bump",
+      "delta": {
+        "A": 0,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 0,
+        "PAGE": 0,
+        "colormode": 0,
+        "componentstate": 0,
+        "dual": 0,
+        "evloop": 0,
+        "foreach_row": 0,
+        "late": 0
+      }
+    },
+    {
+      "name": "nav_page2_and_back",
+      "delta": {
+        "A": 2,
+        "B": 2,
+        "C": 1,
+        "D": 1,
+        "E": 1,
+        "F": 1,
+        "G": 1,
+        "H": 1,
+        "PAGE": 2,
+        "PAGE2": 1,
+        "colormode": 1,
+        "componentstate": 2,
+        "dual": 2,
+        "evloop": 1,
+        "foreach_row": 300,
+        "late": 2
+      }
+    },
+    {
+      "name": "rebuild_300_rows",
+      "delta": {
+        "A": 0,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "DYN": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 0,
+        "PAGE": 0,
+        "PAGE2": 0,
+        "colormode": 0,
+        "componentstate": 0,
+        "dual": 0,
+        "evloop": 0,
+        "foreach_row": 300,
+        "late": 0
+      }
+    }
+  ],
+  "notes": [],
+  "load_seconds": 0.21,
+  "initial_recv_event_frames": 4,
+  "initial_frames_with_both_substates": 2,
+  "cs_values": [
+    "2",
+    "1"
+  ],
+  "storm_seconds": 5.77,
+  "longtasks_during_storm": [],
+  "storm_values": {
+    "A": "17",
+    "B": "51"
+  },
+  "colormode_sequence": [
+    "DARK",
+    "LIGHT",
+    "DARK",
+    "LIGHT"
+  ],
+  "cm_after_emulate_dark": "LIGHT",
+  "cm_after_emulate_light": "LIGHT",
+  "storage_before_reload": {
+    "ls": "LSVAL",
+    "ss": "SSVAL",
+    "ck": "CKVAL",
+    "cs": "CSVAL",
+    "ls_echo": "LSVAL",
+    "ck_echo": "CKVAL"
+  },
+  "late_value": "1",
+  "page2_value_after_bump": "1",
+  "page2_a_value": "17",
+  "after_nav_values": {
+    "A": "18",
+    "B": "52"
+  },
+  "console_after_storm2": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ],
+  "page2_value_after_bg_storm": "11",
+  "page2_value_after_bg_storm_plus_click": "12",
+  "dyn_pid": "abc",
+  "dyn_a_value": "19",
+  "rows_rebuild_seconds": 0.046,
+  "storage_after_reload": {
+    "ls": "LSVAL",
+    "ss": "SSVAL",
+    "ck": "CKVAL",
+    "cs": "",
+    "ls_echo": "LSVAL",
+    "ss_echo": "SSVAL",
+    "ck_echo": "CKVAL"
+  },
+  "tab2_storage": {
+    "ls": "LSVAL",
+    "ss": "",
+    "ck": "CKVAL"
+  },
+  "tab2_A": "1",
+  "direct_page2_value": "1",
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": [],
+  "ws_frame_counts": {
+    "recv": 127,
+    "sent": 54
+  }
+}
+CONSOLE ERRORS: [
+ {
+  "type": "error",
+  "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+ }
+]
