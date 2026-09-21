@@ -1,0 +1,1 @@
+Add an opt-in HttpRoutingPlugin that exports exact registered page inventories and validated permanent redirects for the shared Caddy chart, preserving client-rendered pages while allowing real HTTP 404 responses for unknown URLs.
