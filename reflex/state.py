@@ -340,25 +340,30 @@ def _suppress_delta_recording() -> Iterator[None]:
     """Stop delta values built in this block from counting as sent to the client.
 
     For a delta that is computed for its side effects and then discarded, whose
-    values the client never receives.
+    values the client never receives. Clears the collector as well, so that a
+    block nested inside a traversal that is recording still records nothing.
 
     Yields:
         None, with recording suppressed.
     """
     token = _record_delta_values.set(False)
+    records_token = _pending_delta_records.set(None)
     try:
         yield
     finally:
+        _pending_delta_records.reset(records_token)
         _record_delta_values.reset(token)
 
 
 def _commit_delta_records(pending: list[_DeltaRecord], delta: Delta) -> None:
-    """Record the values a delivered delta carries as sent to the client.
+    """Record what a delivered delta leaves the client holding for each value.
 
-    A value is recorded only where the delta still holds the very object that
-    was computed for it: a ``get_delta`` override may have dropped the key or
-    replaced it with a placeholder, and what the client never received has to
-    be sent again later.
+    A value counts as sent only where the delta still holds the very object that
+    was computed for it. A ``get_delta`` override may instead have dropped the
+    key, leaving the client on the value the existing record already describes,
+    or replaced it with a placeholder, which makes that record wrong: the client
+    now holds something this side never computed, so the record is discarded and
+    the next value is sent whatever it turns out to be.
 
     Args:
         pending: The records gathered while the delta was built.
@@ -366,11 +371,13 @@ def _commit_delta_records(pending: list[_DeltaRecord], delta: Delta) -> None:
     """
     for state_name, key, value, instance, attr, stored in pending:
         subdelta = delta.get(state_name)
-        if subdelta is None or key not in subdelta or subdelta[key] is not value:
+        if subdelta is None or key not in subdelta:
+            # Withheld entirely: the client keeps what it already had.
             continue
-        if stored is None:
-            # An unkeyable value: forget what the client has, so that the next
-            # value is sent whatever it is.
+        if stored is None or subdelta[key] is not value:
+            # A value that can never be compared, or a placeholder delivered in
+            # its place: forget what the client has, so the next value is sent
+            # whatever it is.
             try:
                 delattr(instance, attr)
             except AttributeError:
@@ -412,6 +419,37 @@ async def _resolve_delta(delta: Delta) -> Delta:
     return delta
 
 
+def _record_or_drop_delta_value(
+    cvar: ComputedVar,
+    instance: BaseState,
+    value: Any,
+    token: str,
+    state_name: str,
+    key: str,
+    pending: list[_DeltaRecord],
+) -> Any:
+    """Keep an uncached computed var value in the delta unless the client has it.
+
+    Args:
+        cvar: The computed var that produced the value.
+        instance: The state instance the computed var is attached to.
+        value: The computed value, already resolved.
+        token: The client token the delta is being produced for.
+        state_name: The full name of the state the value belongs to.
+        key: The delta key the value is stored under.
+        pending: The records to append to once the value is kept.
+
+    Returns:
+        The value, or ``_DROP_FROM_DELTA`` when it matches the last value that
+        was recorded as sent to the client.
+    """
+    record = cvar._pending_delta_record(instance, value, token)
+    if record is None:
+        return _DROP_FROM_DELTA
+    pending.append(_DeltaRecord(state_name, key, value, instance, *record))
+    return value
+
+
 async def _drop_unchanged_delta_value(
     cvar: ComputedVar,
     instance: BaseState,
@@ -419,7 +457,7 @@ async def _drop_unchanged_delta_value(
     token: str,
     state_name: str,
     key: str,
-    pending: list[_DeltaRecord] | None,
+    pending: list[_DeltaRecord],
 ) -> Any:
     """Await an async uncached computed var, dropping it if the value did not change.
 
@@ -430,20 +468,15 @@ async def _drop_unchanged_delta_value(
         token: The client token the delta is being produced for.
         state_name: The full name of the state the value belongs to.
         key: The delta key the resolved value is stored under.
-        pending: The records to append to, or None when the delta being built
-            is not delivered to the client.
+        pending: The records to append to once the value is kept.
 
     Returns:
         The resolved value, or ``_DROP_FROM_DELTA`` when it matches the last
         value that was sent to the client.
     """
-    resolved = await value
-    record = cvar._pending_delta_record(instance, resolved, token)
-    if record is None:
-        return _DROP_FROM_DELTA
-    if pending is not None:
-        pending.append(_DeltaRecord(state_name, key, resolved, instance, *record))
-    return resolved
+    return _record_or_drop_delta_value(
+        cvar, instance, await value, token, state_name, key, pending
+    )
 
 
 RETURN = TypeVar("RETURN")
@@ -2431,11 +2464,11 @@ class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
         )
 
         always_dirty_computed_vars = self._always_dirty_computed_vars
-        # Token of the client this delta is for, used to know which values it has.
-        token = self.router.session.client_token if always_dirty_computed_vars else ""
         # Where to leave the values this traversal sends, for whoever delivers
-        # the delta to record them.
+        # the delta to record them; None when nothing is collecting them.
         pending = _pending_delta_records.get() if always_dirty_computed_vars else None
+        # Token of the client this delta is for, used to know which values it has.
+        token = self.router.session.client_token if pending is not None else ""
         full_name = self.get_full_name()
         subdelta: dict[str, Any] = {}
         for prop in delta_vars:
@@ -2443,22 +2476,33 @@ class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
                 continue
             value = self.get_value(prop)
             key = prop + FIELD_MARKER
-            if prop in always_dirty_computed_vars:
+            if pending is not None and prop in always_dirty_computed_vars:
                 # Uncached computed vars are recomputed for every delta; only
-                # send them when the recomputed value actually changed.
+                # send them when the recomputed value actually changed. Nothing
+                # is left out of a delta nobody collects: what the client has is
+                # only known for the values a delivered delta recorded.
                 cvar = self.computed_vars[prop]
                 if inspect.iscoroutine(value):
                     value = _drop_unchanged_delta_value(
                         cvar, self, value, token, full_name, key, pending
                     )
-                else:
-                    record = cvar._pending_delta_record(self, value, token)
-                    if record is None:
-                        continue
-                    if pending is not None:
-                        pending.append(
-                            _DeltaRecord(full_name, key, value, self, *record)
+                    # An async value cannot be compared to what the client has
+                    # until it is awaited, and a filter that withholds it closes
+                    # the coroutine before that. Stake the key on the wrapper
+                    # now, so that a placeholder delivered in its place still
+                    # invalidates the record; the real one, appended while the
+                    # delta resolves, comes after this and wins.
+                    pending.append(
+                        _DeltaRecord(
+                            full_name, key, value, self, cvar._last_delta_key_attr, None
                         )
+                    )
+                else:
+                    value = _record_or_drop_delta_value(
+                        cvar, self, value, token, full_name, key, pending
+                    )
+                    if value is _DROP_FROM_DELTA:
+                        continue
             subdelta[key] = value
 
         if len(subdelta) > 0:

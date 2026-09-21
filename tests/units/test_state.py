@@ -1828,6 +1828,23 @@ async def test_uncached_var_withheld_by_delta_override_is_resent(
 
     # ...and, having been delivered, it is not sent again.
     assert await state._get_resolved_delta() == {}
+    state._clean()
+
+    # Withhold a fresh value, then release one the client was already sent. A
+    # dropped key leaves the client on that value, so there is nothing to send;
+    # a placeholder overwrote it, so the record it invalidated has to go and the
+    # value has to be delivered again.
+    withholding = True
+    state.n = 2
+    assert await state._get_resolved_delta() == expected_withheld(n=2)
+    state._clean()
+
+    withholding = False
+    state.n = 1
+    restored: Delta = {full_name: {"n" + FIELD_MARKER: 1}}
+    if mode == "replaced":
+        restored[full_name][key] = "secret-1"
+    assert await state._get_resolved_delta() == restored
 
 
 async def test_uncached_computed_var_recorded_only_once_delivered():
@@ -1855,6 +1872,11 @@ async def test_uncached_computed_var_recorded_only_once_delivered():
     assert await us._get_resolved_delta() == expected
     us._clean()
     assert await us._get_resolved_delta() == {}
+    us._clean()
+
+    # Nor is such a delta deduped against what the client has: leaving a value
+    # out is only safe where its delivery is what records it.
+    assert us.get_delta() == expected
 
 
 def test_get_delta_tolerates_zero_argument_override(test_state: TestState, monkeypatch):
@@ -1912,6 +1934,39 @@ async def test_discarded_delta_does_not_record_values_of_substates():
     assert await dps._get_resolved_delta() == expected
     dps._clean()
     assert await dps._get_resolved_delta() == {}
+
+
+async def test_suppressed_delta_inside_a_delivered_one_records_nothing(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Suppression holds wherever it is entered, not only at the top of a delta.
+
+    `_suppress_delta_recording` describes the block it wraps, so a `get_delta`
+    override that enters it records nothing even though the traversal reaching
+    that override is the one being delivered.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+
+    class SuppressingState(BaseState):
+        @rx.var(cache=False)
+        def v(self) -> int:
+            return 1
+
+    expected = {SuppressingState.get_full_name(): {"v" + FIELD_MARKER: 1}}
+    original_get_delta = BaseState.get_delta
+
+    def suppressing_get_delta(self: BaseState) -> Delta:
+        with _suppress_delta_recording():
+            return original_get_delta(self)
+
+    monkeypatch.setattr(SuppressingState, "get_delta", suppressing_get_delta)
+
+    ss = SuppressingState()
+    for _ in range(2):
+        assert await ss._get_resolved_delta() == expected
+        ss._clean()
 
 
 def test_delta_methods_take_no_arguments():
