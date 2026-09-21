@@ -214,8 +214,8 @@ def on_event_harness():
     """Set up an EventNamespace with a connected socket for benchmarking on_event.
 
     The event processor's enqueue is mocked out so the benchmark isolates the
-    per-event router_data preparation (which reuses the connection-scoped
-    data gathered once in on_connect).
+    per-event router_data preparation (which reuses the headers decoded once
+    into the connection's ASGI scope).
 
     Yields:
         An async callable that feeds the given number of events through
@@ -263,6 +263,9 @@ def on_event_harness():
                     "payload": {},
                 },
             )
+
+    # The namespace reads the connection scope through the Socket.IO server.
+    app.sio = mock.Mock(get_environ=mock.Mock(return_value=environ))
 
     loop = asyncio.new_event_loop()
     loop.run_until_complete(namespace.on_connect(sid, environ))
