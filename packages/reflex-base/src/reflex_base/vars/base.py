@@ -2686,8 +2686,10 @@ class ComputedVar(Var[RETURN_TYPE]):
         """
         return f"__last_delta_{self._js_expr}"
 
-    def _record_delta_value(self, instance: BaseState, value: Any, token: str) -> bool:
-        """Record the value an uncached var contributes to the delta.
+    def _pending_delta_record(
+        self, instance: BaseState, value: Any, token: str
+    ) -> tuple[str, tuple[str, Any] | None] | None:
+        """Decide whether the value an uncached var contributes has to be sent.
 
         Uncached vars are recomputed for every delta, but recomputing does not
         imply the value changed. Keeping a key for the last value that was sent
@@ -2698,29 +2700,31 @@ class ComputedVar(Var[RETURN_TYPE]):
         instance can serve several clients (linked shared states): a value that
         was already sent to one client still has to be sent to the others.
 
+        Nothing is written here: only the caller knows which of the values it
+        computes survive into the delta the client actually receives, and a
+        value that a downstream filter withholds still has to be sent later.
+
         Args:
             instance: The state instance that the computed var is attached to.
             value: The freshly computed value.
             token: The client token the delta is being produced for.
 
         Returns:
-            Whether the value differs from the last recorded value and should
-            therefore be included in the delta.
+            None when the value matches the last one recorded as sent and can
+            be left out of the delta, otherwise the instance attribute holding
+            the record and what to store in it once the value has been
+            delivered -- None there for a value that cannot be compared, whose
+            record has to be dropped instead.
         """
         attr = self._last_delta_key_attr
         key = _delta_value_key(value)
         if key is _UNKEYABLE_VALUE:
             # The value can never be compared, so it always has to be sent.
-            with contextlib.suppress(AttributeError):
-                delattr(instance, attr)
-            return True
+            return attr, None
         recorded = (token, key)
         if getattr(instance, attr, None) == recorded:
-            return False
-        setattr(instance, attr, recorded)
-        # Ensure the recorded value gets serialized to redis.
-        instance._was_touched = True
-        return True
+            return None
+        return attr, recorded
 
     def needs_update(self, instance: BaseState) -> bool:
         """Check if the computed var needs to be updated.
