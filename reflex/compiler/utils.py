@@ -994,41 +994,44 @@ def resolve_path_of_web_dir(path: str | Path) -> Path:
 
 
 _MEMO_MANIFEST_FILENAME = ".memo-manifest.json"
+_ASSET_MANIFEST_FILENAME = ".asset-manifest.json"
 
 
-def _read_memo_manifest(web_dir: Path) -> set[str]:
-    """Read the previous compile's memo file manifest.
+def _read_file_manifest(manifest_path: Path) -> set[str]:
+    """Read relative file paths owned by the previous compile.
 
     Args:
-        web_dir: The project's ``.web`` directory.
+        manifest_path: The manifest to read.
 
     Returns:
-        The set of paths (relative to ``.web``) recorded by the previous
-        compile, or an empty set if the manifest is absent or invalid.
+        Relative paths, or an empty set if the manifest is absent or invalid.
     """
-    manifest_path = web_dir / _MEMO_MANIFEST_FILENAME
-    if not manifest_path.exists():
-        return set()
     try:
         data = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return set()
     if not isinstance(data, list):
         return set()
-    return {entry for entry in data if isinstance(entry, str)}
+    return {
+        entry
+        for entry in data
+        if isinstance(entry, str)
+        and (path := Path(entry)).parts
+        and not path.is_absolute()
+        and ".." not in path.parts
+    }
 
 
-def _write_memo_manifest(web_dir: Path, relative_paths: set[str]) -> None:
-    """Atomically write the new memo file manifest.
+def _write_file_manifest(manifest_path: Path, relative_paths: set[str]) -> None:
+    """Atomically write the new file manifest.
 
     Args:
-        web_dir: The project's ``.web`` directory.
-        relative_paths: Paths emitted this run, relative to ``.web``.
+        manifest_path: The manifest to write.
+        relative_paths: Relative paths owned by this compile.
     """
-    manifest_path = web_dir / _MEMO_MANIFEST_FILENAME
-    web_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(
-        prefix=".memo-manifest.", suffix=".json.tmp", dir=str(web_dir)
+        prefix=manifest_path.stem + ".", suffix=".json.tmp", dir=manifest_path.parent
     )
     # Close the raw fd immediately and reopen the file by path. Wrapping the
     # fd via os.fdopen() would leak it if the wrap itself raised.
@@ -1042,6 +1045,67 @@ def _write_memo_manifest(web_dir: Path, relative_paths: set[str]) -> None:
         # Best-effort cleanup; manifest write is recoverable on the next run.
         tmp_path.unlink(missing_ok=True)
         raise
+
+
+def _prune_stale_files(directory: Path, relative_paths: set[str]) -> None:
+    """Remove owned files and their empty parents within an output directory.
+
+    Args:
+        directory: The root containing the owned files.
+        relative_paths: Validated relative paths to remove.
+    """
+    resolved_directory = directory.resolve()
+    for relative in relative_paths:
+        target = directory / relative
+        # Do not follow a replaced parent symlink outside the output directory.
+        if not target.parent.resolve().is_relative_to(resolved_directory):
+            continue
+        if target.is_file() or target.is_symlink():
+            target.unlink()
+            parent = target.parent
+            while parent != directory:
+                try:
+                    parent.rmdir()
+                except OSError:
+                    break
+                parent = parent.parent
+
+
+def _sync_app_assets() -> None:
+    """Copy app assets and remove previously copied files absent from the source.
+
+    Track ownership outside ``public`` so plugin and generated files are kept
+    and the manifest itself is never served. Follow source directory symlinks
+    just like ``update_directory_tree`` does.
+
+    Raises:
+        OSError: If the source cannot be scanned or the output cannot be updated.
+    """
+    assets = Path(constants.Dirs.APP_ASSETS)
+    web_dir = get_web_dir()
+    public = web_dir / constants.Dirs.PUBLIC
+    manifest_path = web_dir / _ASSET_MANIFEST_FILENAME
+    previous = _read_file_manifest(manifest_path)
+    has_assets = assets.is_dir()
+    current: set[str] = set()
+    if has_assets:
+        scan_errors: list[OSError] = []
+        current = {
+            path.relative_to(assets).as_posix()
+            for directory, _, filenames in os.walk(
+                assets, followlinks=True, onerror=scan_errors.append
+            )
+            for filename in filenames
+            if (path := Path(directory) / filename).is_file()
+        }
+        if scan_errors:
+            raise scan_errors[0]
+    # Prune before copying to allow a removed file to become a directory.
+    _prune_stale_files(public, previous - current)
+    if has_assets:
+        path_ops.update_directory_tree(assets, public)
+    if current != previous:
+        _write_file_manifest(manifest_path, current)
 
 
 def prune_stale_memo_files(emitted_paths: Iterable[str | Path]) -> None:
@@ -1066,21 +1130,11 @@ def prune_stale_memo_files(emitted_paths: Iterable[str | Path]) -> None:
         for path in emitted_paths
     }
 
-    previous = _read_memo_manifest(web_dir)
-    for relative in previous - emitted_relative:
-        target = web_dir / relative
-        if target.is_file():
-            target.unlink()
-            parent = target.parent
-            while parent != web_dir and parent.is_relative_to(web_dir):
-                try:
-                    parent.rmdir()
-                except OSError:
-                    break
-                parent = parent.parent
-
+    manifest_path = web_dir / _MEMO_MANIFEST_FILENAME
+    previous = _read_file_manifest(manifest_path)
+    _prune_stale_files(web_dir, previous - emitted_relative)
     if emitted_relative != previous:
-        _write_memo_manifest(web_dir, emitted_relative)
+        _write_file_manifest(manifest_path, emitted_relative)
 
 
 def empty_dir(path: str | Path, keep_files: list[str] | None = None):
