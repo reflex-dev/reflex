@@ -256,7 +256,7 @@ def load_application_demo(monkeypatch, relative_path):
     """Execute the exact copyable demo shown on an application guide."""
     source = (DOCS.parent / relative_path).read_text()
     blocks = re.findall(
-        r"^```python demo exec defer[^\n]*\n(.*?)^```", source, re.MULTILINE | re.DOTALL
+        r"^```python demo exec[^\n]*\n(.*?)^```", source, re.MULTILINE | re.DOTALL
     )
     assert len(blocks) == 1
     module = ModuleType(f"application_demo_{uuid4().hex}")

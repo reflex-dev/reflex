@@ -13,7 +13,7 @@ This example uses one-nearest-neighbor classification on six labelled flower mea
 
 Create a blank Reflex app with the [installation guide](/docs/getting-started/installation/). Copy this code into the app module, followed by the registration lines below. No model download or API key is needed.
 
-```python demo exec defer id=model_interface_demo
+```python demo exec id=model_interface_demo
 import math
 from typing import Any
 
@@ -32,7 +32,9 @@ SAMPLES = [
 
 def predict_flower(length: float, width: float) -> str:
     """Predict the nearest labelled sample using two petal measurements."""
-    if not all(math.isfinite(value) and 0 < value <= 10 for value in (length, width)):
+    if not all(
+        math.isfinite(value) and 0 < value <= 10 for value in (length, width)
+    ):
         raise ValueError("Enter measurements greater than 0 and at most 10 cm.")
     nearest = min(
         SAMPLES, key=lambda row: (row[0] - length) ** 2 + (row[1] - width) ** 2
@@ -64,20 +66,125 @@ class ModelInterfaceState(rx.State):
 def model_interface():
     """Render the model's input form and result."""
     return rx.vstack(
+        rx.hstack(
+            rx.icon("flower-2", size=22, color=rx.color("violet", 9)),
+            rx.heading("Flower classifier", size="5", as_="h3"),
+            align="center",
+            spacing="3",
+        ),
+        rx.text(
+            "Enter two petal measurements to find the closest sample.",
+            size="2",
+            color=rx.color("gray", 11),
+        ),
         rx.form(
             rx.vstack(
-                rx.el.label("Petal length (cm)", html_for="petal-length"),
-                rx.input(id="petal-length", name="length", default_value="1.4"),
-                rx.el.label("Petal width (cm)", html_for="petal-width"),
-                rx.input(id="petal-width", name="width", default_value="0.2"),
-                rx.button("Predict", type="submit"),
-                spacing="3",
+                rx.grid(
+                    rx.vstack(
+                        rx.el.label(
+                            "Petal length (cm)",
+                            html_for="petal-length",
+                            font_size="0.875rem",
+                            font_weight="500",
+                        ),
+                        rx.input(
+                            id="petal-length",
+                            name="length",
+                            default_value="1.4",
+                            input_mode="decimal",
+                            size="3",
+                            width="100%",
+                        ),
+                        spacing="2",
+                        align_items="stretch",
+                    ),
+                    rx.vstack(
+                        rx.el.label(
+                            "Petal width (cm)",
+                            html_for="petal-width",
+                            font_size="0.875rem",
+                            font_weight="500",
+                        ),
+                        rx.input(
+                            id="petal-width",
+                            name="width",
+                            default_value="0.2",
+                            input_mode="decimal",
+                            size="3",
+                            width="100%",
+                        ),
+                        spacing="2",
+                        align_items="stretch",
+                    ),
+                    columns={"initial": "1", "sm": "2"},
+                    spacing="4",
+                    width="100%",
+                ),
+                rx.button(
+                    "Predict species",
+                    rx.icon("arrow-right", size=16),
+                    type="submit",
+                    size="3",
+                    width="100%",
+                ),
+                spacing="4",
+                align_items="stretch",
             ),
             on_submit=ModelInterfaceState.predict,
+            width="100%",
         ),
-        rx.text(ModelInterfaceState.prediction, role="status"),
-        rx.text(ModelInterfaceState.error, role="alert", color="red"),
+        rx.vstack(
+            rx.text(
+                "Prediction",
+                size="1",
+                weight="medium",
+                color=rx.color("gray", 11),
+            ),
+            rx.cond(
+                ModelInterfaceState.prediction != "",
+                rx.text(
+                    ModelInterfaceState.prediction,
+                    size="5",
+                    weight="medium",
+                    text_transform="capitalize",
+                ),
+                rx.text(
+                    "Enter measurements and select Predict species.",
+                    size="2",
+                    color=rx.color("gray", 11),
+                ),
+            ),
+            role="status",
+            spacing="2",
+            align_items="stretch",
+            width="100%",
+            padding="1rem",
+            border_radius="8px",
+            background=rx.color("gray", 3),
+        ),
+        rx.cond(
+            ModelInterfaceState.error != "",
+            rx.text(
+                ModelInterfaceState.error,
+                role="alert",
+                size="2",
+                color=rx.color("red", 11),
+            ),
+        ),
+        rx.text(
+            "Demo model · 6 reference samples",
+            size="1",
+            color=rx.color("gray", 11),
+        ),
         spacing="4",
+        align_items="stretch",
+        width="100%",
+        max_width="30rem",
+        padding=["1rem", "1.5rem"],
+        background=rx.color("gray", 1),
+        border=f"1px solid {rx.color('gray', 5)}",
+        border_radius="12px",
+        box_shadow="0 2px 8px rgba(0, 0, 0, 0.03)",
     )
 ```
 
