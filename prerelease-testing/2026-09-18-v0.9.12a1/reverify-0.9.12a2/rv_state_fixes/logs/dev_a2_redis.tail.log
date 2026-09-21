@@ -1,0 +1,120 @@
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3100 is not in use.
+Debug: Checking if Backend port: 8100 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8100 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8100 is not in use.
+DeprecationWarning: `@rx.memo` on `memo_toast_button` without explicit 
+annotations has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations 
+on parameter(s) `label`. Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (elapp/elapp.py:410)
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.11s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 30/29 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 249 installs across 296 packages (no changes) [7.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', 'tailwindcss@4.3.0', 'postcss@8.5.26', 
+'postcss-import@17.0.0', '@tailwindcss/typography@0.5.20', 
+'@react-router/dev@8.4.0', 'vite@8.2.2', '@react-router/fs-routes@8.4.0', 
+'@emotion/react@11.14.0', '@tailwindcss/postcss@4.3.0', 'autoprefixer@10.5.4']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed tailwindcss@4.3.0
+Debug: installed postcss@8.5.26
+Debug: installed postcss-import@17.0.0
+Debug: installed @tailwindcss/typography@0.5.20
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed @emotion/react@11.14.0
+Debug: installed @tailwindcss/postcss@4.3.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: 
+Debug: [7.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'react-dropzone@15.0.0', 'react-error-boundary@6.1.2', 
+'mergician@v2.0.2', '@radix-ui/themes@3.3.0', 'react-helmet@6.1.0', 
+'react-router@8.4.0', 'react-dom@19.2.8', 'react@19.2.8', 
+'socket.io-client@4.8.3', 'lucide-react@1.26.0', 'sonner@2.0.8', 
+'universal-cookie@8.1.2', 'isbot@5.2.2', '@react-router/node@8.4.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed react-dropzone@15.0.0
+Debug: installed react-error-boundary@6.1.2
+Debug: installed mergician@2.0.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-helmet@6.1.0
+Debug: installed react-router@8.4.0
+Debug: installed react-dom@19.2.8
+Debug: installed react@19.2.8
+Debug: installed socket.io-client@4.8.3
+Debug: installed lucide-react@1.26.0
+Debug: installed sonner@2.0.8
+Debug: installed universal-cookie@8.1.2
+Debug: installed isbot@5.2.2
+Debug: installed @react-router/node@8.4.0
+Debug: 
+Debug: [7.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+reverify/rv_state_fixes/elapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+reverify/rv_state_fixes/elapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.04s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpa
+d/reverify/rv_state_fixes/elapp/elapp', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_state_fixes/elapp/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_state_fixes/elapp/assets', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_state_fixes/elapp/CLAUDE.md', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_state_fixes/elapp/AGENTS.md', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_state_fixes/elapp/rxconfig.py']
+[INFO] Starting granian (main PID: 4391)
+[INFO] Listening at: http://0.0.0.0:8100
+[INFO] Spawning worker-1 with PID: 4421
+DeprecationWarning: `@rx.memo` on `memo_toast_button` without explicit 
+annotations has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations 
+on parameter(s) `label`. Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (elapp/elapp.py:410)
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3100/
+App running at: http://localhost:3100/
+Backend running at: http://0.0.0.0:8100
+Debug:   ➜  Network: http://192.0.2.2:3100/  eth0
+Debug: 9:35:53 PM [vite] (ssr) connected.
+[INFO] Stopping worker-1
+[ERROR] Unexpected exit from worker-1
+Debug: error: script "dev" exited with code 143
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

@@ -1,0 +1,120 @@
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed postcss-import@17.0.0
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed @tailwindcss/typography@0.5.20
+Debug: installed postcss@8.5.26
+Debug: installed @emotion/react@11.14.0
+Debug: installed @tailwindcss/postcss@4.3.0
+Debug: 
+Debug: [8.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'mergician@v2.0.2', 'react-helmet@6.1.0', 
+'@react-router/node@8.4.0', 'react@19.2.8', 'lucide-react@1.26.0', 
+'react-router@8.4.0', 'universal-cookie@8.1.2', 'react-error-boundary@6.1.2', 
+'socket.io-client@4.8.3', 'isbot@5.2.2', 'react-dom@19.2.8', 'sonner@2.0.8', 
+'@radix-ui/themes@3.3.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed mergician@2.0.2
+Debug: installed react-helmet@6.1.0
+Debug: installed @react-router/node@8.4.0
+Debug: installed react@19.2.8
+Debug: installed lucide-react@1.26.0
+Debug: installed react-router@8.4.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-error-boundary@6.1.2
+Debug: installed socket.io-client@4.8.3
+Debug: installed isbot@5.2.2
+Debug: installed react-dom@19.2.8
+Debug: installed sonner@2.0.8
+Debug: installed @radix-ui/themes@3.3.0
+Debug: 
+Debug: [7.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+reverify/rv_state_fixes/r7230/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+reverify/rv_state_fixes/r7230/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.04s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 9:40:03 PM [vite] (client) hmr update /app_components/r7230/r7230.jsx
+Debug: 9:40:03 PM [vite] (client) hmr update /app_components/r7230/r7230.jsx, 
+/styles/__reflex_global_styles.css?direct
+Debug: 9:40:03 PM [vite] (client) hmr update /utils/context.jsx
+Debug: 9:40:03 PM [vite] (client) hmr update /utils/context.jsx
+Debug: 9:40:03 PM [vite] (client) hmr update /utils/context.jsx, 
+/styles/__reflex_global_styles.css?direct
+Debug: 9:40:03 PM [vite] (ssr) page reload utils/context.jsx
+Debug: 9:40:03 PM [vite] (ssr) program reload
+Debug: 9:40:03 PM [vite] (client) hmr update /app/routes/_index.jsx
+Debug: 9:40:03 PM [vite] (client) hmr update /app/routes/_index.jsx, 
+/styles/__reflex_global_styles.css?direct
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230/r7230.py:63)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230/r7230.py:66)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230/r7230.py:67)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230/r7230.py:94)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230/r7230.py:110)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230/r7230.py:118)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230/r7230.py:121)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230/r7230.py:132)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230/r7230.py:149)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230/r7230.py:160)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230/r7230.py:210)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230/r7230.py:222)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230/r7230.py:225)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230/r7230.py:243)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230/r7230.py:245)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230/r7230.py:182)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230/r7230.py:255)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230/r7230.py:269)
+Debug: error: script "dev" exited with code 143
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

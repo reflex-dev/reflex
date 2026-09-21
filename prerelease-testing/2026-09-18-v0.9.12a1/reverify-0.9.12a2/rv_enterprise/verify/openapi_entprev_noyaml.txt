@@ -1,0 +1,9 @@
+### baseline 0.9.11.post1 + rxe 0.9.5, no pyyaml
+Internal Server Error
+[HTTP 500]
+### api-catalog
+{"linkset":[{"anchor":"http://localhost:8641/","service-desc":[{"href":"http://localhost:8641/_reflex/events/openapi.yaml","type":"application/vnd.oai.openapi"}]}]}
+[HTTP 200]
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_enterprise-verify/venv_entprev/lib/python3.11/site-packages/reflex_enterprise/plugins/event_handler_api.py", line 1686, in openapi_response
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_enterprise-verify/venv_entprev/lib/python3.11/site-packages/starlette/schemas.py", line 106, in parse_docstring
+AssertionError: `pyyaml` must be installed to use parse_docstring.

@@ -1,0 +1,82 @@
+routeview: route_id=/index path=/ params={'a': '1', 'b': 'two'}
+onload   : on_load saw path=/ raw_headers_n=14
+== plain ==
+    [plain] delta: {'reflex___state____state': ['rx_router_headers_rx_state_', 'rx_router_page_rx_state_'], 'reflex___state____state.r7230_a1___r7230_a1____root_s': ['log_rx_state_', 'route_view_rx_state_']}
+    [plain] read path='/' params={'a': '1', 'b': 'two'}
+    [plain] write params OK -> {'a': '1', 'b': 'two', 'plain': 'yes'}
+    [plain] write raw_headers RAISED builtins.TypeError: '_FrozenDictStrStr' object does not support item assignment
+    [plain] `self.router.url = ...` RAISED dataclasses.FrozenInstanceError: cannot assign to field 'url'
+   ticks=0 subticks=0
+    routeview: route_id=/index path=/ params={'a': '1', 'b': 'two', 'plain': 'yes'}
+== bgroot ==
+    [bgroot] delta: {'reflex___state____state': ['rx_router_headers_rx_state_', 'rx_router_page_rx_state_'], 'reflex___state____state.r7230_a1___r7230_a1____root_s': ['log_rx_state_', 'route_view_rx_state_', 'ticks_rx_state_']}
+    [bgroot] delta: {'reflex___state____state': ['rx_router_headers_rx_state_', 'rx_router_page_rx_state_'], 'reflex___state____state.r7230_a1___r7230_a1____root_s': ['log_rx_state_', 'route_view_rx_state_']}
+    [bg-root] OUTSIDE direct field write reflex_base.utils.exceptions.ImmutableStateError: Background task StateProxy is immutable outside of a context manager. Use `async with self` to modify state.
+    [bg-root] OUTSIDE router params write ALLOWED (!)
+    [bg-root] OUTSIDE router raw_headers write builtins.TypeError: '_FrozenDictStrStr' object does not support item assignment
+    [bg-root] OUTSIDE `router.url = ...` dataclasses.FrozenInstanceError: cannot assign to field 'url'
+    [bg-root] OUTSIDE router.page.params ALLOWED (!)
+    [bg-root] INSIDE router params write OK -> {'a': '1', 'b': 'two', 'bg': 'inside', 'legacy': 'outside'}
+    [bg-root] INSIDE raw_headers write RAISED builtins.TypeError: '_FrozenDictStrStr' object does not support item assignment
+    [bg-root] INSIDE dirty_vars=['route_view']
+    [bg-root] ESCAPED reference write ALLOWED (!)
+    [bg-root] READONLY router params write ALLOWED (!)
+    [bg-root] READONLY raw_headers write builtins.TypeError: '_FrozenDictStrStr' object does not support item assignment
+    [bg-root] READONLY read ok: path='/' params={'a': '1', 'b': 'two', 'bg': 'inside', 'legacy': 'outside', 'after': '1', 'ro': '1'}
+    [bg-root] READONLY direct field write builtins.NotImplementedError: This is a read-only state proxy.
+   ticks=1 subticks=0
+    routeview: route_id=/index path=/ params={'a': '1', 'b': 'two', 'bg': 'inside', 'legacy': 'outside', 'after': '1', 'ro': '1'}
+== bgsub ==
+    [bgsub] delta: {'reflex___state____state': ['rx_router_headers_rx_state_', 'rx_router_page_rx_state_'], 'reflex___state____state.r7230_a1___r7230_a1____root_s': ['route_view_rx_state_'], 'reflex___state____state.r7230_a1___r7230_a1____root_s.r7230_a1___r7230_a1____sub_s': ['sub_log_rx_state_', 'sub_ticks_rx_state_']}
+    [bg-sub] OUTSIDE direct field write reflex_base.utils.exceptions.ImmutableStateError: Background task StateProxy is immutable outside of a context manager. Use `async with self` to modify state.
+    [bg-sub] OUTSIDE router params write ALLOWED (!)
+    [bg-sub] OUTSIDE raw_headers write builtins.TypeError: '_FrozenDictStrStr' object does not support item assignment
+    [bg-sub] INSIDE router params write OK -> {'a': '1', 'b': 'two', 'sub': 'inside'}
+    [bg-sub] INSIDE parent dirty_vars=['route_view']
+    [bg-sub] root log extend from substate: len 0 -> 5
+   ticks=1 subticks=1
+    routeview: route_id=/index path=/ params={'a': '1', 'b': 'two', 'sub': 'inside'}
+== subplain ==
+    [subplain] delta: {'reflex___state____state': ['rx_router_page_rx_state_'], 'reflex___state____state.r7230_a1___r7230_a1____root_s': ['log_rx_state_', 'route_view_rx_state_']}
+    [sub-plain] write OK -> {'a': '1', 'b': 'two', 'subplain': 'yes'}
+    [bg-sub] OUTSIDE direct field write reflex_base.utils.exceptions.ImmutableStateError: Background task StateProxy is immutable outside of a context manager. Use `async with self` to modify state.
+    [bg-sub] OUTSIDE router params write ALLOWED (!)
+    [bg-sub] OUTSIDE raw_headers write builtins.TypeError: '_FrozenDictStrStr' object does not support item assignment
+    [bg-sub] INSIDE router params write OK -> {'a': '1', 'b': 'two', 'sub': 'inside'}
+    [bg-sub] INSIDE parent dirty_vars=['route_view']
+    [bg-sub] root log extend from substate: len 0 -> 5
+   ticks=1 subticks=1
+    routeview: route_id=/index path=/ params={'a': '1', 'b': 'two', 'subplain': 'yes'}
+== bgread ==
+    [bgread] delta: {'reflex___state____state.r7230_a1___r7230_a1____root_s': ['log_rx_state_']}
+    [bg-read] path='/' route_id='/index' params={'a': '1', 'b': 'two'} token_len=36 headers_n=14
+    [bg-sub] OUTSIDE direct field write reflex_base.utils.exceptions.ImmutableStateError: Background task StateProxy is immutable outside of a context manager. Use `async with self` to modify state.
+    [bg-sub] OUTSIDE router params write ALLOWED (!)
+    [bg-sub] OUTSIDE raw_headers write builtins.TypeError: '_FrozenDictStrStr' object does not support item assignment
+    [bg-sub] INSIDE router params write OK -> {'a': '1', 'b': 'two', 'sub': 'inside'}
+    [bg-sub] INSIDE parent dirty_vars=['route_view']
+    [bg-sub] root log extend from substate: len 0 -> 5
+   ticks=1 subticks=1
+    routeview: route_id=/index path=/ params={'a': '1', 'b': 'two'}
+== bgnested ==
+    [bgnested] delta: {'reflex___state____state': ['rx_router_page_rx_state_'], 'reflex___state____state.r7230_a1___r7230_a1____root_s': ['route_view_rx_state_'], 'reflex___state____state.r7230_a1___r7230_a1____root_s.r7230_a1___r7230_a1____sub_s': ['sub_log_rx_state_']}
+    [bg-sub] OUTSIDE direct field write reflex_base.utils.exceptions.ImmutableStateError: Background task StateProxy is immutable outside of a context manager. Use `async with self` to modify state.
+    [bg-sub] OUTSIDE router params write ALLOWED (!)
+    [bg-sub] OUTSIDE raw_headers write builtins.TypeError: '_FrozenDictStrStr' object does not support item assignment
+    [bg-sub] INSIDE router params write OK -> {'a': '1', 'b': 'two', 'sub': 'inside'}
+    [bg-sub] INSIDE parent dirty_vars=['route_view']
+    [bg-sub] root log extend from substate: len 0 -> 5
+    [bg-nested] `async with params` OK -> {'a': '1', 'b': 'two', 'nested': '1'}
+    [bg-nested] post-context write ALLOWED (!)
+    [bg-nested] READONLY `async with params` ALLOWED (!)
+   ticks=1 subticks=1
+    routeview: route_id=/index path=/ params={'a': '1', 'b': 'two', 'nested': '1', 'late': '1'}
+== client-side nav to /other?q=1 ==
+    routeview: route_id=/other path=/other params={'q': '1'}
+    onload   : on_load saw path=/other raw_headers_n=14
+== direct load /other?q=direct ==
+    routeview: route_id=/other path=/other params={'q': 'direct'}
+    onload   : on_load saw path=/other raw_headers_n=14
+== console (non-benign) ==
+== pageerrors == []
+== net == []

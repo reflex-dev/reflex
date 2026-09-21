@@ -1,0 +1,9 @@
+### a2 + rxe 0.9.6a1 WITH pyyaml 6.0.3 installed
+HTTP/1.1 200 OK
+content-length: 27210
+content-type: application/vnd.oai.openapi
+link: </.well-known/api-catalog>; rel="api-catalog"
+server: granian
+date: Mon, 21 Sep 2026 22:10:08 GMT
+
+[HTTP 200] [bytes=27210]

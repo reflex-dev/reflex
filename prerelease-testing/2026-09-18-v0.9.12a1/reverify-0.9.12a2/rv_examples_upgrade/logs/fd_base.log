@@ -1,0 +1,29 @@
+────────────────────────── Initializing form_designer ──────────────────────────
+Info: Initializing the web directory.
+Success: Initialized form_designer. Install dependencies from `requirements.txt`
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 33/32 0:00:01
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:3260/
+Backend running at: http://0.0.0.0:8260
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_examples_upgrade/venv/lib/python3.11/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `int` - serialized value may not be as expected [field_name='form_id', input_value='1', input_type=str])
+  return self.__pydantic_serializer__.to_python(
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_examples_upgrade/venv/lib/python3.11/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `int` - serialized value may not be as expected [field_name='form_id', input_value='1', input_type=str])
+  PydanticSerializationUnexpectedValue(Expected `enum` - serialized value may not be as expected [field_name='type_', input_value='text', input_type=str])
+  return self.__pydantic_serializer__.to_python(
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ➜  Local:   http://localhost:3260/
+  ➜  Network: http://192.0.2.2:3260/  eth0
+9:32:15 PM [vite] (client) [optimizer] bundling dependencies...
+9:32:17 PM [vite] (ssr) connected.
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

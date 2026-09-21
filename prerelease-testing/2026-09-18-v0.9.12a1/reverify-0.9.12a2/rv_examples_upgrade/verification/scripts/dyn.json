@@ -1,0 +1,5 @@
+[{"wait":2000},
+ {"dump":"item7.txt"},
+ {"eval":"document.querySelector('#iid') ? document.querySelector('#iid').innerText : 'NO #iid'"},
+ {"eval":"location.pathname + ' | title=' + document.title"},
+ {"screenshot":"item7.png"}]

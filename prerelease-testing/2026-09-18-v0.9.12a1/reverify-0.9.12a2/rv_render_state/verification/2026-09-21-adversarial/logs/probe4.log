@@ -1,0 +1,36 @@
+########## a2 ##########
+reflex: 0.9.12a2
+class-body override `get_delta`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_delta` shadows a builtin State method; use a different name instead
+class-body override `_get_resolved_delta`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `_get_resolved_delta` shadows a builtin State method; use a different na
+class-body override `get_value`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_value` shadows a builtin State method; use a different name instead
+class-body override `reset`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `reset` shadows a builtin State method; use a different name instead
+class-body override `setvar`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `setvar` shadows a builtin State method; use a different name instead
+class-body override `_clean`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `_clean` shadows a builtin State method; use a different name instead
+class-body override `_mark_dirty`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `_mark_dirty` shadows a builtin State method; use a different name inste
+class-body override `dict`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `dict` shadows a builtin State method; use a different name instead
+class-body override `get_state`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_state` shadows a builtin State method; use a different name instead
+class-body override `_process_event`: ALLOWED
+########## shared ##########
+reflex: 0.9.12a1
+class-body override `get_delta`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_delta` shadows a builtin State method; use a different name instead
+class-body override `_get_resolved_delta`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `_get_resolved_delta` shadows a builtin State method; use a different na
+class-body override `get_value`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_value` shadows a builtin State method; use a different name instead
+class-body override `reset`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `reset` shadows a builtin State method; use a different name instead
+class-body override `setvar`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `setvar` shadows a builtin State method; use a different name instead
+class-body override `_clean`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `_clean` shadows a builtin State method; use a different name instead
+class-body override `_mark_dirty`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `_mark_dirty` shadows a builtin State method; use a different name inste
+class-body override `dict`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `dict` shadows a builtin State method; use a different name instead
+class-body override `get_state`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_state` shadows a builtin State method; use a different name instead
+class-body override `_process_event`: ALLOWED
+########## prev ##########
+reflex: 0.9.11.post1
+class-body override `get_delta`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_delta` shadows a builtin State method; use a different name instead
+class-body override `_get_resolved_delta`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `_get_resolved_delta` shadows a builtin State method; use a different na
+class-body override `get_value`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_value` shadows a builtin State method; use a different name instead
+class-body override `reset`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `reset` shadows a builtin State method; use a different name instead
+class-body override `setvar`: ALLOWED
+class-body override `_clean`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `_clean` shadows a builtin State method; use a different name instead
+class-body override `_mark_dirty`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `_mark_dirty` shadows a builtin State method; use a different name inste
+class-body override `dict`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `dict` shadows a builtin State method; use a different name instead
+class-body override `get_state`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_state` shadows a builtin State method; use a different name instead
+class-body override `_process_event`: ALLOWED

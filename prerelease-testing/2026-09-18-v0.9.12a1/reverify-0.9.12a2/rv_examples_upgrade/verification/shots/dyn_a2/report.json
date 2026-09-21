@@ -1,0 +1,48 @@
+{
+ "url": "http://localhost:3761/item/7",
+ "actions": [
+  [
+   "0",
+   "wait",
+   "ok"
+  ],
+  [
+   "1",
+   "dump",
+   "ok"
+  ],
+  [
+   "eval",
+   "id=7"
+  ],
+  [
+   "2",
+   "eval",
+   "ok"
+  ],
+  [
+   "eval",
+   "/item/7 | title=Dynapp | Item"
+  ],
+  [
+   "3",
+   "eval",
+   "ok"
+  ],
+  [
+   "4",
+   "screenshot",
+   "ok"
+  ]
+ ],
+ "console": [
+  "[error] Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "[error] Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "[log] Disconnect websocket on pagehide"
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": [
+  "404 GET http://localhost:3761/item/7"
+ ]
+}

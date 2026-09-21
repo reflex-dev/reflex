@@ -1,0 +1,18 @@
+### a2
+reflex: 0.9.12a2
+BaseState has _get_delta? False
+BaseState has _get_resolved_delta? True
+substate marked override works: True
+shared mixin marked override works: True
+### shared
+reflex: 0.9.12a1
+BaseState has _get_delta? False
+BaseState has _get_resolved_delta? True
+substate marked override works: True
+shared mixin marked override works: True
+### prev
+reflex: 0.9.11.post1
+BaseState has _get_delta? False
+BaseState has _get_resolved_delta? True
+substate marked override works: True
+shared mixin marked override works: True

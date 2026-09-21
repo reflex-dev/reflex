@@ -1,0 +1,173 @@
+{
+ "url": "http://localhost:3260/",
+ "actions": [
+  [
+   "0",
+   "wait",
+   "ok"
+  ],
+  [
+   "1",
+   "dump",
+   "ok"
+  ],
+  [
+   "2",
+   "screenshot",
+   "ok"
+  ],
+  [
+   "3",
+   "goto",
+   "ok"
+  ],
+  [
+   "4",
+   "wait",
+   "ok"
+  ],
+  [
+   "5",
+   "fill",
+   "ok"
+  ],
+  [
+   "6",
+   "fill",
+   "ok"
+  ],
+  [
+   "7",
+   "click",
+   "ok"
+  ],
+  [
+   "8",
+   "wait",
+   "ok"
+  ],
+  [
+   "9",
+   "dump",
+   "ok"
+  ],
+  [
+   "10",
+   "screenshot",
+   "ok"
+  ],
+  [
+   "11",
+   "goto",
+   "ok"
+  ],
+  [
+   "12",
+   "wait",
+   "ok"
+  ],
+  [
+   "13",
+   "dump",
+   "ok"
+  ],
+  [
+   "14",
+   "screenshot",
+   "ok"
+  ],
+  [
+   "15",
+   "click",
+   "ok"
+  ],
+  [
+   "16",
+   "wait",
+   "ok"
+  ],
+  [
+   "17",
+   "fill",
+   "ok"
+  ],
+  [
+   "18",
+   "fill",
+   "ok"
+  ],
+  [
+   "19",
+   "click",
+   "ok"
+  ],
+  [
+   "20",
+   "wait",
+   "ok"
+  ],
+  [
+   "21",
+   "dump",
+   "ok"
+  ],
+  [
+   "22",
+   "screenshot",
+   "ok"
+  ],
+  [
+   "23",
+   "goto",
+   "ok"
+  ],
+  [
+   "24",
+   "wait",
+   "ok"
+  ],
+  [
+   "25",
+   "dump",
+   "ok"
+  ],
+  [
+   "26",
+   "screenshot",
+   "ok"
+  ],
+  [
+   "27",
+   "goto",
+   "ok"
+  ],
+  [
+   "28",
+   "wait",
+   "ok"
+  ],
+  [
+   "29",
+   "dump",
+   "ok"
+  ],
+  [
+   "30",
+   "screenshot",
+   "ok"
+  ]
+ ],
+ "console": [
+  "[log] Disconnect websocket on page navigation",
+  "[verbose] [DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+  "[log] Disconnect websocket on page navigation",
+  "[log] Disconnect websocket on page navigation",
+  "[error] %o\n\n%s\n\n%s\n Error: `FormMessage` must be used within `FormField` or specify the `name` prop\n    at FormMessage (http://localhost:3260/node_modules/.vite/deps/dist-C7bZrGFs.js?v=66715c63:293:19)\n    at Object.react_stack_bottom_frame (http://localhost:3260/node_modules/.vite/deps/react-dom_client.js?v=dbc54d92:12866:12)\n    at renderWithHooks (http://localhost:3260/node_modules/.vite/deps/react-dom_client.js?v=dbc54d92:4213:19)\n    at updateForwardRef (http://localhost:3260/node_modules/.vite/deps/react-dom_client.js?v=dbc54d92:5396:16)\n    at beginWork (http://localhost:3260/node_modules/.vite/deps/react-dom_client.js?v=dbc54d92:6204:21)\n    at runWithFiberInDEV (http://localhost:3260/node_modules/.vite/deps/react-dom_client.js?v=dbc54d92:851:66)\n    at performUnitOfWork (http://localhost:3260/node_modules/.vite/deps/react-dom_client.js?v=dbc54d92:8429:92)\n    at workLoopSync (http://localhost:3260/node_modules/.vite/deps/react-dom_client.js?v=dbc54d92:8325:37)\n    at renderRootSync (http://localhost:3260/node_modules/.vite/deps/react-dom_client.js?v=dbc54d92:8309:6)\n    at performWorkOnRoot (http://localhost:3260/node_modules/.vite/deps/react-dom_client.js?v=dbc54d92:7994:27) The above error occurred in the <ForwardRef(FormMessage)> component. React will try to recreate this component tree from scratch using the error boundary you provided, m.",
+  "[log] Disconnect websocket on page navigation",
+  "[error] Received `%s` for a non-boolean attribute `%s`.\n\nIf you want to write it to the DOM, pass a string instead: %s=\"%s\" or %s={value.toString()}. true collapsible collapsible true collapsible",
+  "[log] Disconnect websocket on pagehide"
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": []
+}

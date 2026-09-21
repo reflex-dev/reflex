@@ -1,0 +1,6 @@
+reflex 0.9.12a2
+OktaAuthState FAIL: ImportError cannot import name 'OktaAuthState' from 'reflex_enterprise.auth' (/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_en
+DatabricksAuthState FAIL: AttributeError No reflex_enterprise.auth attribute DatabricksAuthState
+GoogleAuthState FAIL: AttributeError No reflex_enterprise.auth attribute GoogleAuthState
+GenericOIDCAuthState OK
+OIDCAuthState OK

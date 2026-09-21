@@ -1,0 +1,167 @@
+[02_event_no_route_change(bump)] ROUTER KEYS DIFFER
+   a1: []
+   a2: [{}]
+[02_event_no_route_change(bump)] BYTES a1=[] a2=[112] (delta 112)
+[03_clientside_nav_to_/items/1] ROUTER KEYS DIFFER
+   a1: []
+   a2: [{"reflex___state____state": ["rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_url_rx_state_"]}, {}, {}]
+[03_clientside_nav_to_/items/1] BYTES a1=[] a2=[1334, 121, 88] (delta 1543)
+[04_same_route_diff_id_/items/2] ROUTER KEYS DIFFER
+   a1: []
+   a2: [{"reflex___state____state": ["rx_router_page_rx_state_", "rx_router_url_rx_state_"]}, {}, {}]
+[04_same_route_diff_id_/items/2] BYTES a1=[] a2=[1289, 121, 88] (delta 1498)
+[05_nav_to_/docs/a/b_catchall] ROUTER KEYS DIFFER
+   a1: []
+   a2: [{"reflex___state____state": ["rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_url_rx_state_"]}]
+[05_nav_to_/docs/a/b_catchall] BYTES a1=[] a2=[1423] (delta 1423)
+[06_nav_to_/search?q=hello] ROUTER KEYS DIFFER
+   a1: []
+   a2: [{"reflex___state____state": ["rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_url_rx_state_"]}]
+[06_nav_to_/search?q=hello] BYTES a1=[] a2=[1366] (delta 1366)
+[07_substate_handler_read_router] ROUTER KEYS DIFFER
+   a1: []
+   a2: [{}]
+[07_substate_handler_read_router] BYTES a1=[] a2=[207] (delta 207)
+[08_background_task_read_router] ROUTER KEYS DIFFER
+   a1: []
+   a2: [{}]
+[08_background_task_read_router] BYTES a1=[] a2=[133] (delta 133)
+[09_componentstate_click] ROUTER KEYS DIFFER
+   a1: []
+   a2: [{}]
+[09_componentstate_click] BYTES a1=[] a2=[135] (delta 135)
+[11_back] ROUTER KEYS DIFFER
+   a1: []
+   a2: [{"reflex___state____state": ["rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_url_rx_state_"]}]
+[11_back] BYTES a1=[] a2=[1423] (delta 1423)
+[12_forward] ROUTER KEYS DIFFER
+   a1: []
+   a2: [{"reflex___state____state": ["rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_url_rx_state_"]}]
+[12_forward] BYTES a1=[] a2=[1366] (delta 1366)
+[14_mutate_headers_handler] ROUTER KEYS DIFFER
+   a1: []
+   a2: [{}]
+[14_mutate_headers_handler] BYTES a1=[] a2=[112] (delta 112)
+[15_bump_after_header_mutation] ROUTER KEYS DIFFER
+   a1: []
+   a2: [{}]
+[15_bump_after_header_mutation] BYTES a1=[] a2=[112] (delta 112)
+[17_event_chain_redirect] ROUTER KEYS DIFFER
+   a1: []
+   a2: [{}, {}, {"reflex___state____state": ["rx_router_page_rx_state_", "rx_router_url_rx_state_"]}, {}, {}]
+[17_event_chain_redirect] BYTES a1=[] a2=[113, 144, 1361, 127, 88] (delta 1833)
+[18_redirect_about] ROUTER KEYS DIFFER
+   a1: []
+   a2: [{"reflex___state____state": ["rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_url_rx_state_"]}]
+[18_redirect_about] BYTES a1=[] a2=[1267] (delta 1267)
+[21_second_tab_nav_/about] ROUTER KEYS DIFFER
+   a1: []
+   a2: [{"reflex___state____state": ["rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_url_rx_state_"]}]
+[21_second_tab_nav_/about] BYTES a1=[] a2=[1267] (delta 1267)
+[23_second_context_nav_item1] ROUTER KEYS DIFFER
+   a1: []
+   a2: [{"reflex___state____state": ["rx_router_page_rx_state_", "rx_router_route_id_rx_state_", "rx_router_url_rx_state_"]}, {}, {}]
+[23_second_context_nav_item1] BYTES a1=[] a2=[1334, 121, 88] (delta 1543)
+[24_final_bump] ROUTER KEYS DIFFER
+   a1: []
+   a2: [{}]
+[24_final_bump] BYTES a1=[] a2=[113] (delta 113)
+total differing aspects: 34
+labels: ['01_initial_load_home', '02_event_no_route_change(bump)', '03_clientside_nav_to_/items/1', '04_same_route_diff_id_/items/2', '05_nav_to_/docs/a/b_catchall', '06_nav_to_/search?q=hello', '07_substate_handler_read_router', '08_background_task_read_router', '09_componentstate_click', '10_client_state_set_from_router', '11_back', '12_forward', '13_reload_on_search', '14_mutate_headers_handler', '15_bump_after_header_mutation', '16_direct_load_/items/7?x=1#frag', '17_event_chain_redirect', '18_redirect_about', '19_onload_redirect_/items/redirectme', '20_second_tab_load_/items/99', '21_second_tab_nav_/about', '22_second_context_load_home', '23_second_context_nav_item1', '24_final_bump']
+[01_initial_load_home] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"xtg3l2BLiIAQX0mJAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"jgq-GXHmE_sQ4aGhAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[02_event_no_route_change(bump)] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"xtg3l2BLiIAQX0mJAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"jgq-GXHmE_sQ4aGhAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[03_clientside_nav_to_/items/1] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"xtg3l2BLiIAQX0mJAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"jgq-GXHmE_sQ4aGhAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[04_same_route_diff_id_/items/2] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"xtg3l2BLiIAQX0mJAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"jgq-GXHmE_sQ4aGhAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[05_nav_to_/docs/a/b_catchall] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"xtg3l2BLiIAQX0mJAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"jgq-GXHmE_sQ4aGhAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[06_nav_to_/search?q=hello] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"xtg3l2BLiIAQX0mJAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"jgq-GXHmE_sQ4aGhAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[07_substate_handler_read_router] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"xtg3l2BLiIAQX0mJAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"jgq-GXHmE_sQ4aGhAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[08_background_task_read_router] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"xtg3l2BLiIAQX0mJAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"jgq-GXHmE_sQ4aGhAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[09_componentstate_click] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"xtg3l2BLiIAQX0mJAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"jgq-GXHmE_sQ4aGhAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[10_client_state_set_from_router] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"xtg3l2BLiIAQX0mJAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"jgq-GXHmE_sQ4aGhAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[11_back] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"xtg3l2BLiIAQX0mJAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"jgq-GXHmE_sQ4aGhAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[12_forward] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"xtg3l2BLiIAQX0mJAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"jgq-GXHmE_sQ4aGhAAAB\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[13_reload_on_search] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"W_hCiatND0HLamtQAAAD\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"WmTAQnbiaQQTunHzAAAD\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[14_mutate_headers_handler] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"W_hCiatND0HLamtQAAAD\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"WmTAQnbiaQQTunHzAAAD\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[15_bump_after_header_mutation] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"W_hCiatND0HLamtQAAAD\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"WmTAQnbiaQQTunHzAAAD\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[16_direct_load_/items/7?x=1#frag] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"NzwFgzrLvxb8cKcfAAAF\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"VF18HVPY70vU_CbiAAAF\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[17_event_chain_redirect] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"NzwFgzrLvxb8cKcfAAAF\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"VF18HVPY70vU_CbiAAAF\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[18_redirect_about] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"NzwFgzrLvxb8cKcfAAAF\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"VF18HVPY70vU_CbiAAAF\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[19_onload_redirect_/items/redirectme] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"dJL-53X24ADiA5SkAAAH\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"UuPMoDjD0WyVjhi4AAAH\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[20_second_tab_load_/items/99] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=80ba955b|sid=SID" a2= "ip=127.0.0.1|tok=c7545cc7|sid=SID"
+     direct_token a1= "80ba955b-b91b-45bc-871c-f8754d000e1a" a2= "c7545cc7-6148-4004-f4e3-78e188ca42e9"
+     whole_router a1= "{\"session\":{\"client_token\":\"80ba955b-b91b-45bc-871c-f8754d000e1a\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"t8IK93ET8zTQXE08AAAJ\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c7545cc7-6148-4004-f4e3-78e188ca42e9\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"zw2_EeLK6TffD04SAAAJ\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[21_second_tab_nav_/about] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=80ba955b|sid=SID" a2= "ip=127.0.0.1|tok=c7545cc7|sid=SID"
+     direct_token a1= "80ba955b-b91b-45bc-871c-f8754d000e1a" a2= "c7545cc7-6148-4004-f4e3-78e188ca42e9"
+     whole_router a1= "{\"session\":{\"client_token\":\"80ba955b-b91b-45bc-871c-f8754d000e1a\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"t8IK93ET8zTQXE08AAAJ\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c7545cc7-6148-4004-f4e3-78e188ca42e9\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"zw2_EeLK6TffD04SAAAJ\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[22_second_context_load_home] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=44422297|sid=SID" a2= "ip=127.0.0.1|tok=fb3a9e79|sid=SID"
+     direct_token a1= "44422297-eb3a-4047-8b93-f3b6459d3eb6" a2= "fb3a9e79-5aba-4c89-b9cc-adff8f635960"
+     whole_router a1= "{\"session\":{\"client_token\":\"44422297-eb3a-4047-8b93-f3b6459d3eb6\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"clUEmmyqrpGKElLFAAAL\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"fb3a9e79-5aba-4c89-b9cc-adff8f635960\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"qFpKGAgmdNuu7XeQAAAL\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[23_second_context_nav_item1] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=44422297|sid=SID" a2= "ip=127.0.0.1|tok=fb3a9e79|sid=SID"
+     direct_token a1= "44422297-eb3a-4047-8b93-f3b6459d3eb6" a2= "fb3a9e79-5aba-4c89-b9cc-adff8f635960"
+     whole_router a1= "{\"session\":{\"client_token\":\"44422297-eb3a-4047-8b93-f3b6459d3eb6\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"clUEmmyqrpGKElLFAAAL\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"fb3a9e79-5aba-4c89-b9cc-adff8f635960\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"qFpKGAgmdNuu7XeQAAAL\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+[24_final_bump] SNAPSHOT DIFFERS
+     cv_session a1= "ip=127.0.0.1|tok=e9b69801|sid=SID" a2= "ip=127.0.0.1|tok=c4e0af87|sid=SID"
+     direct_token a1= "e9b69801-d811-4223-eaa9-565d892b350b" a2= "c4e0af87-efdf-4516-b16e-d4de2f8c0d87"
+     whole_router a1= "{\"session\":{\"client_token\":\"e9b69801-d811-4223-eaa9-565d892b350b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"dJL-53X24ADiA5SkAAAH\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1" a2= "{\"session\":{\"client_token\":\"c4e0af87-efdf-4516-b16e-d4de2f8c0d87\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"UuPMoDjD0WyVjhi4AAAH\"},\"headers\":{\"host\":\"localhost:BP\",\"origin\":\"http://localhost:PORT\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/1"
+snapshot/url mismatches: 24

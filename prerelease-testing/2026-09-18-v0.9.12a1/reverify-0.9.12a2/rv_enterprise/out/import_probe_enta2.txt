@@ -1,0 +1,38 @@
+VENV /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/enta2/lib/python3.11/site-packages/reflex/__init__.py
+reflex 0.9.12a2
+OK   reflex_enterprise
+OK   reflex_enterprise.app
+OK   reflex_enterprise.config
+OK   reflex_enterprise.vars
+OK   reflex_enterprise.auth
+OK   reflex_enterprise.auth.oidc.state
+OK   reflex_enterprise.auth.enforcement
+OK   reflex_enterprise.auth.cookie
+OK   reflex_enterprise.auth.replay
+OK   reflex_enterprise.auth.decorators
+OK   reflex_enterprise.plugins
+OK   reflex_enterprise.plugins.event_handler_api
+OK   reflex_enterprise.mcp
+OK   reflex_enterprise.plugins.mcp_auth.provider
+OK   reflex_enterprise.components.ag_grid
+OK   reflex_enterprise.components.ag_grid.wrapper
+OK   reflex_enterprise.components.map
+OK   reflex_enterprise.components.dnd
+OK   reflex_enterprise.components.flow
+OK   reflex_enterprise.components.mantine
+OK   reflex_enterprise.components.highcharts
+OK   reflex_enterprise.testing
+attr OK   App
+attr OK   Config
+attr OK   AuthPlugin
+attr OK   MCPPlugin
+attr OK   static
+attr OK   field
+attr OK   var
+attr OK   event
+attr OK   ag_grid
+attr OK   map
+attr OK   dnd
+attr OK   flow
+attr OK   mantine
+BAD = 0

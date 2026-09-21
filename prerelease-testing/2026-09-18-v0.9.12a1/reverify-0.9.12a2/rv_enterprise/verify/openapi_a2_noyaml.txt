@@ -1,0 +1,11 @@
+### GET /_reflex/events/openapi.yaml (a2 + rxe 0.9.6a1, NO pyyaml)
+Internal Server Error
+[HTTP 500] [ct=text/plain; charset=utf-8]
+
+### GET /.well-known/api-catalog
+{"linkset":[{"anchor":"http://localhost:8640/","service-desc":[{"href":"http://localhost:8640/_reflex/events/openapi.yaml","type":"application/vnd.oai.openapi"}]}]}
+[HTTP 200] [ct=application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"]
+
+### GET /ping
+"pong"
+[HTTP 200]

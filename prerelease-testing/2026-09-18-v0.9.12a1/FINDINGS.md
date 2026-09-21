@@ -15,6 +15,9 @@ verifier and the remaining five explorers (build_prod_export, render_ctx_statemg
 db_optional_imports) died with the limit error. Both workflows were resumed from cache at 04:38 UTC once the limit
 reset (completed agents replay, the failed ones re-run) and finished at 05:57 UTC.
 
+**Re-verification status (2026-09-21): READY.** The fixes for FINDING-001/003/011/012/017 shipped as reflex 0.9.12a2 + reflex-enterprise 0.9.6a1; every original failing repro and a regression sweep were re-run against the published packages (96 pass / 0 fail / 2 skipped). Verdict, table and release conditions in
+[Phase 7](#phase-7--re-verification-on-reflex-0912a2--reflex-enterprise-096a1-2026-09-21) at the end of this file.
+
 ## Versions under test (all published on PyPI, verified with check_release_versions.py)
 
 New in this train (alphas): reflex 0.9.12a1, reflex-base 0.9.12a1, reflex-components-code 0.9.6a1,
@@ -28,6 +31,12 @@ Environment: Linux container (Ubuntu 24.04), 4 CPU / 15 GB, Node v22.22.2, refle
 3.15.0rc2 via uv), Chromium via Playwright 1.63, redis-server 7.0, outbound via an egress proxy.
 
 ## Executive summary
+
+> **Update 2026-09-21:** superseded. All four regressions and FINDING-012 are fixed in reflex 0.9.12a2 /
+> reflex-enterprise 0.9.6a1 and re-verified end to end against the published packages (Phase 7, end of file).
+> The recommendation is now **READY to release 0.9.12**, subject to publishing reflex-enterprise 0.9.6 no later
+> than reflex 0.9.12 and a stock-install smoke after the finals publish. The text below is the 0.9.12a1
+> assessment as written on 2026-09-19.
 
 **Recommendation: do not release 0.9.12 from this train as-is.** Four regressions against 0.9.11.post1 were
 confirmed by independent verifiers; two of them break the published reflex-enterprise 0.9.5 outright and one of
@@ -68,8 +77,8 @@ What works — every headline changelog item was exercised on the published pack
 prod, against a 0.9.11.post1 baseline: the #7068 router split (navigation-delta matrix matches the PR table, −47%
 whole-frame bytes, redis/disk pickles store the URL once, old pickles discarded cleanly on upgrade); #6850 Slot
 transparency and #7176 memo app-wraps (a page that crashed outright on 0.9.11.post1 now works); #6946 (−42% inbound
-websocket bytes), #7168 (8/8 supersession shapes, baseline fails 3), #7145, #7157, #7187; #6181 (on_load render count
-halved); #7159 both halves; #7015/#7189/#7198 (80 006-entry var leak gone, 1.5–3.8× faster ops), #7115, #7131,
+websocket bytes), #7168 (8/8 supersession shapes, baseline fails 3), #7145, #7157, #7187; #6181 (per-substate providers real in the compiled output; the
+"on_load count halved" measurement was later shown to be timing noise, see Phase 7); #7159 both halves; #7015/#7189/#7198 (80 006-entry var leak gone, 1.5–3.8× faster ops), #7115, #7131,
 #6930 (PEP 810 path active on 3.15), #7080, #6923; #7153/#7078 (three route URLs that 404 on the previous stable now
 serve prerendered HTML), #7165, #7112, #7096 (the enterprise ag-grid demo's dev backend, dead on 0.9.11.post1, runs),
 #7142, #7139; #7089/#7114/#7117/#7129/#7202/#7193/#7152/#7075; #7049 (with heavy libraries installed but unused:
@@ -880,7 +889,8 @@ Render-count probe app (10 substates, memo sections, two ComponentStates, foreac
 event-loop consumers, LocalStorage/Cookie/SessionStorage, client_state, background tasks, event chains, a second page
 and a dynamic route), a byte-identical 0.9.11.post1 copy, and a StateManagerDisk probe app with Starlette routes
 exposing the manager's disk contents, cache and write queue. #6181: per-substate providers are real in the compiled
-output and halve the on_load render count for the two substates an on_load touches (A/B/dual 2 vs 4 in dev); every
+output; the recorded "A/B/dual 2 vs 4 in dev" on_load halving did not survive re-verification (bimodal 2/4 on all
+three versions over six fresh contexts each, see Phase 7 — treat as unchanged / not measurable in this app); every
 other scenario was already isolated on 0.9.11.post1 and is unchanged; prod replays the suite with exactly half the
 dev counts (StrictMode). #7159: a debounced write flushes the LATEST of two different instances; a state never obtained
 from `get_state` is persisted; `modify_state` from an API route pushes live and persists; state survives a hot reload;
@@ -915,3 +925,119 @@ were refuted (see the refuted list); `reflex db init` without the extra printing
 lines, identical on both versions) was CONFIRMED as a pre-existing low. Latent fragility noted: optional-library serializers are matched by identity against hard-coded
 module paths (`pandas.core.frame`, `plotly.graph_objs._figure`, `PIL.Image`, `sqlmodel.main`) — a library reorg would
 disable serialization silently. Skipped: reflex-local-auth (covered by `up_examples_b`).
+
+## Phase 7 — re-verification on reflex 0.9.12a2 + reflex-enterprise 0.9.6a1 (2026-09-21)
+
+**Verdict: READY — release reflex 0.9.12 and the related packages of this train, subject to the two release conditions at the end of this section.** Every original failing repro passes on the published reflex 0.9.12a2 (+ reflex-enterprise 0.9.6a1): 96 checks passed, 0 failed, 2 skipped (enterprise prod behind the paid-tier gate; #6180 not measurable in this app — both skipped in the campaign too) across the five re-verification clusters; the regression sweep on the surfaces the fixes touch found no new reflex defect; the five new items surfaced are pre-existing or static-only in reflex-enterprise and none blocks.
+
+Scope: release branch `r/pre-2026.09.18-35410916948` at `f223a0bff` = `main` `006543ab3` (all four reflex fix PRs
+#7215/#7216/#7217/#7218 plus #7230) + changelog materialization; the a2 changelog lists exactly those five entries.
+`check_release_versions.py` → all 19 packages published (reflex/reflex-base 0.9.12a2, components unchanged since a1);
+`audit_pyi.py` → PASS, 122 stubs identical in wheel and sdist, no foreign stubs (`reverify-0.9.12a2/packaging/`).
+reflex-enterprise 0.9.6a1 came as an offline wheel (`Requires-Dist: reflex[db]>=0.9.6`, still no upper bound).
+Method as in the campaign: PyPI-only venvs (`a2`, `enta2` = a2 + rxe 0.9.6a1[mcp], baselines `prev` = 0.9.11.post1,
+`shared` = 0.9.12a1, `ent` = a1 + rxe 0.9.5), five re-verification agents (Opus, xhigh) on reserved ports, an
+independent adversarial verifier for every newly claimed issue. Artifacts: `reverify-0.9.12a2/<cluster>/NOTES.md`
+(with `## VERIFICATION` appendices), `logs/`, `out/`, `shots/`; briefs in `reverify-0.9.12a2/briefs/`.
+
+### Original failing repros, re-run against the published packages
+
+| finding | issue / fix | repro (unchanged campaign script) | 0.9.11.post1 | 0.9.12a1 | 0.9.12a2 (+ rxe 0.9.6a1) | result |
+|---|---|---|---|---|---|---|
+| FINDING-001 | #7211 / #7215 | `orch_probes/metaclass_probe.py`, 3 cases | 3 OK | 2 FAIL (metaclass conflict) | 3 OK; `type(rx.State) is BaseStateMeta`; reserved names still rejected through a custom metaclass | **PASS** |
+| FINDING-001 downstream | #7211 / rxe #232 | `ent_import_probe.py` (23 modules, 13 attrs), MCPPlugin-only and AuthPlugin-only apps, `demos/oidc` | 23/23, `/ping` 200 | 1 FAIL, `/ping` 000 | 23/23, BAD=0, `/ping` 200, `demos/oidc` builds — no shim anywhere | **PASS** |
+| FINDING-003 | #7212 / #7216 | `pure_delta_memo.py` steps 3/4 | True/True | False/False | True/True | **PASS** |
+| FINDING-003 (browser) | | `elapp` `/filtered` + `s_filtered.py`, dev memory and dev + redis | secret-1 / secret-3 | secret-0 / secret-2 | secret-1 / secret-3, zero console/page/network errors | **PASS** |
+| FINDING-003 (enterprise) | | `@rxe.var(auth=True, cache=False)` right after OIDC login | immediate | stale until reload | immediate, stays correct across events and reload | **PASS** |
+| FINDING-011 | #7214 / rxe #232 | `probe_router_redact.py` in-process | OK | LEAK (with rxe 0.9.5) | OK (and OK for rxe 0.9.6a1 on 0.9.11.post1: legacy `router` still redacted) | **PASS** |
+| FINDING-011 (HTTP / MCP) | | unmodified `tickets` demo: `POST /_reflex/retrieve_state`, ndjson event delta, MCP `reflex://state/vars` reads | `router` blanked | not runnable (FINDING-001) | `rx_router_session` with `client_token`/`session_id` blanked, `client_ip` kept, on all three surfaces; UUID sweep finds only ticket ids | **PASS** |
+| FINDING-017 | #7213 / #7217 | `break_reload_probe.py` at +10 s / +24 s after breaking the app module | REFUSED 0.00 s | TIMEOUT 6 s | REFUSED 0.00 s, 200 again 12 s after the fix | **PASS** |
+| FINDING-017 (#7114 guard) | | 20 Hz `/ping` across two hot reloads | – | 0 refused | 806 requests, 0 refused, 0 errors; latency bumps only at the two edits | **PASS** |
+| FINDING-017 (SIGTERM route) | | `sigterm_port_probe.py` at +8 s / +18 s | REFUSED | TIMEOUT 6 s | REFUSED (FINDING-018 itself unchanged, pre-existing) | **PASS** |
+| FINDING-012 | #6143 / #7218 | `vapp` prod, default badge, `editor_probe.py` | fails (pre-existing) | `portal_exists=false`, 2× "portal not found" | `#portal` present, badge present, carousel opens with its images, no error; `root.jsx` shows badge and portal as siblings | **PASS** |
+| #7230 (new in a2) | #7229 | own app: `self.router.*` writes from a background task outside `async with self`, from a substate, via `ReadOnlyStateProxy` | `ImmutableStateError` | **bypassed** (a1 regression) | `ImmutableStateError`; in-lock writes allowed and emit `rx_router_page` (a2 also emits from substates, where prev emitted nothing) | **PASS** |
+
+### Regression sweep on the surfaces the fixes touch
+
+- Smoke: blank app dev and prod driven in Chromium, zero console/page/network errors; generated `package.json`
+  byte-identical to the a1 smoke copy (the `"mergician": "v2.0.2"` nit unchanged).
+- Router / deltas: the `routerlab` 24-step matrix diffs to zero lines against the campaign (every event, delta size,
+  key set); #6946 savings intact (24 delta frames / 15 274 B inbound, identical to a1; 0.9.11.post1 26 059 B);
+  #7168 8/8 supersession shapes byte-identical; #7145 3000 self-chained ticks, no RecursionError.
+- Dev server: hot reload reaches a held-open browser in ~1 s with the backend answering throughout; a syntax error
+  saved mid-run refuses fast and recovers in 2 s; `--backend-only` + `--frontend-only` pair; `--json` logging
+  intact (#7193); SIGINT to the process group exits 0 in ~1 s with no listener left.
+- Components in prod: the 9-page gallery app diffs against the a1 prod results with zero differing keys for code,
+  misc, plotly, props, sankey and toast; the only change is the data_editor overlay coming alive and three console
+  errors disappearing.
+- Enterprise (rxe 0.9.6a1 on a2, no shim): full OIDC browser flow (PKCE login, protected and background events,
+  reload, second tab, RP-initiated logout) matches the 0.9.11.post1 run apart from ports; MCP resources/tools,
+  `queue_event`, protected-handler enforcement, rate limiting (7×200 → 429 with Retry-After), garbage bearer 401,
+  legacy SSE and streamable transports as recorded; demos map 13/13, dnd 18/18, flow 11/11, mantine 52/52, ag_grid 13
+  routes identical to the campaign; tickets REST 401/401/401 + api-catalog 200; the tickets `/` UI, inert on
+  0.9.10/0.9.11a1 and unstartable on a1, now hydrates and runs (rxe #231). Prod for enterprise demos stays behind
+  the paid-tier gate (skipped, as in the campaign).
+- Upgrade path: form-designer (reflex-local-auth 0.5.0 + `reflex[db]` + alembic), basic_crud (mounted FastAPI
+  router) and data_visualisation (pandas, recharts, plotly, the campaign's `/pandas` probe page) upgraded IN PLACE
+  from 0.9.11.post1 to a2 with `.web/`, `reflex.lock/` and sqlite preserved: every flow passes, first post-upgrade
+  run is a ten-line clean recompile, pre-upgrade bcrypt logins and rows survive, cold `.web` rebuild converges,
+  prod mode serves the authenticated flows; `package.json` drift is exactly react-router 8.3.1 → 8.4.0.
+- Render / state managers: the `renderapp` render-count suite reproduces the campaign's a1 numbers — every
+  event-driven scenario's render delta compares equal, the prod replay is identical mark for mark (127/54
+  websocket frames on both); the #7159 StateManagerDisk probes match (debounce flushes the latest instance,
+  `modify_state` from an API route persists, hot-reload survival, a shutdown flush of five pickles at the SIGTERM
+  second with a 30 s debounce). #7216 exercised in a fresh app across dev/memory, dev/redis (1 worker) and
+  prod/redis (2 workers): the withheld uncached var reads U0 → U3 → U4 → U5 on a2 where a1 reads U0 → U0 → U4 → U4,
+  identical twelve-step table on all three managers, no stale value, duplicate frame, missing key or pickling
+  error. #7218 generalizes: custom app wraps at priority −2 and −3 and the real data_editor portal all render
+  beside the badge in prod (a1 renders only the +5 and 0 wraps); the memo_aschild app's uploads, toaster and a live
+  toast coexist with the badge. memo_aschild's 52-check driver passes in dev and prod. Measurement correction for
+  the campaign report: the initial `on_load` A/B/dual render count is bimodal (2 or 4) on 0.9.11.post1, a1 and a2
+  alike (six fresh contexts each), so the campaign's "#6181 halves the on_load count" row should read
+  "unchanged / not measurable in this app"; #6180 stays not observable here.
+
+### New items surfaced by the re-verification (none blocks 0.9.12; all adversarially verified)
+
+- **rxe 0.9.6a1 type-checks against the removed `reflex.istate.validation`** — `reflex_enterprise/auth/oidc/state.py:63`
+  imports `_StateMeta` under `TYPE_CHECKING` from a module a2 deleted; the runtime branch (`type(rx.State)`) is what
+  executes, all 110 rxe modules import, and 245 of 246 `from reflex…` imports in the wheel resolve. Static-only,
+  LOW, confirmed by the verifier as isolated and narrower than claimed. reflex-enterprise follow-up: import
+  `reflex_base.vars.BaseStateMeta` (public, and the metaclass of `rx.State` again) instead.
+- **rxe EventHandlerAPIPlugin `GET /_reflex/events/openapi.yaml` returns 500 unless `pyyaml` is installed** —
+  Starlette's `parse_docstring` asserts on the missing package; same code and same missing dependency in rxe 0.9.5,
+  so pre-existing. `/.well-known/api-catalog` (200) points at the failing URL. reflex-enterprise follow-up: declare
+  `pyyaml` (or answer 501 with the explanation). The verifier rebuilt both venvs itself and ran the 0.9.11.post1 +
+  rxe 0.9.5 baseline: identical 500, identical traceback; with `pyyaml` installed the endpoint serves a valid 34-path
+  document. LOW–MEDIUM for reflex-enterprise, irrelevant to the reflex 0.9.12 decision.
+- **HTTP 404 status for non-prerendered paths in prod** (page renders and hydrates, only the status is wrong) —
+  byte-identical on 0.9.11.post1, a1 and a2; this is the campaign's `up_examples_b` finding, already tracked as
+  #6983 / PR #6996. Not new.
+- **`rx.accordion.root(collapsible=True, type="multiple")` React warning** — Radix only honours `collapsible` for
+  `type="single"`, so the prop reaches the DOM and React warns in dev builds only; no DOM attribute, behaviour
+  intact, identical on all three versions; reflex-examples' form-designer ships the combination. Docs nit at most.
+- **Declaring `get_delta` on a State subclass is rejected at class creation** (`EventHandlerShadowsBuiltInStateMethodError`,
+  raised for a plain mixin base too) — identical on 0.9.11.post1, a1 and a2 (only the raise site moved:
+  `reflex/state.py` → `reflex/istate/validation.py` → `reflex_base/vars/base.py`), so pre-existing. The verifier
+  reproduced it and refuted the headline: the rejection is the blanket reserved-member guard with a working opt-in,
+  `@rx.state._override_base_method`, which makes the class-body override work on all four venvs (root state,
+  substate, shared mixin) and is exactly what reflex-enterprise 0.9.6a1 ships (`auth/oidc/state.py:2541`); and
+  `get_delta` is not a documented extension point (`docs/` never mentions it, the docstring describes monkeypatching).
+  Downgraded to cosmetic: the error message could name the marker when the shadowed member is a method rather than a
+  var. No release action.
+- Mixed-version trap unchanged: `uv pip install --upgrade reflex==0.9.12a2` without `--prerelease=allow` moves only
+  reflex/reflex-base; an app in that state still runs identically. Release-note line for the alpha; moot once
+  0.9.12 is final (the bare pin then pulls the whole set).
+- Confirmed unchanged, pre-existing, not re-reported: FINDING-018 (SIGTERM to the pid alone), granian's cosmetic
+  `Unexpected exit from worker-1` on clean shutdown, FINDING-023/024/025 and FINDING-008, all re-run and identical field for field.
+- Campaign artifact-copy gaps for the next runner (not reflex defects): `components_bumps/verification/vapp/` lacks
+  `vapp/__init__.py`; `components_bumps/gallery/gallery/gallery.py:10` asserts the original explorer's venv path.
+
+### Release conditions
+
+1. Publish reflex-enterprise 0.9.6 (from #232, the 0.9.6a1 content) **no later than** reflex 0.9.12 and its
+   related packages: the published rxe 0.9.5 has no upper bound on reflex, so a user who upgrades only reflex lands
+   on the broken pair with no resolver warning. Put "reflex 0.9.12 requires reflex-enterprise >= 0.9.6" in both
+   release notes.
+2. After the final versions publish, run the stock-install smoke from the skill's Phase 7: `pip install reflex==0.9.12`
+   with no prerelease flag, init, run, browser, and confirm the resolved graph is all-final (the component packages
+   must have moved from their `a1` versions to finals in the same batch).

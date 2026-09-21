@@ -1,0 +1,11 @@
+=== unauth retrieve_state (expect 401) ===
+401
+=== unauth event (expect 401) ===
+401
+=== bogus bearer (expect 401) ===
+401
+=== api-catalog ===
+{"linkset":[{"anchor":"http://localhost:8140/","service-desc":[{"href":"http://localhost:8140/_reflex/events/openapi.yaml","type":"application/vnd.oai.openapi"}]}]} [200]
+
+=== openapi.yaml head ===
+Internal Server Error [500]

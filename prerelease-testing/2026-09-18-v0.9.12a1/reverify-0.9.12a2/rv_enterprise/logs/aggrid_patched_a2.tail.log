@@ -1,0 +1,224 @@
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+version 0.8.28. pass Plugin classes directly instead, e.g. 
+disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_enterprise/venv_a2tk/lib/python3.11/site-packages/reflex_enterprise
+/config.py:22)
+───────────────────────────── Initializing ag_grid ─────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized ag_grid. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+DeprecationWarning: `@rx.memo` on `row_counter` without explicit annotations has
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`rowid`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (ag_grid/formatters.py:219)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (<frozen abc>:106)
+DeprecationWarning: console.info has been deprecated in version 0.9.9. use 
+logger.info(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_enterprise/venv_a2tk/lib/python3.11/site-packages/reflex_enterprise
+/app.py:154)
+Info: Single port proxy mode enabled
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_enterprise/venv_a2tk/lib/python3.11/site-packages/reflex_enterprise
+/components/ag_grid/aggrid.py:1736)
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_enterprise/venv_a2tk/lib/python3.11/site-packages/reflex_components
+_radix/plugin.py:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 44/43 0:00:01
+───────────────────────────────── App Running ──────────────────────────────────
+DeprecationWarning: `@rx.memo` on `row_counter` without explicit annotations has
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`rowid`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (ag_grid/formatters.py:219)
+App running at: http://localhost:3147/
+Backend running at: http://0.0.0.0:8149
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (<frozen abc>:106)
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_enterprise/venv_a2tk/lib/python3.11/site-packages/reflex_enterprise
+/components/ag_grid/aggrid.py:1736)
+DeprecationWarning: console.error has been deprecated in version 0.9.9. use 
+logger.error(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_enterprise/venv_a2tk/lib/python3.11/site-packages/reflex_enterprise
+/proxy.py:135)
+Unable to find the base Starlette app. Proxying will not be enabled.
+Starting frontend failed with exit code -9
+$ react-router dev --host
+  ➜  Local:   http://localhost:3147/
+  ➜  Network: http://192.0.2.2:3147/  eth0
+9:50:33 PM [vite] (ssr) connected.
+9:50:34 PM [vite] (client) [optimizer] bundling dependencies...
+Files in the public directory are served at the root path.
+Instead of 
+/public/external/reflex_enterprise/components/mantine/base/mantine_provider.js, 
+use /external/reflex_enterprise/components/mantine/base/mantine_provider.js.
+9:51:11 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:11 PM [vite] (client) [console.error] 
+************************************************ AG Grid Enterprise License 
+************************************************
+9:51:11 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+9:51:11 PM [vite] (client) [console.error] * All AG Grid Enterprise features are
+unlocked for trial.                                                             
+*
+9:51:11 PM [vite] (client) [console.error] * If you want to hide the watermark 
+please email info@ag-grid.com for a trial license key.                          
+*
+9:51:11 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:11 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:11 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:11 PM [vite] (client) [console.error] 
+************************************************ AG Grid Enterprise License 
+************************************************
+9:51:11 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+9:51:11 PM [vite] (client) [console.error] * All AG Grid Enterprise features are
+unlocked for trial.                                                             
+*
+9:51:11 PM [vite] (client) [console.error] * If you want to hide the watermark 
+please email info@ag-grid.com for a trial license key.                          
+*
+9:51:11 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:11 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:22 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:22 PM [vite] (client) [console.error] 
+************************************************ AG Grid Enterprise License 
+************************************************
+9:51:22 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+9:51:22 PM [vite] (client) [console.error] * All AG Grid Enterprise features are
+unlocked for trial.                                                             
+*
+9:51:22 PM [vite] (client) [console.error] * If you want to hide the watermark 
+please email info@ag-grid.com for a trial license key.                          
+*
+9:51:22 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:22 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:22 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:22 PM [vite] (client) [console.error] 
+************************************************ AG Grid Enterprise License 
+************************************************
+9:51:22 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+9:51:22 PM [vite] (client) [console.error] * All AG Grid Enterprise features are
+unlocked for trial.                                                             
+*
+9:51:22 PM [vite] (client) [console.error] * If you want to hide the watermark 
+please email info@ag-grid.com for a trial license key.                          
+*
+9:51:22 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:22 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:52 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:52 PM [vite] (client) [console.error] 
+************************************************ AG Grid Enterprise License 
+************************************************
+9:51:52 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+9:51:52 PM [vite] (client) [console.error] * All AG Grid Enterprise features are
+unlocked for trial.                                                             
+*
+9:51:52 PM [vite] (client) [console.error] * If you want to hide the watermark 
+please email info@ag-grid.com for a trial license key.                          
+*
+9:51:52 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:52 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:52 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:52 PM [vite] (client) [console.error] 
+************************************************ AG Grid Enterprise License 
+************************************************
+9:51:52 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+9:51:52 PM [vite] (client) [console.error] * All AG Grid Enterprise features are
+unlocked for trial.                                                             
+*
+9:51:52 PM [vite] (client) [console.error] * If you want to hide the watermark 
+please email info@ag-grid.com for a trial license key.                          
+*
+9:51:52 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:52 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:59 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:59 PM [vite] (client) [console.error] 
+************************************************ AG Grid Enterprise License 
+************************************************
+9:51:59 PM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+9:51:59 PM [vite] (client) [console.error] * All AG Grid Enterprise features are
+unlocked for trial.                                                             
+*
+9:51:59 PM [vite] (client) [console.error] * If you want to hide the watermark 
+please email info@ag-grid.com for a trial license key.                          
+*
+9:51:59 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:59 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+9:51:59 PM [vite] (client) [console.error] 
+********************************************************************************
+********************************************

@@ -1,0 +1,30 @@
+########## a2
+reflex from: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/a2/lib/python3.11/site-packages/reflex/__init__.py
+reflex version: 0.9.12a2
+1 anon initial                     client receives protected var: False  delta={'reflex___state____state.__main______probe_state': {}}
+2 anon event (value changed)       client receives protected var: False  delta={'reflex___state____state.__main______probe_state': {'hits_rx_state_': 1}}
+3 after login                      client receives protected var: True   delta={'reflex___state____state.__main______probe_state': {'shared_label_rx_state_': 'shared=SERVER-ONLY-SECRET', 'hits_rx_state_': 2}}
+4 after another event              client receives protected var: True   delta={'reflex___state____state.__main______probe_state': {'shared_label_rx_state_': 'shared=SERVER-ONLY-SECRET', 'hits_rx_state_': 3}}
+
+EXPECTED: steps 3/4 deliver shared_label = shared=SERVER-ONLY-SECRET
+RESULT  : step3 = True  step4 = True
+########## shared
+reflex from: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex/__init__.py
+reflex version: 0.9.12a1
+1 anon initial                     client receives protected var: False  delta={'reflex___state____state.__main______probe_state': {}}
+2 anon event (value changed)       client receives protected var: False  delta={'reflex___state____state.__main______probe_state': {'hits_rx_state_': 1}}
+3 after login                      client receives protected var: False  delta={'reflex___state____state.__main______probe_state': {'hits_rx_state_': 2}}
+4 after another event              client receives protected var: False  delta={'reflex___state____state.__main______probe_state': {'hits_rx_state_': 3}}
+
+EXPECTED: steps 3/4 deliver shared_label = shared=SERVER-ONLY-SECRET
+RESULT  : step3 = False  step4 = False
+########## prev
+reflex from: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/prev/lib/python3.11/site-packages/reflex/__init__.py
+reflex version: 0.9.11.post1
+1 anon initial                     client receives protected var: False  delta={'reflex___state____state.__main______probe_state': {}}
+2 anon event (value changed)       client receives protected var: False  delta={'reflex___state____state.__main______probe_state': {'hits_rx_state_': 1}}
+3 after login                      client receives protected var: True   delta={'reflex___state____state.__main______probe_state': {'hits_rx_state_': 2, 'shared_label_rx_state_': 'shared=SERVER-ONLY-SECRET'}}
+4 after another event              client receives protected var: True   delta={'reflex___state____state.__main______probe_state': {'hits_rx_state_': 3, 'shared_label_rx_state_': 'shared=SERVER-ONLY-SECRET'}}
+
+EXPECTED: steps 3/4 deliver shared_label = shared=SERVER-ONLY-SECRET
+RESULT  : step3 = True  step4 = True

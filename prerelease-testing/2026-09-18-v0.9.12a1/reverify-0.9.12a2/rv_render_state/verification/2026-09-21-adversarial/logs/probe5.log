@@ -1,0 +1,36 @@
+########## a2 ##########
+reflex: 0.9.12a2
+rx.state._override_base_method: <function _override_base_method at 0x7f241ff81440>
+public export in reflex namespace? False
+in reflex.state.__all__? False
+hidden delta: {'reflex___state____state.__main______filtered': {'n_rx_state_': 1}}
+visible delta: {'reflex___state____state.__main______filtered': {'secret_rx_state_': 'secret-1', 'visible_rx_state_': True}}
+get_delta is an EventHandler? function
+in event_handlers? False
+########## enta2 ##########
+reflex: 0.9.12a2
+rx.state._override_base_method: <function _override_base_method at 0x7fe1786bc180>
+public export in reflex namespace? False
+in reflex.state.__all__? False
+hidden delta: {'reflex___state____state.__main______filtered': {'n_rx_state_': 1}}
+visible delta: {'reflex___state____state.__main______filtered': {'secret_rx_state_': 'secret-1', 'visible_rx_state_': True}}
+get_delta is an EventHandler? function
+in event_handlers? False
+########## shared ##########
+reflex: 0.9.12a1
+rx.state._override_base_method: <function _override_base_method at 0x7f07cb1e3ba0>
+public export in reflex namespace? False
+in reflex.state.__all__? False
+hidden delta: {'reflex___state____state.__main______filtered': {'n_rx_state_': 1}}
+visible delta: {'reflex___state____state.__main______filtered': {'visible_rx_state_': True}}
+get_delta is an EventHandler? function
+in event_handlers? False
+########## prev ##########
+reflex: 0.9.11.post1
+rx.state._override_base_method: <function _override_base_method at 0x7fb7314a1260>
+public export in reflex namespace? False
+in reflex.state.__all__? False
+hidden delta: {'reflex___state____state.__main______filtered': {'n_rx_state_': 1}}
+visible delta: {'reflex___state____state.__main______filtered': {'visible_rx_state_': True, 'secret_rx_state_': 'secret-1'}}
+get_delta is an EventHandler? function
+in event_handlers? False

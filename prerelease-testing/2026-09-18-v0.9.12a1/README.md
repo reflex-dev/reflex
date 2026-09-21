@@ -18,6 +18,12 @@ probes; 14 independent adversarial verifier runs re-executed every claimed issue
 with a 0.9.11.post1 baseline. Each verifier's commands, versions and evidence live in the cluster's `NOTES.md`
 (`## VERIFICATION`) and `verification/` directory; FINDINGS.md carries the verdict per finding.
 
+**Re-verification (Phase 7, 2026-09-21): READY.** The five blockers were fixed (`fixes/`: reflex #7215, #7216,
+#7217, #7218; reflex-enterprise #232), merged and republished as reflex/reflex-base 0.9.12a2 (release branch
+`f223a0bff`); reflex-enterprise 0.9.6a1 came as an offline wheel. `reverify-0.9.12a2/` re-ran every original
+failing repro plus a regression sweep on the published packages, with an adversarial verifier behind each new
+claim: 96 checks, 0 failures, 2 skipped. Verdict, pass/fail table and release conditions: FINDINGS.md, Phase 7.
+
 ## Method
 
 - All installs PyPI-only in isolated uv venvs — never from a checkout. The ground rules given to
@@ -56,6 +62,8 @@ rerun commands, observations, verification appendix), trimmed logs and screensho
 | `up_examples_a/` `up_examples_b/` `up_examples_c/` | upgrade regression 0.9.11.post1 → 0.9.12a1 on reflex-examples apps (protocol in `briefs/UPGRADE_PROTOCOL.md`) |
 | `ent_aggrid/` `ent_map_dnd_flow_mantine/` `ent_mcp_oidc/` | reflex-enterprise 0.9.5 demos, MCP plugin and OIDC auth on both reflex versions |
 | `tools/` | `ports.py` (listening ports → pids; no `ss` in the container), `checkin.sh` (workflow/process/disk summary) |
+| `fixes/` | fix engagement for the five blockers (separate from the campaign): `briefs/`, one `REPORT.md` per fix with its independent review, follow-ups and rework, exported `patches/`, `evidence/`; overview, integration results and release sequencing in `fixes/README.md` |
+| `reverify-0.9.12a2/` | Phase 7 on the published reflex 0.9.12a2 + reflex-enterprise 0.9.6a1: `packaging/` (19 packages, stub audit), `rv_state_fixes/` (001, 003, #7230), `rv_enterprise/` (011, OIDC/MCP/REST/demos with rxe 0.9.6a1), `rv_devserver_badge/` (017, 012, smoke), `rv_examples_upgrade/` (in-place upgrades 0.9.11.post1 → a2), `rv_render_state/` (#7216/#7218 across state managers, render counts); `briefs/`, per-cluster `NOTES.md` with `## VERIFICATION` |
 
 ## Campaign notes for the next run
 
