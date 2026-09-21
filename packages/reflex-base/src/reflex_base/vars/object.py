@@ -463,14 +463,6 @@ class LiteralObjectVar(
             keys_and_values.append(f"{key.json()}:{value.json()}")
         return "{" + ", ".join(keys_and_values) + "}"
 
-    def __hash__(self) -> int:
-        """Get the hash of the var.
-
-        Returns:
-            The hash of the var.
-        """
-        return hash((type(self).__name__, self._js_expr))
-
     @classmethod
     def _get_all_var_data_without_creating_var(
         cls,
@@ -558,7 +550,7 @@ def object_keys_operation(value: ObjectVar):
         The keys of the object.
     """
     return var_operation_return(
-        js_expression=f"Object.keys({value} ?? {{}})",
+        js_expression=f"Object.keys({value!s} ?? {{}})",
         var_type=list[str],
     )
 
@@ -574,7 +566,7 @@ def object_values_operation(value: ObjectVar):
         The values of the object.
     """
     return var_operation_return(
-        js_expression=f"Object.values({value} ?? {{}})",
+        js_expression=f"Object.values({value!s} ?? {{}})",
         var_type=list[value._value_type()],
     )
 
@@ -590,7 +582,7 @@ def object_entries_operation(value: ObjectVar):
         The entries of the object.
     """
     return var_operation_return(
-        js_expression=f"Object.entries({value} ?? {{}})",
+        js_expression=f"Object.entries({value!s} ?? {{}})",
         var_type=list[tuple[str, value._value_type()]],
     )
 
@@ -607,7 +599,7 @@ def object_merge_operation(lhs: ObjectVar, rhs: ObjectVar):
         The merged object.
     """
     return var_operation_return(
-        js_expression=f"({{...{lhs}, ...{rhs}}})",
+        js_expression=f"({{...{lhs!s}, ...{rhs!s}}})",
         var_type=Mapping[
             lhs._key_type() | rhs._key_type(),
             lhs._value_type() | rhs._value_type(),
@@ -677,6 +669,6 @@ def object_has_own_property_operation(object: ObjectVar, key: Var):
         The result of the check.
     """
     return var_operation_return(
-        js_expression=f"{object}.hasOwnProperty({key})",
+        js_expression=f"{object!s}.hasOwnProperty({key!s})",
         var_type=bool,
     )

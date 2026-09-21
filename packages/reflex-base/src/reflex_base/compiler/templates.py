@@ -388,18 +388,8 @@ export const initialEvents = () => []
 """
     )
 
-    state_reducer_str = "\n".join(
-        rf'const [{format_state_name(state_name)}, dispatch_{format_state_name(state_name)}] = useReducer(applyDelta, initialState["{state_name}"])'
-        for state_name in initial_state
-    )
-
     create_state_contexts_str = "\n".join(
-        rf"createElement(StateContexts.{format_state_name(state_name)},{{value: {format_state_name(state_name)}}},"
-        for state_name in initial_state
-    )
-
-    dispatchers_str = "\n".join(
-        f'"{state_name}": dispatch_{format_state_name(state_name)},'
+        rf"createElement(SubstateProvider, {{substateName: '{state_name}', contextName: '{format_state_name(state_name)}'}},"
         for state_name in initial_state
     )
 
@@ -431,7 +421,7 @@ if (typeof window !== "undefined") {
         else ""
     )
 
-    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useReducer, useState, createElement, useEffect }} from "react"
+    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useReducer, useRef, useState, createElement, useEffect, useLayoutEffect }} from "react"
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
 import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, getStateContext, registerApp, eventLoop }} from "$/utils/context-registry"
 import {{ jsx }} from "@emotion/react";
@@ -511,26 +501,68 @@ export function EventLoopProvider({{ children }}) {{
   // React-tree path (e.g. ``ErrorBoundary.onError``) can call ``addEvents``.
   eventLoop.addEvents = addEventsLocal;
   eventLoop.connectErrors = connectErrors;
-  return createElement(
-    EventLoopContext.Provider,
-    {{ value: [addEventsLocal, connectErrors] }},
-    children
+  return useMemo(
+    () =>
+      createElement(
+        EventLoopContext.Provider,
+        {{ value: [addEventsLocal, connectErrors] }},
+        children
+      ),
+    [addEventsLocal, connectErrors, children],
   );
 }}
 
-export function StateProvider({{ children }}) {{
-  {state_reducer_str}
-  const dispatchers = useMemo(() => {{
-    return {{
-      {dispatchers_str}
-    }}
-  }}, [])
+// ``useLayoutEffect`` warns when rendered on the server, where no effect runs
+// at all, so fall back to ``useEffect`` there.
+const useIsomorphicLayoutEffect =
+  typeof document !== "undefined" ? useLayoutEffect : useEffect;
 
-  return (
-    {create_state_contexts_str}
-    createElement(DispatchContext, {{value: dispatchers}}, children)
+// Holds the mutable substate -> dispatch registry that ``SubstateProvider``
+// writes into and ``EventLoopProvider`` reads. The registry object identity is
+// stable for the lifetime of the tree, so neither adding a dispatcher nor
+// updating a substate re-renders the consumers of ``DispatchContext``.
+const DispatchProvider = ({{ children }}) => {{
+  const dispatchers = useRef({{}});
+  return useMemo(
+    () =>
+      createElement(DispatchContext, {{ value: dispatchers.current }}, children),
+    [children],
+  );
+}};
+
+// One provider per substate: each owns its own reducer, so a delta for one
+// substate only re-renders its provider instead of recreating every provider.
+const SubstateProvider = ({{ children, substateName, contextName }}) => {{
+  const dispatchers = useContext(DispatchContext);
+  const [state, dispatchSubstate] = useReducer(
+    applyDelta,
+    initialState[substateName],
+  );
+  // A layout effect, not a passive one: layout effects for the whole commit
+  // run before any passive effect, so every dispatcher is registered before
+  // ``EventLoopProvider`` (mounted below this provider) connects the socket.
+  // A delta naming an unregistered substate is a fatal state mismatch.
+  useIsomorphicLayoutEffect(() => {{
+    dispatchers[substateName] = dispatchSubstate;
+    return () => {{
+      delete dispatchers[substateName];
+    }};
+  }}, [dispatchers, dispatchSubstate, substateName]);
+  return useMemo(
+    () => createElement(StateContexts[contextName], {{ value: state }}, children),
+    [children, state, contextName],
+  );
+}};
+
+export function StateProvider({{ children }}) {{
+  return useMemo(
+    () => (
+    createElement(DispatchProvider, {{}},
+    {create_state_contexts_str}children
     {")" * len(initial_state)}
-  )
+  )),
+    [children],
+  );
 }}"""
 
 

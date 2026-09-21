@@ -17,7 +17,7 @@ from reflex_base.vars.function import FunctionVar
 
 from reflex.event import EventType, event, run_script
 from reflex.istate.storage import Cookie
-from reflex.state import BaseState, State
+from reflex.state import BaseState, State, _override_base_method
 
 from .config import LOCALE_COOKIE_NAME, get_active_i18n_config
 from .runtime import negotiate_locale, use_locale
@@ -49,6 +49,7 @@ class I18nState(State):
     locale_cookie: str = Cookie("", name=LOCALE_COOKIE_NAME)
 
     @classmethod
+    @_override_base_method
     def is_user_defined(cls) -> bool:
         """Whether this is a user-authored state.
 

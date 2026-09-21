@@ -12,7 +12,9 @@ import inspect
 import json
 import logging
 import operator
+import os
 import sys
+import tempfile
 import time
 import traceback
 import urllib.parse
@@ -25,6 +27,7 @@ from collections.abc import (
     Sequence,
 )
 from contextvars import Token
+from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, overload
 
@@ -73,7 +76,7 @@ from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
-from reflex.istate.data import RouterData
+from reflex.istate.data import SessionData
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
 from reflex.route import (
@@ -1664,7 +1667,11 @@ class App(MiddlewareMixin, LifespanMixin):
             sticky_badge._add_style_recursive({})
             return sticky_badge
 
-        self.app_wraps[0, "StickyBadge"] = lambda _: memoized_badge()
+        # The badge memo renders no children, and `_app_root` nests every
+        # lower-priority wrap inside the previous one, so keep the badge inside
+        # a Fragment: wraps below it (e.g. the `rx.data_editor` portal at
+        # priority -1) then stay siblings of the badge and reach the DOM.
+        self.app_wraps[0, "StickyBadge"] = lambda _: Fragment.create(memoized_badge())
 
     def _apply_decorated_pages(self):
         """Add @rx.page decorated pages to the app."""
@@ -1764,14 +1771,40 @@ class App(MiddlewareMixin, LifespanMixin):
                 clear_hash_caches()
 
     def _write_stateful_pages_marker(self):
-        """Write list of routes that create dynamic states for the backend to use later."""
-        if self._state is not None:
-            stateful_pages_marker = (
-                prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
-            )
-            stateful_pages_marker.parent.mkdir(parents=True, exist_ok=True)
-            with stateful_pages_marker.open("w") as f:
+        """Write list of routes that create dynamic states for the backend to use later.
+
+        Multiple backend workers may write the marker at the same time, so the
+        content is written to a temporary file and swapped into place with
+        ``Path.replace`` to ensure readers only ever see a complete marker.
+        """
+        stateful_pages_marker = (
+            prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
+        )
+        stateful_pages_marker.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(
+            dir=stateful_pages_marker.parent,
+            prefix=f"{stateful_pages_marker.name}.",
+            suffix=".tmp",
+        )
+        os.close(fd)
+        tmp_marker = Path(tmp_path)
+        try:
+            with tmp_marker.open("w", encoding="utf-8") as f:
                 json.dump(list(self._stateful_pages), f)
+            tmp_marker.chmod(0o644)
+            for attempt in range(100):
+                try:
+                    tmp_marker.replace(stateful_pages_marker)
+                    break
+                except PermissionError:
+                    if not constants.IS_WINDOWS or attempt == 99:
+                        raise
+                    # Windows readers temporarily prevent replacing their open file.
+                    # Wait 10 milliseconds before retrying.
+                    time.sleep(0.01)
+        except BaseException:
+            tmp_marker.unlink(missing_ok=True)
+            raise
 
     def add_all_routes_endpoint(self):
         """Add an endpoint to the app that returns all the routes."""
@@ -2085,6 +2118,10 @@ class EventNamespace(AsyncNamespace):
         # Number of client_error reports logged per SID, for rate limiting.
         self._client_error_counts: dict[str, int] = {}
 
+        # Connection-scoped router_data entries per SID, computed once at
+        # connect time instead of for every event on the connection.
+        self._static_router_data: dict[str, dict[str, Any]] = {}
+
         # Start time and count of the current process-wide client_error window.
         self._client_error_window_start = 0.0
         self._client_error_window_count = 0
@@ -2136,6 +2173,51 @@ class EventNamespace(AsyncNamespace):
         if otel.enabled:
             otel.record_connection(1)
 
+        # Headers, client IP, and session id cannot change for the lifetime of
+        # the connection; compute them once instead of on every event.
+        self._static_router_data[sid] = self._build_static_router_data(sid, environ)
+
+    def _build_static_router_data(self, sid: str, environ: dict) -> dict[str, Any]:
+        """Build the connection-scoped router_data entries for a socket.
+
+        Args:
+            sid: The Socket.IO session id.
+            environ: The request information, including HTTP headers.
+
+        Returns:
+            The router_data entries that are constant for the connection.
+        """
+        asgi_scope = environ.get("asgi.scope", {})
+
+        # Get the client headers.
+        headers = {
+            k.decode("utf-8"): v.decode("utf-8")
+            for (k, v) in asgi_scope.get("headers", [])
+        }
+
+        # Get the client IP
+        try:
+            client_ip = asgi_scope["client"][0]
+            headers["asgi-scope-client"] = client_ip
+        except (KeyError, IndexError):
+            client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
+
+        # Unroll reverse proxy forwarded headers.
+        client_ip = (
+            headers
+            .get(
+                "x-forwarded-for",
+                client_ip,
+            )
+            .partition(",")[0]
+            .strip()
+        )
+        return {
+            constants.RouteVar.SESSION_ID: sid,
+            constants.RouteVar.HEADERS: headers,
+            constants.RouteVar.CLIENT_IP: client_ip,
+        }
+
     def on_disconnect(self, sid: str) -> asyncio.Task | None:
         """Event for when the websocket disconnects.
 
@@ -2148,6 +2230,7 @@ class EventNamespace(AsyncNamespace):
         if otel.enabled:
             otel.record_connection(-1)
         self._client_error_counts.pop(sid, None)
+        self._static_router_data.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
@@ -2240,45 +2323,33 @@ class EventNamespace(AsyncNamespace):
             msg = f"Failed to deserialize event data: {fields}."
             raise exceptions.EventDeserializationError(msg) from ex
 
-        # Get the event environment.
-        if self.app.sio is None:
-            msg = "Socket.IO is not initialized."
-            raise RuntimeError(msg)
-        environ = self.app.sio.get_environ(sid, self.namespace)
-        if environ is None:
-            msg = "Socket.IO environ is not initialized."
-            raise RuntimeError(msg)
-
-        # Get the client headers.
-        headers = {
-            k.decode("utf-8"): v.decode("utf-8")
-            for (k, v) in environ["asgi.scope"]["headers"]
-        }
-
-        # Get the client IP
-        try:
-            client_ip = environ["asgi.scope"]["client"][0]
-            headers["asgi-scope-client"] = client_ip
-        except (KeyError, IndexError):
-            client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
-
-        # Unroll reverse proxy forwarded headers.
-        client_ip = (
-            headers
-            .get(
-                "x-forwarded-for",
-                client_ip,
+        static_router_data = self._static_router_data.get(sid)
+        if static_router_data is None:
+            # The connection was not seen by on_connect (e.g. namespace created
+            # after the socket connected); fall back to the connection environ.
+            if self.app.sio is None:
+                msg = "Socket.IO is not initialized."
+                raise RuntimeError(msg)
+            environ = self.app.sio.get_environ(sid, self.namespace)
+            if environ is None:
+                msg = "Socket.IO environ is not initialized."
+                raise RuntimeError(msg)
+            static_router_data = self._static_router_data[sid] = (
+                self._build_static_router_data(sid, environ)
             )
-            .partition(",")[0]
-            .strip()
-        )
         router_data = event.router_data
+        router_data.update(static_router_data)
+        # The cached headers reach the event, and from there `state.router_data`,
+        # which is a plain mutable dict: sharing the mapping would let a handler
+        # mutating `self.router_data["headers"]` corrupt the connection cache for
+        # every later event on this socket. The shallow copy is ~17x cheaper than
+        # the per-event header decode it replaced, so the cache still pays off.
+        router_data[constants.RouteVar.HEADERS] = static_router_data[
+            constants.RouteVar.HEADERS
+        ].copy()
         router_data.update({
             constants.RouteVar.QUERY: format.format_query_params(event.router_data),
             constants.RouteVar.CLIENT_TOKEN: token,
-            constants.RouteVar.SESSION_ID: sid,
-            constants.RouteVar.HEADERS: headers,
-            constants.RouteVar.CLIENT_IP: client_ip,
         })
         router_data[constants.RouteVar.PATH] = "/" + (
             self.app.router(path) or "404"
@@ -2400,4 +2471,11 @@ class EventNamespace(AsyncNamespace):
                 BaseStateToken(ident=new_token or token, cls=self.app._state)
             ) as state:
                 state.router_data[constants.RouteVar.SESSION_ID] = sid
-                state.router = RouterData.from_router_data(state.router_data)
+                # Record the identity the state was loaded under; duplicate-token
+                # handling can hand back a fresh one here.
+                state.router_data[constants.RouteVar.CLIENT_TOKEN] = new_token or token
+                # Rebuild from router_data to keep the session var in step with it.
+                if (
+                    session := SessionData.from_router_data(state.router_data)
+                ) != state.rx_router_session:
+                    state.rx_router_session = session

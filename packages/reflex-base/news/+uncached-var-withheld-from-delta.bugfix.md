@@ -1,0 +1,1 @@
+An `@rx.var(cache=False)` value only counts as sent to the client once the delta carrying it is delivered, so a value a `get_delta` override withholds is sent as soon as the override releases it instead of being deduplicated away until it changes again.
