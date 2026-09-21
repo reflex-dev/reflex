@@ -16,6 +16,7 @@ from types import MethodType
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, SupportsIndex, TypeVar, cast
 
 import wrapt
+from reflex_base import constants
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
 from reflex_base.utils.exceptions import ImmutableStateError
@@ -263,7 +264,7 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             ImmutableStateError: If the state is not in mutable mode.
         """
-        if name == "router":
+        if name == constants.ROUTER:
             from reflex.state import _router_fget
 
             # Router fields belong to the root. A linked proxy keeps their dirty
