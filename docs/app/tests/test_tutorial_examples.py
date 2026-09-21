@@ -679,3 +679,239 @@ def test_pandas_failed_read_duplicate_and_invalid_filter(monkeypatch):
     assert run_csv_upload(state, [unreadable]) == []
     state.apply_filters({"region": "North", "product": "Tea"})
     assert state.region == "All" and state.download_summary() is None
+
+
+class DocumentSession(SimpleNamespace):
+    """Check that the copied document app mutates state under its lock."""
+
+    def __setattr__(self, name, value):
+        """Require a lock before changing session fields."""
+        assert STATE_LOCKED.get(), f"Unlocked assignment: {name}"
+        super().__setattr__(name, value)
+
+    async def __aenter__(self):
+        """Enter the background event's state lock."""
+        assert not STATE_LOCKED.get()
+        STATE_LOCKED.set(True)
+        return self
+
+    async def __aexit__(self, *args):
+        """Release the lock before external work resumes."""
+        STATE_LOCKED.set(False)
+
+
+@pytest.fixture
+def document_demo(monkeypatch):
+    """Load the actual complete document assistant, including its SDK import."""
+    return load_application_demo(
+        monkeypatch, "guides/ai_applications.md", "document_assistant"
+    )
+
+
+def document_session():
+    """Create an independent session without prior results."""
+    return DocumentSession(answer="", sources=[], error="", status="", processing=False)
+
+
+def ask_document(module, state, question):
+    """Execute the exact event with a submitted question."""
+    asyncio.run(module.DocumentState.ask.fn(state, {"question": question}))
+
+
+def test_document_permissions_precede_ranking(document_demo, monkeypatch):
+    """An unauthorized passage is neither scored nor returned to the reader."""
+    module = document_demo
+    scanned = []
+    original = module.words
+
+    def tracked_words(text):
+        scanned.append(text)
+        return original(text)
+
+    monkeypatch.setattr(module, "words", tracked_words)
+    assert module.retrieve("acquisition budget", "alice") == []
+    assert not any("420000" in text for text in scanned)
+    assert [p.source_id for p in module.retrieve("acquisition budget", "bob")] == [
+        "finance"
+    ]
+    assert module.retrieve("annual leave", "unknown") == []
+    assert module.retrieve("cafeteria menu", "alice") == []
+    assert [p.source_id for p in module.retrieve("annual leave", "alice")] == ["leave"]
+
+
+@pytest.mark.parametrize("reader", ["", "unknown", "alice"])
+def test_document_no_match_or_invalid_identity_skips_model(
+    document_demo, monkeypatch, reader
+):
+    """Lack of access must not leak passages to a model or the client."""
+    module = document_demo
+    monkeypatch.setenv("REFLEX_DEMO_READER", reader)
+    generate = AsyncMock()
+    monkeypatch.setattr(module, "generate_answer", generate)
+    state = document_session()
+    ask_document(module, state, "acquisition budget")
+    generate.assert_not_called()
+    assert not state.answer and not state.sources and not state.processing
+    assert bool(state.error) == (reader != "alice")
+
+
+def test_document_rejects_unknown_citation_and_recovers(document_demo, monkeypatch):
+    """A model cannot reveal a hidden source by naming its known identifier."""
+    module = document_demo
+    monkeypatch.setenv("REFLEX_DEMO_READER", "alice")
+    generate = AsyncMock(
+        return_value=module.GroundedAnswer(
+            claims=[module.Claim(text="A claim", source_ids=["finance"])]
+        )
+    )
+    monkeypatch.setattr(module, "generate_answer", generate)
+    state, other = document_session(), document_session()
+    ask_document(module, state, "annual leave")
+    assert state.error and not state.answer and not state.sources
+    assert not state.processing and not other.answer and not other.error
+    assert [p.source_id for p in generate.call_args.args[1]] == ["leave"]
+    generate.return_value = module.GroundedAnswer(
+        claims=[module.Claim(text="Employees receive 20 days.", source_ids=["leave"])]
+    )
+    ask_document(module, state, "annual leave")
+    assert not state.error and "20 days" in state.answer
+    assert state.sources[0]["text"] == module.PASSAGES[0].text
+    assert "420000" not in str(vars(state))
+    assert not other.answer and not other.sources
+    assert module.DocumentState.ask.is_background
+    assert module.document_assistant() is not None
+
+
+@pytest.mark.parametrize("question", ["", "   ", "x" * 1001])
+def test_document_invalid_question_skips_model(document_demo, monkeypatch, question):
+    """Blank and oversized submissions do not start external work."""
+    generate = AsyncMock()
+    monkeypatch.setattr(document_demo, "generate_answer", generate)
+    state = document_session()
+    ask_document(document_demo, state, question)
+    generate.assert_not_called()
+    assert not state.processing
+
+
+@pytest.mark.parametrize("failure", [TimeoutError(), ValueError("invalid response")])
+def test_document_error_and_empty_response(document_demo, monkeypatch, failure):
+    """Timeouts and unsupported answers publish no stale answer or citations."""
+    module = document_demo
+    monkeypatch.setenv("REFLEX_DEMO_READER", "alice")
+    generate = AsyncMock(side_effect=failure)
+    monkeypatch.setattr(module, "generate_answer", generate)
+    state = document_session()
+    ask_document(module, state, "annual leave")
+    assert state.error and not state.processing and not state.sources
+    generate.side_effect = None
+    generate.return_value = module.GroundedAnswer(claims=[])
+    ask_document(module, state, "annual leave")
+    assert not state.error and not state.answer and not state.sources
+    assert "do not answer" in state.status
+
+
+def test_document_concurrent_submission_is_rejected(document_demo, monkeypatch):
+    """A second submission cannot overwrite the first request's pending state."""
+    module = document_demo
+    monkeypatch.setenv("REFLEX_DEMO_READER", "alice")
+    calls = []
+    state = document_session()
+
+    async def generate(question, passages):
+        assert not STATE_LOCKED.get()
+        calls.append(question)
+        await module.DocumentState.ask.fn(state, {"question": "laptop"})
+        return module.GroundedAnswer(
+            claims=[module.Claim(text="20 days", source_ids=["leave"])]
+        )
+
+    monkeypatch.setattr(module, "generate_answer", generate)
+    ask_document(module, state, "annual leave")
+    assert calls == ["annual leave"]
+    assert state.answer == "20 days [leave]" and not state.processing
+
+
+@pytest.mark.parametrize("missing", ["OPENAI_API_KEY", "OPENAI_MODEL"])
+def test_document_missing_configuration(document_demo, monkeypatch, missing):
+    """Missing provider configuration produces a retryable state without a call."""
+    monkeypatch.setenv("REFLEX_DEMO_READER", "alice")
+    monkeypatch.setenv("OPENAI_API_KEY", "offline-test")
+    monkeypatch.setenv("OPENAI_MODEL", "offline-model")
+    monkeypatch.delenv(missing)
+    factory = MagicMock()
+    monkeypatch.setattr(document_demo, "AsyncOpenAI", factory)
+    state = document_session()
+    ask_document(document_demo, state, "annual leave")
+    factory.assert_not_called()
+    assert state.error and not state.processing
+
+
+@pytest.mark.parametrize(
+    "outcome", ["answer", "refusal", "incomplete", "invalid-json", "api-error"]
+)
+def test_document_real_sdk_protocol(document_demo, monkeypatch, outcome):
+    """The installed SDK parses the real Responses JSON format without network I/O."""
+    import json
+
+    import httpx
+    from openai import AsyncOpenAI
+
+    module = document_demo
+    requests = []
+
+    def respond(request):
+        assert not STATE_LOCKED.get()
+        payload = json.loads(request.content)
+        requests.append(payload)
+        if outcome == "api-error":
+            return httpx.Response(500, json={"error": {"message": "offline failure"}})
+        text = json.dumps({"claims": [{"text": "20 days", "source_ids": ["leave"]}]})
+        if outcome == "invalid-json":
+            text = "not json"
+        content = (
+            {"type": "refusal", "refusal": "I cannot answer."}
+            if outcome == "refusal"
+            else {"type": "output_text", "text": text, "annotations": []}
+        )
+        return httpx.Response(
+            200,
+            json={
+                "id": "resp_offline",
+                "object": "response",
+                "created_at": 1,
+                "model": "offline-model",
+                "status": "incomplete" if outcome == "incomplete" else "completed",
+                "output": [
+                    {
+                        "type": "message",
+                        "id": "msg_offline",
+                        "role": "assistant",
+                        "status": "completed",
+                        "content": [content],
+                    }
+                ],
+            },
+        )
+
+    def client(**kwargs):
+        return AsyncOpenAI(
+            **kwargs,
+            http_client=httpx.AsyncClient(transport=httpx.MockTransport(respond)),
+        )
+
+    monkeypatch.setenv("REFLEX_DEMO_READER", "alice")
+    monkeypatch.setenv("OPENAI_API_KEY", "offline-test")
+    monkeypatch.setenv("OPENAI_MODEL", "offline-model")
+    monkeypatch.setattr(module, "AsyncOpenAI", client)
+    state = document_session()
+    ask_document(module, state, "annual leave")
+    assert len(requests) == 1
+    payload = requests[0]
+    assert payload["store"] is False and payload["max_output_tokens"] == 2048
+    assert payload["text"]["format"]["type"] == "json_schema"
+    context = json.loads(payload["input"])
+    assert [p["source_id"] for p in context["passages"]] == ["leave"]
+    assert "420000" not in json.dumps(payload)
+    assert bool(state.answer) == (outcome == "answer")
+    assert bool(state.error) == (outcome != "answer")
+    assert not state.processing
