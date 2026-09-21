@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 from reflex_base import constants, otel
+from reflex_base.components.app_wraps import collect_var_app_wraps_in_subtree
 from reflex_base.components.component import (
     BaseComponent,
     Component,
@@ -50,7 +51,6 @@ from rich.progress import Progress
 
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
-from reflex.compiler.plugins.builtin import collect_var_app_wraps_in_subtree
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
 from reflex.state import BaseState, code_uses_state_contexts
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
@@ -1206,6 +1206,27 @@ def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:
     app._register_plugin_pages(plugins)
 
 
+def _read_stateful_pages_marker() -> list[str] | None:
+    """Read the routes that create state classes from a previous compile.
+
+    A missing marker or one truncated by an older writer requires full page
+    evaluation. New writers replace the marker atomically.
+
+    Returns:
+        The stateful routes, or None if no valid marker has been written yet.
+    """
+    marker = prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
+    try:
+        return json.loads(marker.read_text())
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+    except PermissionError:
+        if constants.IS_WINDOWS:
+            # A concurrent atomic replacement can temporarily block Windows readers.
+            return None
+        raise
+
+
 def compile_app(
     app: App,
     *,
@@ -1231,15 +1252,14 @@ def compile_app(
     app._pages = {}
 
     should_compile = app._should_compile()
-    backend_dir = prerequisites.get_backend_dir()
-    if not dry_run and not should_compile and backend_dir.exists():
-        stateful_pages_marker = backend_dir / constants.Dirs.STATEFUL_PAGES
-        if stateful_pages_marker.exists():
-            with stateful_pages_marker.open("r") as file:
-                stateful_pages = json.load(file)
-            for route in stateful_pages:
-                logger.debug(f"BE Evaluating stateful page: {route}")
-                app._compile_page(route, save_page=False)
+    if not dry_run and not should_compile:
+        stateful_pages = _read_stateful_pages_marker()
+    else:
+        stateful_pages = None
+    if stateful_pages is not None:
+        for route in stateful_pages:
+            logger.debug(f"BE Evaluating stateful page: {route}")
+            app._compile_page(route, save_page=False)
         if app._state is not None:
             utils._restore_bundled_libraries()
             utils._compile_initial_state(app._state)
@@ -1278,6 +1298,11 @@ def compile_app(
     # ``library`` from the current module layout (handles a module flipping to
     # a package across hot reloads).
     reset_memo_component_classes()
+    # Page evaluation rebuilds every chain that is not interned by handler, so
+    # entries from an earlier compile can only retain dead chains.
+    context = RegistrationContext.ensure_context()
+    context._bound_event_chains.clear()
+    context._memoized_event_triggers.clear()
     for plugin in compiler_plugins:
         for dependency in plugin.get_frontend_dependencies():
             _bundle_library(dependency)
@@ -1314,7 +1339,8 @@ def compile_app(
 
     app._evaluated_pages.update(compile_ctx.compiled_pages)
     app._stateful_pages.update(compile_ctx.stateful_routes)
-    app._write_stateful_pages_marker()
+    if not dry_run:
+        app._write_stateful_pages_marker()
     app._add_optional_endpoints()
     app._validate_var_dependencies()
 

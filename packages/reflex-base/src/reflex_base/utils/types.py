@@ -52,6 +52,8 @@ if TYPE_CHECKING:
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)
 
+_AnnotatedAlias = type(typing.Annotated[int, ""])
+
 # Potential Union types for isinstance checks.
 UnionTypes = (Union, types.UnionType)
 
@@ -492,11 +494,24 @@ def _apply_type_params(
         return _substitute_type_params(value, substitution)
 
 
-def resolve_type_alias(cls: GenericType) -> GenericType:
-    """Resolve a TypeAliasType (PEP 695 ``type`` statement) to its underlying value.
+def _annotated_origin(cls: Any) -> Any:
+    """Get the type that ``Annotated[X, ...]`` annotates.
 
-    Handles bare aliases, subscripted generic aliases (``Keys[str]`` for
-    ``type Keys[T] = list[T]``, substituting the type parameters into the
+    Args:
+        cls: The type to inspect.
+
+    Returns:
+        ``X`` for ``Annotated[X, ...]``, else None.
+    """
+    return cls.__origin__ if type(cls) is _AnnotatedAlias else None
+
+
+def resolve_type_alias(cls: GenericType) -> GenericType:
+    """Resolve a type alias to its underlying value.
+
+    Unwraps ``Annotated[X, ...]`` to ``X``, and resolves TypeAliasTypes (PEP 695
+    ``type`` statement): bare aliases, subscripted generic aliases (``Keys[str]``
+    for ``type Keys[T] = list[T]``, substituting the type parameters into the
     alias value), and aliases appearing as members of a union.
 
     Args:
@@ -505,6 +520,12 @@ def resolve_type_alias(cls: GenericType) -> GenericType:
     Returns:
         The resolved type, or the original type if it contains no alias.
     """
+    # ``Annotated`` metadata (a pydantic discriminator, a validator, a unit) is
+    # never part of the type Reflex reasons about, and ``__origin__`` already
+    # flattens nested annotations. Unwrapped before the alias branches so that
+    # ``Annotated[SomeAlias, ...]`` resolves both layers.
+    if (annotated := _annotated_origin(cls)) is not None:
+        return resolve_type_alias(annotated)
     origin = get_origin(cls)
     # The subscripted case is checked first: on Python 3.10 ``types.GenericAlias``
     # proxies ``__class__`` to its origin, so ``Keys[str]`` passes an isinstance
@@ -1317,6 +1338,21 @@ def typehint_issubclass(
         return treat_any_as_subtype_of_everything
     if possible_subclass is NoReturn:
         return True
+
+    # ``Annotated[X, ...]`` compares as ``X``. ``get_origin`` reports ``X``
+    # rather than ``Annotated``, so the comparisons below would otherwise read
+    # the hint as a bare ``X`` carrying the metadata as a type argument.
+    if (
+        _annotated_origin(possible_subclass) is not None
+        or _annotated_origin(possible_superclass) is not None
+    ):
+        return typehint_issubclass(
+            resolve_type_alias(possible_subclass),
+            resolve_type_alias(possible_superclass),
+            treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+            treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+            treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
+        )
 
     provided_type_origin = get_origin(possible_subclass)
     accepted_type_origin = get_origin(possible_superclass)

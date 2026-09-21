@@ -252,7 +252,7 @@ def docdemo(
             default_value=_VIEW_TAB_VALUE,
             class_name="w-full",
         ),
-        class_name="w-full py-4",
+        class_name="w-full my-6",
         **props,
     )
 
@@ -295,5 +295,5 @@ def docgraphing(
             default_value=_VIEW_TAB_VALUE,
             class_name="w-full",
         ),
-        class_name="w-full py-4 flex flex-col",
+        class_name="w-full my-6 flex flex-col",
     )
