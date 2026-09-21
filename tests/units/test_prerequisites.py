@@ -739,6 +739,55 @@ def test_install_frontend_packages_cache_respects_root_bun_lock(
     assert install_runs == 2
 
 
+@pytest.mark.parametrize("package_manager", ["bun", "npm"])
+def test_install_frontend_packages_cache_ignores_package_json_formatting(
+    install_packages_env: InstallPackagesEnv, package_manager: str
+):
+    """Package manager formatting must not cause installs on subsequent compiles.
+
+    Args:
+        install_packages_env: The isolated frontend installation environment.
+        package_manager: The package manager used for installation.
+    """
+    env = install_packages_env
+    env.root_package_json.write_text("{}")
+    calls: list[list[str]] = []
+
+    def run_package_manager(args, **kwargs):
+        """Record the command and simulate a package manager rewriting its manifest.
+
+        Args:
+            args: Package manager command arguments.
+            **kwargs: Package manager invocation options.
+        """
+        calls.append(list(args))
+        package_json = json.loads(env.web_package_json.read_text())
+        package_json["dependencies"] = {"some-pkg": "1.0.0"}
+        env.web_package_json.write_text(
+            json.dumps(package_json, indent=2, sort_keys=True) + "\n"
+        )
+
+    env.patch_pm([package_manager], run_package_manager)
+    env.install({"some-pkg@1.0.0"})
+    assert len(calls) == 1
+    formatted = env.web_package_json.read_text()
+    cache_file = js_runtimes._frontend_packages_cache_path()
+    cache_mtime = cache_file.stat().st_mtime_ns
+
+    for _ in range(2):
+        env.install({"some-pkg@1.0.0"})
+        assert len(calls) == 1
+        assert env.web_package_json.read_text() == formatted
+        assert env.root_package_json.read_text() == formatted
+        assert cache_file.stat().st_mtime_ns == cache_mtime
+
+    package_json = json.loads(env.root_package_json.read_text())
+    package_json["dependencies"]["some-pkg"] = "2.0.0"
+    env.root_package_json.write_text(json.dumps(package_json))
+    env.install({"some-pkg@1.0.0"})
+    assert len(calls) == 2
+
+
 def test_install_frontend_packages_npm_does_not_create_bogus_bun_lock(
     install_packages_env: InstallPackagesEnv,
 ):
