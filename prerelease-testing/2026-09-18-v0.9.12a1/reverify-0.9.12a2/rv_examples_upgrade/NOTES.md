@@ -351,3 +351,138 @@ for a1.
   were taken deeper (prod and cold included) instead.
 - Prod was run for `form-designer` and `data_visualisation`, not for `basic_crud` (the campaign
   covered `basic_crud` prod on a1 and nothing in the a2 delta touches the mounted-API path).
+
+---
+
+## VERIFICATION
+
+Independent adversarial re-check of this cluster's two NEW-issue claims, 2026-09-21, by a second
+agent working from the written repros alone. Ports 3760–3763 / 8760–8763 only; read-only campaign
+venvs `$SB/envs/{prev,shared,a2}` (0.9.11.post1 / 0.9.12a1 / 0.9.12a2); driver
+`$SB/envs/driver/bin/python`; workspace `$SB/reverify/rv_examples_upgrade-verify`;
+`REFLEX_TELEMETRY_ENABLED=false` everywhere. Probes copied verbatim from `probes/` (no edits).
+Every server stopped by pid (`scripts/killtree.py` + the pid holding the port per `$SB/bin/ports.py`);
+no pattern kills; all eight ports verified clear at the end. Evidence under `verification/`.
+
+**Both claims reproduce exactly as written. Both are pre-existing — identical on 0.9.11.post1,
+0.9.12a1 and 0.9.12a2 — so neither is a 0.9.12 release issue. Claim 1 is additionally a duplicate
+of something the campaign already recorded; claim 2's blast radius is smaller than the claim says
+(dev builds only).**
+
+| claim | prev 0.9.11.post1 | a1 0.9.12a1 | a2 0.9.12a2 | verdict |
+|---|---|---|---|---|
+| 1. dynamic route direct-loaded in prod answers 404 | `/`→200, `/item/7`→404, `/item/abc`→404 | identical | identical | CONFIRMED, pre-existing, **already in FINDINGS.md** |
+| 2. `collapsible=True` + `type="multiple"` React console error | present | present | present | CONFIRMED, pre-existing, app-side misuse, **dev-build only** |
+
+### Claim 1 — dynamic route 404 in prod
+
+Reproduced from the written repro: `probes/dynroute_probe` run with `--env prod` on each venv
+(ports 3760 prev / 3762 a1 / 3761 a2; logs `verification/logs/dyn_{prev,a1,a2}_prod.log`, each
+carrying its `RUNNING-REFLEX-FROM` line).
+
+```
+0.9.11.post1  /→200  /item/7→404  /item/abc→404  /nope→404
+0.9.12a1      /→200  /item/7→404  /item/abc→404  /nope→404
+0.9.12a2      /→200  /item/7→404  /item/abc→404  /nope→404
+```
+
+Chromium on `/item/7`, all three versions byte-identical
+(`verification/shots/dyn_{prev,a1,a2}/report.json`): page dump `item page / id=7`, evals
+`['id=7', '/item/7 | title=Dynapp | Item']`, `page_errors: []`, `failed_requests: []`, the only
+`http_errors` entry the document's own 404. So the page renders, the title is right and the state
+hydrates — only the status line is wrong, exactly as claimed.
+
+Root cause confirmed in the installed a2 wheel, and it is the same cause the campaign already
+recorded: `reflex/utils/exec.py::get_frontend_mount()` mounts the build with Starlette
+`PrecompressedStaticFiles(directory=…, html=True)`, and Starlette's `html=True` answers a miss with
+`404.html` **at status 404**. Verified on the wire: the `/item/7` body is byte-identical to
+`.web/build/client/404.html` (`cmp` clean, `verification/out/a2_item7.html`), served with
+`content-length: 5436`, `server: granian`. The build also emits `__spa-fallback.html`, byte-identical
+to `404.html`, which nothing ever serves. `sed -n '340,400p'` of `exec.py` on prev vs the same block
+on a2 diffs **empty** — the prod static-serving path is unchanged by this train, which is the
+source-level proof that a2 cannot have introduced it.
+
+Refutation attempts, all failed to dislodge it — but they do dislodge its novelty:
+- **Already recorded.** FINDINGS.md's `up_examples_b` section carries this verbatim ("prod 404s for
+  dynamic routes (pre-existing on both, issue #6983 / PR #6996 …) — and roots it in
+  `reflex/utils/exec.py:383` … `PrecompressedStaticFiles(html=True)`, which answers a miss with
+  `404.html` at 404; the build's `__spa-fallback.html` is byte-identical to `404.html` and never
+  used"). Per the re-verification rules this is a known campaign finding, not a new issue. It also
+  already has an upstream ticket and an open fix: the checkout carries `31dbaa851 fix(app): return
+  correct HTTP status for SPA fallback routes`, `139ba3c7b Serve SPA fallback with 200 for routable
+  paths in prod static serving` and `47b9992a2 Match SPA fallback routes with URL separators on
+  Windows`, all only on `origin/claude/pr-6996-review-97oxj9` / `origin/claude/investigate-reflex-
+  deployment-YoZvO` — i.e. not merged, so its absence from 0.9.12a2 is expected, not a fix
+  regression.
+- **Not an environment quirk:** three separate app dirs, three venvs, plain `curl --noproxy '*'`,
+  and Chromium all agree.
+- **Not app misuse:** the 25-line probe is the documented `/item/[id]` form and the page works.
+- **Prod-only, as claimed** (new control): the same app in dev on a2 answers `/item/7`→200,
+  `/item/abc`→200 — and also `/nope`→200, which is ordinary vite SPA-dev behaviour
+  (`verification/logs/dyn_a2_dev.log`).
+- Scope note: the miss is not specific to *dynamic* routes — it is every path the prod build did not
+  prerender. Static pages are prerendered to their own `index.html` and stay 200; a dynamic segment
+  cannot be, so in practice dynamic routes are the whole user-visible surface. `sitemap.xml` lists
+  only `/`, so crawlers are not being pointed at the 404-status URLs by reflex itself.
+
+Severity: agree it is **not a release blocker** (identical to the previous stable, tracked upstream).
+I would file it at low/medium rather than low — in a real deployment every dynamic-route URL returns
+404 to crawlers, uptime checks and CDNs while looking fine in a browser — but that is a ticket-
+priority argument on an existing ticket, not a 0.9.12 gate.
+
+### Claim 2 — `rx.accordion.root(collapsible=True, type="multiple")`
+
+Reproduced from `probes/accordion_probe` on all three venvs (dev, port 3763/8763, driver
+`scripts/acc.json`). All three console arrays and all three eval vectors are identical:
+
+```
+console: ["[error] Received `%s` for a non-boolean attribute `%s`.\n\nIf you want to write it to the
+          DOM, pass a string instead: … true collapsible collapsible true collapsible",
+          3 × "[error] The pseudo class \":first-child\" is potentially unsafe when doing SSR …",
+          "[log] Disconnect websocket on pagehide"]
+evals:   ['0', '', 'True', 'False', 'True', 'False']     # prev == a1 == a2
+page_errors: []   http_errors: []   failed_requests: []
+```
+
+`diff` of the rendered `acc_after.txt` across prev/a1/a2 is empty. Evidence:
+`verification/shots/acc_{prev,a1,a2}/`.
+
+Root cause named at both layers:
+- Python: `reflex_components_radix/primitives/accordion.py:104` declares
+  `collapsible: Var[bool]` on `AccordionRoot` unconditionally and `_exclude_props()` (lines 141-148)
+  drops only `radius/duration/easing/show_dividers`, so `collapsible` is always forwarded. That file
+  is **byte-identical** across `$SB/envs/{prev,shared,a2}` (`cmp` clean both ways).
+- JS: `@radix-ui/react-accordion` 1.2.20 (same pin on both versions) destructures
+  `collapsible = false` out of props in `AccordionImplSingle` (`dist/index.mjs:48`) but **not** in
+  `AccordionImplMultiple` (`dist/index.mjs:69-98`, which hard-codes `collapsible: true` in its
+  provider and spreads the rest), so the prop reaches `Primitive.div` and React warns.
+- Consequence check: React drops the attribute after warning, so
+  `document.querySelectorAll('[collapsible]').length === 0` on every version, and the `type="single"`
+  root still opens/collapses (`True`/`False` in the eval vector). Behaviourally inert.
+
+Refutation attempts:
+- **In-app sighting confirmed:** `up_examples_b/form-designer/form_designer/pages/response.py`
+  `responses_accordion()` really does pass `collapsible=True, type="multiple"`.
+- **Not new, not version-sensitive:** identical console + evals + DOM on prev/a1/a2, and identical
+  source on all three.
+- **Narrower than claimed** (new control): in a **prod** build the warning does not exist at all —
+  React's production build strips these dev warnings. `verification/shots/acc_a2_prod/report.json`
+  from the same probe under `--env prod` on a2 has console `["[error] Failed to load resource: … 404
+  (Not Found)"` (the template's missing `favicon.ico`, a known campaign note), "[log] Disconnect
+  websocket on pagehide"]` and the same eval vector `['0','','True','False','True','False']`. The
+  campaign's own prod artifact agrees: `shots/fd_a2_prod/report.json` shows no `collapsible` error.
+  So "every visit to `/responses/<id>` logs the error" holds in dev only, not for deployed users.
+
+Severity: **low, and not a release item** — pre-existing, app-side misuse, no behavioural effect, and
+invisible in production builds. The residue is upstream-Reflex-side at most: either drop
+`collapsible` from the rendered props when `type == "multiple"` (a one-line `_render`/`_exclude_props`
+condition) or say so in the `rx.accordion.root` docstring.
+
+### Cluster re-check byproducts (nothing new)
+
+- FINDING-018 reproduced again on a2: `killtree.py` on the `reflex run` pid left the vite `node`
+  child holding 3763, which made `run2.sh` refuse the next start (visible in the run transcript).
+  Unchanged behaviour; the notes' own guard caught it.
+- Benign noise seen and ignored per the agent brief: the `SitemapPlugin` "enabled by default"
+  warning, the implicit-Radix-Themes `DeprecationWarning` (fires on prev too), emotion's
+  `:first-child` SSR warnings, and the prod `favicon.ico` 404.

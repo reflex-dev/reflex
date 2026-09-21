@@ -252,3 +252,107 @@ reads it as a behaviour change.
 
 All five app servers (3100-3104 / 8100-8104) and the redis instance on 8119 were stopped; a final
 `uv run --no-project python $SB/bin/ports.py` shows nothing of mine listening.
+
+## VERIFICATION
+
+Independent adversarial re-check of the one NEW issue this cluster claims (the stale
+`reflex.istate.validation._StateMeta` TYPE_CHECKING import in reflex-enterprise 0.9.6a1).
+Reproduced from the written repro alone, on the same read-only PyPI-only venvs. My scratch
+dir: `$SB/reverify/rv_state_fixes-verify/` (own pyright projects only; nothing installed into
+`$SB/envs/*`). No servers, no ports: the claim is static-analysis-only, so nothing needed to
+be started — the four browser channels are not applicable, and I confirm that independently
+below rather than taking it on trust.
+
+**Environment trap hit and avoided.** My first attempt ran the venv pythons with cwd
+`/home/user/reflex`, and `/home/user/reflex/reflex/__init__.py` shadowed the installed
+package (`AttributeError: No reflex attribute __version__` out of the *checkout*). Every
+result below was re-run from `$SB/reverify/rv_state_fixes-verify`. Resolved versions from that
+neutral cwd: a2 = reflex 0.9.12a2 / reflex-base 0.9.12a2; enta2 = same + reflex-enterprise
+0.9.6a1; shared = 0.9.12a1; prev = 0.9.11.post1.
+
+### Verdict: CONFIRMED (mechanism exactly as described), with one clause overstated
+
+| step | prev 0.9.11.post1 | a1 0.9.12a1 | a2 0.9.12a2 |
+| --- | --- | --- | --- |
+| `from reflex.istate.validation import _StateMeta` | `ModuleNotFoundError` | **imports** | `ModuleNotFoundError` |
+| `reflex/istate/validation.py` on disk | absent | **present** | absent |
+| `type(rx.State)` | `BaseStateMeta` | `_StateMeta` | `BaseStateMeta` |
+| pyright `reveal_type(_StateMetaclass)` | `Unknown` | `type[_StateMeta]` | **`Unknown`** |
+
+Step 1 of the repro reproduces verbatim. Step 2's reading of the source is accurate:
+`.../reflex_enterprise/auth/oidc/state.py:63` imports it under `if TYPE_CHECKING:` and `:72`
+falls back to `_StateMetaclass = type(rx.State)`, consumed at `:360` by
+`class OIDCCookieMeta(_StateMetaclass)`.
+
+**Classification `new in a2` is correct, and tighter than claimed.** A full module-set diff of
+the two installs shows `istate/validation.py` is the *only* file removed between a1 and a2
+(`reflex`: 1 removed, 0 added; `reflex_base`: 0/0). A static sweep of all **246**
+`from reflex…/reflex_base… import` statements in rxe 0.9.6a1 resolves **245**; the single
+unresolvable one is exactly `auth/oidc/state.py:63`. So this is isolated, not a pattern.
+
+**Runtime harmlessness independently confirmed** (not taken from the cluster's own probe): my
+own `pkgutil.walk_packages` sweep of the installed rxe on enta2 gives **OK=110, BAD=0**, the
+only skip being `reflex_enterprise.testing.plugin` (needs pytest). `OIDCCookieMeta.__mro__` is
+`[OIDCCookieMeta, reflex_base.vars.base.BaseStateMeta, abc.ABCMeta, type, object]`.
+
+### What I could NOT confirm — the blast-radius clause is overstated
+
+The claim says "OIDCCookieMeta and every state built from it are untyped". Measured with real
+pyright 1.1.408 against the enta2 venv, that is not what happens. A realistic downstream
+consumer (`class OktaAuthState(OIDCAuthState, rx.State)` with an extra `my_field: str`) gives
+**0 errors, 0 warnings**, and the types resolve: `type[OIDCCookieMeta]`, `type[OIDCAuthState]`,
+`type[OktaAuthState]`, `OktaAuthState.my_field` → `str`. Only the metaclass *variable* is
+`Unknown`; the classes built from it are still named types. Two further caps on the impact:
+
+- pyright does not report diagnostics inside `site-packages`, so the unresolved import is
+  invisible to consumers.
+- **reflex-enterprise 0.9.6a1 ships no `py.typed`** (verified in the wheel itself: 0 `py.typed`
+  entries out of 160; it does ship component `.pyi` files, but none for `auth/oidc/state.py`).
+  Under PEP 561 it does not advertise types at all.
+
+Where the issue *is* real is reflex-enterprise's own type-check run, faithfully reproduced as
+`pyr2/libpattern.py`:
+
+| pyright config | a1 (module present) | a2 (module gone) |
+| --- | --- | --- |
+| basic, `reportMissingImports` **on** (pyright default) | 0 errors | **1 error** `reportMissingImports` |
+| basic, `reportMissingImports` off (what the code comment says rxe uses) | 0 errors | **0 errors**, `_StateMetaclass` = `Unknown` |
+| strict | 5 errors (incl. `reportPrivateUsage` on `_StateMeta`) | **9 errors** (`reportUntypedBaseClass`, `reportUnknownParameterType` ×3, `reportUnknownMemberType`, …) |
+
+So with rxe's stated config the build stays green and the only cost is lost precision; the
+comment at `:60-64` ("The metaclass reflex >= 0.9.12 gives `rx.State`", "against the locked
+reflex the cookie metaclass below is fully typed") and the runtime comment at `:66-70` ("a
+*sibling* subclass of it from 0.9.12 on") are both factually **stale for 0.9.12a2**, which is
+the durable part of the finding.
+
+### Root cause (read from the installed wheels)
+
+a1 introduced `reflex/istate/validation.py` defining `_StateMeta`, a *subclass* of
+`BaseStateMeta`, and made it `rx.State`'s metaclass — the direct cause of FINDING-001. The a2
+fix deletes that module and folds reserved-name validation back into `BaseStateMeta.__new__`
+(`reflex_base/vars/base.py`: `StateValueError` raise at 4090, `_reflex_state_root` at
+4154/4179, `new_cls._reflex_state_root = new_cls` at 4293), restoring
+`type(rx.State) is BaseStateMeta`. rxe 0.9.6a1's compat shim was authored against a1 and its
+TYPE_CHECKING branch still points at a1's layout.
+
+### The recommended remedy checks out
+
+Substituting `from reflex_base.vars import BaseStateMeta as _StateMetaclass`
+(`pyr3/fixpattern.py`) gives **0 errors on a2 and 0 on prev**, with `_StateMetaclass` fully
+typed as `type[BaseStateMeta]`. `BaseStateMeta` is public and in `reflex_base.vars.__all__` on
+all four envs. It errors only on a1 (`reportGeneralTypeIssues: metaclass conflict`) — correctly,
+since a1 is the discarded alpha whose metaclass split caused FINDING-001 in the first place. So
+the fix is right for every version that will actually ship.
+
+### Overlap check
+
+Not a restatement of a recorded campaign finding. FINDING-001 is the runtime metaclass conflict
+(fixed, and re-confirmed fixed in row 1a above); FINDING-011 is the rxe REST session-token
+redaction no-op. Neither covers a TYPE_CHECKING-only import.
+
+### Bottom line
+
+Confirmed, **LOW**, cosmetic/static-analysis only, **not a release blocker for reflex 0.9.12**.
+It is a reflex-enterprise follow-up (stale comment + one-line import swap), and nothing about
+it argues against shipping 0.9.12 final. Downgrading the claim's blast-radius wording is the
+only correction.

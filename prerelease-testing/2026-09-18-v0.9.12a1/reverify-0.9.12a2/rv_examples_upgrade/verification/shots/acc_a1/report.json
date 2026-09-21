@@ -1,0 +1,129 @@
+{
+ "url": "http://localhost:3763/",
+ "actions": [
+  [
+   "0",
+   "wait",
+   "ok"
+  ],
+  [
+   "1",
+   "dump",
+   "ok"
+  ],
+  [
+   "2",
+   "screenshot",
+   "ok"
+  ],
+  [
+   "eval",
+   "0"
+  ],
+  [
+   "3",
+   "eval",
+   "ok"
+  ],
+  [
+   "eval",
+   ""
+  ],
+  [
+   "4",
+   "eval",
+   "ok"
+  ],
+  [
+   "5",
+   "click",
+   "ok"
+  ],
+  [
+   "6",
+   "wait",
+   "ok"
+  ],
+  [
+   "eval",
+   "True"
+  ],
+  [
+   "7",
+   "eval",
+   "ok"
+  ],
+  [
+   "8",
+   "click",
+   "ok"
+  ],
+  [
+   "9",
+   "wait",
+   "ok"
+  ],
+  [
+   "eval",
+   "False"
+  ],
+  [
+   "10",
+   "eval",
+   "ok"
+  ],
+  [
+   "11",
+   "click",
+   "ok"
+  ],
+  [
+   "12",
+   "wait",
+   "ok"
+  ],
+  [
+   "eval",
+   "True"
+  ],
+  [
+   "13",
+   "eval",
+   "ok"
+  ],
+  [
+   "14",
+   "click",
+   "ok"
+  ],
+  [
+   "15",
+   "wait",
+   "ok"
+  ],
+  [
+   "eval",
+   "False"
+  ],
+  [
+   "16",
+   "eval",
+   "ok"
+  ],
+  [
+   "17",
+   "dump",
+   "ok"
+  ]
+ ],
+ "console": [
+  "[error] Received `%s` for a non-boolean attribute `%s`.\n\nIf you want to write it to the DOM, pass a string instead: %s=\"%s\" or %s={value.toString()}. true collapsible collapsible true collapsible",
+  "[error] The pseudo class \":first-child\" is potentially unsafe when doing server-side rendering. Try changing it to \":first-of-type\".",
+  "[error] The pseudo class \":first-child\" is potentially unsafe when doing server-side rendering. Try changing it to \":first-of-type\".",
+  "[error] The pseudo class \":first-child\" is potentially unsafe when doing server-side rendering. Try changing it to \":first-of-type\".",
+  "[log] Disconnect websocket on pagehide"
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": []
+}

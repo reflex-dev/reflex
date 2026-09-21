@@ -58,10 +58,10 @@ uv pip install --python $SB/reverify/rv_devserver_badge/venv/bin/python --prerel
 | 2b | #7114 intact — 20 Hz `/ping` across two hot reloads | **PASS** 806 pings, 0 refused, 0 errors, max 0.202 s | — | — | `logs/hotreload_a2.json`, `logs/hotreload_a2.tsv` |
 | 2c | `sigterm_port_probe.py` (SIGTERM to the pid alone) | **PASS** `CONNECTION_REFUSED` at +8 s/+18 s, like prev | (`TIMEOUT_NO_REPLY_6s`) | `CONNECTION_REFUSED` | `logs/portprobe_a2.json` |
 | 2d | FINDING-018 unchanged (`reflex run` ignores SIGTERM to its own pid) | unchanged: `still_alive=true` | — | same | `logs/portprobe_a2.json` |
-| 2e | SIGINT to the process group of a normal dev session | **PASS** exit 0 in 1.03 s, no listener left | — | — | `logs/devsurface_run.txt` |
+| 2e | SIGINT to the process group of a normal dev session | **PASS** exit 0 in 1.03 s, no listener left | — | — | `logs/sigint_run.txt`, `logs/sigint_a2.trimmed.log` |
 | 3a | FINDING-012 — `vapp` prod, DEFAULT badge | **PASS** `#portal` exists, badge present, carousel opens, no "portal not found" | **FAIL** `portal_exists=false`, 2x "portal not found" | (campaign: fails) | `out/editor_a2.json`, `out/editor_a1.json`, `shots/a2-editor.png` |
 | 3b | compiled `root.jsx` nesting | **PASS** badge and `#portal` are siblings in a `Fragment` | badge is the **parent** of `#portal` | — | `out/root_a2.jsx` vs `out/root_a1.jsx` |
-| 3c | wider gallery surface in prod (data_editor / recharts / plotly / sonner / code / upload) | see below | — | — | `out/gprod-results.json`, `shots/gprod-*.png` |
+| 3c | wider gallery surface in prod (data_editor / recharts / plotly / sonner / code / misc) | **PASS** identical to the campaign's a1 prod run except the overlay now opens; 0 page errors / 0 failed requests / 0 responses >= 400 | (campaign `components_bumps/shots/prod-results.json`) | — | `out/gprod-results.json`, `shots/gprod-*.png` |
 | 4a | hot reload end to end in a held-open browser | **PASS** new heading in 1.0 s, backend answered `200` throughout, state events still work | — | — | `out/hr_a2.json`, `shots/hr-{before,after}.png` |
 | 4b | `--backend-only` then `--frontend-only` pairing | **PASS** events flow, 0 console errors; `.web/nocompile` absent (#7089 intact) | — | — | `out/split_a2.json`, `logs/split_{backend,frontend}.log` |
 | 4c | `reflex run --json` (#7193) still JSON | **PASS** 247/270 lines JSON, 26 `_granian*` records | — | — | `logs/devsurface_a2.log` |
@@ -105,10 +105,12 @@ bash $W/scripts/gallery_prod_a2.sh        # prod 3231 + drive.py + portal_probe.
 Apps: `apps/dsc_*` are copies of `dev_server_cli/{dsc,dsc_prev}`; `apps/vapp*` a copy of
 `components_bumps/verification/vapp`; `apps/gallery` a copy of `components_bumps/gallery`.
 
-> Note for whoever re-runs 3a: the archived `components_bumps/verification/vapp/` and
-> `components_bumps/gallery/` are missing `vapp/__init__.py` / (gallery already has one), so the
-> first prod run dies with `AttributeError: module 'vapp' has no attribute 'app'`. `touch
-> vapp/vapp/__init__.py` before running. That is an artifact-copy gap, not a reflex defect.
+> Two artifact-copy gaps to know about before re-running 3a/3c (neither is a reflex defect):
+> the archived `components_bumps/verification/vapp/` has no `vapp/__init__.py`, so the first prod
+> run dies with `AttributeError: module 'vapp' has no attribute 'app'` — `touch
+> vapp/vapp/__init__.py` first; and `components_bumps/gallery/gallery/gallery.py` line 10 asserts
+> `"/envs/cb/" in rx.__file__`, the explorer's venv, so point it at your own venv (I replaced it
+> with `"/reverify/rv_devserver_badge/venv/"`).
 
 ## FINDING-017 / #7217 — fixed
 
@@ -135,7 +137,12 @@ still does not stop the dev server (`still_alive: true`). What changed is only t
 answers `CONNECTION_REFUSED` at +8 s and +18 s where a1 answered `TIMEOUT_NO_REPLY_6s`.
 
 A normal dev session **does** stop on SIGINT to the process group: `exit_code=0` after 1.03 s,
-and `ports.py 3227 8227` is empty afterwards.
+and `ports.py` reports nothing bound afterwards — measured twice, once at the end of the
+`--json` dev-surface run on 3227/8227 and once in a dedicated run on 3232/8232
+(`bash $W/scripts/sigint_group_a2.sh`, `logs/sigint_run.txt`). The log tail is
+`App running at … / Backend running at … / [ERROR] Unexpected exit from worker-1 / Info: Reflex
+app stopped.` — that ERROR line is granian's own cosmetic message, present identically on
+0.9.11.post1 and on a1 (campaign issue 3), so it is unchanged, not new.
 
 Client-visible consequence of the fix, worth knowing but correct: while the app module is broken
 the browser logs `WebSocket connection to 'ws://…/_event/…' failed: … ERR_CONNECTION_REFUSED`
@@ -165,6 +172,24 @@ jsx(Fragment,{},children,jsx(MemoizedBadge_04c36749,{},jsx("div",{...,id:"portal
 // 0.9.12a2 — badge and portal are SIBLINGS
 jsx(Fragment,{},children,jsx(Fragment,{},jsx(MemoizedBadge_04c36749,{},),jsx("div",{...,id:"portal"},)))
 ```
+
+### Wider gallery surface in prod (check 3c)
+
+The campaign's 9-page `components_bumps/gallery` app, prod on one port (3231), driven by the
+cluster's own `drive.py` and `portal_probe.py`. I diffed my `gprod-results.json` against the
+campaign's a1 `components_bumps/shots/prod-results.json` section by section:
+
+* `code`, `misc`, `plotly`, `props`, `sankey`, `toast` — **zero differing keys**.
+* `editor` — the only difference, and it is the fix: `overlay_imgs` `[]` → `['/green.png',
+  '/red.png','/green.png','/red.png']`, `overlay_present` 4 → 11.
+* `nav` — differs only in the port in the recorded URL.
+* console: a1 had the 404 plus **three** `Cannot open Data Grid overlay editor …` errors; a2 has
+  **only** the pre-existing 404 (on `/sankey/`). `pageerrors`, `failed_requests`,
+  `bad_responses` are all empty on both.
+* `portal_probe.py` on a2 prod: `carousel_root` present with control dots, 8 `.carousel` CSS
+  rules matched, overlay images loaded.
+
+So the badge fix changed exactly what it was meant to and nothing else in that surface.
 
 ## Dev-server surface (#7217's blast radius)
 
