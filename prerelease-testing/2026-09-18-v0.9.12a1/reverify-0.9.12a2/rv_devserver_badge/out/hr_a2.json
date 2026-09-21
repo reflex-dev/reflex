@@ -1,0 +1,217 @@
+{
+ "heading_before": "dsc v5-reload",
+ "body_before": "dsc v5-reload\n\n1\n\ninc\nadd\n\nbg\n\n0\n\nclient+\n\n0\n\nmemo\n\n1\n\ncs+\n\n0\n\nalpha\n\nbeta\n\nsmall\n\npid=5195 nmods=763 rss_kb=59876 present=reflex.compiler\n\nother\ndyn",
+ "hot_reload_seen_in_browser_after_s": 1.0,
+ "backend_pings_during_reload": [
+  [
+   "200",
+   0.02
+  ],
+  [
+   "200",
+   0.02
+  ]
+ ],
+ "backend_never_hung": true,
+ "body_after_reload": "dsc v6-HOTRELOAD\n\n1\n\ninc\nadd\n\nbg\n\n0\n\nclient+\n\n0\n\nmemo\n\n1\n\ncs+\n\n0\n\nalpha\n\nbeta\n\nsmall\n\npid=5195 nmods=763 rss_kb=59876 present=reflex.compiler\n\nother\ndyn",
+ "body_after_reload_click": "dsc v6-HOTRELOAD\n\n2\n\ninc\nadd\n\nbg\n\n0\n\nclient+\n\n0\n\nmemo\n\n2\n\ncs+\n\n0\n\nalpha\n\nbeta\n\nsmall\n\npid=5195 nmods=763 rss_kb=59876 present=reflex.compiler\n\nother\ndyn",
+ "ping_after_syntax_error_12s": [
+  "CONNECTION_REFUSED",
+  0.0
+ ],
+ "ping_after_syntax_error_20s": [
+  "CONNECTION_REFUSED",
+  0.0
+ ],
+ "recovered_to_200_after_s": 2.0,
+ "body_after_fix": "dsc v5-reload\n\n2\n\ninc\nadd\n\nbg\n\n0\n\nclient+\n\n0\n\nmemo\n\n2\n\ncs+\n\n0\n\nalpha\n\nbeta\n\nsmall\n\npid=5195 nmods=763 rss_kb=59876 present=reflex.compiler\n\nother\ndyn",
+ "console": [
+  [
+   "log",
+   "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module"
+  ],
+  [
+   "debug",
+   "[vite] connecting..."
+  ],
+  [
+   "debug",
+   "[vite] connected."
+  ],
+  [
+   "info",
+   "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ],
+  [
+   "debug",
+   "[vite] invalidate /utils/context.jsx: Could not Fast Refresh. Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /utils/context.jsx"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /utils/context.jsx"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /utils/context.jsx"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /app/routes/_index.jsx"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /app/routes/_index.jsx"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /app/root.jsx"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /app_components/reflex/compiler/compiler.jsx"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.jsx"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /app_components/reflex/app.jsx"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /app_components/dsc/dsc.jsx"
+  ],
+  [
+   "error",
+   "WebSocket connection to 'ws://localhost:8227/_event/?token=4abeb37e-69f1-4268-8a06-a27fec66b672&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET"
+  ],
+  [
+   "error",
+   "WebSocket connection to 'ws://localhost:8227/_event/?token=4abeb37e-69f1-4268-8a06-a27fec66b672&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  [
+   "error",
+   "WebSocket connection to 'ws://localhost:8227/_event/?token=4abeb37e-69f1-4268-8a06-a27fec66b672&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  [
+   "error",
+   "WebSocket connection to 'ws://localhost:8227/_event/?token=4abeb37e-69f1-4268-8a06-a27fec66b672&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  [
+   "error",
+   "WebSocket connection to 'ws://localhost:8227/_event/?token=4abeb37e-69f1-4268-8a06-a27fec66b672&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  [
+   "error",
+   "WebSocket connection to 'ws://localhost:8227/_event/?token=4abeb37e-69f1-4268-8a06-a27fec66b672&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  [
+   "error",
+   "WebSocket connection to 'ws://localhost:8227/_event/?token=4abeb37e-69f1-4268-8a06-a27fec66b672&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  [
+   "error",
+   "WebSocket connection to 'ws://localhost:8227/_event/?token=4abeb37e-69f1-4268-8a06-a27fec66b672&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  [
+   "error",
+   "WebSocket connection to 'ws://localhost:8227/_event/?token=4abeb37e-69f1-4268-8a06-a27fec66b672&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  [
+   "error",
+   "WebSocket connection to 'ws://localhost:8227/_event/?token=4abeb37e-69f1-4268-8a06-a27fec66b672&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  [
+   "error",
+   "WebSocket connection to 'ws://localhost:8227/_event/?token=4abeb37e-69f1-4268-8a06-a27fec66b672&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  [
+   "error",
+   "WebSocket connection to 'ws://localhost:8227/_event/?token=4abeb37e-69f1-4268-8a06-a27fec66b672&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  [
+   "error",
+   "WebSocket connection to 'ws://localhost:8227/_event/?token=4abeb37e-69f1-4268-8a06-a27fec66b672&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  [
+   "error",
+   "WebSocket connection to 'ws://localhost:8227/_event/?token=4abeb37e-69f1-4268-8a06-a27fec66b672&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  [
+   "error",
+   "WebSocket connection to 'ws://localhost:8227/_event/?token=4abeb37e-69f1-4268-8a06-a27fec66b672&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  [
+   "debug",
+   "[vite] invalidate /utils/context.jsx: Could not Fast Refresh. Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /utils/context.jsx"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /utils/context.jsx"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /utils/context.jsx"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /app/root.jsx"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /app_components/reflex/compiler/compiler.jsx"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.jsx"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /app_components/reflex/app.jsx"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /app_components/dsc/dsc.jsx"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /app/routes/_index.jsx"
+  ],
+  [
+   "debug",
+   "[vite] hot updated: /app/routes/_index.jsx"
+  ],
+  [
+   "log",
+   "Disconnect websocket on page navigation"
+  ],
+  [
+   "log",
+   "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module"
+  ],
+  [
+   "debug",
+   "[vite] connecting..."
+  ],
+  [
+   "debug",
+   "[vite] connected."
+  ],
+  [
+   "info",
+   "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ]
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_4xx_5xx": []
+}
