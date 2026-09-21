@@ -27,6 +27,7 @@ def monthly_payment(principal: float, annual_rate: float, years: int) -> float:
     if not 1 <= years <= 50:
         raise ValueError("Term must be between 1 and 50 years.")
     months = years * 12
+    # Convert the annual percentage rate to a monthly decimal rate.
     rate = annual_rate / 1200
     if rate == 0:
         return principal / months

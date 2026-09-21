@@ -3,7 +3,9 @@
 import json
 import os
 import sys
-from functools import cache, partial
+from collections.abc import Callable
+from copy import deepcopy
+from functools import cache, partial, wraps
 
 import reflex as rx
 import reflex_enterprise as rxe
@@ -27,6 +29,31 @@ from reflex_docs.whitelist import _check_whitelisted_path
 # higher and the prod build fails with EMFILE error.
 WINDOWS_MAX_ROUTES = int(os.environ.get("REFLEX_WEB_WINDOWS_MAX_ROUTES", "100"))
 LLMS_TXT_PATH = "/llms.txt"
+
+
+def _stable_page_factory(
+    component: Callable[[], rx.Component],
+) -> Callable[[], rx.Component]:
+    """Keep demo state identities stable while isolating compiler mutations.
+
+    Args:
+        component: The page factory whose demos must be instantiated only once.
+
+    Returns:
+        A factory yielding independent copies of the pristine component tree.
+    """
+    build_once = cache(component)
+
+    @wraps(component)
+    def page() -> rx.Component:
+        """Copy the pristine tree before handing it to a compiler or plugin.
+
+        Returns:
+            A fresh component tree retaining the original state classes.
+        """
+        return deepcopy(build_once())
+
+    return page
 
 
 def _llms_txt_directive() -> rx.Component:
@@ -177,8 +204,8 @@ for route in routes:
 
         page_args = {
             # XY registers chart plans by evaluating pages again at worker startup.
-            # Reuse each tree so ComponentState demos are instantiated only once.
-            "component": cache(route.component)
+            # Instantiate demos once, but give each compiler its own mutable tree.
+            "component": _stable_page_factory(route.component)
             if callable(route.component)
             else route.component,
             "route": route.path,
