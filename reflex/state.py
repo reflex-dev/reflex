@@ -66,6 +66,7 @@ from reflex_base.vars.base import (
     EvenMoreBasicBaseState,
     ToOperation,
     Var,
+    _validate_state_name,
     computed_var,
     dispatch,
     is_computed_var,
@@ -88,7 +89,6 @@ from reflex.istate.data import (
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
 from reflex.istate.proxy import MutableProxy, is_mutable_type
 from reflex.istate.storage import ClientStorageBase
-from reflex.istate.validation import _install_state_validation, _validate_state_name
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
 
@@ -626,7 +626,7 @@ CLASS_VAR_NAMES = frozenset({
 })
 
 
-class BaseState(EvenMoreBasicBaseState):
+class BaseState(EvenMoreBasicBaseState, state_root=True):
     """The state of the app."""
 
     # A map from the var name to the var.
@@ -1031,7 +1031,7 @@ class BaseState(EvenMoreBasicBaseState):
             name: The name of the event handler.
             fn: The function to call when the event is triggered.
         """
-        _validate_state_name(name)
+        _validate_state_name(cls._reflex_state_root, name)
         handler = cls._create_event_handler(fn)
         cls.event_handlers[name] = handler
         setattr(cls, name, handler)
@@ -1544,7 +1544,7 @@ class BaseState(EvenMoreBasicBaseState):
             var: The variable to add a field for.
             default_value: The default value of the field.
         """
-        _validate_state_name(name)
+        _validate_state_name(cls._reflex_state_root, name)
         super().add_field(name, var, default_value)
 
     @classmethod
@@ -1750,7 +1750,7 @@ class BaseState(EvenMoreBasicBaseState):
             return
 
         for name in args:
-            _validate_state_name(name)
+            _validate_state_name(cls._reflex_state_root, name)
         cls._check_overwritten_dynamic_args(list(args.keys()))
 
         def argsingle_factory(param: str):
@@ -2731,11 +2731,6 @@ class BaseState(EvenMoreBasicBaseState):
         if substate_schema != state._to_schema():
             raise StateSchemaMismatchError
         return state
-
-
-# Installed after the class body: BaseState's own namespace is what defines
-# the names its subclasses may not shadow.
-_install_state_validation(BaseState)
 
 
 def _serialize_type(type_: Any) -> str:
