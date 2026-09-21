@@ -6,7 +6,7 @@ from collections.abc import AsyncIterator
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
-from reflex_build_sdk import AsyncReflexCloud
+from reflex_build_sdk import AsyncReflexBuild
 from reflex_build_sdk.types import (
     Audience,
     AudienceChange,
@@ -35,7 +35,7 @@ NOON = datetime.datetime(2026, 9, 16, 12, tzinfo=UTC)
 
 
 @pytest.fixture
-async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
+async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -44,7 +44,7 @@ async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
     Yields:
         The client.
     """
-    async with AsyncReflexCloud(
+    async with AsyncReflexBuild(
         token="test-token", transport=AsyncMockTransport(mock_api)
     ) as client:
         yield client
@@ -71,13 +71,13 @@ async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
     ],
 )
 async def test_get(
-    client: AsyncReflexCloud, mock_api: MockAPI, body: dict, status: SignInStatus
+    client: AsyncReflexBuild, mock_api: MockAPI, body: dict, status: SignInStatus
 ):
     mock_api.add("GET", AUTH_PATH, reply(200, json=body))
     assert await client.apps.sign_in.get(APP_ID) == status
 
 
-async def test_enable_is_retried(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_enable_is_retried(client: AsyncReflexBuild, mock_api: MockAPI):
     # Enabling again converges on the same settings.
     mock_api.add(
         "POST",
@@ -100,12 +100,12 @@ async def test_enable_is_retried(client: AsyncReflexCloud, mock_api: MockAPI):
     assert first.headers["X-Request-ID"] == retry.headers["X-Request-ID"]
 
 
-async def test_disable(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_disable(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("DELETE", AUTH_PATH, reply(200, json={"deleted": True}))
     assert await client.apps.sign_in.disable(APP_ID) is True
 
 
-async def test_list_users(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_list_users(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         f"{AUTH_PATH}/users",
@@ -158,7 +158,7 @@ async def test_list_users(client: AsyncReflexCloud, mock_api: MockAPI):
     [("app-users.csv", False), ("app-users.partial.csv", True)],
 )
 async def test_export_users(
-    client: AsyncReflexCloud, mock_api: MockAPI, filename: str, truncated: bool
+    client: AsyncReflexBuild, mock_api: MockAPI, filename: str, truncated: bool
 ):
     csv = "Email,Name,First consented,Last active,Consent last given,Blocked since,User ID\r\n"
     mock_api.add(
@@ -180,7 +180,7 @@ async def test_export_users(
 
 @pytest.mark.parametrize("action", ["block", "unblock"])
 async def test_block_and_unblock(
-    client: AsyncReflexCloud, mock_api: MockAPI, action: str
+    client: AsyncReflexBuild, mock_api: MockAPI, action: str
 ):
     # A failed session sweep still answers 200, with revoked_sessions null.
     body = {
@@ -223,13 +223,13 @@ SIGN_IN_INVITE = SignInInvite(
     ],
 )
 async def test_get_audience(
-    client: AsyncReflexCloud, mock_api: MockAPI, body: dict, audience: Audience
+    client: AsyncReflexBuild, mock_api: MockAPI, body: dict, audience: Audience
 ):
     mock_api.add("GET", f"{AUTH_PATH}/audience", reply(200, json=body))
     assert await client.apps.sign_in.get_audience(APP_ID) == audience
 
 
-async def test_set_audience(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_set_audience(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{AUTH_PATH}/audience",
@@ -243,7 +243,7 @@ async def test_set_audience(client: AsyncReflexCloud, mock_api: MockAPI):
     assert json_body(mock_api.requests[0]) == {"audience": "members"}
 
 
-async def test_invite(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_invite(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("POST", f"{AUTH_PATH}/invites", reply(201, json=INVITE))
     assert (
         await client.apps.sign_in.invite(APP_ID, "Someone@Example.com")
@@ -252,7 +252,7 @@ async def test_invite(client: AsyncReflexCloud, mock_api: MockAPI):
     assert json_body(mock_api.requests[0]) == {"email": "Someone@Example.com"}
 
 
-async def test_uninvite(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_uninvite(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "DELETE",
         f"{AUTH_PATH}/invites",
@@ -265,7 +265,7 @@ async def test_uninvite(client: AsyncReflexCloud, mock_api: MockAPI):
     assert "email=a%2Bb%40example.com" in mock_api.requests[0].url
 
 
-async def test_uninvite_is_retried(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_uninvite_is_retried(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "DELETE",
         f"{AUTH_PATH}/invites",

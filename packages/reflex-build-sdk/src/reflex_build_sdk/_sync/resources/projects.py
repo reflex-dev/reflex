@@ -23,7 +23,7 @@ from reflex_build_sdk.types import (
 )
 
 if TYPE_CHECKING:
-    from reflex_build_sdk._sync._client import ReflexCloud
+    from reflex_build_sdk._sync._client import ReflexBuild
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -87,7 +87,7 @@ class Roles:
     Creating, changing and previewing custom roles needs the Enterprise plan.
     """
 
-    def __init__(self, client: ReflexCloud) -> None:
+    def __init__(self, client: ReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:
@@ -233,7 +233,7 @@ class Roles:
 class Members:
     """Manage who has access to a project."""
 
-    def __init__(self, client: ReflexCloud) -> None:
+    def __init__(self, client: ReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:
@@ -330,7 +330,7 @@ class Teams:
     members get the role's access without being members themselves.
     """
 
-    def __init__(self, client: ReflexCloud) -> None:
+    def __init__(self, client: ReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:
@@ -409,7 +409,7 @@ class Projects:
     # Give an organization's teams access to a project.
     teams: Teams
 
-    def __init__(self, client: ReflexCloud) -> None:
+    def __init__(self, client: ReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:

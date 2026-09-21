@@ -13,7 +13,7 @@ from reflex_build_sdk import (
     AuthenticationError,
     LoginDeniedError,
     LoginTimeoutError,
-    ReflexCloud,
+    ReflexBuild,
 )
 from reflex_build_sdk.transports import Request, Response, TransportError
 from reflex_build_sdk.types import AccessScope, LoginRequest, Me, Token, TokenAccess
@@ -31,7 +31,7 @@ PROJECT_ID = "b3c1e3f2-2d0a-4d8e-9a0e-7f7a1c2d3e4f"
 
 
 @pytest.fixture
-def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
+def client(mock_api: MockAPI) -> Iterator[ReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -40,7 +40,7 @@ def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
     Yields:
         The client.
     """
-    with ReflexCloud(token="test-token", transport=MockTransport(mock_api)) as client:
+    with ReflexBuild(token="test-token", transport=MockTransport(mock_api)) as client:
         yield client
 
 
@@ -65,7 +65,7 @@ ME = {
 }
 
 
-def test_me(client: ReflexCloud, mock_api: MockAPI):
+def test_me(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("POST", "/api/v1/authenticate/me", reply(200, json=ME))
     assert client.auth.me() == Me(
         user_id=uuid.UUID(USER_ID),
@@ -78,13 +78,13 @@ def test_me(client: ReflexCloud, mock_api: MockAPI):
     assert "?" not in request.url
 
 
-def test_me_records_the_login_source(client: ReflexCloud, mock_api: MockAPI):
+def test_me_records_the_login_source(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("POST", "/api/v1/authenticate/me", reply(200, json=ME))
     client.auth.me(source="reflex")
     assert mock_api.requests[0].url.endswith("/authenticate/me?source=reflex")
 
 
-def test_me_scoped_token(client: ReflexCloud, mock_api: MockAPI):
+def test_me_scoped_token(client: ReflexBuild, mock_api: MockAPI):
     # Every token `reflex login` mints carries an access map.
     body = {
         **ME,
@@ -105,7 +105,7 @@ def test_me_scoped_token(client: ReflexCloud, mock_api: MockAPI):
     )
 
 
-def test_me_invalid_token(client: ReflexCloud, mock_api: MockAPI):
+def test_me_invalid_token(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         "/api/v1/authenticate/me",
@@ -115,7 +115,7 @@ def test_me_invalid_token(client: ReflexCloud, mock_api: MockAPI):
         client.auth.me()
 
 
-def test_create_token(client: ReflexCloud, mock_api: MockAPI):
+def test_create_token(client: ReflexBuild, mock_api: MockAPI):
     token_id = str(uuid.uuid4())
     mock_api.add("POST", "/api/v1/user/token", reply(200, json=token_id))
     assert client.auth.tokens.create("ci") == token_id
@@ -125,7 +125,7 @@ def test_create_token(client: ReflexCloud, mock_api: MockAPI):
     }
 
 
-def test_create_scoped_token(client: ReflexCloud, mock_api: MockAPI):
+def test_create_scoped_token(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("POST", "/api/v1/user/token", reply(200, json="token"))
     client.auth.tokens.create(
         "deploy",
@@ -139,7 +139,7 @@ def test_create_scoped_token(client: ReflexCloud, mock_api: MockAPI):
     }
 
 
-def test_list_tokens(client: ReflexCloud, mock_api: MockAPI):
+def test_list_tokens(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         "/api/v1/user/token",
@@ -167,7 +167,7 @@ def test_list_tokens(client: ReflexCloud, mock_api: MockAPI):
     ]
 
 
-def test_delete_token_quotes_name(client: ReflexCloud, mock_api: MockAPI):
+def test_delete_token_quotes_name(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "DELETE",
         "/api/v1/user/token/ci%2Fprod%20key",
@@ -176,7 +176,7 @@ def test_delete_token_quotes_name(client: ReflexCloud, mock_api: MockAPI):
     assert client.auth.tokens.delete("ci/prod key") is None
 
 
-def test_revoke_token(client: ReflexCloud, mock_api: MockAPI):
+def test_revoke_token(client: ReflexBuild, mock_api: MockAPI):
     token = str(uuid.uuid4())
     mock_api.add(
         "POST", "/api/v1/user/token/revoke", reply(200, json={"message": "success"})
@@ -186,14 +186,14 @@ def test_revoke_token(client: ReflexCloud, mock_api: MockAPI):
     assert json_body(mock_api.requests[0]) == {"token_id": token}
 
 
-def test_refresh_token(client: ReflexCloud, mock_api: MockAPI):
+def test_refresh_token(client: ReflexBuild, mock_api: MockAPI):
     old, new = str(uuid.uuid4()), str(uuid.uuid4())
     mock_api.add("POST", "/api/v1/user/token/refresh", reply(200, json=new))
     assert client.auth.tokens.refresh(old) == new
     assert json_body(mock_api.requests[0]) == {"token_id": old}
 
 
-def test_refresh_token_is_not_retried(client: ReflexCloud, mock_api: MockAPI):
+def test_refresh_token_is_not_retried(client: ReflexBuild, mock_api: MockAPI):
     # Each attempt would mint another token and revoke the one before.
     mock_api.add("POST", "/api/v1/user/token/refresh", reply(503))
     with pytest.raises(APIStatusError):
@@ -201,7 +201,7 @@ def test_refresh_token_is_not_retried(client: ReflexCloud, mock_api: MockAPI):
     assert len(mock_api.requests) == 1
 
 
-def test_assign_token_to_service_account(client: ReflexCloud, mock_api: MockAPI):
+def test_assign_token_to_service_account(client: ReflexBuild, mock_api: MockAPI):
     account_id = str(uuid.uuid4())
     mock_api.add(
         "POST",
@@ -218,12 +218,29 @@ def test_assign_token_to_service_account(client: ReflexCloud, mock_api: MockAPI)
 @pytest.mark.parametrize(
     ("ui_url", "env", "base"),
     [
-        (None, None, "https://build.reflex.dev"),
-        (None, "https://cloud.example.com/", "https://cloud.example.com"),
+        (None, {}, "https://build.reflex.dev"),
         (
-            "https://ui.example.com",
+            None,
+            {"REFLEX_CLOUD_URL": "https://cloud.example.com/"},
             "https://cloud.example.com",
+        ),
+        (
+            None,
+            {"REFLEX_BUILD_URL": "https://ui.example.com/"},
             "https://ui.example.com",
+        ),
+        (
+            None,
+            {
+                "REFLEX_BUILD_URL": "https://ui.example.com",
+                "REFLEX_CLOUD_URL": "https://cloud.example.com",
+            },
+            "https://ui.example.com",
+        ),
+        (
+            "https://explicit.example.com",
+            {"REFLEX_BUILD_URL": "https://ui.example.com"},
+            "https://explicit.example.com",
         ),
     ],
 )
@@ -231,13 +248,13 @@ def test_begin_login(
     mock_api: MockAPI,
     monkeypatch: pytest.MonkeyPatch,
     ui_url: str | None,
-    env: str | None,
+    env: dict[str, str],
     base: str,
 ):
-    if env is not None:
-        monkeypatch.setenv("REFLEX_CLOUD_URL", env)
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
     # Starting a login sends nothing, so it needs no event loop or token.
-    client = ReflexCloud(transport=MockTransport(mock_api))
+    client = ReflexBuild(transport=MockTransport(mock_api))
     login = client.auth.begin_login(ui_url=ui_url)
     assert len(login.request_id) == 32
     assert login.url == f"{base}/cli/login?request_id={login.request_id}"
@@ -258,7 +275,7 @@ def test_finish_login_waits_for_approval(mock_api: MockAPI):
         reply(200, json={"token_id": token}),
     )
     # No token is needed to log in.
-    with ReflexCloud(transport=MockTransport(mock_api)) as client:
+    with ReflexBuild(transport=MockTransport(mock_api)) as client:
         assert client.auth.finish_login(LOGIN, poll_interval=0) == token
     assert len(mock_api.requests) == 3
     for request in mock_api.requests:
@@ -267,7 +284,7 @@ def test_finish_login_waits_for_approval(mock_api: MockAPI):
 
 
 def test_finish_login_does_not_retry_a_lost_response(
-    client: ReflexCloud, mock_api: MockAPI
+    client: ReflexBuild, mock_api: MockAPI
 ):
     def lose_response(request: Request) -> Response:
         msg = "connection reset after the token was handed out"
@@ -280,7 +297,7 @@ def test_finish_login_does_not_retry_a_lost_response(
     assert len(mock_api.requests) == 1
 
 
-def test_finish_login_retries_an_unsent_request(client: ReflexCloud, mock_api: MockAPI):
+def test_finish_login_retries_an_unsent_request(client: ReflexBuild, mock_api: MockAPI):
     token = str(uuid.uuid4())
 
     def refuse_connection(request: Request) -> Response:
@@ -298,7 +315,7 @@ def test_finish_login_retries_an_unsent_request(client: ReflexCloud, mock_api: M
     assert len(mock_api.requests) == 2
 
 
-def test_finish_login_denied(client: ReflexCloud, mock_api: MockAPI):
+def test_finish_login_denied(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         "/api/v1/cli/token",
@@ -309,12 +326,12 @@ def test_finish_login_denied(client: ReflexCloud, mock_api: MockAPI):
 
 
 def test_finish_login_waits_ten_minutes_by_default(mock_api: MockAPI):
-    client = ReflexCloud(transport=MockTransport(mock_api))
+    client = ReflexBuild(transport=MockTransport(mock_api))
     timeout = inspect.signature(client.auth.finish_login).parameters["timeout"]
     assert timeout.default == pytest.approx(600.0)
 
 
-def test_finish_login_timeout(client: ReflexCloud, mock_api: MockAPI):
+def test_finish_login_timeout(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         "/api/v1/cli/token",

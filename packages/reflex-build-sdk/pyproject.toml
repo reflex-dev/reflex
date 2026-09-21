@@ -1,7 +1,7 @@
 [project]
 name = "reflex-build-sdk"
 dynamic = ["version"]
-description = "Python client for the Reflex Cloud API."
+description = "Python client for the Reflex Build API."
 license.text = "Apache-2.0"
 readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]

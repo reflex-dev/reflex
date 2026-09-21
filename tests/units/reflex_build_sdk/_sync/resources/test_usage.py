@@ -6,7 +6,7 @@ from collections.abc import Iterator
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
-from reflex_build_sdk import ReflexCloud
+from reflex_build_sdk import ReflexBuild
 from reflex_build_sdk.transports import Request, Response
 from reflex_build_sdk.types import UsageBalance, UsageEntry
 
@@ -16,7 +16,7 @@ UTC = datetime.timezone.utc
 
 
 @pytest.fixture
-def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
+def client(mock_api: MockAPI) -> Iterator[ReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -25,11 +25,11 @@ def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
     Yields:
         The client.
     """
-    with ReflexCloud(token="test-token", transport=MockTransport(mock_api)) as client:
+    with ReflexBuild(token="test-token", transport=MockTransport(mock_api)) as client:
         yield client
 
 
-def test_balance(client: ReflexCloud, mock_api: MockAPI):
+def test_balance(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         "/api/v1/user/usage/balance",
@@ -64,7 +64,7 @@ def _entry(kind: str) -> dict:
     }
 
 
-def test_history_follows_the_cursor_header(client: ReflexCloud, mock_api: MockAPI):
+def test_history_follows_the_cursor_header(client: ReflexBuild, mock_api: MockAPI):
     cursor = "2026-08-16T00:00:00+00:00|2026-09-15T13:00:00+00:00|6f1c"
 
     def first_page(request: Request) -> Response:
@@ -105,7 +105,7 @@ def test_history_follows_the_cursor_header(client: ReflexCloud, mock_api: MockAP
     assert "%7C" in mock_api.requests[1].url
 
 
-def test_history_rejects_naive_datetimes(client: ReflexCloud, mock_api: MockAPI):
+def test_history_rejects_naive_datetimes(client: ReflexBuild, mock_api: MockAPI):
     with pytest.raises(ValueError, match="timezone-aware"):
         for _ in client.usage.history(start=datetime.datetime(2026, 9, 1)):
             pass

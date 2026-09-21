@@ -25,6 +25,10 @@ task is running, **outside of the context block, Vars accessed by the background
 task may be _stale_**. Attempting to modify the state from a background task
 outside of the context block will raise an `ImmutableStateError` exception.
 
+This also applies to mutable values nested inside `self.router`, including legacy
+`self.router.page.params`. A reference obtained inside the context block cannot
+be mutated after leaving it.
+
 In the following example, the `my_task` event handler is decorated with
 `@rx.event(background=True)` and increments the `counter` variable every half second, as
 long as certain conditions are met. While it is running, the UI remains

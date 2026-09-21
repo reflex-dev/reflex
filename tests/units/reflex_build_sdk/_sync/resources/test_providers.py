@@ -7,7 +7,7 @@ import uuid
 from collections.abc import Iterator
 
 import pytest
-from reflex_build_sdk import ReflexCloud
+from reflex_build_sdk import ReflexBuild
 from reflex_build_sdk.types import (
     CloudRunManifest,
     GcpBlockingApp,
@@ -34,7 +34,7 @@ USER_ID = "8b0f4a52-3a8a-4c43-9d7e-2f0c7d2a4b11"
 
 
 @pytest.fixture
-def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
+def client(mock_api: MockAPI) -> Iterator[ReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -43,11 +43,11 @@ def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
     Yields:
         The client.
     """
-    with ReflexCloud(token="test-token", transport=MockTransport(mock_api)) as client:
+    with ReflexBuild(token="test-token", transport=MockTransport(mock_api)) as client:
         yield client
 
 
-def test_gcp_status(client: ReflexCloud, mock_api: MockAPI):
+def test_gcp_status(client: ReflexBuild, mock_api: MockAPI):
     body = {
         "configured": True,
         "allowed": True,
@@ -85,7 +85,7 @@ def test_gcp_status(client: ReflexCloud, mock_api: MockAPI):
     )
 
 
-def test_gcp_status_unconfigured(client: ReflexCloud, mock_api: MockAPI):
+def test_gcp_status_unconfigured(client: ReflexBuild, mock_api: MockAPI):
     body = {
         "configured": False,
         "allowed": False,
@@ -107,7 +107,7 @@ def test_gcp_status_unconfigured(client: ReflexCloud, mock_api: MockAPI):
     )
 
 
-def test_accounts(client: ReflexCloud, mock_api: MockAPI):
+def test_accounts(client: ReflexBuild, mock_api: MockAPI):
     account = {
         "id": ACCOUNT_ID,
         "provider": "gcp",
@@ -136,13 +136,13 @@ def test_accounts(client: ReflexCloud, mock_api: MockAPI):
     ]
 
 
-def test_cloud_run_manifest(client: ReflexCloud, mock_api: MockAPI):
+def test_cloud_run_manifest(client: ReflexBuild, mock_api: MockAPI):
     body = {"dockerfile": "FROM python:3.13", "deploy_command": "gcloud run deploy"}
     mock_api.add("GET", "/api/v1/cli/gcp-cloud-run-manifest", reply(200, json=body))
     assert client.providers.cloud_run_manifest() == CloudRunManifest(**body)
 
 
-def test_connect_gcp(client: ReflexCloud, mock_api: MockAPI):
+def test_connect_gcp(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "PUT",
         GCP_PATH,
@@ -179,12 +179,12 @@ def test_connect_gcp(client: ReflexCloud, mock_api: MockAPI):
     }
 
 
-def test_disconnect_gcp(client: ReflexCloud, mock_api: MockAPI):
+def test_disconnect_gcp(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("DELETE", GCP_PATH, reply(200, json={"status": "deleted"}))
     assert client.providers.disconnect_gcp(ORG_ID) is None
 
 
-def test_gcp_blocking_apps(client: ReflexCloud, mock_api: MockAPI):
+def test_gcp_blocking_apps(client: ReflexBuild, mock_api: MockAPI):
     app_id = str(uuid.uuid4())
     mock_api.add(
         "GET",
@@ -217,7 +217,7 @@ def test_gcp_blocking_apps(client: ReflexCloud, mock_api: MockAPI):
     ]
 
 
-def test_gcp_connections_create(client: ReflexCloud, mock_api: MockAPI):
+def test_gcp_connections_create(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{GCP_PATH}/connections",
@@ -248,7 +248,7 @@ def test_gcp_connections_create(client: ReflexCloud, mock_api: MockAPI):
     }
 
 
-def test_gcp_connections_update(client: ReflexCloud, mock_api: MockAPI):
+def test_gcp_connections_update(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "PATCH",
         f"{GCP_PATH}/connections/{ACCOUNT_ID}",
@@ -272,7 +272,7 @@ def test_gcp_connections_update(client: ReflexCloud, mock_api: MockAPI):
     }
 
 
-def test_gcp_connections_rotate_key(client: ReflexCloud, mock_api: MockAPI):
+def test_gcp_connections_rotate_key(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{GCP_PATH}/connections/{ACCOUNT_ID}/rotate-key",
@@ -306,7 +306,7 @@ def test_gcp_connections_rotate_key(client: ReflexCloud, mock_api: MockAPI):
     assert json.loads(body["service_account_key"]) == KEY
 
 
-def test_gcp_connections_verify(client: ReflexCloud, mock_api: MockAPI):
+def test_gcp_connections_verify(client: ReflexBuild, mock_api: MockAPI):
     # Problems are reported in a 200.
     mock_api.add(
         "POST",
@@ -347,7 +347,7 @@ def test_gcp_connections_verify(client: ReflexCloud, mock_api: MockAPI):
     )
 
 
-def test_gcp_connections_set_default_is_retried(client: ReflexCloud, mock_api: MockAPI):
+def test_gcp_connections_set_default_is_retried(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{GCP_PATH}/connections/{ACCOUNT_ID}/default",
@@ -359,7 +359,7 @@ def test_gcp_connections_set_default_is_retried(client: ReflexCloud, mock_api: M
     assert first.headers["X-Request-ID"] == retry.headers["X-Request-ID"]
 
 
-def test_gcp_connections_delete(client: ReflexCloud, mock_api: MockAPI):
+def test_gcp_connections_delete(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "DELETE",
         f"{GCP_PATH}/connections/{ACCOUNT_ID}",

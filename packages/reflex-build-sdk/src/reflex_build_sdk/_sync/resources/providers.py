@@ -21,7 +21,7 @@ from reflex_build_sdk.types import (
 )
 
 if TYPE_CHECKING:
-    from reflex_build_sdk._sync._client import ReflexCloud
+    from reflex_build_sdk._sync._client import ReflexBuild
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -96,7 +96,7 @@ class GcpConnections:
     Adding and changing connections needs the Enterprise plan.
     """
 
-    def __init__(self, client: ReflexCloud) -> None:
+    def __init__(self, client: ReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:
@@ -303,7 +303,7 @@ class Providers:
     # Manage the Google Cloud projects an organization deploys apps to.
     gcp_connections: GcpConnections
 
-    def __init__(self, client: ReflexCloud) -> None:
+    def __init__(self, client: ReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:

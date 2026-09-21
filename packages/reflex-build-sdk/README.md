@@ -1,28 +1,28 @@
 # reflex-build-sdk
 
-Python client for the [Reflex Cloud](https://build.reflex.dev) API, with synchronous and asynchronous interfaces.
+Python client for the [Reflex Build](https://build.reflex.dev) API, with synchronous and asynchronous interfaces.
 
 ```python
-from reflex_build_sdk import ReflexCloud
+from reflex_build_sdk import ReflexBuild
 
-with ReflexCloud() as client:
+with ReflexBuild() as client:
     me = client.auth.me()
     print(me.email, me.tier)
 ```
 
 ```python
-from reflex_build_sdk import AsyncReflexCloud
+from reflex_build_sdk import AsyncReflexBuild
 
-async with AsyncReflexCloud() as client:
+async with AsyncReflexBuild() as client:
     me = await client.auth.me()
 ```
 
 ## Apps and projects
 
 ```python
-from reflex_build_sdk import ReflexCloud
+from reflex_build_sdk import ReflexBuild
 
-with ReflexCloud() as client:
+with ReflexBuild() as client:
     projects = client.projects.search("default")
     project = projects[0] if projects else client.projects.create("default")
     app = client.apps.create("dashboard", project_id=project.id)
@@ -35,7 +35,7 @@ with ReflexCloud() as client:
         print(record.timestamp, record.message)
 ```
 
-`client.apps` lists, creates, renames, moves, starts, stops, pauses, scales, rolls back and deletes apps, changes their settings, and reads their status, running deployment, deployment history and runtime logs; `client.apps.secrets` manages their secrets. `client.projects` lists, searches, creates, renames and deletes projects and reads their audit logs, with `projects.roles` (including custom roles), `projects.members` and `projects.teams` for access control. `AsyncReflexCloud` has the same methods as coroutines, with `logs` as an async iterator.
+`client.apps` lists, creates, renames, moves, starts, stops, pauses, scales, rolls back and deletes apps, changes their settings, and reads their status, running deployment, deployment history and runtime logs; `client.apps.secrets` manages their secrets. `client.projects` lists, searches, creates, renames and deletes projects and reads their audit logs, with `projects.roles` (including custom roles), `projects.members` and `projects.teams` for access control. `AsyncReflexBuild` has the same methods as coroutines, with `logs` as an async iterator.
 
 ### Custom domains
 
@@ -52,9 +52,9 @@ print(domain.status, domain.status_detail)
 ## Deploying
 
 ```python
-from reflex_build_sdk import DeploymentFailedError, ReflexCloud
+from reflex_build_sdk import DeploymentFailedError, ReflexBuild
 
-with ReflexCloud() as client:
+with ReflexBuild() as client:
     urls = client.apps.reserve_hostname(app.id, app.name)
     # Export the app against urls.frontend_url and urls.backend_url, e.g. with
     # `reflex export`, producing backend.zip and frontend.zip.
@@ -123,6 +123,20 @@ client.apps.sign_in.invite(app.id, "someone@example.com")
 
 `client.apps.sign_in` lets an app's users sign in with their Reflex accounts, through `rxe.AuthPlugin` from `reflex-enterprise`. It sets the app's sign-in settings as secrets, which take effect when the app is next deployed with `rxe.AuthPlugin`, chooses who may sign in, and lists, exports and blocks the app's users. Restricting who may sign in and inviting addresses need the Pro or Enterprise plan. Changing sign-in needs a token with full access; tokens from `reflex login` are refused.
 
+### Third-party connections
+
+```python
+# Inside a deployed app, which is started with its own access token.
+with ReflexBuild() as client:
+    token = client.apps.connections.credential(app_id, "openai").access_token
+    # ... and for one of the app's users:
+    token = client.apps.connections.credential(
+        app_id, "openai", end_user=user_id
+    ).access_token
+```
+
+`client.apps.connections` calls third-party services an app is connected to without the app holding their keys: Reflex Build stores the credentials and hands out a live one per call, so read one for each call rather than storing it. `connect_link` starts a connection and returns the page to send someone to, `status` and `list` report what is connected, and `disconnect` ends it. A connection belongs either to the app or to one of its users, named with `end_user`. These need the app's own token, so a client built with no arguments inside a deployed app is already the right one.
+
 ## Authentication
 
 The client uses the first access token it finds:
@@ -136,9 +150,9 @@ To log in through the browser and save the token for later clients:
 ```python
 import webbrowser
 
-from reflex_build_sdk import ReflexCloud, credentials
+from reflex_build_sdk import ReflexBuild, credentials
 
-with ReflexCloud() as client:
+with ReflexBuild() as client:
     login = client.auth.begin_login()
     print(f"Approve the login at {login.url}")
     webbrowser.open(login.url)
@@ -148,6 +162,10 @@ with ReflexCloud() as client:
 `credentials.delete_token()` removes the saved token. Create a token for CI with `client.auth.tokens.create("ci", expires_in_days=30)`, and rotate or revoke one with `client.auth.tokens.refresh(token)` and `client.auth.tokens.revoke(token)`. Managing tokens needs a token with full access, which `reflex login` tokens are not.
 
 `client.usage.balance()` reports how much of the organization's plan allowance is used, and `client.usage.history()` iterates over its charges and credits.
+
+### Pointing at another deployment
+
+The client sends its requests to `https://build.reflex.dev`, or to the `base_url` argument, the `REFLEX_BUILD_BACKEND_URL` environment variable or `REFLEX_CLOUD_BACKEND_URL`, in that order. `begin_login` builds its approval URL the same way, from `ui_url`, `REFLEX_BUILD_URL` or `REFLEX_CLOUD_URL`, and falls back to the client's `base_url`. `reflex-hosting-cli` reads only the `REFLEX_CLOUD_*` names, so set those too for `reflex deploy` to reach the same deployment.
 
 ## Security reviews
 
@@ -162,7 +180,7 @@ Security reviews need the Pro or Enterprise plan.
 
 ## Google Cloud
 
-Apps can run on an organization's own Google Cloud instead of Reflex Cloud:
+Apps can run on an organization's own Google Cloud instead of Reflex Build:
 
 ```python
 status = client.providers.gcp_status(client.auth.me().org_id)
@@ -189,16 +207,16 @@ with open("key.json") as key_file:
 
 ## Errors
 
-Every exception derives from `reflex_build_sdk.ReflexCloudError`. Error responses raise a subclass of `APIStatusError` matching the status code (`AuthenticationError`, `NotFoundError`, ...), carrying `status_code`, the server's `detail`, and the `request_id` to quote to support. Failed requests are retried up to `max_retries` times when repeating them cannot apply them twice: requests that never reached the server or were turned away with 408 or 429, and requests that are harmless to repeat (`GET`, `HEAD`, `OPTIONS` and `PUT` requests, and calls such as `apps.environments.update` that settle on the same result) that timed out, lost their connection, or got a 500, 502, 503 or 504 response.
+Every exception derives from `reflex_build_sdk.ReflexBuildError`. Error responses raise a subclass of `APIStatusError` matching the status code (`AuthenticationError`, `NotFoundError`, ...), carrying `status_code`, the server's `detail`, the `code` naming the condition where the API names one (e.g. `"not_connected"`), and the `request_id` to quote to support. Failed requests are retried up to `max_retries` times when repeating them cannot apply them twice: requests that never reached the server or were turned away with 408 or 429, and requests that are harmless to repeat (`GET`, `HEAD`, `OPTIONS` and `PUT` requests, and calls such as `apps.environments.update` that settle on the same result) that timed out, lost their connection, or got a 500, 502, 503 or 504 response.
 
 ## Transports
 
-`AsyncReflexCloud` sends requests with [aiohttp](https://docs.aiohttp.org) and `ReflexCloud` with [httpx](https://www.python-httpx.org). Pass a transport from `reflex_build_sdk.transports` to configure the HTTP client, e.g. for proxies, or to use httpx asynchronously:
+`AsyncReflexBuild` sends requests with [aiohttp](https://docs.aiohttp.org) and `ReflexBuild` with [httpx](https://www.python-httpx.org). Pass a transport from `reflex_build_sdk.transports` to configure the HTTP client, e.g. for proxies, or to use httpx asynchronously:
 
 ```python
 import aiohttp
 import httpx
-from reflex_build_sdk import AsyncReflexCloud, ReflexCloud
+from reflex_build_sdk import AsyncReflexBuild, ReflexBuild
 from reflex_build_sdk.transports import (
     AiohttpTransport,
     AsyncHttpxTransport,
@@ -207,11 +225,11 @@ from reflex_build_sdk.transports import (
 
 # Reads HTTP_PROXY, HTTPS_PROXY and NO_PROXY from the environment.
 async with aiohttp.ClientSession(trust_env=True) as session:
-    async with AsyncReflexCloud(transport=AiohttpTransport(session)) as client:
+    async with AsyncReflexBuild(transport=AiohttpTransport(session)) as client:
         ...
 
-client = AsyncReflexCloud(transport=AsyncHttpxTransport())
-client = ReflexCloud(transport=HttpxTransport(httpx.Client(proxy="http://proxy:8080")))
+client = AsyncReflexBuild(transport=AsyncHttpxTransport())
+client = ReflexBuild(transport=HttpxTransport(httpx.Client(proxy="http://proxy:8080")))
 ```
 
 To use another HTTP library, implement the `Transport` or `AsyncTransport` protocol.
