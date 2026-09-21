@@ -31,7 +31,7 @@ long as certain conditions are met. While it is running, the UI remains
 interactive and continues to process events normally.
 
 ```md alert info
-# Background events are similar to simple Task Queues like [Celery](https://www.fullstackpython.com/celery.html) allowing asynchronous events.
+# Background events run in the application backend; they are not a durable job queue. Use a separate worker and persistent job records when work needs restart recovery or guaranteed retries. See [performance and execution](/docs/advanced-onboarding/performance-and-execution/) for execution tradeoffs.
 ```
 
 ```python demo exec id=background_demo

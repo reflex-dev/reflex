@@ -250,3 +250,187 @@ def test_chat_missing_api_key_keeps_question(chat_module, monkeypatch):
     assert state.question == "Hello"
     assert state.chat_history == []
     assert "OPENAI_API_KEY" in state.error
+
+
+def load_application_demo(monkeypatch, relative_path):
+    """Execute the exact copyable demo shown on an application guide."""
+    source = (DOCS.parent / relative_path).read_text()
+    blocks = re.findall(
+        r"^```python demo exec defer[^\n]*\n(.*?)^```", source, re.MULTILINE | re.DOTALL
+    )
+    assert len(blocks) == 1
+    module = ModuleType(f"application_demo_{uuid4().hex}")
+    monkeypatch.setitem(sys.modules, module.__name__, module)
+    exec(blocks[0], module.__dict__)
+    return module
+
+
+def selection_event(rows, *, cleared=False, truncated=False):
+    """Build the selection portion consumed by the XY handler."""
+    return {"selection": {"rows": rows, "cleared": cleared, "truncated": truncated}}
+
+
+def linked_state(module):
+    """Hydrate a separate session as the runtime does."""
+    import reflex as rx
+    from reflex.istate.data import RouterData
+
+    root = rx.State(
+        _reflex_internal_init=True,
+        rx_router_session=RouterData.from_router_data({"token": str(uuid4())}).session,
+    )
+    return root.get_substate(
+        tuple(module.LinkedChartsState.get_full_name().split("."))[1:]
+    )
+
+
+def revenue_columns(state):
+    """Read the data published by the exact tutorial computed var."""
+    from reflex_xy.registry import registry
+
+    return registry.get_columns(state.revenue_data.token).columns
+
+
+def test_linked_charts_selection_reset_and_session_isolation(monkeypatch):
+    """A real state updates both linked views without changing another session."""
+    module = load_application_demo(
+        monkeypatch, "getting_started/linked_charts_tutorial.md"
+    )
+    assert module.linked_charts() is not None
+    state = linked_state(module)
+    other = linked_state(module)
+    assert state.source_data.token != other.source_data.token
+    assert len(state.visible_rows) == 4
+    state.select_points(
+        selection_event([
+            {"trace": 0, "index": 1},
+            {"trace": 0, "index": 0},
+            {"trace": 0, "index": 1},
+        ])
+    )
+    assert state.selected_ids == ["order-b", "order-a"]
+    assert [row["id"] for row in state.visible_rows] == ["order-a", "order-b"]
+    assert revenue_columns(state)["revenue"] == [120, 180]
+    assert len(other.visible_rows) == 4
+    # A new selection replaces, rather than intersects with, the previous subset.
+    state.select_points(selection_event([{"trace": 0, "index": 3}]))
+    assert [row["id"] for row in state.visible_rows] == ["order-d"]
+    assert revenue_columns(state)["revenue"] == [240]
+    state.select_points(selection_event([]))
+    assert state.visible_rows == []
+    assert revenue_columns(state)["revenue"] == []
+    state.select_points(selection_event([], cleared=True))
+    assert len(state.visible_rows) == 4
+    state.clear_selection()
+    assert len(state.visible_rows) == 4
+    assert state.chart_revision == 1
+    assert other.chart_revision == 0
+
+
+def test_linked_charts_rejects_invalid_source_positions(monkeypatch):
+    """Unrecognized traces and point positions cannot select unrelated records."""
+    module = load_application_demo(
+        monkeypatch, "getting_started/linked_charts_tutorial.md"
+    )
+    state = linked_state(module)
+    state.select_points(
+        selection_event([
+            {},
+            {"trace": 1, "index": 0},
+            {"trace": 0, "index": -1},
+            {"trace": 0, "index": 10},
+            {"trace": 0, "index": "1"},
+        ])
+    )
+    assert state.visible_rows == []
+
+
+def test_xy_data_handles_recover_after_pre_session_render(monkeypatch):
+    """The empty compile-time handle must not stay cached after hydration."""
+    import reflex as rx
+    from reflex.istate.data import RouterData
+
+    module = load_application_demo(
+        monkeypatch, "getting_started/linked_charts_tutorial.md"
+    )
+    root = rx.State(_reflex_internal_init=True)
+    state = root.get_substate(
+        tuple(module.LinkedChartsState.get_full_name().split("."))[1:]
+    )
+    assert state.source_data.token == ""
+    assert state.revenue_data.token == ""
+    # Set the session without dirtying computed vars to reproduce the cached handle.
+    object.__setattr__(
+        root,
+        "rx_router_session",
+        RouterData.from_router_data({"token": str(uuid4())}).session,
+    )
+    assert state.source_data.token
+    assert state.revenue_data.token
+
+
+def test_linked_charts_resolves_truncated_selections(monkeypatch):
+    """Do not silently apply only the event's bounded row sample."""
+    from types import SimpleNamespace
+
+    module = load_application_demo(
+        monkeypatch, "getting_started/linked_charts_tutorial.md"
+    )
+    state = linked_state(module)
+    monkeypatch.setattr(
+        module.rxy,
+        "resolve_selection",
+        lambda event: SimpleNamespace(
+            rows=lambda: [{"trace": 0, "index": 2}, {"trace": 0, "index": 3}]
+        ),
+    )
+    state.select_points(selection_event([{"trace": 0, "index": 2}], truncated=True))
+    assert state.selected_ids == ["order-c", "order-d"]
+    monkeypatch.setattr(module.rxy, "resolve_selection", lambda event: None)
+    state.select_points(selection_event([], truncated=True))
+    assert state.selected_ids == ["order-c", "order-d"]
+    assert state.selection_error
+    state.clear_selection()
+    assert state.selection_error == ""
+
+
+def test_function_app_validates_and_clears_stale_results(monkeypatch):
+    """Valid calculations and bad submissions produce mutually exclusive feedback."""
+    module = load_application_demo(
+        monkeypatch, "getting_started/python_function_to_app.md"
+    )
+    assert module.payment_app() is not None
+    assert module.monthly_payment(12000, 0, 1) == 1000
+    assert module.monthly_payment(12000, 1e-12, 1) == pytest.approx(1000)
+    assert module.monthly_payment(10000, 5, 3) == pytest.approx(299.70897)
+    state = module.PaymentState(_reflex_internal_init=True)
+    state.calculate({"amount": "12000", "rate": "0", "years": "1"})
+    assert state.result == "Monthly payment: $1,000.00"
+    assert state.error == ""
+    for bad_input in ("oops", "nan", "inf", "-1"):
+        state.calculate({"amount": bad_input, "rate": "0", "years": "1"})
+        assert state.result == ""
+        assert state.error
+    state.calculate({"amount": "12000", "rate": "0", "years": "0"})
+    assert state.error
+    state.calculate({"amount": "12000", "rate": "0", "years": "1"})
+    assert state.error == ""
+
+
+def test_model_interface_predictions_and_invalid_input(monkeypatch):
+    """The copied model example can run inference and recover after bad input."""
+    module = load_application_demo(monkeypatch, "guides/model_and_media_interfaces.md")
+    assert module.model_interface() is not None
+    assert module.predict_flower(1.4, 0.2) == "setosa"
+    assert module.predict_flower(4.7, 1.4) == "versicolor"
+    assert module.predict_flower(6.0, 2.5) == "virginica"
+    state = module.ModelInterfaceState(_reflex_internal_init=True)
+    state.predict({"length": "1.4", "width": "0.2"})
+    assert state.prediction == "setosa"
+    for bad_input in ("", "oops", "nan", "inf", "-1", "11"):
+        state.predict({"length": bad_input, "width": "0.2"})
+        assert state.prediction == ""
+        assert state.error
+    state.predict({"length": "6.0", "width": "2.5"})
+    assert state.prediction == "virginica"
+    assert state.error == ""

@@ -4,7 +4,7 @@ from .item import create_item
 
 
 def get_sidebar_items_learn():
-    from reflex_docs.pages.docs import advanced_onboarding, getting_started
+    from reflex_docs.pages.docs import advanced_onboarding, getting_started, guides
 
     items = [
         create_item(
@@ -12,6 +12,7 @@ def get_sidebar_items_learn():
             children=[
                 getting_started.installation,
                 getting_started.introduction,
+                getting_started.what_you_can_build,
                 getting_started.basics,
                 getting_started.project_structure,
             ],
@@ -21,12 +22,24 @@ def get_sidebar_items_learn():
             children=[
                 getting_started.dashboard_tutorial,
                 getting_started.chatapp_tutorial,
+                getting_started.python_function_to_app,
+                getting_started.linked_charts_tutorial,
+            ],
+        ),
+        create_item(
+            "Application Guides",
+            children=[
+                guides.dashboards_and_internal_tools,
+                guides.ai_applications,
+                guides.model_and_media_interfaces,
+                guides.moving_an_existing_app,
             ],
         ),
         create_item(
             "Advanced Onboarding",
             children=[
                 advanced_onboarding.how_reflex_works,
+                advanced_onboarding.performance_and_execution,
                 advanced_onboarding.configuration,
                 advanced_onboarding.code_structure,
             ],

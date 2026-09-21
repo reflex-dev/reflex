@@ -3,6 +3,23 @@
 from reflex_docs.pages.docs import _frontmatter_for, get_image_from_frontmatter
 
 
+def test_authored_title_changes_search_title_without_changing_route(tmp_path):
+    """A descriptive authored title must reach the page head, not its URL."""
+    from reflex_docs.pages.docs import get_component_docgen, resolve_doc_route
+
+    doc = tmp_path / "example.md"
+    doc.write_text(
+        "---\ntitle: Build Linked Charts in Python\n---\n\n# Linked charts\n"
+    )
+    route = get_component_docgen("docs/getting_started/example.md", str(doc), "example")
+    assert route.title.startswith("Build Linked Charts in Python · ")
+    assert route.path == "/getting-started/example/"
+    assert (
+        resolve_doc_route("docs/getting_started/example.md", "example").display_title
+        == "Example"
+    )
+
+
 def test_frontmatter_for_extracts_fields(tmp_path):
     """Frontmatter fields are parsed from a doc with a body."""
     doc = tmp_path / "page.md"

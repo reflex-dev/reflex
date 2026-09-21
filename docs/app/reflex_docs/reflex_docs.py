@@ -3,7 +3,7 @@
 import json
 import os
 import sys
-from functools import partial
+from functools import cache, partial
 
 import reflex as rx
 import reflex_enterprise as rxe
@@ -176,7 +176,11 @@ for route in routes:
         ]
 
         page_args = {
-            "component": route.component,
+            # XY registers chart plans by evaluating pages again at worker startup.
+            # Reuse each tree so ComponentState demos are instantiated only once.
+            "component": cache(route.component)
+            if callable(route.component)
+            else route.component,
             "route": route.path,
             "title": head_title,
             "image": image_url,

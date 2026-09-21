@@ -488,9 +488,12 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
 
     description = extract_doc_description(doc_text)
     image = get_image_from_frontmatter(actual_path)
+    frontmatter = _frontmatter_for(actual_path)
     return make_docpage(
         resolved.route,
-        resolved.display_title,
+        frontmatter.title
+        if frontmatter and frontmatter.title
+        else resolved.display_title,
         virtual_doc,
         comp,
         actual_path,
