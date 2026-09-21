@@ -37,7 +37,7 @@ def test_render_no_on_submit():
     assert f.event_triggers["on_submit"].events[0] == prevent_default
 
 
-def test_form_refs_only_include_form_controls():
+def test_form_submit_filters_null_ref_values():
     """IDs on non-input descendants must not add null form payload fields."""
 
     class FormState(rx.State):
@@ -58,9 +58,8 @@ def test_form_refs_only_include_form_controls():
     )
 
     submit_hook = form.add_hooks()[0]
-    assert "ref_email" in submit_hook
-    assert "ref_email_label" not in submit_hook
-    assert "ref_submit_button" not in submit_hook
+    assert "Object.entries" in submit_hook
+    assert ".filter(([, value]) => value !== null)" in submit_hook
 
 
 @pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
