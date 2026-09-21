@@ -2,12 +2,22 @@
 
 from __future__ import annotations
 
+import dataclasses
+import re
 from pathlib import Path
 
 import pytest
 from packaging.version import Version
 from reflex_release.actions import ReleaseError
-from reflex_release.config import Config, is_final, load_config
+from reflex_release.config import (
+    DEFAULT_PYTHON_VERSION,
+    DEFAULT_UV_VERSION,
+    Config,
+    is_final,
+    load_config,
+)
+
+from .conftest import write_custom_build, write_lockstep
 
 
 def write_config(repo: Path, body: str) -> None:
@@ -265,11 +275,151 @@ def test_no_lockstep_by_default(config: Config) -> None:
             'root-package = "mypkg"\ndispatch-package-inputs = "maybe"\n',
             "must be one of",
         ),
+        (
+            'root-package = "mypkg"\nuv-version = 12\n',
+            "uv-version must be a string",
+        ),
+        (
+            'root-package = "mypkg"\nnever-publish-packages = ["nope"]\n',
+            "never-publish-packages lists unknown package",
+        ),
+        # A package cannot both never publish and publish on every push.
+        (
+            (
+                'root-package = "mypkg"\ninternal-packages = ["widget-core"]\n'
+                'never-publish-packages = ["widget-core"]\n'
+            ),
+            "listed in both never-publish-packages and internal-packages",
+        ),
+        (
+            (
+                'root-package = "mypkg"\nlatest-release-package = "widget-core"\n'
+                'never-publish-packages = ["widget-core"]\n'
+            ),
+            "has no release to mark",
+        ),
+        # The pins are interpolated into a quoted YAML scalar, so anything that
+        # could end the scalar or open an expression is rejected outright.
+        (
+            'root-package = "mypkg"\nuv-version = \'0.1" # \'\n',
+            "uv-version must be a version or specifier",
+        ),
+        (
+            'root-package = "mypkg"\npython-version = "${{ secrets.X }}"\n',
+            "python-version must be a version or specifier",
+        ),
     ],
 )
 def test_invalid_config(repo: Path, body: str, message: str) -> None:
     write_config(repo, body)
     with pytest.raises(ReleaseError, match=message):
+        load_config(repo)
+
+
+def test_version_pins_default_to_the_tools_own(config: Config) -> None:
+    assert config.uv_version == DEFAULT_UV_VERSION
+    assert config.python_version == DEFAULT_PYTHON_VERSION
+
+
+@pytest.mark.parametrize(
+    "pin", ["0.12.5", "latest", ">=1.2", "3.14", "pypy-3.10", "1.2.*"]
+)
+def test_version_pins_accept_versions_and_specifiers(repo: Path, pin: str) -> None:
+    write_config(repo, f'root-package = "mypkg"\nuv-version = "{pin}"\n')
+    assert load_config(repo).uv_version == pin
+
+
+def test_version_pins_can_be_disabled(repo: Path) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\nuv-version = ""\npython-version = "  "\n',
+    )
+    config = load_config(repo)
+    assert config.uv_version == ""
+    assert config.python_version == ""
+
+
+#: The Config fields in the order they had before uv-version, python-version
+#: and never-publish-packages were added. Config is exported, so its generated
+#: __init__ has a positional contract: a new field goes at the end of the list,
+#: never in the middle, or every caller's arguments shift by one.
+_HISTORICAL_FIELD_ORDER = (
+    "root",
+    "allow_self_review",
+    "cli_command",
+    "dispatch_package_inputs",
+    "news_directory",
+    "changelog_filename",
+    "root_package",
+    "root_source_dirs",
+    "packages_dir",
+    "package_source_subdirs",
+    "release_timezone",
+    "main_branch",
+    "prerelease_branch_prefix",
+    "hotfix_branch_prefix",
+    "release_branch_prefix",
+    "tag_prefix",
+    "latest_release_package",
+    "internal_packages",
+    "changelog_exempt_packages",
+    "post_release_workflow",
+    "lockstep",
+    "custom_build",
+)
+
+
+def test_new_config_fields_are_appended() -> None:
+    names = tuple(field.name for field in dataclasses.fields(Config))
+    assert names[: len(_HISTORICAL_FIELD_ORDER)] == _HISTORICAL_FIELD_ORDER
+
+
+def test_never_published_packages_are_excluded(repo: Path) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n'
+        'never-publish-packages = ["widget-core"]\n',
+    )
+    config = load_config(repo)
+    assert config.is_never_published("widget-core")
+    assert not config.is_never_published("mypkg")
+    # It is still a package of the repository — just not a releasable one.
+    assert "widget-core" in config.all_packages()
+    # And nothing about it can require a news fragment it has nowhere to put.
+    assert not config.requires_fragments("widget-core")
+    assert config.requires_fragments("mypkg")
+
+
+def test_never_published_packages_cannot_be_lockstep_members(repo: Path) -> None:
+    write_lockstep(repo)
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            'packages-dir = "packages"',
+            'packages-dir = "packages"\nnever-publish-packages = ["widget-core"]',
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ReleaseError, match="never reaches a release"):
+        load_config(repo)
+
+
+def test_never_published_packages_cannot_be_custom_built(repo: Path) -> None:
+    write_custom_build(repo)
+    pyproject = repo / "pyproject.toml"
+    # The sub-package, not the root: the root is latest-release-package by
+    # default, which rejects it one check earlier.
+    pyproject.write_text(
+        pyproject
+        .read_text(encoding="utf-8")
+        .replace('packages = ["mypkg"]', 'packages = ["widget-core"]')
+        .replace(
+            'packages-dir = "packages"',
+            'packages-dir = "packages"\nnever-publish-packages = ["widget-core"]',
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ReleaseError, match="never reaches a release"):
         load_config(repo)
 
 
@@ -322,6 +472,217 @@ def test_requires_fragments(config: Config, repo: Path) -> None:
 )
 def test_is_final(version: str, final: bool) -> None:
     assert is_final(Version(version)) is final
+
+
+CUSTOM_BUILD = """\
+root-package = "mypkg"
+packages-dir = "packages"
+
+[[tool.reflex-release.custom-build]]
+packages = ["mypkg"]
+workflow = "build_wheels.yml"
+expect-artifacts = ["*.tar.gz"]
+"""
+
+
+def test_custom_build_is_resolved_per_package(config: Config, repo: Path) -> None:
+    write_config(repo, CUSTOM_BUILD)
+    reloaded = load_config(repo)
+    entry = reloaded.custom_build_for("mypkg")
+    assert entry is not None
+    assert entry.workflow == "build_wheels.yml"
+    assert reloaded.custom_build_packages() == ("mypkg",)
+    assert reloaded.expect_artifacts("mypkg") == ("*.tar.gz",)
+    # A package with no entry builds in-repo and carries no expectations.
+    assert reloaded.custom_build_for("widget-core") is None
+    assert reloaded.expect_artifacts("widget-core") == ()
+
+
+def test_custom_build_rejects_an_unknown_package(config: Config, repo: Path) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\n\n[[tool.reflex-release.custom-build]]\n'
+        'packages = ["nope"]\nworkflow = "build.yml"\n',
+    )
+    with pytest.raises(ReleaseError, match="not a package in this repository"):
+        load_config(repo)
+
+
+def test_custom_build_rejects_an_empty_package_list(config: Config, repo: Path) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\n\n[[tool.reflex-release.custom-build]]\n'
+        'packages = []\nworkflow = "build.yml"\n',
+    )
+    with pytest.raises(ReleaseError, match="at least one package"):
+        load_config(repo)
+
+
+@pytest.mark.parametrize("workflow", ["", "build", "ci/build.yml"])
+def test_custom_build_rejects_a_workflow_that_is_not_a_bare_filename(
+    config: Config, repo: Path, workflow: str
+) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\n\n[[tool.reflex-release.custom-build]]\n'
+        f'packages = ["mypkg"]\nworkflow = "{workflow}"\n',
+    )
+    with pytest.raises(ReleaseError, match="must be a bare filename"):
+        load_config(repo)
+
+
+def test_custom_build_rejects_a_package_listed_twice(
+    config: Config, repo: Path
+) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n\n'
+        "[[tool.reflex-release.custom-build]]\n"
+        'packages = ["mypkg"]\nworkflow = "one.yml"\n\n'
+        "[[tool.reflex-release.custom-build]]\n"
+        'packages = ["mypkg", "widget-core"]\nworkflow = "two.yml"\n',
+    )
+    with pytest.raises(ReleaseError, match="more than one custom-build entry"):
+        load_config(repo)
+
+
+def test_custom_build_rejects_two_entries_sharing_a_workflow(
+    config: Config, repo: Path
+) -> None:
+    """One job per entry, so a shared file would collide as a job id."""
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n\n'
+        "[[tool.reflex-release.custom-build]]\n"
+        'packages = ["mypkg"]\nworkflow = "build.yml"\n\n'
+        "[[tool.reflex-release.custom-build]]\n"
+        'packages = ["widget-core"]\nworkflow = "build.yml"\n',
+    )
+    with pytest.raises(ReleaseError, match="same publish job"):
+        load_config(repo)
+
+
+def test_custom_build_rejects_an_unknown_key(config: Config, repo: Path) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\n\n[[tool.reflex-release.custom-build]]\n'
+        'packages = ["mypkg"]\nworkflow = "build.yml"\nartifacts = ["x"]\n',
+    )
+    with pytest.raises(ReleaseError, match="unknown key"):
+        load_config(repo)
+
+
+def test_custom_build_is_incompatible_with_an_exact_lockstep_pin(
+    config: Config, repo: Path
+) -> None:
+    """pin-exact rewrites a checkout the custom build workflow never sees."""
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n\n'
+        "[[tool.reflex-release.lockstep]]\n"
+        'members = ["mypkg", "widget-core"]\n'
+        'publish-last = ["mypkg"]\n'
+        "pin-exact = true\n\n"
+        "[[tool.reflex-release.custom-build]]\n"
+        'packages = ["mypkg"]\nworkflow = "build.yml"\n',
+    )
+    with pytest.raises(ReleaseError, match="pin-exact"):
+        load_config(repo)
+
+
+def test_a_lockstep_member_that_does_not_pin_may_build_custom(
+    config: Config, repo: Path
+) -> None:
+    """Only the pinning member rewrites metadata; its siblings are unaffected."""
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n\n'
+        "[[tool.reflex-release.lockstep]]\n"
+        'members = ["mypkg", "widget-core"]\n'
+        'publish-last = ["mypkg"]\n'
+        "pin-exact = true\n\n"
+        "[[tool.reflex-release.custom-build]]\n"
+        'packages = ["widget-core"]\nworkflow = "build.yml"\n',
+    )
+    assert load_config(repo).custom_build_packages() == ("widget-core",)
+
+
+def test_custom_build_rejects_workflows_that_share_a_job_id(
+    config: Config, repo: Path
+) -> None:
+    """Distinct filenames can still collapse into one generated job."""
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n\n'
+        "[[tool.reflex-release.custom-build]]\n"
+        'packages = ["mypkg"]\nworkflow = "build.yml"\n\n'
+        "[[tool.reflex-release.custom-build]]\n"
+        'packages = ["widget-core"]\nworkflow = "build.yaml"\n',
+    )
+    with pytest.raises(ReleaseError, match="same publish job"):
+        load_config(repo)
+
+
+@pytest.mark.parametrize(
+    "workflow", ["build.yml\njobs: bad", "build .yml: x", "~build.yml", "*.yml"]
+)
+def test_custom_build_rejects_a_yaml_unsafe_workflow_name(
+    config: Config, repo: Path, workflow: str
+) -> None:
+    """The name is written into `uses:` as a bare scalar."""
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            "\n[tool.towncrier]",
+            "\n[[tool.reflex-release.custom-build]]\n"
+            'packages = ["mypkg"]\n'
+            f"workflow = {workflow!r}\n\n[tool.towncrier]",
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ReleaseError, match="must be a bare filename"):
+        load_config(repo)
+
+
+@pytest.mark.parametrize(
+    ("body", "expected"),
+    [
+        (
+            'packages = ["mypkg"]\nworkflow = "b.yml"\nexpect-artifacts = "*.whl"\n',
+            "[[tool.reflex-release.custom-build]] expect-artifacts",
+        ),
+        (
+            'packages = [1]\nworkflow = "b.yml"\n',
+            "[[tool.reflex-release.custom-build]] packages",
+        ),
+        (
+            'packages = ["mypkg"]\nworkflow = 1\n',
+            "[[tool.reflex-release.custom-build]] workflow",
+        ),
+    ],
+)
+def test_custom_build_type_errors_name_their_own_table(
+    config: Config, repo: Path, body: str, expected: str
+) -> None:
+    """A key in a sub-table must not send the reader to the top-level one."""
+    write_config(
+        repo,
+        'root-package = "mypkg"\n\n[[tool.reflex-release.custom-build]]\n' + body,
+    )
+    with pytest.raises(ReleaseError, match=re.escape(expected)):
+        load_config(repo)
+
+
+def test_lockstep_type_errors_name_their_own_table(config: Config, repo: Path) -> None:
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n\n'
+        "[[tool.reflex-release.lockstep]]\nmembers = 1\n",
+    )
+    with pytest.raises(
+        ReleaseError, match=re.escape("[[tool.reflex-release.lockstep]] members")
+    ):
+        load_config(repo)
 
 
 def test_post_release_workflow_defaults_to_nothing(config: Config) -> None:

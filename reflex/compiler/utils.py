@@ -17,8 +17,10 @@ from typing import Any, TypedDict
 from urllib.parse import urlparse
 
 from reflex_base import constants
-from reflex_base.components.component import Component, ComponentStyle
+from reflex_base.components.component import BaseComponent, Component, ComponentStyle
+from reflex_base.components.dynamic import _bundle_imports
 from reflex_base.components.memo import (
+    DEFAULT_MEMO_WRAPPER,
     MemoComponentDefinition,
     MemoFunctionDefinition,
     MemoParamKind,
@@ -26,7 +28,7 @@ from reflex_base.components.memo import (
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
-from reflex_base.utils import format, imports, memo_paths
+from reflex_base.utils import format, imports, memo_paths, serializers
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Field, Var, VarData
 from reflex_base.vars.function import DestructuredArg
@@ -44,6 +46,7 @@ from reflex.utils.prerequisites import get_web_dir
 
 # To re-export this function.
 merge_imports = imports.merge_imports
+write_file = path_ops.write_file
 
 
 def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
@@ -234,6 +237,69 @@ def compile_state(state: type[BaseState]) -> dict:
     return _sorted_keys(asyncio.run(_resolve_delta(initial_state)))
 
 
+def _compile_initial_state(
+    state: type[BaseState], *, component_imports: ParsedImportDict | None = None
+) -> tuple[dict, str]:
+    """Serialize initial state while discovering its dynamic component imports.
+
+    Args:
+        state: The app state class.
+        component_imports: Optional accumulator for frontend package installation.
+
+    Returns:
+        The initial state dictionary and its serialized JSON.
+    """
+
+    def serialize_initial_value(value: Any) -> Any:
+        """Register a component's imports before serializing its initial value.
+
+        Args:
+            value: An initial state value requiring a custom serializer.
+
+        Returns:
+            The serialized value.
+        """
+        if isinstance(value, Component):
+            value_imports = value._get_all_imports()
+            _bundle_imports(value_imports)
+            if component_imports is not None:
+                for library, fields in value_imports.items():
+                    component_imports.setdefault(library, []).extend(fields)
+        return serializers.serialize(value)
+
+    initial_state = compile_state(state)
+    return initial_state, format.json_dumps(
+        initial_state, default=serialize_initial_value
+    )
+
+
+def _compile_bundled_libraries() -> tuple[str, str]:
+    """Return the bundled-library registry as a frontend build artifact.
+
+    Returns:
+        The output path and serialized registry.
+    """
+    bundled_libraries = RegistrationContext.ensure_context().bundled_libraries
+    return constants.Dirs.BUNDLED_LIBRARIES, format.json_dumps(bundled_libraries)
+
+
+def _restore_bundled_libraries() -> None:
+    """Restore the registry emitted by the most recent frontend compile."""
+    path = get_web_dir() / constants.Dirs.BUNDLED_LIBRARIES
+    try:
+        bundled_libraries = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return
+    if not isinstance(bundled_libraries, list) or not all(
+        isinstance(library, str) for library in bundled_libraries
+    ):
+        return
+    context = RegistrationContext.ensure_context()
+    context.bundled_libraries[:] = list(
+        dict.fromkeys([*bundled_libraries, *context.bundled_libraries])
+    )
+
+
 def _compile_client_storage_field(
     field: Field,
 ) -> (
@@ -374,6 +440,48 @@ def _app_style() -> ComponentStyle | Style:
     return app.style if app is not None else {}
 
 
+def _splice_transparent_root_props(
+    rest_name: str | None,
+    rendered: dict,
+    imports: ParsedImportDict,
+    ref_prop: str | None = None,
+) -> str:
+    """Make a memo wrapper transparent to props its parent injects at runtime.
+
+    The wrapper's rest param collects everything the parent passes but the
+    signature does not name, including ``ref`` under React 19 ref-as-prop. The
+    root renders ``mergeSlotProps(rest, {...own})``, which applies Radix
+    ``Slot`` semantics (own props win, ``on*`` handlers and refs compose,
+    ``className`` concatenates, object-valued props deep-merge), so a Slot
+    parent cloning the wrapper behaves as if it had cloned the root element.
+
+    Args:
+        rest_name: The rest param the definition declares, or ``None`` to
+            synthesize one.
+        rendered: The root's rendered tag, whose ``props`` are replaced in place.
+        imports: The memo module's imports, extended with the helper import.
+        ref_prop: The JS prop carrying the root's DOM ref when the root does
+            not accept ``ref`` directly (e.g. DebounceInput's ``inputRef``);
+            ``mergeSlotProps`` routes an injected ref there.
+
+    Returns:
+        The rest param name the wrapper signature must declare.
+    """
+    if rest_name is None:
+        rest_name = "rest"
+    ref_prop_arg = f', "{ref_prop}"' if ref_prop is not None else ""
+    own_props = ", ".join(rendered["props"])
+    rendered["props"] = [
+        f"...mergeSlotProps({rest_name}, ({{ {own_props} }}){ref_prop_arg})"
+    ]
+    # The call is spliced into the rendered props rather than carried by any
+    # Var, so its import is merged explicitly.
+    imports.setdefault(f"$/{constants.Dirs.STATE_PATH}", []).append(
+        ImportVar(tag="mergeSlotProps")
+    )
+    return rest_name
+
+
 def compile_experimental_component_memo(
     definition: MemoComponentDefinition,
 ) -> tuple[dict, ParsedImportDict]:
@@ -438,6 +546,15 @@ def compile_experimental_component_memo(
         for lib, fields in wrapper_var_data.imports:
             imports.setdefault(lib, []).extend(fields)
 
+    rest_param = next(
+        (p for p in definition.params if p.kind is MemoParamKind.REST), None
+    )
+    rest_name = rest_param.placeholder_name if rest_param is not None else None
+    if definition.forward_root_props:
+        rest_name = _splice_transparent_root_props(
+            rest_name, rendered, imports, definition.root_ref_prop
+        )
+
     signature_fields = [
         field
         for param in definition.params
@@ -447,21 +564,20 @@ def compile_experimental_component_memo(
     if any(p.kind is MemoParamKind.CHILDREN for p in definition.params):
         signature_fields.insert(0, "children")
 
-    rest_param = next(
-        (p for p in definition.params if p.kind is MemoParamKind.REST), None
-    )
-
     return (
         {
             "kind": "component",
             "name": memo_paths.library_and_symbol(
                 definition.source_module, definition.export_name
             )[1],
+            "display_name": definition.display_name or definition.export_name,
             "signature": DestructuredArg(
                 fields=tuple(signature_fields),
-                rest=rest_param.placeholder_name if rest_param is not None else None,
+                rest=rest_name,
             ).to_javascript(),
             "wrapper": str(wrapper) if wrapper is not None else None,
+            "pure_wrapper": wrapper is not None
+            and wrapper.equals(DEFAULT_MEMO_WRAPPER),
             "render": rendered,
             "hooks": hooks,
             "custom_code": custom_code,
@@ -561,6 +677,42 @@ def compile_experimental_function_memo(
     )
 
 
+def _literalize_static_ids(component: BaseComponent) -> None:
+    """Replace static component IDs with literal variables, recursively.
+
+    Args:
+        component: The component or nested component to update in place.
+    """
+    if not isinstance(component, Component):
+        return
+    if component.id is not None and not isinstance(component.id, Var):
+        component.id = Var.create(component.id)
+    for child in component.children:
+        _literalize_static_ids(child)
+    for child in component._get_components_in_props():
+        _literalize_static_ids(child)
+
+
+def _without_static_id_refs(component: Component) -> Component:
+    """Copy a head component so its static IDs do not generate refs.
+
+    Document roots cannot contain hooks, but a static component ID normally
+    creates a ``useRef`` hook. Preserve the ID as an HTML attribute while making
+    it a literal variable so it does not create a ref in the document root.
+
+    Args:
+        component: The head component to copy.
+
+    Returns:
+        A copied component with static IDs represented as literal variables.
+    """
+    if not component._get_all_refs():
+        return component
+    component = copy.deepcopy(component)
+    _literalize_static_ids(component)
+    return component
+
+
 def create_document_root(
     head_components: Sequence[Component] | None = None,
     html_lang: str | None = None,
@@ -592,22 +744,26 @@ def create_document_root(
             ):
                 existing_meta_types.add("viewport")
 
+    global_styles_href = Var(
+        "reflexGlobalStyles",
+        _var_data=VarData(
+            imports={
+                "$/styles/__reflex_global_styles.css?url": [
+                    ImportVar(tag="reflexGlobalStyles", is_default=True)
+                ]
+            }
+        ),
+    )
     # Always include the framework meta and link tags.
     always_head_components = [
         ReactMeta.create(),
         Link.create(
+            rel="preload", custom_attrs={"as": "style"}, href=global_styles_href
+        ),
+        Link.create(
             rel="stylesheet",
             type="text/css",
-            href=Var(
-                "reflexGlobalStyles",
-                _var_data=VarData(
-                    imports={
-                        "$/styles/__reflex_global_styles.css?url": [
-                            ImportVar(tag="reflexGlobalStyles", is_default=True)
-                        ]
-                    }
-                ),
-            ),
+            href=global_styles_href,
         ),
         Links.create(),
     ]
@@ -625,7 +781,7 @@ def create_document_root(
 
     head_components = [
         *theme_preload_components,
-        *(head_components or []),
+        *(_without_static_id_refs(component) for component in head_components or []),
         *maybe_head_components,
         *always_head_components,
     ]
@@ -752,10 +908,13 @@ def get_root_stylesheet_path() -> str:
 def get_context_path() -> str:
     """Get the path of the context / initial state file.
 
+    The module is emitted as ``.jsx`` so the React fast-refresh transform
+    registers its provider components; a ``.js`` file without JSX is skipped.
+
     Returns:
         The path of the context module.
     """
-    return str(get_web_dir() / (constants.Dirs.CONTEXTS_PATH + constants.Ext.JS))
+    return str(get_web_dir() / (constants.Dirs.CONTEXTS_PATH + constants.Ext.JSX))
 
 
 def get_memo_components_dir() -> str:
@@ -800,12 +959,14 @@ def add_meta(
     Returns:
         The component with the metadata added.
     """
+    from reflex.utils.misc import is_page_meta_set
+
     meta_tags = [
         item if isinstance(item, Component) else Meta.create(**item) for item in meta
     ]
 
     children: list[Any] = [Title.create(title)]
-    if description:
+    if is_page_meta_set(description):
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))
 
@@ -829,20 +990,6 @@ def resolve_path_of_web_dir(path: str | Path) -> Path:
     if path.is_relative_to(web_dir):
         return path.absolute()
     return (web_dir / path).absolute()
-
-
-def write_file(path: str | Path, code: str):
-    """Write the given code to the given path.
-
-    Args:
-        path: The path to write the code to.
-        code: The code to write.
-    """
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists() and path.read_text(encoding="utf-8") == code:
-        return
-    path.write_text(code, encoding="utf-8")
 
 
 _MEMO_MANIFEST_FILENAME = ".memo-manifest.json"

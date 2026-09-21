@@ -8,6 +8,7 @@ import contextvars
 import dataclasses
 import functools
 import inspect
+import logging
 import os
 import platform
 import re
@@ -24,7 +25,6 @@ from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
-import uvicorn
 from reflex_base.components.memo import MEMOS
 from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
@@ -42,9 +42,12 @@ import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.istate.shared import SharedState as SharedState  # To register it.
 from reflex.state import reload_state_module
-from reflex.utils import console, js_runtimes
+from reflex.utils import js_runtimes
+from reflex.utils.exec import _with_development_condition
 from reflex.utils.export import export
 from reflex.utils.token_manager import TokenManager
+
+logger = logging.getLogger(__name__)
 
 try:
     from selenium import webdriver
@@ -58,12 +61,34 @@ try:
 except ImportError:
     has_selenium = False
 
+if TYPE_CHECKING:
+    import uvicorn
+
 # The timeout (minutes) to check for the port.
 DEFAULT_TIMEOUT = 15
 POLL_INTERVAL = 0.25
 FRONTEND_POPEN_ARGS: dict[str, Any] = {}
 T = TypeVar("T")
 TimeoutType = int | float | None
+
+
+def _get_uvicorn():
+    """Import uvicorn for an AppHarness server.
+
+    Returns:
+        The imported uvicorn module.
+    """
+    try:
+        import uvicorn
+    except ImportError as exc:
+        msg = (
+            "AppHarness backend support requires `uvicorn`. Install it with "
+            "`pip install 'reflex[testing]'`."
+        )
+        raise ImportError(msg) from exc
+    return uvicorn
+
+
 if platform.system() == "Windows":
     FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # ty:ignore[unresolved-attribute]
     FRONTEND_POPEN_ARGS["shell"] = True
@@ -338,6 +363,7 @@ class AppHarness:
         if self.app_asgi is None:
             msg = "App was not initialized."
             raise RuntimeError(msg)
+        uvicorn = _get_uvicorn()
         self.backend = uvicorn.Server(
             uvicorn.Config(
                 app=self.app_asgi,
@@ -382,7 +408,13 @@ class AppHarness:
                 "dev",
             ],
             cwd=self.app_path / reflex.utils.prerequisites.get_web_dir(),
-            env={"PORT": "0", "NO_COLOR": "1"},
+            # The development condition lets react-router's dev CLI skip the
+            # relaunch it otherwise needs to enable that condition.
+            env=_with_development_condition({
+                **os.environ,
+                "PORT": "0",
+                "NO_COLOR": "1",
+            }),
             **FRONTEND_POPEN_ARGS,
         )
 
@@ -413,7 +445,7 @@ class AppHarness:
                     line = stdout.readline()
                 # catch I/O operation on closed file.
                 except ValueError as e:
-                    console.error(str(e))
+                    logger.debug(str(e))
                     break
                 if not line:
                     break
@@ -460,7 +492,14 @@ class AppHarness:
 
     def stop(self) -> None:
         """Stop the frontend and backend servers."""
-        import psutil
+        try:
+            import psutil
+        except ImportError as exc:
+            msg = (
+                "AppHarness cleanup requires `psutil`. Install it with "
+                "`pip install 'reflex[testing]'`."
+            )
+            raise ImportError(msg) from exc
 
         # Quit browsers first to avoid any lingering events being sent during shutdown.
         for driver in self._frontends:
@@ -815,6 +854,7 @@ class AppHarnessProd(AppHarness):
     frontend_server: uvicorn.Server | None = None
 
     def _run_frontend(self):
+        uvicorn = _get_uvicorn()
         with chdir(self.app_path):
             frontend_app = reflex.utils.exec._frontend_prod_app()
         self.frontend_server = uvicorn.Server(
@@ -883,6 +923,7 @@ class AppHarnessProd(AppHarness):
             msg = "App was not initialized."
             raise RuntimeError(msg)
         environment.REFLEX_SKIP_COMPILE.set(True)
+        uvicorn = _get_uvicorn()
         self.backend = uvicorn.Server(
             uvicorn.Config(
                 app=self.app_asgi,

@@ -1,6 +1,6 @@
 import dataclasses
 from collections.abc import Sequence
-from typing import Any
+from typing import Annotated, Any, Literal
 
 import pytest
 from reflex_base.utils.exceptions import VarAttributeError
@@ -53,7 +53,7 @@ class HybridQuantity:
         return self.quantity != 0
 
     @is_nonzero.var
-    def is_nonzero(cls) -> Var[bool]:
+    def _is_nonzero_var(cls) -> Var[bool]:
         """The frontend var for ``is_nonzero`` (deliberately distinct from the getter).
 
         Returns:
@@ -358,3 +358,46 @@ def test_rest_prop_merge_propagates_var_data():
     var_data = merged._get_all_var_data()
     assert var_data is not None
     assert "some-lib" in dict(var_data.imports)
+
+
+def test_annotated_value_type_is_unwrapped() -> None:
+    """An ``Annotated`` value type resolves to the type it annotates.
+
+    A pydantic discriminated union is spelled ``Annotated[A | B, Field(...)]``,
+    so reading one out of a mapping must guess the union rather than choke on
+    the metadata.
+    """
+
+    class GenericColor(pydantic.BaseModel):
+        kind: Literal["generic"] = "generic"
+        name: str = ""
+
+    class BrandedColor(pydantic.BaseModel):
+        kind: Literal["branded"] = "branded"
+        name: str = ""
+        brand: str = ""
+
+    any_color = Annotated[
+        GenericColor | BrandedColor, pydantic.Field(discriminator="kind")
+    ]
+    colors = Var(_js_expr="colors", _var_type=dict[str, any_color]).guess_type()
+    assert isinstance(colors, ObjectVar)
+
+    # A literal key reads as an attribute, a Var key as an item operation.
+    for color in (
+        colors["red"],
+        colors[Var(_js_expr="key", _var_type=str).guess_type()],
+    ):
+        assert isinstance(color, ObjectVar)
+        assert color._var_type == GenericColor | BrandedColor
+        assert color.name._var_type is str
+
+
+def test_annotated_var_type_is_unwrapped() -> None:
+    """``guess_type`` sees through ``Annotated`` on the var's own type."""
+    annotated = Annotated[Base, "metadata"]
+    var = Var(_js_expr="obj", _var_type=annotated).guess_type()
+
+    assert isinstance(var, ObjectVar)
+    assert var._var_type is Base
+    assert var.quantity._var_type is int

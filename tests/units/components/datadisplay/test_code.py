@@ -4,6 +4,13 @@ from reflex_components_code.code import CodeBlock, Theme
 import reflex as rx
 
 
+def test_default_code_copy_button_has_an_accessible_name():
+    """Icon-only copy controls must announce their action."""
+    assert '"aria-label":"Copy code"' in str(
+        CodeBlock.create("print('Hello')", can_copy=True)
+    )
+
+
 @pytest.mark.parametrize(
     ("theme", "expected"),
     [(Theme.one_light, "oneLight"), (Theme.one_dark, "oneDark")],

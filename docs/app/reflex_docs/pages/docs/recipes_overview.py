@@ -5,7 +5,7 @@ from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp, text_comp_2
 
 def get_component_link(category, clist) -> str:
     file_name_without_extension = clist.split("/")[-1].split(".")[0].replace("_", "-")
-    return f"/recipes/{category}/{file_name_without_extension}"
+    return f"/recipes/{category}/{file_name_without_extension}/"
 
 
 def format_titles(path):
@@ -32,27 +32,27 @@ def component_grid():
                 rx.box(
                     rx.el.h2(
                         rx.utils.format.to_title_case(category),
-                        class_name="font-large text-secondary-12",
+                        class_name="font-large text-foreground",
                     ),
                     rx.icon(
                         icons.get(category, "shapes"),
                         size=18,
-                        class_name="!text-secondary-9",
+                        class_name="!text-subtle-foreground",
                     ),
-                    class_name="px-4 py-2 flex flex-row !text-secondary-12 gap-3 items-center justify-between",
+                    class_name="px-4 py-2 flex flex-row !text-foreground gap-3 items-center justify-between",
                 ),
                 rx.box(
                     *[
                         rx.link(
                             format_titles(c),
                             href=get_component_link(category, c),
-                            class_name="font-small text-secondary-11 hover:!text-primary-9 transition-color w-fit",
+                            class_name="font-small text-muted-foreground hover:!text-primary transition-color w-fit",
                         )
                         for c in recipes_list[category]
                     ],
-                    class_name="flex flex-col gap-3 px-4 py-2 border-t border-secondary-5",
+                    class_name="flex flex-col gap-3 px-4 py-2 border-t border-border",
                 ),
-                class_name="flex flex-col border border-secondary-5 rounded-xl bg-secondary-2 shadow-large overflow-hidden",
+                class_name="flex flex-col border border-border rounded-xl bg-muted shadow-large overflow-hidden",
             )
         )
 
@@ -65,13 +65,13 @@ def info_card(title, content):
     return rx.box(
         rx.el.h2(
             title,
-            class_name="font-md-smbold text-secondary-12",
+            class_name="font-md-smbold text-foreground",
         ),
         rx.text(
             content,
-            class_name="font-small text-secondary-11",
+            class_name="font-small text-muted-foreground",
         ),
-        class_name="flex flex-col border gap-2 border-secondary-5 rounded-xl bg-secondary-1 shadow-large overflow-hidden px-4 py-2",
+        class_name="flex flex-col border gap-2 border-border rounded-xl bg-background shadow-large overflow-hidden px-4 py-2",
     )
 
 
@@ -95,7 +95,7 @@ def card_section():
     )
 
 
-@docpage(set_path="/recipes", right_sidebar=False)
+@docpage(set_path="/recipes/", right_sidebar=False)
 def overview():
     return rx.box(
         h1_comp(text="Recipes"),

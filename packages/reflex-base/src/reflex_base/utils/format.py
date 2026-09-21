@@ -6,6 +6,7 @@ import inspect
 import json
 import os
 import re
+from collections.abc import Callable
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
@@ -546,7 +547,10 @@ def format_event(event_spec: EventSpec) -> str:
     event_args.append(wrap(args, "{"))
 
     if event_spec.client_handler_name:
-        event_args.append(wrap(event_spec.client_handler_name, '"'))
+        event_args.extend((
+            json.dumps(event_spec.event_actions),
+            wrap(event_spec.client_handler_name, '"'),
+        ))
     return f"ReflexEvent({', '.join(event_args)})"
 
 
@@ -561,10 +565,9 @@ def format_queue_events(
     """Format a list of event handler / event spec as a javascript callback.
 
     The resulting code can be passed to interfaces that expect a callback
-    function and when triggered it will directly call queueEvents.
-
-    It is intended to be executed in the rx.call_script context, where some
-    existing API needs a callback to trigger a backend event handler.
+    function and when triggered it dispatches the events through `addEvents`.
+    The name resolves via the attached imports in compiled modules and via a
+    local alias in the `applyEvent` eval context.
 
     Args:
         events: The events to queue.
@@ -583,7 +586,7 @@ def format_queue_events(
         call_event_fn,
         call_event_handler,
     )
-    from reflex_base.vars import FunctionVar, Var
+    from reflex_base.vars import FunctionVar, Var, VarData
 
     if not events:
         return Var("(() => null)").to(FunctionVar, EventChain)
@@ -616,11 +619,9 @@ def format_queue_events(
                 raise ValueError(msg)
         payloads.extend(format_event(s) for s in specs)
 
-    # Return the final code snippet, expecting queueEvents, processEvent, and socket to be in scope.
-    # Typically this snippet will _only_ run from within an rx.call_script eval context.
     return Var(
-        f"{arg_def} => {{queueEvents([{','.join(payloads)}], {constants.CompileVars.SOCKET}, false, navigate, params);"
-        f"processEvent({constants.CompileVars.SOCKET}, navigate, params);}}",
+        f"{arg_def} => {{{constants.CompileVars.ADD_EVENTS}([{','.join(payloads)}])}}",
+        _var_data=VarData(imports=constants.Imports.EVENTS),
     ).to(FunctionVar, EventChain)
 
 
@@ -730,6 +731,27 @@ def format_library_name(library_fullname: str | dict[str, Any]) -> str:
     return lib
 
 
+_serialize: Callable[[Any], Any] | None = None
+
+
+def _get_serialize() -> Callable[[Any], Any]:
+    """Get ``serializers.serialize``, importing it on first use.
+
+    The import cannot live at module scope (``serializers`` imports this
+    module), and repeating it per call is measurable on the compile path,
+    so the resolved function is cached.
+
+    Returns:
+        The ``serializers.serialize`` callable.
+    """
+    global _serialize
+    if _serialize is None:
+        from reflex_base.utils import serializers
+
+        _serialize = serializers.serialize
+    return _serialize
+
+
 def json_dumps(obj: Any, **kwargs) -> str:
     """Takes an object and returns a jsonified string.
 
@@ -740,10 +762,8 @@ def json_dumps(obj: Any, **kwargs) -> str:
     Returns:
         A string
     """
-    from reflex_base.utils import serializers
-
     kwargs.setdefault("ensure_ascii", False)
-    kwargs.setdefault("default", serializers.serialize)
+    kwargs.setdefault("default", _get_serialize())
 
     return json.dumps(obj, **kwargs)
 

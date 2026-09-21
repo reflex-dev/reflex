@@ -5,13 +5,15 @@ from __future__ import annotations
 import collections
 import dataclasses
 import json
+import logging
 import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
-from reflex_base import constants
+from reflex_base import constants, otel
+from reflex_base.components.app_wraps import collect_var_app_wraps_in_subtree
 from reflex_base.components.component import (
     BaseComponent,
     Component,
@@ -31,26 +33,31 @@ from reflex_base.constants.compiler import PageNames, ResetStylesheet
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
-from reflex_base.registry import RegistrationContext
-from reflex_base.utils import memo_paths
+from reflex_base.registry import RegistrationContext, _default_bundled_libraries
+from reflex_base.utils import log, memo_paths
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import callable_name, to_title_case
-from reflex_base.utils.imports import ABSOLUTE_IMPORT_PREFIXES, ImportVar
+from reflex_base.utils.imports import (
+    ABSOLUTE_IMPORT_PREFIXES,
+    ImportVar,
+    ParsedImportDict,
+)
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_radix.plugin import RadixThemesPlugin
-from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
+from rich.progress import Progress
 
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
-from reflex.compiler.plugins.builtin import collect_var_app_wraps_in_subtree
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
 from reflex.state import BaseState, code_uses_state_contexts
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
 from reflex.utils.exec import get_compile_context, is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
+
+logger = logging.getLogger(__name__)
 
 RADIX_THEMES_STYLESHEET = "@radix-ui/themes/styles.css"
 
@@ -127,7 +134,36 @@ def _normalize_library_name(lib: str) -> str:
     """
     if lib == "react":
         return "React"
-    return lib.replace("$/", "").replace("@", "").replace("/", "_").replace("-", "_")
+    return (
+        lib
+        .replace("$/", "")
+        .replace("@", "")
+        .replace("/", "_")
+        .replace("-", "_")
+        .replace(".", "_")
+    )
+
+
+def _get_window_libraries() -> list[tuple[str, str]]:
+    """Build distinct JavaScript aliases for bundled libraries and subpaths.
+
+    Returns:
+        Library aliases paired with their original module paths.
+    """
+    used_aliases: set[str] = set()
+    window_libraries: list[tuple[str, str]] = []
+    for library in dict.fromkeys(
+        RegistrationContext.ensure_context().bundled_libraries
+    ):
+        base_alias = _normalize_library_name(library)
+        alias = base_alias
+        suffix = 2
+        while alias in used_aliases:
+            alias = f"{base_alias}_{suffix}"
+            suffix += 1
+        used_aliases.add(alias)
+        window_libraries.append((alias, library))
+    return window_libraries
 
 
 def _compile_app(
@@ -143,12 +179,16 @@ def _compile_app(
     Returns:
         The compiled app.
     """
-    window_libraries = [
-        (_normalize_library_name(name), name)
-        for name in RegistrationContext.ensure_context().bundled_libraries
-    ]
-
-    window_libraries_deduped = list(dict.fromkeys(window_libraries))
+    window_libraries = _get_window_libraries()
+    lazy_window_libraries = []
+    if get_config().frontend_lazy_bundled_libraries:
+        core_libraries = set(_default_bundled_libraries())
+        lazy_window_libraries = [
+            library for library in window_libraries if library[1] not in core_libraries
+        ]
+        window_libraries = [
+            library for library in window_libraries if library[1] in core_libraries
+        ]
 
     app_root_imports = app_root._get_all_imports()
     _apply_common_imports(app_root_imports)
@@ -157,7 +197,8 @@ def _compile_app(
         imports=utils.compile_imports(app_root_imports),
         custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
-        window_libraries=window_libraries_deduped,
+        window_libraries=window_libraries,
+        lazy_window_libraries=lazy_window_libraries,
         render=app_root.render(),
         dynamic_imports=app_root._get_all_dynamic_imports(),
         hydrate_fallback_export=hydrate_fallback_export,
@@ -200,39 +241,57 @@ def _resolve_default_color_mode(theme: Component | None) -> str:
     return get_config().default_color_mode
 
 
-def _compile_contexts(state: type[BaseState] | None, theme: Component | None) -> str:
+def _compile_contexts(
+    state: type[BaseState] | None,
+    theme: Component | None,
+    *,
+    component_imports: ParsedImportDict | None = None,
+) -> str:
     """Compile the initial state and contexts.
 
     Args:
         state: The app state.
         theme: The top-level app theme.
+        component_imports: Optional accumulator for initial component dependencies.
 
     Returns:
         The compiled context file.
     """
     default_color_mode = str(LiteralVar.create(_resolve_default_color_mode(theme)))
+    disable_react_owner_stacks = (
+        not is_prod_mode() and not environment.REFLEX_REACT_OWNER_STACKS.get()
+    )
+    initial_state, initial_state_json = (
+        utils._compile_initial_state(state, component_imports=component_imports)
+        if state
+        else (None, None)
+    )
 
     return (
         templates.context_template(
-            initial_state=utils.compile_state(state),
+            initial_state=initial_state,
+            initial_state_json=initial_state_json,
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
+            disable_react_owner_stacks=disable_react_owner_stacks,
         )
         if state
         else templates.context_template(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
+            disable_react_owner_stacks=disable_react_owner_stacks,
         )
     )
 
 
-def _compile_page(component: BaseComponent) -> str:
+def _compile_page(component: BaseComponent, route: str) -> str:
     """Compile the component.
 
     Args:
         component: The component to compile.
+        route: The route the page is compiled for.
 
     Returns:
         The compiled component.
@@ -248,6 +307,7 @@ def _compile_page(component: BaseComponent) -> str:
         custom_codes=component._get_all_custom_code(),
         hooks=component._get_all_hooks(),
         render=component.render(),
+        route=route,
     )
 
 
@@ -389,9 +449,13 @@ def _compile_root_stylesheet(
                 from sass import compile as sass_compile
 
                 target.write_text(
-                    data=sass_compile(
-                        filename=str(stylesheet),
-                        output_style="compressed",
+                    # libsass is untyped; compiling from a filename returns the CSS.
+                    data=cast(
+                        "str",
+                        sass_compile(
+                            filename=str(stylesheet),
+                            output_style="compressed",
+                        ),
                     ),
                     encoding="utf8",
                 )
@@ -406,7 +470,7 @@ def _compile_root_stylesheet(
         sheets.append(str_target_path) if str_target_path not in sheets else None
 
     if failed_to_import_sass:
-        console.error(
+        logger.error(
             'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
         )
 
@@ -699,12 +763,15 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
 def compile_contexts(
     state: type[BaseState] | None,
     theme: Component | None,
+    *,
+    component_imports: ParsedImportDict | None = None,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
 
     Args:
         state: The app state.
         theme: The top-level app theme.
+        component_imports: Optional accumulator for initial component dependencies.
 
     Returns:
         The path and code of the compiled context.
@@ -712,7 +779,9 @@ def compile_contexts(
     # Get the path for the output file.
     output_path = utils.get_context_path()
 
-    return output_path, _compile_contexts(state, theme)
+    return output_path, _compile_contexts(
+        state, theme, component_imports=component_imports
+    )
 
 
 def compile_page(path: str, component: BaseComponent) -> tuple[str, str]:
@@ -729,7 +798,7 @@ def compile_page(path: str, component: BaseComponent) -> tuple[str, str]:
     output_path = utils.get_page_path(path)
 
     # Add the style to the component.
-    code = _compile_page(component)
+    code = _compile_page(component, path)
     return output_path, code
 
 
@@ -757,6 +826,7 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
         custom_codes=page_ctx.custom_code_dict(),
         hooks=page_ctx.hooks,
         render=page_ctx.root_component.render(),
+        route=page_ctx.route,
     )
     return output_path, code
 
@@ -1133,6 +1203,27 @@ def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:
     app._register_plugin_pages(plugins)
 
 
+def _read_stateful_pages_marker() -> list[str] | None:
+    """Read the routes that create state classes from a previous compile.
+
+    A missing marker or one truncated by an older writer requires full page
+    evaluation. New writers replace the marker atomically.
+
+    Returns:
+        The stateful routes, or None if no valid marker has been written yet.
+    """
+    marker = prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
+    try:
+        return json.loads(marker.read_text())
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+    except PermissionError:
+        if constants.IS_WINDOWS:
+            # A concurrent atomic replacement can temporarily block Windows readers.
+            return None
+        raise
+
+
 def compile_app(
     app: App,
     *,
@@ -1146,7 +1237,10 @@ def compile_app(
         ``True`` when a real frontend compile ran, ``False`` when the call
         short-circuited (backend-only paths that only re-evaluate pages).
     """
-    from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+    from reflex_base.components.dynamic import (
+        _bundle_library,
+        _reset_bundled_libraries_for_compile,
+    )
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
     app._apply_decorated_pages()
@@ -1155,15 +1249,17 @@ def compile_app(
     app._pages = {}
 
     should_compile = app._should_compile()
-    backend_dir = prerequisites.get_backend_dir()
-    if not dry_run and not should_compile and backend_dir.exists():
-        stateful_pages_marker = backend_dir / constants.Dirs.STATEFUL_PAGES
-        if stateful_pages_marker.exists():
-            with stateful_pages_marker.open("r") as file:
-                stateful_pages = json.load(file)
-            for route in stateful_pages:
-                console.debug(f"BE Evaluating stateful page: {route}")
-                app._compile_page(route, save_page=False)
+    if not dry_run and not should_compile:
+        stateful_pages = _read_stateful_pages_marker()
+    else:
+        stateful_pages = None
+    if stateful_pages is not None:
+        for route in stateful_pages:
+            logger.debug(f"BE Evaluating stateful page: {route}")
+            app._compile_page(route, save_page=False)
+        if app._state is not None:
+            utils._restore_bundled_libraries()
+            utils._compile_initial_state(app._state)
         app._add_optional_endpoints()
         return False
 
@@ -1173,37 +1269,40 @@ def compile_app(
     app.style = evaluate_style_namespaces(app.style)
 
     if not should_compile and not dry_run:
-        with console.timing("Evaluate Pages (Backend)"):
+        with (
+            log.timing(logger, "Evaluate Pages (Backend)"),
+            otel.span("reflex.compile.evaluate_pages"),
+        ):
             for route in app._unevaluated_pages:
-                console.debug(f"Evaluating page: {route}")
+                logger.debug(f"Evaluating page: {route}")
                 app._compile_page(route, save_page=False)
 
         app._write_stateful_pages_marker()
+        if app._state is not None:
+            utils._restore_bundled_libraries()
+            utils._compile_initial_state(app._state)
         app._add_optional_endpoints()
         return False
 
-    progress = (
-        Progress(
-            *Progress.get_default_columns()[:-1],
-            MofNCompleteColumn(),
-            TimeElapsedColumn(),
-        )
-        if use_rich
-        else console.PoorProgress()
-    )
+    progress = console.progress() if use_rich else console.PoorProgress()
     fixed_steps = 7
     compiler_plugins, radix_themes_plugin = _resolve_radix_themes_plugin(
         app,
         config.plugins,
     )
-    reset_bundled_libraries()
+    _reset_bundled_libraries_for_compile()
     # Drop cached memo wrapper classes so each compile recomputes a memo's
     # ``library`` from the current module layout (handles a module flipping to
     # a package across hot reloads).
     reset_memo_component_classes()
+    # Page evaluation rebuilds every chain that is not interned by handler, so
+    # entries from an earlier compile can only retain dead chains.
+    context = RegistrationContext.ensure_context()
+    context._bound_event_chains.clear()
+    context._memoized_event_triggers.clear()
     for plugin in compiler_plugins:
         for dependency in plugin.get_frontend_dependencies():
-            bundle_library(dependency)
+            _bundle_library(dependency)
     base_total = (len(app._unevaluated_pages) * 2) + fixed_steps + len(config.plugins)
     progress.start()
     task = progress.add_task("Compiling:", total=base_total)
@@ -1215,7 +1314,11 @@ def compile_app(
         ),
     )
 
-    with console.timing("Compile pages"), compile_ctx:
+    with (
+        log.timing(logger, "Compile pages"),
+        otel.span("reflex.compile.pages"),
+        compile_ctx,
+    ):
         compile_ctx.compile(
             evaluate_progress=lambda: progress.advance(task),
             render_progress=lambda: progress.advance(task),
@@ -1233,7 +1336,8 @@ def compile_app(
 
     app._evaluated_pages.update(compile_ctx.compiled_pages)
     app._stateful_pages.update(compile_ctx.stateful_routes)
-    app._write_stateful_pages_marker()
+    if not dry_run:
+        app._write_stateful_pages_marker()
     app._add_optional_endpoints()
     app._validate_var_dependencies()
 
@@ -1322,7 +1426,7 @@ def compile_app(
 
     assets_src = Path.cwd() / constants.Dirs.APP_ASSETS
     if assets_src.is_dir() and not dry_run:
-        with console.timing("Copy assets"):
+        with log.timing(logger, "Copy assets"), otel.span("reflex.compile.copy_assets"):
             path_ops.update_directory_tree(
                 src=assets_src,
                 dest=Path.cwd() / prerequisites.get_web_dir() / constants.Dirs.PUBLIC,
@@ -1384,9 +1488,14 @@ def compile_app(
             compile_results.append(result)
         progress.advance(task)
 
-    compile_results.append(
-        compile_contexts(app._state, radix_themes_plugin.get_theme())
-    )
+    compile_results.extend([
+        compile_contexts(
+            app._state,
+            radix_themes_plugin.get_theme(),
+            component_imports=all_imports,
+        ),
+        utils._compile_bundled_libraries(),
+    ])
     progress.advance(task)
 
     compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
@@ -1400,8 +1509,14 @@ def compile_app(
     # Delete memo files this compile no longer emits. Done here (not before the
     # dry-run return) so ``--dry`` never mutates ``.web`` or the manifest.
     utils.prune_stale_memo_files(path for path, _ in memo_component_files)
+    # A leftover ``.js`` module would win extensionless resolution of
+    # ``$/utils/context`` over the ``.jsx`` file written below.
+    Path(utils.get_context_path()).with_suffix(constants.Ext.JS).unlink(missing_ok=True)
 
-    with console.timing("Install Frontend Packages"):
+    with (
+        log.timing(logger, "Install Frontend Packages"),
+        otel.span("reflex.compile.install_frontend_packages"),
+    ):
         app._get_frontend_packages(all_imports)
 
     frontend_skeleton.update_react_router_config(
@@ -1424,7 +1539,7 @@ def compile_app(
     for output_path, code in compile_results:
         path = utils.resolve_path_of_web_dir(output_path)
         if path in output_mapping:
-            console.warn(
+            logger.warning(
                 f"Path {path} has two different outputs. The last one will be used."
             )
         output_mapping[path] = code
@@ -1433,7 +1548,7 @@ def compile_app(
         for static_file_path, content in plugin.get_static_assets():
             path = utils.resolve_path_of_web_dir(static_file_path)
             if path in output_mapping:
-                console.warn(
+                logger.warning(
                     f"Plugin {plugin.__class__.__name__} is overwriting existing files at {path}."
                 )
             output_mapping[path] = (
@@ -1451,7 +1566,7 @@ def compile_app(
                 raise FileNotFoundError(msg)
         output_mapping[path] = modify_fn(file_content)
 
-    with console.timing("Write to Disk"):
+    with log.timing(logger, "Write to Disk"), otel.span("reflex.compile.write"):
         for output_path, code in output_mapping.items():
             utils.write_file(output_path, code)
 

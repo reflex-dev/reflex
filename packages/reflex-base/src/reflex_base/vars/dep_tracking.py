@@ -388,9 +388,8 @@ class DependencyTracker:
             if the_var_data is None:
                 msg = f"Cannot determine the source code for the var in {self.func!r}."
                 raise VarValueError(msg)
-            self.dependencies.setdefault(the_var_data.state, set()).add(
-                the_var_data.field_name
-            )
+            for state_name, field_names in the_var._dependency_fields().items():
+                self.dependencies.setdefault(state_name, set()).update(field_names)
             self.scan_status = ScanStatus.SCANNING
 
     def _populate_dependencies(self) -> None:
@@ -454,7 +453,9 @@ class DependencyTracker:
                         tracked_locals=self.tracked_locals,
                     )
                 )
-            elif instruction.opname == "IMPORT_NAME" and instruction.argval is not None:
+            elif instruction.opname == "IMPORT_NAME":
+                if instruction.argval is None:
+                    continue
                 self.scan_status = ScanStatus.GETTING_IMPORT
                 self._last_import_name = instruction.argval
                 importlib.import_module(instruction.argval)

@@ -214,7 +214,7 @@ ALWAYS_COMPUTED_DICT_KEYS = [
 ]
 
 
-@pytest_asyncio.fixture(loop_scope="function", scope="function")
+@pytest_asyncio.fixture(loop_scope="function")
 async def state_manager_redis(
     app_module_mock,
 ) -> AsyncGenerator[StateManager, None]:

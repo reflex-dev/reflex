@@ -18,14 +18,13 @@ from reflex_base.utils.exceptions import (
     VarValueError,
 )
 from reflex_base.utils.imports import ImportDict, ImportVar
-from reflex_base.utils.types import safe_issubclass
+from reflex_base.utils.types import safe_issubclass, unionize
 
 from .base import (
     CustomVarOperationReturn,
     LiteralVar,
     Var,
     VarData,
-    unionize,
     var_operation,
     var_operation_return,
 )
@@ -59,6 +58,12 @@ def raise_unsupported_operand_types(
 
 class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
     """Base class for immutable number vars."""
+
+    # Load-bearing: defining __eq__ below drops the inherited hash, which would
+    # leave every numeric var unhashable, including LiteralNumberVar. Var.__format__
+    # hashes, so removing this breaks interpolating any numeric literal into a
+    # string. test_numeric_literal_var_hashability_is_load_bearing pins it.
+    __hash__ = Var.__hash__
 
     def __add__(self, other: number_types) -> NumberVar:
         """Add two numbers.
@@ -539,7 +544,7 @@ def number_add_operation(lhs: NumberVar, rhs: NumberVar):
     Returns:
         The number addition operation.
     """
-    return f"({lhs} + {rhs})"
+    return f"({lhs!s} + {rhs!s})"
 
 
 @binary_number_operation
@@ -553,7 +558,7 @@ def number_subtract_operation(lhs: NumberVar, rhs: NumberVar):
     Returns:
         The number subtraction operation.
     """
-    return f"({lhs} - {rhs})"
+    return f"({lhs!s} - {rhs!s})"
 
 
 @var_operation
@@ -567,7 +572,7 @@ def number_abs_operation(value: NumberVar):
         The number absolute operation.
     """
     return var_operation_return(
-        js_expression=f"Math.abs({value})", var_type=value._var_type
+        js_expression=f"Math.abs({value!s})", var_type=value._var_type
     )
 
 
@@ -582,7 +587,7 @@ def number_multiply_operation(lhs: NumberVar, rhs: NumberVar):
     Returns:
         The number multiplication operation.
     """
-    return f"({lhs} * {rhs})"
+    return f"({lhs!s} * {rhs!s})"
 
 
 @var_operation
@@ -597,7 +602,7 @@ def number_negate_operation(
     Returns:
         The number negation operation.
     """
-    return var_operation_return(js_expression=f"-({value})", var_type=value._var_type)
+    return var_operation_return(js_expression=f"-({value!s})", var_type=value._var_type)
 
 
 @binary_number_operation
@@ -611,7 +616,7 @@ def number_true_division_operation(lhs: NumberVar, rhs: NumberVar):
     Returns:
         The number true division operation.
     """
-    return f"({lhs} / {rhs})"
+    return f"({lhs!s} / {rhs!s})"
 
 
 @binary_number_operation
@@ -625,7 +630,7 @@ def number_floor_division_operation(lhs: NumberVar, rhs: NumberVar):
     Returns:
         The number floor division operation.
     """
-    return f"Math.floor({lhs} / {rhs})"
+    return f"Math.floor({lhs!s} / {rhs!s})"
 
 
 @binary_number_operation
@@ -639,7 +644,7 @@ def number_modulo_operation(lhs: NumberVar, rhs: NumberVar):
     Returns:
         The number modulo operation.
     """
-    return f"({lhs} % {rhs})"
+    return f"({lhs!s} % {rhs!s})"
 
 
 @binary_number_operation
@@ -653,7 +658,7 @@ def number_exponent_operation(lhs: NumberVar, rhs: NumberVar):
     Returns:
         The number exponent operation.
     """
-    return f"({lhs} ** {rhs})"
+    return f"({lhs!s} ** {rhs!s})"
 
 
 @var_operation
@@ -670,9 +675,11 @@ def number_round_operation(value: NumberVar, ndigits: NumberVar | int):
     if (isinstance(ndigits, LiteralNumberVar) and ndigits._var_value == 0) or (
         isinstance(ndigits, int) and ndigits == 0
     ):
-        return var_operation_return(js_expression=f"Math.round({value})", var_type=int)
+        return var_operation_return(
+            js_expression=f"Math.round({value!s})", var_type=int
+        )
     return var_operation_return(
-        js_expression=f"(+{value}.toFixed({ndigits}))", var_type=float
+        js_expression=f"(+{value!s}.toFixed({ndigits!s}))", var_type=float
     )
 
 
@@ -686,7 +693,7 @@ def number_ceil_operation(value: NumberVar):
     Returns:
         The number ceil operation.
     """
-    return var_operation_return(js_expression=f"Math.ceil({value})", var_type=int)
+    return var_operation_return(js_expression=f"Math.ceil({value!s})", var_type=int)
 
 
 @var_operation
@@ -699,7 +706,7 @@ def number_floor_operation(value: NumberVar):
     Returns:
         The number floor operation.
     """
-    return var_operation_return(js_expression=f"Math.floor({value})", var_type=int)
+    return var_operation_return(js_expression=f"Math.floor({value!s})", var_type=int)
 
 
 @var_operation
@@ -712,7 +719,7 @@ def number_trunc_operation(value: NumberVar):
     Returns:
         The number trunc operation.
     """
-    return var_operation_return(js_expression=f"Math.trunc({value})", var_type=int)
+    return var_operation_return(js_expression=f"Math.trunc({value!s})", var_type=int)
 
 
 class BooleanVar(NumberVar[bool], python_types=bool):
@@ -805,7 +812,7 @@ def boolean_to_number_operation(value: BooleanVar):
     Returns:
         The boolean to number operation.
     """
-    return var_operation_return(js_expression=f"Number({value})", var_type=int)
+    return var_operation_return(js_expression=f"Number({value!s})", var_type=int)
 
 
 def comparison_operator(
@@ -853,7 +860,7 @@ def greater_than_operation(lhs: Var, rhs: Var):
     Returns:
         The result of the comparison.
     """
-    return f"({lhs} > {rhs})"
+    return f"({lhs!s} > {rhs!s})"
 
 
 @comparison_operator
@@ -867,7 +874,7 @@ def greater_than_or_equal_operation(lhs: Var, rhs: Var):
     Returns:
         The result of the comparison.
     """
-    return f"({lhs} >= {rhs})"
+    return f"({lhs!s} >= {rhs!s})"
 
 
 @comparison_operator
@@ -881,7 +888,7 @@ def less_than_operation(lhs: Var, rhs: Var):
     Returns:
         The result of the comparison.
     """
-    return f"({lhs} < {rhs})"
+    return f"({lhs!s} < {rhs!s})"
 
 
 @comparison_operator
@@ -895,7 +902,7 @@ def less_than_or_equal_operation(lhs: Var, rhs: Var):
     Returns:
         The result of the comparison.
     """
-    return f"({lhs} <= {rhs})"
+    return f"({lhs!s} <= {rhs!s})"
 
 
 @comparison_operator
@@ -909,7 +916,7 @@ def equal_operation(lhs: Var, rhs: Var):
     Returns:
         The result of the comparison.
     """
-    return f"({lhs}?.valueOf?.() === {rhs}?.valueOf?.())"
+    return f"({lhs!s}?.valueOf?.() === {rhs!s}?.valueOf?.())"
 
 
 @comparison_operator
@@ -923,7 +930,7 @@ def not_equal_operation(lhs: Var, rhs: Var):
     Returns:
         The result of the comparison.
     """
-    return f"({lhs}?.valueOf?.() !== {rhs}?.valueOf?.())"
+    return f"({lhs!s}?.valueOf?.() !== {rhs!s}?.valueOf?.())"
 
 
 @var_operation
@@ -936,7 +943,7 @@ def boolean_not_operation(value: BooleanVar):
     Returns:
         The boolean NOT operation.
     """
-    return var_operation_return(js_expression=f"!({value})", var_type=bool)
+    return var_operation_return(js_expression=f"!({value!s})", var_type=bool)
 
 
 @dataclasses.dataclass(
@@ -964,14 +971,6 @@ class LiteralNumberVar(LiteralVar[NUMBER_T], NumberVar[NUMBER_T]):
             msg = f"No valid JSON representation for {self}"
             raise PrimitiveUnserializableToJSONError(msg)
         return json.dumps(self._var_value)
-
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash((type(self).__name__, self._var_value))
 
     @classmethod
     def _get_all_var_data_without_creating_var(
@@ -1033,14 +1032,6 @@ class LiteralBooleanVar(LiteralVar[bool], BooleanVar):
         """
         return "true" if self._var_value else "false"
 
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash((type(self).__name__, self._var_value))
-
     @classmethod
     def _get_all_var_data_without_creating_var(cls, value: bool) -> VarData | None:
         """Get all the var data without creating the var.
@@ -1096,7 +1087,7 @@ def boolify(value: Var):
         The boolean value.
     """
     return var_operation_return(
-        js_expression=f"isTrue({value})",
+        js_expression=f"isTrue({value!s})",
         var_type=bool,
         var_data=VarData(imports=_IS_TRUE_IMPORT),
     )
@@ -1113,7 +1104,7 @@ def is_not_none_operation(value: Var):
         The boolean value.
     """
     return var_operation_return(
-        js_expression=f"isNotNullOrUndefined({value})",
+        js_expression=f"isNotNullOrUndefined({value!s})",
         var_type=bool,
         var_data=VarData(imports=_IS_NOT_NULL_OR_UNDEFINED_IMPORT),
     )
@@ -1139,7 +1130,7 @@ def ternary_operation(
     """
     type_value: type[T] | type[U] = unionize(if_true._var_type, if_false._var_type)  # ty:ignore[invalid-assignment]
     value: CustomVarOperationReturn[T | U] = var_operation_return(
-        js_expression=f"({condition} ? {if_true} : {if_false})",
+        js_expression=f"({condition!s} ? {if_true!s} : {if_false!s})",
         var_type=type_value,
     )
     return value

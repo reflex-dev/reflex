@@ -2,21 +2,24 @@
 
 from __future__ import annotations
 
+import json
+import logging
 from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
 
 from reflex_base.components.component import Component, NoSSRComponent, field
 from reflex_base.event import EventHandler, no_args_event_spec
-from reflex_base.utils import console
 from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.core.cond import color_mode_cond
+
+logger = logging.getLogger(__name__)
 
 try:
     from plotly.graph_objs import Figure
     from plotly.graph_objs.layout import Template
 
 except ImportError:
-    console.warn("Plotly is not installed. Please run `pip install plotly`.")
+    logger.warning("Plotly is not installed. Please run `pip install plotly`.")
     if not TYPE_CHECKING:
         Figure = Any
         Template = Any
@@ -67,10 +70,14 @@ class Point(TypedDict):
     bbox: BBox | None
 
 
+_ID_PROP = "id"
+_DIV_ID_PROP = "divId"
+
+
 class Plotly(NoSSRComponent):
     """Display a plotly graph."""
 
-    library = "react-plotly.js@4.0.0"
+    library = "react-plotly.js@4.1.0"
 
     lib_dependencies: list[str] = ["plotly.js@3.7.0"]
 
@@ -186,8 +193,10 @@ class Plotly(NoSSRComponent):
             The imports for the plotly component.
         """
         imports: ImportDict = {
-            # For merging plotly data/layout/templates.
-            "mergician@v2.0.2": "mergician",
+            # For merging plotly data/layout/templates. Unversioned so it
+            # collapses into the base dependency during package collection —
+            # ``PackageJson.DEPENDENCIES`` owns the pin.
+            "mergician": "mergician",
         }
         if self.locale is not None:
             # For locale dictionaries injected into plot config.locales.
@@ -305,6 +314,12 @@ const _rxGetPlotlyLocaleConfig = (config, locale, plotlyLocales) => {
 
     def _render(self):
         tag = super()._render()
+        # react-plotly.js only forwards `divId` (plus style, className and ref) to
+        # the container div it renders; the framework `id` prop would be dropped.
+        element_id = tag.props.get(_ID_PROP)
+        if element_id is not None:
+            tag = tag.remove_props(_ID_PROP)
+            tag = tag.set(props={**tag.props, _DIV_ID_PROP: element_id})
         figure = self.data.to(dict) if self.data is not None else Var.create({})
         merge_dicts = []  # Data will be merged and spread from these dict Vars
         if self.layout is not None:
@@ -374,7 +389,7 @@ def dynamic_plotly_import(name: str, package: str) -> str:
     return f"""
 const {name} = ClientSide(() =>
     {library_import}{mod_import}
-)
+, {json.dumps(name)})
 """
 
 
@@ -383,7 +398,7 @@ class PlotlyBasic(Plotly):
 
     tag: str = "BasicPlotlyPlot"
 
-    library = "react-plotly.js@4.0.0"
+    library = "react-plotly.js@4.1.0"
 
     lib_dependencies: list[str] = ["plotly.js-basic-dist-min@3.7.0"]
 
@@ -409,7 +424,7 @@ class PlotlyCartesian(Plotly):
 
     tag: str = "CartesianPlotlyPlot"
 
-    library = "react-plotly.js@4.0.0"
+    library = "react-plotly.js@4.1.0"
 
     lib_dependencies: list[str] = ["plotly.js-cartesian-dist-min@3.7.0"]
 
@@ -435,7 +450,7 @@ class PlotlyGeo(Plotly):
 
     tag: str = "GeoPlotlyPlot"
 
-    library = "react-plotly.js@4.0.0"
+    library = "react-plotly.js@4.1.0"
 
     lib_dependencies: list[str] = ["plotly.js-geo-dist-min@3.7.0"]
 
@@ -461,7 +476,7 @@ class PlotlyGl3d(Plotly):
 
     tag: str = "Gl3dPlotlyPlot"
 
-    library = "react-plotly.js@4.0.0"
+    library = "react-plotly.js@4.1.0"
 
     lib_dependencies: list[str] = ["plotly.js-gl3d-dist-min@3.7.0"]
 
@@ -487,7 +502,7 @@ class PlotlyGl2d(Plotly):
 
     tag: str = "Gl2dPlotlyPlot"
 
-    library = "react-plotly.js@4.0.0"
+    library = "react-plotly.js@4.1.0"
 
     lib_dependencies: list[str] = ["plotly.js-gl2d-dist-min@3.7.0"]
 
@@ -513,7 +528,7 @@ class PlotlyMapbox(Plotly):
 
     tag: str = "MapboxPlotlyPlot"
 
-    library = "react-plotly.js@4.0.0"
+    library = "react-plotly.js@4.1.0"
 
     lib_dependencies: list[str] = ["plotly.js-mapbox-dist-min@3.7.0"]
 
@@ -539,7 +554,7 @@ class PlotlyFinance(Plotly):
 
     tag: str = "FinancePlotlyPlot"
 
-    library = "react-plotly.js@4.0.0"
+    library = "react-plotly.js@4.1.0"
 
     lib_dependencies: list[str] = ["plotly.js-finance-dist-min@3.7.0"]
 
@@ -565,7 +580,7 @@ class PlotlyStrict(Plotly):
 
     tag: str = "StrictPlotlyPlot"
 
-    library = "react-plotly.js@4.0.0"
+    library = "react-plotly.js@4.1.0"
 
     lib_dependencies: list[str] = ["plotly.js-strict-dist-min@3.7.0"]
 

@@ -1,16 +1,20 @@
 """Tests for the shared documentation shell."""
 
 from pathlib import Path
+from typing import cast
 
 import pytest
 from reflex_site_shared.components.docs_shell import (
     _docs_external_page_footer_memo,
+    docs_feedback_button,
     docs_feedback_button_toc,
     docs_left_sidebar,
     docs_page_footer,
     docs_right_sidebar,
     docs_sidebar_category,
     docs_sidebar_group,
+    docs_sidebar_leaf,
+    docs_sidebar_section,
 )
 from reflex_site_shared.docs.models import DocsLayoutConfig, DocsPage, NavigationItem
 from reflex_site_shared.templates.docs import docs_layout
@@ -18,13 +22,36 @@ from reflex_site_shared.templates.docs import docs_layout
 import reflex as rx
 
 
+def test_sidebar_active_marker_aligns_with_section_guide() -> None:
+    """Use the same guide alignment and row spacing as a nested Learn group."""
+    rendered = str(docs_sidebar_leaf._definition.component)
+    section = docs_sidebar_section("MCP", "/mcp/", rx.text("Overview"))
+    group = docs_sidebar_group("Getting Started", rx.text("Installation"))
+    section_rows = section.children[1]
+    group_rows = group.children[0].children[1]
+
+    for rows in (section_rows, group_rows):
+        assert "left-[2.5rem]" in str(cast(rx.Component, rows.children[0]).class_name)
+        assert "gap-1" in str(cast(rx.Component, rows).class_name)
+    assert "-bottom-1 -top-1 left-0" in rendered
+
+
+def test_feedback_choices_are_individual_popover_triggers():
+    """Each feedback choice is a real button, without an interactive div parent."""
+    choices = docs_feedback_button().children[0]
+    assert choices.tag == "div"
+    assert len(choices.children) == 2
+    assert all("Trigger" in (child.tag or "") for child in choices.children)
+
+
 def test_shared_feedback_preserves_the_official_form_structure() -> None:
-    """Keep the official feedback form DOM and thumb-button props unchanged."""
+    """Keep the feedback form layout and accessible clear control."""
     rendered = str(docs_feedback_button_toc())
 
     assert "w-full gap-4 flex flex-col" in rendered
     assert "flex flex-col gap-4 w-full" in rendered
-    assert "aria-label" not in rendered
+    assert '"aria-label":"Clear input"' in rendered
+    assert 'jsx(Popover.Close,{"data-slot":"popover-close",render:' in rendered
 
 
 def test_docs_layout_rejects_conflicting_footer_factories() -> None:
@@ -43,8 +70,11 @@ def test_bannerless_sidebars_use_static_navbar_offsets() -> None:
 
     assert "hosting_banner_state" not in left
     assert "hosting_banner_state" not in right
-    assert "top-[77px] h-[calc(100vh-77px)]" in left
-    assert "mt-[90px]" in right
+    assert (
+        "top-[var(--docs-header-height)] h-[calc(100vh-var(--docs-header-height))]"
+        in left
+    )
+    assert "mt-[calc(var(--docs-header-height)+2rem)]" in right
 
 
 def test_bannerless_layout_uses_navbar_only_content_offset() -> None:
@@ -72,7 +102,7 @@ def test_bannerless_layout_uses_navbar_only_content_offset() -> None:
     )
 
     assert "hosting_banner_state" not in rendered
-    assert "pt-[7.25rem]" in rendered
+    assert "pt-[calc(var(--docs-header-height)+2rem)]" in rendered
     assert "pt-[9.5rem]" not in rendered
 
 
@@ -132,11 +162,13 @@ def test_shared_sidebar_rows_keep_official_structure() -> None:
     )
 
     assert "Navigate to Learn" in category
-    assert "ml-[3rem]" in category
+    assert "ml-[2.5rem]" in category
     assert "LucideGraduationCap" in category
     assert "group/details" in group
     assert "ArrowDown01Icon" in group
-    assert "left-[3rem]" in group
+    assert 'jsx("summary"' in group
+    assert 'jsx("ul"' in group
+    assert "open:true" in group
 
 
 def test_official_docs_footer_content_is_shared() -> None:
@@ -150,16 +182,28 @@ def test_official_docs_footer_content_is_shared() -> None:
     assert "https://github.com/example/project/issues/new" in str(component)
     assert "Raise an issue" in rendered
     assert "Edit this page" in rendered
-    assert "Links" in rendered
+    assert "Get started" in rendered
     assert "Documentation" in rendered
     assert "Resources" in rendered
     assert "Social link for Github" in rendered
+    assert "Social link for Forum" in rendered
     assert "Pynecone, Inc." in rendered
     assert "https://reflex.dev/docs/getting-started/introduction/" not in rendered
     assert "/getting-started/introduction/" in rendered
 
     external_rendered = str(_docs_external_page_footer_memo._definition.component)
     assert "https://reflex.dev/docs/getting-started/introduction/" in external_rendered
+    for path in (
+        "/ai/",
+        "/api-reference/app/",
+        "/ai/integrations/agent-toolkit/",
+        "/enterprise/overview/",
+    ):
+        assert f"https://reflex.dev/docs{path}" in external_rendered
+        assert f"https://reflex.dev/docs{path}" not in rendered
+        assert path in rendered
+    for path in ("/", "/blog/", "/faq/"):
+        assert f'href:"https://reflex.dev{path}"' in rendered
 
 
 def test_docs_layout_uses_page_aware_footer_renderer() -> None:

@@ -123,19 +123,23 @@ class HeadingLink(rx.link.__self__):
                 text,
                 id=id_,
                 as_=heading,
-                style=style if style is not None else {},
+                style={
+                    "letter_spacing": "-0.03em" if heading == "h1" else "-0.025em",
+                    "line_height": "1.2" if heading == "h1" else "1.25",
+                    **(style or {}),
+                },
                 class_name=class_name + " " + scroll_margin + " mt-" + mt,
             ),
             rx.icon(
                 tag="link",
                 size=18,
-                class_name="!text-primary-11 invisible transition-[visibility_0.075s_ease-out] group-hover:visible mt-"
+                class_name="!text-foreground invisible transition-[visibility_0.075s_ease-out] group-hover:visible mt-"
                 + mt,
             ),
             underline="none",
             href=href,
             on_click=lambda: rx.set_clipboard(href),
-            class_name="flex flex-row items-center gap-2 hover:!text-primary-11 cursor-pointer mb-3 transition-colors group text-secondary-12 ",
+            class_name="flex flex-row items-center gap-2 hover:!text-foreground cursor-pointer mb-3 transition-colors group text-foreground ",
         )
 
 
@@ -152,7 +156,7 @@ def h1_comp(text: rx.Var[str]) -> rx.Component:
     return h_comp_common(
         text=text,
         heading="h1",
-        class_name="lg:text-4xl text-3xl font-semibold",
+        class_name="lg:text-4xl text-3xl font-medium",
     )
 
 
@@ -166,7 +170,7 @@ def h1_comp_xd(text: rx.Var[str]) -> rx.Component:
     return h_comp_common(
         text=text,
         heading="h1",
-        class_name="lg:text-4xl text-3xl font-semibold",
+        class_name="lg:text-4xl text-3xl font-medium",
     )
 
 
@@ -180,8 +184,8 @@ def h2_comp(text: rx.Var[str]) -> rx.Component:
     return h_comp_common(
         text=text,
         heading="h2",
-        mt="8",
-        class_name="lg:text-3xl text-2xl font-semibold",
+        mt="12",
+        class_name="lg:text-3xl text-2xl font-medium",
     )
 
 
@@ -195,8 +199,8 @@ def h2_comp_xd(text: rx.Var[str]) -> rx.Component:
     return h_comp_common(
         text=text,
         heading="h2",
-        mt="8",
-        class_name="lg:text-2xl text-xl font-semibold",
+        mt="12",
+        class_name="lg:text-3xl text-2xl font-medium",
     )
 
 
@@ -210,8 +214,8 @@ def h3_comp(text: rx.Var[str]) -> rx.Component:
     return h_comp_common(
         text=text,
         heading="h3",
-        mt="4",
-        class_name="lg:text-xl text-lg font-semibold",
+        mt="8",
+        class_name="lg:text-2xl text-xl font-medium",
     )
 
 
@@ -225,8 +229,8 @@ def h3_comp_xd(text: rx.Var[str]) -> rx.Component:
     return h_comp_common(
         text=text,
         heading="h3",
-        mt="4",
-        class_name="lg:text-xl text-lg font-semibold",
+        mt="8",
+        class_name="lg:text-2xl text-xl font-medium",
     )
 
 
@@ -270,5 +274,5 @@ def img_comp_xd(src: rx.Var[str]) -> rx.Component:
     return rx.image(
         src=src,
         alt="Documentation image",
-        class_name="rounded-lg border border-secondary-a4 mb-2",
+        class_name="rounded-lg border border-border-subtle mb-2",
     )

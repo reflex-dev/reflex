@@ -1,5 +1,6 @@
 // State management for Reflex web apps.
 import io from "socket.io-client";
+import { mergician } from "mergician";
 import env from "$/env.json";
 import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
@@ -10,14 +11,9 @@ import {
   useSearchParams,
   useParams,
 } from "react-router";
-import {
-  initialEvents,
-  initialState,
-  onLoadInternalEvent,
-  state_name,
-  exception_state_name,
-} from "$/utils/context";
+import { app, eventLoop } from "$/utils/context-registry";
 import debounce from "$/utils/helpers/debounce";
+import { parseJson } from "$/utils/helpers/json";
 import throttle from "$/utils/helpers/throttle";
 import { uploadFiles } from "$/utils/helpers/upload";
 
@@ -171,6 +167,7 @@ export const applyDelta = (state, delta) => {
  * @returns The evaluated component.
  */
 export const evalReactComponent = async (component) => {
+  await window.__reflex_load?.();
   if (!window.React && window.__reflex) {
     window.React = window.__reflex.react;
   }
@@ -224,6 +221,10 @@ function urlFrom(string) {
  * @param params The params object from useParams
  */
 export const applyEvent = async (event, socket, navigate, params) => {
+  // Eval'd callback strings (format_queue_events) dispatch through addEvents
+  // like compiled event triggers do; late-bound so a remounted
+  // EventLoopProvider is picked up.
+  const addEvents = (...args) => eventLoop.addEvents(...args);
   // Handle special events
   if (event.name == "_redirect") {
     if ((event.payload.path ?? undefined) === undefined) {
@@ -258,31 +259,31 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
   if (event.name == "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
   if (event.name == "_clear_local_storage") {
     localStorage.clear();
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
   if (event.name == "_remove_local_storage") {
     localStorage.removeItem(event.payload.key);
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
   if (event.name == "_clear_session_storage") {
     sessionStorage.clear();
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
   if (event.name == "_remove_session_storage") {
     sessionStorage.removeItem(event.payload.key);
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
@@ -426,6 +427,8 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
   // Send the event to the server.
   if (socket) {
+    // Instrumentation hook (installed by reflex-otel): may add a traceparent.
+    window.__reflex_otel?.onEventSend?.(event);
     socket.emit("event", event);
   }
 };
@@ -470,25 +473,6 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
 const resolveSocket = (socket) => {
   return socket?.current ?? socket;
 };
-
-// Python's json.dumps emits bare Infinity/-Infinity/NaN tokens (invalid JSON).
-// Rewrite them outside string literals so JSON.parse accepts the payload.
-// 1e999 / -1e999 overflow to ±Infinity; NaN has no JSON literal, so it is
-// swapped for a sentinel string and revived back to NaN after parsing.
-// The alternation matches whole string literals first (passed through unchanged),
-// guaranteeing bare-token matches only land in numeric positions.
-const NAN_SENTINEL = "__reflex_nan__";
-const NON_FINITE_FLOAT_RE = /"(?:[^"\\]|\\.)*"|-?\bInfinity\b|\bNaN\b/g;
-const NON_FINITE_REPLACEMENTS = {
-  Infinity: "1e999",
-  "-Infinity": "-1e999",
-  NaN: `"${NAN_SENTINEL}"`,
-};
-const rewriteBareNonFiniteFloats = (str) =>
-  str.replace(NON_FINITE_FLOAT_RE, (match) =>
-    match[0] === '"' ? match : NON_FINITE_REPLACEMENTS[match],
-  );
-const reviveNonFiniteFloats = (_k, v) => (v === NAN_SENTINEL ? NaN : v);
 
 /**
  * Queue events to be processed and trigger processing of queue.
@@ -603,16 +587,9 @@ export const connect = async (
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
   socket.current.io.decoder.tryParse = (str) => {
     try {
-      return JSON.parse(str);
-    } catch (e) {
-      try {
-        return JSON.parse(
-          rewriteBareNonFiniteFloats(str),
-          reviveNonFiniteFloats,
-        );
-      } catch (e2) {
-        return false;
-      }
+      return parseJson(str);
+    } catch {
+      return false;
     }
   };
   // Set up a reconnect helper function
@@ -673,11 +650,12 @@ export const connect = async (
   socket.current.on("connect", async () => {
     socket.current.wait_connect = false;
     setConnectErrors([]);
+    window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
     if (socket.current.rehydrate) {
       socket.current.rehydrate = false;
-      queueEvents(initialEvents(), socket, true, navigate, params);
+      queueEvents(app.initialEvents(), socket, true, navigate, params);
     }
     // Drain any initial events from the queue.
     while (event_queue.length > 0) {
@@ -702,6 +680,7 @@ export const connect = async (
 
   socket.current.on("disconnect", (reason, details) => {
     socket.current.wait_connect = false;
+    window.__reflex_otel?.onSocketDisconnect?.(reason);
     const try_reconnect =
       reason !== "io server disconnect" && reason !== "io client disconnect";
     window.removeEventListener("beforeunload", disconnectTrigger);
@@ -757,7 +736,7 @@ export const connect = async (
           dispatch[substate](update.delta[substate]);
           // handle events waiting for `is_hydrated`
           if (
-            substate === state_name &&
+            substate === app.state_name &&
             update.delta[substate]?.is_hydrated_rx_state_
           ) {
             // Deliberately not awaited: the rest of the delta and the client
@@ -1014,7 +993,7 @@ export const useEventLoop = (
     }
     // only use websockets if state is present and backend is not disabled (reflex cloud).
     if (
-      Object.keys(initialState).length > 1 &&
+      Object.keys(app.initialState).length > 1 &&
       !isBackendDisabled() &&
       !socket.current?.connected
     ) {
@@ -1078,7 +1057,7 @@ export const useEventLoop = (
 
     window.onerror = function (msg, url, lineNo, columnNo, error) {
       addEvents([
-        ReflexEvent(`${exception_state_name}.handle_frontend_exception`, {
+        ReflexEvent(`${app.exception_state_name}.handle_frontend_exception`, {
           info: error.name + ": " + error.message + "\n" + error.stack,
           component_stack: "",
         }),
@@ -1090,7 +1069,7 @@ export const useEventLoop = (
     //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
     window.onunhandledrejection = function (event) {
       addEvents([
-        ReflexEvent(`${exception_state_name}.handle_frontend_exception`, {
+        ReflexEvent(`${app.exception_state_name}.handle_frontend_exception`, {
           info:
             event.reason?.name +
             ": " +
@@ -1156,7 +1135,7 @@ export const useEventLoop = (
         const vars = {};
         vars[storage_to_state_map[e.key]] = e.newValue;
         const event = ReflexEvent(
-          `${state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
+          `${app.state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
           { vars: vars },
         );
         addEvents([event], e);
@@ -1199,11 +1178,11 @@ export const useEventLoop = (
     }
 
     // Equivalent to routeChangeComplete - runs after navigation completes
-    addEvents(onLoadInternalEvent());
+    addEvents(app.onLoadInternalEvent());
 
     // Update the ref
     prevLocationRef.current = location;
-  }, [location, dispatch, onLoadInternalEvent, addEvents]);
+  }, [location, dispatch, addEvents]);
 
   return [addEvents, connectErrors];
 };
@@ -1316,6 +1295,171 @@ export const pyFlatMap = (arr, fn) =>
     if (value === Object(value)) return Object.keys(value);
     throw new TypeError(`flat_map value is not iterable: ${value}`);
   });
+
+/**
+ * Merge refs into a single callback ref, attaching the node to all of them.
+ *
+ * Handles ref objects and callback refs, including React 19 callback refs
+ * that return a cleanup function.
+ * @param refsToMerge The refs to merge.
+ * @returns The merged callback ref.
+ */
+export const mergeRefs =
+  (...refsToMerge) =>
+  (node) => {
+    const cleanups = refsToMerge.map((ref) => {
+      if (ref == null) {
+        return null;
+      }
+      if (typeof ref === "function") {
+        const cleanup = ref(node);
+        return typeof cleanup === "function" ? cleanup : () => ref(null);
+      }
+      ref.current = node;
+      return () => {
+        ref.current = null;
+      };
+    });
+    return () => {
+      for (const cleanup of cleanups) {
+        cleanup?.();
+      }
+    };
+  };
+
+// Composed refs and event handlers, keyed by the identity of the (own,
+// injected) pair they were built from. A mounted wrapper rerendering with
+// stable inputs gets the same composed function back, so React sees an
+// unchanged prop: refs are not detached and reattached (no callback cleanup,
+// no transient nulling of object refs) and a memoized root keeps its bailout.
+// Both levels are weak, so an entry dies with whichever input dies first.
+const composedRefCache = new WeakMap();
+const composedHandlerCache = new WeakMap();
+
+const canWeakKey = (value) =>
+  value !== null && (typeof value === "object" || typeof value === "function");
+
+const composeCached = (cache, own, injected, compose) => {
+  if (!canWeakKey(own) || !canWeakKey(injected)) {
+    return compose(own, injected);
+  }
+  let byInjected = cache.get(own);
+  if (byInjected === undefined) {
+    byInjected = new WeakMap();
+    cache.set(own, byInjected);
+  }
+  let composed = byInjected.get(injected);
+  if (composed === undefined) {
+    composed = compose(own, injected);
+    byInjected.set(injected, composed);
+  }
+  return composed;
+};
+
+const composeHandlers =
+  (own, injected) =>
+  (...args) => {
+    own(...args);
+    injected(...args);
+  };
+
+// Props named `on` followed by an uppercase letter are event handlers and get
+// composed rather than overridden. Hoisted because evaluating a regex literal
+// allocates a new RegExp every time.
+const EVENT_HANDLER_PROP = /^on[A-Z]/;
+
+// Whether a prop value can be deeply merged: plain objects only — never
+// arrays, React elements (tagged with $$typeof), or class instances.
+const isPlainObjectProp = (value) => {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    value.$$typeof !== undefined
+  ) {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+};
+
+/**
+ * Merge props injected by a parent at runtime (e.g. a Radix Slot cloning its
+ * child) with a component's own compiled-in props.
+ *
+ * Follows Radix Slot semantics with the own props in the child role: own
+ * props win for plain props, `on*` event handlers compose (own handler first,
+ * then the injected one), refs compose via `mergeRefs`, `className` strings
+ * concatenate, and object-valued props (e.g. `style`) merge deeply via
+ * `mergician` with own keys winning. A prop the own side declares but leaves
+ * valueless falls through to the injected value.
+ *
+ * Composed refs and handlers keep a stable identity for as long as the props
+ * they were composed from do, so merging never re-triggers a ref attach or
+ * defeats a memoized root's bailout. With nothing injected the own props
+ * object is returned unchanged, so the common (non-Slot) call site renders
+ * exactly as it did before.
+ * @param injectedProps The props injected by the parent at runtime.
+ * @param ownProps The component's own compiled-in props.
+ * @param refProp The prop carrying the root's DOM ref when the root does not
+ * accept `ref` directly (e.g. DebounceInput's `inputRef`, a class component
+ * whose `ref` would resolve to the instance). An injected ref is routed there
+ * and `ref` itself is never emitted.
+ * @returns The merged props object.
+ */
+export const mergeSlotProps = (injectedProps, ownProps, refProp) => {
+  let hasInjected = false;
+  for (const _ in injectedProps) {
+    hasInjected = true;
+    break;
+  }
+  if (!hasInjected) {
+    return ownProps;
+  }
+  const merged = { ...injectedProps, ...ownProps };
+  if (refProp !== undefined) {
+    const injectedRef = injectedProps.ref;
+    delete merged.ref;
+    if (injectedRef != null) {
+      const own = ownProps[refProp];
+      merged[refProp] =
+        own == null
+          ? injectedRef
+          : composeCached(composedRefCache, own, injectedRef, mergeRefs);
+    }
+  }
+  for (const propName in ownProps) {
+    const injected = injectedProps[propName];
+    if (injected == null || propName === refProp) {
+      continue;
+    }
+    const own = ownProps[propName];
+    if (own == null) {
+      // The own side has no value for this prop, so the spread above
+      // shadowed the injection with null/undefined. Keep the injection.
+      merged[propName] = injected;
+    } else if (EVENT_HANDLER_PROP.test(propName)) {
+      merged[propName] =
+        own && injected
+          ? composeCached(composedHandlerCache, own, injected, composeHandlers)
+          : own || injected;
+    } else if (propName === "ref") {
+      merged[propName] = composeCached(
+        composedRefCache,
+        own,
+        injected,
+        mergeRefs,
+      );
+    } else if (propName === "className") {
+      merged[propName] =
+        own && injected ? injected + " " + own : own || injected;
+    } else if (isPlainObjectProp(injected) && isPlainObjectProp(own)) {
+      // Own is a fresh object literal every render, so there is no identity
+      // to cache the merge under — merge directly.
+      merged[propName] = mergician(injected, own);
+    }
+  }
+  return merged;
+};
 
 /**
  * Get the value from a ref.

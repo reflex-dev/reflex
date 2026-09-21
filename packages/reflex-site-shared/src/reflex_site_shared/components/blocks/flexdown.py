@@ -49,17 +49,17 @@ def _markdown_table(*children, **props) -> rx.Component:
     return rx.box(
         rx.el.table(
             *children,
-            class_name="w-full border-collapse text-sm border border-secondary-4 rounded-lg overflow-hidden bg-white-1 ",
+            class_name="w-full border-collapse text-sm border border-border-subtle rounded-lg overflow-hidden bg-white-1 ",
             **props,
         ),
-        class_name="w-full rounded-xl border border-secondary-a4 my-6 max-w-full overflow-hidden",
+        class_name="w-full rounded-xl border border-border-subtle my-6 max-w-full overflow-hidden",
     )
 
 
 def _markdown_thead(*children, **props) -> rx.Component:
     return rx.el.thead(
         *children,
-        class_name="bg-secondary-1 border-b border-secondary-4",
+        class_name="bg-background border-b border-border-subtle",
         **props,
     )
 
@@ -67,7 +67,7 @@ def _markdown_thead(*children, **props) -> rx.Component:
 def _markdown_tbody(*children, **props) -> rx.Component:
     return rx.el.tbody(
         *children,
-        class_name="[&_tr:nth-child(even)]:bg-secondary-1",
+        class_name="[&_tr:nth-child(even)]:bg-background",
         **props,
     )
 
@@ -75,7 +75,7 @@ def _markdown_tbody(*children, **props) -> rx.Component:
 def _markdown_tr(*children, **props) -> rx.Component:
     return rx.el.tr(
         *children,
-        class_name="border-b border-secondary-4 last:border-b-0",
+        class_name="border-b border-border-subtle last:border-b-0",
         **props,
     )
 
@@ -83,7 +83,7 @@ def _markdown_tr(*children, **props) -> rx.Component:
 def _markdown_th(*children, **props) -> rx.Component:
     return rx.el.th(
         *children,
-        class_name="px-3 py-2.5 text-left text-xs font-[575] text-secondary-12 align-top",
+        class_name="px-3 py-2.5 text-left text-xs font-[575] text-foreground align-top",
         **props,
     )
 
@@ -91,7 +91,7 @@ def _markdown_th(*children, **props) -> rx.Component:
 def _markdown_td(*children, **props) -> rx.Component:
     return rx.el.td(
         *children,
-        class_name="px-3 py-2.5 text-xs font-medium first:font-[575] text-secondary-11 align-top",
+        class_name="px-3 py-2.5 text-xs font-medium first:font-[575] text-muted-foreground align-top",
         **props,
     )
 

@@ -7,6 +7,7 @@ import contextlib
 import dataclasses
 import functools
 import inspect
+import logging
 import time
 from collections.abc import Callable, Coroutine
 from typing import TYPE_CHECKING, TypeVar, overload
@@ -16,7 +17,11 @@ from reflex_base.utils.exceptions import InvalidLifespanTaskTypeError
 from reflex_base.utils.format import callable_name
 from starlette.applications import Starlette
 
+from reflex.utils import prerequisites
+
 from .mixin import AppMixin
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from typing_extensions import deprecated
@@ -58,14 +63,14 @@ class LifespanMixin(AppMixin):
         @property
         @deprecated("Use get_lifespan_tasks method instead.")
         def lifespan_tasks(self) -> frozenset[asyncio.Task | Callable]:
-            """Get a copy of registered lifespan tasks (deprecated)."""
+            """A copy of registered lifespan tasks (deprecated)."""
             ...
 
     else:
 
         @property
         def lifespan_tasks(self) -> frozenset[asyncio.Task | Callable]:
-            """Get a copy of registered lifespan tasks.
+            """A copy of registered lifespan tasks.
 
             Returns:
                 A frozenset of registered lifespan tasks.
@@ -107,7 +112,7 @@ class LifespanMixin(AppMixin):
                         t_ = task()
                         if isinstance(t_, contextlib._AsyncGeneratorContextManager):
                             await stack.enter_async_context(t_)
-                            console.debug(run_msg.format(type="asynccontextmanager"))
+                            logger.debug(run_msg.format(type="asynccontextmanager"))
                         elif isinstance(t_, Coroutine):
                             task_ = asyncio.create_task(
                                 t_,
@@ -115,13 +120,13 @@ class LifespanMixin(AppMixin):
                             )
                             task_.add_done_callback(lambda t: t.result())
                             running_tasks.append(task_)
-                            console.debug(run_msg.format(type="coroutine"))
+                            logger.debug(run_msg.format(type="coroutine"))
                         else:
-                            console.debug(run_msg.format(type="function"))
+                            logger.debug(run_msg.format(type="function"))
                 yield
         finally:
             for task in running_tasks:
-                console.debug(f"Canceling lifespan task: {task}")
+                logger.debug(f"Canceling lifespan task: {task}")
                 task.cancel(msg="lifespan_cleanup")
         # Disassociate sid / token pairings so they can be reconnected properly.
         event_namespace = getattr(self, "event_namespace", None)
@@ -132,7 +137,7 @@ class LifespanMixin(AppMixin):
                 finally:
                     await event_namespace._token_manager.close()
             except Exception as e:
-                console.error(f"Error during lifespan cleanup: {e}")
+                logger.error(f"Error during lifespan cleanup: {e}")
         # Flush any pending writes from the state manager.
         try:
             state_manager = getattr(self, "state_manager", None)
@@ -140,6 +145,7 @@ class LifespanMixin(AppMixin):
             state_manager = None
         if state_manager is not None:
             await state_manager.close()
+        await prerequisites.close_health_redis()
 
     @overload
     def register_lifespan_task(
@@ -197,5 +203,5 @@ class LifespanMixin(AppMixin):
             registered_task = functools.partial(task, **task_kwargs)
             functools.update_wrapper(registered_task, task)
         self._lifespan_tasks[registered_task] = None
-        console.debug(f"Registered lifespan task: {task_name}")
+        logger.debug(f"Registered lifespan task: {task_name}")
         return task

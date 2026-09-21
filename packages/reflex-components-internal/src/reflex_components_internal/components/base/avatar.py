@@ -22,7 +22,7 @@ class AvatarBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the avatar component."""
+        """The import variable for the avatar component."""
         return ImportVar(tag="Avatar", package_path="", install=False)
 
 

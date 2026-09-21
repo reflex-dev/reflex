@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import fnmatch
 import re
 import sys
 import tarfile
 import zipfile
+from collections.abc import Sequence
 from pathlib import Path
 
 from packaging.version import InvalidVersion, Version
@@ -77,7 +79,12 @@ def dist_metadata(path: Path) -> tuple[str, str]:
     return fields["Name"], fields["Version"]
 
 
-def verify_dist(dist_dir: Path, distribution: str, target: Version) -> int:
+def verify_dist(
+    dist_dir: Path,
+    distribution: str,
+    target: Version,
+    expect: Sequence[str] = (),
+) -> int:
     """Verify every built artifact is the expected distribution at the target version.
 
     Catches a misconfigured dynamic-versioning tag prefix building e.g.
@@ -91,6 +98,10 @@ def verify_dist(dist_dir: Path, distribution: str, target: Version) -> int:
         dist_dir: The directory holding the built artifacts.
         distribution: The distribution name every artifact must declare.
         target: The version every artifact must declare.
+        expect: Filename glob patterns that must each match at least one
+            artifact. A build spread over a matrix of platforms is only correct
+            if every leg contributed, and a leg that produced nothing is
+            otherwise indistinguishable from one that was never configured.
 
     Returns:
         The number of artifacts verified.
@@ -119,6 +130,14 @@ def verify_dist(dist_dir: Path, distribution: str, target: Version) -> int:
             fail(f"artifact {path.name} has unparsable version {raw!r}")
         if found != target:
             fail(f"artifact {path.name} has version {found}, expected {target}")
+    for pattern in expect:
+        if not any(fnmatch.fnmatchcase(path.name, pattern) for path in files):
+            fail(
+                f"no built artifact matches the expected pattern {pattern!r}; the "
+                f"build produced: {', '.join(path.name for path in files)}. "
+                "Publishing an incomplete set of artifacts is not recoverable — a "
+                "version can only be uploaded once — so this stops the release."
+            )
     return len(files)
 
 

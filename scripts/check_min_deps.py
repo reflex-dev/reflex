@@ -18,9 +18,15 @@ allows — exactly the bug this catches (e.g. calling a pydantic 2.x API while d
 Development-release pins are the exception to ``--no-sources``. A package may pin a sibling
 workspace package to an unreleased ``*.dev`` version (e.g. ``reflex-base >= 0.9.5.dev1``)
 while that version is still unpublished, which would otherwise make resolution from PyPI
-impossible. For such pins — and only those — the depended-on package is installed editable
-from its local workspace checkout in both environments, so every *non-dev* dependency is
-still required to resolve from PyPI.
+impossible. For such pins — and only those — a wheel is built from the sibling's local
+checkout into a temporary directory that is offered to the resolver as an extra
+``--find-links`` index. When a declared development floor satisfies the requirement, the
+temporary wheel uses that version so older ancestor tags cannot make it unresolvable.
+Every *non-dev* dependency is still required to resolve from
+PyPI. A local index is used rather than an extra editable install target because build
+environments (a package whose build backend sets ``require-runtime-dependencies`` resolves
+its own runtime dependencies to build) are resolved separately from the install targets and
+would otherwise not see the unpublished sibling at all.
 
 Run with ``uv run python scripts/check_min_deps.py [package ...]``. With no arguments,
 every checkable package is validated. ``--check-dev-pins [package ...]`` instead scans the
@@ -40,6 +46,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -133,8 +140,8 @@ class Package:
     local_dev_sources: tuple[Path, ...] = ()
     """Project dirs of sibling workspace packages this package pins to a ``*.dev`` release.
 
-    These are installed editable from the local checkout (rather than PyPI) in both
-    resolutions, because the pinned development version is not published.
+    These are built into a local wheelhouse and made available to the resolver (rather than
+    PyPI) in both resolutions, because the pinned development version is not published.
     """
 
     def install_target(self) -> str:
@@ -365,11 +372,88 @@ def _pyright_errors(report: dict) -> dict[tuple[str, int, int, str], str]:
     return errors
 
 
+def _dev_build_version(project: dict, dependency_name: str) -> str | None:
+    """Choose a declared development floor that satisfies a sibling's requirements.
+
+    Args:
+        project: The consuming package's project metadata.
+        dependency_name: The sibling's canonical distribution name.
+
+    Returns:
+        The lowest usable declared development version, or None to use normal versioning.
+    """
+    requirements = [
+        Requirement(dependency)
+        for dependency in _published_dependencies(project)
+        if _parse_requirement(dependency)[0] == dependency_name
+    ]
+    candidates: set[Version] = set()
+    for requirement in requirements:
+        for specifier in requirement.specifier:
+            if specifier.operator not in _LOWER_BOUND_OPERATORS:
+                continue
+            try:
+                version = Version(specifier.version)
+            except InvalidVersion:
+                continue
+            if version.is_devrelease:
+                candidates.add(version)
+    return next(
+        (
+            str(version)
+            for version in sorted(candidates)
+            if all(version in requirement.specifier for requirement in requirements)
+        ),
+        None,
+    )
+
+
+def _build_dev_wheelhouse(package: Package, wheelhouse: Path) -> str | None:
+    """Build wheels for the package's unpublished ``*.dev`` siblings into a local index.
+
+    Args:
+        package: The package whose dev-pinned siblings should be built.
+        wheelhouse: Directory to write the wheels into.
+
+    Returns:
+        ``None`` on success, otherwise the captured output of the failing build.
+    """
+    wheelhouse.mkdir(parents=True, exist_ok=True)
+    project = _load_pyproject(package.project_dir / "pyproject.toml")["project"]
+    for source in package.local_dev_sources:
+        name = canonicalize_name(
+            _load_pyproject(source / "pyproject.toml")["project"]["name"]
+        )
+        version = _dev_build_version(project, name)
+        build = _run(
+            [
+                "uv",
+                "build",
+                "--no-sources",
+                "--wheel",
+                # An earlier sibling's wheel may satisfy a later one's own dev pin.
+                "--find-links",
+                str(wheelhouse),
+                "--out-dir",
+                str(wheelhouse),
+                str(source),
+            ],
+            cwd=REPO_ROOT,
+            env={**os.environ, "UV_DYNAMIC_VERSIONING_BYPASS": version}
+            if version is not None
+            else None,
+        )
+        if build.returncode != 0:
+            return build.stdout
+    return None
+
+
 def _resolve_and_check(
     package: Package,
     python_version: str,
     venv: Path,
     config: Path,
+    wheelhouse: Path | None,
     lowest: bool,
 ) -> tuple[dict[tuple[str, int, int, str], str] | None, str]:
     """Install a package into an isolated venv and run pyright against its source.
@@ -379,6 +463,8 @@ def _resolve_and_check(
         python_version: The interpreter version for the venv.
         venv: Directory in which to create the virtualenv.
         config: Path to the pyright options config.
+        wheelhouse: Local index holding wheels for the package's unpublished ``*.dev``
+            siblings, or ``None`` when the package has no such pins.
         lowest: Whether to pin direct dependencies to their declared minimums.
 
     Returns:
@@ -399,14 +485,16 @@ def _resolve_and_check(
         venv_python,
         "--no-sources",
     ]
+    # ``--no-sources`` forces every dependency to resolve from PyPI; the lone exception is a
+    # sibling pinned to an unpublished ``*.dev`` release, whose locally built wheel is offered
+    # as an extra index. Unlike an editable install target, an index is also consulted while
+    # resolving build environments, which a ``require-runtime-dependencies`` build hook makes
+    # subject to the same unpublished pin.
+    if wheelhouse is not None:
+        install_cmd += ["--find-links", str(wheelhouse)]
     if lowest:
         install_cmd += ["--resolution", "lowest-direct"]
     install_cmd += ["-e", package.install_target()]
-    # ``--no-sources`` forces every dependency to resolve from PyPI; the lone exception is a
-    # sibling pinned to an unpublished ``*.dev`` release, which is provided here as an explicit
-    # editable from its local checkout so resolution can succeed without reaching PyPI for it.
-    for source in package.local_dev_sources:
-        install_cmd += ["-e", str(source)]
     install = _run(install_cmd, cwd=REPO_ROOT)
     if install.returncode != 0:
         return None, install.stdout
@@ -450,8 +538,25 @@ def check_package(package: Package, python_version: str) -> Result:
         config = tmp_path / "pyrightconfig.json"
         config.write_text(json.dumps({"reportIncompatibleMethodOverride": False}))
 
+        wheelhouse = None
+        if package.local_dev_sources:
+            wheelhouse = tmp_path / "wheelhouse"
+            detail = _build_dev_wheelhouse(package, wheelhouse)
+            if detail is not None:
+                return Result(
+                    package.name,
+                    False,
+                    "resolution",
+                    f"building unpublished sibling wheels failed:\n{detail}",
+                )
+
         baseline, detail = _resolve_and_check(
-            package, python_version, tmp_path / ".venv-latest", config, lowest=False
+            package,
+            python_version,
+            tmp_path / ".venv-latest",
+            config,
+            wheelhouse,
+            lowest=False,
         )
         if baseline is None:
             return Result(
@@ -462,7 +567,12 @@ def check_package(package: Package, python_version: str) -> Result:
             )
 
         minimum, detail = _resolve_and_check(
-            package, python_version, tmp_path / ".venv-lowest", config, lowest=True
+            package,
+            python_version,
+            tmp_path / ".venv-lowest",
+            config,
+            wheelhouse,
+            lowest=True,
         )
         if minimum is None:
             return Result(

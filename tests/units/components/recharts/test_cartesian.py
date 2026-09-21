@@ -1,13 +1,17 @@
+import pytest
 from reflex_components_recharts import (
     Area,
     Bar,
     Brush,
     Line,
+    ReferenceLine,
     Scatter,
     XAxis,
     YAxis,
     ZAxis,
 )
+
+import reflex as rx
 
 
 def test_xaxis():
@@ -43,6 +47,48 @@ def test_bar():
 def test_line():
     line = Line.create().render()
     assert line["name"] == "RechartsLine"
+
+
+def test_reference_line_stroke_dasharray():
+    reference_line = ReferenceLine.create(stroke_dasharray="8 8")
+    assert "strokeDasharray" not in reference_line.style
+    props = reference_line.render()["props"]
+    assert 'strokeDasharray:"8 8"' in props
+    assert not any("wrapperStyle" in prop for prop in props)
+
+
+def test_xaxis_tick_formatter():
+    x_axis = XAxis.create(tick_formatter="(value) => value.toFixed(2)")
+    assert "tickFormatter" not in x_axis.style
+    props = x_axis.render()["props"]
+    assert "tickFormatter:(value) => value.toFixed(2)" in props
+    assert not any("wrapperStyle" in prop for prop in props)
+
+
+def test_yaxis_tick_formatter():
+    y_axis = YAxis.create(tick_formatter="(value) => value.toFixed(2)")
+    assert "tickFormatter" not in y_axis.style
+    props = y_axis.render()["props"]
+    assert "tickFormatter:(value) => value.toFixed(2)" in props
+    assert not any("wrapperStyle" in prop for prop in props)
+
+
+def test_xaxis_tick_formatter_rejects_non_callable():
+    with pytest.raises(TypeError):
+        XAxis.create(tick_formatter=123)  # ty:ignore[invalid-argument-type]
+
+
+def test_xaxis_tick_formatter_rejects_python_callable():
+    with pytest.raises(TypeError):
+        XAxis.create(
+            tick_formatter=lambda value: value  # ty:ignore[invalid-argument-type]
+        )
+
+
+def test_xaxis_tick_formatter_literal_string_var():
+    x_axis = XAxis.create(tick_formatter=rx.Var.create("(value) => value.toFixed(2)"))
+    props = x_axis.render()["props"]
+    assert "tickFormatter:(value) => value.toFixed(2)" in props
 
 
 def test_scatter():

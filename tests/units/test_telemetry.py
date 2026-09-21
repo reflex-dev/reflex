@@ -1,5 +1,7 @@
 import asyncio
 import importlib.metadata
+import json
+import sys
 import threading
 import uuid
 from types import SimpleNamespace
@@ -7,7 +9,10 @@ from types import SimpleNamespace
 import pytest
 from packaging.version import parse as parse_python_version
 from pytest_mock import MockerFixture
+from reflex_base.config import get_config
+from reflex_base.registry import RegistrationContext
 
+import reflex as rx
 from reflex.utils import telemetry
 
 
@@ -60,13 +65,25 @@ def event_defaults(mocker: MockerFixture) -> dict:
 
 
 @pytest.fixture
-def httpx_post(mocker: MockerFixture):
-    """Mock ``httpx.post`` used by ``telemetry._send``.
+def urlopen(mocker: MockerFixture):
+    """Mock ``urllib.request.urlopen`` used by ``telemetry._send_event``.
 
     Returns:
-        The mock for ``httpx.post`` so tests can assert on the posted payload.
+        The mock for ``urlopen`` so tests can assert on the posted payload.
     """
-    return mocker.patch("httpx.post")
+    return mocker.patch("reflex.utils.telemetry.urllib.request.urlopen")
+
+
+def posted_json(call) -> dict:
+    """Decode the JSON body of one recorded ``urlopen`` call.
+
+    Args:
+        call: A ``mock.call`` recorded by the ``urlopen`` fixture.
+
+    Returns:
+        The decoded request body.
+    """
+    return json.loads(call.args[0].data)
 
 
 def test_telemetry():
@@ -190,16 +207,16 @@ def test_get_reflex_package_versions_handles_missing_reflex_metadata(
         ),
     ],
 )
-def test_send(event_defaults, httpx_post, event, kwargs, expected_props):
+def test_send(event_defaults, urlopen, event, kwargs, expected_props):
     telemetry._send(event, telemetry_enabled=True, **kwargs)
-    httpx_post.assert_called_once()
-    posted = httpx_post.call_args.kwargs["json"]
+    urlopen.assert_called_once()
+    posted = posted_json(urlopen.call_args)
     assert posted["event"] == event
     for key, value in expected_props.items():
         assert posted["properties"][key] == value
 
 
-def test_send_does_not_leak_kwargs_between_events(event_defaults, httpx_post):
+def test_send_does_not_leak_kwargs_between_events(event_defaults, urlopen):
     """Per-event kwargs must not leak into a subsequent event's payload."""
     telemetry._send("export", telemetry_enabled=True, status="success", duration=1.0)
     telemetry._send(
@@ -210,9 +227,9 @@ def test_send_does_not_leak_kwargs_between_events(event_defaults, httpx_post):
         duration=2.0,
     )
 
-    assert httpx_post.call_count == 2
-    first_props = httpx_post.call_args_list[0].kwargs["json"]["properties"]
-    second_props = httpx_post.call_args_list[1].kwargs["json"]["properties"]
+    assert urlopen.call_count == 2
+    first_props = posted_json(urlopen.call_args_list[0])["properties"]
+    second_props = posted_json(urlopen.call_args_list[1])["properties"]
 
     assert first_props["status"] == "success"
     assert first_props["duration"] == pytest.approx(1.0)
@@ -228,16 +245,16 @@ def test_send_does_not_leak_kwargs_between_events(event_defaults, httpx_post):
     assert "detail" not in event_defaults["properties"]
 
 
-def test_send_drops_unknown_kwargs(event_defaults, httpx_post):
+def test_send_drops_unknown_kwargs(event_defaults, urlopen):
     """Unknown kwargs must not land in the posted payload."""
     telemetry._send("export", telemetry_enabled=True, foo="bar", secret="leak")
-    httpx_post.assert_called_once()
-    props = httpx_post.call_args.kwargs["json"]["properties"]
+    urlopen.assert_called_once()
+    props = posted_json(urlopen.call_args)["properties"]
     assert "foo" not in props
     assert "secret" not in props
 
 
-def test_send_drops_none_kwargs(event_defaults, httpx_post):
+def test_send_drops_none_kwargs(event_defaults, urlopen):
     """None-valued kwargs for allowed keys are omitted from the posted payload."""
     telemetry._send(
         "export",
@@ -249,8 +266,8 @@ def test_send_drops_none_kwargs(event_defaults, httpx_post):
         build_duration=0.05,
         zip_duration=None,
     )
-    httpx_post.assert_called_once()
-    props = httpx_post.call_args.kwargs["json"]["properties"]
+    urlopen.assert_called_once()
+    props = posted_json(urlopen.call_args)["properties"]
     assert props["status"] == "success"
     assert props["build_duration"] == pytest.approx(0.05)
     assert "detail" not in props
@@ -594,7 +611,7 @@ def test_maybe_alias_runs_at_most_once_per_process(mocker: MockerFixture):
 
 
 def test_maybe_alias_create_alias_payload(
-    event_defaults, httpx_post, mocker: MockerFixture
+    event_defaults, urlopen, mocker: MockerFixture
 ):
     """The posted $create_alias pairs the new UUID distinct_id with the legacy int."""
     mocker.patch.object(telemetry, "has_uuid_distinct_id_semantics", return_value=False)
@@ -608,8 +625,8 @@ def test_maybe_alias_create_alias_payload(
     # The $create_alias is now sent on the telemetry worker thread; wait for it.
     telemetry._flush()
 
-    httpx_post.assert_called_once()
-    payload = httpx_post.call_args.kwargs["json"]
+    urlopen.assert_called_once()
+    payload = posted_json(urlopen.call_args)
     assert payload["event"] == "$create_alias"
     props = payload["properties"]
     # The legacy integer is sent at full precision so PostHog re-coerces it to
@@ -710,6 +727,59 @@ async def test_send_within_event_loop_runs_off_loop_thread(mocker: MockerFixture
     assert seen["thread"] is not loop_thread
 
 
+def test_submit_runs_job_in_callers_registration_context():
+    """Queued telemetry work runs under the submitting thread's context.
+
+    The worker thread carries no RegistrationContext of its own, so a config
+    lookup during event collection (e.g. ``get_bun_path``) used to attach a
+    throwaway context and re-import ``rxconfig.py`` off-thread. The submitter's
+    context travels with the job instead, so the already-loaded config is reused.
+    """
+    seen: dict[str, object] = {}
+
+    def record() -> None:
+        seen["thread"] = threading.current_thread()
+        seen["context"] = RegistrationContext.get()
+        seen["config"] = get_config()
+
+    with RegistrationContext() as ctx:
+        config = rx.Config(app_name="telemetry_ctx")
+        ctx._set_config(config)
+
+        telemetry._submit(record)
+        telemetry._flush()
+
+    assert seen["thread"] is not threading.current_thread()
+    assert seen["context"] is ctx
+    assert seen["config"] is config
+
+
+def test_submit_leaves_worker_context_clean_between_jobs():
+    """The attached context is detached again once the job finishes."""
+    seen: list[RegistrationContext | None] = []
+
+    def record() -> None:
+        try:
+            seen.append(RegistrationContext.get())
+        except LookupError:
+            seen.append(None)
+
+    with RegistrationContext() as ctx:
+        ctx._set_config(rx.Config(app_name="telemetry_ctx"))
+        telemetry._submit(record)
+        telemetry._flush()
+
+    # Submitted from a thread that is not under ``ctx``: the worker must not
+    # still be holding the previous job's context.
+    submitter = threading.Thread(target=lambda: telemetry._submit(record))
+    submitter.start()
+    submitter.join()
+    telemetry._flush()
+
+    assert seen[0] is ctx
+    assert seen[1] is not ctx
+
+
 def test_send_suppresses_worker_errors(mocker: MockerFixture):
     """A failed telemetry send is swallowed and never reaches the caller."""
     mocker.patch.object(telemetry, "_maybe_alias_legacy_distinct_id")
@@ -745,3 +815,25 @@ def test_flush_returns_false_when_worker_does_not_drain_in_time():
     finally:
         release.set()
         blocker.result(timeout=5)
+
+
+def test_send_event_posts_json_without_httpx(mocker: MockerFixture):
+    """Delivery goes through urllib, so backend workers never import httpx."""
+    urlopen = mocker.patch("reflex.utils.telemetry.urllib.request.urlopen")
+    mocker.patch.dict(sys.modules, {"httpx": None})
+
+    assert telemetry._send_event({"api_key": "k", "event": "e"})  # ty:ignore[invalid-argument-type, missing-typed-dict-key]
+
+    request = urlopen.call_args.args[0]
+    assert request.full_url == telemetry.POSTHOG_API_URL
+    assert request.get_header("Content-type") == "application/json"
+    assert json.loads(request.data) == {"api_key": "k", "event": "e"}
+    urlopen.return_value.close.assert_called_once()
+
+
+def test_send_event_swallows_delivery_errors(mocker: MockerFixture):
+    """A failed request is reported as False, never raised."""
+    mocker.patch(
+        "reflex.utils.telemetry.urllib.request.urlopen", side_effect=OSError("down")
+    )
+    assert not telemetry._send_event({"api_key": "k", "event": "e"})  # ty:ignore[invalid-argument-type, missing-typed-dict-key]

@@ -108,7 +108,6 @@ class ToastProps(NoExtrasAllowedProps):
     # Icon displayed in front of toast's text, aligned vertically.
     # icon: Icon | None = None # noqa: ERA001
 
-    # TODO: fix implementation for action / cancel buttons
     # Renders a primary button, clicking it will close the toast.
     action: ToastAction | None = None
 
@@ -173,7 +172,7 @@ class ToastProps(NoExtrasAllowedProps):
 class Toaster(Component):
     """A Toaster Component for displaying toast notifications."""
 
-    library: str | None = "sonner@2.0.7"
+    library: str | None = "sonner@2.0.8"
 
     tag = "Toaster"
 

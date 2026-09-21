@@ -665,14 +665,6 @@ class LiteralArrayVar(
             self._var_data,
         )
 
-    def __hash__(self) -> int:
-        """Get the hash of the var.
-
-        Returns:
-            The hash of the var.
-        """
-        return hash((self.__class__.__name__, self._js_expr))
-
     def json(self) -> str:
         """Get the JSON representation of the var.
 
@@ -1046,7 +1038,7 @@ def string_lt_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
     Returns:
         The string less than operation.
     """
-    return var_operation_return(js_expression=f"{lhs} < {rhs}", var_type=bool)
+    return var_operation_return(js_expression=f"{lhs!s} < {rhs!s}", var_type=bool)
 
 
 @var_operation
@@ -1060,7 +1052,7 @@ def string_gt_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
     Returns:
         The string greater than operation.
     """
-    return var_operation_return(js_expression=f"{lhs} > {rhs}", var_type=bool)
+    return var_operation_return(js_expression=f"{lhs!s} > {rhs!s}", var_type=bool)
 
 
 @var_operation
@@ -1074,7 +1066,7 @@ def string_le_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
     Returns:
         The string less than or equal operation.
     """
-    return var_operation_return(js_expression=f"{lhs} <= {rhs}", var_type=bool)
+    return var_operation_return(js_expression=f"{lhs!s} <= {rhs!s}", var_type=bool)
 
 
 @var_operation
@@ -1088,7 +1080,7 @@ def string_ge_operation(lhs: StringVar[Any] | str, rhs: StringVar[Any] | str):
     Returns:
         The string greater than or equal operation.
     """
-    return var_operation_return(js_expression=f"{lhs} >= {rhs}", var_type=bool)
+    return var_operation_return(js_expression=f"{lhs!s} >= {rhs!s}", var_type=bool)
 
 
 @var_operation
@@ -1101,7 +1093,7 @@ def string_lower_operation(string: StringVar[Any]):
     Returns:
         The lowercase string.
     """
-    return var_operation_return(js_expression=f"{string}.toLowerCase()", var_type=str)
+    return var_operation_return(js_expression=f"{string!s}.toLowerCase()", var_type=str)
 
 
 @var_operation
@@ -1114,7 +1106,7 @@ def string_upper_operation(string: StringVar[Any]):
     Returns:
         The uppercase string.
     """
-    return var_operation_return(js_expression=f"{string}.toUpperCase()", var_type=str)
+    return var_operation_return(js_expression=f"{string!s}.toUpperCase()", var_type=str)
 
 
 @var_operation
@@ -1128,7 +1120,7 @@ def string_title_operation(string: StringVar[Any]):
         The title case string.
     """
     return var_operation_return(
-        js_expression=f"{string}.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')",
+        js_expression=f"{string!s}.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')",
         var_type=str,
     )
 
@@ -1144,7 +1136,7 @@ def string_capitalize_operation(string: StringVar[Any]):
         The capitalized string.
     """
     return var_operation_return(
-        js_expression=f"(((s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())({string}))",
+        js_expression=f"(((s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())({string!s}))",
         var_type=str,
     )
 
@@ -1177,7 +1169,7 @@ def string_strip_operation(
         The stripped string.
     """
     return var_operation_return(
-        js_expression=f"pyStrip({string}, {chars})",
+        js_expression=f"pyStrip({string!s}, {chars!s})",
         var_type=str,
         var_data=VarData(imports=_PY_STRIP_IMPORT),
     )
@@ -1198,7 +1190,7 @@ def string_lstrip_operation(
         The stripped string.
     """
     return var_operation_return(
-        js_expression=f"pyLstrip({string}, {chars})",
+        js_expression=f"pyLstrip({string!s}, {chars!s})",
         var_type=str,
         var_data=VarData(imports=_PY_LSTRIP_IMPORT),
     )
@@ -1219,7 +1211,7 @@ def string_rstrip_operation(
         The stripped string.
     """
     return var_operation_return(
-        js_expression=f"pyRstrip({string}, {chars})",
+        js_expression=f"pyRstrip({string!s}, {chars!s})",
         var_type=str,
         var_data=VarData(imports=_PY_RSTRIP_IMPORT),
     )
@@ -1240,7 +1232,7 @@ def string_contains_field_operation(
         The string contains operation.
     """
     return var_operation_return(
-        js_expression=f"{haystack}.some(obj => obj[{field}] === {needle})",
+        js_expression=f"{haystack!s}.some(obj => obj[{field!s}] === {needle!s})",
         var_type=bool,
     )
 
@@ -1257,7 +1249,7 @@ def string_contains_operation(haystack: StringVar[Any], needle: StringVar[Any] |
         The string contains operation.
     """
     return var_operation_return(
-        js_expression=f"{haystack}.includes({needle})", var_type=bool
+        js_expression=f"{haystack!s}.includes({needle!s})", var_type=bool
     )
 
 
@@ -1275,7 +1267,7 @@ def string_starts_with_operation(
         Whether the string starts with the prefix.
     """
     return var_operation_return(
-        js_expression=f"{full_string}.startsWith({prefix})", var_type=bool
+        js_expression=f"{full_string!s}.startsWith({prefix!s})", var_type=bool
     )
 
 
@@ -1293,7 +1285,7 @@ def string_ends_with_operation(
         Whether the string ends with the suffix.
     """
     return var_operation_return(
-        js_expression=f"{full_string}.endsWith({suffix})", var_type=bool
+        js_expression=f"{full_string!s}.endsWith({suffix!s})", var_type=bool
     )
 
 
@@ -1308,7 +1300,9 @@ def string_item_operation(string: StringVar[Any], index: NumberVar | int):
     Returns:
         The item from the string.
     """
-    return var_operation_return(js_expression=f"{string}?.at?.({index})", var_type=str)
+    return var_operation_return(
+        js_expression=f"{string!s}?.at?.({index!s})", var_type=str
+    )
 
 
 @var_operation
@@ -1322,7 +1316,7 @@ def array_join_operation(array: ArrayVar, sep: StringVar[Any] | str = ""):
     Returns:
         The joined elements.
     """
-    return var_operation_return(js_expression=f"{array}.join({sep})", var_type=str)
+    return var_operation_return(js_expression=f"{array!s}.join({sep!s})", var_type=str)
 
 
 @var_operation
@@ -1340,7 +1334,7 @@ def string_replace_operation(
         The string replace operation.
     """
     return var_operation_return(
-        js_expression=f"{string}.replaceAll({search_value}, {new_value})",
+        js_expression=f"{string!s}.replaceAll({search_value!s}, {new_value!s})",
         var_type=str,
     )
 
@@ -1357,7 +1351,7 @@ def get_decimal_string_separator_operation(value: NumberVar, separator: StringVa
         The decimal string separator.
     """
     return var_operation_return(
-        js_expression=f"({value}.toLocaleString('en-US').replaceAll(',', {separator}))",
+        js_expression=f"({value!s}.toLocaleString('en-US').replaceAll(',', {separator!s}))",
         var_type=str,
     )
 
@@ -1377,7 +1371,7 @@ def get_decimal_string_operation(
         The decimal string of the number.
     """
     return var_operation_return(
-        js_expression=f"({value}.toLocaleString('en-US', ((decimals) => ({{minimumFractionDigits: decimals, maximumFractionDigits: decimals}}))({decimals})).replaceAll(',', {separator}))",
+        js_expression=f"({value!s}.toLocaleString('en-US', ((decimals) => ({{minimumFractionDigits: decimals, maximumFractionDigits: decimals}}))({decimals!s})).replaceAll(',', {separator!s}))",
         var_type=str,
     )
 
@@ -1507,14 +1501,6 @@ class LiteralStringVar(LiteralVar[STRING_TYPE], StringVar[STRING_TYPE]):
             _var_value=value,
         )
 
-    def __hash__(self) -> int:
-        """Get the hash of the var.
-
-        Returns:
-            The hash of the var.
-        """
-        return hash((type(self).__name__, self._var_value))
-
     def json(self) -> str:
         """Get the JSON representation of the var.
 
@@ -1615,7 +1601,7 @@ def string_split_operation(string: StringVar[Any], sep: StringVar | str = ""):
         The split string.
     """
     return var_operation_return(
-        js_expression=f"{string}.split({sep})", var_type=list[str]
+        js_expression=f"{string!s}.split({sep!s})", var_type=list[str]
     )
 
 
@@ -1712,7 +1698,7 @@ def array_pluck_operation(
         The reversed array.
     """
     return var_operation_return(
-        js_expression=f"{array}.map(e=>e?.[{field}])",
+        js_expression=f"{array!s}.map(e=>e?.[{field!s}])",
         var_type=array._var_type,
     )
 
@@ -1730,7 +1716,7 @@ def array_reverse_operation(
         The reversed array.
     """
     return var_operation_return(
-        js_expression=f"{array}.slice().reverse()",
+        js_expression=f"{array!s}.slice().reverse()",
         var_type=array._var_type,
     )
 
@@ -1746,7 +1732,7 @@ def array_lt_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
     Returns:
         The array less than operation.
     """
-    return var_operation_return(js_expression=f"{lhs} < {rhs}", var_type=bool)
+    return var_operation_return(js_expression=f"{lhs!s} < {rhs!s}", var_type=bool)
 
 
 @var_operation
@@ -1760,7 +1746,7 @@ def array_gt_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
     Returns:
         The array greater than operation.
     """
-    return var_operation_return(js_expression=f"{lhs} > {rhs}", var_type=bool)
+    return var_operation_return(js_expression=f"{lhs!s} > {rhs!s}", var_type=bool)
 
 
 @var_operation
@@ -1774,7 +1760,7 @@ def array_le_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
     Returns:
         The array less than or equal operation.
     """
-    return var_operation_return(js_expression=f"{lhs} <= {rhs}", var_type=bool)
+    return var_operation_return(js_expression=f"{lhs!s} <= {rhs!s}", var_type=bool)
 
 
 @var_operation
@@ -1788,7 +1774,7 @@ def array_ge_operation(lhs: ArrayVar | list | tuple, rhs: ArrayVar | list | tupl
     Returns:
         The array greater than or equal operation.
     """
-    return var_operation_return(js_expression=f"{lhs} >= {rhs}", var_type=bool)
+    return var_operation_return(js_expression=f"{lhs!s} >= {rhs!s}", var_type=bool)
 
 
 @var_operation
@@ -1802,7 +1788,7 @@ def array_length_operation(array: ArrayVar):
         The length of the array.
     """
     return var_operation_return(
-        js_expression=f"{array}.length",
+        js_expression=f"{array!s}.length",
         var_type=int,
     )
 
@@ -1923,7 +1909,7 @@ def array_contains_field_operation(
         The array contains operation.
     """
     return var_operation_return(
-        js_expression=f"{haystack}.some(obj => obj[{field}] === {needle})",
+        js_expression=f"{haystack!s}.some(obj => obj[{field!s}] === {needle!s})",
         var_type=bool,
     )
 
@@ -1942,7 +1928,7 @@ def array_contains_operation(
         The array contains operation.
     """
     return var_operation_return(
-        js_expression=f"{haystack}.includes({needle})",
+        js_expression=f"{haystack!s}.includes({needle!s})",
         var_type=bool,
     )
 
@@ -1961,7 +1947,7 @@ def repeat_array_operation(
         The repeated array.
     """
     return var_operation_return(
-        js_expression=f"Array.from({{ length: {count} }}).flatMap(() => {array})",
+        js_expression=f"Array.from({{ length: {count!s} }}).flatMap(() => {array!s})",
         var_type=array._var_type,
     )
 
@@ -1981,7 +1967,7 @@ def map_array_operation(
         The mapped array.
     """
     return var_operation_return(
-        js_expression=f"{array}.map({function})", var_type=list[Any]
+        js_expression=f"{array!s}.map({function!s})", var_type=list[Any]
     )
 
 
@@ -2000,7 +1986,7 @@ def filter_array_operation(
         The filtered array.
     """
     return var_operation_return(
-        js_expression=f"{array}.filter({predicate})",
+        js_expression=f"{array!s}.filter({predicate!s})",
         var_type=array._var_type,
     )
 
@@ -2025,7 +2011,7 @@ def reduce_array_operation(
     return_type = callable_args[-1] if callable_args else Any
     if initial is not None:
         return var_operation_return(
-            js_expression=f"{array}.reduce({function}, {initial})",
+            js_expression=f"{array!s}.reduce({function!s}, {initial!s})",
             var_type=unionize(return_type, initial._var_type),
         )
     param_types = callable_args[0] if callable_args else None
@@ -2035,7 +2021,7 @@ def reduce_array_operation(
         else Any
     )
     return var_operation_return(
-        js_expression=f"{array}.reduce({function})",
+        js_expression=f"{array!s}.reduce({function!s})",
         var_type=unionize(return_type, element_type),
     )
 
@@ -2060,7 +2046,7 @@ def flat_map_array_operation(
         The flattened array of mapped results.
     """
     return var_operation_return(
-        js_expression=f"pyFlatMap({array}, {function})",
+        js_expression=f"pyFlatMap({array!s}, {function!s})",
         var_type=list[Any],
         var_data=VarData(imports=_PY_FLAT_MAP_IMPORT),
     )
@@ -2080,7 +2066,7 @@ def array_concat_operation(
         The concatenated array.
     """
     return var_operation_return(
-        js_expression=f"[...{lhs}, ...{rhs}]",
+        js_expression=f"[...{lhs!s}, ...{rhs!s}]",
         var_type=lhs._var_type | rhs._var_type,
     )
 
@@ -2122,19 +2108,6 @@ class LiteralRangeVar(CachedVarOperation, LiteralVar[Sequence[int]], RangeVar):
             _var_data=_var_data,
             _var_value=value,
         )
-
-    def __hash__(self) -> int:
-        """Get the hash of the var.
-
-        Returns:
-            The hash of the var.
-        """
-        return hash((
-            self.__class__.__name__,
-            self._var_value.start,
-            self._var_value.stop,
-            self._var_value.step,
-        ))
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 from reflex_release.config import Config, load_config
-from reflex_release.scaffold import towncrier_config_toml
+from reflex_release.scaffold import CUSTOM_BUILD_CONTRACT, towncrier_config_toml
 
 ROOT_PYPROJECT = """\
 [project]
@@ -94,6 +94,33 @@ def set_post_release_workflow(repo: Path, workflow: str) -> Config:
         encoding="utf-8",
     )
     return load_config(repo)
+
+
+def write_custom_build(repo: Path, extra: str = "", workflow: bool = True) -> None:
+    """Configure a custom build workflow for the root package.
+
+    Args:
+        repo: The repository root.
+        extra: Additional keys for the ``custom-build`` entry.
+        workflow: Whether to also create the referenced workflow file.
+    """
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            "\n[tool.towncrier]",
+            "\n[[tool.reflex-release.custom-build]]\n"
+            'packages = ["mypkg"]\n'
+            'workflow = "build_wheels.yml"\n' + extra + "\n[tool.towncrier]",
+        ),
+        encoding="utf-8",
+    )
+    if workflow:
+        workflows = repo / ".github" / "workflows"
+        workflows.mkdir(parents=True, exist_ok=True)
+        (workflows / "build_wheels.yml").write_text(
+            f"name: Build wheels\n{CUSTOM_BUILD_CONTRACT}\njobs: {{}}\n",
+            encoding="utf-8",
+        )
 
 
 @pytest.fixture

@@ -34,6 +34,16 @@ repos:
     require_serial: true
 - repo: local
   hooks:
+  - id: unasync-reflex-build-sdk
+    name: unasync-reflex-build-sdk
+    description: Regenerate the synchronous reflex-build-sdk client and tests from the asynchronous source
+    entry: uv run --no-sync python packages/reflex-build-sdk/scripts/unasync.py
+    language: system
+    files: ^(packages/reflex-build-sdk/src/reflex_build_sdk/|packages/reflex-build-sdk/scripts/unasync\.py$|tests/units/reflex_build_sdk/)
+    pass_filenames: false
+    require_serial: true
+- repo: local
+  hooks:
   - id: ty
     name: ty
     entry: uv run --no-sync ty check
@@ -43,12 +53,12 @@ repos:
     require_serial: true
 - repo: local
   hooks:
-  # The second opinion the assert_type examples exist for. Always runs: what
-  # these examples catch is a source change altering an inferred type, so
-  # scoping the hook to the examples themselves would never fire on the edit
-  # that broke them.
-  - id: ty
-    name: ty
+  # The assert_type examples, re-checked against the newest Python the project
+  # supports. Always runs: what these examples catch is a source change altering
+  # an inferred type, so scoping the hook to the examples themselves would never
+  # fire on the edit that broke them.
+  - id: ty-type-checking
+    name: ty-type-checking
     entry: uv run --no-sync ty check --python-version 3.14 tests/type_checking
     language: system
     always_run: true
@@ -60,5 +70,5 @@ repos:
   - id: biome-format
     additional_dependencies: ['@biomejs/biome@2.4.8']
     args: [--indent-width, '2', --indent-style, space]
-    exclude: (\.css$|docs/app/)
+    exclude: (\.css$|docs/app/|packages/reflex-build-sdk/openapi\.json$)
     require_serial: true

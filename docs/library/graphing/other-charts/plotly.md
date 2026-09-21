@@ -24,7 +24,7 @@ import plotly.graph_objects as go
 
 Let's create a line graph of life expectancy in Canada.
 
-```python demo exec
+```python demo exec defer
 import plotly.express as px
 
 df = px.data.gapminder().query("country=='Canada'")
@@ -33,7 +33,7 @@ fig = px.line(df, x="year", y="lifeExp", title="Life expectancy in Canada")
 
 def line_chart():
     return rx.center(
-        rx.plotly(data=fig),
+        rx.plotly(width="100%", data=fig),
     )
 ```
 
@@ -45,7 +45,7 @@ def line_chart():
 
 Create a Plotly Express bar chart with `px.bar`:
 
-```python demo exec
+```python demo exec defer
 oceania = px.data.gapminder().query("continent == 'Oceania'")
 bar_fig = px.bar(
     oceania, x="year", y="pop", color="country", title="Population of Oceania"
@@ -53,14 +53,14 @@ bar_fig = px.bar(
 
 
 def plotly_bar_chart():
-    return rx.center(rx.plotly(data=bar_fig))
+    return rx.center(rx.plotly(width="100%", data=bar_fig))
 ```
 
 ### Scatter Plot
 
 Create a Plotly scatter plot with `px.scatter`:
 
-```python demo exec
+```python demo exec defer
 iris = px.data.iris()
 scatter_fig = px.scatter(
     iris,
@@ -72,27 +72,27 @@ scatter_fig = px.scatter(
 
 
 def plotly_scatter_plot():
-    return rx.center(rx.plotly(data=scatter_fig))
+    return rx.center(rx.plotly(width="100%", data=scatter_fig))
 ```
 
 ### Pie Chart
 
 Create a Plotly pie chart with `px.pie`:
 
-```python demo exec
+```python demo exec defer
 tips = px.data.tips()
 pie_fig = px.pie(tips, values="tip", names="day", title="Tips by day")
 
 
 def plotly_pie_chart():
-    return rx.center(rx.plotly(data=pie_fig))
+    return rx.center(rx.plotly(width="100%", data=pie_fig))
 ```
 
 ### Heatmap
 
 Create a Plotly heatmap with `px.density_heatmap`:
 
-```python demo exec
+```python demo exec defer
 tips_data = px.data.tips()
 heatmap_fig = px.density_heatmap(
     tips_data, x="total_bill", y="tip", title="Bill vs tip density heatmap"
@@ -100,14 +100,14 @@ heatmap_fig = px.density_heatmap(
 
 
 def plotly_heatmap():
-    return rx.center(rx.plotly(data=heatmap_fig))
+    return rx.center(rx.plotly(width="100%", data=heatmap_fig))
 ```
 
 ### Histogram
 
 Create a Plotly histogram with `px.histogram`:
 
-```python demo exec
+```python demo exec defer
 hist_data = px.data.tips()
 histogram_fig = px.histogram(
     hist_data, x="total_bill", nbins=20, title="Distribution of total bills"
@@ -115,27 +115,27 @@ histogram_fig = px.histogram(
 
 
 def plotly_histogram():
-    return rx.center(rx.plotly(data=histogram_fig))
+    return rx.center(rx.plotly(width="100%", data=histogram_fig))
 ```
 
 ### Box Plot
 
 Create a Plotly box plot with `px.box`:
 
-```python demo exec
+```python demo exec defer
 box_data = px.data.tips()
 box_fig = px.box(box_data, x="day", y="total_bill", title="Total bill by day")
 
 
 def plotly_box_plot():
-    return rx.center(rx.plotly(data=box_fig))
+    return rx.center(rx.plotly(width="100%", data=box_fig))
 ```
 
 ### Bubble Chart
 
 A bubble chart is a scatter plot in which a third dimension of the data is shown through the size of the markers. Create one with `px.scatter` by passing a column to the `size` argument:
 
-```python demo exec
+```python demo exec defer
 gapminder = px.data.gapminder()
 bubble_fig = px.scatter(
     gapminder.query("year==2007"),
@@ -151,14 +151,14 @@ bubble_fig = px.scatter(
 
 
 def plotly_bubble_chart():
-    return rx.center(rx.plotly(data=bubble_fig))
+    return rx.center(rx.plotly(width="100%", data=bubble_fig))
 ```
 
 ### Gantt Chart
 
 A Gantt chart is a type of bar chart that illustrates a project schedule: tasks are listed on the vertical axis, time intervals on the horizontal axis, and the width of each bar shows the duration of the activity. Create one with `px.timeline`:
 
-```python demo exec
+```python demo exec defer
 tasks = pd.DataFrame([
     dict(Task="Job A", Start="2009-01-01", Finish="2009-02-28"),
     dict(Task="Job B", Start="2009-03-05", Finish="2009-04-15"),
@@ -170,14 +170,14 @@ gantt_fig.update_yaxes(autorange="reversed")
 
 
 def plotly_gantt_chart():
-    return rx.center(rx.plotly(data=gantt_fig))
+    return rx.center(rx.plotly(width="100%", data=gantt_fig))
 ```
 
 ### Sunburst Chart
 
 Sunburst charts visualize hierarchical data spanning outwards radially from root to leaves: the root sits at the center and children are added to the outer rings. Create one with `px.sunburst`, defining the hierarchy with `names` and `parents`:
 
-```python demo exec
+```python demo exec defer
 family = dict(
     character=["Eve", "Cain", "Seth", "Enos", "Noam", "Abel", "Awan", "Enoch", "Azura"],
     parent=["", "Eve", "Eve", "Seth", "Seth", "Eve", "Eve", "Awan", "Eve"],
@@ -187,14 +187,14 @@ sunburst_fig = px.sunburst(family, names="character", parents="parent", values="
 
 
 def plotly_sunburst_chart():
-    return rx.center(rx.plotly(data=sunburst_fig))
+    return rx.center(rx.plotly(width="100%", data=sunburst_fig))
 ```
 
 ### Funnel Chart
 
 Funnel charts represent data as it moves through the stages of a business process, making them a common Business Intelligence tool for spotting where a process loses volume. Create one with `px.funnel`:
 
-```python demo exec
+```python demo exec defer
 funnel_data = dict(
     number=[39, 27.4, 20.6, 11, 2],
     stage=[
@@ -209,14 +209,14 @@ funnel_fig = px.funnel(funnel_data, x="number", y="stage")
 
 
 def plotly_funnel_chart():
-    return rx.center(rx.plotly(data=funnel_fig))
+    return rx.center(rx.plotly(width="100%", data=funnel_fig))
 ```
 
 ## Locale Configuration
 
 Use `locale` to localize Plotly number/date formatting and modebar labels:
 
-```python demo exec
+```python demo exec defer
 df = px.data.gapminder().query("country=='Canada'")
 fig = px.line(df, x="year", y="lifeExp", title="Life expectancy in Canada")
 
@@ -224,6 +224,7 @@ fig = px.line(df, x="year", y="lifeExp", title="Life expectancy in Canada")
 def localized_line_chart():
     return rx.center(
         rx.plotly(
+            width="100%",
             data=fig,
             locale="de",
         ),
@@ -236,7 +237,7 @@ You can still pass `config`; when both are provided, `locale=` is applied as the
 
 Let's create a 3D surface plot of Mount Bruno. This is a slightly more complicated example, but it wraps in Reflex using the same method. In fact, you can wrap any figure using the same approach.
 
-```python demo exec
+```python demo exec defer
 import plotly.graph_objects as go
 import pandas as pd
 
@@ -256,7 +257,7 @@ fig.update_layout(
 
 def mountain_surface():
     return rx.center(
-        rx.plotly(data=fig),
+        rx.plotly(width="100%", data=fig),
     )
 ```
 
@@ -268,7 +269,7 @@ def mountain_surface():
 
 The candlestick chart is a financial chart describing the open, high, low, and close values for a given x coordinate (most likely time): boxes show the spread between open and close, and lines show the spread between low and high. Create one with `go.Candlestick`:
 
-```python demo exec
+```python demo exec defer
 candles = pd.DataFrame({
     "Date": [
         "2024-01-02",
@@ -301,14 +302,14 @@ candlestick_fig.update_layout(
 
 
 def candlestick_chart():
-    return rx.center(rx.plotly(data=candlestick_fig))
+    return rx.center(rx.plotly(width="100%", data=candlestick_fig))
 ```
 
 ### Waterfall Chart
 
 The waterfall chart visualizes how an initial value is affected by a series of positive and negative changes — for example, a profit and loss statement. Create one with `go.Waterfall`, marking each value as `"relative"` or `"total"` via the `measure` argument:
 
-```python demo exec
+```python demo exec defer
 waterfall_fig = go.Figure(
     go.Waterfall(
         name="20",
@@ -332,14 +333,14 @@ waterfall_fig.update_layout(title="Profit and loss statement 2018", showlegend=T
 
 
 def waterfall_chart():
-    return rx.center(rx.plotly(data=waterfall_fig))
+    return rx.center(rx.plotly(width="100%", data=waterfall_fig))
 ```
 
 ### Bullet Chart
 
 The bullet chart, designed by Stephen Few as a compact replacement for dashboard gauges and meters, combines a quantitative bar, qualitative ranges (steps), and a performance threshold line in one simple layout. Build one with `go.Indicator` using the `"bullet"` gauge shape:
 
-```python demo exec
+```python demo exec defer
 bullet_fig = go.Figure(
     go.Indicator(
         mode="number+gauge+delta",
@@ -366,7 +367,7 @@ bullet_fig = go.Figure(
 
 
 def bullet_chart():
-    return rx.center(rx.plotly(data=bullet_fig))
+    return rx.center(rx.plotly(width="100%", data=bullet_fig))
 ```
 
 ## Statistical Charts
@@ -375,7 +376,7 @@ def bullet_chart():
 
 Continuous error bands represent error or uncertainty as a shaded region around a main trace, rather than as discrete whisker-like error bars. Build one with `go.Scatter` by drawing the main line, then a second trace that walks the upper bound forward and the lower bound in reverse, filled with `fill="toself"`:
 
-```python demo exec
+```python demo exec defer
 band_x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 band_y = [1, 2, 7, 4, 5, 6, 7, 8, 9, 10]
 band_y_upper = [2, 3, 8, 5, 6, 7, 8, 9, 10, 11]
@@ -401,7 +402,7 @@ error_band_fig = go.Figure([
 
 
 def continuous_error_bands_chart():
-    return rx.center(rx.plotly(data=error_band_fig))
+    return rx.center(rx.plotly(width="100%", data=error_band_fig))
 ```
 
 ## Maps
@@ -410,7 +411,7 @@ def continuous_error_bands_chart():
 
 Geo maps are outline-based maps drawn from geographic features rather than map tiles. Figures created with `px.scatter_geo`, `px.line_geo`, or `px.choropleth` — or containing `go.Scattergeo` or `go.Choropleth` traces — store their map configuration in the figure's `layout.geo` object, which you can adjust with `update_geos`:
 
-```python demo exec
+```python demo exec defer
 geo_fig = go.Figure(go.Scattergeo())
 geo_fig.update_geos(
     visible=False,
@@ -424,14 +425,14 @@ geo_fig.update_layout(height=300, margin={"r": 0, "t": 0, "l": 0, "b": 0})
 
 
 def geo_map_chart():
-    return rx.center(rx.plotly(data=geo_fig))
+    return rx.center(rx.plotly(width="100%", data=geo_fig))
 ```
 
 ### Scatter Map
 
 Scatter maps plot markers on a tile-based map, sized and colored by your data — useful for visualizing geographic point data like vehicle locations or store sites. Create one with `px.scatter_map` (or a `go.Scattermap` trace for lower-level control):
 
-```python demo exec
+```python demo exec defer
 carshare = px.data.carshare()
 map_fig = px.scatter_map(
     carshare,
@@ -446,7 +447,7 @@ map_fig = px.scatter_map(
 
 
 def scatter_map_chart():
-    return rx.center(rx.plotly(data=map_fig))
+    return rx.center(rx.plotly(width="100%", data=map_fig))
 ```
 
 ## Tables and Diagrams
@@ -455,7 +456,7 @@ def scatter_map_chart():
 
 Plotly can also render data as an interactive table. Create one with `go.Table`, passing column headers to `header` and column data to `cells`:
 
-```python demo exec
+```python demo exec defer
 table_fig = go.Figure(
     data=[
         go.Table(
@@ -467,14 +468,14 @@ table_fig = go.Figure(
 
 
 def plotly_table():
-    return rx.center(rx.plotly(data=table_fig))
+    return rx.center(rx.plotly(width="100%", data=table_fig))
 ```
 
 ### Sankey Diagram
 
 A Sankey diagram is a flow diagram in which the width of the arrows is proportional to the flow quantity. Create one with `go.Sankey`, defining the nodes and the links between them by index:
 
-```python demo exec
+```python demo exec defer
 sankey_fig = go.Figure(
     data=[
         go.Sankey(
@@ -498,7 +499,7 @@ sankey_fig.update_layout(title_text="Basic Sankey Diagram", font_size=10)
 
 
 def plotly_sankey_diagram():
-    return rx.center(rx.plotly(data=sankey_fig))
+    return rx.center(rx.plotly(width="100%", data=sankey_fig))
 ```
 
 ## 3D Charts
@@ -507,7 +508,7 @@ def plotly_sankey_diagram():
 
 3D scatter plots show the relationship between three variables at once, with an optional fourth encoded as color. Create one with `px.scatter_3d`:
 
-```python demo exec
+```python demo exec defer
 iris_3d = px.data.iris()
 scatter_3d_fig = px.scatter_3d(
     iris_3d,
@@ -519,14 +520,14 @@ scatter_3d_fig = px.scatter_3d(
 
 
 def scatter_3d_chart():
-    return rx.center(rx.plotly(data=scatter_3d_fig))
+    return rx.center(rx.plotly(width="100%", data=scatter_3d_fig))
 ```
 
 ### 3D Axis
 
 3D figures place their traces in a scene, and each scene axis is configured through the figure's `scene` layout — set `nticks`, `range`, or axis titles per axis. This example renders a `go.Mesh3d` cloud with custom tick counts and ranges on all three axes:
 
-```python demo exec
+```python demo exec defer
 import numpy as np
 
 np.random.seed(1)
@@ -554,14 +555,14 @@ mesh_fig.update_layout(
 
 
 def axis_3d_chart():
-    return rx.center(rx.plotly(data=mesh_fig))
+    return rx.center(rx.plotly(width="100%", data=mesh_fig))
 ```
 
 ## Plot as State Var
 
 If the figure is set as a state var, it can be updated during run time.
 
-```python demo exec
+```python demo exec defer
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
@@ -600,6 +601,7 @@ def line_chart_with_state():
             on_change=PlotlyState.set_selected_country,
         ),
         rx.plotly(
+            width="100%",
             data=PlotlyState.figure,
             on_mount=PlotlyState.create_figure,
         ),
@@ -614,7 +616,7 @@ Use `update_layout()` method to update the layout of your chart. Checkout [Plotl
 Note that the width and height props are not recommended to ensure the plot remains size responsive to its container. The size of plot will be determined by it's outer container.
 ```
 
-```python demo exec
+```python demo exec defer
 df = px.data.gapminder().query("country=='Canada'")
 fig_1 = px.line(
     df,
@@ -634,7 +636,7 @@ fig_1.update_layout(
 
 def add_styles():
     return rx.center(
-        rx.plotly(data=fig_1),
+        rx.plotly(width="100%", data=fig_1),
         width="100%",
         height="100%",
     )
