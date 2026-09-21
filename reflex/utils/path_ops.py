@@ -7,6 +7,7 @@ import os
 import re
 import shutil
 import stat
+from collections.abc import Callable
 from pathlib import Path
 
 from reflex_base.config import get_config
@@ -303,13 +304,16 @@ def samefile(file1: Path, file2: Path) -> bool:
     return False
 
 
-def update_directory_tree(src: Path, dest: Path):
+def update_directory_tree(
+    src: Path, dest: Path, *, on_copy: Callable[[Path], None] | None = None
+):
     """Recursively copies a directory tree from src to dest.
     Only copies files if the destination file is missing or modified earlier than the source file.
 
     Args:
         src: Source directory
         dest: Destination directory
+        on_copy: Optional callback receiving each destination file after it is copied.
 
     Raises:
         ValueError: If the source is not a directory
@@ -326,9 +330,11 @@ def update_directory_tree(src: Path, dest: Path):
 
         if item.is_dir():
             # Recursively copy subdirectories
-            update_directory_tree(item, dest_item)
+            update_directory_tree(item, dest_item, on_copy=on_copy)
         elif item.is_file() and (
             not dest_item.exists() or item.stat().st_mtime > dest_item.stat().st_mtime
         ):
             # Copy file if it doesn't exist in the destination or is older than the source
             shutil.copy2(item, dest_item)
+            if on_copy is not None:
+                on_copy(dest_item)

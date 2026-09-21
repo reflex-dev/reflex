@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from reflex.utils.path_ops import write_file
+from reflex.utils.path_ops import update_directory_tree, write_file
 
 
 @pytest.mark.parametrize("string_path", [False, True])
@@ -39,3 +39,30 @@ def test_write_file_updates_changed_file(tmp_path: Path) -> None:
     write_file(path, "before")
     write_file(path, "after")
     assert path.read_text(encoding="utf-8") == "after"
+
+
+def test_update_directory_tree_reports_only_copied_files(tmp_path: Path) -> None:
+    """Copy callbacks include nested files and omit files skipped on later updates.
+
+    Args:
+        tmp_path: The temporary source and destination directories.
+    """
+    source = tmp_path / "source"
+    destination = tmp_path / "destination"
+    (source / "nested").mkdir(parents=True)
+    (source / "asset.txt").write_text("asset")
+    (source / "nested" / "asset.txt").write_text("nested asset")
+    copied: list[Path] = []
+
+    update_directory_tree(source, destination, on_copy=copied.append)
+
+    assert set(copied) == {
+        destination / "asset.txt",
+        destination / "nested" / "asset.txt",
+    }
+    assert all(path.is_file() for path in copied)
+    copied.clear()
+
+    update_directory_tree(source, destination, on_copy=copied.append)
+
+    assert not copied

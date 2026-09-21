@@ -65,9 +65,9 @@ def test_sync_app_assets_renames_and_prunes_empty_directories(asset_project):
     assert (
         public / "untracked.txt"
     ).read_text() == "generated before the first compile"
-    assert json.loads((public.parent / utils._ASSET_MANIFEST_FILENAME).read_text()) == [
-        "new.txt"
-    ]
+    assert list(
+        json.loads((public.parent / utils._ASSET_MANIFEST_FILENAME).read_text())
+    ) == ["new.txt"]
     assert not (public / utils._ASSET_MANIFEST_FILENAME).exists()
 
 
@@ -174,7 +174,15 @@ def test_sync_app_assets_changes_file_type(asset_project, start_with_directory: 
 
 
 @pytest.mark.parametrize(
-    "contents", [None, "not json", "{}", '[1, "../outside.txt", "", "."]']
+    "contents",
+    [
+        None,
+        "not json",
+        "{}",
+        '[1, "../outside.txt", "", "."]',
+        '["untracked.txt"]',
+        '{"untracked.txt": 42}',
+    ],
 )
 def test_sync_app_assets_without_valid_ownership_preserves_public_files(
     asset_project, contents: str | None
@@ -223,6 +231,95 @@ def test_sync_app_assets_preserves_directory_replacing_a_copy(asset_project):
     assert (destination / "generated.txt").read_text() == "keep"
 
 
+@pytest.mark.parametrize("intermediate_compiles", [0, 2])
+@pytest.mark.parametrize("replacement", ["content", "same_metadata", "same_content"])
+def test_sync_app_assets_preserves_replaced_copy(
+    asset_project, intermediate_compiles: int, replacement: str
+):
+    """A plugin replacement must not be deleted or adopted by later compiles.
+
+    Args:
+        asset_project: The source and destination directories.
+        intermediate_compiles: Compiles while both source and replacement exist.
+        replacement: Whether the replacement retains the original metadata or bytes.
+    """
+    assets, public = asset_project
+    source = assets / "shared.txt"
+    source.write_bytes(b"app original")
+    utils._sync_app_assets()
+    destination = public / source.name
+    original_stat = destination.stat()
+    content = b"app original" if replacement == "same_content" else b"plugin asset"
+    destination.write_bytes(content)
+    mtime = original_stat.st_mtime_ns
+    if replacement != "same_metadata":
+        mtime += 10_000_000_000
+    os.utime(destination, ns=(mtime, mtime))
+    for _ in range(intermediate_compiles):
+        utils._sync_app_assets()
+    source.unlink()
+
+    utils._sync_app_assets()
+
+    assert destination.read_bytes() == content
+
+
+@pytest.mark.parametrize("existing_copy", [False, True])
+def test_sync_app_assets_initial_ownership_comes_from_source(
+    asset_project, existing_copy: bool
+):
+    """Adopt existing app copies without claiming skipped plugin output.
+
+    Args:
+        asset_project: The source and destination directories.
+        existing_copy: Whether public contains a prior app copy or a plugin file.
+    """
+    assets, public = asset_project
+    source = assets / "shared.txt"
+    source.write_text("app")
+    destination = public / source.name
+    shutil.copy2(source, destination)
+    if not existing_copy:
+        destination.write_text("plugin")
+        mtime = source.stat().st_mtime_ns + 10_000_000_000
+        os.utime(destination, ns=(mtime, mtime))
+    utils._sync_app_assets()
+    source.unlink()
+
+    utils._sync_app_assets()
+
+    if existing_copy:
+        assert not destination.exists()
+    else:
+        assert destination.read_text() == "plugin"
+
+
+@pytest.mark.parametrize("copy_update", [False, True])
+def test_sync_app_assets_tracks_the_last_actual_copy(asset_project, copy_update: bool):
+    """Source changes only replace the ownership fingerprint when copied.
+
+    Args:
+        asset_project: The source and destination directories.
+        copy_update: Whether the source change is newer than the destination.
+    """
+    assets, public = asset_project
+    source = assets / "asset.txt"
+    source.write_text("original")
+    utils._sync_app_assets()
+    destination = public / source.name
+    source.write_text("updated")
+    mtime = destination.stat().st_mtime_ns
+    mtime += 10_000_000_000 if copy_update else -10_000_000_000
+    os.utime(source, ns=(mtime, mtime))
+    utils._sync_app_assets()
+    assert destination.read_text() == ("updated" if copy_update else "original")
+    source.unlink()
+
+    utils._sync_app_assets()
+
+    assert not destination.exists()
+
+
 def test_sync_app_assets_follows_source_symlinks(asset_project, windows_platform: bool):
     """Shared assets copied through symlinks are removed when their links disappear.
 
@@ -251,10 +348,10 @@ def test_sync_app_assets_follows_source_symlinks(asset_project, windows_platform
     assert shared.is_dir()
 
 
-def test_sync_app_assets_does_not_prune_through_symlinks(
+def test_sync_app_assets_preserves_symlink_replacing_a_copy(
     asset_project, windows_platform: bool
 ):
-    """Cleanup cannot follow a replaced public directory outside its output root.
+    """A new symlink is not the owned copy even if its target still matches.
 
     Args:
         asset_project: The source and destination directories.
@@ -263,19 +360,49 @@ def test_sync_app_assets_does_not_prune_through_symlinks(
     if windows_platform:
         pytest.skip("Symlinks require additional privileges on Windows")
     assets, public = asset_project
+    source = assets / "asset.txt"
+    source.write_text("asset")
+    utils._sync_app_assets()
+    destination = public / source.name
+    target = assets.parent / "generated.txt"
+    shutil.copy2(destination, target)
+    destination.unlink()
+    destination.symlink_to(target)
+    source.unlink()
+
+    utils._sync_app_assets()
+
+    assert destination.is_symlink()
+    assert target.read_text() == "asset"
+
+
+@pytest.mark.parametrize("outside_public", [False, True])
+def test_sync_app_assets_does_not_prune_through_symlinks(
+    asset_project, windows_platform: bool, outside_public: bool
+):
+    """Cleanup cannot follow a replaced public directory to another file.
+
+    Args:
+        asset_project: The source and destination directories.
+        windows_platform: Whether symlinks require Windows privileges.
+        outside_public: Whether the symlink points outside the public directory.
+    """
+    if windows_platform:
+        pytest.skip("Symlinks require additional privileges on Windows")
+    assets, public = asset_project
     (assets / "nested").mkdir()
     (assets / "nested" / "asset.txt").write_text("old")
     utils._sync_app_assets()
+    generated = (assets.parent if outside_public else public) / "generated"
+    generated.mkdir()
+    shutil.copy2(public / "nested" / "asset.txt", generated / "asset.txt")
     shutil.rmtree(assets)
     shutil.rmtree(public / "nested")
-    outside = assets.parent / "outside"
-    outside.mkdir()
-    (outside / "asset.txt").write_text("keep")
-    (public / "nested").symlink_to(outside, target_is_directory=True)
+    (public / "nested").symlink_to(generated.resolve(), target_is_directory=True)
 
     utils._sync_app_assets()
 
-    assert (outside / "asset.txt").read_text() == "keep"
+    assert (generated / "asset.txt").read_text() == "old"
 
 
 def test_write_file_reexport() -> None:

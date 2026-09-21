@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import copy
+import hashlib
 import json
 import operator
 import os
@@ -997,37 +998,45 @@ _MEMO_MANIFEST_FILENAME = ".memo-manifest.json"
 _ASSET_MANIFEST_FILENAME = ".asset-manifest.json"
 
 
-def _read_file_manifest(manifest_path: Path) -> set[str]:
+def _read_file_manifest(manifest_path: Path) -> dict[str, str | None]:
     """Read relative file paths owned by the previous compile.
 
     Args:
         manifest_path: The manifest to read.
 
     Returns:
-        Relative paths, or an empty set if the manifest is absent or invalid.
+        Relative paths and optional fingerprints, or an empty mapping if invalid.
     """
     try:
         data = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return set()
-    if not isinstance(data, list):
-        return set()
+        return {}
+    entries: Iterable[tuple[object, object]]
+    if isinstance(data, list):
+        entries = ((entry, None) for entry in data)
+    elif isinstance(data, dict):
+        entries = data.items()
+    else:
+        return {}
     return {
-        entry
-        for entry in data
+        entry: fingerprint
+        for entry, fingerprint in entries
         if isinstance(entry, str)
+        and (fingerprint is None or isinstance(fingerprint, str))
         and (path := Path(entry)).parts
         and not path.is_absolute()
         and ".." not in path.parts
     }
 
 
-def _write_file_manifest(manifest_path: Path, relative_paths: set[str]) -> None:
+def _write_file_manifest(
+    manifest_path: Path, relative_paths: list[str] | dict[str, str]
+) -> None:
     """Atomically write the new file manifest.
 
     Args:
         manifest_path: The manifest to write.
-        relative_paths: Relative paths owned by this compile.
+        relative_paths: Sorted relative paths or a mapping to their fingerprints.
     """
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(
@@ -1039,7 +1048,7 @@ def _write_file_manifest(manifest_path: Path, relative_paths: set[str]) -> None:
     tmp_path = Path(tmp_name)
     try:
         with tmp_path.open("w", encoding="utf-8") as fh:
-            json.dump(sorted(relative_paths), fh)
+            json.dump(relative_paths, fh, sort_keys=True)
         tmp_path.replace(manifest_path)
     except Exception:
         # Best-effort cleanup; manifest write is recoverable on the next run.
@@ -1047,23 +1056,52 @@ def _write_file_manifest(manifest_path: Path, relative_paths: set[str]) -> None:
         raise
 
 
-def _prune_stale_files(directory: Path, relative_paths: set[str]) -> None:
+def _asset_file_fingerprint(path: Path) -> str:
+    """Identify an asset copy by its modification time and content digest.
+
+    Args:
+        path: The file to fingerprint.
+
+    Returns:
+        The modification time and SHA-256 digest of the file.
+    """
+    digest = hashlib.sha256()
+    with path.open("rb") as file:
+        mtime = os.fstat(file.fileno()).st_mtime_ns
+        while chunk := file.read(1024 * 1024):
+            digest.update(chunk)
+    return f"{mtime}:{digest.hexdigest()}"
+
+
+def _prune_stale_files(
+    directory: Path,
+    relative_paths: set[str],
+    *,
+    fingerprints: Mapping[str, str | None] | None = None,
+) -> None:
     """Remove owned files and their empty parents within an output directory.
 
     Args:
         directory: The root containing the owned files.
         relative_paths: Validated relative paths to remove.
+        fingerprints: If provided, only remove copies matching their saved fingerprint.
     """
     resolved_directory = directory.resolve()
     for relative in relative_paths:
-        target = directory / relative
-        # Do not follow a replaced parent symlink outside the output directory.
-        if not target.parent.resolve().is_relative_to(resolved_directory):
+        target = resolved_directory / relative
+        # A replaced parent symlink no longer identifies the owned file.
+        if target.parent.resolve() != target.parent:
             continue
         if target.is_file() or target.is_symlink():
+            if fingerprints is not None and (
+                target.is_symlink()
+                or fingerprints[relative] is None
+                or _asset_file_fingerprint(target) != fingerprints[relative]
+            ):
+                continue
             target.unlink()
             parent = target.parent
-            while parent != directory:
+            while parent != resolved_directory:
                 try:
                     parent.rmdir()
                 except OSError:
@@ -1101,11 +1139,30 @@ def _sync_app_assets() -> None:
         if scan_errors:
             raise scan_errors[0]
     # Prune before copying to allow a removed file to become a directory.
-    _prune_stale_files(public, previous - current)
+    _prune_stale_files(public, previous.keys() - current, fingerprints=previous)
+    fingerprints = {
+        relative: fingerprint
+        for relative in current
+        if (fingerprint := previous.get(relative)) is not None
+    }
     if has_assets:
-        path_ops.update_directory_tree(assets, public)
-    if current != previous:
-        _write_file_manifest(manifest_path, current)
+
+        def record_copy(path: Path) -> None:
+            """Record the fingerprint only after an asset is actually copied.
+
+            Args:
+                path: The destination file that was just copied.
+            """
+            fingerprints[path.relative_to(public).as_posix()] = _asset_file_fingerprint(
+                path
+            )
+
+        path_ops.update_directory_tree(assets, public, on_copy=record_copy)
+        # Adopt old copies from their source, never from skipped plugin output.
+        for relative in current - fingerprints.keys():
+            fingerprints[relative] = _asset_file_fingerprint(assets / relative)
+    if fingerprints != previous:
+        _write_file_manifest(manifest_path, fingerprints)
 
 
 def prune_stale_memo_files(emitted_paths: Iterable[str | Path]) -> None:
@@ -1131,10 +1188,10 @@ def prune_stale_memo_files(emitted_paths: Iterable[str | Path]) -> None:
     }
 
     manifest_path = web_dir / _MEMO_MANIFEST_FILENAME
-    previous = _read_file_manifest(manifest_path)
+    previous = set(_read_file_manifest(manifest_path))
     _prune_stale_files(web_dir, previous - emitted_relative)
     if emitted_relative != previous:
-        _write_file_manifest(manifest_path, emitted_relative)
+        _write_file_manifest(manifest_path, sorted(emitted_relative))
 
 
 def empty_dir(path: str | Path, keep_files: list[str] | None = None):
