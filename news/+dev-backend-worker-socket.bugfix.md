@@ -1,0 +1,1 @@
+Release the development backend port when its worker crashes or the server shuts down, so requests fail promptly. Fixing the app restarts the backend on the same port, while successful hot reloads continue to queue requests.

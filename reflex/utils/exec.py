@@ -13,6 +13,7 @@ import re
 import socket
 import subprocess
 import sys
+import threading
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
@@ -724,14 +725,29 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     from reflex_base.environment import _load_dotenv_from_env
 
     class ParentBoundGranian(Granian):  # pyright: ignore[reportGeneralTypeIssues]
-        """Granian server that binds the listen socket in the supervisor.
+        """Single-worker dev server that owns its listening socket.
 
         On Linux each worker otherwise binds only after loading the app, so
         requests during a reload are refused. With the supervisor holding the
-        socket they wait in the accept backlog for the new worker.
+        socket they wait in the accept backlog for the new worker. If that
+        worker fails, release the socket until the next reload so requests
+        fail promptly instead of hanging indefinitely.
         """
 
+        def __init__(self, *args, **kwargs):
+            """Initialize the supervisor's socket ownership.
+
+            Args:
+                *args: Positional arguments forwarded to Granian.
+                **kwargs: Keyword arguments forwarded to Granian.
+            """
+            super().__init__(*args, **kwargs)
+            self._socket_lock = threading.RLock()
+            self._socket_worker = None
+            self._sso = None
+
         def _init_shared_socket(self):
+            """Bind the socket and preserve the selected port across recovery."""
             self._ssp = SocketSpec(self.bind_addr, self.bind_port, self.backlog)
             self._shd = self._ssp.build()
             self._sfd = self._shd.get_fd()
@@ -739,6 +755,55 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
             sock = socket.socket(fileno=self._sfd)
             sock.set_inheritable(True)
             self._sso = sock
+            self.bind_port = sock.getsockname()[1]
+
+        def _close_shared_socket(self):
+            """Release the supervisor's socket on failure or shutdown."""
+            with self._socket_lock:
+                if self._sso is not None:
+                    # Granian 2.7.4 unconditionally detaches this object during
+                    # shutdown, so retain the closed socket for that cleanup.
+                    self._sso.close()
+                    self._shd = self._sfd = None
+
+        def _spawn_worker(self, idx: int, target: Any, callback_loader: Any):
+            """Reopen the socket as needed and observe the replacement worker.
+
+            Args:
+                idx: The worker index.
+                target: The worker entry point.
+                callback_loader: The app loader.
+
+            Returns:
+                The worker to start.
+            """
+            with self._socket_lock:
+                if self._sso is None or self._sso.fileno() < 0:
+                    self._init_shared_socket()
+                worker = super()._spawn_worker(idx, target, callback_loader)
+                self._socket_worker = worker
+            watch_worker = worker._watcher
+
+            def watch_and_release():
+                """Release the socket if the current worker exits unexpectedly."""
+                watch_worker()
+                with self._socket_lock:
+                    # A previous worker's watcher may finish after a reload has
+                    # already created its replacement. It no longer owns cleanup.
+                    if self._socket_worker is worker and not worker.interrupt_by_parent:
+                        self._close_shared_socket()
+
+            worker._watcher = watch_and_release
+            return worker
+
+        def shutdown(self, exit_code: int = 0):
+            """Release the socket before waiting for workers to stop.
+
+            Args:
+                exit_code: The supervisor's exit code.
+            """
+            self._close_shared_socket()
+            super().shutdown(exit_code)
 
     reset_dev_backend_reload_marker()
     environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)
@@ -756,6 +821,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         reload_ignore_worker_failure=True,
         reload_ignore_patterns=HOTRELOAD_IGNORE_PATTERNS,
         reload_tick=100,
+        workers=1,
         workers_kill_timeout=2,
     )
 

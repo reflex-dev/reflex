@@ -132,6 +132,8 @@ uv run reflex run
 
 Your app runs at [http://localhost:3000](http://localhost:3000). Reflex _hot reloads_ any code changes in real time — your edits show up automatically.
 
+With the default Granian backend, requests wait for the replacement worker during a hot reload. If an error prevents the worker from starting, backend connections are refused until you fix the error and save again. The backend then restarts on the same port.
+
 For troubleshooting, increase log verbosity with the `--loglevel` flag:
 
 ```bash
