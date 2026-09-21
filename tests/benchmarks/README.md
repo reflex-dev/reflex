@@ -21,6 +21,55 @@ direction, and totals that the table benchmark encodes.
 Timing includes processor startup/shutdown, but excludes initial
 hydration, Socket.IO packet framing, network transport, databases, and rendering.
 
+## Linked shared state benchmarks
+
+```sh
+uv run pytest tests/benchmarks/test_shared_state.py --codspeed
+```
+
+Linking resolves one `SharedState` substate of many client state trees to a
+single shared token's instance. Every event on a linked client pays for that
+indirection, and every write fans out to the other clients on the same token.
+These run against `StateManagerMemory` and an in-process `EventNamespace` whose
+socket emit is stubbed, so the numbers cover taking the shared token's lock,
+patching the linked state into the tree, resolving deltas through it and
+re-driving one `modify_state` per other client -- not redis or websocket
+transport.
+
+- `test_process_event`: the same four counter events (two increments, two
+  decrements, so the batch returns the counter to its starting value) under
+  four scenarios. `private` is never linked; `linked` adds the shared token's
+  lock, the patch into the tree and the router vars `_patch_state` re-dirties;
+  `linked_1_client` and `linked_8_clients` add one full `modify_state` and
+  emitted update per other client per event, so the fixed cost of the fan-out
+  and its per-client slope can be read apart.
+- `test_modify_state`: `app.modify_state` cycles, the path a background task or
+  an API route takes into client state. Resolves links the same way an event
+  does with less on top of it, so a change to the patching machinery is easier
+  to see. Ten cycles per measured call, because entering the event loop costs a
+  few microseconds no matter what happens inside it.
+- `test_link_and_unlink`: what a client pays on the `on_load` that joins it to
+  a room. Both halves patch with `full_delta=True`, re-marking every Var of the
+  state being swapped in and resolving the delta from the root, which makes
+  this the most expensive single operation in the feature. The cycle leaves the
+  client unlinked, so every sample links from the same starting point.
+
+`test_fanout_updates_every_linked_client` separately asserts that every other
+linked client receives every step of the batch, because the fan-out is silently
+skipped for a token with no connected socket -- without it the linked scenarios
+could quietly measure an empty task set.
+
+`private` is the baseline for every comparison here, and it is not a
+shared-state-free one. Defining any `SharedState` subclass flips
+`_reflex_internal_links` on the `State` root from `None` to `{}` for the whole
+interpreter, which is what routes every event through
+`modify_state_with_links`. That is process-global and cannot be scoped to one
+module, so it applies to every benchmark in this directory that processes
+events -- `test_process_event[counter]` in `test_event_processing.py` stepped
+up when this module landed and measures that path now. The difference between
+`private` and `linked` is the cost of resolving a link, not the cost of the
+feature existing.
+
 ## Var operation benchmarks
 
 ```sh
