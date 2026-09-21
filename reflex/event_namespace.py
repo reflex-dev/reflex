@@ -21,7 +21,7 @@ from reflex_base.event import _EVENT_FIELDS, Event
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from reflex.channels import MAX_MESSAGE_BUFFERS, ChannelSession
-from reflex.istate.data import RouterData
+from reflex.istate.data import SessionData
 from reflex.istate.manager.token import BaseStateToken
 from reflex.state import StateUpdate
 from reflex.utils import exceptions, format
@@ -626,7 +626,14 @@ class BaseEventNamespace(ABC):
                 BaseStateToken(ident=new_token or token, cls=self.app._state)
             ) as state:
                 state.router_data[constants.RouteVar.SESSION_ID] = sid
-                state.router = RouterData.from_router_data(state.router_data)
+                # Record the identity the state was loaded under; duplicate-token
+                # handling can hand back a fresh one here.
+                state.router_data[constants.RouteVar.CLIENT_TOKEN] = new_token or token
+                # Rebuild from router_data to keep the session var in step with it.
+                if (
+                    session := SessionData.from_router_data(state.router_data)
+                ) != state.rx_router_session:
+                    state.rx_router_session = session
 
 
 class WebsocketEventNamespace(BaseEventNamespace):

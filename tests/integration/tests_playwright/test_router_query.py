@@ -19,11 +19,13 @@ Covers dev and prod modes via ``app_harness_env`` parametrisation.
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import Generator
 
 import pytest
 from playwright.sync_api import Page, expect
+from reflex_base.constants.state import FIELD_MARKER
 
 from reflex.testing import AppHarness
 
@@ -31,6 +33,11 @@ from reflex.testing import AppHarness
 def RouterQueryApp():
     """App exercising replaceState, redirect, and redirect(replace=True)."""
     import reflex as rx
+
+    class ConnectedState(rx.State):
+        """A sibling updated by the first on-load event after connecting."""
+
+        connected_count: int = 0
 
     class RouterQueryState(rx.State):
         # Incremented by the page on_load handler; proves whether a navigation
@@ -59,9 +66,11 @@ def RouterQueryApp():
             return self.router.url.query_parameters.get("name", "")
 
         @rx.event
-        def on_load(self):
-            """Record that the page on_load handler fired."""
+        async def on_load(self):
+            """Update both substates in the same on-load delta."""
             self.load_count += 1
+            connected = await self.get_state(ConnectedState)
+            connected.connected_count += 1
 
         @rx.event
         def replace_via_script(self, query: str):
@@ -142,6 +151,11 @@ def RouterQueryApp():
                 id="load-count",
             ),
             rx.input(
+                value=f"{ConnectedState.connected_count}",
+                read_only=True,
+                id="connected-count",
+            ),
+            rx.input(
                 value=f"{RouterQueryState.ping_count}",
                 read_only=True,
                 id="ping-count",
@@ -194,6 +208,45 @@ def _load(harness: AppHarness, page: Page) -> str:
     # The initial page load fires on_load exactly once.
     expect(page.locator("#load-count")).to_have_value("1")
     return base
+
+
+def test_initial_connection_dispatches_both_substates(
+    router_query_app: AppHarness, page: Page
+):
+    """The first on-load delta updates both sibling substates in the browser.
+
+    Args:
+        router_query_app: Running application in dev or production mode.
+        page: Browser page receiving the initial connection's state updates.
+    """
+    frames: list[str | bytes] = []
+    page.on(
+        "websocket",
+        lambda socket: socket.on("framereceived", lambda frame: frames.append(frame)),
+    )
+
+    _load(router_query_app, page)
+    expect(page.locator("#connected-count")).to_have_value("1")
+
+    # Frames on the default transport are JSON arrays, [event_name, payload].
+    for frame in frames:
+        if not isinstance(frame, str):
+            continue
+        message = json.loads(frame)
+        if not isinstance(message, list) or len(message) != 2:
+            continue
+        event, update = message
+        if event != "event" or not isinstance(update, dict):
+            continue
+        updated_substates = sum(
+            fields.get("load_count" + FIELD_MARKER) == 1
+            or fields.get("connected_count" + FIELD_MARKER) == 1
+            for fields in update.get("delta", {}).values()
+        )
+        if updated_substates == 2:
+            break
+    else:
+        pytest.fail("The initial on-load update did not contain both substates")
 
 
 def test_replace_state_is_not_reactive_but_next_event_syncs(
