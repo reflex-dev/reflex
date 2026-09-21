@@ -68,8 +68,8 @@ What works — every headline changelog item was exercised on the published pack
 prod, against a 0.9.11.post1 baseline: the #7068 router split (navigation-delta matrix matches the PR table, −47%
 whole-frame bytes, redis/disk pickles store the URL once, old pickles discarded cleanly on upgrade); #6850 Slot
 transparency and #7176 memo app-wraps (a page that crashed outright on 0.9.11.post1 now works); #6946 (−42% inbound
-websocket bytes), #7168 (8/8 supersession shapes, baseline fails 3), #7145, #7157, #7187; #6181 (on_load render count
-halved); #7159 both halves; #7015/#7189/#7198 (80 006-entry var leak gone, 1.5–3.8× faster ops), #7115, #7131,
+websocket bytes), #7168 (8/8 supersession shapes, baseline fails 3), #7145, #7157, #7187; #6181 (per-substate providers real in the compiled output; the
+"on_load count halved" measurement was later shown to be timing noise, see Phase 7); #7159 both halves; #7015/#7189/#7198 (80 006-entry var leak gone, 1.5–3.8× faster ops), #7115, #7131,
 #6930 (PEP 810 path active on 3.15), #7080, #6923; #7153/#7078 (three route URLs that 404 on the previous stable now
 serve prerendered HTML), #7165, #7112, #7096 (the enterprise ag-grid demo's dev backend, dead on 0.9.11.post1, runs),
 #7142, #7139; #7089/#7114/#7117/#7129/#7202/#7193/#7152/#7075; #7049 (with heavy libraries installed but unused:
@@ -880,7 +880,8 @@ Render-count probe app (10 substates, memo sections, two ComponentStates, foreac
 event-loop consumers, LocalStorage/Cookie/SessionStorage, client_state, background tasks, event chains, a second page
 and a dynamic route), a byte-identical 0.9.11.post1 copy, and a StateManagerDisk probe app with Starlette routes
 exposing the manager's disk contents, cache and write queue. #6181: per-substate providers are real in the compiled
-output and halve the on_load render count for the two substates an on_load touches (A/B/dual 2 vs 4 in dev); every
+output; the recorded "A/B/dual 2 vs 4 in dev" on_load halving did not survive re-verification (bimodal 2/4 on all
+three versions over six fresh contexts each, see Phase 7 — treat as unchanged / not measurable in this app); every
 other scenario was already isolated on 0.9.11.post1 and is unchanged; prod replays the suite with exactly half the
 dev counts (StrictMode). #7159: a debounced write flushes the LATEST of two different instances; a state never obtained
 from `get_state` is persisted; `modify_state` from an API route pushes live and persists; state survives a hot reload;
