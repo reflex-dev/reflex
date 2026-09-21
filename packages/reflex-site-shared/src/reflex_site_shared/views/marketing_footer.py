@@ -3,9 +3,9 @@
 from datetime import datetime
 from typing import Literal
 
+import reflex as rx
 import reflex_components_internal as ui
 
-import reflex as rx
 from reflex_site_shared.backend.signup import IndexState
 from reflex_site_shared.backend.status import StatusState
 from reflex_site_shared.components.icons import get_icon
@@ -443,12 +443,11 @@ def marketing_footer(
                         ],
                     ),
                     (
-                        "Migration",
+                        "Comparison",
                         [
-                            ("From no-code", "/migration/no-code/"),
-                            ("From low-code", "/migration/low-code/"),
-                            ("From other frameworks", "/migration/other-frameworks/"),
-                            ("From other AI tools", "/migration/other-ai-tools/"),
+                            ("From no/low-code", "/compare/no-code/"),
+                            ("Frameworks", "/compare/frameworks/"),
+                            ("From other AI tools", "/compare/other-ai-tools/"),
                         ],
                     ),
                     appearance=appearance,

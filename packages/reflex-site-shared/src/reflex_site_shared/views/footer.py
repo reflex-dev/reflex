@@ -2,11 +2,11 @@
 
 from datetime import datetime
 
+import reflex as rx
 import reflex_components_internal as ui
+from reflex.style import color_mode, set_color_mode
 from reflex_components_internal import button as marketing_button
 
-import reflex as rx
-from reflex.style import color_mode, set_color_mode
 from reflex_site_shared.backend.signup import IndexState
 from reflex_site_shared.backend.status import StatusState
 from reflex_site_shared.components.icons import get_icon
@@ -304,17 +304,16 @@ def footer_index(
                             ],
                         ),
                         footer_link_flex(
-                            "Migration",
+                            "Comparison",
                             [
-                                footer_link("From No-Code", "/migration/no-code/"),
-                                footer_link("From Low-Code", "/migration/low-code/"),
+                                footer_link("From no/low-code", "/compare/no-code/"),
                                 footer_link(
-                                    "From Other Frameworks",
-                                    "/migration/other-frameworks/",
+                                    "Frameworks",
+                                    "/compare/frameworks/",
                                 ),
                                 footer_link(
-                                    "From Other AI Tools",
-                                    "/migration/other-ai-tools/",
+                                    "From other AI tools",
+                                    "/compare/other-ai-tools/",
                                 ),
                             ],
                         ),
