@@ -32,7 +32,6 @@ def get_sidebar_items_learn():
                 guides.dashboards_and_internal_tools,
                 guides.ai_applications,
                 guides.model_and_media_interfaces,
-                guides.moving_an_existing_app,
             ],
         ),
         create_item(

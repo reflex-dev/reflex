@@ -35,4 +35,4 @@ Read [performance and execution](/docs/advanced-onboarding/performance-and-execu
 
 ## Coming from another Python framework?
 
-Use [moving an existing Python app](/docs/guides/moving-an-existing-app/) to map a Streamlit, Dash, Gradio, or NiceGUI workflow into Reflex. Start with one complete workflow and preserve its observable behavior before expanding the port.
+Explore the [framework comparisons](https://reflex.dev/compare/frameworks/) to find your current framework and understand how its interface, state, and backend fit into Reflex. Then choose a working tutorial above to implement your first workflow.
