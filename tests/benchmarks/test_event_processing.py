@@ -265,7 +265,9 @@ def on_event_harness():
             )
 
     # The namespace reads the connection scope through the Socket.IO server.
-    app.sio = mock.Mock(get_environ=mock.Mock(return_value=environ))
+    # A plain function stands in for the lookup, so the measurement is not
+    # dominated by a mock recording a call per event.
+    app.sio = mock.Mock(get_environ=lambda *_args: environ)
 
     loop = asyncio.new_event_loop()
     loop.run_until_complete(namespace.on_connect(sid, environ))
