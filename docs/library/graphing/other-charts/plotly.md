@@ -22,6 +22,8 @@ import plotly.graph_objects as go
 
 ## Basic Example
 
+To connect chart selections to other charts and a table, see the XY-based [linked charts and cross-filtering tutorial](/docs/getting-started/linked-charts-tutorial/). It demonstrates shared state, stable record IDs, empty results, and reset behavior. Plotly uses a different event payload; adapt the handler to the events documented below.
+
 Let's create a line graph of life expectancy in Canada.
 
 ```python demo exec defer
