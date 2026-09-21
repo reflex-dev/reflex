@@ -1001,8 +1001,11 @@ independent adversarial verifier for every newly claimed issue. Artifacts: `reve
 - **rxe 0.9.6a1 type-checks against the removed `reflex.istate.validation`** — `reflex_enterprise/auth/oidc/state.py:63`
   imports `_StateMeta` under `TYPE_CHECKING` from a module a2 deleted; the runtime branch (`type(rx.State)`) is what
   executes, all 110 rxe modules import, and 245 of 246 `from reflex…` imports in the wheel resolve. Static-only,
-  LOW, confirmed by the verifier as isolated and narrower than claimed. reflex-enterprise follow-up: import
-  `reflex_base.vars.BaseStateMeta` (public, and the metaclass of `rx.State` again) instead.
+  LOW, confirmed by the verifier as isolated and narrower than claimed. Fixed in reflex-enterprise
+  [#235](https://github.com/reflex-dev/reflex-enterprise/pull/235): `OIDCCookieMeta` now derives from the public
+  `reflex_base.vars.BaseStateMeta` (the metaclass of `rx.State` on every supported reflex), a new unit test
+  executes every `TYPE_CHECKING` import in the package against the installed reflex, and the lock moves to
+  0.9.12a2; verified on 0.9.6, 0.9.9 and 0.9.12a2.
 - **rxe EventHandlerAPIPlugin `GET /_reflex/events/openapi.yaml` returns 500 unless `pyyaml` is installed** —
   Starlette's `parse_docstring` asserts on the missing package; same code and same missing dependency in rxe 0.9.5,
   so pre-existing. `/.well-known/api-catalog` (200) points at the failing URL. reflex-enterprise follow-up: declare
