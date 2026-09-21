@@ -19,7 +19,7 @@ You can use Reflex for the data-app, dashboard, chat, model-demo, and internal-t
 | A web interface for a Python function | [Function-to-app tutorial](/docs/getting-started/python-function-to-app/) | Validated form input, a Python calculation, and a result view |
 | An internal business tool | [Dashboards and internal tools](/docs/guides/dashboards-and-internal-tools/) | Record workflows, data loading, shared filters, and background refresh |
 | An AI or document assistant | [AI applications](/docs/guides/ai-applications/) | Extending chat with retrieval, sources, persistence, and tool progress |
-| A model or media interface | [Model and media interfaces](/docs/guides/model-and-media-interfaces/) | A local prediction function, custom controls, and media delivery choices |
+| A model or media interface | [Model and media interfaces](/docs/guides/model-and-media-interfaces/) | Local inference plus an image upload, processing, preview, and download workflow |
 
 These are application patterns, not separate Reflex products. The framework's [components](/docs/library/), [state](/docs/state/overview/), and [events](/docs/events/events-overview/) are the building blocks in each case. Reflex Build is a separate way to generate applications; you can write these framework examples directly in Python.
 

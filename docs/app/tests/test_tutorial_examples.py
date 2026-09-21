@@ -4,6 +4,7 @@ import asyncio
 import re
 import sys
 from contextvars import ContextVar
+from io import BytesIO
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
@@ -11,6 +12,7 @@ from uuid import uuid4
 
 import pytest
 import reflex as rx
+from PIL import Image
 from reflex_base.registry import RegistrationContext
 
 DOCS = Path(__file__).resolve().parents[2] / "getting_started"
@@ -252,11 +254,14 @@ def test_chat_missing_api_key_keeps_question(chat_module, monkeypatch):
     assert "OPENAI_API_KEY" in state.error
 
 
-def load_application_demo(monkeypatch, relative_path):
+def load_application_demo(monkeypatch, relative_path, demo_id=None):
     """Execute the exact copyable demo shown on an application guide."""
     source = (DOCS.parent / relative_path).read_text()
+    marker = rf"[^\n]*\bid={re.escape(demo_id)}\b" if demo_id else ""
     blocks = re.findall(
-        r"^```python demo exec[^\n]*\n(.*?)^```", source, re.MULTILINE | re.DOTALL
+        rf"^```python demo exec{marker}[^\n]*\n(.*?)^```",
+        source,
+        re.MULTILINE | re.DOTALL,
     )
     assert len(blocks) == 1
     module = ModuleType(f"application_demo_{uuid4().hex}")
@@ -419,7 +424,9 @@ def test_function_app_validates_and_clears_stale_results(monkeypatch):
 
 def test_model_interface_predictions_and_invalid_input(monkeypatch):
     """The copied model example can run inference and recover after bad input."""
-    module = load_application_demo(monkeypatch, "guides/model_and_media_interfaces.md")
+    module = load_application_demo(
+        monkeypatch, "guides/model_and_media_interfaces.md", "model_interface_demo"
+    )
     assert module.model_interface() is not None
     assert module.predict_flower(1.4, 0.2) == "setosa"
     assert module.predict_flower(4.7, 1.4) == "versicolor"
@@ -434,3 +441,112 @@ def test_model_interface_predictions_and_invalid_input(monkeypatch):
     state.predict({"length": "6.0", "width": "2.5"})
     assert state.prediction == "virginica"
     assert state.error == ""
+
+
+def image_demo(monkeypatch):
+    """Load the copyable image workflow from the model guide."""
+    return load_application_demo(
+        monkeypatch, "guides/model_and_media_interfaces.md", "image_workflow_demo"
+    )
+
+
+def image_bytes(size=(800, 400), image_format="PNG"):
+    """Create a small deterministic upload without relying on external assets."""
+    output = BytesIO()
+    Image.new("RGB", size, "red").save(output, format=image_format)
+    return output.getvalue()
+
+
+@pytest.mark.parametrize("image_format", ["PNG", "JPEG"])
+def test_image_workflow_prepares_bounded_grayscale_png(monkeypatch, image_format):
+    """The processing function produces a usable PNG with preserved aspect ratio."""
+    module = image_demo(monkeypatch)
+    png, summary = module.prepare_image(image_bytes(image_format=image_format))
+    with Image.open(BytesIO(png)) as result:
+        assert result.format == "PNG"
+        assert result.mode == "L"
+        assert result.size == (512, 256)
+        assert result.getpixel((0, 0)) == pytest.approx(76, abs=1)
+        assert not result.getexif()
+    assert "800 x 400" in summary and "512 x 256" in summary
+    assert module.image_workflow() is not None
+
+
+@pytest.mark.parametrize(
+    "bad_data",
+    [b"", b"not an image", image_bytes(image_format="GIF")],
+    ids=["empty", "malformed", "unsupported-format"],
+)
+def test_image_workflow_rejects_invalid_content(monkeypatch, bad_data):
+    """File content, rather than a browser-supplied filename or MIME, is checked."""
+    with pytest.raises(ValueError, match="valid PNG or JPEG"):
+        image_demo(monkeypatch).prepare_image(bad_data)
+
+
+def test_image_workflow_bounds_bytes_and_pixels(monkeypatch):
+    """Both compressed size and decoded image dimensions are bounded."""
+    module = image_demo(monkeypatch)
+    with pytest.raises(ValueError, match="2 MiB"):
+        module.prepare_image(b"x" * (module.MAX_IMAGE_BYTES + 1))
+    with pytest.raises(ValueError, match="4 million pixels"):
+        module.prepare_image(image_bytes(size=(2001, 2000)))
+
+
+@pytest.mark.asyncio
+async def test_image_workflow_upload_recovery_and_session_isolation(monkeypatch):
+    """Uploads report progress, clear stale results on failure, and stay per-session."""
+    module = image_demo(monkeypatch)
+    state = module.ImageWorkflowState(_reflex_internal_init=True)
+    other = module.ImageWorkflowState(_reflex_internal_init=True)
+    file = SimpleNamespace(read=AsyncMock(return_value=image_bytes()))
+    progress = [state.processing async for _ in state.process_image([file])]
+    assert progress == [True]
+    assert not state.processing
+    assert state.preview.startswith("data:image/png;base64,")
+    assert state._output_png.startswith(b"\x89PNG")
+    assert state.download_image() is not None
+    assert other.preview == "" and other._output_png == b""
+    file.read.assert_awaited_once_with(module.MAX_IMAGE_BYTES + 1)
+
+    invalid = SimpleNamespace(read=AsyncMock(return_value=b"bad"))
+    async for _ in state.process_image([invalid]):
+        pass
+    assert state.error and not state.processing
+    assert state.preview == "" and state._output_png == b""
+    assert state.download_image() is None
+    async for _ in state.process_image([file]):
+        pass
+    assert state.preview and not state.error
+    state.clear_image()
+    assert state.preview == "" and state._output_png == b"" and state.summary == ""
+
+
+@pytest.mark.asyncio
+async def test_image_workflow_handles_read_failure_and_missing_file(monkeypatch):
+    """Unreadable or absent uploads produce feedback without leaving the UI busy."""
+    module = image_demo(monkeypatch)
+    state = module.ImageWorkflowState(_reflex_internal_init=True)
+    unreadable = SimpleNamespace(read=AsyncMock(side_effect=OSError("read failed")))
+    async for _ in state.process_image([unreadable]):
+        pass
+    assert "could not be read" in state.error
+    assert not state.processing and state.preview == ""
+    async for _ in state.process_image([]):
+        pass
+    assert "Choose one" in state.error
+
+
+def test_image_workflow_applies_orientation_and_strips_metadata(monkeypatch):
+    """A rotated photo displays correctly and does not copy uploaded metadata."""
+    source = Image.new("RGB", (800, 400), "red")
+    exif = Image.Exif()
+    exif[274] = 6
+    exif[270] = "Private image description"
+    data = BytesIO()
+    source.save(data, format="JPEG", exif=exif)
+    png, summary = image_demo(monkeypatch).prepare_image(data.getvalue())
+    with Image.open(BytesIO(png)) as result:
+        assert result.size == (256, 512)
+        assert not result.getexif()
+        assert not result.info
+    assert "400 x 800" in summary

@@ -201,7 +201,233 @@ Replace `predict_flower` with a call to your Python inference code or model serv
 
 A slow service call needs loading, timeout, error, and duplicate-submission behavior. A CPU-heavy model needs an execution strategy that does not block the application server. See [performance and execution](/docs/advanced-onboarding/performance-and-execution/) and [background events](/docs/events/background-events/). A durable inference queue must be supplied separately when jobs must survive restarts.
 
-## Add files, images, audio, or video
+## Run an image input and output workflow
+
+A media interface can pass uploaded bytes to a Python function and display its output in a custom layout. This example makes a grayscale image preview, preserves its aspect ratio, and provides a PNG download. It demonstrates image preprocessing, not a trained image classifier. Replace the processing function with your model pipeline when you want predictions or generated images.
+
+Install Pillow in your app:
+
+```bash
+uv add pillow
+```
+
+Copy this example into a blank app module. It accepts one still PNG or JPEG up to 2 MiB and 4 million pixels. The output is at most 512 pixels on its longest side. Processing uses a worker thread, and the form shows progress and validation errors.
+
+```python demo exec id=image_workflow_demo
+import asyncio
+import base64
+from io import BytesIO
+
+import reflex as rx
+from PIL import Image, ImageOps, UnidentifiedImageError
+
+
+MAX_IMAGE_BYTES = 2 * 1024 * 1024
+IMAGE_UPLOAD_ID = "image-workflow-upload"
+
+
+def prepare_image(data: bytes) -> tuple[bytes, str]:
+    """Create a bounded grayscale PNG and describe the input/output dimensions."""
+    if len(data) > MAX_IMAGE_BYTES:
+        raise ValueError("Choose an image smaller than 2 MiB.")
+    try:
+        with Image.open(BytesIO(data), formats=("PNG", "JPEG")) as source:
+            if source.width * source.height > 4_000_000:
+                raise ValueError("Choose an image with at most 4 million pixels.")
+            if getattr(source, "n_frames", 1) != 1:
+                raise ValueError("Choose a still PNG or JPEG, not an animation.")
+            oriented = ImageOps.exif_transpose(source)
+            original_size = oriented.size
+            oriented.thumbnail((512, 512))
+            grayscale = ImageOps.grayscale(oriented)
+            # Copy pixels into a fresh image so uploaded metadata is not retained.
+            clean = Image.new("L", grayscale.size)
+            clean.paste(grayscale)
+            output = BytesIO()
+            clean.save(output, format="PNG")
+            summary = (
+                f"{original_size[0]} x {original_size[1]} input · "
+                f"{clean.width} x {clean.height} grayscale PNG"
+            )
+            return output.getvalue(), summary
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as error:
+        raise ValueError("Choose a valid PNG or JPEG image.") from error
+
+
+class ImageWorkflowState(rx.State):
+    """Keep the small generated preview in the current session."""
+
+    preview: str = ""
+    summary: str = ""
+    error: str = ""
+    processing: bool = False
+    _output_png: bytes = b""
+
+    @rx.event
+    async def process_image(self, files: list[rx.UploadFile]):
+        """Validate the upload and send its generated preview to this session."""
+        if self.processing:
+            return
+        self.preview = ""
+        self.summary = ""
+        self.error = ""
+        self._output_png = b""
+        if len(files) != 1:
+            self.error = "Choose one PNG or JPEG image."
+            return
+        self.processing = True
+        yield
+        try:
+            data = await files[0].read(MAX_IMAGE_BYTES + 1)
+            png, summary = await asyncio.to_thread(prepare_image, data)
+            self._output_png = png
+            self.preview = "data:image/png;base64," + base64.b64encode(png).decode(
+                "ascii"
+            )
+            self.summary = summary
+        except ValueError as error:
+            self.error = str(error)
+        except OSError:
+            self.error = "The upload could not be read. Please try again."
+        finally:
+            self.processing = False
+
+    @rx.event
+    def download_image(self):
+        """Download the output generated for the current session."""
+        if self._output_png:
+            return rx.download(
+                data=self._output_png,
+                filename="image-preview.png",
+                mime_type="image/png",
+            )
+
+    @rx.event
+    def clear_image(self):
+        """Discard the output and clear the browser's selected file."""
+        self.preview = ""
+        self.summary = ""
+        self.error = ""
+        self._output_png = b""
+        return rx.clear_selected_files(IMAGE_UPLOAD_ID)
+
+
+def image_workflow():
+    """Render an image upload, processing action, preview, and download."""
+    return rx.vstack(
+        rx.hstack(
+            rx.icon("image", size=22, color=rx.color("violet", 9)),
+            rx.heading("Image preparation", size="5", as_="h3"),
+            spacing="3",
+        ),
+        rx.text(
+            "Upload an image to create a grayscale preview for your model pipeline.",
+            size="2",
+            color=rx.color("gray", 11),
+        ),
+        rx.upload(
+            rx.vstack(
+                rx.icon("upload", size=24),
+                rx.text(
+                    "Drop an image here or choose a file", size="2", weight="medium"
+                ),
+                rx.text(
+                    "PNG or JPEG · up to 2 MiB", size="1", color=rx.color("gray", 11)
+                ),
+                rx.foreach(
+                    rx.selected_files(IMAGE_UPLOAD_ID),
+                    lambda name: rx.text(name, size="2", overflow_wrap="anywhere"),
+                ),
+                spacing="2",
+                width="100%",
+            ),
+            id=IMAGE_UPLOAD_ID,
+            accept={"image/png": [".png"], "image/jpeg": [".jpg", ".jpeg"]},
+            multiple=False,
+            disabled=ImageWorkflowState.processing,
+            border=f"1px dashed {rx.color('gray', 7)}",
+            border_radius="8px",
+            padding="1.5rem",
+            width="100%",
+        ),
+        rx.button(
+            "Create preview",
+            on_click=ImageWorkflowState.process_image(
+                rx.upload_files(upload_id=IMAGE_UPLOAD_ID)
+            ),
+            loading=ImageWorkflowState.processing,
+            disabled=rx.selected_files(IMAGE_UPLOAD_ID).length() == 0,
+            size="3",
+            width="100%",
+        ),
+        rx.cond(
+            ImageWorkflowState.error != "",
+            rx.text(
+                ImageWorkflowState.error,
+                role="alert",
+                size="2",
+                color=rx.color("red", 11),
+            ),
+        ),
+        rx.cond(
+            ImageWorkflowState.preview != "",
+            rx.vstack(
+                rx.image(
+                    src=ImageWorkflowState.preview,
+                    alt="Generated grayscale image preview",
+                    max_height="18rem",
+                    object_fit="contain",
+                    width="100%",
+                ),
+                rx.text(
+                    ImageWorkflowState.summary,
+                    role="status",
+                    size="2",
+                    color=rx.color("gray", 11),
+                ),
+                rx.button(
+                    "Download PNG",
+                    rx.icon("download", size=16),
+                    on_click=ImageWorkflowState.download_image,
+                    variant="soft",
+                ),
+                spacing="3",
+                align_items="stretch",
+                width="100%",
+                padding="1rem",
+                border_radius="8px",
+                background=rx.color("gray", 3),
+            ),
+        ),
+        rx.button(
+            "Clear image",
+            on_click=ImageWorkflowState.clear_image,
+            disabled=ImageWorkflowState.processing,
+            variant="ghost",
+        ),
+        spacing="4",
+        align_items="stretch",
+        width="100%",
+        max_width="32rem",
+        padding=["1rem", "1.5rem"],
+        border_radius="12px",
+        border=f"1px solid {rx.color('gray', 5)}",
+        background=rx.color("gray", 1),
+    )
+```
+
+```python
+app = rx.App()
+app.add_page(image_workflow)
+```
+
+Run `uv run reflex run`, select an image, then choose **Create preview**. The generated image and **Download PNG** control appear together. Try another image, a malformed file, and **Clear image** to check the complete interaction.
+
+The original file is not copied into the public upload directory. This small example sends a bounded preview to the current browser session and keeps download bytes in a backend-only variable. Clearing the image removes the application state; it does not erase an already downloaded copy. Configure request-size limits at your server or proxy as well: the handler's bounded read happens after the request reaches the upload endpoint.
+
+The image function is independent of the interface. You can add crop controls, prediction labels, a review form, or a gallery without replacing the upload/event/result pattern. For larger files and long-running inference, use appropriately authorized storage and a worker service rather than sending large data URLs through state.
+
+## Add audio or video workflows
 
 | Need | Component or guide | Application responsibility |
 | --- | --- | --- |

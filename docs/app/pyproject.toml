@@ -11,6 +11,7 @@ dependencies = [
     "openai",
     "orjson",
     "pandas",
+    "pillow",
     "plotly-express",
     # TODO: revert to a single "psycopg[binary]" once a psycopg release
     # ships cp315 wheels for psycopg-binary
