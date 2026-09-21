@@ -107,5 +107,30 @@ def test_plotly_normalizes_string_layout_title(plotly_fig: go.Figure):
         layout={"title": "layout title", "height": 300},
     )._render()
 
-    assert "_rxNormalizePlotlyLayout" in str(rendered.special_props)
-    assert "layout title" in str(rendered.special_props)
+    layout_prop = str(rendered.special_props)
+    assert "_rxNormalizePlotlyLayout" in layout_prop
+    assert '["title"] : "layout title"' in layout_prop
+
+
+def test_plotly_preserves_object_layout_title(plotly_fig: go.Figure):
+    """Preserve object-form Plotly layout titles."""
+    rendered = rx.plotly(
+        data=plotly_fig,
+        layout={"title": {"text": "layout title"}, "height": 300},
+    )._render()
+
+    assert '["title"] : ({ ["text"] : "layout title" })' in str(rendered.special_props)
+
+
+def test_plotly_layout_var_data_is_preserved(plotly_fig: go.Figure):
+    """Preserve state metadata when embedding a dynamic layout."""
+
+    class PlotlyState(rx.State):
+        layout: dict = {"title": "layout title"}
+
+    rendered = rx.plotly(data=plotly_fig, layout=PlotlyState.layout)._render()
+    layout_prop = rendered.special_props[-1]
+    var_data = layout_prop._get_all_var_data()
+
+    assert var_data is not None
+    assert "layout" in var_data.field_name

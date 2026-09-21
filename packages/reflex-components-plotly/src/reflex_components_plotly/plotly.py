@@ -332,7 +332,7 @@ const _rxGetPlotlyLocaleConfig = (config, locale, plotlyLocales) => {
         merge_dicts = []  # Data will be merged and spread from these dict Vars
         if self.layout is not None:
             layout_dict = Var(
-                _js_expr=f"{{layout: _rxNormalizePlotlyLayout({self.layout!s})}}"
+                _js_expr=f"{{layout: _rxNormalizePlotlyLayout({self.layout})}}"
             )
             merge_dicts.append(layout_dict)
         if self.template is not None:
@@ -345,7 +345,7 @@ const _rxGetPlotlyLocaleConfig = (config, locale, plotlyLocales) => {
                     # Merge all dictionaries and spread the result over props.
                     Var(
                         _js_expr=f"{{...mergician({figure!s},"
-                        f"{','.join(str(md) for md in merge_dicts)})}}",
+                        f"{','.join(f'{md}' for md in merge_dicts)})}}",
                     ),
                 ]
             )
