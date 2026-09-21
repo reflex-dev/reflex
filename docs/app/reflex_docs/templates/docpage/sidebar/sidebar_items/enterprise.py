@@ -46,6 +46,10 @@ def get_sidebar_items_enterprise_usage():
                     link=enterprise.auth.secure_by_default.path,
                 ),
                 SideBarItem(
+                    names="Example: A Complete App",
+                    link=enterprise.auth.example_app.path,
+                ),
+                SideBarItem(
                     names="OIDC Providers",
                     link=enterprise.auth.providers.path,
                 ),
@@ -64,6 +68,31 @@ def get_sidebar_items_enterprise_usage():
                 SideBarItem(
                     names="Deploying to Production",
                     link=enterprise.auth.deployment.path,
+                ),
+            ],
+        ),
+        SideBarItem(
+            names="Auto MCP",
+            children=[
+                SideBarItem(
+                    names="Overview",
+                    link=enterprise.mcp.index.path,
+                ),
+                SideBarItem(
+                    names="Authentication",
+                    link=enterprise.mcp.authentication.path,
+                ),
+                SideBarItem(
+                    names="Custom Resources",
+                    link=enterprise.mcp.custom_resources.path,
+                ),
+                SideBarItem(
+                    names="Extending the Server",
+                    link=enterprise.mcp.extending.path,
+                ),
+                SideBarItem(
+                    names="Deploying to Production",
+                    link=enterprise.mcp.deployment.path,
                 ),
             ],
         ),

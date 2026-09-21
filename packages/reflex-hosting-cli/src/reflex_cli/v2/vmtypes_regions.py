@@ -1,11 +1,14 @@
 """VMTypes and Regions commands for the Reflex Cloud CLI."""
 
-import json
+import logging
 
 import click
 
 from reflex_cli import constants
-from reflex_cli.utils import console
+from reflex_cli.utils import console, log
+from reflex_cli.utils.output import interactive_option, json_option, print_json
+
+logger = logging.getLogger(__name__)
 
 
 @click.group()
@@ -28,16 +31,12 @@ def vm_types_regions_cli():
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def create_token(
     name: str,
     token: str | None,
+    as_json: bool,
     interactive: bool,
     duration: int,
     loglevel: constants.LogLevel = constants.LogLevel.INFO,
@@ -52,12 +51,15 @@ def create_token(
 
     if duration is None:
         duration = 90  # Default duration is 90 days
-        console.info("No duration specified. Using default duration of 90 days.")
+        logger.info("No duration specified. Using default duration of 90 days.")
 
     token = hosting.create_token(
         name=name, expiration=duration, client=authenticated_client
     )
-    console.success(f"Token: {token}")
+    if as_json:
+        print_json({"name": name, "token": token, "expires_in_days": duration})
+        return
+    logger.log(log.SUCCESS, f"Token: {token}")
 
 
 @vm_types_regions_cli.command("vmtypes")
@@ -68,13 +70,7 @@ def create_token(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in json format.",
-)
+@json_option
 def get_vm_types(
     token: str | None,
     loglevel: str,
@@ -87,7 +83,7 @@ def get_vm_types(
 
     vmtypes = hosting.get_vm_types()
     if as_json:
-        console.print(json.dumps(vmtypes))
+        print_json(vmtypes)
         return
     if vmtypes:
         ordered_vmtpes: list[list[str | float]] = [
@@ -112,13 +108,7 @@ def get_vm_types(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in json format.",
-)
+@json_option
 def get_deployment_regions(
     loglevel: str,
     as_json: bool,
@@ -167,7 +157,7 @@ def get_deployment_regions(
 
     list_regions_info = hosting.get_regions()
     if as_json:
-        console.print(json.dumps(list_regions_info))
+        print_json(list_regions_info)
         return
     if list_regions_info:
         headers = list(list_regions_info[0].keys())
@@ -180,19 +170,22 @@ def get_deployment_regions(
 
 @vm_types_regions_cli.command(name="config")
 @click.option("--token", help="An existing authentication token.")
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def generate_cloud_config(
     token: str | None = None,
+    as_json: bool = False,
     interactive: bool = True,
 ):
     """Generate a configuration file for the cloud deployment."""
     from reflex_cli.utils import hosting
 
-    hosting.generate_config(interactive=interactive, token=token)
-    console.print("Configuration file generated.")
+    config_path = hosting.generate_config(interactive=interactive, token=token)
+    if as_json:
+        print_json({
+            "generated": config_path is not None,
+            "path": str(config_path.resolve()) if config_path else None,
+        })
+        return
+    if config_path is not None:
+        console.print("Configuration file generated.")

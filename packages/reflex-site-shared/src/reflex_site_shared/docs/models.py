@@ -67,7 +67,7 @@ class DocsLayoutConfig:
         call_to_action: Optional ``(label, href)`` or component factory for the
             navbar action.
         logo: Optional replacement for the default text wordmark.
-        search: Optional replacement for the shared Inkeep search.
+        search: Optional replacement for the shared keyword search.
         navbar: Optional replacement for the default navbar.
         sidebar: Optional site-owned navigation rendered inside the shared
             sidebar column. The current page route is passed to the factory.

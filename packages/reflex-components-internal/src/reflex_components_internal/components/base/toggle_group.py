@@ -24,7 +24,7 @@ class ToggleGroupBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the toggle group component."""
+        """The import variable for the toggle group component."""
         return ImportVar(tag="ToggleGroup", package_path="", install=False)
 
 

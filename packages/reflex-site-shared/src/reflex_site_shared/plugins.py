@@ -17,7 +17,15 @@ _SOURCE_DIR = Path(__file__).parent / "styles" / "assets"
 _OUTPUT_DIR = Path("styles") / "reflex-site-shared"
 _BASE_STYLESHEETS = ("custom-colors.css", "tailwind-theme.css")
 _FONT_STYLESHEET = "fonts.css"
-_PUBLIC_ASSETS = ("components/GradientButton.tsx", "icons/search.svg")
+# Favicons are supplied by each consuming app to preserve its branding.
+_PUBLIC_ASSETS = (
+    "components/AlgoliaSearch.tsx",
+    "components/DeferredDemo.jsx",
+    "components/GradientButton.tsx",
+    "icons/search.svg",
+    "components/marketing-date.jsx",
+    "homepage/lib/use-isomorphic-layout-effect.ts",
+)
 
 
 def _markdown_asset_path(page: DocsPage) -> Path:

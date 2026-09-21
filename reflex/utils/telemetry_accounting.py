@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+import logging
+import sys
 from collections.abc import Iterable, Iterator
-from importlib.util import find_spec
 from typing import TYPE_CHECKING, TypedDict
 
 from reflex_base.config import Config, get_config
 from reflex_base.telemetry_context import _KNOWN_FEATURES, TelemetryContext
-from reflex_base.utils import console
 from reflex_components_core.core.upload import Upload
 
 from reflex.istate.shared import SharedState
@@ -18,11 +18,10 @@ from reflex.istate.storage import (
     LocalStorage,
     SessionStorage,
 )
-from reflex.model import ModelRegistry
 from reflex.route import get_route_args
 from reflex.utils import telemetry
 
-_HAS_SQLALCHEMY = find_spec("sqlalchemy") is not None
+logger = logging.getLogger(__name__)
 
 __all__ = ["record_compile"]
 
@@ -79,7 +78,7 @@ def record_compile(app: App, ctx: TelemetryContext) -> None:
         payload = _collect_compile_event_payload(app, ctx)
         telemetry.send("compile", properties=dict(payload))
     except Exception as exc:
-        console.debug(f"compile telemetry event failed: {exc!r}")
+        logger.debug(f"compile telemetry event failed: {exc!r}")
 
 
 def _collect_compile_event_payload(
@@ -222,10 +221,30 @@ def _collect_features_used(
     _walk_state_features(features, user_states)
     _walk_app_features(features, app)
     features["upload_count"] = int(Upload.is_used)
-    if _HAS_SQLALCHEMY:
-        features["db_model_count"] = len(ModelRegistry.get_models())
+    features["db_model_count"] = _get_db_model_count()
     _record_config_attestations(features, config)
     return features
+
+
+def _get_db_model_count() -> int:
+    """Count nonempty model bases without importing the optional database stack.
+
+    Returns:
+        The number of nonempty registered model bases, including the shared
+        SQLModel base for apps that have not loaded Reflex's model integration.
+    """
+    model_module = sys.modules.get("reflex.model")
+    registry = getattr(model_module, "ModelRegistry", None)
+    get_models = getattr(registry, "get_models", None)
+    if get_models is not None:
+        return len(get_models())
+
+    # Reflex's default model shares SQLModel's metadata, counting as one base
+    # regardless of how many tables an app has defined directly with SQLModel.
+    sqlmodel_module = sys.modules.get("sqlmodel")
+    sqlmodel_base = getattr(sqlmodel_module, "SQLModel", None)
+    metadata = getattr(sqlmodel_base, "metadata", None)
+    return int(metadata is not None and bool(metadata.tables))
 
 
 _STATE_MANAGER_FEATURE: dict[str, FeatureName] = {

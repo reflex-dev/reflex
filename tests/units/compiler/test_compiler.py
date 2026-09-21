@@ -2,6 +2,7 @@ import dataclasses
 import importlib.util
 import json
 import os
+import sys
 from pathlib import Path, PureWindowsPath
 
 import pytest
@@ -10,6 +11,7 @@ from reflex_base import constants
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
 from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import PageNames
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
     PageValueError,
@@ -18,7 +20,7 @@ from reflex_base.utils.exceptions import (
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Var
 from reflex_base.vars.sequence import LiteralStringVar
-from reflex_components_core.base import document
+from reflex_components_core.base import Description, document
 from reflex_components_core.base.document import Links, Scripts
 from reflex_components_core.el.elements.metadata import Head, Link, Meta
 from reflex_components_core.el.elements.other import Html
@@ -26,6 +28,29 @@ from reflex_components_core.el.elements.other import Html
 import reflex as rx
 from reflex.compiler import compiler, utils
 from reflex.state import BaseState
+from reflex.utils import prerequisites
+
+
+@pytest.mark.parametrize("content", ["", '["index",'])
+def test_read_stateful_pages_marker_recovers_legacy_corruption(
+    tmp_path, mocker, content
+):
+    """A marker truncated by an older writer requests full page evaluation."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    (tmp_path / constants.Dirs.STATEFUL_PAGES).write_text(content)
+    assert compiler._read_stateful_pages_marker() is None
+
+
+@pytest.mark.parametrize("windows", [False, True])
+def test_read_stateful_pages_marker_sharing_violation(mocker, windows):
+    """An unavailable Windows marker requests evaluation without hiding POSIX errors."""
+    mocker.patch.object(constants, "IS_WINDOWS", windows)
+    mocker.patch.object(Path, "read_text", side_effect=PermissionError)
+    if windows:
+        assert compiler._read_stateful_pages_marker() is None
+    else:
+        with pytest.raises(PermissionError):
+            compiler._read_stateful_pages_marker()
 
 
 @pytest.mark.parametrize(
@@ -440,6 +465,137 @@ def test_compile_app_root_omits_radix_window_library_by_default():
     assert "@radix-ui/themes" not in code
 
 
+def test_compile_preserves_app_bundle_registrations(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """Keep module-level registrations available to pages and the emitted bundle.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+    """
+    monkeypatch.chdir(tmp_path)
+    with RegistrationContext() as context:
+
+        class FrontendLibraryPlugin(rx.plugins.Plugin):
+            """Contribute a library only while the plugin is configured."""
+
+            def get_frontend_dependencies(self, **context) -> tuple[str, ...]:
+                """Return the library contributed by this plugin.
+
+                Returns:
+                    The frontend dependency to bundle.
+                """
+                return ("compile-only-library",)
+
+        config = rx.Config(app_name="bundle_test", plugins=[FrontendLibraryPlugin()])
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+        bundle_library("d3-format@3.1.0")
+        app = rx.App()
+        seen = []
+        use_radix = True
+
+        def index():
+            """Record the registrations visible during page evaluation.
+
+            Returns:
+                A component that optionally enables Radix for this compile.
+            """
+            seen.append(tuple(RegistrationContext.get().bundled_libraries))
+            return rx.text("hello") if use_radix else rx.el.div("hello")
+
+        app.add_page(index)
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+        assert seen
+        assert all("d3-format" in libraries for libraries in seen)
+        assert "d3-format" in context.bundled_libraries
+        _, code = compiler.compile_app_root(rx.el.div())
+        assert 'import * as d3_format from "d3-format";' in code
+        assert '"d3-format": d3_format' in code
+        assert "compile-only-library" in context.bundled_libraries
+        assert "@radix-ui/themes" in context.bundled_libraries
+
+        config.plugins.clear()
+        use_radix = False
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+        assert all("d3-format" in libraries for libraries in seen)
+        assert "d3-format" in context.bundled_libraries
+        assert "compile-only-library" not in context.bundled_libraries
+        assert "@radix-ui/themes" not in context.bundled_libraries
+
+
+def test_compile_preserves_lazily_imported_bundle_registration(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """Retain an app registration first imported while evaluating a page.
+
+    Args:
+        tmp_path: The temporary application directory.
+        monkeypatch: Fixture for selecting the app directory and import path.
+        mocker: Fixture for configuring the application.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    module_name = "lazy_bundle_registration_test"
+    (tmp_path / f"{module_name}.py").write_text(
+        "from reflex_base.components.dynamic import bundle_library\n"
+        'bundle_library("d3-format@3.1.0")\n'
+    )
+    with RegistrationContext() as context:
+        config = rx.Config(app_name="lazy_bundle_test", plugins=[])
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+        app = rx.App()
+
+        def index():
+            """Import the registration module when the page is evaluated.
+
+            Returns:
+                A component without implicit plugin dependencies.
+            """
+            importlib.import_module(module_name)
+            return rx.el.div("hello")
+
+        app.add_page(index)
+        try:
+            for _ in range(2):
+                compiler.compile_app(app, dry_run=True, use_rich=False)
+                assert "d3-format" in context.bundled_libraries
+        finally:
+            sys.modules.pop(module_name, None)
+
+
+@pytest.mark.parametrize("lazy", [False, True])
+def test_compile_app_root_uses_unique_window_library_aliases(
+    lazy: bool, mocker: MockerFixture
+):
+    """Bundle subpaths with valid, distinct aliases in eager and lazy mode.
+
+    Args:
+        lazy: Whether application libraries should be loaded lazily.
+        mocker: Fixture for configuring the bundle loading mode.
+    """
+    with RegistrationContext():
+        mocker.patch(
+            "reflex_base.config._get_config",
+            return_value=rx.Config(
+                app_name="testing", frontend_lazy_bundled_libraries=lazy
+            ),
+        )
+        bundle_library("foo.bar")
+        bundle_library("foo_bar")
+        bundle_library("foo/bar.mjs")
+        _, code = compiler.compile_app_root(rx.el.div("hello"))
+
+    if lazy:
+        assert '"foo.bar": () => import("foo.bar")' in code
+        assert '"foo/bar.mjs": () => import("foo/bar.mjs")' in code
+    else:
+        assert 'import * as foo_bar from "foo.bar";' in code
+        assert 'import * as foo_bar_2 from "foo_bar";' in code
+        assert 'import * as foo_bar_mjs from "foo/bar.mjs";' in code
+
+
 def test_compile_app_root_omits_hydrate_fallback_by_default():
     """Apps without a hydrate_fallback should not export a HydrateFallback."""
     reset_bundled_libraries()
@@ -461,8 +617,12 @@ def test_compile_app_root_with_hydrate_fallback_exports_hydrate_fallback():
     )
 
 
-def test_compile_app_root_includes_radix_window_library_when_bundled():
+def test_compile_app_root_includes_radix_window_library_when_bundled(mocker):
     """Bundled Radix libraries should be exposed to window.__reflex."""
+    mocker.patch(
+        "reflex.compiler.compiler.get_config",
+        return_value=rx.Config(app_name="eager_libraries"),
+    )
     reset_bundled_libraries()
     try:
         bundle_library("@radix-ui/themes@3.3.0")
@@ -475,12 +635,23 @@ def test_compile_app_root_includes_radix_window_library_when_bundled():
         reset_bundled_libraries()
 
 
-def test_compile_contexts_has_default_color_mode_context():
-    """ColorModeContext should have a safe fallback value without Radix."""
-    _, code = compiler.compile_contexts(None, None)
+def test_compile_app_root_can_defer_optional_window_libraries(mocker):
+    """Dynamic libraries need not force their entire exports into every page."""
+    mocker.patch(
+        "reflex.compiler.compiler.get_config",
+        return_value=rx.Config(
+            app_name="lazy_libraries", frontend_lazy_bundled_libraries=True
+        ),
+    )
+    with RegistrationContext():
+        bundle_library("@radix-ui/themes@3.3.0")
+        _, code = compiler.compile_app_root(rx.el.div("hello"))
 
-    assert "createContext({" in code
-    assert 'resolvedColorMode: defaultColorMode === "dark" ? "dark" : "light"' in code
+    assert 'import * as radix_ui_themes from "@radix-ui/themes"' not in code
+    assert '() => import("@radix-ui/themes")' in code
+    assert 'import * as React from "react"' in code
+    assert 'import * as utils_context from "$/utils/context"' in code
+    assert "window.__reflex_load" in code
 
 
 def _mock_config_color_mode(mocker: MockerFixture, mode: LiteralColorMode) -> None:
@@ -602,7 +773,7 @@ def test_create_document_root():
     assert isinstance(lang, LiteralStringVar)
     assert lang.equals(Var.create("en"))
     # No children in head.
-    assert len(root.children[0].children) == 6
+    assert len(root.children[0].children) == 7
     assert isinstance(root.children[0].children[1], Meta)
     char_set = root.children[0].children[1].char_set  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(char_set, LiteralStringVar)
@@ -613,7 +784,42 @@ def test_create_document_root():
     assert name.equals(Var.create("viewport"))
     assert isinstance(root.children[0].children[3], document.Meta)
     assert isinstance(root.children[0].children[4], Link)
-    assert isinstance(root.children[0].children[5], Links)
+    assert isinstance(root.children[0].children[5], Link)
+    assert isinstance(root.children[0].children[6], Links)
+
+
+def test_add_meta_accepts_dynamic_description():
+    """Dynamic page descriptions should be represented as component Vars."""
+
+    class PageState(rx.State):
+        description: str = "Dynamic description"
+
+    page = rx.box()
+    utils.add_meta(
+        page,
+        title="title",
+        image="",
+        meta=(),
+        description=PageState.description,
+    )
+
+    description = page.children[1]
+    assert isinstance(description, Description)
+    assert description.content is PageState.description  # pyright: ignore [reportAttributeAccessIssue]
+
+
+def test_add_meta_drops_empty_description():
+    """An empty-string description keeps producing no description tag."""
+    page = rx.box()
+    utils.add_meta(
+        page,
+        title="title",
+        image="",
+        meta=(),
+        description="",
+    )
+
+    assert not any(isinstance(child, Description) for child in page.children)
 
 
 def test_create_document_root_with_scripts():
@@ -628,7 +834,7 @@ def test_create_document_root_with_scripts():
         html_custom_attrs={"project": "reflex"},
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 8
+    assert len(root.children[0].children) == 9
     names = [c.tag for c in root.children[0].children]
     assert names == [
         "script",
@@ -637,6 +843,7 @@ def test_create_document_root_with_scripts():
         "meta",
         "meta",
         "Meta",
+        "link",
         "link",
         "Links",
     ]
@@ -656,9 +863,9 @@ def test_create_document_root_with_meta_char_set():
         head_components=comps,
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 6
+    assert len(root.children[0].children) == 7
     names = [c.tag for c in root.children[0].children]
-    assert names == ["script", "meta", "meta", "Meta", "link", "Links"]
+    assert names == ["script", "meta", "meta", "Meta", "link", "link", "Links"]
     assert str(root.children[0].children[1].char_set) == '"cp1252"'  # pyright: ignore [reportAttributeAccessIssue]
 
 
@@ -672,9 +879,9 @@ def test_create_document_root_with_meta_viewport():
         head_components=comps,
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 7
+    assert len(root.children[0].children) == 8
     names = [c.tag for c in root.children[0].children]
-    assert names == ["script", "meta", "meta", "meta", "Meta", "link", "Links"]
+    assert names == ["script", "meta", "meta", "meta", "Meta", "link", "link", "Links"]
     assert str(root.children[0].children[1].http_equiv) == '"refresh"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].name) == '"viewport"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].content) == '"foo"'  # pyright: ignore [reportAttributeAccessIssue]
@@ -710,6 +917,7 @@ def test_register_plugin_routes_runs_once_per_app():
 
 
 @pytest.mark.parametrize("with_stateful_marker", [False, True])
+@pytest.mark.usefixtures("clean_registration_context")
 def test_compile_registers_plugin_routes_on_backend_early_return(
     tmp_path: Path,
     mocker: MockerFixture,
@@ -723,9 +931,7 @@ def test_compile_registers_plugin_routes_on_backend_early_return(
     mocker.patch.object(app, "_should_compile", return_value=False)
     compile_page = mocker.patch.object(app, "_compile_page")
     mocker.patch.object(app, "_add_optional_endpoints")
-    mocker.patch.object(
-        compiler.prerequisites, "get_backend_dir", return_value=tmp_path
-    )
+    mocker.patch.object(prerequisites, "get_backend_dir", return_value=tmp_path)
     mocker.patch.object(compiler, "get_config", return_value=config)
 
     if with_stateful_marker:
@@ -738,7 +944,96 @@ def test_compile_registers_plugin_routes_on_backend_early_return(
     if with_stateful_marker:
         compile_page.assert_called_once_with("plugin-page", save_page=False)
     else:
-        compile_page.assert_not_called()
+        compile_page.assert_any_call("plugin-page", save_page=False)
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_backend_compile_evaluates_all_pages_when_marker_missing(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """A backend dir without a complete marker falls through to evaluating every page.
+
+    Another worker may have created the backend dir but not yet swapped its
+    marker into place, so a missing marker must not be mistaken for "no
+    stateful pages".
+    """
+    app = rx.App(enable_state=False)
+    app.add_page(lambda: rx.fragment(), route="index")
+    mocker.patch.object(app, "_apply_decorated_pages")
+    mocker.patch.object(app, "_should_compile", return_value=False)
+    compile_page = mocker.patch.object(app, "_compile_page")
+    mocker.patch.object(app, "_add_optional_endpoints")
+    mocker.patch.object(prerequisites, "get_backend_dir", return_value=tmp_path)
+    mocker.patch.object(
+        compiler, "get_config", return_value=rx.Config(app_name="testing", plugins=[])
+    )
+
+    assert compiler.compile_app(app, use_rich=False) is False
+
+    assert {call.args[0] for call in compile_page.call_args_list} == {
+        "index",
+        constants.Page404.SLUG,
+    }
+    assert json.loads((tmp_path / constants.Dirs.STATEFUL_PAGES).read_text()) == []
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_backend_compile_restores_registry_before_initial_state_serialization(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Backend-only compilation restores frontend metadata before serializing state."""
+
+    class BackendState(rx.State):
+        """State used to exercise backend-only compilation."""
+
+    app = rx.App(_state=BackendState)
+    mocker.patch.object(app, "_apply_decorated_pages")
+    mocker.patch.object(app, "_should_compile", return_value=False)
+    mocker.patch.object(app, "_add_optional_endpoints")
+    mocker.patch.object(prerequisites, "get_backend_dir", return_value=tmp_path)
+    mocker.patch.object(
+        compiler, "get_config", return_value=rx.Config(app_name="testing", plugins=[])
+    )
+    calls = []
+    restore = mocker.patch.object(
+        utils, "_restore_bundled_libraries", side_effect=lambda: calls.append("restore")
+    )
+    compile_initial_state = mocker.patch.object(
+        utils,
+        "_compile_initial_state",
+        side_effect=lambda _state: calls.append("initial_state"),
+    )
+
+    assert compiler.compile_app(app, use_rich=False) is False
+
+    assert restore.call_args_list == [mocker.call()]
+    assert compile_initial_state.call_args_list == [mocker.call(BackendState)]
+    assert calls == ["restore", "initial_state"]
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_frontend_compile_emits_bundled_library_registry(mocker: MockerFixture):
+    """Frontend compilation emits the registry consumed by backend-only workers."""
+    app = rx.App()
+
+    def index():
+        """Render an empty page.
+
+        Returns:
+            The empty page.
+        """
+        return rx.el.div()
+
+    app.add_page(index)
+    emitted_registry = mocker.patch.object(
+        utils,
+        "_compile_bundled_libraries",
+        return_value=(constants.Dirs.BUNDLED_LIBRARIES, "[]"),
+    )
+
+    assert compiler.compile_app(app, dry_run=True, use_rich=False) is True
+
+    emitted_registry.assert_called_once_with()
 
 
 def test_register_plugin_routes_exposes_app_type_not_mutable_app():
@@ -1170,12 +1465,15 @@ def test_register_plugin_routes_rejects_stale_dynamic_arg_type_from_prior_app():
     first_app = rx.App(_state=RouteState)
     compiler._register_plugin_routes(first_app, [ScalarPlugin()])
 
-    second_app = rx.App(_state=RouteState)
-    with pytest.raises(
-        RouteValueError,
-        match=r"Plugin ListPlugin.*`splat`.*type `list`.*already.*type `single`",
-    ):
-        compiler._register_plugin_routes(second_app, [ListPlugin()])
+    # A context only allows one App; fork (as an app reload does) to create the
+    # second one while preserving the shared RouteState registration.
+    with RegistrationContext.get().fork():
+        second_app = rx.App(_state=RouteState)
+        with pytest.raises(
+            RouteValueError,
+            match=r"Plugin ListPlugin.*`splat`.*type `list`.*already.*type `single`",
+        ):
+            compiler._register_plugin_routes(second_app, [ListPlugin()])
 
     assert second_app._unevaluated_pages == {}
     assert not second_app._plugin_routes_registered
@@ -1383,3 +1681,198 @@ def test_register_plugin_routes_preserves_component_source_module():
     compiler._register_plugin_routes(app, [ComponentPlugin()])
 
     assert app._unevaluated_pages["component-page"]._source_module == __name__
+
+
+@pytest.mark.parametrize("disable_owner_stacks", [True, False])
+def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
+    """The owner-stack pin is emitted only when asked for, and only for the browser.
+
+    The snippet mutates shared React internals, so it must never run in the
+    server renderer, and it must disappear entirely when owner stacks are
+    requested (REFLEX_REACT_OWNER_STACKS=1) or in production builds.
+
+    Args:
+        disable_owner_stacks: Whether the pin should be emitted.
+    """
+    from reflex_base.compiler.templates import context_template
+
+    rendered = context_template(
+        is_dev_mode=True,
+        default_color_mode='"light"',
+        disable_react_owner_stacks=disable_owner_stacks,
+    )
+
+    if not disable_owner_stacks:
+        assert "recentlyCreatedOwnerStacks" not in rendered
+        # React is only imported for the pin; without it the import is dead weight.
+        assert not rendered.startswith("import React,")
+        return
+
+    assert "recentlyCreatedOwnerStacks" in rendered
+    assert rendered.startswith("import React,")
+    # Browser-only: the guard must wrap the mutation, not merely precede it.
+    pin_at = rendered.index("recentlyCreatedOwnerStacks")
+    guard_at = rendered.index('typeof window !== "undefined"')
+    assert guard_at < pin_at
+    assert "Object.defineProperty" in rendered
+    # The documented escape hatch must be discoverable from the generated code.
+    assert "REFLEX_REACT_OWNER_STACKS" in rendered
+    # The trade-off must be stated where a reader of the output will see it.
+    assert "captureOwnerStack" in rendered
+
+
+def test_context_template_one_provider_per_substate():
+    """Each substate gets its own provider so one delta re-renders one context.
+
+    A single provider owning every reducer means any delta recreates every
+    ``StateContexts`` element; nesting one ``SubstateProvider`` per substate
+    keeps the untouched providers memoized.
+    """
+    from reflex_base.compiler.templates import context_template
+
+    rendered = context_template(
+        is_dev_mode=True,
+        default_color_mode='"light"',
+        initial_state={
+            "reflex___state____state": {},
+            "reflex___state____state__sub": {},
+        },
+        state_name="reflex___state____state",
+    )
+
+    assert (
+        "createElement(SubstateProvider, {substateName: 'reflex___state____state', "
+        "contextName: 'reflex___state____state'}," in rendered
+    )
+    assert (
+        "createElement(SubstateProvider, {substateName: 'reflex___state____state__sub', "
+        "contextName: 'reflex___state____state__sub'}," in rendered
+    )
+    # The reducers moved into SubstateProvider; StateProvider only composes.
+    provider_body = rendered[rendered.index("export function StateProvider") :]
+    assert "useReducer" not in provider_body
+    assert "createElement(DispatchProvider, {}," in provider_body
+
+
+def test_context_template_client_side_component_is_named():
+    """``ClientSide`` returns a named component, not an anonymous arrow."""
+    from reflex_base.compiler.templates import context_template
+
+    rendered = context_template(is_dev_mode=True, default_color_mode='"light"')
+
+    assert "function ClientSideComponent({ children, ...props })" in rendered
+    assert (
+        "ClientSideComponent.displayName = name ? `ClientSide(${name})` : "
+        '"ClientSide";' in rendered
+    )
+    assert "return ClientSideComponent;" in rendered
+
+
+def _render_page_template(route: str = "test/[dynamic]") -> str:
+    """Render the page template for ``route``.
+
+    Args:
+        route: The route to compile the page for.
+
+    Returns:
+        The rendered page module source.
+    """
+    from reflex_base.compiler.templates import page_template
+
+    return page_template(
+        imports=[],
+        dynamic_imports=[],
+        custom_codes=[],
+        hooks={},
+        render=rx.el.div("hi").render(),
+        route=route,
+    )
+
+
+def test_page_template_display_name_carries_the_route():
+    """Every page compiles to ``Component``; its route is in the display name."""
+    assert (
+        'Component.displayName = "Component(test/[dynamic])";'
+        in _render_page_template()
+    )
+
+
+def test_page_template_without_a_route_omits_the_display_name():
+    """``route`` is optional so out-of-tree callers of the shipped template work.
+
+    ``page_template`` is a public symbol in ``reflex-base``; a downstream
+    compiler plugin that predates the parameter must keep working. Without a
+    route there is no name worth showing, so the assignment is skipped entirely
+    rather than emitting a contentless ``Component()`` label.
+    """
+    from reflex_base.compiler.templates import page_template
+
+    rendered = page_template(
+        imports=[],
+        dynamic_imports=[],
+        custom_codes=[],
+        hooks={},
+        render=rx.el.div("hi").render(),
+    )
+
+    assert "displayName" not in rendered
+    assert "export default Component;" in rendered
+
+
+def test_page_template_exports_the_component_binding_separately():
+    """The page component is declared and named before it is exported.
+
+    React Router rewrites an exported function *declaration* into a function
+    *expression* wrapped in ``UNSAFE_withComponentProps``
+    (``decorateComponentExportsWithProps``), which leaves no module-scope
+    binding behind. A trailing ``Component.displayName = ...`` would then throw
+    ``ReferenceError: Component is not defined`` when the route module loads,
+    breaking every page. Exporting the identifier keeps the declaration intact.
+    """
+    rendered = _render_page_template()
+
+    assert "export default function Component" not in rendered
+    assert "\nfunction Component() {" in rendered
+    assert rendered.index("Component.displayName") < rendered.index(
+        "export default Component;"
+    )
+
+
+def test_compile_page_passes_its_route_to_the_template():
+    """The route reaches the template through the legacy page compile path."""
+    _, code = compiler.compile_page("about", rx.el.div("hi"))
+
+    assert 'Component.displayName = "Component(about)";' in code
+
+
+def test_no_ssr_dynamic_import_names_the_client_side_wrapper():
+    """A client-only component passes its tag through to the wrapper's name."""
+    from reflex_components_plotly.plotly import Plotly
+
+    assert Plotly.create()._get_dynamic_imports().endswith(', "Plot")')
+
+
+def test_compile_app_drops_event_caches_from_earlier_compiles(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """Chains and wrappers cached by an earlier compile do not outlive it.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+    """
+    monkeypatch.chdir(tmp_path)
+    with RegistrationContext() as context:
+        config = rx.Config(app_name="event_cache_test", plugins=[])
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+        app = rx.App()
+        app.add_page(lambda: rx.el.div("hello"), route="/")
+        stale = object()
+        context._bound_event_chains[0, 0, None] = stale  # pyright: ignore[reportArgumentType]
+        context._memoized_event_triggers["on_click", 0] = stale  # pyright: ignore[reportArgumentType]
+
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+        assert (0, 0, None) not in context._bound_event_chains
+        assert ("on_click", 0) not in context._memoized_event_triggers

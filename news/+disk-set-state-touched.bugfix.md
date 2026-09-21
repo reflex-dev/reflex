@@ -1,0 +1,1 @@
+Fixed `StateManagerDisk.set_state` to persist and cache state instances that were not obtained from `get_state`, and debounced writes now flush the latest supplied value instead of the first one queued.

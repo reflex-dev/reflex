@@ -27,7 +27,7 @@ class CheckboxBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the checkbox component."""
+        """The import variable for the checkbox component."""
         return ImportVar(tag="Checkbox", package_path="", install=False)
 
 

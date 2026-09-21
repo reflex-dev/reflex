@@ -103,12 +103,12 @@ def test_docs_api_table_preserves_official_table_styles() -> None:
         )
     )
 
-    assert "border-b border-secondary-4 bg-secondary-2" in rendered
-    assert "px-4 py-3 text-left text-xs font-semibold text-secondary-11" in rendered
+    assert "border-b border-border-subtle bg-muted" in rendered
+    assert "px-4 py-3 text-left text-xs font-semibold text-muted-foreground" in rendered
     assert "min-w-0 px-4 py-3 align-top w-[20%]" in rendered
     assert "w-[20%]" in rendered
     assert "w-[25%]" in rendered
     assert "w-[55%]" in rendered
     assert (
-        "rounded-xl border border-secondary-4 bg-secondary-1 shadow-small" in rendered
+        "rounded-xl border border-border-subtle bg-background shadow-small" in rendered
     )

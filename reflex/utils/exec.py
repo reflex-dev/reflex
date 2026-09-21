@@ -6,12 +6,15 @@ import contextlib
 import hashlib
 import importlib.util
 import json
+import logging
 import os
 import platform
 import re
+import socket
 import subprocess
 import sys
-from collections.abc import Sequence
+import threading
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
 
@@ -20,12 +23,14 @@ from reflex_base.config import get_config
 from reflex_base.constants.base import LogLevel
 from reflex_base.environment import environment
 from reflex_base.telemetry_context import CompileTrigger
-from reflex_base.utils import console
+from reflex_base.utils import console, log
 from reflex_base.utils.decorator import once
 
 from reflex.utils import path_ops
 from reflex.utils.misc import get_module_path
 from reflex.utils.prerequisites import get_web_dir
+
+logger = logging.getLogger(__name__)
 
 # For uvicorn windows bug fix (#2335)
 frontend_process = None
@@ -214,6 +219,52 @@ def notify_backend(host: str | None = None):
     )
 
 
+_DEV_CONDITION_FLAG = "--conditions=development"
+
+
+def _with_development_condition(environ: Mapping[str, str]) -> dict[str, str]:
+    """Copy an environment with the `development` export condition enabled.
+
+    react-router's dev CLI requires the condition and relaunches itself to
+    enable it. Setting it up front skips that relaunch under node, which reads
+    NODE_OPTIONS. Bun applies neither variable to the process it spawns for a
+    package script, so a node-less install relaunches anyway and relies on the
+    CLI passing the condition along as a flag; BUN_OPTIONS still covers bun
+    invoked directly on a script. The setting does not leak into the parent
+    process.
+
+    Args:
+        environ: The base environment.
+
+    Returns:
+        A copy of the environment with the flag merged into NODE_OPTIONS and
+        BUN_OPTIONS.
+    """
+    env = dict(environ)
+    for options_var in ("NODE_OPTIONS", "BUN_OPTIONS"):
+        existing = env.get(options_var, "")
+        if _DEV_CONDITION_FLAG not in existing.split():
+            env[options_var] = f"{existing} {_DEV_CONDITION_FLAG}".strip()
+    return env
+
+
+def frontend_env(environ: Mapping[str, str]) -> dict[str, str]:
+    """Build the environment for the frontend toolchain processes.
+
+    Rolldown, which vite and react-router run for dependency pre-bundling and
+    builds, allocates through mimalloc. Disabling eager arena commit keeps the
+    memory it touches during pre-bundling from staying resident for the life of
+    the dev server or build. A value already present in ``environ`` wins.
+
+    Args:
+        environ: The base environment.
+
+    Returns:
+        A copy of the environment for the vite/react-router processes.
+    """
+    return {"MIMALLOC_ARENA_EAGER_COMMIT": "0", **environ, "NO_COLOR": "1"}
+
+
 # run_process_and_launch_url is assumed to be used
 # only to launch the frontend
 # If this is not the case, might have to change the logic
@@ -236,10 +287,7 @@ def run_process_and_launch_url(
     while True:
         if process is None:
             kwargs: dict[str, Any] = {
-                "env": {
-                    **os.environ,
-                    "NO_COLOR": "1",
-                }
+                "env": _with_development_condition(frontend_env(os.environ))
             }
             if constants.IS_WINDOWS and backend_present:
                 kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
@@ -259,10 +307,10 @@ def run_process_and_launch_url(
                         get_different_packages(last_content, new_content)
                     )
                     last_content, last_hash = new_content, new_hash
-                    console.info(
-                        "Detected changes in package.json.\n"
-                        + format_change("Dependencies", dependencies_change)
-                        + format_change("Dev Dependencies", dev_dependencies_change)
+                    logger.info(
+                        f"Detected changes in package.json.\n"
+                        f"{format_change('Dependencies', dependencies_change)}"
+                        f"{format_change('Dev Dependencies', dev_dependencies_change)}"
                     )
 
                 match = re.search(constants.ReactRouter.FRONTEND_LISTENING_REGEX, line)
@@ -376,7 +424,7 @@ def run_frontend_prod(host: str, port: int):
 
 @once
 def _warn_user_about_uvicorn():
-    console.warn(
+    logger.warning(
         "Using Uvicorn for backend as it is installed. This behavior will change in 0.8.0 to use Granian by default."
     )
 
@@ -461,17 +509,32 @@ def run_backend(
         frontend_present: Whether the frontend is present.
     """
     web_dir = get_web_dir()
-    # Create a .nocompile file to skip compile for backend.
+    # Only a backend running with a frontend needs to skip its own compile.
+    # Backend-only runs must not leave this marker for the next full run.
     if web_dir.exists():
-        (web_dir / constants.NOCOMPILE_FILE).touch()
+        nocompile = web_dir / constants.NOCOMPILE_FILE
+        if frontend_present:
+            nocompile.touch()
+        else:
+            nocompile.unlink(missing_ok=True)
 
     if not frontend_present:
         notify_backend(host)
 
     # Run the backend in development mode.
     if should_use_granian():
-        # We import reflex app because this lets granian cache the module
-        import reflex.app  # noqa: F401
+        # Forked workers inherit imported modules from the supervisor. Spawned
+        # and forkserver workers do not, so preloading the app there only keeps
+        # the full framework graph resident in the long-lived supervisor.
+        if not environment.REFLEX_STRICT_HOT_RELOAD.get():
+            import multiprocessing
+
+            if multiprocessing.get_start_method() == "fork":
+                from reflex_base.utils import serializers
+
+                import reflex.app  # noqa: F401
+
+                serializers._prepare_serializers_for_fork()
 
         run_granian_backend(host, port, loglevel)
     else:
@@ -505,7 +568,7 @@ def get_reload_paths() -> Sequence[Path]:
     )
 
     if override_dirs:
-        console.debug(f"Reload paths (override): {list(map(str, override_dirs))}")
+        logger.debug(f"Reload paths (override): {list(map(str, override_dirs))}")
         return override_dirs
 
     config = get_config()
@@ -525,7 +588,7 @@ def get_reload_paths() -> Sequence[Path]:
                 if init_file_content.strip():
                     msg = "There should not be an `__init__.py` file in your app root directory"
                     raise RuntimeError(msg)
-                console.warn(
+                logger.warning(
                     "Removing `__init__.py` file in the app root directory. "
                     "This file can cause issues with module imports. "
                 )
@@ -575,7 +638,7 @@ def get_reload_paths() -> Sequence[Path]:
             if all(not path.samefile(exclude) for exclude in exclude_dirs)
         )
 
-    console.debug(f"Reload paths: {list(map(str, reload_paths))}")
+    logger.debug(f"Reload paths: {list(map(str, reload_paths))}")
 
     return reload_paths
 
@@ -624,6 +687,22 @@ HOTRELOAD_IGNORE_PATTERNS = (
 )
 
 
+def _granian_log_dictconfig() -> dict[str, Any] | None:
+    """Get the Granian logging config override for the active log mode.
+
+    Granian replaces top-level keys of its default config, so both of its
+    handlers are redefined.
+
+    Returns:
+        A config routing Granian records through the JSON handler in JSON
+        mode, otherwise None to keep the Granian defaults.
+    """
+    if not log.is_json_mode():
+        return None
+    json_handler = {"()": "reflex_base.utils.log.JsonHandler"}
+    return {"handlers": {"console": json_handler, "access": json_handler}}
+
+
 def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     """Run the backend in development mode using Granian.
 
@@ -632,7 +711,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         port: The app port
         loglevel: The log level.
     """
-    console.debug("Using Granian for backend")
+    logger.debug("Using Granian for backend")
 
     if environment.REFLEX_STRICT_HOT_RELOAD.get():
         import multiprocessing
@@ -641,19 +720,135 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
 
     from granian.constants import Interfaces
     from granian.log import LogLevels
+    from granian.net import SocketSpec  # pyright: ignore[reportPrivateImportUsage]
     from granian.server import Server as Granian
     from reflex_base.environment import _load_dotenv_from_env
+
+    class ParentBoundGranian(Granian):  # pyright: ignore[reportGeneralTypeIssues]
+        """Granian server that binds the listen socket in the supervisor.
+
+        On Linux each worker otherwise binds only after loading the app, so
+        requests during a reload are refused. With the supervisor holding the
+        socket they wait in the accept backlog for the new worker.
+
+        The socket is released again whenever no worker is left to serve it --
+        a worker that died on its own (an app module that raises on import), or
+        the supervisor shutting down -- so that clients are refused right away
+        instead of waiting in the accept backlog. The next worker spawn
+        re-creates it.
+        """
+
+        def __init__(self, *args, **kwargs):
+            """Create the supervisor.
+
+            Args:
+                args: Positional arguments for the Granian server.
+                kwargs: Keyword arguments for the Granian server.
+            """
+            super().__init__(*args, **kwargs)
+            self._socket_lock = threading.RLock()
+            self._spawn_count = 0
+
+        def _init_shared_socket(self):
+            """Bind the listening socket in the supervisor process."""
+            self._ssp = SocketSpec(self.bind_addr, self.bind_port, self.backlog)
+            self._shd = self._ssp.build()
+            self._sfd = self._shd.get_fd()
+            self._ssp = None
+            sock = socket.socket(fileno=self._sfd)
+            sock.set_inheritable(True)
+            self._sso = sock
+            # Resolve port 0 so a re-created socket keeps the same port.
+            self.bind_port = sock.getsockname()[1]
+
+        def _shared_socket_is_open(self) -> bool:
+            """Report whether the supervisor still holds the listening socket.
+
+            Returns:
+                Whether the listening socket is open.
+            """
+            return self._sso is not None and self._sso.fileno() >= 0
+
+        def _close_shared_socket(self):
+            """Release the listening socket, so the port refuses connections."""
+            with self._socket_lock:
+                if not self._shared_socket_is_open():
+                    return
+                # Granian's SocketHolder does not own the descriptor, so
+                # closing the socket object is what frees the port. The closed
+                # object stays in place for granian to detach on shutdown.
+                self._sso.close()
+                self._shd = self._sfd = None
+
+        def _release_socket_unless_served(self, wrk: Any, spawn_count: int):
+            """Release the socket when an exited worker leaves nobody serving.
+
+            Workers stopped by the supervisor keep the socket bound: their
+            replacement is already on its way and requests should queue for it.
+
+            Args:
+                wrk: The worker that exited.
+                spawn_count: The spawn counter when that worker was created.
+            """
+            if wrk.interrupt_by_parent:
+                return
+            with self._socket_lock:
+                if spawn_count == self._spawn_count and not any(
+                    worker.is_alive() for worker in self.wrks
+                ):
+                    self._close_shared_socket()
+
+        def _spawn_worker(self, idx: int, target: Any, callback_loader: Any):
+            """Spawn a worker, re-creating the socket if it has been released.
+
+            Args:
+                idx: The index of the worker.
+                target: The worker entrypoint.
+                callback_loader: The loader for the ASGI app.
+
+            Returns:
+                The spawned worker.
+            """
+            with self._socket_lock:
+                if not self._shared_socket_is_open():
+                    self._init_shared_socket()
+                self._spawn_count += 1
+                spawn_count = self._spawn_count
+                wrk = super()._spawn_worker(
+                    idx=idx, target=target, callback_loader=callback_loader
+                )
+            granian_watcher = wrk._watcher
+
+            def watcher():
+                granian_watcher()
+                self._release_socket_unless_served(wrk, spawn_count)
+
+            wrk._watcher = watcher
+            return wrk
+
+        def shutdown(self, exit_code: int = 0):
+            """Release the listening socket, then shut the supervisor down.
+
+            Granian only detaches the socket object, which leaves the port
+            bound for as long as the supervisor process lives.
+
+            Args:
+                exit_code: The exit code to terminate with.
+            """
+            self._close_shared_socket()
+            super().shutdown(exit_code)
 
     reset_dev_backend_reload_marker()
     environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)
 
-    granian_app = Granian(
+    granian_app = ParentBoundGranian(
         target=get_app_instance_from_file(),
         factory=True,
         address=host,
         port=port,
         interface=Interfaces.ASGI,
         log_level=LogLevels(loglevel.value),
+        log_dictconfig=_granian_log_dictconfig(),
         reload=True,
         reload_paths=get_reload_paths(),
         reload_ignore_worker_failure=True,
@@ -772,7 +967,7 @@ def run_granian_backend_prod(
     from granian.log import LogLevels
     from granian.server import Server as Granian
 
-    console.debug("Using Granian for backend")
+    logger.debug("Using Granian for backend")
 
     granian_app = Granian(
         target=app_target or get_app_instance_from_file(),
@@ -781,6 +976,7 @@ def run_granian_backend_prod(
         port=port,
         interface=Interfaces.ASGI,
         log_level=LogLevels(os.getenv("GRANIAN_LOG_LEVEL", loglevel.value)),
+        log_dictconfig=_granian_log_dictconfig(),
         workers=int(os.getenv("GRANIAN_WORKERS", str(_get_backend_workers()))),
     )
 
@@ -789,7 +985,7 @@ def run_granian_backend_prod(
 
 def output_system_info():
     """Show system information if the loglevel is in DEBUG."""
-    if console._LOG_LEVEL > constants.LogLevel.DEBUG:
+    if not console.is_debug():
         return
 
     from reflex.utils import js_runtimes
@@ -801,8 +997,8 @@ def output_system_info():
         config_file = None
 
     console.rule("System Info")
-    console.debug(f"Config file: {config_file!r}")
-    console.debug(f"Config: {config}")
+    logger.debug(f"Config file: {config_file!r}")
+    logger.debug(f"Config: {config}")
 
     dependencies = [
         f"[Reflex {constants.Reflex.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
@@ -823,16 +1019,16 @@ def output_system_info():
     dependencies.append(f"[OS {platform.system()} {os_version}]")
 
     for dep in dependencies:
-        console.debug(f"{dep}")
+        logger.debug(f"{dep}")
 
-    console.debug(
+    logger.debug(
         f"Using package installer at: {js_runtimes.get_nodejs_compatible_package_managers(raise_on_none=False)}"
     )
-    console.debug(
+    logger.debug(
         f"Using package executer at: {js_runtimes.get_js_package_executor(raise_on_none=False)}"
     )
     if system != "Windows":
-        console.debug(f"Unzip path: {path_ops.which('unzip')}")
+        logger.debug(f"Unzip path: {path_ops.which('unzip')}")
 
 
 def is_testing_env() -> bool:
@@ -871,6 +1067,24 @@ def should_prerender_routes() -> bool:
     """
     if not environment.REFLEX_SSR.is_set():
         return is_prod_mode()
+    return environment.REFLEX_SSR.get()
+
+
+def arbitrate_ssr(ssr: bool) -> bool:
+    """Reconcile an --ssr flag value with the REFLEX_SSR environment variable.
+
+    The environment variable wins when already set; otherwise the flag value
+    is stored in the environment so worker subprocesses inherit it.
+
+    Args:
+        ssr: The flag value from the command line.
+
+    Returns:
+        The effective SSR setting.
+    """
+    if not environment.REFLEX_SSR.is_set():
+        environment.REFLEX_SSR.set(ssr)
+        return ssr
     return environment.REFLEX_SSR.get()
 
 

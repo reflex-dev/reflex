@@ -4,6 +4,7 @@ from pathlib import Path, PurePosixPath
 
 from reflex_docs.changelogs import (
     ENTERPRISE_PACKAGE,
+    TOWNCRIER_MARKER,
     changelog_page_title,
     discover_changelogs,
     discover_repo_changelogs,
@@ -172,4 +173,30 @@ def test_normalize_changelog_replaces_existing_h1():
     assert normalize_changelog(source, "reflex-enterprise Changelog") == (
         "# reflex-enterprise Changelog\n\n"
         "## [0.9.0] - 2026-06-09\n\n### Changed\n\n- A change.\n"
+    )
+
+
+def test_normalize_changelog_drops_towncrier_preamble():
+    """Everything up to and including the towncrier marker is dropped."""
+    source = (
+        "# Changelog\n\n"
+        "All notable changes to this project are documented in this file.\n\n"
+        "Unreleased changes live as news fragments under `news/`.\n\n"
+        f"{TOWNCRIER_MARKER}\n\n"
+        "## v0.9.4 (2026-08-14)\n\n### Features\n\n- A change.\n"
+    )
+
+    assert normalize_changelog(source, "reflex-enterprise Changelog") == (
+        "# reflex-enterprise Changelog\n\n"
+        "## v0.9.4 (2026-08-14)\n\n### Features\n\n- A change.\n"
+    )
+
+
+def test_normalize_changelog_marker_only_preamble():
+    """A changelog that is nothing but preamble renders as just its title."""
+    source = f"# Changelog\n\nNothing released yet.\n\n{TOWNCRIER_MARKER}\n"
+
+    assert (
+        normalize_changelog(source, "reflex-base Changelog")
+        == "# reflex-base Changelog\n"
     )

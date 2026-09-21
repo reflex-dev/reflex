@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "clsx-for-tailwind";
-import React, { useCallback, useState } from "react";
+import React from "react";
 
 type ButtonVariant = "primary" | "destructive" | "outline" | "ghost";
 type ButtonSize =
@@ -24,26 +24,26 @@ interface GradientButtonProps
 }
 
 const BASE_CLASSES =
-  'relative inline-flex items-center justify-center whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:border disabled:border-secondary-4/80 disabled:bg-secondary-3 disabled:text-secondary-11 [&_svg]:pointer-events-none [&_svg:not([class*="size-"])]:size-4 shrink-0 [&_svg]:shrink-0 cursor-pointer box-border font-[525] overflow-hidden';
+  'relative inline-flex items-center justify-center whitespace-nowrap rounded-control transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground [&_svg]:pointer-events-none [&_svg:not([class*="size-"])]:size-4 shrink-0 [&_svg]:shrink-0 cursor-pointer box-border font-medium';
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    "bg-primary-9 text-primary-2 dark:text-primary-contrast hover:bg-primary-10 shadow-[0_0_1px_var(--primary-9,#6E56CF)_inset,0_2px_0_0_rgba(255,255,255,0.22)_inset]",
-  destructive: "bg-destructive-9 hover:bg-destructive-10 text-primary-contrast",
+    "bg-primary text-primary-foreground hover:bg-primary-hover shadow-none",
+  destructive: "bg-destructive hover:bg-destructive/90 text-white",
   outline:
-    "shadow-[0_-1px_0_0_rgba(0,0,0,0.08)_inset,0_0_0_1px_rgba(0,0,0,0.08)_inset,0_1px_2px_0_rgba(0,0,0,0.02),0_1px_4px_0_rgba(0,0,0,0.02)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.16)_inset] bg-white dark:bg-secondary-4 hover:bg-secondary-2 dark:hover:bg-secondary-5 text-secondary-12",
-  ghost: "text-secondary-12 hover:text-primary-10 dark:hover:text-primary-9",
+    "border border-border bg-background hover:bg-accent text-foreground shadow-small",
+  ghost: "text-foreground hover:bg-accent shadow-none",
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
-  xs: "px-1.5 h-7 rounded-lg gap-1.5 text-sm",
-  sm: "px-2 h-8 rounded-lg gap-2 text-sm",
-  md: "px-2.5 h-9 rounded-[0.625rem] gap-2 text-sm",
-  lg: "px-3 h-10 rounded-[0.625rem] gap-2.5 text-base",
-  "icon-xs": "size-7 rounded-lg",
-  "icon-sm": "size-8 rounded-lg",
-  "icon-md": "size-9 rounded-[0.625rem]",
-  "icon-lg": "size-10 rounded-[0.625rem]",
+  xs: "px-1.5 h-7 rounded-control gap-1.5 text-sm",
+  sm: "px-4 h-9 rounded-control gap-2 text-sm leading-none",
+  md: "px-2.5 h-9 rounded-control gap-2 text-sm",
+  lg: "px-3 h-10 rounded-control gap-2.5 text-base",
+  "icon-xs": "size-7 rounded-control",
+  "icon-sm": "size-9 rounded-control",
+  "icon-md": "size-9 rounded-control",
+  "icon-lg": "size-10 rounded-control",
 };
 
 export function GradientButton({
@@ -54,28 +54,12 @@ export function GradientButton({
   nativeButton = true,
   ...props
 }: GradientButtonProps) {
-  const [isMouseOver, setIsMouseOver] = useState(false);
-  const [x, setX] = useState(0);
-  const [y, setY] = useState(0);
-
-  const handleMouseMove = useCallback<
-    React.MouseEventHandler<HTMLButtonElement>
-  >((event) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    setX(event.clientX - rect.left);
-    setY(event.clientY - rect.top);
-  }, []);
-
-  const handleMouseEnter = useCallback(() => setIsMouseOver(true), []);
-  const handleMouseLeave = useCallback(() => setIsMouseOver(false), []);
-  const Component = nativeButton ? "button" : "div";
+  const Component =
+    nativeButton || props["aria-haspopup"] === "dialog" ? "button" : "div";
 
   return (
     <Component
       {...props}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onMouseMove={handleMouseMove}
       className={cn(
         BASE_CLASSES,
         VARIANT_CLASSES[variant],
@@ -83,31 +67,7 @@ export function GradientButton({
         className,
       )}
     >
-      {variant === "primary" ? (
-        <>
-          <span
-            className="block absolute rounded-full pointer-events-none"
-            style={{
-              width: "2.75rem",
-              height: "2.75rem",
-              left: x,
-              top: y,
-              transform: "translate(-50%, -50%) translateZ(0)",
-              background: "#EB8E90",
-              mixBlendMode: "plus-lighter",
-              filter: "blur(28px)",
-              opacity: isMouseOver ? 1 : 0,
-              transition: "opacity 0.3s ease",
-              willChange: "transform, opacity",
-            }}
-          />
-          <span className="inline-flex z-10 relative items-center gap-[inherit]">
-            {children}
-          </span>
-        </>
-      ) : (
-        children
-      )}
+      {children}
     </Component>
   );
 }

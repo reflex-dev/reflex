@@ -36,7 +36,7 @@ class PopoverBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the popover component."""
+        """The import variable for the popover component."""
         return ImportVar(tag="Popover", package_path="", install=False)
 
 
