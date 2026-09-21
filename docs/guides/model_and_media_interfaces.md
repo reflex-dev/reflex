@@ -190,7 +190,7 @@ def model_interface():
 
 ```python
 app = rx.App()
-app.add_page(model_interface)
+app.add_page(model_interface, route="/")
 ```
 
 Run `uv run reflex run`. Inputs 1.4 and 0.2 produce `setosa`; 6.0 and 2.5 produce `virginica`. A nonnumeric or out-of-range input clears the previous prediction and shows an error. The function can be tested independently of the interface.
@@ -211,9 +211,9 @@ Install Pillow in your app:
 uv add pillow
 ```
 
-Copy this example into a blank app module. It accepts one still PNG or JPEG up to 2 MiB and 4 million pixels. The output is at most 512 pixels on its longest side. Processing uses a worker thread, and the form shows progress and validation errors.
+Copy this example into a blank app module and run it locally. File uploads run in your app; this documentation site does not accept uploads. The example accepts one still PNG or JPEG up to 2 MiB and 4 million pixels. The output is at most 512 pixels on its longest side. Processing uses a worker thread, and the form shows progress and validation errors.
 
-```python demo exec id=image_workflow_demo
+```python id=image_workflow_demo
 import asyncio
 import base64
 from io import BytesIO
@@ -418,7 +418,7 @@ def image_workflow():
 
 ```python
 app = rx.App()
-app.add_page(image_workflow)
+app.add_page(image_workflow, route="/")
 ```
 
 Run `uv run reflex run`, select an image, then choose **Create preview**. The generated image and **Download PNG** control appear together. Try another image, a malformed file, and **Clear image** to check the complete interaction.

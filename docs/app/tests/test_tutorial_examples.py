@@ -14,6 +14,7 @@ import pytest
 import reflex as rx
 from PIL import Image
 from reflex_base.registry import RegistrationContext
+from reflex_components_core.core.upload import Upload
 
 DOCS = Path(__file__).resolve().parents[2] / "getting_started"
 OPENAI_CHAT_ENDPOINT = "https://api.openai.com/v1/chat/completions"
@@ -257,9 +258,13 @@ def test_chat_missing_api_key_keeps_question(chat_module, monkeypatch):
 def load_application_demo(monkeypatch, relative_path, demo_id=None):
     """Execute the exact copyable demo shown on an application guide."""
     source = (DOCS.parent / relative_path).read_text()
-    marker = rf"[^\n]*\bid={re.escape(demo_id)}\b" if demo_id else ""
+    marker = (
+        rf"(?: demo exec)?[^\n]*\bid={re.escape(demo_id)}\b"
+        if demo_id
+        else " demo exec"
+    )
     blocks = re.findall(
-        rf"^```python demo exec{marker}[^\n]*\n(.*?)^```",
+        rf"^```python{marker}[^\n]*\n(.*?)^```",
         source,
         re.MULTILINE | re.DOTALL,
     )
@@ -469,6 +474,8 @@ def test_image_workflow_prepares_bounded_grayscale_png(monkeypatch, image_format
         assert result.getpixel((0, 0)) == pytest.approx(76, abs=1)
         assert not result.getexif()
     assert "800 x 400" in summary and "512 x 256" in summary
+    # Construct the standalone UI without leaking its upload flag to the docs app.
+    monkeypatch.setattr(Upload, "is_used", Upload.is_used)
     assert module.image_workflow() is not None
 
 
@@ -492,14 +499,22 @@ def test_image_workflow_bounds_bytes_and_pixels(monkeypatch):
         module.prepare_image(image_bytes(size=(2001, 2000)))
 
 
-@pytest.mark.asyncio
-async def test_image_workflow_upload_recovery_and_session_isolation(monkeypatch):
+def run_image_upload(state, files):
+    """Exercise the upload generator without an optional pytest async plugin."""
+
+    async def collect_progress():
+        return [state.processing async for _ in state.process_image(files)]
+
+    return asyncio.run(collect_progress())
+
+
+def test_image_workflow_upload_recovery_and_session_isolation(monkeypatch):
     """Uploads report progress, clear stale results on failure, and stay per-session."""
     module = image_demo(monkeypatch)
     state = module.ImageWorkflowState(_reflex_internal_init=True)
     other = module.ImageWorkflowState(_reflex_internal_init=True)
     file = SimpleNamespace(read=AsyncMock(return_value=image_bytes()))
-    progress = [state.processing async for _ in state.process_image([file])]
+    progress = run_image_upload(state, [file])
     assert progress == [True]
     assert not state.processing
     assert state.preview.startswith("data:image/png;base64,")
@@ -509,30 +524,25 @@ async def test_image_workflow_upload_recovery_and_session_isolation(monkeypatch)
     file.read.assert_awaited_once_with(module.MAX_IMAGE_BYTES + 1)
 
     invalid = SimpleNamespace(read=AsyncMock(return_value=b"bad"))
-    async for _ in state.process_image([invalid]):
-        pass
+    run_image_upload(state, [invalid])
     assert state.error and not state.processing
     assert state.preview == "" and state._output_png == b""
     assert state.download_image() is None
-    async for _ in state.process_image([file]):
-        pass
+    run_image_upload(state, [file])
     assert state.preview and not state.error
     state.clear_image()
     assert state.preview == "" and state._output_png == b"" and state.summary == ""
 
 
-@pytest.mark.asyncio
-async def test_image_workflow_handles_read_failure_and_missing_file(monkeypatch):
+def test_image_workflow_handles_read_failure_and_missing_file(monkeypatch):
     """Unreadable or absent uploads produce feedback without leaving the UI busy."""
     module = image_demo(monkeypatch)
     state = module.ImageWorkflowState(_reflex_internal_init=True)
     unreadable = SimpleNamespace(read=AsyncMock(side_effect=OSError("read failed")))
-    async for _ in state.process_image([unreadable]):
-        pass
+    run_image_upload(state, [unreadable])
     assert "could not be read" in state.error
     assert not state.processing and state.preview == ""
-    async for _ in state.process_image([]):
-        pass
+    run_image_upload(state, [])
     assert "Choose one" in state.error
 
 
