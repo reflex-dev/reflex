@@ -20,6 +20,14 @@ Reflex performance depends on the interaction being measured. Browser rendering,
 
 Reflex compiles the UI to React. Ordinary Python state handlers execute on the backend, with events and state updates carried over the connection to the browser. It is inaccurate to say that no logic runs in the browser: component-local interactions, compiled expressions, and explicitly added JavaScript can run there. See [how Reflex works](/docs/advanced-onboarding/how-reflex-works/) and [custom code and hooks](/docs/wrapping-react/custom-code-and-hooks/).
 
+## Avoid repeating unrelated work
+
+An ordinary Reflex event invokes its handler; it does not re-execute the entire Python page definition. The state system tracks changed values and sends state updates to the frontend. Keep a database load in the event that needs it, and let a separate UI event update only the selection or display state it owns.
+
+For example, the [model demo](/docs/guides/model-and-media-interfaces/) runs `predict_flower` when the form is submitted. Editing an input does not run inference. In the [linked XY charts](/docs/getting-started/linked-charts-tutorial/), drawing a selection is local to the chart; the completed selection triggers the Python cross-filter. Those boundaries give you control over when backend work runs.
+
+This architecture provides a way to avoid repeated work, rather than a guarantee that every Reflex app outperforms every alternative. An event handler can still call an expensive function, and a computed value can still perform an expensive calculation. Measure those costs with the same inputs and cache policy when comparing implementations.
+
 ## Follow one interaction
 
 In the [linked charts example](/docs/getting-started/linked-charts-tutorial/), XY handles drawing the selection locally. A completed selection sends a bounded selection envelope to a Python handler. The handler records selected IDs, computed values produce the linked chart data and rows, and the browser renders the changed views.

@@ -1,11 +1,13 @@
 ---
 title: Build Python Model Interfaces with Reflex
-meta_description: Build a custom Reflex interface for a Python prediction function. Add validated model inputs and learn how file uploads and media outputs fit the app.
+meta_description: Build an interactive machine learning demo with a custom Reflex UI. Run a Python prediction function, validate inputs, and display model results.
 ---
 
 # Model and media interfaces
 
 A Reflex model interface collects inputs, runs a Python prediction function or model-service call, and displays the result. You control the surrounding layout, forms, charts, and workflow. Start with a small local example, then add the execution and storage services your model needs.
+
+You can build an interactive machine learning demo in Reflex with a local model or a hosted inference API. Define the input controls, call your Python function from an event handler, and render the returned prediction. The same interface can grow into a multi-page application with custom styling, result review, and database-backed workflows.
 
 ## A local prediction demo
 
@@ -32,9 +34,7 @@ SAMPLES = [
 
 def predict_flower(length: float, width: float) -> str:
     """Predict the nearest labelled sample using two petal measurements."""
-    if not all(
-        math.isfinite(value) and 0 < value <= 10 for value in (length, width)
-    ):
+    if not all(math.isfinite(value) and 0 < value <= 10 for value in (length, width)):
         raise ValueError("Enter measurements greater than 0 and at most 10 cm.")
     nearest = min(
         SAMPLES, key=lambda row: (row[0] - length) ** 2 + (row[1] - width) ** 2
