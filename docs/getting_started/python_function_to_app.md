@@ -98,4 +98,6 @@ The same pattern can call a data transformation, a loaded model, or an external 
 
 For fast local calculations, a normal handler is sufficient. For a slow API call, use an async SDK and show a loading state. If other events need to run while work is pending, use a [background event](/docs/events/background-events/) and hold the state lock only while reading or updating state. CPU-heavy inference needs a separate execution strategy; marking a function async does not make blocking computation asynchronous.
 
+For a complete data-analysis workflow, try the [pandas data app](/docs/getting-started/pandas-data-app/): upload a CSV, filter records, and download a grouped summary.
+
 Continue with [model and media interfaces](/docs/guides/model-and-media-interfaces/), [streaming chat](/docs/getting-started/chatapp-tutorial/), and [self-hosting](/docs/hosting/self-hosting/).

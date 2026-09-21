@@ -23,6 +23,7 @@ def get_sidebar_items_learn():
                 getting_started.dashboard_tutorial,
                 getting_started.chatapp_tutorial,
                 getting_started.python_function_to_app,
+                getting_started.pandas_data_app,
                 getting_started.linked_charts_tutorial,
             ],
         ),

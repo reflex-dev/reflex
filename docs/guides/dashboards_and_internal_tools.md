@@ -11,6 +11,8 @@ A Reflex dashboard combines charts, tables, filters, and forms in one web applic
 
 The [dashboard tutorial](/docs/getting-started/dashboard-tutorial/) provides a runnable table, add-record form, and chart. Adding a record updates both views. The [linked charts tutorial](/docs/getting-started/linked-charts-tutorial/) adds a different interaction: selecting points filters a second chart and a table, with explicit reset and empty-result behavior.
 
+For a file-based analysis app, the [pandas tutorial](/docs/getting-started/pandas-data-app/) adds CSV validation, filtering, aggregation, and summary download. Its preview is bounded independently of the aggregate.
+
 Use the first example for an operational workflow and the second for analytical exploration. Both use shared state, but selecting a chart is not the same operation as changing a stored record.
 
 ## Coordinate filters and views

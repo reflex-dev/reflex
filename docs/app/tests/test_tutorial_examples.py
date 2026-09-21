@@ -560,3 +560,122 @@ def test_image_workflow_applies_orientation_and_strips_metadata(monkeypatch):
         assert not result.getexif()
         assert not result.info
     assert "400 x 800" in summary
+
+
+def pandas_demo(monkeypatch):
+    """Load the standalone pandas example exactly as readers copy it."""
+    return load_application_demo(
+        monkeypatch, "getting_started/pandas_data_app.md", "pandas_data_app"
+    )
+
+
+def test_pandas_filters_aggregate_all_matches_beyond_preview(monkeypatch):
+    """The bounded preview must not silently truncate totals or the download."""
+    module = pandas_demo(monkeypatch)
+    data = b"region,product,units\n" + b"North,Tea,2\n" * 70 + b"South,Coffee,3\n"
+    records = module.read_orders(data)
+    rows, summary, count, units = module.analyze_orders(records, "All", "tEa")
+    assert len(rows) == 50
+    assert count == 70 and units == 140
+    assert summary == [{"region": "North", "units": 140}]
+    assert module.analyze_orders(records, "South", "Tea") == ([], [], 0, 0)
+    # Product search is literal, so regex symbols cannot match everything.
+    assert module.analyze_orders(records, "All", ".*") == ([], [], 0, 0)
+    monkeypatch.setattr(Upload, "is_used", Upload.is_used)
+    assert module.pandas_data_app() is not None
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        b"",
+        b"region,product,units\n",
+        b"region,product,units\nNorth,Tea,2,extra\n",
+        b"region,product,units\nNorth,Tea\n",
+        b"region,region,units\nNorth,Tea,2\n",
+        b"region,product,units\nNorth,\xff,2\n",
+        b'region,product,units\nNorth,"Tea,2',
+        b"region,product,units\nOther,Tea,2\n",
+        b"region,product,units\nNorth, ,2\n",
+        b"region,product,units\nNorth,Tea,-1\n",
+        b"region,product,units\nNorth,Tea,1.5\n",
+        b"region,product,units\nNorth,Tea,nan\n",
+        b"region,product,units\nNorth,Tea,1000001\n",
+        b"region,product,units\nNorth," + b"a" * 81 + b",2\n",
+    ],
+)
+def test_pandas_rejects_malformed_schema_and_values(monkeypatch, data):
+    """CSV structure, encoding, and domain values are checked on the backend."""
+    with pytest.raises(ValueError):
+        pandas_demo(monkeypatch).read_orders(data)
+
+
+def test_pandas_bounds_rows_bytes_and_preserves_text(monkeypatch):
+    """A byte-order mark and NA-like names are valid; oversized inputs are not."""
+    module = pandas_demo(monkeypatch)
+    assert module.read_orders(b"\xef\xbb\xbfregion,product,units\nNorth,NA,0\n") == [
+        {"region": "North", "product": "NA", "units": 0}
+    ]
+    with pytest.raises(ValueError, match="2 MiB"):
+        module.read_orders(b"x" * (module.MAX_CSV_BYTES + 1))
+    with pytest.raises(ValueError, match="10,000"):
+        module.read_orders(b"region,product,units\n" + b"North,Tea,1\n" * 10_001)
+
+
+def run_csv_upload(state, files):
+    """Run the copied async handler and inspect its progress boundary."""
+
+    async def collect():
+        return [state.processing async for _ in state.upload_csv(files)]
+
+    return asyncio.run(collect())
+
+
+def test_pandas_upload_filter_download_and_session_isolation(monkeypatch):
+    """Upload, filtering, download, and error recovery operate on one session."""
+    module = pandas_demo(monkeypatch)
+    state = module.PandasAppState(_reflex_internal_init=True)
+    other = module.PandasAppState(_reflex_internal_init=True)
+    upload = SimpleNamespace(read=AsyncMock(return_value=module.SAMPLE_CSV))
+    assert run_csv_upload(state, [upload]) == [True]
+    upload.read.assert_awaited_once_with(module.MAX_CSV_BYTES + 1)
+    assert (state.loaded_count, state.matching_count, state.total_units) == (4, 4, 33)
+    assert other._orders == [] and other.rows == []
+    state.apply_filters({"region": "North", "product": "tea"})
+    assert (state.matching_count, state.total_units) == (1, 12)
+    download = MagicMock()
+    monkeypatch.setattr(module.rx, "download", download)
+    state.download_summary()
+    assert download.call_args.kwargs["data"] == "region,units\nNorth,12\n"
+    state.apply_filters({"region": "South", "product": "tea"})
+    assert not state.rows and not state.summary
+    assert state.download_summary() is None
+    invalid = SimpleNamespace(read=AsyncMock(return_value=b"bad"))
+    run_csv_upload(state, [invalid])
+    assert state.error and not state.processing
+    assert state.loaded_count == 0 and state._orders == [] and state.summary == []
+    state.load_sample()
+    assert state.loaded_count == 4 and not state.error
+    assert state.region == "South" and state.product == "tea"
+    state.apply_filters({"region": "All", "product": ""})
+    assert state.total_units == 33
+
+
+def test_pandas_failed_read_duplicate_and_invalid_filter(monkeypatch):
+    """Failure paths restore controls without leaking stale output."""
+    module = pandas_demo(monkeypatch)
+    state = module.PandasAppState(_reflex_internal_init=True)
+    state.load_sample()
+    unreadable = SimpleNamespace(read=AsyncMock(side_effect=OSError("read failed")))
+    run_csv_upload(state, [unreadable])
+    assert "could not be read" in state.error
+    assert state.loaded_count == 0 and not state.processing
+    run_csv_upload(state, [])
+    assert "Choose one" in state.error
+    state.load_sample()
+    state.apply_filters({"region": "Unknown", "product": ""})
+    assert state.error and state.region == "All" and state.total_units == 33
+    state.processing = True
+    assert run_csv_upload(state, [unreadable]) == []
+    state.apply_filters({"region": "North", "product": "Tea"})
+    assert state.region == "All" and state.download_summary() is None

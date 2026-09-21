@@ -13,6 +13,7 @@ You can use Reflex for the data-app, dashboard, chat, model-demo, and internal-t
 
 | I want to build… | Start here | What the example demonstrates |
 | --- | --- | --- |
+| A pandas data app | [Pandas data app](/docs/getting-started/pandas-data-app/) | CSV upload, literal filtering, complete regional aggregates, and summary download |
 | An analytics dashboard | [Dashboard tutorial](/docs/getting-started/dashboard-tutorial/) | A table, an input form, and a chart that update from the same records |
 | Linked charts and cross-filtering | [Linked charts tutorial](/docs/getting-started/linked-charts-tutorial/) | Selecting points filters a second chart and a table |
 | A custom AI chatbot | [Streaming chat tutorial](/docs/getting-started/chatapp-tutorial/) | Provider SDK calls, streamed responses, conversation state, and error handling |
