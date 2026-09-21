@@ -60,6 +60,37 @@ _CLIENT_ERROR = str(constants.SocketEvent.CLIENT_ERROR)
 # The heartbeat frame is static; serialize it once.
 _PING_FRAME = json.dumps([PING_MESSAGE])
 
+# ASGI scope key holding the connection-scoped router_data.
+_STATIC_ROUTER_DATA = "_reflex_static_router_data"
+
+
+def build_static_router_data(sid: str, asgi_scope: Mapping[str, Any]) -> dict[str, Any]:
+    """Build the router_data entries that are constant for a connection.
+
+    Args:
+        sid: The session id.
+        asgi_scope: The ASGI scope of the client connection.
+
+    Returns:
+        The connection-scoped router_data entries.
+    """
+    headers = {k.decode("utf-8"): v.decode("utf-8") for (k, v) in asgi_scope["headers"]}
+
+    # Get the client IP.
+    if client := asgi_scope.get("client"):
+        client_ip = client[0]
+        headers["asgi-scope-client"] = client_ip
+    else:
+        client_ip = "0.0.0.0"
+
+    # Unroll reverse proxy forwarded headers.
+    client_ip = headers.get("x-forwarded-for", client_ip).partition(",")[0].strip()
+    return {
+        constants.RouteVar.SESSION_ID: sid,
+        constants.RouteVar.HEADERS: headers,
+        constants.RouteVar.CLIENT_IP: client_ip,
+    }
+
 
 def utf8_size(data: str | bytes) -> int:
     """Size of a serialized message in UTF-8 bytes.
@@ -472,44 +503,31 @@ class BaseEventNamespace(ABC):
             msg = "Event fields have invalid types."
             raise exceptions.EventDeserializationError(msg)
 
-        # Decode the connection headers once: the scope is per-connection
-        # state, so cache the decoded mapping in it and copy per event (the
-        # copy is mutated below and ends up in the event's router_data).
-        base_headers = asgi_scope.get("_reflex_headers")
-        if base_headers is None:
-            base_headers = {
-                k.decode("utf-8"): v.decode("utf-8") for (k, v) in asgi_scope["headers"]
-            }
-            asgi_scope["_reflex_headers"] = base_headers
-        headers = dict(base_headers)
-
-        # Get the client IP
-        client = asgi_scope.get("client")
-        if client:
-            client_ip = client[0]
-            headers["asgi-scope-client"] = client_ip
-        else:
-            client_ip = "0.0.0.0"
-
-        # Unroll reverse proxy forwarded headers.
-        client_ip = (
-            headers
-            .get(
-                "x-forwarded-for",
-                client_ip,
+        # Headers, client IP, and session id cannot change for the lifetime of
+        # the connection; derive them once and cache them on its ASGI scope,
+        # which is per-connection state, instead of on every event.
+        static_router_data = asgi_scope.get(_STATIC_ROUTER_DATA)
+        if static_router_data is None:
+            static_router_data = asgi_scope[_STATIC_ROUTER_DATA] = (
+                build_static_router_data(sid, asgi_scope)
             )
-            .partition(",")[0]
-            .strip()
-        )
+
         router_data = event.router_data
         try:
+            router_data.update(static_router_data)
+            # The cached headers reach the event, and from there
+            # `state.router_data`, a plain mutable dict: sharing the mapping
+            # would let a handler mutating `self.router_data["headers"]`
+            # corrupt the connection cache for every later event on this
+            # socket. The shallow copy is far cheaper than the per-event
+            # header decode it replaced, so the cache still pays off.
+            router_data[constants.RouteVar.HEADERS] = static_router_data[
+                constants.RouteVar.HEADERS
+            ].copy()
             # The nested values are still client-controlled.
             router_data.update({
                 constants.RouteVar.QUERY: format.format_query_params(event.router_data),
                 constants.RouteVar.CLIENT_TOKEN: token,
-                constants.RouteVar.SESSION_ID: sid,
-                constants.RouteVar.HEADERS: headers,
-                constants.RouteVar.CLIENT_IP: client_ip,
             })
             router_data[constants.RouteVar.PATH] = "/" + (
                 self.app.router(path) or "404"

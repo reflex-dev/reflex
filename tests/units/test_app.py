@@ -4923,12 +4923,11 @@ async def test_on_event_does_not_share_the_cached_headers(
     enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
     _, event = enqueue_mock.call_args[0]
     event_headers = event.router_data[constants.RouteVar.HEADERS]
-    cached_headers = environ["asgi.scope"]["_reflex_headers"]
+    cached_headers = environ["asgi.scope"]["_reflex_static_router_data"][
+        constants.RouteVar.HEADERS
+    ]
 
-    assert cached_headers == {
-        "origin": "http://localhost:3000",
-        "user-agent": "test-agent",
-    }
+    assert event_headers == cached_headers
     assert event_headers is not cached_headers
     # Mutating what the handler sees must not reach the connection cache.
     event_headers["user-agent"] = "mutated"
@@ -4961,10 +4960,15 @@ async def test_on_event_builds_router_data_without_connect(
     await event_namespace.on_event("sid1", _client_event_payload())
     await event_namespace.on_event("sid1", _client_event_payload())
 
-    # The raw headers are decoded once and cached on the connection scope.
-    assert environ["asgi.scope"]["_reflex_headers"] == {
-        "origin": "http://localhost:3000",
-        "user-agent": "test-agent",
+    # The connection-scoped entries are derived once and cached on the scope.
+    assert environ["asgi.scope"]["_reflex_static_router_data"] == {
+        constants.RouteVar.SESSION_ID: "sid1",
+        constants.RouteVar.CLIENT_IP: "127.0.0.1",
+        constants.RouteVar.HEADERS: {
+            "origin": "http://localhost:3000",
+            "user-agent": "test-agent",
+            "asgi-scope-client": "127.0.0.1",
+        },
     }
     enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
     assert enqueue_mock.call_count == 2
