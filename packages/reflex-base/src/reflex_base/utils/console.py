@@ -11,14 +11,8 @@ from __future__ import annotations
 
 import contextlib
 import datetime
-import functools
-import inspect
-import shutil
-import sys
 import time
 from collections.abc import Sequence
-from pathlib import Path
-from types import FrameType, ModuleType
 from typing import TYPE_CHECKING, overload
 
 from rich.console import Console, OverflowMethod
@@ -34,8 +28,16 @@ from reflex_base.utils.decorator import once
 _console = Console(highlight=False)
 _console_stderr = Console(stderr=True, highlight=False)
 
-# Deprecated features who's warning has been printed.
-_EMITTED_DEPRECATION_WARNINGS = set()
+
+def _human_console() -> Console:
+    """Get the console human-readable output renders to.
+
+    Returns:
+        The stderr console while stdout is reserved for a machine-readable
+        document, the stdout one otherwise.
+    """
+    return _console_stderr if _log.is_stdout_reserved() else _console
+
 
 # Info messages which have been printed.
 _EMITTED_INFO = set()
@@ -108,7 +110,7 @@ def print(msg: str, *, dedupe: bool = False, level: str = "info", **kwargs):
         if msg in _EMITTED_PRINTS:
             return
         _EMITTED_PRINTS.add(msg)
-    _console.print(msg, **kwargs)
+    _human_console().print(msg, **kwargs)
 
 
 def _print_stderr(msg: str, *, dedupe: bool = False, level: str = "error", **kwargs):
@@ -134,13 +136,14 @@ def _print_stderr(msg: str, *, dedupe: bool = False, level: str = "error", **kwa
 def log_file_console():
     """Create a console that logs to a file.
 
-    Writes through the stream of the logging pipeline's file handler, so the
-    legacy helpers and the ``logging`` sinks share one full-logging file.
+    Writes through a proxy to the logging pipeline's file-handler stream, so
+    the legacy helpers and the ``logging`` sinks share one full-logging file
+    even after an external logging re-config closes and reopens the handler.
 
     Returns:
         A Console object that logs to a file.
     """
-    return Console(file=_log.log_file_stream())
+    return Console(file=_log.log_file_proxy())
 
 
 @once
@@ -249,7 +252,7 @@ def log(msg: str, *, dedupe: bool = False, **kwargs):
         if _log.is_json_mode():
             _log.emit_json_print(msg)
         else:
-            _console.log(msg, **kwargs)
+            _human_console().log(msg, **kwargs)
     if should_use_log_file_console():
         print_to_log_file(msg, **kwargs)
 
@@ -263,7 +266,7 @@ def rule(title: str, **kwargs):
     """
     if _log.is_json_mode():
         return
-    _console.rule(title, **kwargs)
+    _human_console().rule(title, **kwargs)
 
 
 def warn(msg: str, *, dedupe: bool = False, **kwargs):
@@ -285,76 +288,6 @@ def warn(msg: str, *, dedupe: bool = False, **kwargs):
         print_to_log_file(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
 
 
-@once
-def _exclude_paths_from_frame_info() -> list[Path]:
-    import importlib.util
-
-    import click
-    import granian
-    import socketio
-    import typing_extensions
-
-    import reflex_base
-
-    try:
-        import reflex as rx
-    except ImportError:
-        rx = None
-
-    # Exclude utility modules that should never be the source of deprecated reflex usage.
-    exclude_modules: list[ModuleType | None] = [
-        click,
-        rx,
-        typing_extensions,
-        socketio,
-        granian,
-        reflex_base,
-    ]
-
-    modules_paths = [file for m in exclude_modules if m and (file := m.__file__)] + [
-        spec.origin
-        for m in [*sys.builtin_module_names, *sys.stdlib_module_names]
-        if (spec := importlib.util.find_spec(m)) and spec.origin
-    ]
-    exclude_roots = [
-        p.parent.resolve() if (p := Path(file)).name == "__init__.py" else p.resolve()
-        for file in modules_paths
-    ]
-    # Specifically exclude the reflex cli module.
-    if reflex_bin := shutil.which(b"reflex"):
-        exclude_roots.append(Path(reflex_bin.decode()))
-
-    return exclude_roots
-
-
-@functools.cache
-def _is_framework_filename(filename: str) -> bool:
-    """Check if a code filename belongs to an excluded framework/stdlib root.
-
-    Cached per filename: module file locations do not move within a process,
-    but resolving a path and comparing it against every exclude root is far
-    too expensive to repeat for each frame on every deprecation check.
-
-    Args:
-        filename: The ``co_filename`` of a frame's code object.
-
-    Returns:
-        Whether the file lives under one of the excluded framework roots.
-    """
-    frame_path = Path(filename).resolve()
-    return any(
-        frame_path.is_relative_to(root) for root in _exclude_paths_from_frame_info()
-    )
-
-
-def _get_first_non_framework_frame() -> FrameType | None:
-    frame = inspect.currentframe()
-    while frame := frame and frame.f_back:
-        if not _is_framework_filename(frame.f_code.co_filename):
-            break
-    return frame
-
-
 def deprecate(
     *,
     feature_name: str,
@@ -364,43 +297,25 @@ def deprecate(
     dedupe: bool = True,
     **kwargs,
 ):
-    """Print a deprecation warning.
+    """Log a deprecation warning through the standard logging pipeline.
 
     Args:
-        feature_name: The feature to deprecate.
-        reason: The reason for deprecation.
-        deprecation_version: The version the feature was deprecated
-        removal_version: The version the deprecated feature will be removed
-        dedupe: If True, suppress multiple console logs of deprecation message.
-        kwargs: Keyword arguments to pass to the print function.
+        feature_name: Passed to :func:`reflex_base.utils.log.deprecate`.
+        reason: Passed to :func:`reflex_base.utils.log.deprecate`.
+        deprecation_version: Passed to :func:`reflex_base.utils.log.deprecate`.
+        removal_version: Passed to :func:`reflex_base.utils.log.deprecate`.
+        dedupe: Passed to :func:`reflex_base.utils.log.deprecate`.
+        kwargs: Legacy Rich print arguments, ignored by the logging pipeline.
     """
-    dedupe_key = feature_name
-    loc = ""
-
-    # See if we can find where the deprecation exists in "user code"
-    origin_frame = _get_first_non_framework_frame()
-    if origin_frame is not None:
-        filename = Path(origin_frame.f_code.co_filename)
-        if filename.is_relative_to(Path.cwd()):
-            filename = filename.relative_to(Path.cwd())
-        loc = f" ({filename}:{origin_frame.f_lineno})"
-        dedupe_key = f"{dedupe_key} {loc}"
-
-    if dedupe_key not in _EMITTED_DEPRECATION_WARNINGS:
-        msg = (
-            f"{feature_name} has been deprecated in version {deprecation_version}. {reason.rstrip('.').lstrip('. ')}. It will be completely "
-            f"removed in {removal_version}.{loc}"
-        )
-        if _log.get_log_level() <= LogLevel.WARNING:
-            print(
-                f"[yellow]DeprecationWarning: {msg}[/yellow]",
-                level="warning",
-                **kwargs,
-            )
-        if should_use_log_file_console():
-            print_to_log_file(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
-        if dedupe:
-            _EMITTED_DEPRECATION_WARNINGS.add(dedupe_key)
+    _log.ensure_configured()
+    _log.deprecate(
+        feature_name=feature_name,
+        reason=reason,
+        deprecation_version=deprecation_version,
+        removal_version=removal_version,
+        dedupe=dedupe,
+        **kwargs,
+    )
 
 
 def error(msg: str, *, dedupe: bool = False, **kwargs):
@@ -458,8 +373,15 @@ def ask(
     Returns:
         A string with the user input.
     """
+    # A prompt is human output like any other, and the one that must not land
+    # on a reserved stdout: it blocks, so a caller parsing the document reads
+    # the question as data and never answers it.
     return Prompt.ask(
-        question, choices=choices, default=default, show_choices=show_choices
+        question,
+        choices=choices,
+        default=default,
+        show_choices=show_choices,
+        console=_human_console(),
     )
 
 
@@ -493,7 +415,7 @@ def print_table(
     for row in tabular_data:
         table.add_row(*row)
 
-    _console.print(table)
+    _human_console().print(table)
 
 
 def progress():
@@ -506,7 +428,10 @@ def progress():
         *Progress.get_default_columns()[:-1],
         MofNCompleteColumn(),
         TimeElapsedColumn(),
-        disable=_log.is_json_mode(),
+        # A bar is decoration, and it redraws in place: there is nowhere to
+        # put it in a machine-readable stream, and nothing to draw it over
+        # once stdout belongs to a document.
+        disable=_log.is_json_mode() or _log.is_stdout_reserved(),
     )
 
 
@@ -522,7 +447,7 @@ def status(*args, **kwargs):
     """
     if _log.is_json_mode():
         return _log._quiet_console.status(*args, **kwargs)
-    return _console.status(*args, **kwargs)
+    return _human_console().status(*args, **kwargs)
 
 
 @contextlib.contextmanager

@@ -101,6 +101,7 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
 
       - name: Validate against changelog, branch rules and existing tags
         id: prepare
@@ -108,6 +109,7 @@ jobs:
           PACKAGE: ${{ inputs.package }}
           VERSION: ${{ inputs.version }}
           REF_NAME: ${{ github.ref_name }}
+        shell: bash
         run: @@CLI@@ prepare-publish
 @@CUSTOM_DEV_PIN_STEP@@
 
@@ -129,11 +131,13 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
 
       - name: Pin lockstep siblings to exact versions
         env:
           PACKAGE: ${{ inputs.package }}
           VERSION: ${{ needs.prepare.outputs.version }}
+        shell: bash
         run: @@CLI@@ pin-lockstep
 
       # A *.dev dependency pin references an unpublished version, so it must
@@ -144,6 +148,7 @@ jobs:
       - name: Reject development-release dependency pins
         env:
           PACKAGE: ${{ inputs.package }}
+        shell: bash
         run: @@CLI@@ check-dev-pins "$PACKAGE"
 
       # The dynamic versioning backend derives each package's version from the
@@ -153,6 +158,7 @@ jobs:
       - name: Tag local checkout
         env:
           TAG: ${{ needs.prepare.outputs.tag }}
+        shell: bash
         run: git tag "$TAG"
 
       # --out-dir is absolute so the artifacts land in the repository root
@@ -162,6 +168,7 @@ jobs:
       - name: Build
         env:
           BUILD_DIR: ${{ needs.prepare.outputs.build_dir }}
+        shell: bash
         run: uv build --directory "$BUILD_DIR" --out-dir "$GITHUB_WORKSPACE/dist"
 
       - name: Upload the built distribution files
@@ -200,6 +207,7 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
 
       # One artifact per build job — a platform matrix uploads one per leg —
       # merged into a single dist/. The `--` in the pattern is what keeps a
@@ -213,6 +221,7 @@ jobs:
           merge-multiple: true
 
       - name: Flatten the downloaded artifacts
+        shell: bash
         run: |
           set -euo pipefail
           # mkdir, because no matching artifact leaves nothing behind at all —
@@ -231,6 +240,7 @@ jobs:
         env:
           PACKAGE: ${{ inputs.package }}
           VERSION: ${{ needs.prepare.outputs.version }}
+        shell: bash
         run: @@CLI@@ verify-dist
 
       - name: Repository-specific post-build checks
@@ -240,6 +250,7 @@ jobs:
           VERSION: ${{ needs.prepare.outputs.version }}
           BUILD_DIR: ${{ needs.prepare.outputs.build_dir }}
           DIST_DIR: dist
+        shell: bash
         run: bash .github/scripts/publish/post_build.sh
 
       - name: Extract release notes from changelog
@@ -247,6 +258,7 @@ jobs:
           PACKAGE: ${{ inputs.package }}
           VERSION: ${{ needs.prepare.outputs.version }}
           NOTES_PATH: release_notes.md
+        shell: bash
         run: @@CLI@@ extract-notes
 
       # The manifest covers exactly the files that go to PyPI. It lets the
@@ -255,6 +267,7 @@ jobs:
       # front of the approver (job summary), and it is attached to the GitHub
       # release so the record of what a version contains outlives this run.
       - name: Write checksum manifest
+        shell: bash
         run: |
           set -euo pipefail
           # Bare filenames, covering exactly the files that go to PyPI: the
@@ -286,7 +299,14 @@ jobs:
   # dependencies — it only uploads the artifact collected above.
   publish:
     needs: [prepare, collect]
-    if: needs.prepare.outputs.skipped != 'true'
+    # The status function is load-bearing. With none, GitHub applies an
+    # implicit success() evaluated over the whole transitive dependency
+    # closure rather than the direct needs — and exactly one build path ever
+    # runs, so the skipped one reaches this job straight through the `collect`
+    # written to absorb it and the upload silently never happens.
+    if: >-
+      !cancelled() && needs.collect.result == 'success' &&
+      needs.prepare.outputs.skipped != 'true'
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -301,6 +321,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ALLOW_SELF_REVIEW: "@@ALLOW_SELF_REVIEW@@"
+        shell: bash
         run: |
           set -euo pipefail
           # Fail closed: uploads must never run unattended. If this job started
@@ -339,8 +360,14 @@ jobs:
           fi
           echo "pypi environment protection rules: $rules (prevent_self_review: $self_review)"
 
+      # This job deliberately never checks the repository out, so setup-uv
+      # runs against an empty directory: its cache key would hash nothing and
+      # its empty-workdir check would warn, once each per released package. It
+      # installs no dependencies either — `uv publish` only uploads the files
+      # the approval covered — so there is nothing to cache.
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_NO_CHECKOUT@@
 
       - name: Download built artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -348,16 +375,24 @@ jobs:
           name: publish-${{ inputs.package }}
 
       - name: Verify artifact integrity
+        shell: bash
         run: cd dist && sha256sum -c ../SHA256SUMS
 
       # --check-url makes a retried run skip files that already made it to PyPI
       # (e.g. when the upload succeeded but tagging failed), instead of erroring
       # on the duplicate upload.
       - name: Publish
+        shell: bash
         run: uv publish --check-url https://pypi.org/simple/ dist/*
 
   tag-and-release:
     needs: [prepare, publish]
+    # The same transitive implicit success() reaches this job through
+    # `publish`, so it needs a status function of its own. Not `!failure()`:
+    # a skipped publish is neither failed nor cancelled, and tolerating it
+    # would push the tag for a release that uploaded nothing.
+    if: >-
+      !cancelled() && needs.publish.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -370,6 +405,7 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
 
       # The same artifact the approval covered: the release notes and the
       # checksum manifest of exactly what was uploaded.
@@ -382,6 +418,7 @@ jobs:
         env:
           TAG: ${{ needs.prepare.outputs.tag }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: @@CLI@@ push-tag
 
       - name: Create GitHub release
@@ -394,5 +431,6 @@ jobs:
           NOTES_PATH: release_notes.md
           CHECKSUMS_PATH: SHA256SUMS
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: @@CLI@@ create-release
 @@POST_RELEASE_STEP@@

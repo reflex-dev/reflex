@@ -213,6 +213,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Branch the workflow was dispatched on.",
     )
     pr.add_argument("--releases", default=_env("RELEASES_JSON"), help="The plan JSON.")
+    pr.add_argument(
+        "--repinned",
+        default=_env("REPINNED_JSON"),
+        help="Paths the pin upgrade rewrote, as emitted by materialize.",
+    )
 
     prerelease = sub.add_parser(
         "push-prerelease", help="Commit the changelogs and push the prerelease branch."
@@ -225,6 +230,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     prerelease.add_argument(
         "--releases", default=_env("RELEASES_JSON"), help="The plan JSON."
+    )
+    prerelease.add_argument(
+        "--repinned",
+        default=_env("REPINNED_JSON"),
+        help="Paths the pin upgrade rewrote, as emitted by materialize.",
     )
 
     push_tag = sub.add_parser("push-tag", help="Push the tag of a published version.")
@@ -335,11 +345,11 @@ def dispatch(args: argparse.Namespace, config: Config) -> None:
             commands.cmd_detect_internal(config, args.base, args.head, args.package)
         case "open-release-pr":
             commands.cmd_open_release_pr(
-                config, args.action, args.ref_name, args.releases
+                config, args.action, args.ref_name, args.releases, args.repinned
             )
         case "push-prerelease":
             commands.cmd_push_prerelease(
-                config, args.action, args.ref_name, args.releases
+                config, args.action, args.ref_name, args.releases, args.repinned
             )
         case "push-tag":
             commands.cmd_push_tag(config, args.tag)

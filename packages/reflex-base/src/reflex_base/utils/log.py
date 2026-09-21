@@ -29,9 +29,10 @@ import os
 import shutil
 import sys
 import time
+from collections.abc import Generator
 from pathlib import Path
 from types import FrameType, ModuleType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from rich.console import Console
 from rich.errors import MarkupError
@@ -61,6 +62,8 @@ PACKAGE_LOGGER_NAMES = (
     "reflex_components_lucide",
     "reflex_components_plotly",
     "reflex_components_react_player",
+    "reflex_otel",
+    "reflex_build_sdk",
 )
 
 # The single logger the reflex sinks attach to; parent of every package logger.
@@ -69,6 +72,7 @@ _REFLEX_LOGGER = logging.getLogger("reflex")
 # Marker inherited by worker subprocesses: handlers attach only when running
 # under the reflex CLI. Read with os.environ so bootstrap stays import-light.
 _MANAGED_ENV_VAR = "REFLEX_MANAGED_LOGGING"
+_RICH_KWARGS_FIELD = "rich_kwargs"
 
 # Consoles for pretty printing (shared with reflex_base.utils.console).
 _console = Console(highlight=False)
@@ -76,6 +80,9 @@ _console_stderr = Console(stderr=True, highlight=False)
 
 # Console that renders nowhere, backing interactive rich features in JSON mode.
 _quiet_console = Console(quiet=True)
+
+# Whether stdout carries a machine-readable document rather than human output.
+_stdout_reserved = False
 
 # The current log level.
 _log_level = LogLevel.INFO
@@ -197,7 +204,9 @@ class RichConsoleHandler(logging.Handler):
         """
         try:
             style, prefix = _style_for(record)
-            console = _console_stderr if record.levelno >= logging.ERROR else _console
+            console = (
+                _console_stderr if record.levelno >= logging.ERROR else human_console()
+            )
             # Records may carry a rich Progress to print through, so the
             # message lands above an active progress bar.
             progress = getattr(record, "progress", None)
@@ -207,9 +216,13 @@ class RichConsoleHandler(logging.Handler):
             # Markup is opt-in per record (``extra={"rich": True}``); plain
             # messages keep their literal brackets.
             markup = bool(getattr(record, "rich", False))
-            console.print(
-                f"{prefix}{record.getMessage()}", style=style, end=end, markup=markup
-            )
+            print_kwargs = {
+                "style": style,
+                "end": end,
+                "markup": markup,
+                **getattr(record, _RICH_KWARGS_FIELD, {}),
+            }
+            console.print(f"{prefix}{record.getMessage()}", **print_kwargs)
             if record.exc_info and record.exc_info[0] is not None:
                 # Tracebacks may contain user data; never parse them as markup.
                 # Never word-wrap them either: wrapping breaks file paths.
@@ -241,7 +254,7 @@ def _write_json(payload: dict, *, stderr: bool):
         payload: The record fields.
         stderr: Whether the record targets stderr.
     """
-    stream = sys.stderr if stderr else sys.stdout
+    stream = sys.stderr if stderr or _stdout_reserved else sys.stdout
     stream.write(json.dumps(payload, default=str) + "\n")
     stream.flush()
 
@@ -335,26 +348,95 @@ def _log_file_path() -> Path:
 def _file_handler() -> logging.FileHandler:
     """Create the full-logging file handler.
 
+    The file is truncated up front and the handler opened in append mode:
+    appended writes land atomically at the end of the file, and a closed
+    handler reopens on the next record — the stdlib refuses to reopen only
+    ``mode="w"`` handlers. Both matter in granian workers, whose post-fork
+    ``logging.config.dictConfig`` closes every fork-inherited handler.
+
     Returns:
         A file handler writing every record with markup stripped.
     """
-    handler = logging.FileHandler(_log_file_path(), mode="w", encoding="utf-8")
+    path = _log_file_path()
+    path.write_bytes(b"")
+    handler = logging.FileHandler(path, mode="a", encoding="utf-8")
     handler.setFormatter(
         _FileFormatter("[{asctime}] {levelname}: {message}", style="{")
     )
     return handler
 
 
-def log_file_stream() -> TextIO:
-    """Open (once) and return the stream of the full-logging file.
+@contextlib.contextmanager
+def log_file_stream() -> Generator[TextIO]:
+    """Return the live stream of the full-logging file, reopening if needed.
 
-    The legacy ``console`` file writer renders through this same stream, so a
-    single file holds every record no matter which API produced it.
+    An external ``logging.config.dictConfig`` (granian runs one in each
+    worker process) closes every existing handler; reopen the file in append
+    mode rather than handing writers a dead stream.
 
-    Returns:
+    Yields:
         The writable stream of the full-logging file.
     """
-    return _file_handler().stream
+    handler = _file_handler()
+    handler.acquire()
+    try:
+        stream = handler.stream
+        if stream is None:
+            # FileHandler._open is private stdlib API, but it is the only way
+            # to reopen the file with the handler's own mode/encoding, and
+            # FileHandler.emit itself reopens a closed handler the same way.
+            stream = handler.stream = handler._open()
+        yield cast("TextIO", stream)
+    finally:
+        handler.release()
+
+
+class _LogFileStreamProxy:
+    """Writable file-like object always targeting the live log-file stream.
+
+    Long-lived writers (the legacy console file writer) hold this proxy
+    instead of a raw stream, so they stay valid when an external logging
+    re-config closes the file handler and the pipeline reopens it.
+    """
+
+    __slots__ = ()
+
+    def write(self, text: str) -> int:
+        """Write to the current log-file stream.
+
+        Args:
+            text: The text to write.
+
+        Returns:
+            The number of characters written.
+        """
+        with log_file_stream() as stream:
+            return stream.write(text)
+
+    def flush(self):
+        """Flush the current log-file stream."""
+        with log_file_stream() as stream:
+            stream.flush()
+
+    def isatty(self) -> bool:
+        """Report that the log file is not a terminal.
+
+        Returns:
+            False.
+        """
+        return False
+
+
+_LOG_FILE_PROXY = _LogFileStreamProxy()
+
+
+def log_file_proxy() -> TextIO:
+    """Return a stable writable proxy for the full-logging file.
+
+    Returns:
+        A file-like object resolving the live stream on every write.
+    """
+    return cast("TextIO", _LOG_FILE_PROXY)
 
 
 @once
@@ -400,6 +482,38 @@ def is_json_mode() -> bool:
     from reflex_base.environment import environment
 
     return environment.REFLEX_LOG_JSON.get()
+
+
+def reserve_stdout(reserved: bool = True):
+    """Reserve stdout for a machine-readable document.
+
+    A command that writes structured output (``--json``) owns stdout for the
+    duration, so every human-readable message -- log records, tables, spinners
+    -- renders to stderr instead and cannot land in the middle of the document.
+
+    Args:
+        reserved: Whether stdout carries data rather than human output.
+    """
+    global _stdout_reserved
+    _stdout_reserved = reserved
+
+
+def is_stdout_reserved() -> bool:
+    """Check whether stdout is reserved for a machine-readable document.
+
+    Returns:
+        True if human-readable output has to go to stderr.
+    """
+    return _stdout_reserved
+
+
+def human_console() -> Console:
+    """Get the console human-readable output renders to.
+
+    Returns:
+        The stderr console while stdout is reserved, the stdout one otherwise.
+    """
+    return _console_stderr if _stdout_reserved else _console
 
 
 def set_json_mode(enabled: bool):
@@ -468,6 +582,8 @@ def emit_json_print(
 
 
 _configured = False
+_configured_json_mode: bool | None = None
+_configured_full_logging: bool | None = None
 _active_file_handler: logging.FileHandler | None = None
 
 
@@ -521,7 +637,11 @@ def configure():
     application-side ``basicConfig`` cannot double-emit reflex records or
     break the ``--json`` only-JSON output contract.
     """
-    global _active_file_handler, _configured
+    global \
+        _active_file_handler, \
+        _configured, \
+        _configured_full_logging, \
+        _configured_json_mode
     from reflex_base.environment import environment
 
     json_mode = environment.REFLEX_LOG_JSON.get()
@@ -549,6 +669,8 @@ def configure():
         else:
             _REFLEX_LOGGER.removeHandler(file_handler)
     _configured = True
+    _configured_full_logging = full_logging
+    _configured_json_mode = json_mode
 
 
 def ensure_configured():
@@ -557,19 +679,38 @@ def ensure_configured():
     Outside the CLI this is a no-op: no handler is attached and records
     propagate to the root logger for the application to handle.
     """
-    if not _configured and is_managed_mode():
+    if not is_managed_mode():
+        return
+    from reflex_base.environment import environment
+
+    json_mode = environment.REFLEX_LOG_JSON.get()
+    full_logging = environment.REFLEX_ENABLE_FULL_LOGGING.get()
+    expected_sink = _json_handler() if json_mode else _console_handler()
+    if (
+        not _configured
+        or _configured_json_mode != json_mode
+        or _configured_full_logging != full_logging
+        or expected_sink not in _REFLEX_LOGGER.handlers
+    ):
         configure()
 
 
 def _reset():
     """Detach the sinks and restore propagation (test teardown helper)."""
-    global _configured
+    global \
+        _configured, \
+        _configured_full_logging, \
+        _configured_json_mode, \
+        _stdout_reserved
+    _stdout_reserved = False
     for handler in (_console_handler(), _json_handler(), _active_file_handler):
         if handler is not None:
             _REFLEX_LOGGER.removeHandler(handler)
     _REFLEX_LOGGER.propagate = True
     _REFLEX_LOGGER.setLevel(logging.NOTSET)
     _configured = False
+    _configured_full_logging = None
+    _configured_json_mode = None
 
 
 def set_log_level(log_level: LogLevel | None):
@@ -725,9 +866,8 @@ def deprecate(
         deprecation_version: The version the feature was deprecated
         removal_version: The version the deprecated feature will be removed
         dedupe: If True, suppress multiple warnings of the same deprecation.
-        kwargs: Ignored legacy print kwargs.
+        kwargs: Legacy Rich print kwargs for the console sink.
     """
-    del kwargs
     dedupe_key = feature_name
     loc = ""
     user_location = None
@@ -761,6 +901,8 @@ def deprecate(
             "removal_version": removal_version,
             # Machine consumers need the user call site, not this frame.
             "location": user_location,
+            "rich": kwargs.get("markup", True),
+            _RICH_KWARGS_FIELD: kwargs,
         },
     )
 

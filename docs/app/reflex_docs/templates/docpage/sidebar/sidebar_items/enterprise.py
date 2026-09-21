@@ -46,6 +46,10 @@ def get_sidebar_items_enterprise_usage():
                     link=enterprise.auth.secure_by_default.path,
                 ),
                 SideBarItem(
+                    names="Example: A Complete App",
+                    link=enterprise.auth.example_app.path,
+                ),
+                SideBarItem(
                     names="OIDC Providers",
                     link=enterprise.auth.providers.path,
                 ),

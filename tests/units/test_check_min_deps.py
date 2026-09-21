@@ -1,7 +1,10 @@
 """Unit tests for scripts/check_min_deps.py (the minimum-dependency-version checker)."""
 
+import os
+import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 
@@ -208,41 +211,195 @@ def test_discover_packages_records_local_dev_sources():
             assert (source / "pyproject.toml").is_file()
 
 
-def test_resolve_and_check_appends_local_dev_sources_as_editables(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-):
-    captured: list[list[str]] = []
+class _FakeRun:
+    """Records the commands ``_run`` is called with and replays canned results."""
 
-    class _Done:
-        returncode = 0
-        stdout = '{"generalDiagnostics": []}'
+    def __init__(self, returncode: int = 0, stdout: str = '{"generalDiagnostics": []}'):
+        self.commands: list[list[str]] = []
+        self.returncode = returncode
+        self.stdout = stdout
 
-    def fake_run(cmd: list[str], **kwargs: object) -> _Done:
-        captured.append([str(c) for c in cmd])
-        return _Done()
+    def __call__(self, cmd: list[str], **kwargs: object) -> "_FakeRun":
+        self.commands.append([str(c) for c in cmd])
+        return self
 
-    monkeypatch.setattr(check_min_deps, "_run", fake_run)
-    dev_source = check_min_deps.REPO_ROOT / "packages" / "reflex-base"
-    package = check_min_deps.Package(
+    def command_starting_with(self, prefix: list[str]) -> list[str]:
+        return next(c for c in self.commands if c[: len(prefix)] == prefix)
+
+
+def _fake_package(dev_sources: tuple[Path, ...] = ()) -> check_min_deps.Package:
+    return check_min_deps.Package(
         name="reflex",
         project_dir=check_min_deps.REPO_ROOT,
         source_dir=check_min_deps.REPO_ROOT / "reflex",
         extras=(),
-        local_dev_sources=(dev_source,),
+        local_dev_sources=dev_sources,
     )
 
+
+def test_resolve_and_check_offers_dev_wheelhouse_as_an_index(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    fake_run = _FakeRun()
+    monkeypatch.setattr(check_min_deps, "_run", fake_run)
+    wheelhouse = tmp_path / "wheelhouse"
+
     errors, _ = check_min_deps._resolve_and_check(
-        package, "3.12", tmp_path / "venv", tmp_path / "cfg.json", lowest=True
+        _fake_package((check_min_deps.REPO_ROOT / "packages" / "reflex-base",)),
+        "3.12",
+        tmp_path / "venv",
+        tmp_path / "cfg.json",
+        wheelhouse,
+        lowest=True,
     )
 
     assert errors == {}
-    install = next(c for c in captured if c[:3] == ["uv", "pip", "install"])
+    install = fake_run.command_starting_with(["uv", "pip", "install"])
     # PyPI is still forced for every non-dev dependency...
     assert "--no-sources" in install
     assert install[install.index("--resolution") + 1] == "lowest-direct"
-    # ...but the dev-pinned sibling is provided editable from its local checkout.
-    assert install.count("-e") == 2
-    assert str(dev_source) in install
+    # ...but the locally built wheels of dev-pinned siblings are resolvable. An index (not a
+    # second editable target) is required, so build environments can see them too.
+    assert install[install.index("--find-links") + 1] == str(wheelhouse)
+    assert install.count("-e") == 1
+    assert install[-1] == str(check_min_deps.REPO_ROOT)
+
+
+def test_resolve_and_check_without_dev_sources_uses_no_index(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    fake_run = _FakeRun()
+    monkeypatch.setattr(check_min_deps, "_run", fake_run)
+
+    check_min_deps._resolve_and_check(
+        _fake_package(),
+        "3.12",
+        tmp_path / "venv",
+        tmp_path / "cfg.json",
+        None,
+        lowest=False,
+    )
+
+    install = fake_run.command_starting_with(["uv", "pip", "install"])
+    assert "--find-links" not in install
+    assert "--resolution" not in install
+    assert install.count("-e") == 1
+
+
+def test_build_dev_wheelhouse_builds_every_dev_source(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    fake_run = _FakeRun()
+    monkeypatch.setattr(check_min_deps, "_run", fake_run)
+    sources = (
+        check_min_deps.REPO_ROOT / "packages" / "reflex-base",
+        check_min_deps.REPO_ROOT / "packages" / "reflex-hosting-cli",
+    )
+    wheelhouse = tmp_path / "nested" / "wheelhouse"
+
+    assert (
+        check_min_deps._build_dev_wheelhouse(_fake_package(sources), wheelhouse) is None
+    )
+
+    # ``uv build`` refuses to run against a missing ``--find-links`` directory.
+    assert wheelhouse.is_dir()
+    assert len(fake_run.commands) == len(sources)
+    for source, build in zip(sources, fake_run.commands, strict=True):
+        assert build[:4] == ["uv", "build", "--no-sources", "--wheel"]
+        assert build[build.index("--out-dir") + 1] == str(wheelhouse)
+        assert build[build.index("--find-links") + 1] == str(wheelhouse)
+        assert build[-1] == str(source)
+
+
+def test_build_dev_wheelhouse_reports_build_failure(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    fake_run = _FakeRun(returncode=1, stdout="boom")
+    monkeypatch.setattr(check_min_deps, "_run", fake_run)
+    sources = (
+        check_min_deps.REPO_ROOT / "packages" / "reflex-base",
+        check_min_deps.REPO_ROOT / "packages" / "reflex-hosting-cli",
+    )
+
+    detail = check_min_deps._build_dev_wheelhouse(
+        _fake_package(sources), tmp_path / "wheelhouse"
+    )
+
+    assert detail == "boom"
+    assert len(fake_run.commands) == 1, "the first failure should stop the build"
+
+
+@pytest.mark.parametrize(
+    ("requirement", "version"),
+    [
+        ("reflex-base>=0.9.12.dev0", "0.9.12.dev0"),
+        ("reflex-base>=0.9.12.dev0,>=0.9.12.dev2", "0.9.12.dev2"),
+        ("reflex-base==0.9.12.dev3", "0.9.12.dev3"),
+        ("reflex-base>0.9.12.dev0", None),
+    ],
+)
+def test_dev_wheel_version_satisfies_declared_floor(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    requirement: str,
+    version: str | None,
+):
+    """Development wheels honor usable declared floors without changing the parent env.
+
+    Args:
+        monkeypatch: Environment and build-process patching fixture.
+        tmp_path: Temporary consumer and sibling package directory.
+        requirement: The consumer's unpublished dependency requirement.
+        version: The declared version to use, or None to retain normal versioning.
+    """
+    consumer = tmp_path / "consumer"
+    sibling = tmp_path / "sibling"
+    consumer.mkdir()
+    sibling.mkdir()
+    (consumer / "pyproject.toml").write_text(
+        f'[project]\nname = "consumer"\ndependencies = ["{requirement}"]\n'
+    )
+    (sibling / "pyproject.toml").write_text('[project]\nname = "reflex-base"\n')
+    package = check_min_deps.Package(
+        name="consumer",
+        project_dir=consumer,
+        source_dir=consumer,
+        extras=(),
+        local_dev_sources=(sibling,),
+    )
+    monkeypatch.delenv("UV_DYNAMIC_VERSIONING_BYPASS", raising=False)
+    build = Mock(return_value=subprocess.CompletedProcess([], 0, stdout=""))
+    monkeypatch.setattr(check_min_deps, "_run", build)
+
+    assert check_min_deps._build_dev_wheelhouse(package, tmp_path / "wheels") is None
+
+    env = build.call_args.kwargs.get("env")
+    if version is None:
+        assert env is None
+    else:
+        assert env is not None
+        assert env["UV_DYNAMIC_VERSIONING_BYPASS"] == version
+        assert env["PATH"] == os.environ["PATH"]
+    assert "UV_DYNAMIC_VERSIONING_BYPASS" not in os.environ
+
+
+def test_check_package_reports_failed_wheelhouse_build(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(
+        check_min_deps, "_build_dev_wheelhouse", lambda package, wheelhouse: "boom"
+    )
+    monkeypatch.setattr(
+        check_min_deps,
+        "_resolve_and_check",
+        lambda *args, **kwargs: pytest.fail("must not resolve without the dev wheels"),
+    )
+
+    result = check_min_deps.check_package(
+        _fake_package((check_min_deps.REPO_ROOT / "packages" / "reflex-base",)), "3.12"
+    )
+
+    assert not result.ok
+    assert result.stage == "resolution"
+    assert "boom" in result.detail
 
 
 def _write_pyproject(path: Path, dependencies: list[str], optional: str = "") -> Path:

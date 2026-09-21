@@ -21,7 +21,7 @@ class SwitchBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the switch component."""
+        """The import variable for the switch component."""
         return ImportVar(tag="Switch", package_path="", install=False)
 
 

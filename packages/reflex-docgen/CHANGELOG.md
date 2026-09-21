@@ -1,3 +1,10 @@
+## v0.9.5 (2026-08-28)
+
+### Miscellaneous
+
+- Property docstrings are now noun phrases rather than "Get the ..." / "Return the ..." (ruff 0.16's new `D421`). ([#6893](https://github.com/reflex-dev/reflex/issues/6893))
+
+
 ## v0.9.4 (2026-08-04)
 
 ### Features

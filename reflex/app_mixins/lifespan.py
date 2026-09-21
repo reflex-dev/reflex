@@ -16,6 +16,8 @@ from reflex_base.utils import console
 from reflex_base.utils.exceptions import InvalidLifespanTaskTypeError
 from starlette.applications import Starlette
 
+from reflex.utils import prerequisites
+
 from .mixin import AppMixin
 
 logger = logging.getLogger(__name__)
@@ -60,14 +62,14 @@ class LifespanMixin(AppMixin):
         @property
         @deprecated("Use get_lifespan_tasks method instead.")
         def lifespan_tasks(self) -> frozenset[asyncio.Task | Callable]:
-            """Get a copy of registered lifespan tasks (deprecated)."""
+            """A copy of registered lifespan tasks (deprecated)."""
             ...
 
     else:
 
         @property
         def lifespan_tasks(self) -> frozenset[asyncio.Task | Callable]:
-            """Get a copy of registered lifespan tasks.
+            """A copy of registered lifespan tasks.
 
             Returns:
                 A frozenset of registered lifespan tasks.
@@ -146,6 +148,7 @@ class LifespanMixin(AppMixin):
             pass
         else:
             await state_manager.close()
+        await prerequisites.close_health_redis()
 
     @overload
     def register_lifespan_task(
