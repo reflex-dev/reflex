@@ -49,7 +49,9 @@ from reflex_base.utils.compat import MISSING_TYPE, annotations_from_namespace
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
     ComputedVarSignatureError,
+    EventHandlerShadowsBuiltInStateMethodError,
     ReflexRuntimeError,
+    StateValueError,
     UntypedComputedVarError,
     VarAttributeError,
     VarDependencyError,
@@ -4036,25 +4038,103 @@ def _inherited_value(lookup_order: list[type], name: str) -> Any:
     return MISSING
 
 
-# Check run on every class this metaclass creates, installed by `reflex` once
-# its BaseState exists (see `reflex.istate.validation`). It is a hook rather
-# than a `BaseStateMeta` subclass so that `BaseStateMeta` stays the metaclass
-# of every state and downstream metaclasses derived from it keep composing.
-_state_declaration_validator: (
-    Callable[[tuple[type, ...], dict[str, Any]], None] | None
-) = None
+_FIELD_MAP_NAMES = frozenset({"__fields__", "__own_fields__", "__inherited_fields__"})
 
 
-def _set_state_declaration_validator(
-    validator: Callable[[tuple[type, ...], dict[str, Any]], None],
-) -> None:
-    """Install the check run before any class of this metaclass is constructed.
+@functools.cache
+def _reserved_state_members(root: BaseStateMeta) -> dict[str, Any]:
+    """Return the framework members of a root state, without its vars or Python protocols.
 
     Args:
-        validator: Called with the bases and the unmodified class namespace.
+        root: The state class declared with ``state_root=True``.
+
+    Returns:
+        Reserved names and their original descriptors, without invoking them.
     """
-    global _state_declaration_validator
-    _state_declaration_validator = validator
+    members = {}
+    for base in reversed(root.__mro__[:-1]):
+        namespace = vars(base)
+        members.update(
+            (name, namespace.get(name))
+            for name in namespace.keys() | annotations_from_namespace(namespace).keys()
+            if not name.startswith("__") or name in _FIELD_MAP_NAMES
+        )
+    for name, field_ in root.__fields__.items():
+        if field_.is_var:
+            members.pop(name, None)
+    return members
+
+
+def _validate_state_name(root: BaseStateMeta, name: str, value: Any = None) -> None:
+    """Reject declarations that replace framework methods or bookkeeping.
+
+    Args:
+        root: The state class whose namespace is reserved.
+        name: The declared or dynamically registered name.
+        value: The raw class declaration, when available.
+
+    Raises:
+        StateValueError: If a declaration uses a reserved name.
+        EventHandlerShadowsBuiltInStateMethodError: If a method overrides a builtin.
+    """
+    members = _reserved_state_members(root)
+    if name not in members:
+        return
+    method = value.__func__ if isinstance(value, (classmethod, staticmethod)) else value
+    if isinstance(method, FunctionType):
+        if value is members[name] or getattr(method, "__override_base_method__", False):
+            return
+        msg = f"The event handler name `{name}` shadows a builtin State method; use a different name instead"
+        raise EventHandlerShadowsBuiltInStateMethodError(msg)
+    msg = f"State name `{name}` is reserved by {root.__name__}; use a different name instead."
+    raise StateValueError(msg)
+
+
+def _validate_inherited_members(
+    root: BaseStateMeta, base: type, seen: set[str]
+) -> None:
+    """Check the members a Python mixin or model base adds to a state.
+
+    Args:
+        root: The state class whose namespace is reserved.
+        base: A base class that is not itself a state of that root.
+        seen: Names an earlier base already provides in the MRO.
+    """
+    is_model = isinstance(base, BaseStateMeta)
+    if is_model:
+        # Model fields are inherited even when an earlier base masks their
+        # class attributes in the MRO.
+        for member in base.__own_fields__:
+            _validate_state_name(root, member)
+        seen.update(base.__own_fields__)
+    for member, value in vars(base).items():
+        if member not in seen and not (
+            is_model and (member in _FIELD_MAP_NAMES or member == "_mixin")
+        ):
+            _validate_state_name(root, member, value)
+
+
+def _validate_state_declaration(
+    root: BaseStateMeta, lookup_order: list[type], namespace: dict[str, Any]
+) -> None:
+    """Check a state's declarations and Python mixins before it is constructed.
+
+    Args:
+        root: The state class whose namespace the new class may not shadow.
+        lookup_order: The bases of the new class in method resolution order.
+        namespace: The unmodified class namespace.
+    """
+    seen = namespace.keys() | annotations_from_namespace(namespace).keys()
+    for member in seen:
+        _validate_state_name(root, member, namespace.get(member))
+    for base in lookup_order:
+        if (
+            not issubclass(base, root)
+            and base is not EvenMoreBasicBaseState
+            and base is not object
+        ):
+            _validate_inherited_members(root, base, seen)
+        seen.update(vars(base))
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
@@ -4069,12 +4149,17 @@ class BaseStateMeta(ABCMeta):
         # Whether this state class is a mixin and should not be instantiated.
         _mixin: bool = False
 
+        # The state declared with ``state_root=True`` that this class descends
+        # from; its namespace is reserved for the whole hierarchy.
+        _reflex_state_root: BaseStateMeta
+
     def __new__(
         cls,
         name: str,
         bases: tuple[type, ...],
         namespace: dict[str, Any],
         mixin: bool = False,
+        state_root: bool = False,
     ) -> type:
         """Create a new class.
 
@@ -4083,12 +4168,18 @@ class BaseStateMeta(ABCMeta):
             bases: The bases of the class.
             namespace: The namespace of the class.
             mixin: Whether the class is a mixin and should not be instantiated.
+            state_root: Whether the class defines the framework namespace that
+                its subclasses may not shadow.
 
         Returns:
             The new class.
         """
-        if _state_declaration_validator is not None:
-            _state_declaration_validator(bases, namespace)
+        lookup_order = _linearize_bases(bases)
+        for base in bases:
+            root = getattr(base, "_reflex_state_root", None)
+            if root is not None:
+                _validate_state_declaration(root, lookup_order, namespace)
+                break
 
         state_bases = [
             base for base in bases if issubclass(base, EvenMoreBasicBaseState)
@@ -4152,8 +4243,6 @@ class BaseStateMeta(ABCMeta):
 
             own_fields[key] = new_value
 
-        lookup_order = _linearize_bases(bases)
-
         for key, annotation in resolved_annotations.items():
             value = namespace.get(key, MISSING)
 
@@ -4199,7 +4288,10 @@ class BaseStateMeta(ABCMeta):
         namespace["__inherited_fields__"] = inherited_fields
         namespace["__fields__"] = inherited_fields | own_fields
         namespace["_mixin"] = mixin
-        return super().__new__(cls, name, bases, namespace)
+        new_cls = super().__new__(cls, name, bases, namespace)
+        if state_root:
+            new_cls._reflex_state_root = new_cls
+        return new_cls
 
 
 class EvenMoreBasicBaseState(metaclass=BaseStateMeta):
