@@ -216,3 +216,30 @@ With the fix: `38 passed`. The 34 pre-existing #7136 tests are green on both sid
 Claim independently verified on 0.9.11.post1 vs the fixed tree: `State(...).dict()` goes from `['router_rx_state_']` to the five `rx_router_{headers,page,route_id,session,url}_rx_state_` keys, and `get_delta()` shows the same five once the router vars are dirty (0.9.11.post1: `['router_rx_state_']`). I also confirmed no existing fragment covers it - `news/7068.breaking.md` documents the new base vars and the shadowing error, `news/7068.performance.md` and `packages/reflex-base/news/7068.performance.md` document the storage change, none tells a reader of a serialized state which keys to read. The gap is real and the wording is accurate.
 
 VERDICT: the root-cause analysis is correct (the conflict is raised by `__build_class__`/`_calculate_meta` before any metaclass code runs, so shape (b) from the brief is genuinely impossible, not merely unattractive), shape (a) is implemented minimally, the #7136 behaviour is bit-for-bit preserved, and the release blocker is gone on the real enterprise surface. Cherry-pickable as two clean commits (`6ab3edbc9`, `4290548fe`); worktree is clean at `4290548fe`.
+
+## REWORK (2026-09-21, orchestrator, commit `fbcdb33a1` on the PR branch)
+
+Requested by the maintainer during PR review: no module-level state, no validator installed after the class body.
+
+- `reflex/istate/validation.py` is deleted; the reserved-name / handler-shadowing validation now lives in
+  `packages/reflex-base/src/reflex_base/vars/base.py` next to `BaseStateMeta`, and `BaseStateMeta.__new__` always runs it.
+- `class BaseState(EvenMoreBasicBaseState, state_root=True)`: the new class keyword (alongside `mixin=`) makes the
+  metaclass store the created class on itself as `_reflex_state_root`. Every subclass inherits the attribute;
+  `__new__` finds the root on the bases of each class it creates and validates the new namespace against that root's
+  members (`_reserved_state_members` is cached per root). No root among the bases (the root itself, `EvenMoreBasicBaseState`,
+  plain models) means no validation, exactly as the previous `issubclass(base, BaseState)` guard behaved.
+- `_validate_state_name(root, name, value=None)` takes the root explicitly; the three dynamic-registration call sites in
+  `reflex/state.py` pass `cls._reflex_state_root`. The MRO linearization `__new__` already computes is reused for the
+  inherited-members walk instead of being recomputed.
+- Tests: `tests/units/istate/test_validation.py` moved unchanged into `tests/units/reflex_base/vars/test_base.py` (the
+  module that owns the code now), `test_state_metaclass_is_base_state_meta` also asserts the root marker, plus two new
+  tests: a `state_root=True` class on `EvenMoreBasicBaseState` reserves its own members (including `_reflex_state_root`)
+  for its subclasses, and two roots in one process do not share reserved names.
+- News fragments reworded for the new mechanism.
+
+Evidence on the reworked branch: `uv run ruff check .` / `ruff format --check .` clean; `uv run pyright reflex tests`
+0 errors; `uv run pytest tests/units --ignore=tests/units/reflex_cli` 9128 passed, 20 skipped; the campaign's
+`orch_probes/metaclass_probe.py` prints OK for all three cases with `type(rx.State) = reflex_base.vars.base.BaseStateMeta`;
+`import reflex_enterprise.auth.oidc.state` (published 0.9.5 wheel) succeeds and `rx.State._reflex_state_root is BaseState`;
+a reserved name declared through a `BaseStateMeta`-derived metaclass is still rejected with `StateValueError`.
+Cherry-picked onto `claude/upbeat-feynman-m41a1u` as `b9f8f518a`.
