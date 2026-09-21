@@ -3019,7 +3019,7 @@ class BackgroundTaskState(BaseState):
 
     async def bad_chain1(self):
         """Test that a background task cannot be chained."""
-        await self.background_task()
+        await self.background_task(0)
 
     async def bad_chain2(self):
         """Test that a background task generator cannot be chained."""
