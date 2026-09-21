@@ -109,6 +109,10 @@ They touch only framework files, so each can be cherry-picked from there onto `m
   reflex-enterprise's injected cookie names. `type(rx.State) is BaseStateMeta` is again an implicit contract —
   document it in the `BaseStateMeta` docstring if intended. `_reflex_state_root` is itself a reserved name and
   `state_root=` joins `mixin=` as a class keyword understood by `BaseStateMeta`.
+  PR #7215 review follow-ups (out of scope, recorded in the PR description): restructure
+  `test_reserved_mixin_var[state_mixin=True]` so it asserts where the rejection happens (its second statement is
+  dead, pre-existing since #7136); optionally replace the `getattr(base, "_reflex_state_root", None)` lookup with a
+  typed metaclass default; document the `type(rx.State) is BaseStateMeta` contract.
 - f003: a downstream package that filters *after* `_get_resolved_delta` (rather than inside `get_delta`) would
   still get values recorded — reflex-enterprise 0.9.5 does not do that (verified from the wheel). The commit still
   happens before `emit_update`, so a delta the socket never delivers counts as sent (pre-existing; a reconnect

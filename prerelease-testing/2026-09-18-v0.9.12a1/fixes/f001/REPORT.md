@@ -243,3 +243,19 @@ Evidence on the reworked branch: `uv run ruff check .` / `ruff format --check .`
 `import reflex_enterprise.auth.oidc.state` (published 0.9.5 wheel) succeeds and `rx.State._reflex_state_root is BaseState`;
 a reserved name declared through a `BaseStateMeta`-derived metaclass is still rejected with `StateValueError`.
 Cherry-picked onto `claude/upbeat-feynman-m41a1u` as `b9f8f518a`.
+
+### PR review follow-ups (2026-09-21)
+
+PR #7215 review state: all 125 CI check runs green (macOS jobs skipped by design), no red checks; two bot threads.
+
+- cubic P3 on `test_reserved_mixin_var` (unresolved → answered and resolved): correct that for `state_mixin=True` the
+  reserved name is rejected at the mixin's own declaration, so the second `type("MixedState", …)` statement is dead in
+  that parametrization; incorrect that a "state-mixin branch of `_validate_inherited_members`" goes unexercised (that
+  function only runs for bases that are not subclasses of the root). Verified identical on `main` before the PR, so it
+  is pre-existing since #7136 and the test was moved verbatim. Pushed back; restructuring the test recorded as a
+  follow-up in the PR description.
+- greptile P2 "hardcoded root-marker identifier" (already resolved by a maintainer): the `"_reflex_state_root"` literal
+  in the `getattr` over the bases. Left as is; a typed metaclass default (`_reflex_state_root: BaseStateMeta | None =
+  None`) with the lookup limited to the `EvenMoreBasicBaseState` bases would remove both the literal and the `getattr`,
+  recorded as an optional follow-up.
+- Also listed as follow-up: documenting the `type(rx.State) is BaseStateMeta` contract in the `BaseStateMeta` docstring.
