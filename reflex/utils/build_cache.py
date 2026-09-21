@@ -216,6 +216,33 @@ def _digest_symlink(digest: _Digest, root: Path, path: Path, *, inputs: bool) ->
     )
 
 
+def _digest_frontend_metadata(digest: _Digest, path: Path) -> None:
+    """Hash frontend metadata without private telemetry timestamps.
+
+    Args:
+        digest: The digest receiving the frontend metadata.
+        path: The frontend metadata file.
+
+    Raises:
+        ValueError: Frontend metadata is not a JSON object.
+    """
+    metadata = json.loads(path.read_text())
+    if not isinstance(metadata, dict):
+        msg = "Frontend metadata must be an object"
+        raise ValueError(msg)
+    digest.update(
+        json.dumps(
+            {
+                key: value
+                for key, value in metadata.items()
+                if key not in _TELEMETRY_FIELDS
+                and not key.startswith(_VERSION_CHECK_PREFIXES)
+            },
+            sort_keys=True,
+        ).encode()
+    )
+
+
 def _digest_regular_file(
     digest: _Digest, path: Path, relative: Path, info: os.stat_result, *, inputs: bool
 ) -> None:
@@ -243,21 +270,7 @@ def _digest_regular_file(
         )
         return
     if inputs and relative.as_posix() == constants.Reflex.JSON:
-        metadata = json.loads(path.read_text())
-        if not isinstance(metadata, dict):
-            msg = "Frontend metadata must be an object"
-            raise ValueError(msg)
-        digest.update(
-            json.dumps(
-                {
-                    key: value
-                    for key, value in metadata.items()
-                    if key not in _TELEMETRY_FIELDS
-                    and not key.startswith(_VERSION_CHECK_PREFIXES)
-                },
-                sort_keys=True,
-            ).encode()
-        )
+        _digest_frontend_metadata(digest, path)
         return
     content_digest = hashlib.sha256()
     with path.open("rb") as source:

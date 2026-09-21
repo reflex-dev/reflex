@@ -470,10 +470,8 @@ def _is_bun_package_manager(package_manager: str) -> bool:
     return Path(package_manager).stem.lower() == "bun"
 
 
-def _verified_installed_version(
-    name: str, declaration: str, entry: object
-) -> str | None:
-    """Return a verified installed version for one npm caret declaration.
+def _npm_lock_version(name: str, declaration: str, entry: object) -> str | None:
+    """Read a reusable version from an npm lock entry.
 
     Args:
         name: The package name.
@@ -481,7 +479,7 @@ def _verified_installed_version(
         entry: The package-lock entry for the installed package.
 
     Returns:
-        The installed version when its lock and package metadata both match.
+        The locked version when its identity and saved caret declaration match.
     """
     if (
         not isinstance(entry, dict)
@@ -498,6 +496,25 @@ def _verified_installed_version(
         "link:",
         "workspace:",
     )):
+        return None
+    return installed_version
+
+
+def _verified_installed_version(
+    name: str, declaration: str, entry: object
+) -> str | None:
+    """Return a verified installed version for one npm caret declaration.
+
+    Args:
+        name: The package name.
+        declaration: The version declared in the package manifest.
+        entry: The package-lock entry for the installed package.
+
+    Returns:
+        The installed version when its lock and package metadata both match.
+    """
+    installed_version = _npm_lock_version(name, declaration, entry)
+    if installed_version is None:
         return None
     package_dir = get_web_dir() / Javascript.NODE_MODULES / name
     if package_dir.is_symlink():
