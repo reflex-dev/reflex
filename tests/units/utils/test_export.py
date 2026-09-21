@@ -2,10 +2,17 @@
 
 from __future__ import annotations
 
+import multiprocessing
+import os
+import zipfile
+from pathlib import Path
+from unittest.mock import Mock, patch
+
 import pytest
 from pytest_mock import MockerFixture
+from reflex_base import constants
 
-from reflex.utils import export
+from reflex.utils import build_cache, export
 
 
 @pytest.fixture
@@ -168,11 +175,93 @@ def test_export_holds_frontend_lock_through_packaging(
     assert config._set_persistent.call_count == 2
 
 
-def test_backend_only_export_does_not_lock_frontend(patched_export):
-    """A backend-only export does not create or lock a frontend workspace."""
-    export.export(frontend=False)
+@pytest.mark.parametrize(
+    ("workspace_exists", "backend", "zipping", "needs_lock"),
+    [
+        (False, True, True, False),
+        (True, True, True, True),
+        (True, False, True, False),
+        (True, True, False, False),
+    ],
+)
+def test_backend_only_export_locks_existing_workspace_for_packaging(
+    patched_export, tmp_path, mocker, workspace_exists, backend, zipping, needs_lock
+):
+    """Backend packaging locks existing generated files without creating a workspace."""
+    web = tmp_path / ".web"
+    if workspace_exists:
+        web.mkdir()
+    mocker.patch.object(export.prerequisites, "get_web_dir", return_value=web)
 
-    patched_export["frontend_build_lock"].assert_not_called()
+    export.export(frontend=False, backend=backend, zipping=zipping)
+
+    lock = patched_export["frontend_build_lock"]
+    if needs_lock:
+        lock.assert_called_once_with(web)
+        lock.return_value.__exit__.assert_called_once_with(None, None, None)
+    else:
+        lock.assert_not_called()
+    assert web.exists() == workspace_exists
+
+
+def _export_backend_in_process(root: Path, attempted, finished):
+    """Create a real backend archive from an independent interpreter.
+
+    Args:
+        root: The application root containing the shared frontend workspace.
+        attempted: Event set immediately before exporting.
+        finished: Event set after the backend archive has been written.
+    """
+    os.chdir(root)
+    with (
+        patch.object(export.prerequisites, "get_web_dir", return_value=root / ".web"),
+        patch.object(export, "get_config", return_value=Mock()),
+        patch.object(export.exec, "output_system_info"),
+        patch.object(export.telemetry, "send"),
+    ):
+        attempted.set()
+        export.export(frontend=False, zip_dest_dir=str(root))
+        finished.set()
+
+
+@pytest.mark.parametrize("cache_enabled", ["true", "false"])
+def test_backend_archive_waits_for_frontend_compilation(
+    tmp_path, monkeypatch, cache_enabled
+):
+    """Backend ZIPs wait for the compiler to publish its temporary stateful marker."""
+    monkeypatch.setenv("REFLEX_FRONTEND_BUILD_CACHE", cache_enabled)
+    web = tmp_path / ".web"
+    backend = web / constants.Dirs.BACKEND
+    backend.mkdir(parents=True)
+    marker = backend / constants.Dirs.STATEFUL_PAGES
+    marker.write_text('["old"]')
+    temporary = marker.with_suffix(".tmp")
+    temporary.write_text('["new"]')
+    (tmp_path / "app.py").write_text("# Backend source\n")
+    context = multiprocessing.get_context("spawn")
+    attempted, finished = context.Event(), context.Event()
+    child = context.Process(
+        target=_export_backend_in_process, args=(tmp_path, attempted, finished)
+    )
+    try:
+        with build_cache.frontend_build_lock(web):
+            child.start()
+            assert attempted.wait(15)
+            assert not finished.wait(0.5), "Backend ZIP raced with frontend compilation"
+            temporary.replace(marker)
+        assert finished.wait(15)
+    finally:
+        if child.pid is not None:
+            child.join(15)
+            if child.is_alive():
+                child.terminate()
+                child.join(5)
+    assert child.exitcode == 0
+
+    with zipfile.ZipFile(tmp_path / constants.ComponentName.BACKEND.zip()) as archive:
+        assert archive.read(marker.relative_to(tmp_path).as_posix()) == b'["new"]'
+        assert temporary.relative_to(tmp_path).as_posix() not in archive.namelist()
+        assert archive.read("app.py") == b"# Backend source\n"
 
 
 @pytest.mark.parametrize(

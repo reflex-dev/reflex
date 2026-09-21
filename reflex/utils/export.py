@@ -63,9 +63,10 @@ def export(
             phase_durations[name] = time.monotonic() - t0
 
     try:
+        web_dir = prerequisites.get_web_dir()
         with (
-            build_cache.frontend_build_lock(prerequisites.get_web_dir())
-            if frontend
+            build_cache.frontend_build_lock(web_dir)
+            if frontend or (backend and zipping and web_dir.is_dir())
             else nullcontext()
         ):
             # Set env mode in the environment.

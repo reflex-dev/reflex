@@ -19,10 +19,12 @@ from pathlib import Path
 from typing import Protocol
 
 from reflex_base import constants
+from reflex_base.constants.base import Javascript
 from reflex_base.environment import environment
 from typing_extensions import Buffer
 
 from reflex.utils import path_ops
+from reflex.utils.exec import frontend_env
 
 logger = logging.getLogger(__name__)
 
@@ -45,8 +47,7 @@ _VERSION_CHECK_PREFIXES = (
     "last_version_check_datetime_",
     "last_version_check_attempt_datetime_",
 )
-_BUILD_ENVIRONMENT_PREFIXES = ("BUN_", "NODE_", "NPM_CONFIG_", "REFLEX_", "VITE_")
-_IGNORED_BUILD_ENVIRONMENT_KEYS = {"REFLEX_LOGLEVEL"}
+_IGNORED_BUILD_ENVIRONMENT_KEYS = {"REFLEX_LOGLEVEL", "SHLVL"}
 _lock_state = threading.local()
 _lock_descriptors: set[int] = set()
 
@@ -168,7 +169,7 @@ def _is_generated(relative: Path) -> bool:
         relative.parts[0] in _GENERATED_ROOT_ENTRIES
         or (
             len(relative.parts) >= 2
-            and relative.parts[0] == "node_modules"
+            and relative.parts[0] == Javascript.NODE_MODULES
             and relative.parts[1] in _DEPENDENCY_CACHE_ENTRIES
         )
     )
@@ -230,7 +231,7 @@ def _digest_regular_file(
     Raises:
         ValueError: Frontend metadata is not a JSON object.
     """
-    if inputs and relative.parts[0] == "node_modules":
+    if inputs and relative.parts[0] == Javascript.NODE_MODULES:
         digest.update(
             json.dumps([
                 info.st_dev,
@@ -347,16 +348,15 @@ def _tree_digest(root: Path, *, inputs: bool = False) -> str:
 
 
 def _build_environment() -> list[tuple[str, str]]:
-    """Return environment values that can affect a Vite production build.
+    """Return the effective build environment, excluding documented non-inputs.
 
     Returns:
-        Sorted build-relevant environment key-value pairs.
+        Sorted environment key-value pairs passed to the frontend build.
     """
     return sorted(
         (key, value)
-        for key, value in os.environ.items()
-        if (key == "PATH" or key.startswith(_BUILD_ENVIRONMENT_PREFIXES))
-        and key not in _IGNORED_BUILD_ENVIRONMENT_KEYS
+        for key, value in frontend_env(os.environ).items()
+        if key not in _IGNORED_BUILD_ENVIRONMENT_KEYS
     )
 
 
@@ -374,7 +374,7 @@ def _input_digest(web_dir: Path, command: Sequence[str | Path]) -> str:
         OSError: Installed dependencies or a runtime are missing.
         ValueError: An input cannot safely be tracked.
     """
-    if not (web_dir / "node_modules").is_dir():
+    if not (web_dir / Javascript.NODE_MODULES).is_dir():
         msg = "Installed frontend dependencies are missing"
         raise ValueError(msg)
     runtime_paths = {str(command[0])}
@@ -393,7 +393,7 @@ def _input_digest(web_dir: Path, command: Sequence[str | Path]) -> str:
             info.st_ctime_ns,
         ))
     payload = [
-        3,  # Discard snapshots created before build-environment filtering.
+        4,  # Discard snapshots that omitted custom build environment inputs.
         str(web_dir),
         constants.Reflex.VERSION,
         [str(arg) for arg in command],

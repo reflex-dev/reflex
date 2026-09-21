@@ -250,11 +250,61 @@ def test_build_environment_change_rebuilds(cached_build, monkeypatch):
 @pytest.mark.skipif(
     os.name == "nt", reason="Frontend build cache is disabled on Windows"
 )
-def test_non_build_environment_change_reuses_cache(cached_build, monkeypatch):
-    """Unrelated shell state does not invalidate a deterministic frontend build."""
+@pytest.mark.parametrize("name", ["APP_RELEASE", "CI", "npm_config_custom"])
+def test_custom_build_environment_changes_refresh_output(
+    cached_build, monkeypatch, name
+):
+    """Custom export scripts see added, changed, and removed environment inputs."""
+    web, _, process = cached_build
+    compile_frontend = process.side_effect
+
+    def compile_release(*args, **kwargs):
+        """Write an artifact from the environment passed to the build subprocess.
+
+        Returns:
+            The simulated build process.
+        """
+        result = compile_frontend(*args, **kwargs)
+        (web / "build/client/release.txt").write_text(kwargs["env"].get(name, "unset"))
+        return result
+
+    process.side_effect = compile_release
+    monkeypatch.delenv(name, raising=False)
+    build.build()
+    for value in ("first", "second", None):
+        if value is None:
+            monkeypatch.delenv(name)
+        else:
+            monkeypatch.setenv(name, value)
+        build.build()
+        assert (web / "build/client/release.txt").read_text() == (value or "unset")
+    assert process.call_count == 4
+
+
+def test_effective_frontend_environment_is_fingerprinted(cached_build, monkeypatch):
+    """Track effective allocator overrides while ignoring overridden color values."""
+    _, _, process = cached_build
+    monkeypatch.delenv("MIMALLOC_ARENA_EAGER_COMMIT", raising=False)
+    monkeypatch.setenv("NO_COLOR", "0")
+    before = build_cache._build_environment()
+    build.build()
+    monkeypatch.setenv("NO_COLOR", "2")
+    monkeypatch.setenv("MIMALLOC_ARENA_EAGER_COMMIT", "0")
+    assert build_cache._build_environment() == before
+    monkeypatch.setenv("MIMALLOC_ARENA_EAGER_COMMIT", "1")
+    build.build()
+    assert process.call_count == 2
+
+
+@pytest.mark.skipif(
+    os.name == "nt", reason="Frontend build cache is disabled on Windows"
+)
+@pytest.mark.parametrize("name", ["SHLVL", "REFLEX_LOGLEVEL"])
+def test_non_build_environment_change_reuses_cache(cached_build, monkeypatch, name):
+    """Documented shell and logging exclusions do not invalidate a build."""
     _, _, process = cached_build
     build.build()
-    monkeypatch.setenv("SHLVL", "999")
+    monkeypatch.setenv(name, "999" if name == "SHLVL" else "debug")
     build.build()
     assert process.call_count == 1
 

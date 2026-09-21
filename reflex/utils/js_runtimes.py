@@ -12,6 +12,7 @@ from pathlib import Path
 from packaging import version
 from reflex_base import constants
 from reflex_base.config import Config, get_config
+from reflex_base.constants.base import Javascript
 from reflex_base.environment import environment
 from reflex_base.utils.decorator import cached_procedure, once
 from reflex_base.utils.exceptions import SystemPackageMissingError
@@ -498,7 +499,7 @@ def _verified_installed_version(
         "workspace:",
     )):
         return None
-    package_dir = get_web_dir() / "node_modules" / name
+    package_dir = get_web_dir() / Javascript.NODE_MODULES / name
     if package_dir.is_symlink():
         return None
     try:
@@ -565,7 +566,9 @@ def _npm_installed_package_sections(
             if root_declarations.get(name) != declaration:
                 continue
             if installed_version := _verified_installed_version(
-                name, declaration, packages.get(f"node_modules/{name}")
+                name,
+                declaration,
+                packages.get(f"{Javascript.NODE_MODULES}/{name}"),
             ):
                 installed[name] = installed_version
     return installed_deps, installed_dev_deps

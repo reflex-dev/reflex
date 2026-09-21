@@ -127,7 +127,9 @@ build, then runs post-build plugins, fallback generation, compression, and front
 path processing again. Python compilation and the normal dependency checks still run.
 
 On macOS, Linux, and Windows, production exports sharing `.web` wait for one
-another from compilation through ZIP creation. Production and preview startup
+another from compilation through ZIP creation. Backend-only exports also wait
+while archiving an existing `.web/backend` directory; they do not create `.web`
+when it is absent. Production and preview startup
 also hold this lock while compiling and building, even when caching is disabled,
 and release it before serving. The lock file `.web/.reflex-build.lock` remains in
 place between commands; do not remove it while a command is running.
@@ -141,7 +143,10 @@ or files outside `.web`; changes to those inputs require a fresh build. Run with
 or remove `.web/reflex.build-cache`. Re-enabling the option then populates a new cache.
 
 The cache checks generated frontend source, assets and configuration within `.web`,
-the build environment, runtime identity, and installed dependency file metadata.
+the effective build environment (including custom variables read by export scripts),
+runtime identity, and installed dependency file metadata. Only `REFLEX_LOGLEVEL`
+and the shell nesting level `SHLVL` are excluded from the environment fingerprint.
+Custom builds that use either excluded variable as an input should keep caching disabled.
 It also verifies snapshot file contents before restoring them. Use it on a local
 macOS or Linux filesystem that reports file modification and change timestamps
 reliably; the cache is bypassed on Windows and when links lead outside tracked inputs.
