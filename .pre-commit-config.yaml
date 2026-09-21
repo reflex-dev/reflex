@@ -34,6 +34,16 @@ repos:
     require_serial: true
 - repo: local
   hooks:
+  - id: unasync-reflex-build-sdk
+    name: unasync-reflex-build-sdk
+    description: Regenerate the synchronous reflex-build-sdk client and tests from the asynchronous source
+    entry: uv run --no-sync python packages/reflex-build-sdk/scripts/unasync.py
+    language: system
+    files: ^(packages/reflex-build-sdk/src/reflex_build_sdk/|packages/reflex-build-sdk/scripts/unasync\.py$|tests/units/reflex_build_sdk/)
+    pass_filenames: false
+    require_serial: true
+- repo: local
+  hooks:
   - id: pyright
     name: pyright
     entry: uv run --no-sync pyright
@@ -59,5 +69,5 @@ repos:
   - id: biome-format
     additional_dependencies: ['@biomejs/biome@2.4.8']
     args: [--indent-width, '2', --indent-style, space]
-    exclude: (\.css$|docs/app/)
+    exclude: (\.css$|docs/app/|packages/reflex-build-sdk/openapi\.json$)
     require_serial: true

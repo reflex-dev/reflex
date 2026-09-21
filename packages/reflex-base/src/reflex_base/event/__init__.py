@@ -585,13 +585,20 @@ class EventHandler(EventActionsMixin):
 
     @property
     def supersedes(self) -> bool:
-        """Whether a newer chain-root invocation supersedes an older one.
+        """Whether a newer invocation supersedes an older one.
 
-        When True, enqueuing this handler as a chain root cancels the previous
-        unfinished event chain rooted at the same handler for the same client
-        token. Cancellation is cooperative: a handler that never yields to the
-        event loop runs to completion, and only its not-yet-started chained
-        events are skipped.
+        When True, invocations of this handler use latest-wins semantics per
+        client token, ordered by the user-initiated root enqueue each chain
+        descends from: enqueuing the handler from a newer chain cancels any
+        unfinished invocation from an older chain, whether either was a chain
+        root or yielded by another handler. Invocations belonging to the same
+        chain coexist, so a handler may re-chain itself or be yielded several
+        times by one parent. While the newer chain's invocations are still
+        tracked, an older chain enqueuing the handler is dropped instead of
+        cancelling the newer work.
+        Cancellation is cooperative: a handler that never yields to the event
+        loop runs to completion, and only its not-yet-started chained events
+        are skipped.
 
         Returns:
             True if the event handler is marked as superseding.
@@ -914,6 +921,22 @@ class EventChain(EventActionsMixin):
             # Trust that the caller knows what they're doing passing an EventChain directly
             return value
 
+        # A handler bound to one trigger always produces the same chain, so
+        # every call site sharing the handler shares one instance per
+        # registration context. Handlers carrying event actions are fresh
+        # copies at every call site, so caching them would only retain them.
+        bound_handler = None
+        if (
+            not event_chain_kwargs
+            and isinstance(value, EventHandler)
+            and not value.event_actions
+        ):
+            bound_handler = value
+            bound_chains = RegistrationContext.ensure_context()._bound_event_chains
+            bound = bound_chains.get((id(value), id(args_spec), key))
+            if bound is not None and bound[0] is value and bound[1] is args_spec:
+                return bound[2]
+
         # If the input is a single event handler, wrap it in a list.
         if isinstance(value, (EventHandler, EventSpec)):
             value = [value]
@@ -953,12 +976,16 @@ class EventChain(EventActionsMixin):
             for e in events
         ]
 
-        # Return the event chain.
-        return cls(
+        chain = cls(
             events=events,
             args_spec=args_spec,
             **event_chain_kwargs,
         )
+        if bound_handler is not None:
+            RegistrationContext.ensure_context()._bound_event_chains[
+                id(bound_handler), id(args_spec), key
+            ] = (bound_handler, args_spec, chain)
+        return chain
 
 
 @dataclasses.dataclass(

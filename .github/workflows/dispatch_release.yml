@@ -82,6 +82,10 @@ on:
         description: "hatch-reflex-pyi"
         type: boolean
         default: false
+      reflex_build_sdk:
+        description: "reflex-build-sdk"
+        type: boolean
+        default: false
       reflex_components_code:
         description: "reflex-components-code"
         type: boolean
@@ -180,6 +184,7 @@ jobs:
           PACKAGES: >-
             ${{ inputs.reflex && 'reflex,reflex-base' || '' }}
             ${{ inputs.hatch_reflex_pyi && 'hatch-reflex-pyi' || '' }}
+            ${{ inputs.reflex_build_sdk && 'reflex-build-sdk' || '' }}
             ${{ inputs.reflex_components_code && 'reflex-components-code' || '' }}
             ${{ inputs.reflex_components_core && 'reflex-components-core' || '' }}
             ${{ inputs.reflex_components_dataeditor && 'reflex-components-dataeditor' || '' }}

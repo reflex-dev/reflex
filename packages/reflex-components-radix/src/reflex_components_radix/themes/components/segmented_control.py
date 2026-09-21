@@ -73,7 +73,7 @@ def _array_index_of_operation(
         Var yielding the 0-based index, or -1.
     """
     return CustomVarOperationReturn.create(
-        js_expression=f"({haystack}.indexOf({needle}))",
+        js_expression=f"({haystack!s}.indexOf({needle!s}))",
         _var_type=int,
     )
 
