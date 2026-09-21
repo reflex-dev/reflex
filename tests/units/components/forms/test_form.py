@@ -4,6 +4,7 @@ import pytest
 from reflex_base.event import EventChain, prevent_default
 from reflex_base.utils.exceptions import EventHandlerValueError
 from reflex_base.vars.base import Var
+from reflex_components_core.core.debounce import DebounceInput
 from reflex_components_core.el.elements.forms import (
     AUTO_HEIGHT_JS,
     ENTER_KEY_SUBMIT_JS,
@@ -58,8 +59,20 @@ def test_form_submit_filters_null_ref_values():
     )
 
     submit_hook = form.add_hooks()[0]
-    assert "Object.entries" in submit_hook
-    assert ".filter(([, value]) => value !== null)" in submit_hook
+    assert "ref_email" in submit_hook
+    assert "ref_email_label" not in submit_hook
+    assert "ref_submit_button" not in submit_hook
+
+
+def test_form_refs_include_debounced_controls():
+    """ID-only debounced inputs remain available to submit handlers."""
+    form = HTMLForm.create(
+        DebounceInput.create(
+            Input.create(id="debounced_input", on_change=rx.console_log)
+        )
+    )
+
+    assert "ref_debounced_input" in form.add_hooks()[0]
 
 
 @pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])

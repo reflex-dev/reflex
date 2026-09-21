@@ -64,7 +64,7 @@ def _handle_submit_js_template(
     const handleSubmit_{handle_submit_unique_name} = useCallback((ev) => {{
         const $form = ev.target
         ev.preventDefault()
-        const {form_data} = {{...Object.fromEntries(new FormData($form).entries()), ...Object.fromEntries(Object.entries({field_ref_mapping}).filter(([, value]) => value !== null))}};
+        const {form_data} = {{...Object.fromEntries(new FormData($form).entries()), ...{field_ref_mapping}}};
 
         ({on_submit_event_chain}(ev));
 
@@ -361,7 +361,15 @@ class Form(BaseHTML):
     def _get_form_refs(self) -> dict[str, Any]:
         # Send all the input refs to the handler.
         form_refs = {}
-        for ref in self._get_all_refs():
+        refs = dict.fromkeys(
+            ref
+            for component in _iter_form_components(self)
+            if component is not self
+            and isinstance(component, Component)
+            and getattr(component, "_is_form_control", False)
+            and (ref := component.get_ref()) is not None
+        )
+        for ref in refs:
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):

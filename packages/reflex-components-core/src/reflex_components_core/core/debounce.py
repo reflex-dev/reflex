@@ -25,6 +25,7 @@ class DebounceInput(Component):
     library = "react-debounce-input@3.3.0"
     tag = "DebounceInput"
     is_default = True
+    _is_form_control = True
 
     min_length: Var[int] = field(
         doc="Minimum input characters before triggering the on_change event"
