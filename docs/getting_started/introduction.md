@@ -126,14 +126,12 @@ rx.hstack(
     rx.button(
         "Decrement",
         color_scheme="ruby",
-        high_contrast=True,
         on_click=CounterExampleState.decrement,
     ),
     rx.heading(CounterExampleState.count, as_="h2", font_size="2em"),
     rx.button(
         "Increment",
         color_scheme="grass",
-        high_contrast=True,
         on_click=CounterExampleState.increment,
     ),
     spacing="4",
@@ -170,14 +168,12 @@ rx.box(
         rx.button(
             "Decrement",
             color_scheme="ruby",
-            high_contrast=True,
             on_click=State.decrement,
         ),
         rx.heading(State.count, font_size="2em"),
         rx.button(
             "Increment",
             color_scheme="grass",
-            high_contrast=True,
             on_click=State.increment,
         ),
         spacing="4",
@@ -241,14 +237,12 @@ def index():
         rx.button(
             "Decrement",
             color_scheme="ruby",
-            high_contrast=True,
             on_click=State.decrement,
         ),
         rx.heading(State.count, as_="h2", font_size="2em"),
         rx.button(
             "Increment",
             color_scheme="grass",
-            high_contrast=True,
             on_click=State.increment,
         ),
         spacing="4",

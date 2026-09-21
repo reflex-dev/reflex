@@ -107,39 +107,3 @@ def test_reference_html_stays_within_payload_budget(route, budget):
     """Catch accidental reintroduction of repeated inherited API tables."""
     page = WEB / "build/client/docs" / route / "index.html"
     assert page.stat().st_size < budget, (route, page.stat().st_size, budget)
-
-
-def test_introduction_counter_uses_high_contrast_buttons():
-    """The introductory live demo keeps readable labels on its colored buttons."""
-    page = WEB / "build/client/docs/getting-started/introduction/index.html"
-    if not page.is_file():
-        pytest.skip("Build the docs before checking exported counter buttons.")
-
-    class Buttons(HTMLParser):
-        def __init__(self):
-            super().__init__()
-            self.buttons = []
-            self.current = None
-            self.label = []
-
-        def handle_starttag(self, tag, attrs):
-            if tag == "button":
-                self.current = dict(attrs)
-                self.label = []
-
-        def handle_data(self, data):
-            if self.current is not None:
-                self.label.append(data)
-
-        def handle_endtag(self, tag):
-            if tag == "button" and self.current is not None:
-                self.buttons.append(("".join(self.label).strip(), self.current))
-                self.current = None
-
-    buttons = Buttons()
-    buttons.feed(page.read_text())
-    for label, color in {"Decrement": "ruby", "Increment": "grass"}.items():
-        matches = [attrs for text, attrs in buttons.buttons if text == label]
-        assert len(matches) == 1, (label, matches)
-        assert matches[0].get("data-accent-color") == color
-        assert "rt-high-contrast" in matches[0].get("class", "").split()
