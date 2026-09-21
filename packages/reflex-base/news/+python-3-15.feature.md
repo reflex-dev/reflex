@@ -1,0 +1,1 @@
+Python 3.15 has provisional support and is tested in CI. Upstream dependency limitations remain, including dill-based function serialization, which affects some persisted state and dynamic components with Redis.

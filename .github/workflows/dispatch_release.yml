@@ -82,6 +82,10 @@ on:
         description: "hatch-reflex-pyi"
         type: boolean
         default: false
+      reflex_build_sdk:
+        description: "reflex-build-sdk"
+        type: boolean
+        default: false
       reflex_components_code:
         description: "reflex-components-code"
         type: boolean
@@ -138,6 +142,10 @@ on:
         description: "reflex-hosting-cli"
         type: boolean
         default: false
+      reflex_otel:
+        description: "reflex-otel"
+        type: boolean
+        default: false
       reflex_release:
         description: "reflex-release"
         type: boolean
@@ -176,6 +184,7 @@ jobs:
           PACKAGES: >-
             ${{ inputs.reflex && 'reflex,reflex-base' || '' }}
             ${{ inputs.hatch_reflex_pyi && 'hatch-reflex-pyi' || '' }}
+            ${{ inputs.reflex_build_sdk && 'reflex-build-sdk' || '' }}
             ${{ inputs.reflex_components_code && 'reflex-components-code' || '' }}
             ${{ inputs.reflex_components_core && 'reflex-components-core' || '' }}
             ${{ inputs.reflex_components_dataeditor && 'reflex-components-dataeditor' || '' }}
@@ -190,6 +199,7 @@ jobs:
             ${{ inputs.reflex_components_sonner && 'reflex-components-sonner' || '' }}
             ${{ inputs.reflex_docgen && 'reflex-docgen' || '' }}
             ${{ inputs.reflex_hosting_cli && 'reflex-hosting-cli' || '' }}
+            ${{ inputs.reflex_otel && 'reflex-otel' || '' }}
             ${{ inputs.reflex_release && 'reflex-release' || '' }}
         shell: bash
         run: uv run --frozen --package reflex-release reflex-release plan

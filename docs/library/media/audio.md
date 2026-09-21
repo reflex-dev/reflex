@@ -24,5 +24,5 @@ If we had a local file in the `assets` folder named `test.mp3` we could set `src
 ```md alert info
 # How to let your user upload an audio file
 
-To let a user upload an audio file to your app check out the [upload docs](/docs/library/forms/upload).
+To let a user upload an audio file to your app check out the [upload docs](/docs/library/forms/upload/).
 ```

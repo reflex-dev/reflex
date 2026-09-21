@@ -10,11 +10,13 @@ import inspect
 import json
 import sys
 from collections.abc import Callable, Sequence
+from importlib import import_module
 from importlib.util import find_spec
 from types import MethodType
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, SupportsIndex, TypeVar, cast
 
 import wrapt
+from reflex_base import constants
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
 from reflex_base.utils.exceptions import ImmutableStateError
@@ -164,16 +166,12 @@ class StateProxy(wrapt.ObjectProxy):
             ImmutableStateError: If the state is already mutable.
         """
         if self._self_parent_state_proxy is not None:
-            from reflex.state import State
-
             parent_state = (
                 await self._self_parent_state_proxy.__aenter__()
             ).__wrapped__
             super().__setattr__(
                 "__wrapped__",
-                await parent_state.get_state(
-                    State.get_class_substate(self._self_substate_path)
-                ),
+                await parent_state.get_state(self._self_substate_token.cls),
             )
             self._self_entered_context = True
             return self
@@ -266,6 +264,19 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             ImmutableStateError: If the state is not in mutable mode.
         """
+        if name == constants.ROUTER:
+            from reflex.state import _router_fget
+
+            # Router fields belong to the root. A linked proxy keeps their dirty
+            # tracking there while enforcing the calling proxy's mutation guard.
+            root_state = self.__wrapped__._get_root_state()
+            router_proxy = (
+                self
+                if root_state is self.__wrapped__
+                else type(self)(root_state, parent_state_proxy=self)
+            )
+            return _router_fget(cast("BaseState", router_proxy))
+
         if name in ["substates", "parent_state"] and not self._is_mutable():
             msg = (
                 "Background task StateProxy is immutable outside of a context "
@@ -415,21 +426,38 @@ class ReadOnlyStateProxy(StateProxy):
         raise NotImplementedError(msg)
 
 
-MUTABLE_TYPES = (
+_MUTABLE_BUILTIN_TYPES = (
     list,
     dict,
     set,
 )
 
-if find_spec("sqlalchemy"):
-    from sqlalchemy.orm import DeclarativeBase
+_MUTABLE_MODEL_BASES = (
+    ("sqlalchemy.orm.decl_api", "DeclarativeBase"),
+    ("pydantic.main", "BaseModel"),
+)
 
-    MUTABLE_TYPES += (DeclarativeBase,)
 
-if find_spec("pydantic"):
-    from pydantic import BaseModel
+def __getattr__(name: str) -> Any:
+    """Resolve the legacy mutable-types tuple only when explicitly requested.
 
-    MUTABLE_TYPES += (BaseModel,)
+    Args:
+        name: The module attribute to resolve.
+
+    Returns:
+        The mutable builtin and model base types.
+
+    Raises:
+        AttributeError: If the requested attribute is unknown.
+    """
+    if name == "MUTABLE_TYPES":
+        return _MUTABLE_BUILTIN_TYPES + tuple(
+            getattr(import_module(module_name), base_name)
+            for module_name, base_name in _MUTABLE_MODEL_BASES
+            if find_spec(module_name.partition(".")[0])
+        )
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)
 
 
 class MutableProxy(wrapt.ObjectProxy):
@@ -1012,6 +1040,15 @@ def is_mutable_type(type_: type) -> bool:
     Returns:
         Whether the type is mutable and should be wrapped.
     """
-    return issubclass(type_, MUTABLE_TYPES) or (
+    if issubclass(type_, _MUTABLE_BUILTIN_TYPES) or (
         dataclasses.is_dataclass(type_) and not issubclass(type_, Var)
-    )
+    ):
+        return True
+    # A model's defining module is already loaded before its subclasses exist.
+    # Read its namespace directly so lazy module attributes cannot load packages.
+    for module_name, base_name in _MUTABLE_MODEL_BASES:
+        if (module := sys.modules.get(module_name)) is not None:
+            base = vars(module).get(base_name)
+            if base is not None and issubclass(type_, base):
+                return True
+    return False

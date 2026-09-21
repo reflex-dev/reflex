@@ -1,14 +1,10 @@
-from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import cast
 
 import pytest
 from pydantic import BaseModel
-from reflex_base.components.component import BaseComponent, Component
-from reflex_base.plugins import CompileContext, PageContext
 
 import reflex as rx
-from reflex.compiler.plugins import DefaultCollectorPlugin
 
 
 class SideBarState(rx.State):
@@ -225,51 +221,67 @@ class NestedElement(BaseModel):
     value: list[int]
 
 
-@dataclass(frozen=True, slots=True)
-class ImportOnlyCollectorPlugin(DefaultCollectorPlugin):
-    """Collect only imports — same scope as Component._get_all_imports.
+@dataclass
+class Order:
+    """An order in the table event benchmark."""
 
-    Inherits import collection from DefaultCollectorPlugin but disables
-    hooks, custom code, app_wrap, and stateful code rendering.
-    """
+    name: str
+    customer: str
+    amount: float
+    status: str
 
-    _compiler_stateful_only_leave_component = False
 
-    def leave_component(self, *_args: Any, **_kwargs: Any) -> None:
-        """No-op: skip stateful code rendering."""
+class TableState(rx.State):
+    """A 1000-row table with filtering, sorting, and a computed total."""
 
-    def _compiler_bind_leave_component(
-        self, *_args: Any, **_kwargs: Any
-    ) -> Callable[..., None]:
-        """Return a no-op leave hook."""
+    orders: rx.Field[list[Order]] = rx.field(
+        default_factory=lambda: [
+            Order(
+                name=f"order {i}",
+                customer=f"customer {i % 50}",
+                amount=i * 1.5,
+                status=("open", "paid", "shipped")[i % 3],
+            )
+            for i in range(1000)
+        ]
+    )
+    status: rx.Field[str] = rx.field("")
+    sort_reverse: rx.Field[bool] = rx.field(False)
 
-        def _noop(*_a: Any, **_kw: Any) -> None:
-            pass
+    @rx.event
+    def set_status(self, status: str):
+        """Filter the table by status, flipping the sort direction.
 
-        return _noop
+        Args:
+            status: The status to keep, or an empty string for all rows.
+        """
+        self.status = status
+        self.sort_reverse = not self.sort_reverse
 
-    def _compiler_bind_enter_component(
-        self,
-        page_context: PageContext,
-        compile_context: CompileContext,
-    ) -> Callable[[BaseComponent, bool], None]:
-        del compile_context
+    @rx.var
+    def filtered_orders(self) -> list[Order]:
+        """The rows matching the filter, sorted.
 
-        frontend_imports = page_context.frontend_imports
-        extend_imports = self._extend_imports
+        Returns:
+            The filtered, sorted rows.
+        """
+        orders = self.orders
+        if self.status:
+            orders = [order for order in orders if order.status == self.status]
+        return sorted(
+            orders,
+            key=lambda order: order.amount,
+            reverse=self.sort_reverse,
+        )
 
-        def enter_component(
-            comp: BaseComponent,
-            in_prop_tree: bool,
-        ) -> None:
-            if not isinstance(comp, Component) or in_prop_tree:
-                return
+    @rx.var
+    def total_amount(self) -> float:
+        """The amount summed over the filtered rows.
 
-            imports = comp._get_imports()
-            if imports:
-                extend_imports(frontend_imports, imports)
-
-        return enter_component
+        Returns:
+            The total amount.
+        """
+        return sum(order.amount for order in self.filtered_orders)
 
 
 class BenchmarkState(rx.State):

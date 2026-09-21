@@ -9,10 +9,10 @@ def _resource_card(
 ) -> rx.Component:
     return rx.el.a(
         rx.el.div(
-            rx.el.h3(title, class_name="text-base font-semibold text-secondary-12"),
-            rx.el.p(body, class_name="text-sm leading-6 text-secondary-11"),
-            rx.el.div(action, class_name="text-sm font-semibold text-primary-10"),
-            class_name="flex h-full flex-col gap-2 rounded-lg border border-secondary-a4 bg-white-1 p-4 transition-colors hover:bg-secondary-2 shadow-xs",
+            rx.el.h3(title, class_name="text-base font-semibold text-foreground"),
+            rx.el.p(body, class_name="text-sm leading-6 text-muted-foreground"),
+            rx.el.div(action, class_name="text-sm font-semibold text-primary-hover"),
+            class_name="flex h-full flex-col gap-2 rounded-lg border border-border-subtle bg-white-1 p-4 transition-colors hover:bg-muted shadow-xs",
         ),
         href=href,
         target=target,

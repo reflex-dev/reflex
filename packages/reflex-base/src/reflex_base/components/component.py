@@ -13,7 +13,7 @@ import operator
 import typing
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
-from dataclasses import _MISSING_TYPE, MISSING
+from dataclasses import MISSING
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast
 
@@ -23,7 +23,7 @@ from reflex_base import constants
 from reflex_base.breakpoints import Breakpoints
 from reflex_base.components.dynamic import load_dynamic_serializer
 from reflex_base.components.field import BaseField, FieldBasedMeta
-from reflex_base.components.tags import Tag
+from reflex_base.components.tags import CommonTag, Tag
 from reflex_base.constants import Dirs, EventTriggers, Hooks, Imports, MemoizationMode
 from reflex_base.constants.compiler import SpecialAttributes
 from reflex_base.event import (
@@ -36,6 +36,7 @@ from reflex_base.event import (
 )
 from reflex_base.style import Style, format_as_emotion
 from reflex_base.utils import format, imports, types
+from reflex_base.utils.compat import MISSING_TYPE
 from reflex_base.utils.imports import ImportDict, ImportVar, ParsedImportDict
 from reflex_base.vars import VarData
 from reflex_base.vars.base import (
@@ -64,10 +65,10 @@ class ComponentField(BaseField[FIELD_TYPE]):
 
     def __init__(
         self,
-        default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+        default: FIELD_TYPE | MISSING_TYPE = MISSING,
         default_factory: Callable[[], FIELD_TYPE] | None = None,
         is_javascript: bool | None = None,
-        annotated_type: type[Any] | _MISSING_TYPE = MISSING,
+        annotated_type: type[Any] | MISSING_TYPE = MISSING,
         doc: str | None = None,
     ) -> None:
         """Initialize the field.
@@ -129,7 +130,7 @@ class ComponentField(BaseField[FIELD_TYPE]):
 
 
 def field(
-    default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+    default: FIELD_TYPE | MISSING_TYPE = MISSING,
     default_factory: Callable[[], FIELD_TYPE] | None = None,
     is_javascript_property: bool | None = None,
     doc: str | None = None,
@@ -789,6 +790,13 @@ class Component(BaseComponent, ABC):
     # props to change the name of
     _rename_props: ClassVar[dict[str, str]] = {}
 
+    # The prop that carries a ref to the rendered DOM element for components
+    # whose root does not accept ``ref`` directly (e.g. ``DebounceInput``, a
+    # class component that exposes the real ``<input>`` through ``input_ref``).
+    # Auto-memo wrappers route a runtime-injected ref to this prop so it
+    # reaches the element instead of a class-component instance.
+    _dom_ref_prop: ClassVar[str | None] = None
+
     # Whether this component contributes a named field to form submission data.
     _is_form_control: ClassVar[bool] = False
 
@@ -1143,7 +1151,7 @@ class Component(BaseComponent, ABC):
             name = '"' + name + '"'
         return name
 
-    def _render(self, props: dict[str, Any] | None = None) -> Tag:
+    def _render(self, props: dict[str, Any] | None = None) -> CommonTag:
         """Define how to render the component in React.
 
         Args:
@@ -1161,7 +1169,7 @@ class Component(BaseComponent, ABC):
         if props is None:
             # Add component props to the tag.
             props = {
-                attr.removesuffix("_"): getattr(self, attr) for attr in self.get_props()
+                prop.removesuffix("_"): value for prop, value in self._iter_set_props()
             }
 
             # Add ref to element if `ref` is None and `id` is not None.
@@ -1203,6 +1211,39 @@ class Component(BaseComponent, ABC):
 
     @classmethod
     @functools.cache
+    def _get_defaulted_props(cls) -> frozenset[str]:
+        """Get the props whose field supplies a value when unset.
+
+        Returns:
+            The props with a default other than ``None`` or a default factory.
+        """
+        return frozenset(
+            prop
+            for prop, field_ in cls.get_js_fields().items()
+            if field_.default_factory is not None
+            or (field_.default is not MISSING and field_.default is not None)
+        )
+
+    def _iter_set_props(self) -> Iterator[tuple[str, Any]]:
+        """Walk the props that carry a value, in declaration order.
+
+        An unset prop resolves to ``None`` through its field descriptor and
+        every consumer drops ``None``, so only props present on the instance
+        or backed by a class default are read.
+
+        Yields:
+            Each prop name with its value.
+        """
+        values = self.__dict__
+        defaulted = self._get_defaulted_props()
+        for prop in self.get_props():
+            if prop in values:
+                yield prop, values[prop]
+            elif prop in defaulted:
+                yield prop, getattr(self, prop)
+
+    @classmethod
+    @functools.cache
     def get_initial_props(cls) -> set[str]:
         """Get the initial props to set for the component.
 
@@ -1215,9 +1256,8 @@ class Component(BaseComponent, ABC):
     def _get_component_prop_property(self) -> Sequence[BaseComponent]:
         return [
             component
-            for prop in self.get_props()
-            if (value := getattr(self, prop)) is not None
-            and isinstance(value, (BaseComponent, Var))
+            for _, value in self._iter_set_props()
+            if isinstance(value, (BaseComponent, Var))
             for component in _components_from(value)
         ]
 
@@ -1438,11 +1478,8 @@ class Component(BaseComponent, ABC):
         except AttributeError:
             pass
         tag = self._render()
-        rendered_dict = dict(
-            tag.set(
-                children=[child.render() for child in self.children],
-            )
-        )
+        children = [child.render() for child in self.children]
+        rendered_dict = tag.render(children)
         self._replace_prop_names(rendered_dict)
         self._cached_render_result = rendered_dict
         return rendered_dict
@@ -1581,8 +1618,7 @@ class Component(BaseComponent, ABC):
             vars.extend(event_vars)
 
         # Get Vars associated with component props.
-        for prop in self.get_props():
-            prop_var = getattr(self, prop)
+        for _, prop_var in self._iter_set_props():
             if isinstance(prop_var, Var):
                 vars.append(prop_var)
 
