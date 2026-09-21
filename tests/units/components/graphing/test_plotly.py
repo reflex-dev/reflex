@@ -98,3 +98,14 @@ def test_plotly_without_id_has_no_div_id(plotly_fig: go.Figure):
     rendered = rx.plotly(data=plotly_fig)._render()
 
     assert "divId" not in rendered.props
+
+
+def test_plotly_normalizes_string_layout_title(plotly_fig: go.Figure):
+    """Normalize string layout titles for Plotly.js."""
+    rendered = rx.plotly(
+        data=plotly_fig,
+        layout={"title": "layout title", "height": 300},
+    )._render()
+
+    assert "_rxNormalizePlotlyLayout" in str(rendered.special_props)
+    assert "layout title" in str(rendered.special_props)
