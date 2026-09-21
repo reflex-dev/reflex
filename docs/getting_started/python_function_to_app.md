@@ -5,7 +5,7 @@ meta_description: Add a web form and result view to a Python function with Refle
 
 # Turn a Python function into a web app
 
-Expose a Python function through a Reflex interface by collecting inputs in a form, calling the function from an event handler, and storing the result in state. This example calculates a loan's monthly payment. It runs locally without a service or API key and keeps the calculation independent of the UI.
+To turn a Python function into a web app with Reflex, collect inputs in a form, call the function from an event handler, and store the result in state. This example calculates a loan's monthly payment. It runs locally without a service or API key and keeps the calculation independent of the UI.
 
 Create a blank app using the [installation guide](/docs/getting-started/installation/). Replace the app module with the code below and the two registration lines that follow it.
 

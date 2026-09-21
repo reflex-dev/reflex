@@ -31,7 +31,7 @@ Document whether a filter runs in the browser, against Python state, or in a dat
 
 ## Replace sample records with a database
 
-Follow the [database guide](/docs/database/overview/) to connect the app to storage. Read the authenticated user's permitted records in the backend. Choose when to query: page load, filter submission, explicit refresh, or a bounded background refresh loop.
+Follow the [database guide](/docs/database/overview/) to connect the app to PostgreSQL or another supported database using SQLAlchemy or SQLModel. Read the authenticated user's permitted records in the backend. Choose when to query: page load, filter submission, explicit refresh, or a bounded background refresh loop.
 
 An edit flow should validate submitted values and authorize the operation, write in a transaction, then update the visible result after a successful save. If the write fails, keep the user's input and show an error. Do not show “Saved” merely because a local state variable changed. For concurrent edits, use a record version or other conflict-detection strategy appropriate to the database.
 

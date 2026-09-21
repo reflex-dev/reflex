@@ -5,7 +5,7 @@ meta_description: Build Reflex interfaces for streaming AI chat, document assist
 
 # AI applications with Reflex
 
-Reflex provides the interface and application state for an AI application while your Python code calls the model provider. A custom chat interface can display a response as it arrives and combine messages with forms, charts, files, and other components.
+Reflex provides the custom interface and application state for Python AI applications, including streaming LLM chat and document assistants with source citations. Your backend connects retrieval, access checks, and model calls to the UI. A chat interface can display a response as it arrives and combine messages with forms, charts, files, and other components.
 
 Start with the [streaming chat tutorial](/docs/getting-started/chatapp-tutorial/) for a complete application. It demonstrates asynchronous provider calls, conversation history, loading and error states, and incremental output. The [chat recipe](/docs/recipes/others/chat/) provides another interface you can adapt. You do not need to use Reflex Build to write an AI application with the framework.
 
@@ -29,9 +29,9 @@ Streaming is a sequence of state updates. Consume the provider's async stream ou
 
 A second model provider may have a different request format, chunk shape, or cancellation API. Adapt that boundary while retaining the UI. Do not assume providers are interchangeable merely because they both stream text.
 
-## Add document retrieval and sources
+## Add document retrieval and source citations
 
-A document assistant adds a retrieval step before the model call:
+A document assistant uses retrieval-augmented generation (RAG): retrieve passages the user is allowed to read before asking a model to answer. The application performs these steps:
 
 1. Identify the authenticated user on the backend.
 2. Query documents that user is allowed to read. Apply permissions in retrieval, before passages enter the prompt.

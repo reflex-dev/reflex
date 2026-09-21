@@ -1,6 +1,6 @@
 ---
 title: Build Python Model Interfaces with Reflex
-meta_description: Build an interactive machine learning demo with a custom Reflex UI. Run a Python prediction function, validate inputs, and display model results.
+meta_description: Build Reflex model demos and image workflows. Connect Python inference to custom forms, previews, and downloads; extend the UI with audio and video.
 ---
 
 # Model and media interfaces

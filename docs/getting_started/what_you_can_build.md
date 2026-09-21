@@ -5,7 +5,7 @@ meta_description: Explore Python examples for dashboards, linked charts, streami
 
 # What you can build with Reflex
 
-Reflex lets you build web applications with a Python-defined interface and Python backend logic. Combine forms, tables, interactive charts, and streamed model responses in one application. Start with a working example, then add the data access, authentication, and deployment configuration your application needs.
+Reflex is a Python web app framework. Define the interface and backend logic in Python; Reflex compiles the interface to React. Combine forms, tables, interactive charts, and streamed model responses in one application. Start with a working example, then add the data access, authentication, and deployment configuration your application needs.
 
 You can use Reflex for the data-app, dashboard, chat, model-demo, and internal-tool workflows commonly associated with Streamlit, Dash, Gradio, and NiceGUI. These patterns can share a custom, multi-page interface: a conversation can sit beside a chart, a model prediction can populate an editable form, and a dashboard selection can update a table. The examples below demonstrate the individual building blocks; the [framework comparisons](https://reflex.dev/compare/frameworks/) explain the different development models.
 
@@ -56,6 +56,6 @@ The tutorials deliberately start small. Before deploying a shared application, d
 
 Read [performance and execution](/docs/advanced-onboarding/performance-and-execution/) to understand browser work, Python events, network round trips, and background tasks. Use the [self-hosting guide](/docs/hosting/self-hosting/) for deployment instructions.
 
-## Coming from another Python framework?
+## Choosing between Python frameworks
 
 Explore the [framework comparisons](https://reflex.dev/compare/frameworks/) to find your current framework and understand how its interface, state, and backend fit into Reflex. Then choose a working tutorial above to implement your first workflow.

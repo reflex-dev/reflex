@@ -5,7 +5,7 @@ meta_description: Turn pandas analysis into a Python web app. Upload a CSV, filt
 
 # Build a pandas data app
 
-Use Reflex to put a custom web interface around pandas analysis. This example uploads a CSV, filters its records, groups units by region, and downloads the filtered summary. The parsing and analysis functions remain ordinary Python functions; Reflex connects them to file input, a filter form, and result tables.
+Use Reflex to turn pandas analysis into a shareable Python web app with a custom interface. This example uploads a CSV, filters its records, groups units by region, and downloads the filtered summary. The parsing and analysis functions remain ordinary Python functions; Reflex connects them to file input, a filter form, and result tables.
 
 The app runs locally without a database or API key. It includes sample data, so you can try the complete analysis flow before uploading a file. Uploads run in your own app; this documentation site does not accept files.
 

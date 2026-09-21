@@ -5,7 +5,7 @@ meta_description: Understand Reflex browser rendering, Python state events, netw
 
 # Performance and execution
 
-Reflex performance depends on the interaction being measured. Browser rendering, a Python event, a database query, and model inference have different costs. Identify the path a user action takes before deciding what to optimize.
+Reflex performance depends on which interaction you measure. Browser rendering, a Python state event, a database query, and model inference each have different costs. When comparing Reflex with Streamlit, Dash, Gradio, or NiceGUI, [measure an equivalent workload](#measure-an-equivalent-workload). Start by identifying the path a user action takes before deciding what to optimize.
 
 ## Where work runs
 
@@ -26,7 +26,7 @@ An ordinary Reflex event invokes its handler; it does not re-execute the entire 
 
 For example, the [model demo](/docs/guides/model-and-media-interfaces/) runs `predict_flower` when the form is submitted. Editing an input does not run inference. In the [linked XY charts](/docs/getting-started/linked-charts-tutorial/), drawing a selection is local to the chart; the completed selection triggers the Python cross-filter. Those boundaries give you control over when backend work runs.
 
-This architecture provides a way to avoid repeated work, rather than a guarantee that every Reflex app outperforms every alternative. An event handler can still call an expensive function, and a computed value can still perform an expensive calculation. Measure those costs with the same inputs and cache policy when comparing implementations.
+This architecture can avoid repeated work, but it does not guarantee that every Reflex app outperforms every alternative. An event handler can still call an expensive function, and a computed value can still perform an expensive calculation. Measure those costs with the same inputs and cache policy when comparing implementations.
 
 ## Follow one interaction
 
