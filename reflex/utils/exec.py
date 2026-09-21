@@ -13,6 +13,7 @@ import re
 import socket
 import subprocess
 import sys
+import threading
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
@@ -729,9 +730,27 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         On Linux each worker otherwise binds only after loading the app, so
         requests during a reload are refused. With the supervisor holding the
         socket they wait in the accept backlog for the new worker.
+
+        The socket is released again whenever no worker is left to serve it --
+        a worker that died on its own (an app module that raises on import), or
+        the supervisor shutting down -- so that clients are refused right away
+        instead of waiting in the accept backlog. The next worker spawn
+        re-creates it.
         """
 
+        def __init__(self, *args, **kwargs):
+            """Create the supervisor.
+
+            Args:
+                args: Positional arguments for the Granian server.
+                kwargs: Keyword arguments for the Granian server.
+            """
+            super().__init__(*args, **kwargs)
+            self._socket_lock = threading.RLock()
+            self._spawn_count = 0
+
         def _init_shared_socket(self):
+            """Bind the listening socket in the supervisor process."""
             self._ssp = SocketSpec(self.bind_addr, self.bind_port, self.backlog)
             self._shd = self._ssp.build()
             self._sfd = self._shd.get_fd()
@@ -739,6 +758,85 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
             sock = socket.socket(fileno=self._sfd)
             sock.set_inheritable(True)
             self._sso = sock
+            # Resolve port 0 so a re-created socket keeps the same port.
+            self.bind_port = sock.getsockname()[1]
+
+        def _shared_socket_is_open(self) -> bool:
+            """Report whether the supervisor still holds the listening socket.
+
+            Returns:
+                Whether the listening socket is open.
+            """
+            return self._sso is not None and self._sso.fileno() >= 0
+
+        def _close_shared_socket(self):
+            """Release the listening socket, so the port refuses connections."""
+            with self._socket_lock:
+                if not self._shared_socket_is_open():
+                    return
+                # Granian's SocketHolder does not own the descriptor, so
+                # closing the socket object is what frees the port. The closed
+                # object stays in place for granian to detach on shutdown.
+                self._sso.close()
+                self._shd = self._sfd = None
+
+        def _release_socket_unless_served(self, wrk: Any, spawn_count: int):
+            """Release the socket when an exited worker leaves nobody serving.
+
+            Workers stopped by the supervisor keep the socket bound: their
+            replacement is already on its way and requests should queue for it.
+
+            Args:
+                wrk: The worker that exited.
+                spawn_count: The spawn counter when that worker was created.
+            """
+            if wrk.interrupt_by_parent:
+                return
+            with self._socket_lock:
+                if spawn_count == self._spawn_count and not any(
+                    worker.is_alive() for worker in self.wrks
+                ):
+                    self._close_shared_socket()
+
+        def _spawn_worker(self, idx: int, target: Any, callback_loader: Any):
+            """Spawn a worker, re-creating the socket if it has been released.
+
+            Args:
+                idx: The index of the worker.
+                target: The worker entrypoint.
+                callback_loader: The loader for the ASGI app.
+
+            Returns:
+                The spawned worker.
+            """
+            with self._socket_lock:
+                if not self._shared_socket_is_open():
+                    self._init_shared_socket()
+                self._spawn_count += 1
+                spawn_count = self._spawn_count
+                wrk = super()._spawn_worker(
+                    idx=idx, target=target, callback_loader=callback_loader
+                )
+            granian_watcher = wrk._watcher
+
+            def watcher():
+                granian_watcher()
+                self._release_socket_unless_served(wrk, spawn_count)
+
+            wrk._watcher = watcher
+            return wrk
+
+        def shutdown(self, exit_code: int = 0):
+            """Release the listening socket, then shut the supervisor down.
+
+            Granian only detaches the socket object, which leaves the port
+            bound for as long as the supervisor process lives.
+
+            Args:
+                exit_code: The exit code to terminate with.
+            """
+            self._close_shared_socket()
+            super().shutdown(exit_code)
 
     reset_dev_backend_reload_marker()
     environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)
