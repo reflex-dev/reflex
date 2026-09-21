@@ -14,7 +14,7 @@ import pickle
 import re
 import sys
 import time
-from collections.abc import Callable, Coroutine, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextvars import ContextVar
 from hashlib import md5
 from types import FunctionType
@@ -23,7 +23,6 @@ from typing import (
     Any,
     BinaryIO,
     ClassVar,
-    Final,
     ParamSpec,
     TypeVar,
     cast,
@@ -293,16 +292,8 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
     )
 
 
-# Sentinel a delta-value coroutine may resolve to in order to suppress its key:
-# when ``_resolve_delta`` awaits a coroutine value and gets this object back, it
-# drops the key from the delta instead of writing it. Lets a value whose
-# inclusion can only be decided asynchronously be deferred into the delta as a
-# coroutine and then omitted post-hoc. Compared by identity (the object itself is
-# the contract); never serialized into a delta sent to the client.
-_DROP_FROM_DELTA: Final = object()
-
 # Whether uncached computed var values may be recorded as sent to the client for
-# the delta currently being built. Carried out of band rather than as an argument
+# the delta currently being resolved. Carried out of band rather than as an argument
 # so that every internal call stays ``get_delta()``: downstream packages patch
 # that method with a signature taking no arguments, and the flag describes the
 # whole traversal rather than any single state in it. A ContextVar, not a global:
@@ -315,7 +306,7 @@ _record_delta_values: ContextVar[bool] = ContextVar(
 
 @contextlib.contextmanager
 def _suppress_delta_recording() -> Iterator[None]:
-    """Stop delta values built in this block from counting as sent to the client.
+    """Stop deltas resolved in this block from counting as sent to the client.
 
     For a delta that is computed for its side effects and then discarded, whose
     values the client never receives.
@@ -331,15 +322,13 @@ def _suppress_delta_recording() -> Iterator[None]:
 
 
 async def _resolve_delta(delta: Delta) -> Delta:
-    """Await all coroutines in the delta, dropping keys that resolve to the drop sentinel.
+    """Await all coroutines in the delta.
 
     Args:
         delta: The delta to process.
 
     Returns:
-        The same delta dict with all coroutines resolved to their return value,
-        and any key whose coroutine resolved to ``_DROP_FROM_DELTA`` removed
-        (along with any state subdict left empty by such removals).
+        The same delta dict with all coroutines resolved to their return value.
     """
     tasks = {}
     for state_name, state_delta in delta.items():
@@ -350,38 +339,35 @@ async def _resolve_delta(delta: Delta) -> Delta:
                     name=f"reflex_resolve_delta|{state_name}|{var_name}|{time.time()}",
                 )
     for (state_name, var_name), task in tasks.items():
-        resolved = await task
-        if resolved is _DROP_FROM_DELTA:
-            del delta[state_name][var_name]
-            if not delta[state_name]:
-                del delta[state_name]
-        else:
-            delta[state_name][var_name] = resolved
+        delta[state_name][var_name] = await task
     return delta
 
 
-async def _drop_unchanged_delta_value(
-    cvar: ComputedVar,
-    instance: BaseState,
-    value: Coroutine[None, None, Any],
-    token: str,
-) -> Any:
-    """Await an async uncached computed var, dropping it if the value did not change.
+def _deduplicate_delta(state: BaseState, delta: Delta) -> None:
+    """Record final uncached values and omit those unchanged for this client.
+
+    Visit only branches containing uncached vars. Looking up their final values
+    after filtering and resolution avoids recording withheld or replaced values.
 
     Args:
-        cvar: The computed var that produced the coroutine.
-        instance: The state instance the computed var is attached to.
-        value: The coroutine returned by the computed var.
-        token: The client token the delta is being produced for.
-
-    Returns:
-        The resolved value, or ``_DROP_FROM_DELTA`` when it matches the last
-        value that was sent to the client.
+        state: The state whose uncached vars and substates to check.
+        delta: The filtered, resolved delta to deduplicate in place.
     """
-    resolved = await value
-    if not cvar._record_delta_value(instance, resolved, token):
-        return _DROP_FROM_DELTA
-    return resolved
+    if (uncached_vars := state._always_dirty_computed_vars) and (
+        subdelta := delta.get(state_name := state.get_full_name())
+    ):
+        token = state.router.session.client_token
+        for prop in uncached_vars:
+            key = prop + FIELD_MARKER
+            if key in subdelta and not state.computed_vars[prop]._record_delta_value(
+                state, subdelta[key], token
+            ):
+                del subdelta[key]
+        if not subdelta:
+            del delta[state_name]
+
+    for substate in state._always_dirty_substates:
+        _deduplicate_delta(state.substates[substate], delta)
 
 
 RETURN = TypeVar("RETURN")
@@ -2347,14 +2333,14 @@ class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
         """Get the delta for the state.
 
         Takes no arguments, and no internal caller passes any: the method is
-        monkeypatched downstream with a signature accepting only `self`. Whether
-        the uncached computed var values it computes count as sent to the client
-        is carried by `_suppress_delta_recording` instead.
+        monkeypatched downstream with a signature accepting only `self`.
+        Uncached computed vars are deduplicated and recorded by
+        `_get_resolved_delta` after these overrides have filtered the delta.
+        Calling this method alone does not record values as sent.
 
         Returns:
             The delta for the state.
         """
-        record_values = _record_delta_values.get()
         delta = {}
 
         self._mark_dirty_computed_vars()
@@ -2368,23 +2354,11 @@ class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
             self.dirty_vars.intersection(frontend_computed_vars)
         )
 
-        always_dirty_computed_vars = self._always_dirty_computed_vars
-        # Token of the client this delta is for, used to know which values it has.
-        token = self.router.session.client_token if always_dirty_computed_vars else ""
         subdelta: dict[str, Any] = {}
         for prop in delta_vars:
             if types.is_backend_base_variable(prop, type(self)):
                 continue
-            value = self.get_value(prop)
-            if record_values and prop in always_dirty_computed_vars:
-                # Uncached computed vars are recomputed for every delta; only
-                # send them when the recomputed value actually changed.
-                cvar = self.computed_vars[prop]
-                if inspect.iscoroutine(value):
-                    value = _drop_unchanged_delta_value(cvar, self, value, token)
-                elif not cvar._record_delta_value(self, value, token):
-                    continue
-            subdelta[prop + FIELD_MARKER] = value
+            subdelta[prop + FIELD_MARKER] = self.get_value(prop)
 
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
@@ -2398,12 +2372,19 @@ class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
         return delta
 
     async def _get_resolved_delta(self) -> Delta:
-        """Get the delta for the state after resolving all coroutines.
+        """Get the filtered delta, resolve coroutines, and deduplicate uncached vars.
+
+        Record only values that survive downstream `get_delta` overrides.
+        `_suppress_delta_recording` skips recording and deduplication when the
+        resolved delta is only needed for its side effects.
 
         Returns:
             The resolved delta for the state.
         """
-        return await _resolve_delta(self.get_delta())
+        delta = await _resolve_delta(self.get_delta())
+        if _record_delta_values.get():
+            _deduplicate_delta(self, delta)
+        return delta
 
     def _mark_dirty(self):
         """Mark the substate and all parent states as dirty."""

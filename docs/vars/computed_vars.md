@@ -50,6 +50,11 @@ An uncached var is recomputed for every state update, but the recomputed value i
 only sent to the frontend when it differs from the value that was last sent, so a
 recomputation that yields the same value does not trigger a re-render.
 
+Deduplication runs after any downstream `get_delta` filters. A value withheld by
+a filter remains eligible for the next update; a replacement value is compared
+as it appears in the final delta. Calling `get_delta()` directly builds a delta
+without recording its values as sent.
+
 Previous versions of Reflex had a `@rx.cached_var` decorator, which is now replaced
 by the `cache` argument of `@rx.var` (which defaults to `True`).
 
