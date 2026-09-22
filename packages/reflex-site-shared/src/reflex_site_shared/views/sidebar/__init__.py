@@ -327,7 +327,7 @@ def solutions_panel() -> rx.Component:
                 drawer_panel_item(
                     nav_icon("LoginMethodIcon"),
                     "Auth",
-                    "/docs/authentication/authentication-overview/",
+                    "/docs/enterprise/auth/overview/",
                 ),
                 drawer_panel_item(
                     nav_icon("UserUnlock01Icon"),
