@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import MutableMapping
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
@@ -76,6 +77,9 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
         """
         AsyncNamespace.__init__(self, namespace)
         BaseEventNamespace.__init__(self, namespace, app)
+        # ASGI scope per session, so the per-event path reaches the connection
+        # state it caches without going through the Socket.IO server.
+        self._scopes: dict[str, MutableMapping[str, Any]] = {}
 
     async def on_connect(self, sid: str, environ: dict):
         """Event for when the websocket is connected.
@@ -84,6 +88,8 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
         """
+        if (scope := environ.get("asgi.scope")) is not None:
+            self._scopes[sid] = scope
         await self.handle_connect(
             sid,
             environ.get("QUERY_STRING", ""),
@@ -99,6 +105,7 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
         Returns:
             An asyncio Task for cleaning up the token, or None.
         """
+        self._scopes.pop(sid, None)
         return self.handle_disconnect(sid)
 
     async def on_event(self, sid: str, data: Any):
@@ -111,14 +118,19 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
         Raises:
             RuntimeError: If the Socket.IO is badly initialized.
         """
-        if self.app.sio is None:
-            msg = "Socket.IO is not initialized."
-            raise RuntimeError(msg)
-        environ = self.app.sio.get_environ(sid, self.namespace)
-        if environ is None:
-            msg = "Socket.IO environ is not initialized."
-            raise RuntimeError(msg)
-        await self.handle_event(sid, data, environ["asgi.scope"])
+        scope = self._scopes.get(sid)
+        if scope is None:
+            # The connection was not seen by on_connect (e.g. the namespace
+            # was registered after the socket connected); ask the server.
+            if self.app.sio is None:
+                msg = "Socket.IO is not initialized."
+                raise RuntimeError(msg)
+            environ = self.app.sio.get_environ(sid, self.namespace)
+            if environ is None:
+                msg = "Socket.IO environ is not initialized."
+                raise RuntimeError(msg)
+            scope = self._scopes[sid] = environ["asgi.scope"]
+        await self.handle_event(sid, data, scope)
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.
