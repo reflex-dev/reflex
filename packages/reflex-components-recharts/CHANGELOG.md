@@ -1,3 +1,10 @@
+## v0.9.4.post1 (2026-09-21)
+
+### Bug Fixes
+
+- Require `reflex-base >= 0.9.12`. The declared floor was older than the `reflex_base.vars.special` module this package imports, so a resolver was free to pair it with a `reflex-base` that fails at import time with `ModuleNotFoundError`. ([#7268](https://github.com/reflex-dev/reflex/issues/7268))
+
+
 ## v0.9.4 (2026-09-21)
 
 ### Features

@@ -1,1 +1,0 @@
-Require `reflex-base >= 0.9.12`. The declared floor was older than the `reflex_base.vars.special` module this package imports, so a resolver was free to pair it with a `reflex-base` that fails at import time with `ModuleNotFoundError`.
