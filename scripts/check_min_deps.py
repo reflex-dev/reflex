@@ -549,7 +549,7 @@ def _distribution_name(project_dir: Path) -> str:
 
 def build_wheelhouse(
     packages: list[Package], wheelhouse: Path, build: bool
-) -> tuple[dict[str, Version], list[str], str | None]:
+) -> tuple[dict[str, Version], str | None]:
     """Build every workspace sibling the selected packages need, once, into one index.
 
     This runs to completion before any package is checked, and never alongside one. The pyi
@@ -573,10 +573,12 @@ def build_wheelhouse(
     drifting apart unnoticed, and a wheel this check cannot use is one those jobs spent
     their minutes on for nothing.
 
-    A wheel that is present but cannot satisfy what is declared against it is reported and
-    left to PyPI. That is not drift and no build fixes it: the workspace numbers a sibling
-    from the newest tag this checkout reaches, so a release tagged off a branch leaves it
-    permanently below a floor raised to that release.
+    A wheel that is present but unable to satisfy what is declared against it fails too, for
+    a different reason: a package is numbered from the newest tag its checkout reaches, so a
+    floor raised to a release whose tag never landed on this branch cannot be met by any
+    revision of it. Resolving that sibling from PyPI at both ends instead would cancel its
+    errors out and quietly restore the blind spot this check exists to close, so a pin this
+    branch cannot satisfy is refused rather than worked around.
 
     Args:
         packages: The packages about to be checked.
@@ -584,11 +586,9 @@ def build_wheelhouse(
         build: Whether to build what the index does not already cover.
 
     Returns:
-        A ``(versions, uncovered, detail)`` tuple. ``versions`` maps each distribution in the
-        index to its version, and ``uncovered`` describes the siblings left to PyPI, which
-        the caller reports alongside the results because it narrows what the run covered.
+        A ``(versions, detail)`` tuple mapping each distribution in the index to its version.
         ``detail`` is ``None`` on success, otherwise the failure — a build's captured output,
-        or a report of the siblings the index does not hold.
+        or a report of the siblings the index cannot serve.
     """
     wheelhouse.mkdir(parents=True, exist_ok=True)
     # Each package's closure already lists a sibling after everything it depends on, and two
@@ -606,8 +606,7 @@ def build_wheelhouse(
             *sources,
         ])
     )
-    missing: list[str] = []
-    uncovered: list[str] = []
+    unusable: list[str] = []
     for source in sources:
         name = _distribution_name(source)
         declared = requirements.get(name, [])
@@ -615,10 +614,10 @@ def build_wheelhouse(
         if built is None and build:
             detail = _build_sibling(source, wheelhouse, None)
             if detail is not None:
-                return {}, [], detail
+                return {}, detail
             built = _wheel_versions(wheelhouse).get(name)
         if built is None:
-            missing.append(f"  {name}")
+            unusable.append(f"  {name}: absent from the wheelhouse")
             continue
         if _satisfies(declared, built):
             continue
@@ -626,28 +625,25 @@ def build_wheelhouse(
         if build and floor is not None:
             detail = _build_sibling(source, wheelhouse, floor)
             if detail is not None:
-                return {}, [], detail
+                return {}, detail
             continue
-        # The workspace cannot number this sibling high enough for what is declared against
-        # it: its release was tagged off a branch, so the newest tag this checkout reaches is
-        # older than the floor. No build gets out of that, so say so and leave it to PyPI,
-        # which is what the pin would otherwise have overridden.
-        uncovered.append(
+        unusable.append(
             f"  {name}: builds as {built} here, which does not satisfy "
-            f"{', '.join(str(r) for r in declared)}"
+            f"{', '.join(str(requirement) for requirement in declared)}"
         )
-    if missing:
-        return (
-            {},
-            [],
-            (
-                "the wheelhouse is missing workspace siblings this check needs:\n"
-                + "\n".join(missing)
-                + "\n\nThe build jobs produce these wheels, so a gap means this check and that "
-                "workflow have drifted. Pass --build-wheels to build them here instead."
-            ),
+    if unusable:
+        return {}, (
+            "the wheelhouse cannot serve every workspace sibling:\n"
+            + "\n".join(unusable)
+            + "\n\nA sibling that is absent means this check and the build jobs that "
+            "produce these wheels have drifted; pass --build-wheels to build it here "
+            "instead.\nA sibling this checkout cannot number high enough means a floor was "
+            "raised to a release whose tag is not on this branch, so no revision of it can "
+            "satisfy that floor. Tag the commit here whose source matches that release:\n"
+            "  git tag <package>-v<version>.post1 <commit> && git push origin "
+            "<package>-v<version>.post1"
         )
-    return _wheel_versions(wheelhouse), uncovered, None
+    return _wheel_versions(wheelhouse), None
 
 
 def _workspace_pins(package: Package, versions: dict[str, Version]) -> list[str]:
@@ -977,9 +973,7 @@ def main() -> int:
             # Copied rather than used in place, so a wheel built to cover a gap in the
             # prebuilt set never lands in the caller's directory.
             shutil.copytree(args.wheelhouse, wheelhouse)
-        versions, uncovered, detail = build_wheelhouse(
-            selected, wheelhouse, args.build_wheels
-        )
+        versions, detail = build_wheelhouse(selected, wheelhouse, args.build_wheels)
         if detail is not None:
             # One index serves the whole run, so a failed build stops every package in it.
             print(f"building workspace sibling wheels failed:\n{detail}")
@@ -998,15 +992,6 @@ def main() -> int:
     for result in sorted(results, key=lambda r: r.package):
         status = "PASS" if result.ok else f"FAIL ({result.stage})"
         print(f"  {status:<18} {result.package}")
-
-    if uncovered:
-        # Reported next to the results, not only where it was discovered: these siblings
-        # resolve from PyPI at both ends, so the delta cancels out for them exactly as it
-        # did before this check learned to build the workspace. A release tagged off a
-        # branch leaves its package permanently below a floor raised to that release, and
-        # tagging it on this branch is what restores the coverage.
-        print("\nNot covered by the workspace (resolved from PyPI at both ends):")
-        print("\n".join(uncovered))
 
     reason = {
         "min-version": "type errors that only appear at the declared minimum versions "
