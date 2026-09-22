@@ -444,7 +444,7 @@ def test_build_wheelhouse_builds_every_source_once(
     wheelhouse = tmp_path / "nested" / "wheelhouse"
 
     package = _fake_package(sources)
-    versions, detail = check_min_deps.build_wheelhouse(
+    versions, _, detail = check_min_deps.build_wheelhouse(
         [package], wheelhouse, build=True
     )
     assert detail is None
@@ -473,7 +473,7 @@ def test_build_wheelhouse_reports_build_failure(
         check_min_deps.REPO_ROOT / "packages" / "reflex-hosting-cli",
     )
 
-    versions, detail = check_min_deps.build_wheelhouse(
+    versions, _, detail = check_min_deps.build_wheelhouse(
         [_fake_package(sources)], tmp_path / "wheelhouse", build=True
     )
 
@@ -539,7 +539,7 @@ def test_dev_wheel_version_satisfies_declared_floor(
     monkeypatch.setattr(check_min_deps, "_run", build)
 
     assert (
-        check_min_deps.build_wheelhouse([package], tmp_path / "wheels", build=True)[1]
+        check_min_deps.build_wheelhouse([package], tmp_path / "wheels", build=True)[2]
         is None
     )
 
@@ -573,7 +573,7 @@ def test_build_wheelhouse_pins_the_exact_workspace_build(
     monkeypatch.setattr(check_min_deps, "_run", fake_run)
 
     package = _consumer(tmp_path, requirement)
-    versions, detail = check_min_deps.build_wheelhouse(
+    versions, _, detail = check_min_deps.build_wheelhouse(
         [package], tmp_path / "wheelhouse", build=True
     )
 
@@ -600,7 +600,7 @@ def test_build_wheelhouse_keeps_a_prebuilt_wheel(
     (wheelhouse / "reflex_base-0.9.12.post1.dev0+abc1234-py3-none-any.whl").touch()
     package = _consumer(tmp_path, "reflex-base >= 0.9.12")
 
-    versions, detail = check_min_deps.build_wheelhouse(
+    versions, _, detail = check_min_deps.build_wheelhouse(
         [package], wheelhouse, build=False
     )
 
@@ -630,7 +630,7 @@ def test_build_wheelhouse_redoes_a_prebuilt_wheel_below_a_development_floor(
     (wheelhouse / "reflex_base-0.9.11.post1.dev0+abc1234-py3-none-any.whl").touch()
     package = _consumer(tmp_path, "reflex-base >= 0.9.12.dev0")
 
-    versions, detail = check_min_deps.build_wheelhouse(
+    versions, _, detail = check_min_deps.build_wheelhouse(
         [package], wheelhouse, build=True
     )
 
@@ -658,7 +658,7 @@ def test_build_wheelhouse_reports_a_sibling_the_wheelhouse_lacks(
     wheelhouse = tmp_path / "wheelhouse"
     wheelhouse.mkdir()
 
-    versions, detail = check_min_deps.build_wheelhouse(
+    versions, _, detail = check_min_deps.build_wheelhouse(
         [_consumer(tmp_path, "reflex-base >= 0.9.12")], wheelhouse, build=False
     )
 
@@ -671,7 +671,7 @@ def test_build_wheelhouse_reports_a_sibling_the_wheelhouse_lacks(
 
 
 def test_build_wheelhouse_warns_when_a_wheel_cannot_reach_a_floor(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
     """A sibling the workspace cannot number high enough is reported, and left to PyPI.
 
@@ -681,7 +681,6 @@ def test_build_wheelhouse_warns_when_a_wheel_cannot_reach_a_floor(
     Args:
         monkeypatch: Subprocess patching fixture.
         tmp_path: Temporary package and wheelhouse directory.
-        capsys: Captures the warning.
     """
     fake_run = _FakeRun()
     monkeypatch.setattr(check_min_deps, "_run", fake_run)
@@ -690,16 +689,16 @@ def test_build_wheelhouse_warns_when_a_wheel_cannot_reach_a_floor(
     (wheelhouse / "reflex_base-0.9.11-py3-none-any.whl").touch()
     package = _consumer(tmp_path, "reflex-base >= 0.9.12")
 
-    versions, detail = check_min_deps.build_wheelhouse(
+    versions, uncovered, detail = check_min_deps.build_wheelhouse(
         [package], wheelhouse, build=False
     )
 
     assert detail is None, "the run continues"
     assert fake_run.commands == [], "nothing is built"
     assert check_min_deps._workspace_pins(package, versions) == [], "left to PyPI"
-    warning = capsys.readouterr().out
-    assert "reflex-base builds as 0.9.11 here" in warning
-    assert "reflex-base>=0.9.12" in warning
+    assert len(uncovered) == 1
+    assert "reflex-base: builds as 0.9.11 here" in uncovered[0]
+    assert "reflex-base>=0.9.12" in uncovered[0]
 
 
 def test_build_wheelhouse_skips_a_pin_the_declared_floor_excludes(
@@ -716,7 +715,7 @@ def test_build_wheelhouse_skips_a_pin_the_declared_floor_excludes(
     monkeypatch.setattr(check_min_deps, "_run", fake_run)
 
     package = _consumer(tmp_path, "reflex-base >= 0.9.12")
-    versions, detail = check_min_deps.build_wheelhouse(
+    versions, _, detail = check_min_deps.build_wheelhouse(
         [package], tmp_path / "wheelhouse", build=True
     )
 
@@ -737,7 +736,7 @@ def test_build_wheelhouse_redoes_a_build_below_a_development_floor(
     monkeypatch.setattr(check_min_deps, "_run", fake_run)
 
     package = _consumer(tmp_path, "reflex-base >= 0.9.12.dev0")
-    versions, detail = check_min_deps.build_wheelhouse(
+    versions, _, detail = check_min_deps.build_wheelhouse(
         [package], tmp_path / "wheelhouse", build=True
     )
 
