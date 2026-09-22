@@ -2,7 +2,9 @@
 
 import asyncio
 import re
+import struct
 import sys
+import wave
 from contextvars import ContextVar
 from io import BytesIO
 from pathlib import Path
@@ -453,6 +455,151 @@ def image_demo(monkeypatch):
     return load_application_demo(
         monkeypatch, "guides/model_and_media_interfaces.md", "image_workflow_demo"
     )
+
+
+def audio_demo(monkeypatch):
+    """Load the exact standalone WAV example from the media guide."""
+    return load_application_demo(
+        monkeypatch, "guides/model_and_media_interfaces.md", "audio_workflow_demo"
+    )
+
+
+def wav_bytes(samples=(0, 1000, -2000, 500), channels=1, rate=16000, width=2):
+    """Encode a deterministic WAV fixture with configurable format and samples."""
+    output = BytesIO()
+    with wave.open(output, "wb") as result:
+        result.setnchannels(channels)
+        result.setframerate(rate)
+        result.setsampwidth(width)
+        result.writeframes(
+            struct.pack(f"<{len(samples)}h", *samples) if width == 2 else bytes(samples)
+        )
+    return output.getvalue()
+
+
+@pytest.mark.parametrize("channels", [1, 2])
+def test_audio_workflow_normalizes_samples_without_changing_timing(
+    monkeypatch, channels
+):
+    """Known PCM samples retain sign, channel ordering, frame count, and rate."""
+    module = audio_demo(monkeypatch)
+    result, summary = module.normalize_audio(wav_bytes(channels=channels))
+    with wave.open(BytesIO(result), "rb") as decoded:
+        assert decoded.getparams()[:4] == (channels, 2, 16000, 4 // channels)
+        assert struct.unpack("<4h", decoded.readframes(4)) == (0, 13106, -26213, 6553)
+    assert "13.11x gain" in summary
+    monkeypatch.setattr(Upload, "is_used", Upload.is_used)
+    assert module.audio_workflow() is not None
+
+
+@pytest.mark.parametrize(
+    "samples, expected",
+    [
+        ((0, 0), (0, 0)),
+        ((-32768, 32767), (-26213, 26212)),
+    ],
+)
+def test_audio_workflow_handles_silence_and_full_scale(monkeypatch, samples, expected):
+    """Silence avoids division by zero and full-scale peaks avoid overflow."""
+    result, _ = audio_demo(monkeypatch).normalize_audio(wav_bytes(samples=samples))
+    with wave.open(BytesIO(result), "rb") as decoded:
+        assert struct.unpack("<2h", decoded.readframes(2)) == expected
+
+
+@pytest.mark.parametrize(
+    "data, message",
+    [
+        (b"", "valid uncompressed"),
+        (b"not a WAV", "valid uncompressed"),
+        (
+            b"RIFF"
+            + struct.pack("<I", 16)
+            + b"WAVEJUNK"
+            + struct.pack("<I", 1000)
+            + b"x",
+            "valid uncompressed",
+        ),
+        (wav_bytes()[:-1], "incomplete"),
+        (wav_bytes(samples=()), "10 seconds"),
+        (wav_bytes(rate=96000), "8-48 kHz"),
+        (wav_bytes(samples=(1, 2, 3), channels=3), "mono or stereo"),
+        (wav_bytes(samples=(128, 128), width=1), "16-bit"),
+        (wav_bytes(samples=(0,) * 80001, rate=8000), "10 seconds"),
+        (b"x" * (512 * 1024 + 1), "512 KiB"),
+    ],
+)
+def test_audio_workflow_rejects_malformed_or_unsupported_uploads(
+    monkeypatch, data, message
+):
+    """Server-side checks reject invalid formats, truncation, and resource limits."""
+    with pytest.raises(ValueError, match=message):
+        audio_demo(monkeypatch).normalize_audio(data)
+
+
+def test_audio_workflow_rejects_partial_sample_frame(monkeypatch):
+    """An odd-sized 16-bit data chunk must not silently drop a partial sample."""
+    malformed = bytearray(wav_bytes(samples=(1, 2)))
+    malformed[40:44] = struct.pack("<I", 3)
+    with pytest.raises(ValueError, match="incomplete"):
+        audio_demo(monkeypatch).normalize_audio(bytes(malformed))
+
+
+def run_audio_upload(state, files):
+    """Consume the upload handler and collect its visible progress states."""
+
+    async def consume():
+        return [state.processing async for _ in state.process_audio(files)]
+
+    return asyncio.run(consume())
+
+
+def test_audio_workflow_upload_recovery_download_and_session_isolation(monkeypatch):
+    """Only the submitting session receives a result; invalid replacements clear it."""
+    import base64
+
+    module = audio_demo(monkeypatch)
+    state = module.AudioWorkflowState(_reflex_internal_init=True)
+    other = module.AudioWorkflowState(_reflex_internal_init=True)
+    upload = SimpleNamespace(read=AsyncMock(return_value=wav_bytes()))
+    assert run_audio_upload(state, [upload]) == [True]
+    upload.read.assert_awaited_once_with(module.MAX_AUDIO_BYTES + 1)
+    assert base64.b64decode(state.preview.split(",", 1)[1]) == state._output_wav
+    assert state.download_audio() is not None
+    assert other.preview == "" and other._output_wav == b""
+    bad = SimpleNamespace(read=AsyncMock(return_value=b"bad"))
+    run_audio_upload(state, [bad])
+    assert state.error and not state.processing
+    assert state.preview == "" and state.summary == "" and state._output_wav == b""
+    assert state.download_audio() is None
+    run_audio_upload(state, [upload])
+    assert state.preview and not state.error
+    state.clear_audio()
+    assert state.preview == "" and state._output_wav == b"" and state.summary == ""
+
+
+def test_audio_workflow_rejects_multiple_files_and_handles_read_errors(monkeypatch):
+    """Missing, multiple, and unreadable inputs recover without a stale player."""
+    module = audio_demo(monkeypatch)
+    state = module.AudioWorkflowState(_reflex_internal_init=True)
+    upload = SimpleNamespace(read=AsyncMock(side_effect=OSError("read failed")))
+    for files in ([], [upload, upload]):
+        assert run_audio_upload(state, files) == []
+        assert "Choose one" in state.error
+    upload.read.assert_not_awaited()
+    run_audio_upload(state, [upload])
+    assert "could not be read" in state.error and not state.processing
+
+
+def test_audio_workflow_ignores_overlapping_submission_and_clear(monkeypatch):
+    """A busy session keeps its current job and cannot enqueue another upload."""
+    module = audio_demo(monkeypatch)
+    state = module.AudioWorkflowState(_reflex_internal_init=True)
+    state.processing = True
+    upload = SimpleNamespace(read=AsyncMock(return_value=wav_bytes()))
+    assert run_audio_upload(state, [upload]) == []
+    assert state.clear_audio() is None
+    upload.read.assert_not_awaited()
+    assert state.processing
 
 
 def image_bytes(size=(800, 400), image_format="PNG"):

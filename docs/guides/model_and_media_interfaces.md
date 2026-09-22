@@ -1,6 +1,6 @@
 ---
 title: Build Python Model Interfaces with Reflex
-meta_description: Build Reflex model demos and image workflows. Connect Python inference to custom forms, previews, and downloads; extend the UI with audio and video.
+meta_description: Build interactive machine learning demos in Python with Reflex. Try local predictions, image previews, and WAV audio processing with custom inputs and downloads.
 ---
 
 # Model and media interfaces
@@ -427,7 +427,258 @@ The original file is not copied into the public upload directory. This small exa
 
 The image function is independent of the interface. You can add crop controls, prediction labels, a review form, or a gallery without replacing the upload/event/result pattern. For larger files and long-running inference, use appropriately authorized storage and a worker service rather than sending large data URLs through state.
 
-## Add audio or video workflows
+## Run an audio input and output workflow
+
+This audio example accepts a short WAV file, runs a Python processing function, plays the result in the browser, and offers a WAV download. It uses Reflex's upload component, a native HTML audio player, and per-session state. No external service or additional Python audio package is required.
+
+The example performs **peak normalization**: it scales all samples by the same factor so the loudest sample reaches about 80% of the 16-bit range. Stereo channels keep their relative levels; silence stays silent. This is audio preprocessing, not speech recognition, noise removal, or a loudness standard. A speech model can replace the processing function while keeping the surrounding input and result workflow.
+
+Copy the code into a blank app module. It accepts uncompressed 16-bit mono or stereo PCM WAV at 8-48 kHz, up to 10 seconds and 512 KiB. MP3, compressed WAV, and other sample widths are rejected. Python's [wave module](https://docs.python.org/3/library/wave.html) reads the WAV header; the function also checks the decoded frame count before processing.
+
+```python id=audio_workflow_demo
+import asyncio
+import base64
+import sys
+import wave
+from array import array
+from io import BytesIO
+
+import reflex as rx
+
+
+MAX_AUDIO_BYTES = 512 * 1024
+AUDIO_UPLOAD_ID = "audio-workflow-upload"
+
+
+def normalize_audio(data: bytes) -> tuple[bytes, str]:
+    """Normalize the peak of a short 16-bit PCM WAV without changing its timing.
+
+    Args:
+        data: Uploaded WAV bytes, limited to 512 KiB.
+
+    Returns:
+        A new WAV file and a description of its duration, channels, and gain.
+
+    Raises:
+        ValueError: The upload is malformed or outside the supported limits.
+    """
+    if len(data) > MAX_AUDIO_BYTES:
+        raise ValueError("Choose a WAV file no larger than 512 KiB.")
+    try:
+        with wave.open(BytesIO(data), "rb") as source:
+            channels = source.getnchannels()
+            rate = source.getframerate()
+            frames = source.getnframes()
+            if source.getsampwidth() != 2 or channels not in (1, 2):
+                raise ValueError("Choose a 16-bit mono or stereo PCM WAV.")
+            if not 8000 <= rate <= 48000 or not 0 < frames <= rate * 10:
+                raise ValueError(
+                    "Use 8-48 kHz audio lasting more than 0 and at most 10 seconds."
+                )
+            pcm = source.readframes(frames + 1)
+            if len(pcm) != frames * channels * 2:
+                raise ValueError("The WAV file is incomplete.")
+    except (wave.Error, EOFError, RuntimeError) as error:
+        raise ValueError("Choose a valid uncompressed PCM WAV file.") from error
+    samples = array("h", pcm)
+    if sys.byteorder != "little":
+        samples.byteswap()
+    peak = max(abs(sample) for sample in samples)
+    gain = 26213 / peak if peak else 1.0
+    normalized = array("h", (round(sample * gain) for sample in samples))
+    if sys.byteorder != "little":
+        normalized.byteswap()
+    output = BytesIO()
+    with wave.open(output, "wb") as result:
+        result.setnchannels(channels)
+        result.setsampwidth(2)
+        result.setframerate(rate)
+        result.writeframes(normalized.tobytes())
+    summary = f"{frames / rate:.2f} seconds · {channels} channel(s) · {gain:.2f}x gain"
+    return output.getvalue(), summary
+
+
+class AudioWorkflowState(rx.State):
+    """Keep one small processed recording in the current session."""
+
+    preview: str = ""
+    summary: str = ""
+    error: str = ""
+    processing: bool = False
+    _output_wav: bytes = b""
+
+    @rx.event
+    async def process_audio(self, files: list[rx.UploadFile]):
+        """Validate an uploaded WAV and prepare its normalized playback.
+
+        Args:
+            files: Files selected by the upload component.
+
+        Yields:
+            An update displaying the processing state before reading the file.
+        """
+        if self.processing:
+            return
+        self.preview = self.summary = self.error = ""
+        self._output_wav = b""
+        if len(files) != 1:
+            self.error = "Choose one WAV file."
+            return
+        self.processing = True
+        yield
+        try:
+            data = await files[0].read(MAX_AUDIO_BYTES + 1)
+            wav, summary = await asyncio.to_thread(normalize_audio, data)
+            self._output_wav = wav
+            self.preview = "data:audio/wav;base64," + base64.b64encode(wav).decode(
+                "ascii"
+            )
+            self.summary = summary
+        except ValueError as error:
+            self.error = str(error)
+        except OSError:
+            self.error = "The recording could not be read. Please try again."
+        finally:
+            self.processing = False
+
+    @rx.event
+    def download_audio(self):
+        """Download this session's generated WAV.
+
+        Returns:
+            A download event when a result is available, otherwise None.
+        """
+        if self._output_wav:
+            return rx.download(
+                data=self._output_wav, filename="normalized.wav", mime_type="audio/wav"
+            )
+
+    @rx.event
+    def clear_audio(self):
+        """Discard the result and reset the file selector when idle.
+
+        Returns:
+            A file-selector reset event when idle, otherwise None.
+        """
+        if self.processing:
+            return
+        self.preview = self.summary = self.error = ""
+        self._output_wav = b""
+        return rx.clear_selected_files(AUDIO_UPLOAD_ID)
+
+
+def audio_workflow() -> rx.Component:
+    """Render a custom audio upload and playback card.
+
+    Returns:
+        The upload, result player, and download controls.
+    """
+    return rx.vstack(
+        rx.hstack(
+            rx.icon("audio-lines", size=22, color=rx.color("violet", 9)),
+            rx.heading("Audio preparation", size="5", as_="h3"),
+            spacing="3",
+            align="center",
+        ),
+        rx.text(
+            "Normalize a short recording, listen to the result, and download the WAV.",
+            size="2",
+            color=rx.color("gray", 11),
+        ),
+        rx.upload(
+            rx.vstack(
+                rx.icon("upload", size=24),
+                rx.text("Drop a WAV here or choose a file", size="2", weight="medium"),
+                rx.text("16-bit PCM · up to 10 seconds and 512 KiB", size="1"),
+                rx.foreach(
+                    rx.selected_files(AUDIO_UPLOAD_ID),
+                    lambda name: rx.text(name, size="2", overflow_wrap="anywhere"),
+                ),
+                spacing="2",
+                width="100%",
+            ),
+            id=AUDIO_UPLOAD_ID,
+            accept={"audio/wav": [".wav"]},
+            multiple=False,
+            disabled=AudioWorkflowState.processing,
+            border=f"1px dashed {rx.color('gray', 7)}",
+            border_radius="8px",
+            padding="1.5rem",
+            width="100%",
+        ),
+        rx.button(
+            "Normalize recording",
+            on_click=AudioWorkflowState.process_audio(
+                rx.upload_files(upload_id=AUDIO_UPLOAD_ID)
+            ),
+            loading=AudioWorkflowState.processing,
+            disabled=rx.selected_files(AUDIO_UPLOAD_ID).length() == 0,
+            size="3",
+            width="100%",
+        ),
+        rx.cond(
+            AudioWorkflowState.error != "",
+            rx.text(
+                AudioWorkflowState.error,
+                role="alert",
+                size="2",
+                color=rx.color("red", 11),
+            ),
+        ),
+        rx.cond(
+            AudioWorkflowState.preview != "",
+            rx.vstack(
+                rx.text("Processed recording", size="2", weight="medium"),
+                rx.el.audio(
+                    src=AudioWorkflowState.preview,
+                    controls=True,
+                    preload="metadata",
+                    aria_label="Normalized recording",
+                    width="100%",
+                ),
+                rx.text(AudioWorkflowState.summary, role="status", size="2"),
+                rx.button(
+                    "Download WAV",
+                    on_click=AudioWorkflowState.download_audio,
+                    variant="soft",
+                ),
+                spacing="3",
+                align_items="stretch",
+                width="100%",
+                padding="1rem",
+                border_radius="8px",
+                background=rx.color("gray", 3),
+            ),
+        ),
+        rx.button(
+            "Clear recording",
+            on_click=AudioWorkflowState.clear_audio,
+            disabled=AudioWorkflowState.processing,
+            variant="ghost",
+        ),
+        spacing="4",
+        align_items="stretch",
+        width="100%",
+        max_width="32rem",
+        padding=["1rem", "1.5rem"],
+        border_radius="12px",
+        border=f"1px solid {rx.color('gray', 5)}",
+        background=rx.color("gray", 1),
+    )
+```
+
+```python
+app = rx.App()
+app.add_page(audio_workflow, route="/")
+```
+
+Run `uv run reflex run`, select a WAV file, and choose **Normalize recording**. Use the player to listen when ready; playback does not start automatically. **Download WAV** saves the processed recording. An invalid replacement clears the previous result and shows an error; **Clear recording** resets the result and file selector.
+
+The worker thread keeps the bounded sample-processing function off the event loop. The original recording is not written to the public upload directory. The small processed WAV travels to the current browser session as a data URL and stays available in a backend-only variable for download. Clearing state does not erase copies already received by the browser or downloaded. Configure server or proxy request-size limits too, since the bounded read occurs after upload handling begins. Use authorized storage and a worker service for larger or longer-running jobs.
+
+This example receives a file; it does not record a microphone or run a speech model. For microphone capture, use a verified recording component or browser integration. For model calls, add timeouts, cancellation, and service-specific validation as described in [performance and execution](/docs/advanced-onboarding/performance-and-execution/).
+
+## Add video playback and media capture
 
 | Need | Component or guide | Application responsibility |
 | --- | --- | --- |
