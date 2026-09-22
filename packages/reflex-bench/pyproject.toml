@@ -1,0 +1,35 @@
+[project]
+name = "reflex-bench"
+dynamic = ["version"]
+description = "Macro benchmark harness for Reflex: runs benchmarks through the real CLI, stores raw samples and machine profiles, and reports statistically sound comparisons."
+license.text = "Apache-2.0"
+readme = "README.md"
+authors = [{ name = "Reflex", email = "maintainers@reflex.dev" }]
+maintainers = [{ name = "Reflex", email = "maintainers@reflex.dev" }]
+requires-python = ">=3.10"
+dependencies = [
+  "click >=8.2",
+  "packaging >=24.2",
+  "psutil >=7.0.0,<8.0",
+  "rich >=13,<16",
+]
+
+[project.scripts]
+reflex-bench = "reflex_bench.cli:main"
+
+[project.urls]
+Repository = "https://github.com/reflex-dev/reflex"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+pattern-prefix = "reflex-bench-"
+fallback-version = "0.0.0dev0"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/reflex_bench"]
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"

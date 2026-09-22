@@ -46,6 +46,7 @@ members = [
     "hatch-reflex-pyi",
     "reflex",
     "reflex-base",
+    "reflex-bench",
     "reflex-build-sdk",
     "reflex-components-code",
     "reflex-components-core",
@@ -4165,6 +4166,7 @@ dev = [
     { name = "pytest-split" },
     { name = "python-dotenv" },
     { name = "pyyaml" },
+    { name = "reflex-bench" },
     { name = "reflex-build-sdk" },
     { name = "reflex-docgen" },
     { name = "reflex-otel" },
@@ -4254,6 +4256,7 @@ dev = [
     { name = "pytest-split" },
     { name = "python-dotenv" },
     { name = "pyyaml" },
+    { name = "reflex-bench", editable = "packages/reflex-bench" },
     { name = "reflex-build-sdk", editable = "packages/reflex-build-sdk" },
     { name = "reflex-docgen", editable = "packages/reflex-docgen" },
     { name = "reflex-otel", editable = "packages/reflex-otel" },
@@ -4295,6 +4298,24 @@ requires-dist = [
     { name = "typing-extensions", specifier = ">=4.13.0" },
 ]
 provides-extras = ["pydantic"]
+
+[[package]]
+name = "reflex-bench"
+source = { editable = "packages/reflex-bench" }
+dependencies = [
+    { name = "click" },
+    { name = "packaging" },
+    { name = "psutil" },
+    { name = "rich" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "click", specifier = ">=8.2" },
+    { name = "packaging", specifier = ">=24.2" },
+    { name = "psutil", specifier = ">=7.0.0,<8.0" },
+    { name = "rich", specifier = ">=13,<16" },
+]
 
 [[package]]
 name = "reflex-build-sdk"

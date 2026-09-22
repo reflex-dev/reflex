@@ -117,6 +117,7 @@ dev = [
   "pytest",
   "python-dotenv",
   "pyyaml",
+  "reflex-bench",
   "reflex-docgen",
   "reflex-otel",
   "reflex-release",
@@ -161,6 +162,7 @@ require-runtime-dependencies = true
 
 [tool.pyright]
 extraPaths = [
+  "packages/reflex-bench/src",
   "packages/reflex-code/src",
   "packages/reflex-components/src",
   "packages/reflex-dataeditor/src",
@@ -327,6 +329,7 @@ source = [
   "reflex_site_shared",
   "reflex_components_internal",
   "reflex_integrations_docs",
+  "reflex_bench",
 ]
 branch = true
 omit = [
@@ -383,9 +386,10 @@ release-timezone = "America/Los_Angeles"
 # No changelog, no news fragments: patch-released on every push to main that
 # touches them.
 internal-packages = ["reflex-components-internal", "reflex-site-shared"]
-# Built for the docs site rather than published to PyPI: no release checkbox, no
+# Built for the docs site (integrations-docs) or used only inside this repository
+# (reflex-bench) rather than published to PyPI: no release checkbox, no
 # changelog detection, no news fragment, and publish refuses it.
-never-publish-packages = ["integrations-docs"]
+never-publish-packages = ["integrations-docs", "reflex-bench"]
 
 # reflex's metadata pins reflex-base exactly, so the two always release together
 # at one version and reflex uploads only after reflex-base is on PyPI.
@@ -524,6 +528,7 @@ reflex-hosting-cli = false
 [tool.uv.sources]
 hatch-reflex-pyi.workspace = true
 reflex-base.workspace = true
+reflex-bench.workspace = true
 reflex-components-code.workspace = true
 reflex-components-core.workspace = true
 reflex-components-dataeditor.workspace = true

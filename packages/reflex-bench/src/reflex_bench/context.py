@@ -1,0 +1,202 @@
+"""The reflex installation under test and the context passed to every hook.
+
+The harness never imports the reflex under test: it only reads its package
+metadata. Benchmarks reach reflex through subprocesses run with
+:attr:`Subject.python` and :attr:`Context.env`.
+"""
+
+from __future__ import annotations
+
+import logging
+import os
+import platform
+import random
+import subprocess
+import sys
+from dataclasses import dataclass, field
+from importlib import metadata
+from pathlib import Path
+from typing import Any
+
+from reflex_bench.schema import SubjectDoc
+
+BASE_ENV = {
+    "REFLEX_TELEMETRY_ENABLED": "false",
+    "REFLEX_CHECK_LATEST_VERSION": "false",
+    "NO_COLOR": "1",
+    "PYTHONUNBUFFERED": "1",
+    "PYTHONHASHSEED": "0",
+    "REFLEX_USE_GRANIAN": "true",
+}
+
+
+def base_env() -> dict[str, str]:
+    """Build the base environment for subprocesses started by benchmarks.
+
+    Returns:
+        A copy of ``os.environ`` with telemetry, update checks and colors off,
+        unbuffered output, a fixed hash seed and granian as the backend server.
+    """
+    return {**os.environ, **BASE_ENV}
+
+
+def git(cwd: Path, *args: str) -> str | None:
+    """Run a git command.
+
+    Args:
+        cwd: The directory to run it in.
+        *args: The git arguments.
+
+    Returns:
+        The stripped stdout, or ``None`` when git is missing or the command fails.
+    """
+    try:
+        proc = subprocess.run(
+            ["git", *args],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return proc.stdout.strip() if proc.returncode == 0 else None
+
+
+def git_root(start: Path) -> Path | None:
+    """Find the root of the git checkout containing a directory.
+
+    Args:
+        start: A directory inside the checkout.
+
+    Returns:
+        The checkout root, or ``None`` outside a checkout.
+    """
+    root = git(start, "rev-parse", "--show-toplevel")
+    return Path(root) if root else None
+
+
+def git_state(root: Path) -> tuple[str | None, bool | None]:
+    """Read the commit and dirtiness of a checkout.
+
+    Untracked files do not make a checkout dirty (``git describe --dirty``).
+
+    Args:
+        root: The checkout root.
+
+    Returns:
+        ``(commit sha, dirty)``, each ``None`` when unknown.
+    """
+    commit = git(root, "rev-parse", "HEAD")
+    if commit is None:
+        return None, None
+    status = git(root, "status", "--porcelain", "--untracked-files=no")
+    return commit, None if status is None else bool(status)
+
+
+def installed_version(distribution: str) -> str | None:
+    """Read an installed distribution's version from its metadata, without importing it.
+
+    Args:
+        distribution: The distribution name.
+
+    Returns:
+        The version, or ``None`` when it is not installed.
+    """
+    try:
+        return metadata.version(distribution)
+    except metadata.PackageNotFoundError:
+        return None
+
+
+@dataclass
+class Subject:
+    """The reflex installation under test.
+
+    Attributes:
+        spec: How the subject was requested, e.g. ``workspace``.
+        source: Where it comes from: workspace, pypi, git or path.
+        python: The interpreter of the subject's environment.
+        reflex_version: The installed reflex version.
+        commit: The git commit of the source, when known.
+        dirty: Whether the source had uncommitted changes, when known.
+        python_version: The interpreter's version.
+        extra: Further tool versions (bun, node, ...).
+    """
+
+    spec: str
+    source: str
+    python: Path
+    reflex_version: str | None
+    commit: str | None
+    dirty: bool | None
+    python_version: str
+    extra: dict[str, str] = field(default_factory=dict)
+
+    def to_doc(self) -> SubjectDoc:
+        """Describe the subject for the result document.
+
+        Returns:
+            The subject entry.
+        """
+        return {
+            "spec": self.spec,
+            "source": self.source,
+            "python": str(self.python),
+            "python_version": self.python_version,
+            "reflex_version": self.reflex_version,
+            "commit": self.commit,
+            "dirty": self.dirty,
+            "extra": dict(self.extra),
+        }
+
+
+class WorkspaceSubject(Subject):
+    """The reflex installed in the harness's own environment (the current checkout)."""
+
+    def __init__(self, cwd: Path | None = None) -> None:
+        """Describe the current checkout.
+
+        Args:
+            cwd: A directory inside the checkout; defaults to the working directory.
+        """
+        root = git_root(cwd or Path.cwd())
+        commit, dirty = git_state(root) if root else (None, None)
+        super().__init__(
+            spec="workspace",
+            source="workspace",
+            python=Path(sys.executable),
+            reflex_version=installed_version("reflex"),
+            commit=commit,
+            dirty=dirty,
+            python_version=platform.python_version(),
+        )
+
+
+@dataclass
+class Context:
+    """What every hook receives.
+
+    Attributes:
+        subject: The reflex installation under test.
+        params: The instance's parameters, hidden ones included.
+        workdir: A fresh temporary directory for this instance, removed after
+            ``cleanup`` unless the run keeps it.
+        cache_dir: A persistent directory per subject and benchmark id for
+            ``setup_cache`` results; the benchmark's parameter sets share it and
+            it survives across invocations, so hooks decide what to reuse.
+        env: The base environment for subprocesses (see :func:`base_env`).
+        rng: A seeded random generator.
+        log: A logger for the benchmark.
+        arm: The arm being measured, ``A`` or ``B``.
+    """
+
+    subject: Subject
+    params: dict[str, Any]
+    workdir: Path
+    cache_dir: Path
+    env: dict[str, str]
+    rng: random.Random
+    log: logging.Logger
+    arm: str = "A"
