@@ -1,4 +1,5 @@
 ---
+title: Build a Streaming AI Chatbot in Python with Reflex
 meta_description: Build a streaming AI assistant in Python with Reflex and OpenAI. Create a custom chatbot UI, manage chat state, and display responses as they arrive.
 ---
 
@@ -1180,3 +1181,7 @@ Yes. Reuse the chat components and state structure, then adapt the `answer` hand
 
 This tutorial builds a general-purpose chatbot with a custom interface. To make it a task-specific AI assistant, add instructions, document retrieval, or integrations for the task you want it to perform. The UI and streaming state pattern provide a starting point; those additional capabilities are not included in the example.
 ```
+
+## Extend the assistant
+
+Continue with [AI applications](/docs/guides/ai-applications/) for retrieval, source references, persistent conversations, and tool progress. Use [performance and execution](/docs/advanced-onboarding/performance-and-execution/) to distinguish streaming UI latency from provider work.
