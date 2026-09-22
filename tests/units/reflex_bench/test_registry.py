@@ -71,6 +71,8 @@ def test_duplicate_ids_are_an_error(fresh_registry):
         ({"params": {"n": []}}, "parameter 'n' has no values"),
         ({"params": {"n": [1]}, "hidden_params": {"n": 2}}, "both visible and hidden"),
         ({"params": {"1n": [1]}}, "is not an identifier"),
+        ({"params": {"p": [object()]}}, "parameter 'p' value .* is not JSON"),
+        ({"hidden_params": {"h": float("nan")}}, "parameter 'h' value nan is not JSON"),
         ({"suites": ("nightly",)}, "unknown suites"),
         ({"suites": ("all",)}, "unknown suites"),
         ({"timeout": 0}, "timeouts > 0"),
@@ -145,6 +147,7 @@ def test_coerce_param():
     assert registry.coerce_param("true", (False,)) is True
     assert registry.coerce_param("prod", ("dev",)) == "prod"
     assert registry.coerce_param(7, (1,)) == 7
+    assert registry.coerce_param("NaN", (1.0,)) == "NaN"
 
 
 def test_parse_overrides():

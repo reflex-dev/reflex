@@ -161,9 +161,27 @@ def coerce_param(raw: object, declared: Sequence[Any]) -> Any:
         if str(value) == raw:
             return value
     try:
-        return json.loads(raw)
+        value = json.loads(raw)
     except ValueError:
         return raw
+    # json.loads accepts NaN and Infinity, which a result document cannot store.
+    return value if _is_json(value) else raw
+
+
+def _is_json(value: object) -> bool:
+    """Check that a parameter value can be stored in a result document.
+
+    Args:
+        value: The value.
+
+    Returns:
+        Whether ``json.dumps`` accepts it without NaN or infinity.
+    """
+    try:
+        json.dumps(value, allow_nan=False)
+    except (TypeError, ValueError):
+        return False
+    return True
 
 
 def _source_version(target: type) -> str:
@@ -279,6 +297,12 @@ class Benchmark:
             f"parameter {name!r} has no values"
             for name, values in grid.items()
             if not values
+        )
+        problems.extend(
+            f"parameter {name!r} value {value!r} is not JSON serializable"
+            for name, values in (*grid.items(), *((n, (v,)) for n, v in hidden.items()))
+            for value in values
+            if not _is_json(value)
         )
         if overlap := grid.keys() & hidden.keys():
             problems.append(f"parameters {sorted(overlap)} are both visible and hidden")

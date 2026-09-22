@@ -134,9 +134,14 @@ def compare(
             if entry["status"] != "ok"
         )
         reasons.extend(
-            f"metric {metric_name!r} is missing in base"
-            for metric_name in head_entry["metrics"].keys()
-            - base_entry["metrics"].keys()
+            f"metric {metric_name!r} is missing in {side}"
+            for side, present, other in (
+                ("base", base_entry, head_entry),
+                ("head", head_entry, base_entry),
+            )
+            for metric_name in sorted(
+                other["metrics"].keys() - present["metrics"].keys()
+            )
         )
         samples = (
             {}

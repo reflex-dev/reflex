@@ -149,7 +149,13 @@ def test_missing_metric_and_missing_samples_are_not_comparable():
     compared_to = renamed.get("compared_to")
     assert compared_to is not None
     assert compared_to["not_comparable"] == [
-        {"id": "selftest.exact", "reasons": ["metric 'size' is missing in base"]}
+        {
+            "id": "selftest.exact",
+            "reasons": [
+                "metric 'size' is missing in base",
+                "metric 'bytes' is missing in head",
+            ],
+        }
     ]
 
 

@@ -121,6 +121,10 @@ def test_profile_id(monkeypatch: pytest.MonkeyPatch):
     assert machine.profile_id("Linux", "arm64", None, "3.12.8") == "graviton-arm64"
     monkeypatch.setenv(machine.PROFILE_ENV, "Bad/Profile Name")
     assert machine.profile_id("Linux", "arm64", None, "3.12.8") == "bad-profile-name"
+    monkeypatch.setenv(machine.PROFILE_ENV, "!!! \N{SNOWMAN}")
+    assert machine.profile_id("Linux", "arm64", None, "3.12.8") == (
+        "linux-arm64-unknown-cpu-py3.12"
+    )
 
 
 def test_normalize_arch():

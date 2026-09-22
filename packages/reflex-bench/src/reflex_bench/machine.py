@@ -147,13 +147,11 @@ def profile_id(
         E.g. ``linux-x86_64-ryzen-9-7950x-py3.12``.
     """
     override = os.environ.get(PROFILE_ENV, "").strip()
-    if override:
-        # The id names a directory, so keep it to a safe character set.
-        return (
-            override
-            if _PROFILE_PATTERN.fullmatch(override)
-            else _NON_ALNUM.sub("-", override.lower()).strip("-")
-        )
+    # The id names a directory, so keep it to a safe character set.
+    if _PROFILE_PATTERN.fullmatch(override):
+        return override
+    if slug := _NON_ALNUM.sub("-", override.lower()).strip("-"):
+        return slug
     major_minor = ".".join(python_version.split(".")[:2])
     return f"{system.lower()}-{arch}-{cpu_slug(cpu_model)}-py{major_minor}"
 
