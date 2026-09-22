@@ -1,0 +1,1 @@
+Unchanged objects and arrays in state updates now keep their previous identity on the frontend, so memoized components skip re-rendering them, and an update that changes nothing no longer re-renders at all.
