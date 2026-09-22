@@ -36,6 +36,12 @@ try {
     apply: plugin.apply ?? null,
     config: plugin.config(),
     filename: id.split("?")[0],
+    moduleTypes: Object.fromEntries(
+      ["@emotion/react", "react"].map((name) => [
+        name,
+        globalThis.babelCalls[0]?.plugins[0][1].environment.moduleTypeProvider(name),
+      ]),
+    ),
   }));
 } catch (error) {
   process.stdout.write(JSON.stringify({error: error.message}));
@@ -134,6 +140,7 @@ def test_compiles_generated_components(compiler_driver: Path, file: str):
                         "target": "19",
                         "compilationMode": "infer",
                         "panicThreshold": "none",
+                        "environment": {"enableFunctionOutlining": False},
                     },
                 ]
             ],
@@ -191,3 +198,23 @@ def test_handles_babel_ignored_module(compiler_driver: Path):
         compiler_driver: Adapter driver.
     """
     assert _transform(compiler_driver, "app/root.jsx", "ignored")["result"] is None
+
+
+def test_describes_emotion_jsx_like_jsx_syntax(compiler_driver: Path):
+    """Emotion's ``jsx`` freezes its arguments and returns an immutable element.
+
+    Args:
+        compiler_driver: Adapter driver.
+    """
+    module_types = _transform(compiler_driver, "app/routes/index.jsx")["moduleTypes"]
+
+    jsx_type = module_types["@emotion/react"]["properties"]["jsx"]
+    assert jsx_type["returnValueKind"] == "frozen"
+    assert jsx_type["positionalParams"] == ["freeze", "freeze"]
+    assert jsx_type["restParam"] == "freeze"
+    assert {effect["value"] for effect in jsx_type["aliasing"]["effects"][:3]} == {
+        "@type",
+        "@props",
+        "@rest",
+    }
+    assert module_types["react"] is None

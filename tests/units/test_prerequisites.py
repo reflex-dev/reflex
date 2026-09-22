@@ -888,7 +888,7 @@ def test_react_compiler_dependencies_toggle(install_packages_env: InstallPackage
     assert "add" in calls[0]
     assert "-d" in calls[0]
     assert "@babel/core@7.29.7" in calls[0]
-    assert "babel-plugin-react-compiler@1.0.0" in calls[0]
+    assert "babel-plugin-react-compiler@0.0.0-experimental-a1856f3-20260507" in calls[0]
 
     env.install()
     assert len(calls) == 1

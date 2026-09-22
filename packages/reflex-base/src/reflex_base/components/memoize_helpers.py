@@ -20,6 +20,7 @@ Auto-memoized components compile using one of two render strategies:
 from __future__ import annotations
 
 import enum
+import re
 from hashlib import md5
 from typing import TYPE_CHECKING
 
@@ -34,6 +35,8 @@ from reflex_base.vars.sequence import ArrayVar
 
 if TYPE_CHECKING:
     from reflex_base.plugins.compiler import PageContext
+
+_JS_IDENTIFIER = re.compile(r"[A-Za-z_$][\w$]*")
 
 
 class MemoizationStrategy(enum.Enum):
@@ -123,28 +126,31 @@ def get_memoized_event_triggers(
             continue
 
         rendered_chain = LiteralVar.create(event)
+        rendered_js = str(rendered_chain)
         rendered_data = rendered_chain._get_all_var_data()
         event_var_data = [
             data for arg in event_args if (data := arg._get_all_var_data()) is not None
         ]
-        chain_hash = md5(
-            str(rendered_chain).encode("utf-8"), usedforsecurity=False
-        ).hexdigest()
+        chain_hash = md5(rendered_js.encode("utf-8"), usedforsecurity=False).hexdigest()
         memo_name = f"{event_trigger}_{chain_hash}"
 
-        var_deps = ["addEvents", "ReflexEvent"]
-        var_deps.extend(_get_deps_from_event_trigger(event))
-
-        for var_data in event_var_data:
-            for hook in var_data.hooks:
-                var_deps.extend(_get_hook_deps(hook))
+        var_deps = list(_get_deps_from_event_trigger(event))
+        if hook_deps := [
+            dep
+            for var_data in event_var_data
+            for hook in var_data.hooks
+            for dep in _get_hook_deps(hook)
+        ]:
+            # Hooks may declare bindings the callback never reads.
+            identifiers = set(_JS_IDENTIFIER.findall(rendered_js))
+            var_deps.extend(dep for dep in hook_deps if dep in identifiers)
 
         memo_var_data = VarData.merge(
             *event_var_data,
             rendered_data,
             VarData(
                 hooks=[
-                    f"const {memo_name} = useCallback({rendered_chain!s}, [{', '.join(var_deps)}])"
+                    f"const {memo_name} = useCallback({rendered_js}, [{', '.join(var_deps)}])"
                 ],
                 imports={"react": [ImportVar(tag="useCallback")]},
             ),

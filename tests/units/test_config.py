@@ -77,6 +77,16 @@ def test_react_compiler_default(base_config_values):
     assert rx.Config(**base_config_values, react_compiler=True).react_compiler is True
 
 
+def test_auto_memoize_default(base_config_values):
+    """Keep Reflex auto-memoization enabled unless the app opts out.
+
+    Args:
+        base_config_values: Config values.
+    """
+    assert rx.Config(**base_config_values).auto_memoize is True
+    assert rx.Config(**base_config_values, auto_memoize=False).auto_memoize is False
+
+
 @pytest.mark.parametrize(
     ("env_var", "value"),
     [

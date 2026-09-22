@@ -1825,9 +1825,8 @@ class Component(BaseComponent, ABC):
 
         if self._get_ref_hook() is not None:
             # Handle hooks needed for attaching react refs to DOM nodes.
-            imports_.setdefault("react", set()).add(ImportVar(tag="useRef"))
             imports_.setdefault(f"$/{Dirs.STATE_PATH}", set()).add(
-                ImportVar(tag="refs")
+                ImportVar(tag="useRegisteredRef")
             )
 
         if self._get_mount_lifecycle_hook():
@@ -1947,12 +1946,12 @@ class Component(BaseComponent, ABC):
         """Generate the ref hook for the component.
 
         Returns:
-            The useRef hook for managing refs.
+            The hook creating the ref and registering it in ``refs``.
         """
         ref = self.get_ref()
         if ref is not None:
             return Var(
-                f"const {ref} = useRef(null); {Var(_js_expr=ref)._as_ref()!s} = {ref};",
+                f"const {ref} = useRegisteredRef({Var.create(ref)!s});",
                 _var_data=VarData(position=Hooks.HookPosition.INTERNAL),
             )
         return None

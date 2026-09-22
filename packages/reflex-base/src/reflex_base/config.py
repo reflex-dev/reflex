@@ -176,6 +176,7 @@ class BaseConfig:
         vite_allowed_hosts: Allowed hosts for the Vite dev server. Set to True to allow all hosts, or provide a list of hostnames (e.g. ["myservice.local"]) to allow specific ones. Prevents 403 errors in Docker, Codespaces, reverse proxies, etc.
         react_strict_mode: Whether to use React strict mode.
         react_compiler: Enable experimental React Compiler memoization for generated components in development and production. Defaults to False.
+        auto_memoize: Wrap stateful page components in generated memo components. Disable only together with react_compiler, which then memoizes whole pages; without it, every state change re-renders the whole page. Defaults to True.
         frontend_compression_formats: Pre-compressed frontend asset formats to generate for production builds. Supported values are "gzip", "brotli", and "zstd". Use an empty list to disable build-time pre-compression.
         frontend_packages: Additional frontend packages to install.
         frontend_lazy_bundled_libraries: Load optional dynamic-component libraries when a dynamic component is first evaluated, rather than importing their full namespaces on every page. Defaults to False for compatibility with scripts that read window.__reflex directly.
@@ -239,6 +240,8 @@ class BaseConfig:
     react_strict_mode: bool = True
 
     react_compiler: bool = False
+
+    auto_memoize: bool = True
 
     frontend_compression_formats: Annotated[
         list[str],

@@ -1,6 +1,7 @@
 """Tests for sharing prepared event wrappers within a registration context."""
 
 import dataclasses
+import re
 
 import pytest
 from reflex_base.components.component import Component
@@ -141,3 +142,39 @@ def test_event_wrappers_are_shared_by_chain_identity(monkeypatch):
         assert get_memoized_event_triggers(second)["on_click"] is wrapper
         monkeypatch.undo()
         assert get_memoized_event_triggers(other_trigger)["on_blur"] is not wrapper
+
+
+def _callback_dependencies(event: Var) -> list[str]:
+    """Render one trigger's ``useCallback`` and return its dependency names.
+
+    Args:
+        event: The event trigger value.
+
+    Returns:
+        The names listed in the generated dependency array.
+    """
+    with RegistrationContext.ensure_context().fork():
+        wrapper = get_memoized_event_triggers(
+            Component._create(children=(), event_triggers={"on_click": event})
+        )["on_click"]
+    data = wrapper._get_all_var_data()
+    assert data is not None
+    hook = next(hook for hook in data.hooks if "useCallback" in hook)
+    match = re.search(r", \[([^\]]*)\]\)$", hook)
+    assert match is not None, hook
+    return [dep for dep in match.group(1).split(", ") if dep]
+
+
+def test_event_wrapper_omits_module_level_dependencies():
+    """Imported helpers never change, so they are not callback dependencies."""
+    assert _callback_dependencies(Var("handler", EventChain)) == []
+
+
+def test_event_wrapper_lists_only_referenced_hook_bindings():
+    """Hook bindings join the dependency array only when the callback reads them."""
+    event = Var(
+        "(e) => upload(files, e)",
+        EventChain,
+        VarData(hooks=["const [files, setFiles] = useContext(FilesContext)"]),
+    )
+    assert _callback_dependencies(event) == ["files"]
