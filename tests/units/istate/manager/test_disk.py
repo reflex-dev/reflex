@@ -111,7 +111,7 @@ async def test_set_state_persists_untouched_base_state(
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
     state_manager = StateManagerDisk(_write_debounce_seconds=write_debounce_seconds)
     token = BaseStateToken(ident="client", cls=DiskPersistState)
-    state = DiskPersistState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state = DiskPersistState(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
     object.__setattr__(state, "num", 9.5)
     state.dirty_vars.clear()
     state._was_touched = False

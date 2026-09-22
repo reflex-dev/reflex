@@ -1154,7 +1154,7 @@ def test_interval_computed_vars_resolve_through_state_proxy(
         def timed(self) -> int:
             return self.base
 
-    state = IntervalState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state = IntervalState(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
     proxy = StateProxy(state)
     assert proxy._expired_computed_vars() == {"timed"}
     assert IntervalState._interval_computed_var_names == frozenset({"timed"})
@@ -1174,7 +1174,7 @@ def test_fast_path_skips_names_a_subclass_defines():
     def get_value(self, key: str):
         return f"shadow:{key}"
 
-    get_value.__override_base_method__ = True  # pyright: ignore [reportFunctionMemberAccess]
+    get_value.__override_base_method__ = True  # ty:ignore[unresolved-attribute]
 
     ShadowState = type(
         "ShadowState",

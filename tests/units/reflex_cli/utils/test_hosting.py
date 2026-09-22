@@ -750,7 +750,7 @@ def test_list_gcp_connections_reads_the_status(mocker: MockerFixture):
 def test_list_gcp_connections_refuses_an_unauthenticated_client():
     """The docstring promises NotAuthenticatedError, not an AttributeError."""
     with pytest.raises(NotAuthenticatedError):
-        list_gcp_connections(None)  # pyright: ignore[reportArgumentType]
+        list_gcp_connections(None)  # ty:ignore[invalid-argument-type]
 
 
 def test_list_gcp_connections_without_org():
@@ -969,7 +969,7 @@ def _deploy(zip_dir: Path, app_id: str | None = "app-1", **kwargs: Any) -> str:
     Returns:
         Whatever ``create_deployment`` returned.
     """
-    return create_deployment(**{
+    return create_deployment(**{  # ty:ignore[invalid-argument-type]
         "zip_dir": zip_dir,
         "client": _CLIENT,
         "app_name": "n",

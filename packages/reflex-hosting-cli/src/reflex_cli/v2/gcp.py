@@ -739,7 +739,7 @@ def _parse_envs(envfile: str | None, envs: tuple[str, ...]) -> dict[str, str]:
 
     if envfile:
         try:
-            from dotenv import dotenv_values  # pyright: ignore[reportMissingImports]
+            from dotenv import dotenv_values
         except ImportError:
             logger.error(
                 'The `python-dotenv` package is required for --envfile. Run `pip install "python-dotenv>=1.0.1"`.'

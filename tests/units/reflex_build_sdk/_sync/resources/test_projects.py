@@ -376,7 +376,9 @@ def test_roles_preview_update(client: ReflexBuild, mock_api: MockAPI):
         ),
     )
     assert client.projects.roles.preview_update(
-        PROJECT_ID, ROLE_ID, **ROLE_BODY
+        PROJECT_ID,
+        ROLE_ID,
+        **ROLE_BODY,  # ty:ignore[invalid-argument-type]
     ) == RoleUpdatePreview(
         gained=["can_view_audit_logs"],
         lost=[],

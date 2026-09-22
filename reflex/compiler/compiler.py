@@ -36,7 +36,7 @@ from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plug
 from reflex_base.registry import RegistrationContext, _default_bundled_libraries
 from reflex_base.utils import log, memo_paths
 from reflex_base.utils.exceptions import ReflexError
-from reflex_base.utils.format import to_title_case
+from reflex_base.utils.format import callable_name, to_title_case
 from reflex_base.utils.imports import (
     ABSOLUTE_IMPORT_PREFIXES,
     ImportVar,
@@ -912,9 +912,10 @@ def readable_name_from_component(
             module = getmodule(component)
             if module is not None:
                 module_name = module.__name__
+        name = callable_name(component)
         if module_name is not None:
-            return f"{module_name}.{component.__name__}"
-        return component.__name__
+            return f"{module_name}.{name}"
+        return name
     return None
 
 
@@ -958,6 +959,8 @@ def into_component(component: Component | ComponentCallable) -> Component:
 
     # noqa: DAR401
     """
+    if isinstance(component, Component):
+        return component
     if (converted := _into_component_once(component)) is not None:
         return converted
     if not callable(component):
@@ -1043,23 +1046,17 @@ def compile_unevaluated_page(
 
         component = Fragment.create(component)
 
-        meta_args = {
-            "title": (
+        # Add meta information to the component.
+        utils.add_meta(
+            component,
+            title=(
                 page.title
                 if page.title is not None
                 else make_default_page_title(get_config().app_name, route)
             ),
-            "image": page.image,
-            "meta": page.meta,
-        }
-
-        if page.description is not None:
-            meta_args["description"] = page.description
-
-        # Add meta information to the component.
-        utils.add_meta(
-            component,
-            **meta_args,
+            image=page.image,
+            meta=page.meta,
+            description=page.description,
         )
 
     except Exception as e:

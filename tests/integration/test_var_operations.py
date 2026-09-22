@@ -607,7 +607,7 @@ def VarOperations():
                 id="list_map",
             ),
             rx.text(
-                ArrayVar.range(1, 5).foreach(lambda x: x * 2).to_string(),
+                ArrayVar.range(1, 5).foreach(lambda x: x * 2).to_string(),  # ty:ignore[deprecated]
                 id="list_foreach_alias",
             ),
             rx.text(
@@ -798,7 +798,7 @@ def VarOperations():
                 id="optional_list",
             ),
             rx.box(
-                rx.foreach(VarOperationState.optional_dict, rx.text.span),
+                rx.foreach(VarOperationState.optional_dict, rx.text.span),  # ty:ignore[invalid-argument-type]
                 id="optional_dict",
             ),
             rx.box(
@@ -806,7 +806,7 @@ def VarOperations():
                 id="optional_list_value",
             ),
             rx.box(
-                rx.foreach(VarOperationState.optional_dict_value, rx.text.span),
+                rx.foreach(VarOperationState.optional_dict_value, rx.text.span),  # ty:ignore[invalid-argument-type]
                 id="optional_dict_value",
             ),
             rx.box(

@@ -229,7 +229,7 @@ def _patch_typer(click_instance: click.Command) -> typer.Typer:
         original_get_group_from_info,
     )
 
-    typer.main.get_group_from_info = get_group_from_info
+    typer.main.get_group_from_info = get_group_from_info  # ty:ignore[invalid-assignment]
 
     return fake_typer_app
 
@@ -239,4 +239,4 @@ if (
     and find_spec("typer.core") is not None
     and find_spec("typer.models") is not None
 ):
-    deployments_cli = _patch_typer(deployments_cli)  # pyright: ignore[reportAssignmentType]
+    deployments_cli = _patch_typer(deployments_cli)  # ty:ignore[invalid-assignment]

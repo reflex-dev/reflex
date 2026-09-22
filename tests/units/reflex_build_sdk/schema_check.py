@@ -171,7 +171,7 @@ def model_problems(
     properties = component.get("properties", {})
     required = set(component.get("required", []))
     problems = []
-    for field in dataclasses.fields(model):
+    for field in dataclasses.fields(model):  # ty:ignore[invalid-argument-type]
         key = json_key(field)
         path = f"{model.__name__}.{field.name}"
         if key not in properties:

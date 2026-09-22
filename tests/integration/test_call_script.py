@@ -92,7 +92,7 @@ def CallScript():
         def call_script_inline_return_lambda(self):
             return rx.call_script(
                 "inline2()",
-                callback=lambda result: CallScriptState.call_script_callback_other_arg(
+                callback=lambda result: CallScriptState.call_script_callback_other_arg(  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                     result, "lambda"
                 ),
             )
@@ -140,7 +140,7 @@ def CallScript():
         def call_script_external_return_lambda(self):
             return rx.call_script(
                 "external2()",
-                callback=lambda result: CallScriptState.call_script_callback_other_arg(
+                callback=lambda result: CallScriptState.call_script_callback_other_arg(  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                     result, "lambda"
                 ),
             )

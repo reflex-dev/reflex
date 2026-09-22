@@ -261,7 +261,7 @@ def new_process(
     fn: Callable[..., subprocess.CompletedProcess[str] | subprocess.Popen[str]] = (
         subprocess.run if run else subprocess_p_open
     )
-    return fn(non_empty_args, **kwargs)
+    return fn(non_empty_args, **kwargs)  # ty:ignore[no-matching-overload]
 
 
 def _interrupt_main_thread():
@@ -282,7 +282,7 @@ def _interrupt_main_thread():
 
 @contextlib.contextmanager
 def run_concurrently_context(
-    *fns: Callable[..., Any] | tuple[Callable[..., Any], ...],
+    *fns: Callable[..., Any] | tuple[Any, ...],
 ) -> Generator[list[futures.Future], None, None]:
     """Run functions concurrently in a thread pool.
 

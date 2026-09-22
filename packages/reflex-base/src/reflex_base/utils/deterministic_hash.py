@@ -65,7 +65,7 @@ def _hash_dataclass_layout(cls: type) -> tuple[bytes, tuple[tuple[bytes, str], .
     """
     layout = _hash_dataclass_layouts.get(cls)
     if layout is None:
-        fields = dataclasses.fields(cls)  # pyright: ignore [reportArgumentType]
+        fields = dataclasses.fields(cls)  # ty:ignore[invalid-argument-type]
         # The defining class is part of the header: two dataclasses with the
         # same field names and values are different values.
         layout = (

@@ -235,7 +235,7 @@ class AsyncDomains:
         """
         # An app without a custom domain answers with an empty object, the only
         # value a dict that can hold no values matches.
-        domain = await self._client._request(
+        domain = await self._client._request(  # ty:ignore[no-matching-overload]
             "GET",
             f"apps/{path_segment(app_id)}/custom_domain",
             CustomDomain | dict[str, NoReturn],
@@ -585,7 +585,7 @@ class AsyncApps:
             The running deployment, or None if the app is not running, e.g. while it
             is stopped, paused or deploying.
         """
-        deployment = await self._client._request(
+        deployment = await self._client._request(  # ty:ignore[no-matching-overload]
             "GET",
             f"apps/{path_segment(app_id)}/deployment",
             RunningDeployment | _NoRunningDeployment,

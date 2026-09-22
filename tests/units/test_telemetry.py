@@ -284,7 +284,7 @@ def test_prepare_event_merges_properties(event_defaults):
 
     assert event is not None
     assert event["event"] == "compile"
-    props: dict = event["properties"]  # pyright: ignore[reportAssignmentType]
+    props: dict = event["properties"]  # ty:ignore[invalid-assignment]
     assert props["pages_count"] == 7
     assert props["trigger"] == "initial"
     # Existing default keys are preserved.
@@ -441,7 +441,7 @@ def test_prepare_event_properties_override_kwargs(event_defaults):
     )
 
     assert event is not None
-    props: dict = event["properties"]  # pyright: ignore[reportAssignmentType]
+    props: dict = event["properties"]  # ty:ignore[invalid-assignment]
     assert props["template"] == "from-properties"
 
 
@@ -505,7 +505,7 @@ def test_get_event_defaults_encodes_ids_as_uuid_strings(stub_event_default_sourc
     defaults = telemetry._get_event_defaults()
 
     assert defaults is not None
-    props: dict = defaults["properties"]  # pyright: ignore[reportAssignmentType]
+    props: dict = defaults["properties"]  # ty:ignore[invalid-assignment]
     assert isinstance(props["distinct_id"], str)
     assert isinstance(props["distinct_app_id"], str)
     assert props["distinct_id"] == str(uuid.UUID(int=installation_id))
@@ -822,7 +822,7 @@ def test_send_event_posts_json_without_httpx(mocker: MockerFixture):
     urlopen = mocker.patch("reflex.utils.telemetry.urllib.request.urlopen")
     mocker.patch.dict(sys.modules, {"httpx": None})
 
-    assert telemetry._send_event({"api_key": "k", "event": "e"})  # pyright: ignore[reportArgumentType]
+    assert telemetry._send_event({"api_key": "k", "event": "e"})  # ty:ignore[invalid-argument-type, missing-typed-dict-key]
 
     request = urlopen.call_args.args[0]
     assert request.full_url == telemetry.POSTHOG_API_URL
@@ -836,4 +836,4 @@ def test_send_event_swallows_delivery_errors(mocker: MockerFixture):
     mocker.patch(
         "reflex.utils.telemetry.urllib.request.urlopen", side_effect=OSError("down")
     )
-    assert not telemetry._send_event({"api_key": "k", "event": "e"})  # pyright: ignore[reportArgumentType]
+    assert not telemetry._send_event({"api_key": "k", "event": "e"})  # ty:ignore[invalid-argument-type, missing-typed-dict-key]

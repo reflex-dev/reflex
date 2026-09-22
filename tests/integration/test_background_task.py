@@ -334,9 +334,7 @@ def test_background_task(
     AppHarness.expect(lambda: counter.text == "620", timeout=40)
     AppHarness.expect(lambda: counter_async_cv.text == "620", timeout=40)
     # all tasks should have exited and cleaned up
-    AppHarness.expect(
-        lambda: not background_task.app_instance.event_processor._tasks  # pyright: ignore [reportOptionalMemberAccess]
-    )
+    AppHarness.expect(lambda: not background_task.app_instance.event_processor._tasks)  # ty:ignore[unresolved-attribute]
 
 
 def test_nested_async_with_self(

@@ -34,7 +34,7 @@ def _client(**kwargs: Any) -> BaseClient:
         "timeout": None,
         "max_retries": DEFAULT_MAX_RETRIES,
     }
-    return BaseClient(**(settings | kwargs))
+    return BaseClient(**(settings | kwargs))  # ty:ignore[invalid-argument-type]
 
 
 def _request(method: str = "GET") -> Request:

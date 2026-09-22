@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import dataclasses
 import re
-from collections.abc import Callable
 from typing import Any
 
 from reflex_base import constants
-from reflex_base.event import EventChain, EventHandler, EventSpec, run_script
+from reflex_base.event import EventChain, EventSpec, EventType, run_script
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData, get_unique_variable_name
 from reflex_base.vars.base import LiteralVar, Var
@@ -257,7 +256,7 @@ class ClientStateVar(Var):
         """
         return self.set_value()
 
-    def retrieve(self, callback: EventHandler | Callable | None = None) -> EventSpec:
+    def retrieve(self, callback: EventType[Any] | None = None) -> EventSpec:
         """Pass the value of the client state variable to a backend EventHandler.
 
         The event handler must `yield` or `return` the EventSpec to trigger the event.

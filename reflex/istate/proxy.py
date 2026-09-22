@@ -13,7 +13,16 @@ from collections.abc import Callable, Sequence
 from importlib import import_module
 from importlib.util import find_spec
 from types import MethodType
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, SupportsIndex, TypeVar, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Literal,
+    NoReturn,
+    SupportsIndex,
+    TypeVar,
+    cast,
+)
 
 import wrapt
 from reflex_base import constants
@@ -46,8 +55,8 @@ _DATACLASSES_FILE = dataclasses.__file__
 # which the proxy's instance-level forwarding cannot answer for; the methods
 # `@dataclass` writes need no copy, resolving through the wrapped object.
 _DATACLASS_CLASS_ATTRS = (
-    dataclasses._FIELDS,  # pyright: ignore [reportAttributeAccessIssue]
-    dataclasses._PARAMS,  # pyright: ignore [reportAttributeAccessIssue]
+    dataclasses._FIELDS,  # ty:ignore[unresolved-attribute]
+    dataclasses._PARAMS,  # ty:ignore[unresolved-attribute]
     "__match_args__",
 )
 
@@ -65,7 +74,7 @@ def _dataclass_proxy_namespace(wrapped_cls: type) -> dict[str, Any]:
     # dataclass declares as an instance field must not be copied. `fields()`
     # lists exactly those, excluding the ClassVar and InitVar entries that
     # `__dataclass_fields__` also carries, which stay class-level regardless.
-    instance_fields = {field.name for field in dataclasses.fields(wrapped_cls)}  # pyright: ignore [reportArgumentType]
+    instance_fields = {field.name for field in dataclasses.fields(wrapped_cls)}  # ty:ignore[invalid-argument-type]
     return {
         attr: getattr(wrapped_cls, attr)
         for attr in _DATACLASS_CLASS_ATTRS
@@ -284,7 +293,7 @@ class StateProxy(wrapt.ObjectProxy):
             )
             raise ImmutableStateError(msg)
 
-        value = super().__getattr__(name)  # pyright: ignore[reportAttributeAccessIssue]
+        value = super().__getattr__(name)
         if not name.startswith("_self_") and isinstance(value, MutableProxy):
             # ensure mutations to these containers are blocked unless proxy is _mutable
             return ImmutableMutableProxy(
@@ -376,7 +385,7 @@ class StateProxy(wrapt.ObjectProxy):
             await self.__wrapped__.get_state(state_cls),
             event=self._self_event,
             parent_state_proxy=self,
-        )  # pyright: ignore [reportReturnType]
+        )  # ty:ignore[invalid-return-type]
 
     async def _as_state_update(self, *args, **kwargs) -> StateUpdate:
         """Temporarily allow mutability to access parent_state.
@@ -493,7 +502,7 @@ class MutableProxy(wrapt.ObjectProxy):
     }
 
     # Dynamically generated classes for tracking dataclass mutations.
-    __dataclass_proxies__: dict[tuple[type, type], type] = {}
+    __dataclass_proxies__: ClassVar[dict[tuple[type, type], type[MutableProxy]]] = {}
     _self_path: tuple[_AccessSpec, ...] = ()
     # The state (or StateProxy) whose async context this proxy has entered.
     _self_actx_state: BaseState | None = None
@@ -531,7 +540,7 @@ class MutableProxy(wrapt.ObjectProxy):
             cls = cls.__dataclass_proxies__[wrapper_cls_key]
         # wrapt-stubs types `ObjectProxy.__new__` as returning `ObjectProxy`
         # rather than `Self`, hence the cast.
-        return cast("Self", super().__new__(cls))  # pyright: ignore[reportArgumentType]
+        return cast("Self", super().__new__(cls))
 
     def __init__(
         self,
@@ -787,7 +796,7 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The attribute value.
         """
-        value = super().__getattr__(__name)  # pyright: ignore[reportAttributeAccessIssue]
+        value = super().__getattr__(__name)
 
         if callable(value):
             if __name in self.__mark_dirty_attrs__:
@@ -798,7 +807,7 @@ class MutableProxy(wrapt.ObjectProxy):
                 # Wrap special methods that may return mutable objects tied to the state.
                 value = wrapt.FunctionWrapper(
                     value,
-                    self._wrap_recursive_decorator,  # pyright: ignore[reportArgumentType]
+                    self._wrap_recursive_decorator,
                 )
 
             if (
@@ -831,7 +840,7 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The item value.
         """
-        value = super().__getitem__(key)  # pyright: ignore[reportAttributeAccessIssue]
+        value = super().__getitem__(key)
         if not isinstance(value, MutableProxy) and not is_mutable_type(type(value)):
             # Skip the wrapping machinery entirely on the non-mutable hot path.
             return value
@@ -859,7 +868,7 @@ class MutableProxy(wrapt.ObjectProxy):
         mutable_check = is_mutable_type
         # All iterated elements share one child path; build it once, not per element.
         child_path = (*self._self_path, _UNREFRESHABLE_ACCESS_SPEC)
-        for value in super().__iter__():  # pyright: ignore[reportAttributeAccessIssue]
+        for value in super().__iter__():
             # Iterated values have no stable key to refresh through, so their
             # proxies cannot be used as async context managers.
             if isinstance(value, MutableProxy) or mutable_check(type(value)):
@@ -881,7 +890,7 @@ class MutableProxy(wrapt.ObjectProxy):
         Args:
             key: The key of the item.
         """
-        self._mark_dirty(super().__delitem__, args=(key,))  # pyright: ignore[reportAttributeAccessIssue]
+        self._mark_dirty(super().__delitem__, args=(key,))
 
     def __setitem__(self, key: str, value: Any):
         """Set the item on the proxied object and mark state dirty.
@@ -890,7 +899,7 @@ class MutableProxy(wrapt.ObjectProxy):
             key: The key of the item.
             value: The value of the item.
         """
-        self._mark_dirty(super().__setitem__, args=(key, value))  # pyright: ignore[reportAttributeAccessIssue]
+        self._mark_dirty(super().__setitem__, args=(key, value))
 
     def __setattr__(self, name: str, value: Any):
         """Set the attribute on the proxied object and mark state dirty.
@@ -993,6 +1002,8 @@ class ImmutableMutableProxy(MutableProxy):
     to modify the wrapped object when the StateProxy is immutable.
     """
 
+    _self_state: StateProxy
+
     # Ensure that recursively wrapped proxies use ImmutableMutableProxy as base.
     __base_proxy__ = "ImmutableMutableProxy"
 
@@ -1019,7 +1030,7 @@ class ImmutableMutableProxy(MutableProxy):
         Raises:
             ImmutableStateError: if the StateProxy is not mutable.
         """
-        if not self._self_state._is_mutable():  # pyright: ignore[reportAttributeAccessIssue]
+        if not self._self_state._is_mutable():
             msg = (
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."

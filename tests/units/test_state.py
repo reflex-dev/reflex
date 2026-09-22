@@ -146,7 +146,7 @@ class TestMixin(BaseState, mixin=True):
     _mixin_backend: rx.Field[int] = rx.field(default_factory=lambda: 10)
 
 
-class TestState(TestMixin, BaseState):  # pyright: ignore[reportUnsafeMultipleInheritance]
+class TestState(TestMixin, BaseState):
     """A test state."""
 
     # Set this class as not test one
@@ -311,7 +311,7 @@ def test_state() -> TestState:
     Returns:
         A test state.
     """
-    return TestState()  # pyright: ignore [reportCallIssue]
+    return TestState()  # ty:ignore[missing-argument]
 
 
 @pytest.fixture
@@ -494,13 +494,13 @@ def test_dict(test_state: TestState):
 
 def test_class_indexing_with_vars():
     """Test that we can index into a state var with another var."""
-    prop = TestState.array[TestState.num1]  # pyright: ignore [reportCallIssue, reportArgumentType]
+    prop = TestState.array[TestState.num1]  # ty:ignore[invalid-argument-type]
     assert (
         str(prop)
         == f"{TestState.get_name()}.array{FIELD_MARKER}?.at?.({TestState.get_name()}.num1{FIELD_MARKER})"
     )
 
-    prop = TestState.mapping["a"][TestState.num1]  # pyright: ignore [reportCallIssue, reportArgumentType]
+    prop = TestState.mapping["a"][TestState.num1]
     assert (
         str(prop)
         == f'{TestState.get_name()}.mapping{FIELD_MARKER}?.["a"]?.at?.({TestState.get_name()}.num1{FIELD_MARKER})'
@@ -620,11 +620,11 @@ def test_get_class_var():
 def test_set_class_var():
     """Test setting the var of a class."""
     with pytest.raises(AttributeError):
-        TestState.num3  # pyright: ignore [reportAttributeAccessIssue]
+        TestState.num3  # ty:ignore[unresolved-attribute]
     TestState._set_var(
         "num3", Var(_js_expr="num3", _var_type=int)._var_set_state(TestState)
     )
-    var = TestState.num3  # pyright: ignore [reportAttributeAccessIssue]
+    var = TestState.num3  # ty:ignore[unresolved-attribute]
     assert var._js_expr == TestState.get_full_name() + ".num3"
     assert var._var_type is int
     assert var._var_state == TestState.get_full_name()
@@ -1134,22 +1134,22 @@ def test_add_var():
     assert not hasattr(ds1, "dynamic_int")
     ds1.add_var("dynamic_int", int, 42)
     # Existing instances get the BaseVar
-    assert ds1.dynamic_int.equals(DynamicState.dynamic_int)  # pyright: ignore [reportAttributeAccessIssue]
+    assert ds1.dynamic_int.equals(DynamicState.dynamic_int)  # ty:ignore[unresolved-attribute]
     # New instances get an actual value with the default
-    assert DynamicState().dynamic_int == 42  # pyright: ignore[reportAttributeAccessIssue]
+    assert DynamicState().dynamic_int == 42  # ty:ignore[unresolved-attribute]
 
     ds1.add_var("dynamic_list", list[int], [5, 10])
-    assert ds1.dynamic_list.equals(DynamicState.dynamic_list)  # pyright: ignore [reportAttributeAccessIssue]
+    assert ds1.dynamic_list.equals(DynamicState.dynamic_list)  # ty:ignore[unresolved-attribute]
     ds2 = DynamicState()
-    assert ds2.dynamic_list == [5, 10]  # pyright: ignore[reportAttributeAccessIssue]
-    ds2.dynamic_list.append(15)  # pyright: ignore[reportAttributeAccessIssue]
-    assert ds2.dynamic_list == [5, 10, 15]  # pyright: ignore[reportAttributeAccessIssue]
-    assert DynamicState().dynamic_list == [5, 10]  # pyright: ignore[reportAttributeAccessIssue]
+    assert ds2.dynamic_list == [5, 10]  # ty:ignore[unresolved-attribute]
+    ds2.dynamic_list.append(15)  # ty:ignore[unresolved-attribute]
+    assert ds2.dynamic_list == [5, 10, 15]  # ty:ignore[unresolved-attribute]
+    assert DynamicState().dynamic_list == [5, 10]  # ty:ignore[unresolved-attribute]
 
     ds1.add_var("dynamic_dict", dict[str, int], {"k1": 5, "k2": 10})
-    assert ds1.dynamic_dict.equals(DynamicState.dynamic_dict)  # pyright: ignore [reportAttributeAccessIssue]
-    assert ds2.dynamic_dict.equals(DynamicState.dynamic_dict)  # pyright: ignore [reportAttributeAccessIssue]
-    assert DynamicState().dynamic_dict == {"k1": 5, "k2": 10}  # pyright: ignore[reportAttributeAccessIssue]
+    assert ds1.dynamic_dict.equals(DynamicState.dynamic_dict)  # ty:ignore[unresolved-attribute]
+    assert ds2.dynamic_dict.equals(DynamicState.dynamic_dict)  # ty:ignore[unresolved-attribute]
+    assert DynamicState().dynamic_dict == {"k1": 5, "k2": 10}  # ty:ignore[unresolved-attribute]
 
 
 class InterdependentState(BaseState):
@@ -2023,11 +2023,14 @@ def test_computed_var_depends_on_parent_non_cached():
 
 
 @pytest.mark.parametrize("use_partial", [True, False])
-def test_cached_var_depends_on_event_handler(use_partial: bool):
+def test_cached_var_depends_on_event_handler(
+    use_partial: bool, monkeypatch: pytest.MonkeyPatch
+):
     """A cached var that calls an event handler calculates deps correctly.
 
     Args:
         use_partial: if true, replace the EventHandler with functools.partial
+        monkeypatch: The pytest monkeypatch fixture.
     """
     counter = 0
 
@@ -2045,7 +2048,8 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
             return counter
 
     if use_partial:
-        HandlerState.handler = functools.partial(HandlerState.handler.fn)  # pyright: ignore [reportFunctionMemberAccess]
+        handler_fn = HandlerState.event_handlers["handler"].fn
+        monkeypatch.setattr(HandlerState, "handler", functools.partial(handler_fn))
         assert isinstance(HandlerState.handler, functools.partial)
     else:
         assert isinstance(HandlerState.handler, EventHandler)
@@ -2711,7 +2715,7 @@ def mock_app_simple(monkeypatch) -> rx.App:
 
     setattr(app_module, CompileVars.APP, app)
     app._state = TestState
-    app.event_namespace.emit = CopyingAsyncMock()  # pyright: ignore [reportOptionalMemberAccess]
+    app.event_namespace.emit = CopyingAsyncMock()  # ty:ignore[invalid-assignment]
 
     def _mock_get_app(*args, **kwargs):
         return app_module
@@ -3336,7 +3340,7 @@ def test_mutable_list(mutable_state: MutableTestState):
     assert_array_dirty()
     mutable_state.array.reverse()
     assert_array_dirty()
-    mutable_state.array.sort()  # pyright: ignore[reportCallIssue]
+    mutable_state.array.sort()  # ty:ignore[invalid-argument-type]
     assert_array_dirty()
     mutable_state.array[0] = 666
     assert_array_dirty()
@@ -3356,7 +3360,7 @@ def test_mutable_list(mutable_state: MutableTestState):
     assert isinstance(mutable_state.array[0], MutableProxy)
     for item in mutable_state.array:
         assert isinstance(item, MutableProxy)
-        item["foo"] = "bar"  # pyright: ignore[reportArgumentType, reportCallIssue]
+        item["foo"] = "bar"
         assert_array_dirty()
 
 
@@ -3428,10 +3432,10 @@ def test_mutable_dict(mutable_state: MutableTestState):
     mutable_value_third_ref = mutable_state.hashmap.pop("setdefault_mutable_key")
     assert not isinstance(mutable_value_third_ref, MutableProxy)
     assert_hashmap_dirty()
-    mutable_value_third_ref.append("baz")  # pyright: ignore[reportAttributeAccessIssue]
+    mutable_value_third_ref.append("baz")  # ty:ignore[unresolved-attribute]
     assert not mutable_state.dirty_vars
     # Unfortunately previous refs still will mark the state dirty... nothing doing about that
-    assert mutable_value.pop()  # pyright: ignore[reportCallIssue]
+    assert mutable_value.pop()
     assert_hashmap_dirty()
 
 
@@ -3588,7 +3592,7 @@ def test_duplicate_substate_class(mocker: MockerFixture):
         class TestState(BaseState):
             pass
 
-        class ChildTestState(TestState):  # pyright: ignore [reportRedeclaration]
+        class ChildTestState(TestState):
             pass
 
         class ChildTestState(TestState):  # noqa: F811
@@ -3631,21 +3635,21 @@ def test_reset_with_mutables():
         items: list[list[int]] = default
 
     instance = MutableResetState()
-    assert instance.items.__wrapped__ is not default  # pyright: ignore [reportAttributeAccessIssue]
+    assert instance.items.__wrapped__ is not default  # ty:ignore[unresolved-attribute]
     assert instance.items == default == copied_default
     instance.items.append([3, 3])
     assert instance.items != default
     assert instance.items != copied_default
 
     instance.reset()
-    assert instance.items.__wrapped__ is not default  # pyright: ignore [reportAttributeAccessIssue]
+    assert instance.items.__wrapped__ is not default  # ty:ignore[unresolved-attribute]
     assert instance.items == default == copied_default
     instance.items.append([3, 3])
     assert instance.items != default
     assert instance.items != copied_default
 
     instance.reset()
-    assert instance.items.__wrapped__ is not default  # pyright: ignore [reportAttributeAccessIssue]
+    assert instance.items.__wrapped__ is not default  # ty:ignore[unresolved-attribute]
     assert instance.items == default == copied_default
     instance.items.append([3, 3])
     assert instance.items != default
@@ -3707,31 +3711,29 @@ def test_state_union_optional():
         c3r: Custom3 = Custom3(c2r=Custom2(c1r=Custom1(foo="")))
         custom_union: Custom1 | Custom2 | Custom3 = Custom1(foo="")
 
-    assert str(UnionState.c3.c2) == f'{UnionState.c3!s}?.["c2"]'  # pyright: ignore [reportOptionalMemberAccess]
-    assert str(UnionState.c3.c2.c1) == f'{UnionState.c3!s}?.["c2"]?.["c1"]'  # pyright: ignore [reportOptionalMemberAccess]
+    assert str(UnionState.c3.c2) == f'{UnionState.c3!s}?.["c2"]'  # ty:ignore[unresolved-attribute]
+    assert str(UnionState.c3.c2.c1) == f'{UnionState.c3!s}?.["c2"]?.["c1"]'  # ty:ignore[unresolved-attribute]
+    assert str(UnionState.c3.c2.c1.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1"]?.["foo"]'  # ty:ignore[unresolved-attribute]
     assert (
-        str(UnionState.c3.c2.c1.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1"]?.["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
+        str(UnionState.c3.c2.c1r.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1r"]?.["foo"]'  # ty:ignore[unresolved-attribute]
+    )
+    assert str(UnionState.c3.c2r.c1) == f'{UnionState.c3!s}?.["c2r"]?.["c1"]'  # ty:ignore[unresolved-attribute]
+    assert (
+        str(UnionState.c3.c2r.c1.foo) == f'{UnionState.c3!s}?.["c2r"]?.["c1"]?.["foo"]'  # ty:ignore[unresolved-attribute]
     )
     assert (
-        str(UnionState.c3.c2.c1r.foo) == f'{UnionState.c3!s}?.["c2"]?.["c1r"]?.["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
-    )
-    assert str(UnionState.c3.c2r.c1) == f'{UnionState.c3!s}?.["c2r"]?.["c1"]'  # pyright: ignore [reportOptionalMemberAccess]
-    assert (
-        str(UnionState.c3.c2r.c1.foo) == f'{UnionState.c3!s}?.["c2r"]?.["c1"]?.["foo"]'  # pyright: ignore [reportOptionalMemberAccess]
-    )
-    assert (
-        str(UnionState.c3.c2r.c1r.foo)  # pyright: ignore [reportOptionalMemberAccess]
+        str(UnionState.c3.c2r.c1r.foo)  # ty:ignore[unresolved-attribute]
         == f'{UnionState.c3!s}?.["c2r"]?.["c1r"]?.["foo"]'
     )
     assert str(UnionState.c3i.c2) == f'{UnionState.c3i!s}?.["c2"]'
     assert str(UnionState.c3r.c2) == f'{UnionState.c3r!s}?.["c2"]'
-    assert UnionState.custom_union.foo is not None  # pyright: ignore [reportAttributeAccessIssue]
-    assert UnionState.custom_union.c1 is not None  # pyright: ignore [reportAttributeAccessIssue]
-    assert UnionState.custom_union.c1r is not None  # pyright: ignore [reportAttributeAccessIssue]
-    assert UnionState.custom_union.c2 is not None  # pyright: ignore [reportAttributeAccessIssue]
-    assert UnionState.custom_union.c2r is not None  # pyright: ignore [reportAttributeAccessIssue]
-    assert types.is_optional(UnionState.opt_int._var_type)  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
-    assert types.is_union(UnionState.int_float._var_type)  # pyright: ignore [reportAttributeAccessIssue]
+    assert UnionState.custom_union.foo is not None  # ty:ignore[unresolved-attribute]
+    assert UnionState.custom_union.c1 is not None  # ty:ignore[unresolved-attribute]
+    assert UnionState.custom_union.c1r is not None  # ty:ignore[unresolved-attribute]
+    assert UnionState.custom_union.c2 is not None  # ty:ignore[unresolved-attribute]
+    assert UnionState.custom_union.c2r is not None  # ty:ignore[unresolved-attribute]
+    assert types.is_optional(UnionState.opt_int._var_type)  # ty:ignore[unresolved-attribute]
+    assert types.is_union(UnionState.int_float._var_type)  # ty:ignore[unresolved-attribute]
 
 
 def test_set_base_field_via_setter():
@@ -3893,7 +3895,7 @@ async def test_preprocess(
     app._compile_page("index")
 
     on_load_internal_name = format.format_event_handler(
-        OnLoadInternalState.on_load_internal  # pyright: ignore[reportArgumentType]
+        OnLoadInternalState.on_load_internal  # ty:ignore[invalid-argument-type]
     )
 
     async with mock_base_state_event_processor as processor:
@@ -3959,7 +3961,7 @@ async def test_preprocess_multiple_load_events(
     app._compile_page("index")
 
     on_load_internal_name = format.format_event_handler(
-        OnLoadInternalState.on_load_internal  # pyright: ignore[reportArgumentType]
+        OnLoadInternalState.on_load_internal  # ty:ignore[invalid-argument-type]
     )
 
     async with mock_base_state_event_processor as processor:
@@ -4374,7 +4376,7 @@ async def test_get_var_value_of_the_whole_router() -> None:
     attribute it stands for, this raised UnretrievableVarValueError, while a
     state with a single `router` base var resolved it.
     """
-    state = State(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state = State(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
 
     router = await state.get_var_value(State.router)
 
@@ -4771,9 +4773,9 @@ config = rx.Config(
         reflex_base.config.reload_config()
 
         state_manager = StateManagerRedis(redis=mock_redis())
-        assert state_manager.lock_expiration == expected_values[0]  # pyright: ignore [reportAttributeAccessIssue]
-        assert state_manager.token_expiration == expected_values[1]  # pyright: ignore [reportAttributeAccessIssue]
-        assert state_manager.lock_warning_threshold == expected_values[2]  # pyright: ignore [reportAttributeAccessIssue]
+        assert state_manager.lock_expiration == expected_values[0]
+        assert state_manager.token_expiration == expected_values[1]
+        assert state_manager.lock_warning_threshold == expected_values[2]
 
 
 @pytest.mark.parametrize(
@@ -5080,7 +5082,7 @@ def test_mixin_state() -> None:
     assert "computed" in UsesMixinState.vars
 
     assert (
-        UsesMixinState(_reflex_internal_init=True)._backend_no_default  # pyright: ignore [reportCallIssue]
+        UsesMixinState(_reflex_internal_init=True)._backend_no_default  # ty:ignore[missing-argument, unknown-argument]
         is not UsesMixinState.backend_vars["_backend_no_default"]
     )
 
@@ -5142,12 +5144,12 @@ class MarkerMixin(State, mixin=True):
         """
         return "marked"
 
-    marked_computed.fget._custom_marker = object()  # pyright: ignore [reportFunctionMemberAccess]
+    marked_computed.fget._custom_marker = object()  # ty:ignore[unresolved-attribute]
 
     def marked_handler(self):
         """An event handler tagged with a custom attribute."""
 
-    marked_handler._custom_marker = object()  # pyright: ignore [reportFunctionMemberAccess]
+    marked_handler._custom_marker = object()  # ty:ignore[unresolved-attribute]
 
     def kwonly_default_handler(self, *, count: int = 1) -> int:
         """An event handler with a keyword-only default argument.
@@ -5171,8 +5173,8 @@ def test_copy_fn_preserves_custom_function_attributes() -> None:
     copied_computed_fget = UsesMarkerMixin.computed_vars["marked_computed"].fget
     assert copied_computed_fget is not orig_computed_fget
     assert (
-        copied_computed_fget._custom_marker  # pyright: ignore [reportFunctionMemberAccess]
-        is orig_computed_fget._custom_marker  # pyright: ignore [reportFunctionMemberAccess]
+        copied_computed_fget._custom_marker  # ty:ignore[unresolved-attribute]
+        is orig_computed_fget._custom_marker
     )
 
     orig_handler_fn = MarkerMixin.__dict__["marked_handler"]
@@ -5224,7 +5226,7 @@ def test_mixin_event_handler_preserves_background_task_marker() -> None:
         pass
 
     handler = UsesBackgroundTaskMixin.handle_in_background
-    assert handler.is_background  # pyright: ignore [reportAttributeAccessIssue]
+    assert handler.is_background  # pyright: ignore [reportAttributeAccessIssue] # ty:ignore[unresolved-attribute]
 
 
 def test_assignment_to_undeclared_vars():
@@ -5233,7 +5235,7 @@ def test_assignment_to_undeclared_vars():
     class State(BaseState):
         val: str
         _val: str
-        __val: str  # pyright: ignore [reportGeneralTypeIssues]
+        __val: str
 
         def handle_supported_regular_vars(self):
             self.val = "no underscore"
@@ -5253,8 +5255,8 @@ def test_assignment_to_undeclared_vars():
         def handle_var(self):
             self.value = 20
 
-    state = State()  # pyright: ignore [reportCallIssue]
-    sub_state = Substate()  # pyright: ignore [reportCallIssue]
+    state = State()  # ty:ignore[missing-argument]
+    sub_state = Substate()  # ty:ignore[missing-argument]
 
     with pytest.raises(SetUndefinedStateVarError):
         state.handle_regular_var()
@@ -5325,7 +5327,7 @@ def test_assignment_through_property_setter():
             return ""
 
     with pytest.raises(AttributeError) as exc_info:
-        ReadOnlyState().derived = "x"  # pyright: ignore [reportCallIssue, reportAttributeAccessIssue]
+        ReadOnlyState().derived = "x"  # ty:ignore[invalid-assignment]
     # SetUndefinedStateVarError is itself an AttributeError, so exclude it by type
     assert not isinstance(exc_info.value, SetUndefinedStateVarError)
 
@@ -5401,7 +5403,7 @@ def test_fallback_pickle():
         _f: Callable | None = None
         _g: Any = None
 
-    state = DillState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state = DillState(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
     state._o = Obj(f=lambda: 42)
     state._f = lambda: 420
 
@@ -5415,7 +5417,7 @@ def test_fallback_pickle():
     assert unpickled_state._o.f() == 42
 
     # Threading locks are unpicklable normally, and raise TypeError instead of PicklingError.
-    state2 = DillState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state2 = DillState(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
     state2._g = threading.Lock()
     pk2 = state2._serialize()
     unpickled_state2 = BaseState._deserialize(pk2)
@@ -5423,7 +5425,7 @@ def test_fallback_pickle():
     assert isinstance(unpickled_state2._g, type(threading.Lock()))
 
     # Some object, like generator, are still unpicklable with dill.
-    state3 = DillState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state3 = DillState(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
     state3._g = (i for i in range(10))
 
     with pytest.raises(StateSerializationError):
@@ -5660,7 +5662,7 @@ class UpcastState(rx.State):
         assert isinstance(a, list)
         self.passed = True
 
-    def py_unresolvable(self, u: Unresolvable):  # noqa: D102, F821 # pyright: ignore [reportUndefinedVariable]
+    def py_unresolvable(self, u: Unresolvable):  # noqa: D102, F821  # ty:ignore[unresolved-reference]
         assert isinstance(u, list)
         self.passed = True
 
@@ -5756,7 +5758,7 @@ async def test_get_var_value(
         await state.get_var_value(TestState.num1 + TestState.num2)
     with pytest.raises(UnretrievableVarValueError):
         # array[0] is a Var operation at runtime, though statically typed as the element.
-        await state.get_var_value(TestState.array[0])  # pyright: ignore[reportArgumentType]
+        await state.get_var_value(TestState.array[0])  # ty:ignore[invalid-argument-type]
     with pytest.raises(UnretrievableVarValueError):
         await state.get_var_value(TestState.mapping["a"])
 
@@ -6032,7 +6034,7 @@ def test_descriptor_attribute_not_in_backend_vars():
             self._values[id(instance)] = value
 
     class DescriptorState(rx.State):
-        _desc_value: int = _IntDescriptor()  # pyright: ignore[reportAssignmentType]
+        _desc_value: int = _IntDescriptor()  # ty:ignore[invalid-assignment]
 
         @rx.var
         def doubled(self) -> int:
@@ -6072,14 +6074,14 @@ def test_descriptor_overrides_inherited_descriptor():
     child_descriptor = _Sentinel("child")
 
     class ParentDescState(rx.State):
-        _shared: int = parent_descriptor  # pyright: ignore[reportAssignmentType]
+        _shared: int = parent_descriptor  # ty:ignore[invalid-assignment]
 
         @rx.var
         def parent_view(self) -> int:
             return self._shared
 
     class ChildDescState(ParentDescState):
-        _shared: int = child_descriptor  # pyright: ignore[reportAssignmentType]
+        _shared: int = child_descriptor  # ty:ignore[invalid-assignment]
 
         @rx.var
         def child_view(self) -> int:
@@ -6150,7 +6152,7 @@ async def test_on_load_internal_supersedes_previous_navigation(
         "cancelled": asyncio.Event(),
     }
     on_load_internal_name = format.format_event_handler(
-        OnLoadInternalState.on_load_internal  # pyright: ignore[reportArgumentType]
+        OnLoadInternalState.on_load_internal  # ty:ignore[invalid-argument-type]
     )
 
     async with mock_base_state_event_processor as processor:
@@ -6269,7 +6271,7 @@ def test_setattr_alias_annotated_var(mocker: MockerFixture):
         mocker: Pytest mock fixture.
     """
     error_mock = mocker.patch("reflex.state.logger.error")
-    state = AliasAnnotatedState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state = AliasAnnotatedState(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
     state.assign()
     assert state.name == "y"
     assert state.key == "b"
@@ -6278,7 +6280,7 @@ def test_setattr_alias_annotated_var(mocker: MockerFixture):
     error_mock.assert_not_called()
 
     # A mismatched value is logged by the guard, not raised.
-    state.key = 1  # pyright: ignore[reportAttributeAccessIssue]
+    state.key = 1  # ty:ignore[invalid-assignment]
     assert state.key == 1
     error_mock.assert_called_once()
 

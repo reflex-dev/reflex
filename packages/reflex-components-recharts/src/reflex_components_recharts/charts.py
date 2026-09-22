@@ -11,6 +11,7 @@ from reflex_base.components.memo import memo
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.colors import Color
 from reflex_base.event import EventHandler, no_args_event_spec
+from reflex_base.utils.format import callable_name
 from reflex_base.vars.base import Var
 from reflex_base.vars.object import RestProp
 from typing_extensions import NotRequired
@@ -671,7 +672,7 @@ def _sankey_renderer(
     def _wrapper(rest: RestProp) -> Component:
         return fn(**{first_param.name: rest.to(props_type)})
 
-    _wrapper.__name__ = fn.__name__
+    _wrapper.__name__ = callable_name(fn)
     _wrapper.__module__ = fn.__module__
     return memo(wrapper=None)(_wrapper)
 

@@ -40,6 +40,7 @@ reflex-components-internal = false
 reflex-components-lucide = false
 reflex-components-react-player = false
 reflex-hosting-cli = false
+ty = false
 
 [manifest]
 members = [
@@ -3724,19 +3725,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pyright"
-version = "1.1.411"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "nodeenv" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/7e/ab/265f7dc69d28113ebba19092e57b075f41543b2ed048429c5f56e2b88eac/pyright-1.1.411.tar.gz", hash = "sha256:d885a0551f2e763b089a02702174e7f4ba77548cddabc972ab86d1f7f1b0f998", size = 4112861, upload-time = "2026-06-25T02:14:06.37Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0a/49/385be530a6a5b78d1cbcd5c2e38debc8959a2fc6bdb716f4e581002979fc/pyright-1.1.411-py3-none-any.whl", hash = "sha256:dc7c72a8e2700c55baa127554040e067041ea53ccfd50bf96308cc4291c7d5d9", size = 6181526, upload-time = "2026-06-25T02:14:04.691Z" },
-]
-
-[[package]]
 name = "pysocks"
 version = "1.7.1"
 source = { registry = "https://pypi.org/simple" }
@@ -4153,7 +4141,6 @@ dev = [
     { name = "psycopg" },
     { name = "psycopg", extra = ["binary"], marker = "python_full_version < '3.15'" },
     { name = "pydantic" },
-    { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-benchmark" },
@@ -4242,7 +4229,6 @@ dev = [
     { name = "psycopg", marker = "python_full_version >= '3.15'" },
     { name = "psycopg", extras = ["binary"], marker = "python_full_version < '3.15'" },
     { name = "pydantic" },
-    { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-benchmark" },

@@ -75,13 +75,13 @@ def test_yaxis_tick_formatter():
 
 def test_xaxis_tick_formatter_rejects_non_callable():
     with pytest.raises(TypeError):
-        XAxis.create(tick_formatter=123)  # pyright: ignore [reportArgumentType]
+        XAxis.create(tick_formatter=123)  # ty:ignore[invalid-argument-type]
 
 
 def test_xaxis_tick_formatter_rejects_python_callable():
     with pytest.raises(TypeError):
         XAxis.create(
-            tick_formatter=lambda value: value  # pyright: ignore [reportArgumentType]
+            tick_formatter=lambda value: value  # ty:ignore[invalid-argument-type]
         )
 
 

@@ -91,5 +91,5 @@ def test_var_access(access_fn, benchmark: BenchmarkFixture):
         access_fn: The parametrized var-access routine.
         benchmark: The codspeed benchmark fixture.
     """
-    state = ProxyBenchmarkState()  # pyright: ignore [reportCallIssue]
+    state = ProxyBenchmarkState()
     benchmark(lambda: access_fn(state))

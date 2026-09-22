@@ -563,7 +563,7 @@ def get_type_hints_environment(cls: type) -> dict[str, Any]:
     return get_type_hints(cls)
 
 
-class env_var:  # noqa: N801 # pyright: ignore [reportRedeclaration]
+class env_var:  # noqa: N801
     """Descriptor for environment variables."""
 
     name: str

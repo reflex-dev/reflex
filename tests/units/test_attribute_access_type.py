@@ -426,7 +426,7 @@ def test_get_attribute_access_type_no_default(cls: type) -> None:
 class UnresolvableRefClass:
     """Class with an unresolvable forward-ref annotation."""
 
-    broken: UndefinedElsewhere  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+    broken: UndefinedElsewhere  # noqa: F821 # ty:ignore[unresolved-reference]
     count: int = 0
 
 

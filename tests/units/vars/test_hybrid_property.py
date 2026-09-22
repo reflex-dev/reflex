@@ -71,7 +71,7 @@ def test_hybrid_property_access_types():
     assert_type(TypedHybridState.lookup, ObjectVar[dict[str, int]])
     assert_type(TypedHybridState.custom, StringVar)
 
-    state = TypedHybridState(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    state = TypedHybridState(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
     assert_type(state.greeting, str)
     assert_type(state.doubled, int)
     assert_type(state.positive, bool)
@@ -133,7 +133,7 @@ def test_hybrid_property_var_fn_backend_var_access_raises():
 
         @value.var
         def _value_var(cls) -> Var[str]:
-            return cls._secret  # pyright: ignore[reportReturnType]
+            return cls._secret  # ty:ignore[invalid-return-type]
 
     with pytest.raises(HybridPropertyError, match="_secret"):
         _ = VarFnBackendState.value
@@ -156,7 +156,7 @@ def test_hybrid_property_var_fn_sees_state_dunders():
         def _value_var(cls) -> Var[str]:
             seen["name"] = cls.__name__
             seen["module"] = cls.__module__
-            return cls.name  # pyright: ignore[reportReturnType]
+            return cls.name  # ty:ignore[invalid-return-type]
 
     _ = DunderState.value
     assert seen == {"name": "DunderState", "module": DunderState.__module__}
@@ -194,7 +194,7 @@ def test_hybrid_property_var_returns_new_descriptor():
 
         @original.var
         def _full_var(cls) -> Var:
-            return cls.first  # pyright: ignore[reportReturnType]
+            return cls.first  # ty:ignore[invalid-return-type]
 
     class StateB(Mixin, rx.State):
         first: str = "x"
@@ -251,7 +251,7 @@ def test_hybrid_property_not_evaluated_during_class_creation():
         @doubled.var
         def _doubled_var(cls) -> Var[int]:
             calls.append("var")
-            return cls.count * 2  # pyright: ignore[reportReturnType]
+            return cls.count * 2  # ty:ignore[invalid-return-type]
 
     assert calls == []
     _ = LazyState.doubled
@@ -270,11 +270,11 @@ def test_hybrid_property_var_fn_under_own_name():
 
         @doubled.var
         def _doubled_var(cls) -> Var[int]:
-            return cls.count * 3  # pyright: ignore[reportReturnType]
+            return cls.count * 3  # ty:ignore[invalid-return-type]
 
     # the alias does not linger on the class
     assert "_doubled_var" not in AliasState.__dict__
-    assert AliasState(_reflex_internal_init=True).doubled == 0  # pyright: ignore[reportCallIssue]
+    assert AliasState(_reflex_internal_init=True).doubled == 0  # ty:ignore[unknown-argument]
     assert str(Var.create(AliasState.doubled)) == str(Var.create(AliasState.count * 3))
 
 
@@ -368,7 +368,7 @@ def test_hybrid_property_setter_on_state():
         def _full_deleter(self) -> None:
             self.first = self.last = ""
 
-    state = NameState(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    state = NameState(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
     state.full = "Ada Lovelace"  # pyright: ignore[reportAttributeAccessIssue]
     assert (state.first, state.last) == ("Ada", "Lovelace")
     assert state.full == "Ada Lovelace"
@@ -395,9 +395,9 @@ def test_hybrid_property_var_fn_as_classmethod():
         @doubled.var
         @classmethod
         def doubled(cls) -> Var[int]:
-            return cls.count * 4  # pyright: ignore[reportReturnType]
+            return cls.count * 4  # ty:ignore[invalid-return-type]
 
-    assert ClassmethodVarState(_reflex_internal_init=True).doubled == 0  # pyright: ignore[reportCallIssue]
+    assert ClassmethodVarState(_reflex_internal_init=True).doubled == 0  # ty:ignore[unknown-argument]
     assert str(Var.create(ClassmethodVarState.doubled)) == str(
         Var.create(ClassmethodVarState.count * 4)
     )
@@ -695,7 +695,7 @@ def test_hybrid_property_backend_var_not_resolved_during_class_creation():
     assert calls == []
     # The annotation must not shadow the inherited descriptor with storage.
     assert "_foo" not in GuardState.backend_vars
-    assert GuardState(_reflex_internal_init=True)._foo == 1  # pyright: ignore[reportCallIssue]
+    assert GuardState(_reflex_internal_init=True)._foo == 1  # ty:ignore[missing-argument, unknown-argument]
     assert calls == ["getter ran"]
 
 
@@ -705,14 +705,14 @@ def test_hybrid_property_inherited_annotated_name_keeps_descriptor():
     class HybridBase:
         @hybrid_property
         def doubled(self) -> int:
-            return self.count * 2  # pyright: ignore[reportAttributeAccessIssue]
+            return self.count * 2  # ty:ignore[unresolved-attribute]
 
     class InheritedState(HybridBase, rx.State):
         count: int = 3
         doubled: int  # pyright: ignore[reportIncompatibleVariableOverride]
 
     assert "doubled" not in InheritedState.get_fields()
-    assert InheritedState(_reflex_internal_init=True).doubled == 6  # pyright: ignore[reportCallIssue]
+    assert InheritedState(_reflex_internal_init=True).doubled == 6  # ty:ignore[missing-argument, unknown-argument]
     assert str(Var.create(InheritedState.doubled)) == str(
         Var.create(InheritedState.count * 2)
     )
@@ -756,7 +756,7 @@ def test_hybrid_property_annotated_name_keeps_descriptor():
             return self.count * 2
 
     assert isinstance(AnnotatedState.__dict__["doubled"], hybrid_property)
-    assert AnnotatedState(_reflex_internal_init=True).doubled == 6  # pyright: ignore[reportCallIssue]
+    assert AnnotatedState(_reflex_internal_init=True).doubled == 6  # ty:ignore[unknown-argument]
     assert str(Var.create(AnnotatedState.doubled)) == str(
         Var.create(AnnotatedState.count * 2)
     )
@@ -862,14 +862,14 @@ def test_hybrid_property_class_access_var_type_follows_getter():
         @upper_names.var
         @classmethod
         def _upper_names_var(cls) -> Var[list[str]]:
-            return cls.names  # pyright: ignore[reportReturnType]
+            return cls.names  # ty:ignore[invalid-return-type]
 
     # the operations these var types carry must be available on class access
     assert isinstance(LadderState.positive & True, Var)
     assert isinstance(LadderState.doubled + 1, Var)
     assert isinstance(LadderState.upper_names.length(), Var)
     # ... while the getter still serves the instance
-    state = LadderState(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    state = LadderState(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
     state.count = 2
     state.names = ["a"]
     assert state.positive is True

@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 if hasattr(asyncio, "QueueShutDown"):
 
-    class QueueShutDown(asyncio.QueueShutDown):  # pyright: ignore[reportRedeclaration]
+    class QueueShutDown(asyncio.QueueShutDown):
         """Exception raised when trying to put an item into a shut down queue."""
 
     _QUEUE_SHUTDOWN_ERRORS: tuple[type[BaseException], ...] = (asyncio.QueueShutDown,)
@@ -537,7 +537,7 @@ class EventProcessor:
         # Raise any exceptions for the caller, waiting for all chained events.
         await task_future.wait_all()
 
-    def _try_clean_future(self, future: EventFuture) -> None:  # type: ignore[override]
+    def _try_clean_future(self, future: EventFuture) -> None:
         """Pop a future from _futures when it and all immediate children are done.
 
         After popping, cascade the check upward: if the parent future is also
@@ -637,7 +637,7 @@ class EventProcessor:
         tracked.covered_supersede_keys |= {key}
         return True
 
-    def _on_future_done(self, future: EventFuture) -> None:  # type: ignore[override]
+    def _on_future_done(self, future: EventFuture) -> None:
         """Callback invoked when an enqueued future completes.
 
         If the future was cancelled externally, cancel the running task
@@ -745,7 +745,7 @@ class EventProcessor:
         else:
             task = asyncio.create_task(coro, name=name)
         if sys.version_info < (3, 12):
-            task._event_ctx = entry.ctx  # pyright: ignore[reportAttributeAccessIssue]
+            task._event_ctx = entry.ctx  # ty:ignore[unresolved-attribute]
         self._tasks[entry.ctx.txid] = task
         task.add_done_callback(self._finish_task)
         return task
@@ -867,7 +867,7 @@ class EventProcessor:
         """
         if sys.version_info < (3, 12):
             # py3.11 compat
-            task_ctx = task._event_ctx  # type: ignore[attr-defined]
+            task_ctx = task._event_ctx  # ty:ignore[unresolved-attribute]
         else:
             task_ctx = task.get_context().run(EventContext.get)
         self._tasks.pop(task_ctx.txid, None)
@@ -925,7 +925,7 @@ class EventProcessor:
                     name=f"reflex_backend_exception_handler|task=[{task.get_name()}]|{time.time()}",
                 )
                 if sys.version_info < (3, 12):
-                    t._event_ctx = task_ctx  # pyright: ignore[reportAttributeAccessIssue]
+                    t._event_ctx = task_ctx  # ty:ignore[unresolved-attribute]
                 t.add_done_callback(self._finish_task)
                 return True
             logger.exception(f"Error in {task.get_name()} [txid={task_ctx.txid}]:")

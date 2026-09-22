@@ -107,7 +107,7 @@ def hosting_patterns() -> list[rx.Component]:
         rx.image(
             src=f"{REFLEX_ASSETS_CDN}hosting/light/hosting_patterns.svg",
             alt="Reflex Hosting Patterns",
-            class_name=rx.cond(  # type: ignore[arg-type]
+            class_name=rx.cond(
                 HostingBannerState.is_banner_visible,
                 "dark:hidden lg:flex hidden absolute top-0 z-[-1] w-[1028px] h-[478px] pointer-events-none shrink-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 lg:mt-[24rem] mt-[3.5rem]",
                 "dark:hidden lg:flex hidden absolute top-0 z-[-1] w-[1028px] h-[478px] pointer-events-none shrink-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 lg:mt-[19rem] mt-[8.5rem]",
@@ -116,7 +116,7 @@ def hosting_patterns() -> list[rx.Component]:
         rx.image(
             src=f"{REFLEX_ASSETS_CDN}hosting/dark/hosting_patterns.svg",
             alt="Reflex Hosting Patterns",
-            class_name=rx.cond(  # type: ignore[arg-type]
+            class_name=rx.cond(
                 HostingBannerState.is_banner_visible,
                 "hidden dark:flex lg:dark:flex absolute top-0 z-[-1] w-[1028px] h-[478px] pointer-events-none shrink-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 lg:mt-[24rem] mt-[3.5rem]",
                 "hidden dark:flex lg:dark:flex absolute top-0 z-[-1] w-[1028px] h-[478px] pointer-events-none shrink-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 lg:mt-[19rem] mt-[8.5rem]",

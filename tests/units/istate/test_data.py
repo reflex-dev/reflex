@@ -268,11 +268,11 @@ def test_shared_empty_url_default_cannot_be_mutated_through_a_state():
     class _URLIsolationState(BaseState):
         pass
 
-    one = _URLIsolationState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
-    two = _URLIsolationState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    one = _URLIsolationState(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
+    two = _URLIsolationState(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
 
     with pytest.raises(AttributeError, match="immutable"):
-        one.router.url.path = "/mutated"
+        one.router.url.path = "/mutated"  # ty:ignore[invalid-assignment]
 
     one.rx_router_url = URLData.from_url(ReflexURL("https://example.com/real"))
 

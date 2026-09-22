@@ -48,7 +48,7 @@ def test_custom_field_attr_survives_annotated_rebuild():
     setattr(f, _MARKER_ATTR, "tag")
 
     class MyState(EvenMoreBasicBaseState):
-        name: str = f  # pyright: ignore[reportAssignmentType]
+        name: str = f  # ty:ignore[invalid-assignment]
 
     rebuilt = MyState.get_fields()["name"]
     assert getattr(rebuilt, _MARKER_ATTR, None) == "tag"
@@ -88,10 +88,10 @@ def test_reserved_annotation_attr_not_copied():
     it would shadow the real class annotation.
     """
     f = field("x")
-    f.annotation = int  # pyright: ignore[reportAttributeAccessIssue]
+    f.annotation = int  # ty:ignore[unresolved-attribute]
 
     class MyState(EvenMoreBasicBaseState):
-        name: str = f  # pyright: ignore[reportAssignmentType]
+        name: str = f  # ty:ignore[invalid-assignment]
 
     rebuilt = MyState.get_fields()["name"]
     assert "annotation" not in rebuilt.__dict__
@@ -113,13 +113,13 @@ def test_custom_attr_is_carried_by_reference():
 
     check = Check()
     f = field("x")
-    f._check = check  # pyright: ignore[reportAttributeAccessIssue]
+    f._check = check  # ty:ignore[unresolved-attribute]
 
     class MyState(EvenMoreBasicBaseState):
-        name: str = f  # pyright: ignore[reportAssignmentType]
+        name: str = f  # ty:ignore[invalid-assignment]
 
     rebuilt = MyState.get_fields()["name"]
-    assert rebuilt._check is check  # pyright: ignore[reportAttributeAccessIssue]
+    assert rebuilt._check is check  # ty:ignore[unresolved-attribute]
 
 
 def _type_alias_types() -> list[type]:
@@ -339,7 +339,7 @@ def test_serializer_attribute_error_is_not_masked() -> None:
         pass
 
     def serialize_point(value: Point) -> str:
-        return value.label  # pyright: ignore[reportAttributeAccessIssue]
+        return value.label  # ty:ignore[unresolved-attribute]
 
     serializers.serializer(serialize_point)
     try:

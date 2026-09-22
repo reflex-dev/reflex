@@ -290,7 +290,7 @@ def run_process_and_launch_url(
                 "env": _with_development_condition(frontend_env(os.environ))
             }
             if constants.IS_WINDOWS and backend_present:
-                kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
+                kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # ty:ignore[unresolved-attribute]
             process = processes.new_process(
                 run_command,
                 cwd=get_web_dir(),

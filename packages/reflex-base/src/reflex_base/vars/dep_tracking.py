@@ -105,10 +105,10 @@ class DependencyTracker:
         """After initializing, populate the dependencies dict."""
         with contextlib.suppress(AttributeError):
             # unbox functools.partial
-            self.func = cast(FunctionType, self.func.func)  # pyright: ignore[reportAttributeAccessIssue]
+            self.func = cast(FunctionType, self.func.func)  # ty:ignore[unresolved-attribute]
         with contextlib.suppress(AttributeError):
             # unbox EventHandler
-            self.func = cast(FunctionType, self.func.fn)  # pyright: ignore[reportAttributeAccessIssue,reportFunctionMemberAccess]
+            self.func = cast(FunctionType, self.func.fn)  # ty:ignore[unresolved-attribute]
 
         if isinstance(self.func, FunctionType):
             with contextlib.suppress(AttributeError, IndexError):
@@ -224,7 +224,7 @@ class DependencyTracker:
         """
         if isinstance(self.func, CodeType):
             return {}
-        return self.func.__globals__  # pyright: ignore[reportAttributeAccessIssue]
+        return self.func.__globals__
 
     def _get_closure(self) -> dict[str, Any]:
         """Get the closure of the function, with unbound values omitted.
@@ -237,7 +237,7 @@ class DependencyTracker:
         return {
             var_name: get_cell_value(cell)
             for var_name, cell in zip(
-                self.func.__code__.co_freevars,  # pyright: ignore[reportAttributeAccessIssue]
+                self.func.__code__.co_freevars,
                 self.func.__closure__ or (),
                 strict=False,
             )

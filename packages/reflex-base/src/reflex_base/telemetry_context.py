@@ -77,7 +77,7 @@ class TelemetryContext(BaseContext):
         object.__setattr__(self, "exception", exc)
 
     @classmethod
-    def get(cls) -> TelemetryContext | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get(cls) -> TelemetryContext | None:
         """Return the active telemetry context, or None if none is attached.
 
         Returns:

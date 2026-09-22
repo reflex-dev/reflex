@@ -44,20 +44,21 @@ repos:
     require_serial: true
 - repo: local
   hooks:
-  - id: pyright
-    name: pyright
-    entry: uv run --no-sync pyright
+  - id: ty
+    name: ty
+    entry: uv run --no-sync ty check
     language: system
     types: [python]
+    pass_filenames: false
     require_serial: true
 - repo: local
   hooks:
-  # The second opinion the assert_type examples exist for. Always runs: what
-  # these examples catch is a source change altering an inferred type, so
-  # scoping the hook to the examples themselves would never fire on the edit
-  # that broke them.
-  - id: ty
-    name: ty
+  # The assert_type examples, re-checked against the newest Python the project
+  # supports. Always runs: what these examples catch is a source change altering
+  # an inferred type, so scoping the hook to the examples themselves would never
+  # fire on the edit that broke them.
+  - id: ty-type-checking
+    name: ty-type-checking
     entry: uv run --no-sync ty check --python-version 3.14 tests/type_checking
     language: system
     always_run: true

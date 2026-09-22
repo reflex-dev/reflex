@@ -1119,7 +1119,7 @@ async def test_rehydrate_resolves_dynamic_route_args_of_the_incoming_event(
 
         @event
         def load_item(self):
-            item_id = self.item_id  # pyright: ignore[reportAttributeAccessIssue]
+            item_id = self.item_id  # ty:ignore[unresolved-attribute]
             self.seen = [*self.seen, f"{self.router.url.path}|{item_id}"]
 
         @event

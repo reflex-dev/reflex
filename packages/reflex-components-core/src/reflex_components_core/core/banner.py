@@ -102,7 +102,7 @@ class ConnectionToaster(Fragment):
             close_button=True,
             duration=120000,
             id=toast_id,
-        )  # pyright: ignore [reportCallIssue]
+        )
 
         if environment.REFLEX_DOES_BACKEND_COLD_START.get():
             loading_message = Var.create("Backend is starting.")

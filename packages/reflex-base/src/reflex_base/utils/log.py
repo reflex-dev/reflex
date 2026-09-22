@@ -222,7 +222,7 @@ class RichConsoleHandler(logging.Handler):
                 "markup": markup,
                 **getattr(record, _RICH_KWARGS_FIELD, {}),
             }
-            console.print(f"{prefix}{record.getMessage()}", **print_kwargs)
+            console.print(f"{prefix}{record.getMessage()}", **print_kwargs)  # ty:ignore[invalid-argument-type]
             if record.exc_info and record.exc_info[0] is not None:
                 # Tracebacks may contain user data; never parse them as markup.
                 # Never word-wrap them either: wrapping breaks file paths.
@@ -244,7 +244,7 @@ class RichConsoleHandler(logging.Handler):
         Returns:
             The formatted traceback.
         """
-        return _EXC_FORMATTER.formatException(record.exc_info)  # pyright: ignore[reportArgumentType]
+        return _EXC_FORMATTER.formatException(record.exc_info)  # ty:ignore[invalid-argument-type]
 
 
 def _write_json(payload: dict, *, stderr: bool):

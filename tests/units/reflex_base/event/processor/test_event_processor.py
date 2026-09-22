@@ -133,7 +133,7 @@ async def _background_slow_logging_handler(value: str = "default"):
     _CALL_LOG.append({"value": value})
 
 
-_background_slow_logging_handler._reflex_background_task = True  # type: ignore[attr-defined]
+_background_slow_logging_handler._reflex_background_task = True  # ty:ignore[unresolved-attribute]
 
 # Gates for coordinating supersede tests; tests create loop-local events here.
 _GATES: dict[str, asyncio.Event] = {}
@@ -199,7 +199,7 @@ async def _superseding_root_handler(value: str = "default", child: str = "load")
     await ctx.enqueue(Event.from_event_type(child_event(value))[0])
 
 
-_superseding_root_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+_superseding_root_handler._reflex_supersedes = True  # ty:ignore[unresolved-attribute]
 
 
 async def _polling_handler(tick: int = 0, ticks: int = 0):
@@ -230,7 +230,7 @@ async def _superseding_poll_root_handler(ticks: int = 0):
     await ctx.enqueue(Event.from_event_type(polling_event(0, ticks))[0])
 
 
-_superseding_poll_root_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+_superseding_poll_root_handler._reflex_supersedes = True  # ty:ignore[unresolved-attribute]
 
 
 async def _shared_refresh_handler(value: str = "default"):
@@ -255,8 +255,8 @@ async def _shared_refresh_handler(value: str = "default"):
     _CALL_LOG.append({"value": value})
 
 
-_shared_refresh_handler._reflex_background_task = True  # type: ignore[attr-defined]
-_shared_refresh_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+_shared_refresh_handler._reflex_background_task = True  # ty:ignore[unresolved-attribute]
+_shared_refresh_handler._reflex_supersedes = True  # ty:ignore[unresolved-attribute]
 
 
 async def _refresh_spawner_handler(value: str = "default", gated: bool = False):
@@ -272,7 +272,7 @@ async def _refresh_spawner_handler(value: str = "default", gated: bool = False):
     await ctx.enqueue(Event.from_event_type(shared_refresh_event(value))[0])
 
 
-_refresh_spawner_handler._reflex_background_task = True  # type: ignore[attr-defined]
+_refresh_spawner_handler._reflex_background_task = True  # ty:ignore[unresolved-attribute]
 
 
 async def _refresh_fanout_handler():
@@ -305,8 +305,8 @@ async def _lingering_refresh_handler(value: str = "default", chain: bool = False
     _CALL_LOG.append({"value": value})
 
 
-_lingering_refresh_handler._reflex_background_task = True  # type: ignore[attr-defined]
-_lingering_refresh_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+_lingering_refresh_handler._reflex_background_task = True  # ty:ignore[unresolved-attribute]
+_lingering_refresh_handler._reflex_supersedes = True  # ty:ignore[unresolved-attribute]
 
 
 async def _counting_superseding_handler(tick: int = 0, limit: int = 3):
@@ -325,7 +325,7 @@ async def _counting_superseding_handler(tick: int = 0, limit: int = 3):
     _CALL_LOG.append({"value": f"tick_{tick}"})
 
 
-_counting_superseding_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+_counting_superseding_handler._reflex_supersedes = True  # ty:ignore[unresolved-attribute]
 
 
 noop_event = EventHandler(fn=_noop_handler)
@@ -466,7 +466,7 @@ async def test_native_queue_shutdown_is_suppressed(
     send_error = mocker.patch("reflex.utils.telemetry.send_error")
     console_error = mocker.patch("reflex.utils.console.error")
     queue: asyncio.Queue = asyncio.Queue()
-    queue.shutdown()
+    queue.shutdown()  # ty:ignore[unresolved-attribute]
 
     processor._queue = queue
     await processor._process_queue()
@@ -1333,7 +1333,7 @@ async def test_late_chained_invocation_stays_cancellable(
         assert first.txid in ep._futures
 
         late_ctx = dataclasses.replace(
-            ep._root_context.fork(token=token),  # pyright: ignore[reportOptionalMemberAccess]
+            ep._root_context.fork(token=token),  # ty:ignore[unresolved-attribute]
             parent_txid=first.txid,
         )
         late = await ep.enqueue(

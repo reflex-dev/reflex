@@ -105,7 +105,6 @@ dev = [
   "psycopg[binary]; python_version < '3.15'",
   "psycopg; python_version >= '3.15'",
   "pydantic",
-  "pyright",
   "pytest-asyncio",
   "pytest-benchmark",
   "pytest-codspeed",
@@ -159,28 +158,13 @@ path = "scripts/hatch_build.py"
 dependencies = ["plotly", "ruff"]
 require-runtime-dependencies = true
 
-[tool.pyright]
-extraPaths = [
-  "packages/reflex-code/src",
-  "packages/reflex-components/src",
-  "packages/reflex-dataeditor/src",
-  "packages/reflex-gridjs/src",
-  "packages/reflex-lucide/src",
-  "packages/reflex-markdown/src",
-  "packages/reflex-moment/src",
-  "packages/reflex-plotly/src",
-  "packages/reflex-radix/src",
-  "packages/reflex-release/src",
-  "packages/reflex-react-player/src",
-  "packages/reflex-react-router/src",
-  "packages/reflex-recharts/src",
-  "packages/reflex-sonner/src",
-  "packages/reflex-components-internal/src",
-  "packages/reflex-otel/src",
-  "packages/reflex-build-sdk/src",
-  "packages/reflex-site-shared/src",
-  "packages/integrations-docs/src",
-]
+[tool.ty.environment]
+# Type-check against Python 3.11 stdlib so newer-Python-only features like
+# `dis.Positions`, `tomllib`, and `ExceptionGroup` resolve. Reflex still
+# supports Python 3.10 at runtime via `sys.version_info >= (3, 11)` guards.
+python-version = "3.11"
+
+[tool.ty.src]
 exclude = [
   ".venv",
   "**/__pycache__",
@@ -192,7 +176,17 @@ exclude = [
   "packages/integrations-docs",
   "packages/reflex-ui-shared",
 ]
-reportIncompatibleMethodOverride = false
+
+[tool.ty.rules]
+invalid-method-override = "ignore"
+unsupported-base = "ignore"
+# `EventHandler[some_arg_spec]` is the public spelling for declaring an event
+# trigger; `EventHandler.__class_getitem__` turns it into `Annotated[EventHandler,
+# some_arg_spec]`. The subscript argument is a function, not a type, so ty rejects
+# it in a type expression (intentionally, see astral-sh/ty#3388). Component authors
+# outside this repo hit the same thing, so ignore the rule rather than rewriting
+# every annotation to the `Annotated[...]` form.
+not-subscriptable = "ignore"
 
 [tool.ruff]
 target-version = "py310"
@@ -462,7 +456,7 @@ backend_held = [
 ]
 backend_pinned = [
     # Linters are pinned deliberately and bumped on their own cadence.
-    "pyright",
+    "ty",
     "ruff",
 ]
 frontend_held = [
@@ -520,6 +514,9 @@ reflex-components-recharts = false
 reflex-components-sonner = false
 reflex-enterprise = false
 reflex-hosting-cli = false
+# Keep the type checker itself resolvable at its latest release; ty ships frequent
+# fixes the migration depends on.
+ty = false
 
 [tool.uv.sources]
 hatch-reflex-pyi.workspace = true

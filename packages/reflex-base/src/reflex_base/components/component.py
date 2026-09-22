@@ -134,7 +134,7 @@ def field(
     default_factory: Callable[[], FIELD_TYPE] | None = None,
     is_javascript_property: bool | None = None,
     doc: str | None = None,
-) -> FIELD_TYPE:
+) -> Any:
     """Create a field for a component.
 
     Args:
@@ -152,7 +152,7 @@ def field(
     if default is not MISSING and default_factory is not None:
         msg = "cannot specify both default and default_factory"
         raise ValueError(msg)
-    return ComponentField(  # pyright: ignore [reportReturnType]
+    return ComponentField(
         default=default,
         default_factory=default_factory,
         is_javascript=is_javascript_property,
@@ -427,7 +427,7 @@ class BaseComponent(metaclass=BaseComponentMeta):
 
     def _clear_compile_caches(self) -> None:
         """Clear cached render/compiler artifacts after compile-time mutation."""
-        attrs = cast("dict[str, Any]", vars(self))
+        attrs = vars(self)
         for attr in _COMPILE_CACHE_ATTRS:
             attrs.pop(attr, None)
 
@@ -523,7 +523,7 @@ class BaseComponent(metaclass=BaseComponentMeta):
 class ComponentNamespace(SimpleNamespace):
     """A namespace to manage components with subcomponents."""
 
-    def __hash__(self) -> int:  # pyright: ignore [reportIncompatibleVariableOverride]
+    def __hash__(self) -> int:
         """Get the hash of the namespace.
 
         Returns:
@@ -663,15 +663,15 @@ DEFAULT_TRIGGERS_AND_DESC: Mapping[str, TriggerDefinition] = {
         description="Fired when focus has left the element (or left some element inside of it). For example, it is called when the user clicks outside of a focused text input.",
     ),
     EventTriggers.ON_CLICK: TriggerDefinition(
-        spec=pointer_event_spec,  # pyright: ignore [reportArgumentType]
+        spec=pointer_event_spec,
         description="Fired when the user clicks on an element. For example, it's called when the user clicks on a button.",
     ),
     EventTriggers.ON_CONTEXT_MENU: TriggerDefinition(
-        spec=pointer_event_spec,  # pyright: ignore [reportArgumentType]
+        spec=pointer_event_spec,
         description="Fired when the user right-clicks on an element.",
     ),
     EventTriggers.ON_DOUBLE_CLICK: TriggerDefinition(
-        spec=pointer_event_spec,  # pyright: ignore [reportArgumentType]
+        spec=pointer_event_spec,
         description="Fired when the user double-clicks on an element.",
     ),
     EventTriggers.ON_MOUSE_DOWN: TriggerDefinition(
@@ -1109,7 +1109,7 @@ class Component(BaseComponent, ABC):
         cached = cls.__dict__.get("_event_triggers_cache")
         if cached is not None:
             return cached
-        result = DEFAULT_TRIGGERS | args_specs_from_fields(cls.get_fields())  # pyright: ignore [reportOperatorIssue]
+        result = DEFAULT_TRIGGERS | args_specs_from_fields(cls.get_fields())
         cls._event_triggers_cache = result
         return result
 
@@ -1394,9 +1394,11 @@ class Component(BaseComponent, ABC):
             The style of the component.
         """
         component_style = None
-        if (style := styles.get(type(self))) is not None:  # pyright: ignore [reportArgumentType]
+        if isinstance(styles, Style):
+            return component_style
+        if (style := styles.get(type(self))) is not None:
             component_style = Style(style)
-        if (style := styles.get(self.create)) is not None:  # pyright: ignore [reportArgumentType]
+        if (style := styles.get(self.create)) is not None:
             component_style = Style(style)
         return component_style
 
@@ -1584,12 +1586,14 @@ class Component(BaseComponent, ABC):
             if isinstance(event, Var):
                 yield event_trigger, [event]
             elif isinstance(event, EventChain):
-                event_args = []
+                event_args: list[Var] = []
                 for spec in event.events:
                     if isinstance(spec, EventSpec):
                         for args in spec.args:
                             event_args.extend(args)
-                    else:
+                    elif isinstance(spec, Var):
+                        # EventCallback is only in the declared type of
+                        # EventChain.events; calling one yields an EventSpec.
                         event_args.append(spec)
                 yield event_trigger, event_args
 
@@ -2332,7 +2336,7 @@ def _format_patterns_into_condition(patterns: list, element: Var) -> Var:
     )
 
 
-def render_dict_to_var(tag: dict | Component | str) -> Var:
+def render_dict_to_var(tag: dict[str, Any] | Component | str) -> Var:
     """Convert a render dict to a Var.
 
     Args:
@@ -2341,37 +2345,38 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
     Returns:
         The Var.
     """
+    if isinstance(tag, Component):
+        return render_dict_to_var(tag.render())
     if not isinstance(tag, dict):
-        if isinstance(tag, Component):
-            return render_dict_to_var(tag.render())
         return Var.create(tag)
+    render_dict: dict[str, Any] = tag
 
-    if "contents" in tag:
-        return Var(tag["contents"])
+    if "contents" in render_dict:
+        return Var(render_dict["contents"])
 
-    if "iterable" in tag:
+    if "iterable" in render_dict:
         function_return = LiteralArrayVar.create([
-            render_dict_to_var(child.render()) for child in tag["children"]
+            render_dict_to_var(child.render()) for child in render_dict["children"]
         ])
 
         func = ArgsFunctionOperation.create(
-            (tag["arg_var_name"], tag["index_var_name"]),
+            (render_dict["arg_var_name"], render_dict["index_var_name"]),
             function_return,
         )
 
         return FunctionStringVar.create("Array.prototype.map.call").call(
-            tag["iterable"]
-            if not isinstance(tag["iterable"], ObjectVar)
-            else tag["iterable"].items(),
+            render_dict["iterable"]
+            if not isinstance(render_dict["iterable"], ObjectVar)
+            else render_dict["iterable"].items(),
             func,
         )
 
-    if "match_cases" in tag:
-        element = Var(tag["cond"])
+    if "match_cases" in render_dict:
+        element = Var(render_dict["cond"])
 
-        conditionals = render_dict_to_var(tag["default"])
+        conditionals = render_dict_to_var(render_dict["default"])
 
-        for case in tag["match_cases"][::-1]:
+        for case in render_dict["match_cases"][::-1]:
             patterns, return_value = case
             condition = _format_patterns_into_condition(patterns, element)
 
@@ -2383,18 +2388,18 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
 
         return conditionals
 
-    if "cond_state" in tag:
+    if "cond_state" in render_dict:
         return ternary_operation(
-            Var(tag["cond_state"]),
-            render_dict_to_var(tag["true_value"]),
-            render_dict_to_var(tag["false_value"])
-            if tag["false_value"] is not None
+            Var(render_dict["cond_state"]),
+            render_dict_to_var(render_dict["true_value"]),
+            render_dict_to_var(render_dict["false_value"])
+            if render_dict["false_value"] is not None
             else LiteralNoneVar.create(),
         )
 
-    props = Var("({" + ",".join(tag["props"]) + "})")
+    props = Var("({" + ",".join(render_dict["props"]) + "})")
 
-    raw_tag_name = tag.get("name")
+    raw_tag_name = render_dict.get("name")
     tag_name = Var(raw_tag_name or "Fragment")
 
     return FunctionStringVar.create(
@@ -2402,7 +2407,7 @@ def render_dict_to_var(tag: dict | Component | str) -> Var:
     ).call(
         tag_name,
         props,
-        *[render_dict_to_var(child) for child in tag["children"]],
+        *[render_dict_to_var(child) for child in render_dict["children"]],
     )
 
 

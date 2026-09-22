@@ -4,7 +4,7 @@ For every checkable package (the root ``reflex`` package plus the sub-packages u
 ``packages/*``), this installs the package editable into two isolated virtualenvs (deps
 from PyPI, never the local workspace, via ``--no-sources``): one with dependencies resolved
 to their *declared minimums* (``--resolution lowest-direct``) and one with the latest
-compatible versions. Pyright runs against the package's own source in each, and the check
+compatible versions. ty runs against the package's own source in each, and the check
 fails only on errors that are *new* at the minimum versions.
 
 The delta is what matters, not the absolute error count: a package's source legitimately
@@ -47,6 +47,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -62,7 +63,7 @@ from packaging.version import InvalidVersion, Version
 if sys.version_info >= (3, 11):
     import tomllib
 else:
-    import tomli as tomllib
+    import tomli as tomllib  # ty:ignore[unresolved-import]
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -73,7 +74,7 @@ DEFAULT_PYTHON = f"{sys.version_info.major}.{sys.version_info.minor}"
 # Packages that are intentionally not validated:
 #   hatch-reflex-pyi   - build-backend plugin, only depends on hatchling
 #   integrations-docs  - has no declared dependencies
-#   reflex-site-shared - excluded from the root pyright config
+#   reflex-site-shared - excluded from the root ty config
 SKIP_PACKAGES = frozenset({
     "hatch-reflex-pyi",
     "integrations-docs",
@@ -132,7 +133,7 @@ class Package:
     """Directory containing the package's ``pyproject.toml`` (the editable install target)."""
 
     source_dir: Path
-    """Directory of importable source that pyright should type-check."""
+    """Directory of importable source that ty should type-check."""
 
     extras: tuple[str, ...]
     """Names of optional-dependency groups to install alongside the package."""
@@ -342,32 +343,46 @@ def _run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess[str]:
     )
 
 
-def _pyright_errors(report: dict) -> dict[tuple[str, int, int, str], str]:
-    """Extract error diagnostics from a pyright JSON report.
+def _ty_config() -> str:
+    """Build the ``ty.toml`` the isolated checks run under.
 
-    Args:
-        report: The parsed ``--outputjson`` document.
+    ``--config-file`` replaces every discovered config, so the root project's rule
+    severities are copied over to keep the isolated runs comparable to the repo-wide
+    check. The interpreter comes from ``--python``, so no environment is declared.
 
     Returns:
-        A mapping from a stable diagnostic key (file, line, character, message) to a
+        The ``ty.toml`` contents.
+    """
+    rules = _load_pyproject(REPO_ROOT / "pyproject.toml")["tool"]["ty"]["rules"]
+    body = "".join(f'{rule} = "{level}"\n' for rule, level in rules.items())
+    return f"[rules]\n{body}"
+
+
+_TY_DIAGNOSTIC = re.compile(
+    r"^(?P<file>.+?):(?P<line>\d+):(?P<column>\d+): "
+    r"(?P<severity>\w+)\[(?P<rule>[\w-]+)\] (?P<message>.*)$"
+)
+
+
+def _ty_errors(output: str) -> dict[tuple[str, int, int, str], str]:
+    """Extract error diagnostics from ty's concise output.
+
+    Args:
+        output: The captured ``--output-format concise`` text.
+
+    Returns:
+        A mapping from a stable diagnostic key (file, line, column, message) to a
         formatted, human-readable display line.
     """
     errors: dict[tuple[str, int, int, str], str] = {}
-    for diagnostic in report.get("generalDiagnostics", []):
-        if diagnostic.get("severity") != "error":
+    for line in output.splitlines():
+        match = _TY_DIAGNOSTIC.match(line)
+        if match is None or match["severity"] != "error":
             continue
-        start = diagnostic.get("range", {}).get("start", {})
-        if "line" not in start or "character" not in start:
-            continue
-        key = (
-            diagnostic["file"],
-            start["line"],
-            start["character"],
-            diagnostic["message"],
-        )
+        message = f"[{match['rule']}] {match['message']}"
+        key = (match["file"], int(match["line"]), int(match["column"]), message)
         errors[key] = (
-            f"{diagnostic['file']}:{start['line'] + 1}:{start['character'] + 1}"
-            f" - error: {diagnostic['message']}"
+            f"{match['file']}:{match['line']}:{match['column']} - error: {message}"
         )
     return errors
 
@@ -456,21 +471,21 @@ def _resolve_and_check(
     wheelhouse: Path | None,
     lowest: bool,
 ) -> tuple[dict[tuple[str, int, int, str], str] | None, str]:
-    """Install a package into an isolated venv and run pyright against its source.
+    """Install a package into an isolated venv and run ty against its source.
 
     Args:
         package: The package to install and check.
         python_version: The interpreter version for the venv.
         venv: Directory in which to create the virtualenv.
-        config: Path to the pyright options config.
+        config: Path to the ty options config.
         wheelhouse: Local index holding wheels for the package's unpublished ``*.dev``
             siblings, or ``None`` when the package has no such pins.
         lowest: Whether to pin direct dependencies to their declared minimums.
 
     Returns:
-        A ``(errors, detail)`` tuple. ``errors`` is the pyright error map, or ``None`` if
-        the environment could not be built or pyright produced no parseable output, in
-        which case ``detail`` carries the captured output.
+        A ``(errors, detail)`` tuple. ``errors`` is the ty error map, or ``None`` if the
+        environment could not be built or ty failed outright, in which case ``detail``
+        carries the captured output.
     """
     venv_proc = _run(["uv", "venv", "--python", python_version, str(venv)])
     if venv_proc.returncode != 0:
@@ -499,32 +514,33 @@ def _resolve_and_check(
     if install.returncode != 0:
         return None, install.stdout
 
-    pyright = _run(
+    ty = _run(
         [
-            "pyright",
-            "--outputjson",
-            "--pythonpath",
+            "ty",
+            "check",
+            "--python",
             venv_python,
-            "--project",
+            "--config-file",
             str(config),
+            "--output-format",
+            "concise",
+            "--exit-zero",
             str(package.source_dir),
         ],
         cwd=REPO_ROOT,
     )
-    try:
-        report = json.loads(pyright.stdout)
-    except json.JSONDecodeError:
-        return None, pyright.stdout or "(pyright produced no output)"
-    return _pyright_errors(report), ""
+    if ty.returncode != 0:
+        return None, ty.stdout or "(ty produced no output)"
+    return _ty_errors(ty.stdout), ""
 
 
 def check_package(package: Package, python_version: str) -> Result:
     """Check that a package type-checks no worse at its declared minimums than at latest.
 
     Installs the package twice in isolated environments — once with dependencies at their
-    latest compatible versions, once pinned to their declared minimums — and compares
-    pyright errors. Errors present only at the minimum versions indicate the code depends
-    on a newer dependency than its declared lower bound allows.
+    latest compatible versions, once pinned to their declared minimums — and compares ty
+    errors. Errors present only at the minimum versions indicate the code depends on a
+    newer dependency than its declared lower bound allows.
 
     Args:
         package: The package to validate.
@@ -535,8 +551,8 @@ def check_package(package: Package, python_version: str) -> Result:
     """
     with tempfile.TemporaryDirectory(prefix=f"min-deps-{package.name}-") as tmp:
         tmp_path = Path(tmp)
-        config = tmp_path / "pyrightconfig.json"
-        config.write_text(json.dumps({"reportIncompatibleMethodOverride": False}))
+        config = tmp_path / "ty.toml"
+        config.write_text(_ty_config())
 
         wheelhouse = None
         if package.local_dev_sources:

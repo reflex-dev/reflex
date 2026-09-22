@@ -1,6 +1,6 @@
 {
   "packages/reflex-components-code/src/reflex_components_code/code.pyi": "3b89c09ccc89eeeafe3e38ca539607a0",
-  "packages/reflex-components-code/src/reflex_components_code/shiki_code_block.pyi": "53c8f35514ebcf40ac5cf70c2342ac1c",
+  "packages/reflex-components-code/src/reflex_components_code/shiki_code_block.pyi": "1f23b551c57a3e840caf98c316dcb1d8",
   "packages/reflex-components-core/src/reflex_components_core/__init__.pyi": "d89c7cfa0920f664bc41d292ef882a64",
   "packages/reflex-components-core/src/reflex_components_core/base/__init__.pyi": "d46e910c03263a8d3456d473de9e76c7",
   "packages/reflex-components-core/src/reflex_components_core/base/app_wrap.pyi": "4a701f7eaf84ec041c8fd5c8af4e48ff",
@@ -37,11 +37,11 @@
   "packages/reflex-components-core/src/reflex_components_core/el/elements/tables.pyi": "7b4c2eaff78f6a412f804457570014c4",
   "packages/reflex-components-core/src/reflex_components_core/el/elements/typography.pyi": "a3d0d5b0ad9d896261091603df6d2c03",
   "packages/reflex-components-core/src/reflex_components_core/react_router/dom.pyi": "7617635157b816f70354e2db98b38642",
-  "packages/reflex-components-dataeditor/src/reflex_components_dataeditor/dataeditor.pyi": "8aedc1629118cd3c0075340a5a0c3356",
+  "packages/reflex-components-dataeditor/src/reflex_components_dataeditor/dataeditor.pyi": "7e55157a990cb542790c83fbd997450e",
   "packages/reflex-components-gridjs/src/reflex_components_gridjs/datatable.pyi": "2ce1c076ecf5c2fa4945b4abdbf2f91d",
   "packages/reflex-components-lucide/src/reflex_components_lucide/icon.pyi": "1e331a3d6420b97e5b1ce7f63ad53de8",
   "packages/reflex-components-markdown/src/reflex_components_markdown/markdown.pyi": "6759daf6e242e209d9298045c7b4456a",
-  "packages/reflex-components-moment/src/reflex_components_moment/moment.pyi": "13e39f8d2b46bfd76c50cb04062da8ff",
+  "packages/reflex-components-moment/src/reflex_components_moment/moment.pyi": "3c791ad4491d1161816e6522613b7bc4",
   "packages/reflex-components-plotly/src/reflex_components_plotly/plotly.pyi": "f411341e59a3065fee964747584f9fcf",
   "packages/reflex-components-radix/src/reflex_components_radix/__init__.pyi": "a77352f60fb6f4135b5d08a6e56efa6d",
   "packages/reflex-components-radix/src/reflex_components_radix/primitives/__init__.pyi": "bbd4d1a4fa73275a882c33ba485d0165",
@@ -117,8 +117,8 @@
   "packages/reflex-components-recharts/src/reflex_components_recharts/general.pyi": "fe22b3cf69e9ae3d425cc88c3511525b",
   "packages/reflex-components-recharts/src/reflex_components_recharts/polar.pyi": "99ebcfc07868061bdc3c2010d85a153f",
   "packages/reflex-components-recharts/src/reflex_components_recharts/recharts.pyi": "f2a9cf6db58d169289fbc76de6813300",
-  "packages/reflex-components-sonner/src/reflex_components_sonner/toast.pyi": "f170ac685b6ba5892370166c80684db3",
+  "packages/reflex-components-sonner/src/reflex_components_sonner/toast.pyi": "829911e2f365d91727d967c0f353762a",
   "reflex/__init__.pyi": "a3e1782fab4a9aed55f66cc98af8c217",
   "reflex/components/__init__.pyi": "9facd05a776d0641432696bbf8e34388",
-  "reflex/experimental/memo.pyi": "db5757abc9540da4a9eee9ff8d60444a"
+  "reflex/experimental/memo.pyi": "005d602c706b5ed7872f87f8fdd1d367"
 }

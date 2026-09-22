@@ -292,8 +292,8 @@ def _touch(state: BaseState) -> None:
     Args:
         state: The root state to dirty.
     """
-    state.counter += 1  # pyright: ignore[reportAttributeAccessIssue]
-    state.substates[DATA_SUBSTATE_NAME].revision += 1  # pyright: ignore[reportAttributeAccessIssue]
+    state.counter += 1  # ty:ignore[unresolved-attribute]
+    state.substates[DATA_SUBSTATE_NAME].revision += 1  # ty:ignore[unresolved-attribute]
 
 
 async def _get_state(manager: StateManager) -> None:

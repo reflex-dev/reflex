@@ -17,7 +17,7 @@ from reflex_cli.v2.deployments import hosting_cli
 
 from .utils import as_click_command
 
-hosting_cli = as_click_command(hosting_cli)
+hosting_cli = as_click_command(hosting_cli)  # ty:ignore[invalid-assignment]
 
 runner = CliRunner()
 

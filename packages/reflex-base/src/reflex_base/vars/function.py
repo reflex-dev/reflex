@@ -176,7 +176,7 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
     @overload
     def partial(self, *args: Var | Any) -> FunctionVar: ...
 
-    def partial(self, *args: Var | Any) -> FunctionVar:  # pyright: ignore [reportInconsistentOverload]
+    def partial(self, *args: Var | Any) -> FunctionVar:
         """Partially apply the function with the given arguments.
 
         Args:
@@ -250,7 +250,7 @@ class FunctionVar(Var[CALLABLE_TYPE], default_type=ReflexCallable[Any, Any]):
     @overload
     def call(self, *args: Var | Any) -> Var: ...
 
-    def call(self, *args: Var | Any) -> Var:  # pyright: ignore [reportInconsistentOverload]
+    def call(self, *args: Var | Any) -> Var:
         """Call the function with the given arguments.
 
         Args:
@@ -279,7 +279,7 @@ class FunctionStringVar(FunctionVar[CALLABLE_TYPE]):
     def create(
         cls,
         func: str,
-        _var_type: type[OTHER_CALLABLE_TYPE] = ReflexCallable[Any, Any],
+        _var_type: type[OTHER_CALLABLE_TYPE] = ReflexCallable[Any, Any],  # ty:ignore[invalid-parameter-default]
         _var_data: VarData | None = None,
     ) -> FunctionStringVar[OTHER_CALLABLE_TYPE]:
         """Create a new function var from a string.

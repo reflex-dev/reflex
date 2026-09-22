@@ -31,9 +31,9 @@ def _run_granian_reload_test_app(app_dir: str, port_queue: Queue) -> None:
     """
     app_path = Path(app_dir)
     sys.path.insert(0, app_dir)
-    exec_utils.get_app_instance_from_file = lambda: "reload_app:app"
-    exec_utils.get_reload_paths = lambda: [app_path]
-    exec_utils.get_dev_backend_reload_marker = lambda: app_path / ".reload"
+    exec_utils.get_app_instance_from_file = lambda: "reload_app:app"  # ty:ignore[invalid-assignment]
+    exec_utils.get_reload_paths = lambda: [app_path]  # ty:ignore[invalid-assignment]
+    exec_utils.get_dev_backend_reload_marker = lambda: app_path / ".reload"  # ty:ignore[invalid-assignment]
     original_socket = socket.socket
 
     def report_listener(*args, **kwargs):
@@ -280,8 +280,8 @@ def test_run_granian_backend_binds_listen_socket_in_supervisor(
     )
 
     (server,) = servers
-    server._init_shared_socket()  # pyright: ignore[reportAttributeAccessIssue]
-    listener: socket.socket = server._sso  # pyright: ignore[reportAttributeAccessIssue]
+    server._init_shared_socket()  # ty:ignore[unresolved-attribute]
+    listener: socket.socket = server._sso  # ty:ignore[unresolved-attribute]
     try:
         assert listener.get_inheritable()
         # Once a worker calls listen the supervisor's descriptor keeps the

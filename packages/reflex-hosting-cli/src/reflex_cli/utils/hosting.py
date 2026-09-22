@@ -370,7 +370,7 @@ class SilentBackgroundBrowser(webbrowser.BackgroundBrowser):
             return False
 
 
-webbrowser.BackgroundBrowser = SilentBackgroundBrowser
+webbrowser.BackgroundBrowser = SilentBackgroundBrowser  # ty:ignore[invalid-assignment]
 
 
 class TokenSource(str, Enum):

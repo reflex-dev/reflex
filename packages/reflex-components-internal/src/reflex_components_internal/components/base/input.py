@@ -59,7 +59,7 @@ class InputRoot(InputBaseComponent, ReflexInput):
     render_: Var[Component]
 
     @classmethod
-    def create(cls, *children, **props) -> "InputRoot":  # pyright: ignore[reportIncompatibleMethodOverride]
+    def create(cls, *children, **props) -> "InputRoot":
         """Create a high level input component with simplified API.
 
         Returns:
@@ -67,7 +67,7 @@ class InputRoot(InputBaseComponent, ReflexInput):
         """
         props["data-slot"] = "input"
         cls.set_class_name(ClassNames.INPUT, props)
-        return super().create(*children, **props)  # pyright: ignore[reportReturnType]
+        return super().create(*children, **props)  # ty:ignore[invalid-return-type]
 
 
 class HighLevelInput(InputBaseComponent):
@@ -151,7 +151,7 @@ class HighLevelInput(InputBaseComponent):
             },
         })
 
-        return Div.create(  # pyright: ignore[reportReturnType]
+        return Div.create(
             (
                 Span.create(
                     hi(icon, class_name="text-secondary-12 size-4 pointer-events-none"),
@@ -166,7 +166,7 @@ class HighLevelInput(InputBaseComponent):
             on_click=set_focus(id),
             class_name=cn(f"{ClassNames.DIV} {INPUT_SIZE_VARIANTS[size]}", class_name),
             **props,
-        )
+        )  # ty:ignore[invalid-return-type]
 
     @staticmethod
     def _create_clear_button(id: str, clear_events: list[EventHandler]) -> Button:

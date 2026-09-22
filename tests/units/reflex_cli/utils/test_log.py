@@ -413,7 +413,7 @@ def _with_old_reflex_base() -> Iterator[tuple[ModuleType, ModuleType, ModuleType
     blocker = _ReflexBaseLogBlocker()
     sys.meta_path.insert(0, blocker)
     old_constants_base = ModuleType("reflex_base.constants.base")
-    old_constants_base.LogLevel = _OldBaseLogLevel  # pyright: ignore[reportAttributeAccessIssue]
+    old_constants_base.LogLevel = _OldBaseLogLevel  # ty:ignore[unresolved-attribute]
     sys.modules["reflex_base.constants.base"] = old_constants_base
     try:
         yield (
@@ -480,7 +480,7 @@ def test_loglevel_option_still_offers_every_choice_on_old_reflex_base():
     """
     with _with_old_reflex_base() as (_, _fallback_log, _console):
         cli_options = importlib.import_module("reflex_cli.utils.cli_options")
-        (option,) = cli_options.loglevel_option(lambda: None).__click_params__
+        (option,) = cli_options.loglevel_option(lambda: None).__click_params__  # ty:ignore[unresolved-attribute]
 
         assert list(option.type.choices) == [level.value for level in _OldBaseLogLevel]
 
