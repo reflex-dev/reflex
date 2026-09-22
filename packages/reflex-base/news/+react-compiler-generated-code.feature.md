@@ -1,0 +1,1 @@
+React Compiler now optimizes generated components that use `id` refs, generated UUIDs, and memoized event handlers, including upload callbacks and client state with Unicode names. The `react_compiler` option now installs the experimental `babel-plugin-react-compiler` release. Component `id` refs register through the new `useRegisteredRef` hook in `$/utils/state`.

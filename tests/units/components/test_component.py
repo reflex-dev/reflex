@@ -2447,3 +2447,16 @@ def test_set_props_iteration_skips_unset_props_and_keeps_defaults():
         "third": '"set"',
     }
     assert "first" not in vars(component)
+
+
+def test_ref_hook_registers_through_state_helper():
+    """Id refs register through a hook instead of writing ``refs`` during render."""
+    component = Box.create(id="my-box")
+
+    hook = component._get_ref_hook()
+
+    assert hook is not None
+    assert str(hook) == 'const ref_my_box = useRegisteredRef("ref_my_box");'
+    hook_imports = component._get_hooks_imports()
+    assert list(hook_imports["$/utils/state"]) == [ImportVar(tag="useRegisteredRef")]
+    assert "react" not in hook_imports

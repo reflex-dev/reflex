@@ -1255,3 +1255,45 @@ def test_compile_context_applies_style_before_shared_stateful_render() -> None:
 
     assert '["color"] : "red"' in (compile_ctx.compiled_pages["/a"].output_code or "")
     assert '["color"] : "red"' in (compile_ctx.compiled_pages["/b"].output_code or "")
+
+
+def test_default_page_plugins_can_skip_auto_memoization() -> None:
+    plugins = default_page_plugins(style=page_style(), auto_memoize=False)
+
+    assert [type(plugin) for plugin in plugins] == [
+        DefaultPagePlugin,
+        ApplyStylePlugin,
+        DefaultCollectorPlugin,
+    ]
+
+
+@pytest.mark.parametrize("auto_memoize", [True, False])
+def test_compile_app_passes_auto_memoize_config(
+    auto_memoize: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Page compilation follows the ``auto_memoize`` config."""
+    import reflex as rx
+
+    received: list[bool] = []
+
+    def recording_default_page_plugins(**kwargs):
+        received.append(kwargs["auto_memoize"])
+        raise _StopCompile
+
+    class _StopCompile(Exception):
+        pass
+
+    monkeypatch.setattr(
+        compiler, "default_page_plugins", recording_default_page_plugins
+    )
+    monkeypatch.setattr(
+        compiler,
+        "get_config",
+        lambda: rx.Config(app_name="testing", auto_memoize=auto_memoize),
+    )
+    app = rx.App()
+    app.add_page(lambda: rx.box("hi"), route="/")
+    with pytest.raises(_StopCompile):
+        compiler.compile_app(app)
+
+    assert received == [auto_memoize]
