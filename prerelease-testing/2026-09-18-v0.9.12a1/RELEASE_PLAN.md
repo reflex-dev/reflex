@@ -258,7 +258,7 @@ mechanics and downstream coordination.
    `reflex.istate.validation` module stands.
 4. reflex-enterprise follow-ups surfaced by the re-verification, neither blocking and both for that repo's tracker:
    the `TYPE_CHECKING` import of the removed `reflex.istate.validation._StateMeta` in `auth/oidc/state.py`
-   (static-only) — **fixed in reflex-enterprise [#235](https://github.com/reflex-dev/reflex-enterprise/pull/235)**
+   (static-only) — **fixed and merged, reflex-enterprise [#235](https://github.com/reflex-dev/reflex-enterprise/pull/235)**
    (`OIDCCookieMeta` derives from the public `reflex_base.vars.BaseStateMeta`; a new unit test executes every
-   `TYPE_CHECKING` import in the package; lock bumped to reflex 0.9.12a2), to land before 0.9.6 is cut — and `GET /_reflex/events/openapi.yaml` answering
+   `TYPE_CHECKING` import in the package; lock bumped to reflex 0.9.12a2), so it ships with 0.9.6 — and `GET /_reflex/events/openapi.yaml` answering
    500 unless `pyyaml` is installed (pre-existing in 0.9.5; declare the dependency or answer 501).
