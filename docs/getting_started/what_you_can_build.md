@@ -7,7 +7,7 @@ meta_description: Explore Python examples for dashboards, linked charts, streami
 
 Reflex is a Python web app framework. Define the interface and backend logic in Python; Reflex compiles the interface to React. Combine forms, tables, interactive charts, and streamed model responses in one application. Start with a working example, then add the data access, authentication, and deployment configuration your application needs.
 
-You can use Reflex for the data-app, dashboard, chat, model-demo, and internal-tool workflows commonly associated with Streamlit, Dash, Gradio, and NiceGUI. These patterns can share a custom, multi-page interface: a conversation can sit beside a chart, a model prediction can populate an editable form, and a dashboard selection can update a table. The examples below demonstrate the individual building blocks; the [framework comparisons](https://reflex.dev/compare/frameworks/) explain the different development models.
+You can use Reflex for the data-app, dashboard, chat, model-demo, and internal-tool workflows commonly associated with Streamlit, Dash, and Gradio. These patterns can share a custom, multi-page interface: a conversation can sit beside a chart, a model prediction can populate an editable form, and a dashboard selection can update a table. The examples below demonstrate the individual building blocks; the [framework comparisons](https://reflex.dev/compare/frameworks/) explain the different development models.
 
 ## Choose a starting point
 
@@ -42,7 +42,7 @@ You can change the model demo's form, result panel, and surrounding page without
 
 Reflex compiles Python component definitions into a React frontend. An ordinary interaction calls the associated Python event handler and synchronizes changed state; it does not rerun the whole Python page definition. Browser-local interactions and compiled Var expressions can run without a Python event. This lets you keep expensive data loading separate from controls that only change the view.
 
-See [performance and execution](/docs/advanced-onboarding/performance-and-execution/) for the event path and measurement method. To establish which implementation is faster for your app, compare the same interaction, data, and deployment conditions; frontend architecture alone is not a benchmark.
+The [Streamlit and Dash benchmarks](/docs/advanced-onboarding/performance-and-execution/) show where these techniques delivered measurable gains: faster initial dashboard data visibility and faster bulk component updates. Read the results alongside their workload, rendering strategy, and measurement setup, then apply the execution guide to your own app.
 
 ## Connect data and services
 

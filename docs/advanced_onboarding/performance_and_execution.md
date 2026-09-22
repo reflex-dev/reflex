@@ -1,11 +1,47 @@
 ---
-title: Reflex Performance — Rendering, Python Events and Background Work
-meta_description: Understand Reflex browser rendering, Python state events, network round trips, and background work. Measure application latency with reproducible workloads.
+title: Reflex Performance — Streamlit and Dash Benchmarks
+meta_description: Compare Reflex performance with Streamlit and Dash using published dashboard and component benchmarks. Learn how rendering and state updates affect latency.
 ---
 
 # Performance and execution
 
-Reflex performance depends on which interaction you measure. Browser rendering, a Python state event, a database query, and model inference each have different costs. When comparing Reflex with Streamlit, Dash, Gradio, or NiceGUI, [measure an equivalent workload](#measure-an-equivalent-workload). Start by identifying the path a user action takes before deciding what to optimize.
+Reflex combines a customizable React interface with explicit Python state and event handlers. Published comparisons show concrete performance gains over Streamlit and Dash: faster initial data visibility in an NBA dashboard and faster bulk updates in a component-heavy form. The measurements below explain where those gains appeared and how to apply the same rendering and state-management techniques in your app.
+
+## Reflex vs Streamlit: faster time to visible data
+
+In Reflex's internal NBA dashboard benchmark, the player table appeared in **2.13 seconds with Reflex versus 15.56 seconds with Streamlit** on simulated slow 4G: about **7.3× less waiting for the initial data**.
+
+| Network profile | Reflex | Streamlit | Cold runs |
+| --- | --- | --- | --- |
+| Local | 436 ms | 681 ms | 7 |
+| Cable | 484 ms | 1,727 ms | 5 |
+| Simulated slow 4G | 2,132 ms | 15,556 ms | 3 |
+
+These are median production-mode measurements from June 3, 2026, on one Linux workstation using Chromium. The metric is the later of first contentful paint and table rows entering the DOM. Slow 4G simulated 1.6/0.75 Mbps, 150 ms RTT, and 4× CPU slowdown.
+
+The Reflex app prerendered its first table page. Its development-version branch also included tree-shaking and font-preload improvements; compression differed between implementations. These results measure initial visibility, not full interactivity or filtering latency. Reflex used more idle server memory: 327 MB versus 175 MB PSS.
+
+Read the [benchmark report and reproduction limits](https://reflex.dev/compare/streamlit-benchmark/) and the [Reflex vs Streamlit comparison](https://reflex.dev/compare/streamlit/).
+
+## Reflex vs Dash: faster component-heavy updates
+
+The public component-scaling benchmark linked from the [Reflex vs Dash comparison](https://reflex.dev/compare/dash/) reports **1.2 seconds in Reflex versus 29 seconds in Dash** to write all checkbox values in a form with roughly 5,200 mounted components: about **24× less time for that bulk update**.
+
+| Workload | Reflex | Dash |
+| --- | --- | --- |
+| Initial load, ~5,200 configured components | ~305 ms | ~22 s |
+| Initial load, ~17,200 configured components | ~215 ms | ~364 s |
+| Write all checkboxes, ~5,200 mounted components | ~1.2 s | ~29 s |
+
+These are third-party **development-mode** results. The initial-load implementations use different mounting strategies: Reflex leaves collapsed checkbox groups unmounted with `rx.cond`, while Dash mounts them upfront. Expanding all ~17,200 components in the Reflex example took ~5.3 seconds. The bulk-update row changes many checkbox values; it is not a single-field latency measurement.
+
+The practical lesson is to mount expensive panels when needed and limit broad state updates. Both frameworks incur more browser work as mounted content grows. See the [benchmark source and setup](https://github.com/olincb/dash-vs-reflex), [Reflex measurements](https://github.com/olincb/dash-vs-reflex/blob/main/reflex_app/README.md), and [Dash measurements](https://github.com/olincb/dash-vs-reflex/blob/main/dash_app/README.md).
+
+## Apply the performance advantages in your app
+
+Reflex gives you control over when UI components mount, which Python handler runs, and which state changes reach the browser. Combine those controls with component-level CSS, responsive layouts, and [React component wrappers](/docs/wrapping-react/overview/) to build a custom application around your dashboard.
+
+The published results above were reported by their authors and have not been independently reproduced for this guide. They demonstrate gains for those implementations, rather than a universal speed ranking. Use the execution model below to identify your bottleneck, then [measure an equivalent workload](#measure-an-equivalent-workload) in production mode.
 
 ## Where work runs
 
