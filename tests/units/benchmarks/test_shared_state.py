@@ -11,8 +11,8 @@ from reflex.istate.shared import UPDATE_OTHER_CLIENT_TASKS
 from tests.benchmarks.test_shared_state import _drain_fanout
 
 
-def test_shared_benchmarks_preserve_other_benchmarks():
-    """Collection and execution preserve ordinary benchmarks' state and app."""
+def test_shared_benchmarks_preserve_other_states():
+    """Collection and execution preserve ordinary state registrations and app."""
     result = subprocess.run(
         [
             sys.executable,
@@ -23,7 +23,15 @@ def test_shared_benchmarks_preserve_other_benchmarks():
                 from reflex.app import App
                 from reflex.state import State
                 from reflex_base.registry import RegistrationContext
-                from tests.benchmarks import test_event_processing as ordinary
+
+                class CounterState(State):
+                    '''An ordinary counter with no optional dependencies.'''
+
+                    counter: int = 0
+
+                    def increment(self):
+                        '''Increment the counter.'''
+                        self.counter += 1
 
                 context = RegistrationContext.get()
                 original_app = App()
@@ -46,14 +54,17 @@ def test_shared_benchmarks_preserve_other_benchmarks():
                 assert_isolated()
 
                 async def exercise():
-                    '''Run every shared scenario before the ordinary counter batch.'''
+                    '''Run every shared scenario before modifying the ordinary counter.'''
                     for scenario in shared.SCENARIOS.values():
                         async with shared._shared_state_app(scenario, lambda *_: None) as harness:
                             await harness.counter_events()
                             await harness.modify_state()
                         assert_isolated()
-                    async with ordinary._event_pipeline(ordinary._counter_events(), lambda _: None) as run:
-                        await run()
+                    root = State.get_root_state()(_reflex_internal_init=True)
+                    counter = root.get_substate(CounterState.get_full_name().split('.'))
+                    counter.increment()
+                    assert counter.counter == 1
+                    assert root._reflex_internal_links is None
                     assert_isolated()
 
                 asyncio.run(exercise())
