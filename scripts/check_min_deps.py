@@ -47,7 +47,9 @@ the workspace, which is that opt-in. The minimum resolution is left unpinned, wh
 ``lowest-direct`` selects the published release each declared floor asks for.
 
 Run with ``uv run python scripts/check_min_deps.py [package ...]``. With no arguments,
-every checkable package is validated. ``--check-dev-pins [package ...]`` instead scans the
+every checkable package is validated. ``--wheelhouse DIR`` takes the sibling wheels from a
+directory instead of building them — how CI reuses the artifacts its build jobs already
+produced — and builds only what that directory does not already cover. ``--check-dev-pins [package ...]`` instead scans the
 declared dependencies for development-release pins and fails if any are found (used by the
 publish pipeline to keep ``*.dev`` pins out of released package metadata).
 """
@@ -65,6 +67,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -559,12 +562,16 @@ def build_wheelhouse(
     considered are those declared anywhere in the selection, because one wheel has to serve
     every package in it.
 
+    A sibling already present in the index is taken as built: CI seeds it from the wheels
+    the build workflow produced, and nothing is rebuilt there. One that is missing, or whose
+    seeded version falls below a declared development floor, is still built here.
+
     Args:
         packages: The packages about to be checked.
-        wheelhouse: Directory to write the wheels into.
+        wheelhouse: Directory to write the wheels into, holding any already built for it.
 
     Returns:
-        A ``(versions, detail)`` tuple mapping each distribution built to its version.
+        A ``(versions, detail)`` tuple mapping each distribution in the index to its version.
         ``detail`` is ``None`` on success, otherwise the failing build's captured output.
     """
     wheelhouse.mkdir(parents=True, exist_ok=True)
@@ -584,11 +591,15 @@ def build_wheelhouse(
         ])
     )
     for source in sources:
-        declared = requirements.get(_distribution_name(source), [])
-        detail = _build_sibling(source, wheelhouse, None)
-        if detail is not None:
-            return {}, detail
-        built = _wheel_versions(wheelhouse).get(_distribution_name(source))
+        name = _distribution_name(source)
+        declared = requirements.get(name, [])
+        built = _wheel_versions(wheelhouse).get(name)
+        if built is None:
+            # Nothing seeded this distribution into the index, so produce it here.
+            detail = _build_sibling(source, wheelhouse, None)
+            if detail is not None:
+                return {}, detail
+            built = _wheel_versions(wheelhouse).get(name)
         if built is not None and _satisfies(declared, built):
             continue
         floor = _dev_build_version(declared)
@@ -878,6 +889,13 @@ def main() -> int:
         default=1,
         help="Number of packages to check in parallel (default: 1).",
     )
+    parser.add_argument(
+        "--wheelhouse",
+        type=Path,
+        help="Directory of prebuilt workspace wheels to use instead of building them. CI "
+        "points this at the artifacts the build workflow already produced; anything the "
+        "selection needs that is missing from it is still built.",
+    )
     args = parser.parse_args()
 
     if args.check_dev_pins:
@@ -908,6 +926,10 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory(prefix="min-deps-wheelhouse-") as tmp:
         wheelhouse = Path(tmp) / "wheelhouse"
+        if args.wheelhouse is not None:
+            # Copied rather than used in place, so a wheel built to cover a gap in the
+            # prebuilt set never lands in the caller's directory.
+            shutil.copytree(args.wheelhouse, wheelhouse)
         versions, detail = build_wheelhouse(selected, wheelhouse)
         if detail is not None:
             # One index serves the whole run, so a failed build stops every package in it.

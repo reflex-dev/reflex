@@ -577,6 +577,59 @@ def test_build_wheelhouse_pins_the_exact_workspace_build(
     assert len(fake_run.commands) == 1, "a satisfying build is not redone"
 
 
+def test_build_wheelhouse_keeps_a_prebuilt_wheel(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    """A wheel already in the index is taken as built, which is how CI reuses its artifacts.
+
+    Args:
+        monkeypatch: Subprocess patching fixture.
+        tmp_path: Temporary package and wheelhouse directory.
+    """
+    fake_run = _FakeRun()
+    monkeypatch.setattr(check_min_deps, "_run", fake_run)
+    wheelhouse = tmp_path / "wheelhouse"
+    wheelhouse.mkdir()
+    (wheelhouse / "reflex_base-0.9.12.post1.dev0+abc1234-py3-none-any.whl").touch()
+    package = _consumer(tmp_path, "reflex-base >= 0.9.12")
+
+    versions, detail = check_min_deps.build_wheelhouse([package], wheelhouse)
+
+    assert detail is None
+    assert fake_run.commands == [], "nothing is rebuilt over a usable prebuilt wheel"
+    assert check_min_deps._workspace_pins(package, versions) == [
+        "reflex-base==0.9.12.post1.dev0+abc1234"
+    ]
+
+
+def test_build_wheelhouse_redoes_a_prebuilt_wheel_below_a_development_floor(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    """A prebuilt wheel that misses a `*.dev` floor is still rebuilt at it.
+
+    The build jobs know nothing about the floors declared against them, so a release train
+    whose floor has outrun the tags needs the wheel produced here after all.
+
+    Args:
+        monkeypatch: Subprocess patching fixture.
+        tmp_path: Temporary package and wheelhouse directory.
+    """
+    fake_run = _FakeRun(built={"reflex-base": "0.9.11.post1.dev0+abc1234"})
+    monkeypatch.setattr(check_min_deps, "_run", fake_run)
+    wheelhouse = tmp_path / "wheelhouse"
+    wheelhouse.mkdir()
+    (wheelhouse / "reflex_base-0.9.11.post1.dev0+abc1234-py3-none-any.whl").touch()
+    package = _consumer(tmp_path, "reflex-base >= 0.9.12.dev0")
+
+    versions, detail = check_min_deps.build_wheelhouse([package], wheelhouse)
+
+    assert detail is None
+    assert len(fake_run.commands) == 1, "built once, at the floor"
+    assert check_min_deps._workspace_pins(package, versions) == [
+        "reflex-base==0.9.12.dev0"
+    ]
+
+
 def test_build_wheelhouse_skips_a_pin_the_declared_floor_excludes(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
