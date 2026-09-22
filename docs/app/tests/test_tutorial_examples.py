@@ -732,6 +732,51 @@ def test_pandas_filters_aggregate_all_matches_beyond_preview(monkeypatch):
     assert module.pandas_data_app() is not None
 
 
+def test_pandas_chart_uses_complete_filtered_totals(monkeypatch):
+    """Chart data follows filters and full aggregates, including empty results."""
+    from reflex.istate.data import RouterData
+    from reflex_xy.registry import registry
+
+    module = pandas_demo(monkeypatch)
+    root = rx.State(
+        _reflex_internal_init=True,
+        rx_router_session=RouterData.from_router_data({"token": str(uuid4())}).session,
+    )
+    state = root.get_substate(
+        tuple(module.PandasAppState.get_full_name().split("."))[1:]
+    )
+    state.load_sample(False)
+    assert registry.get_columns(state.region_data.token).columns == {
+        "region": ["North", "South", "West"],
+        "units": [17, 7, 9],
+    }
+    state._orders = module.read_orders(
+        b"region,product,units\n" + b"North,Tea,2\n" * 70 + b"South,Coffee,3\n"
+    )
+    state.apply_filters({"region": "All", "product": "Tea"})
+    assert len(state.rows) == 50 and state.matching_count == 70
+    assert registry.get_columns(state.region_data.token).columns == {
+        "region": ["North"],
+        "units": [140],
+    }
+    state.apply_filters({"region": "South", "product": "Tea"})
+    assert state.total_units == 0 and not state.rows
+    assert registry.get_columns(state.region_data.token).columns == {
+        "region": [],
+        "units": [],
+    }
+
+
+def test_pandas_preview_does_not_enable_uploads(monkeypatch):
+    """Embedding the shared dashboard must not enable the docs upload route."""
+    module = pandas_demo(monkeypatch)
+    monkeypatch.setattr(Upload, "is_used", False)
+    assert module.pandas_preview() is not None
+    assert not Upload.is_used
+    assert module.pandas_data_app() is not None
+    assert Upload.is_used
+
+
 @pytest.mark.parametrize(
     "data",
     [
