@@ -1001,7 +1001,7 @@ independent adversarial verifier for every newly claimed issue. Artifacts: `reve
 - **rxe 0.9.6a1 type-checks against the removed `reflex.istate.validation`** — `reflex_enterprise/auth/oidc/state.py:63`
   imports `_StateMeta` under `TYPE_CHECKING` from a module a2 deleted; the runtime branch (`type(rx.State)`) is what
   executes, all 110 rxe modules import, and 245 of 246 `from reflex…` imports in the wheel resolve. Static-only,
-  LOW, confirmed by the verifier as isolated and narrower than claimed. Fixed in reflex-enterprise
+  LOW, confirmed by the verifier as isolated and narrower than claimed. Fixed and merged in reflex-enterprise
   [#235](https://github.com/reflex-dev/reflex-enterprise/pull/235): `OIDCCookieMeta` now derives from the public
   `reflex_base.vars.BaseStateMeta` (the metaclass of `rx.State` on every supported reflex), a new unit test
   executes every `TYPE_CHECKING` import in the package against the installed reflex, and the lock moves to
