@@ -4,12 +4,12 @@ import asyncio
 import pickle
 import time
 from collections.abc import Callable, Generator
-from contextlib import asynccontextmanager
+from contextlib import aclosing, asynccontextmanager
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from reflex import config
+from reflex import _MAPPING, config
 from reflex.app import EventNamespace
 from reflex.istate.data import RouterData
 from reflex.state import StateUpdate
@@ -18,6 +18,8 @@ from reflex.utils.token_manager import (
     RedisTokenManager,
     SocketRecord,
     TokenManager,
+    _TokenNotConnectedError,
+    get_token_manager,
 )
 
 
@@ -219,6 +221,264 @@ class TestLocalTokenManager:
         async for token in manager.enumerate_tokens():
             found_tokens.add(token)
         assert not found_tokens
+
+
+@pytest.fixture
+def local_manager():
+    """Create a LocalTokenManager instance.
+
+    Returns:
+        A LocalTokenManager instance for testing.
+    """
+    return LocalTokenManager()
+
+
+async def test_when_token_disconnects_connected(local_manager):
+    """Event not set while connected, set after disconnect.
+
+    Args:
+        local_manager: LocalTokenManager fixture instance.
+    """
+    await local_manager.link_token_to_sid("tok1", "sid1")
+    evt = local_manager.when_token_disconnects("tok1")
+    assert not evt.is_set()
+    local_manager._notify_disconnect("tok1", "sid1")
+    assert evt.is_set()
+
+
+def test_when_token_disconnects_already_disconnected(local_manager):
+    """Event set immediately for unknown token.
+
+    Args:
+        local_manager: LocalTokenManager fixture instance.
+    """
+    evt = local_manager.when_token_disconnects("nonexistent")
+    assert evt.is_set()
+
+
+async def test_when_session_disconnects_connected(local_manager):
+    """Event not set while connected, set after disconnect.
+
+    Args:
+        local_manager: LocalTokenManager fixture instance.
+    """
+    await local_manager.link_token_to_sid("tok2", "sid2")
+    evt = local_manager.when_session_disconnects("sid2")
+    assert not evt.is_set()
+    local_manager._notify_disconnect("tok2", "sid2")
+    assert evt.is_set()
+
+
+def test_when_session_disconnects_already_disconnected(local_manager):
+    """Event set immediately for unknown sid.
+
+    Args:
+        local_manager: LocalTokenManager fixture instance.
+    """
+    evt = local_manager.when_session_disconnects("nonexistent")
+    assert evt.is_set()
+
+
+async def test_session_is_connected_yields_and_stops(local_manager):
+    """Yields token once, then awaits disconnect.
+
+    Args:
+        local_manager: LocalTokenManager fixture instance.
+    """
+    await local_manager.link_token_to_sid("tok4", "sid4")
+    async with aclosing(local_manager.session_is_connected("sid4")) as gen:
+        token = await gen.__anext__()
+        assert token == "tok4"
+        # Trigger disconnect so the await inside the iterator completes.
+        local_manager._notify_disconnect("tok4", "sid4")
+
+
+async def test_session_is_connected_raises_for_unknown(local_manager):
+    """Raises for unknown sid.
+
+    Args:
+        local_manager: LocalTokenManager fixture instance.
+    """
+    with pytest.raises(_TokenNotConnectedError):
+        async for _ in local_manager.session_is_connected("unknown_sid"):
+            pass
+
+
+async def test_token_is_connected_yields_and_stops(local_manager):
+    """Yields sid once, then awaits disconnect.
+
+    Args:
+        local_manager: LocalTokenManager fixture instance.
+    """
+    await local_manager.link_token_to_sid("tok5", "sid5")
+    async with aclosing(local_manager.token_is_connected("tok5")) as gen:
+        sid = await gen.__anext__()
+        assert sid == "sid5"
+        # Trigger disconnect so the await inside the iterator completes.
+        local_manager._notify_disconnect("tok5", "sid5")
+
+
+async def test_token_is_connected_raises_for_unknown(local_manager):
+    """Raises for unknown token.
+
+    Args:
+        local_manager: LocalTokenManager fixture instance.
+    """
+    with pytest.raises(_TokenNotConnectedError):
+        async for _ in local_manager.token_is_connected("unknown_tok"):
+            pass
+
+
+async def test_multiple_watchers_token_disconnect(local_manager):
+    """Multiple watchers on same token all get notified.
+
+    Args:
+        local_manager: LocalTokenManager fixture instance.
+    """
+    await local_manager.link_token_to_sid("tok6", "sid6")
+    evt1 = local_manager.when_token_disconnects("tok6")
+    evt2 = local_manager.when_token_disconnects("tok6")
+    assert not evt1.is_set()
+    assert not evt2.is_set()
+    local_manager._notify_disconnect("tok6", "sid6")
+    assert evt1.is_set()
+    assert evt2.is_set()
+
+
+async def test_multiple_watchers_session_disconnect(local_manager):
+    """Multiple session watchers all get notified.
+
+    Args:
+        local_manager: LocalTokenManager fixture instance.
+    """
+    await local_manager.link_token_to_sid("tok7", "sid7")
+    evt1 = local_manager.when_session_disconnects("sid7")
+    evt2 = local_manager.when_session_disconnects("sid7")
+    local_manager._notify_disconnect("tok7", "sid7")
+    assert evt1.is_set()
+    assert evt2.is_set()
+
+
+async def test_notify_disconnect_only_matching(local_manager):
+    """_notify_disconnect only fires for matching token.
+
+    Args:
+        local_manager: LocalTokenManager fixture instance.
+    """
+    await local_manager.link_token_to_sid("tok_c", "sid_c")
+    await local_manager.link_token_to_sid("tok_d", "sid_d")
+    evt_c = local_manager.when_token_disconnects("tok_c")
+    evt_d = local_manager.when_token_disconnects("tok_d")
+    local_manager._notify_disconnect("tok_c", "sid_c")
+    assert evt_c.is_set()
+    assert not evt_d.is_set()
+
+
+async def test_cleanup_after_disconnect_notify(local_manager):
+    """Events dict cleaned up after notify.
+
+    Args:
+        local_manager: LocalTokenManager fixture instance.
+    """
+    await local_manager.link_token_to_sid("tok8", "sid8")
+    local_manager.when_token_disconnects("tok8")
+    assert "tok8" in local_manager._token_disconnect_events
+    local_manager._notify_disconnect("tok8", "sid8")
+    assert "tok8" not in local_manager._token_disconnect_events
+
+
+async def test_session_iterator_cleanup_with_aclosing(local_manager):
+    """Events list cleaned up when using aclosing.
+
+    Args:
+        local_manager: LocalTokenManager fixture instance.
+    """
+    await local_manager.link_token_to_sid("tok9", "sid9")
+    async with aclosing(local_manager.session_is_connected("sid9")) as gen:
+        async for _token in gen:
+            break
+    assert len(local_manager._sid_disconnect_events.get("sid9", [])) == 0
+
+
+async def test_token_iterator_cleanup_with_aclosing(local_manager):
+    """Events list cleaned up when using aclosing.
+
+    Args:
+        local_manager: LocalTokenManager fixture instance.
+    """
+    await local_manager.link_token_to_sid("tok10", "sid10")
+    async with aclosing(local_manager.token_is_connected("tok10")) as gen:
+        async for _sid in gen:
+            break
+    assert len(local_manager._token_disconnect_events.get("tok10", [])) == 0
+
+
+async def test_disconnect_token_notifies_watchers(local_manager):
+    """disconnect_token wakes token and session watchers after removing the mappings.
+
+    Args:
+        local_manager: LocalTokenManager fixture instance.
+    """
+    await local_manager.link_token_to_sid("tok11", "sid11")
+    token_event = local_manager.when_token_disconnects("tok11")
+    sid_event = local_manager.when_session_disconnects("sid11")
+    await local_manager.disconnect_token("tok11", "sid11")
+    assert token_event.is_set()
+    assert sid_event.is_set()
+    assert "tok11" not in local_manager.token_to_socket
+    assert "sid11" not in local_manager.sid_to_token
+
+
+async def test_on_disconnect_watcher_registered_before_cleanup(
+    event_namespace_factory,
+):
+    """A watcher registered after on_disconnect but before cleanup still wakes.
+
+    Args:
+        event_namespace_factory: EventNamespace factory fixture.
+    """
+    namespace = event_namespace_factory()
+    await namespace.link_token_to_sid("sid_race", "tok_race")
+    task = namespace.on_disconnect("sid_race")
+    assert task is not None
+    event = namespace._token_manager.when_session_disconnects("sid_race")
+    await task
+    assert event.is_set()
+
+
+def test_get_token_manager_returns_namespace_manager(event_namespace_factory):
+    """get_token_manager returns the running app's token manager.
+
+    Args:
+        event_namespace_factory: EventNamespace factory fixture.
+    """
+    namespace = event_namespace_factory()
+    app_info = Mock()
+    app_info.app.event_namespace = namespace
+    with patch(
+        "reflex.utils.token_manager.prerequisites.get_and_validate_app",
+        return_value=app_info,
+    ):
+        assert get_token_manager() is namespace._token_manager
+
+
+def test_get_token_manager_without_namespace():
+    """get_token_manager raises when the event namespace is not initialized."""
+    app_info = Mock()
+    app_info.app.event_namespace = None
+    with (
+        patch(
+            "reflex.utils.token_manager.prerequisites.get_and_validate_app",
+            return_value=app_info,
+        ),
+        pytest.raises(RuntimeError, match="Event namespace is not initialized"),
+    ):
+        get_token_manager()
+
+
+def test_rx_mapping_has_get_token_manager():
+    """rx.__init__ has get_token_manager in its lazy mapping."""
+    assert "get_token_manager" in _MAPPING.get("utils.token_manager", [])
 
 
 class TestRedisTokenManager:
