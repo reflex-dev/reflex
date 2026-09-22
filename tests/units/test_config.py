@@ -87,6 +87,53 @@ def test_auto_memoize_default(base_config_values):
     assert rx.Config(**base_config_values, auto_memoize=False).auto_memoize is False
 
 
+@pytest.mark.parametrize("from_env", [False, True])
+@pytest.mark.parametrize(
+    ("auto_memoize", "react_compiler"),
+    [(True, False), (True, True), (False, True), (False, False)],
+)
+def test_warns_when_all_memoization_is_disabled(
+    base_config_values: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    from_env: bool,
+    auto_memoize: bool,
+    react_compiler: bool,
+):
+    """Warn only when the effective config disables both memoization options.
+
+    Args:
+        base_config_values: Config values.
+        monkeypatch: Fixture for overriding environment variables.
+        caplog: Captured log records.
+        from_env: Whether environment variables override opposite config values.
+        auto_memoize: Effective Reflex memoization setting.
+        react_compiler: Effective React Compiler setting.
+    """
+    values = {"auto_memoize": auto_memoize, "react_compiler": react_compiler}
+    if from_env:
+        for name, value in values.items():
+            monkeypatch.setenv(f"REFLEX_{name.upper()}", str(value))
+        values = {name: not value for name, value in values.items()}
+
+    config = rx.Config(
+        **base_config_values,
+        auto_memoize=values["auto_memoize"],
+        react_compiler=values["react_compiler"],
+    )
+
+    assert config.auto_memoize is auto_memoize
+    assert config.react_compiler is react_compiler
+    warnings = [
+        record.getMessage()
+        for record in caplog.records
+        if record.levelno == logging.WARNING and "auto_memoize" in record.getMessage()
+    ]
+    assert bool(warnings) is (not auto_memoize and not react_compiler)
+    if warnings:
+        assert "react_compiler=True" in warnings[0]
+
+
 @pytest.mark.parametrize(
     ("env_var", "value"),
     [
@@ -106,6 +153,8 @@ def test_auto_memoize_default(base_config_values):
         ("REFLEX_FROZEN_LOCKFILE", True),
         ("REFLEX_REACT_COMPILER", False),
         ("REFLEX_REACT_COMPILER", True),
+        ("REFLEX_AUTO_MEMOIZE", False),
+        ("REFLEX_AUTO_MEMOIZE", True),
         ("REFLEX_DEFAULT_COLOR_MODE", "dark"),
     ],
 )

@@ -389,6 +389,13 @@ class Config(BaseConfig):
         for key, env_value in env_kwargs.items():
             setattr(self, key, env_value)
 
+        if not self.auto_memoize and not self.react_compiler:
+            logger.warning(
+                "auto_memoize=False without react_compiler=True disables page "
+                "memoization. Every state change can re-render the whole page. "
+                "Enable react_compiler=True or restore auto_memoize=True."
+            )
+
         self._normalize_frontend_compression_formats()
 
         # Normalize route prefixes to ensure they start with a slash.

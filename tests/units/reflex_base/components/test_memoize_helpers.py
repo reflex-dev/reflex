@@ -170,11 +170,27 @@ def test_event_wrapper_omits_module_level_dependencies():
     assert _callback_dependencies(Var("handler", EventChain)) == []
 
 
-def test_event_wrapper_lists_only_referenced_hook_bindings():
-    """Hook bindings join the dependency array only when the callback reads them."""
+def test_event_wrapper_keeps_hook_bindings_for_scope_analysis():
+    """Keep candidates until Babel can distinguish captured and unused bindings."""
     event = Var(
         "(e) => upload(files, e)",
         EventChain,
         VarData(hooks=["const [files, setFiles] = useContext(FilesContext)"]),
     )
-    assert _callback_dependencies(event) == ["files"]
+    assert _callback_dependencies(event) == ["files", "setFiles"]
+
+
+@pytest.mark.parametrize("name", ["asciiCounter", "Δcounter", "状态", "café"])
+def test_event_wrapper_preserves_unicode_hook_dependencies(name: str):
+    """Keep captured hook bindings with valid Unicode JavaScript names.
+
+    Args:
+        name: The JavaScript binding read by the event callback.
+    """
+    event = Var(
+        f"() => update({name})",
+        EventChain,
+        VarData(hooks=[f"const {name} = useValue()"]),
+    )
+
+    assert _callback_dependencies(event) == [name]

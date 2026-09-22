@@ -20,7 +20,6 @@ Auto-memoized components compile using one of two render strategies:
 from __future__ import annotations
 
 import enum
-import re
 from hashlib import md5
 from typing import TYPE_CHECKING
 
@@ -35,8 +34,6 @@ from reflex_base.vars.sequence import ArrayVar
 
 if TYPE_CHECKING:
     from reflex_base.plugins.compiler import PageContext
-
-_JS_IDENTIFIER = re.compile(r"[A-Za-z_$][\w$]*")
 
 
 class MemoizationStrategy(enum.Enum):
@@ -135,15 +132,11 @@ def get_memoized_event_triggers(
         memo_name = f"{event_trigger}_{chain_hash}"
 
         var_deps = list(_get_deps_from_event_trigger(event))
-        if hook_deps := [
-            dep
-            for var_data in event_var_data
-            for hook in var_data.hooks
-            for dep in _get_hook_deps(hook)
-        ]:
-            # Hooks may declare bindings the callback never reads.
-            identifiers = set(_JS_IDENTIFIER.findall(rendered_js))
-            var_deps.extend(dep for dep in hook_deps if dep in identifiers)
+        # Keep hook bindings here; the React Compiler adapter can use Babel's
+        # scopes to remove unused dependencies without losing captured values.
+        for var_data in event_var_data:
+            for hook in var_data.hooks:
+                var_deps.extend(_get_hook_deps(hook))
 
         memo_var_data = VarData.merge(
             *event_var_data,

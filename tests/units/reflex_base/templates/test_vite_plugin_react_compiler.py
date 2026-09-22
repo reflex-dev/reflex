@@ -39,7 +39,7 @@ try {
     moduleTypes: Object.fromEntries(
       ["@emotion/react", "react"].map((name) => [
         name,
-        globalThis.babelCalls[0]?.plugins[0][1].environment.moduleTypeProvider(name),
+        globalThis.babelCalls[0]?.plugins[1][1].environment.moduleTypeProvider(name),
       ]),
     ),
   }));
@@ -134,6 +134,7 @@ def test_compiles_generated_components(compiler_driver: Path, file: str):
             "sourceMaps": True,
             "parserOpts": {"plugins": ["jsx"]},
             "plugins": [
+                None,
                 [
                     None,
                     {
@@ -142,7 +143,7 @@ def test_compiles_generated_components(compiler_driver: Path, file: str):
                         "panicThreshold": "none",
                         "environment": {"enableFunctionOutlining": False},
                     },
-                ]
+                ],
             ],
         }
     ]

@@ -178,6 +178,8 @@ config = rx.Config(
 
 This also shortens Python compilation. React Compiler skips any component it cannot prove safe, such as a custom component whose hook code modifies values during render. Without auto-memoization, a skipped page re-renders completely on every state change, so measure your pages before turning `auto_memoize` off.
 
+Setting both `auto_memoize=False` and `react_compiler=False` logs a warning because page memoization is disabled. Enable one of these options for normal use.
+
 ## Customizable App Data Directory
 
 The `REFLEX_DIR` environment variable can be set, which allows users to set the location where Reflex writes helper tools like Bun and NodeJS.

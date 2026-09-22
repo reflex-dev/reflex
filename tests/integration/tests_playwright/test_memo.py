@@ -22,6 +22,7 @@ def MemoApp():
     from typing import TypedDict
 
     import reflex as rx
+    from reflex.experimental.client_state import ClientStateVar
 
     class TreeNode(TypedDict):
         name: str
@@ -119,6 +120,30 @@ def MemoApp():
             id="derived-count",
         )
 
+    def client_counter(name: str, increment: str) -> rx.Component:
+        """Create a counter that reads client state in its click callback.
+
+        Args:
+            name: Client-state binding and button ID.
+            increment: JavaScript expression computing the next counter value.
+
+        Returns:
+            A button exposing its counter value as a data attribute.
+        """
+        counter = ClientStateVar.create(name, default=0, global_ref=False)
+        return rx.button(
+            "Increment client counter",
+            id=name,
+            custom_attrs={"data-count": counter.value},
+            on_click=counter.set_value(
+                rx.Var(
+                    increment,
+                    _var_type=int,
+                    _var_data=counter.value._get_all_var_data(),
+                )
+            ),
+        )
+
     def index() -> rx.Component:
         return rx.vstack(
             rx.input(
@@ -127,6 +152,11 @@ def MemoApp():
                 id="token",
             ),
             rx.text(MemoState.last_value, id="memo-last-value"),
+            client_counter("Δcounter", "Δcounter + 1"),
+            client_counter("eval_counter", "eval('eval_counter') + 1"),
+            client_counter(
+                "nested_eval_counter", "(() => eval('nested_eval_counter'))() + 1"
+            ),
             my_memoed_component(
                 some_value="memod_some_value", event=MemoState.set_last_value
             ),
@@ -404,3 +434,77 @@ def test_react_compiler_transforms_generated_components(
     response = page.request.get(module_url)
     assert response.ok
     assert ("compiler-runtime" in response.text()) is react_compiler
+
+
+@pytest.mark.parametrize("name", ["Δcounter", "eval_counter", "nested_eval_counter"])
+def test_memo_client_counter(memo_app: AppHarness, page: Page, name: str) -> None:
+    """Unicode and dynamic client-state reads must not leave callbacks stale.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+        name: Counter binding and button ID.
+    """
+    _load_page(page, memo_app)
+    counter = page.locator(f"#{name}")
+    for value in range(1, 4):
+        counter.click()
+        expect(counter).to_have_attribute("data-count", str(value))
+
+
+@pytest.mark.parametrize(
+    ("case", "callback", "generated"),
+    [
+        ("captured", "() => setValue(Δvalue + 1)", True),
+        ("shadowed", "() => setValue(Δvalue => Δvalue + 1)", True),
+        (
+            "mixed_scopes",
+            "() => { [0].map(Δvalue => Δvalue + 1); setValue(Δvalue + 1); }",
+            True,
+        ),
+        (
+            "text_and_keys",
+            '() => { console.log("Δvalue", {unused: 1}); setValue(1); }',
+            True,
+        ),
+        ("manual", "() => setValue(Δvalue + 1)", False),
+    ],
+)
+def test_react_compiler_callback_dependencies(
+    memo_app: AppHarness,
+    react_compiler: bool,
+    page: Page,
+    case: str,
+    callback: str,
+    generated: bool,
+) -> None:
+    """Compile generated callbacks by binding scope while preserving manual hooks.
+
+    Args:
+        memo_app: Running app harness.
+        react_compiler: Whether React Compiler should be active.
+        page: Playwright page.
+        case: The module name for this dependency scenario.
+        callback: A callback containing captured or shadowed bindings.
+        generated: Whether the callback has Reflex's generated name.
+    """
+    if isinstance(memo_app, AppHarnessProd):
+        pytest.skip("Vite serves individual source modules only in development")
+    name = "on_click_" + "0" * 32 if generated else "manual_callback"
+    module = f"app_components/dependency_probe_{case}.jsx"
+    (memo_app.app_path / ".web" / module).write_text(
+        f"""
+import {{useCallback, useState}} from "react";
+import {{jsx}} from "@emotion/react";
+export default function Component() {{
+  const [Δvalue, setValue] = useState(0);
+  const [unused, setUnused] = useState(0);
+  const {name} = useCallback({callback}, [Δvalue, setValue, unused, setUnused]);
+  return jsx("button", {{onClick: {name}}}, Δvalue);
+}}
+"""
+    )
+    assert memo_app.frontend_url is not None
+    response = page.request.get(f"{memo_app.frontend_url.rstrip('/')}/{module}")
+    assert response.ok
+    assert ("compiler-runtime" in response.text()) is (react_compiler and generated)

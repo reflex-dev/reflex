@@ -47,6 +47,64 @@ const moduleTypeProvider = (moduleName) =>
     ? { kind: "object", properties: { jsx: EMOTION_JSX_TYPE } }
     : null;
 
+/**
+ * Remove unused dependencies from a generated event callback using Babel scopes.
+ * @param declaration A Babel variable declarator path.
+ */
+function pruneEventCallbackDependencies(declaration) {
+  const id = declaration.get("id");
+  const call = declaration.get("init");
+  if (
+    !id.isIdentifier() ||
+    !/^on_\w+_[0-9a-f]{32}$/.test(id.node.name) ||
+    !call.isCallExpression() ||
+    !call.get("callee").referencesImport("react", "useCallback")
+  ) {
+    return;
+  }
+  const [callback, dependencies] = call.get("arguments");
+  if (!callback?.isFunction() || !dependencies?.isArrayExpression()) return;
+
+  // Direct eval can read bindings that Babel cannot see in referencePaths.
+  let hasDirectEval = false;
+  callback.traverse({
+    CallExpression(call) {
+      if (call.get("callee").isIdentifier({ name: "eval" })) {
+        hasDirectEval = true;
+        call.stop();
+      }
+    },
+  });
+  if (hasDirectEval) return;
+
+  dependencies.node.elements = dependencies
+    .get("elements")
+    .filter((dependency) => {
+      if (!dependency.isIdentifier()) return true;
+      const binding = dependency.scope.getBinding(dependency.node.name);
+      return (
+        !binding ||
+        binding.referencePaths.some((reference) =>
+          callback.isAncestor(reference),
+        )
+      );
+    })
+    .map((dependency) => dependency.node);
+}
+
+/** Prune generated callback dependencies before React Compiler's Program visitor. */
+function pruneGeneratedEventDependencies() {
+  return {
+    visitor: {
+      Program(program) {
+        program.traverse({
+          VariableDeclarator: pruneEventCallbackDependencies,
+        });
+      },
+    },
+  };
+}
+
 /** Compile generated components before React Router applies its transforms. */
 export default function reflexReactCompiler() {
   let root;
@@ -79,6 +137,7 @@ export default function reflexReactCompiler() {
         sourceMaps: true,
         parserOpts: { plugins: ["jsx"] },
         plugins: [
+          pruneGeneratedEventDependencies,
           [
             reactCompiler,
             {
