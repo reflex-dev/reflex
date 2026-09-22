@@ -15,7 +15,9 @@ verifier and the remaining five explorers (build_prod_export, render_ctx_statemg
 db_optional_imports) died with the limit error. Both workflows were resumed from cache at 04:38 UTC once the limit
 reset (completed agents replay, the failed ones re-run) and finished at 05:57 UTC.
 
-**Re-verification status (2026-09-21): READY.** The fixes for FINDING-001/003/011/012/017 shipped as reflex 0.9.12a2 + reflex-enterprise 0.9.6a1; every original failing repro and a regression sweep were re-run against the published packages (96 pass / 0 fail / 2 skipped). Verdict, table and release conditions in
+**Re-verification status (2026-09-21): READY.** The fixes for FINDING-001/003/011/012/017 shipped as reflex 0.9.12a2 + reflex-enterprise 0.9.6a1; every original failing repro and a regression sweep were re-run against the published packages (96 pass / 0 fail / 2 skipped). Every deferred finding the maintainer wanted tracked was filed on
+2026-09-22 as reflex #7244–#7266 (table in RELEASE_PLAN.md, "Issues filed for the deferred findings"). Verdict, table and
+release conditions in
 [Phase 7](#phase-7--re-verification-on-reflex-0912a2--reflex-enterprise-096a1-2026-09-21) at the end of this file.
 
 ## Versions under test (all published on PyPI, verified with check_release_versions.py)

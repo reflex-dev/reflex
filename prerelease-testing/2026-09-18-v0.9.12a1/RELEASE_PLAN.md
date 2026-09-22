@@ -3,7 +3,8 @@
 **Status: FINAL (2026-09-19 06:00 UTC); re-verified READY on reflex 0.9.12a2 + reflex-enterprise 0.9.6a1 (2026-09-21)** — every
 cluster and every adversarial verifier has reported; all five fix-before-release items are fixed, merged, republished and
 re-verified against the published packages with the original campaign repros (FINDINGS.md, Phase 7). What is left is in
-"What remains before 0.9.12 final" at the end of this file. Rubric (from the campaign playbook):
+"What remains before 0.9.12 final" at the end of this file; every deferred finding the maintainer wanted tracked was
+filed on 2026-09-22 ("Issues filed for the deferred findings", below). Rubric (from the campaign playbook):
 fix before release = confirmed regression vs 0.9.11.post1, OR security-relevant, OR significant user
 impact / trivially small. Everything else is filed as an issue and fixed after. Each entry names the
 arm of the rubric that put it there, so a maintainer can disagree with a specific judgment.
@@ -262,3 +263,50 @@ mechanics and downstream coordination.
    (`OIDCCookieMeta` derives from the public `reflex_base.vars.BaseStateMeta`; a new unit test executes every
    `TYPE_CHECKING` import in the package; lock bumped to reflex 0.9.12a2), so it ships with 0.9.6 — and `GET /_reflex/events/openapi.yaml` answering
    500 unless `pyyaml` is installed (pre-existing in 0.9.5; declare the dependency or answer 501).
+
+## Issues filed for the deferred findings (2026-09-22)
+
+Filed on the maintainer's instruction before cutting 0.9.12, one issue per item unless noted; each carries the repro,
+regression status and evidence links from this campaign.
+
+| item | issue |
+|---|---|
+| FINDING-015 `filesById is not defined` from a toast action / `call_script` callback | [#7244](https://github.com/reflex-dev/reflex/issues/7244) |
+| FINDING-019 non-UTF-8 stateful-pages marker wedges backend startup | [#7245](https://github.com/reflex-dev/reflex/issues/7245) |
+| FINDING-024 `modify_state("<bare token>")` → 500, un-deprecated `str` overload | [#7246](https://github.com/reflex-dev/reflex/issues/7246) |
+| FINDING-023 `backend_state_mismatch` latch deadens the frontend | [#7247](https://github.com/reflex-dev/reflex/issues/7247) |
+| FINDING-016 cancelled `supersedes=True` handler loses writes under redis | [#7248](https://github.com/reflex-dev/reflex/issues/7248) |
+| FINDING-027 malformed CDN fallback URL for sub-path `@rx.dynamic` imports | [#7249](https://github.com/reflex-dev/reflex/issues/7249) |
+| FINDING-008 `on_click` inside `rx.dropdown_menu.trigger` never runs | [#7250](https://github.com/reflex-dev/reflex/issues/7250) |
+| `on_load`-started self-chaining loop keeps running after client disconnect | [#7251](https://github.com/reflex-dev/reflex/issues/7251) |
+| dev `reflex run` prints "Backend running at" after the app module failed to import | [#7252](https://github.com/reflex-dev/reflex/issues/7252) |
+| #6946 polish (re-send after hydrate, dict key order, dead `_UNKEYABLE_VALUE` branch) | [#7253](https://github.com/reflex-dev/reflex/issues/7253) |
+| withheld async uncached var leaves its coroutine unawaited (`RuntimeWarning`) | [#7254](https://github.com/reflex-dev/reflex/issues/7254) |
+| `_app_root` nesting contract: a childless wrap swallows lower-priority wraps (f012 follow-up) | [#7255](https://github.com/reflex-dev/reflex/issues/7255) |
+| `rx.Var.create(x)._replace(_var_data=...)` raises `TypeError` | [#7256](https://github.com/reflex-dev/reflex/issues/7256) |
+| `Axis.tick_formatter` accepts only a literal string | [#7257](https://github.com/reflex-dev/reflex/issues/7257) |
+| missing app-package `__init__.py` → silent state-name mismatch | [#7258](https://github.com/reflex-dev/reflex/issues/7258) |
+| `reflex db init` without the db extra prints a raw traceback | [#7259](https://github.com/reflex-dev/reflex/issues/7259) |
+| FINDING-002 + #7115 `hasattr`/`getattr` change + #7131 wording (changelog) | [#7260](https://github.com/reflex-dev/reflex/issues/7260) |
+| FINDING-021 `frontend_path` + assets docs | [#7261](https://github.com/reflex-dev/reflex/issues/7261) |
+| FINDING-022 `frontend_lazy_bundled_libraries` +65 KB (confirm the potential regression) | [#7262](https://github.com/reflex-dev/reflex/issues/7262) |
+| #7077 hard error vs warning (maintainer decision) | [#7263](https://github.com/reflex-dev/reflex/issues/7263) |
+| #7215 review follow-ups (dead test statement, typed root default, document the metaclass contract) | [#7264](https://github.com/reflex-dev/reflex/issues/7264) |
+| FINDING-006 backend (underscore) var shadowing across substates | [#7265](https://github.com/reflex-dev/reflex/issues/7265) |
+| granian `Unexpected exit from worker-1` on clean group SIGTERM (residual of #6981) | [#7266](https://github.com/reflex-dev/reflex/issues/7266) |
+
+Already tracked before this batch: FINDING-018 → [#6980](https://github.com/reflex-dev/reflex/issues/6980) (PR #7209);
+prod 404 status for dynamic routes → [#6983](https://github.com/reflex-dev/reflex/issues/6983) (PR #6996); sdist install →
+[#7088](https://github.com/reflex-dev/reflex/issues/7088); FINDING-006's sibling (mixin route) → [#7190](https://github.com/reflex-dev/reflex/issues/7190)
+(PR #7206); reflex-enterprise OpenAPI 500 without `pyyaml` → [reflex-enterprise#227](https://github.com/reflex-dev/reflex-enterprise/issues/227);
+AG Grid demo breakage → [reflex-enterprise#225](https://github.com/reflex-dev/reflex-enterprise/issues/225); #6978 closed by #7115.
+
+Deliberately not filed (maintainer decision, 2026-09-22): FINDING-025 (`.states/` wiped at startup in prod), FINDING-013
+(`use_id()` in `rx.foreach`), the f003 note that a delta is recorded as sent before `emit_update` delivers it, FINDING-004
+(`deps=["router"]` deprecation in the redundant shape), the `mergician` `v` prefix, the `async_db_url` docs nit, the accordion
+`collapsible` warning, the `get_delta` override error message, and every reflex-enterprise item (`/_reflex/cookies/sync` 405,
+client token in OIDC error log lines, the `_override_base_method` dependency, `column_def` dropping unknown kwargs).
+
+Not filed for lack of access: the reflex-examples items (the `upload` example's never-refreshing `files` var, form-designer's
+`/form/<id>` crash, the missing alembic directories in basic_crud/twitter/data_visualisation) — that tracker was not reachable
+from the QA sandbox; they remain listed under "File as issues" above for a maintainer to file.
