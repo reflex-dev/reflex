@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from reflex.istate.shared import _do_update_other_tokens
+from reflex.istate.shared import SharedStateBaseInternal, _do_update_other_tokens
 from reflex.state import State
 from reflex.utils.token_manager import (
     LocalTokenManager,
@@ -119,9 +119,7 @@ async def test_no_fan_out_without_linked_clients():
     each event with no client to fan out to, so it must not do the work -- nor
     require an App to be registered -- when there is nothing to propagate.
     """
-    from reflex.istate.shared import SharedStateBaseInternal
-
-    root_state = State(_reflex_internal_init=True)
+    root_state = State.get_root_state()(_reflex_internal_init=True)
     root_state._reflex_internal_links = {}
     shared_base = root_state.substates[SharedStateBaseInternal.get_name()]
     assert isinstance(shared_base, SharedStateBaseInternal)

@@ -13,13 +13,11 @@ per other client -- rather than redis or websocket transport.
 
 ``private`` is the baseline for every comparison here. It is the same state
 class on the same pipeline, never linked: an app that defines a ``SharedState``
-but has not linked this client. It is not a shared-state-free baseline, and
-there is no way to measure one in this process -- defining any ``SharedState``
-subclass flips ``_reflex_internal_links`` on the ``State`` root from ``None``
-to ``{}`` for the whole interpreter, which is what routes every event through
-``modify_state_with_links``. The difference between ``private`` and ``linked``
-is therefore the cost of resolving a link, not the cost of the feature
-existing.
+but has not linked this client. It is not a shared-state-free baseline.
+Registrations and the root's shared-state flags are isolated during collection
+and execution, so other benchmark modules retain their original event path.
+The difference between ``private`` and ``linked`` is the cost of resolving a
+link, not the cost of the feature existing.
 """
 
 import asyncio
@@ -45,7 +43,6 @@ import reflex as rx
 from reflex.app import App, EventNamespace
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.token import BaseStateToken
-from reflex.istate.shared import UPDATE_OTHER_CLIENT_TASKS
 from reflex.utils.token_manager import SocketRecord
 
 # The shared token every linked client in a scenario points at. Link tokens
@@ -66,38 +63,49 @@ FANOUT_CLIENTS = 8
 MODIFY_ITERATIONS = 10
 
 
-class SharedCounterState(rx.SharedState):
-    """A counter that clients link to a shared token."""
+# Importing SharedState registers its internal base, and subclassing it mutates
+# State's shared-state flags. Keep both changes out of other benchmark modules.
+with (
+    RegistrationContext.ensure_context().fork() as SHARED_STATE_REGISTRATION,
+    mock.patch.dict(rx.State.backend_vars),
+    mock.patch.object(
+        rx.State, "_always_dirty_substates", rx.State._always_dirty_substates.copy()
+    ),
+):
+    from reflex.istate.shared import UPDATE_OTHER_CLIENT_TASKS, SharedStateBaseInternal
 
-    counter: int = 0
+    class SharedCounterState(rx.SharedState):
+        """A counter that clients link to a shared token."""
 
-    @rx.event
-    def increment(self):
-        """Increment the counter."""
-        self.counter = self.counter + 1
+        counter: int = 0
 
-    @rx.event
-    def decrement(self):
-        """Decrement the counter."""
-        self.counter = self.counter - 1
+        @rx.event
+        def increment(self):
+            """Increment the counter."""
+            self.counter = self.counter + 1
 
-    @rx.event
-    async def link(self, token: str):
-        """Link this client's counter to a shared token.
+        @rx.event
+        def decrement(self):
+            """Decrement the counter."""
+            self.counter = self.counter - 1
 
-        Args:
-            token: The shared token to link to.
-        """
-        await self._link_to(token)
+        @rx.event
+        async def link(self, token: str):
+            """Link this client's counter to a shared token.
 
-    @rx.event
-    async def unlink(self):
-        """Unlink this client's counter from its shared token.
+            Args:
+                token: The shared token to link to.
+            """
+            await self._link_to(token)
 
-        The rehydrate events ``_unlink`` returns are dropped: replaying a full
-        hydrate would swamp the unlink itself.
-        """
-        await self._unlink()
+        @rx.event
+        async def unlink(self):
+            """Unlink this client's counter from its shared token.
+
+            The rehydrate events ``_unlink`` returns are dropped: replaying a full
+            hydrate would swamp the unlink itself.
+            """
+            await self._unlink()
 
 
 COUNTER_FULL_NAME = SharedCounterState.get_full_name()
@@ -188,16 +196,24 @@ def _link_events(token: str) -> list[Event]:
     ]
 
 
-async def _drain_fanout() -> None:
+async def _drain_fanout(timeout: float = 5) -> None:
     """Wait for the updates the shared state spawned for the other clients.
 
     The fan-out is fire-and-forget: ``_do_update_other_tokens`` creates one
     task per other client and returns without awaiting them, so a benchmark
     that did not drain them would stop timing before the work it is measuring
     had run.
+
+    Args:
+        timeout: Maximum seconds to wait before cancelling stalled updates.
+
+    Raises:
+        asyncio.TimeoutError: If an update does not finish in time.
+        AssertionError: If fan-out tasks remain after the batch finishes.
     """
-    while pending := tuple(UPDATE_OTHER_CLIENT_TASKS):
-        await asyncio.gather(*pending)
+    if pending := tuple(UPDATE_OTHER_CLIENT_TASKS):
+        await asyncio.wait_for(asyncio.gather(*pending), timeout=timeout)
+    assert not UPDATE_OTHER_CLIENT_TASKS, "Shared-state fan-out tasks leaked"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -287,11 +303,15 @@ async def _shared_state_app(
     ) -> None:
         on_update(sid_to_token[to], update.delta)
 
-    # A RegistrationContext hosts a single App, and other benchmark modules
-    # leave one behind.
-    registration_context = RegistrationContext.ensure_context()
-    object.__setattr__(registration_context, "_app", None)
-    try:
+    with (
+        SHARED_STATE_REGISTRATION.fork(),
+        mock.patch.dict(rx.State.backend_vars, {"_reflex_internal_links": {}}),
+        mock.patch.object(
+            rx.State,
+            "_always_dirty_substates",
+            rx.State._always_dirty_substates | {SharedStateBaseInternal.get_name()},
+        ),
+    ):
         state_manager = StateManagerMemory()
         app = App()
         app._state_manager = state_manager
@@ -349,9 +369,10 @@ async def _shared_state_app(
                     await harness.counter_events()
                 yield harness
             finally:
-                await state_manager.close()
-    finally:
-        object.__setattr__(registration_context, "_app", None)
+                try:
+                    await _drain_fanout()
+                finally:
+                    await state_manager.close()
 
 
 @pytest_asyncio.fixture

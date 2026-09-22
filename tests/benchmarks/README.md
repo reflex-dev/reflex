@@ -60,15 +60,11 @@ skipped for a token with no connected socket -- without it the linked scenarios
 could quietly measure an empty task set.
 
 `private` is the baseline for every comparison here, and it is not a
-shared-state-free one. Defining any `SharedState` subclass flips
-`_reflex_internal_links` on the `State` root from `None` to `{}` for the whole
-interpreter, which is what routes every event through
-`modify_state_with_links`. That is process-global and cannot be scoped to one
-module, so it applies to every benchmark in this directory that processes
-events -- `test_process_event[counter]` in `test_event_processing.py` stepped
-up when this module landed and measures that path now. The difference between
-`private` and `linked` is the cost of resolving a link, not the cost of the
-feature existing.
+shared-state-free one. The module isolates state registration during collection
+and enables the root state's linked-state flags only while a shared benchmark
+scenario runs. Other benchmark modules keep their original registrations, app,
+and event path. The difference between `private` and `linked` is the cost of
+resolving a link, not the cost of the feature existing.
 
 ## Var operation benchmarks
 
