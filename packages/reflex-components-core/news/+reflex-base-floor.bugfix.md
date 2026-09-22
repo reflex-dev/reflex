@@ -1,1 +1,0 @@
-Require `reflex-base >= 0.9.12`. The declared floor was older than the `reflex_base.components.tags.CommonTag` import this package relies on, so a resolver was free to pair it with a `reflex-base` that fails at import time with `ImportError: cannot import name 'CommonTag'`.
