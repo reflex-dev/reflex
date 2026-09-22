@@ -46,12 +46,16 @@ published release. The baseline therefore pins each sibling to the exact version
 the workspace, which is that opt-in. The minimum resolution is left unpinned, where
 ``lowest-direct`` selects the published release each declared floor asks for.
 
-Run with ``uv run python scripts/check_min_deps.py [package ...]``. With no arguments,
-every checkable package is validated. ``--wheelhouse DIR`` takes the sibling wheels from a
-directory instead of building them — how CI reuses the artifacts its build jobs already
-produced — and builds only what that directory does not already cover. ``--check-dev-pins [package ...]`` instead scans the
-declared dependencies for development-release pins and fails if any are found (used by the
-publish pipeline to keep ``*.dev`` pins out of released package metadata).
+Run with ``uv run python scripts/check_min_deps.py --build-wheels [package ...]``. With no
+package arguments, every checkable package is validated. The sibling wheels have to come
+from somewhere: ``--wheelhouse DIR`` takes them from a directory, which is how CI reuses the
+artifacts its build jobs already produced, and ``--build-wheels`` builds them locally
+instead. Building is deliberately not a fallback for a wheelhouse that comes up short — a
+gap there means this check and the build workflow have drifted, and silently building over
+it would both hide that and waste the minutes those jobs already spent.
+``--check-dev-pins [package ...]`` instead scans the declared dependencies for
+development-release pins and fails if any are found (used by the publish pipeline to keep
+``*.dev`` pins out of released package metadata).
 """
 
 # /// script
@@ -544,7 +548,7 @@ def _distribution_name(project_dir: Path) -> str:
 
 
 def build_wheelhouse(
-    packages: list[Package], wheelhouse: Path
+    packages: list[Package], wheelhouse: Path, build: bool
 ) -> tuple[dict[str, Version], str | None]:
     """Build every workspace sibling the selected packages need, once, into one index.
 
@@ -562,17 +566,27 @@ def build_wheelhouse(
     considered are those declared anywhere in the selection, because one wheel has to serve
     every package in it.
 
-    A sibling already present in the index is taken as built: CI seeds it from the wheels
-    the build workflow produced, and nothing is rebuilt there. One that is missing, or whose
-    seeded version falls below a declared development floor, is still built here.
+    A sibling already present in the index is taken as built, which is how CI reuses the
+    wheels its build jobs produced. Building the rest is opt-in: without it a sibling the
+    index does not hold is an error naming it, rather than a wheel quietly produced here to
+    a different recipe than the one the build workflow follows. That keeps the two from
+    drifting apart unnoticed, and a wheel this check cannot use is one those jobs spent
+    their minutes on for nothing.
+
+    A wheel that is present but cannot satisfy what is declared against it is reported and
+    left to PyPI. That is not drift and no build fixes it: the workspace numbers a sibling
+    from the newest tag this checkout reaches, so a release tagged off a branch leaves it
+    permanently below a floor raised to that release.
 
     Args:
         packages: The packages about to be checked.
         wheelhouse: Directory to write the wheels into, holding any already built for it.
+        build: Whether to build what the index does not already cover.
 
     Returns:
         A ``(versions, detail)`` tuple mapping each distribution in the index to its version.
-        ``detail`` is ``None`` on success, otherwise the failing build's captured output.
+        ``detail`` is ``None`` on success, otherwise the failure — a build's captured output,
+        or a report of the siblings the index does not hold.
     """
     wheelhouse.mkdir(parents=True, exist_ok=True)
     # Each package's closure already lists a sibling after everything it depends on, and two
@@ -590,23 +604,43 @@ def build_wheelhouse(
             *sources,
         ])
     )
+    missing: list[str] = []
     for source in sources:
         name = _distribution_name(source)
         declared = requirements.get(name, [])
         built = _wheel_versions(wheelhouse).get(name)
-        if built is None:
-            # Nothing seeded this distribution into the index, so produce it here.
+        if built is None and build:
             detail = _build_sibling(source, wheelhouse, None)
             if detail is not None:
                 return {}, detail
             built = _wheel_versions(wheelhouse).get(name)
-        if built is not None and _satisfies(declared, built):
+        if built is None:
+            missing.append(f"  {name}")
+            continue
+        if _satisfies(declared, built):
             continue
         floor = _dev_build_version(declared)
-        if floor is not None:
+        if build and floor is not None:
             detail = _build_sibling(source, wheelhouse, floor)
             if detail is not None:
                 return {}, detail
+            continue
+        # The workspace cannot number this sibling high enough for what is declared against
+        # it: its release was tagged off a branch, so the newest tag this checkout reaches is
+        # older than the floor. No build gets out of that, so say so and leave it to PyPI,
+        # which is what the pin would otherwise have overridden.
+        print(
+            f"warning: {name} builds as {built} here, which does not satisfy "
+            f"{', '.join(str(r) for r in declared)}. Resolving it from PyPI instead of the "
+            "workspace, so a change to it is not covered by this run."
+        )
+    if missing:
+        return {}, (
+            "the wheelhouse is missing workspace siblings this check needs:\n"
+            + "\n".join(missing)
+            + "\n\nThe build jobs produce these wheels, so a gap means this check and that "
+            "workflow have drifted. Pass --build-wheels to build them here instead."
+        )
     return _wheel_versions(wheelhouse), None
 
 
@@ -892,9 +926,16 @@ def main() -> int:
     parser.add_argument(
         "--wheelhouse",
         type=Path,
-        help="Directory of prebuilt workspace wheels to use instead of building them. CI "
-        "points this at the artifacts the build workflow already produced; anything the "
-        "selection needs that is missing from it is still built.",
+        help="Directory of prebuilt workspace wheels to resolve siblings from. CI points "
+        "this at the artifacts the build workflow already produced. Without "
+        "--build-wheels, a sibling the directory does not usably cover is an error.",
+    )
+    parser.add_argument(
+        "--build-wheels",
+        action="store_true",
+        help="Build the workspace sibling wheels this check needs, rather than taking them "
+        "from --wheelhouse. Intended for local runs; in CI the build jobs produce them, and "
+        "building here instead would hide a drift between the two.",
     )
     args = parser.parse_args()
 
@@ -930,7 +971,7 @@ def main() -> int:
             # Copied rather than used in place, so a wheel built to cover a gap in the
             # prebuilt set never lands in the caller's directory.
             shutil.copytree(args.wheelhouse, wheelhouse)
-        versions, detail = build_wheelhouse(selected, wheelhouse)
+        versions, detail = build_wheelhouse(selected, wheelhouse, args.build_wheels)
         if detail is not None:
             # One index serves the whole run, so a failed build stops every package in it.
             print(f"building workspace sibling wheels failed:\n{detail}")
