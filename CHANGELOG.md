@@ -1,29 +1,11 @@
-## v0.9.12a2 (2026-09-21)
-
-### Breaking Changes
-
-- `state.dict()` and the state deltas no longer carry a single `router` entry: the root state now serializes `rx_router_session`, `rx_router_headers`, `rx_router_page`, `rx_router_url` and `rx_router_route_id` instead (each with the usual field-marker suffix). Code that read or rewrote the `router` entry of a state dict or delta — for example to redact request headers before returning state over an API — must read those five entries instead. `State.router` itself is unchanged for app code. ([#7215](https://github.com/reflex-dev/reflex/issues/7215))
-
-### Bug Fixes
-
-- `type(rx.State)` is `reflex.vars.BaseStateMeta` again, so a state declared with its own metaclass derived from `BaseStateMeta` (`class MyState(rx.State, metaclass=MyMeta)`) no longer raises `TypeError: metaclass conflict`. The reserved-state-name validation is unchanged: it now runs from `BaseStateMeta` itself for every subclass of `rx.State`. ([#7215](https://github.com/reflex-dev/reflex/issues/7215))
-- An `@rx.var(cache=False)` value that a downstream `get_delta` override keeps out of the delta is now delivered as soon as the override stops withholding it, instead of being deduplicated away until the value changes again. Uncached var values only count as sent to the client once the delta that carries them is actually delivered. ([#7216](https://github.com/reflex-dev/reflex/issues/7216))
-- Release the development backend port again when no worker can serve it, so requests fail fast while the app module raises on import and after the server shuts down, instead of waiting in the accept backlog until the client times out. ([#7217](https://github.com/reflex-dev/reflex/issues/7217))
-- Keep app wraps registered below the "Built with Reflex" badge in the rendered
-  page. In production builds with the badge on, the badge swallowed every
-  lower-priority app wrap, so `rx.data_editor`'s `<div id="portal" />` never
-  reached the DOM and its overlay cell editors — including the new image preview —
-  could not open. ([#7218](https://github.com/reflex-dev/reflex/issues/7218))
-- Fix nested router mutations bypassing background-task locks and read-only state proxies. Writes through `self.router` now enforce the same mutation guards as direct state-field access. ([#7230](https://github.com/reflex-dev/reflex/issues/7230))
-
-
-## v0.9.12a1 (2026-09-18)
+## v0.9.12 (2026-09-21)
 
 ### Breaking Changes
 
 - The root state gained five base vars holding the router data: `rx_router_session`, `rx_router_headers`, `rx_router_page`, `rx_router_url` and `rx_router_route_id`. A substate that declares one of these names now raises `BaseVarShadowsInheritedVarError`, the same error any other shadowed inherited var raises, and must rename its field. `State.router` itself is unchanged. ([#7068](https://github.com/reflex-dev/reflex/issues/7068))
 - Declaring a substate var that shadows a var inherited from a parent state now raises `BaseVarShadowsInheritedVarError` at class creation. Such a declaration was silently ignored — reads and writes resolved to the parent's var and class-level access returned the raw default instead of a reactive `Var`. Rename the substate var to fix the error. ([#7077](https://github.com/reflex-dev/reflex/issues/7077))
 - State vars, event handlers, and dynamic route arguments now reject names reserved by framework methods and bookkeeping before registration. Rename conflicting members. ([#7136](https://github.com/reflex-dev/reflex/issues/7136))
+- `state.dict()` and the state deltas no longer carry a single `router` entry: the root state now serializes `rx_router_session`, `rx_router_headers`, `rx_router_page`, `rx_router_url` and `rx_router_route_id` instead (each with the usual field-marker suffix). Code that read or rewrote the `router` entry of a state dict or delta — for example to redact request headers before returning state over an API — must read those five entries instead. `State.router` itself is unchanged for app code. ([#7215](https://github.com/reflex-dev/reflex/issues/7215))
 
 ### Deprecations
 
@@ -56,6 +38,15 @@
 - Reuse one long-lived Redis client for the `/_health` endpoint instead of opening and closing a new TCP connection on every probe. ([#7187](https://github.com/reflex-dev/reflex/issues/7187))
 - Emit Granian lifecycle logs as JSON records when Reflex JSON logging is enabled, keeping `reflex run --json` stdout valid JSON lines. ([#7193](https://github.com/reflex-dev/reflex/issues/7193))
 - Avoid crash when node is not installed (`error: restartWithMergedOptions() was called, but the process has already been restarted.`). ([#7202](https://github.com/reflex-dev/reflex/issues/7202))
+- `type(rx.State)` is `reflex.vars.BaseStateMeta` again, so a state declared with its own metaclass derived from `BaseStateMeta` (`class MyState(rx.State, metaclass=MyMeta)`) no longer raises `TypeError: metaclass conflict`. The reserved-state-name validation is unchanged: it now runs from `BaseStateMeta` itself for every subclass of `rx.State`. ([#7215](https://github.com/reflex-dev/reflex/issues/7215))
+- An `@rx.var(cache=False)` value that a downstream `get_delta` override keeps out of the delta is now delivered as soon as the override stops withholding it, instead of being deduplicated away until the value changes again. Uncached var values only count as sent to the client once the delta that carries them is actually delivered. ([#7216](https://github.com/reflex-dev/reflex/issues/7216))
+- Release the development backend port again when no worker can serve it, so requests fail fast while the app module raises on import and after the server shuts down, instead of waiting in the accept backlog until the client times out. ([#7217](https://github.com/reflex-dev/reflex/issues/7217))
+- Keep app wraps registered below the "Built with Reflex" badge in the rendered
+  page. In production builds with the badge on, the badge swallowed every
+  lower-priority app wrap, so `rx.data_editor`'s `<div id="portal" />` never
+  reached the DOM and its overlay cell editors — including the new image preview —
+  could not open. ([#7218](https://github.com/reflex-dev/reflex/issues/7218))
+- Fix nested router mutations bypassing background-task locks and read-only state proxies. Writes through `self.router` now enforce the same mutation guards as direct state-field access. ([#7230](https://github.com/reflex-dev/reflex/issues/7230))
 
 ### Performance
 

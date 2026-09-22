@@ -1,12 +1,4 @@
-## v0.9.12a2 (2026-09-21)
-
-### Bug Fixes
-
-- `BaseStateMeta` validates the declarations of every class descending from a state declared with `state_root=True` (`reflex`'s `BaseState`), so `reflex` no longer needs a `BaseStateMeta` subclass as the metaclass of its states and a third-party metaclass derived from `BaseStateMeta` composes with state classes again. ([#7215](https://github.com/reflex-dev/reflex/issues/7215))
-- An `@rx.var(cache=False)` value only counts as sent to the client once the delta carrying it is delivered, so a value a `get_delta` override withholds is sent as soon as the override releases it instead of being deduplicated away until it changes again. ([#7216](https://github.com/reflex-dev/reflex/issues/7216))
-
-
-## v0.9.12a1 (2026-09-18)
+## v0.9.12 (2026-09-21)
 
 ### Features
 
@@ -45,6 +37,8 @@
   component behaves the same inside a memo as inlined into the page. ([#7176](https://github.com/reflex-dev/reflex/issues/7176))
 - `Annotated[...]` hints now resolve to the type they annotate wherever Reflex inspects a type. A var typed with a pydantic discriminated union — `Annotated[Cat | Dog, Field(discriminator="kind")]` — no longer raises `Unsupported type ... for guess_type.` when read out of a state var, and its attributes resolve through the union as usual. ([#7189](https://github.com/reflex-dev/reflex/issues/7189))
 - Bumped react-router to 8.4.0. ([#7202](https://github.com/reflex-dev/reflex/issues/7202))
+- `BaseStateMeta` validates the declarations of every class descending from a state declared with `state_root=True` (`reflex`'s `BaseState`), so `reflex` no longer needs a `BaseStateMeta` subclass as the metaclass of its states and a third-party metaclass derived from `BaseStateMeta` composes with state classes again. ([#7215](https://github.com/reflex-dev/reflex/issues/7215))
+- An `@rx.var(cache=False)` value only counts as sent to the client once the delta carrying it is delivered, so a value a `get_delta` override withholds is sent as soon as the override releases it instead of being deduplicated away until it changes again. ([#7216](https://github.com/reflex-dev/reflex/issues/7216))
 
 ### Performance
 
