@@ -194,12 +194,36 @@ def test_local_sources_selects_every_workspace_member():
             ],  # optional group -> included
         },
     }
-    # Declaration order, so an earlier sibling can satisfy a later one's build environment.
-    assert check_min_deps._local_sources(project, dirs) == (
-        dirs["reflex-base"],
-        dirs["reflex-components-lucide"],
-        dirs["reflex-components-radix"],
+    sources = check_min_deps._local_sources(project, dirs)
+
+    assert dirs["reflex-base"] in sources
+    assert dirs["reflex-components-lucide"] in sources
+    assert dirs["reflex-components-radix"] in sources
+    assert "pydantic" not in dirs
+    assert len(sources) == len(set(sources)), "deduplicated"
+    # Radix is reached directly, its own workspace requirements only through it, and they
+    # have to be built first.
+    assert sources.index(dirs["reflex-components-core"]) < sources.index(
+        dirs["reflex-components-radix"]
     )
+
+
+def test_local_sources_returns_the_closure_dependencies_first():
+    """A sibling's own workspace requirements must be built before the sibling itself.
+
+    `reflex-docgen` declares only `reflex`, but the root's build backend sets
+    `require-runtime-dependencies`, so building it resolves the root's own `reflex-base`
+    floor -- which is unpublished for the length of a release train.
+    """
+    sources = {p.name: p for p in check_min_deps.discover_packages()}[
+        "reflex-docgen"
+    ].local_sources
+    root = check_min_deps.REPO_ROOT
+    base = root / "packages" / "reflex-base"
+
+    assert root in sources, "the directly declared sibling"
+    assert base in sources, "reached only through the root's own dependencies"
+    assert sources.index(base) < sources.index(root)
 
 
 def test_local_sources_ignores_non_workspace_deps():
@@ -306,6 +330,40 @@ def test_resolve_and_check_offers_the_wheelhouse_at_the_minimum(
     assert install[install.index("--find-links") + 1] == str(wheelhouse)
     assert install.count("-e") == 1
     assert install[-1] == str(check_min_deps.REPO_ROOT)
+
+
+def test_resolve_and_check_checks_modules_not_the_source_directory(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    """Only real source is checked; generated `.pyi` stubs in the tree must not be.
+
+    Stubs are absent from a fresh checkout and regenerated whenever the pyi build hook runs,
+    including when another package's check builds this one as a sibling, so naming the
+    directory would make the result depend on what else the run happened to build.
+
+    Args:
+        monkeypatch: Subprocess patching fixture.
+        tmp_path: Temporary venv and config directory.
+    """
+    fake_run = _FakeRun()
+    monkeypatch.setattr(check_min_deps, "_run", fake_run)
+
+    check_min_deps._resolve_and_check(
+        _fake_package(),
+        "3.12",
+        tmp_path / "venv",
+        tmp_path / "cfg.json",
+        None,
+        (),
+        lowest=False,
+    )
+
+    pyright = fake_run.command_starting_with(["pyright"])
+    checked = pyright[pyright.index("--project") + 2 :]
+    assert str(check_min_deps.REPO_ROOT / "reflex") not in pyright
+    assert checked, "the package's modules are passed individually"
+    assert all(module.endswith(".py") for module in checked)
+    assert str(check_min_deps.REPO_ROOT / "reflex" / "app.py") in checked
 
 
 def test_resolve_and_check_offers_the_wheelhouse_at_the_baseline(

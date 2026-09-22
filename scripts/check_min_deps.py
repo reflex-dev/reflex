@@ -69,7 +69,7 @@ import subprocess
 import sys
 import tempfile
 import threading
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
@@ -262,23 +262,37 @@ def _published_dependencies(project: dict) -> list[str]:
 def _local_sources(project: dict, workspace_dirs: dict[str, Path]) -> tuple[Path, ...]:
     """Resolve a package's workspace-sibling dependencies to local project directories.
 
+    The whole transitive closure is returned, not just the direct dependencies: building a
+    sibling resolves *its* runtime requirements too when its build backend sets
+    ``require-runtime-dependencies``, so an unpublished floor deeper in the graph has to be
+    in the wheelhouse already. Checking ``reflex-docgen`` builds the root ``reflex``, whose
+    build environment resolves the root's own ``reflex-base`` floor.
+
     Args:
         project: The ``[project]`` table of the package being checked.
         workspace_dirs: Mapping from distribution name to project dir (see
             :func:`_workspace_package_dirs`).
 
     Returns:
-        The project directories of the sibling workspace packages this package declares,
-        deduplicated and in declaration order. Declaration order is preserved so a sibling
-        listed before another can satisfy that other's build environment.
+        The project directories of the workspace packages this package depends on, directly
+        or transitively, deduplicated and ordered dependencies-first so each sibling's own
+        requirements are already built when it is.
     """
     sources: list[Path] = []
     seen: set[str] = set()
-    for dependency in _published_dependencies(project):
-        name, _ = _parse_requirement(dependency)
-        if name in workspace_dirs and name not in seen:
+
+    def visit(project: dict) -> None:
+        for dependency in _published_dependencies(project):
+            name, _ = _parse_requirement(dependency)
+            directory = workspace_dirs.get(name)
+            if directory is None or name in seen:
+                continue
+            # Marked before recursing, so a cycle in the workspace graph terminates.
             seen.add(name)
-            sources.append(workspace_dirs[name])
+            visit(_load_pyproject(directory / "pyproject.toml")["project"])
+            sources.append(directory)
+
+    visit(project)
     return tuple(sources)
 
 
@@ -398,21 +412,26 @@ def _pyright_errors(report: dict) -> dict[tuple[str, int, int, str], str]:
     return errors
 
 
-def _declared_requirements(project: dict) -> dict[str, list[Requirement]]:
-    """Group a package's published requirements by canonical distribution name.
+def _declared_requirements(projects: Iterable[dict]) -> dict[str, list[Requirement]]:
+    """Group published requirements by canonical distribution name, across several projects.
+
+    The package under test and every workspace sibling in its closure are passed together: a
+    sibling's wheel has to satisfy whoever else in the closure depends on it, not just the
+    package that pulled it in.
 
     Args:
-        project: The ``[project]`` table of the package being checked.
+        projects: The ``[project]`` tables to collect requirements from.
 
     Returns:
         A mapping from canonical distribution name to every requirement declared against it,
-        across the core dependencies and the optional groups.
+        across the core dependencies and the optional groups of each project.
     """
     requirements: dict[str, list[Requirement]] = {}
-    for dependency in _published_dependencies(project):
-        name, _ = _parse_requirement(dependency)
-        if name:
-            requirements.setdefault(name, []).append(Requirement(dependency))
+    for project in projects:
+        for dependency in _published_dependencies(project):
+            name, _ = _parse_requirement(dependency)
+            if name:
+                requirements.setdefault(name, []).append(Requirement(dependency))
     return requirements
 
 
@@ -545,7 +564,8 @@ def _build_local_wheelhouse(
     """
     wheelhouse.mkdir(parents=True, exist_ok=True)
     requirements = _declared_requirements(
-        _load_pyproject(package.project_dir / "pyproject.toml")["project"]
+        _load_pyproject(path / "pyproject.toml")["project"]
+        for path in (package.project_dir, *package.local_sources)
     )
     for source in package.local_sources:
         name = canonicalize_name(
@@ -628,6 +648,13 @@ def _resolve_and_check(
     if install.returncode != 0:
         return None, install.stdout
 
+    # The package's modules are named individually rather than by directory, so only real
+    # source is checked. ``.pyi`` stubs under ``src/`` are build artifacts: absent from a
+    # fresh checkout, regenerated into the tree whenever the pyi build hook runs — including
+    # when another package's check builds this one as a sibling — and written against the
+    # workspace rather than this isolated environment, so checking them reports imports that
+    # were never this package's to resolve. Naming the ``.py`` files leaves the diagnostics
+    # byte-identical whether or not stubs happen to be present.
     pyright = _run(
         [
             "pyright",
@@ -636,7 +663,7 @@ def _resolve_and_check(
             venv_python,
             "--project",
             str(config),
-            str(package.source_dir),
+            *sorted(str(module) for module in package.source_dir.rglob("*.py")),
         ],
         cwd=REPO_ROOT,
     )
