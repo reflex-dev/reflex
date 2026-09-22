@@ -26,6 +26,7 @@ Ordinary Markdown pages may set a descriptive `title` and `meta_description` in
 YAML frontmatter. The title supplies the page's search/browser title; it does not
 change the file-derived route or the short navigation label. Add new guides to
 the appropriate sidebar and link them from related pages so readers can find them.
+For component-library pages, the frontmatter title also supplies the sidebar label.
 
 ## Page Whitelist (Faster Dev Builds)
 

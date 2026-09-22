@@ -136,9 +136,9 @@ Beyond this, Reflex components can be styled using the full power of CSS. We lev
 
 Now let's look at how we added interactivity to our apps.
 
-In Reflex only the frontend compiles to Javascript and runs on the user's browser, while all the state and logic stays in Python and is run on the server. When you run `uv run reflex run`, we start a FastAPI server (by default on port `8000`) that the frontend connects to through a websocket.
+Reflex runs Python state handlers and backend state management on the server. The compiled React interface, Var expressions, and component-local JavaScript run in the user's browser. When you run `uv run reflex run`, we start a FastAPI server (by default on port `8000`) that the frontend connects to through a websocket.
 
-All the state and logic are defined within a `State` class.
+Backend state and event handlers are defined within a `State` class.
 
 ```python
 class GithubState(rx.State):

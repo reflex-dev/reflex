@@ -47,8 +47,9 @@ Paste this code into your app module. It shows at most 50 matching records in th
 
 ```python demo exec defer id=pandas_data_app
 import asyncio
-import warnings
-from io import BytesIO
+import csv
+from io import StringIO
+from itertools import islice
 from typing import Any, TypedDict
 
 import pandas as pd
@@ -87,30 +88,20 @@ def read_orders(data: bytes) -> list[OrderRow]:
     if len(data) > MAX_CSV_BYTES:
         raise ValueError("Choose a CSV of at most 2 MiB.")
     try:
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", pd.errors.ParserWarning)
-            frame = pd.read_csv(
-                BytesIO(data),
-                encoding="utf-8-sig",
-                dtype=str,
-                keep_default_na=False,
-                index_col=False,
-                nrows=MAX_ROWS + 1,
-            )
-    except (
-        UnicodeDecodeError,
-        pd.errors.ParserError,
-        pd.errors.ParserWarning,
-    ) as error:
+        reader = csv.reader(StringIO(data.decode("utf-8-sig")), strict=True)
+        columns = next(reader, [])
+        rows = list(islice((row for row in reader if row), MAX_ROWS + 1))
+    except (UnicodeDecodeError, csv.Error) as error:
         raise ValueError(
             "Choose a valid UTF-8 CSV with three columns per row."
         ) from error
-    except pd.errors.EmptyDataError as error:
-        raise ValueError("The CSV needs a header and at least one record.") from error
-    if list(frame.columns) != ["region", "product", "units"]:
+    if columns != ["region", "product", "units"]:
         raise ValueError("Use exactly these columns: region,product,units.")
-    if not 1 <= len(frame) <= MAX_ROWS:
+    if not 1 <= len(rows) <= MAX_ROWS:
         raise ValueError("Include between 1 and 10,000 records.")
+    if any(len(row) != len(columns) for row in rows):
+        raise ValueError("Use exactly three columns per row.")
+    frame = pd.DataFrame(rows, columns=columns)
     frame["region"] = frame["region"].str.strip()
     frame["product"] = frame["product"].str.strip()
     frame["units"] = frame["units"].str.strip()

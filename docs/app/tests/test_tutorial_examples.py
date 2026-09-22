@@ -4,6 +4,7 @@ import asyncio
 import re
 import struct
 import sys
+import warnings
 import wave
 from contextvars import ContextVar
 from io import BytesIO
@@ -339,22 +340,38 @@ def test_linked_charts_selection_reset_and_session_isolation(monkeypatch):
     assert other.chart_revision == 0
 
 
-def test_linked_charts_rejects_invalid_source_positions(monkeypatch):
-    """Unrecognized traces and point positions cannot select unrelated records."""
+@pytest.mark.parametrize(
+    "row",
+    [
+        {},
+        {"trace": 1, "index": 0},
+        {"trace": 0, "index": -1},
+        {"trace": 0, "index": 10},
+        {"trace": 0, "index": "1"},
+        {"trace": 0, "index": True},
+    ],
+)
+@pytest.mark.parametrize("truncated", [False, True])
+def test_linked_charts_rejects_invalid_source_positions(monkeypatch, row, truncated):
+    """Invalid positions retain the previous filter, even in a mixed selection."""
     module = load_application_demo(
         monkeypatch, "getting_started/linked_charts_tutorial.md"
     )
     state = linked_state(module)
-    state.select_points(
-        selection_event([
-            {},
-            {"trace": 1, "index": 0},
-            {"trace": 0, "index": -1},
-            {"trace": 0, "index": 10},
-            {"trace": 0, "index": "1"},
-        ])
-    )
-    assert state.visible_rows == []
+    state.select_points(selection_event([{"trace": 0, "index": 1}]))
+    rows = [{"trace": 0, "index": 0}, row]
+    if truncated:
+        monkeypatch.setattr(
+            module.rxy,
+            "resolve_selection",
+            lambda event: SimpleNamespace(rows=lambda: rows),
+        )
+    state.select_points(selection_event(rows, truncated=truncated))
+    assert state.selected_ids == ["order-b"]
+    assert state.selection_error == "Selection unavailable. Please select again."
+    state.select_points(selection_event([]))
+    assert state.selected_ids == []
+    assert state.selection_error == ""
 
 
 def test_xy_data_handles_recover_after_pre_session_render(monkeypatch):
@@ -814,6 +831,34 @@ def test_pandas_bounds_rows_bytes_and_preserves_text(monkeypatch):
         module.read_orders(b"region,product,units\n" + b"North,Tea,1\n" * 10_001)
 
 
+def test_pandas_upload_does_not_change_process_warning_filters(monkeypatch):
+    """A parser running in a worker must leave other sessions' warnings alone."""
+    module = pandas_demo(monkeypatch)
+    original_filters = list(warnings.filters)
+    read_orders = module.read_orders
+
+    def trace_parser(frame, event, arg):
+        """Check the warning policy throughout execution of the copied parser."""
+        if frame.f_code is read_orders.__code__:
+            assert warnings.filters == original_filters
+        return trace_parser
+
+    async def parse():
+        """Exercise the same worker-thread boundary as the upload handler."""
+
+        def worker():
+            """Monitor warning filters while parsing a valid upload."""
+            sys.settrace(trace_parser)
+            try:
+                return read_orders(module.SAMPLE_CSV)
+            finally:
+                sys.settrace(None)
+
+        return await asyncio.to_thread(worker)
+
+    assert len(asyncio.run(parse())) == 4
+
+
 def run_csv_upload(state, files):
     """Run the copied async handler and inspect its progress boundary."""
 
@@ -1013,6 +1058,7 @@ def test_document_concurrent_submission_is_rejected(document_demo, monkeypatch):
         assert not STATE_LOCKED.get()
         calls.append(question)
         await module.DocumentState.ask.fn(state, {"question": "laptop"})
+        assert state.processing
         return module.GroundedAnswer(
             claims=[module.Claim(text="20 days", source_ids=["leave"])]
         )

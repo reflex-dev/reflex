@@ -90,15 +90,18 @@ class LinkedChartsState(rx.State):
                 self.selection_error = "Selection unavailable. Please select again."
                 return
             rows = resolved.rows()
-        self.selected_ids = list(
-            dict.fromkeys(
-                RECORDS[row["index"]]["id"]
-                for row in rows
-                if row.get("trace") == 0
-                and type(row.get("index")) is int
-                and 0 <= row["index"] < len(RECORDS)
-            )
-        )
+        selected = {}
+        for row in rows:
+            index = row.get("index")
+            if (
+                row.get("trace") != 0
+                or type(index) is not int
+                or not 0 <= index < len(RECORDS)
+            ):
+                self.selection_error = "Selection unavailable. Please select again."
+                return
+            selected[RECORDS[index]["id"]] = None
+        self.selected_ids = list(selected)
 
     @rx.event
     def clear_selection(self):
@@ -208,7 +211,7 @@ XY's numeric chart columns travel through its data channel. The table's four dis
 
 A cleared selection means “remove the filter,” so `selected_ids` becomes `None`. A completed box containing no points means an empty result, so it becomes `[]`. These states must not be conflated.
 
-Selection event rows are bounded. The handler uses `resolve_selection` when `truncated` is true rather than silently filtering to only the rows included in the event. This tiny example does not reach that limit, but the branch matters when adapting it to larger data. If the chart registry can no longer resolve the selection, the example retains the previous filter and asks the user to select again.
+Selection event rows are bounded. The handler uses `resolve_selection` when `truncated` is true rather than silently filtering to only the rows included in the event. This tiny example does not reach that limit, but the branch matters when adapting it to larger data. If the chart registry can no longer resolve the selection, or any row has an unrecognized trace or invalid source position, the example retains the previous filter and asks the user to select again.
 
 The Reflex adapter event is distinct from a notebook's `xy.Selection` callback. See [XY interactions and selections](https://reflex.dev/docs/xy/core-concepts/interactions/) for both contracts.
 

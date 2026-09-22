@@ -74,8 +74,8 @@ def build_nested_namespace(
     return parent_namespace
 
 
-# Leading YAML frontmatter block, mirroring reflex_docgen's parser.
-_FRONTMATTER_BLOCK_RE = re.compile(r"\A---\n.*?\n---\n", re.DOTALL)
+# Share the accepted frontmatter boundary across all page metadata.
+_FRONTMATTER_BLOCK_RE = re.compile(r"\A\ufeff?\s*---\r?\n(.*?)\r?\n---\r?\n", re.DOTALL)
 
 
 @lru_cache(maxsize=None)
@@ -94,7 +94,7 @@ def _frontmatter_for(filepath: str) -> FrontMatter | None:
     block = _FRONTMATTER_BLOCK_RE.match(source)
     if block is None:
         return None
-    return parse_document(block.group(0)).frontmatter
+    return parse_document(f"---\n{block.group(1)}\n---\n").frontmatter
 
 
 def get_components_from_frontmatter(filepath: str) -> list:
@@ -286,7 +286,7 @@ def extract_doc_description(
         # description only when it's already long enough; otherwise strip the
         # block and fall through to the body prose, which is usually richer than
         # a short frontmatter field.
-        frontmatter = re.match(r"﻿?\s*---\r?\n(.*?)\r?\n---\r?\n", text, flags=re.DOTALL)
+        frontmatter = _FRONTMATTER_BLOCK_RE.match(text)
         if frontmatter:
             for fm_line in frontmatter.group(1).splitlines():
                 key_value = re.match(
