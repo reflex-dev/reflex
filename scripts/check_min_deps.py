@@ -68,6 +68,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import threading
 from collections.abc import Iterator, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -103,6 +104,13 @@ SKIP_PACKAGES = frozenset({
 # an upper-bound (``<``, ``<=``) or exclusion (``!=``) operator (e.g. ``!=2.0.dev1``) leaves
 # the requirement resolvable from PyPI, so it must not count as a dev pin.
 _LOWER_BOUND_OPERATORS = frozenset({"===", "==", "~=", ">=", ">"})
+
+# Serializes sibling builds across the ``--jobs`` worker threads. The pyi build hook
+# regenerates stubs inside the sibling's own source tree, and most siblings are declared by
+# several packages, so two workers building one at the same time race on those files and the
+# wheel builder stats a stub another build has just replaced. CI checks one package per job
+# and never contends; locally this costs only the overlap between builds.
+_BUILD_LOCK = threading.Lock()
 
 
 def _parse_requirement(requirement: str) -> tuple[str, bool]:
@@ -487,28 +495,31 @@ def _build_sibling(source: Path, wheelhouse: Path, version: str | None) -> str |
     Returns:
         ``None`` on success, otherwise the captured output of the failing build.
     """
-    build = _run(
-        [
-            "uv",
-            "build",
-            "--no-sources",
-            "--wheel",
-            "--find-links",
-            str(wheelhouse),
-            "--out-dir",
-            str(wheelhouse),
-            str(source),
-        ],
-        cwd=REPO_ROOT,
-        env={**os.environ, "UV_DYNAMIC_VERSIONING_BYPASS": version}
-        if version is not None
-        else None,
-    )
+    with _BUILD_LOCK:
+        build = _run(
+            [
+                "uv",
+                "build",
+                "--no-sources",
+                "--wheel",
+                "--find-links",
+                str(wheelhouse),
+                "--out-dir",
+                str(wheelhouse),
+                str(source),
+            ],
+            cwd=REPO_ROOT,
+            env={**os.environ, "UV_DYNAMIC_VERSIONING_BYPASS": version}
+            if version is not None
+            else None,
+        )
     return None if build.returncode == 0 else build.stdout
 
 
-def _build_local_wheelhouse(package: Package, wheelhouse: Path) -> str | None:
-    """Build wheels for the package's workspace siblings into a local index.
+def _build_local_wheelhouse(
+    package: Package, wheelhouse: Path
+) -> tuple[list[str] | None, str | None]:
+    """Build the package's workspace siblings into a local index and pin the baseline to them.
 
     Each sibling is built at the version its own checkout derives, so the wheelhouse is one
     consistent snapshot of the workspace and the siblings satisfy each other's requirements
@@ -516,16 +527,26 @@ def _build_local_wheelhouse(package: Package, wheelhouse: Path) -> str | None:
     development floor — a checkout whose tags predate the pin — is redone at that floor,
     which is what keeps an unpublished ``*.dev`` requirement resolvable at all.
 
+    The pins matter because a workspace build carries a development version
+    (``0.9.12.post1.dev0+<sha>``), and a resolver only considers pre-releases for a
+    requirement that names one: without them a plain floor such as ``reflex-base >= 0.9.12``
+    skips the wheel and takes the published release. Naming the exact version is that opt-in,
+    and it makes the baseline independent of how the workspace version sorts against PyPI.
+
     Args:
         package: The package whose declared siblings should be built.
         wheelhouse: Directory to write the wheels into.
 
     Returns:
-        ``None`` on success, otherwise the captured output of the failing build.
+        A ``(pins, detail)`` tuple. ``pins`` are the ``name==version`` requirements for the
+        siblings whose build satisfies what the package declares for them; one that does not
+        is left out, so that sibling resolves from PyPI as it did before. ``pins`` is ``None``
+        when a build failed, in which case ``detail`` carries its captured output.
     """
     wheelhouse.mkdir(parents=True, exist_ok=True)
-    project = _load_pyproject(package.project_dir / "pyproject.toml")["project"]
-    requirements = _declared_requirements(project)
+    requirements = _declared_requirements(
+        _load_pyproject(package.project_dir / "pyproject.toml")["project"]
+    )
     for source in package.local_sources:
         name = canonicalize_name(
             _load_pyproject(source / "pyproject.toml")["project"]["name"]
@@ -533,7 +554,7 @@ def _build_local_wheelhouse(package: Package, wheelhouse: Path) -> str | None:
         declared = requirements.get(name, [])
         detail = _build_sibling(source, wheelhouse, None)
         if detail is not None:
-            return detail
+            return None, detail
         built = _wheel_versions(wheelhouse).get(name)
         if built is not None and _satisfies(declared, built):
             continue
@@ -541,36 +562,12 @@ def _build_local_wheelhouse(package: Package, wheelhouse: Path) -> str | None:
         if floor is not None:
             detail = _build_sibling(source, wheelhouse, floor)
             if detail is not None:
-                return detail
-    return None
-
-
-def _workspace_pins(package: Package, wheelhouse: Path) -> list[str]:
-    """Pin each workspace sibling to the wheel built from its local checkout.
-
-    A workspace build carries a development version (``0.9.12.post1.dev0+<sha>``), and a
-    resolver only considers pre-releases for a requirement that names one, so a plain floor
-    such as ``reflex-base >= 0.9.12`` would skip the wheel and take the published release
-    instead. Naming the exact version is that opt-in, and it makes the baseline independent
-    of how the workspace version happens to sort against PyPI.
-
-    Args:
-        package: The package being checked.
-        wheelhouse: Directory holding the wheels built from its siblings.
-
-    Returns:
-        ``name==version`` requirements for the siblings whose local build satisfies what the
-        package declares for them. A build that does not — a checkout whose tags predate the
-        declared floor — is left out, so that sibling resolves from PyPI as it did before.
-    """
-    requirements = _declared_requirements(
-        _load_pyproject(package.project_dir / "pyproject.toml")["project"]
-    )
+                return None, detail
     return [
         f"{name}=={version}"
         for name, version in sorted(_wheel_versions(wheelhouse).items())
         if _satisfies(requirements.get(name, []), version)
-    ]
+    ], None
 
 
 def _resolve_and_check(
@@ -592,8 +589,8 @@ def _resolve_and_check(
         wheelhouse: Local index holding wheels built from the package's workspace siblings,
             or ``None`` when the package declares none.
         pins: Extra ``name==version`` requirements to install alongside the package (see
-            :func:`_workspace_pins`); empty for the minimum resolution, whose declared floors
-            are exactly what is under test.
+            :func:`_build_local_wheelhouse`); empty for the minimum resolution, whose declared
+            floors are exactly what is under test.
         lowest: Whether to pin direct dependencies to their declared minimums.
 
     Returns:
@@ -674,15 +671,15 @@ def check_package(package: Package, python_version: str) -> Result:
         pins: list[str] = []
         if package.local_sources:
             wheelhouse = tmp_path / "wheelhouse"
-            detail = _build_local_wheelhouse(package, wheelhouse)
-            if detail is not None:
+            built, detail = _build_local_wheelhouse(package, wheelhouse)
+            if built is None:
                 return Result(
                     package.name,
                     False,
                     "resolution",
                     f"building workspace sibling wheels failed:\n{detail}",
                 )
-            pins = _workspace_pins(package, wheelhouse)
+            pins = built
 
         baseline, detail = _resolve_and_check(
             package,
