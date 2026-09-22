@@ -7,7 +7,13 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from reflex.istate.shared import _do_update_other_tokens
+from reflex.istate.shared import (
+    DISCONNECT_REAP_TASKS,
+    SharedState,
+    _do_update_other_tokens,
+    _reap_disconnected_client,
+    schedule_disconnect_reap,
+)
 from reflex.state import State
 from reflex.utils.token_manager import (
     LocalTokenManager,
@@ -109,3 +115,102 @@ async def test_update_other_tokens_redis_cross_instance(redis_manager, mock_redi
     # Locally owned sockets are authoritative and never require a redis lookup.
     local_key = redis_manager._get_redis_key("local")
     assert local_key not in [call.args[0] for call in mock_redis.get.call_args_list]
+
+
+def _mock_reap_app(token_manager) -> tuple[Mock, Mock, list[str]]:
+    """Create a mock app with one client linked to one shared state.
+
+    Returns:
+        The mock app, the mock shared state and the list collecting the
+        token idents passed to modify_state.
+    """
+    modified_tokens: list[str] = []
+
+    shared = Mock(spec=SharedState)
+    shared._linked_from = {"gone", "other"}
+    shared._on_subscriber_disconnected = AsyncMock()
+
+    @asynccontextmanager
+    async def modify_state(token, previous_dirty_vars=None):
+        modified_tokens.append(token.ident)
+        shared_root = Mock()
+        shared_root.get_state = AsyncMock(return_value=shared)
+        yield shared_root
+
+    root_state = Mock(spec=State)
+    root_state._reflex_internal_links = {"state.shared_sub": "room-token"}
+
+    app = Mock()
+    app.modify_state = modify_state
+    app.event_namespace = Mock()
+    app.event_namespace._token_manager = token_manager
+    app.state_manager.get_state = AsyncMock(return_value=root_state)
+    app._state = Mock()
+    app._state.get_class_substate = Mock(return_value=State)
+    return app, shared, modified_tokens
+
+
+async def test_reap_disconnected_client_unsubscribes():
+    """A client that stayed disconnected is removed from its linked states."""
+    app, shared, modified_tokens = _mock_reap_app(LocalTokenManager())
+
+    await _reap_disconnected_client(app, "gone", grace=0)
+
+    assert modified_tokens == ["room-token"]
+    assert shared._linked_from == {"other"}
+    shared._on_subscriber_disconnected.assert_awaited_once_with("gone")
+
+
+async def test_reap_skips_reconnected_client():
+    """A client that reconnected within the grace is left subscribed."""
+    manager = LocalTokenManager()
+    manager.token_to_socket["gone"] = SocketRecord(
+        instance_id=manager.instance_id, sid="sid1"
+    )
+    app, shared, modified_tokens = _mock_reap_app(manager)
+
+    await _reap_disconnected_client(app, "gone", grace=0)
+
+    assert modified_tokens == []
+    assert shared._linked_from == {"gone", "other"}
+    shared._on_subscriber_disconnected.assert_not_awaited()
+
+
+async def test_reap_skips_unsubscribed_client():
+    """A token no longer in the subscriber set does not trigger the hook."""
+    app, shared, modified_tokens = _mock_reap_app(LocalTokenManager())
+
+    await _reap_disconnected_client(app, "unknown", grace=0)
+
+    assert modified_tokens == ["room-token"]
+    assert shared._linked_from == {"gone", "other"}
+    shared._on_subscriber_disconnected.assert_not_awaited()
+
+
+def test_schedule_disconnect_reap_disabled(monkeypatch):
+    """Grace 0 disables scheduling entirely."""
+    monkeypatch.setenv("REFLEX_SHARED_STATE_DISCONNECT_GRACE", "0")
+    app, _, _ = _mock_reap_app(LocalTokenManager())
+
+    assert schedule_disconnect_reap(app, "gone") is None
+    assert not DISCONNECT_REAP_TASKS
+
+
+async def test_schedule_disconnect_reap_restarts_grace(monkeypatch):
+    """A new disconnect for the same token cancels the pending reap."""
+    monkeypatch.setenv("REFLEX_SHARED_STATE_DISCONNECT_GRACE", "60")
+    app, _, modified_tokens = _mock_reap_app(LocalTokenManager())
+
+    first = schedule_disconnect_reap(app, "gone")
+    second = schedule_disconnect_reap(app, "gone")
+    assert first is not None
+    assert second is not None
+    with pytest.raises(asyncio.CancelledError):
+        await first
+    assert {"gone": second} == DISCONNECT_REAP_TASKS
+
+    second.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await second
+    assert not DISCONNECT_REAP_TASKS
+    assert modified_tokens == []
