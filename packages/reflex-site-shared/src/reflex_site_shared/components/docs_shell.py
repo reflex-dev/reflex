@@ -96,7 +96,7 @@ def docs_left_sidebar(
     return rx.box(
         content,
         class_name=ui.cn(
-            "sticky left-0 z-10 hidden w-[19.5rem] shrink-0 border-r border-border-subtle before:absolute before:bottom-0 before:right-0 before:top-0 before:-z-10 before:w-[100vw] before:bg-[#fcfcfc] dark:before:bg-white-1 lg:block",
+            "sticky left-0 z-10 hidden w-[19.5rem] shrink-0 border-r border-border-subtle before:absolute before:bottom-0 before:right-0 before:top-0 before:-z-10 before:w-[100vw] before:bg-white-1 lg:block",
             "top-[var(--docs-header-height)] h-[calc(100vh-var(--docs-header-height))]",
         ),
         style={} if show_banner else {"--docs-header-height": "4rem"},
