@@ -3,6 +3,7 @@
 import os
 import subprocess
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -178,66 +179,102 @@ def test_workspace_package_dirs_maps_dist_names_to_dirs():
     assert "pydantic" not in dirs
 
 
-def test_local_dev_sources_selects_only_dev_pinned_workspace_members():
+def test_local_sources_selects_every_workspace_member():
     dirs = check_min_deps._workspace_package_dirs()
     project = {
         "dependencies": [
-            "reflex-base >= 0.9.5.dev1",  # workspace + dev -> included
+            "reflex-base >= 0.9.5.dev1",  # workspace + dev pin -> included
             "pydantic >= 2.12.0",  # external -> excluded
-            "reflex-components-lucide >= 0.9.0",  # workspace, non-dev -> excluded
+            "reflex-components-lucide >= 0.9.0",  # workspace, plain floor -> included
             "reflex-base >= 0.9.5.dev1",  # duplicate -> deduped
         ],
         "optional-dependencies": {
-            "x": ["reflex-components-radix >= 0.9.2.dev1"],  # dev pin in optional group
+            "x": [
+                "reflex-components-radix >= 0.9.2.dev1"
+            ],  # optional group -> included
         },
     }
-    assert check_min_deps._local_dev_sources(project, dirs) == (
+    # Declaration order, so an earlier sibling can satisfy a later one's build environment.
+    assert check_min_deps._local_sources(project, dirs) == (
         dirs["reflex-base"],
+        dirs["reflex-components-lucide"],
         dirs["reflex-components-radix"],
     )
 
 
-def test_local_dev_sources_ignores_dev_pinned_non_workspace_dep():
+def test_local_sources_ignores_non_workspace_deps():
     dirs = check_min_deps._workspace_package_dirs()
-    # An external package's dev pin cannot be served locally, so it is not selected.
-    project = {"dependencies": ["somethirdparty >= 1.0.dev1"]}
-    assert check_min_deps._local_dev_sources(project, dirs) == ()
+    # Nothing outside the workspace can be served locally, dev-pinned or not.
+    project = {"dependencies": ["somethirdparty >= 1.0.dev1", "pydantic >= 2.12.0"]}
+    assert check_min_deps._local_sources(project, dirs) == ()
 
 
-def test_discover_packages_records_local_dev_sources():
-    for package in check_min_deps.discover_packages():
-        assert isinstance(package.local_dev_sources, tuple)
-        for source in package.local_dev_sources:
+def test_discover_packages_records_local_sources():
+    by_name = {p.name: p for p in check_min_deps.discover_packages()}
+    for package in by_name.values():
+        assert isinstance(package.local_sources, tuple)
+        for source in package.local_sources:
             assert (source / "pyproject.toml").is_file()
+
+    # A plain (non-dev) sibling floor must be served from the workspace too. A package is
+    # written against the sibling's HEAD, so while the API it uses is unpublished, resolving
+    # `latest` from PyPI reports the same error as the minimum resolution does, the delta
+    # cancels it out, and the too-low floor ships.
+    assert (
+        check_min_deps.REPO_ROOT / "packages" / "reflex-base"
+        in by_name["reflex-components-core"].local_sources
+    )
 
 
 class _FakeRun:
     """Records the commands ``_run`` is called with and replays canned results."""
 
-    def __init__(self, returncode: int = 0, stdout: str = '{"generalDiagnostics": []}'):
+    def __init__(
+        self,
+        returncode: int = 0,
+        stdout: str = '{"generalDiagnostics": []}',
+        built: dict[str, str] | None = None,
+    ):
+        """Record calls, and write the wheels a ``uv build`` would have produced.
+
+        Args:
+            returncode: The exit status every replayed call reports.
+            stdout: The output every replayed call carries.
+            built: Version to "build" each source directory at, keyed by directory name.
+                A ``uv build`` for a listed directory drops a wheel in its ``--out-dir``,
+                as the real command would.
+        """
         self.commands: list[list[str]] = []
         self.returncode = returncode
         self.stdout = stdout
+        self.built = built or {}
 
     def __call__(self, cmd: list[str], **kwargs: object) -> "_FakeRun":
-        self.commands.append([str(c) for c in cmd])
+        command = [str(c) for c in cmd]
+        self.commands.append(command)
+        if command[:2] == ["uv", "build"] and self.returncode == 0:
+            version = self.built.get(Path(command[-1]).name)
+            if version is not None:
+                out_dir = Path(command[command.index("--out-dir") + 1])
+                name = Path(command[-1]).name.replace("-", "_")
+                (out_dir / f"{name}-{version}-py3-none-any.whl").touch()
         return self
 
     def command_starting_with(self, prefix: list[str]) -> list[str]:
         return next(c for c in self.commands if c[: len(prefix)] == prefix)
 
 
-def _fake_package(dev_sources: tuple[Path, ...] = ()) -> check_min_deps.Package:
+def _fake_package(local_sources: tuple[Path, ...] = ()) -> check_min_deps.Package:
     return check_min_deps.Package(
         name="reflex",
         project_dir=check_min_deps.REPO_ROOT,
         source_dir=check_min_deps.REPO_ROOT / "reflex",
         extras=(),
-        local_dev_sources=dev_sources,
+        local_sources=local_sources,
     )
 
 
-def test_resolve_and_check_offers_dev_wheelhouse_as_an_index(
+def test_resolve_and_check_offers_the_wheelhouse_at_the_minimum(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
     fake_run = _FakeRun()
@@ -250,22 +287,56 @@ def test_resolve_and_check_offers_dev_wheelhouse_as_an_index(
         tmp_path / "venv",
         tmp_path / "cfg.json",
         wheelhouse,
+        (),
         lowest=True,
     )
 
     assert errors == {}
     install = fake_run.command_starting_with(["uv", "pip", "install"])
-    # PyPI is still forced for every non-dev dependency...
+    # PyPI is still forced for every third-party dependency...
     assert "--no-sources" in install
     assert install[install.index("--resolution") + 1] == "lowest-direct"
-    # ...but the locally built wheels of dev-pinned siblings are resolvable. An index (not a
-    # second editable target) is required, so build environments can see them too.
+    # ...but the workspace wheels stay resolvable, which is what makes an unpublished `*.dev`
+    # floor installable at all. An index (not a second editable target) is required, so build
+    # environments can see them too.
     assert install[install.index("--find-links") + 1] == str(wheelhouse)
     assert install.count("-e") == 1
     assert install[-1] == str(check_min_deps.REPO_ROOT)
 
 
-def test_resolve_and_check_without_dev_sources_uses_no_index(
+def test_resolve_and_check_offers_the_wheelhouse_at_the_baseline(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    """The `latest` resolution must see the workspace, or the delta has nothing to compare.
+
+    Args:
+        monkeypatch: Subprocess patching fixture.
+        tmp_path: Temporary venv, config and wheelhouse directory.
+    """
+    fake_run = _FakeRun()
+    monkeypatch.setattr(check_min_deps, "_run", fake_run)
+    wheelhouse = tmp_path / "wheelhouse"
+
+    check_min_deps._resolve_and_check(
+        _fake_package((check_min_deps.REPO_ROOT / "packages" / "reflex-base",)),
+        "3.12",
+        tmp_path / "venv",
+        tmp_path / "cfg.json",
+        wheelhouse,
+        ("reflex-base==0.9.12.post1.dev0+abc1234",),
+        lowest=False,
+    )
+
+    install = fake_run.command_starting_with(["uv", "pip", "install"])
+    assert install[install.index("--find-links") + 1] == str(wheelhouse)
+    assert "--resolution" not in install
+    # A plain floor would otherwise skip the workspace build for the published release,
+    # because a resolver only considers pre-releases for a requirement that names one.
+    assert install[-1] == "reflex-base==0.9.12.post1.dev0+abc1234"
+    assert install[-3:-1] == ["-e", str(check_min_deps.REPO_ROOT)]
+
+
+def test_resolve_and_check_without_local_sources_uses_no_index(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
     fake_run = _FakeRun()
@@ -277,6 +348,7 @@ def test_resolve_and_check_without_dev_sources_uses_no_index(
         tmp_path / "venv",
         tmp_path / "cfg.json",
         None,
+        (),
         lowest=False,
     )
 
@@ -286,10 +358,22 @@ def test_resolve_and_check_without_dev_sources_uses_no_index(
     assert install.count("-e") == 1
 
 
-def test_build_dev_wheelhouse_builds_every_dev_source(
+def test_build_local_wheelhouse_builds_every_source_once(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
-    fake_run = _FakeRun()
+    """Each sibling is built once, at the version its own checkout derives.
+
+    Args:
+        monkeypatch: Subprocess patching fixture.
+        tmp_path: Temporary wheelhouse directory.
+    """
+    fake_run = _FakeRun(
+        built={
+            # Both satisfy what the root package declares, so neither is rebuilt.
+            "reflex-base": "0.9.12.post1.dev0+abc1234",
+            "reflex-hosting-cli": "0.1.71.post1.dev0+abc1234",
+        }
+    )
     monkeypatch.setattr(check_min_deps, "_run", fake_run)
     sources = (
         check_min_deps.REPO_ROOT / "packages" / "reflex-base",
@@ -298,7 +382,8 @@ def test_build_dev_wheelhouse_builds_every_dev_source(
     wheelhouse = tmp_path / "nested" / "wheelhouse"
 
     assert (
-        check_min_deps._build_dev_wheelhouse(_fake_package(sources), wheelhouse) is None
+        check_min_deps._build_local_wheelhouse(_fake_package(sources), wheelhouse)
+        is None
     )
 
     # ``uv build`` refuses to run against a missing ``--find-links`` directory.
@@ -311,7 +396,31 @@ def test_build_dev_wheelhouse_builds_every_dev_source(
         assert build[-1] == str(source)
 
 
-def test_build_dev_wheelhouse_reports_build_failure(
+def test_build_local_wheelhouse_redoes_a_build_below_a_development_floor(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    """A checkout whose tags predate a `*.dev` pin is rebuilt at the declared floor.
+
+    Args:
+        monkeypatch: Subprocess patching fixture.
+        tmp_path: Temporary wheelhouse directory.
+    """
+    # The root package declares `reflex-base >= 0.9.12.dev0`; 0.9.11 does not reach it.
+    fake_run = _FakeRun(built={"reflex-base": "0.9.11.post1.dev0+abc1234"})
+    monkeypatch.setattr(check_min_deps, "_run", fake_run)
+    sources = (check_min_deps.REPO_ROOT / "packages" / "reflex-base",)
+
+    assert (
+        check_min_deps._build_local_wheelhouse(
+            _fake_package(sources), tmp_path / "wheelhouse"
+        )
+        is None
+    )
+
+    assert len(fake_run.commands) == 2, "the first build is redone at the floor"
+
+
+def test_build_local_wheelhouse_reports_build_failure(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
     fake_run = _FakeRun(returncode=1, stdout="boom")
@@ -321,7 +430,7 @@ def test_build_dev_wheelhouse_reports_build_failure(
         check_min_deps.REPO_ROOT / "packages" / "reflex-hosting-cli",
     )
 
-    detail = check_min_deps._build_dev_wheelhouse(
+    detail = check_min_deps._build_local_wheelhouse(
         _fake_package(sources), tmp_path / "wheelhouse"
     )
 
@@ -365,13 +474,13 @@ def test_dev_wheel_version_satisfies_declared_floor(
         project_dir=consumer,
         source_dir=consumer,
         extras=(),
-        local_dev_sources=(sibling,),
+        local_sources=(sibling,),
     )
     monkeypatch.delenv("UV_DYNAMIC_VERSIONING_BYPASS", raising=False)
     build = Mock(return_value=subprocess.CompletedProcess([], 0, stdout=""))
     monkeypatch.setattr(check_min_deps, "_run", build)
 
-    assert check_min_deps._build_dev_wheelhouse(package, tmp_path / "wheels") is None
+    assert check_min_deps._build_local_wheelhouse(package, tmp_path / "wheels") is None
 
     env = build.call_args.kwargs.get("env")
     if version is None:
@@ -383,9 +492,108 @@ def test_dev_wheel_version_satisfies_declared_floor(
     assert "UV_DYNAMIC_VERSIONING_BYPASS" not in os.environ
 
 
+def _consumer(tmp_path: Path, requirement: str) -> check_min_deps.Package:
+    """Build a package whose only dependency is the given requirement.
+
+    Args:
+        tmp_path: Directory to create the package in.
+        requirement: The single declared dependency.
+
+    Returns:
+        A package rooted at a freshly written ``pyproject.toml``.
+    """
+    consumer = tmp_path / "consumer"
+    consumer.mkdir()
+    (consumer / "pyproject.toml").write_text(
+        f'[project]\nname = "consumer"\ndependencies = ["{requirement}"]\n'
+    )
+    return check_min_deps.Package(
+        name="consumer", project_dir=consumer, source_dir=consumer, extras=()
+    )
+
+
+def _wheelhouse(tmp_path: Path, *wheels: str) -> Path:
+    """Create a wheelhouse holding empty files with the given wheel names.
+
+    Args:
+        tmp_path: Directory to create the wheelhouse under.
+        wheels: Wheel filenames to place in it.
+
+    Returns:
+        The wheelhouse directory.
+    """
+    house = tmp_path / "wheelhouse"
+    house.mkdir()
+    for wheel in wheels:
+        (house / wheel).touch()
+    return house
+
+
+@pytest.mark.parametrize(
+    "requirement",
+    ["reflex-base >= 0.9.12", "reflex-base >= 0.9.12.dev0", "reflex-base"],
+)
+def test_workspace_pins_names_the_exact_workspace_build(
+    tmp_path: Path, requirement: str
+):
+    """A satisfied workspace build is pinned, whatever shape the declared floor takes.
+
+    Args:
+        tmp_path: Temporary package and wheelhouse directory.
+        requirement: The consumer's declared dependency on the sibling.
+    """
+    wheelhouse = _wheelhouse(
+        tmp_path, "reflex_base-0.9.12.post1.dev0+abc1234-py3-none-any.whl"
+    )
+
+    assert check_min_deps._workspace_pins(
+        _consumer(tmp_path, requirement), wheelhouse
+    ) == ["reflex-base==0.9.12.post1.dev0+abc1234"]
+
+
+def test_workspace_pins_skips_a_build_the_declared_floor_excludes(tmp_path: Path):
+    """A checkout whose tags predate the floor falls back to PyPI instead of failing."""
+    wheelhouse = _wheelhouse(
+        tmp_path, "reflex_base-0.9.11.post1.dev0+abc1234-py3-none-any.whl"
+    )
+
+    assert (
+        check_min_deps._workspace_pins(
+            _consumer(tmp_path, "reflex-base >= 0.9.12"), wheelhouse
+        )
+        == []
+    )
+
+
+def test_check_package_pins_the_workspace_only_at_the_baseline(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """The minimum resolution must see the declared floors, not the workspace builds."""
+    monkeypatch.setattr(
+        check_min_deps, "_build_local_wheelhouse", lambda package, wheelhouse: None
+    )
+    monkeypatch.setattr(
+        check_min_deps, "_workspace_pins", lambda package, wheelhouse: ["pinned==1.0"]
+    )
+    seen: list[tuple[Sequence[str], bool]] = []
+
+    def fake_resolve(package, python_version, venv, config, wheelhouse, pins, lowest):
+        seen.append((pins, lowest))
+        return {}, ""
+
+    monkeypatch.setattr(check_min_deps, "_resolve_and_check", fake_resolve)
+
+    result = check_min_deps.check_package(
+        _fake_package((check_min_deps.REPO_ROOT / "packages" / "reflex-base",)), "3.12"
+    )
+
+    assert result.ok
+    assert seen == [(["pinned==1.0"], False), ((), True)]
+
+
 def test_check_package_reports_failed_wheelhouse_build(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(
-        check_min_deps, "_build_dev_wheelhouse", lambda package, wheelhouse: "boom"
+        check_min_deps, "_build_local_wheelhouse", lambda package, wheelhouse: "boom"
     )
     monkeypatch.setattr(
         check_min_deps,

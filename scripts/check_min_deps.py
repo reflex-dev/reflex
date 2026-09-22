@@ -15,18 +15,36 @@ minimum versions means the code depends on a newer dependency than its declared 
 allows — exactly the bug this catches (e.g. calling a pydantic 2.x API while declaring
 ``pydantic >=1.10``).
 
-Development-release pins are the exception to ``--no-sources``. A package may pin a sibling
-workspace package to an unreleased ``*.dev`` version (e.g. ``reflex-base >= 0.9.5.dev1``)
-while that version is still unpublished, which would otherwise make resolution from PyPI
-impossible. For such pins — and only those — a wheel is built from the sibling's local
-checkout into a temporary directory that is offered to the resolver as an extra
-``--find-links`` index. When a declared development floor satisfies the requirement, the
-temporary wheel uses that version so older ancestor tags cannot make it unresolvable.
-Every *non-dev* dependency is still required to resolve from
-PyPI. A local index is used rather than an extra editable install target because build
-environments (a package whose build backend sets ``require-runtime-dependencies`` resolves
-its own runtime dependencies to build) are resolved separately from the install targets and
-would otherwise not see the unpublished sibling at all.
+Workspace siblings are the exception to ``--no-sources``. Every sibling the package
+declares is built from its local checkout into a temporary directory that is offered to the
+resolver as an extra ``--find-links`` index, so ``latest`` means "this workspace" for a
+sibling and "PyPI" for everything else. Third-party dependencies still resolve from PyPI at
+both ends.
+
+That matters because a delta cannot see an error present at *both* ends. Cross-package APIs
+are written and consumed in the same release train, so a package routinely imports a sibling
+symbol that no published version of that sibling has yet. Resolving both ends from PyPI put
+the identical error in both sets, it cancelled out, and the too-low floor sailed through —
+until the sibling was published, at which point the check went red on already-merged code.
+Against the workspace the symbol is present at ``latest`` and missing at the floor, which is
+what the delta is meant to report. The fix it asks for is the ``*.dev`` pin below, which the
+release pipeline rewrites to the real version.
+
+A development-release pin (e.g. ``reflex-base >= 0.9.5.dev1``) is unresolvable from PyPI by
+construction, so the same index is what makes it installable at all. Each sibling is built at
+the version its own checkout derives, which keeps the wheelhouse a consistent snapshot of the
+workspace; only a build that lands *below* such a floor — a checkout whose tags predate the
+pin — is redone at the floor itself. An index is used rather than an extra editable install
+target because build environments (a package whose build backend sets
+``require-runtime-dependencies`` resolves its own runtime dependencies to build) are resolved
+separately from the install targets and would otherwise not see the sibling at all.
+
+An index alone is not enough at ``latest``. A workspace build carries a development version
+(``0.9.12.post1.dev0+<sha>``), and a resolver only considers pre-releases for a requirement
+that names one — so a plain floor such as ``reflex-base >= 0.9.12`` would quietly prefer the
+published release. The baseline therefore pins each sibling to the exact version built from
+the workspace, which is that opt-in. The minimum resolution is left unpinned, where
+``lowest-direct`` selects the published release each declared floor asks for.
 
 Run with ``uv run python scripts/check_min_deps.py [package ...]``. With no arguments,
 every checkable package is validated. ``--check-dev-pins [package ...]`` instead scans the
@@ -50,13 +68,13 @@ import os
 import subprocess
 import sys
 import tempfile
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
 from packaging.requirements import InvalidRequirement, Requirement
-from packaging.utils import canonicalize_name
+from packaging.utils import canonicalize_name, parse_wheel_filename
 from packaging.version import InvalidVersion, Version
 
 if sys.version_info >= (3, 11):
@@ -137,11 +155,12 @@ class Package:
     extras: tuple[str, ...]
     """Names of optional-dependency groups to install alongside the package."""
 
-    local_dev_sources: tuple[Path, ...] = ()
-    """Project dirs of sibling workspace packages this package pins to a ``*.dev`` release.
+    local_sources: tuple[Path, ...] = ()
+    """Project dirs of the sibling workspace packages this package depends on.
 
-    These are built into a local wheelhouse and made available to the resolver (rather than
-    PyPI) in both resolutions, because the pinned development version is not published.
+    These are built into a local wheelhouse offered to the resolver alongside PyPI in both
+    resolutions, so ``latest`` resolves a sibling to this workspace. Without it a sibling API
+    added in the current release train is missing at both ends and its error cancels out.
     """
 
     def install_target(self) -> str:
@@ -232,10 +251,8 @@ def _published_dependencies(project: dict) -> list[str]:
     return deps
 
 
-def _local_dev_sources(
-    project: dict, workspace_dirs: dict[str, Path]
-) -> tuple[Path, ...]:
-    """Resolve a package's ``*.dev`` dependency pins to local workspace project directories.
+def _local_sources(project: dict, workspace_dirs: dict[str, Path]) -> tuple[Path, ...]:
+    """Resolve a package's workspace-sibling dependencies to local project directories.
 
     Args:
         project: The ``[project]`` table of the package being checked.
@@ -243,14 +260,15 @@ def _local_dev_sources(
             :func:`_workspace_package_dirs`).
 
     Returns:
-        The project directories of the sibling workspace packages this package pins to an
-        unpublished development release, deduplicated and in declaration order.
+        The project directories of the sibling workspace packages this package declares,
+        deduplicated and in declaration order. Declaration order is preserved so a sibling
+        listed before another can satisfy that other's build environment.
     """
     sources: list[Path] = []
     seen: set[str] = set()
     for dependency in _published_dependencies(project):
-        name, is_dev = _parse_requirement(dependency)
-        if is_dev and name in workspace_dirs and name not in seen:
+        name, _ = _parse_requirement(dependency)
+        if name in workspace_dirs and name not in seen:
             seen.add(name)
             sources.append(workspace_dirs[name])
     return tuple(sources)
@@ -272,7 +290,7 @@ def discover_packages() -> list[Package]:
             project_dir=REPO_ROOT,
             source_dir=REPO_ROOT / "reflex",
             extras=tuple(root_project.get("optional-dependencies", {})),
-            local_dev_sources=_local_dev_sources(root_project, workspace_dirs),
+            local_sources=_local_sources(root_project, workspace_dirs),
         )
     )
 
@@ -289,7 +307,7 @@ def discover_packages() -> list[Package]:
                 project_dir=project_file.parent,
                 source_dir=_single_source_dir(project_file.parent / "src"),
                 extras=tuple(project.get("optional-dependencies", {})),
-                local_dev_sources=_local_dev_sources(project, workspace_dirs),
+                local_sources=_local_sources(project, workspace_dirs),
             )
         )
 
@@ -372,21 +390,52 @@ def _pyright_errors(report: dict) -> dict[tuple[str, int, int, str], str]:
     return errors
 
 
-def _dev_build_version(project: dict, dependency_name: str) -> str | None:
+def _declared_requirements(project: dict) -> dict[str, list[Requirement]]:
+    """Group a package's published requirements by canonical distribution name.
+
+    Args:
+        project: The ``[project]`` table of the package being checked.
+
+    Returns:
+        A mapping from canonical distribution name to every requirement declared against it,
+        across the core dependencies and the optional groups.
+    """
+    requirements: dict[str, list[Requirement]] = {}
+    for dependency in _published_dependencies(project):
+        name, _ = _parse_requirement(dependency)
+        if name:
+            requirements.setdefault(name, []).append(Requirement(dependency))
+    return requirements
+
+
+def _satisfies(requirements: list[Requirement], version: Version) -> bool:
+    """Return whether a version meets every requirement declared against its distribution.
+
+    Pre-releases count as satisfying: a workspace build always carries a development version,
+    and whether a resolver would *consider* one is settled by naming it in a pin, not here.
+
+    Args:
+        requirements: The requirements declared against one distribution.
+        version: The version to test.
+
+    Returns:
+        True when every requirement's specifier admits the version.
+    """
+    return all(
+        requirement.specifier.contains(version, prereleases=True)
+        for requirement in requirements
+    )
+
+
+def _dev_build_version(requirements: list[Requirement]) -> str | None:
     """Choose a declared development floor that satisfies a sibling's requirements.
 
     Args:
-        project: The consuming package's project metadata.
-        dependency_name: The sibling's canonical distribution name.
+        requirements: The requirements declared against the sibling.
 
     Returns:
-        The lowest usable declared development version, or None to use normal versioning.
+        The lowest usable declared development version, or None when none is declared.
     """
-    requirements = [
-        Requirement(dependency)
-        for dependency in _published_dependencies(project)
-        if _parse_requirement(dependency)[0] == dependency_name
-    ]
     candidates: set[Version] = set()
     for requirement in requirements:
         for specifier in requirement.specifier:
@@ -402,17 +451,73 @@ def _dev_build_version(project: dict, dependency_name: str) -> str | None:
         (
             str(version)
             for version in sorted(candidates)
-            if all(version in requirement.specifier for requirement in requirements)
+            if _satisfies(requirements, version)
         ),
         None,
     )
 
 
-def _build_dev_wheelhouse(package: Package, wheelhouse: Path) -> str | None:
-    """Build wheels for the package's unpublished ``*.dev`` siblings into a local index.
+def _wheel_versions(wheelhouse: Path) -> dict[str, Version]:
+    """Map each distribution built into a wheelhouse to its highest version there.
 
     Args:
-        package: The package whose dev-pinned siblings should be built.
+        wheelhouse: Directory holding the built wheels.
+
+    Returns:
+        A mapping from canonical distribution name to the highest version built for it.
+    """
+    versions: dict[str, Version] = {}
+    for wheel in wheelhouse.glob("*.whl"):
+        name, version, *_ = parse_wheel_filename(wheel.name)
+        if name not in versions or version > versions[name]:
+            versions[name] = version
+    return versions
+
+
+def _build_sibling(source: Path, wheelhouse: Path, version: str | None) -> str | None:
+    """Build one sibling's wheel into the wheelhouse.
+
+    Args:
+        source: The sibling's project directory.
+        wheelhouse: Directory to write the wheel into. It doubles as an index so an earlier
+            sibling's wheel can satisfy this one's build environment.
+        version: A version to build at in place of the one the checkout derives, or ``None``
+            to use that.
+
+    Returns:
+        ``None`` on success, otherwise the captured output of the failing build.
+    """
+    build = _run(
+        [
+            "uv",
+            "build",
+            "--no-sources",
+            "--wheel",
+            "--find-links",
+            str(wheelhouse),
+            "--out-dir",
+            str(wheelhouse),
+            str(source),
+        ],
+        cwd=REPO_ROOT,
+        env={**os.environ, "UV_DYNAMIC_VERSIONING_BYPASS": version}
+        if version is not None
+        else None,
+    )
+    return None if build.returncode == 0 else build.stdout
+
+
+def _build_local_wheelhouse(package: Package, wheelhouse: Path) -> str | None:
+    """Build wheels for the package's workspace siblings into a local index.
+
+    Each sibling is built at the version its own checkout derives, so the wheelhouse is one
+    consistent snapshot of the workspace and the siblings satisfy each other's requirements
+    the same way they do in the repository. Only a build that lands *below* a declared
+    development floor — a checkout whose tags predate the pin — is redone at that floor,
+    which is what keeps an unpublished ``*.dev`` requirement resolvable at all.
+
+    Args:
+        package: The package whose declared siblings should be built.
         wheelhouse: Directory to write the wheels into.
 
     Returns:
@@ -420,32 +525,52 @@ def _build_dev_wheelhouse(package: Package, wheelhouse: Path) -> str | None:
     """
     wheelhouse.mkdir(parents=True, exist_ok=True)
     project = _load_pyproject(package.project_dir / "pyproject.toml")["project"]
-    for source in package.local_dev_sources:
+    requirements = _declared_requirements(project)
+    for source in package.local_sources:
         name = canonicalize_name(
             _load_pyproject(source / "pyproject.toml")["project"]["name"]
         )
-        version = _dev_build_version(project, name)
-        build = _run(
-            [
-                "uv",
-                "build",
-                "--no-sources",
-                "--wheel",
-                # An earlier sibling's wheel may satisfy a later one's own dev pin.
-                "--find-links",
-                str(wheelhouse),
-                "--out-dir",
-                str(wheelhouse),
-                str(source),
-            ],
-            cwd=REPO_ROOT,
-            env={**os.environ, "UV_DYNAMIC_VERSIONING_BYPASS": version}
-            if version is not None
-            else None,
-        )
-        if build.returncode != 0:
-            return build.stdout
+        declared = requirements.get(name, [])
+        detail = _build_sibling(source, wheelhouse, None)
+        if detail is not None:
+            return detail
+        built = _wheel_versions(wheelhouse).get(name)
+        if built is not None and _satisfies(declared, built):
+            continue
+        floor = _dev_build_version(declared)
+        if floor is not None:
+            detail = _build_sibling(source, wheelhouse, floor)
+            if detail is not None:
+                return detail
     return None
+
+
+def _workspace_pins(package: Package, wheelhouse: Path) -> list[str]:
+    """Pin each workspace sibling to the wheel built from its local checkout.
+
+    A workspace build carries a development version (``0.9.12.post1.dev0+<sha>``), and a
+    resolver only considers pre-releases for a requirement that names one, so a plain floor
+    such as ``reflex-base >= 0.9.12`` would skip the wheel and take the published release
+    instead. Naming the exact version is that opt-in, and it makes the baseline independent
+    of how the workspace version happens to sort against PyPI.
+
+    Args:
+        package: The package being checked.
+        wheelhouse: Directory holding the wheels built from its siblings.
+
+    Returns:
+        ``name==version`` requirements for the siblings whose local build satisfies what the
+        package declares for them. A build that does not — a checkout whose tags predate the
+        declared floor — is left out, so that sibling resolves from PyPI as it did before.
+    """
+    requirements = _declared_requirements(
+        _load_pyproject(package.project_dir / "pyproject.toml")["project"]
+    )
+    return [
+        f"{name}=={version}"
+        for name, version in sorted(_wheel_versions(wheelhouse).items())
+        if _satisfies(requirements.get(name, []), version)
+    ]
 
 
 def _resolve_and_check(
@@ -454,6 +579,7 @@ def _resolve_and_check(
     venv: Path,
     config: Path,
     wheelhouse: Path | None,
+    pins: Sequence[str],
     lowest: bool,
 ) -> tuple[dict[tuple[str, int, int, str], str] | None, str]:
     """Install a package into an isolated venv and run pyright against its source.
@@ -463,8 +589,11 @@ def _resolve_and_check(
         python_version: The interpreter version for the venv.
         venv: Directory in which to create the virtualenv.
         config: Path to the pyright options config.
-        wheelhouse: Local index holding wheels for the package's unpublished ``*.dev``
-            siblings, or ``None`` when the package has no such pins.
+        wheelhouse: Local index holding wheels built from the package's workspace siblings,
+            or ``None`` when the package declares none.
+        pins: Extra ``name==version`` requirements to install alongside the package (see
+            :func:`_workspace_pins`); empty for the minimum resolution, whose declared floors
+            are exactly what is under test.
         lowest: Whether to pin direct dependencies to their declared minimums.
 
     Returns:
@@ -485,16 +614,19 @@ def _resolve_and_check(
         venv_python,
         "--no-sources",
     ]
-    # ``--no-sources`` forces every dependency to resolve from PyPI; the lone exception is a
-    # sibling pinned to an unpublished ``*.dev`` release, whose locally built wheel is offered
-    # as an extra index. Unlike an editable install target, an index is also consulted while
-    # resolving build environments, which a ``require-runtime-dependencies`` build hook makes
-    # subject to the same unpublished pin.
+    # ``--no-sources`` forces every dependency to resolve from PyPI; workspace siblings are the
+    # exception, offered as an extra index of locally built wheels. At ``latest`` the ``pins``
+    # select them, so an API added in the current release train is present on one side of the
+    # delta. The minimum resolution passes no pins, leaving ``lowest-direct`` to take the
+    # lowest version satisfying each declared floor — the published release under test. Unlike
+    # an editable install target, an index is also consulted while resolving build
+    # environments, which a ``require-runtime-dependencies`` build hook makes subject to the
+    # same requirements.
     if wheelhouse is not None:
         install_cmd += ["--find-links", str(wheelhouse)]
     if lowest:
         install_cmd += ["--resolution", "lowest-direct"]
-    install_cmd += ["-e", package.install_target()]
+    install_cmd += ["-e", package.install_target(), *pins]
     install = _run(install_cmd, cwd=REPO_ROOT)
     if install.returncode != 0:
         return None, install.stdout
@@ -539,16 +671,18 @@ def check_package(package: Package, python_version: str) -> Result:
         config.write_text(json.dumps({"reportIncompatibleMethodOverride": False}))
 
         wheelhouse = None
-        if package.local_dev_sources:
+        pins: list[str] = []
+        if package.local_sources:
             wheelhouse = tmp_path / "wheelhouse"
-            detail = _build_dev_wheelhouse(package, wheelhouse)
+            detail = _build_local_wheelhouse(package, wheelhouse)
             if detail is not None:
                 return Result(
                     package.name,
                     False,
                     "resolution",
-                    f"building unpublished sibling wheels failed:\n{detail}",
+                    f"building workspace sibling wheels failed:\n{detail}",
                 )
+            pins = _workspace_pins(package, wheelhouse)
 
         baseline, detail = _resolve_and_check(
             package,
@@ -556,6 +690,7 @@ def check_package(package: Package, python_version: str) -> Result:
             tmp_path / ".venv-latest",
             config,
             wheelhouse,
+            pins,
             lowest=False,
         )
         if baseline is None:
@@ -572,6 +707,7 @@ def check_package(package: Package, python_version: str) -> Result:
             tmp_path / ".venv-lowest",
             config,
             wheelhouse,
+            (),
             lowest=True,
         )
         if minimum is None:
