@@ -94,7 +94,7 @@ def _frontmatter_for(filepath: str) -> FrontMatter | None:
     block = _FRONTMATTER_BLOCK_RE.match(source)
     if block is None:
         return None
-    return parse_document(f"---\n{block.group(1)}\n---\n").frontmatter
+    return parse_document(block.group(0)).frontmatter
 
 
 def get_components_from_frontmatter(filepath: str) -> list:

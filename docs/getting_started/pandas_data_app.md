@@ -88,16 +88,19 @@ def read_orders(data: bytes) -> list[OrderRow]:
     if len(data) > MAX_CSV_BYTES:
         raise ValueError("Choose a CSV of at most 2 MiB.")
     try:
-        reader = csv.reader(StringIO(data.decode("utf-8-sig")), strict=True)
-        columns = next(reader, [])
-        rows = list(islice((row for row in reader if row), MAX_ROWS + 1))
+        reader = csv.reader(StringIO(data.decode("utf-8-sig"), newline=""), strict=True)
+        nonempty_rows = (row for row in reader if row)
+        columns = next(nonempty_rows, [])
+        rows = list(islice(nonempty_rows, MAX_ROWS + 1))
     except (UnicodeDecodeError, csv.Error) as error:
         raise ValueError(
             "Choose a valid UTF-8 CSV with three columns per row."
         ) from error
+    if not columns or not rows:
+        raise ValueError("The CSV needs a header and at least one record.")
     if columns != ["region", "product", "units"]:
         raise ValueError("Use exactly these columns: region,product,units.")
-    if not 1 <= len(rows) <= MAX_ROWS:
+    if len(rows) > MAX_ROWS:
         raise ValueError("Include between 1 and 10,000 records.")
     if any(len(row) != len(columns) for row in rows):
         raise ValueError("Use exactly three columns per row.")

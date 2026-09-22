@@ -831,6 +831,31 @@ def test_pandas_bounds_rows_bytes_and_preserves_text(monkeypatch):
         module.read_orders(b"region,product,units\n" + b"North,Tea,1\n" * 10_001)
 
 
+@pytest.mark.parametrize("newline", ["\n", "\r\n", "\r"])
+@pytest.mark.parametrize("blank_lines", [0, 2])
+def test_pandas_accepts_csv_newlines_and_leading_blank_lines(
+    monkeypatch, newline, blank_lines
+):
+    """Record separators and blank lines must not alter quoted product text."""
+    product = f"Tea{newline}Coffee, roast"
+    data = (
+        newline * blank_lines
+        + f'region,product,units{newline}North,"{product}",2{newline}'
+    ).encode()
+    assert pandas_demo(monkeypatch).read_orders(data) == [
+        {"region": "North", "product": product, "units": 2}
+    ]
+
+
+@pytest.mark.parametrize(
+    "data", [b"", b"\n\n", b"\r\r", b"\xef\xbb\xbf", b"region,product,units\n"]
+)
+def test_pandas_empty_upload_explains_missing_content(monkeypatch, data):
+    """Empty files and headers without records need an actionable error."""
+    with pytest.raises(ValueError, match="needs a header and at least one record"):
+        pandas_demo(monkeypatch).read_orders(data)
+
+
 def test_pandas_upload_does_not_change_process_warning_filters(monkeypatch):
     """A parser running in a worker must leave other sessions' warnings alone."""
     module = pandas_demo(monkeypatch)
