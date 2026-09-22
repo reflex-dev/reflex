@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from typing_extensions import Self
 
@@ -19,6 +19,8 @@ if TYPE_CHECKING:
     from reflex_base.event import EventChain, EventHandler
     from reflex_base.utils.types import ArgsSpec
     from reflex_base.vars.base import Var
+
+STATE_TYPE = TypeVar("STATE_TYPE", bound="BaseState")
 
 
 def _default_bundled_libraries() -> list[str]:
@@ -60,6 +62,19 @@ class RegistrationContext(BaseContext):
     base_state_substates: dict[str, set[type[BaseState]]] = dataclasses.field(
         default_factory=dict,
         repr=False,
+    )
+    # Memoized lookups, invalidated whenever a base state is registered.
+    _implementations: dict[type[BaseState], tuple[type[BaseState], ...]] = (
+        dataclasses.field(
+            default_factory=dict,
+            repr=False,
+        )
+    )
+    _resolved_implementations: dict[type[BaseState], type[BaseState]] = (
+        dataclasses.field(
+            default_factory=dict,
+            repr=False,
+        )
     )
     _config: Config | None = dataclasses.field(default=None, repr=False)
     decorated_pages: list[tuple[Callable, dict[str, Any]]] = dataclasses.field(
@@ -206,6 +221,8 @@ class RegistrationContext(BaseContext):
             The registered base state class.
         """
         self.base_states[state_cls.get_full_name()] = state_cls
+        self._implementations.clear()
+        self._resolved_implementations.clear()
         for event_handler in state_cls.event_handlers.values():
             self._register_event_handler(event_handler, states=(state_cls,))
         if (parent_state := state_cls.get_parent_state()) is not None:
@@ -278,3 +295,66 @@ class RegistrationContext(BaseContext):
         return self.base_state_substates.setdefault(
             base_state_cls.get_full_name(), set()
         )
+
+    def get_states_implementing(
+        self, interface: type[STATE_TYPE]
+    ) -> tuple[type[STATE_TYPE], ...]:
+        """Get every registered state class that is a subclass of the given interface.
+
+        Args:
+            interface: The state mixin (or state class) to look up implementations of.
+
+        Returns:
+            The registered states implementing the interface, in registration order.
+        """
+        if (cached := self._implementations.get(interface)) is not None:
+            return cached  # pyright: ignore [reportReturnType]
+        implementations = tuple(
+            state_cls
+            for state_cls in self.base_states.values()
+            if issubclass(state_cls, interface)
+        )
+        self._implementations[interface] = implementations
+        return implementations
+
+    def resolve_implementation(self, interface: type[STATE_TYPE]) -> type[STATE_TYPE]:
+        """Get the single registered state class the given interface was mixed into.
+
+        Args:
+            interface: The state mixin (or state class) to resolve.
+
+        Returns:
+            The state class the interface was mixed into.
+
+        Raises:
+            StateValueError: If no or more than one state implements the interface.
+        """
+        if (cached := self._resolved_implementations.get(interface)) is not None:
+            return cached  # pyright: ignore [reportReturnType]
+        implementations = self.get_states_implementing(interface)
+        # Keep only where the interface entered the tree: an implementation
+        # inheriting from another implementation is not a candidate.
+        roots = [
+            state_cls
+            for state_cls in implementations
+            if not any(
+                other is not state_cls and issubclass(state_cls, other)
+                for other in implementations
+            )
+        ]
+        if not roots:
+            msg = (
+                f"No registered state implements {interface.__name__}. "
+                "Define a state which inherits from it before resolving it."
+            )
+            raise StateValueError(msg)
+        if len(roots) > 1:
+            names = ", ".join(sorted(state.get_full_name() for state in roots))
+            msg = (
+                f"{interface.__name__} is implemented by more than one state: {names}. "
+                "Resolving it is ambiguous, pass the wanted state class explicitly."
+            )
+            raise StateValueError(msg)
+        resolved = roots[0]
+        self._resolved_implementations[interface] = resolved
+        return resolved
