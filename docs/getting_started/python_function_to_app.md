@@ -58,25 +58,169 @@ class PaymentState(rx.State):
         self.result = f"Monthly payment: ${payment:,.2f}"
 
 
-def payment_app():
-    """Render a labelled form and its result or validation message."""
+def payment_field(label: str, name: str, value: str, unit: str):
+    """Render a full-width input with a visible label and unit.
+
+    Args:
+        label: The input's accessible label.
+        name: The submitted form key.
+        value: The initial input value.
+        unit: The unit displayed beside the input.
+
+    Returns:
+        A labelled input group.
+    """
     return rx.vstack(
-        rx.form(
-            rx.vstack(
-                rx.el.label("Loan amount", html_for="loan-amount"),
-                rx.input(id="loan-amount", name="amount", default_value="10000"),
-                rx.el.label("Annual interest (%)", html_for="loan-rate"),
-                rx.input(id="loan-rate", name="rate", default_value="5"),
-                rx.el.label("Term (years)", html_for="loan-years"),
-                rx.input(id="loan-years", name="years", default_value="3"),
-                rx.button("Calculate", type="submit"),
-                spacing="3",
-            ),
-            on_submit=PaymentState.calculate,
+        rx.el.label(
+            label, html_for=f"loan-{name}", font_size="0.875rem", font_weight="500"
         ),
-        rx.text(PaymentState.result, role="status"),
-        rx.text(PaymentState.error, role="alert", color="red"),
-        spacing="4",
+        rx.input(
+            rx.input.slot(
+                rx.text(unit, size="2", color=rx.color("gray", 10)), side="right"
+            ),
+            id=f"loan-{name}",
+            name=name,
+            default_value=value,
+            input_mode="numeric" if name == "years" else "decimal",
+            size="3",
+            width="100%",
+        ),
+        spacing="2",
+        align_items="stretch",
+        width="100%",
+        min_width="0",
+    )
+
+
+def payment_app():
+    """Render the loan calculator and an accessible payment summary."""
+    return rx.vstack(
+        rx.hstack(
+            rx.center(
+                rx.icon("calculator", size=22, aria_hidden=True),
+                width="3rem",
+                height="3rem",
+                border_radius="14px",
+                color=rx.color("violet", 11),
+                background=rx.color("violet", 3),
+                flex_shrink="0",
+            ),
+            rx.vstack(
+                rx.heading(
+                    "Payment calculator", size="6", as_="h2", letter_spacing="-0.03em"
+                ),
+                rx.text(
+                    "Explore a monthly payment in a few simple steps.",
+                    size="2",
+                    color=rx.color("gray", 11),
+                ),
+                spacing="1",
+                align_items="start",
+            ),
+            spacing="3",
+            align="center",
+        ),
+        rx.grid(
+            rx.form(
+                rx.vstack(
+                    payment_field("Loan amount", "amount", "10000", "USD"),
+                    payment_field("Annual interest", "rate", "5", "%"),
+                    payment_field("Loan term", "years", "3", "years"),
+                    rx.button(
+                        "Calculate payment",
+                        rx.icon("arrow-right", size=16, aria_hidden=True),
+                        type="submit",
+                        size="3",
+                        color_scheme="violet",
+                        width="100%",
+                        cursor="pointer",
+                        margin_top="0.25rem",
+                    ),
+                    rx.cond(
+                        PaymentState.error != "",
+                        rx.text(
+                            PaymentState.error,
+                            role="alert",
+                            size="2",
+                            color=rx.color("red", 11),
+                        ),
+                    ),
+                    spacing="4",
+                    align_items="stretch",
+                ),
+                on_submit=PaymentState.calculate,
+                width="100%",
+                min_width="0",
+            ),
+            rx.vstack(
+                rx.hstack(
+                    rx.icon("wallet", size=18, aria_hidden=True),
+                    rx.text(
+                        "MONTHLY PAYMENT",
+                        size="1",
+                        weight="bold",
+                        letter_spacing="0.08em",
+                    ),
+                    color=rx.color("violet", 11),
+                    align="center",
+                    spacing="2",
+                ),
+                rx.box(
+                    rx.cond(
+                        PaymentState.result != "",
+                        rx.text(
+                            PaymentState.result.replace("Monthly payment: ", ""),
+                            font_size="clamp(1.75rem, 5vw, 2.75rem)",
+                            line_height="1.15",
+                            weight="bold",
+                            letter_spacing="-0.04em",
+                            overflow_wrap="anywhere",
+                            color=rx.color("violet", 12),
+                        ),
+                        rx.text("—", size="8", color=rx.color("violet", 9)),
+                    ),
+                    rx.text(
+                        rx.cond(
+                            PaymentState.result != "",
+                            "per month",
+                            "Enter your details and calculate.",
+                        ),
+                        size="2",
+                        color=rx.color("violet", 11),
+                        margin_top="0.5rem",
+                    ),
+                    role="status",
+                    aria_live="polite",
+                ),
+                rx.text(
+                    "Fixed-rate estimate · excludes fees and taxes",
+                    size="1",
+                    color=rx.color("gray", 11),
+                ),
+                justify="between",
+                align_items="stretch",
+                spacing="5",
+                padding="1.5rem",
+                min_height="260px",
+                min_width="0",
+                background=rx.color("violet", 2),
+                border=f"1px solid {rx.color('violet', 5)}",
+                border_radius="14px",
+            ),
+            grid_template_columns="repeat(auto-fit, minmax(min(100%, 15rem), 1fr))",
+            gap="1.5rem",
+            width="100%",
+        ),
+        spacing="5",
+        align_items="stretch",
+        width="100%",
+        max_width="48rem",
+        padding=["1rem", "1.5rem"],
+        margin="0 auto",
+        background=rx.color("gray", 1),
+        border=f"1px solid {rx.color('gray', 4)}",
+        border_radius="18px",
+        box_shadow="0 4px 20px rgba(0, 0, 0, 0.03)",
     )
 ```
 
