@@ -369,8 +369,8 @@ the event benchmarks do.
   `websockets` server, not of python-socketio (the harness does not depend on
   python-socketio). The sweep's steps below `max_sessions` are 100 and 500.
 - **Leak**: a 5 s closed-loop probe sizes the warmup (`warmup_events`, hidden,
-  5000) and the window (`events`, with 10 % of room); the tree is sampled 100
-  times over the window (at most once a second). The x axis is answered events
+  5000) and the window (`events`, with 10 % of room); the tree is sampled every
+  hundredth of the window, between 0.1 s and 1 s apart. The x axis is answered events
   (`answered_per_second` of the load), the y axis the anonymous PSS: file-backed
   pages do not leak. The sample fails with `LeakDetected` when the upper end of
   the slope's 95 % interval exceeds `tolerance_bytes_per_event` (hidden, 100 B,
