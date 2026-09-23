@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import collections
 import dataclasses
-import json
 import logging
 import sys
 from collections.abc import Callable, Iterable, Sequence
@@ -36,7 +35,7 @@ from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plug
 from reflex_base.registry import RegistrationContext, _default_bundled_libraries
 from reflex_base.utils import log, memo_paths
 from reflex_base.utils.exceptions import ReflexError
-from reflex_base.utils.format import to_title_case
+from reflex_base.utils.format import orjson_loads, to_title_case
 from reflex_base.utils.imports import (
     ABSOLUTE_IMPORT_PREFIXES,
     ImportVar,
@@ -1217,8 +1216,8 @@ def _read_stateful_pages_marker() -> list[str] | None:
     """
     marker = prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
     try:
-        return json.loads(marker.read_text())
-    except (FileNotFoundError, json.JSONDecodeError):
+        return orjson_loads(marker.read_bytes())
+    except (FileNotFoundError, ValueError):
         return None
     except PermissionError:
         if constants.IS_WINDOWS:

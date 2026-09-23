@@ -45,7 +45,7 @@ def test_read_stateful_pages_marker_recovers_legacy_corruption(
 def test_read_stateful_pages_marker_sharing_violation(mocker, windows):
     """An unavailable Windows marker requests evaluation without hiding POSIX errors."""
     mocker.patch.object(constants, "IS_WINDOWS", windows)
-    mocker.patch.object(Path, "read_text", side_effect=PermissionError)
+    mocker.patch.object(Path, "read_bytes", side_effect=PermissionError)
     if windows:
         assert compiler._read_stateful_pages_marker() is None
     else:

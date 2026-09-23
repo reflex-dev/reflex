@@ -1,10 +1,10 @@
-"""Benchmark counter and table events through the in-memory event pipeline."""
+"""Benchmarks for the event processing pipeline."""
 
 import asyncio
+import contextlib
 import json
 import traceback
 from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
-from contextlib import asynccontextmanager
 from typing import Any
 from unittest import mock
 
@@ -13,16 +13,101 @@ import pytest_asyncio
 from pytest_codspeed import BenchmarkFixture
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
-from reflex_base.event.context import EventContext
+from reflex_base.event.context import EmitDeltaProtocol, EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
-from reflex_base.utils.format import format_event_handler, json_dumps
+from reflex_base.utils.format import (
+    format_event_handler,
+    orjson_dumps_socket,
+    orjson_loads,
+)
 
+import reflex as rx
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.state import StateUpdate
 
 from .fixtures import BenchmarkState, TableState
 
+TOKEN = "benchmark-token"
+ROUTER_DATA = {"query": {}, "path": "/"}
 TABLE_STATUSES = ("open", "", "paid")
+
+
+def _make_rows(count: int) -> list[dict[str, str | int | float | bool]]:
+    """Build a deterministic table-like payload.
+
+    Args:
+        count: Number of rows to generate.
+
+    Returns:
+        A list of row dicts with mixed scalar types.
+    """
+    return [
+        {
+            "id": i,
+            "name": f"customer_{i}",
+            "email": f"user{i}@example.com",
+            "balance": i * 1.37,
+            "active": i % 2 == 0,
+            "notes": "lorem ipsum dolor sit amet " * 3,
+        }
+        for i in range(count)
+    ]
+
+
+class WireBenchState(rx.State):
+    """State whose handler produces a realistic table-sized delta."""
+
+    rows: rx.Field[list[dict[str, str | int | float | bool]]] = rx.field(
+        default_factory=list
+    )
+
+    @rx.event
+    def refresh_rows(self, count: int):
+        """Replace the rows with a freshly generated table.
+
+        Args:
+            count: Number of rows to generate.
+        """
+        self.rows = _make_rows(count)
+
+
+def _handle_backend_exception(ex: Exception) -> None:
+    formatted_exc = "\n".join(traceback.format_exception(ex))
+    pytest.fail(f"Event processor raised an unexpected exception:\n{formatted_exc}")
+
+
+@contextlib.asynccontextmanager
+async def _processing_pipeline(emit_delta_impl: EmitDeltaProtocol):
+    """Wire a ``BaseStateEventProcessor`` to a real ``StateManagerMemory``.
+
+    Args:
+        emit_delta_impl: Callback receiving each emitted (token, delta).
+
+    Yields:
+        The configured processor.
+    """
+
+    async def emit_event_impl(token: str, *events: Event) -> None:
+        pass
+
+    processor = BaseStateEventProcessor(
+        backend_exception_handler=_handle_backend_exception,
+        graceful_shutdown_timeout=5,
+    )
+    # There is no frontend to receive the initial full-state push.
+    with mock.patch.object(processor, "_rehydrate", new=mock.AsyncMock()):
+        state_manager = StateManagerMemory()
+        processor._root_context = EventContext(
+            token="",
+            state_manager=state_manager,
+            enqueue_impl=processor.enqueue_many,
+            emit_delta_impl=emit_delta_impl,
+            emit_event_impl=emit_event_impl,
+        )
+        try:
+            yield processor
+        finally:
+            await state_manager.close()
 
 
 def _encode_delta(delta: Mapping[str, Mapping[str, Any]]) -> str:
@@ -34,7 +119,7 @@ def _encode_delta(delta: Mapping[str, Mapping[str, Any]]) -> str:
     Returns:
         The delta encoded as a StateUpdate envelope.
     """
-    return json_dumps(StateUpdate(delta=delta), separators=(",", ":"))
+    return orjson_dumps_socket(StateUpdate(delta=delta), separators=(",", ":"))
 
 
 def _events(handler_name: str, payloads: list[dict[str, Any]]) -> list[Event]:
@@ -48,11 +133,7 @@ def _events(handler_name: str, payloads: list[dict[str, Any]]) -> list[Event]:
         The events to enqueue.
     """
     return [
-        Event(
-            name=handler_name,
-            router_data={"query": {}, "path": "/"},
-            payload=payload,
-        )
+        Event(name=handler_name, router_data=ROUTER_DATA, payload=payload)
         for payload in payloads
     ]
 
@@ -78,12 +159,12 @@ def _table_events() -> list[Event]:
     return _events(set_status, [{"status": status} for status in TABLE_STATUSES * 2])
 
 
-@asynccontextmanager
+@contextlib.asynccontextmanager
 async def _event_pipeline(
     events: list[Event],
     on_delta: Callable[[Mapping[str, Mapping[str, Any]]], Any],
 ) -> AsyncIterator[Callable[[], Awaitable[None]]]:
-    """Wire a ``BaseStateEventProcessor`` to an in-memory state manager.
+    """Wire the processing pipeline to a fixed batch of events.
 
     Args:
         events: The batch to enqueue on each run.
@@ -101,27 +182,7 @@ async def _event_pipeline(
         emitted += 1
         on_delta(delta)
 
-    async def emit_event_impl(token: str, *events: Event) -> None:
-        pass
-
-    def handle_backend_exception(ex: Exception) -> None:
-        formatted_exc = "\n".join(traceback.format_exception(ex))
-        pytest.fail(f"Event processor raised an unexpected exception:\n{formatted_exc}")
-
-    processor = BaseStateEventProcessor(
-        backend_exception_handler=handle_backend_exception,
-        graceful_shutdown_timeout=5,
-    )
-    # Skip initial hydration because there is no frontend.
-    with mock.patch.object(processor, "_rehydrate", new=mock.AsyncMock()):
-        state_manager = StateManagerMemory()
-        processor._root_context = EventContext(
-            token="",
-            state_manager=state_manager,
-            enqueue_impl=processor.enqueue_many,
-            emit_delta_impl=emit_delta_impl,
-            emit_event_impl=emit_event_impl,
-        )
+    async with _processing_pipeline(emit_delta_impl) as processor:
 
         async def run_events() -> None:
             """Process the batch and verify that each event emitted a delta."""
@@ -129,15 +190,12 @@ async def _event_pipeline(
             emitted = 0
             async with processor as p:
                 async for _ in asyncio.as_completed([
-                    await p.enqueue("benchmark-token", event) for event in events
+                    await p.enqueue(TOKEN, event) for event in events
                 ]):
                     pass
             assert emitted == len(events)
 
-        try:
-            yield run_events
-        finally:
-            await state_manager.close()
+        yield run_events
 
 
 @pytest_asyncio.fixture(params=["counter", "table"])
@@ -207,6 +265,86 @@ async def test_table_event_deltas():
         assert delta["total_amount" + FIELD_MARKER] == sum(
             row["amount"] for row in expected
         )
+
+
+@pytest_asyncio.fixture
+async def wire_event_processing_harness():
+    """Set up event processing with JSON decoding and encoding.
+
+    Yields:
+        An async callable taking raw event JSON strings and the expected
+        number of serialized wire payloads.
+    """
+    wire_payloads: list[str] = []
+
+    async def emit_delta_impl(  # noqa: RUF029
+        token: str, delta: Mapping[str, Mapping[str, Any]]
+    ) -> None:
+        wire_payloads.append(
+            orjson_dumps_socket(
+                ["event", StateUpdate(delta=delta)], separators=(",", ":")
+            )
+        )
+
+    async with _processing_pipeline(emit_delta_impl) as processor:
+
+        async def run_raw_events(raw_events: list[str], num_expected: int) -> None:
+            """Decode, enqueue, and serialize the given raw events.
+
+            Args:
+                raw_events: JSON strings, each an encoded event.
+                num_expected: How many wire payloads to expect.
+            """
+            wire_payloads.clear()
+
+            async with processor as p:
+                async for _ in asyncio.as_completed([
+                    await p.enqueue(
+                        TOKEN,
+                        Event(
+                            name=(fields := orjson_loads(raw))["name"],
+                            router_data=fields["router_data"],
+                            payload=fields["payload"],
+                        ),
+                    )
+                    for raw in raw_events
+                ]):
+                    pass
+            assert len(wire_payloads) == num_expected
+
+        yield run_raw_events
+
+
+@pytest.mark.parametrize("row_count", [5, 500], ids=["small_delta", "large_delta"])
+def test_process_event_wire(
+    wire_event_processing_harness,
+    benchmark: BenchmarkFixture,
+    row_count: int,
+):
+    """Benchmark receiving, processing, and serializing three events.
+
+    Args:
+        wire_event_processing_harness: The run_raw_events async callable.
+        benchmark: The codspeed benchmark fixture.
+        row_count: Rows per delta (small ~2KB, large ~200KB wire payload).
+    """
+    run_raw_events = wire_event_processing_harness
+    loop = asyncio.get_event_loop()
+
+    handler_name = format_event_handler(WireBenchState.event_handlers["refresh_rows"])
+    raw_events = [
+        json.dumps({
+            "name": handler_name,
+            "router_data": ROUTER_DATA,
+            "payload": {"count": row_count},
+        })
+        for _ in range(3)
+    ]
+
+    # refresh_rows reassigns the rows field, so each event yields 1 delta.
+    @benchmark
+    def _():
+        loop.run_until_complete(run_raw_events(raw_events, num_expected=3))
 
 
 @pytest.fixture
