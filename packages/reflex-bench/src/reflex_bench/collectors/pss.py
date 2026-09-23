@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import math
 import operator
-import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -21,7 +20,8 @@ from typing import Any
 
 import psutil
 
-PROC = Path("/proc")
+from reflex_bench.collectors import PROC, SamplingLoop
+
 METHOD = "pss_sampling"
 TIMELINE_POINTS = 2000
 _KB = 1024
@@ -106,7 +106,8 @@ def tree_pss(root_pid: int, *, proc_root: Path = PROC) -> PssReading:
         directory = proc_root / str(pid)
         try:
             fields = _rollup((directory / "smaps_rollup").read_text(encoding="utf-8"))
-            name = (directory / "comm").read_text(encoding="utf-8").strip()
+            # The kernel keeps 15 bytes of a name, which can end mid-character.
+            comm = (directory / "comm").read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
         if "Pss" not in fields:
@@ -116,6 +117,7 @@ def tree_pss(root_pid: int, *, proc_root: Path = PROC) -> PssReading:
         pss += fields["Pss"]
         anon += fields.get("Pss_Anon", 0)
         file += fields.get("Pss_File", 0)
+        name = comm.strip()
         uss[name] = (
             uss.get(name, 0)
             + fields.get("Private_Clean", 0)
@@ -212,10 +214,7 @@ class PssSampler:
         self.result: PssResult | None = None
         self._timeline: list[tuple[float, int]] = []
         self._peak: PssReading | None = None
-        self._stop = threading.Event()
-        self._thread = threading.Thread(
-            target=self._run, name="reflex-bench pss", daemon=True
-        )
+        self._loop = SamplingLoop(self._sample, interval, "PSS sampling")
 
     def start(self) -> PssSampler:
         """Start sampling.
@@ -223,7 +222,7 @@ class PssSampler:
         Returns:
             The sampler.
         """
-        self._thread.start()
+        self._loop.start()
         return self
 
     def stop(self) -> PssResult:
@@ -231,9 +230,11 @@ class PssSampler:
 
         Returns:
             The peak and the timeline.
+
+        Raises:
+            RuntimeError: When a sample failed, since the peak could have been missed.
         """
-        self._stop.set()
-        self._thread.join()
+        self._loop.stop()
         self.result = PssResult(
             peak_bytes=self._peak.pss_bytes if self._peak else 0,
             peak=self._peak,
@@ -243,15 +244,12 @@ class PssSampler:
         )
         return self.result
 
-    def _run(self) -> None:
-        """Sample until stopped."""
-        while True:
-            reading = tree_pss(self.root_pid, proc_root=self.proc_root)
-            self._timeline.append((time.perf_counter() - self.t0, reading.pss_bytes))
-            if self._peak is None or reading.pss_bytes > self._peak.pss_bytes:
-                self._peak = reading
-            if self._stop.wait(self.interval):
-                return
+    def _sample(self) -> None:
+        """Read the tree once."""
+        reading = tree_pss(self.root_pid, proc_root=self.proc_root)
+        self._timeline.append((time.perf_counter() - self.t0, reading.pss_bytes))
+        if self._peak is None or reading.pss_bytes > self._peak.pss_bytes:
+            self._peak = reading
 
     def __enter__(self) -> PssSampler:
         """Start sampling.

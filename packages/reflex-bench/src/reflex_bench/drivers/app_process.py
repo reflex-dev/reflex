@@ -990,8 +990,10 @@ def run_cli(
         try:
             tree.kill(_KILL_GRACE_S)
         finally:
-            tree_report = tree_sampler.stop() if tree_sampler else None
-            memory = memory_sampler.stop() if memory_sampler else None
+            try:
+                tree_report = tree_sampler.stop() if tree_sampler else None
+            finally:
+                memory = memory_sampler.stop() if memory_sampler else None
     lines = tree.output.lines()
     if reading is not None:
         cpu_s, cpu_method = reading.cpu_s, "cgroup"
@@ -1329,6 +1331,9 @@ class AppProcess:
     def stop(self, timeout: float = 10.0) -> None:
         """Kill the whole process tree; safe to call again and from another thread.
 
+        A call made while another thread stops the app returns once that
+        teardown is done.
+
         Args:
             timeout: Seconds between SIGTERM and SIGKILL.
         """
@@ -1337,14 +1342,14 @@ class AppProcess:
                 return
             self._stopped = True
             tree = self._tree
-        if tree is None:
-            return
-        tree.output.wake()
-        try:
-            tree.kill(timeout)
-        finally:
-            if self.scope is not None:
-                self.scope.close()
+            if tree is None:
+                return
+            tree.output.wake()
+            try:
+                tree.kill(timeout)
+            finally:
+                if self.scope is not None:
+                    self.scope.close()
 
     def __enter__(self) -> AppProcess:
         """Start the app.

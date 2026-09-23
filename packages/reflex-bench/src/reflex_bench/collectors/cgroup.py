@@ -32,7 +32,9 @@ from typing import Literal
 
 import psutil
 
-PROC = Path("/proc")
+from reflex_bench.collectors import PROC
+
+CGROUP_ROOT = Path("/sys/fs/cgroup")
 UNIT_PREFIX = "reflex-bench-"
 MIN_KERNEL = (5, 19)
 
@@ -382,7 +384,7 @@ class CgroupScope:
             msg = "wrap() a command before attach()"
             raise RuntimeError(msg)
         suffix = f"/{self.unit}.scope"
-        root = self._cgroup_root or _cgroup2_root() or Path("/sys/fs/cgroup")
+        root = self._cgroup_root or _cgroup2_root() or CGROUP_ROOT
         deadline = time.monotonic() + timeout
         try:
             process: psutil.Process | None = psutil.Process(pid)

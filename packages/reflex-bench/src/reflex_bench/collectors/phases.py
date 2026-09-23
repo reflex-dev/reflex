@@ -11,7 +11,6 @@ combines both into a breakdown of the command's wall time.
 from __future__ import annotations
 
 import re
-import threading
 import time
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
@@ -19,6 +18,8 @@ from pathlib import PurePath
 from typing import Any, TypedDict
 
 import psutil
+
+from reflex_bench.collectors import SamplingLoop
 
 # The labels of 0.8.23 and 0.9 never collide, so one table serves both versions.
 PHASE_LABELS = {
@@ -219,10 +220,7 @@ class TreePhases:
         self.report: TreeReport | None = None
         self._records: dict[tuple[int, float], ProcessRecord] = {}
         self._root: psutil.Process | None = None
-        self._stop = threading.Event()
-        self._thread = threading.Thread(
-            target=self._run, name="reflex-bench tree phases", daemon=True
-        )
+        self._loop = SamplingLoop(self._sample, interval, "process tree sampling")
 
     def start(self) -> TreePhases:
         """Start sampling.
@@ -234,7 +232,7 @@ class TreePhases:
             self._root = psutil.Process(self.root_pid)
         except psutil.NoSuchProcess:
             self._root = None
-        self._thread.start()
+        self._loop.start()
         return self
 
     def stop(self) -> TreeReport:
@@ -242,19 +240,14 @@ class TreePhases:
 
         Returns:
             The report.
+
+        Raises:
+            RuntimeError: When a sample failed, since processes could have been missed.
         """
-        self._stop.set()
-        self._thread.join()
+        self._loop.stop()
         self._sample()
         self.report = self._report()
         return self.report
-
-    def _run(self) -> None:
-        """Sample until stopped."""
-        while True:
-            self._sample()
-            if self._stop.wait(self.interval):
-                return
 
     def _sample(self) -> None:
         """Record the descendants alive right now."""

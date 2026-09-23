@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
 
+import psutil
 import pytest
 from reflex_bench.collectors import phases
 
@@ -207,6 +209,27 @@ def test_tree_phases_samples_a_real_tree(tmp_path: Path):
     sleeps = [p for p in report.processes if Path(p.cmdline[0]).name == "sleep"]
     assert sorted(str(p.kind) for p in sleeps) == ["frontend", "install"]
     assert root.pid not in {p.pid for p in report.processes}
+
+
+def test_tree_phases_raises_when_sampling_fails(monkeypatch: pytest.MonkeyPatch):
+    calls = 0
+    sample = phases.TreePhases._sample
+
+    def fail_once(self: phases.TreePhases) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise psutil.AccessDenied(self.root_pid)
+        sample(self)
+
+    monkeypatch.setattr(phases.TreePhases, "_sample", fail_once)
+    sampler = phases.TreePhases(os.getpid(), interval=0.01).start()
+    # The first sample fails on the sampling thread; the report must not be made
+    # from the samples that follow as if nothing was missed.
+    with pytest.raises(RuntimeError, match="process tree sampling failed") as info:
+        sampler.stop()
+    assert isinstance(info.value.__cause__, psutil.AccessDenied)
+    assert sampler.report is None
 
 
 def test_merge_intervals():

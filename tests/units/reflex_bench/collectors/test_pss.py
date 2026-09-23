@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import os
 import subprocess
 import sys
 import time
@@ -113,6 +114,16 @@ def test_tree_pss_of_a_gone_process_is_empty(tmp_path: Path):
     assert (reading.pss_bytes, reading.processes, reading.uss_bytes) == (0, 0, {})
 
 
+def test_tree_pss_reads_names_that_are_not_utf8(tmp_path: Path, tree: tuple[int, int]):
+    parent, _ = tree
+    _fake(tmp_path, parent, "python3", _rollup(1000, 400, 600, 50, 350))
+    # The kernel cuts names at 15 bytes, which can split a UTF-8 character.
+    (tmp_path / str(parent) / "comm").write_bytes(b"worker-\xe2\x9c\n")
+    reading = pss.tree_pss(parent, proc_root=tmp_path)
+    assert reading.processes == 1
+    assert reading.uss_bytes == {"worker-�": 400 * 1024}
+
+
 def test_uss_adds_up_processes_with_the_same_name(
     tmp_path: Path, tree: tuple[int, int]
 ):
@@ -153,6 +164,21 @@ def test_sampler_is_a_context_manager(tmp_path: Path, tree: tuple[int, int]):
         time.sleep(0.05)
     assert sampler.result is not None
     assert sampler.result.peak_bytes == 1000 * 1024
+
+
+def test_sampler_raises_when_sampling_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    def fail(root_pid: int, *, proc_root: Path) -> pss.PssReading:
+        raise psutil.AccessDenied(root_pid)
+
+    monkeypatch.setattr(pss, "tree_pss", fail)
+    sampler = pss.PssSampler(os.getpid(), interval=0.01, proc_root=tmp_path).start()
+    # A sampler that failed must not pass a peak of 0 bytes off as a measurement.
+    with pytest.raises(RuntimeError, match="PSS sampling failed") as info:
+        sampler.stop()
+    assert isinstance(info.value.__cause__, psutil.AccessDenied)
+    assert sampler.result is None
 
 
 @linux_only

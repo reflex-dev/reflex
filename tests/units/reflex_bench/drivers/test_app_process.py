@@ -12,6 +12,7 @@ import json
 import os
 import signal
 import sys
+import threading
 import time
 from collections.abc import Callable, Iterator
 from pathlib import Path
@@ -584,6 +585,39 @@ def test_stop_escalates_to_sigkill(app_dir: Path, fake: Configure):
 
 
 @posix_only
+def test_stop_waits_for_a_teardown_in_progress(
+    app_dir: Path,
+    fake: Configure,
+    apps: list[AppProcess],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    # conclude() after a timeout can stop the app while the timed-out start()
+    # still tears it down: the second stop() returns only once the tree is gone.
+    env = fake(lines=_replay("head-run-dev.log"), ignore_sigterm=True)
+    app = AppProcess(
+        Path(sys.executable), app_dir, mode="dev", reflex_version=HEAD, env=env
+    )
+    apps.append(app)
+    app.start()
+    root = app.pid
+    killing = threading.Event()
+    kill = app_process._ProcessTree.kill
+
+    def announced_kill(tree: app_process._ProcessTree, timeout: float) -> None:
+        killing.set()
+        kill(tree, timeout)
+
+    monkeypatch.setattr(app_process._ProcessTree, "kill", announced_kill)
+    first = threading.Thread(target=app.stop, kwargs={"timeout": 1.0})
+    first.start()
+    assert killing.wait(10)
+    app.stop()
+    assert _running([root]) == []
+    first.join(10)
+    assert not first.is_alive()
+
+
+@posix_only
 def test_stop_finds_children_of_a_crashed_app(app_dir: Path, fake: Configure):
     # The app spawns a detached child, then dies: the child is re-parented away
     # from the tree and is only found by the owner token in its environment.
@@ -726,6 +760,47 @@ def test_run_cli_samples_memory(app_dir: Path, fake: Configure):
     assert result.memory_method == "pss_sampling"
     assert result.pss is not None
     assert result.peak_mem_bytes == result.pss.peak_bytes > 1024 * 1024
+
+
+@posix_only
+@pytest.mark.parametrize(
+    ("owner", "name", "message"),
+    [
+        (app_process.TreePhases, "_sample", "process tree sampling failed"),
+        (app_process.pss, "tree_pss", "PSS sampling failed"),
+    ],
+    ids=["tree", "pss"],
+)
+def test_run_cli_fails_when_a_collector_fails(
+    app_dir: Path,
+    fake: Configure,
+    monkeypatch: pytest.MonkeyPatch,
+    owner: object,
+    name: str,
+    message: str,
+):
+    if sys.platform != "linux":
+        pytest.skip("PSS needs /proc")
+
+    def fail(*args: Any, **kwargs: Any) -> None:
+        raise psutil.AccessDenied
+
+    monkeypatch.setattr(owner, name, fail)
+    # What a failed collector saw before failing is no measurement: the command
+    # fails, and the other collector still stops.
+    with pytest.raises(RuntimeError, match=message) as info:
+        run_cli(
+            Path(sys.executable),
+            ["compile"],
+            cwd=app_dir,
+            env=fake(busy_s=0.3),
+            timeout=60,
+            phases=True,
+            sample_memory=True,
+        )
+    assert isinstance(info.value.__cause__, psutil.AccessDenied)
+    samplers = {"reflex-bench PSS sampling", "reflex-bench process tree sampling"}
+    assert not samplers & {thread.name for thread in threading.enumerate()}
 
 
 def test_run_cli_refuses_to_sample_memory_without_pss(
