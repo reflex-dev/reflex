@@ -23,6 +23,7 @@ from reflex_bench.report.format import (
 )
 from reflex_bench.report.table import (
     counts_line,
+    failure_text,
     geomean_line,
     significance_label,
     subject_label,
@@ -101,7 +102,7 @@ def render_comparison(doc: ResultDoc) -> str:
             f"`{row.name}`",
             row.metric,
             *sides,
-            change_text(comparison, exact),
+            change_text(comparison, exact, scale),
             stats_text(comparison, exact),
             verdict,
         ]
@@ -116,9 +117,19 @@ def render_comparison(doc: ResultDoc) -> str:
         ),
         "",
     ]
+    failures = compare.failed_in_head(doc)
+    if failures:
+        lines += [
+            "Failed in head:",
+            *(
+                f"- `{failure['id']}`: **regressed** {failure_text(failure)}"
+                for failure in failures
+            ),
+            "",
+        ]
     if attention:
         lines += [*_table(_COMPARISON_HEADER, attention), ""]
-    else:
+    elif not failures:
         lines += ["No regressions, improvements or inconclusive results.", ""]
     if geomean := geomean_line(doc):
         lines.append(geomean)

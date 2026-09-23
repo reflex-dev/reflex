@@ -120,11 +120,17 @@ def test_profile_id(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv(machine.PROFILE_ENV, "graviton-arm64")
     assert machine.profile_id("Linux", "arm64", None, "3.12.8") == "graviton-arm64"
     monkeypatch.setenv(machine.PROFILE_ENV, "Bad/Profile Name")
-    assert machine.profile_id("Linux", "arm64", None, "3.12.8") == "bad-profile-name"
-    monkeypatch.setenv(machine.PROFILE_ENV, "!!! \N{SNOWMAN}")
-    assert machine.profile_id("Linux", "arm64", None, "3.12.8") == (
-        "linux-arm64-unknown-cpu-py3.12"
-    )
+    assert machine.profile_id("Linux", "arm64", None, "3.12.8") == "Bad-Profile-Name"
+
+
+@pytest.mark.parametrize("override", ["!!! \N{SNOWMAN}", "..", ".", "/../.hidden"])
+def test_unsafe_profile_overrides_fall_back(
+    monkeypatch: pytest.MonkeyPatch, override: str
+):
+    monkeypatch.setenv(machine.PROFILE_ENV, override)
+    with pytest.warns(UserWarning, match=machine.PROFILE_ENV):
+        found = machine.profile_id("Linux", "arm64", None, "3.12.8")
+    assert found == "linux-arm64-unknown-cpu-py3.12"
 
 
 def test_normalize_arch():

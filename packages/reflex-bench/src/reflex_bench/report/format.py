@@ -171,17 +171,41 @@ def format_p(p: float | None) -> str:
     return f"p={p:.3f}" if p < 0.01 else f"p={p:.2f}"
 
 
-def change_text(comparison: ComparisonDoc, exact: bool) -> str:
+def _signed(value: float, scale: Scale) -> str:
+    """Format a signed value on a row's scale, without the unit.
+
+    Args:
+        value: The value in SI base units.
+        scale: The row's scale.
+
+    Returns:
+        E.g. ``+5.000``.
+    """
+    return f"{value / scale.factor:+,.{scale.decimals}f}"
+
+
+def change_text(comparison: ComparisonDoc, exact: bool, scale: Scale) -> str:
     """Format the change column of a comparison.
 
     Args:
         comparison: The comparison.
         exact: Whether the metric is deterministic.
+        scale: The row's scale, for an absolute change.
 
     Returns:
-        E.g. ``+5.4 % [+4.9, +5.9]``, ``~ [-2.6, +1.9]`` or ``+1.1 %``.
+        E.g. ``+5.4 % [+4.9, +5.9]``, ``~ [-2.6, +1.9]``, ``+1.1 %`` or, for an
+        absolute change, ``+5.000 s [+4.900, +5.100] (absolute)``.
     """
     ratio, ci = comparison["ratio"], comparison["ci"]
+    if comparison.get("mode") == "absolute":
+        delta = comparison["head"]["median"] - comparison["base"]["median"]
+        label = "" if scale.label == "1" else f" {scale.label}"
+        interval = (
+            "" if ci is None else f" [{_signed(ci[0], scale)}, {_signed(ci[1], scale)}]"
+        )
+        if comparison["verdict"] == "unchanged":
+            return f"~{interval} (absolute)"
+        return f"{_signed(delta, scale)}{label}{interval} (absolute)"
     if ratio is None:
         return "n/a (zero base)"
     if exact or ci is None:
@@ -225,9 +249,7 @@ def verdict_text(comparison: ComparisonDoc, exact: bool) -> str:
         return verdict
     needed = comparison["runs_needed"]
     if needed is None:
-        return "? inconclusive"
-    if needed >= RUNS_NEEDED_CAP:
-        return f"? inconclusive ({needed}+ runs/side needed)"
+        return f"? inconclusive (more than {RUNS_NEEDED_CAP} runs/side needed)"
     return f"? inconclusive (~{needed} runs/side needed)"
 
 

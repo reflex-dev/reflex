@@ -36,6 +36,7 @@ Status = Literal["ok", "failed", "timeout", "unsupported", "skipped"]
 Direction = Literal["lower", "higher"]
 Assume = Literal["nothing", "exact"]
 Verdict = Literal["regressed", "improved", "unchanged", "inconclusive"]
+ChangeMode = Literal["ratio", "absolute"]
 Kind = Literal["time", "startup", "rate", "latency", "peakmem", "track"]
 Mode = Literal["local", "ci"]
 RunKind = Literal["local", "ci", "pr", "daily", "backfill", "aa"]
@@ -183,11 +184,19 @@ class ComparisonSideDoc(TypedDict):
     ci: Interval | None
 
 
-class ComparisonDoc(TypedDict):
+class _ComparisonDocOptional(TypedDict, total=False):
+    mode: ChangeMode
+
+
+class ComparisonDoc(_ComparisonDocOptional):
     """The verdict of one metric against a baseline.
 
-    ``ratio`` and ``ci`` are relative changes, ``median(head) / median(base) - 1``;
-    ``ratio`` is ``None`` when the base median is zero.
+    In ``ratio`` mode (the default when ``mode`` is absent) ``ratio`` and ``ci`` are
+    relative changes, ``median(head) / median(base) - 1``. When the base median is
+    not positive, a ratio is undefined: ``mode`` is ``absolute``, ``ratio`` is
+    ``None`` and ``ci`` is the change ``median(head) - median(base)`` in the
+    metric's unit. Exact metrics always use ``ratio`` mode, with ``ratio`` ``None``
+    when the base is zero.
     """
 
     base: ComparisonSideDoc
@@ -258,8 +267,25 @@ class NotComparableDoc(TypedDict):
     reasons: list[str]
 
 
-class ComparedToDoc(TypedDict):
-    """The baseline the document's ``comparison`` blocks were computed against."""
+class FailedInHeadDoc(TypedDict):
+    """An entry that failed or timed out in head but not in base (or is new)."""
+
+    id: str
+    status: Status
+    base_status: Status | None
+    error: str | None
+
+
+class _ComparedToDocOptional(TypedDict, total=False):
+    failed_in_head: list[FailedInHeadDoc]
+
+
+class ComparedToDoc(_ComparedToDocOptional):
+    """The baseline the document's ``comparison`` blocks were computed against.
+
+    ``failed_in_head`` lists the entries that failed or timed out in head without
+    failing in base; each counts as a regression.
+    """
 
     base_label: str
     head_label: str

@@ -125,7 +125,9 @@ class Fail:
     suites=("selftest",),
     metrics=WALL,
     timeout=0.5,
-    estimate=0.5,
+    # The first sample times out after 0.5 s and ends the instance, but `list`
+    # multiplies the per-sample estimate by the 30 automatic runs.
+    estimate=0.5 / 30,
 )
 class Timeout:
     """Block past the timeout until conclude() releases it; checks timeout handling."""

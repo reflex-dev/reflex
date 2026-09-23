@@ -4,15 +4,18 @@ Layout under the bench home (``<git root or cwd>/.reflex-bench``, or
 ``$REFLEX_BENCH_HOME``)::
 
     results/<profile_id>/<NNNN>_<short sha>[_dirty]_<UTC timestamp>.json
+    results/<profile_id>/.claims/<NNNN>      reserves each autosave number
     baselines/<profile_id>/<name>.json
-    cache/<subject>/<benchmark id>/      setup_cache results
+    cache/<subject identity>/<benchmark id>/<params hash>/      setup_cache results
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
+from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -80,21 +83,25 @@ def slug(text: str) -> str:
     return re.sub(r"[^A-Za-z0-9._=-]+", "-", text).strip("-") or "_"
 
 
-def cache_dir(home: Path, subject_spec: str, benchmark_id: str) -> Path:
-    """Return the persistent ``setup_cache`` directory of a subject and benchmark.
+def cache_dir(
+    home: Path, subject_identity: str, benchmark_id: str, params: Mapping[str, Any]
+) -> Path:
+    """Return the persistent ``setup_cache`` directory of a benchmark instance.
 
-    Every parameter set of the benchmark shares it, so ``setup_cache`` can reuse
-    expensive work (an installed app) across parameters.
+    ``setup_cache`` runs once per subject and parameter set, so each of them has
+    its own directory.
 
     Args:
         home: The bench home.
-        subject_spec: The subject spec, e.g. ``workspace``.
+        subject_identity: The subject's :attr:`~reflex_bench.context.Subject.identity`.
         benchmark_id: The benchmark id.
+        params: The instance's visible parameters.
 
     Returns:
         The directory (not created).
     """
-    return home / "cache" / slug(subject_spec) / slug(benchmark_id)
+    digest = hashlib.sha256(canonical(params).encode()).hexdigest()[:12]
+    return home / "cache" / slug(subject_identity) / slug(benchmark_id) / digest
 
 
 def _counter(path: Path) -> int | None:
@@ -132,6 +139,9 @@ def autosave_name(doc: ResultDoc, counter: int) -> str:
 def autosave(doc: ResultDoc, home: Path) -> Path:
     """Save a result under the next counter of its machine profile.
 
+    Each counter is reserved by exclusively creating ``.claims/<NNNN>``, so
+    concurrent runs never share a number.
+
     Args:
         doc: The result; it is validated first.
         home: The bench home.
@@ -141,19 +151,20 @@ def autosave(doc: ResultDoc, home: Path) -> Path:
     """
     text = dumps(doc)
     directory = results_dir(home, doc["machine"]["profile_id"])
-    directory.mkdir(parents=True, exist_ok=True)
+    claims = directory / ".claims"
+    claims.mkdir(parents=True, exist_ok=True)
     counter = max(
         (c for path in directory.iterdir() if (c := _counter(path)) is not None),
         default=0,
     )
     while True:
         counter += 1
-        path = directory / autosave_name(doc, counter)
         try:
-            with path.open("x", encoding="utf-8") as file:
-                file.write(text)
+            (claims / f"{counter:04d}").touch(exist_ok=False)
         except FileExistsError:
             continue
+        path = directory / autosave_name(doc, counter)
+        path.write_text(text, encoding="utf-8")
         return path
 
 

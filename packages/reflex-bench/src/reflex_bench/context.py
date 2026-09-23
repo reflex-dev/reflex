@@ -134,6 +134,18 @@ class Subject:
     python_version: str
     extra: dict[str, str] = field(default_factory=dict)
 
+    @property
+    def identity(self) -> str:
+        """Identify the code under test, e.g. to key ``setup_cache`` results.
+
+        Returns:
+            The commit with a ``-dirty`` suffix for uncommitted changes, or the
+            spec when the commit is unknown.
+        """
+        if self.commit is None:
+            return self.spec
+        return f"{self.commit}-dirty" if self.dirty else self.commit
+
     def to_doc(self) -> SubjectDoc:
         """Describe the subject for the result document.
 
@@ -152,26 +164,26 @@ class Subject:
         }
 
 
-class WorkspaceSubject(Subject):
-    """The reflex installed in the harness's own environment (the current checkout)."""
+def workspace_subject(cwd: Path | None = None) -> Subject:
+    """Describe the reflex installed in the harness's own environment (the current checkout).
 
-    def __init__(self, cwd: Path | None = None) -> None:
-        """Describe the current checkout.
+    Args:
+        cwd: A directory inside the checkout; defaults to the working directory.
 
-        Args:
-            cwd: A directory inside the checkout; defaults to the working directory.
-        """
-        root = git_root(cwd or Path.cwd())
-        commit, dirty = git_state(root) if root else (None, None)
-        super().__init__(
-            spec="workspace",
-            source="workspace",
-            python=Path(sys.executable),
-            reflex_version=installed_version("reflex"),
-            commit=commit,
-            dirty=dirty,
-            python_version=platform.python_version(),
-        )
+    Returns:
+        The ``workspace`` subject.
+    """
+    root = git_root(cwd or Path.cwd())
+    commit, dirty = git_state(root) if root else (None, None)
+    return Subject(
+        spec="workspace",
+        source="workspace",
+        python=Path(sys.executable),
+        reflex_version=installed_version("reflex"),
+        commit=commit,
+        dirty=dirty,
+        python_version=platform.python_version(),
+    )
 
 
 @dataclass
@@ -183,9 +195,9 @@ class Context:
         params: The instance's parameters, hidden ones included.
         workdir: A fresh temporary directory for this instance, removed after
             ``cleanup`` unless the run keeps it.
-        cache_dir: A persistent directory per subject and benchmark id for
-            ``setup_cache`` results; the benchmark's parameter sets share it and
-            it survives across invocations, so hooks decide what to reuse.
+        cache_dir: A persistent directory per subject identity, benchmark id and
+            parameter set for ``setup_cache`` results; it survives across
+            invocations, so hooks decide what to reuse.
         env: The base environment for subprocesses (see :func:`base_env`).
         rng: A seeded random generator.
         log: A logger for the benchmark.

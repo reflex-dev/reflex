@@ -85,11 +85,26 @@ def test_bench_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     assert store.bench_home(repo) == tmp_path / "custom"
 
 
-def test_cache_dir_is_per_subject_and_benchmark(tmp_path: Path):
-    assert store.cache_dir(tmp_path, "git:main", "lifecycle.compile") == (
-        tmp_path / "cache" / "git-main" / "lifecycle.compile"
+def test_cache_dir_is_per_subject_benchmark_and_params(tmp_path: Path):
+    one = store.cache_dir(tmp_path, "git:main", "lifecycle.compile", {"a": 1, "b": 2})
+    assert one.parent == tmp_path / "cache" / "git-main" / "lifecycle.compile"
+    assert one == store.cache_dir(
+        tmp_path, "git:main", "lifecycle.compile", {"b": 2, "a": 1}
+    )
+    assert one != store.cache_dir(
+        tmp_path, "git:main", "lifecycle.compile", {"a": 1, "b": 3}
     )
     assert store.slug("a.b[x=1,y=2]") == "a.b-x=1-y=2"
+
+
+def test_autosave_skips_numbers_claimed_by_concurrent_runs(
+    tmp_path: Path, doc: ResultDoc
+):
+    # Another run claimed 0001 but has not written its result yet.
+    directory = tmp_path / "results" / "test-profile"
+    (directory / ".claims").mkdir(parents=True)
+    (directory / ".claims" / "0001").touch()
+    assert store.autosave(doc, tmp_path).name.startswith("0002_")
 
 
 def _key(doc: ResultDoc) -> store.SeriesKey:

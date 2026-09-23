@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import random
+import shutil
 import sys
 import threading
+import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 import pytest
-from reflex_bench import scheduler
+from reflex_bench import scheduler, store
 from reflex_bench.context import BASE_ENV, Context
 from reflex_bench.registry import Benchmark, Metric, ParamSet
 from reflex_bench.scheduler import Planned, Policy, Scheduler
@@ -227,7 +230,10 @@ def test_timeout_releases_the_sample_and_moves_on(tmp_path: Path):
     assert calls == ["sample", "conclude", "cleanup"]
 
 
-def test_policy_timeout_overrides_the_benchmark(tmp_path: Path):
+def test_policy_timeout_overrides_the_benchmark(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(scheduler, "ABANDON_GRACE_S", 0.05)
     release = threading.Event()
     planned = _recorder([], sample=lambda ctx: release.wait(30))
     try:
@@ -316,7 +322,9 @@ def test_context(tmp_path: Path):
     assert ctx.params == {"n": 7, "shift": 2.0}
     assert ctx.arm == "A"
     assert all(ctx.env[key] == value for key, value in BASE_ENV.items())
-    assert ctx.cache_dir == tmp_path / "home" / "cache" / "workspace" / "t.rec"
+    assert ctx.cache_dir == store.cache_dir(
+        tmp_path / "home", ctx.subject.identity, "t.rec", {"n": 7}
+    )
     assert ctx.cache_dir.is_dir()
     assert not ctx.workdir.exists()
     assert entry["params"] == {"n": 7}
@@ -386,3 +394,192 @@ def test_policy_validation():
 def test_derive_seed_is_stable():
     assert scheduler.derive_seed(1, "a", "b") == scheduler.derive_seed(1, "a", "b")
     assert scheduler.derive_seed(1, "a", "b") != scheduler.derive_seed(1, "a", "c")
+
+
+def test_interrupt_runs_conclude_on_a_fresh_thread(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    calls: list[str] = []
+    release = threading.Event()
+    waits = 0
+    real_wait = scheduler.concurrent.futures.wait
+
+    def interrupting_wait(futures: Any, timeout: float | None = None) -> Any:
+        nonlocal waits
+        waits += 1
+        # setup_cache, setup, prepare, then Ctrl-C while sample() blocks.
+        if waits == 4:
+            raise KeyboardInterrupt
+        return real_wait(futures, timeout=timeout)
+
+    class Releasing:
+        """Blocks in sample until conclude releases it."""
+
+        def sample(self, ctx: Context) -> None:
+            calls.append("sample")
+            release.wait(30)
+
+        def conclude(self, ctx: Context) -> None:
+            calls.append("conclude")
+            release.set()
+
+        def cleanup(self, ctx: Context) -> None:
+            calls.append("cleanup")
+
+    bench = Benchmark.define(Releasing, id="t.int", metrics={"wall": WALL}, timeout=30)
+    monkeypatch.setattr(scheduler.concurrent.futures, "wait", interrupting_wait)
+    started = time.monotonic()
+    with pytest.raises(KeyboardInterrupt):
+        _run(Planned(bench, ParamSet({})), tmp_path, runs=1)
+    assert time.monotonic() - started < 5
+    assert release.is_set()
+    assert calls[-2:] == ["conclude", "cleanup"]
+
+
+def test_a_timed_out_hook_finishes_before_its_work_directory_is_removed(
+    tmp_path: Path,
+):
+    finished = threading.Event()
+    workdirs: list[Path] = []
+
+    def sample(ctx: Context) -> None:
+        workdirs.append(ctx.workdir)
+        time.sleep(0.3)
+        finished.set()
+
+    entry = _run(_recorder([], sample=sample), tmp_path, runs=1, timeout_s=0.05)
+    assert entry["status"] == "timeout"
+    assert finished.is_set()
+    assert not workdirs[0].exists()
+
+
+def test_a_stuck_hook_keeps_the_work_directory_and_skips_other_params(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(scheduler, "ABANDON_GRACE_S", 0.05)
+    release = threading.Event()
+    calls: list[str] = []
+
+    class Stuck:
+        """setup_cache() never returns for p=1."""
+
+        def setup_cache(self, ctx: Context) -> None:
+            calls.append(f"setup_cache {ctx.params['p']}")
+            if ctx.params["p"] == 1:
+                release.wait(30)
+
+        def sample(self, ctx: Context) -> None:
+            calls.append("sample")
+
+    bench = Benchmark.define(
+        Stuck,
+        id="t.stuck",
+        metrics={"wall": WALL},
+        params={"p": [1, 2]},
+        setup_timeout=0.05,
+    )
+    runner = Scheduler(make_subject(), Policy(runs=1), home=tmp_path, seed=1)
+    try:
+        first, second = runner.run(scheduler.plan([bench]))
+    finally:
+        release.set()
+    assert first["status"] == "timeout"
+    assert "setup_cache() of t.stuck[p=1] was still running" in (
+        first["traceback_tail"] or ""
+    )
+    (kept,) = runner.kept
+    assert kept.is_dir()
+    assert second["status"] == "skipped"
+    assert second["error"] == (
+        "setup_cache() of t.stuck[p=1] was still running after teardown"
+    )
+    assert calls == ["setup_cache 1"]
+
+
+def test_setup_cache_gets_one_cache_dir_per_param_set(tmp_path: Path):
+    dirs: dict[int, Path] = {}
+
+    class Caching:
+        """Records the cache directory setup_cache() sees."""
+
+        def setup_cache(self, ctx: Context) -> None:
+            dirs[ctx.params["p"]] = ctx.cache_dir
+
+        def sample(self, ctx: Context) -> None:
+            pass
+
+    bench = Benchmark.define(
+        Caching, id="t.cache", metrics={"wall": WALL}, params={"p": [1, 2]}
+    )
+    runner = Scheduler(make_subject(), Policy(runs=1), home=tmp_path, seed=1)
+    runner.run(scheduler.plan([bench]))
+    assert dirs[1] != dirs[2]
+    assert dirs[1].parent == dirs[2].parent
+
+
+def test_make_context(tmp_path: Path):
+    planned = _recorder([], params={"n": [7]}, hidden_params={"shift": 2.0})
+    subject = make_subject()
+    ctx = scheduler.make_context(subject, planned, home=tmp_path, seed=3, arm="B")
+    try:
+        assert ctx.subject is subject
+        assert ctx.params == {"n": 7, "shift": 2.0}
+        assert ctx.arm == "B"
+        assert ctx.workdir.is_dir()
+        assert ctx.cache_dir.is_dir()
+        assert ctx.cache_dir == store.cache_dir(
+            tmp_path, subject.identity, "t.rec", {"n": 7}
+        )
+        assert all(ctx.env[key] == value for key, value in BASE_ENV.items())
+        expected = random.Random(scheduler.derive_seed(3, "t.rec[n=7]", "B"))
+        assert ctx.rng.random() == expected.random()
+    finally:
+        shutil.rmtree(ctx.workdir)
+
+
+def test_open_sessions_alternate_samples(tmp_path: Path):
+    calls: list[str] = []
+    planned = _recorder(calls)
+    entry = scheduler.new_entry(planned)
+    runner = Scheduler(make_subject(), Policy(), home=tmp_path, seed=1)
+    with (
+        runner.open(planned, entry, arm="A") as a,
+        runner.open(planned, entry, arm="B") as b,
+    ):
+        assert a.ctx is not None
+        assert b.ctx is not None
+        assert a.ctx.arm == "A"
+        assert b.ctx.arm == "B"
+        for round_, order in ((0, 0), (0, 1), (1, 0), (1, 1)):
+            session = (a, b, b, a)[2 * round_ + order]
+            taken = session.sample_once(round=round_, order=order, warmup=round_ == 0)
+            assert taken is not None
+    assert calls.count("setup") == 2
+    assert calls.count("cleanup") == 2
+    assert entry["status"] == "ok"
+    assert [
+        (meta["arm"], meta["round"], meta["order"], meta["warmup"])
+        for meta in entry["sample_meta"]
+    ] == [
+        ("A", 0, 0, True),
+        ("B", 0, 1, True),
+        ("B", 1, 0, False),
+        ("A", 1, 1, False),
+    ]
+    assert {arm: len(v) for arm, v in entry["metrics"]["wall"]["samples"].items()} == {
+        "A": 2,
+        "B": 2,
+    }
+
+
+def test_a_failed_session_takes_no_samples_and_records_the_failure(tmp_path: Path):
+    calls: list[str] = []
+    planned = _recorder(calls, fail_in="setup")
+    entry = scheduler.new_entry(planned)
+    runner = Scheduler(make_subject(), Policy(), home=tmp_path, seed=1)
+    with runner.open(planned, entry) as session:
+        assert session.sample_once(round=0, order=0, warmup=False) is None
+    assert "sample" not in calls
+    assert calls[-1] == "cleanup"
+    assert entry["status"] == "failed"
+    assert entry["error"] == "RuntimeError: setup broke"

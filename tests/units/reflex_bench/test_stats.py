@@ -170,6 +170,7 @@ def test_bootstrap_ratio_ci_is_deterministic_for_a_seed():
     first = stats.bootstrap_ratio_ci(a, b, seed=42, resamples=2000)
     assert first == stats.bootstrap_ratio_ci(a, b, seed=42, resamples=2000)
     assert first != stats.bootstrap_ratio_ci(a, b, seed=43, resamples=2000)
+    assert first is not None
     low, high = first
     # median(b) / median(a) - 1 == 1.195 / 1.095 - 1 lies inside the interval.
     assert low < 1.195 / 1.095 - 1 < high
@@ -179,9 +180,26 @@ def test_bootstrap_ratio_ci_of_constants_is_a_point():
     assert stats.bootstrap_ratio_ci([2.0] * 5, [3.0] * 5, seed=1) == (0.5, 0.5)
 
 
-def test_bootstrap_ratio_ci_needs_positive_base_values():
+def test_bootstrap_ratio_ci_needs_a_positive_base_median():
     with pytest.raises(ValueError, match="positive"):
-        stats.bootstrap_ratio_ci([0.0, 1.0], [1.0, 2.0], seed=1)
+        stats.bootstrap_ratio_ci([0.0, 0.0, 1.0], [1.0, 2.0], seed=1)
+
+
+def test_bootstrap_ratio_ci_tolerates_a_zero_base_value():
+    a = [0.0] + [1.0 + 0.001 * i for i in range(29)]
+    b = [2.0 + 0.001 * i for i in range(30)]
+    ci = stats.bootstrap_ratio_ci(a, b, seed=1, resamples=2000)
+    assert ci is not None
+    assert 0.9 < ci[0] < ci[1] < 1.1
+
+
+def test_bootstrap_ratio_ci_is_unbounded_when_base_medians_often_hit_zero():
+    # A quarter of the resampled base medians are zero: more than the 2.5 % tail.
+    assert stats.bootstrap_ratio_ci([0.0, 1.0], [1.0, 2.0], seed=1) is None
+
+
+def test_bootstrap_diff_ci():
+    assert stats.bootstrap_diff_ci([0.0] * 10, [5.0] * 10, seed=1) == (5.0, 5.0)
 
 
 def test_holm_matches_statsmodels():
@@ -220,6 +238,19 @@ def test_stability_warns_about_a_slow_first_sample():
     warnings = stats.stability_warnings(xs, xs[0])
     assert any(
         w.startswith("first sample much slower: raise --warmup") for w in warnings
+    )
+
+
+def test_stability_warns_about_a_slow_first_sample_without_spread():
+    # MAD is 0, so the first sample's modified z-score is infinite.
+    xs = [5.0] + [1.0] * 9
+    slower = "first sample much slower"
+    assert any(w.startswith(slower) for w in stats.stability_warnings(xs, 5.0))
+    assert not any(
+        w.startswith(slower) for w in stats.stability_warnings(xs, 5.0, "higher")
+    )
+    assert not any(
+        w.startswith(slower) for w in stats.stability_warnings([1.0] * 10, 1.0)
     )
 
 
@@ -268,10 +299,18 @@ def test_runs_needed_scales_with_the_ci_width():
     # Half width 0.091 against a margin of 0.079 - 0.03 = 0.049:
     # 10 * (0.091 / 0.049) ** 2 == 34.5, rounded up.
     assert stats.runs_needed(10, 0.079, (-0.012, 0.17), 0.03, alpha=0.01) == 35
-    # An effect sitting on the threshold needs more runs than the cap allows.
-    assert stats.runs_needed(10, 0.03, (-0.5, 0.56), 0.03, alpha=0.01) == 200
     # Without a CI: at least enough samples for a median CI (6 at 95 %).
     assert stats.runs_needed(3, 0.0, None, 0.03, alpha=0.01) == 6
+
+
+def test_runs_needed_beyond_the_cap_is_none():
+    # An effect sitting on the threshold needs more runs than the cap allows.
+    assert stats.runs_needed(10, 0.03, (-0.5, 0.56), 0.03, alpha=0.01) is None
+    assert stats.runs_needed(10, 0.079, (-0.9, 1.0), 0.03, alpha=0.01) is None
+    # Already past the cap: never an estimate at or below the current runs.
+    assert stats.runs_needed(250, 0.05, (0.0, 0.1), 0.03, alpha=0.01) is None
+    assert stats.runs_needed(250, 0.0, None, 0.03, alpha=0.01) is None
+    assert stats.runs_needed(199, 0.0, None, 0.03, alpha=0.01) == 200
 
 
 def _noise(seed: int, n: int, cv: float, shift: float = 1.0) -> list[float]:
@@ -358,3 +397,33 @@ def test_exact_metrics_skip_the_tests():
 def test_compare_samples_from_zero_base():
     assert stats.compare_samples([0.0], [0.0], exact=True).effect == pytest.approx(0.0)
     assert stats.compare_samples([0.0], [3.0], exact=True).effect == math.inf
+
+
+def test_compare_samples_with_a_zero_base_value_keeps_the_ratio():
+    a = [0.0] + [1.0 + 0.001 * i for i in range(29)]
+    b = [2.0 + 0.001 * i for i in range(30)]
+    comparison = stats.compare_samples(a, b, resamples=2000, seed=7)
+    assert comparison.mode == "ratio"
+    assert comparison.effect == pytest.approx(0.988, abs=0.001)
+    assert comparison.ci is not None
+    assert _verdict(a, b) == "regressed"
+
+
+def test_compare_samples_with_a_zero_base_median_compares_absolutely():
+    comparison = stats.compare_samples([0.0] * 10, [5.0] * 10, resamples=2000, seed=7)
+    assert comparison.mode == "absolute"
+    assert comparison.effect == pytest.approx(5.0)
+    assert comparison.ci == (5.0, 5.0)
+    assert comparison.p is not None
+    assert comparison.p < 0.01
+    # No relative threshold applies to an absolute difference.
+    kwargs = {"direction": "lower", "threshold": 0.0, "alpha": 0.01}
+    assert stats.verdict(5.0, comparison.ci, comparison.p, **kwargs) == "regressed"
+    assert stats.verdict(-5.0, (-5.0, -5.0), comparison.p, **kwargs) == "improved"
+    assert stats.verdict(0.0, (0.0, 0.0), 1.0, **kwargs) == "unchanged"
+    assert stats.verdict(0.5, (-0.5, 1.0), 0.2, **kwargs) == "inconclusive"
+    # Too few samples for a CI still give the absolute effect.
+    few = stats.compare_samples([0.0] * 3, [5.0] * 3)
+    assert (few.mode, few.effect, few.ci) == ("absolute", 5.0, None)
+    negative = stats.compare_samples([-2.0] * 10, [-1.0] * 10, resamples=200, seed=7)
+    assert (negative.mode, negative.effect) == ("absolute", 1.0)

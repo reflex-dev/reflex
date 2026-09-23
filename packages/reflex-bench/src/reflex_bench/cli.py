@@ -29,7 +29,7 @@ from rich.status import Status
 from rich.text import Text
 
 from reflex_bench import compare as comparing
-from reflex_bench.context import WorkspaceSubject, installed_version
+from reflex_bench.context import Subject, installed_version, workspace_subject
 from reflex_bench.machine import checks, collect, warning_count
 from reflex_bench.registry import SUITES, Benchmark, discover, parse_overrides, select
 from reflex_bench.report.bmf import to_bmf
@@ -324,7 +324,7 @@ class _Progress:
 
 
 def _new_doc(
-    subject: WorkspaceSubject,
+    subject: Subject,
     policy: Policy,
     seed: int,
     argv: list[str],
@@ -385,6 +385,9 @@ def _exit_code(
 ) -> int:
     """Decide the exit code of a run or comparison.
 
+    An entry that started failing in head counts as a regression, and as a
+    comparison made even when no metric could be compared.
+
     Args:
         doc: The result, annotated when compared.
         fail_on: ``regression`` or ``never``.
@@ -397,10 +400,11 @@ def _exit_code(
     statuses = {entry["status"] for entry in doc["benchmarks"]}
     if statuses & {"failed", "timeout"} and "ok" not in statuses:
         return EXIT_ERROR
-    if compared and not comparing.rows(doc):
+    failed = comparing.failed_in_head(doc)
+    if compared and not failed and not comparing.rows(doc):
         return EXIT_ERROR
     counts = comparing.verdict_counts(doc)
-    if fail_on == "regression" and counts["regressed"]:
+    if fail_on == "regression" and (counts["regressed"] or failed):
         return EXIT_REGRESSION
     if fail_on_inconclusive and counts["inconclusive"]:
         return EXIT_INCONCLUSIVE
@@ -463,7 +467,11 @@ def _stats_options(command: Any) -> Any:
     help="Fixed run count (overrides the auto rule).",
 )
 @click.option("--min-runs", type=click.IntRange(min=1), default=10, show_default=True)
-@click.option("--max-runs", type=click.IntRange(min=1), default=30, show_default=True)
+@click.option(
+    "--max-runs",
+    type=click.IntRange(min=1),
+    help="The most runs of the automatic rule. Default: max(30, --min-runs).",
+)
 @click.option(
     "--min-time",
     type=click.FloatRange(min=0),
@@ -528,7 +536,7 @@ def run(
     suite: str | None,
     runs: int | None,
     min_runs: int,
-    max_runs: int,
+    max_runs: int | None,
     min_time: float,
     warmup: int | None,
     params: tuple[str, ...],
@@ -557,7 +565,8 @@ def run(
         suite: A named selection.
         runs: A fixed run count.
         min_runs: The fewest runs of the automatic rule.
-        max_runs: The most runs of the automatic rule.
+        max_runs: The most runs of the automatic rule; ``None`` for
+            ``max(30, min_runs)``.
         min_time: The measuring time the automatic rule aims for.
         warmup: Untimed runs.
         params: ``KEY=VALUE`` parameter overrides.
@@ -588,7 +597,7 @@ def run(
         policy = Policy(
             runs=runs,
             min_runs=min_runs,
-            max_runs=max_runs,
+            max_runs=max(Policy.max_runs, min_runs) if max_runs is None else max_runs,
             min_time_s=min_time,
             warmup=warmup,
             timeout_s=timeout,
@@ -616,7 +625,7 @@ def run(
         raise click.UsageError(msg)
 
     home = bench_home()
-    subject = WorkspaceSubject()
+    subject = workspace_subject()
     seed = secrets.randbits(32) if seed is None else seed
     doc = _new_doc(subject, policy, seed, ctx.meta.get(_ARGV, []), kind)
     # Resolve the baseline before running, so a typo does not waste a whole run.

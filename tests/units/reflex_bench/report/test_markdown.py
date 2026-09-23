@@ -104,3 +104,19 @@ def test_result_without_comparison():
         " 50.08 ms \N{HORIZONTAL ELLIPSIS} 50.61 ms | 10 |"
     )
     assert lines[7] == "| `selftest.fail` |  | failed | RuntimeError: boom |  |"
+
+
+def test_failures_in_head_lead_the_report():
+    base = make_doc([
+        make_entry("selftest.sleep", {"wall": (WALL, SLEEP)}),
+        make_entry("selftest.exact", {"bytes": (EXACT, [238_400])}),
+    ])
+    head = make_doc([
+        make_entry("selftest.sleep", {"wall": (WALL, [])}, status="timeout"),
+        make_entry("selftest.exact", {"bytes": (EXACT, [238_400])}),
+    ])
+    compare.compare(base, head, threshold=0.03, alpha=0.01, resamples=200)
+    text = markdown.render_comparison(head)
+    assert text.splitlines()[0].endswith("1 unchanged \N{MIDDLE DOT} 1 failed in head")
+    assert "- `selftest.sleep`: **regressed** (ok in base, timeout in head)" in text
+    assert "No regressions" not in text

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import subprocess
 import sys
 from pathlib import Path
@@ -37,7 +38,7 @@ def test_workspace_subject_reads_git_state(tmp_path: Path):
     (tmp_path / "file.txt").write_text("one", encoding="utf-8")
     _git(tmp_path, "add", "file.txt")
     _git(tmp_path, "commit", "-q", "-m", "init")
-    subject = context.WorkspaceSubject(tmp_path)
+    subject = context.workspace_subject(tmp_path)
     assert subject.spec == subject.source == "workspace"
     assert subject.python == Path(sys.executable)
     assert subject.commit is not None
@@ -45,13 +46,13 @@ def test_workspace_subject_reads_git_state(tmp_path: Path):
     assert subject.dirty is False
     # Untracked files do not make a checkout dirty; modified tracked files do.
     (tmp_path / "untracked.txt").write_text("x", encoding="utf-8")
-    assert context.WorkspaceSubject(tmp_path).dirty is False
+    assert context.workspace_subject(tmp_path).dirty is False
     (tmp_path / "file.txt").write_text("two", encoding="utf-8")
-    assert context.WorkspaceSubject(tmp_path).dirty is True
+    assert context.workspace_subject(tmp_path).dirty is True
 
 
 def test_workspace_subject_outside_git(tmp_path: Path):
-    subject = context.WorkspaceSubject(tmp_path)
+    subject = context.workspace_subject(tmp_path)
     assert subject.commit is None
     assert subject.dirty is None
     assert subject.to_doc()["python"] == sys.executable
@@ -72,3 +73,16 @@ def test_the_harness_never_imports_reflex():
         "assert not loaded, loaded"
     )
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_workspace_subject_is_a_plain_subject(tmp_path: Path):
+    subject = context.workspace_subject(tmp_path)
+    assert dataclasses.replace(subject, spec="git:main").spec == "git:main"
+
+
+def test_subject_identity(tmp_path: Path):
+    subject = context.workspace_subject(tmp_path)
+    assert subject.identity == "workspace"
+    clean = dataclasses.replace(subject, commit="abc", dirty=False)
+    assert clean.identity == "abc"
+    assert dataclasses.replace(clean, dirty=True).identity == "abc-dirty"

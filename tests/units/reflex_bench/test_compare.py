@@ -126,7 +126,8 @@ def test_different_profiles_are_not_compared_unless_forced():
 
 def test_failed_entries_and_entries_on_one_side():
     base, head = _docs()
-    head["benchmarks"][0]["status"] = "failed"
+    base["benchmarks"][0]["status"] = "failed"
+    head["benchmarks"][0]["status"] = "timeout"
     head["benchmarks"].append(make_entry("selftest.new", {"wall": (WALL, [1.0])}))
     base["benchmarks"].append(make_entry("selftest.gone", {"wall": (WALL, [1.0])}))
     _compare(base, head)
@@ -135,8 +136,43 @@ def test_failed_entries_and_entries_on_one_side():
     assert compared_to["only_in_base"] == ["selftest.gone"]
     assert compared_to["only_in_head"] == ["selftest.new"]
     assert compared_to["not_comparable"] == [
-        {"id": "selftest.noise[cv=2]", "reasons": ["head status is failed"]}
+        {
+            "id": "selftest.noise[cv=2]",
+            "reasons": ["base status is failed", "head status is timeout"],
+        }
     ]
+    assert compare.failed_in_head(head) == []
+
+
+def test_failing_in_head_is_a_regression():
+    base, head = _docs()
+    head["benchmarks"][0].update(status="failed", error="boom")
+    head["benchmarks"][1]["status"] = "unsupported"
+    head["benchmarks"].append(
+        make_entry("selftest.new", {"wall": (WALL, [])}, status="timeout")
+    )
+    _compare(base, head)
+    compared_to = head.get("compared_to")
+    assert compared_to is not None
+    assert compare.failed_in_head(head) == [
+        {
+            "id": "selftest.noise[cv=2]",
+            "status": "failed",
+            "base_status": "ok",
+            "error": "boom",
+        },
+        {
+            "id": "selftest.new",
+            "status": "timeout",
+            "base_status": None,
+            "error": None,
+        },
+    ]
+    # Becoming unsupported is not a failure.
+    assert compared_to["not_comparable"] == [
+        {"id": "selftest.exact", "reasons": ["head status is unsupported"]}
+    ]
+    assert validate(head) == []
 
 
 def test_missing_metric_and_missing_samples_are_not_comparable():
@@ -196,6 +232,31 @@ def test_zero_base_gives_no_ratio():
     assert row.comparison["ratio"] is None
     assert row.comparison["verdict"] == "regressed"
     assert validate(head) == []
+
+
+def test_zero_base_median_is_compared_absolutely():
+    base = make_doc([make_entry("selftest.zero", {"value": (WALL, [0.0] * 10)})])
+    head = make_doc([make_entry("selftest.zero", {"value": (WALL, [5.0] * 10)})])
+    _compare(base, head)
+    (row,) = compare.rows(head)
+    assert row.comparison.get("mode") == "absolute"
+    assert row.comparison["ratio"] is None
+    assert row.comparison["ci"] == [5.0, 5.0]
+    assert row.comparison["verdict"] == "regressed"
+    assert validate(head) == []
+
+
+def test_zero_in_the_base_keeps_the_ratio():
+    a = [0.0] + [1.0 + 0.001 * i for i in range(29)]
+    b = [2.0 + 0.001 * i for i in range(30)]
+    base = make_doc([make_entry("selftest.zero", {"value": (WALL, a)})])
+    head = make_doc([make_entry("selftest.zero", {"value": (WALL, b)})])
+    _compare(base, head)
+    (row,) = compare.rows(head)
+    assert row.comparison.get("mode") == "ratio"
+    assert row.comparison["ratio"] == pytest.approx(0.988, abs=0.001)
+    assert row.comparison["verdict"] == "regressed"
+    assert row.comparison["runs_needed"] is None
 
 
 def test_geomeans_per_unit_family():

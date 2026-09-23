@@ -6,13 +6,20 @@ set), ``setup``, then ``prepare`` → ``sample`` → ``conclude`` per run, then
 runs on one worker thread (so thread-bound resources such as a sync Playwright
 browser work across hooks) under a deadline; a hook that misses it ends the
 instance with status ``timeout``, and the remaining teardown hooks run on a
-fresh thread while the stuck one is abandoned. Any exception ends the instance
-with status ``failed``; other instances still run.
+fresh thread while the stuck one is abandoned. An interrupt (Ctrl-C) during a
+hook also moves the teardown hooks to a fresh thread. An abandoned hook gets
+:data:`ABANDON_GRACE_S` after teardown to return; if it does not, the work
+directory is kept and the benchmark's remaining parameter sets are skipped. Any
+exception ends the instance with status ``failed``; other instances still run.
+
+:meth:`Scheduler.open` holds an instance open so a caller can take samples one
+at a time, e.g. interleaving two arms.
 """
 
 from __future__ import annotations
 
 import concurrent.futures
+import contextlib
 import functools
 import hashlib
 import logging
@@ -25,7 +32,7 @@ import tempfile
 import threading
 import time
 import traceback
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from concurrent.futures import Future
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -51,6 +58,7 @@ from reflex_bench.schema import (
 from reflex_bench.store import cache_dir, slug
 
 TRACEBACK_LINES = 50
+ABANDON_GRACE_S = 5.0
 CORRECTION = "holm"
 
 Event = dict[str, Any]
@@ -339,6 +347,18 @@ class _Worker:
         """Let the thread exit once its current job returns."""
         self._jobs.put(None)
 
+    def join(self, timeout: float) -> bool:
+        """Wait for the thread to exit after :meth:`close`.
+
+        Args:
+            timeout: Seconds to wait.
+
+        Returns:
+            Whether the thread is still running.
+        """
+        self._thread.join(timeout)
+        return self._thread.is_alive()
+
 
 class _Hooks:
     """Runs one instance's hooks under deadlines, replacing a stuck worker."""
@@ -351,7 +371,18 @@ class _Hooks:
         """
         self._name = name
         self._worker = _Worker(name)
+        self._abandoned: list[tuple[str, _Worker]] = []
         self.secondary: list[Exception] = []
+
+    def _abandon(self, hook: str) -> None:
+        """Leave the worker to its running hook and continue on a fresh thread.
+
+        Args:
+            hook: The running hook.
+        """
+        self._worker.close()
+        self._abandoned.append((hook, self._worker))
+        self._worker = _Worker(self._name)
 
     def call(self, hook: str, fn: Callable[[], _T], timeout: float) -> _T:
         """Run a hook on the worker thread.
@@ -366,15 +397,19 @@ class _Hooks:
 
         Raises:
             HookTimeoutError: When the hook misses its deadline. Later hooks run on a
-                fresh thread.
+                fresh thread, as they do after an interrupt while waiting.
         """
         try:
             return self._worker.run(fn, timeout)
         except _StuckError:
             stack = self._worker.stack()
-            self._worker.close()
-            self._worker = _Worker(self._name)
+            self._abandon(hook)
             raise HookTimeoutError(hook, timeout, stack) from None
+        except BaseException as exc:
+            # Hook errors arrive as Exception; anything else interrupted the wait.
+            if not isinstance(exc, Exception):
+                self._abandon(hook)
+            raise
 
     def call_quietly(self, hook: str, fn: Callable[[], object], timeout: float) -> None:
         """Run a teardown hook after a failure, keeping its error as secondary.
@@ -389,9 +424,19 @@ class _Hooks:
         except Exception as exc:
             self.secondary.append(exc)
 
-    def close(self) -> None:
-        """Stop the worker thread."""
+    def close(self) -> list[str]:
+        """Stop the worker thread and give abandoned hooks a grace period to return.
+
+        Returns:
+            The abandoned hooks still running after :data:`ABANDON_GRACE_S`.
+        """
         self._worker.close()
+        deadline = time.monotonic() + ABANDON_GRACE_S
+        return [
+            hook
+            for hook, worker in self._abandoned
+            if worker.join(max(0.0, deadline - time.monotonic()))
+        ]
 
 
 def _timed(fn: Callable[[], _T]) -> tuple[_T, int]:
@@ -569,6 +614,185 @@ def finalize(entry: BenchmarkDoc, confidence: float) -> None:
             metric["warnings"].extend(prefix + warning for warning in found)
 
 
+def make_context(
+    subject: Subject, planned: Planned, *, home: Path, seed: int, arm: str = "A"
+) -> Context:
+    """Create the context of a benchmark instance, as the scheduler does.
+
+    Args:
+        subject: The reflex installation under test.
+        planned: The instance.
+        home: The bench home, for the ``setup_cache`` directory.
+        seed: The invocation seed.
+        arm: The arm being measured.
+
+    Returns:
+        A context with a fresh work directory, the persistent (created) cache
+        directory of the subject identity and parameter set, and an RNG seeded
+        from ``seed``, the instance name and the arm.
+    """
+    cache = cache_dir(
+        home, subject.identity, planned.benchmark.id, planned.params.params
+    )
+    cache.mkdir(parents=True, exist_ok=True)
+    return Context(
+        subject=subject,
+        params=planned.params.merged,
+        workdir=Path(tempfile.mkdtemp(prefix=f"reflex-bench-{slug(planned.name)}-")),
+        cache_dir=cache,
+        env=base_env(),
+        rng=random.Random(derive_seed(seed, planned.name, arm)),
+        log=logging.getLogger(f"reflex_bench.{planned.benchmark.id}"),
+        arm=arm,
+    )
+
+
+class Session:
+    """A benchmark instance held open by :meth:`Scheduler.open`.
+
+    ``setup`` has run; each :meth:`sample_once` runs ``prepare`` → ``sample`` →
+    ``conclude`` and records the sample in ``entry``. :meth:`close` runs
+    ``cleanup`` and records any failure in ``entry``.
+
+    Attributes:
+        planned: The instance.
+        entry: The result entry the samples and any failure go to.
+        arm: The arm being measured.
+        ctx: The context of the hooks; ``None`` when it could not be created.
+    """
+
+    def __init__(
+        self, scheduler: Scheduler, planned: Planned, entry: BenchmarkDoc, arm: str
+    ) -> None:
+        """Prepare the session; :meth:`Scheduler.open` then runs the setup hooks.
+
+        Args:
+            scheduler: The scheduler that opened it.
+            planned: The instance.
+            entry: The result entry.
+            arm: The arm being measured.
+        """
+        self.planned = planned
+        self.entry = entry
+        self.arm = arm
+        self.ctx: Context | None = None
+        self._scheduler = scheduler
+        self._hooks = _Hooks(f"reflex-bench {planned.name}")
+        self._instance: Instance | None = None
+        self._errors: list[Exception] = []
+        self._timeout = scheduler.policy.timeout_s or planned.benchmark.timeout
+        self._closed = False
+
+    def _setup(self) -> None:
+        """Create the context and run the setup hooks.
+
+        ``setup_cache`` runs once per cache directory, then ``setup`` runs.
+        """
+        bench = self.planned.benchmark
+        scheduler = self._scheduler
+        try:
+            self.ctx = make_context(
+                scheduler.subject,
+                self.planned,
+                home=scheduler.home,
+                seed=scheduler.seed,
+                arm=self.arm,
+            )
+            self._instance = Instance(bench, self.planned.params, self.ctx)
+            if self.ctx.cache_dir not in scheduler._cache_done:
+                self._hooks.call(
+                    "setup_cache", self._instance.setup_cache, bench.setup_timeout
+                )
+                scheduler._cache_done.add(self.ctx.cache_dir)
+            self._hooks.call("setup", self._instance.setup, bench.setup_timeout)
+        except Exception as exc:
+            self._errors.append(exc)
+
+    def sample_once(
+        self, *, round: int, order: int, warmup: bool
+    ) -> tuple[SampleResult, float] | None:
+        """Take one sample and record it in the entry.
+
+        Args:
+            round: The round the sample belongs to.
+            order: The sample's position within its round.
+            warmup: Whether the sample is excluded from statistics.
+
+        Returns:
+            The normalized sample and its duration in seconds, or ``None`` when a
+            hook failed now or earlier (the failure is recorded on :meth:`close`).
+        """
+        instance = self._instance
+        if self._errors or instance is None:
+            return None
+        hooks, timeout = self._hooks, self._timeout
+        try:
+            try:
+                hooks.call("prepare", instance.prepare, timeout)
+                started_at = utc_now()
+                raw, elapsed_ns = hooks.call(
+                    "sample", functools.partial(_timed, instance.sample), timeout
+                )
+            except BaseException:
+                hooks.call_quietly("conclude", instance.conclude, timeout)
+                raise
+            hooks.call("conclude", instance.conclude, timeout)
+            duration = elapsed_ns / 1e9
+            result = instance.benchmark.normalize(raw, duration)
+        except Exception as exc:
+            self._errors.append(exc)
+            return None
+        _record_sample(
+            self.entry,
+            result,
+            {
+                "arm": self.arm,
+                "round": round,
+                "order": order,
+                "started_at": started_at,
+                "warmup": warmup,
+                "duration_s": duration,
+            },
+        )
+        return result, duration
+
+    def close(self) -> None:
+        """Run ``cleanup``, remove the work directory and record any failure.
+
+        A hook still running after teardown keeps the work directory and makes
+        the scheduler skip the benchmark's remaining parameter sets.
+        """
+        if self._closed:
+            return
+        self._closed = True
+        hooks, bench = self._hooks, self.planned.benchmark
+        if self._instance is not None:
+            if self._errors:
+                hooks.call_quietly(
+                    "cleanup", self._instance.cleanup, bench.setup_timeout
+                )
+            else:
+                try:
+                    hooks.call("cleanup", self._instance.cleanup, bench.setup_timeout)
+                except Exception as exc:
+                    self._errors.append(exc)
+        stuck = hooks.close()
+        errors = [*self._errors, *hooks.secondary]
+        if stuck:
+            reason = (
+                f"{stuck[0]}() of {self.planned.name} was still running after teardown"
+            )
+            self._scheduler._stuck[bench.id] = reason
+            errors.append(RuntimeError(f"{reason}; its work directory was kept"))
+        if self.ctx is not None:
+            if stuck or self._scheduler.keep:
+                self._scheduler.kept.append(self.ctx.workdir)
+            else:
+                shutil.rmtree(self.ctx.workdir, ignore_errors=True)
+        if errors:
+            _record_failure(self.entry, errors)
+
+
 class Scheduler:
     """Runs planned instances against one subject under one policy."""
 
@@ -600,7 +824,8 @@ class Scheduler:
         self.keep = keep
         self.on_event = on_event
         self.kept: list[Path] = []
-        self._cache_done: set[tuple[str, str]] = set()
+        self._cache_done: set[Path] = set()
+        self._stuck: dict[str, str] = {}
 
     def _emit(self, event: Event) -> None:
         """Send a progress event to the listener, if any.
@@ -624,6 +849,30 @@ class Scheduler:
             self.run_one(item, index=index, total=len(planned))
             for index, item in enumerate(planned)
         ]
+
+    @contextlib.contextmanager
+    def open(
+        self, planned: Planned, entry: BenchmarkDoc, *, arm: str = "A"
+    ) -> Iterator[Session]:
+        """Set up an instance and hold it open for :meth:`Session.sample_once`.
+
+        Several sessions can be open at once, e.g. one per arm to interleave
+        their samples into one entry. Leaving the block closes the session.
+
+        Args:
+            planned: The instance.
+            entry: The result entry the samples and any failure go to.
+            arm: The arm being measured.
+
+        Yields:
+            The session; after a setup failure it takes no samples.
+        """
+        session = Session(self, planned, entry, arm)
+        try:
+            session._setup()
+            yield session
+        finally:
+            session.close()
 
     def run_one(
         self, planned: Planned, *, index: int = 0, total: int = 1, arm: str = "A"
@@ -649,11 +898,16 @@ class Scheduler:
         })
         started = time.perf_counter()
         reason = unsupported_reason(planned.benchmark, self.subject)
+        stuck = self._stuck.get(planned.benchmark.id)
         if reason is not None:
             entry["status"] = "unsupported"
             entry["error"] = reason
+        elif stuck is not None:
+            entry["status"] = "skipped"
+            entry["error"] = stuck
         else:
-            self._execute(planned, entry, arm)
+            with self.open(planned, entry, arm=arm) as session:
+                self._sample(session)
             if entry["status"] == "ok" and not self.policy.smoke:
                 finalize(entry, self.policy.confidence)
         self._emit({
@@ -668,88 +922,14 @@ class Scheduler:
         })
         return entry
 
-    def _context(self, planned: Planned, arm: str) -> Context:
-        """Create the context of an instance.
+    def _sample(self, session: Session) -> None:
+        """Take warmup and timed samples until the run count is reached or a hook fails.
 
         Args:
-            planned: The instance.
-            arm: The arm being measured.
-
-        Returns:
-            A context with a fresh work directory, the persistent cache directory of
-            the subject and benchmark (shared by its parameter sets) and a seeded RNG.
+            session: The open instance.
         """
-        cache = cache_dir(self.home, self.subject.spec, planned.benchmark.id)
-        cache.mkdir(parents=True, exist_ok=True)
-        return Context(
-            subject=self.subject,
-            params=planned.params.merged,
-            workdir=Path(
-                tempfile.mkdtemp(prefix=f"reflex-bench-{slug(planned.name)}-")
-            ),
-            cache_dir=cache,
-            env=base_env(),
-            rng=random.Random(derive_seed(self.seed, planned.name, arm)),
-            log=logging.getLogger(f"reflex_bench.{planned.benchmark.id}"),
-            arm=arm,
-        )
-
-    def _execute(self, planned: Planned, entry: BenchmarkDoc, arm: str) -> None:
-        """Run an instance's hooks and record its samples or its failure.
-
-        Args:
-            planned: The instance.
-            entry: Its result entry, updated in place.
-            arm: The arm being measured.
-        """
-        bench = planned.benchmark
-        hooks = _Hooks(f"reflex-bench {planned.name}")
-        errors: list[BaseException] = []
-        ctx: Context | None = None
-        instance: Instance | None = None
-        try:
-            ctx = self._context(planned, arm)
-            instance = Instance(bench, planned.params, ctx)
-            cache_key = (self.subject.spec, planned.name)
-            if cache_key not in self._cache_done:
-                hooks.call("setup_cache", instance.setup_cache, bench.setup_timeout)
-                self._cache_done.add(cache_key)
-            hooks.call("setup", instance.setup, bench.setup_timeout)
-            self._sample(instance, hooks, entry, arm)
-        except Exception as exc:
-            errors.append(exc)
-        finally:
-            if instance is not None:
-                if errors:
-                    hooks.call_quietly("cleanup", instance.cleanup, bench.setup_timeout)
-                else:
-                    try:
-                        hooks.call("cleanup", instance.cleanup, bench.setup_timeout)
-                    except Exception as exc:
-                        errors.append(exc)
-            hooks.close()
-            if ctx is not None and self.keep:
-                self.kept.append(ctx.workdir)
-            elif ctx is not None:
-                shutil.rmtree(ctx.workdir, ignore_errors=True)
-        errors.extend(hooks.secondary)
-        if errors:
-            _record_failure(entry, errors)
-
-    def _sample(
-        self, instance: Instance, hooks: _Hooks, entry: BenchmarkDoc, arm: str
-    ) -> None:
-        """Take warmup and timed samples until the run count is reached.
-
-        Args:
-            instance: The bound benchmark.
-            hooks: The hook runner.
-            entry: The result entry, updated in place.
-            arm: The arm being measured.
-        """
-        bench = instance.benchmark
+        bench = session.planned.benchmark
         policy = self.policy
-        timeout = policy.timeout_s or bench.timeout
         if policy.smoke:
             warmup, target = 0, 1
         else:
@@ -759,37 +939,17 @@ class Scheduler:
         index = 0
         while target is None or timed < target:
             is_warmup = index < warmup
-            try:
-                hooks.call("prepare", instance.prepare, timeout)
-                started_at = utc_now()
-                raw, elapsed_ns = hooks.call(
-                    "sample", functools.partial(_timed, instance.sample), timeout
-                )
-            except BaseException:
-                hooks.call_quietly("conclude", instance.conclude, timeout)
-                raise
-            hooks.call("conclude", instance.conclude, timeout)
-            duration = elapsed_ns / 1e9
-            result = bench.normalize(raw, duration)
-            _record_sample(
-                entry,
-                result,
-                {
-                    "arm": arm,
-                    "round": 0,
-                    "order": 0,
-                    "started_at": started_at,
-                    "warmup": is_warmup,
-                    "duration_s": duration,
-                },
-            )
+            taken = session.sample_once(round=0, order=0, warmup=is_warmup)
+            if taken is None:
+                return
+            result, duration = taken
             if not is_warmup:
                 timed += 1
                 if target is None:
                     target = policy.auto_runs(duration)
             self._emit({
                 "event": "sample",
-                "id": instance.name,
+                "id": session.planned.name,
                 "index": index,
                 "warmup": is_warmup,
                 "timed": timed,

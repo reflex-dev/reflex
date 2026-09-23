@@ -177,6 +177,16 @@ def test_unsupported_entries():
     )
 
 
+def test_status_summary_is_pluralized():
+    one = make_doc([make_entry("selftest.fail", {"wall": (WALL, [])}, status="failed")])
+    assert "1 benchmark: 1 failed" in _render(table.render_run, one)
+    two = make_doc([
+        make_entry("selftest.fail", {"wall": (WALL, [])}, status="failed"),
+        make_entry("selftest.sleep", {"wall": (WALL, SLEEP)}),
+    ])
+    assert "2 benchmarks: 1 failed" in _render(table.render_run, two)
+
+
 def _compared() -> ResultDoc:
     base = make_doc(
         [

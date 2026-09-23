@@ -8,7 +8,10 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner, Result
 from reflex_bench import cli
-from reflex_bench.schema import load, validate
+from reflex_bench.registry import Metric
+from reflex_bench.schema import dump, load, validate
+
+from .factories import WALL, make_doc, make_entry
 
 
 @pytest.fixture
@@ -62,6 +65,21 @@ def test_list_self_tests(home: Path):
     ]
     assert "bytes (B, exact)" in result.output
     assert result.output.splitlines()[-1].startswith("7 benchmarks")
+
+
+def test_list_estimates_the_timeout_self_test_as_one_sample(home: Path):
+    result = invoke("list", "selftest.timeout", "--suite", "selftest")
+    assert result.exit_code == 0, result.output
+    assert result.output.splitlines()[1].endswith("~0.5 s")
+
+
+def test_min_runs_alone_raises_the_default_max_runs(home: Path):
+    result = invoke(
+        "run", "selftest.exact", "--min-runs", "40", "--no-save", "--json", "e.json"
+    )
+    assert result.exit_code == 0, result.output
+    policy = load(Path("e.json"))["policy"]
+    assert (policy["min_runs"], policy["max_runs"]) == (40, 40)
 
 
 def test_list_hides_self_tests_by_default(home: Path):
@@ -136,7 +154,7 @@ def test_run_self_tests_reports_failures_and_exits_zero(home: Path):
 def test_run_autosaves_and_resolves_baselines(home: Path):
     first = invoke("run", "selftest.exact", "--save-as", "main")
     assert first.exit_code == 0, first.output
-    saved = sorted((home / "results" / "test-profile").iterdir())
+    saved = sorted((home / "results" / "test-profile").glob("*.json"))
     assert [path.name.split("_")[0] for path in saved] == ["0001"]
     assert (home / "baselines" / "test-profile" / "main.json").is_file()
     for ref in ("main", "0001", str(saved[0])):
@@ -226,6 +244,58 @@ def test_compare_formats_and_exit_codes(home: Path, monkeypatch: pytest.MonkeyPa
     )
     monkeypatch.setenv("CI", "true")
     assert invoke("compare", "base.json", "head.json").exit_code == 2
+
+
+def _failing_head_files() -> None:
+    exact = Metric(unit="B", direction="lower", assume="exact")
+    base = make_doc(
+        [
+            make_entry("selftest.exact", {"bytes": (exact, [238_400])}),
+            make_entry("selftest.fail", {"wall": (WALL, [1.0] * 6)}),
+        ],
+        invocation_id="base",
+    )
+    head = make_doc(
+        [
+            make_entry("selftest.exact", {"bytes": (exact, [238_400])}),
+            make_entry(
+                "selftest.fail", {"wall": (WALL, [])}, status="failed", error="boom"
+            ),
+        ],
+        invocation_id="head",
+    )
+    dump(base, Path("base.json"))
+    dump(head, Path("head.json"))
+
+
+def test_compare_fails_when_a_benchmark_starts_failing(
+    home: Path, monkeypatch: pytest.MonkeyPatch
+):
+    _failing_head_files()
+    term = invoke("compare", "base.json", "head.json")
+    assert term.exit_code == 0, term.output
+    assert "selftest.fail: regressed (ok in base, failed in head): boom" in term.output
+    assert "1 failed in head" in term.output
+    md = invoke("compare", "base.json", "head.json", "--format", "md")
+    assert "- `selftest.fail`: **regressed** (ok in base, failed in head): boom" in (
+        md.output
+    )
+    assert (
+        invoke("compare", "base.json", "head.json", "--fail-on", "regression").exit_code
+        == 2
+    )
+    monkeypatch.setenv("CI", "true")
+    assert invoke("compare", "base.json", "head.json").exit_code == 2
+
+
+def test_run_fails_when_a_benchmark_starts_failing(home: Path):
+    _failing_head_files()
+    result = invoke(
+        "run", "selftest.fail", "selftest.exact", "--no-save",
+        "--baseline", "base.json", "--fail-on", "regression",
+    )  # fmt: skip
+    assert result.exit_code == 2, result.output
+    assert "selftest.fail: regressed (ok in base, failed in head)" in result.output
 
 
 def test_compare_refuses_other_profiles_unless_forced(

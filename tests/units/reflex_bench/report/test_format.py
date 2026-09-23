@@ -62,6 +62,9 @@ def test_format_p(p, expected):
     assert fmt.format_p(p) == expected
 
 
+SCALE = fmt.scale_for("s", 1.0, 1.05)
+
+
 def _comparison(**changes) -> ComparisonDoc:
     comparison: ComparisonDoc = {
         "base": {
@@ -93,17 +96,17 @@ def _comparison(**changes) -> ComparisonDoc:
 
 def test_comparison_texts():
     regressed = _comparison()
-    assert fmt.change_text(regressed, exact=False) == "+5.4 % [+4.9, +5.9]"
+    assert fmt.change_text(regressed, exact=False, scale=SCALE) == "+5.4 % [+4.9, +5.9]"
     assert fmt.stats_text(regressed, exact=False) == "p=0.000 n=10/10"
     assert fmt.verdict_text(regressed, exact=False) == "regressed"
 
     unchanged = _comparison(verdict="unchanged", ratio=-0.003, ci=[-0.026, 0.019])
-    assert fmt.change_text(unchanged, exact=False) == "~ [-2.6, +1.9]"
+    assert fmt.change_text(unchanged, exact=False, scale=SCALE) == "~ [-2.6, +1.9]"
     assert fmt.verdict_text(unchanged, exact=False) == "no change"
     assert fmt.verdict_text(unchanged, exact=True) == "~ below threshold"
 
     exact = _comparison(verdict="unchanged", ratio=0.011, ci=None, p=None, p_adj=None)
-    assert fmt.change_text(exact, exact=True) == "+1.1 %"
+    assert fmt.change_text(exact, exact=True, scale=SCALE) == "+1.1 %"
     assert fmt.stats_text(exact, exact=True) == "exact"
 
     inconclusive = _comparison(verdict="inconclusive", runs_needed=40)
@@ -111,8 +114,30 @@ def test_comparison_texts():
         "? inconclusive (~40 runs/side needed)"
     )
     assert fmt.verdict_text(
-        _comparison(verdict="inconclusive", runs_needed=200), exact=False
-    ) == ("? inconclusive (200+ runs/side needed)")
-    assert fmt.change_text(_comparison(ratio=None), exact=True) == "n/a (zero base)"
+        _comparison(verdict="inconclusive", runs_needed=None), exact=False
+    ) == ("? inconclusive (more than 200 runs/side needed)")
+    assert (
+        fmt.change_text(_comparison(ratio=None), exact=True, scale=SCALE)
+        == "n/a (zero base)"
+    )
     assert fmt.verdict_style("regressed") == "bold red"
     assert fmt.verdict_style("unchanged") == ""
+
+
+def test_absolute_change_text():
+    absolute = _comparison(mode="absolute", ratio=None, ci=[4.9, 5.1])
+    absolute["base"]["median"] = 0.0
+    absolute["head"]["median"] = 5.0
+    scale = fmt.scale_for("s", 0.0, 5.0)
+    assert (
+        fmt.change_text(absolute, exact=False, scale=scale)
+        == "+5.000 s [+4.900, +5.100] (absolute)"
+    )
+    unchanged = _comparison(
+        mode="absolute", ratio=None, ci=[0.0, 0.0], verdict="unchanged"
+    )
+    unchanged["base"]["median"] = unchanged["head"]["median"] = 0.0
+    assert (
+        fmt.change_text(unchanged, exact=False, scale=fmt.scale_for("1", 0))
+        == "~ [+0, +0] (absolute)"
+    )

@@ -14,6 +14,7 @@ import re
 import shutil
 import subprocess
 import sys
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -32,7 +33,7 @@ _CPU_NOISE = re.compile(
 )
 _CPU_VENDORS = re.compile(r"\b(?:amd|intel|genuineintel|authenticamd)\b", re.IGNORECASE)
 _NON_ALNUM = re.compile(r"[^a-z0-9]+")
-_PROFILE_PATTERN = re.compile(r"[A-Za-z0-9._-]+")
+_PROFILE_UNSAFE = re.compile(r"[^A-Za-z0-9._-]+")
 
 CheckStatus = Literal["ok", "warn", "info"]
 
@@ -137,6 +138,9 @@ def profile_id(
 ) -> str:
     """Build the machine profile id; ``REFLEX_BENCH_PROFILE`` overrides it.
 
+    The override has runs of unsafe characters replaced by ``-``; an override that
+    is then empty or starts with ``.`` is ignored with a warning.
+
     Args:
         system: ``platform.system()``.
         arch: The normalized architecture.
@@ -146,12 +150,15 @@ def profile_id(
     Returns:
         E.g. ``linux-x86_64-ryzen-9-7950x-py3.12``.
     """
-    override = os.environ.get(PROFILE_ENV, "").strip()
-    # The id names a directory, so keep it to a safe character set.
-    if _PROFILE_PATTERN.fullmatch(override):
-        return override
-    if slug := _NON_ALNUM.sub("-", override.lower()).strip("-"):
-        return slug
+    if override := os.environ.get(PROFILE_ENV, "").strip():
+        # The id names a directory, so keep it to one safe, visible path component.
+        slug = _PROFILE_UNSAFE.sub("-", override).strip("-")
+        if slug and not slug.startswith("."):
+            return slug
+        warnings.warn(
+            f"ignoring {PROFILE_ENV}={override!r}: not usable as a directory name",
+            stacklevel=2,
+        )
     major_minor = ".".join(python_version.split(".")[:2])
     return f"{system.lower()}-{arch}-{cpu_slug(cpu_model)}-py{major_minor}"
 

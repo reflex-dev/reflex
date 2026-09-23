@@ -39,6 +39,7 @@ from reflex_bench.report.format import (
 from reflex_bench.schema import (
     ComparedToDoc,
     ComparisonSideDoc,
+    FailedInHeadDoc,
     MachineDoc,
     PolicyDoc,
     ResultDoc,
@@ -309,10 +310,11 @@ def render_run(console: Console, doc: ResultDoc) -> None:
     _print_lines(console, lines, right=(3,))
     statuses = Counter(entry["status"] for entry in doc["benchmarks"])
     if set(statuses) - {"ok"}:
+        total = len(doc["benchmarks"])
         console.print()
         console.print(
             Text(
-                f"{len(doc['benchmarks'])} benchmarks: "
+                f"{total} benchmark{'' if total == 1 else 's'}: "
                 + _SEPARATOR.join(
                     f"{count} {status}" for status, count in statuses.items()
                 )
@@ -361,13 +363,33 @@ def counts_line(doc: ResultDoc) -> str:
         doc: The head document after :func:`reflex_bench.compare.compare`.
 
     Returns:
-        E.g. ``1 regressed · 0 improved · 1 inconclusive · 2 unchanged``.
+        E.g. ``1 regressed · 0 improved · 1 inconclusive · 2 unchanged``, followed
+        by ``· 1 failed in head`` when entries started failing.
     """
     counts = compare.verdict_counts(doc)
-    return _SEPARATOR.join(
+    line = _SEPARATOR.join(
         f"{counts.get(verdict, 0)} {verdict}"
         for verdict in ("regressed", "improved", "inconclusive", "unchanged")
     )
+    if failed := compare.failed_in_head(doc):
+        line += f"{_SEPARATOR}{len(failed)} failed in head"
+    return line
+
+
+def failure_text(failure: FailedInHeadDoc) -> str:
+    """Describe how an entry started failing in head, after its verdict.
+
+    Args:
+        failure: The entry.
+
+    Returns:
+        E.g. ``(ok in base, failed in head): RuntimeError: boom``.
+    """
+    origin = (
+        "new" if failure["base_status"] is None else f"{failure['base_status']} in base"
+    )
+    error = f": {failure['error']}" if failure["error"] else ""
+    return f"({origin}, {failure['status']} in head){error}"
 
 
 def significance_label(compared_to: ComparedToDoc) -> str:
@@ -416,7 +438,7 @@ def render_comparison(console: Console, doc: ResultDoc) -> None:
             row.metric,
             _side_text(comparison["base"], row.doc["unit"], exact, scale),
             _side_text(comparison["head"], row.doc["unit"], exact, scale),
-            change_text(comparison, exact),
+            change_text(comparison, exact, scale),
             stats_text(comparison, exact),
             Text(verdict_text(comparison, exact), style=verdict_style(verdict)),
         ])
@@ -434,6 +456,13 @@ def render_comparison(console: Console, doc: ResultDoc) -> None:
     if geomean := geomean_line(doc):
         console.print(Text(geomean))
     console.print(Text(counts_line(doc)))
+    for failure in compare.failed_in_head(doc):
+        console.print(
+            Text(
+                f"{CROSS} {failure['id']}: regressed {failure_text(failure)}",
+                style=verdict_style("regressed"),
+            )
+        )
     for label, names in (
         ("only in base", compared_to["only_in_base"]),
         ("only in head", compared_to["only_in_head"]),

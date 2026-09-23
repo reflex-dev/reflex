@@ -4,8 +4,10 @@ Entries are paired by id, params and dims, and compared only when their full
 series keys match (machine profile, fixture and benchmark version too). Each
 metric gets a Mann-Whitney U test and a bootstrap CI of the change; Holm's
 correction runs across all tested metrics of the comparison; exact metrics
-compare values directly. The verdicts are written into the head document, so an
-annotated document is self-describing for ``show`` and ``export``.
+compare values directly. An entry that fails or times out in head without
+failing in base is a regression whatever its series key. The verdicts are
+written into the head document, so an annotated document is self-describing for
+``show`` and ``export``.
 """
 
 from __future__ import annotations
@@ -20,6 +22,7 @@ from reflex_bench.schema import (
     ComparedToDoc,
     ComparisonDoc,
     ComparisonSideDoc,
+    FailedInHeadDoc,
     MetricDoc,
     NotComparableDoc,
     ResultDoc,
@@ -30,6 +33,7 @@ from reflex_bench.schema import (
 from reflex_bench.store import entry_key, series_key
 
 _FAMILY_ORDER = ("time", "bytes", "rate", "count")
+_FAILED = frozenset({"failed", "timeout"})
 
 
 class Row(NamedTuple):
@@ -117,12 +121,23 @@ def compare(
     base_id = base["invocation"]["id"]
     head_id = head["invocation"]["id"]
     not_comparable: list[NotComparableDoc] = []
+    failed_in_head: list[FailedInHeadDoc] = []
     pending: list[_Pending] = []
     for head_entry in head["benchmarks"]:
         base_entry = base_entries.get(entry_key(head_entry))
+        name = entry_name(head_entry)
+        if head_entry["status"] in _FAILED and (
+            base_entry is None or base_entry["status"] not in _FAILED
+        ):
+            failed_in_head.append({
+                "id": name,
+                "status": head_entry["status"],
+                "base_status": None if base_entry is None else base_entry["status"],
+                "error": head_entry["error"],
+            })
+            continue
         if base_entry is None:
             continue
-        name = entry_name(head_entry)
         reasons = (
             []
             if force
@@ -195,12 +210,14 @@ def compare(
     for index, item in enumerate(pending):
         p_adj = adjusted.get(index)
         exact = item.metric["assume"] == "exact"
+        # A relative threshold does not apply to an absolute change.
+        applied = threshold if item.raw.mode == "ratio" else 0.0
         verdict = stats.verdict(
             item.raw.effect,
             item.raw.ci,
             p_adj,
             direction=item.metric["direction"],
-            threshold=threshold,
+            threshold=applied,
             alpha=alpha,
             exact=exact,
             min_p=item.raw.min_p,
@@ -208,7 +225,10 @@ def compare(
         item.metric["comparison"] = {
             "base": item.base,
             "head": item.head,
-            "ratio": item.raw.effect if math.isfinite(item.raw.effect) else None,
+            "mode": item.raw.mode,
+            "ratio": item.raw.effect
+            if item.raw.mode == "ratio" and math.isfinite(item.raw.effect)
+            else None,
             "ci": None if item.raw.ci is None else list(item.raw.ci),
             "p": item.raw.p,
             "p_adj": p_adj,
@@ -219,7 +239,7 @@ def compare(
                 min(item.base["n"], item.head["n"]),
                 item.raw.effect,
                 item.raw.ci,
-                threshold,
+                applied,
                 alpha=alpha,
                 confidence=confidence,
             )
@@ -250,6 +270,7 @@ def compare(
             if entry_key(entry) not in base_entries
         ],
         "not_comparable": not_comparable,
+        "failed_in_head": failed_in_head,
     }
     head["compared_to"] = compared_to
     return compared_to
@@ -270,6 +291,19 @@ def rows(doc: ResultDoc) -> list[Row]:
         for name, metric in entry["metrics"].items()
         if metric["comparison"] is not None
     ]
+
+
+def failed_in_head(doc: ResultDoc) -> list[FailedInHeadDoc]:
+    """List the entries of an annotated document that started failing in head.
+
+    Args:
+        doc: The head document after :func:`compare`.
+
+    Returns:
+        The entries that failed or timed out in head without failing in base.
+    """
+    compared_to = doc.get("compared_to")
+    return [] if compared_to is None else compared_to.get("failed_in_head", [])
 
 
 def verdict_counts(doc: ResultDoc) -> Counter[Verdict]:

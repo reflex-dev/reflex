@@ -12,17 +12,16 @@ from __future__ import annotations
 import functools
 import math
 import random
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import NamedTuple
 
-from reflex_bench.schema import Direction, SummaryDoc, Verdict
+from reflex_bench.schema import ChangeMode, Direction, SummaryDoc, Verdict
 
 CV_WARN = 0.10
 EXTREME_WARN = 0.50
 MODIFIED_Z_WARN = 14.8
 MWU_EXACT_MAX = 20
 RUNS_NEEDED_CAP = 200
-_MIN_MARGIN = 1e-3
 
 
 class Outliers(NamedTuple):
@@ -35,10 +34,12 @@ class Outliers(NamedTuple):
 class SampleComparison(NamedTuple):
     """The raw comparison of two samples, before multiple-testing correction.
 
-    ``effect`` and ``ci`` are relative changes ``median(b) / median(a) - 1``;
-    ``effect`` is infinite when the base median is zero and the head median is not.
-    ``ci`` is ``None`` when either side has too few samples for a median confidence
-    interval, and ``p`` is ``None`` for exact metrics, which are not tested.
+    In ``ratio`` mode ``effect`` and ``ci`` are relative changes
+    ``median(b) / median(a) - 1``; ``effect`` is infinite for an exact metric whose
+    base median is zero and head median is not. In ``absolute`` mode they are
+    differences ``median(b) - median(a)`` in the metric's unit. ``ci`` is ``None``
+    when either side has too few samples for a median confidence interval, and
+    ``p`` is ``None`` for exact metrics, which are not tested.
     """
 
     effect: float
@@ -46,6 +47,7 @@ class SampleComparison(NamedTuple):
     p: float | None
     test: str
     min_p: float
+    mode: ChangeMode = "ratio"
 
 
 def _median_sorted(sorted_xs: Sequence[float]) -> float:
@@ -435,46 +437,132 @@ def min_runs_for_alpha(alpha: float) -> int:
     return n
 
 
+def _bootstrap(
+    a: Sequence[float],
+    b: Sequence[float],
+    seed: int,
+    resamples: int,
+    confidence: float,
+    change: Callable[[float, float], float | None],
+) -> tuple[float, float] | None:
+    """Return a percentile bootstrap CI of a change between resampled medians.
+
+    Each side is resampled separately with replacement from ``random.Random(seed)``.
+    Resamples whose change is undefined are dropped; when more of them are dropped
+    than one tail of the interval holds, that bound is unbounded and there is no CI.
+
+    Args:
+        a: The base sample.
+        b: The head sample.
+        seed: The RNG seed.
+        resamples: The number of bootstrap resamples.
+        confidence: The confidence level.
+        change: Maps ``(median(a*), median(b*))`` to the change, or ``None``.
+
+    Returns:
+        ``(low, high)``, or ``None`` when the interval is unbounded.
+
+    Raises:
+        ValueError: When a sample is empty.
+    """
+    if not a or not b:
+        msg = "the bootstrap needs at least one sample per side"
+        raise ValueError(msg)
+    choices = random.Random(seed).choices
+    n_a, n_b = len(a), len(b)
+    changes: list[float] = []
+    for _ in range(resamples):
+        head = _median_sorted(sorted(choices(b, k=n_b)))
+        value = change(_median_sorted(sorted(choices(a, k=n_a))), head)
+        if value is not None:
+            changes.append(value)
+    tail = (1 - confidence) / 2
+    if resamples - len(changes) > tail * resamples:
+        return None
+    changes.sort()
+    return quantile(changes, tail), quantile(changes, 1 - tail)
+
+
+def _ratio(base: float, head: float) -> float | None:
+    """Return ``head / base - 1``, undefined unless the base is positive.
+
+    Args:
+        base: The base median.
+        head: The head median.
+
+    Returns:
+        The relative change, or ``None``.
+    """
+    return head / base - 1 if base > 0 else None
+
+
+def _difference(base: float, head: float) -> float:
+    """Return ``head - base``.
+
+    Args:
+        base: The base median.
+        head: The head median.
+
+    Returns:
+        The absolute change.
+    """
+    return head - base
+
+
 def bootstrap_ratio_ci(
     a: Sequence[float],
     b: Sequence[float],
     seed: int,
     resamples: int = 10_000,
     confidence: float = 0.95,
-) -> tuple[float, float]:
+) -> tuple[float, float] | None:
     """Return a percentile bootstrap CI of ``median(b) / median(a) - 1``.
 
     Each side is resampled separately with replacement from ``random.Random(seed)``.
+    A resample whose base median is not positive has no ratio and is dropped.
 
     Args:
-        a: The base sample (all values positive).
+        a: The base sample, with a positive median.
         b: The head sample.
         seed: The RNG seed.
         resamples: The number of bootstrap resamples.
         confidence: The confidence level.
 
     Returns:
-        ``(low, high)`` relative changes.
+        ``(low, high)`` relative changes, or ``None`` when more resamples than one
+        tail of the interval have no ratio, so the interval is unbounded.
 
     Raises:
-        ValueError: When a sample is empty or the base has a non-positive value.
+        ValueError: When a sample is empty or the base median is not positive.
     """
-    if not a or not b:
-        msg = "the bootstrap needs at least one sample per side"
+    if a and median(a) <= 0:
+        msg = "a ratio CI needs a positive base median"
         raise ValueError(msg)
-    if min(a) <= 0:
-        msg = "a ratio CI needs positive base values"
-        raise ValueError(msg)
-    choices = random.Random(seed).choices
-    n_a, n_b = len(a), len(b)
-    ratios = sorted(
-        _median_sorted(sorted(choices(b, k=n_b)))
-        / _median_sorted(sorted(choices(a, k=n_a)))
-        - 1
-        for _ in range(resamples)
-    )
-    tail = (1 - confidence) / 2
-    return quantile(ratios, tail), quantile(ratios, 1 - tail)
+    return _bootstrap(a, b, seed, resamples, confidence, _ratio)
+
+
+def bootstrap_diff_ci(
+    a: Sequence[float],
+    b: Sequence[float],
+    seed: int,
+    resamples: int = 10_000,
+    confidence: float = 0.95,
+) -> tuple[float, float]:
+    """Return a percentile bootstrap CI of ``median(b) - median(a)``.
+
+    Args:
+        a: The base sample.
+        b: The head sample.
+        seed: The RNG seed.
+        resamples: The number of bootstrap resamples.
+        confidence: The confidence level.
+
+    Returns:
+        ``(low, high)`` absolute changes.
+    """
+    ci = _bootstrap(a, b, seed, resamples, confidence, _difference)
+    assert ci is not None  # every resample has a difference
+    return ci
 
 
 def holm(pvalues: Sequence[float]) -> list[float]:
@@ -524,7 +612,9 @@ def compare_samples(
 
     Exact (deterministic) metrics compare medians only. Otherwise this runs the
     Mann-Whitney U test and, when each side has enough samples for a median
-    confidence interval and the base is positive, a bootstrap CI of the change.
+    confidence interval, a bootstrap CI of the change. The change is relative when
+    the base median is positive and its ratio CI is bounded, and absolute
+    otherwise.
 
     Args:
         a: The base sample.
@@ -537,17 +627,18 @@ def compare_samples(
     Returns:
         The effect, CI, raw p-value, test name and minimum achievable p-value.
     """
-    effect = _relative_change(median(a), median(b))
+    base, head = median(a), median(b)
     if exact:
-        return SampleComparison(effect, None, None, "exact", 0.0)
+        return SampleComparison(_relative_change(base, head), None, None, "exact", 0.0)
     _, p, test = _mwu(a, b)
+    min_p = min_achievable_p(len(a), len(b))
     enough = min(len(a), len(b)) >= min_ci_samples(confidence)
-    ci = (
-        bootstrap_ratio_ci(a, b, seed, resamples, confidence)
-        if enough and min(a) > 0
-        else None
-    )
-    return SampleComparison(effect, ci, p, test, min_achievable_p(len(a), len(b)))
+    if base > 0:
+        ci = bootstrap_ratio_ci(a, b, seed, resamples, confidence) if enough else None
+        if ci is not None or not enough:
+            return SampleComparison(head / base - 1, ci, p, test, min_p)
+    ci = bootstrap_diff_ci(a, b, seed, resamples, confidence) if enough else None
+    return SampleComparison(head - base, ci, p, test, min_p, "absolute")
 
 
 def verdict(
@@ -568,7 +659,9 @@ def verdict(
     direction, ``unchanged`` only when the whole CI lies within the threshold, and
     ``inconclusive`` otherwise — including whenever the samples are too few for
     the test to reach ``alpha`` or for a CI. Exact metrics compare the change with
-    the threshold directly.
+    the threshold directly. An absolute change has no relative threshold: pass
+    ``threshold=0``, so a verdict needs the whole CI on one side of zero, and only
+    a CI of exactly zero is ``unchanged``.
 
     Args:
         effect: The relative change of the medians.
@@ -638,11 +731,16 @@ def stability_warnings(
             warnings.append(f"max is {100 * above:.0f} % above the median")
         if below >= EXTREME_WARN:
             warnings.append(f"min is {100 * below:.0f} % below the median")
-    spread = mad(xs, middle)
-    if first_sample is not None and spread > 0:
-        score = 0.6745 * (first_sample - middle) / spread
+    if first_sample is not None:
+        deviation = first_sample - middle
         if direction == "higher":
-            score = -score
+            deviation = -deviation
+        spread = mad(xs, middle)
+        # Without spread, any slower first sample is an infinitely large outlier.
+        if spread:
+            score = 0.6745 * deviation / spread
+        else:
+            score = math.inf if deviation > 0 else 0.0
         if score > MODIFIED_Z_WARN:
             warnings.append(
                 f"first sample much slower: raise --warmup (modified z-score {score:.1f})"
@@ -694,13 +792,13 @@ def runs_needed(
     alpha: float,
     confidence: float = 0.95,
     cap: int = RUNS_NEEDED_CAP,
-) -> int:
+) -> int | None:
     """Estimate how many runs per side would make an inconclusive result decisive.
 
     Approximate: a CI's half width shrinks with the square root of the sample
     size, and the CI must end up clear of the threshold, so ``n`` scales by
-    ``(half_width / |abs(effect) - threshold|)^2``. Never below what a median CI
-    and a p-value under ``alpha`` need.
+    ``(half_width / |abs(effect) - threshold|)^2``. Never at or below ``n`` nor
+    below what a median CI and a p-value under ``alpha`` need.
 
     Args:
         n: The current runs per side.
@@ -712,12 +810,16 @@ def runs_needed(
         cap: The largest estimate returned.
 
     Returns:
-        The estimated runs per side.
+        The estimated runs per side, or ``None`` when more than ``cap`` are needed.
     """
-    floor = max(min_ci_samples(confidence), min_runs_for_alpha(alpha), n + 1)
-    if ci is None or not math.isfinite(effect):
-        return min(cap, floor)
-    half_width = (ci[1] - ci[0]) / 2
-    margin = max(abs(abs(effect) - threshold), _MIN_MARGIN)
-    estimate = math.ceil(n * (half_width / margin) ** 2)
-    return min(cap, max(floor, estimate))
+    needed = max(min_ci_samples(confidence), min_runs_for_alpha(alpha), n + 1)
+    if ci is not None and math.isfinite(effect):
+        half_width = (ci[1] - ci[0]) / 2
+        margin = abs(abs(effect) - threshold)
+        if half_width:
+            scale = half_width / margin if margin else math.inf
+            estimate = n * scale * scale
+            if estimate > cap:
+                return None
+            needed = max(needed, math.ceil(estimate))
+    return needed if needed <= cap else None
