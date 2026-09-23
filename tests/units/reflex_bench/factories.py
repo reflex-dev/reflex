@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from reflex_bench.context import Context, Subject
+from reflex_bench.drivers.events import LoadResult
 from reflex_bench.registry import Metric
 from reflex_bench.scheduler import Policy, finalize
 from reflex_bench.schema import SCHEMA_ID, BenchmarkDoc, MachineDoc, ResultDoc
@@ -251,3 +252,45 @@ def make_doc(
         "policy": (policy or Policy()).to_doc(),
         "benchmarks": list(entries),
     }
+
+
+def make_load_result(**changes: Any) -> LoadResult:
+    """Build a healthy open-loop load result.
+
+    Args:
+        **changes: Fields to override.
+
+    Returns:
+        The result.
+    """
+    values: dict[str, Any] = {
+        "sessions": 10,
+        "mode": "open",
+        "processes": 1,
+        "cpus": None,
+        "reflex_version": "0.9.12",
+        "warmup_s": 10.0,
+        "duration_s": 30.0,
+        "offered_rate": 400.0,
+        "achieved_send_rate": 399.8,
+        "answered_rate": 399.8,
+        "sent": 11994,
+        "answered": 11994,
+        "unanswered": 0,
+        "out_of_order": 0,
+        "session_errors": [],
+        "response_s": {
+            "p50": 0.0031,
+            "p90": 0.0052,
+            "p99": 0.0119,
+            "p999": 0.031,
+            "max": 0.044,
+        },
+        "service_s": {"p50": 0.003, "p99": 0.0117, "max": 0.044},
+        "lag_s": {"p50": 4e-05, "p99": 0.00021, "max": 0.0009},
+        "generator_cpu_fraction": 0.18,
+        "prime_s": {"p50": 0.09, "max": 0.21},
+        "histogram": {"of": "response_s", "lo_s": 1e-05, "hi_s": 100.0, "counts": []},
+        "reply_frame": None,
+    }
+    return LoadResult(**{**values, **changes})

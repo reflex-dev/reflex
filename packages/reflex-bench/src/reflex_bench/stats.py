@@ -12,7 +12,8 @@ from __future__ import annotations
 import functools
 import math
 import random
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
+from fractions import Fraction
 from typing import NamedTuple
 
 from reflex_bench.schema import ChangeMode, Direction, SummaryDoc, Verdict
@@ -100,6 +101,59 @@ def quantile(sorted_xs: Sequence[float], q: float) -> float:
     if fraction >= 0.5:
         return b - (b - a) * (1 - fraction)
     return a + (b - a) * fraction
+
+
+def percentiles(xs: Iterable[float], ps: Sequence[float]) -> list[float]:
+    """Return percentiles by the nearest-rank method.
+
+    The ``p``-th percentile is the value at rank ``ceil(p / 100 * n)`` of the
+    sorted data (rank 1 for ``p = 0``), so it is always an observed value. The
+    rank is computed on the decimal value of ``p``, so ``99.9`` of 1000 values is
+    rank 999, not 1000.
+
+    Args:
+        xs: Non-empty data, in any order.
+        ps: Percentiles between 0 and 100.
+
+    Returns:
+        One value per percentile, in the order of ``ps``.
+
+    Raises:
+        ValueError: When ``xs`` is empty.
+    """
+    sorted_xs = sorted(xs)
+    n = len(sorted_xs)
+    if not n:
+        msg = "cannot take percentiles of an empty sample"
+        raise ValueError(msg)
+    return [sorted_xs[max(1, math.ceil(Fraction(str(p)) * n / 100)) - 1] for p in ps]
+
+
+def log_histogram(
+    xs: Iterable[float], *, lo: float = 1e-5, hi: float = 100.0, buckets: int = 120
+) -> list[int]:
+    """Count values in log-spaced buckets, so percentiles can be pooled later.
+
+    Bucket ``i`` covers ``[lo * r**i, lo * r**(i + 1))`` with
+    ``r = (hi / lo) ** (1 / buckets)``; values below ``lo`` count in the first
+    bucket and values from ``hi`` on in the last. The defaults span 10 μs to
+    100 s in 120 buckets, each 14 % wide.
+
+    Args:
+        xs: The values.
+        lo: The lower edge of the first bucket.
+        hi: The upper edge of the last bucket.
+        buckets: The number of buckets.
+
+    Returns:
+        The count of each bucket.
+    """
+    counts = [0] * buckets
+    scale = buckets / math.log(hi / lo)
+    last = buckets - 1
+    for x in xs:
+        counts[min(int(math.log(x / lo) * scale), last) if x > lo else 0] += 1
+    return counts
 
 
 def mad(xs: Sequence[float], center: float | None = None) -> float:

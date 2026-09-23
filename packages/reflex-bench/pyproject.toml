@@ -12,6 +12,7 @@ dependencies = [
   "packaging >=24.2",
   "psutil >=7.0.0,<8.0",
   "rich >=13,<16",
+  "websockets >=15,<18",
 ]
 
 [project.scripts]
