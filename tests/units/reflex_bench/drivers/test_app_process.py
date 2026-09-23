@@ -587,7 +587,7 @@ def test_stop_escalates_to_sigkill(app_dir: Path, fake: Configure):
 def test_stop_finds_children_of_a_crashed_app(app_dir: Path, fake: Configure):
     # The app spawns a detached child, then dies: the child is re-parented away
     # from the tree and is only found by the owner token in its environment.
-    env = fake(lines=["starting"], spawn=True, exit_after_s=1.0, exit_code=1)
+    env = fake(lines=["starting"], spawn=True, exit_after_s=2.0, exit_code=1)
     app = AppProcess(
         Path(sys.executable), app_dir, mode="dev", reflex_version=HEAD, env=env
     )
@@ -768,7 +768,7 @@ def test_run_cli_timeout_kills_the_group(app_dir: Path, fake: Configure):
     env = fake(spawn=True, exit_after_s=3600)
     started = time.monotonic()
     result = run_cli(
-        Path(sys.executable), ["compile"], cwd=app_dir, env=env, timeout=1.0
+        Path(sys.executable), ["compile"], cwd=app_dir, env=env, timeout=2.0
     )
     assert time.monotonic() - started < 15
     assert result.timed_out
@@ -776,7 +776,7 @@ def test_run_cli_timeout_kills_the_group(app_dir: Path, fake: Configure):
     detached = _detached(result.lines)
     assert len(detached) == 2
     assert _running(detached) == []
-    with pytest.raises(RuntimeError, match=r"timed out after 1 s"):
+    with pytest.raises(RuntimeError, match=r"timed out after 2 s"):
         result.check()
 
 

@@ -11,8 +11,9 @@ HEAD is reflex `0.9.12.post10.dev0` (this workspace); 0.8.23 comes from PyPI:
 $ uv venv -p 3.12 /tmp/r0823 && uv pip install -p /tmp/r0823 reflex==0.8.23
 ```
 
-Every command ran with this environment (the `reflex-bench` driver sets the same
-variables) and was stopped with `SIGTERM` to its process group a few seconds
+Every command ran with the harness's base environment
+(`reflex_bench.context.BASE_ENV`, which benchmarks pass to the driver through
+`ctx.env`) and was stopped with `SIGTERM` to its process group a few seconds
 after the last ready line:
 
 ```console
@@ -52,5 +53,5 @@ $ $PY -m reflex run --env prod --backend-only --backend-port 18000              
 ```
 
 `0.8.23-run-prod-granian-not-on-path.log` is the prod command run without the
-venv on `PATH`: the backend crashes, yet both ready lines are printed after the
-traceback, and nothing listens on port 18000.
+venv on `PATH`: the backend never starts (`granian` is not found), yet both
+ready lines are printed after the traceback.
