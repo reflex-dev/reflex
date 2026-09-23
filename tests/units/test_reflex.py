@@ -431,3 +431,19 @@ def test_init_records_version_check_after_frontend_setup(
     reflex._init("demo")
 
     assert events == ["frontend", "version"]
+
+
+@pytest.mark.parametrize(
+    "args", [["init"], ["migrate"], ["makemigrations"], ["status"]]
+)
+def test_db_commands_without_db_extra_point_to_install(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, args: list[str]
+):
+    """Without the db extra, db commands print the install hint instead of a traceback."""
+    monkeypatch.setattr(reflex, "find_spec", lambda name: None)
+
+    result = click.testing.CliRunner().invoke(reflex.db_cli, args)
+
+    assert result.exit_code == 1
+    assert "pip install reflex[db]" in caplog.text
+    assert not isinstance(result.exception, ImportError)
