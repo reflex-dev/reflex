@@ -30,14 +30,23 @@ BASE_ENV = {
 }
 
 
-def base_env() -> dict[str, str]:
-    """Build the base environment for subprocesses started by benchmarks.
+def subject_env(python: Path) -> dict[str, str]:
+    """Build the environment for subprocesses of the subject with interpreter ``python``.
+
+    Commands the subject starts by name (reflex 0.8.x starts ``granian`` in
+    production mode) come from its environment, not the harness's.
+
+    Args:
+        python: The subject's interpreter.
 
     Returns:
         A copy of ``os.environ`` with telemetry, update checks and colors off,
-        unbuffered output, a fixed hash seed and granian as the backend server.
+        unbuffered output, a fixed hash seed, granian as the backend server and
+        the directory of ``python`` first on ``PATH``.
     """
-    return {**os.environ, **BASE_ENV}
+    env = {**os.environ, **BASE_ENV}
+    env["PATH"] = os.pathsep.join(filter(None, (str(python.parent), env.get("PATH"))))
+    return env
 
 
 def git(cwd: Path, *args: str) -> str | None:
@@ -198,7 +207,7 @@ class Context:
         cache_dir: A persistent directory per subject identity, benchmark id and
             parameter set for ``setup_cache`` results; it survives across
             invocations, so hooks decide what to reuse.
-        env: The base environment for subprocesses (see :func:`base_env`).
+        env: The environment for subprocesses (see :func:`subject_env`).
         rng: A seeded random generator.
         log: A logger for the benchmark.
         arm: The arm being measured, ``A`` or ``B``.

@@ -226,8 +226,9 @@ self.app.wait_http_ready()  # GET / (or /ping without a frontend) answers 200
 
 The driver picks free ports, expects the ready lines of the subject's version
 and mode (0.8.23 prod runs sirv and the backend on two ports, 0.9 prod one
-port), never trusts a line without a TCP probe, and puts the venv's `bin` first
-on `PATH`. Each command runs in its own session; `stop()` and the end of
+port) and never trusts a line without a TCP probe. It runs with the `env` it
+is given: pass `ctx.env`, or `reflex_bench.context.subject_env(python)` outside
+a benchmark, so the subject's commands come first on `PATH`. Each command runs in its own session; `stop()` and the end of
 `run_cli` kill the whole tree, children that started their own session
 included. Peak memory and CPU come from a transient cgroup v2 scope when
 `systemd-run` works (user manager, or sudo on CI), else from PSS sampling

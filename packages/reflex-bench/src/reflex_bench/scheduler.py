@@ -24,7 +24,6 @@ import functools
 import hashlib
 import logging
 import math
-import os
 import queue
 import random
 import shutil
@@ -43,7 +42,7 @@ from typing import Any, TypeVar
 from packaging.version import InvalidVersion, Version
 
 from reflex_bench import stats
-from reflex_bench.context import Context, Subject, base_env
+from reflex_bench.context import Context, Subject, subject_env
 from reflex_bench.registry import Benchmark, Instance, ParamSet, SampleResult
 from reflex_bench.schema import (
     BenchmarkDoc,
@@ -617,25 +616,19 @@ def make_context(
     Returns:
         A context with a fresh work directory, the persistent (created) cache
         directory of the subject identity and parameter set, an RNG seeded from
-        ``seed``, the instance name and the arm, and :func:`base_env` with the
-        directory of the subject's interpreter first on ``PATH``.
+        ``seed``, the instance name and the arm, and the subject's
+        :func:`subject_env`.
     """
     cache = cache_dir(
         home, subject.identity, planned.benchmark.id, planned.params.params
     )
     cache.mkdir(parents=True, exist_ok=True)
-    env = base_env()
-    # Commands the subject starts by name (reflex 0.8.x starts `granian` in
-    # production mode) must come from its environment, not the harness's.
-    env["PATH"] = os.pathsep.join(
-        filter(None, (str(subject.python.parent), env.get("PATH")))
-    )
     return Context(
         subject=subject,
         params=planned.params.merged,
         workdir=Path(tempfile.mkdtemp(prefix=f"reflex-bench-{slug(planned.name)}-")),
         cache_dir=cache,
-        env=env,
+        env=subject_env(subject.python),
         rng=random.Random(derive_seed(seed, planned.name, arm)),
         log=logging.getLogger(f"reflex_bench.{planned.benchmark.id}"),
         arm=arm,

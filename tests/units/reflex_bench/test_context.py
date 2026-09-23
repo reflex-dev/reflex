@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -20,10 +21,17 @@ def _git(repo: Path, *args: str) -> None:
     )
 
 
-def test_base_env_overrides(monkeypatch: pytest.MonkeyPatch):
+def test_subject_env(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("REFLEX_TELEMETRY_ENABLED", "true")
     monkeypatch.setenv("SOMETHING_ELSE", "kept")
-    env = context.base_env()
+    monkeypatch.setenv("PATH", os.pathsep.join(["/usr/local/bin", "/usr/bin"]))
+    env = context.subject_env(Path("/venv/bin/python"))
+    # Commands the subject starts by name come from its own environment.
+    assert env["PATH"].split(os.pathsep) == [
+        str(Path("/venv/bin")),
+        "/usr/local/bin",
+        "/usr/bin",
+    ]
     assert env["REFLEX_TELEMETRY_ENABLED"] == "false"
     assert env["REFLEX_CHECK_LATEST_VERSION"] == "false"
     assert env["NO_COLOR"] == "1"

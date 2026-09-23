@@ -21,6 +21,7 @@ from typing import Any
 import psutil
 import pytest
 from reflex_bench.collectors import cgroup
+from reflex_bench.context import subject_env
 from reflex_bench.drivers import app_process
 from reflex_bench.drivers.app_process import AppProcess, AppStartError, run_cli
 
@@ -141,13 +142,13 @@ def fake(tmp_path: Path) -> Configure:
 
     Returns:
         A function taking the fake's settings and returning the environment
-        that makes the fake use them.
+        that makes the fake use them, built as ``ctx.env`` is.
     """
 
     def configure(**spec: Any) -> dict[str, str]:
         path = tmp_path / "fake.json"
         path.write_text(json.dumps(spec), encoding="utf-8")
-        env = {**os.environ, "FAKE_REFLEX": str(path)}
+        env = {**subject_env(Path(sys.executable)), "FAKE_REFLEX": str(path)}
         env.pop("PYTHONSAFEPATH", None)
         return env
 
@@ -246,20 +247,14 @@ def test_cache_env():
     }
 
 
-def test_reflex_env_activates_the_venv(tmp_path: Path):
-    venv_bin = tmp_path / "venv" / "bin"
-    venv_bin.mkdir(parents=True)
-    (tmp_path / "venv" / "pyvenv.cfg").write_text("home = /usr/bin\n", encoding="utf-8")
-    env = app_process._reflex_env(
-        venv_bin / "python",
-        {
-            "PATH": "/usr/bin",
-            "NO_COLOR": "0",
-            "REFLEX_USE_GRANIAN": "false",
-            "KEEP": "1",
-        },
-    )
-    assert env["PATH"] == os.pathsep.join([str(venv_bin), "/usr/bin"])
+def test_reflex_env_forces_the_driver_settings():
+    env = app_process._reflex_env({
+        "PATH": "/venv/bin:/usr/bin",
+        "NO_COLOR": "0",
+        "REFLEX_USE_GRANIAN": "false",
+        "KEEP": "1",
+    })
+    assert env["PATH"] == "/venv/bin:/usr/bin"
     assert env["NO_COLOR"] == "1"
     assert env["PYTHONUNBUFFERED"] == "1"
     assert env["REFLEX_TELEMETRY_ENABLED"] == "false"
@@ -267,11 +262,6 @@ def test_reflex_env_activates_the_venv(tmp_path: Path):
     assert env["REFLEX_USE_GRANIAN"] == "true"
     assert env["KEEP"] == "1"
     assert int(env["COLUMNS"]) >= 200
-    # An interpreter outside a venv leaves PATH alone.
-    assert (
-        app_process._reflex_env(Path("/usr/bin/python3"), {"PATH": "/opt/bin"})["PATH"]
-        == "/opt/bin"
-    )
 
 
 def _ready(topology: app_process._Topology) -> dict[str, str]:

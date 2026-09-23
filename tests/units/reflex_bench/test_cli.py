@@ -657,8 +657,10 @@ def test_ab_random_order_is_reproducible(home: Path, resolved: list, shifted: No
 
 
 def test_ab_self_tests_against_the_workspace(home: Path):
+    # The selftest.app.* benchmarks start real apps; test_selftest_app.py runs them.
     result = invoke(
-        "ab", "--suite", "selftest", "--base", "workspace", "--head", "workspace",
+        "ab", "--suite", "selftest", "selftest.[!a]*",
+        "--base", "workspace", "--head", "workspace",
         "--rounds", "6", "--no-save", "--json", "ab.json",
     )  # fmt: skip
     assert result.exit_code == 0, result.output

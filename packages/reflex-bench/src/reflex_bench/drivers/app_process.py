@@ -2,9 +2,8 @@
 
 :func:`run_cli` runs one-shot commands (``init``, ``compile``, ``export``) and
 :class:`AppProcess` runs ``reflex run`` until it is ready. Both start reflex
-with the subject's interpreter in a new session, with the ``PATH`` of an
-activated venv, drain its merged stdout and stderr on a thread and kill its
-whole process tree when done. The harness never imports the reflex under test:
+with the subject's interpreter in a new session, drain its merged stdout and
+stderr on a thread and kill its whole process tree when done. The harness never imports the reflex under test:
 the reflex version the caller passes decides what to expect from it.
 
 Readiness has tiers, each a time in seconds since just before the spawn:
@@ -181,25 +180,16 @@ def cache_env(
     return {name: str(path) for name, path in names.items() if path is not None}
 
 
-def _reflex_env(python: Path, env: Mapping[str, str]) -> dict[str, str]:
+def _reflex_env(env: Mapping[str, str]) -> dict[str, str]:
     """Build the environment of a reflex subprocess.
 
-    A venv interpreter's directory goes first on ``PATH``, as activating the venv
-    would: 0.8.23 starts its prod backend as a ``granian`` command.
-
     Args:
-        python: The subject's interpreter.
         env: The caller's environment, normally ``ctx.env``.
 
     Returns:
-        The environment.
+        The environment with the settings the driver relies on forced.
     """
-    result = {**env, **_FORCED_ENV}
-    if (python.parent.parent / "pyvenv.cfg").is_file():
-        result["PATH"] = os.pathsep.join(
-            part for part in (str(python.parent), env.get("PATH")) if part
-        )
-    return result
+    return {**env, **_FORCED_ENV}
 
 
 def _check_platform() -> None:
@@ -940,7 +930,9 @@ def run_cli(
         python: The subject's interpreter.
         args: The reflex arguments, e.g. ``["compile"]``.
         cwd: The app directory.
-        env: The environment, normally ``ctx.env``.
+        env: The environment: ``ctx.env``, or
+            :func:`~reflex_bench.context.subject_env` of ``python`` outside a
+            benchmark, so commands reflex starts by name come from the subject.
         timeout: Seconds before the whole tree is killed.
         scope: A cgroup scope to run in, for whole-tree peak memory and CPU.
         phases: Log at debug level, parse the ``[timing]`` lines and sample the
@@ -958,7 +950,7 @@ def run_cli(
         msg = f"cannot sample memory: {reason}"
         raise RuntimeError(msg)
     args = [*args, *(("--loglevel", "debug") if phases else ())]
-    env = _reflex_env(python, env)
+    env = _reflex_env(env)
     argv = [str(python), "-m", "reflex", *args]
     if scope is not None:
         argv = scope.wrap(["/bin/sh", "-c", _KEEPER, "sh", *argv], env=env)
@@ -1095,7 +1087,10 @@ class AppProcess:
             mode: ``dev``, ``prod`` or ``preview`` (``--env``).
             reflex_version: The subject's reflex version, which decides the
                 expected ready lines and ports.
-            env: The environment, normally ``ctx.env``.
+            env: The environment: ``ctx.env``, or
+                :func:`~reflex_bench.context.subject_env` of ``python`` outside
+                a benchmark, so commands reflex starts by name (0.8.x prod
+                starts ``granian``) come from the subject.
             extra_args: More ``reflex run`` arguments.
             backend_only: Run with ``--backend-only``.
             frontend_port: The frontend port; a free one by default.
@@ -1143,7 +1138,7 @@ class AppProcess:
             *extra_args,
             *(["--loglevel", "debug"] if phases else []),
         ]
-        self._env = _reflex_env(python, env)
+        self._env = _reflex_env(env)
         self.frontend_url: str | None = (
             None if frontend_port is None else f"http://localhost:{frontend_port}"
         )
