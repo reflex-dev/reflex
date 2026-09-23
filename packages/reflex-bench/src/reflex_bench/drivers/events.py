@@ -100,6 +100,9 @@ KILL_GRACE_S = 5.0
 CPU_LIMIT = 0.75
 LAG_FLOOR_S = 1e-3
 LAG_SHARE = 0.1
+# Machine noise (VM steal, interrupts) that stalls the generator stalls the
+# server too; a lag tail within half the service time tail is that noise.
+LAG_SERVICE_SHARE = 0.5
 SEND_RATE_SHARE = 0.98
 
 HISTOGRAM_LO_S = 1e-5
@@ -433,8 +436,9 @@ class LoadResult:
         Returns:
             ``None``, or why the generator was saturated: a process used more
             than 75 % of a core, or, in the open loop, the send lag p99
-            exceeded 1 ms or 10 % of the median response (whichever is larger),
-            or fewer than 98 % of the offered events went out in the window.
+            exceeded the largest of 1 ms, 10 % of the median response and half
+            the service time p99, or fewer than 98 % of the offered events went
+            out in the window.
         """
         if self.generator_cpu_fraction > CPU_LIMIT:
             return (
@@ -445,11 +449,16 @@ class LoadResult:
         if self.mode != "open":
             return None
         if self.lag_s is not None and self.response_s is not None:
-            limit = max(LAG_FLOOR_S, LAG_SHARE * self.response_s["p50"])
+            limit = max(
+                LAG_FLOOR_S,
+                LAG_SHARE * self.response_s["p50"],
+                LAG_SERVICE_SHARE * (self.service_s or {}).get("p99", 0.0),
+            )
             if self.lag_s["p99"] > limit:
                 return (
                     f"generator saturated: send lag p99 {1e3 * self.lag_s['p99']:.2f} ms"
-                    f" exceeds {1e3 * limit:.2f} ms (1 ms or 10 % of the median response)"
+                    f" exceeds {1e3 * limit:.2f} ms (the largest of 1 ms, 10 % of the"
+                    " median response and half the service time p99)"
                 )
         if (
             self.offered_rate is not None

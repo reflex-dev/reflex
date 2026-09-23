@@ -498,17 +498,33 @@ def healthy(**overrides: Any) -> LoadResult:
 
 
 SLOW = {"p50": 0.03, "p90": 0.05, "p99": 0.06, "p999": 0.07, "max": 0.08}
+QUICK_SERVICE = {"p50": 0.001, "p99": 0.002, "max": 0.004}
 
 
 @pytest.mark.parametrize(
     ("overrides", "reason"),
     [
         # 1 ms is the floor of the lag limit...
-        ({"lag_s": {"p50": 1e-4, "p99": 0.0015, "max": 0.002}}, "send lag p99"),
-        # ...which grows to 10 % of the median response.
         (
-            {"lag_s": {"p50": 1e-4, "p99": 0.004, "max": 0.005}, "response_s": SLOW},
-            "send lag p99",
+            {
+                "lag_s": {"p50": 1e-4, "p99": 0.0015, "max": 0.002},
+                "service_s": QUICK_SERVICE,
+            },
+            "send lag p99 1.50 ms exceeds 1.00 ms",
+        ),
+        # ...which grows to 10 % of the median response...
+        (
+            {
+                "lag_s": {"p50": 1e-4, "p99": 0.004, "max": 0.005},
+                "response_s": SLOW,
+                "service_s": QUICK_SERVICE,
+            },
+            "send lag p99 4.00 ms exceeds 3.00 ms",
+        ),
+        # ...or to half the service time p99.
+        (
+            {"lag_s": {"p50": 1e-4, "p99": 0.007, "max": 0.009}},
+            "send lag p99 7.00 ms exceeds 5.85 ms",
         ),
         ({"generator_cpu_fraction": 0.8}, "80 % of a core"),
         ({"achieved_send_rate": 390.0}, "sent 390 ev/s"),
@@ -525,7 +541,29 @@ def test_the_self_check_passes_a_healthy_result():
     assert healthy().check() is None
     # A lag under 10 % of a slow median response is fine.
     lag = {"p50": 1e-4, "p99": 0.0025, "max": 0.005}
-    assert healthy(lag_s=lag, response_s=SLOW).check() is None
+    assert healthy(lag_s=lag, response_s=SLOW, service_s=QUICK_SERVICE).check() is None
+
+
+def test_the_self_check_tolerates_machine_noise():
+    # Measured on a VM with 1-2 % steal time at 50 ev/s: host preemption
+    # stalled the generator (2 % CPU) and the server alike. The lag tail is
+    # within half the server's own service time tail, so it is noise, not
+    # saturation.
+    noisy = healthy(
+        offered_rate=50.0,
+        achieved_send_rate=50.0,
+        response_s={
+            "p50": 0.00164,
+            "p90": 0.00224,
+            "p99": 0.02534,
+            "p999": 0.08976,
+            "max": 0.10979,
+        },
+        service_s={"p50": 0.00142, "p99": 0.02097, "max": 0.08425},
+        lag_s={"p50": 0.00022, "p99": 0.00645, "max": 0.02773},
+        generator_cpu_fraction=0.02,
+    )
+    assert noisy.check() is None
 
 
 def test_the_closed_loop_self_check_only_watches_cpu():

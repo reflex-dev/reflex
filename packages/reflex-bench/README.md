@@ -287,8 +287,10 @@ number.
   data records the split.
 - **Self-check**: a sample fails with `generator saturated` when a generator
   process used more than 75 % of a core, when the p99 of the send lag
-  (actual minus planned send time) exceeds 1 ms or 10 % of the median response,
-  or when less than 98 % of the offered events went out in the window.
+  (actual minus planned send time) exceeds the largest of 1 ms, 10 % of the
+  median response and half the service time p99 (machine noise such as VM
+  steal time stalls the server as much as the generator), or when less than
+  98 % of the offered events went out in the window.
   `selftest.events.calibrate` shows how far the generator goes on a machine.
 
 Not parameters yet: injected redis latency, uvicorn instead of granian, and
