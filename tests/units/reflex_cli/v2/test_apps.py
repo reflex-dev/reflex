@@ -189,6 +189,21 @@ def test_app_history_as_json(mocker: MockFixture):
     ]
 
 
+def test_app_history_without_a_url(mocker: MockFixture):
+    """A deployment that is not serving yet reports a null url, not a missing key.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
+    client = _authed(mocker)
+    client.api.apps.history.return_value = [deployment_record(url=None)]
+
+    result = runner.invoke(hosting_cli, ["apps", "history", "test_app_id", "--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout)[0]["url"] is None
+
+
 def test_app_history_no_deployments(mocker: MockFixture):
     """Test retrieving deployment history when there are no deployments."""
     client = _authed(mocker)

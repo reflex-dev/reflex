@@ -4,6 +4,8 @@ import logging
 import pytest
 from click.testing import CliRunner
 from pytest_mock import MockerFixture, MockFixture
+from reflex_build_sdk.types import CreatedToken
+from reflex_cli.utils import log
 from reflex_cli.v2.deployments import hosting_cli
 
 from .utils import api_error, as_click_command, fake_client
@@ -187,7 +189,9 @@ def test_get_deployment_regions_http_error(
 def test_create_token_json_output(mocker: MockFixture):
     """Minting a token reports it as a field rather than in a log line."""
     client = fake_client()
-    client.api.auth.tokens.create.return_value = "tok-1"
+    client.api.auth.tokens.create.return_value = CreatedToken(
+        token="tok-1", name="ci", expires_at=None
+    )
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client", return_value=client
     )
@@ -200,6 +204,31 @@ def test_create_token_json_output(mocker: MockFixture):
         "token": "tok-1",
         "expires_in_days": 90,
     }
+
+
+def test_create_token_reports_the_value(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """The log line carries the token itself, not the result carrying it.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: Pytest log capture fixture.
+    """
+    client = fake_client()
+    client.api.auth.tokens.create.return_value = CreatedToken(
+        token="tok-1", name="ci", expires_at=None
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=client
+    )
+
+    result = runner.invoke(hosting_cli, ["create-token", "ci"])
+
+    assert result.exit_code == 0, result.output
+    assert [r.getMessage() for r in caplog.records if r.levelno == log.SUCCESS] == [
+        "Token: tok-1"
+    ]
 
 
 def test_generate_cloud_config_json_output(mocker: MockFixture, tmp_path):

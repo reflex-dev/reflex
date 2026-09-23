@@ -54,13 +54,13 @@ def create_token(
         logger.info("No duration specified. Using default duration of 90 days.")
 
     with hosting.reporting_api_errors():
-        token = authenticated_client.api.auth.tokens.create(
+        created = authenticated_client.api.auth.tokens.create(
             name, expires_in_days=duration
         )
     if as_json:
-        print_json({"name": name, "token": token, "expires_in_days": duration})
+        print_json({"name": name, "token": created.token, "expires_in_days": duration})
         return
-    logger.log(log.SUCCESS, f"Token: {token}")
+    logger.log(log.SUCCESS, f"Token: {created.token}")
 
 
 @vm_types_regions_cli.command("vmtypes")
