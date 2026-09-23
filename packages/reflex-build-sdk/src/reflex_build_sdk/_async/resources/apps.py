@@ -378,9 +378,7 @@ class AsyncApps:
             body["project"] = str(project_id)
         if description is not None:
             body["description"] = description
-        # The trailing slash is part of the route: without it the request reaches
-        # the list route and is rejected. The response only identifies the app, so
-        # the app is read back in full.
+        # The response only identifies the app, so the app is read back in full.
         created = await self._client._request("POST", "apps", dict[str, Any], json=body)
         return await self.get(created["id"])
 
