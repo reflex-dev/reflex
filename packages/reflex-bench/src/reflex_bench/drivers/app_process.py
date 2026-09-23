@@ -12,8 +12,8 @@ Readiness has tiers, each a time in seconds since just before the spawn:
    port accepts TCP connections. In prod and preview reflex prints its line
    before the server binds, so a line alone never counts.
 2. ``http_ready``: ``GET /`` (``/ping`` without a frontend) answers 200.
-3. ``interactive_ready``: the page is interactive in a browser; measured by the
-   browser driver of a later change.
+3. ``interactive_ready``: the page is hydrated in a browser; measured by
+   :meth:`reflex_bench.drivers.browser.Browser.interactive`.
 """
 
 from __future__ import annotations
@@ -406,7 +406,7 @@ class _Output:
         """
         self._stream = stream
         self._t0 = t0
-        self._lines: deque[str] = deque(maxlen=maxlen)
+        self._lines: deque[tuple[float, str]] = deque(maxlen=maxlen)
         self._on_line = on_line
         self._marker = marker
         self.closed_at: float | None = None
@@ -431,7 +431,7 @@ class _Output:
                         if not line:
                             self.cond.notify_all()
                             continue
-                    self._lines.append(line)
+                    self._lines.append((at, line))
                     if self._on_line is not None:
                         self._on_line(line, at)
                     self.cond.notify_all()
@@ -457,6 +457,15 @@ class _Output:
 
         Returns:
             The lines, oldest first.
+        """
+        with self.cond:
+            return [line for _, line in self._lines]
+
+    def timed_lines(self) -> list[tuple[float, str]]:
+        """Copy the kept lines with the time each was read.
+
+        Returns:
+            ``(seconds since t0, line)`` pairs, oldest first.
         """
         with self.cond:
             return list(self._lines)
@@ -615,6 +624,70 @@ def _owned_by(proc: psutil.Process, token: str) -> bool:
         return False
 
 
+def owned_processes(token: str) -> list[psutil.Process]:
+    """Find the processes carrying an owner token, and everything they spawned.
+
+    Descendants count whatever their environment: Chromium starts its helpers
+    with an empty one.
+
+    Args:
+        token: The owner token.
+
+    Returns:
+        The processes, the harness excluded.
+    """
+    me = os.getpid()
+    children: dict[int, list[psutil.Process]] = {}
+    pending: list[psutil.Process] = []
+    for proc in psutil.process_iter(["ppid"]):
+        if proc.pid == me:
+            continue
+        children.setdefault(proc.info["ppid"], []).append(proc)
+        if _owned_by(proc, token):
+            pending.append(proc)
+    found: dict[int, psutil.Process] = {}
+    while pending:
+        proc = pending.pop()
+        if proc.pid not in found:
+            found[proc.pid] = proc
+            pending.extend(children.get(proc.pid, ()))
+    return list(found.values())
+
+
+def kill_owned(token: str, extra: Sequence[psutil.Process] = ()) -> None:
+    """SIGKILL the processes of an owner token and the process groups they lead.
+
+    Killing a group also reaches a child that left the tree (its parent died)
+    without the token. The scan repeats for processes spawned meanwhile, as
+    :meth:`_ProcessTree.kill` does.
+
+    Args:
+        token: The owner token (see :func:`owned_processes`).
+        extra: More processes to kill, e.g. a parent without the token.
+
+    Raises:
+        RuntimeError: When a process survives SIGKILL.
+    """
+    known: set[int] = set()
+    alive: list[psutil.Process] = []
+    for _ in range(3):
+        late = [
+            proc for proc in [*owned_processes(token), *extra] if proc.pid not in known
+        ]
+        known.update(proc.pid for proc in late)
+        alive = _alive([*alive, *late])
+        if not alive:
+            return
+        for proc in alive:
+            if _pgid(proc) == proc.pid:
+                _signal_group(proc.pid, signal.SIGKILL)
+            _signal(proc, signal.SIGKILL)
+        alive = _wait_gone(alive, _KILL_GRACE_S)
+    if alive:
+        msg = f"processes survived SIGKILL: {', '.join(map(_describe, alive))}"
+        raise RuntimeError(msg)
+
+
 _LIVE: set[_ProcessTree] = set()
 _LIVE_LOCK = threading.Lock()
 
@@ -723,7 +796,8 @@ class _ProcessTree:
         """Find every process of the tree.
 
         Returns:
-            The root, its descendants and every process carrying the owner token.
+            The root, its descendants and every process carrying the owner token,
+            with theirs.
         """
         found: dict[int, psutil.Process] = {}
         try:
@@ -731,12 +805,8 @@ class _ProcessTree:
                 found[proc.pid] = proc
         except psutil.NoSuchProcess:
             pass
-        me = os.getpid()
-        found.update(
-            (proc.pid, proc)
-            for proc in psutil.process_iter()
-            if proc.pid not in found and proc.pid != me and _owned_by(proc, self.token)
-        )
+        for proc in owned_processes(self.token):
+            found.setdefault(proc.pid, proc)
         return list(found.values())
 
     def kill(self, timeout: float) -> None:
@@ -1025,8 +1095,8 @@ class Readiness:
         process_ready: Tier 1: when the lines were printed and every expected port
             accepted a TCP connection.
         http_ready: Tier 2: when ``GET`` answered 200 (:meth:`AppProcess.wait_http_ready`).
-        interactive_ready: Tier 3: when the page was interactive in a browser, set
-            by the browser driver.
+        interactive_ready: Tier 3: when the page was hydrated in a browser, set by
+            :meth:`reflex_bench.drivers.browser.Browser.interactive`.
     """
 
     spawned: float
@@ -1163,6 +1233,24 @@ class AppProcess:
             raise RuntimeError(msg)
         return self._tree.pid
 
+    @property
+    def t0(self) -> float:
+        """The ``time.perf_counter()`` taken just before the spawn.
+
+        Readiness and log line times are seconds since it, so other clocks (a
+        browser's) can be mapped onto them.
+
+        Returns:
+            The spawn time.
+
+        Raises:
+            RuntimeError: Before :meth:`start`.
+        """
+        if self._tree is None:
+            msg = "the app was not started"
+            raise RuntimeError(msg)
+        return self._tree.t0
+
     def logs(self) -> list[str]:
         """Copy the app's recent output.
 
@@ -1170,6 +1258,14 @@ class AppProcess:
             Up to :data:`LOG_LINES` lines, escapes stripped, oldest first.
         """
         return self._tree.output.lines() if self._tree is not None else []
+
+    def log_lines(self) -> list[tuple[float, str]]:
+        """Copy the app's recent output with the time each line was read.
+
+        Returns:
+            Up to :data:`LOG_LINES` ``(seconds since t0, line)`` pairs, oldest first.
+        """
+        return self._tree.output.timed_lines() if self._tree is not None else []
 
     def is_running(self) -> bool:
         """Check the started command.

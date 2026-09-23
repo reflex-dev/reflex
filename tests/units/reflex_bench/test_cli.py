@@ -98,6 +98,33 @@ def test_min_runs_alone_raises_the_default_max_runs(home: Path):
 
 def test_list_hides_self_tests_by_default(home: Path):
     result = invoke("list")
+    assert result.exit_code == 0, result.output
+    names = [line.split()[0] for line in result.output.splitlines()[1:-1]]
+    assert names == [
+        "browser.dev.ready",
+        "browser.preview.ready",
+        "browser.prod.pageload[cpu=1]",
+        "browser.prod.pageload[cpu=4]",
+        "browser.prod.ready",
+        "hmr.asset[app=playground]",
+        "hmr.asset.preview[app=playground]",
+        "hmr.css[app=playground]",
+        "hmr.css.preview[app=playground]",
+        "hmr.handler[app=playground]",
+        "hmr.handler.preview[app=playground]",
+        "hmr.reconnect[app=playground]",
+        "hmr.reconnect.preview[app=playground]",
+        "hmr.render.leaf[app=playground]",
+        "hmr.render.leaf.preview[app=playground]",
+        "hmr.render.root[app=playground]",
+        "hmr.render.root.preview[app=playground]",
+        "hmr.watcher[app=playground]",
+    ]
+    assert result.output.splitlines()[-1].startswith("18 benchmarks")
+
+
+def test_list_says_when_nothing_is_selected(home: Path):
+    result = invoke("list", "nothing.*")
     assert result.exit_code == 0
     assert (
         "no benchmarks selected (self-tests are listed with --suite selftest)"

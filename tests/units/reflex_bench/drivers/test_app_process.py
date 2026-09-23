@@ -8,9 +8,12 @@ children as each test scripts it.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
+import secrets
 import signal
+import subprocess
 import sys
 import threading
 import time
@@ -679,6 +682,90 @@ def test_signals_never_target_pid_1_or_below(
     assert targets
     assert min(targets) > 1
     assert _running([root]) == []
+
+
+@posix_only
+def test_t0_and_timed_log_lines(app_dir: Path, fake: Configure, apps: list[AppProcess]):
+    env = fake(lines=_replay("head-run-dev.log"))
+    app = AppProcess(
+        Path(sys.executable), app_dir, mode="dev", reflex_version=HEAD, env=env
+    )
+    apps.append(app)
+    with pytest.raises(RuntimeError, match="not started"):
+        _ = app.t0
+    assert app.log_lines() == []
+    before = time.perf_counter()
+    readiness = app.start()
+    # t0 is the origin of every readiness time, taken just before the spawn.
+    assert before <= app.t0 < app.t0 + readiness.process_ready <= time.perf_counter()
+    timed = app.log_lines()
+    assert [line for _, line in timed] == app.logs()
+    times = [at for at, _ in timed]
+    assert times == sorted(times)
+    assert times[0] > 0
+    assert readiness.ready_line in times
+
+
+# A session leader carrying the owner token whose child drops its environment
+# (as Chromium's helpers do) and leaves an orphan behind in the leader's group.
+_OWNED_TREE = """
+import os, subprocess, sys, time
+orphan = "import subprocess, sys; print(subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(3600)']).pid, flush=True)"
+subprocess.run([sys.executable, "-c", orphan], env={}, check=True)
+child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(3600)"], env={})
+print(os.getpid(), child.pid, flush=True)
+time.sleep(3600)
+"""
+
+
+@posix_only
+def test_owned_processes_and_kill_owned():
+    token = secrets.token_hex(8)
+    leader = subprocess.Popen(
+        [sys.executable, "-c", _OWNED_TREE],
+        env={**os.environ, app_process.OWNER_ENV: token},
+        stdout=subprocess.PIPE,
+        text=True,
+        start_new_session=True,
+    )
+    other = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(3600)"])
+    try:
+        assert leader.stdout is not None
+        orphan = int(leader.stdout.readline())
+        root, child = map(int, leader.stdout.readline().split())
+        assert root == leader.pid
+        # The child is found through its parent; the orphan left the tree.
+        assert {proc.pid for proc in app_process.owned_processes(token)} == {
+            root,
+            child,
+        }
+        app_process.kill_owned(token, extra=[psutil.Process(other.pid)])
+        # SIGKILL to the leader's process group also reaches the orphan.
+        assert _running([root, child, orphan, other.pid]) == []
+        assert app_process.owned_processes(token) == []
+        app_process.kill_owned(token)  # nothing left: a no-op
+    finally:
+        # The whole group, also when the code under test failed to kill it.
+        with contextlib.suppress(ProcessLookupError):
+            os.killpg(leader.pid, signal.SIGKILL)
+        for proc in (leader, other):
+            proc.kill()
+            proc.wait()
+
+
+@posix_only
+def test_kill_owned_never_signals_pid_1_or_the_harness(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    targets: list[int] = []
+    monkeypatch.setattr(os, "kill", lambda pid, sig: targets.append(pid))
+    monkeypatch.setattr(os, "killpg", lambda pgid, sig: targets.append(pgid))
+    monkeypatch.setattr(app_process, "_KILL_GRACE_S", 0.05)
+    with pytest.raises(RuntimeError, match="survived SIGKILL"):
+        app_process.kill_owned(
+            secrets.token_hex(8), extra=[psutil.Process(1), psutil.Process()]
+        )
+    assert targets == []
 
 
 def test_windows_is_rejected(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
