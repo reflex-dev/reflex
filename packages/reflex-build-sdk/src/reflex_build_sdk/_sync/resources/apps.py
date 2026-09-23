@@ -382,7 +382,7 @@ class Apps:
         # The trailing slash is part of the route: without it the request reaches
         # the list route and is rejected. The response only identifies the app, so
         # the app is read back in full.
-        created = self._client._request("POST", "apps/", dict[str, Any], json=body)
+        created = self._client._request("POST", "apps", dict[str, Any], json=body)
         return self.get(created["id"])
 
     def delete(self, app_id: uuid.UUID | str) -> None:

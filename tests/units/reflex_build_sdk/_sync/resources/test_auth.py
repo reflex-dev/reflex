@@ -16,7 +16,15 @@ from reflex_build_sdk import (
     ReflexBuild,
 )
 from reflex_build_sdk.transports import Request, Response, TransportError
-from reflex_build_sdk.types import AccessScope, LoginRequest, Me, Token, TokenAccess
+from reflex_build_sdk.types import (
+    AccessScope,
+    CreatedToken,
+    LoginRequest,
+    Me,
+    RotatedToken,
+    Token,
+    TokenAccess,
+)
 
 from tests.units.reflex_build_sdk.conftest import (
     MockAPI,
@@ -57,6 +65,7 @@ ME = {
     "is_service_account": False,
     "impersonated_by": None,
     "impersonation_expires_at": None,
+    "app_id": None,
     "_memo": {},
     "_project_of": {},
     "_org_projects": None,
@@ -105,6 +114,20 @@ def test_me_scoped_token(client: ReflexBuild, mock_api: MockAPI):
     )
 
 
+def test_me_app_token(client: ReflexBuild, mock_api: MockAPI):
+    # An app token grants nothing: its access map is empty.
+    app_id = str(uuid.uuid4())
+    body = {
+        **ME,
+        "access": {"permissions": {}, "all_projects": True, "project_ids": []},
+        "app_id": app_id,
+    }
+    mock_api.add("POST", "/api/v1/authenticate/me", reply(200, json=body))
+    me = client.auth.me()
+    assert me.app_id == uuid.UUID(app_id)
+    assert me.access == TokenAccess(permissions={})
+
+
 def test_me_invalid_token(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
@@ -117,16 +140,43 @@ def test_me_invalid_token(client: ReflexBuild, mock_api: MockAPI):
 
 def test_create_token(client: ReflexBuild, mock_api: MockAPI):
     token_id = str(uuid.uuid4())
-    mock_api.add("POST", "/api/v1/user/token", reply(200, json=token_id))
-    assert client.auth.tokens.create("ci") == token_id
+    mock_api.add(
+        "POST",
+        "/api/v1/user/token/create",
+        reply(
+            200,
+            json={
+                "token": token_id,
+                "name": "ci",
+                "expiration": "2026-10-16T10:00:00+00:00",
+            },
+        ),
+    )
+    assert client.auth.tokens.create("ci") == CreatedToken(
+        token=token_id,
+        name="ci",
+        expires_at=datetime.datetime(2026, 10, 16, 10, tzinfo=datetime.timezone.utc),
+    )
     assert json_body(mock_api.requests[0]) == {
         "name": "ci",
         "expiration": None,
     }
 
 
+def test_create_token_is_not_retried(client: ReflexBuild, mock_api: MockAPI):
+    # A lost response may hide a created token, whose name a retry would reuse.
+    mock_api.add("POST", "/api/v1/user/token/create", reply(503))
+    with pytest.raises(APIStatusError):
+        client.auth.tokens.create("ci")
+    assert len(mock_api.requests) == 1
+
+
 def test_create_scoped_token(client: ReflexBuild, mock_api: MockAPI):
-    mock_api.add("POST", "/api/v1/user/token", reply(200, json="token"))
+    mock_api.add(
+        "POST",
+        "/api/v1/user/token/create",
+        reply(200, json={"token": "token", "name": "deploy", "expiration": None}),
+    )
     client.auth.tokens.create(
         "deploy",
         expires_in_days=7,
@@ -186,16 +236,39 @@ def test_revoke_token(client: ReflexBuild, mock_api: MockAPI):
     assert json_body(mock_api.requests[0]) == {"token_id": token}
 
 
-def test_refresh_token(client: ReflexBuild, mock_api: MockAPI):
+def test_revoke_self(client: ReflexBuild, mock_api: MockAPI):
+    mock_api.add("POST", "/api/v1/user/token/revoke-self", reply(204))
+    assert client.auth.tokens.revoke_self() is None
+    (request,) = mock_api.requests
+    assert request.headers["X-API-TOKEN"] == "test-token"
+    assert request.content is None
+
+
+@pytest.mark.parametrize("previous_revoked", [True, False])
+def test_refresh_token(client: ReflexBuild, mock_api: MockAPI, previous_revoked: bool):
     old, new = str(uuid.uuid4()), str(uuid.uuid4())
-    mock_api.add("POST", "/api/v1/user/token/refresh", reply(200, json=new))
-    assert client.auth.tokens.refresh(old) == new
+    mock_api.add(
+        "POST",
+        "/api/v1/user/token/rotate",
+        reply(
+            200,
+            json={
+                "token": new,
+                "name": "ci",
+                "expiration": None,
+                "previous_revoked": previous_revoked,
+            },
+        ),
+    )
+    assert client.auth.tokens.refresh(old) == RotatedToken(
+        token=new, name="ci", expires_at=None, previous_revoked=previous_revoked
+    )
     assert json_body(mock_api.requests[0]) == {"token_id": old}
 
 
 def test_refresh_token_is_not_retried(client: ReflexBuild, mock_api: MockAPI):
     # Each attempt would mint another token and revoke the one before.
-    mock_api.add("POST", "/api/v1/user/token/refresh", reply(503))
+    mock_api.add("POST", "/api/v1/user/token/rotate", reply(503))
     with pytest.raises(APIStatusError):
         client.auth.tokens.refresh(str(uuid.uuid4()))
     assert len(mock_api.requests) == 1
