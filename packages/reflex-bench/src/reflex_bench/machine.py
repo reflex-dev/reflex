@@ -163,12 +163,11 @@ def profile_id(
     return f"{system.lower()}-{arch}-{cpu_slug(cpu_model)}-py{major_minor}"
 
 
-def _cpu_model(cpuinfo: str | None, system: str) -> str | None:
+def _cpu_model(cpuinfo: str | None) -> str | None:
     """Find the CPU model name.
 
     Args:
         cpuinfo: The content of ``/proc/cpuinfo`` on Linux.
-        system: ``platform.system()``.
 
     Returns:
         The model name, or ``None`` when unknown.
@@ -178,8 +177,6 @@ def _cpu_model(cpuinfo: str | None, system: str) -> str | None:
             key, _, value = line.partition(":")
             if key.strip() in {"model name", "Model", "Hardware"} and value.strip():
                 return value.strip()
-    if system == "Darwin":
-        return _run("sysctl", "-n", "machdep.cpu.brand_string")
     return platform.processor() or None
 
 
@@ -242,26 +239,20 @@ def _container(sysroot: Path) -> bool:
     return detected is not None and detected != "none"
 
 
-def _virtualized(cpuinfo: str | None, system: str) -> bool | None:
-    """Detect a virtual machine.
+def _virtualized(cpuinfo: str | None) -> bool | None:
+    """Detect a Linux virtual machine.
 
     Args:
-        cpuinfo: The content of ``/proc/cpuinfo`` on Linux.
-        system: ``platform.system()``.
+        cpuinfo: The content of ``/proc/cpuinfo``.
 
     Returns:
         Whether the machine is virtual, or ``None`` when unknown.
     """
-    if system == "Linux":
-        detected = _run("systemd-detect-virt", "--vm")
-        if detected is not None:
-            return detected != "none"
-        if cpuinfo and re.search(r"^flags\s*:.*\bhypervisor\b", cpuinfo, re.MULTILINE):
-            return True
-        return None
-    if system == "Darwin":
-        present = _run("sysctl", "-n", "kern.hv_vmm_present")
-        return None if present is None else present == "1"
+    detected = _run("systemd-detect-virt", "--vm")
+    if detected is not None:
+        return detected != "none"
+    if cpuinfo and re.search(r"^flags\s*:.*\bhypervisor\b", cpuinfo, re.MULTILINE):
+        return True
     return None
 
 
@@ -304,8 +295,6 @@ def _playwright_chromium() -> bool:
         root = Path(configured)
     elif sys.platform == "darwin":
         root = Path.home() / "Library" / "Caches" / "ms-playwright"
-    elif sys.platform == "win32":
-        root = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "ms-playwright"
     else:
         root = Path.home() / ".cache" / "ms-playwright"
     try:
@@ -333,7 +322,7 @@ def collect(
     system = system or platform.system()
     linux = system == "Linux"
     cpuinfo = _read(root / "proc" / "cpuinfo") if linux else None
-    cpu_model = _cpu_model(cpuinfo, system)
+    cpu_model = _cpu_model(cpuinfo)
     arch = normalize_arch(platform.machine())
     memory = psutil.virtual_memory()
     return {
@@ -354,7 +343,7 @@ def collect(
         if linux
         else None,
         "container": _container(root) if linux else None,
-        "virtualized": _virtualized(cpuinfo, system),
+        "virtualized": _virtualized(cpuinfo) if linux else None,
         "tools": {
             "bun": shutil.which("bun") is not None,
             "node": shutil.which("node") is not None,

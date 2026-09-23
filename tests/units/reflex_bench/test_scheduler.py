@@ -379,10 +379,6 @@ def test_events(tmp_path: Path):
 def test_policy_validation():
     with pytest.raises(ValueError, match="max-runs must be >= min-runs"):
         Policy(min_runs=5, max_runs=2)
-    with pytest.raises(ValueError, match="alpha must be between 0 and 1"):
-        Policy(alpha=1.5)
-    with pytest.raises(ValueError, match="fail-on must be one of"):
-        Policy(fail_on="always")  # pyright: ignore[reportArgumentType]
     doc = Policy(fail_on="regression", fail_on_inconclusive=True).to_doc()
     assert (doc["correction"], doc["fail_on"], doc["fail_on_inconclusive"]) == (
         "holm",

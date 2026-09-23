@@ -45,7 +45,6 @@ from reflex_bench import stats
 from reflex_bench.context import Context, Subject, base_env
 from reflex_bench.registry import Benchmark, Instance, ParamSet, SampleResult
 from reflex_bench.schema import (
-    FAIL_ON,
     BenchmarkDoc,
     FailOn,
     PolicyDoc,
@@ -129,33 +128,16 @@ class Policy:
     fail_on_inconclusive: bool = False
 
     def __post_init__(self) -> None:
-        """Validate the settings.
+        """Check the settings that depend on each other.
+
+        Single settings are range-checked where they are parsed (the CLI options).
 
         Raises:
-            ValueError: On an out-of-range setting.
+            ValueError: When ``max_runs`` is below ``min_runs``.
         """
-        problems = [
-            message
-            for bad, message in (
-                (self.runs is not None and self.runs < 1, "runs must be >= 1"),
-                (self.min_runs < 1, "min-runs must be >= 1"),
-                (self.max_runs < self.min_runs, "max-runs must be >= min-runs"),
-                (self.min_time_s < 0, "min-time must be >= 0"),
-                (self.warmup is not None and self.warmup < 0, "warmup must be >= 0"),
-                (
-                    self.timeout_s is not None and self.timeout_s <= 0,
-                    "timeout must be > 0",
-                ),
-                (not 0 < self.alpha < 1, "alpha must be between 0 and 1"),
-                (self.threshold_rel < 0, "threshold must be >= 0"),
-                (not 0 < self.confidence < 1, "confidence must be between 0 and 1"),
-                (self.bootstrap_resamples < 1, "bootstrap resamples must be >= 1"),
-                (self.fail_on not in FAIL_ON, f"fail-on must be one of {FAIL_ON}"),
-            )
-            if bad
-        ]
-        if problems:
-            raise ValueError("; ".join(problems))
+        if self.max_runs < self.min_runs:
+            msg = "max-runs must be >= min-runs"
+            raise ValueError(msg)
 
     def auto_runs(self, first_sample_s: float) -> int:
         """Apply hyperfine's run-count rule after the first timed sample.

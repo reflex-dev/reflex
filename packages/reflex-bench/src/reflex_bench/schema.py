@@ -1,7 +1,8 @@
 """The result document written by every ``reflex-bench`` invocation (``reflex-bench/1``).
 
 One JSON document per invocation. The TypedDicts below are the single source of
-truth for its shape: :func:`validate` checks a parsed document against them, and
+truth for its shape: :func:`validate` checks a parsed document's required keys
+against them, plus the values the harness relies on, and
 :func:`load` and :func:`dump` refuse documents that fail. Unknown keys are allowed
 so a v1 reader can open documents written by a newer v1 writer.
 
@@ -11,24 +12,12 @@ can be recomputed. Values are in SI base units (``s``, ``B``, ``ev/s``).
 
 from __future__ import annotations
 
-import functools
 import json
 import math
-from collections.abc import Callable, Mapping
+from collections import Counter
+from collections.abc import Mapping
 from pathlib import Path
-from types import UnionType
-from typing import (
-    Annotated,
-    Any,
-    Literal,
-    TypedDict,
-    Union,
-    cast,
-    get_args,
-    get_origin,
-    get_type_hints,
-    is_typeddict,
-)
+from typing import Any, Literal, TypedDict, cast, get_args
 
 SCHEMA_ID = "reflex-bench/1"
 
@@ -42,15 +31,15 @@ Mode = Literal["local", "ci"]
 RunKind = Literal["local", "ci", "pr", "daily", "backfill", "aa"]
 FailOn = Literal["regression", "never"]
 
+STATUSES: tuple[Status, ...] = get_args(Status)
 DIRECTIONS: tuple[Direction, ...] = get_args(Direction)
 ASSUMPTIONS: tuple[Assume, ...] = get_args(Assume)
 KINDS: tuple[Kind, ...] = get_args(Kind)
 RUN_KINDS: tuple[RunKind, ...] = get_args(RunKind)
 FAIL_ON: tuple[FailOn, ...] = get_args(FailOn)
 
-_INTERVAL = "interval"
-# A ``[low, high]`` confidence interval; validated as ordered finite numbers.
-Interval = Annotated[list[float], _INTERVAL]
+# A ``[low, high]`` confidence interval.
+Interval = list[float]
 
 
 class SchemaError(ValueError):
@@ -321,33 +310,6 @@ class ResultDoc(_ResultDocOptional):
     benchmarks: list[BenchmarkDoc]
 
 
-_Check = Callable[[Any, str, list[str]], None]
-
-
-def _type_name(value: object) -> str:
-    """Name a JSON value's type for an error message.
-
-    Args:
-        value: The value.
-
-    Returns:
-        The JSON type name.
-    """
-    if value is None:
-        return "null"
-    if isinstance(value, bool):
-        return "boolean"
-    if isinstance(value, (int, float)):
-        return "number"
-    if isinstance(value, str):
-        return "string"
-    if isinstance(value, list):
-        return "array"
-    if isinstance(value, dict):
-        return "object"
-    return type(value).__name__
-
-
 def _is_number(value: object) -> bool:
     """Check for a finite JSON number (booleans are not numbers).
 
@@ -364,304 +326,130 @@ def _is_number(value: object) -> bool:
     )
 
 
-def _string(value: Any, path: str, errors: list[str]) -> None:
-    """Require a string.
+def _object(value: object, doc_type: Any, path: str, errors: list[str]) -> bool:
+    """Require an object carrying every required key of a document TypedDict.
+
+    Unknown keys are allowed.
 
     Args:
         value: The value to check.
+        doc_type: The TypedDict describing the object.
         path: Its location in the document.
         errors: Collected error messages.
-    """
-    if not isinstance(value, str):
-        errors.append(f"{path}: expected a string, got {_type_name(value)}")
-
-
-def _integer(value: Any, path: str, errors: list[str]) -> None:
-    """Require an integer.
-
-    Args:
-        value: The value to check.
-        path: Its location in the document.
-        errors: Collected error messages.
-    """
-    if not isinstance(value, int) or isinstance(value, bool):
-        errors.append(f"{path}: expected an integer, got {_type_name(value)}")
-
-
-def _number(value: Any, path: str, errors: list[str]) -> None:
-    """Require a finite number.
-
-    Args:
-        value: The value to check.
-        path: Its location in the document.
-        errors: Collected error messages.
-    """
-    if not _is_number(value):
-        errors.append(f"{path}: expected a finite number, got {value!r}")
-
-
-def _boolean(value: Any, path: str, errors: list[str]) -> None:
-    """Require a boolean.
-
-    Args:
-        value: The value to check.
-        path: Its location in the document.
-        errors: Collected error messages.
-    """
-    if not isinstance(value, bool):
-        errors.append(f"{path}: expected a boolean, got {_type_name(value)}")
-
-
-def _anything(value: Any, path: str, errors: list[str]) -> None:
-    """Accept any JSON value.
-
-    Args:
-        value: The value to check.
-        path: Its location in the document.
-        errors: Collected error messages.
-    """
-
-
-def _interval(value: Any, path: str, errors: list[str]) -> None:
-    """Require a ``[low, high]`` pair of finite numbers with ``low <= high``.
-
-    Args:
-        value: The value to check.
-        path: Its location in the document.
-        errors: Collected error messages.
-    """
-    if (
-        not isinstance(value, list)
-        or len(value) != 2
-        or not all(_is_number(v) for v in value)
-    ):
-        errors.append(f"{path}: expected [low, high] numbers, got {value!r}")
-    elif value[0] > value[1]:
-        errors.append(f"{path}: low {value[0]} is above high {value[1]}")
-
-
-def _nullable(check: _Check) -> _Check:
-    """Allow ``null`` in addition to what ``check`` accepts.
-
-    Args:
-        check: The check for non-null values.
 
     Returns:
-        The combined check.
+        Whether the value is an object with all required keys.
     """
+    if not isinstance(value, dict):
+        errors.append(
+            f"{path or '<document>'}: expected an object, got {type(value).__name__}"
+        )
+        return False
+    prefix = f"{path}." if path else ""
+    missing = [
+        f"{prefix}{key}: missing"
+        for key in sorted(doc_type.__required_keys__)
+        if key not in value
+    ]
+    errors.extend(missing)
+    return not missing
 
-    def run(value: Any, path: str, errors: list[str]) -> None:
-        if value is not None:
-            check(value, path, errors)
 
-    return run
-
-
-def _enum(*allowed: str) -> _Check:
+def _enum(
+    value: object, allowed: tuple[str, ...], path: str, errors: list[str]
+) -> None:
     """Require one of a fixed set of strings.
 
     Args:
-        *allowed: The accepted values.
-
-    Returns:
-        The check.
+        value: The value to check.
+        allowed: The accepted values.
+        path: Its location in the document.
+        errors: Collected error messages.
     """
-
-    def run(value: Any, path: str, errors: list[str]) -> None:
-        if value not in allowed:
-            errors.append(
-                f"{path}: expected one of {', '.join(allowed)}, got {value!r}"
-            )
-
-    return run
+    if value not in allowed:
+        errors.append(f"{path}: expected one of {', '.join(allowed)}, got {value!r}")
 
 
-def _array(item: _Check) -> _Check:
-    """Require an array whose items all pass ``item``.
-
-    Args:
-        item: The check for each item.
-
-    Returns:
-        The check.
-    """
-
-    def run(value: Any, path: str, errors: list[str]) -> None:
-        if not isinstance(value, list):
-            errors.append(f"{path}: expected an array, got {_type_name(value)}")
-            return
-        for index, element in enumerate(value):
-            item(element, f"{path}[{index}]", errors)
-
-    return run
-
-
-def _mapping(item: _Check) -> _Check:
-    """Require an object whose values all pass ``item``.
-
-    Args:
-        item: The check for each value.
-
-    Returns:
-        The check.
-    """
-
-    def run(value: Any, path: str, errors: list[str]) -> None:
-        if not isinstance(value, dict):
-            errors.append(f"{path}: expected an object, got {_type_name(value)}")
-            return
-        for key, element in value.items():
-            item(element, f"{path}.{key}", errors)
-
-    return run
-
-
-def _object(
-    required: Mapping[str, _Check], optional: Mapping[str, _Check] | None = None
-) -> _Check:
-    """Require an object with the given keys; unknown keys are allowed.
-
-    Args:
-        required: Checks for keys that must be present.
-        optional: Checks for keys that may be absent.
-
-    Returns:
-        The check.
-    """
-    optional = optional or {}
-
-    def run(value: Any, path: str, errors: list[str]) -> None:
-        if not isinstance(value, dict):
-            errors.append(
-                f"{path or '<document>'}: expected an object, got {_type_name(value)}"
-            )
-            return
-        prefix = f"{path}." if path else ""
-        for key, check in required.items():
-            if key in value:
-                check(value[key], prefix + key, errors)
-            else:
-                errors.append(f"{prefix}{key}: missing")
-        for key, check in optional.items():
-            if key in value:
-                check(value[key], prefix + key, errors)
-
-    return run
-
-
-def _checker(annotation: Any) -> _Check:
-    """Build the check for one annotation of the document TypedDicts.
-
-    Args:
-        annotation: A resolved type annotation.
-
-    Returns:
-        The check.
-
-    Raises:
-        TypeError: For an annotation the schema does not use.
-    """
-    simple: dict[Any, _Check] = {
-        Any: _anything,
-        str: _string,
-        int: _integer,
-        float: _number,
-        bool: _boolean,
-    }
-    if annotation in simple:
-        return simple[annotation]
-    origin, args = get_origin(annotation), get_args(annotation)
-    if origin is Annotated:
-        return _interval if _INTERVAL in args[1:] else _checker(args[0])
-    if origin is Literal:
-        return _enum(*args)
-    if origin in {Union, UnionType} and len(args) == 2 and type(None) in args:
-        return _nullable(_checker(args[0] if args[1] is type(None) else args[1]))
-    if origin is list:
-        return _array(_checker(args[0]))
-    if origin is dict:
-        return _mapping(_checker(args[1]))
-    if is_typeddict(annotation):
-        return _typed_dict(annotation)
-    msg = f"no schema check for {annotation!r}"
-    raise TypeError(msg)
-
-
-def _typed_dict(cls: Any) -> _Check:
-    """Build the check for a TypedDict: its required and optional keys.
-
-    Args:
-        cls: The TypedDict class.
-
-    Returns:
-        The check.
-    """
-    hints = get_type_hints(cls, include_extras=True)
-    return _object(
-        {
-            key: _checker(hint)
-            for key, hint in hints.items()
-            if key in cls.__required_keys__
-        },
-        {
-            key: _checker(hint)
-            for key, hint in hints.items()
-            if key in cls.__optional_keys__
-        },
-    )
-
-
-@functools.cache
-def _result_check() -> _Check:
-    """Build the check of a whole document from :class:`ResultDoc`, once.
-
-    Returns:
-        The check.
-    """
-    return _typed_dict(ResultDoc)
-
-
-def _check_alignment(doc: dict[str, Any], errors: list[str]) -> None:
-    """Check the cross-references a structural check cannot see.
+def _check_benchmark(
+    bench: object, subjects: Mapping[str, Any], path: str, errors: list[str]
+) -> None:
+    """Check one benchmark entry: enums, finite samples and their alignment.
 
     Every arm must be a known subject, every arm's sample list must have one value
     per ``sample_meta`` entry of that arm, and ``sample_extra`` must have one entry
     per sample.
 
     Args:
-        doc: A structurally valid document.
+        bench: The benchmark entry.
+        subjects: The document's subjects.
+        path: Its location in the document.
         errors: Collected error messages.
     """
-    subjects = doc["subjects"]
-    for index, bench in enumerate(doc["benchmarks"]):
-        path = f"benchmarks[{index}]"
-        per_arm: dict[str, int] = {}
-        for meta in bench["sample_meta"]:
-            per_arm[meta["arm"]] = per_arm.get(meta["arm"], 0) + 1
-        errors.extend(
-            f"{path}.sample_meta: arm {arm!r} is not in subjects"
-            for arm in per_arm.keys() - subjects.keys()
+    if not _object(bench, BenchmarkDoc, path, errors):
+        return
+    bench = cast("dict[str, Any]", bench)
+    _enum(bench["status"], STATUSES, f"{path}.status", errors)
+    metas, extra = bench["sample_meta"], bench["sample_extra"]
+    if not (
+        isinstance(metas, list)
+        and isinstance(extra, list)
+        and isinstance(bench["metrics"], dict)
+    ):
+        errors.append(
+            f"{path}: sample_meta and sample_extra must be arrays, metrics an object"
         )
-        if len(bench["sample_extra"]) != len(bench["sample_meta"]):
-            errors.append(
-                f"{path}.sample_extra: {len(bench['sample_extra'])} entries for"
-                f" {len(bench['sample_meta'])} samples"
-            )
-        for name, metric in bench["metrics"].items():
+        return
+    if not all(
+        _object(meta, SampleMetaDoc, f"{path}.sample_meta[{i}]", errors)
+        for i, meta in enumerate(metas)
+    ):
+        return
+    per_arm = Counter(meta["arm"] for meta in metas)
+    errors.extend(
+        f"{path}.sample_meta: arm {arm!r} is not in subjects"
+        for arm in per_arm.keys() - subjects.keys()
+    )
+    if len(extra) != len(metas):
+        errors.append(
+            f"{path}.sample_extra: {len(extra)} entries for {len(metas)} samples"
+        )
+    for name, metric in bench["metrics"].items():
+        where = f"{path}.metrics.{name}"
+        if not _object(metric, MetricDoc, where, errors):
+            continue
+        _enum(metric["direction"], DIRECTIONS, f"{where}.direction", errors)
+        _enum(metric["assume"], ASSUMPTIONS, f"{where}.assume", errors)
+        samples, summary = metric["samples"], metric["summary"]
+        if not isinstance(samples, dict) or not isinstance(summary, dict):
+            errors.append(f"{where}: samples and summary must be objects")
+            continue
+        for arm in samples.keys() | per_arm.keys():
+            values = samples.get(arm, [])
+            if not isinstance(values, list):
+                errors.append(f"{where}.samples.{arm}: expected an array")
+                continue
             errors.extend(
-                f"{path}.metrics.{name}.samples.{arm}: {have} values for"
-                f" {per_arm.get(arm, 0)} samples of that arm"
-                for arm in metric["samples"].keys() | per_arm.keys()
-                if (have := len(metric["samples"].get(arm, ()))) != per_arm.get(arm, 0)
+                f"{where}.samples.{arm}[{i}]: expected a finite number, got {v!r}"
+                for i, v in enumerate(values)
+                if not _is_number(v)
             )
-            errors.extend(
-                f"{path}.metrics.{name}.summary: arm {arm!r} is not in subjects"
-                for arm in metric["summary"].keys() - subjects.keys()
-            )
+            if len(values) != per_arm[arm]:
+                errors.append(
+                    f"{where}.samples.{arm}: {len(values)} values for"
+                    f" {per_arm[arm]} samples of that arm"
+                )
+        errors.extend(
+            f"{where}.summary: arm {arm!r} is not in subjects"
+            for arm in summary.keys() - subjects.keys()
+        )
 
 
 def validate(obj: object) -> list[str]:
     """Check a parsed document against schema ``reflex-bench/1``.
+
+    Checks the required keys of every object, the machine profile id, the enums and
+    the raw samples; derived summaries and comparisons are recomputable and only
+    checked for presence.
 
     Args:
         obj: The parsed JSON document.
@@ -670,15 +458,37 @@ def validate(obj: object) -> list[str]:
         Human-readable errors, empty when the document is valid.
     """
     errors: list[str] = []
-    _result_check()(obj, "", errors)
-    if errors:
+    if not _object(obj, ResultDoc, "", errors):
         return errors
     doc = cast("dict[str, Any]", obj)
     if doc["schema"] != SCHEMA_ID:
         errors.append(f"schema: expected {SCHEMA_ID!r}, got {doc['schema']!r}")
-    if not doc["machine"]["profile_id"].strip():
-        errors.append("machine.profile_id: must not be empty")
-    _check_alignment(doc, errors)
+    for key, doc_type in (
+        ("tool", ToolDoc),
+        ("invocation", InvocationDoc),
+        ("policy", PolicyDoc),
+    ):
+        _object(doc[key], doc_type, key, errors)
+    machine = doc["machine"]
+    if _object(machine, MachineDoc, "machine", errors) and not (
+        isinstance(machine["profile_id"], str) and machine["profile_id"].strip()
+    ):
+        errors.append("machine.profile_id: must be a non-empty string")
+    if doc.get("fixture") is not None:
+        _object(doc["fixture"], FixtureDoc, "fixture", errors)
+    if "compared_to" in doc:
+        _object(doc["compared_to"], ComparedToDoc, "compared_to", errors)
+    subjects = doc["subjects"]
+    if not isinstance(subjects, dict) or not subjects:
+        errors.append("subjects: expected a non-empty object")
+        return errors
+    for arm, subject in subjects.items():
+        _object(subject, SubjectDoc, f"subjects.{arm}", errors)
+    if not isinstance(doc["benchmarks"], list):
+        errors.append("benchmarks: expected an array")
+        return errors
+    for index, bench in enumerate(doc["benchmarks"]):
+        _check_benchmark(bench, subjects, f"benchmarks[{index}]", errors)
     return errors
 
 

@@ -44,6 +44,7 @@ from reflex_bench.report.table import (
 )
 from reflex_bench.scheduler import Event, Policy, Scheduler, plan, utc_now
 from reflex_bench.schema import (
+    FAIL_ON,
     RUN_KINDS,
     SCHEMA_ID,
     CiDoc,
@@ -367,7 +368,7 @@ def _new_doc(
     }
 
 
-def _resolve_fail_on(option: str | None) -> FailOn:
+def _resolve_fail_on(option: FailOn | None) -> FailOn:
     """Apply the environment-dependent default of ``--fail-on``.
 
     Args:
@@ -376,8 +377,7 @@ def _resolve_fail_on(option: str | None) -> FailOn:
     Returns:
         The option, else ``regression`` when ``CI=true`` and ``never`` otherwise.
     """
-    chosen = option or ("regression" if in_ci() else "never")
-    return "regression" if chosen == "regression" else "never"
+    return option or ("regression" if in_ci() else "never")
 
 
 def _exit_code(
@@ -427,7 +427,7 @@ def _fail_options(command: Any) -> Any:
     )(command)
     return click.option(
         "--fail-on",
-        type=click.Choice(["regression", "never"]),
+        type=click.Choice(FAIL_ON),
         help="Exit with 2 on a regression. Default: never locally, regression when CI=true.",
     )(command)
 
@@ -545,7 +545,7 @@ def run(
     baseline: str | None,
     threshold: float,
     alpha: float,
-    fail_on: str | None,
+    fail_on: FailOn | None,
     fail_on_inconclusive: bool,
     json_path: Path | None,
     ndjson: bool,
@@ -763,7 +763,7 @@ def compare_command(
     threshold: float,
     alpha: float,
     force: bool,
-    fail_on: str | None,
+    fail_on: FailOn | None,
     fail_on_inconclusive: bool,
 ) -> int:
     """Compare two results (BASE is the reference).

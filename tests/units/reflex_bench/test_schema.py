@@ -6,6 +6,7 @@ import copy
 import json
 import math
 from pathlib import Path
+from typing import Any
 
 import pytest
 from reflex_bench import schema
@@ -45,7 +46,7 @@ def test_missing_profile_id_fails_validation_and_dump_refuses(
 
 def test_empty_profile_id_is_invalid(doc: schema.ResultDoc):
     doc["machine"]["profile_id"] = "  "
-    assert schema.validate(doc) == ["machine.profile_id: must not be empty"]
+    assert schema.validate(doc) == ["machine.profile_id: must be a non-empty string"]
 
 
 @pytest.mark.parametrize(
@@ -94,15 +95,62 @@ def test_enums_are_checked(doc: schema.ResultDoc):
     assert any(e.startswith("benchmarks[0].metrics.wall.direction:") for e in errors)
 
 
-def test_non_finite_and_boolean_numbers_are_rejected(doc: schema.ResultDoc):
-    doc["benchmarks"][0]["metrics"]["wall"]["samples"]["A"][0] = math.nan
-    doc["invocation"]["duration_s"] = True  # pyright: ignore[reportGeneralTypeIssues]
-    errors = schema.validate(doc)
-    assert (
-        "benchmarks[0].metrics.wall.samples.A[0]: expected a finite number, got nan"
-        in errors
-    )
-    assert "invocation.duration_s: expected a finite number, got True" in errors
+def test_non_finite_and_boolean_samples_are_rejected(doc: schema.ResultDoc):
+    samples = doc["benchmarks"][0]["metrics"]["wall"]["samples"]["A"]
+    samples[0] = math.nan
+    samples[1] = True
+    assert schema.validate(doc) == [
+        "benchmarks[0].metrics.wall.samples.A[0]: expected a finite number, got nan",
+        "benchmarks[0].metrics.wall.samples.A[1]: expected a finite number, got True",
+    ]
+
+
+def test_empty_subjects_are_rejected(doc: schema.ResultDoc):
+    doc["subjects"] = {}
+    assert schema.validate(doc) == ["subjects: expected a non-empty object"]
+
+
+def test_nested_required_keys_are_checked(doc: schema.ResultDoc):
+    del doc["benchmarks"][0]["metrics"]["wall"]["unit"]  # pyright: ignore[reportGeneralTypeIssues]
+    del doc["benchmarks"][0]["sample_meta"][0]["warmup"]  # pyright: ignore[reportGeneralTypeIssues]
+    doc["invocation"] = []  # pyright: ignore[reportGeneralTypeIssues]
+    assert schema.validate(doc) == [
+        "invocation: expected an object, got list",
+        "benchmarks[0].sample_meta[0].warmup: missing",
+    ]
+    doc["benchmarks"][0]["sample_meta"][0]["warmup"] = True
+    assert "benchmarks[0].metrics.wall.unit: missing" in schema.validate(doc)
+
+
+@pytest.mark.parametrize(
+    ("mutate", "error"),
+    [
+        (
+            lambda d: d.update(benchmarks={}),
+            "benchmarks: expected an array",
+        ),
+        (
+            lambda d: d["benchmarks"][0].update(metrics=[]),
+            (
+                "benchmarks[0]: sample_meta and sample_extra must be arrays,"
+                " metrics an object"
+            ),
+        ),
+        (
+            lambda d: d["benchmarks"][0]["metrics"]["wall"].update(samples=[]),
+            "benchmarks[0].metrics.wall: samples and summary must be objects",
+        ),
+        (
+            lambda d: d["benchmarks"][0]["metrics"]["wall"]["samples"].update(A=1),
+            "benchmarks[0].metrics.wall.samples.A: expected an array",
+        ),
+    ],
+)
+def test_wrong_container_types_are_rejected(
+    doc: schema.ResultDoc, mutate: Any, error: str
+):
+    mutate(doc)
+    assert schema.validate(doc) == [error]
 
 
 def test_samples_must_align_with_sample_meta(doc: schema.ResultDoc):
@@ -119,14 +167,6 @@ def test_arms_must_be_subjects(doc: schema.ResultDoc):
         meta["arm"] = "B"
     errors = schema.validate(doc)
     assert "benchmarks[0].sample_meta: arm 'B' is not in subjects" in errors
-
-
-def test_ci_interval_must_be_ordered(doc: schema.ResultDoc):
-    summary = doc["benchmarks"][0]["metrics"]["wall"]["summary"]["A"]
-    summary["ci"] = [2.0, 1.0]
-    assert schema.validate(doc) == [
-        "benchmarks[0].metrics.wall.summary.A.ci: low 2.0 is above high 1.0"
-    ]
 
 
 def test_load_rejects_invalid_json(tmp_path: Path):
@@ -159,18 +199,3 @@ def test_names_and_timed_values(doc: schema.ResultDoc):
     assert schema.timed_values(entry, "wall") == [0.05, 0.051, 0.052]
     assert schema.sample_indices(entry) == [1, 2, 3]
     assert schema.timed_values(entry, "wall", arm="B") == []
-
-
-def test_intervals_must_be_pairs(doc: schema.ResultDoc):
-    doc["benchmarks"][0]["metrics"]["wall"]["summary"]["A"]["ci"] = [1.0, 2.0, 3.0]
-    assert schema.validate(doc) == [
-        (
-            "benchmarks[0].metrics.wall.summary.A.ci: expected [low, high] numbers,"
-            " got [1.0, 2.0, 3.0]"
-        )
-    ]
-
-
-def test_checks_are_derived_from_the_typed_dicts():
-    with pytest.raises(TypeError, match="no schema check for"):
-        schema._checker(set[int])
