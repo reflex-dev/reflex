@@ -64,6 +64,8 @@ def test_discover_packages_records_optional_extras():
     by_name = {p.name: p for p in check_min_deps.discover_packages()}
     # The root package declares a `db` optional-dependency group.
     assert "db" in by_name["reflex"].extras
+    # reflex-build-sdk has no required dependencies, only extras.
+    assert set(by_name["reflex-build-sdk"].extras) == {"aiohttp", "httpx", "httpx2"}
 
 
 def test_pyright_errors_keys_and_filters_severity():

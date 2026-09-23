@@ -14,8 +14,12 @@ from reflex_build_sdk import (
     RateLimitError,
     ReflexBuild,
 )
-from reflex_build_sdk.transports import Request, Response, TransportError
-from reflex_build_sdk.transports._defaults import DefaultTransport
+from reflex_build_sdk.transports import (
+    Httpx2Transport,
+    Request,
+    Response,
+    TransportError,
+)
 
 from tests.units.reflex_build_sdk.conftest import MockAPI, MockTransport, reply
 
@@ -198,13 +202,13 @@ def test_client_leaves_passed_transport_open(mock_api: MockAPI):
 
 def test_client_closes_its_own_transport(monkeypatch: pytest.MonkeyPatch):
     closed = []
-    original_aclose = DefaultTransport.close
+    original_aclose = Httpx2Transport.close
 
-    def close(self: DefaultTransport) -> None:
+    def close(self: Httpx2Transport) -> None:
         closed.append(self)
         original_aclose(self)
 
-    monkeypatch.setattr(DefaultTransport, "close", close)
+    monkeypatch.setattr(Httpx2Transport, "close", close)
     with ReflexBuild() as client:
-        assert type(client._transport) is DefaultTransport
+        assert type(client._transport) is Httpx2Transport
     assert closed == [client._transport]

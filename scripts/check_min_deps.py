@@ -281,14 +281,15 @@ def discover_packages() -> list[Package]:
         if name in SKIP_PACKAGES:
             continue
         project = _load_pyproject(project_file)["project"]
-        if not project.get("dependencies"):
+        extras = tuple(project.get("optional-dependencies", {}))
+        if not project.get("dependencies") and not extras:
             continue
         packages.append(
             Package(
                 name=name,
                 project_dir=project_file.parent,
                 source_dir=_single_source_dir(project_file.parent / "src"),
-                extras=tuple(project.get("optional-dependencies", {})),
+                extras=extras,
                 local_dev_sources=_local_dev_sources(project, workspace_dirs),
             )
         )
