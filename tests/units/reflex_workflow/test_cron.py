@@ -81,11 +81,26 @@ def test_a_restricted_weekday_alone_ignores_the_day_of_month():
         "0 0 * * MONDAY",
         "x * * * *",
         "*/x * * * *",
+        "*/ * * * *",
+        "0 0 * * 1/",
     ],
 )
 def test_an_expression_that_is_not_valid_is_refused(expression: str):
     with pytest.raises(ValueError):
         Cron(expression)
+
+
+def test_a_weekday_range_can_end_on_sunday_by_name():
+    weekend = Cron("0 9 * * FRI-SUN")
+    when = datetime.datetime(2026, 9, 21, 12, tzinfo=UTC)
+    days = [(when := weekend(when)).strftime("%a") for _ in range(4)]
+    # As croniter reads it; cronsim refuses the expression.
+    assert days == ["Fri", "Sat", "Sun", "Fri"]
+
+
+def test_a_moment_without_a_timezone_is_refused():
+    with pytest.raises(ValueError, match="timezone-aware"):
+        Cron("0 9 * * *")(datetime.datetime(2026, 9, 21, 12))
 
 
 def test_an_expression_that_can_never_fire_is_refused():

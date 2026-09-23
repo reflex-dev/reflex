@@ -54,7 +54,10 @@ def parse_field(field: str, index: int) -> frozenset[int]:
     low, high = BOUNDS[index]
     matched: set[int] = set()
     for term in field.split(","):
-        part, _, step_text = term.partition("/")
+        part, slash, step_text = term.partition("/")
+        if slash and not step_text:
+            msg = f"{term!r} has a slash but no step."
+            raise ValueError(msg)
         try:
             step = int(step_text) if step_text else 1
         except ValueError:
@@ -74,6 +77,9 @@ def parse_field(field: str, index: int) -> frozenset[int]:
                     if dash
                     else (high if step_text else first)
                 )
+                # A range that ends on Sunday by name, like FRI-SUN, ends on 7.
+                if index == 4 and dash and end.lower() == "sun":
+                    last = 7
             except ValueError:
                 msg = f"{term!r} is not a number, a name, or a range."
                 raise ValueError(msg) from None
@@ -173,8 +179,12 @@ class Cron:
             The next time it fires, always later than ``after``.
 
         Raises:
-            ValueError: If it does not fire within the next nine years.
+            ValueError: If ``after`` has no timezone, or the expression does not
+                fire within the next nine years.
         """
+        if after.tzinfo is None:
+            msg = "Cron needs a timezone-aware moment to search from."
+            raise ValueError(msg)
         local = after.astimezone(self.tz)
         cursor = local.replace(second=0, microsecond=0) + datetime.timedelta(minutes=1)
         hours, minutes = sorted(self.hours), sorted(self.minutes)
