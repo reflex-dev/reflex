@@ -166,7 +166,7 @@ def test_create(client: ReflexBuild, mock_api: MockAPI):
     }
     mock_api.add(
         "POST",
-        "/api/v1/apps/",
+        "/api/v1/apps",
         reply(201, json={**created, "disable_secrets": False, "is_deleted": False}),
     )
     mock_api.add("GET", APP_PATH, reply(200, json=APP_INFO))

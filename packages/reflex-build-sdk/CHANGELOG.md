@@ -2,6 +2,28 @@
 
 <!-- towncrier release notes start -->
 
+## v0.0.3 (2026-09-23)
+
+### Breaking Changes
+
+- `auth.tokens.create` returns a `CreatedToken` and `auth.tokens.refresh` a `RotatedToken`, rather than the bare token value. Read the value from `.token`:
+
+  ```python
+  token = client.auth.tokens.create("ci").token
+  ```
+
+  If a refresh returns `previous_revoked=False`, the old token is still live; revoke it with `auth.tokens.revoke`. ([#7277](https://github.com/reflex-dev/reflex/issues/7277))
+
+### Features
+
+- Add `auth.tokens.revoke_self()`, which revokes the client's own token and works with any token, and `Me.app_id`, the app an app token was provisioned for. ([#7277](https://github.com/reflex-dev/reflex/issues/7277))
+
+### Bug Fixes
+
+- `deployments.wait` raises the API's `UnprocessableEntityError` for a malformed deployment id, rather than `ValueError`. ([#7240](https://github.com/reflex-dev/reflex/issues/7240))
+- `auth.tokens.refresh`, `apps.create` and `projects.list` call the routes Reflex Build serves, and `apps.history` decodes deployments without a URL. ([#7277](https://github.com/reflex-dev/reflex/issues/7277))
+
+
 ## v0.0.2 (2026-09-18)
 
 ### Breaking Changes
