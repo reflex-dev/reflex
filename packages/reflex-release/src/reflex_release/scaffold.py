@@ -57,9 +57,10 @@ CORE_WORKFLOWS = (
     "publish.yml",
 )
 
-#: ``workflow_dispatch`` accepts at most twenty inputs, one of which is the
-#: action.
-MAX_DISPATCH_CHECKBOXES = 19
+#: ``workflow_dispatch`` accepts at most twenty-five inputs, one of which is the
+#: action. The limit was raised from ten on 4 December 2025, so a repository on
+#: an older GitHub Enterprise Server may still be held to the smaller number.
+MAX_DISPATCH_CHECKBOXES = 24
 
 #: Workflow scaffolded only for repositories that declare internal packages.
 INTERNAL_WORKFLOW = "auto_release_internal.yml"

@@ -8,6 +8,8 @@
 assets/external/*
 dist/*
 examples/
+!packages/reflex-workflow/examples/
+!tests/units/reflex_workflow/examples/
 .web
 .states
 .idea

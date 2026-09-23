@@ -1,0 +1,1 @@
+`@step(lane="media")` keeps a step on the workers started to serve that lane, with `run_workflows(..., lanes=["media"])`. Heavy work can have its own machines while ordinary steps run anywhere, and a worker skips tables it can run nothing of.

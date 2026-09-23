@@ -1,0 +1,24 @@
+[project]
+name = "reflex-workflow"
+dynamic = ["version"]
+description = "Durable workflows as SQLAlchemy tables on Postgres."
+license.text = "Apache-2.0"
+readme = "README.md"
+authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+requires-python = ">=3.10"
+dependencies = ["sqlalchemy[asyncio] >=2.0.20,<3.0"]
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+pattern-prefix = "reflex-workflow-"
+fallback-version = "0.0.0dev0"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/reflex_workflow"]
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
