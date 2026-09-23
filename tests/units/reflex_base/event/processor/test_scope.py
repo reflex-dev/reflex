@@ -81,3 +81,40 @@ async def test_earlier_scope_cleaned_up_when_later_provider_raises():
 
     # The first provider's context must be exited even though the second raised.
     assert exited == ["first"]
+
+
+@pytest.mark.asyncio
+async def test_body_exception_is_forwarded_to_providers():
+    seen: list[BaseException | None] = []
+
+    @contextlib.contextmanager
+    def observing_cm():
+        try:
+            yield
+        except BaseException as exc:
+            seen.append(exc)
+            raise
+
+    async def provider(_root):  # noqa: RUF029 (async required by provider protocol)
+        return observing_cm()
+
+    scope.register_event_scope_provider(provider)
+
+    with pytest.raises(RuntimeError, match="handler failed"):
+        async with scope.event_scope(_ROOT):
+            msg = "handler failed"
+            raise RuntimeError(msg)
+
+    assert [str(exc) for exc in seen] == ["handler failed"]
+
+
+@pytest.mark.asyncio
+async def test_provider_can_suppress_a_body_exception():
+    async def provider(_root):  # noqa: RUF029 (async required by provider protocol)
+        return contextlib.suppress(RuntimeError)
+
+    scope.register_event_scope_provider(provider)
+
+    async with scope.event_scope(_ROOT):
+        msg = "swallowed"
+        raise RuntimeError(msg)

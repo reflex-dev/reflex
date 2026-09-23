@@ -13,6 +13,8 @@ from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from types import TracebackType
+
     from reflex.state import BaseState
 
 # A provider takes the root state and returns (async) a synchronous context
@@ -62,8 +64,15 @@ class _EventScope:
             self._stack.close()
             raise
 
-    async def __aexit__(self, *exc_info: object) -> None:
-        self._stack.close()
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool | None:
+        # Forwarded so a provider's context manager can observe (and suppress)
+        # an exception raised by the handler or by delta resolution.
+        return self._stack.__exit__(exc_type, exc_value, traceback)
 
 
 def event_scope(
