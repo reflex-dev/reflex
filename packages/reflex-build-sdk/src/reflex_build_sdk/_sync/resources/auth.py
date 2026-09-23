@@ -41,8 +41,9 @@ _LOGIN_TIMEOUT = 600.0
 class Tokens:
     """Manage the caller's access tokens.
 
-    Needs a token with full access: tokens from ``reflex login`` and service
-    account tokens are refused with ``PermissionDeniedError``.
+    Every method but ``revoke_self`` needs a token with full access: tokens from
+    ``reflex login`` and service account tokens are refused with
+    ``PermissionDeniedError``.
     """
 
     def __init__(self, client: ReflexBuild) -> None:

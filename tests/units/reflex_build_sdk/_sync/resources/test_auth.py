@@ -27,6 +27,7 @@ from reflex_build_sdk.types import (
 )
 
 from tests.units.reflex_build_sdk.conftest import (
+    Handler,
     MockAPI,
     MockTransport,
     json_body,
@@ -163,14 +164,6 @@ def test_create_token(client: ReflexBuild, mock_api: MockAPI):
     }
 
 
-def test_create_token_is_not_retried(client: ReflexBuild, mock_api: MockAPI):
-    # A lost response may hide a created token, whose name a retry would reuse.
-    mock_api.add("POST", "/api/v1/user/token/create", reply(503))
-    with pytest.raises(APIStatusError):
-        client.auth.tokens.create("ci")
-    assert len(mock_api.requests) == 1
-
-
 def test_create_scoped_token(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
@@ -266,10 +259,43 @@ def test_refresh_token(client: ReflexBuild, mock_api: MockAPI, previous_revoked:
     assert json_body(mock_api.requests[0]) == {"token_id": old}
 
 
-def test_refresh_token_is_not_retried(client: ReflexBuild, mock_api: MockAPI):
-    # Each attempt would mint another token and revoke the one before.
-    mock_api.add("POST", "/api/v1/user/token/rotate", reply(503))
-    with pytest.raises(APIStatusError):
+def _lose_response(request: Request) -> Response:
+    msg = "connection reset after the request was processed"
+    raise TransportError(msg, request=request, sent=True)
+
+
+# Failures after which the server may have processed the request.
+AMBIGUOUS_FAILURES = pytest.mark.parametrize(
+    ("handler", "error"),
+    [(reply(503), APIStatusError), (_lose_response, APIConnectionError)],
+    ids=["unavailable", "lost_response"],
+)
+
+
+@AMBIGUOUS_FAILURES
+def test_create_token_is_not_retried(
+    client: ReflexBuild,
+    mock_api: MockAPI,
+    handler: Handler,
+    error: type[Exception],
+):
+    # A retry would create another token with the same name.
+    mock_api.add("POST", "/api/v1/user/token/create", handler)
+    with pytest.raises(error):
+        client.auth.tokens.create("ci")
+    assert len(mock_api.requests) == 1
+
+
+@AMBIGUOUS_FAILURES
+def test_refresh_token_is_not_retried(
+    client: ReflexBuild,
+    mock_api: MockAPI,
+    handler: Handler,
+    error: type[Exception],
+):
+    # A retry would mint another token and revoke the one just issued.
+    mock_api.add("POST", "/api/v1/user/token/rotate", handler)
+    with pytest.raises(error):
         client.auth.tokens.refresh(str(uuid.uuid4()))
     assert len(mock_api.requests) == 1
 

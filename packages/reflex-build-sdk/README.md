@@ -159,7 +159,7 @@ with ReflexBuild() as client:
     credentials.save_token(client.auth.finish_login(login, timeout=600))
 ```
 
-`credentials.delete_token()` removes the saved token, and `client.auth.tokens.revoke_self()` revokes the client's own token, which any token may do. Create a token for CI with `client.auth.tokens.create("ci", expires_in_days=30)`, whose `.token` holds the value, and rotate or revoke one with `client.auth.tokens.refresh(token)` and `client.auth.tokens.revoke(token)`. If a refresh answers `previous_revoked=False`, the old token is still live and needs revoking. Managing other tokens needs a token with full access, which `reflex login` tokens are not.
+`credentials.delete_token()` removes the saved token, and `client.auth.tokens.revoke_self()` revokes the client's own token, which any token may do. Create a token for CI with `client.auth.tokens.create("ci", expires_in_days=30)`, whose `.token` holds the value, and rotate or revoke one with `client.auth.tokens.refresh(token)`, whose `.token` holds the new value, and `client.auth.tokens.revoke(token)`. If a refresh answers `previous_revoked=False`, the old token is still live and needs revoking. Managing other tokens needs a token with full access, which `reflex login` tokens are not.
 
 `client.usage.balance()` reports how much of the organization's plan allowance is used, and `client.usage.history()` iterates over its charges and credits.
 
