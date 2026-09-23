@@ -151,7 +151,9 @@ class Sleep:
 Every hook except `sample` is optional; `conclude` and `cleanup` always run, also
 after a failure or a timeout. Further `@benchmark` arguments:
 `hidden_params={"name": default}` for parameters that are passed to hooks but are
-not part of the name or the series key, and `setup_timeout` (600 s) for
+not part of the name or the series key, `suite_params={"smoke": {"sessions":
+[10]}}` for the values a parameter takes when that suite is selected (a quick
+subset of the grid; `--param` still wins), and `setup_timeout` (600 s) for
 `setup_cache`, `setup` and `cleanup`.
 
 **Metrics** are declared with `Metric(unit, direction, assume="nothing",
@@ -235,6 +237,62 @@ included. Peak memory and CPU come from a transient cgroup v2 scope when
 (`memory_method: pss_sampling`, never compared with cgroup peaks);
 `reflex-bench doctor` shows which. `selftest.app.compile` and
 `selftest.app.dev_ready` exercise all of it against a blank app.
+
+## Event benchmarks
+
+`reflex_bench.suites.events` measures how many events the playground
+(`examples/playground`) answers and how fast. Each sample starts it as a
+production backend (`reflex run --env prod --backend-only`, one granian worker)
+and drives it with `reflex_bench.drivers.events`, a socket.io load generator
+that speaks reflex's event websocket over `websockets` (no python-socketio).
+Sessions are browser tabs: each connects with its own token, hydrates like a page
+load, then sends `BenchState.set_seq*` events whose delta echoes a sequence
+number.
+
+| Benchmark | Suites | Parameters | Load | Metrics |
+| --- | --- | --- | --- | --- |
+| `events.<shape>.capacity` | `smoke` (simple, `sessions=10`), `daily` | `manager`, `sessions` 1, 10, 50, 200 | closed loop, 10 s after 3 s | `throughput`, `service_p50`, `cpu_us_per_event` |
+| `events.<shape>.latency` | `smoke` (simple, `sessions=10`, `rate=50`), `daily` | `manager`, `sessions`, `rate` | open loop, 30 s after 10 s | `response_p50`, `p90`, `p99`, `max`, `throughput`, `unanswered`, `cpu_us_per_event` |
+| `events.<shape>.knee` | (`all`) | `manager`, `sessions` | open loop at 10 % to 110 % of the capacity, 30 s after 10 s each | `knee_rate`, `low_load_p99` |
+| `events.sessions.at_1hz` | `daily` | `manager`, `sessions` 50, 200, 1000 | open loop, 1 ev/s per session, 30 s after 10 s | `response_p50`, `response_p99`, `unanswered`, `cpu_us_per_event` |
+| `selftest.events.calibrate` | `selftest` | | the generator against an echo server | `closed_ceiling`, `open_max_rate` |
+
+- **Shapes**: `simple` (`set_seq`), `complex` (three vars behind a chain of
+  three computed vars), `cross` (`get_state` of another state), `background` (a
+  background task). SharedState fan-out and contention come with the
+  playground's SharedState surface.
+- **`manager`**: `memory` and `disk`, plus `redis` when `REFLEX_REDIS_URL` is set
+  in the harness's environment when the suite is imported. The URL reaches only
+  the redis instances: reflex uses redis whenever a URL is configured.
+- **`rate`**: `auto` offers half the capacity that a 5 s closed-loop probe
+  measures before each sample, so each arm of an `ab` run is loaded to the same
+  share of its own capacity; `--param rate=N` offers `N` events per second to
+  both, which compares the same absolute load.
+- **Open and closed loop**: the open loop sends on a fixed schedule whatever
+  the server does and times each answer from the *planned* send time, so a
+  stall counts in every event it delays (no coordinated omission); events
+  without an answer count as `unanswered`, never dropped. The closed loop sends
+  the next event when the previous one is answered: it measures capacity and
+  service time (answer minus actual send), never user latency.
+- **Per run, not pooled**: every sample's percentiles come from that run's
+  events; `response_p99` of a run with fewer than 10 000 answered events is kept
+  with `p99_underpowered` in its extra data. Each sample's extra data also holds
+  a 120-bucket log histogram (10 μs to 100 s) for pooled percentiles on display.
+- **CPU per event** is the server tree's CPU time in the measured window divided
+  by the answered events: from its cgroup scope (`cpu_method: cgroup`) or,
+  without one, summed over its processes with psutil (`cpu_method: psutil`).
+- **Pinning**: on Linux with four CPUs or more, the server runs on the lower
+  half of the CPUs (CPU 0 excluded) and the generator on the upper half, with
+  up to 4 generator processes (1 up to 10 sessions); `pinning` in the extra
+  data records the split.
+- **Self-check**: a sample fails with `generator saturated` when a generator
+  process used more than 75 % of a core, when the p99 of the send lag
+  (actual minus planned send time) exceeds 1 ms or 10 % of the median response,
+  or when less than 98 % of the offered events went out in the window.
+  `selftest.events.calibrate` shows how far the generator goes on a machine.
+
+Not parameters yet: injected redis latency, uvicorn instead of granian, and
+more than one backend worker.
 
 ## How samples are taken
 

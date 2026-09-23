@@ -24,6 +24,13 @@ from reflex_bench.suites.selftest import noise_value
 from .factories import WALL, make_doc, make_entry
 
 HARNESS_PYTHON = f"{sys.version_info.major}.{sys.version_info.minor}"
+QUICK_SELF_TESTS = (
+    "selftest.exact",
+    "selftest.fail",
+    "selftest.noise",
+    "selftest.sleep",
+    "selftest.timeout",
+)
 
 
 @pytest.fixture
@@ -62,6 +69,7 @@ def test_list_self_tests(home: Path):
     assert names == [
         "selftest.app.compile",
         "selftest.app.dev_ready",
+        "selftest.events.calibrate",
         "selftest.exact",
         "selftest.fail",
         "selftest.noise[cv=5]",
@@ -78,7 +86,7 @@ def test_list_self_tests(home: Path):
         "estimate",
     ]
     assert "bytes (B, exact)" in result.output
-    assert result.output.splitlines()[-1].startswith("9 benchmarks")
+    assert result.output.splitlines()[-1].startswith("10 benchmarks")
 
 
 def test_list_estimates_the_timeout_self_test_as_one_sample(home: Path):
@@ -98,6 +106,10 @@ def test_min_runs_alone_raises_the_default_max_runs(home: Path):
 
 def test_list_hides_self_tests_by_default(home: Path):
     result = invoke("list")
+    assert result.exit_code == 0
+    assert "events.simple.capacity[manager=memory,sessions=10]" in result.output
+    assert "selftest." not in result.output
+    result = invoke("list", "nothing.*")
     assert result.exit_code == 0
     assert (
         "no benchmarks selected (self-tests are listed with --suite selftest)"
@@ -145,9 +157,10 @@ def test_run_writes_json(home: Path):
 
 
 def test_run_self_tests_reports_failures_and_exits_zero(home: Path):
-    # The selftest.app.* benchmarks start real apps; test_selftest_app.py runs them.
+    # The selftest.app.* and selftest.events.* benchmarks start real processes;
+    # test_selftest_app.py and suites/test_events_app.py run them.
     result = invoke(
-        "run", "--suite", "selftest", "selftest.[!a]*",
+        "run", "--suite", "selftest", *QUICK_SELF_TESTS,
         "--runs", "2", "--no-save", "--json", "all.json",
     )  # fmt: skip
     assert result.exit_code == 0, result.output
@@ -657,9 +670,9 @@ def test_ab_random_order_is_reproducible(home: Path, resolved: list, shifted: No
 
 
 def test_ab_self_tests_against_the_workspace(home: Path):
-    # The selftest.app.* benchmarks start real apps; test_selftest_app.py runs them.
+    # The selftest.app.* and selftest.events.* benchmarks start real processes.
     result = invoke(
-        "ab", "--suite", "selftest", "selftest.[!a]*",
+        "ab", "--suite", "selftest", *QUICK_SELF_TESTS,
         "--base", "workspace", "--head", "workspace",
         "--rounds", "6", "--no-save", "--json", "ab.json",
     )  # fmt: skip
