@@ -81,12 +81,15 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
         # state it caches without going through the Socket.IO server.
         self._scopes: dict[str, MutableMapping[str, Any]] = {}
 
-    async def on_connect(self, sid: str, environ: dict):
+    async def on_connect(self, sid: str, environ: dict) -> bool | None:
         """Event for when the websocket is connected.
 
         Args:
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
+
+        Returns:
+            False to refuse a session that linked no token, else None.
         """
         if (scope := environ.get("asgi.scope")) is not None:
             self._scopes[sid] = scope
@@ -95,6 +98,12 @@ class EventNamespace(AsyncNamespace, BaseEventNamespace):
             environ.get("QUERY_STRING", ""),
             environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL"),
         )
+        if sid in self.sid_to_token:
+            return None
+        # Not a Reflex client: nothing it sends can be served. Socket.IO runs
+        # no disconnect handler for a refused connect, so undo this one here.
+        self.on_disconnect(sid)
+        return False
 
     def on_disconnect(self, sid: str) -> asyncio.Task | None:
         """Event for when the websocket disconnects.
