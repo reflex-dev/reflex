@@ -20,9 +20,11 @@ dependencies = [
     "httpx >=0.25.1,<1.0",
     "packaging >=24.2",
     "platformdirs >=3.10.0,<5.0",
+    # The SDK ships no HTTP library of its own; [httpx] points it at the one
+    # `check_version` already pulls in, so the extra costs nothing to install.
     # The SDK is pre-1.0, so every release may break its API: cap at the patch
     # and raise both bounds when adopting a new one.
-    "reflex-build-sdk >=0.0.3,<0.0.4",
+    "reflex-build-sdk[httpx] >=0.0.4,<0.0.5",
     "rich >=13,<16",
 ]
 

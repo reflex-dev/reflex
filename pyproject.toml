@@ -120,7 +120,7 @@ dev = [
   "reflex-docgen",
   "reflex-otel",
   "reflex-release",
-  "reflex-build-sdk",
+  "reflex-build-sdk[aiohttp,httpx,httpx2]",
   "reflex-site-shared",
   "ruff",
   "selenium",

@@ -1,12 +1,13 @@
+# Generated from tests/units/reflex_build_sdk/transports/test_httpx.py by packages/reflex-build-sdk/scripts/unasync.py. Do not edit.
 from __future__ import annotations
 
 import asyncio
 
-import httpx
+import httpx2
 import pytest
 from reflex_build_sdk.transports import (
-    AsyncHttpxTransport,
-    HttpxTransport,
+    AsyncHttpx2Transport,
+    Httpx2Transport,
     Request,
     TransportError,
 )
@@ -25,8 +26,8 @@ def _request(timeout: float | None = None) -> Request:
     )
 
 
-def _echo(request: httpx.Request) -> httpx.Response:
-    return httpx.Response(
+def _echo(request: httpx2.Request) -> httpx2.Response:
+    return httpx2.Response(
         201,
         headers={"Retry-After": "1", "X-Path": request.url.raw_path.decode()},
         json={
@@ -39,7 +40,7 @@ def _echo(request: httpx.Request) -> httpx.Response:
 
 
 def test_send():
-    transport = HttpxTransport(httpx.Client(transport=httpx.MockTransport(_echo)))
+    transport = Httpx2Transport(httpx2.Client(transport=httpx2.MockTransport(_echo)))
     request = _request()
     response = transport.send(request)
     assert response.request is request
@@ -54,8 +55,8 @@ def test_send():
     assert body["body"] == '{"a":1}'
 
 
-def _echo_upload(request: httpx.Request) -> httpx.Response:
-    return httpx.Response(
+def _echo_upload(request: httpx2.Request) -> httpx2.Response:
+    return httpx2.Response(
         200,
         json={
             "body": request.content.decode(),
@@ -76,8 +77,8 @@ def _upload(content: object) -> Request:
 
 
 def test_send_streamed_body():
-    transport = HttpxTransport(
-        httpx.Client(transport=httpx.MockTransport(_echo_upload))
+    transport = Httpx2Transport(
+        httpx2.Client(transport=httpx2.MockTransport(_echo_upload))
     )
     response = transport.send(_upload(iter([b"abc", b"def"])))
     # The signed length is sent as is, without chunked encoding or a content type.
@@ -96,8 +97,8 @@ async def test_async_send_streamed_body():
         await asyncio.sleep(0)
         yield b"def"
 
-    transport = AsyncHttpxTransport(
-        httpx.AsyncClient(transport=httpx.MockTransport(_echo_upload))
+    transport = AsyncHttpx2Transport(
+        httpx2.AsyncClient(transport=httpx2.MockTransport(_echo_upload))
     )
     response = await transport.send(_upload(chunks()))
     assert response.json() == {
@@ -110,19 +111,19 @@ async def test_async_send_streamed_body():
 
 
 def test_request_timeout():
-    transport = HttpxTransport(
-        httpx.Client(transport=httpx.MockTransport(_echo), timeout=3.0)
+    transport = Httpx2Transport(
+        httpx2.Client(transport=httpx2.MockTransport(_echo), timeout=3.0)
     )
-    assert transport.send(_request()).json()["timeout"] == httpx.Timeout(3.0).as_dict()
+    assert transport.send(_request()).json()["timeout"] == httpx2.Timeout(3.0).as_dict()
     assert (
         transport.send(_request(timeout=7.0)).json()["timeout"]
-        == httpx.Timeout(7.0).as_dict()
+        == httpx2.Timeout(7.0).as_dict()
     )
 
 
 def test_default_client_timeout():
-    transport = HttpxTransport()
-    assert transport._client.timeout == httpx.Timeout(
+    transport = Httpx2Transport()
+    assert transport._client.timeout == httpx2.Timeout(
         DEFAULT_TIMEOUT, connect=DEFAULT_CONNECT_TIMEOUT
     )
     transport.close()
@@ -131,21 +132,23 @@ def test_default_client_timeout():
 @pytest.mark.parametrize(
     ("error_type", "sent", "timed_out"),
     [
-        (httpx.ConnectError, False, False),
-        (httpx.ConnectTimeout, False, True),
-        (httpx.PoolTimeout, False, True),
-        (httpx.ReadTimeout, True, True),
-        (httpx.WriteTimeout, True, True),
-        (httpx.ReadError, True, False),
-        (httpx.RemoteProtocolError, True, False),
+        (httpx2.ConnectError, False, False),
+        (httpx2.ConnectTimeout, False, True),
+        (httpx2.PoolTimeout, False, True),
+        (httpx2.ReadTimeout, True, True),
+        (httpx2.WriteTimeout, True, True),
+        (httpx2.ReadError, True, False),
+        (httpx2.RemoteProtocolError, True, False),
     ],
 )
-def test_errors(error_type: type[httpx.TransportError], sent: bool, timed_out: bool):
-    def raise_error(request: httpx.Request) -> httpx.Response:
+def test_errors(error_type: type[httpx2.TransportError], sent: bool, timed_out: bool):
+    def raise_error(request: httpx2.Request) -> httpx2.Response:
         msg = "boom"
         raise error_type(msg, request=request)
 
-    transport = HttpxTransport(httpx.Client(transport=httpx.MockTransport(raise_error)))
+    transport = Httpx2Transport(
+        httpx2.Client(transport=httpx2.MockTransport(raise_error))
+    )
     request = _request()
     with pytest.raises(TransportError, match="boom") as exc_info:
         transport.send(request)
@@ -155,21 +158,21 @@ def test_errors(error_type: type[httpx.TransportError], sent: bool, timed_out: b
 
 
 def test_close_ownership():
-    client = httpx.Client()
-    HttpxTransport(client).close()
+    client = httpx2.Client()
+    Httpx2Transport(client).close()
     assert not client.is_closed
-    transport = HttpxTransport()
+    transport = Httpx2Transport()
     transport.close()
     assert transport._client.is_closed
 
 
 def test_keeps_falsy_client():
-    class FalsyClient(httpx.Client):
+    class FalsyClient(httpx2.Client):
         def __bool__(self) -> bool:
             return False
 
     client = FalsyClient()
-    transport = HttpxTransport(client)
+    transport = Httpx2Transport(client)
     assert transport._client is client
     transport.close()
     assert not client.is_closed
@@ -177,23 +180,23 @@ def test_keeps_falsy_client():
 
 
 async def test_async_send():
-    transport = AsyncHttpxTransport(
-        httpx.AsyncClient(transport=httpx.MockTransport(_echo))
+    transport = AsyncHttpx2Transport(
+        httpx2.AsyncClient(transport=httpx2.MockTransport(_echo))
     )
     response = await transport.send(_request(timeout=7.0))
     assert response.status_code == 201
     assert response.headers["x-path"] == "/api/v1/user/token/a%2Fb?x=1"
-    assert response.json()["timeout"] == httpx.Timeout(7.0).as_dict()
+    assert response.json()["timeout"] == httpx2.Timeout(7.0).as_dict()
     await transport.aclose()
 
 
 async def test_async_errors():
-    def refuse(request: httpx.Request) -> httpx.Response:
+    def refuse(request: httpx2.Request) -> httpx2.Response:
         msg = "refused"
-        raise httpx.ConnectError(msg, request=request)
+        raise httpx2.ConnectError(msg, request=request)
 
-    transport = AsyncHttpxTransport(
-        httpx.AsyncClient(transport=httpx.MockTransport(refuse))
+    transport = AsyncHttpx2Transport(
+        httpx2.AsyncClient(transport=httpx2.MockTransport(refuse))
     )
     with pytest.raises(TransportError, match="refused") as exc_info:
         await transport.send(_request())
@@ -201,10 +204,10 @@ async def test_async_errors():
 
 
 async def test_async_close_ownership():
-    client = httpx.AsyncClient()
-    await AsyncHttpxTransport(client).aclose()
+    client = httpx2.AsyncClient()
+    await AsyncHttpx2Transport(client).aclose()
     assert not client.is_closed
-    transport = AsyncHttpxTransport()
+    transport = AsyncHttpx2Transport()
     await transport.aclose()
     assert transport._client.is_closed
     await client.aclose()
