@@ -1,6 +1,7 @@
 """Tests for development backend launchers in ``reflex.utils.exec``."""
 
 import builtins
+import importlib
 import logging
 import multiprocessing
 import os
@@ -451,15 +452,24 @@ def test_uvicorn_worker_carries_the_socket_policy(monkeypatch: pytest.MonkeyPatc
     pytest.importorskip("gunicorn")
     pytest.importorskip("uvicorn")
     monkeypatch.setenv("REFLEX_SOCKET_PER_MESSAGE_DEFLATE", "false")
-    # The class body reads the environment at import time.
-    sys.modules.pop("reflex.utils.uvicorn_worker", None)
-    from reflex.utils.uvicorn_worker import ReflexUvicornWorker
+    name = "reflex.utils.uvicorn_worker"
+    # The class body reads the environment at import time, so import it fresh
+    # -- then put the cache back, or a later importer would be handed a module
+    # whose settings were baked from this test's environment.
+    cached = sys.modules.pop(name, None)
+    try:
+        worker = importlib.import_module(name)
+    finally:
+        if cached is None:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = cached
 
     assert (
-        ReflexUvicornWorker.CONFIG_KWARGS.items()
+        worker.ReflexUvicornWorker.CONFIG_KWARGS.items()
         >= exec_utils.uvicorn_websocket_options().items()
     )
-    assert ReflexUvicornWorker.CONFIG_KWARGS["ws_per_message_deflate"] is False
+    assert worker.ReflexUvicornWorker.CONFIG_KWARGS["ws_per_message_deflate"] is False
 
 
 @pytest.fixture

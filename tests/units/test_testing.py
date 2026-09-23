@@ -257,12 +257,21 @@ def test_embedded_server_retries_taken_port():
     thread.start()
     try:
         deadline = time.monotonic() + 15
-        while time.monotonic() < deadline:
+        # A server that gave up has nothing left to wait for; without that the
+        # only report of a broken retry would be a full-timeout bare assert.
+        while time.monotonic() < deadline and thread.is_alive():
             if server.port != probed_port and server.is_listening():
                 break
             time.sleep(0.05)
-        assert server.port != probed_port
-        assert server.is_listening()
+        assert server.port != probed_port, (
+            f"the server never left the probed port {probed_port} "
+            f"(serving: {thread.is_alive()}): it either bound a port another "
+            "socket holds, or failed with a bind error the retry does not "
+            "recognize -- the thread's traceback says which"
+        )
+        assert server.is_listening(), (
+            f"the server rebound to port {server.port} without serving on it"
+        )
     finally:
         blocker.close()
         server.should_exit = True
