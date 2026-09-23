@@ -211,6 +211,10 @@ class Context:
         rng: A seeded random generator.
         log: A logger for the benchmark.
         arm: The arm being measured, ``A`` or ``B``.
+        dims: How the values were measured, e.g. ``{"memory_method": "cgroup"}``;
+            ``setup`` fills it and the scheduler copies it into the entry's
+            ``dims``, which are part of the series key. It must not depend on
+            the arm.
     """
 
     subject: Subject
@@ -221,3 +225,4 @@ class Context:
     rng: random.Random
     log: logging.Logger
     arm: str = "A"
+    dims: dict[str, str] = field(default_factory=dict)

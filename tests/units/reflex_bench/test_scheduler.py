@@ -332,6 +332,24 @@ def test_context(tmp_path: Path):
     assert entry["hidden_params"] == {"shift": 2.0}
 
 
+def test_setup_fills_the_dims_of_the_entry(tmp_path: Path):
+    class Labeled:
+        def setup(self, ctx: Context) -> None:
+            assert ctx.dims == {}
+            ctx.dims["memory_method"] = "pss_sampling"
+
+        def sample(self, ctx: Context) -> None:
+            pass
+
+    bench = Benchmark.define(Labeled, id="t.dims", metrics={"wall": WALL})
+    runner = Scheduler(make_subject(), Policy(runs=1), home=tmp_path, seed=1)
+    entry = runner.run_one(Planned(bench, bench.expand()[0]))
+    assert entry["status"] == "ok"
+    # dims are part of the series key: differently measured values never pair up.
+    assert entry["dims"] == {"memory_method": "pss_sampling"}
+    assert store.entry_key(entry)[2] == '{"memory_method":"pss_sampling"}'
+
+
 def test_context_errors_are_failures_not_crashes(tmp_path: Path):
     home = tmp_path / "not-a-directory"
     home.write_text("x", encoding="utf-8")
