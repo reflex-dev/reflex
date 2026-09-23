@@ -270,14 +270,16 @@ its hash), plus `initial_files` in page order, `html` (the page parsed),
 
 Two samples of one export are identical, but two exports of one commit are not
 quite: reflex bundles `.web/reflex.json`, with a random `project_hash` and the
-export's time, into a shared chunk (`assets/link-HASH.js` at 0.9.12). That
-chunk's content hash changes, and with it every chunk that imports it, the
-manifest and the HTML pages. Raw sizes stay the same up to a byte or two (the
-number of digits of the project hash), compressed sizes move by a few bytes
-(`total_gzip` 328,672 against 328,668 B, `total_brotli` 263,161 against
-263,219 B) and `web_dir` by a few dozen. That is far below the budgets' headroom
-and the 3 % threshold of exact comparisons, so the metrics stay exact and no
-file is left out of the breakdown.
+export's time, into a shared chunk (`assets/link-HASH.js` at 0.9.12,
+`assets/esm-HASH.js` at 0.8.23). That chunk's content hash changes, and with it
+every chunk that imports it, the manifest and the HTML pages. Raw sizes stay the
+same up to a byte or two (the number of digits of the project hash), compressed
+sizes move by a few bytes and `web_dir` by a few dozen: two runs in separate
+bench homes measured `total_gzip` 328,699 and 328,683 B, `total_brotli` 263,247
+and 263,218 B, `web_dir` 2,142,835 and 2,142,814 B, with the same `total_raw`,
+`chunks` and `node_modules`. That is far below the budgets' headroom and the
+3 % threshold of exact comparisons, so the metrics stay exact and no file is
+left out of the breakdown.
 
 `packages/reflex-bench/budgets.json` caps metrics, as whole numbers in the
 metric's unit:

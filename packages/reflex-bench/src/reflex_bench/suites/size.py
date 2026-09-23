@@ -280,7 +280,8 @@ def copy_example(name: str, dest: Path) -> None:
     if root is None or not listing:
         msg = f"{example} is not tracked in a git checkout around {Path.cwd()}; run reflex-bench from the reflex repository"
         raise FileNotFoundError(msg)
-    shutil.rmtree(dest, ignore_errors=True)
+    if dest.exists():
+        shutil.rmtree(dest)
     for tracked in filter(None, listing.split("\0")):
         source = root / tracked
         # A tracked file deleted in the work tree is left out.
@@ -298,7 +299,7 @@ def copy_example(name: str, dest: Path) -> None:
     metrics=METRICS,
     setup_timeout=EXPORT_TIMEOUT_S + 60,
     # One sample; the export in setup_cache takes most of the time.
-    estimate=60,
+    estimate=20,
 )
 class ExportSize:
     """Export an example app for production and measure its bundle and footprint."""
