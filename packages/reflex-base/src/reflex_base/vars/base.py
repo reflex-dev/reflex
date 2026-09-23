@@ -4254,9 +4254,11 @@ class BaseStateMeta(ABCMeta):
             declared = (
                 value if value is not MISSING else _inherited_value(lookup_order, key)
             )
-            if isinstance(declared, property):
-                # A (hybrid) property under an annotated name stays a descriptor,
-                # here or on a base; a field would shadow it with a stored value.
+            if hasattr(type(declared), "__get__") and not isinstance(
+                declared, (Field, Var)
+            ):
+                # Descriptors under annotated names stay descriptors; a field
+                # would shadow them with stored state.
                 continue
 
             if value is MISSING:
