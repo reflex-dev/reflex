@@ -122,7 +122,8 @@ class Runner:
             if started:
                 continue
             wake.clear()
-            with contextlib.suppress(TimeoutError):
+            # asyncio's own TimeoutError, which is only the builtin from 3.11 on.
+            with contextlib.suppress(asyncio.TimeoutError):
                 await asyncio.wait_for(wake.wait(), self.poll_interval.total_seconds())
 
     async def drain(self, timeout: datetime.timedelta) -> None:

@@ -64,7 +64,7 @@ class WeeklyUpdate(Base, Workflow):
             The step that shares the report.
         """
         days = week_before(
-            self.wake_at or datetime.datetime.now(datetime.UTC), self.timezone
+            self.wake_at or datetime.datetime.now(datetime.timezone.utc), self.timezone
         )
         self.week_start = days[0]
         missing = [day.isoformat() for day in days if day not in SALES]
