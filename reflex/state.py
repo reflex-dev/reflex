@@ -1445,12 +1445,13 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             )
             raise BaseVarShadowsInheritedVarError(msg)
 
-        for name in cls._get_type_hints():
+        for name in set(cls._get_type_hints()) | cls.__dict__.keys():
             if (
                 not name.startswith("_")
                 or name.startswith("__")
                 or name not in cls.inherited_backend_vars
                 or name not in cls.__dict__
+                or callable(cls.__dict__[name])
             ):
                 continue
             msg = (
