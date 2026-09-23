@@ -169,7 +169,7 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
     assert.equal(calls, 0);
     assert.equal(window.__reflex.react, react);
     assert.equal(window.__reflex["quality-lazy-fixture"], undefined);
-    const source = 'const {value} = window.__reflex["quality-lazy-fixture"]; export default function Quality(){ return value; }';
+    const source = 'await window.__reflex_load?.(["quality-lazy-fixture"]); const {value} = window.__reflex["quality-lazy-fixture"]; export default function Quality(){ return value; }';
     const components = await Promise.all([evaluate(source), evaluate(source)]);
     assert.equal(calls, 1);
     assert.deepEqual(components.map(component => component()), [42, 42]);

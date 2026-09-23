@@ -234,9 +234,10 @@ if (typeof window !== "undefined") {{
   const loaders = {{
 {loaders}
   }};
-  const pending = {{}};
+  const pending = Object.create(null);
+  const hasOwn = (object, name) => Object.prototype.hasOwnProperty.call(object, name);
   window.__reflex_load = (libraries = Object.keys(loaders)) => {{
-    return Promise.all(libraries.filter((name) => loaders[name] && !window.__reflex[name]).map((name) => {{
+    return Promise.all(libraries.filter((name) => hasOwn(loaders, name) && !hasOwn(window.__reflex, name)).map((name) => {{
       if (!pending[name]) {{
         pending[name] = loaders[name]().then((module) => {{
           window.__reflex[name] = module;
