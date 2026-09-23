@@ -447,3 +447,21 @@ def test_db_commands_without_db_extra_point_to_install(
     assert result.exit_code == 1
     assert "pip install reflex[db]" in caplog.text
     assert not isinstance(result.exception, ImportError)
+
+
+def test_db_commands_without_sqlmodel_point_to_install(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """A partial install without sqlmodel still gets the install hint."""
+    real_find_spec = reflex.find_spec
+    monkeypatch.setattr(
+        reflex,
+        "find_spec",
+        lambda name: None if name == "sqlmodel" else real_find_spec(name),
+    )
+
+    result = click.testing.CliRunner().invoke(reflex.db_cli, ["init"])
+
+    assert result.exit_code == 1
+    assert "pip install reflex[db]" in caplog.text
+    assert not isinstance(result.exception, ImportError)
