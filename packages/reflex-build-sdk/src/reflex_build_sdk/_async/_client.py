@@ -23,7 +23,7 @@ from reflex_build_sdk._base import (
 )
 from reflex_build_sdk._errors import status_error_from_response
 from reflex_build_sdk.transports._base import AsyncTransport, TransportError
-from reflex_build_sdk.transports._defaults import AsyncDefaultTransport
+from reflex_build_sdk.transports._defaults import async_default_transport
 
 T = TypeVar("T")
 
@@ -62,7 +62,7 @@ class AsyncReflexBuild(BaseClient):
 
         Args:
             token: The access token. Defaults to the ``REFLEX_ACCESS_TOKEN`` environment
-                variable, then to the token saved by ``reflex login``.
+                variable.
             base_url: The Reflex Build URL. Defaults to the ``REFLEX_BUILD_BACKEND_URL``
                 environment variable, then to ``REFLEX_CLOUD_BACKEND_URL``, which
                 ``reflex-hosting-cli`` reads, then to ``https://build.reflex.dev``.
@@ -85,7 +85,7 @@ class AsyncReflexBuild(BaseClient):
             token=token, base_url=base_url, timeout=timeout, max_retries=max_retries
         )
         self._owns_transport = transport is None
-        self._transport = AsyncDefaultTransport() if transport is None else transport
+        self._transport = async_default_transport() if transport is None else transport
         self.apps = AsyncApps(self)
         self.auth = AsyncAuth(self)
         self.deployments = AsyncDeployments(self)

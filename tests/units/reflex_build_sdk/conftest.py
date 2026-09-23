@@ -11,7 +11,6 @@ from urllib.parse import urlsplit
 
 import pytest
 import reflex_build_sdk._base
-import reflex_build_sdk.credentials
 from reflex_build_sdk.transports import Request, Response
 
 OPENAPI_SNAPSHOT = Path(__file__).parents[3] / "packages/reflex-build-sdk/openapi.json"
@@ -204,12 +203,11 @@ def mock_api() -> MockAPI:
 
 
 @pytest.fixture(autouse=True)
-def isolated_settings(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    """Keep the developer's environment and saved login out of the tests.
+def isolated_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep the developer's environment out of the tests.
 
     Args:
         monkeypatch: The pytest monkeypatch fixture.
-        tmp_path: A temporary directory standing in for the Reflex data directory.
     """
     for name in (
         "REFLEX_ACCESS_TOKEN",
@@ -219,10 +217,5 @@ def isolated_settings(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         "REFLEX_CLOUD_URL",
     ):
         monkeypatch.delenv(name, raising=False)
-    monkeypatch.setattr(
-        reflex_build_sdk.credentials,
-        "credentials_path",
-        lambda: tmp_path / "hosting_v1.json",
-    )
     # Retries back off without waiting.
     monkeypatch.setattr(reflex_build_sdk._base, "_INITIAL_RETRY_DELAY", 0.0)

@@ -1,0 +1,1 @@
+Add `Httpx2Transport` and `AsyncHttpx2Transport`, sending requests with [httpx2](https://github.com/pydantic/httpx2). Both clients use httpx2 by default over httpx, and `AsyncReflexBuild` still prefers aiohttp.
