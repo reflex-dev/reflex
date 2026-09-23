@@ -941,14 +941,14 @@ def logout():
     logout(get_config().loglevel)
 
 
+_DB_PACKAGES = ("sqlalchemy", "alembic", "sqlmodel", "pydantic")
+
+
 @click.group
 def db_cli():
     """Subcommands for managing the database schema."""
     try:
-        db_available = all(
-            find_spec(name) is not None
-            for name in ("sqlalchemy", "alembic", "sqlmodel", "pydantic")
-        )
+        db_available = all(find_spec(name) is not None for name in _DB_PACKAGES)
     except (AttributeError, ImportError, ValueError):
         db_available = False
     if not db_available:
