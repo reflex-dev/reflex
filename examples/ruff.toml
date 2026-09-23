@@ -15,6 +15,7 @@ src = ["*"]
 hatch_reflex_pyi.msg = "Examples import Reflex only as `import reflex as rx`."
 integrations_docs.msg = "Examples import Reflex only as `import reflex as rx`."
 reflex_base.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_bench.msg = "Examples import Reflex only as `import reflex as rx`."
 reflex_build_sdk.msg = "Examples import Reflex only as `import reflex as rx`."
 reflex_cli.msg = "Examples import Reflex only as `import reflex as rx`."
 reflex_components_code.msg = "Examples import Reflex only as `import reflex as rx`."
