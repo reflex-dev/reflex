@@ -944,7 +944,14 @@ def logout():
 @click.group
 def db_cli():
     """Subcommands for managing the database schema."""
-    if not (find_spec("sqlalchemy") and find_spec("alembic")):
+    try:
+        db_available = all(
+            find_spec(name) is not None
+            for name in ("sqlalchemy", "alembic", "sqlmodel", "pydantic")
+        )
+    except (AttributeError, ImportError, ValueError):
+        db_available = False
+    if not db_available:
         logger.error(
             "Database is not available. Please install the required packages: "
             "`pip install reflex[db]`."
