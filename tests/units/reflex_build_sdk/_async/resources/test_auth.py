@@ -390,11 +390,7 @@ async def test_finish_login_waits_for_approval(mock_api: MockAPI):
 async def test_finish_login_does_not_retry_a_lost_response(
     client: AsyncReflexBuild, mock_api: MockAPI
 ):
-    def lose_response(request: Request) -> Response:
-        msg = "connection reset after the token was handed out"
-        raise TransportError(msg, request=request, sent=True)
-
-    mock_api.add("GET", "/api/v1/cli/token", lose_response)
+    mock_api.add("GET", "/api/v1/cli/token", _lose_response)
     # A retry would find the token gone and keep waiting for a done approval.
     with pytest.raises(APIConnectionError, match="connection reset"):
         await client.auth.finish_login(LOGIN, poll_interval=0)
