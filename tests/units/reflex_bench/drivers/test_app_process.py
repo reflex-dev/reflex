@@ -713,6 +713,22 @@ def test_run_cli_returns_the_output(app_dir: Path, fake: Configure):
 
 
 @posix_only
+def test_run_cli_prefix_replaces_dash_m_reflex(tmp_path: Path):
+    # `python -c "import reflex"` runs through the same process tree code.
+    result = run_cli(
+        Path(sys.executable),
+        ["one", "two"],
+        cwd=tmp_path,
+        env=subject_env(Path(sys.executable)),
+        timeout=60,
+        prefix=("-c", "import sys; print('argv', sys.argv[1:])"),
+    )
+    assert result.returncode == 0
+    assert result.lines == ["argv ['one', 'two']"]
+    assert result.args == ["one", "two"]
+
+
+@posix_only
 def test_run_cli_with_phases(app_dir: Path, fake: Configure):
     env = fake(lines=_log("head-compile-debug.log"), busy_s=0.3)
     result = run_cli(

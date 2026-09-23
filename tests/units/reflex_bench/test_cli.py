@@ -99,9 +99,13 @@ def test_min_runs_alone_raises_the_default_max_runs(home: Path):
 def test_list_hides_self_tests_by_default(home: Path):
     result = invoke("list")
     assert result.exit_code == 0
+    assert "lifecycle.compile.warm[app=playground]" in result.output
+    assert "selftest" not in result.output
+    empty = invoke("list", "nothing.*")
+    assert empty.exit_code == 0
     assert (
         "no benchmarks selected (self-tests are listed with --suite selftest)"
-        in result.output
+        in empty.output
     )
 
 

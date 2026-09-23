@@ -235,6 +235,39 @@ included. Peak memory and CPU come from a transient cgroup v2 scope when
 (`memory_method: pss_sampling`, never compared with cgroup peaks);
 `reflex-bench doctor` shows which. `selftest.app.compile` and
 `selftest.app.dev_ready` exercise all of it against a blank app.
+`run_cli(..., prefix=("-c", "import reflex"))` runs other interpreter
+arguments than `-m reflex` through the same process tree code.
+
+## Fixtures
+
+A fixture is the app a benchmark drives, described by a `FixtureDoc` (`name`,
+`content_hash`, `params`). A benchmark sets `ctx.fixture` in `setup_cache` or
+`setup`, and its entry records the name and hash in `dims`
+(`{"fixture": "playground", "fixture_hash": "sha256:…"}`), which are part of the
+pairing and series keys: an edited fixture starts a new series. One invocation
+drives several fixtures, so the document-level `fixture` stays `null`.
+
+- **The playground**, `examples/playground`: a committed app whose hash is the
+  line in its `.content-hash` (see its README for the element ids and hot reload
+  targets benchmarks rely on). `materialize_playground(dest)` copies it without
+  build output.
+- **Generated apps**, `reflex_bench.fixtures.generate`: `GenParams(pages,
+  components_per_page, state_vars, substate_depth, computed_vars, seed)` gives a
+  deterministic app of any size, hashed from the generator's source and the
+  parameters. Its hot reload targets follow the playground's pragma form and
+  are listed in `bench-manifest.json`. `uv run python -m
+  reflex_bench.fixtures.generate --pages 10 DEST` writes one to look at.
+
+`ensure_fixture(ctx.cache_dir, describe, make)` keeps the app in
+`cache_dir/app` with a `fixture.json` stamp, and rebuilds it when the stamp no
+longer matches: `setup_cache` directories are keyed by subject and parameters,
+not by the app. `bump_marker(path, target)` gives a hot reload target a new
+string (`m-<n>-<target>`) that differs from the one in the file.
+
+The `lifecycle.*` benchmarks (`reflex_bench/suites/lifecycle.py`) time `init`,
+`compile`, `export`, `run` until HTTP-ready and `import reflex`, each in a cache
+state its id names (`cold`, `warm`, `incremental`); the module docstring lists
+which caches each one starts from.
 
 ## How samples are taken
 

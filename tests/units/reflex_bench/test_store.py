@@ -142,6 +142,27 @@ def test_series_keys_differ_by_params_profile_and_version(doc: ResultDoc):
     ]
 
 
+def test_series_and_entry_keys_differ_by_the_fixture_hash_in_dims(doc: ResultDoc):
+    playground = copy.deepcopy(doc)
+    playground["benchmarks"][0]["dims"] = {
+        "fixture": "playground",
+        "fixture_hash": "sha256:" + "a" * 64,
+    }
+    edited = copy.deepcopy(playground)
+    edited["benchmarks"][0]["dims"]["fixture_hash"] = "sha256:" + "b" * 64
+    assert _key(playground) != _key(doc)
+    assert _key(playground).differences(_key(edited)) == [
+        (
+            f"dims differs: {store.canonical(playground['benchmarks'][0]['dims'])}"
+            f" vs {store.canonical(edited['benchmarks'][0]['dims'])}"
+        )
+    ]
+    # Entries of different fixtures are not even paired.
+    assert store.entry_key(playground["benchmarks"][0]) != store.entry_key(
+        edited["benchmarks"][0]
+    )
+
+
 def test_hidden_params_are_not_part_of_the_series_key(doc: ResultDoc):
     shifted = copy.deepcopy(doc)
     shifted["benchmarks"][0]["hidden_params"] = {"shift": 1.2}

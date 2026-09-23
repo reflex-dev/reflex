@@ -18,7 +18,7 @@ from importlib import metadata
 from pathlib import Path
 from typing import Any
 
-from reflex_bench.schema import SubjectDoc
+from reflex_bench.schema import FixtureDoc, SubjectDoc
 
 BASE_ENV = {
     "REFLEX_TELEMETRY_ENABLED": "false",
@@ -211,6 +211,8 @@ class Context:
         rng: A seeded random generator.
         log: A logger for the benchmark.
         arm: The arm being measured, ``A`` or ``B``.
+        fixture: The app the benchmark drives; set in ``setup_cache`` or
+            ``setup``, it is recorded in the entry's ``dims``.
     """
 
     subject: Subject
@@ -221,3 +223,4 @@ class Context:
     rng: random.Random
     log: logging.Logger
     arm: str = "A"
+    fixture: FixtureDoc | None = None

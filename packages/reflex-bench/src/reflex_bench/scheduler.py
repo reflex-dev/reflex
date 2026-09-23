@@ -42,6 +42,7 @@ from typing import Any, TypeVar
 from packaging.version import InvalidVersion, Version
 
 from reflex_bench import stats
+from reflex_bench.collectors.phases import MISMATCH_TOLERANCE
 from reflex_bench.context import Context, Subject, subject_env
 from reflex_bench.registry import Benchmark, Instance, ParamSet, SampleResult
 from reflex_bench.schema import (
@@ -562,11 +563,37 @@ def _outlier_warning(
     )
 
 
+def _phase_warning(entry: BenchmarkDoc, arm: str) -> str | None:
+    """Count an arm's timed samples whose phase attribution overshoots their total.
+
+    Args:
+        entry: The benchmark entry; samples carry the attribution in
+            ``extra["phases"]``.
+        arm: The arm.
+
+    Returns:
+        E.g. ``phases: 2 of 10 samples exceed the total by more than 5 %``, or
+        ``None`` when no sample does.
+    """
+    mismatches = [
+        bool(extra["phases"].get("mismatch"))
+        for meta, extra in zip(entry["sample_meta"], entry["sample_extra"], strict=True)
+        if meta["arm"] == arm and not meta["warmup"] and extra and extra.get("phases")
+    ]
+    if not any(mismatches):
+        return None
+    return (
+        f"phases: {sum(mismatches)} of {len(mismatches)} samples exceed the total"
+        f" by more than {100 * MISMATCH_TOLERANCE:g} %"
+    )
+
+
 def finalize(entry: BenchmarkDoc, confidence: float) -> None:
     """Derive summaries and warnings from an entry's timed samples.
 
     Warmup samples are excluded. Exact metrics warn about any variance; other
-    metrics get the stability and severe-outlier warnings.
+    metrics get the stability and severe-outlier warnings. The ``wall`` metric
+    also warns when the phase attribution of samples exceeds their total.
 
     Args:
         entry: The benchmark entry, updated in place.
@@ -597,6 +624,8 @@ def finalize(entry: BenchmarkDoc, confidence: float) -> None:
                 found = stats.stability_warnings(values, values[0], metric["direction"])
                 if outliers := _outlier_warning(entry, arm, values, summary):
                     found.append(outliers)
+            if name == "wall" and (phases := _phase_warning(entry, arm)):
+                found.append(phases)
             prefix = f"[{arm}] " if len(arms) > 1 else ""
             metric["warnings"].extend(prefix + warning for warning in found)
 
@@ -674,7 +703,9 @@ class Session:
     def _setup(self) -> None:
         """Create the context and run the setup hooks.
 
-        ``setup_cache`` runs once per cache directory, then ``setup`` runs.
+        ``setup_cache`` runs once per cache directory, then ``setup`` runs. The
+        fixture a hook set in ``ctx.fixture`` is recorded in the entry's
+        ``dims``, which are part of the pairing and series keys.
         """
         bench = self.planned.benchmark
         scheduler = self._scheduler
@@ -695,6 +726,11 @@ class Session:
             self._hooks.call("setup", self._instance.setup, bench.setup_timeout)
         except Exception as exc:
             self._errors.append(exc)
+            return
+        if (fixture := self.ctx.fixture) is not None:
+            self.entry["dims"].update(
+                fixture=fixture["name"], fixture_hash=fixture["content_hash"]
+            )
 
     def sample_once(
         self, *, round: int, order: int, warmup: bool
