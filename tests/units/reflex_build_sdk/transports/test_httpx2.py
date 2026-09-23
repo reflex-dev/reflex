@@ -166,6 +166,19 @@ def test_close_ownership():
     assert transport._client.is_closed
 
 
+def test_keeps_falsy_client():
+    class FalsyClient(httpx2.Client):
+        def __bool__(self) -> bool:
+            return False
+
+    client = FalsyClient()
+    transport = Httpx2Transport(client)
+    assert transport._client is client
+    transport.close()
+    assert not client.is_closed
+    client.close()
+
+
 async def test_async_send():
     transport = AsyncHttpx2Transport(
         httpx2.AsyncClient(transport=httpx2.MockTransport(_echo))

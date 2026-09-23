@@ -63,6 +63,9 @@ TO_HTTPX2 = _compile(
     (r"Httpx(?=Transport)", "Httpx2"),
 )
 
+# Ends the first line of every generated module.
+GENERATED_BY = "by packages/reflex-build-sdk/scripts/unasync.py. Do not edit."
+
 # Source file -> generated file, for files generated with TO_HTTPX2.
 FILES = {
     ROOT / "packages/reflex-build-sdk/src/reflex_build_sdk/transports/_httpx.py": ROOT
@@ -109,8 +112,7 @@ def generate(source_path: Path, substitutions: Substitutions) -> str:
         The formatted generated module source.
     """
     header = (
-        f"# Generated from {source_path.relative_to(ROOT).as_posix()} by "
-        "packages/reflex-build-sdk/scripts/unasync.py. Do not edit.\n"
+        f"# Generated from {source_path.relative_to(ROOT).as_posix()} {GENERATED_BY}\n"
     )
     source = header + substitute(source_path.read_text(), substitutions)
     # Renamed imports can fall out of sort order and shortened lines can fit
@@ -139,6 +141,11 @@ def expected_files() -> dict[Path, str]:
     return expected
 
 
+def _is_generated(path: Path) -> bool:
+    with path.open() as file:
+        return file.readline().rstrip("\n").endswith(GENERATED_BY)
+
+
 def stale_files(expected: dict[Path, str]) -> list[Path]:
     """Find generated files that are missing, outdated or no longer generated.
 
@@ -159,6 +166,14 @@ def stale_files(expected: dict[Path, str]) -> list[Path]:
         if target_dir.is_dir()
         for path in sorted(target_dir.rglob("*.py"))
         if path not in expected
+    )
+    # Generated files outside DIRECTORIES share their directory with source files,
+    # so only those carrying the generated header are orphans.
+    stale.extend(
+        path
+        for target_dir in sorted({target.parent for target in FILES.values()})
+        for path in sorted(target_dir.glob("*.py"))
+        if path not in expected and _is_generated(path)
     )
     return stale
 
