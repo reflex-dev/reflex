@@ -10,8 +10,6 @@ AG Grid (also written **ag-grid** or **aggrid**) is a powerful, feature-rich Rea
 
 ## Your First Reflex AG Grid
 
-Upgrading an existing app? Read the [AG Grid 36.2 migration guide](/docs/enterprise/ag-grid/upgrading-to-36-2/) for changes to custom CSS, overlays, column definitions, and integrated charts.
-
 A basic Reflex AG Grid contains column definitions `column_defs`, which define the columns to be displayed in the grid, and `row_data`, which contains the data to be displayed in the grid.
 
 Each grid also requires a unique `id`, which is needed to uniquely identify the Ag-Grid instance on the page. If you have multiple grids on the same page, each grid must have a unique `id` so that it can be correctly rendered and managed.
@@ -774,3 +772,7 @@ def ag_grid_api_argument():
 The react code for the `get_data_as_csv` method of the AG Grid API is `getDataAsCsv = (params?: CsvExportParams) => string  |  undefined;`. Here the function returns a `string` (or undefined).
 
 In Reflex to handle this returned value it is necessary to pass a `callback` as an argument to the `get_data_as_csv` method that will get the returned value. In this example the `handle_get_data` event handler is passed as the callback. This event handler will be called with the returned value from the `get_data_as_csv` method.
+
+## Migration notes
+
+The upcoming reflex-enterprise 0.9.7 release upgrades AG Grid to 36.2.0. Read the [migration guide for reflex-enterprise 0.9.7](/docs/enterprise/ag-grid/upgrading-to-36-2/) for changes to custom CSS, overlays, column definitions, and integrated charts.

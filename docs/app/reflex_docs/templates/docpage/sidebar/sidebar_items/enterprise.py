@@ -156,10 +156,6 @@ def get_sidebar_items_enterprise_components():
                     names="Value Transformers",
                     link=enterprise.ag_grid.value_transformers.path,
                 ),
-                SideBarItem(
-                    names="Upgrade to 36.2",
-                    link=enterprise.ag_grid.upgrading_to_36_2.path,
-                ),
             ],
         ),
         SideBarItem(

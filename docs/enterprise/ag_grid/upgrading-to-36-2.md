@@ -1,11 +1,11 @@
 ---
-title: "Upgrade to AG Grid 36.2"
-meta_description: "Migrate Reflex AG Grid apps to version 36.2.0, including CSS selectors, overlays, column definitions, filters, saved state, and integrated charts."
+title: "AG Grid changes in reflex-enterprise 0.9.7"
+meta_description: "Prepare for reflex-enterprise 0.9.7, which upgrades AG Grid to 36.2.0, with migration notes for CSS, overlays, columns, filters, saved state, and charts."
 ---
 
-# Upgrade to AG Grid 36.2
+# AG Grid changes in reflex-enterprise 0.9.7
 
-This guide covers upgrading the `reflex-enterprise` AG Grid wrapper from AG Grid **34.3.1** to **36.2.0**, with integrated AG Charts moving from **11.2.4** to **14.2.0**.
+The upcoming **reflex-enterprise 0.9.7** release upgrades AG Grid from **34.3.1** to **36.2.0**, with integrated AG Charts moving from **11.2.4** to **14.2.0**. This guide covers the changes to review when upgrading your app to reflex-enterprise 0.9.7.
 
 The wrapper pins `ag-grid-react`, `ag-grid-community`, and `ag-grid-enterprise` to the same version, and pairs them with `ag-charts-enterprise` 14.2.0. AG Grid installs its new `ag-stack` dependency transitively. Remove conflicting AG Grid or Charts versions from your app's frontend package configuration.
 
