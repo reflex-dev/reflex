@@ -18,6 +18,7 @@ $ uv run reflex-bench ab --base git:main --head workspace --suite selftest
 $ uv run reflex-bench compare base.json head.json --format md
 $ uv run reflex-bench doctor
 $ uv run reflex-bench export result.json --to bmf
+$ uv run reflex-bench budgets check result.json
 $ uv run reflex-bench subjects list
 ```
 
@@ -32,6 +33,7 @@ $ uv run reflex-bench subjects list
 | `compare BASE HEAD [--format term\|md\|json]` | Compares two results; `json` prints the annotated head result. |
 | `doctor` | Machine checks that affect measurement noise, with fix hints. |
 | `export FILE --to md\|bmf [-o OUT]` | Pull request markdown or [Bencher Metric Format](https://bencher.dev/docs/reference/bencher-metric-format/). |
+| `budgets check FILE [--budgets BUDGETS]` | Checks a result against the metric maxima of `budgets.json` ([Size budgets](#size-budgets)). |
 | `subjects list` | The cached [subject](#subjects) venvs: spec, Python, key, size and last use. |
 | `subjects prune [--older-than 30d]` | Deletes venvs not used for that long (`30d`, `12h`, `90m`), leftovers of interrupted builds and git worktrees no venv uses. |
 
@@ -235,6 +237,73 @@ included. Peak memory and CPU come from a transient cgroup v2 scope when
 (`memory_method: pss_sampling`, never compared with cgroup peaks);
 `reflex-bench doctor` shows which. `selftest.app.compile` and
 `selftest.app.dev_ready` exercise all of it against a blank app.
+
+## Size budgets
+
+`size.export[app=playground]` (suites `pr` and `daily`) measures what a
+production build of `examples/playground` ships. Its `setup_cache` copies the
+files git tracks of the example into the cache directory, replacing the previous
+copy, and runs `reflex export --frontend-only --no-zip --env prod` there; bun
+stays cached in reflex's data directory next to it. `sample` then measures the
+files on disk. One export gives every metric, and every metric is exact, so one
+sample is taken:
+
+| Metric | What |
+| --- | --- |
+| `initial_raw`, `initial_gzip`, `initial_brotli` | The JS and CSS the first page loads: the files the prerendered `index.html` references with `<link rel="modulepreload">`, `<link rel="stylesheet">` or `<script src>`. URLs of other hosts are not part of the build. |
+| `total_raw`, `total_gzip`, `total_brotli` | Every file of `.web/build/client` except compression sidecars. |
+| `chunks` | The `.js` files of `.web/build/client/assets`. |
+| `web_dir` | The regular files under `.web` outside `node_modules` (build output, compiled pages, templates). |
+| `node_modules` | The regular files under `.web/node_modules`. Symlinks are neither followed nor counted, here and in `web_dir`. |
+
+The harness compresses each file on its own, gzip at level 9 (`mtime=0`) and
+brotli at quality 11. Reflex 0.9 writes `.gz` sidecars next to the build's files
+(`.br` and `.zst` too when configured) and 0.8.23 writes none, so sidecars are
+never measured, only summed into the extra data's `sidecar_bytes`. Each sample's
+extra data also holds the per-file breakdown `files`: `raw`, `gzip`, `brotli` and
+`initial` for each file of the client build, keyed by its path with the content
+hash of names in `assets/` replaced (`assets/chunk-5KNZJZUH-q9CrfzJj.js` becomes
+`assets/chunk-5KNZJZUH-HASH.js`; `#2` marks a second name that differed only in
+its hash), plus `initial_files` in page order, `html` (the page parsed),
+`reflex_version`, `fixture_hash` (the playground's `.content-hash`) and the
+`compressors`' versions. Apps with a `frontend_path` are not supported.
+
+Two samples of one export are identical, but two exports of one commit are not
+quite: reflex bundles `.web/reflex.json`, with a random `project_hash` and the
+export's time, into a shared chunk (`assets/link-HASH.js` at 0.9.12). That
+chunk's content hash changes, and with it every chunk that imports it, the
+manifest and the HTML pages. Raw sizes stay the same up to a byte or two (the
+number of digits of the project hash), compressed sizes move by a few bytes
+(`total_gzip` 328,672 against 328,668 B, `total_brotli` 263,161 against
+263,219 B) and `web_dir` by a few dozen. That is far below the budgets' headroom
+and the 3 % threshold of exact comparisons, so the metrics stay exact and no
+file is left out of the breakdown.
+
+`packages/reflex-bench/budgets.json` caps metrics, as whole numbers in the
+metric's unit:
+
+```json
+{
+  "schema": "reflex-bench-budgets/1",
+  "budgets": {
+    "size.export[app=playground]": {"initial_gzip": 330000, "chunks": 16}
+  }
+}
+```
+
+`reflex-bench budgets check RESULT.json [--budgets FILE]` prints one row per
+budget (value, budget, delta in the unit and in percent of the budget, verdict)
+and exits with `2` when a value (the largest timed sample) exceeds its budget,
+`1` when a budget cannot be checked (the benchmark is not in the result, did not
+finish `ok` or lacks the metric), else `0`. A metric without a budget is
+tracked, not gated. To raise a budget, edit `budgets.json` in the same pull
+request, so the review shows the new value; the value column prints it ready to
+paste. The budgets come from a measurement plus about 5 % headroom (20 % for
+`node_modules`, which moves with bun and the frontend packages' releases).
+
+The `size-budgets` workflow runs `reflex-bench run 'size.*'` and `reflex-bench
+budgets check` on every pull request that touches reflex, the packages or the
+playground, on a standard GitHub runner, and uploads the result.
 
 ## How samples are taken
 

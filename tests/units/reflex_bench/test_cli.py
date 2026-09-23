@@ -99,6 +99,9 @@ def test_min_runs_alone_raises_the_default_max_runs(home: Path):
 def test_list_hides_self_tests_by_default(home: Path):
     result = invoke("list")
     assert result.exit_code == 0
+    assert "size.export[app=playground]" in result.output
+    assert "selftest" not in result.output
+    result = invoke("list", "nothing.*")
     assert (
         "no benchmarks selected (self-tests are listed with --suite selftest)"
         in result.output
@@ -489,6 +492,14 @@ def test_version_and_help(home: Path):
     help_result = invoke("run", "--help")
     assert help_result.exit_code == 0
     assert "--fail-on-inconclusive" in help_result.output
+
+
+def test_budgets_check_is_registered(home: Path):
+    assert "budgets" in invoke("--help").output
+    result = invoke("budgets", "check", "--help")
+    assert result.exit_code == 0, result.output
+    assert "RESULT" in result.output
+    assert "--budgets" in result.output
 
 
 def test_main_entry_point(home: Path, capsys: pytest.CaptureFixture[str]):

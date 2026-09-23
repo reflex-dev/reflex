@@ -32,6 +32,7 @@ from rich.text import Text
 
 from reflex_bench import ab, subjects
 from reflex_bench import compare as comparing
+from reflex_bench.budgets import budgets_command
 from reflex_bench.collectors import cgroup
 from reflex_bench.context import Subject, installed_version
 from reflex_bench.machine import Check, checks, collect, warning_count
@@ -1344,6 +1345,9 @@ def subjects_prune(older_than: timedelta) -> int:
     if not removed:
         console.print(Text("nothing to prune"))
     return EXIT_OK
+
+
+cli.add_command(budgets_command)
 
 
 def main(argv: Sequence[str] | None = None) -> None:
