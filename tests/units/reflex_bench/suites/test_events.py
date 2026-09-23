@@ -12,55 +12,67 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from reflex_bench import registry
-from reflex_bench.drivers.events import LoadResult
+from reflex_bench import cli, registry
+from reflex_bench.drivers.events import LoadResult, Mode
 from reflex_bench.scheduler import Planned, Policy, Scheduler, plan
 from reflex_bench.suites import events as suite
 
 from tests.units.reflex_bench.factories import make_load_result, make_subject
 
 SHAPES = ("background", "complex", "cross", "simple")
+CHEAP = [
+    "events.simple.capacity[manager=memory,sessions=10]",
+    "events.simple.latency[manager=memory,sessions=10,rate=500]",
+]
+
+
+def selected(suite_name: str | None, *filters: str) -> list[Planned]:
+    chosen = registry.select(registry.discover().values(), filters, suite_name)
+    return plan(chosen, suite=suite_name)
 
 
 def names(suite_name: str | None, *filters: str) -> list[str]:
-    selected = registry.select(registry.discover().values(), filters, suite_name)
-    return [planned.name for planned in plan(selected, suite=suite_name)]
+    return [planned.name for planned in selected(suite_name, *filters)]
 
 
 def test_instance_ids_and_params():
     everything = names(None, "events.*")
     assert suite.MANAGERS[:2] == ("memory", "disk")
-    assert len(everything) == len(suite.MANAGERS) * (4 * (4 + 4 + 4) + 3)
+    # Capacity and latency per shape, one knee (simple) and the 1 Hz sessions.
+    assert len(everything) == len(suite.MANAGERS) * (4 * (4 + 4) + 4 + 3)
     assert "events.simple.capacity[manager=memory,sessions=1]" in everything
     assert "events.simple.capacity[manager=disk,sessions=200]" in everything
     assert "events.cross.latency[manager=memory,sessions=10,rate=auto]" in everything
-    assert "events.background.knee[manager=disk,sessions=50]" in everything
+    assert "events.simple.knee[manager=disk,sessions=50]" in everything
     assert "events.sessions.at_1hz[manager=memory,sessions=1000]" in everything
+    assert not [name for name in everything if name.startswith("events.cross.knee")]
 
 
-def test_smoke_runs_one_point_of_the_simple_shape():
-    expected = [
-        *(f"events.simple.capacity[manager={m},sessions=10]" for m in suite.MANAGERS),
-        *(
-            f"events.simple.latency[manager={m},sessions=10,rate=50]"
-            for m in suite.MANAGERS
-        ),
-    ]
-    assert names("smoke", "events.*") == expected
+def test_smoke_and_daily_run_two_cheap_points():
+    assert names("smoke", "events.*") == CHEAP
+    assert names("daily", "events.*") == CHEAP
+
+
+def test_daily_events_fit_the_ci_budget():
+    # The estimate `list` shows with the default policy (10 runs at least).
+    total = sum(cli._estimate(p.benchmark, Policy()) for p in selected("daily"))
+    assert total <= 3 * 60
 
 
 def test_suites():
     found = registry.discover()
-    for shape in SHAPES:
-        smoke = ("smoke",) if shape == "simple" else ()
-        assert found[f"events.{shape}.capacity"].suites == (*smoke, "daily")
-        assert found[f"events.{shape}.latency"].suites == (*smoke, "daily")
-        # The knee only runs with --suite all or by name.
-        assert found[f"events.{shape}.knee"].suites == ()
-    assert found["events.sessions.at_1hz"].suites == ("daily",)
+    assert found["events.simple.capacity"].suites == ("smoke", "daily")
+    assert found["events.simple.latency"].suites == ("smoke", "daily")
+    # Everything else only runs with --suite all or by name.
+    for shape in set(SHAPES) - {"simple"}:
+        assert found[f"events.{shape}.capacity"].suites == ()
+        assert found[f"events.{shape}.latency"].suites == ()
+    assert found["events.simple.knee"].suites == ()
+    assert found["events.sessions.at_1hz"].suites == ()
     assert found["selftest.events.calibrate"].suites == ("selftest",)
     assert "events.sessions.at_1hz[manager=memory,sessions=50]" in names("all")
     assert "events.simple.knee[manager=memory,sessions=10]" in names("all")
+    assert "events.complex.capacity[manager=disk,sessions=200]" in names("all")
 
 
 def test_redis_is_measured_only_with_a_redis_url():
@@ -196,10 +208,66 @@ def test_copy_tracked_files_leaves_out_build_output(tmp_path: Path):
     assert copied == [".gitignore", "pkg/app.py"]
 
 
+CLOSED = make_load_result(
+    mode="closed",
+    offered_rate=None,
+    response_s=None,
+    lag_s=None,
+    answered=12_000,
+    answered_rate=1200.0,
+)
+
+
+STALLED = make_load_result(lag_s={"p50": 1.5e-4, "p99": 0.0287, "max": 0.078})
+
+
+def run_instance(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    bench_id: str,
+    params: dict[str, str],
+    results: dict[Mode, LoadResult | list[LoadResult]],
+    runs: int = 1,
+) -> tuple[dict[str, Any], list[tuple[Any, ...]]]:
+    """Run one instance through the scheduler with the backend replaced.
+
+    Args:
+        tmp_path: The bench home.
+        monkeypatch: Replaces the app, the backend and the loads.
+        bench_id: The benchmark.
+        params: Its parameter values.
+        results: What a load returns, per mode; a list is returned in order.
+        runs: The timed runs.
+
+    Returns:
+        The result entry and the backend calls in order.
+    """
+    calls: list[tuple[Any, ...]] = []
+
+    def run(self: Any, mode: Mode, rate: float | None, window: suite.Window):
+        calls.append(("run", mode, rate, window))
+        canned = results[mode]
+        return (canned.pop(0) if isinstance(canned, list) else canned), 1.2
+
+    monkeypatch.setattr(suite, "prepare_app", lambda ctx: None)
+    monkeypatch.setattr(
+        suite._Backend, "start_app", lambda self: calls.append(("app",))
+    )
+    monkeypatch.setattr(suite._Backend, "run", run)
+    monkeypatch.setattr(
+        suite._Backend, "stop_load", lambda self: calls.append(("stop_load",))
+    )
+    monkeypatch.setattr(suite._Backend, "stop", lambda self: calls.append(("stop",)))
+    bench = registry.discover()[bench_id]
+    (param_set,) = bench.expand(params)
+    runner = Scheduler(make_subject(), Policy(runs=runs), home=tmp_path, seed=1)
+    return dict(runner.run_one(Planned(bench, param_set))), calls
+
+
 def run_capacity(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, result: LoadResult
 ) -> dict[str, Any]:
-    """Run events.simple.capacity through the scheduler with a canned load result.
+    """Run events.simple.capacity once with a canned load result.
 
     Args:
         tmp_path: The bench home.
@@ -209,34 +277,167 @@ def run_capacity(
     Returns:
         The result entry.
     """
-    started: list[str] = []
-    stopped: list[str] = []
-    monkeypatch.setattr(suite, "prepare_app", lambda ctx: None)
-    monkeypatch.setattr(suite._Sample, "start_app", lambda self: started.append("app"))
-    monkeypatch.setattr(suite._Sample, "run", lambda self, *args: (result, 1.2))
-    monkeypatch.setattr(suite._Sample, "stop", lambda self: stopped.append("stop"))
-    bench = registry.discover()["events.simple.capacity"]
-    (params,) = bench.expand({"manager": "memory", "sessions": "10"})
-    runner = Scheduler(make_subject(), Policy(runs=1), home=tmp_path, seed=1)
-    entry = runner.run_one(Planned(bench, params))
-    # conclude stops what prepare started, also after a failed sample.
-    assert started == ["app"]
-    assert stopped == ["stop"]
-    return dict(entry)
+    entry, calls = run_instance(
+        tmp_path,
+        monkeypatch,
+        "events.simple.capacity",
+        {"manager": "memory", "sessions": "10"},
+        {"closed": result},
+    )
+    # cleanup stops what setup started, also after a failed sample.
+    assert calls[0] == ("app",)
+    assert calls[-1] == ("stop",)
+    return entry
+
+
+def test_one_backend_serves_every_sample_of_an_instance(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    entry, calls = run_instance(
+        tmp_path,
+        monkeypatch,
+        "events.simple.capacity",
+        {"manager": "memory", "sessions": "10"},
+        {"closed": CLOSED},
+        runs=3,
+    )
+    assert entry["status"] == "ok", entry["error"]
+    # setup warms the backend with the probe, so no sample meets it cold.
+    probe = ("run", "closed", None, suite.PROBE_WINDOW)
+    load = ("run", "closed", None, suite.CAPACITY_WINDOW)
+    # conclude stops a load a timed-out sample left running; cleanup the backend.
+    assert calls == [("app",), probe, *[load, ("stop_load",)] * 3, ("stop",)]
+    assert suite.CAPACITY_WINDOW == (1.0, 3.0)
+
+
+def test_latency_probes_the_capacity_once_per_instance(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    entry, calls = run_instance(
+        tmp_path,
+        monkeypatch,
+        "events.simple.latency",
+        {"manager": "memory", "sessions": "10", "rate": "auto"},
+        {"closed": CLOSED, "open": make_load_result()},
+        runs=2,
+    )
+    assert entry["status"] == "ok", entry["error"]
+    probe = ("run", "closed", None, suite.PROBE_WINDOW)
+    # Half of the probed 1200 events per second.
+    load = ("run", "open", 600.0, suite.LATENCY_WINDOW)
+    assert calls == [("app",), probe, *[load, ("stop_load",)] * 2, ("stop",)]
+    assert [extra["probed_capacity"] for extra in entry["sample_extra"]] == [
+        1200.0,
+        1200.0,
+    ]
+
+
+def test_latency_at_a_fixed_rate_still_warms_the_backend(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    entry, calls = run_instance(
+        tmp_path,
+        monkeypatch,
+        "events.simple.latency",
+        {"manager": "memory", "sessions": "10", "rate": "500"},
+        {"closed": CLOSED, "open": make_load_result()},
+    )
+    assert entry["status"] == "ok", entry["error"]
+    probe = ("run", "closed", None, suite.PROBE_WINDOW)
+    load = ("run", "open", 500.0, suite.LATENCY_WINDOW)
+    assert calls == [("app",), probe, load, ("stop_load",), ("stop",)]
+    assert entry["metrics"]["response_p99"]["samples"]["A"] == [0.0119]
+    assert entry["metrics"]["unanswered"]["samples"]["A"] == [0.0]
+
+
+def test_a_load_the_self_check_rejects_is_retaken(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    # A host stall of the generator's CPU fails the lag check of one load.
+    reason = STALLED.check()
+    assert reason is not None
+    entry, calls = run_instance(
+        tmp_path,
+        monkeypatch,
+        "events.simple.latency",
+        {"manager": "memory", "sessions": "10", "rate": "500"},
+        {"closed": CLOSED, "open": [STALLED, make_load_result()]},
+    )
+    assert entry["status"] == "ok", entry["error"]
+    probe = ("run", "closed", None, suite.PROBE_WINDOW)
+    load = ("run", "open", 500.0, suite.LATENCY_WINDOW)
+    assert calls == [("app",), probe, load, load, ("stop_load",), ("stop",)]
+    assert entry["metrics"]["response_p99"]["samples"]["A"] == [0.0119]
+    (extra,) = entry["sample_extra"]
+    assert extra["rejected"] == [reason]
+
+
+def test_a_load_that_fails_the_self_check_every_time_fails_the_sample(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    entry, calls = run_instance(
+        tmp_path,
+        monkeypatch,
+        "events.simple.latency",
+        {"manager": "memory", "sessions": "10", "rate": "500"},
+        {"closed": CLOSED, "open": STALLED},
+    )
+    assert entry["status"] == "failed"
+    assert entry["error"].startswith(
+        "GeneratorSaturated: generator saturated: send lag"
+    )
+    probe = ("run", "closed", None, suite.PROBE_WINDOW)
+    load = ("run", "open", 500.0, suite.LATENCY_WINDOW)
+    retakes = [load] * (1 + suite.RETAKES)
+    assert calls == [("app",), probe, *retakes, ("stop_load",), ("stop",)]
+
+
+def test_failed_sessions_are_never_retaken(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    failed = make_load_result(
+        lag_s=STALLED.lag_s, session_errors=["session 3: the websocket closed"]
+    )
+    entry, calls = run_instance(
+        tmp_path,
+        monkeypatch,
+        "events.simple.latency",
+        {"manager": "memory", "sessions": "10", "rate": "500"},
+        {"closed": CLOSED, "open": failed},
+    )
+    assert entry["status"] == "failed"
+    assert "1 of 10 sessions failed" in entry["error"]
+    assert calls.count(("run", "open", 500.0, suite.LATENCY_WINDOW)) == 1
+
+
+def test_a_failed_probe_stops_the_backend(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    saturated = make_load_result(
+        mode="closed",
+        offered_rate=None,
+        response_s=None,
+        lag_s=None,
+        generator_cpu_fraction=0.9,
+    )
+    entry, calls = run_instance(
+        tmp_path,
+        monkeypatch,
+        "events.simple.knee",
+        {"manager": "memory", "sessions": "10"},
+        {"closed": saturated},
+    )
+    assert entry["status"] == "failed"
+    assert "generator saturated" in entry["error"]
+    probe = ("run", "closed", None, suite.PROBE_WINDOW)
+    # A saturated generator fails every attempt; cleanup stops the backend.
+    assert calls == [("app",), *[probe] * (1 + suite.RETAKES), ("stop",)]
 
 
 def test_capacity_reports_throughput_and_cpu_per_event(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    closed = make_load_result(
-        mode="closed",
-        offered_rate=None,
-        response_s=None,
-        lag_s=None,
-        answered=12_000,
-        answered_rate=1200.0,
-    )
-    entry = run_capacity(tmp_path, monkeypatch, closed)
+    entry = run_capacity(tmp_path, monkeypatch, CLOSED)
     assert entry["status"] == "ok", entry["error"]
     metrics = entry["metrics"]
     assert metrics["throughput"]["samples"]["A"] == [1200.0]

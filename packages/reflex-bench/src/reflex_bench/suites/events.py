@@ -1,16 +1,21 @@
 """Event throughput and latency: how many events a reflex app answers, and how fast.
 
-Each sample starts the playground (``examples/playground``) as a production
-backend, ``reflex run --env prod --backend-only`` with one granian worker, and
-drives it with the socket.io generator of :mod:`reflex_bench.drivers.events`:
+Each benchmark instance starts the playground (``examples/playground``) once, as
+a production backend (``reflex run --env prod --backend-only`` with one granian
+worker), and each sample drives it for a few seconds with the socket.io
+generator of :mod:`reflex_bench.drivers.events`:
 
 - ``events.<shape>.capacity``: closed loop, the most events per second.
 - ``events.<shape>.latency``: open loop at a fixed rate (half the capacity a
   closed-loop probe measures, unless ``--param rate=`` fixes it), the response
   times a user sees.
-- ``events.<shape>.knee``: open-loop steps from 10 % to 110 % of the probed
+- ``events.simple.knee``: open-loop steps from 10 % to 110 % of the probed
   capacity; the knee is the highest rate the backend still keeps up with.
 - ``events.sessions.at_1hz``: many sessions sending one event per second.
+
+CI minutes are scarce, so ``smoke`` and ``daily`` run two points only: the
+simple shape with the memory manager and 10 sessions, its latency at 500 events
+per second. Everything else runs with ``--suite all`` or by name.
 
 The shapes are the playground's ``BenchState.set_seq*`` handlers. The state
 manager is a parameter; ``redis`` joins ``memory`` and ``disk`` when
@@ -27,7 +32,7 @@ import shutil
 import threading
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 import psutil
 
@@ -53,7 +58,10 @@ BENCH_STATE = "reflex___state____state.playground___state____bench_state"
 SEQ_VAR = "last_seq_rx_state_"
 SESSIONS = (1, 10, 50, 200)
 AT_1HZ_SESSIONS = (50, 200, 1000)
-KNEE_SHARES = (0.10, 0.25, 0.50, 0.60, 0.70, 0.80, 0.90, 0.95, 1.00, 1.10)
+# The one point of the grid smoke and daily run, and its latency's offered rate.
+CHEAP = {"manager": ("memory",), "sessions": (10,)}
+CHEAP_LATENCY = {**CHEAP, "rate": (500,)}
+KNEE_SHARES = (0.10, 0.50, 0.70, 0.80, 0.90, 0.95, 1.00, 1.10)
 # A step keeps up when it answers 99 % of the offered rate, leaves nothing
 # unanswered and keeps its p99 within 3x the p99 of the 10 % step.
 KNEE_ANSWERED_SHARE = 0.99
@@ -61,10 +69,36 @@ KNEE_P99_FACTOR = 3.0
 LATENCY_SHARE = 0.5
 UNDERPOWERED_P99 = 10_000
 CALIBRATION_SESSIONS = 10
-CALIBRATION_SHARES = (0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50)
+CALIBRATION_SHARES = (0.1, 0.2, 0.3, 0.4, 0.5)
+# Loads taken again when only the self-check rejects one: on a shared machine a
+# host stall of the generator's CPU now and then fails the lag check of a short
+# window, while a saturated generator fails every attempt.
+RETAKES = 2
 COMPILE_TIMEOUT_S = 600.0
 HOOK_TIMEOUT_S = 600.0
-KNEE_TIMEOUT_S = 1200.0
+
+
+class Window(NamedTuple):
+    """How long one load runs.
+
+    Attributes:
+        warmup_s: Seconds of load before the measured window.
+        duration_s: The measured window.
+    """
+
+    warmup_s: float
+    duration_s: float
+
+
+# Seconds, not minutes: at a few thousand events per second a window still
+# answers thousands of events, and CI minutes are scarce.
+CAPACITY_WINDOW = Window(1.0, 3.0)
+LATENCY_WINDOW = Window(1.0, 5.0)
+PROBE_WINDOW = Window(1.0, 2.0)
+KNEE_WINDOW = Window(1.0, 4.0)
+AT_1HZ_WINDOW = Window(3.0, 10.0)
+CALIBRATION_CLOSED_WINDOW = Window(1.0, 3.0)
+CALIBRATION_STEP_WINDOW = Window(1.0, 2.0)
 
 
 def _shape(handler: str) -> EventShape:
@@ -344,15 +378,16 @@ def _checked(result: LoadResult) -> LoadResult:
     return result
 
 
-class _Sample:
-    """What one sample starts: a server and the load runs against it.
+class _Backend:
+    """What one benchmark instance starts: a server, and the loads run against it.
 
-    :meth:`stop` ends both from any thread, as ``conclude`` must after a
-    timed-out ``sample``; a load started after that raises.
+    :meth:`stop_load` ends a running load and :meth:`stop` also the server, both
+    from any thread, as ``conclude`` and ``cleanup`` must after a timed-out
+    ``sample``; a load started after :meth:`stop` raises.
     """
 
     def __init__(self, ctx: Context, shape: EventShape) -> None:
-        """Plan the sample; nothing starts yet.
+        """Plan the backend; nothing starts yet.
 
         Args:
             ctx: The benchmark context.
@@ -367,6 +402,7 @@ class _Sample:
         self._server: AppProcess | EchoProcess | None = None
         self._scope: CgroupScope | None = None
         self._runner: LoadRunner | None = None
+        self.rejected: list[str] = []
 
     @property
     def cpu_method(self) -> str:
@@ -384,11 +420,11 @@ class _Sample:
             server: The server, not started yet.
 
         Raises:
-            LoadError: When the sample was stopped.
+            LoadError: When the backend was stopped.
         """
         with self._lock:
             if self._stopped:
-                msg = "the sample was stopped"
+                msg = "the backend was stopped"
                 raise LoadError(msg)
             self._server = server
 
@@ -458,22 +494,21 @@ class _Sample:
         return total
 
     def run(
-        self, mode: Mode, rate: float | None, warmup_s: float, duration_s: float
+        self, mode: Mode, rate: float | None, window: Window
     ) -> tuple[LoadResult, float | None]:
         """Run one load against the server.
 
         Args:
             mode: ``open`` or ``closed``.
             rate: The offered rate of the open loop.
-            warmup_s: Seconds of load before the measured window.
-            duration_s: The measured window.
+            window: How long the load runs.
 
         Returns:
             The result, and the reflex server's CPU seconds in the window
             (``None`` for the echo server).
 
         Raises:
-            LoadError: When the sample was stopped or the load failed.
+            LoadError: When the backend was stopped or the load failed.
         """
         assert self.url is not None
         sessions = self.ctx.params.get("sessions", CALIBRATION_SESSIONS)
@@ -485,14 +520,14 @@ class _Sample:
             sessions=sessions,
             mode=mode,
             rate=rate,
-            warmup_s=warmup_s,
-            duration_s=duration_s,
+            warmup_s=window.warmup_s,
+            duration_s=window.duration_s,
             processes=generator_processes(sessions, generator),
             cpus=generator,
         )
         with self._lock:
             if self._stopped:
-                msg = "the sample was stopped"
+                msg = "the backend was stopped"
                 raise LoadError(msg)
             runner = self._runner = LoadRunner(plan)
         if not isinstance(self._server, AppProcess):
@@ -501,40 +536,70 @@ class _Sample:
         result = runner.run(lambda edge: marks.__setitem__(edge, self.server_cpu_s()))
         return result, marks["end"] - marks["start"]
 
+    def retaken(
+        self, mode: Mode, rate: float | None, window: Window
+    ) -> tuple[LoadResult, float | None]:
+        """Run one load, and again up to ``RETAKES`` times while only the self-check fails.
+
+        :attr:`rejected` keeps the reasons of the loads taken again.
+
+        Args:
+            mode: ``open`` or ``closed``.
+            rate: The offered rate of the open loop.
+            window: How long the load runs.
+
+        Returns:
+            The last load's result and the server's CPU seconds in its window.
+        """
+        self.rejected = []
+        while True:
+            result, cpu_s = self.run(mode, rate, window)
+            reason = None if result.session_errors else result.check()
+            if reason is None or len(self.rejected) == RETAKES:
+                return result, cpu_s
+            self.rejected.append(reason)
+
     def load(
-        self, *, mode: Mode, rate: float | None, warmup_s: float, duration_s: float
+        self, *, mode: Mode, rate: float | None, window: Window
     ) -> tuple[LoadResult, float]:
         """Run one load against the reflex server and check it.
 
         Args:
             mode: ``open`` or ``closed``.
             rate: The offered rate of the open loop.
-            warmup_s: Seconds of load before the measured window.
-            duration_s: The measured window.
+            window: How long the load runs.
 
         Returns:
             The checked result and the server's CPU seconds in the window.
         """
-        result, cpu_s = self.run(mode, rate, warmup_s, duration_s)
+        result, cpu_s = self.retaken(mode, rate, window)
         assert cpu_s is not None
         return _checked(result), cpu_s
 
     def extra(self, result: LoadResult, **more: Any) -> dict[str, Any]:
-        """Describe a sample: the load result, how CPU was read and the pinning.
+        """Describe a sample: the load result, how CPU was read, the pinning and retakes.
 
         Args:
             result: The load result.
             **more: Further entries.
 
         Returns:
-            The sample's extra data.
+            The sample's extra data, with ``rejected`` when loads were taken again.
         """
         return {
             **result.to_dict(),
             "cpu_method": self.cpu_method,
             "pinning": self.pinning,
+            **({"rejected": self.rejected} if self.rejected else {}),
             **more,
         }
+
+    def stop_load(self) -> None:
+        """Stop the running load, if any; safe from any thread and more than once."""
+        with self._lock:
+            runner = self._runner
+        if runner is not None:
+            runner.stop()
 
     def stop(self) -> None:
         """Stop the running load and the server; safe from any thread and more than once."""
@@ -545,6 +610,60 @@ class _Sample:
             runner.stop()
         if server is not None:
             server.stop()
+
+
+class _OnBackend:
+    """Hooks of a benchmark whose instance keeps one backend for all its samples."""
+
+    backend: _Backend | None = None
+
+    def conclude(self, ctx: Context) -> None:
+        """Stop a load a timed-out sample left running; the backend keeps serving.
+
+        Args:
+            ctx: The benchmark context.
+        """
+        if self.backend is not None:
+            self.backend.stop_load()
+
+    def cleanup(self, ctx: Context) -> None:
+        """Stop the load and the backend, also after a failure or a timeout.
+
+        Args:
+            ctx: The benchmark context.
+        """
+        if self.backend is not None:
+            self.backend.stop()
+            self.backend = None
+
+
+class _OnPlayground(_OnBackend):
+    """Hooks of a benchmark against the playground backend."""
+
+    event: EventShape
+    capacity = 0.0
+
+    def setup_cache(self, ctx: Context) -> None:
+        """Copy and compile the playground.
+
+        Args:
+            ctx: The benchmark context.
+        """
+        prepare_app(ctx)
+
+    def setup(self, ctx: Context) -> None:
+        """Start the backend and probe its capacity with a short closed loop.
+
+        The probe also warms the backend (imports on first use, caches), so no
+        sample meets it cold.
+
+        Args:
+            ctx: The benchmark context.
+        """
+        self.backend = _Backend(ctx, self.event)
+        self.backend.start_app()
+        probe, _ = self.backend.load(mode="closed", rate=None, window=PROBE_WINDOW)
+        self.capacity = probe.answered_rate
 
 
 def _response(result: LoadResult, *names: str) -> dict[str, float]:
@@ -574,20 +693,20 @@ def _underpowered(result: LoadResult) -> dict[str, bool]:
 
 
 def _register(name: str, shape: EventShape) -> None:
-    """Register the capacity, latency and knee benchmarks of one event shape.
+    """Register the capacity and latency benchmarks of one event shape.
 
     Args:
         name: The shape's name in the benchmark ids.
         shape: The event.
     """
-    smoke = ("smoke",) if name == "simple" else ()
+    cheap = ("smoke", "daily") if name == "simple" else ()
 
     @benchmark(
         id=f"events.{name}.capacity",
-        suites=(*smoke, "daily"),
+        suites=cheap,
         kind="rate",
         params={"manager": MANAGERS, "sessions": SESSIONS},
-        suite_params={"smoke": {"sessions": [10]}} if smoke else None,
+        suite_params=dict.fromkeys(cheap, CHEAP),
         metrics={
             "throughput": THROUGHPUT,
             "service_p50": Metric(
@@ -597,29 +716,12 @@ def _register(name: str, shape: EventShape) -> None:
         },
         timeout=HOOK_TIMEOUT_S,
         setup_timeout=COMPILE_TIMEOUT_S + 60,
-        estimate=22,
+        estimate=5,
     )
-    class Capacity:
-        """Closed loop, 10 s after 3 s of warmup: the most events per second the backend answers."""
+    class Capacity(_OnPlayground):
+        """Closed loop, 3 s after 1 s of warmup: the most events per second the backend answers."""
 
-        current: _Sample | None = None
-
-        def setup_cache(self, ctx: Context) -> None:
-            """Copy and compile the playground.
-
-            Args:
-                ctx: The benchmark context.
-            """
-            prepare_app(ctx)
-
-        def prepare(self, ctx: Context) -> None:
-            """Start the backend.
-
-            Args:
-                ctx: The benchmark context.
-            """
-            self.current = _Sample(ctx, shape)
-            self.current.start_app()
+        event = shape
 
         def sample(self, ctx: Context) -> SampleResult:
             """Load the backend as fast as it answers.
@@ -630,9 +732,9 @@ def _register(name: str, shape: EventShape) -> None:
             Returns:
                 The throughput, the median service time and the CPU per event.
             """
-            assert self.current is not None
-            result, cpu_s = self.current.load(
-                mode="closed", rate=None, warmup_s=3, duration_s=10
+            assert self.backend is not None
+            result, cpu_s = self.backend.load(
+                mode="closed", rate=None, window=CAPACITY_WINDOW
             )
             assert result.service_s is not None
             return SampleResult(
@@ -641,25 +743,15 @@ def _register(name: str, shape: EventShape) -> None:
                     "service_p50": result.service_s["p50"],
                     "cpu_us_per_event": cpu_per_event(cpu_s, result.answered),
                 },
-                extra=self.current.extra(result),
+                extra=self.backend.extra(result),
             )
-
-        def conclude(self, ctx: Context) -> None:
-            """Stop the load and the backend, also after a failure or a timeout.
-
-            Args:
-                ctx: The benchmark context.
-            """
-            if self.current is not None:
-                self.current.stop()
-                self.current = None
 
     @benchmark(
         id=f"events.{name}.latency",
-        suites=(*smoke, "daily"),
+        suites=cheap,
         kind="latency",
         params={"manager": MANAGERS, "sessions": SESSIONS, "rate": ("auto",)},
-        suite_params={"smoke": {"sessions": [10], "rate": [50]}} if smoke else None,
+        suite_params=dict.fromkeys(cheap, CHEAP_LATENCY),
         metrics={
             "response_p50": _latency("p50"),
             "response_p90": _latency("p90"),
@@ -671,42 +763,26 @@ def _register(name: str, shape: EventShape) -> None:
         },
         timeout=HOOK_TIMEOUT_S,
         setup_timeout=COMPILE_TIMEOUT_S + 60,
-        estimate=58,
+        estimate=7,
     )
-    class Latency:
-        """Open loop, 30 s after 10 s of warmup, at half the capacity (or --param rate=): the response times."""
+    class Latency(_OnPlayground):
+        """Open loop, 5 s after 1 s of warmup, at half the capacity (or --param rate=): the response times."""
 
-        current: _Sample | None = None
+        event = shape
         rate = 0.0
-        capacity: float | None = None
 
-        def setup_cache(self, ctx: Context) -> None:
-            """Copy and compile the playground.
-
-            Args:
-                ctx: The benchmark context.
-            """
-            prepare_app(ctx)
-
-        def prepare(self, ctx: Context) -> None:
-            """Start the backend and, for ``rate=auto``, probe its capacity.
+        def setup(self, ctx: Context) -> None:
+            """Start and probe the backend, and choose the offered rate.
 
             Args:
                 ctx: The benchmark context.
             """
-            self.current = _Sample(ctx, shape)
-            self.current.start_app()
-            if ctx.params["rate"] == "auto":
-                probe, _ = self.current.load(
-                    mode="closed", rate=None, warmup_s=1, duration_s=5
-                )
-                self.capacity = probe.answered_rate
-                self.rate = LATENCY_SHARE * probe.answered_rate
-            else:
-                self.rate = float(ctx.params["rate"])
+            super().setup(ctx)
+            rate = ctx.params["rate"]
+            self.rate = LATENCY_SHARE * self.capacity if rate == "auto" else float(rate)
 
         def sample(self, ctx: Context) -> SampleResult:
-            """Offer the rate for 40 s and measure from the planned send times.
+            """Offer the rate and measure from the planned send times.
 
             Args:
                 ctx: The benchmark context.
@@ -715,9 +791,9 @@ def _register(name: str, shape: EventShape) -> None:
                 Response time percentiles, throughput, unanswered events and
                 the CPU per event.
             """
-            assert self.current is not None
-            result, cpu_s = self.current.load(
-                mode="open", rate=self.rate, warmup_s=10, duration_s=30
+            assert self.backend is not None
+            result, cpu_s = self.backend.load(
+                mode="open", rate=self.rate, window=LATENCY_WINDOW
             )
             return SampleResult(
                 {
@@ -726,117 +802,10 @@ def _register(name: str, shape: EventShape) -> None:
                     "unanswered": result.unanswered,
                     "cpu_us_per_event": cpu_per_event(cpu_s, result.answered),
                 },
-                extra=self.current.extra(
+                extra=self.backend.extra(
                     result, probed_capacity=self.capacity, **_underpowered(result)
                 ),
             )
-
-        def conclude(self, ctx: Context) -> None:
-            """Stop the load and the backend, also after a failure or a timeout.
-
-            Args:
-                ctx: The benchmark context.
-            """
-            if self.current is not None:
-                self.current.stop()
-                self.current = None
-
-    @benchmark(
-        id=f"events.{name}.knee",
-        kind="rate",
-        params={"manager": MANAGERS, "sessions": SESSIONS},
-        metrics={
-            "knee_rate": Metric(
-                unit="ev/s",
-                direction="higher",
-                description="the highest offered rate the backend keeps up with",
-            ),
-            "low_load_p99": _latency("p99, at 10 % of the capacity,"),
-        },
-        timeout=KNEE_TIMEOUT_S,
-        setup_timeout=COMPILE_TIMEOUT_S + 60,
-        estimate=440,
-    )
-    class Knee:
-        """Open-loop steps from 10 % to 110 % of the capacity, 30 s after 10 s of warmup each: where the backend stops keeping up."""
-
-        current: _Sample | None = None
-        capacity = 0.0
-
-        def setup_cache(self, ctx: Context) -> None:
-            """Copy and compile the playground.
-
-            Args:
-                ctx: The benchmark context.
-            """
-            prepare_app(ctx)
-
-        def prepare(self, ctx: Context) -> None:
-            """Start the backend and probe its capacity.
-
-            Args:
-                ctx: The benchmark context.
-            """
-            self.current = _Sample(ctx, shape)
-            self.current.start_app()
-            probe, _ = self.current.load(
-                mode="closed", rate=None, warmup_s=1, duration_s=5
-            )
-            self.capacity = probe.answered_rate
-
-        def sample(self, ctx: Context) -> SampleResult:
-            """Run the steps and find the knee.
-
-            Args:
-                ctx: The benchmark context.
-
-            Returns:
-                The knee and the low-load p99, with the step table as extra data.
-
-            Raises:
-                GeneratorSaturated: When the generator falls behind at a step.
-                LoadError: When sessions fail at a step.
-            """
-            current = self.current
-            assert current is not None
-            steps = []
-            for share in KNEE_SHARES:
-                result, _ = current.run("open", share * self.capacity, 10, 30)
-                if errors := result.session_errors:
-                    msg = f"{len(errors)} sessions failed at {share:.0%} of the capacity: {errors[0]}"
-                    raise LoadError(msg)
-                if (reason := result.check()) is not None:
-                    reason = f"{reason} (at {share:.0%} of the capacity)"
-                    raise GeneratorSaturated(reason, result)
-                steps.append({
-                    "share": share,
-                    "offered": result.offered_rate,
-                    "achieved": result.answered_rate,
-                    "p99": None
-                    if result.response_s is None
-                    else result.response_s["p99"],
-                    "unanswered": result.unanswered,
-                })
-            knee, low_load_p99 = find_knee(steps)
-            return SampleResult(
-                {"knee_rate": knee, "low_load_p99": low_load_p99},
-                extra={
-                    "capacity": self.capacity,
-                    "steps": steps,
-                    "pinning": current.pinning,
-                    **({"knee": "none"} if not knee else {}),
-                },
-            )
-
-        def conclude(self, ctx: Context) -> None:
-            """Stop the load and the backend, also after a failure or a timeout.
-
-            Args:
-                ctx: The benchmark context.
-            """
-            if self.current is not None:
-                self.current.stop()
-                self.current = None
 
 
 for _name, _shape_of in SHAPES.items():
@@ -844,8 +813,71 @@ for _name, _shape_of in SHAPES.items():
 
 
 @benchmark(
+    id="events.simple.knee",
+    kind="rate",
+    params={"manager": MANAGERS, "sessions": SESSIONS},
+    metrics={
+        "knee_rate": Metric(
+            unit="ev/s",
+            direction="higher",
+            description="the highest offered rate the backend keeps up with",
+        ),
+        "low_load_p99": _latency("p99, at 10 % of the capacity,"),
+    },
+    timeout=HOOK_TIMEOUT_S,
+    setup_timeout=COMPILE_TIMEOUT_S + 60,
+    estimate=50,
+)
+class Knee(_OnPlayground):
+    """Open-loop steps from 10 % to 110 % of the capacity, 4 s after 1 s of warmup each: where the backend stops keeping up."""
+
+    event = SHAPES["simple"]
+
+    def sample(self, ctx: Context) -> SampleResult:
+        """Run the steps and find the knee.
+
+        Args:
+            ctx: The benchmark context.
+
+        Returns:
+            The knee and the low-load p99, with the step table as extra data.
+
+        Raises:
+            GeneratorSaturated: When the generator falls behind at a step.
+            LoadError: When sessions fail at a step.
+        """
+        backend = self.backend
+        assert backend is not None
+        steps = []
+        for share in KNEE_SHARES:
+            result, _ = backend.retaken("open", share * self.capacity, KNEE_WINDOW)
+            if errors := result.session_errors:
+                msg = f"{len(errors)} sessions failed at {share:.0%} of the capacity: {errors[0]}"
+                raise LoadError(msg)
+            if (reason := result.check()) is not None:
+                reason = f"{reason} (at {share:.0%} of the capacity)"
+                raise GeneratorSaturated(reason, result)
+            steps.append({
+                "share": share,
+                "offered": result.offered_rate,
+                "achieved": result.answered_rate,
+                "p99": None if result.response_s is None else result.response_s["p99"],
+                "unanswered": result.unanswered,
+            })
+        knee, low_load_p99 = find_knee(steps)
+        return SampleResult(
+            {"knee_rate": knee, "low_load_p99": low_load_p99},
+            extra={
+                "capacity": self.capacity,
+                "steps": steps,
+                "pinning": backend.pinning,
+                **({"knee": "none"} if not knee else {}),
+            },
+        )
+
+
+@benchmark(
     id="events.sessions.at_1hz",
-    suites=("daily",),
     kind="latency",
     params={"manager": MANAGERS, "sessions": AT_1HZ_SESSIONS},
     metrics={
@@ -856,29 +888,12 @@ for _name, _shape_of in SHAPES.items():
     },
     timeout=HOOK_TIMEOUT_S,
     setup_timeout=COMPILE_TIMEOUT_S + 60,
-    estimate=60,
+    estimate=16,
 )
-class AtOneHz:
-    """Many sessions sending one simple event per second, 30 s after 10 s of warmup: the cost of idle-ish users."""
+class AtOneHz(_OnPlayground):
+    """Many sessions sending one simple event per second, 10 s after 3 s of warmup: the cost of idle-ish users."""
 
-    current: _Sample | None = None
-
-    def setup_cache(self, ctx: Context) -> None:
-        """Copy and compile the playground.
-
-        Args:
-            ctx: The benchmark context.
-        """
-        prepare_app(ctx)
-
-    def prepare(self, ctx: Context) -> None:
-        """Start the backend.
-
-        Args:
-            ctx: The benchmark context.
-        """
-        self.current = _Sample(ctx, SHAPES["simple"])
-        self.current.start_app()
+    event = SHAPES["simple"]
 
     def sample(self, ctx: Context) -> SampleResult:
         """Offer one event per second per session.
@@ -889,9 +904,9 @@ class AtOneHz:
         Returns:
             Response time percentiles, unanswered events and the CPU per event.
         """
-        assert self.current is not None
-        result, cpu_s = self.current.load(
-            mode="open", rate=float(ctx.params["sessions"]), warmup_s=10, duration_s=30
+        assert self.backend is not None
+        result, cpu_s = self.backend.load(
+            mode="open", rate=float(ctx.params["sessions"]), window=AT_1HZ_WINDOW
         )
         return SampleResult(
             {
@@ -899,18 +914,8 @@ class AtOneHz:
                 "unanswered": result.unanswered,
                 "cpu_us_per_event": cpu_per_event(cpu_s, result.answered),
             },
-            extra=self.current.extra(result, **_underpowered(result)),
+            extra=self.backend.extra(result, **_underpowered(result)),
         )
-
-    def conclude(self, ctx: Context) -> None:
-        """Stop the load and the backend, also after a failure or a timeout.
-
-        Args:
-            ctx: The benchmark context.
-        """
-        if self.current is not None:
-            self.current.stop()
-            self.current = None
 
 
 @benchmark(
@@ -930,21 +935,19 @@ class AtOneHz:
         ),
     },
     timeout=HOOK_TIMEOUT_S,
-    estimate=50,
+    estimate=25,
 )
-class Calibrate:
+class Calibrate(_OnBackend):
     """Run the generator against an echo server, which answers at once: how far it goes before it saturates."""
 
-    current: _Sample | None = None
-
-    def prepare(self, ctx: Context) -> None:
+    def setup(self, ctx: Context) -> None:
         """Start the echo server.
 
         Args:
             ctx: The benchmark context.
         """
-        self.current = _Sample(ctx, SHAPES["simple"])
-        self.current.start_echo()
+        self.backend = _Backend(ctx, SHAPES["simple"])
+        self.backend.start_echo()
 
     def sample(self, ctx: Context) -> SampleResult:
         """Measure the closed-loop ceiling, then open-loop steps up to half of it.
@@ -956,12 +959,14 @@ class Calibrate:
             The ceiling and the highest open-loop rate that passed the self-check,
             with each step's lag, CPU and check as extra data.
         """
-        current = self.current
-        assert current is not None
-        closed, _ = current.run("closed", None, 1, 5)
+        backend = self.backend
+        assert backend is not None
+        closed, _ = backend.run("closed", None, CALIBRATION_CLOSED_WINDOW)
         steps = []
         for share in CALIBRATION_SHARES:
-            result, _ = current.run("open", share * closed.answered_rate, 1, 3)
+            result, _ = backend.run(
+                "open", share * closed.answered_rate, CALIBRATION_STEP_WINDOW
+            )
             assert result.lag_s is not None
             steps.append({
                 "offered": result.offered_rate,
@@ -987,16 +992,6 @@ class Calibrate:
                     "generator_cpu_fraction": closed.generator_cpu_fraction,
                 },
                 "steps": steps,
-                "pinning": current.pinning,
+                "pinning": backend.pinning,
             },
         )
-
-    def conclude(self, ctx: Context) -> None:
-        """Stop the load and the echo server, also after a failure or a timeout.
-
-        Args:
-            ctx: The benchmark context.
-        """
-        if self.current is not None:
-            self.current.stop()
-            self.current = None

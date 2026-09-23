@@ -241,20 +241,26 @@ included. Peak memory and CPU come from a transient cgroup v2 scope when
 ## Event benchmarks
 
 `reflex_bench.suites.events` measures how many events the playground
-(`examples/playground`) answers and how fast. Each sample starts it as a
-production backend (`reflex run --env prod --backend-only`, one granian worker)
-and drives it with `reflex_bench.drivers.events`, a socket.io load generator
-that speaks reflex's event websocket over `websockets` (no python-socketio).
-Sessions are browser tabs: each connects with its own token, hydrates like a page
-load, then sends `BenchState.set_seq*` events whose delta echoes a sequence
-number.
+(`examples/playground`) answers and how fast. Each benchmark instance starts it
+once as a production backend (`reflex run --env prod --backend-only`, one
+granian worker), and each sample drives it for a few seconds with
+`reflex_bench.drivers.events`, a socket.io load generator that speaks reflex's
+event websocket over `websockets` (no python-socketio). Sessions are browser
+tabs: each connects with its own token, hydrates like a page load, then sends
+`BenchState.set_seq*` events whose delta echoes a sequence number.
+
+CI minutes are scarce, so `smoke` and `daily` run two points, about 2 minutes
+per reflex with the default policy: `events.simple.capacity[manager=memory,sessions=10]`
+and `events.simple.latency[manager=memory,sessions=10,rate=500]`. The other
+shapes, managers and session counts, the knee and `at_1hz` run with
+`--suite all` or by name.
 
 | Benchmark | Suites | Parameters | Load | Metrics |
 | --- | --- | --- | --- | --- |
-| `events.<shape>.capacity` | `smoke` (simple, `sessions=10`), `daily` | `manager`, `sessions` 1, 10, 50, 200 | closed loop, 10 s after 3 s | `throughput`, `service_p50`, `cpu_us_per_event` |
-| `events.<shape>.latency` | `smoke` (simple, `sessions=10`, `rate=50`), `daily` | `manager`, `sessions`, `rate` | open loop, 30 s after 10 s | `response_p50`, `p90`, `p99`, `max`, `throughput`, `unanswered`, `cpu_us_per_event` |
-| `events.<shape>.knee` | (`all`) | `manager`, `sessions` | open loop at 10 % to 110 % of the capacity, 30 s after 10 s each | `knee_rate`, `low_load_p99` |
-| `events.sessions.at_1hz` | `daily` | `manager`, `sessions` 50, 200, 1000 | open loop, 1 ev/s per session, 30 s after 10 s | `response_p50`, `response_p99`, `unanswered`, `cpu_us_per_event` |
+| `events.<shape>.capacity` | `smoke`, `daily` (simple, `manager=memory`, `sessions=10`) | `manager`, `sessions` 1, 10, 50, 200 | closed loop, 3 s after 1 s | `throughput`, `service_p50`, `cpu_us_per_event` |
+| `events.<shape>.latency` | `smoke`, `daily` (simple, `manager=memory`, `sessions=10`, `rate=500`) | `manager`, `sessions`, `rate` | open loop, 5 s after 1 s | `response_p50`, `p90`, `p99`, `max`, `throughput`, `unanswered`, `cpu_us_per_event` |
+| `events.simple.knee` | (`all`) | `manager`, `sessions` | open loop at 10 % to 110 % of the capacity, 4 s after 1 s each | `knee_rate`, `low_load_p99` |
+| `events.sessions.at_1hz` | (`all`) | `manager`, `sessions` 50, 200, 1000 | open loop, 1 ev/s per session, 10 s after 3 s | `response_p50`, `response_p99`, `unanswered`, `cpu_us_per_event` |
 | `selftest.events.calibrate` | `selftest` | | the generator against an echo server | `closed_ceiling`, `open_max_rate` |
 
 - **Shapes**: `simple` (`set_seq`), `complex` (three vars behind a chain of
@@ -264,10 +270,14 @@ number.
 - **`manager`**: `memory` and `disk`, plus `redis` when `REFLEX_REDIS_URL` is set
   in the harness's environment when the suite is imported. The URL reaches only
   the redis instances: reflex uses redis whenever a URL is configured.
-- **`rate`**: `auto` offers half the capacity that a 5 s closed-loop probe
-  measures before each sample, so each arm of an `ab` run is loaded to the same
+- **`rate`**: `auto` offers half the capacity that a 2 s closed-loop probe
+  measures once per instance, so each arm of an `ab` run is loaded to the same
   share of its own capacity; `--param rate=N` offers `N` events per second to
-  both, which compares the same absolute load.
+  both, which compares the same absolute load. `smoke` and `daily` offer 500,
+  the same load from one day to the next.
+- **One backend per instance**: it starts in `setup`, which also warms it with
+  the probe, and stops in `cleanup`, so its samples share one warm server; in
+  an `ab` run both arms' backends are up, one idle while the other is measured.
 - **Open and closed loop**: the open loop sends on a fixed schedule whatever
   the server does and times each answer from the *planned* send time, so a
   stall counts in every event it delays (no coordinated omission); events
@@ -285,12 +295,15 @@ number.
   half of the CPUs (CPU 0 excluded) and the generator on the upper half, with
   up to 4 generator processes (1 up to 10 sessions); `pinning` in the extra
   data records the split.
-- **Self-check**: a sample fails with `generator saturated` when a generator
-  process used more than 75 % of a core, when the p99 of the send lag
-  (actual minus planned send time) exceeds the largest of 1 ms, 10 % of the
-  median response and half the service time p99 (a lag tail within the
-  server's own tail is machine noise, such as VM steal time, not saturation),
-  or when less than 98 % of the offered events went out in the window.
+- **Self-check**: a load fails it when a generator process used more than
+  75 % of a core, when the p99 of the send lag (actual minus planned send
+  time) exceeds the largest of 1 ms, 10 % of the median response and half the
+  service time p99 (a lag tail within the server's own tail is machine noise,
+  such as VM steal time, not saturation), or when less than 98 % of the
+  offered events went out in the window. On a shared machine a single host
+  stall of the generator's CPU fails a short window now and then, so the load
+  is taken again, up to twice; `rejected` in the extra data lists the reasons.
+  The sample fails with `generator saturated` when every attempt does.
   `selftest.events.calibrate` shows how far the generator goes on a machine.
 
 Not parameters yet: injected redis latency, uvicorn instead of granian, and
