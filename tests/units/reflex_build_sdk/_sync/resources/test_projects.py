@@ -64,7 +64,7 @@ def test_list(client: ReflexBuild, mock_api: MockAPI):
         "deployment_count": 3,
         "app_count": 2,
     }
-    mock_api.add("GET", "/api/v1/project/", reply(200, json=[project]))
+    mock_api.add("GET", "/api/v1/project", reply(200, json=[project]))
     assert client.projects.list() == [
         ProjectSummary(
             id=uuid.UUID(PROJECT_ID),
@@ -81,7 +81,7 @@ def test_list(client: ReflexBuild, mock_api: MockAPI):
 
 
 def test_list_null(client: ReflexBuild, mock_api: MockAPI):
-    mock_api.add("GET", "/api/v1/project/", reply(200, json=None))
+    mock_api.add("GET", "/api/v1/project", reply(200, json=None))
     assert client.projects.list() == []
 
 

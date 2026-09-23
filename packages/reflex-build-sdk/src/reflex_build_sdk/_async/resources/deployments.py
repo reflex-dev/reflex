@@ -329,12 +329,11 @@ class AsyncDeployments:
             DeploymentTimeoutError: If the deployment was still in progress when
                 ``timeout`` passed.
         """
-        deployment_uuid = uuid.UUID(str(deployment_id))
         deadline = None if timeout is None else monotonic() + timeout
         last_message = None
         polls = 0
         while True:
-            message = await self.status(deployment_uuid)
+            message = await self.status(deployment_id)
             if message != last_message:
                 last_message = message
                 if on_status is not None:
@@ -343,7 +342,7 @@ class AsyncDeployments:
             polls += 1
             stale = "bad response" in message
             if outcome is not None or stale or polls % _REPORT_EVERY_POLLS == 0:
-                report = await self.report(deployment_uuid)
+                report = await self.report(deployment_id)
                 if outcome is None:
                     recorded = report_outcome(report.status)
                     # A running deployment is only live once its message says so,
@@ -351,16 +350,15 @@ class AsyncDeployments:
                     if recorded != "succeeded" or stale:
                         outcome = recorded
                 if outcome == "failed":
-                    raise DeploymentFailedError(deployment_uuid, report)
+                    # The API has accepted the id by now, so it parses.
+                    raise DeploymentFailedError(uuid.UUID(str(deployment_id)), report)
                 if outcome is not None:
                     return report
             delay = poll_interval
             if deadline is not None:
                 remaining = deadline - monotonic()
                 if remaining <= 0:
-                    msg = (
-                        f"deployment {deployment_uuid} was still in progress: {message}"
-                    )
+                    msg = f"deployment {deployment_id} was still in progress: {message}"
                     raise DeploymentTimeoutError(msg)
                 # The last wait ends at the deadline rather than a whole interval on.
                 delay = min(delay, remaining)

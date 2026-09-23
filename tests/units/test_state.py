@@ -2925,6 +2925,7 @@ class BackgroundTaskState(BaseState):
     order: list[str] = []
     dict_list: dict[str, list[int]] = {"foo": [1, 2, 3]}
     dc: ModelDC = ModelDC()
+    _started: ClassVar[asyncio.Event | None] = None
 
     @rx.var(cache=False)
     def computed_order(self) -> list[str]:
@@ -2936,11 +2937,16 @@ class BackgroundTaskState(BaseState):
         return self.order
 
     @rx.event(background=True)
-    async def background_task(self):
+    async def background_task(self, startup_delay: float = 0):
         """A background task that updates the state."""
+        if startup_delay:
+            await asyncio.sleep(startup_delay)
         async with self:
             assert not self.order
             self.order.append("background_task:start")
+
+        if BackgroundTaskState._started is not None:
+            BackgroundTaskState._started.set()
 
         assert isinstance(self, StateProxy)
         with pytest.raises(ImmutableStateError):
@@ -3013,7 +3019,7 @@ class BackgroundTaskState(BaseState):
 
     async def bad_chain1(self):
         """Test that a background task cannot be chained."""
-        await self.background_task()
+        await self.background_task(0)
 
     async def bad_chain2(self):
         """Test that a background task generator cannot be chained."""
@@ -3022,12 +3028,15 @@ class BackgroundTaskState(BaseState):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("startup_delay", [0, 0.6])
 async def test_background_task_no_block(
     mock_app: rx.App,
     token: str,
     mock_base_state_event_processor: BaseStateEventProcessor,
     emitted_deltas: list,
     state_manager: StateManager,
+    startup_delay: float,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """Test that a background task does not block other events.
 
@@ -3037,18 +3046,22 @@ async def test_background_task_no_block(
         mock_base_state_event_processor: The event processor.
         emitted_deltas: List to capture emitted deltas.
         state_manager: A state manager instance.
+        startup_delay: Delay before the background task acquires its first lock.
+        monkeypatch: Reset the test-only startup signal after each case.
     """
+    background_started = asyncio.Event()
+    monkeypatch.setattr(BackgroundTaskState, "_started", background_started)
     async with mock_base_state_event_processor as processor:
         # Start background task
         await processor.enqueue(
             token,
             Event(
                 name=f"{BackgroundTaskState.get_full_name()}.background_task",
-                payload={},
+                payload={"startup_delay": startup_delay},
             ),
         )
-        # Wait for the background task coroutine to start
-        await asyncio.sleep(0.5 if CI else 0.1)
+
+        await asyncio.wait_for(background_started.wait(), timeout=10)
 
         # Process another normal event while background task is polling
         await processor.enqueue(

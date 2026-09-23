@@ -24,7 +24,7 @@ from reflex_build_sdk._sync.resources.providers import Providers
 from reflex_build_sdk._sync.resources.security_reviews import SecurityReviews
 from reflex_build_sdk._sync.resources.usage import Usage
 from reflex_build_sdk.transports._base import Transport, TransportError
-from reflex_build_sdk.transports._defaults import DefaultTransport
+from reflex_build_sdk.transports._defaults import default_transport
 
 T = TypeVar("T")
 
@@ -63,7 +63,7 @@ class ReflexBuild(BaseClient):
 
         Args:
             token: The access token. Defaults to the ``REFLEX_ACCESS_TOKEN`` environment
-                variable, then to the token saved by ``reflex login``.
+                variable.
             base_url: The Reflex Build URL. Defaults to the ``REFLEX_BUILD_BACKEND_URL``
                 environment variable, then to ``REFLEX_CLOUD_BACKEND_URL``, which
                 ``reflex-hosting-cli`` reads, then to ``https://build.reflex.dev``.
@@ -86,7 +86,7 @@ class ReflexBuild(BaseClient):
             token=token, base_url=base_url, timeout=timeout, max_retries=max_retries
         )
         self._owns_transport = transport is None
-        self._transport = DefaultTransport() if transport is None else transport
+        self._transport = default_transport() if transport is None else transport
         self.apps = Apps(self)
         self.auth = Auth(self)
         self.deployments = Deployments(self)
