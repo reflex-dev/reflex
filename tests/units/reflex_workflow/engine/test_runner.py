@@ -693,6 +693,21 @@ class Gated(Base, Workflow):
         self.status = f"done:{execution}"
 
 
+class Parting(Base, Workflow):
+    """A step for a worker that is shut down mid-claim; not run by the fixture's."""
+
+    __tablename__ = "wf_test_parting"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    key: Mapped[str] = mapped_column(String, unique=True)
+    status: Mapped[str] = mapped_column(String, default="new")
+
+    @step
+    async def work(self):
+        """Record that the step ran."""
+        self.status = "done"
+
+
 WORKFLOWS = [
     Chain,
     Delayed,
@@ -758,6 +773,22 @@ async def wait_until(
             msg = "condition not met before timeout"
             raise AssertionError(msg)
         await asyncio.sleep(0.2)
+
+
+async def stop_workers(
+    workers: list[runner.Runner], loops: list[asyncio.Task[None]]
+) -> None:
+    """Stop hand-driven workers the way run_workflows stops its own.
+
+    Args:
+        workers: The workers.
+        loops: Their loop tasks.
+    """
+    for worker in workers:
+        worker.stop()
+    await asyncio.gather(*loops)
+    for worker in workers:
+        await worker.drain(datetime.timedelta(seconds=5))
 
 
 def status_is(
@@ -972,11 +1003,7 @@ async def test_competing_workers_run_each_step_once(session_factory):
     try:
         await wait_until(all_done)
     finally:
-        for worker in workers:
-            await worker.drain(datetime.timedelta(seconds=5))
-        for loop in loops:
-            loop.cancel()
-        await asyncio.gather(*loops, return_exceptions=True)
+        await stop_workers(workers, loops)
         for engine in engines:
             await engine.dispose()
     assert all(EVENTS.count(f"race:{key}") == 1 for key in keys)
@@ -1536,11 +1563,7 @@ async def test_a_limit_holds_across_workers(session_factory):
     try:
         await wait_until(all_done, timeout=60)
     finally:
-        for worker in workers:
-            await worker.drain(datetime.timedelta(seconds=5))
-        for loop in loops:
-            loop.cancel()
-        await asyncio.gather(*loops, return_exceptions=True)
+        await stop_workers(workers, loops)
         for engine in engines:
             await engine.dispose()
 
@@ -1583,9 +1606,7 @@ async def test_a_worker_with_one_slot_still_visits_every_table(session_factory):
         backlog = await Hog.by(Hog.key.startswith(f"hog-{key}")).all()
         assert sum(row.status == "done" for row in backlog) < 5
     finally:
-        await worker.drain(datetime.timedelta(seconds=5))
-        loop.cancel()
-        await asyncio.gather(loop, return_exceptions=True)
+        await stop_workers([worker], [loop])
         await engine.dispose()
 
 
@@ -1635,11 +1656,7 @@ async def test_a_rate_limit_holds_across_workers(session_factory):
     try:
         await wait_until(all_done, timeout=60)
     finally:
-        for worker in workers:
-            await worker.drain(datetime.timedelta(seconds=5))
-        for loop in loops:
-            loop.cancel()
-        await asyncio.gather(*loops, return_exceptions=True)
+        await stop_workers(workers, loops)
         for engine in engines:
             await engine.dispose()
 
@@ -1707,11 +1724,7 @@ async def lane_workers(*lane_sets):
     try:
         yield
     finally:
-        for worker, _ in made:
-            await worker.drain(datetime.timedelta(seconds=5))
-        for loop in loops:
-            loop.cancel()
-        await asyncio.gather(*loops, return_exceptions=True)
+        await stop_workers([worker for worker, _ in made], loops)
         for _, engine in made:
             await engine.dispose()
 
@@ -1824,9 +1837,7 @@ async def test_a_process_can_address_runs_without_running_them(session_factory):
     try:
         await wait_until(status_is(Piece, key, "done"))
     finally:
-        await worker.drain(datetime.timedelta(seconds=5))
-        loop.cancel()
-        await asyncio.gather(loop, return_exceptions=True)
+        await stop_workers([worker], [loop])
         await worker_engine.dispose()
 
 
@@ -2042,3 +2053,42 @@ async def test_history_is_only_written_when_a_table_is_mapped(
             .all()
         )
     assert all(attempt.run != [key] for attempt in written)
+
+
+async def test_a_worker_stopping_mid_claim_runs_what_it_claimed(
+    session_factory, monkeypatch
+):
+    keys = await start_many(Parting, f"parting-{uuid.uuid4().hex}", 4)
+    claimed_rows, release = asyncio.Event(), asyncio.Event()
+    real_claim = runner.claim
+
+    async def claim_then_pause(runtime_, cls, limit, steps=None):
+        claimed = await real_claim(runtime_, cls, limit, steps)
+        if cls is Parting and claimed:
+            # The rows are leased and committed; the worker has not started them.
+            claimed_rows.set()
+            await release.wait()
+        return claimed
+
+    monkeypatch.setattr(runner, "claim", claim_then_pause)
+    worker = run_workflows(
+        session_factory,
+        workflows=[Parting],
+        poll_interval=datetime.timedelta(milliseconds=50),
+        lease=datetime.timedelta(minutes=5),
+    )
+    await worker.__aenter__()
+    await asyncio.wait_for(claimed_rows.wait(), 30)
+    # The worker is told to stop while its claim is still returning.
+    stopping = asyncio.create_task(worker.__aexit__(None, None, None))
+    await asyncio.sleep(0.2)
+    release.set()
+    await stopping
+
+    rows = await Parting.by(Parting.key.in_(keys)).all()
+    taken = [
+        row for row in rows if row.claimed_until is not None or row.status == "done"
+    ]
+    # Whatever it leased, it ran: nothing waits out a five-minute lease.
+    assert taken
+    assert all(row.status == "done" and row.claimed_until is None for row in taken)

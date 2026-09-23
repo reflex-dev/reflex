@@ -116,7 +116,7 @@ class Runner:
             for allowance in (share, self.max_concurrency):
                 for cls in order:
                     free = min(allowance, self.max_concurrency - len(self.inflight))
-                    if free <= 0:
+                    if free <= 0 or self.stopping:
                         break
                     started += await self._claim_from(cls, free)
             if started:
@@ -126,16 +126,20 @@ class Runner:
             with contextlib.suppress(asyncio.TimeoutError):
                 await asyncio.wait_for(wake.wait(), self.poll_interval.total_seconds())
 
-    async def drain(self, timeout: datetime.timedelta) -> None:
-        """Stop claiming, let running steps finish, then cancel the rest.
+    def stop(self) -> None:
+        """Tell the loop to finish the pass it is in and claim nothing more."""
+        self.stopping = True
+        self.runtime.wake.set()
 
-        A cancelled step keeps its lease until it expires, then runs again.
+    async def drain(self, timeout: datetime.timedelta) -> None:
+        """Let running steps finish, then cancel the rest.
+
+        Call it once the loop has stopped, so no step starts after it looked. A
+        cancelled step keeps its lease until it expires, then runs again.
 
         Args:
             timeout: How long to wait for running steps.
         """
-        self.stopping = True
-        self.runtime.wake.set()
         if self.inflight:
             await asyncio.wait(self.inflight, timeout=timeout.total_seconds())
         for task in list(self.inflight):
@@ -191,12 +195,18 @@ async def run_workflows(
     try:
         yield
     finally:
-        await runner.drain(shutdown_timeout)
-        for task in (loop, ear):
-            task.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await asyncio.gather(loop, ear)
-        replace_current(previous)
+        # The loop finishes the claim it is making rather than being cancelled
+        # in it: a claim that has committed has leased its rows, and cancelled
+        # there they would wait out the lease instead of running.
+        runner.stop()
+        try:
+            await loop
+        finally:
+            await runner.drain(shutdown_timeout)
+            ear.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await ear
+            replace_current(previous)
 
 
 @contextlib.asynccontextmanager
