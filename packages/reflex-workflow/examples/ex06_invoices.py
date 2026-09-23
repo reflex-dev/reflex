@@ -9,6 +9,7 @@ re-uploaded file nor a second click on the approve button records a second bill.
 from __future__ import annotations
 
 import datetime
+import json
 
 from reflex_workflow import Workflow, step, wait_for
 from sqlalchemy import Integer, String
@@ -47,9 +48,10 @@ class Invoice(Base, Workflow):
         """Identify the invoice by what is printed on it, not by its file.
 
         Returns:
-            The supplier's name and invoice number.
+            The supplier's name and invoice number, encoded so that no two
+            different pairs share a reference whatever characters they hold.
         """
-        return f"{self.supplier}:{self.number}"
+        return json.dumps([self.supplier, self.number])
 
     @step(retries=RETRIES, backoff=BACKOFF)
     async def extract(self):
@@ -61,9 +63,10 @@ class Invoice(Base, Workflow):
         fields = await world.call(
             "ocr.extract", key=self.upload_id, upload=self.upload_id
         )
-        self.supplier = fields.get("supplier", "unknown")
-        self.number = fields.get("number", self.upload_id)
-        self.amount_cents = int(fields.get("amount_cents", 0))
+        # A field the reader could not make out comes back as null, not absent.
+        self.supplier = fields.get("supplier") or "unknown"
+        self.number = fields.get("number") or self.upload_id
+        self.amount_cents = int(fields.get("amount_cents") or 0)
         self.status = "extracted"
         return Invoice.check_duplicate
 
@@ -145,7 +148,7 @@ class Invoice(Base, Workflow):
             "chat.post",
             key=f"overdue-{self.upload_id}",
             to="finance-director",
-            text=f"{self.reference} has been waiting a week",
+            text=f"Invoice {self.number} from {self.supplier} has waited a week",
         )
         self.status = "overdue"
 

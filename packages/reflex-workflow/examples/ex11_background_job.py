@@ -41,7 +41,8 @@ class Job(Base, Workflow):
     prompt: Mapped[str] = mapped_column(String)
     stage: Mapped[str] = mapped_column(String, default="queued")
     percent: Mapped[int] = mapped_column(Integer, default=0)
-    history: Mapped[list[str] | None] = mapped_column(JSONB, default=None)
+    # Named for what it holds; ``history`` is the engine's record of attempts.
+    stages: Mapped[list[str] | None] = mapped_column(JSONB, default=None)
     artifact: Mapped[str | None] = mapped_column(String, default=None)
     error: Mapped[str | None] = mapped_column(String, default=None)
 
@@ -53,7 +54,7 @@ class Job(Base, Workflow):
         """
         self.stage = stage
         self.percent = dict(STAGES)[stage]
-        self.history = [*(self.history or []), stage]
+        self.stages = [*(self.stages or []), stage]
 
     @step(retries=RETRIES, backoff=BACKOFF)
     async def plan(self):

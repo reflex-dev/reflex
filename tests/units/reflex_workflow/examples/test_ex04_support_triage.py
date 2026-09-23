@@ -115,3 +115,16 @@ async def test_a_redelivered_webhook_produces_one_ticket(running):
     await eventually(reaches(event, "escalated:urgent"))
 
     assert len(world.effects("helpdesk.escalate")) == 1
+
+
+async def test_a_signal_word_inside_another_word_is_not_a_signal(running):
+    event = uuid.uuid4().hex
+    # "download" contains "down", which on its own would mean an outage.
+    assert await receive(
+        event, "initech", "Docs", "How do I download the documentation?"
+    )
+    await eventually(reaches(event, "drafted"))
+
+    [draft] = world.effects("helpdesk.draft")
+    assert draft["queue"] == "how-to-queue"
+    assert not world.effects("helpdesk.escalate")

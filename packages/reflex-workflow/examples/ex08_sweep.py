@@ -18,7 +18,7 @@ from typing import Any
 
 from reflex_workflow import Every, Workflow, every, step
 from reflex_workflow.engine.runtime import current
-from sqlalchemy import DateTime, Integer, String, select, update
+from sqlalchemy import DateTime, Integer, String, func, select, update
 from sqlalchemy.orm import Mapped, mapped_column
 
 from examples.base import Base
@@ -44,7 +44,9 @@ class Watch(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     item: Mapped[str] = mapped_column(String, unique=True)
-    due_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True))
+    due_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), index=True
+    )
     every_seconds: Mapped[int] = mapped_column(Integer, default=3600)
     # Bumped by whatever pokes the watch between passes; a burst is one pass.
     signals: Mapped[int] = mapped_column(Integer, default=0)
@@ -93,9 +95,11 @@ class Sweep(Base, Workflow):
     async def run_pass(self) -> Every[Sweep]:
         """Start a collection for every watch whose deadline has passed.
 
-        The deadline moves forward and the signals reset in the same statement
-        that hands the watch to this pass, so a second sweeper looking at the
-        same moment sees the watch already moved on.
+        The watches this pass takes stay locked until it commits, so a second
+        sweeper looking at the same moment skips them. Their collections start
+        before their deadlines move on, in the same transaction: a start that
+        fails rolls the deadlines back too, and the retry starts them again,
+        once each, since a collection is keyed by its occurrence.
 
         Returns:
             This step again, on the sweep's schedule.
@@ -105,7 +109,7 @@ class Sweep(Base, Workflow):
             due = (
                 await session.execute(
                     select(Watch)
-                    .where(Watch.due_at <= datetime.datetime.now(datetime.timezone.utc))
+                    .where(Watch.due_at <= func.now())
                     .order_by(Watch.due_at)
                     .limit(BATCH)
                     .with_for_update(skip_locked=True)
@@ -120,6 +124,7 @@ class Sweep(Base, Workflow):
                 }
                 for watch in due
             ]
+            started = sum([await start_collection(watch) for watch in taken])
             for watch in taken:
                 await session.execute(
                     update(Watch)
@@ -132,7 +137,7 @@ class Sweep(Base, Workflow):
                 )
 
         self.passes += 1
-        self.started += sum([await start_collection(watch) for watch in taken])
+        self.started += started
         self.status = "swept"
         return every(Sweep.run_pass, SWEEP_INTERVAL)
 

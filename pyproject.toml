@@ -335,6 +335,7 @@ source = [
   "reflex_site_shared",
   "reflex_components_internal",
   "reflex_integrations_docs",
+  "reflex_workflow",
 ]
 branch = true
 omit = [

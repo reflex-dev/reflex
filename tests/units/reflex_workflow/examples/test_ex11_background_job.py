@@ -6,6 +6,8 @@ progress and output; retry a late stage without duplicating the completed job.
 
 from __future__ import annotations
 
+import asyncio
+import time
 import uuid
 
 import pytest
@@ -57,8 +59,11 @@ async def test_progress_is_the_same_whether_or_not_anyone_was_watching(running):
 
     # One client polls throughout; the other closes the tab and comes back.
     seen = []
+    deadline = time.monotonic() + 30
     while not await finished(watched)():
+        assert time.monotonic() < deadline, "the watched job never finished"
         seen.append((await progress(watched) or {}).get("stage"))
+        await asyncio.sleep(0.02)
     await eventually(finished(unwatched))
 
     watching = await progress(watched)
@@ -78,7 +83,7 @@ async def test_progress_is_the_same_whether_or_not_anyone_was_watching(running):
     for run_id in (watched, unwatched):
         row = await Job.by(Job.run_id == run_id).get()
         assert row is not None
-        assert row.history == ["planning", "rendering", "uploading", "done"]
+        assert row.stages == ["planning", "rendering", "uploading", "done"]
 
 
 async def test_an_unknown_job_has_no_progress(running):
@@ -97,4 +102,4 @@ async def test_a_late_stage_retries_without_redoing_the_finished_ones(running):
     assert len(world.effects("storage.upload")) == 1
     row = await Job.by(Job.run_id == run_id).get()
     assert row is not None
-    assert row.history == ["planning", "rendering", "uploading", "done"]
+    assert row.stages == ["planning", "rendering", "uploading", "done"]

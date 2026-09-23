@@ -81,6 +81,9 @@ async def test_a_chunk_nobody_can_process_leaves_a_gap_rather_than_a_hang(runnin
     assert row is not None
     assert (row.missing, row.status) == ([1], "assembled-with-gaps")
     assert row.artifact is not None
+    # The progress bar is full: two processed, one that gave up.
+    progress = await chunk_progress(name)
+    assert (progress["done"], progress["failed"], progress["total"]) == (2, 1, 3)
 
 
 async def test_progress_counts_the_chunks_that_are_done(running):
@@ -88,9 +91,15 @@ async def test_progress_counts_the_chunks_that_are_done(running):
     assert await upload_media(name, ["audio"] * 4)
     await eventually(assembled(name))
 
-    assert await chunk_progress(name) == {"done": 4, "total": 4, "status": "assembled"}
+    assert await chunk_progress(name) == {
+        "done": 4,
+        "failed": 0,
+        "total": 4,
+        "status": "assembled",
+    }
     assert await chunk_progress("nothing-of-the-sort") == {
         "done": 0,
+        "failed": 0,
         "total": 0,
         "status": "unknown",
     }

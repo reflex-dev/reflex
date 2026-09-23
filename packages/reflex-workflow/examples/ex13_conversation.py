@@ -93,7 +93,7 @@ async def write(
     role: str,
     text: str = "",
     **data: Any,
-) -> bool:
+) -> None:
     """Add a message to a transcript, unless one with this key is already there.
 
     Args:
@@ -103,17 +103,12 @@ async def write(
         role: Who it is from.
         text: What it says.
         **data: What a tool or action returned.
-
-    Returns:
-        Whether it was added, rather than already there.
     """
-    added = await session.execute(
+    await session.execute(
         pg_insert(Message)
         .values(conversation=conversation, key=key, role=role, text=text, data=data)
         .on_conflict_do_nothing()
-        .returning(Message.id)
     )
-    return added.first() is not None
 
 
 async def transcript(conversation: str, seen: int) -> list[Message]:
@@ -374,11 +369,16 @@ class Conversation(Base, Workflow):
             await session.execute(arrival_lock(self.conversation))
             if await unread(session, self.conversation, self.seen) is not None:
                 return Conversation.turn()
+            text = "Is there anything else I can help with?"
             await world.call(
                 "chat.send",
                 key=f"remind:{self.conversation}:{self.seen}",
                 to=self.customer,
-                text="Is there anything else I can help with?",
+                text=text,
+            )
+            # In the transcript too, so a later turn knows the customer was asked.
+            await write(
+                session, self.conversation, f"remind:{self.seen}", "agent", text
             )
         self.status = "reminded"
         return wait_for(
@@ -504,20 +504,27 @@ async def receive(conversation: str, customer: str, message: str, text: str) -> 
     await Conversation(conversation=conversation, customer=customer).start(
         Conversation.turn
     )
+    key = f"customer:{message}"
     async with current().session_factory() as session, session.begin():
         await session.execute(arrival_lock(conversation))
-        added = await write(
-            session, conversation, f"customer:{message}", "customer", text
+        await write(session, conversation, key, "customer", text)
+        written = await session.scalar(
+            select(Message.id).where(
+                Message.conversation == conversation, Message.key == key
+            )
         )
-    if not added:
-        return
-    if not await wake(conversation, f"customer:{message}"):
+    # A redelivery wakes the conversation too: the first delivery may have been
+    # written and then lost before it woke anything. The wake's key makes the
+    # repeat of one that did land a no-op.
+    if not await wake(conversation, key):
         # A closed conversation takes no wake: the customer coming back opens it
-        # again. Only a finished run is restarted, never one in the middle of a
-        # turn, whose held wake already covers this message.
+        # again, if this message is still unread. Only a finished run is
+        # restarted, never one in the middle of a turn, whose held wake already
+        # covers the message.
         await Conversation.by(
             Conversation.conversation == conversation,
             Conversation.next_step.is_(None),
+            Conversation.seen < written,
         ).run(Conversation.turn)
 
 

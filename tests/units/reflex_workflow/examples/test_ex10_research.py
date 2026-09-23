@@ -7,11 +7,11 @@ of this scenario is not expressible yet; see the example's note.
 
 from __future__ import annotations
 
-import time
+import json
 import uuid
 
 import pytest
-from examples.ex10_research import Lookup, Research, import_companies
+from examples.ex10_research import AT_ONCE, Lookup, Research, import_companies
 from examples.services import world
 
 from .conftest import eventually
@@ -51,16 +51,18 @@ async def test_every_company_is_researched_once_and_reported(running):
 
 async def test_the_lookups_run_at_the_same_time(running):
     name = f"import-{uuid.uuid4().hex}"
-    companies = [f"{name}-co{index}" for index in range(8)]
-    started = time.monotonic()
+    companies = [f"{name}-co{index}" for index in range(AT_ONCE)]
+    # The provider holds every call until released: lookups run one after
+    # another would never have more than one waiting on it.
+    researching = world.hold("research.company")
     assert await import_companies(name, companies, customer=name)
+    await eventually(lambda: world.attempts("research.company") == AT_ONCE)
+    researching.set()
     await eventually(reported(name))
 
-    # Eight lookups, two calls each, finishing far faster than one after another.
-    assert time.monotonic() - started < 8
     row = await Research.by(Research.name == name).get()
     assert row is not None
-    assert row.done == 8
+    assert row.done == AT_ONCE
 
 
 async def test_one_failing_company_retries_without_rerunning_the_others(running):
@@ -93,8 +95,9 @@ async def test_a_company_nobody_can_research_does_not_hold_up_the_report(running
     assert row is not None
     assert (row.done, row.gave_up) == (2, 1)
     assert (row.report or {})["unresearched"] == [companies[1]]
+    assert (row.report or {})["unsummarised"] == []
 
-    abandoned = await Lookup.by(Lookup.key == f"{name}:{companies[1]}").get()
+    abandoned = await Lookup.by(Lookup.key == json.dumps([name, companies[1]])).get()
     assert abandoned is not None
     assert abandoned.last_error is not None
     assert abandoned.status == "queued"
@@ -117,3 +120,18 @@ async def test_one_customers_big_import_does_not_stop_another_customer(running):
 
     await eventually(reported(big), timeout=60)
     assert len(await Lookup.by(Lookup.customer == big).all()) == 24
+
+
+async def test_a_company_found_but_not_written_up_is_reported_as_such(running):
+    name = f"import-{uuid.uuid4().hex}"
+    companies = [f"{name}-co{index}" for index in range(2)]
+    world.break_next("llm.summarise", times=99, key=json.dumps([name, companies[0]]))
+
+    assert await import_companies(name, companies, customer=name)
+    await eventually(reported(name))
+
+    row = await Research.by(Research.name == name).get()
+    assert row is not None
+    # Its facts were found; only the summary failed, and the report says so.
+    assert (row.report or {})["unresearched"] == []
+    assert (row.report or {})["unsummarised"] == [companies[0]]

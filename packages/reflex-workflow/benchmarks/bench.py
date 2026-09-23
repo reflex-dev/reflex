@@ -314,12 +314,12 @@ def peak_overlap(
     return peak
 
 
-async def verify(cls: type[Plain | Grouped], workers: int) -> dict[str, Any]:
+async def verify(cls: type[Plain | Grouped], workers: set[int]) -> dict[str, Any]:
     """Check the finished rows against what the engine promises, and time them.
 
     Args:
         cls: The workflow class.
-        workers: How many worker processes were started.
+        workers: The process ids of the workers this trial started.
 
     Returns:
         The peak concurrency seen per worker and per group, and the lateness of
@@ -327,7 +327,7 @@ async def verify(cls: type[Plain | Grouped], workers: int) -> dict[str, Any]:
 
     Raises:
         AssertionError: If a worker ran more at once than its cap, or a group more
-            than its limit, or a worker that was not started ran anything.
+            than its limit, or a process this trial did not start ran anything.
     """
     db = engine()
     columns = [cls.worker, cls.started_at, cls.finished_at, cls.due_at]
@@ -348,8 +348,8 @@ async def verify(cls: type[Plain | Grouped], workers: int) -> dict[str, Any]:
     worker_peak = max(peak_overlap(spans) for spans in by_worker.values())
     group_peak = max((peak_overlap(spans) for spans in by_group.values()), default=0)
 
-    if len(by_worker) > workers:
-        msg = f"{len(by_worker)} processes ran steps; {workers} were started"
+    if strangers := set(by_worker) - workers:
+        msg = f"processes {sorted(strangers)} ran steps; this trial did not start them"
         raise AssertionError(msg)
     if worker_peak > MAX_CONCURRENCY:
         msg = f"a worker ran {worker_peak} at once; its cap is {MAX_CONCURRENCY}"
@@ -451,19 +451,23 @@ async def measure(
     processes = spawn(
         kind, workers, seconds=180 + spread, history=history, cpus=layout["workers"]
     )
-    await asyncio.sleep(WARMUP)
-
-    db = engine()
-    due = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=1)
-    await insert_runs(db, cls, runs, due, spread=spread)
-    # Bulk inserts leave the planner with no statistics, and without them the
-    # claim falls back to a sequential scan: 6.5ms against 0.3ms on 100k rows.
-    # Autovacuum does this in a running system; a benchmark has to ask.
-    async with db.begin() as conn:
-        await conn.exec_driver_sql(f"ANALYZE {cls.__tablename__}")
-    await db.dispose()
-
+    # Everything after the spawn is inside the try, so a setup that fails still
+    # stops the workers rather than leaving them to run into the next trial.
     try:
+        await asyncio.sleep(WARMUP)
+
+        db = engine()
+        due = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
+            seconds=1
+        )
+        await insert_runs(db, cls, runs, due, spread=spread)
+        # Bulk inserts leave the planner with no statistics, and without them the
+        # claim falls back to a sequential scan: 6.5ms against 0.3ms on 100k rows.
+        # Autovacuum does this in a running system; a benchmark has to ask.
+        async with db.begin() as conn:
+            await conn.exec_driver_sql(f"ANALYZE {cls.__tablename__}")
+        await db.dispose()
+
         await asyncio.sleep(
             max(
                 0.0,
@@ -473,7 +477,7 @@ async def measure(
         before = cpu_ticks()
         took = await wait_for_done(cls, runs, timeout=180 + spread)
         after = cpu_ticks()
-        checked = await verify(cls, workers)
+        checked = await verify(cls, {process.pid for process in processes})
     finally:
         for process in processes:
             process.terminate()

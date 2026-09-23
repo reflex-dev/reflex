@@ -15,6 +15,7 @@ therefore cannot crowd out another customer's handful.
 from __future__ import annotations
 
 import datetime
+import json
 from typing import Any
 
 from reflex_workflow import FanOut, Limit, Workflow, child, fan_out, step
@@ -97,7 +98,8 @@ class Research(Base, Workflow):
             (
                 child(
                     Lookup(
-                        key=f"{self.name}:{company}",
+                        # Encoded so no two batch and company pairs collide.
+                        key=json.dumps([self.name, company]),
                         customer=self.customer,
                         company=company,
                     ),
@@ -120,8 +122,14 @@ class Research(Base, Workflow):
                 for lookup in lookups
                 if lookup.summary is not None
             },
+            # Nothing found, as against found but never written up.
             "unresearched": sorted(
-                lookup.company for lookup in lookups if lookup.summary is None
+                lookup.company for lookup in lookups if lookup.facts is None
+            ),
+            "unsummarised": sorted(
+                lookup.company
+                for lookup in lookups
+                if lookup.facts is not None and lookup.summary is None
             ),
         }
         self.status = "reported"

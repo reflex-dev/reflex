@@ -9,6 +9,7 @@ deadline, so an unanswered request escalates rather than sitting forever.
 from __future__ import annotations
 
 import datetime
+import re
 
 from reflex_workflow import Workflow, step, wait_for
 from sqlalchemy import Float, String
@@ -45,7 +46,8 @@ def classify(text: str) -> tuple[str, str, float]:
     """
     lowered = text.lower()
     for words, category, priority, confidence in SIGNALS:
-        if any(word in lowered for word in words):
+        # Whole words and phrases only: "download" is not "down".
+        if any(re.search(rf"\b{re.escape(word)}\b", lowered) for word in words):
             return category, priority, confidence
     return UNSURE
 

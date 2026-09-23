@@ -368,6 +368,11 @@ async def test_a_quiet_customer_is_reminded_once_closed_and_can_come_back(
         await receive(conversation, conversation, "m1", "hello")
         await eventually(conversation_is(conversation, "closed"))
         assert len(reminders(conversation)) == 1
+        # The reminder is in the transcript, where a later turn can see it.
+        rows = await transcript_of(database, conversation)
+        assert [m.text for m in rows if m.key.startswith("remind:")] == [
+            "Is there anything else I can help with?"
+        ]
 
         # The customer comes back days later, and the conversation opens again.
         await receive(conversation, conversation, "m2", "what's my balance")
@@ -413,3 +418,23 @@ async def test_a_reply_racing_the_reminder_stops_it(database, monkeypatch):
 
         await eventually(said(conversation, "Please confirm sending 3 to ed."))
     assert reminders(conversation) == []
+
+
+async def test_a_redelivered_message_whose_wake_was_lost_is_answered(
+    database, monkeypatch
+):
+    monkeypatch.setattr(ex13_conversation, "REMIND_AFTER", QUICKLY)
+    monkeypatch.setattr(ex13_conversation, "CLOSE_AFTER", QUICKLY)
+    conversation = new_conversation()
+    async with worker(database):
+        await receive(conversation, conversation, "m1", "hello")
+        await eventually(conversation_is(conversation, "closed"))
+
+        # The first delivery of m2 was written, then its process died before it
+        # woke anything. The channel delivers it again.
+        async with database() as session, session.begin():
+            await write(
+                session, conversation, "customer:m2", "customer", "send 9 to hu"
+            )
+        await receive(conversation, conversation, "m2", "send 9 to hu")
+        await eventually(said(conversation, "Please confirm sending 9 to hu."))

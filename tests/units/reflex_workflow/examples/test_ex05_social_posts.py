@@ -67,7 +67,14 @@ async def test_an_approved_post_reaches_every_channel_once(running):
     row = await SocialPost.by(SocialPost.topic == topic).get()
     assert row is not None
     assert set(row.links or {}) == set(CHANNELS)
-    assert len(world.effects("social.publish")) == len(CHANNELS)
+    # Called once per channel: a repeat with the same key would not show in the
+    # effects, which are one per key, but it would here.
+    published = [
+        call.payload["channel"]
+        for call in world.calls
+        if call.action == "social.publish"
+    ]
+    assert sorted(published) == sorted(CHANNELS)
 
 
 async def test_a_rejected_post_is_never_published(running):

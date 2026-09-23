@@ -11,8 +11,10 @@ import datetime
 import uuid
 
 import pytest
+from examples import ex08_sweep
 from examples.ex08_sweep import BATCH, Collection, Sweep, Watch, schedule_sweep
 from examples.services import world
+from reflex_workflow import connect_workflows
 from sqlalchemy import insert, select, update
 
 from .conftest import eventually, worker
@@ -132,15 +134,28 @@ async def test_two_sweepers_at_once_start_one_collection_per_occurrence(database
     items = [f"shared-{uuid.uuid4().hex}" for _ in range(5)]
     for item in items:
         await watch(database, item, -MINUTE)
+    names = [f"sweeper-{side}-{uuid.uuid4().hex}" for side in "ab"]
+
+    # Both sweepers are due before any worker runs, so one claim takes both and
+    # their passes run side by side over the same due watches.
+    async with connect_workflows(database):
+        for name in names:
+            assert await schedule_sweep(name)
 
     async with worker(database):
-        # Two schedulers, sweeping the same watches at the same moment.
-        await sweep_once(database, f"sweeper-a-{uuid.uuid4().hex}")
-        await sweep_once(database, f"sweeper-b-{uuid.uuid4().hex}")
+
+        async def both_swept() -> bool:
+            rows = await Sweep.by(Sweep.name.in_(names)).all()
+            return len(rows) == 2 and all(row.passes >= 1 for row in rows)
+
+        await eventually(both_swept)
         await eventually(lambda: world.attempts("collector.gather") >= len(items))
+        sweepers = await Sweep.by(Sweep.name.in_(names)).all()
 
     for item in items:
         assert len(await collections_for(database, item)) == 1
+    # Between them they started every occurrence, and neither started one twice.
+    assert sum(row.started for row in sweepers) == len(items)
     assert len(world.effects("collector.gather")) == len(items)
 
 
@@ -172,3 +187,23 @@ async def test_a_pass_takes_no_more_than_its_batch(database):
     for item in items:
         started += len(await collections_for(database, item))
     assert started == BATCH
+
+
+async def test_a_collection_that_fails_to_start_is_not_lost(database, monkeypatch):
+    item = f"flaky-{uuid.uuid4().hex}"
+    await watch(database, item, -MINUTE)
+    real_start = ex08_sweep.start_collection
+    blips = [RuntimeError("the database blinked")]
+
+    async def start_or_blip(due: dict[str, object]) -> bool:
+        if due["item"] == item and blips:
+            raise blips.pop()
+        return await real_start(due)
+
+    monkeypatch.setattr(ex08_sweep, "start_collection", start_or_blip)
+    async with worker(database):
+        await sweep_once(database, f"sweeper-{uuid.uuid4().hex}")
+        # The failed pass moved no deadline, so its retry starts the collection.
+        await eventually(lambda: world.attempts("collector.gather") >= 1)
+
+    assert len(await collections_for(database, item)) == 1

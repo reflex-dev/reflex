@@ -134,3 +134,46 @@ async def test_a_large_invoice_goes_to_the_second_signature(running):
     row = await Invoice.by(Invoice.upload_id == upload_id).get()
     assert row is not None
     assert row.approver == "finance-director"
+
+
+async def approved(upload_id: str) -> None:
+    """Approve an invoice once it is waiting, and wait for it to be booked.
+
+    Args:
+        upload_id: The upload's id.
+    """
+    await eventually(reaches(upload_id, "awaiting-approval"))
+    invoice = Invoice.by(Invoice.upload_id == upload_id)
+    assert (
+        await invoice.deliver(
+            Invoice.decide("approve", by="pat"), key=f"decision-{upload_id}"
+        )
+        == 1
+    )
+    await eventually(reaches(upload_id, "recorded"))
+
+
+async def test_fields_the_scanner_could_not_read_fall_back(running):
+    upload_id = uuid.uuid4().hex
+    world.plan(
+        "ocr.extract",
+        upload_id,
+        {"supplier": None, "number": None, "amount_cents": None},
+    )
+    assert await upload(upload_id)
+    await eventually(reaches(upload_id, "awaiting-approval"))
+
+    row = await Invoice.by(Invoice.upload_id == upload_id).get()
+    assert row is not None
+    assert (row.supplier, row.number, row.amount_cents) == ("unknown", upload_id, 0)
+
+
+async def test_invoices_whose_fields_run_together_are_booked_apart(running):
+    tag = uuid.uuid4().hex
+    # Joined with a colon, both of these would read "<tag>:a:b".
+    first = await arrives(f"{tag}:a", "b")
+    second = await arrives(tag, "a:b")
+    for upload_id in (first, second):
+        await approved(upload_id)
+
+    assert len(world.effects("ledger.record")) == 2

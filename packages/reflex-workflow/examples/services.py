@@ -40,6 +40,8 @@ class World:
         """Start with nothing called and nothing failing."""
         self.calls: list[Call] = []
         self.records: dict[tuple[str, str], dict[str, Any]] = {}
+        # Answers decided in advance, which become records only once called.
+        self.planned: dict[tuple[str, str], dict[str, Any]] = {}
         self.faults: collections.Counter[tuple[str, str | None]] = collections.Counter()
         self.gates: dict[tuple[str, str | None], asyncio.Event] = {}
 
@@ -47,6 +49,7 @@ class World:
         """Forget every call, record, and planned failure."""
         self.calls.clear()
         self.records.clear()
+        self.planned.clear()
         self.faults.clear()
         for gate in self.gates.values():
             gate.set()
@@ -105,7 +108,7 @@ class World:
             key: The key it will be called with.
             result: What it answers.
         """
-        self.records[action, key] = result
+        self.planned[action, key] = result
 
     async def call(self, action: str, key: str, **payload: Any) -> dict[str, Any]:
         """Perform an external action, once per key.
@@ -133,6 +136,10 @@ class World:
         stored = self.records.get((action, key))
         if stored is not None:
             return stored
+        planned = self.planned.pop((action, key), None)
+        if planned is not None:
+            self.records[action, key] = planned
+            return planned
         result = {
             "id": f"{action.replace('.', '-')}-{len(self.records) + 1}",
             **payload,

@@ -138,14 +138,19 @@ async def chunk_progress(name: str) -> dict[str, Any]:
         name: The upload's name.
 
     Returns:
-        How many chunks are done, and how many there are.
+        How many chunks are done, how many gave up, and how many there are; the
+        bar is full once the first two add up to the last.
     """
     row = await Upload.by(Upload.name == name).get()
     if row is None:
-        return {"done": 0, "total": 0, "status": "unknown"}
+        return {"done": 0, "failed": 0, "total": 0, "status": "unknown"}
     chunks = await row.children(Chunk).all()
     return {
         "done": sum(chunk.status == "processed" for chunk in chunks),
+        # Finished without being processed: nothing will run it again.
+        "failed": sum(
+            chunk.status != "processed" and chunk.next_step is None for chunk in chunks
+        ),
         "total": len(row.kinds),
         "status": row.status,
     }
