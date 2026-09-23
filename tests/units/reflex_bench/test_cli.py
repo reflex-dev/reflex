@@ -15,6 +15,7 @@ from typing import Any
 import pytest
 from click.testing import CliRunner, Result
 from reflex_bench import cli, registry, subjects
+from reflex_bench.collectors import cgroup
 from reflex_bench.context import Context, Subject
 from reflex_bench.registry import Benchmark, Metric
 from reflex_bench.schema import dump, load, validate
@@ -59,6 +60,8 @@ def test_list_self_tests(home: Path):
     assert result.exit_code == 0, result.output
     names = [line.split()[0] for line in result.output.splitlines()[1:-1]]
     assert names == [
+        "selftest.app.compile",
+        "selftest.app.dev_ready",
         "selftest.exact",
         "selftest.fail",
         "selftest.noise[cv=5]",
@@ -75,7 +78,7 @@ def test_list_self_tests(home: Path):
         "estimate",
     ]
     assert "bytes (B, exact)" in result.output
-    assert result.output.splitlines()[-1].startswith("7 benchmarks")
+    assert result.output.splitlines()[-1].startswith("9 benchmarks")
 
 
 def test_list_estimates_the_timeout_self_test_as_one_sample(home: Path):
@@ -142,9 +145,11 @@ def test_run_writes_json(home: Path):
 
 
 def test_run_self_tests_reports_failures_and_exits_zero(home: Path):
+    # The selftest.app.* benchmarks start real apps; test_selftest_app.py runs them.
     result = invoke(
-        "run", "--suite", "selftest", "--runs", "2", "--no-save", "--json", "all.json"
-    )
+        "run", "--suite", "selftest", "selftest.[!a]*",
+        "--runs", "2", "--no-save", "--json", "all.json",
+    )  # fmt: skip
     assert result.exit_code == 0, result.output
     statuses = {
         entry["id"]: entry["status"] for entry in load(Path("all.json"))["benchmarks"]
@@ -451,6 +456,32 @@ def test_doctor(home: Path):
     assert result.exit_code == 0
     assert "governor" in result.output
     assert "profile: test-profile" in result.output
+
+
+@pytest.mark.parametrize(
+    ("probed", "line"),
+    [
+        (("user", None), "\N{CHECK MARK} cgroup scope  ok (user systemd)"),
+        (("sudo", None), "\N{CHECK MARK} cgroup scope  ok (sudo)"),
+        (
+            (None, "systemd-run not found"),
+            (
+                "\N{MIDDLE DOT} cgroup scope  unavailable: systemd-run not found:"
+                " peak memory falls back to PSS sampling"
+            ),
+        ),
+    ],
+)
+def test_doctor_reports_cgroup_scopes(
+    home: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    probed: tuple[str | None, str | None],
+    line: str,
+):
+    monkeypatch.setattr(cgroup, "probe", lambda: probed)
+    result = invoke("doctor")
+    assert result.exit_code == 0
+    assert line in result.output.splitlines()
 
 
 def test_version_and_help(home: Path):

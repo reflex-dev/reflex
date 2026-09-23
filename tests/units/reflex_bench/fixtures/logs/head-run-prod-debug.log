@@ -1,0 +1,32 @@
+[...]
+───────────────────────────── Starting Reflex App ──────────────────────────────
+[...]
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.03s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+[...]
+Debug: [timing] Install Frontend Packages: 0.04s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/tmp/rb-head/reflex/bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+[...]
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:02
+Debug: Running command: [PosixPath('/opt/node22/bin/node'),
+PosixPath('/tmp/rb-head/app/.web/compress-static.js'),
+PosixPath('/tmp/rb-head/app/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:13000/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 3255)
+[INFO] Listening at: http://0.0.0.0:13000
+[INFO] Spawning worker-1 with PID: 3320
+[...]
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

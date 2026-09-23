@@ -32,8 +32,9 @@ from rich.text import Text
 
 from reflex_bench import ab, subjects
 from reflex_bench import compare as comparing
+from reflex_bench.collectors import cgroup
 from reflex_bench.context import Subject, installed_version
-from reflex_bench.machine import checks, collect, warning_count
+from reflex_bench.machine import Check, checks, collect, warning_count
 from reflex_bench.registry import SUITES, Benchmark, discover, parse_overrides, select
 from reflex_bench.report.bmf import to_bmf
 from reflex_bench.report.format import DOT, WARN, format_value
@@ -1191,7 +1192,16 @@ def doctor() -> int:
     """
     machine = collect()
     console = make_console(plain=in_ci())
-    found = checks(machine)
+    scopes, scope_status = cgroup.status()
+    found = [
+        *checks(machine),
+        Check(
+            "cgroup scope",
+            "ok" if scopes else "info",
+            scope_status,
+            None if scopes else "peak memory falls back to PSS sampling",
+        ),
+    ]
     width = max(len(check.name) for check in found)
     for check in found:
         hint = f": {check.hint}" if check.hint else ""
