@@ -10,6 +10,8 @@ AG Grid (also written **ag-grid** or **aggrid**) is a powerful, feature-rich Rea
 
 ## Your First Reflex AG Grid
 
+Upgrading an existing app? Read the [AG Grid 36.2 migration guide](/docs/enterprise/ag-grid/upgrading-to-36-2/) for changes to custom CSS, overlays, column definitions, and integrated charts.
+
 A basic Reflex AG Grid contains column definitions `column_defs`, which define the columns to be displayed in the grid, and `row_data`, which contains the data to be displayed in the grid.
 
 Each grid also requires a unique `id`, which is needed to uniquely identify the Ag-Grid instance on the page. If you have multiple grids on the same page, each grid must have a unique `id` so that it can be correctly rendered and managed.
