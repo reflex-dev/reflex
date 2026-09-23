@@ -10,8 +10,9 @@ import logging
 import time
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import Interval, case, func, insert, literal, select, update
+from sqlalchemy import Interval, case, func, insert, literal, null, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import undefer
 
 from reflex_workflow import model
 from reflex_workflow.engine import handles, notify, rows
@@ -77,7 +78,7 @@ def resolve(cls: type[Workflow], transition: object) -> Scheduled:
     if isinstance(transition, Wait):
         if transition.on_timeout is not None:
             check_owner(cls, transition.on_timeout)
-        if transition.then.name not in cls.__workflow_steps__:
+        if cls.__workflow_steps__.get(transition.then.name) is not transition.then:
             msg = f"{transition.then!r} is not a step of {cls.__qualname__}."
             raise TypeError(msg)
         return Scheduled(
@@ -207,7 +208,7 @@ def is_finished(values: dict[str, Any]) -> bool:
 
 
 async def start_children(
-    session: AsyncSession, row: Workflow, children: tuple[Child, ...]
+    session: AsyncSession, row: Workflow, children: tuple[Child, ...], fan_out: int
 ) -> int:
     """Start a run's children, skipping the ones that are already there.
 
@@ -215,15 +216,23 @@ async def start_children(
         session: The transaction the parent is committing in.
         row: The parent row.
         children: The runs to start.
+        fan_out: The version the parent commits this fan-out at. A child counts
+            toward its parent only while the parent is still at that version,
+            so one that finishes after the parent moved on is not counted.
 
     Returns:
         How many were started by this call.
     """
-    parent = row.as_parent()
+    parent = {**row.as_parent(), "fan_out": fan_out}
     started = 0
+    tables: set[str] = set()
     for entry in children:
         stmt = handles.insertion(entry.row, entry.first, parent)
-        started += (await session.execute(stmt)).first() is not None
+        if (await session.execute(stmt)).first() is not None:
+            started += 1
+            tables.add(type(entry.row).__tablename__)
+    for table in sorted(tables):
+        await notify.announce(session, table)
     return started
 
 
@@ -247,12 +256,20 @@ async def finish_child(session: AsyncSession, parent: dict[str, Any]) -> None:
     remaining = cls.children_left - 1
     await session.execute(
         update(cls)
-        .where(*rows.pk_filter(cls, parent["pk"]), cls.children_left.is_not(None))
+        .where(
+            *rows.pk_filter(cls, parent["pk"]),
+            # Still joining the fan-out this child belongs to, and still owed a
+            # child: a child run again after it finished, or one whose parent was
+            # moved on and may have fanned out again, counts for nothing. The
+            # version is left alone so every child of the fan-out still matches;
+            # nothing else can touch a parked parent, and its claim bumps it.
+            cls.wf_version == parent["fan_out"],
+            cls.children_left > 0,
+        )
         .values(
             children_left=remaining,
             # The last one to finish is the one that makes the parent due.
             wake_at=case((remaining <= 0, func.now()), else_=cls.wake_at),
-            wf_version=cls.wf_version + 1,
         )
         .execution_options(synchronize_session=False)
     )
@@ -331,11 +348,17 @@ async def execute(
     """
     factory = runtime.session_factory
     async with factory() as session:
-        row = await session.get(cls, tuple(pk) if len(pk) > 1 else pk[0])
+        # Every column, deferred ones too: the step runs on a detached row, which
+        # cannot load one it reads later.
+        row = await session.get(
+            cls, tuple(pk) if len(pk) > 1 else pk[0], options=[undefer("*")]
+        )
         if row is None:
             return "missing"
         if row.wf_version != version:
             return "stale"
+        columns = rows.user_columns(cls)
+        before = rows.snapshot(row, columns)
         session.expunge(row)
 
     # A buffered event for the step the row waits on takes precedence over its
@@ -353,8 +376,6 @@ async def execute(
         return "stale"
     stored = event["args"] if event is not None else row.next_args
     attempts = row.attempts
-    columns = rows.user_columns(cls)
-    before = rows.snapshot(row, columns)
     spec = cls.__workflow_steps__.get(current)
     repeat: Schedule | None = None
     scheduled: Scheduled | None = None
@@ -392,20 +413,17 @@ async def execute(
             await lease
 
     # An unconsumed event stays only while the row can still take it: it is for
-    # the wait this step just armed, or the row is still stepping toward one. The
-    # column is left alone when nothing was buffered, so a delivery that landed
-    # while this step ran survives.
-    if event is not None:
-        values["pending_event"] = None
-    elif pending is not None:
-        waiting = values["waiting_for"]
-        wanted = (
-            pending["step"] == waiting
-            if waiting is not None
-            else values["next_step"] is not None
+    # the wait this step just armed, or the row is still stepping toward one.
+    # Judged against the column as the commit finds it, since a delivery may
+    # have landed while this step ran.
+    waiting = values["waiting_for"]
+    if event is not None or (waiting is None and values["next_step"] is None):
+        values["pending_event"] = null()
+    elif waiting is not None:
+        values["pending_event"] = case(
+            (cls.pending_event["step"].astext == waiting, cls.pending_event),
+            else_=null(),
         )
-        if not wanted:
-            values["pending_event"] = None
 
     parent = row.parent
     async with factory() as session:
@@ -418,12 +436,15 @@ async def execute(
                     values["wake_at"] = repeat(now)
                 except Exception as err:
                     error = f"{type(err).__name__}: {err}"[:2000]
-                    values |= stop() | {"last_error": error}
+                    values |= stop() | {"last_error": error, "pending_event": null()}
                     outcome = "failed"
+                    recorded = error
             # The children go in first so the row can record how many of them it
             # is waiting for; a fenced parent rolls all of it back together.
             if scheduled is not None and scheduled.children is not None:
-                started = await start_children(session, row, scheduled.children)
+                started = await start_children(
+                    session, row, scheduled.children, version + 1
+                )
                 values["children_left"] = started
                 if not started:
                     values["wake_at"] = func.now()

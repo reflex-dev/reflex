@@ -143,7 +143,9 @@ class RunHandle(Generic[W]):
         """Run a step now on every matching row.
 
         This preempts whatever the row was scheduled to do: a step that hasn't run
-        yet is replaced, and one already in flight will not commit.
+        yet is replaced, one already in flight will not commit, a wait is
+        abandoned along with any event held for it, and children of a fan-out it
+        was joining no longer count toward it.
 
         Args:
             call: The step call, e.g. ``Expense.decide("approve")``, or a step
@@ -163,6 +165,9 @@ class RunHandle(Generic[W]):
                 next_step=call.step.name,
                 next_args=call.encode(),
                 wake_at=func.now(),
+                waiting_for=None,
+                pending_event=None,
+                children_left=None,
                 attempts=0,
                 last_error=None,
                 claimed_until=None,
@@ -239,6 +244,10 @@ class RunHandle(Generic[W]):
                 pending_event=None,
                 attempts=0,
                 last_error=None,
+                # A timeout step for this wait may still be running; the new
+                # version fences its commit, so the event need not wait out
+                # that step's lease to run.
+                claimed_until=None,
                 wf_version=cls.wf_version + 1,
                 **remembered,
             )

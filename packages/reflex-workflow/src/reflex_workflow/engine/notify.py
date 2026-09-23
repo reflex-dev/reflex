@@ -9,6 +9,7 @@ from collections.abc import Collection
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.pool import QueuePool
 
 from reflex_workflow.engine.runtime import Runtime
 
@@ -69,6 +70,27 @@ async def listen_once(runtime: Runtime, tables: frozenset[str]) -> bool:
     return True
 
 
+def can_spare_a_connection(runtime: Runtime) -> bool:
+    """Tell whether the pool can hold a connection open to listen on.
+
+    Listening keeps one connection for as long as the worker runs. A pool that
+    can only ever hand out one would give it to the listener and leave the claims
+    waiting on it forever.
+
+    Args:
+        runtime: The running engine.
+
+    Returns:
+        Whether the pool has room for the listener and the work beside it.
+    """
+    bind = runtime.session_factory.kw.get("bind")
+    pool = getattr(getattr(bind, "sync_engine", None), "pool", None)
+    if not isinstance(pool, QueuePool):
+        return True
+    overflow = pool._max_overflow
+    return overflow < 0 or pool.size() + overflow >= 2
+
+
 async def wake_on_notify(runtime: Runtime, tables: Collection[str]) -> None:
     """Wake this worker whenever another process says one of its tables is ready.
 
@@ -81,6 +103,11 @@ async def wake_on_notify(runtime: Runtime, tables: Collection[str]) -> None:
         tables: The tables this worker runs; notifications about others are
             ignored rather than starting a pass that would find nothing.
     """
+    if not can_spare_a_connection(runtime):
+        logger.info(
+            "reflex_workflow's connection pool has no room to listen; workers will poll"
+        )
+        return
     wanted = frozenset(tables)
     # Backing off before reconnecting, rather than waiting on a condition: what
     # this waits for is a database that is not answering.

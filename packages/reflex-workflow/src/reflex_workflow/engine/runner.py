@@ -108,6 +108,10 @@ class Runner:
         """Claim and run steps until stopped."""
         wake = self.runtime.wake
         while not self.stopping:
+            # Cleared before the pass rather than after it: a wake that lands
+            # while the pass is claiming may be for work the pass already looked
+            # past, and waiting out the poll would lose it.
+            wake.clear()
             started = 0
             order = self._order()
             # A share each, so the first table cannot spend the whole pass; a
@@ -121,7 +125,6 @@ class Runner:
                     started += await self._claim_from(cls, free)
             if started:
                 continue
-            wake.clear()
             # asyncio's own TimeoutError, which is only the builtin from 3.11 on.
             with contextlib.suppress(asyncio.TimeoutError):
                 await asyncio.wait_for(wake.wait(), self.poll_interval.total_seconds())
@@ -178,7 +181,19 @@ async def run_workflows(
 
     Yields:
         Nothing; steps run while the block is active.
+
+    Raises:
+        ValueError: If ``max_concurrency`` is below one, or ``lease`` or
+            ``poll_interval`` is not positive.
     """
+    # A lease of nothing expires as it is taken, letting two workers run one
+    # step at once; the others would leave a worker that never runs anything.
+    if max_concurrency < 1:
+        msg = f"max_concurrency must be at least 1; got {max_concurrency}."
+        raise ValueError(msg)
+    if lease <= datetime.timedelta() or poll_interval <= datetime.timedelta():
+        msg = "lease and poll_interval must be positive."
+        raise ValueError(msg)
     runtime = Runtime(session_factory, asyncio.Event(), lease)
     previous = replace_current(runtime)
     runner = Runner(
@@ -221,8 +236,9 @@ async def connect_workflows(
     the database, not a worker. Enter this from its lifespan instead of
     ``run_workflows``, and leave the running to the processes that do it.
 
-    A run started or advanced from here is picked up by a worker's next poll,
-    since nothing tells another process that a row changed.
+    A run started or advanced from here is announced to the workers with
+    Postgres ``NOTIFY``, so they pick it up at once rather than at their next
+    poll.
 
     Args:
         session_factory: Session factory for the database holding the workflow

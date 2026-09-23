@@ -20,6 +20,7 @@ from reflex_workflow import (
     Wait,
     WakeIn,
     Workflow,
+    every,
     model,
     step,
     wait_for,
@@ -208,6 +209,22 @@ def test_arguments_that_are_not_json_are_rejected():
         call.encode()
 
 
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), "circular"])
+def test_arguments_json_cannot_hold_are_rejected(value: object):
+    if value == "circular":
+        value = []
+        value.append(value)
+    call = Expense.decide(value)  # pyright: ignore[reportArgumentType]
+    with pytest.raises(TypeError, match="JSON-serializable"):
+        call.encode()
+
+
+def test_an_interval_has_to_be_positive():
+    for interval in (datetime.timedelta(0), datetime.timedelta(seconds=-1)):
+        with pytest.raises(ValueError, match="positive interval"):
+            every(Expense.escalate, interval)
+
+
 def test_a_bare_step_is_a_call_without_arguments():
     assert wake_in(Expense.escalate, datetime.timedelta(0)).call == Expense.escalate()
 
@@ -220,6 +237,15 @@ def test_a_bare_step_that_needs_arguments_is_rejected():
 def test_another_workflows_step_is_rejected_at_runtime():
     with pytest.raises(TypeError, match="not a step of Expense"):
         check_owner(Expense, Other.go())
+
+
+def test_a_class_of_the_same_name_from_another_module_cannot_take_a_table():
+    with pytest.raises(ValueError, match="already used by Expense"):
+        type(
+            "Expense",
+            (Workflow,),
+            {"__module__": "somewhere.else", "__tablename__": "wf_model_expense"},
+        )
 
 
 def test_two_workflows_cannot_share_a_table():
@@ -248,6 +274,19 @@ class Metered(Base, Workflow):
 def test_a_limit_has_to_cap_something():
     with pytest.raises(ValueError, match="at_most, rate, or both"):
         Limit(by="customer")
+
+
+@pytest.mark.parametrize(
+    "caps",
+    [
+        {"at_most": 0},
+        {"rate": 0, "per": datetime.timedelta(minutes=1)},
+        {"rate": 5, "per": datetime.timedelta(0)},
+    ],
+)
+def test_a_limit_has_to_be_positive(caps: dict[str, object]):
+    with pytest.raises(ValueError, match="must be positive"):
+        Limit(by="customer", **caps)  # pyright: ignore[reportArgumentType]
 
 
 def test_a_rate_needs_the_period_it_is_counted_over():

@@ -15,6 +15,7 @@ import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 
+import psycopg
 import pytest
 import pytest_asyncio
 from sqlalchemy import String, func, insert, select, update
@@ -708,6 +709,38 @@ class Parting(Base, Workflow):
         self.status = "done"
 
 
+class Budgeted(Base, Workflow):
+    """A rate-limited workflow a test claims by hand; three starts an hour."""
+
+    __tablename__ = "wf_test_budgeted"
+    __workflow_limit__ = Limit(by="provider", rate=3, per=datetime.timedelta(hours=1))
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    key: Mapped[str] = mapped_column(String, unique=True)
+    provider: Mapped[str] = mapped_column(String, index=True)
+    status: Mapped[str] = mapped_column(String, default="new")
+
+    @step
+    async def work(self):
+        """Finish."""
+        self.status = "done"
+
+
+class Deferring(Base, Workflow):
+    """A workflow with a column SQLAlchemy loads only when it is read."""
+
+    __tablename__ = "wf_test_deferring"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    key: Mapped[str] = mapped_column(String, unique=True)
+    notes: Mapped[str] = mapped_column(String, default="", deferred=True)
+
+    @step
+    async def work(self):
+        """Add to the deferred column."""
+        self.notes += "worked"
+
+
 WORKFLOWS = [
     Chain,
     Delayed,
@@ -1132,7 +1165,8 @@ async def test_a_repeat_of_a_delivered_key_is_ignored(session_factory):
 
 # The tables a test drives by hand, rather than leaving to a worker.
 async def claim_row(
-    cls: type[RaceReview | Repeating | Batch | Parked | Piece], pk: list[int]
+    cls: type[RaceReview | Repeating | Batch | Parked | Piece | Deferring],
+    pk: list[int],
 ) -> int:
     """Claim one row the way the engine does, by primary key.
 
@@ -1349,6 +1383,20 @@ async def test_a_schedule_that_cannot_say_when_stops_the_run(session_factory):
     assert row is not None
     assert (row.next_step, row.wake_at) == (None, None)
     assert row.last_error == "RuntimeError: no idea when"
+    # The attempt's history says why, as the row does.
+    async with runtime.current().session_factory() as session:
+        latest = (
+            await session.execute(
+                select(WorkflowAttempt)
+                .where(
+                    WorkflowAttempt.workflow == "wf_test_repeating",
+                    WorkflowAttempt.run == pk,
+                )
+                .order_by(WorkflowAttempt.id.desc())
+                .limit(1)
+            )
+        ).scalar_one()
+    assert (latest.outcome, latest.error) == ("failed", row.last_error)
 
 
 async def test_a_run_can_buffer_another_event_after_one_was_consumed(session_factory):
@@ -1392,7 +1440,14 @@ async def test_a_fan_out_runs_its_children_and_reports_once_they_are_done(
     assert [EVENTS.count(f"item:{key}-{index}") for index in range(4)] == [1] * 4
     items = await row.children(Item).all()
     assert len(items) == 4
-    assert all(item.parent == row.as_parent() for item in items)
+    # Each points at the parent, and at the one fan-out it belongs to.
+    assert all(
+        item.parent is not None
+        and {key: value for key, value in item.parent.items() if key != "fan_out"}
+        == row.as_parent()
+        for item in items
+    )
+    assert len({item.parent["fan_out"] for item in items if item.parent}) == 1
 
 
 async def test_children_run_at_the_same_time(session_factory):
@@ -2052,7 +2107,9 @@ async def test_history_is_only_written_when_a_table_is_mapped(
             .scalars()
             .all()
         )
-    assert all(attempt.run != [key] for attempt in written)
+    row = await Chain.by(Chain.key == key).get()
+    assert row is not None
+    assert all(attempt.run != [row.id] for attempt in written)
 
 
 async def test_a_worker_stopping_mid_claim_runs_what_it_claimed(
@@ -2092,3 +2149,226 @@ async def test_a_worker_stopping_mid_claim_runs_what_it_claimed(
     # Whatever it leased, it ran: nothing waits out a five-minute lease.
     assert taken
     assert all(row.status == "done" and row.claimed_until is None for row in taken)
+
+
+async def test_run_abandons_a_wait_and_the_event_held_for_it(session_factory):
+    key = uuid.uuid4().hex
+    await RaceReview(key=key).start(RaceReview.submit())
+    pk = await arm_wait(key)
+    handle = RaceReview.by(RaceReview.key == key)
+
+    assert await handle.run(RaceReview.expire()) == 1
+    # A decision for the wait that was abandoned no longer takes the run over.
+    await handle.deliver(RaceReview.decide("approve"))
+    assert await step_row(RaceReview, pk) == "ok"
+
+    row = await handle.get()
+    assert row is not None
+    assert (row.status, row.waiting_for, row.pending_event) == ("expired", None, None)
+
+
+async def test_an_event_for_a_run_whose_timeout_is_running_runs_at_once(
+    session_factory,
+):
+    key = uuid.uuid4().hex
+    await RaceReview(key=key).start(RaceReview.submit(timeout_s=0, expire_pause_s=1))
+    pk = await arm_wait(key)
+    expiring = asyncio.create_task(step_row(RaceReview, pk))
+    await wait_until(lambda: f"expire-start:{key}" in EVENTS, timeout=10)
+
+    handle = RaceReview.by(RaceReview.key == key)
+    assert await handle.deliver(RaceReview.decide("approve")) == 1
+    row = await handle.get()
+    assert row is not None
+    # The expiry's lease does not hold the decision back: it is claimable now.
+    assert (row.next_step, row.claimed_until) == ("decide", None)
+
+    assert await expiring == "fenced"
+    assert await step_row(RaceReview, pk) == "ok"
+
+
+async def test_an_event_held_while_a_step_ran_is_dropped_when_nothing_can_take_it(
+    session_factory,
+):
+    ending, elsewhere = uuid.uuid4().hex, uuid.uuid4().hex
+    await RaceReview(key=ending).start(RaceReview.submit(pause_s=0.5, arm=False))
+    await RaceReview(key=elsewhere).start(RaceReview.submit(pause_s=0.5))
+
+    for key, event in (
+        (ending, RaceReview.decide("approve")),
+        (elsewhere, RaceReview.expire()),
+    ):
+        running = asyncio.create_task(
+            step_row(RaceReview, await pk_of(RaceReview, key))
+        )
+        await asyncio.sleep(0.2)
+        # Lands while the step runs, after it read the row.
+        assert await RaceReview.by(RaceReview.key == key).deliver(event) == 1
+        assert await running == "ok"
+        row = await RaceReview.by(RaceReview.key == key).get()
+        assert row is not None
+        assert row.pending_event is None
+
+    # The run waiting again takes the next event for the wait it armed.
+    handle = RaceReview.by(RaceReview.key == elsewhere)
+    assert await handle.deliver(RaceReview.decide("approve")) == 1
+
+
+async def test_a_child_run_again_does_not_release_its_parent_again(session_factory):
+    key = uuid.uuid4().hex
+    await Batch(key=key, size=2).start(Batch.split())
+    await wait_until(status_is(Batch, key, "reported"))
+
+    assert await Item.by(Item.key == f"{key}-0").run(Item.work()) == 1
+    await wait_until(lambda: EVENTS.count(f"item:{key}-0") == 2)
+    await asyncio.sleep(0.5)
+
+    row = await Batch.by(Batch.key == key).get()
+    assert row is not None
+    assert row.children_left == 0
+
+
+async def test_a_child_of_an_abandoned_fan_out_does_not_count_toward_the_next(
+    session_factory,
+):
+    key = uuid.uuid4().hex
+    await Parked(key=key, size=2).start(Parked.split)
+    parent = await pk_of(Parked, key)
+    assert await step_row(Parked, parent) == "ok"
+
+    # The parent is moved on before its pieces finish, and fans out again with
+    # one more piece: pieces 0 and 1 are there already, so only piece 2 is new.
+    async with session_factory() as session, session.begin():
+        await session.execute(
+            update(Parked).where(Parked.id == parent[0]).values(size=3)
+        )
+    assert await Parked.by(Parked.key == key).run(Parked.split) == 1
+    assert await step_row(Parked, parent) == "ok"
+    row = await Parked.by(Parked.key == key).get()
+    assert row is not None
+    assert row.children_left == 1
+
+    # A piece of the first fan-out finishing is not the new piece finishing.
+    assert await step_row(Piece, await pk_of(Piece, f"{key}-0")) == "ok"
+    row = await Parked.by(Parked.key == key).get()
+    assert row is not None
+    assert (row.children_left, row.wake_at) == (1, None)
+
+    assert await step_row(Piece, await pk_of(Piece, f"{key}-2")) == "ok"
+    row = await Parked.by(Parked.key == key).get()
+    assert row is not None
+    assert row.children_left == 0
+    assert row.wake_at is not None
+
+
+async def test_a_group_pays_only_for_the_rows_it_claims(session_factory):
+    provider = uuid.uuid4().hex
+    rt = runtime.current()
+    await Budgeted(key=f"{provider}-0", provider=provider).start(Budgeted.work)
+    assert len(await claim.claim(rt, Budgeted, 5)) == 1
+
+    for index in (1, 2):
+        await Budgeted(key=f"{provider}-{index}", provider=provider).start(
+            Budgeted.work
+        )
+    # Three an hour, and the first claim used one: two are still owed.
+    assert len(await claim.claim(rt, Budgeted, 5)) == 2
+
+
+async def test_a_step_can_use_a_deferred_column(session_factory):
+    key = uuid.uuid4().hex
+    await Deferring(key=key).start(Deferring.work)
+    row = await Deferring.by(Deferring.key == key).get()
+    assert row is not None
+    assert (
+        await execute.execute(
+            runtime.current(), Deferring, [row.id], await claim_row(Deferring, [row.id])
+        )
+        == "ok"
+    )
+
+    async with session_factory() as session:
+        notes = await session.scalar(
+            select(Deferring.notes).where(Deferring.key == key)
+        )
+    assert notes == "worked"
+
+
+async def test_a_fan_out_announces_its_children(session_factory):
+    key = uuid.uuid4().hex
+    heard: list[str] = []
+    async with await psycopg.AsyncConnection.connect(URL, autocommit=True) as conn:
+        await conn.execute(f"LISTEN {notify.CHANNEL}")
+        await Batch(key=key, size=2).start(Batch.split())
+
+        async def listen() -> None:
+            async for notice in conn.notifies():
+                heard.append(notice.payload)
+                if notice.payload == "wf_test_item":
+                    return
+
+        await asyncio.wait_for(listen(), 10)
+    assert "wf_test_item" in heard
+
+
+async def test_a_wake_during_a_pass_is_not_lost(session_factory, monkeypatch):
+    rt = runtime.current()
+    passes: list[float] = []
+    real_claim = runner.claim
+
+    async def claim_and_hear(runtime_, cls, limit, steps=None):
+        if cls is not Parting:
+            return await real_claim(runtime_, cls, limit, steps)
+        passes.append(time.monotonic())
+        # A notification lands while the pass is still claiming, which, being a
+        # query, gives the event loop a turn.
+        runtime_.wake.set()
+        await asyncio.sleep(0)
+        return []
+
+    monkeypatch.setattr(runner, "claim", claim_and_hear)
+    worker = runner.Runner(
+        rt, [Parting], 8, datetime.timedelta(seconds=30), [model.DEFAULT_LANE]
+    )
+    loop = asyncio.create_task(worker.loop())
+    try:
+        await wait_until(lambda: len(passes) >= 3, timeout=5)
+    finally:
+        await stop_workers([worker], [loop])
+
+
+@pytest.mark.parametrize(
+    "settings",
+    [
+        {"max_concurrency": 0},
+        {"lease": datetime.timedelta(0)},
+        {"poll_interval": datetime.timedelta(0)},
+    ],
+)
+async def test_run_workflows_refuses_settings_that_cannot_work(
+    session_factory, settings: dict[str, object]
+):
+    with pytest.raises(ValueError, match="must be"):
+        async with run_workflows(session_factory, workflows=[Parting], **settings):  # pyright: ignore[reportArgumentType]
+            pass
+
+
+async def test_a_worker_with_a_single_connection_still_runs(session_factory):
+    engine = create_async_engine(ASYNC_URL, pool_size=1, max_overflow=0)
+    key = uuid.uuid4().hex
+    try:
+        async with run_workflows(
+            async_sessionmaker(engine, expire_on_commit=False),
+            workflows=[Parting],
+            poll_interval=datetime.timedelta(milliseconds=100),
+            lease=LEASE,
+        ):
+            await Parting(key=key).start(Parting.work)
+
+            async def done() -> bool:
+                row = await Parting.by(Parting.key == key).get()
+                return row is not None and row.status == "done"
+
+            await wait_until(done, timeout=15)
+    finally:
+        await engine.dispose()

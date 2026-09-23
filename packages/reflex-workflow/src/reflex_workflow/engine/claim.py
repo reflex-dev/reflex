@@ -141,6 +141,19 @@ async def waiting_groups(
         return list((await session.execute(stmt)).scalars().all())
 
 
+def bucket_key(cls: type[Workflow], value: Any) -> str:
+    """Name the rate bucket of one group of one workflow.
+
+    Args:
+        cls: The workflow class.
+        value: The group.
+
+    Returns:
+        The bucket's key.
+    """
+    return f"{cls.__tablename__}:{value}"
+
+
 async def take_tokens(
     session: AsyncSession, cls: type[Workflow], spec: Limit, value: Any, want: int
 ) -> int:
@@ -173,7 +186,7 @@ async def take_tokens(
             "mapped: class WorkflowRate(Base, RateBucket): __tablename__ = ..."
         )
         raise TypeError(msg)
-    key = f"{cls.__tablename__}:{value}"
+    key = bucket_key(cls, value)
     a_second = rate / per.total_seconds()
     refilled = func.least(
         float(rate),
@@ -200,6 +213,29 @@ async def take_tokens(
             .execution_options(synchronize_session=False)
         )
     return spend
+
+
+async def refund_tokens(
+    session: AsyncSession, cls: type[Workflow], value: Any, unused: int
+) -> None:
+    """Give back tokens a claim took but found no rows to spend on.
+
+    Args:
+        session: The transaction the claim is happening in, which already holds
+            the group's lock.
+        cls: The workflow class.
+        value: Which group the tokens were taken for.
+        unused: How many to give back.
+    """
+    bucket = model.BUCKET
+    if bucket is None:
+        return
+    await session.execute(
+        update(bucket)
+        .where(bucket.key == bucket_key(cls, value))
+        .values(tokens=bucket.tokens + unused)
+        .execution_options(synchronize_session=False)
+    )
 
 
 async def claim_group(
@@ -255,6 +291,10 @@ async def claim_group(
             .with_for_update(skip_locked=True)
         )
         claimed = (await session.execute(lease(runtime, cls, picked, steps))).all()
+        # Tokens were taken before the claim knew how many rows it would find;
+        # the ones it could not use go back rather than throttling later work.
+        if spec.rate is not None and len(claimed) < free:
+            await refund_tokens(session, cls, value, free - len(claimed))
     return [(list(pk), version) for *pk, version in claimed]
 
 

@@ -47,6 +47,22 @@ class Other(Base, Workflow):
         """Do nothing."""
 
 
+class Lookalike(Base, Workflow):
+    """A workflow with a step named like one of Review's."""
+
+    __tablename__ = "wf_execute_lookalike"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    @step
+    async def decide(self, decision: str):
+        """Record something else entirely.
+
+        Args:
+            decision: Whatever it is.
+        """
+
+
 def test_resolve_accepts_calls_bare_steps_and_none():
     call = Review.decide("reject")
     no_delay = datetime.timedelta()
@@ -92,3 +108,8 @@ def test_resolve_rejects_a_wait_on_a_foreign_step():
 def test_resolve_rejects_anything_else(returned: object):
     with pytest.raises(TypeError):
         resolve(Review, returned)
+
+
+def test_resolve_rejects_a_wait_on_another_workflows_step_of_the_same_name():
+    with pytest.raises(TypeError, match="not a step of Review"):
+        resolve(Review, wait_for(Lookalike.decide))

@@ -19,7 +19,7 @@ from typing import (
     overload,
 )
 
-from sqlalchemy import DateTime, Float, Index, Integer, String, Text
+from sqlalchemy import DateTime, Float, Index, Integer, String, Text, literal
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column
 
@@ -84,8 +84,9 @@ class Call(Generic[W]):
         """
         payload = {"args": list(self.args), "kwargs": self.kwargs}
         try:
-            json.dumps(payload)
-        except TypeError as err:
+            # NaN and infinity are not JSON, and Postgres refuses them in JSONB.
+            json.dumps(payload, allow_nan=False)
+        except (TypeError, ValueError) as err:
             msg = (
                 f"Arguments to step {self.step.name!r} must be JSON-serializable: {err}"
             )
@@ -116,13 +117,23 @@ class Limit:
         """Check the limit says something, and says it completely.
 
         Raises:
-            ValueError: If it caps nothing, or gives a rate without a period.
+            ValueError: If it caps nothing, gives a rate without a period, or
+                gives a value that is not positive.
         """
         if self.at_most is None and self.rate is None:
             msg = "A Limit needs at_most, rate, or both."
             raise ValueError(msg)
         if (self.rate is None) != (self.per is None):
             msg = "A Limit takes rate and per together, or neither."
+            raise ValueError(msg)
+        # A cap of nothing would leave the group's runs waiting forever without
+        # saying why, and a period of nothing cannot be divided by.
+        if (
+            (self.at_most is not None and self.at_most < 1)
+            or (self.rate is not None and self.rate < 1)
+            or (self.per is not None and self.per <= datetime.timedelta())
+        ):
+            msg = "A Limit's at_most, rate and per must be positive."
             raise ValueError(msg)
 
 
@@ -255,6 +266,23 @@ def as_call(ref: StepRef[W]) -> Call[W]:
         msg = f"{ref!r} takes arguments; call it with them, e.g. {ref.name}(...)."
         raise TypeError(msg) from None
     return Call(ref, (), {})
+
+
+def same_class(a: type, b: type) -> bool:
+    """Tell whether two classes are one definition, perhaps defined again.
+
+    A module that is imported twice, or a test that defines a class again,
+    produces a new class object for the same definition; one of the same name
+    from another module is a different definition.
+
+    Args:
+        a: One class.
+        b: The other.
+
+    Returns:
+        Whether they share a module and a qualified name.
+    """
+    return (a.__module__, a.__qualname__) == (b.__module__, b.__qualname__)
 
 
 def check_owner(cls: type[Workflow], call: Call[Any]) -> None:
@@ -410,7 +438,13 @@ def every(call: StepRef[W], schedule: Schedule) -> Every[W]:
 
     Returns:
         The transition to return from a step.
+
+    Raises:
+        ValueError: If an interval is not positive.
     """
+    if isinstance(schedule, datetime.timedelta) and schedule <= datetime.timedelta():
+        msg = f"every() needs a positive interval; got {schedule}."
+        raise ValueError(msg)
     return Every(as_call(call), schedule)
 
 
@@ -465,7 +499,7 @@ class RateBucket:
         global BUCKET
         if cls.__dict__.get("__tablename__") is None:
             return
-        if BUCKET is not None and BUCKET.__qualname__ != cls.__qualname__:
+        if BUCKET is not None and not same_class(BUCKET, cls):
             msg = f"A rate bucket is already mapped by {BUCKET.__qualname__}."
             raise ValueError(msg)
         BUCKET = cls
@@ -524,7 +558,7 @@ class AttemptLog:
         global ATTEMPTS
         if cls.__dict__.get("__tablename__") is None:
             return
-        if ATTEMPTS is not None and ATTEMPTS.__qualname__ != cls.__qualname__:
+        if ATTEMPTS is not None and not same_class(ATTEMPTS, cls):
             msg = f"Attempt history is already mapped by {ATTEMPTS.__qualname__}."
             raise ValueError(msg)
         ATTEMPTS = cls
@@ -597,7 +631,7 @@ class Workflow:
         if table is None:
             return
         existing = REGISTRY.get(table)
-        if existing is not None and existing.__qualname__ != cls.__qualname__:
+        if existing is not None and not same_class(existing, cls):
             msg = (
                 f"Workflow table {table!r} is already used by {existing.__qualname__}."
             )
@@ -682,7 +716,10 @@ class Workflow:
         if not hasattr(cls, "parent"):
             msg = f"{cls.__qualname__} is not a workflow."
             raise TypeError(msg)
-        return RunHandle(cls, (cls.parent == self.as_parent(),))
+        # Children point at the fan-out they belong to as well; any of this
+        # run's fan-outs will do here.
+        pointer = cls.parent.op("-", return_type=JSONB)(literal("fan_out", String))
+        return RunHandle(cls, (pointer == self.as_parent(),))
 
     @classmethod
     def by(cls: type[W], *where: ColumnElement[bool]) -> RunHandle[W]:

@@ -141,7 +141,9 @@ async def due_behind_the_planners_back(
 
 async def test_a_claim_takes_no_more_than_its_limit(runtime):
     await due_behind_the_planners_back(runtime, Queued, customers=1)
-    assert len(await claim(runtime, Queued, 8)) == 8
+    claimed = await claim(runtime, Queued, 8)
+    # Each claim bumps the row's version, which fences whoever held it before.
+    assert [version for _, version in claimed] == [1] * 8
 
 
 async def test_a_group_claim_takes_no_more_than_the_group_allows(runtime):
@@ -160,6 +162,7 @@ async def test_a_group_claim_takes_no_more_than_the_group_allows(runtime):
             .all()
         )
     assert sorted(pk for (pk,), _ in claimed) == sorted(taken)
+    assert {version for _, version in claimed} == {1}
     assert collections.Counter(taken.values()) == {
         f"customer-{index}": 2 for index in range(4)
     }
