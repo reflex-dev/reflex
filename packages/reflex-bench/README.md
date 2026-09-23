@@ -265,8 +265,9 @@ extra data also holds the per-file breakdown `files`: `raw`, `gzip`, `brotli` an
 hash of names in `assets/` replaced (`assets/chunk-5KNZJZUH-q9CrfzJj.js` becomes
 `assets/chunk-5KNZJZUH-HASH.js`; `#2` marks a second name that differed only in
 its hash), plus `initial_files` in page order, `html` (the page parsed),
-`reflex_version`, `fixture_hash` (the playground's `.content-hash`) and the
-`compressors`' versions. Apps with a `frontend_path` are not supported.
+`reflex_version`, `fixture_hash` (the playground's `.content-hash`), `bun_lock`
+(the hash of `.web/bun.lock`) and the `compressors`' versions. Apps with a
+`frontend_path` are not supported.
 
 Two samples of one export are identical, but two exports of one commit are not
 quite: reflex bundles `.web/reflex.json`, with a random `project_hash` and the
@@ -279,7 +280,10 @@ bench homes measured `total_gzip` 328,699 and 328,683 B, `total_brotli` 263,247
 and 263,218 B, `web_dir` 2,142,835 and 2,142,814 B, with the same `total_raw`,
 `chunks` and `node_modules`. That is far below the budgets' headroom and the
 3 % threshold of exact comparisons, so the metrics stay exact and no file is
-left out of the breakdown.
+left out of the breakdown. Reflex pins its own frontend packages, but their
+dependencies are resolved when the export installs them (the playground commits
+no lockfile), so a new release of one can change the sizes of the same commit;
+a different `bun_lock` tells such a change apart from a change in the code.
 
 `packages/reflex-bench/budgets.json` caps metrics, as whole numbers in the
 metric's unit:

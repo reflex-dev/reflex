@@ -5,7 +5,7 @@ A budget caps one metric of one benchmark instance, in the metric's unit::
     {
       "schema": "reflex-bench-budgets/1",
       "budgets": {
-        "size.export[app=playground]": {"initial_gzip": 260000, "chunks": 40}
+        "size.export[app=playground]": {"initial_gzip": 330000, "chunks": 16}
       }
     }
 
@@ -38,7 +38,8 @@ from reflex_bench.schema import (
 from reflex_bench.schema import load as load_result
 
 SCHEMA_ID = "reflex-bench-budgets/1"
-# reflex-bench is only installed from the workspace (editable), next to this file.
+# packages/reflex-bench/budgets.json: reflex-bench is never published, so it
+# always runs from its source tree.
 DEFAULT_PATH = Path(__file__).resolve().parents[2] / "budgets.json"
 _COLUMNS = ("benchmark", "metric", "value", "budget", "delta", "verdict")
 _RIGHT_ALIGNED = frozenset({2, 3, 4})

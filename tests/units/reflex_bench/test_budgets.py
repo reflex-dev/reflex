@@ -20,7 +20,7 @@ NAME = "size.export[app=playground]"
 BUDGETS = {NAME: {"initial_gzip": 260_000, "chunks": 40}}
 
 
-def _doc(status: str = "ok", error: str | None = None) -> ResultDoc:
+def _doc(status: str = "ok", error: str | None = None, warmup: int = 0) -> ResultDoc:
     entry = make_entry(
         "size.export",
         {
@@ -29,6 +29,7 @@ def _doc(status: str = "ok", error: str | None = None) -> ResultDoc:
             "chunks": (COUNT, [30]),
         },
         params={"app": "playground"},
+        warmup=warmup,
         status=status,
         error=error,
     )
@@ -116,6 +117,7 @@ def test_a_metric_over_budget_exits_2_with_the_delta(tmp_path: Path):
             "failed: RuntimeError: reflex export exited with 1",
         ),
         (_doc(), {NAME: {"node_modules": 1}}, "metric not in the result"),
+        (_doc(warmup=1), BUDGETS, "no timed samples"),
     ],
 )
 def test_a_budget_that_cannot_be_checked_exits_1(

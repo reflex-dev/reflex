@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import zlib
@@ -230,7 +231,12 @@ def test_extra_is_json_and_repeatable(tmp_path: Path):
     json.dumps(first.extra, allow_nan=False)
     assert first.extra["reflex_version"] == "0.8.23"
     assert first.extra["fixture_hash"] == "sha256:abc123"
+    assert first.extra["bun_lock"] == f"sha256:{hashlib.sha256(b'{}').hexdigest()}"
     assert set(first.extra["compressors"]) == {"zlib", "brotli"}
+    (app / ".web" / "bun.lock").unlink()
+    without_lock = size.measure_export(app, reflex_version="0.8.23").extra
+    assert without_lock is not None
+    assert without_lock["bun_lock"] is None
 
 
 @pytest.mark.parametrize(
@@ -281,10 +287,12 @@ def _git(cwd: Path, *args: str) -> None:
 def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     root = tmp_path / "repo"
     demo = root / "examples" / "demo"
-    _write(demo, {"rxconfig.py": b"config = 1\n", "demo/demo.py": b"app = 1\n"})
+    tracked = {"rxconfig.py": b"config = 1\n", "demo/demo.py": b"app = 1\n"}
+    _write(demo, {**tracked, "deleted.py": b""})
     _write(root, {".gitignore": b".web/\n"})
     _git(root, "init", "-q")
     _git(root, "add", ".")
+    (demo / "deleted.py").unlink()
     _write(demo, {"untracked.py": b"", ".web/stale.js": b""})
     monkeypatch.chdir(root)
     return root

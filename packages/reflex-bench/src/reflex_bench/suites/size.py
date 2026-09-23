@@ -21,6 +21,7 @@ export runs once in ``setup_cache``; ``sample`` measures the files on disk.
 from __future__ import annotations
 
 import gzip
+import hashlib
 import itertools
 import os
 import re
@@ -178,8 +179,9 @@ def measure_export(app: Path, *, reflex_version: str | None) -> SampleResult:
         replaced (``#2``, ``#3``, ... tell apart names that differ only in their
         hash), ``initial_files`` (the first page's files in page order), ``html``
         (the page parsed), ``sidecar_bytes``, ``reflex_version``,
-        ``fixture_hash`` (the app's ``.content-hash``) and the ``compressors``'
-        versions.
+        ``fixture_hash`` (the app's ``.content-hash``), ``bun_lock`` (the hash
+        of the frontend packages' lockfile, which moves when a dependency's
+        release is installed) and the ``compressors``' versions.
 
     Raises:
         FileNotFoundError: When the build has no first page or lacks a file the
@@ -241,6 +243,7 @@ def measure_export(app: Path, *, reflex_version: str | None) -> SampleResult:
         values[f"initial_{field}"] = sum(files[key][field] for key in initial)
         values[f"total_{field}"] = sum(entry[field] for entry in files.values())
     content_hash = app / ".content-hash"
+    lock = web / "bun.lock"
     return SampleResult(
         values,
         extra={
@@ -251,6 +254,9 @@ def measure_export(app: Path, *, reflex_version: str | None) -> SampleResult:
             "reflex_version": reflex_version,
             "fixture_hash": content_hash.read_text().strip()
             if content_hash.is_file()
+            else None,
+            "bun_lock": f"sha256:{hashlib.sha256(lock.read_bytes()).hexdigest()}"
+            if lock.is_file()
             else None,
             "compressors": {
                 "zlib": zlib.ZLIB_RUNTIME_VERSION,
