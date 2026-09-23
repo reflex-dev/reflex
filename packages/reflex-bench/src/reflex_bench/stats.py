@@ -2,9 +2,10 @@
 
 Every function is pure. Descriptive statistics match numpy/scipy, the median
 confidence interval and the "need more samples" rule follow benchstat and asv,
-the stability heuristics follow hyperfine and pyperf, and the two-gate verdict
+the stability heuristics follow hyperfine and pyperf, the two-gate verdict
 (a significant test *and* a confidence interval past a noise threshold) follows
-criterion.rs.
+criterion.rs, and the slope interval of a least squares line matches
+``scipy.stats.linregress``.
 """
 
 from __future__ import annotations
@@ -968,3 +969,136 @@ def runs_needed(
                 return None
             needed = max(needed, math.ceil(estimate))
     return needed if needed <= cap else None
+
+
+# scipy.stats.t.ppf(0.975, df) for each row's degrees of freedom; the last row
+# is the normal quantile.
+_T975 = (
+    (1, 12.706204736174694),
+    (2, 4.302652729749462),
+    (3, 3.1824463052837078),
+    (4, 2.7764451051977934),
+    (5, 2.5705818356363146),
+    (6, 2.4469118511449786),
+    (7, 2.364624251592784),
+    (8, 2.306004135204166),
+    (9, 2.262157162798205),
+    (10, 2.228138851986274),
+    (11, 2.200985160091639),
+    (12, 2.1788128296672284),
+    (13, 2.1603686564627913),
+    (14, 2.144786687917804),
+    (15, 2.131449545559776),
+    (16, 2.1199052992212546),
+    (17, 2.1098155778333156),
+    (18, 2.1009220402410382),
+    (19, 2.0930240544083087),
+    (20, 2.085963447265864),
+    (21, 2.0796138447276795),
+    (22, 2.0738730679040254),
+    (23, 2.0686576104190486),
+    (24, 2.0638985616280245),
+    (25, 2.0595385527532972),
+    (26, 2.0555294386428735),
+    (27, 2.0518305164802846),
+    (28, 2.0484071417952454),
+    (29, 2.045229642132703),
+    (30, 2.0422724563012378),
+    (40, 2.021075390306273),
+    (60, 2.0002978220142604),
+    (120, 1.9799304050824402),
+    (math.inf, 1.959963984540054),
+)
+
+
+class SlopeFit(NamedTuple):
+    """A least squares line and the confidence interval of its slope."""
+
+    slope: float
+    intercept: float
+    ci_lo: float
+    ci_hi: float
+    r2: float
+    n: int
+
+
+def t_quantile_975(df: float) -> float:
+    """Return the 97.5 % quantile of Student's t distribution (two-sided 95 %).
+
+    The table rows (df 1 to 30, 40, 60, 120 and infinity) are exact; between two
+    rows the quantile is linear in ``1 / df``, which stays within 3e-5 (relative)
+    of ``scipy.stats.t.ppf`` for every df up to 100 000, well inside 0.5 %.
+
+    Args:
+        df: The degrees of freedom, at least 1.
+
+    Returns:
+        The quantile.
+
+    Raises:
+        ValueError: When ``df`` is below 1.
+    """
+    if df < 1:
+        msg = f"the t distribution needs at least 1 degree of freedom, got {df}"
+        raise ValueError(msg)
+    low_df, low_t = _T975[0]
+    for high_df, high_t in _T975:
+        if df <= high_df:
+            if df == high_df:
+                return high_t
+            weight = (1 / low_df - 1 / df) / (1 / low_df - 1 / high_df)
+            return low_t + weight * (high_t - low_t)
+        low_df, low_t = high_df, high_t
+    return low_t
+
+
+def linear_slope_ci(
+    xs: Sequence[float], ys: Sequence[float], confidence: float = 0.95
+) -> SlopeFit:
+    """Fit a line by ordinary least squares, with a confidence interval of its slope.
+
+    The interval is ``slope ± t * se``, with ``se`` the standard error of the
+    slope and ``t`` the two-sided Student quantile at ``n - 2`` degrees of
+    freedom, as ``scipy.stats.linregress`` and ``scipy.stats.t.ppf`` give it.
+    Values without any spread in ``ys`` fit exactly: slope 0, a zero-width
+    interval and ``r2`` 0.
+
+    Args:
+        xs: The x values.
+        ys: The y values, paired with ``xs``.
+        confidence: The confidence level; only 0.95 is tabulated.
+
+    Returns:
+        The slope, intercept, interval, coefficient of determination and the
+        number of points.
+
+    Raises:
+        ValueError: On unpaired values, fewer than 3 points, x values that are
+            all equal or another confidence level.
+    """
+    n = len(xs)
+    if n != len(ys):
+        msg = f"linear_slope_ci needs pairs of the same length, got {n} and {len(ys)}"
+        raise ValueError(msg)
+    if n < 3:
+        msg = f"a slope interval needs at least 3 points, got {n}"
+        raise ValueError(msg)
+    if not math.isclose(confidence, 0.95):
+        msg = f"only the 0.95 confidence level is tabulated, got {confidence}"
+        raise ValueError(msg)
+    mean_x = math.fsum(xs) / n
+    mean_y = math.fsum(ys) / n
+    dx = [x - mean_x for x in xs]
+    dy = [y - mean_y for y in ys]
+    sxx = math.fsum(d * d for d in dx)
+    if not sxx:
+        msg = "the x values are all equal, so the slope is undefined"
+        raise ValueError(msg)
+    sxy = math.fsum(a * b for a, b in zip(dx, dy, strict=True))
+    syy = math.fsum(d * d for d in dy)
+    slope = sxy / sxx
+    # Residuals around the line, from the centered values.
+    sse = math.fsum((b - slope * a) ** 2 for a, b in zip(dx, dy, strict=True))
+    half = t_quantile_975(n - 2) * math.sqrt(sse / (n - 2) / sxx)
+    r2 = min(1.0, sxy * sxy / (sxx * syy)) if syy else 0.0
+    return SlopeFit(slope, mean_y - slope * mean_x, slope - half, slope + half, r2, n)
