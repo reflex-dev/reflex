@@ -14,12 +14,14 @@ from __future__ import annotations
 import io
 import json
 import os
+import re
 import secrets
 import sys
 import time
 import uuid
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -28,12 +30,13 @@ from rich.console import Console
 from rich.status import Status
 from rich.text import Text
 
+from reflex_bench import ab, subjects
 from reflex_bench import compare as comparing
-from reflex_bench.context import Subject, installed_version, workspace_subject
+from reflex_bench.context import Subject, installed_version
 from reflex_bench.machine import checks, collect, warning_count
 from reflex_bench.registry import SUITES, Benchmark, discover, parse_overrides, select
 from reflex_bench.report.bmf import to_bmf
-from reflex_bench.report.format import DOT, WARN
+from reflex_bench.report.format import DOT, WARN, format_value
 from reflex_bench.report.markdown import render_comparison as markdown_comparison
 from reflex_bench.report.table import (
     make_console,
@@ -71,6 +74,8 @@ EXIT_INCONCLUSIVE = 3
 EXIT_INTERRUPTED = 130
 _ARGV = "reflex_bench.argv"
 _CHECK_ICONS = {"ok": "\N{CHECK MARK}", "warn": WARN, "info": DOT}
+_AGE = re.compile(r"(\d+)([dhm])")
+_AGE_UNITS = {"d": "days", "h": "hours", "m": "minutes"}
 
 
 def in_ci() -> bool:
@@ -182,6 +187,21 @@ def _estimate(bench: Benchmark, policy: Policy) -> float:
     return (bench.warmup + runs) * bench.estimate
 
 
+def _print_rows(console: Console, rows: Sequence[Sequence[str]]) -> None:
+    """Print rows in aligned columns, the first one (the titles) in bold.
+
+    Args:
+        console: Where to print.
+        rows: The titles, then one row per item.
+    """
+    widths = [max(len(row[i]) for row in rows) for i in range(len(rows[0]))]
+    for index, row in enumerate(rows):
+        line = "   ".join(
+            cell.ljust(width) for cell, width in zip(row, widths, strict=True)
+        )
+        console.print(Text(line.rstrip(), style="bold" if index == 0 else ""))
+
+
 @cli.command("list")
 @click.argument("filters", nargs=-1)
 @click.option("--suite", type=click.Choice(SUITES), help="A named selection.")
@@ -222,12 +242,7 @@ def list_command(filters: tuple[str, ...], suite: str | None) -> int:
             ",".join(bench.suites),
             f"~{_duration(seconds)}",
         ])
-    widths = [max(len(row[i]) for row in rows) for i in range(len(rows[0]))]
-    for index, row in enumerate(rows):
-        line = "   ".join(
-            cell.ljust(width) for cell, width in zip(row, widths, strict=True)
-        )
-        console.print(Text(line.rstrip(), style="bold" if index == 0 else ""))
+    _print_rows(console, rows)
     console.print(
         Text(
             f"{len(planned)} benchmarks {DOT} ~{_duration(total)} estimated with default settings"
@@ -458,9 +473,227 @@ def _stats_options(command: Any) -> Any:
     )(command)
 
 
+def _check_spec(
+    ctx: click.Context, param: click.Parameter, value: str | None
+) -> str | None:
+    """Validate a subject spec option (``--reflex``, ``--base``, ``--head``).
+
+    Args:
+        ctx: The click context.
+        param: The option.
+        value: The spec, if given.
+
+    Returns:
+        The spec, unchanged.
+
+    Raises:
+        BadParameter: When it is not a subject spec.
+    """
+    if value is not None:
+        try:
+            subjects.parse_spec(value)
+        except ValueError as exc:
+            raise click.BadParameter(str(exc)) from exc
+    return value
+
+
+def _instance_options(command: Any) -> Any:
+    """Add the options ``run`` and ``ab`` share: parameters, timeouts, seed and Python.
+
+    Args:
+        command: The click command function.
+
+    Returns:
+        The decorated function.
+    """
+    command = click.option(
+        "--python",
+        default="3.12",
+        show_default=True,
+        help="Python of subject venvs (the workspace runs on the harness's).",
+    )(command)
+    command = click.option(
+        "--keep", is_flag=True, help="Keep each benchmark's work directory."
+    )(command)
+    command = click.option(
+        "--seed",
+        type=click.IntRange(min=0),
+        help="RNG seed. Default: random (always recorded).",
+    )(command)
+    command = click.option(
+        "--timeout",
+        type=click.FloatRange(min=0, min_open=True),
+        metavar="SECONDS",
+        help="Per-sample timeout. Default: per benchmark.",
+    )(command)
+    return click.option(
+        "--param",
+        "params",
+        multiple=True,
+        metavar="KEY=VALUE",
+        help="Restrict or override a parameter.",
+    )(command)
+
+
+def _output_options(command: Any) -> Any:
+    """Add the options ``run`` and ``ab`` share for storing and streaming results.
+
+    Args:
+        command: The click command function.
+
+    Returns:
+        The decorated function.
+    """
+    command = click.option(
+        "--ndjson",
+        is_flag=True,
+        help="Progress events as NDJSON on stdout; human output on stderr.",
+    )(command)
+    command = click.option(
+        "--json",
+        "json_path",
+        type=click.Path(dir_okay=False, path_type=Path),
+        help="Also write the result JSON here.",
+    )(command)
+    command = click.option(
+        "--save-as", metavar="NAME", help="Also store the result as a named baseline."
+    )(command)
+    return click.option(
+        "--save/--no-save", default=True, show_default=True, help="Autosave the result."
+    )(command)
+
+
+def _select(
+    filters: Sequence[str], suite: str | None, overrides: Mapping[str, str]
+) -> list[Benchmark]:
+    """Select the benchmarks to run and check the ``--param`` overrides against them.
+
+    Args:
+        filters: Globs on the benchmark id.
+        suite: A named selection.
+        overrides: The ``--param`` overrides.
+
+    Returns:
+        The selected benchmarks.
+
+    Raises:
+        UsageError: When nothing matches or no selected benchmark takes a
+            ``--param``.
+    """
+    benchmarks = select(discover().values(), filters, suite)
+    if not benchmarks:
+        msg = (
+            "no benchmark matches"
+            + (f" {' '.join(filters)}" if filters else "")
+            + (f" in suite {suite}" if suite else "")
+        )
+        raise click.UsageError(msg)
+    known = set().union(*(bench.param_names for bench in benchmarks))
+    if unknown := sorted(overrides.keys() - known):
+        msg = f"unknown --param {', '.join(unknown)}; the selected benchmarks take: {', '.join(sorted(known)) or 'none'}"
+        raise click.UsageError(msg)
+    return benchmarks
+
+
+def _resolve(spec: str, python: str, home: Path, console: Console) -> Subject:
+    """Build or reuse the environment of a subject, printing what happens.
+
+    Args:
+        spec: The subject spec.
+        python: The Python of subject venvs.
+        home: The bench home.
+        console: Where progress goes.
+
+    Returns:
+        The subject.
+
+    Raises:
+        ClickException: When its environment cannot be built.
+    """
+    try:
+        return subjects.resolve(
+            spec,
+            python=python,
+            home=home,
+            echo=lambda message: console.print(Text(message)),
+        )
+    except subjects.SubjectError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+
+def _finish(
+    console: Console,
+    doc: ResultDoc,
+    home: Path,
+    *,
+    save: bool,
+    save_as: str | None,
+    json_path: Path | None,
+    ndjson: bool,
+    kept: Sequence[Path],
+    compared: bool,
+) -> int:
+    """Store a result, list what was written or kept and decide the exit code.
+
+    Args:
+        console: Where human output goes.
+        doc: The result.
+        home: The bench home.
+        save: Whether to autosave the result.
+        save_as: A baseline name to also store the result as.
+        json_path: A file to also write the result to.
+        ndjson: Whether to end the NDJSON stream with a ``run_end`` event.
+        kept: The work directories that were kept.
+        compared: Whether the result was compared.
+
+    Returns:
+        The exit code.
+    """
+    saved = []
+    if save:
+        saved.append(autosave(doc, home))
+    if save_as:
+        saved.append(save_baseline(doc, save_as, home))
+    if json_path is not None:
+        dump(doc, json_path)
+        saved.append(json_path)
+    if saved:
+        console.print()
+    for path in saved:
+        console.print(Text(f"saved {_relative(path)}"))
+    for path in kept:
+        console.print(Text(f"kept {path}"))
+    policy = doc["policy"]
+    code = _exit_code(
+        doc, policy["fail_on"], policy["fail_on_inconclusive"], compared=compared
+    )
+    if ndjson:
+        click.echo(
+            json.dumps(
+                {
+                    "event": "run_end",
+                    "exit_code": code,
+                    "statuses": Counter(entry["status"] for entry in doc["benchmarks"]),
+                    "verdicts": comparing.verdict_counts(doc),
+                    "saved": [str(path) for path in saved],
+                },
+                separators=(",", ":"),
+            )
+        )
+    return code
+
+
 @cli.command()
 @click.argument("filters", nargs=-1)
 @click.option("--suite", type=click.Choice(SUITES), help="A named selection.")
+@click.option(
+    "--reflex",
+    default="workspace",
+    show_default=True,
+    metavar="SPEC",
+    callback=_check_spec,
+    help="The reflex to measure: workspace, a PyPI version (0.8.23), git:<ref> or path:<dir>.",
+)
 @click.option(
     "--runs",
     type=click.IntRange(min=1),
@@ -483,47 +716,13 @@ def _stats_options(command: Any) -> Any:
     "--warmup", type=click.IntRange(min=0), help="Untimed runs. Default: per benchmark."
 )
 @click.option(
-    "--param",
-    "params",
-    multiple=True,
-    metavar="KEY=VALUE",
-    help="Restrict or override a parameter.",
-)
-@click.option(
-    "--save/--no-save", default=True, show_default=True, help="Autosave the result."
-)
-@click.option(
-    "--save-as", metavar="NAME", help="Also store the result as a named baseline."
-)
-@click.option(
     "--baseline", metavar="NAME|FILE", help="Compare with a baseline after the run."
 )
+@_instance_options
 @_stats_options
 @_fail_options
-@click.option(
-    "--json",
-    "json_path",
-    type=click.Path(dir_okay=False, path_type=Path),
-    help="Also write the result JSON here.",
-)
-@click.option(
-    "--ndjson",
-    is_flag=True,
-    help="Progress events as NDJSON on stdout; human output on stderr.",
-)
+@_output_options
 @click.option("--smoke", is_flag=True, help="1 run, no warmup, no statistics.")
-@click.option(
-    "--timeout",
-    type=click.FloatRange(min=0, min_open=True),
-    metavar="SECONDS",
-    help="Per-sample timeout. Default: per benchmark.",
-)
-@click.option(
-    "--seed",
-    type=click.IntRange(min=0),
-    help="RNG seed. Default: random (always recorded).",
-)
-@click.option("--keep", is_flag=True, help="Keep each benchmark's work directory.")
 @click.option(
     "--kind",
     type=click.Choice(RUN_KINDS),
@@ -534,25 +733,27 @@ def run(
     ctx: click.Context,
     filters: tuple[str, ...],
     suite: str | None,
+    reflex: str,
     runs: int | None,
     min_runs: int,
     max_runs: int | None,
     min_time: float,
     warmup: int | None,
-    params: tuple[str, ...],
-    save: bool,
-    save_as: str | None,
     baseline: str | None,
+    params: tuple[str, ...],
+    timeout: float | None,
+    seed: int | None,
+    keep: bool,
+    python: str,
     threshold: float,
     alpha: float,
     fail_on: FailOn | None,
     fail_on_inconclusive: bool,
+    save: bool,
+    save_as: str | None,
     json_path: Path | None,
     ndjson: bool,
     smoke: bool,
-    timeout: float | None,
-    seed: int | None,
-    keep: bool,
     kind: RunKind | None,
 ) -> int:
     """Run benchmarks and print, store and optionally compare the results.
@@ -563,26 +764,28 @@ def run(
         ctx: The click context.
         filters: Globs on the benchmark id.
         suite: A named selection.
+        reflex: The subject spec.
         runs: A fixed run count.
         min_runs: The fewest runs of the automatic rule.
         max_runs: The most runs of the automatic rule; ``None`` for
             ``max(30, min_runs)``.
         min_time: The measuring time the automatic rule aims for.
         warmup: Untimed runs.
-        params: ``KEY=VALUE`` parameter overrides.
-        save: Whether to autosave the result.
-        save_as: A baseline name to also store the result as.
         baseline: A baseline to compare with.
+        params: ``KEY=VALUE`` parameter overrides.
+        timeout: A per-sample timeout.
+        seed: The RNG seed.
+        keep: Whether to keep work directories.
+        python: The Python of the subject venv.
         threshold: The practical threshold in percent.
         alpha: The significance level.
         fail_on: When to exit with 2.
         fail_on_inconclusive: Whether to exit with 3 on inconclusive results.
+        save: Whether to autosave the result.
+        save_as: A baseline name to also store the result as.
         json_path: A file to also write the result to.
         ndjson: Whether to stream NDJSON events on stdout.
         smoke: Whether to only check that benchmarks work.
-        timeout: A per-sample timeout.
-        seed: The RNG seed.
-        keep: Whether to keep work directories.
         kind: The run kind.
 
     Returns:
@@ -611,21 +814,10 @@ def run(
             check_baseline_name(save_as)
     except ValueError as exc:
         raise click.UsageError(str(exc)) from exc
-    benchmarks = select(discover().values(), filters, suite)
-    if not benchmarks:
-        msg = (
-            "no benchmark matches"
-            + (f" {' '.join(filters)}" if filters else "")
-            + (f" in suite {suite}" if suite else "")
-        )
-        raise click.UsageError(msg)
-    known = set().union(*(bench.param_names for bench in benchmarks))
-    if unknown := sorted(overrides.keys() - known):
-        msg = f"unknown --param {', '.join(unknown)}; the selected benchmarks take: {', '.join(sorted(known)) or 'none'}"
-        raise click.UsageError(msg)
+    benchmarks = _select(filters, suite, overrides)
 
     home = bench_home()
-    subject = workspace_subject()
+    subject = _resolve(reflex, python, home, console)
     seed = secrets.randbits(32) if seed is None else seed
     doc = _new_doc(subject, policy, seed, ctx.meta.get(_ARGV, []), kind)
     # Resolve the baseline before running, so a typo does not waste a whole run.
@@ -665,38 +857,220 @@ def run(
         )
         console.print()
         render_comparison(console, doc)
-
-    saved = []
-    if save:
-        saved.append(autosave(doc, home))
-    if save_as:
-        saved.append(save_baseline(doc, save_as, home))
-    if json_path is not None:
-        dump(doc, json_path)
-        saved.append(json_path)
-    if saved:
-        console.print()
-    for path in saved:
-        console.print(Text(f"saved {_relative(path)}"))
-    for path in scheduler.kept:
-        console.print(Text(f"kept {path}"))
-    code = _exit_code(
-        doc, policy.fail_on, policy.fail_on_inconclusive, compared=base_doc is not None
+    return _finish(
+        console,
+        doc,
+        home,
+        save=save,
+        save_as=save_as,
+        json_path=json_path,
+        ndjson=ndjson,
+        kept=scheduler.kept,
+        compared=base_doc is not None,
     )
-    if ndjson:
-        click.echo(
-            json.dumps(
-                {
-                    "event": "run_end",
-                    "exit_code": code,
-                    "statuses": Counter(entry["status"] for entry in doc["benchmarks"]),
-                    "verdicts": comparing.verdict_counts(doc),
-                    "saved": [str(path) for path in saved],
-                },
-                separators=(",", ":"),
+
+
+@cli.command("ab")
+@click.argument("filters", nargs=-1)
+@click.option("--suite", type=click.Choice(SUITES), help="A named selection.")
+@click.option(
+    "--base",
+    metavar="SPEC",
+    callback=_check_spec,
+    help="The reference subject, arm A: workspace, a PyPI version, git:<ref> or path:<dir>.",
+)
+@click.option(
+    "--head",
+    metavar="SPEC",
+    required=True,
+    callback=_check_spec,
+    help="The subject judged against --base, arm B.",
+)
+@click.option(
+    "--aa",
+    is_flag=True,
+    help="A/A control: measure --head in both arms (no --base) to see the noise floor.",
+)
+@click.option(
+    "--rounds",
+    type=click.IntRange(min=1),
+    default=10,
+    show_default=True,
+    help="Timed samples per arm; there is no automatic run count.",
+)
+@click.option(
+    "--warmup",
+    type=click.IntRange(min=0),
+    help="Untimed samples per arm. Default: per benchmark.",
+)
+@click.option(
+    "--order",
+    type=click.Choice(ab.ORDERS),
+    default="abba",
+    show_default=True,
+    help="The arms' order in each round: AB, BA, AB, ... or a seeded coin flip.",
+)
+@_instance_options
+@_stats_options
+@_fail_options
+@_output_options
+@click.pass_context
+def ab_command(
+    ctx: click.Context,
+    filters: tuple[str, ...],
+    suite: str | None,
+    base: str | None,
+    head: str,
+    aa: bool,
+    rounds: int,
+    warmup: int | None,
+    order: ab.Order,
+    params: tuple[str, ...],
+    timeout: float | None,
+    seed: int | None,
+    keep: bool,
+    python: str,
+    threshold: float,
+    alpha: float,
+    fail_on: FailOn | None,
+    fail_on_inconclusive: bool,
+    save: bool,
+    save_as: str | None,
+    json_path: Path | None,
+    ndjson: bool,
+) -> int:
+    """Compare two subjects on this machine, alternating their samples.
+
+    Both subjects' sessions of a benchmark are open at once and the timed
+    samples alternate (AB, BA, AB, ...), so machine drift hits both arms alike;
+    then arm B (--head) is compared with arm A (--base). FILTERS are globs on
+    the benchmark id, e.g. 'lifecycle.*'.
+
+    Args:
+        ctx: The click context.
+        filters: Globs on the benchmark id.
+        suite: A named selection.
+        base: The spec of arm A.
+        head: The spec of arm B.
+        aa: Whether to measure ``head`` in both arms.
+        rounds: Timed samples per arm.
+        warmup: Untimed samples per arm.
+        order: The order of the arms within each round.
+        params: ``KEY=VALUE`` parameter overrides.
+        timeout: A per-sample timeout.
+        seed: The RNG seed.
+        keep: Whether to keep work directories.
+        python: The Python of subject venvs.
+        threshold: The practical threshold in percent.
+        alpha: The significance level.
+        fail_on: When to exit with 2.
+        fail_on_inconclusive: Whether to exit with 3 on inconclusive results.
+        save: Whether to autosave the result.
+        save_as: A baseline name to also store the result as.
+        json_path: A file to also write the result to.
+        ndjson: Whether to stream NDJSON events on stdout.
+
+    Returns:
+        The exit code.
+
+    Raises:
+        UsageError: On invalid options or an empty selection.
+    """
+    console = make_console(plain=in_ci(), stderr=ndjson)
+    if aa and base is not None:
+        msg = "--aa takes --head only: it measures that subject in both arms"
+        raise click.UsageError(msg)
+    if not aa and base is None:
+        msg = "--base is required unless --aa is given"
+        raise click.UsageError(msg)
+    try:
+        overrides = parse_overrides(params)
+        policy = Policy(
+            runs=rounds,
+            warmup=warmup,
+            timeout_s=timeout,
+            alpha=alpha,
+            threshold_rel=threshold / 100,
+            fail_on=_resolve_fail_on(fail_on),
+            fail_on_inconclusive=fail_on_inconclusive,
+        )
+        if save_as is not None:
+            check_baseline_name(save_as)
+    except ValueError as exc:
+        raise click.UsageError(str(exc)) from exc
+    benchmarks = _select(filters, suite, overrides)
+
+    home = bench_home()
+    # Both environments are built before anything is timed.
+    if base is None:
+        base_subject = head_subject = _resolve(head, python, home, console)
+    else:
+        base_subject = _resolve(base, python, home, console)
+        head_subject = _resolve(head, python, home, console)
+    # The workspace runs on the harness's Python, other subjects on --python.
+    pythons = [
+        ".".join(subject.python_version.split(".")[:2])
+        for subject in (base_subject, head_subject)
+    ]
+    if pythons[0] != pythons[1]:
+        console.print(
+            Text(
+                f"{WARN} arm A runs Python {pythons[0]} and arm B Python {pythons[1]}:"
+                " the comparison includes that difference (match them with --python,"
+                " or use path:<checkout> instead of workspace)",
+                style="yellow",
             )
         )
-    return code
+    seed = secrets.randbits(32) if seed is None else seed
+    doc = _new_doc(
+        base_subject, policy, seed, ctx.meta.get(_ARGV, []), "aa" if aa else None
+    )
+    doc["subjects"]["B"] = head_subject.to_doc()
+    render_header(console, doc, warning_count(doc["machine"]))
+
+    started = time.perf_counter()
+    live = console.is_terminal and not in_ci()
+    schedulers = [
+        Scheduler(subject, policy, home=home, seed=seed, keep=keep)
+        for subject in (base_subject, head_subject)
+    ]
+    with _Progress(console, live=live, ndjson=ndjson) as progress:
+        doc["benchmarks"] = ab.run(
+            plan(benchmarks, overrides),
+            *schedulers,
+            order=order,
+            on_event=progress.emit,
+        )
+    doc["invocation"]["duration_s"] = round(time.perf_counter() - started, 3)
+    if not live:
+        console.print()
+    render_run(console, doc)
+    comparing.compare(
+        doc,
+        doc,
+        threshold=policy.threshold_rel,
+        alpha=policy.alpha,
+        confidence=policy.confidence,
+        resamples=policy.bootstrap_resamples,
+        seed=seed,
+        base_label=f"A={base_subject.spec}",
+        head_label=f"B={head_subject.spec}",
+        base_arm="A",
+        head_arm="B",
+    )
+    console.print()
+    render_comparison(console, doc)
+    return _finish(
+        console,
+        doc,
+        home,
+        save=save,
+        save_as=save_as,
+        json_path=json_path,
+        ndjson=ndjson,
+        kept=[path for scheduler in schedulers for path in scheduler.kept],
+        compared=True,
+    )
 
 
 @cli.command()
@@ -867,6 +1241,95 @@ def export(path: Path, target: str, output: Path | None) -> int:
         click.echo(text, nl=False)
     else:
         output.write_text(text, encoding="utf-8")
+    return EXIT_OK
+
+
+@cli.group("subjects")
+def subjects_command() -> None:
+    """Manage the cached virtualenvs of --reflex, --base and --head subjects."""
+
+
+@subjects_command.command("list")
+def subjects_list() -> int:
+    """List the cached subject venvs: spec, Python, key, size and last use.
+
+    Returns:
+        The exit code.
+    """
+    console = make_console(plain=in_ci())
+    home = bench_home()
+    venvs = subjects.cached_venvs(home)
+    if not venvs:
+        console.print(Text(f"no cached subject venvs in {_relative(home / 'venvs')}"))
+        return EXIT_OK
+    sizes = [venv.size() for venv in venvs]
+    rows = [["spec", "python", "key", "size", "last used"]]
+    rows.extend(
+        [
+            venv.spec,
+            venv.python,
+            venv.key,
+            format_value(size, "B"),
+            datetime.fromtimestamp(venv.last_used).strftime("%Y-%m-%d %H:%M"),
+        ]
+        for venv, size in zip(venvs, sizes, strict=True)
+    )
+    _print_rows(console, rows)
+    plural = "" if len(venvs) == 1 else "s"
+    console.print(
+        Text(f"{len(venvs)} venv{plural} {DOT} {format_value(sum(sizes), 'B')}")
+    )
+    return EXIT_OK
+
+
+def _parse_age(ctx: click.Context, param: click.Parameter, value: str) -> timedelta:
+    """Parse an age such as ``30d``, ``12h`` or ``90m``.
+
+    Args:
+        ctx: The click context.
+        param: The option.
+        value: The age.
+
+    Returns:
+        The age.
+
+    Raises:
+        BadParameter: When it is not a whole number of days, hours or minutes.
+    """
+    match = _AGE.fullmatch(value)
+    if match is None:
+        msg = f"expected a number of days, hours or minutes such as 30d, 12h or 90m, got {value!r}"
+        raise click.BadParameter(msg)
+    return timedelta(**{_AGE_UNITS[match[2]]: int(match[1])})
+
+
+@subjects_command.command("prune")
+@click.option(
+    "--older-than",
+    default="30d",
+    show_default=True,
+    metavar="AGE",
+    callback=_parse_age,
+    help="Delete venvs not used for this long (30d, 12h, 90m).",
+)
+def subjects_prune(older_than: timedelta) -> int:
+    """Delete subject venvs not used for a while.
+
+    Also deletes the leftovers of interrupted builds and the git worktrees that
+    no remaining venv is installed from.
+
+    Args:
+        older_than: How long a venv must have gone unused.
+
+    Returns:
+        The exit code.
+    """
+    console = make_console(plain=in_ci())
+    removed = subjects.prune(
+        bench_home(), older_than, echo=lambda message: console.print(Text(message))
+    )
+    if not removed:
+        console.print(Text("nothing to prune"))
     return EXIT_OK
 
 

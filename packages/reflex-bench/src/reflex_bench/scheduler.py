@@ -24,6 +24,7 @@ import functools
 import hashlib
 import logging
 import math
+import os
 import queue
 import random
 import shutil
@@ -49,6 +50,7 @@ from reflex_bench.schema import (
     FailOn,
     PolicyDoc,
     SampleMetaDoc,
+    Status,
     SummaryDoc,
     format_name,
     sample_indices,
@@ -504,12 +506,15 @@ def _format_error(exc: BaseException) -> str:
     return f"{type(exc).__name__}: {exc}"
 
 
-def _record_failure(entry: BenchmarkDoc, errors: Sequence[BaseException]) -> None:
-    """Mark an entry as failed or timed out.
+def _record_failure(
+    entry: BenchmarkDoc, errors: Sequence[BaseException], arm: str
+) -> None:
+    """Mark an entry as failed or timed out, and the arm whose hooks failed.
 
     Args:
         entry: The benchmark entry.
         errors: The first error and any raised by teardown hooks after it.
+        arm: The arm of the failing session.
     """
     primary = errors[0]
     if isinstance(primary, HookTimeoutError):
@@ -524,6 +529,7 @@ def _record_failure(entry: BenchmarkDoc, errors: Sequence[BaseException]) -> Non
     tail.extend(f"also: {_format_error(exc)}" for exc in errors[1:])
     entry["error"] = _format_error(primary)
     entry["traceback_tail"] = "\n".join(tail)
+    entry.setdefault("failed_arms", []).append(arm)
 
 
 def _outlier_warning(
@@ -610,19 +616,26 @@ def make_context(
 
     Returns:
         A context with a fresh work directory, the persistent (created) cache
-        directory of the subject identity and parameter set, and an RNG seeded
-        from ``seed``, the instance name and the arm.
+        directory of the subject identity and parameter set, an RNG seeded from
+        ``seed``, the instance name and the arm, and :func:`base_env` with the
+        directory of the subject's interpreter first on ``PATH``.
     """
     cache = cache_dir(
         home, subject.identity, planned.benchmark.id, planned.params.params
     )
     cache.mkdir(parents=True, exist_ok=True)
+    env = base_env()
+    # Commands the subject starts by name (reflex 0.8.x starts `granian` in
+    # production mode) must come from its environment, not the harness's.
+    env["PATH"] = os.pathsep.join(
+        filter(None, (str(subject.python.parent), env.get("PATH")))
+    )
     return Context(
         subject=subject,
         params=planned.params.merged,
         workdir=Path(tempfile.mkdtemp(prefix=f"reflex-bench-{slug(planned.name)}-")),
         cache_dir=cache,
-        env=base_env(),
+        env=env,
         rng=random.Random(derive_seed(seed, planned.name, arm)),
         log=logging.getLogger(f"reflex_bench.{planned.benchmark.id}"),
         arm=arm,
@@ -772,7 +785,7 @@ class Session:
             else:
                 shutil.rmtree(self.ctx.workdir, ignore_errors=True)
         if errors:
-            _record_failure(self.entry, errors)
+            _record_failure(self.entry, errors, self.arm)
 
 
 class Scheduler:
@@ -832,6 +845,23 @@ class Scheduler:
             for index, item in enumerate(planned)
         ]
 
+    def skip_reason(self, planned: Planned) -> tuple[Status, str] | None:
+        """Tell why an instance must not run against this scheduler's subject.
+
+        Args:
+            planned: The instance.
+
+        Returns:
+            ``("unsupported", reason)`` when the subject is too old for the
+            benchmark, ``("skipped", reason)`` when a hook of the benchmark is
+            still stuck, else ``None``.
+        """
+        reason = unsupported_reason(planned.benchmark, self.subject)
+        if reason is not None:
+            return "unsupported", reason
+        stuck = self._stuck.get(planned.benchmark.id)
+        return None if stuck is None else ("skipped", stuck)
+
     @contextlib.contextmanager
     def open(
         self, planned: Planned, entry: BenchmarkDoc, *, arm: str = "A"
@@ -879,14 +909,9 @@ class Scheduler:
             "total": total,
         })
         started = time.perf_counter()
-        reason = unsupported_reason(planned.benchmark, self.subject)
-        stuck = self._stuck.get(planned.benchmark.id)
-        if reason is not None:
-            entry["status"] = "unsupported"
-            entry["error"] = reason
-        elif stuck is not None:
-            entry["status"] = "skipped"
-            entry["error"] = stuck
+        skip = self.skip_reason(planned)
+        if skip is not None:
+            entry["status"], entry["error"] = skip
         else:
             with self.open(planned, entry, arm=arm) as session:
                 self._sample(session)

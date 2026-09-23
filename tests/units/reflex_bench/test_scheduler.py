@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import dataclasses
+import os
 import random
 import shutil
 import sys
@@ -513,9 +515,12 @@ def test_setup_cache_gets_one_cache_dir_per_param_set(tmp_path: Path):
     assert dirs[1].parent == dirs[2].parent
 
 
-def test_make_context(tmp_path: Path):
+def test_make_context(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("PATH", os.pathsep.join(["/usr/local/bin", "/usr/bin"]))
     planned = _recorder([], params={"n": [7]}, hidden_params={"shift": 2.0})
-    subject = make_subject()
+    subject = dataclasses.replace(
+        make_subject(), python=tmp_path / "venv" / "bin" / "python"
+    )
     ctx = scheduler.make_context(subject, planned, home=tmp_path, seed=3, arm="B")
     try:
         assert ctx.subject is subject
@@ -527,6 +532,12 @@ def test_make_context(tmp_path: Path):
             tmp_path, subject.identity, "t.rec", {"n": 7}
         )
         assert all(ctx.env[key] == value for key, value in BASE_ENV.items())
+        # Commands the subject starts by name come from its own environment.
+        assert ctx.env["PATH"].split(os.pathsep) == [
+            str(tmp_path / "venv" / "bin"),
+            "/usr/local/bin",
+            "/usr/bin",
+        ]
         expected = random.Random(scheduler.derive_seed(3, "t.rec[n=7]", "B"))
         assert ctx.rng.random() == expected.random()
     finally:
@@ -579,3 +590,18 @@ def test_a_failed_session_takes_no_samples_and_records_the_failure(tmp_path: Pat
     assert calls[-1] == "cleanup"
     assert entry["status"] == "failed"
     assert entry["error"] == "RuntimeError: setup broke"
+
+
+def test_failures_record_the_failing_arm(tmp_path: Path):
+    failed = _run(_recorder([], fail_in="sample"), tmp_path, runs=1)
+    assert failed["failed_arms"] == ["A"]
+    assert "failed_arms" not in _run(_recorder([]), tmp_path, runs=1)
+
+
+def test_skip_reason(tmp_path: Path):
+    runner = Scheduler(make_subject("0.8.23"), Policy(), home=tmp_path, seed=1)
+    assert runner.skip_reason(_recorder([])) is None
+    assert runner.skip_reason(_recorder([], min_version="0.9.0")) == (
+        "unsupported",
+        "requires reflex >= 0.9.0 (subject has 0.8.23)",
+    )

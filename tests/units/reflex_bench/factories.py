@@ -156,6 +156,58 @@ def make_entry(
     return entry
 
 
+def make_ab_entry(
+    bench_id: str,
+    metrics: Mapping[str, tuple[Metric, Mapping[str, Sequence[float]]]],
+    *,
+    status: str = "ok",
+    error: str | None = None,
+    failed_arms: Sequence[str] | None = None,
+) -> BenchmarkDoc:
+    """Build an entry of an interleaved run: arms alternate, round by round.
+
+    Args:
+        bench_id: The benchmark id.
+        metrics: Metric name to its declaration and each arm's timed samples; all
+            metrics have the same arms and sample counts.
+        status: The entry status.
+        error: The error message.
+        failed_arms: The arms whose hooks failed.
+
+    Returns:
+        The entry, summarized when its status is ``ok``.
+    """
+    entry = make_entry(
+        bench_id,
+        {name: (metric, []) for name, (metric, _) in metrics.items()},
+        status=status,
+        error=error,
+    )
+    _, arms = next(iter(metrics.values()))
+    for index in range(max(len(values) for values in arms.values())):
+        for order, (arm, values) in enumerate(arms.items()):
+            if index >= len(values):
+                continue
+            for name, (_, samples) in metrics.items():
+                entry["metrics"][name]["samples"].setdefault(arm, []).append(
+                    float(samples[arm][index])
+                )
+            entry["sample_meta"].append({
+                "arm": arm,
+                "round": index,
+                "order": order,
+                "started_at": "2026-09-23T10:15:00.000Z",
+                "warmup": False,
+                "duration_s": 0.01,
+            })
+            entry["sample_extra"].append(None)
+    if failed_arms is not None:
+        entry["failed_arms"] = list(failed_arms)
+    if status == "ok":
+        finalize(entry, 0.95)
+    return entry
+
+
 def make_doc(
     entries: Sequence[BenchmarkDoc],
     *,
@@ -164,6 +216,7 @@ def make_doc(
     invocation_id: str = "11111111-2222-3333-4444-555555555555",
     started_at: str = "2026-09-23T10:15:00Z",
     seed: int = 1234,
+    arms: Sequence[str] = ("A",),
 ) -> ResultDoc:
     """Build a result document.
 
@@ -174,6 +227,7 @@ def make_doc(
         invocation_id: The invocation id.
         started_at: The invocation start time.
         seed: The invocation seed.
+        arms: The arms, each with the same subject.
 
     Returns:
         The document.
@@ -191,7 +245,7 @@ def make_doc(
             "ci": None,
             "rng_seed": seed,
         },
-        "subjects": {"A": make_subject().to_doc()},
+        "subjects": {arm: make_subject().to_doc() for arm in arms},
         "machine": machine or make_machine(),
         "fixture": None,
         "policy": (policy or Policy()).to_doc(),

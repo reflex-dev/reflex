@@ -5,9 +5,10 @@ series keys match (machine profile, fixture and benchmark version too). Each
 metric gets a Mann-Whitney U test and a bootstrap CI of the change; Holm's
 correction runs across all tested metrics of the comparison; exact metrics
 compare values directly. An entry that fails or times out in head without
-failing in base is a regression whatever its series key. The verdicts are
-written into the head document, so an annotated document is self-describing for
-``show`` and ``export``.
+failing in base is a regression whatever its series key; statuses are seen from
+the compared arms, so the two arms of one ``ab`` document compare too. The
+verdicts are written into the head document, so an annotated document is
+self-describing for ``show`` and ``export``.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from typing import NamedTuple
 from reflex_bench import stats
 from reflex_bench.scheduler import CORRECTION, derive_seed
 from reflex_bench.schema import (
+    BenchmarkDoc,
     ComparedToDoc,
     ComparisonDoc,
     ComparisonSideDoc,
@@ -26,6 +28,7 @@ from reflex_bench.schema import (
     MetricDoc,
     NotComparableDoc,
     ResultDoc,
+    Status,
     Verdict,
     entry_name,
     timed_values,
@@ -52,6 +55,27 @@ class _Pending(NamedTuple):
     raw: stats.SampleComparison
     base: ComparisonSideDoc
     head: ComparisonSideDoc
+
+
+def _arm_status(entry: BenchmarkDoc, arm: str) -> Status:
+    """Tell an entry's status as one of its arms saw it.
+
+    Args:
+        entry: The benchmark entry.
+        arm: The arm.
+
+    Returns:
+        ``ok`` for an arm that is not in the ``failed_arms`` of a failed entry
+        (its samples just stopped early), else the entry's status.
+    """
+    failed_arms = entry.get("failed_arms")
+    if (
+        entry["status"] in _FAILED
+        and failed_arms is not None
+        and arm not in failed_arms
+    ):
+        return "ok"
+    return entry["status"]
 
 
 def _side(
@@ -126,13 +150,13 @@ def compare(
     for head_entry in head["benchmarks"]:
         base_entry = base_entries.get(entry_key(head_entry))
         name = entry_name(head_entry)
-        if head_entry["status"] in _FAILED and (
-            base_entry is None or base_entry["status"] not in _FAILED
-        ):
+        head_status = _arm_status(head_entry, head_arm)
+        base_status = None if base_entry is None else _arm_status(base_entry, base_arm)
+        if head_status in _FAILED and base_status not in _FAILED:
             failed_in_head.append({
                 "id": name,
-                "status": head_entry["status"],
-                "base_status": None if base_entry is None else base_entry["status"],
+                "status": head_status,
+                "base_status": base_status,
                 "error": head_entry["error"],
             })
             continue
@@ -144,9 +168,9 @@ def compare(
             else series_key(base, base_entry).differences(series_key(head, head_entry))
         )
         reasons.extend(
-            f"{side} status is {entry['status']}"
-            for side, entry in (("base", base_entry), ("head", head_entry))
-            if entry["status"] != "ok"
+            f"{side} status is {status}"
+            for side, status in (("base", base_status), ("head", head_status))
+            if status != "ok"
         )
         reasons.extend(
             f"metric {metric_name!r} is missing in {side}"

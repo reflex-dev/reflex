@@ -225,6 +225,7 @@ class SampleMetaDoc(TypedDict):
 
 class _BenchmarkDocOptional(TypedDict, total=False):
     hidden_params: dict[str, Any]
+    failed_arms: list[str]
 
 
 class BenchmarkDoc(_BenchmarkDocOptional):
@@ -233,7 +234,9 @@ class BenchmarkDoc(_BenchmarkDocOptional):
     ``sample_meta`` and ``sample_extra`` list every sample in execution order.
     ``metrics[m].samples[arm][j]`` belongs to the ``j``-th ``sample_meta`` entry of
     that arm. ``hidden_params`` records overridden hidden parameters, which are not
-    part of the name or the series key.
+    part of the name or the series key. ``failed_arms`` lists the arms whose hooks
+    made the instance fail or time out; an arm not listed only stopped early.
+    Without it, the status applies to every arm.
     """
 
     id: str
@@ -375,9 +378,9 @@ def _check_benchmark(
 ) -> None:
     """Check one benchmark entry: enums, finite samples and their alignment.
 
-    Every arm must be a known subject, every arm's sample list must have one value
-    per ``sample_meta`` entry of that arm, and ``sample_extra`` must have one entry
-    per sample.
+    Every arm (failed ones included) must be a known subject, every arm's sample
+    list must have one value per ``sample_meta`` entry of that arm, and
+    ``sample_extra`` must have one entry per sample.
 
     Args:
         bench: The benchmark entry.
@@ -389,6 +392,15 @@ def _check_benchmark(
         return
     bench = cast("dict[str, Any]", bench)
     _enum(bench["status"], STATUSES, f"{path}.status", errors)
+    failed_arms = bench.get("failed_arms", [])
+    if not isinstance(failed_arms, list):
+        errors.append(f"{path}.failed_arms: expected an array")
+    else:
+        errors.extend(
+            f"{path}.failed_arms: arm {arm!r} is not in subjects"
+            for arm in failed_arms
+            if arm not in subjects
+        )
     metas, extra = bench["sample_meta"], bench["sample_extra"]
     if not (
         isinstance(metas, list)

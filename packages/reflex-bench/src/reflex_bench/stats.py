@@ -565,6 +565,37 @@ def bootstrap_diff_ci(
     return ci
 
 
+def spearman(xs: Sequence[float], ys: Sequence[float]) -> float:
+    """Return Spearman's rank correlation coefficient.
+
+    Ties get average ranks and rho is the Pearson correlation of the ranks
+    (``scipy.stats.spearmanr``).
+
+    Args:
+        xs: One variable.
+        ys: The other variable, paired with ``xs``.
+
+    Returns:
+        Rho between -1 and 1; NaN when either variable is constant or there are
+        fewer than two pairs.
+
+    Raises:
+        ValueError: When the variables differ in length.
+    """
+    if len(xs) != len(ys):
+        msg = f"spearman needs pairs of the same length, got {len(xs)} and {len(ys)}"
+        raise ValueError(msg)
+    # Average ranks keep their sum, so both rank means are (n + 1) / 2.
+    mean = (len(xs) + 1) / 2
+    dx = [rank - mean for rank in _rank(xs)[0]]
+    dy = [rank - mean for rank in _rank(ys)[0]]
+    sxx = math.fsum(d * d for d in dx)
+    syy = math.fsum(d * d for d in dy)
+    if not sxx or not syy:
+        return math.nan
+    return math.fsum(a * b for a, b in zip(dx, dy, strict=True)) / math.sqrt(sxx * syy)
+
+
 def holm(pvalues: Sequence[float]) -> list[float]:
     """Apply the Holm-Bonferroni correction.
 
