@@ -66,6 +66,12 @@ TO_HTTPX2 = _compile(
 # Ends the first line of every generated module.
 GENERATED_BY = "by packages/reflex-build-sdk/scripts/unasync.py. Do not edit."
 
+# The trees searched for generated files that are no longer generated.
+GENERATED_ROOTS = (
+    ROOT / "packages/reflex-build-sdk/src",
+    ROOT / "tests/units/reflex_build_sdk",
+)
+
 # Source file -> generated file, for files generated with TO_HTTPX2.
 FILES = {
     ROOT / "packages/reflex-build-sdk/src/reflex_build_sdk/transports/_httpx.py": ROOT
@@ -171,8 +177,8 @@ def stale_files(expected: dict[Path, str]) -> list[Path]:
     # so only those carrying the generated header are orphans.
     stale.extend(
         path
-        for target_dir in sorted({target.parent for target in FILES.values()})
-        for path in sorted(target_dir.glob("*.py"))
+        for root in GENERATED_ROOTS
+        for path in sorted(root.rglob("*.py"))
         if path not in expected and _is_generated(path)
     )
     return stale

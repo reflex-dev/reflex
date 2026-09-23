@@ -163,6 +163,9 @@ with ReflexBuild() as client:
     print(f"Approve the login at {login.url}")
     webbrowser.open(login.url)
     token = client.auth.finish_login(login, timeout=600)
+
+with ReflexBuild(token=token) as client:
+    print(client.auth.me().email)
 ```
 
 `client.auth.tokens.revoke_self()` revokes the client's own token, which any token may do. Create a token for CI with `client.auth.tokens.create("ci", expires_in_days=30)`, whose `.token` holds the value, and rotate or revoke one with `client.auth.tokens.refresh(token)`, whose `.token` holds the new value, and `client.auth.tokens.revoke(token)`. If a refresh answers `previous_revoked=False`, the old token is still live and needs revoking. Managing other tokens needs a token with full access, which `reflex login` tokens are not.
