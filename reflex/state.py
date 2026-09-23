@@ -979,6 +979,14 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                 if k not in own_descriptor_names
             }
 
+        descriptor_names = {
+            name
+            for name, value in cls.__dict__.items()
+            if name in cls.inherited_backend_vars
+            and hasattr(type(value), "__get__")
+            and not isinstance(value, (Field, Var))
+        }
+
         # Base vars silently lose to an inherited var of the same name; warn about it.
         cls._check_overridden_inherited_vars()
 
@@ -1005,6 +1013,12 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             **cls.inherited_backend_vars,
             **new_backend_vars,
         }
+        if descriptor_names:
+            cls.__fields__ = {
+                name: field
+                for name, field in cls.get_fields().items()
+                if name not in descriptor_names
+            }
 
         # Set the base and computed vars.
         cls.base_vars = {
@@ -1445,6 +1459,25 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             )
             raise BaseVarShadowsInheritedVarError(msg)
 
+        descriptor_names = {
+            name
+            for name, value in cls.__dict__.items()
+            if name in cls.inherited_backend_vars
+            and hasattr(type(value), "__get__")
+            and not isinstance(value, (Field, Var))
+        }
+        if descriptor_names:
+            cls.inherited_backend_vars = {
+                name: var
+                for name, var in cls.inherited_backend_vars.items()
+                if name not in descriptor_names
+            }
+            cls.__fields__ = {
+                name: field
+                for name, field in cls.get_fields().items()
+                if name not in descriptor_names
+            }
+
         # Backend declarations include unannotated assignments, so inspect
         # class attributes in addition to resolved annotations.
         for name in set(cls._get_type_hints()) | cls.__dict__.keys():
@@ -1455,10 +1488,6 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                 or name not in cls.inherited_backend_vars
                 or name not in cls.__dict__
                 or callable(value)
-                or isinstance(
-                    value,
-                    (property, functools.cached_property, classmethod, staticmethod),
-                )
             ):
                 continue
             msg = (

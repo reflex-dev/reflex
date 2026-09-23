@@ -6340,11 +6340,18 @@ def test_backend_var_shadowing_with_supported_descriptors_is_allowed() -> None:
         def _shadowed_value(cls) -> int:  # pyright: ignore[reportIncompatibleVariableOverride]
             return 2
 
-    assert isinstance(PropertyChild.__dict__["_shadowed_value"], property)
-    assert isinstance(
-        CachedPropertyChild.__dict__["_shadowed_value"], functools.cached_property
-    )
-    assert isinstance(ClassMethodChild.__dict__["_shadowed_value"], classmethod)
+    assert PropertyChild()._shadowed_value == 2
+    assert CachedPropertyChild()._shadowed_value == 2
+    assert ClassMethodChild()._shadowed_value() == 2
+
+    class Descriptor:
+        def __get__(self, instance, owner=None) -> int:
+            return 3
+
+    class CustomDescriptorChild(ShadowParent):
+        _shadowed_value = Descriptor()  # pyright: ignore[reportAssignmentType]
+
+    assert CustomDescriptorChild()._shadowed_value == 3
 
 
 def test_base_var_shadowing_non_state_descriptor_does_not_raise() -> None:
