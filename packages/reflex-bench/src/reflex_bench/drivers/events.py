@@ -37,7 +37,8 @@ count as unanswered; none is dropped.
 processes with one event loop each, starts their schedules together once every
 session is primed, and merges what they measured into a :class:`LoadResult`.
 :func:`open_sessions` primes sessions on the caller's loop without a load, for
-measurements of idle sessions.
+measurements of idle sessions; :func:`hold_sessions` does the same in a spawned
+process and keeps them open until told to close.
 """
 
 from __future__ import annotations
@@ -1403,3 +1404,189 @@ def run_load(
         The result; call :meth:`LoadResult.check` before trusting it.
     """
     return LoadRunner(plan).run(on_window)
+
+
+async def _hold(endpoint: Endpoint, count: int, conn: Connection) -> None:
+    """Prime idle sessions and keep them open until the parent closes them.
+
+    Args:
+        endpoint: Where they connect.
+        count: How many.
+        conn: The pipe to the parent.
+    """
+    async with open_sessions(endpoint, count) as pool:
+        conn.send(("ready", pool.errors))
+        # The parent asks to close, or its end of the pipe closes when it exits.
+        await wait_readable(conn)
+    conn.send(("closed", pool.errors))
+
+
+def _hold_worker(endpoint: Endpoint, count: int, conn: Connection) -> None:
+    """Run the process of a hold, reporting over a pipe.
+
+    Args:
+        endpoint: Where the sessions connect.
+        count: How many.
+        conn: The pipe to the parent.
+    """
+    # The parent decides when to stop, also on Ctrl-C.
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    try:
+        raise_fd_limit(count)
+        event_loop().run_until_complete(_hold(endpoint, count, conn))
+    except BaseException:
+        with contextlib.suppress(OSError):
+            conn.send(("error", traceback.format_exc()))
+
+
+class SessionHold:
+    """Idle sessions in a spawned process: connected, hydrated and answering pings.
+
+    The sessions send no events after priming, like browser tabs left open.
+    :meth:`ready` waits until every session is primed, :meth:`close` leaves the
+    namespace and closes each websocket, and :meth:`kill` ends the process from
+    any thread (a benchmark's ``conclude`` after a timed-out ``sample``). A hold
+    whose parent exits closes its sessions and ends.
+    """
+
+    def __init__(self, endpoint: Endpoint, count: int) -> None:
+        """Plan the hold; nothing starts yet.
+
+        Args:
+            endpoint: Where the sessions connect.
+            count: The number of sessions.
+        """
+        self.endpoint = endpoint
+        self.count = count
+        self._lock = threading.Lock()
+        self._proc: BaseProcess | None = None
+        self._conn: Connection | None = None
+        self._stopped = False
+
+    def start(self) -> SessionHold:
+        """Spawn the process, which connects and primes the sessions.
+
+        Returns:
+            The hold.
+
+        Raises:
+            LoadError: When the hold was killed before it started.
+        """
+        context = multiprocessing.get_context("spawn")
+        with self._lock:
+            if self._stopped:
+                msg = "the hold was stopped before it started"
+                raise LoadError(msg)
+            conn, child = context.Pipe()
+            self._conn = conn
+            proc = self._proc = context.Process(
+                target=_hold_worker,
+                args=(self.endpoint, self.count, child),
+                name="reflex-bench-hold",
+                daemon=True,
+            )
+            proc.start()
+            child.close()
+        return self
+
+    def ready(self) -> None:
+        """Wait until every session is connected and hydrated.
+
+        Raises:
+            LoadError: When sessions could not start, with how many, or the
+                process failed, timed out or was killed.
+        """
+        batches = -(-self.count // PRIME_CONCURRENCY)
+        errors = self._receive("ready", READY_MARGIN_S + batches * PRIME_TIMEOUT_S)
+        if errors:
+            msg = f"{len(errors)} of {self.count} sessions could not start; {errors[0]}"
+            raise LoadError(msg)
+
+    def close(self) -> list[str]:
+        """Leave the namespace and close every websocket, then end the process.
+
+        Returns:
+            Why sessions failed while they were held, e.g. because the server
+            disconnected them.
+
+        Raises:
+            LoadError: When the process failed, did not answer or was killed.
+        """
+        try:
+            with self._lock:
+                if self._stopped or self._conn is None:
+                    msg = "the hold was stopped"
+                    raise LoadError(msg)
+                self._conn.send(("close", None))
+            return self._receive("closed", RESULT_MARGIN_S)
+        finally:
+            self.kill()
+            if self._conn is not None:
+                self._conn.close()
+
+    def _receive(self, kind: str, timeout: float) -> list[str]:
+        """Receive the process's next report.
+
+        Args:
+            kind: The report expected, ``ready`` or ``closed``.
+            timeout: Seconds to wait.
+
+        Returns:
+            The session errors it carries.
+
+        Raises:
+            LoadError: When the process failed, exited, timed out or was killed.
+        """
+        conn, proc = self._conn, self._proc
+        if conn is None or proc is None:
+            msg = "the hold was not started"
+            raise LoadError(msg)
+        ready = multiprocessing.connection.wait([conn, proc.sentinel], timeout)
+        if self._stopped:
+            msg = "the hold was stopped"
+            raise LoadError(msg)
+        if not ready:
+            msg = f"the hold sent no {kind} report within {timeout:g} s"
+            raise LoadError(msg)
+        try:
+            got, value = conn.recv()
+        except (EOFError, OSError):
+            msg = f"the hold's process exited with code {proc.exitcode}"
+            raise LoadError(msg) from None
+        if got == "error":
+            msg = f"the hold's process failed:\n{value}"
+            raise LoadError(msg)
+        return value
+
+    def kill(self) -> None:
+        """Terminate the process, killing it if it does not exit.
+
+        Safe to call from any thread and more than once.
+        """
+        with self._lock:
+            self._stopped = True
+            proc = self._proc
+        if proc is None:
+            return
+        if proc.is_alive():
+            proc.terminate()
+        proc.join(KILL_GRACE_S)
+        if proc.is_alive():
+            proc.kill()
+            proc.join(KILL_GRACE_S)
+
+
+def hold_sessions(endpoint: Endpoint, count: int) -> SessionHold:
+    """Connect and hydrate idle sessions in a spawned process, and hold them open.
+
+    Call :meth:`SessionHold.ready` to wait for them, then :meth:`SessionHold.close`;
+    :meth:`SessionHold.kill` must follow in any case.
+
+    Args:
+        endpoint: Where the sessions connect.
+        count: The number of sessions.
+
+    Returns:
+        The started hold.
+    """
+    return SessionHold(endpoint, count).start()

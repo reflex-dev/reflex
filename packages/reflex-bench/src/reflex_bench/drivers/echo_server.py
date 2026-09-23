@@ -244,6 +244,21 @@ class EchoProcess:
             raise RuntimeError(msg)
         return f"http://127.0.0.1:{port}"
 
+    @property
+    def pid(self) -> int:
+        """The server process's pid, e.g. to read its memory.
+
+        Returns:
+            The pid.
+
+        Raises:
+            RuntimeError: Before :meth:`start`.
+        """
+        if self._proc is None or self._proc.pid is None:
+            msg = "the echo server was not started"
+            raise RuntimeError(msg)
+        return self._proc.pid
+
     def stop(self) -> None:
         """Stop the server; safe to call again."""
         proc, conn = self._proc, self._conn

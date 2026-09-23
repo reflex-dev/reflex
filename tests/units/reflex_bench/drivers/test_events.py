@@ -16,8 +16,8 @@ import json
 import multiprocessing
 import threading
 import time
-from collections.abc import Awaitable, Callable, Iterator
-from typing import Any
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from typing import Any, cast
 
 import pytest
 from reflex_bench.drivers import events
@@ -801,3 +801,154 @@ def test_open_sessions_reports_the_sessions_that_fail(
             loop.close()
     assert len(errors) == 2
     assert all("not hydrated within 0.5 s" in error for error in errors)
+
+
+class Holding(Counting):
+    """Pings often and records each connection's frames."""
+
+    def __init__(self) -> None:
+        """Record nothing yet."""
+        super().__init__()
+        self.ping_interval_s = 0.2
+        self.frames: list[list[str | bytes]] = []
+
+    async def handle(self, ws):
+        """Serve a connection, recording its frames."""
+        frames: list[str | bytes] = []
+        self.frames.append(frames)
+        await super().handle(cast(ServerConnection, _Recording(ws, frames)))
+
+
+class _Recording:
+    """A server connection that records every frame the client sends."""
+
+    def __init__(self, ws: ServerConnection, frames: list[str | bytes]) -> None:
+        """Wrap a connection.
+
+        Args:
+            ws: The connection.
+            frames: Receives the client's frames.
+        """
+        self._ws = ws
+        self._frames = frames
+
+    def __getattr__(self, name: str) -> Any:
+        """Delegate to the connection.
+
+        Args:
+            name: The attribute.
+
+        Returns:
+            The connection's attribute.
+        """
+        return getattr(self._ws, name)
+
+    async def __aiter__(self) -> AsyncIterator[str | bytes]:
+        """Receive frames, recording them.
+
+        Yields:
+            Each frame.
+        """
+        async for message in self._ws:
+            self._frames.append(message)
+            yield message
+
+
+def wait_for(condition: Callable[[], bool], timeout: float = 10.0) -> bool:
+    """Poll a condition.
+
+    Args:
+        condition: The condition.
+        timeout: Seconds to wait.
+
+    Returns:
+        Whether it held in time.
+    """
+    deadline = time.monotonic() + timeout
+    while not condition():
+        if time.monotonic() > deadline:
+            return False
+        time.sleep(0.02)
+    return True
+
+
+def test_a_hold_keeps_hydrated_sessions_until_closed():
+    server = Holding()
+    with serving(server) as url:
+        hold = events.hold_sessions(Endpoint(url), 3)
+        try:
+            hold.ready()
+            assert server.hydrated == 3
+            time.sleep(1.0)
+            assert server.left == 0
+            assert hold.close() == []
+        finally:
+            hold.kill()
+        assert wait_for(lambda: server.left == 3)
+    for frames in server.frames:
+        # The sessions answered the pings while held, then left the namespace.
+        assert events.PONG in frames
+        assert frames[-1] == events.DISCONNECT_FRAME
+    assert multiprocessing.active_children() == []
+
+
+def test_a_hold_raises_when_sessions_cannot_connect():
+    port = free_ports()[0]
+    hold = events.hold_sessions(Endpoint(f"http://127.0.0.1:{port}"), 3)
+    try:
+        with pytest.raises(LoadError, match="3 of 3 sessions could not start"):
+            hold.ready()
+    finally:
+        hold.kill()
+    assert multiprocessing.active_children() == []
+
+
+def test_close_reports_sessions_lost_while_held():
+    class Dropping(Holding):
+        """Ends the namespace of the first hydrated connection half a second later."""
+
+        async def on_event(self, ws, event):
+            """Answer, then schedule the disconnect of the first connection."""
+            await super().on_event(ws, event)
+            if event["name"] == events.ON_LOAD_EVENT and self.hydrated == 1:
+                loop = asyncio.get_running_loop()
+                loop.call_later(
+                    0.5, lambda: loop.create_task(ws.send(events.DISCONNECT_FRAME))
+                )
+
+    with serving(Dropping()) as url:
+        hold = events.hold_sessions(Endpoint(url), 2)
+        try:
+            hold.ready()
+            time.sleep(1.0)
+            errors = hold.close()
+        finally:
+            hold.kill()
+    assert len(errors) == 1
+    assert "disconnected" in errors[0]
+    assert multiprocessing.active_children() == []
+
+
+def test_kill_ends_a_hold_that_is_still_priming():
+    class NeverHydrated(Holding):
+        """Ignores on_load_internal, so no session finishes priming."""
+
+        async def on_event(self, ws, event):
+            """Answer everything but on_load_internal."""
+            if event["name"] != events.ON_LOAD_EVENT:
+                await super().on_event(ws, event)
+
+    with serving(NeverHydrated()) as url:
+        hold = events.hold_sessions(Endpoint(url), 2)
+        killer = threading.Timer(1.0, hold.kill)
+        killer.start()
+        started = time.monotonic()
+        with pytest.raises(LoadError, match="stopped"):
+            hold.ready()
+        killer.join()
+        assert time.monotonic() - started < 10
+        # Killing again, or closing after the kill, does nothing more.
+        hold.kill()
+        with pytest.raises(LoadError, match="stopped"):
+            hold.close()
+    assert multiprocessing.active_children() == []
