@@ -6295,6 +6295,18 @@ def test_base_var_shadowing_inherited_var_raises() -> None:
             shadowed_value: str = "ninety-nine"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
 
 
+def test_backend_var_shadowing_inherited_var_raises() -> None:
+    """A backend var shadowing an inherited backend var raises instead of being discarded."""
+
+    class ShadowParent(BaseState):
+        _shadowed_value: int = 1
+
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="_shadowed_value"):
+
+        class ShadowChild(ShadowParent):
+            _shadowed_value: str = "ninety-nine"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+
 def test_base_var_shadowing_non_state_descriptor_does_not_raise() -> None:
     """Re-annotating to win over a descriptor from a non-state base is not a shadow."""
     from reflex_base.vars.hybrid_property import hybrid_property

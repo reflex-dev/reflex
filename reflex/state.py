@@ -1409,7 +1409,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
     @classmethod
     def _check_overridden_inherited_vars(cls) -> None:
-        """Reject base vars that shadow a var inherited from a parent state.
+        """Reject vars that shadow a var inherited from a parent state.
 
         Such a redeclaration is dropped: the field never becomes a base var,
         so reads and writes resolve to the parent's var, and the raw default left in
@@ -1419,7 +1419,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         to the inherited Var and stays reactive — that form is inert, not a shadow.
 
         Raises:
-            BaseVarShadowsInheritedVarError: When a base var shadows an inherited var.
+            BaseVarShadowsInheritedVarError: When a var shadows an inherited var.
         """
         parent_state = cls.get_parent_state()
         if parent_state is None:
@@ -1437,6 +1437,21 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             # a merely inherited one is the same object.
             parent_field = parent_fields.get(name)
             if parent_field is None or parent_field is own_field:
+                continue
+            msg = (
+                f"The var `{name}` in {cls.__module__}.{cls.__name__} shadows a var "
+                f"inherited from {parent_state.__module__}.{parent_state.__name__}; "
+                "use a different name instead"
+            )
+            raise BaseVarShadowsInheritedVarError(msg)
+
+        for name in cls._get_type_hints():
+            if (
+                not name.startswith("_")
+                or name.startswith("__")
+                or name not in cls.inherited_backend_vars
+                or name not in cls.__dict__
+            ):
                 continue
             msg = (
                 f"The var `{name}` in {cls.__module__}.{cls.__name__} shadows a var "
