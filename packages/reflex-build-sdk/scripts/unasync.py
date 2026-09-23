@@ -181,7 +181,8 @@ def stale_files(expected: dict[Path, str]) -> list[Path]:
         for path in sorted(root.rglob("*.py"))
         if path not in expected and _is_generated(path)
     )
-    return stale
+    # The scans overlap in the DIRECTORIES targets.
+    return list(dict.fromkeys(stale))
 
 
 def main() -> int:
