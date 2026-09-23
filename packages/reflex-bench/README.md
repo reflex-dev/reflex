@@ -46,7 +46,7 @@ the result's `policy` block):
 | Option | Default | |
 | --- | --- | --- |
 | `--reflex SPEC` | `workspace` | The reflex to measure (see [Subjects](#subjects)). |
-| `--python VERSION` | 3.12 | The Python of subject venvs; the workspace runs on the harness's. |
+| `--python VERSION` | the harness's | The Python of subject venvs (major.minor of the interpreter running reflex-bench, which the workspace runs on). |
 | `--runs N` | automatic | Fixed number of timed runs. |
 | `--min-runs`, `--max-runs`, `--min-time` | 10, max(30, min-runs), 30 s | The automatic run count (below). |
 | `--warmup N` | per benchmark | Untimed runs, stored but excluded from statistics. |
@@ -257,16 +257,19 @@ inconclusive for almost every metric, and the spread shows the noise floor. It
 records `invocation.kind = "aa"`. `ab` takes `run`'s parameter, timeout, seed,
 statistics, `--fail-on`, save, `--json` and `--ndjson` options.
 
-The workspace runs on the harness's Python while other subjects run on
-`--python` (default 3.12), so `ab` warns when the two arms run different Python
-versions: match them with `--python`, or use `path:<checkout>` for the current
-checkout.
+The workspace runs on the harness's Python and other subjects on `--python`,
+which defaults to the harness's major.minor, so both arms match by default.
+`ab` warns when the two arms run different Python versions (for example
+`--python 3.12` against `workspace` on 3.14): match them with `--python`, or
+use `path:<checkout>` for the current checkout.
 
 When an arm's values of a metric trend with their position in the interleaved
-sequence (Spearman's |rho| >= 0.6 over at least 8 samples), the metric warns
-`drift: <metric> trends with time in arm <A|B> (rho=…)`: the machine or the
-benchmark's state probably drifted during the run. It is a hint, not a test:
-with 10 samples, an arm without any trend reaches 0.6 by chance 7 % of the time.
+sequence, significantly (Spearman's rho with p < 0.01: exact up to 10 samples,
+a normal approximation above) and strongly (|rho| >= 0.5), the metric warns
+`drift: <metric> trends with time in arm <A|B> (rho=…, p=…)`: the machine or
+the benchmark's state probably drifted during the run. An arm without any trend
+warns by chance at most 1 % of the time; 6 samples are the fewest that can
+reach p < 0.01.
 
 ## Results
 

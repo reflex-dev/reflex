@@ -22,6 +22,8 @@ from reflex_bench.suites.selftest import noise_value
 
 from .factories import WALL, make_doc, make_entry
 
+HARNESS_PYTHON = f"{sys.version_info.major}.{sys.version_info.minor}"
+
 
 @pytest.fixture
 def home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
@@ -536,7 +538,7 @@ def test_run_measures_the_requested_subject(home: Path, resolved: list):
 
 def test_run_measures_the_workspace_by_default(home: Path, resolved: list):
     assert invoke("run", "selftest.exact", "--no-save").exit_code == 0
-    assert resolved == [("workspace", "3.12")]
+    assert resolved == [("workspace", HARNESS_PYTHON)]
 
 
 @pytest.mark.parametrize(
@@ -569,7 +571,7 @@ def test_ab_finds_a_shift_between_subjects(home: Path, resolved: list, shifted: 
         "--seed", "3", "--no-save", "--json", "ab.json", "--fail-on", "regression",
     )  # fmt: skip
     assert result.exit_code == 2, result.output
-    assert resolved == [("1.0", "3.12"), ("2.0", "3.12")]
+    assert resolved == [("1.0", HARNESS_PYTHON), ("2.0", HARNESS_PYTHON)]
     doc = load(Path("ab.json"))
     assert doc["invocation"]["kind"] == "local"
     assert doc["policy"]["runs"] == 12
@@ -598,7 +600,7 @@ def test_ab_a_a_control(home: Path, resolved: list, shifted: None):
         "--seed", "3", "--json", "aa.json", "--fail-on", "regression",
     )  # fmt: skip
     assert result.exit_code == 0, result.output
-    assert resolved == [("2.0", "3.12")]
+    assert resolved == [("2.0", HARNESS_PYTHON)]
     doc = load(Path("aa.json"))
     assert doc["invocation"]["kind"] == "aa"
     assert doc["subjects"]["A"] == doc["subjects"]["B"]

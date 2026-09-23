@@ -289,25 +289,43 @@ def test_drift_warnings_flag_a_trend_in_one_arm():
     flat = [1.0, 1.02, 0.99, 1.01, 1.0, 0.98, 1.02, 0.99]
     entry = _entry({"A": rising, "B": flat})
     ab.drift_warnings(entry)
+    # Exact p of a perfect order of 8: 2 / 8! permutations.
     assert entry["metrics"]["value"]["warnings"] == [
-        "drift: value trends with time in arm A (rho=1.00)"
+        "drift: value trends with time in arm A (rho=1.00, p=5e-05)"
     ]
     entry = _entry({"A": flat, "B": falling})
     ab.drift_warnings(entry)
     assert entry["metrics"]["value"]["warnings"] == [
-        "drift: value trends with time in arm B (rho=-1.00)"
+        "drift: value trends with time in arm B (rho=-1.00, p=5e-05)"
     ]
 
 
-def test_drift_needs_eight_samples_and_a_strong_trend():
-    entry = _entry({"A": [1.0 + 0.01 * i for i in range(7)], "B": [1.0] * 7})
+def test_drift_needs_a_significant_and_strong_trend():
+    # A perfect order of 5 has p = 2 / 5! = 0.017, above 0.01.
+    entry = _entry({"A": [1.0 + 0.01 * i for i in range(5)], "B": [1.0] * 5})
     ab.drift_warnings(entry)
     assert entry["metrics"]["value"]["warnings"] == []
-    # scipy.stats.spearmanr(weak, range(8)) == 0.5629: some order, below 0.6.
-    weak = [1.0, 1.02, 0.99, 1.01, 1.04, 1.0, 1.05, 1.03]
-    entry = _entry({"A": weak, "B": [1.0] * 8})
+    # rho = 0.78 over 10 samples: p = 0.0105, just above 0.01.
+    moderate = [2.0, 1.0, 4.0, 3.0, 8.0, 5.0, 10.0, 6.0, 9.0, 7.0]
+    entry = _entry({"A": moderate, "B": [1.0] * 10})
     ab.drift_warnings(entry)
     assert entry["metrics"]["value"]["warnings"] == []
+    # rho = 0.33 over 200 samples: p = 4e-06 but a weak trend.
+    rng = random.Random(1)
+    weak = [index + rng.gauss(0, 200) for index in range(200)]
+    entry = _entry({"A": weak, "B": [1.0] * 200})
+    ab.drift_warnings(entry)
+    assert entry["metrics"]["value"]["warnings"] == []
+
+
+def test_drift_rarely_warns_without_a_trend():
+    rng = random.Random(7)
+    warned = 0
+    for _ in range(1000):
+        entry = _entry({"A": [rng.random() for _ in range(10)], "B": [1.0] * 10})
+        ab.drift_warnings(entry)
+        warned += bool(entry["metrics"]["value"]["warnings"])
+    assert warned < 20
 
 
 def test_drift_is_checked_after_finalize(tmp_path: Path):
@@ -315,6 +333,6 @@ def test_drift_is_checked_after_finalize(tmp_path: Path):
     planned = _planned(lambda ctx: {"wall": 1.0 + 0.01 * next(values)})
     (entry,) = _run([planned], _schedulers(tmp_path, runs=8))
     assert entry["metrics"]["wall"]["warnings"] == [
-        "drift: wall trends with time in arm A (rho=1.00)",
-        "drift: wall trends with time in arm B (rho=1.00)",
+        "drift: wall trends with time in arm A (rho=1.00, p=5e-05)",
+        "drift: wall trends with time in arm B (rho=1.00, p=5e-05)",
     ]

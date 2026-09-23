@@ -31,8 +31,8 @@ from reflex_bench.schema import BenchmarkDoc, timed_values
 
 Order = Literal["abba", "random"]
 ORDERS: tuple[Order, ...] = get_args(Order)
-DRIFT_RHO = 0.6
-DRIFT_MIN_SAMPLES = 8
+DRIFT_P = 0.01
+DRIFT_RHO = 0.5
 
 
 def round_orders(
@@ -58,8 +58,9 @@ def drift_warnings(entry: BenchmarkDoc) -> None:
     """Warn about metrics whose timed samples trend with time in an arm.
 
     Spearman's rho between an arm's values of a metric and their positions in
-    the whole interleaved sequence: ``|rho| >= 0.6`` over at least 8 samples
-    suggests the machine (or the benchmark's state) drifted during the run.
+    the whole interleaved sequence: a significant (``p < 0.01``) and strong
+    (``|rho| >= 0.5``) trend suggests the machine (or the benchmark's state)
+    drifted during the run.
 
     Args:
         entry: The benchmark entry; warnings are appended to its metrics.
@@ -70,12 +71,14 @@ def drift_warnings(entry: BenchmarkDoc) -> None:
             positions.setdefault(meta["arm"], []).append(position)
     for name, metric in entry["metrics"].items():
         for arm, where in sorted(positions.items()):
-            if len(where) < DRIFT_MIN_SAMPLES:
-                continue
             rho = stats.spearman(timed_values(entry, name, arm), where)
-            if abs(rho) >= DRIFT_RHO:
+            if abs(rho) < DRIFT_RHO:
+                continue
+            p = stats.spearman_p(rho, len(where))
+            if p < DRIFT_P:
                 metric["warnings"].append(
-                    f"drift: {name} trends with time in arm {arm} (rho={rho:.2f})"
+                    f"drift: {name} trends with time in arm {arm}"
+                    f" (rho={rho:.2f}, p={p:.2g})"
                 )
 
 

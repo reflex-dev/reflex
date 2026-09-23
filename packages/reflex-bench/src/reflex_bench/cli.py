@@ -72,6 +72,8 @@ EXIT_ERROR = 1
 EXIT_REGRESSION = 2
 EXIT_INCONCLUSIVE = 3
 EXIT_INTERRUPTED = 130
+# Subject venvs default to the harness's Python, which the workspace runs on.
+DEFAULT_PYTHON = f"{sys.version_info.major}.{sys.version_info.minor}"
 _ARGV = "reflex_bench.argv"
 _CHECK_ICONS = {"ok": "\N{CHECK MARK}", "warn": WARN, "info": DOT}
 _AGE = re.compile(r"(\d+)([dhm])")
@@ -508,9 +510,10 @@ def _instance_options(command: Any) -> Any:
     """
     command = click.option(
         "--python",
-        default="3.12",
+        default=DEFAULT_PYTHON,
         show_default=True,
-        help="Python of subject venvs (the workspace runs on the harness's).",
+        help="Python of subject venvs; defaults to the harness's, which the"
+        " workspace runs on.",
     )(command)
     command = click.option(
         "--keep", is_flag=True, help="Keep each benchmark's work directory."
