@@ -133,11 +133,17 @@ class ChannelSession:
         await self._send((self.sid,), self.channel.name, event, data, buffers)
 
     def join(self, room: str) -> None:
-        """Add this session to a room for fan-out.
+        """Add this session to a room for fan-out, unless it is closed.
+
+        A handler resuming after the socket went away would otherwise put the
+        session back in the room map, where nothing removes it again and every
+        fan-out keeps addressing the dead connection.
 
         Args:
             room: The room name.
         """
+        if not self.open:
+            return
         self._rooms.add(room)
         self.channel._rooms.setdefault(room, set()).add(self)
 

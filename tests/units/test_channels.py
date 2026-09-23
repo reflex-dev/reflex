@@ -250,6 +250,25 @@ def test_channel_without_a_name_reports_it():
 
 
 @pytest.mark.asyncio
+async def test_join_after_close_leaves_no_member_behind():
+    """A handler resuming after the socket went away cannot rejoin a room.
+
+    The transport drops a closed session's rooms once; a later join would put
+    it back where nothing removes it again, and every fan-out would keep
+    addressing the dead connection.
+    """
+    channel = CollectingChannel()
+    session = channel.session("sid1")
+    channel.forget_session(session)
+
+    session.join("room")
+
+    assert channel._rooms == {}
+    await channel.send_to_room("room", "tick", {"n": 1})
+    assert channel.sent == []
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("event", sorted(RESERVED_EVENTS))
 async def test_send_rejects_reserved_message_names(event: str):
     """A message may not impersonate the client handle's lifecycle events."""
