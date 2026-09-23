@@ -28,14 +28,14 @@ of the whole process tree, from a cgroup scope where the host has them, else
 from the reaped children and PSS sampling (``cpu_method``, ``memory_method``).
 Whole-run peaks only: per-phase peaks need Linux 6.12. Samples are taken with
 ``phases=True``: its ``--loglevel debug`` costs 0.04 % of a warm playground
-compile (median of 10 ABBA pairs against ``--loglevel info``, 1.1013 s against
-1.1009 s), below the 2 % above which phases would come from a separate untimed
-compile. The process tree and PSS samplers add another 3 % locally, the same
-in both arms of a comparison.
+compile (n = 10 per arm, interleaved ABBA against ``--loglevel info``: medians
+1.1013 s and 1.1009 s), below the 2 % above which phases would come from a
+separate untimed compile. The process tree and PSS samplers add another 3 %
+locally, the same in both arms of a comparison.
 
-``export`` rebuilds and zips the frontend every time: after priming, the first
-and second exports of the playground differ by 5 % (HEAD) to 8 % (0.8.23), and
-the second installs no packages, so a sample measures the steady state: a
+``export`` rebuilds the frontend and writes both zips every time: after
+priming, the first two exports of the playground are within 2 to 8 % of each
+other and neither installs packages, so a sample measures the steady state, a
 primed app whose previous export is replaced.
 
 The ``lifecycle.scale.*`` tiers drive generated apps
