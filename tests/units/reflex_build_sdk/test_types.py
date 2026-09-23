@@ -22,6 +22,8 @@ from tests.units.reflex_build_sdk.schema_check import load_components, model_pro
 # backend change that breaks decoding fails here when the snapshot is refreshed.
 SCHEMA_MODELS: dict[type, tuple[str, ...]] = {
     types.AccessScope: ("AccessJson",),
+    types.CreatedToken: ("CreateTokenResponse",),
+    types.RotatedToken: ("RefreshTokenResponse",),
     types.User: (
         "GetAppHistoryResponseDeploymentUser",
         "GetAppInfoLatestDeploymentResponseUser",

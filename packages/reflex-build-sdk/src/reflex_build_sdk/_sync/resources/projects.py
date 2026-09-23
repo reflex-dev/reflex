@@ -427,7 +427,7 @@ class Projects:
             The projects.
         """
         projects = self._client._request(
-            "GET", "project/", builtins.list[ProjectSummary] | None
+            "GET", "project", builtins.list[ProjectSummary] | None
         )
         return projects or []
 
