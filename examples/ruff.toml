@@ -1,0 +1,36 @@
+# Examples are standalone apps that must run on published reflex releases (the
+# playground back to 0.8.23), so they import Reflex only as `import reflex as rx`.
+extend = "../pyproject.toml"
+
+# Each example directory is the root of its app, so the app's own package is
+# first-party and `reflex` is an installed third-party package.
+src = ["*"]
+
+[lint.extend-per-file-ignores]
+# rxconfig.py sits in the app root, which is not a package.
+"*/rxconfig.py" = ["INP001"]
+
+# Every package under packages/ whose import name is not `reflex`.
+[lint.flake8-tidy-imports.banned-api]
+hatch_reflex_pyi.msg = "Examples import Reflex only as `import reflex as rx`."
+integrations_docs.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_base.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_build_sdk.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_cli.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_components_code.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_components_core.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_components_dataeditor.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_components_gridjs.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_components_internal.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_components_lucide.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_components_markdown.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_components_moment.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_components_plotly.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_components_radix.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_components_react_player.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_components_recharts.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_components_sonner.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_docgen.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_otel.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_release.msg = "Examples import Reflex only as `import reflex as rx`."
+reflex_site_shared.msg = "Examples import Reflex only as `import reflex as rx`."

@@ -34,6 +34,16 @@ repos:
     require_serial: true
 - repo: local
   hooks:
+  - id: hash-examples
+    name: hash-examples
+    description: Update the examples/playground content hash as needed
+    entry: uv run --no-sync python scripts/hash_examples.py
+    language: system
+    files: ^(examples/playground/|scripts/hash_examples\.py$)
+    pass_filenames: false
+    require_serial: true
+- repo: local
+  hooks:
   - id: unasync-reflex-build-sdk
     name: unasync-reflex-build-sdk
     description: Regenerate the synchronous reflex-build-sdk client and tests from the asynchronous source

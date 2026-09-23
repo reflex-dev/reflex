@@ -7,7 +7,6 @@
 .mypy_cache/
 assets/external/*
 dist/*
-examples/
 .web
 .states
 .idea
