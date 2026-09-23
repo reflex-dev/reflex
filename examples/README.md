@@ -19,11 +19,14 @@ uv run --directory examples/playground --project ../.. reflex run
 
 ## Rules
 
-- **Import Reflex only through the `rx` namespace** (`import reflex as rx`). Never import
-  the packages Reflex is split into (`reflex_base`, `reflex_components_*`,
-  `reflex_docgen`, ...): they are implementation details, and older releases the
-  examples run on do not have them. `examples/ruff.toml` bans them (ruff `TID251`), so
-  `uv run ruff check examples/` fails on such an import.
+- **Import Reflex only through the `rx` namespace** (`import reflex as rx`). Module
+  paths such as `reflex.state` move between the releases the examples run on, so
+  `tests/units/test_examples.py` fails on any other form (`import reflex`,
+  `from reflex import App`, `from reflex.state import State`). Never import the packages
+  Reflex is split into (`reflex_base`, `reflex_components_*`, `reflex_docgen`, ...):
+  they are implementation details, and older releases do not have them.
+  `examples/ruff.toml` bans them (ruff `TID251`), so `uv run ruff check examples/` fails
+  on such an import.
 - **Stay standalone.** Declare dependencies in the example's own `pyproject.toml` (the
   repository ignores `requirements.txt`), and keep the example out of the uv workspace.
 
