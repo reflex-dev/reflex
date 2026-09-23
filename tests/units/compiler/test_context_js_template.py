@@ -15,7 +15,6 @@ def _event_loop_provider_body() -> str:
         is_dev_mode=False,
         default_color_mode="light",
         initial_state={"state": {}},
-        state_name="state",
     )
     start = rendered.index("export function EventLoopProvider")
     end = rendered.index("export function StateProvider", start)

@@ -97,6 +97,7 @@ from reflex.utils import exec as exec_utils
 from reflex.utils.token_manager import RedisTokenManager, SocketRecord
 
 from .conftest import active_tracer, chdir, metric_points
+from .name_resolvers import stub_resolver, temporary_resolver
 from .states import GenState
 from .states.upload import (
     ChildFileUploadState,
@@ -1614,6 +1615,39 @@ async def test_upload_file_unknown_handler_returns_400(
 
 
 @pytest.mark.asyncio
+async def test_upload_file_scheme_mismatch_returns_409(
+    token: str,
+):
+    """An upload from a bundle built against another scheme is rejected.
+
+    Uploads bypass the socket handshake, and the handler header is resolved
+    against this backend's scheme, so a name from another scheme can pick out
+    a real -- but wrong -- upload handler.
+
+    Args:
+        token: a Token.
+    """
+    app = App(_state=State)
+
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+        "reflex-scheme": "stale-bundle-digest",
+    }
+
+    with (
+        temporary_resolver(stub_resolver(digest="backend-digest")),
+        pytest.raises(HTTPException) as err,
+    ):
+        await upload(app)(request_mock)
+    assert err.value.status_code == 409
+    # Rejected before the body is touched.
+    request_mock.form.assert_not_called()
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "state",
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
@@ -2067,7 +2101,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     prev_exp_val = ""
     for exp_index, exp_val in enumerate(exp_vals):
         on_load_internal = _event(
-            name=f"{OnLoadInternalState.get_full_name()}.{constants.CompileVars.ON_LOAD_INTERNAL.rpartition('.')[2]}",
+            name=f"{OnLoadInternalState.get_full_name()}.on_load_internal",
             val=exp_val,
         )
         exp_router = RouterData.from_router_data(on_load_internal.router_data)

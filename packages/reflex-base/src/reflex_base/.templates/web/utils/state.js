@@ -26,6 +26,12 @@ const CLIENT_ERROR_EVENT = "client_error";
 // Client error types (must match reflex_base/constants/event.py ClientErrorType)
 const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
 const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
+const SCHEME_MISMATCH_EVENT = "scheme_mismatch";
+
+// Shown in the connection UI for any fatal frontend/backend mismatch. The
+// cause differs; the only action available to the viewer does not.
+const OUTDATED_PAGE_MESSAGE =
+  "This page is out of date and can no longer talk to the server. Reload the page to load the current version.";
 
 // These hostnames indicate that the backend and frontend are reachable via the same domain.
 const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
@@ -129,6 +135,19 @@ export const getBackendURL = (url_str) => {
 };
 
 /**
+ * Build the query the backend reads on connect.
+ *
+ * Used for reconnects too: a field dropped here reaches the backend as empty
+ * on every later connection, so the two call sites must not drift apart.
+ *
+ * @returns The socket handshake query.
+ */
+const handshakeQuery = () => ({
+  token: getToken(),
+  scheme: app.schemeDigest ?? "",
+});
+
+/**
  * Check if the backend is disabled.
  *
  * @returns True if the backend is disabled, false otherwise.
@@ -149,7 +168,11 @@ export const isStateful = () => {
   if (event_queue.length === 0) {
     return false;
   }
-  return event_queue.some((event) => event.name.startsWith("reflex___state"));
+  // State events are `<full state name>.<handler>`; the trailing dot keeps a
+  // frontend-only event from matching a short (minified) root state name.
+  return event_queue.some((event) =>
+    event.name.startsWith(app.main_state_name + "."),
+  );
 };
 
 /**
@@ -579,7 +602,7 @@ export const connect = async (
     transports: transports,
     protocols: [reflexEnvironment.version],
     autoUnref: false,
-    query: { token: getToken() },
+    query: handshakeQuery(),
     reconnection: false, // Reconnection will be handled manually.
   });
   socket.current.wait_connect = !socket.current.connected;
@@ -594,6 +617,10 @@ export const connect = async (
   };
   // Set up a reconnect helper function
   socket.current.reconnect = () => {
+    if (backend_state_mismatch) {
+      // Reconnecting cannot resolve a scheme or state mismatch.
+      return;
+    }
     if (
       socket.current &&
       !socket.current.connected &&
@@ -601,7 +628,7 @@ export const connect = async (
     ) {
       socket.current.wait_connect = true;
       socket.current.rehydrate = true;
-      socket.current.io.opts.query = { token: getToken() }; // Update token for reconnect.
+      socket.current.io.opts.query = handshakeQuery(); // Refresh token/scheme.
       socket.current.connect();
     }
   };
@@ -649,7 +676,15 @@ export const connect = async (
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", async () => {
     socket.current.wait_connect = false;
-    setConnectErrors([]);
+    // A fatal mismatch is emitted from the server's connect handler, so it is
+    // buffered and replayed before this runs; clearing it here would discard
+    // the only notice the viewer gets. It also outlives a reconnect, since
+    // reconnecting cannot change what the names mean.
+    setConnectErrors((connectErrors) =>
+      connectErrors.length > 0 && connectErrors[connectErrors.length - 1].fatal
+        ? connectErrors
+        : [],
+    );
     window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
@@ -701,6 +736,32 @@ export const connect = async (
     });
   };
 
+  // A mismatch is terminal: no event will ever be answered again. Push it onto
+  // connectErrors as well, or the page sits dead with the reason only in the
+  // console, where no end user will look.
+  const fatalMismatch = (developerMessage) => {
+    backend_state_mismatch = true;
+    event_queue.length = 0;
+    console.error(developerMessage);
+    setConnectErrors((connectErrors) => [
+      ...connectErrors.slice(-9),
+      Object.assign(new Error(OUTDATED_PAGE_MESSAGE), { fatal: true }),
+    ]);
+    // A dead tab must not hold a live server connection. Engine.IO flushes its
+    // write buffer (any client_error just emitted) before closing the transport,
+    // and "io client disconnect" keeps the reconnect helpers out of it.
+    socket.current?.disconnect();
+  };
+
+  // The backend resolves wire names with its own copy of the minification
+  // scheme. If it disagrees with the one this bundle was built against, every
+  // name we send is meaningless to it, so stop before the first event.
+  socket.current.on(SCHEME_MISMATCH_EVENT, (detail) => {
+    fatalMismatch(
+      `Cannot talk to the backend: it resolves state and event names with a different minification scheme (frontend "${detail?.frontend ?? ""}", backend "${detail?.backend ?? ""}"). If you are the developer of this app, rebuild the frontend against the same minify.json the backend is running.`,
+    );
+  });
+
   // On each received message, queue the updates and events.
   socket.current.on("event", (update) => {
     if (backend_state_mismatch) {
@@ -720,14 +781,13 @@ export const connect = async (
       const errorMsg = `Cannot process state update: no dispatch function for substate(s) "${missing_substates.join(
         '", "',
       )}". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.`;
-      console.error(errorMsg);
       // Surface the error in the backend terminal logs.
       socket.current.emit(CLIENT_ERROR_EVENT, {
         message: errorMsg,
         substate: missing_substates.join(", "),
         error_type: ERROR_TYPE_DISPATCH_MISSING,
       });
-      backend_state_mismatch = true;
+      fatalMismatch(errorMsg);
       return;
     }
     try {
@@ -736,7 +796,7 @@ export const connect = async (
           dispatch[substate](update.delta[substate]);
           // handle events waiting for `is_hydrated`
           if (
-            substate === app.state_name &&
+            substate === app.main_state_name &&
             update.delta[substate]?.is_hydrated_rx_state_
           ) {
             // Deliberately not awaited: the rest of the delta and the client
@@ -1055,30 +1115,34 @@ export const useEventLoop = (
       return;
     }
 
+    // A stateless app exports no handler name, and an event without one
+    // reaches nothing on the backend.
+    const reportException = (info) => {
+      if (app.handle_frontend_exception) {
+        addEvents([
+          ReflexEvent(app.handle_frontend_exception, {
+            info,
+            component_stack: "",
+          }),
+        ]);
+      }
+    };
+
     window.onerror = function (msg, url, lineNo, columnNo, error) {
-      addEvents([
-        ReflexEvent(`${app.exception_state_name}.handle_frontend_exception`, {
-          info: error.name + ": " + error.message + "\n" + error.stack,
-          component_stack: "",
-        }),
-      ]);
+      reportException(error.name + ": " + error.message + "\n" + error.stack);
       return false;
     };
 
     //NOTE: Only works in Chrome v49+
     //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
     window.onunhandledrejection = function (event) {
-      addEvents([
-        ReflexEvent(`${app.exception_state_name}.handle_frontend_exception`, {
-          info:
-            event.reason?.name +
-            ": " +
-            event.reason?.message +
-            "\n" +
-            event.reason?.stack,
-          component_stack: "",
-        }),
-      ]);
+      reportException(
+        event.reason?.name +
+          ": " +
+          event.reason?.message +
+          "\n" +
+          event.reason?.stack,
+      );
       return false;
     };
   }, []);
@@ -1134,10 +1198,9 @@ export const useEventLoop = (
       if (storage_to_state_map[e.key]) {
         const vars = {};
         vars[storage_to_state_map[e.key]] = e.newValue;
-        const event = ReflexEvent(
-          `${app.state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
-          { vars: vars },
-        );
+        const event = ReflexEvent(app.update_vars_internal, {
+          vars: vars,
+        });
         addEvents([event], e);
       }
     };
@@ -1172,7 +1235,7 @@ export const useEventLoop = (
     }
 
     // Equivalent to routeChangeStart - runs when navigation begins
-    const main_state_dispatch = dispatch["reflex___state____state"];
+    const main_state_dispatch = dispatch[app.main_state_name];
     if (main_state_dispatch !== undefined) {
       main_state_dispatch({ is_hydrated_rx_state_: false });
     }

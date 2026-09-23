@@ -43,8 +43,18 @@ has_connection_errors = Var(
     _js_expr="(connectErrors.length > 0)", _var_data=connect_error_var_data
 ).to(BooleanVar)
 
+has_fatal_connection_error = Var(
+    # Indexed access, not Array.prototype.at: a runtime method is not
+    # downlevelled by the bundler, so it would break older browsers.
+    _js_expr="((connectErrors.length > 0) && connectErrors[connectErrors.length - 1].fatal === true)",
+    _var_data=connect_error_var_data,
+).to(BooleanVar)
+
 has_too_many_connection_errors = Var(
-    _js_expr="(connectErrors.length >= 2)", _var_data=connect_error_var_data
+    # A fatal mismatch never retries, so it skips the transient-error debounce:
+    # there will never be a second error to cross the threshold.
+    _js_expr=f"(connectErrors.length >= 2 || {has_fatal_connection_error!s})",
+    _var_data=connect_error_var_data,
 ).to(BooleanVar)
 
 
@@ -76,12 +86,17 @@ def default_connection_error() -> list[str | Var | Component]:
     Returns:
         The default connection error message.
     """
-    return [
-        "Cannot connect to server: ",
-        connection_error,
-        ". Check if server is reachable at ",
-        WebsocketTargetURL.create(),
-    ]
+    target_url = WebsocketTargetURL.create()
+    unreachable = Var(
+        _js_expr=(
+            f'("Cannot connect to server: " + {connection_error!s} + '
+            f'". Check if server is reachable at " + {target_url!s})'
+        ),
+        _var_data=VarData.merge(connect_error_var_data, target_url._get_all_var_data()),
+    )
+    # A fatal mismatch is not a connectivity problem: the server is reachable,
+    # and the message already says what the viewer should do about it.
+    return [cond(has_fatal_connection_error, connection_error, unreachable)]
 
 
 class ConnectionToaster(Fragment):
@@ -135,6 +150,15 @@ setTimeout(() => {{
                 f"toast?.error({loading_message!s}, {{...toast_props, onDismiss: () => setUserDismissed(true)}},)"
             )
 
+        # A fatal mismatch is not a connectivity problem: the message carries
+        # itself and the only fix is a reload. The action must be raw JS, since
+        # a Reflex event would be dropped by the dead event loop.
+        fatal_toast_var = Var(
+            f"toast?.error({connection_error!s}, {{...toast_props, description: '', "
+            "duration: Infinity, action: {label: 'Reload', onClick: () => "
+            "window.location.reload()}, onDismiss: () => setUserDismissed(true)},)"
+        )
+
         individual_hooks = [
             Var(f"const toast = {toast_ref};"),
             f"const toast_props = {LiteralVar.create(props)!s};",
@@ -159,7 +183,11 @@ setTimeout(() => {{
 () => {{
     if ({has_too_many_connection_errors!s}) {{
         if (!userDismissed) {{
-            {toast_var!s}
+            if ({has_fatal_connection_error!s}) {{
+                {fatal_toast_var!s}
+            }} else {{
+                {toast_var!s}
+            }}
         }}
     }} else {{
         toast?.dismiss("{toast_id}");
