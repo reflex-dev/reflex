@@ -58,7 +58,15 @@ def create_token(
             name, expires_in_days=duration
         )
     if as_json:
-        print_json({"name": name, "token": created.token, "expires_in_days": duration})
+        # The name and the expiration are the server's, not the request's: it is
+        # free to clamp the duration it was asked for.
+        print_json({
+            "name": created.name,
+            "token": created.token,
+            "expires_at": created.expires_at.isoformat()
+            if created.expires_at
+            else None,
+        })
         return
     logger.log(log.SUCCESS, f"Token: {created.token}")
 

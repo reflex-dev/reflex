@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 
@@ -187,7 +188,39 @@ def test_get_deployment_regions_http_error(
 
 
 def test_create_token_json_output(mocker: MockFixture):
-    """Minting a token reports it as a field rather than in a log line."""
+    """Minting a token reports the token the server issued, not the one asked for.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
+    client = fake_client()
+    client.api.auth.tokens.create.return_value = CreatedToken(
+        token="tok-1",
+        name="ci",
+        expires_at=datetime.datetime(2025, 3, 1, tzinfo=datetime.timezone.utc),
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=client
+    )
+
+    result = runner.invoke(
+        hosting_cli, ["create-token", "ci", "--duration", "90", "--json"]
+    )
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "name": "ci",
+        "token": "tok-1",
+        "expires_at": "2025-03-01T00:00:00+00:00",
+    }
+
+
+def test_create_token_json_output_without_an_expiry(mocker: MockFixture):
+    """A token the server never expires reports a null expiry, not a missing key.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
     client = fake_client()
     client.api.auth.tokens.create.return_value = CreatedToken(
         token="tok-1", name="ci", expires_at=None
@@ -199,11 +232,7 @@ def test_create_token_json_output(mocker: MockFixture):
     result = runner.invoke(hosting_cli, ["create-token", "ci", "--json"])
 
     assert result.exit_code == 0, result.output
-    assert json.loads(result.stdout) == {
-        "name": "ci",
-        "token": "tok-1",
-        "expires_in_days": 90,
-    }
+    assert json.loads(result.stdout)["expires_at"] is None
 
 
 def test_create_token_reports_the_value(
