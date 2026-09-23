@@ -449,15 +449,16 @@ def test_db_commands_without_db_extra_point_to_install(
     assert not isinstance(result.exception, ImportError)
 
 
-def test_db_commands_without_sqlmodel_point_to_install(
-    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+@pytest.mark.parametrize("missing", reflex._DB_PACKAGES)
+def test_db_commands_with_partial_db_install_point_to_install(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, missing: str
 ):
-    """A partial install without sqlmodel still gets the install hint."""
+    """A partial install missing any one db package still gets the install hint."""
     real_find_spec = reflex.find_spec
     monkeypatch.setattr(
         reflex,
         "find_spec",
-        lambda name: None if name == "sqlmodel" else real_find_spec(name),
+        lambda name: None if name == missing else real_find_spec(name),
     )
 
     result = click.testing.CliRunner().invoke(reflex.db_cli, ["init"])
