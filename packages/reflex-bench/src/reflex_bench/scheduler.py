@@ -201,13 +201,16 @@ class Planned:
 
 
 def plan(
-    benchmarks: Sequence[Benchmark], overrides: Mapping[str, object] | None = None
+    benchmarks: Sequence[Benchmark],
+    overrides: Mapping[str, object] | None = None,
+    suite: str | None = None,
 ) -> list[Planned]:
     """Expand benchmarks into the instances to run.
 
     Args:
         benchmarks: The selected benchmarks.
         overrides: ``--param`` overrides.
+        suite: The selected suite, which may narrow the parameter grids.
 
     Returns:
         The instances, benchmark by benchmark, in parameter-grid order.
@@ -215,7 +218,7 @@ def plan(
     return [
         Planned(bench, params)
         for bench in benchmarks
-        for params in bench.expand(overrides)
+        for params in bench.expand(overrides, suite)
     ]
 
 

@@ -213,6 +213,8 @@ class Benchmark:
             or track.
         params: Visible parameter grid; the cartesian product gives the instances.
         hidden_params: Hidden parameters and their defaults.
+        suite_params: Per suite, parameter values that replace the grid's when
+            that suite is selected, e.g. one quick point for ``smoke``.
         metrics: The declared metrics.
         warmup: Untimed runs before the timed ones.
         timeout: Seconds allowed for each prepare, sample and conclude call.
@@ -230,6 +232,7 @@ class Benchmark:
     kind: Kind
     params: dict[str, tuple[Any, ...]]
     hidden_params: dict[str, Any]
+    suite_params: dict[str, dict[str, tuple[Any, ...]]]
     metrics: dict[str, Metric]
     warmup: int
     timeout: float
@@ -250,6 +253,7 @@ class Benchmark:
         kind: Kind = "time",
         params: Mapping[str, Sequence[Any]] | None = None,
         hidden_params: Mapping[str, Any] | None = None,
+        suite_params: Mapping[str, Mapping[str, Sequence[Any]]] | None = None,
         warmup: int = 0,
         timeout: float = 60.0,
         setup_timeout: float = 600.0,
@@ -266,6 +270,8 @@ class Benchmark:
             kind: What the benchmark measures.
             params: Parameter name to the values to run.
             hidden_params: Hidden parameter name to its default.
+            suite_params: Suite name to parameter values that replace the
+                declared ones when that suite is selected.
             warmup: Untimed runs before the timed ones.
             timeout: Seconds allowed for each prepare, sample and conclude call.
             setup_timeout: Seconds allowed for setup_cache, setup and cleanup.
@@ -306,6 +312,29 @@ class Benchmark:
         )
         if overlap := grid.keys() & hidden.keys():
             problems.append(f"parameters {sorted(overlap)} are both visible and hidden")
+        narrowed = {
+            suite: {name: tuple(values) for name, values in values_by_name.items()}
+            for suite, values_by_name in (suite_params or {}).items()
+        }
+        for suite, values_by_name in narrowed.items():
+            if suite not in suites:
+                problems.append(
+                    f"suite_params name suite {suite!r}, which the benchmark is not in"
+                )
+            for name, values in values_by_name.items():
+                if name not in grid:
+                    problems.append(
+                        f"suite_params of {suite!r} name undeclared parameter {name!r}"
+                    )
+                elif not values:
+                    problems.append(
+                        f"suite_params of {suite!r}: parameter {name!r} has no values"
+                    )
+                problems.extend(
+                    f"suite_params of {suite!r}: parameter {name!r} value {value!r} is not JSON serializable"
+                    for value in values
+                    if not _is_json(value)
+                )
         if unknown := [s for s in suites if s not in _DECLARABLE_SUITES]:
             problems.append(
                 f"unknown suites {unknown}; choose from {_DECLARABLE_SUITES}"
@@ -330,6 +359,7 @@ class Benchmark:
             kind=kind,
             params=grid,
             hidden_params=hidden,
+            suite_params=narrowed,
             metrics=dict(metrics),
             warmup=warmup,
             timeout=float(timeout),
@@ -358,21 +388,28 @@ class Benchmark:
         """
         return {*self.params, *self.hidden_params}
 
-    def expand(self, overrides: Mapping[str, object] | None = None) -> list[ParamSet]:
+    def expand(
+        self, overrides: Mapping[str, object] | None = None, suite: str | None = None
+    ) -> list[ParamSet]:
         """Expand the parameter grid into instances.
 
         Args:
             overrides: Parameter values that replace a parameter's declared values
                 (restricting the grid to one value) or a hidden parameter's default.
                 Keys this benchmark does not declare are ignored.
+            suite: The selected suite, whose ``suite_params`` replace the
+                declared values; overrides still win.
 
         Returns:
             One parameter set per point of the cartesian product, in declaration
             order.
         """
         overrides = overrides or {}
+        narrowed = self.suite_params.get(suite, {}) if suite is not None else {}
         axes = [
-            (coerce_param(overrides[name], values),) if name in overrides else values
+            (coerce_param(overrides[name], values),)
+            if name in overrides
+            else narrowed.get(name, values)
             for name, values in self.params.items()
         ]
         hidden = {
@@ -565,6 +602,7 @@ def benchmark(
     kind: Kind = "time",
     params: Mapping[str, Sequence[Any]] | None = None,
     hidden_params: Mapping[str, Any] | None = None,
+    suite_params: Mapping[str, Mapping[str, Sequence[Any]]] | None = None,
     warmup: int = 0,
     timeout: float = 60.0,
     setup_timeout: float = 600.0,
@@ -583,6 +621,8 @@ def benchmark(
         params: Parameter name to values; the cartesian product gives instances.
         hidden_params: Parameter name to default for parameters that are passed to
             hooks but are not part of the instance name or the series key.
+        suite_params: Suite name to parameter values that replace the declared
+            ones when that suite is selected, e.g. ``{"smoke": {"sessions": [10]}}``.
         warmup: Untimed runs before the timed ones.
         timeout: Seconds allowed for each prepare, sample and conclude call.
         setup_timeout: Seconds allowed for setup_cache, setup and cleanup.
@@ -604,6 +644,7 @@ def benchmark(
                 kind=kind,
                 params=params,
                 hidden_params=hidden_params,
+                suite_params=suite_params,
                 warmup=warmup,
                 timeout=timeout,
                 setup_timeout=setup_timeout,

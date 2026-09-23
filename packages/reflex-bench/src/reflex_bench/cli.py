@@ -222,7 +222,7 @@ def list_command(filters: tuple[str, ...], suite: str | None) -> int:
         The exit code.
     """
     console = make_console(plain=in_ci())
-    planned = plan(select(discover().values(), filters, suite))
+    planned = plan(select(discover().values(), filters, suite), suite=suite)
     if not planned:
         hint = "" if suite else " (self-tests are listed with --suite selftest)"
         console.print(Text(f"no benchmarks selected{hint}"))
@@ -841,7 +841,7 @@ def run(
         scheduler = Scheduler(
             subject, policy, home=home, seed=seed, keep=keep, on_event=progress.emit
         )
-        doc["benchmarks"] = scheduler.run(plan(benchmarks, overrides))
+        doc["benchmarks"] = scheduler.run(plan(benchmarks, overrides, suite))
     doc["invocation"]["duration_s"] = round(time.perf_counter() - started, 3)
     if not live:
         console.print()
@@ -1040,7 +1040,7 @@ def ab_command(
     ]
     with _Progress(console, live=live, ndjson=ndjson) as progress:
         doc["benchmarks"] = ab.run(
-            plan(benchmarks, overrides),
+            plan(benchmarks, overrides, suite),
             *schedulers,
             order=order,
             on_event=progress.emit,
