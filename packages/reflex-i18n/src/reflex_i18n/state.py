@@ -11,9 +11,10 @@ from __future__ import annotations
 import contextlib
 
 from reflex_base.event.processor.scope import register_event_scope_provider
+from reflex_base.plugins.base import get_plugin
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import Var, VarData, computed_var
-from reflex_base.vars.function import FunctionVar
+from reflex_base.vars.function import FunctionStringVar, ReflexCallable
 
 from reflex.event import EventType, event, run_script
 from reflex.istate.storage import Cookie
@@ -21,6 +22,13 @@ from reflex.state import BaseState, State, _override_base_method
 
 from .config import LOCALE_COOKIE_NAME, get_active_i18n_config
 from .runtime import negotiate_locale, use_locale
+
+# Switches the client-side locale, without a round trip to the server.
+_SWITCH_LOCALE = FunctionStringVar.create(
+    "switchLocale",
+    _var_type=ReflexCallable[[str], None],
+    _var_data=VarData(imports={"$/utils/i18n": [ImportVar(tag="switchLocale")]}),
+)
 
 
 def _resolve_locale(locale_cookie: str, accept_language: str) -> str:
@@ -41,12 +49,37 @@ def _resolve_locale(locale_cookie: str, accept_language: str) -> str:
     return negotiate_locale(accept_language, config.locales, config.default_locale)
 
 
+def _locale_from_path(path: str) -> str | None:
+    """The locale a URL path names, when URL-based routing is enabled.
+
+    Args:
+        path: The page path the client is on.
+
+    Returns:
+        The locale owned by the path, or None if this app does not route
+        locales through the URL.
+    """
+    from .plugin import I18nPlugin
+
+    plugin = get_plugin(I18nPlugin)
+    config = get_active_i18n_config()
+    if plugin is None or plugin.routing is None or config is None:
+        return None
+    return plugin.routing.locale_of(path, config.locales, config.default_locale)
+
+
 class I18nState(State):
     """Substate holding the active locale for the current client."""
 
     # The locale explicitly chosen by the user, persisted client-side. Empty
     # until the user picks one, so Accept-Language keeps driving the default.
     locale_cookie: str = Cookie("", name=LOCALE_COOKIE_NAME)
+
+    # The locale the current URL names, written per event by _locale_scope when
+    # the plugin routes locales through the path (empty otherwise). A var of
+    # this state rather than a dependency on the root state's router var: that
+    # would attach an i18n edge to every app sharing the process.
+    _route_locale: str = ""
 
     @classmethod
     @_override_base_method
@@ -59,17 +92,25 @@ class I18nState(State):
         """
         return False
 
-    @computed_var(cache=True, backend=True, auto_deps=False, deps=["locale_cookie"])
+    @computed_var(
+        cache=True,
+        backend=True,
+        auto_deps=False,
+        deps=["locale_cookie", "_route_locale"],
+    )
     def locale(self) -> str:
         """The locale in effect for this client (server-side).
 
         Returns:
             The resolved locale.
         """
-        # Depends only on locale_cookie (not router): accept-language is read
-        # for the initial value but is fixed per session, and depending on
-        # router would dirty this substate on every navigation.
-        return _resolve_locale(self.locale_cookie, self.router.headers.accept_language)
+        # With URL routing the path owns the locale, so navigating between
+        # prefixes retranslates dynamic content. accept-language is read for the
+        # initial cookie-mode value but is fixed per session, so it is not a
+        # dependency.
+        return self._route_locale or _resolve_locale(
+            self.locale_cookie, self.router.headers.accept_language
+        )
 
     @event
     def set_locale(self, locale: str) -> None:
@@ -100,17 +141,10 @@ def set_locale(locale: str | Var[str]) -> EventType:
     Returns:
         The client-side and server-side switch events.
     """
-    switch_client = run_script(
-        Var(
-            _js_expr="switchLocale",
-            _var_data=VarData(
-                imports={"$/utils/i18n": [ImportVar(tag="switchLocale")]}
-            ),
-        )
-        .to(FunctionVar)
-        .call(locale)
-    )
-    return [switch_client, I18nState.set_locale(locale)]
+    return [
+        run_script(_SWITCH_LOCALE.call(locale)),
+        I18nState.set_locale(locale),
+    ]
 
 
 async def _locale_scope(
@@ -124,30 +158,23 @@ async def _locale_scope(
     Returns:
         A context manager activating the client's locale.
     """
-    from reflex_base.config import get_config
-
     from .plugin import I18nPlugin
 
     # Gate on the CURRENT app's plugins rather than the module-global active
     # config: the provider is registered process-wide once i18n is imported,
     # but an app not using i18n (possible when several apps share a process)
     # must be a no-op so it never touches I18nState.
-    plugin = next((p for p in get_config().plugins if isinstance(p, I18nPlugin)), None)
-    if plugin is None:
+    if get_plugin(I18nPlugin) is None:
         return contextlib.nullcontext()
     i18n_state = await root_state.get_state(I18nState)
-    config = get_active_i18n_config()
-    if plugin.routing is not None and config is not None:
-        # URL-based routing: the path is authoritative for the locale, so
-        # dynamic (gettext) content matches the URL the visitor is on.
-        locale = plugin.routing.locale_of(
-            i18n_state.router.page.path, config.locales, config.default_locale
-        )
-    else:
-        locale = _resolve_locale(
-            i18n_state.locale_cookie, i18n_state.router.headers.accept_language
-        )
-    return use_locale(locale)
+    # Record the URL's locale so translated computed vars are invalidated when
+    # the visitor navigates to another prefix.
+    route_locale = _locale_from_path(i18n_state.router.page.path)
+    if route_locale is not None and route_locale != i18n_state._route_locale:
+        i18n_state._route_locale = route_locale
+    # I18nState.locale is the single source of truth, so what gettext returns
+    # and what dynamic translations depend on can never disagree.
+    return use_locale(i18n_state.locale)
 
 
 register_event_scope_provider(_locale_scope)

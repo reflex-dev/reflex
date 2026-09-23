@@ -1,12 +1,14 @@
 """Tests for compiling .po catalogs into per-locale JS modules."""
 
 import dataclasses
+from pathlib import Path
 
 from babel.messages.catalog import Catalog
 from reflex_i18n.catalog import (
     compile_catalog_module,
     compile_index_module,
     default_plural_expr_js,
+    read_po_catalog,
 )
 from reflex_i18n.config import I18nConfig
 from reflex_i18n.registry import MessageKey
@@ -112,9 +114,38 @@ def test_default_plural_expr_from_babel_table():
     assert default_plural_expr_js(None, "en") == "(n != 1)"
 
 
-def test_default_plural_expr_prefers_catalog_header():
-    catalog = Catalog(locale="fr")
-    assert default_plural_expr_js(catalog, "fr") == "(n > 1)"
+def _write_po(tmp_path: Path, locale: str, header_lines: str = "") -> Path:
+    po_path = tmp_path / f"{locale}.po"
+    po_path.write_text(
+        'msgid ""\nmsgstr ""\n'
+        '"Content-Type: text/plain; charset=UTF-8\\n"\n'
+        f"{header_lines}\n",
+        encoding="utf-8",
+    )
+    return po_path
+
+
+def test_default_plural_expr_prefers_catalog_header(tmp_path: Path):
+    # An expression the CLDR table would never produce for "fr", so the test
+    # fails if the catalog's own Plural-Forms header stops being preferred.
+    catalog = read_po_catalog(
+        _write_po(tmp_path, "fr", '"Plural-Forms: nplurals=2; plural=(n > 2);\\n"'),
+        "fr",
+    )
+    assert default_plural_expr_js(catalog, "fr") == "(n > 2)"
+
+
+def test_read_po_catalog_uses_locale_plural_rules(tmp_path: Path):
+    # No Plural-Forms header: the locale supplies Babel's CLDR rule rather than
+    # the generic English one.
+    catalog = read_po_catalog(_write_po(tmp_path, "fr"), "fr")
+    assert catalog.plural_expr == "(n > 1)"
+    assert read_po_catalog(_write_po(tmp_path, "pt-BR"), "pt-BR").locale is not None
+
+
+def test_read_po_catalog_tolerates_unknown_locale(tmp_path: Path):
+    # A well-formed tag Babel has no CLDR data for must not break compilation.
+    assert read_po_catalog(_write_po(tmp_path, "qq-ZZ"), "qq-ZZ") is not None
 
 
 def test_default_plural_expr_invalid_locale_falls_back():

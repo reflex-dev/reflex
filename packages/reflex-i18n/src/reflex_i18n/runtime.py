@@ -106,7 +106,7 @@ def _get_translations(locale: str) -> _gettext_module.NullTranslations:
 
         from .catalog import read_po_catalog
 
-        catalog = read_po_catalog(path)
+        catalog = read_po_catalog(path, locale)
         buffer = io.BytesIO()
         write_mo(buffer, catalog)
         buffer.seek(0)

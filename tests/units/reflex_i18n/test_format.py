@@ -15,9 +15,13 @@ def active_config():
     Yields:
         None
     """
+    # The locale var is a process-global cached singleton built under the
+    # active config, so clear it on both sides to keep test order irrelevant.
+    _locale_var.cache_clear()
     set_active_i18n_config(I18nConfig(locales=["en", "de"], default_locale="en"))
     yield
     set_active_i18n_config(None)
+    _locale_var.cache_clear()
 
 
 def _num() -> Var:
@@ -130,3 +134,29 @@ def test_locale_var_requires_config():
     _locale_var.cache_clear()
     with pytest.raises(RuntimeError, match="I18nPlugin"):
         _locale_var()
+
+
+def test_format_vars_are_hashable():
+    # Vars get hashed when their var data is merged, so the Intl options must
+    # reach the formatter call as a Var rather than a raw dict.
+    hash(number(_num()))
+    hash(date(Var(_js_expr="state.day")))
+
+
+@pytest.mark.parametrize("length", ["short", "full"])
+def test_date_component_options_replace_the_curated_length(length: str):
+    # Intl.DateTimeFormat throws when dateStyle/timeStyle are combined with
+    # per-component options, so the escape hatch wins over `length`.
+    js = str(
+        date(Var(_js_expr="state.day"), length=length, options={"year": "numeric"})
+    )
+    assert "dateStyle" not in js
+    assert '["year"] : "numeric"' in js
+    js = str(time(Var(_js_expr="state.t"), options={"hour": "2-digit"}))
+    assert "timeStyle" not in js
+
+
+def test_date_non_component_options_keep_the_curated_length():
+    js = str(date(Var(_js_expr="state.day"), options={"timeZone": "UTC"}))
+    assert '["dateStyle"] : "medium"' in js
+    assert '["timeZone"] : "UTC"' in js

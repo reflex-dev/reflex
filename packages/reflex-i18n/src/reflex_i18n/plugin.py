@@ -27,7 +27,7 @@ from .catalog import (
     read_po_catalog,
 )
 from .component import HreflangLinks, LocaleRoute
-from .config import I18nConfig, set_active_i18n_config
+from .config import I18nConfig, get_active_catalog_dir, set_active_i18n_config
 from .registry import collected_messages
 from .routing import PathPrefixRouting
 
@@ -253,12 +253,18 @@ class I18nPlugin(Plugin):
 
         config = self._config()
         used_messages = collected_messages()
-        catalog_dir = Path.cwd() / self.catalog_dir
+        # The absolute directory captured when the app was constructed: the
+        # process cwd is not guaranteed to still be the app root at compile.
+        catalog_dir = get_active_catalog_dir() or Path.cwd() / self.catalog_dir
         default_at_root = bool(getattr(self.routing, "default_at_root", True))
         deploy_url = get_config().deploy_url or ""
 
         default_po = catalog_dir / f"{config.default_locale}.po"
-        default_catalog = read_po_catalog(default_po) if default_po.exists() else None
+        default_catalog = (
+            read_po_catalog(default_po, config.default_locale)
+            if default_po.exists()
+            else None
+        )
 
         results: list[tuple[str, str]] = [
             (
@@ -279,7 +285,7 @@ class I18nPlugin(Plugin):
                 catalog = default_catalog
             else:
                 po_path = catalog_dir / f"{locale}.po"
-                catalog = read_po_catalog(po_path) if po_path.exists() else None
+                catalog = read_po_catalog(po_path, locale) if po_path.exists() else None
                 if catalog is None:
                     console.warn(
                         f"No translation catalog found for locale {locale!r} "

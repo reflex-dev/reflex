@@ -14,6 +14,7 @@ import click
 from reflex_base.config import get_config
 from reflex_base.utils import console
 
+from .config import validate_locale
 from .plugin import I18nPlugin
 from .registry import MessageKey, collected_messages
 
@@ -189,14 +190,18 @@ def _catalog_stats(catalog: Catalog, locale: str) -> LocaleStats:
     return stats
 
 
-def _report(stats: LocaleStats) -> None:
+def _report(stats: LocaleStats, *, is_source: bool = False) -> None:
     """Print a one-line summary for a locale.
 
     Args:
         stats: The locale stats to report.
+        is_source: Whether this is the default locale, whose catalog holds the
+            source text and is expected to have empty ``msgstr`` entries.
     """
     detail = f"{stats.missing} missing, {stats.fuzzy} fuzzy, {stats.obsolete} obsolete"
-    if stats.incomplete:
+    if is_source:
+        console.info(f"  {stats.locale}: source catalog ({stats.obsolete} obsolete)")
+    elif stats.incomplete:
         console.warn(f"  {stats.locale}: {detail}")
     else:
         console.success(f"  {stats.locale}: complete ({stats.obsolete} obsolete)")
@@ -236,7 +241,10 @@ def extract_command():
     _write_catalog(template, catalog_dir / _POT_FILENAME)
     console.info(f"Extracted {len(template)} messages.")
     for locale in plugin.locales:
-        _report(merge_into_locale(template, catalog_dir / f"{locale}.po", locale))
+        _report(
+            merge_into_locale(template, catalog_dir / f"{locale}.po", locale),
+            is_source=locale == plugin.default_locale,
+        )
     console.success("Catalogs updated.")
 
 
@@ -249,8 +257,13 @@ def init_command(locale: str):
         locale: The locale to initialize (e.g. ``de``).
 
     Raises:
-        ClickException: If the catalog already exists.
+        ClickException: If the locale is not a language tag, or the catalog
+            already exists.
     """
+    try:
+        validate_locale(locale)
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
     plugin, template, catalog_dir = _extract_template()
     po_path = catalog_dir / f"{locale}.po"
     if po_path.exists():

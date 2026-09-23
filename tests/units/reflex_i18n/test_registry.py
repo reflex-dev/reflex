@@ -52,3 +52,17 @@ def test_clear_messages_forgets_plural_forms():
     clear_messages()
     register(MessageKey("item", plural="items"))
     assert collected_messages() == (MessageKey("item", plural="items"),)
+
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        MessageKey("Open\x04Close"),
+        MessageKey("Open", context="menu\x04extra"),
+    ],
+)
+def test_register_rejects_the_context_separator(key: MessageKey):
+    # The client catalog key is "context\x04msgid", so a separator in either
+    # half would let two distinct entries collide on one key.
+    with pytest.raises(ValueError, match="context separator"):
+        register(key)

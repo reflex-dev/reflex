@@ -84,7 +84,10 @@ def test_gettext_computed_var_gets_locale_edge_without_plugin_or_state_import():
             def greeting(self) -> str:
                 return _("Hello")
 
-        from reflex_i18n.state import I18nState
+        # Scan BEFORE importing .state: the edge must come from the scan itself
+        # pulling in the lazy provider, not from a prior state import.
         deps = GreetState.computed_vars["greeting"]._deps(objclass=GreetState)
+
+        from reflex_i18n.state import I18nState
         assert deps.get(I18nState.get_full_name()) == {"locale"}, deps
     """)

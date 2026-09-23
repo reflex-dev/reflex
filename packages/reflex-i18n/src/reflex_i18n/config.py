@@ -12,8 +12,28 @@ from pathlib import Path
 LOCALE_COOKIE_NAME = "reflex_locale"
 
 # A BCP 47-shaped tag: alphabetic language, optional alphanumeric subtags.
-# Locales double as URL path segments and JS catalog identifiers.
-_LOCALE_RE = re.compile(r"^[A-Za-z]{2,8}(?:[-_][A-Za-z0-9]{1,8})*$")
+# Locales double as URL path segments, JS catalog identifiers and `Intl` /
+# `Accept-Language` tags, all of which are hyphen-separated, so the underscore
+# spelling is rejected rather than normalized in each of those places. Babel's
+# underscore form is derived internally where it is needed.
+_LOCALE_RE = re.compile(r"^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$")
+
+
+def validate_locale(locale: str) -> None:
+    """Check that a locale is a usable language tag.
+
+    Args:
+        locale: The locale to check.
+
+    Raises:
+        ValueError: If the locale is not a hyphen-separated language tag.
+    """
+    if not _LOCALE_RE.fullmatch(locale):
+        msg = (
+            f"Invalid locale {locale!r}: expected a hyphen-separated language "
+            "tag such as 'en', 'pt-BR' or 'zh-Hant'."
+        )
+        raise ValueError(msg)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -45,20 +65,19 @@ class I18nConfig:
                 ``{locale}.po`` catalogs.
 
         Raises:
-            ValueError: If no locales are given, a locale is not a language
-                tag, or the default locale is not among them.
+            ValueError: If no locales are given, a locale is repeated, a locale
+                is not a language tag, or the default locale is not among them.
         """
         locales_tuple = tuple(locales)
         if not locales_tuple:
             msg = "I18nConfig.locales must contain at least one locale."
             raise ValueError(msg)
+        if len(set(locales_tuple)) != len(locales_tuple):
+            # A repeated locale would emit its route and catalog module twice.
+            msg = f"I18nConfig.locales must not repeat a locale: {locales_tuple!r}."
+            raise ValueError(msg)
         for locale in locales_tuple:
-            if not _LOCALE_RE.fullmatch(locale):
-                msg = (
-                    f"Invalid locale {locale!r}: expected a language tag such as "
-                    "'en', 'pt-BR' or 'zh-Hant'."
-                )
-                raise ValueError(msg)
+            validate_locale(locale)
         if default_locale not in locales_tuple:
             msg = (
                 f"I18nConfig.default_locale {default_locale!r} must be one of "

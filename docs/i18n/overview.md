@@ -156,12 +156,22 @@ format, mirroring static vs dynamic content.
 reformat instantly when the locale changes:
 
 ```python
+import datetime
+
+
+class PriceState(rx.State):
+    quantity: float = 3.5
+    total: float = 41.9
+    tax_rate: float = 0.19
+    created: datetime.datetime = datetime.datetime.now(datetime.UTC)
+
+
 def price_row():
     return rx.hstack(
-        rx.text(rx.i18n.number(State.quantity, max_fraction_digits=2)),
-        rx.text(rx.i18n.currency(State.total, "EUR")),
-        rx.text(rx.i18n.percent(State.tax_rate, max_fraction_digits=1)),
-        rx.text(rx.i18n.date(State.created, length="long")),
+        rx.text(rx.i18n.number(PriceState.quantity, max_fraction_digits=2)),
+        rx.text(rx.i18n.currency(PriceState.total, "EUR")),
+        rx.text(rx.i18n.percent(PriceState.tax_rate, max_fraction_digits=1)),
+        rx.text(rx.i18n.date(PriceState.created, length="long")),
     )
 ```
 
@@ -188,7 +198,7 @@ class CartState(rx.State):
 ```
 
 `rx.i18n.locale` exposes the active locale as a var, e.g. to drive
-`rx.moment(State.created, locale=rx.i18n.locale)`.
+`rx.moment(PriceState.created, locale=rx.i18n.locale)`.
 
 Two caveats:
 
@@ -219,6 +229,14 @@ def language_switcher():
 
 Static (`rx.t`) content updates instantly; dynamic (state) content updates on
 the next server round-trip.
+
+`rx.i18n.language_switcher()` is a prebuilt switcher with one `<a>` per locale.
+It sets the cookie here, and becomes a set of real crawlable links once URL
+routing is on (below).
+
+Locales are BCP 47 language tags written with hyphens (`en`, `pt-BR`,
+`zh-Hant`) — they double as URL segments and `Intl` tags, so the underscore
+spelling is rejected.
 
 ## URL-based locales & SEO
 
@@ -257,8 +275,9 @@ locale. With the default `PathPrefixRouting(default_at_root=True)`:
 - The locale comes from the **URL**, not a cookie — so each language URL renders
   its own content for crawlers.
 
-Add a crawlable switcher (real `<a>` links, not a cookie swap), or build your
-own links with `rx.i18n.locale_url`:
+Here the switcher's links become real per-locale URLs (crawlers follow them
+instead of a cookie swap); you can also build your own with
+`rx.i18n.locale_url`:
 
 ```python
 rx.i18n.language_switcher()  # prebuilt <a> links
@@ -278,6 +297,10 @@ Notes:
 - App routes must not start with a configured locale (e.g. a `/de/...` page of
   your own while `de` is configured): those URLs are reserved for the generated
   locale routes, and compilation fails with a clear error.
+- Each locale route prerenders that language's content, `hreflang` and
+  `canonical`. The `<html lang>` and `dir` attributes are applied on hydration:
+  the document root is app-wide (`rx.App(html_lang=...)`) and cannot yet vary
+  per route.
 
 ## Translation catalogs
 

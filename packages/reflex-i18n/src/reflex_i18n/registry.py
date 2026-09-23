@@ -61,9 +61,18 @@ def register(key: MessageKey) -> None:
         key: The message to record.
 
     Raises:
-        ValueError: If the same msgid (and context) was already registered
+        ValueError: If the message or context contains the gettext context
+            separator, or the same msgid (and context) was already registered
             with a different plural form.
     """
+    if CONTEXT_SEPARATOR in key.message or CONTEXT_SEPARATOR in (key.context or ""):
+        # The client-side catalog key is "context\x04msgid", so a separator in
+        # either half would let two distinct entries collide on one key.
+        msg = (
+            "Translatable messages and contexts must not contain the gettext "
+            f"context separator (U+0004): {key.message!r}."
+        )
+        raise ValueError(msg)
     previous = _plural_by_msgid.setdefault((key.context, key.message), key.plural)
     if previous != key.plural:
         msg = (

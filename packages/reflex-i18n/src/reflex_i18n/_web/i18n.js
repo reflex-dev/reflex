@@ -105,9 +105,37 @@ export function switchLocale(locale) {
   }
 }
 
+// Publish a setter as the one `switchLocale` (a Reflex event) drives, without
+// clobbering another provider's on unmount.
+const usePublishedSetter = (setLocale) => {
+  useEffect(() => {
+    _switchLocale = setLocale;
+    return () => {
+      if (_switchLocale === setLocale) {
+        _switchLocale = null;
+      }
+    };
+  }, [setLocale]);
+};
+
+// Switch locale by navigating to the current page's address in the target
+// locale, keeping the query string and fragment.
+const useLocaleNavigate = () => {
+  const { pathname, search, hash } = useLocation();
+  const navigate = useNavigate();
+  return useCallback(
+    (nextLocale, options) =>
+      navigate(
+        localizePath(delocalizePath(pathname), nextLocale) + search + hash,
+        options,
+      ),
+    [pathname, search, hash, navigate],
+  );
+};
+
 export function I18nProvider({ children }) {
   const { pathname } = useLocation();
-  const navigate = useNavigate();
+  const navigateLocale = useLocaleNavigate();
   // Cookie mode starts from the default locale so the server/first render is
   // deterministic and never touches document/navigator; the cookie- and
   // browser-based locale is resolved client-side in the effect below.
@@ -129,11 +157,9 @@ export function I18nProvider({ children }) {
   // no locale of its own; send it to its default-locale address.
   useEffect(() => {
     if (urlRouting && !defaultAtRoot && pathLocale(pathname) === undefined) {
-      navigate(localizePath(delocalizePath(pathname), defaultLocale), {
-        replace: true,
-      });
+      navigateLocale(defaultLocale, { replace: true });
     }
-  }, [pathname, navigate]);
+  }, [pathname, navigateLocale]);
 
   useEffect(() => {
     let cancelled = false;
@@ -177,7 +203,7 @@ export function I18nProvider({ children }) {
       if (urlRouting) {
         // The URL owns the locale in this mode: switch by navigating to the
         // localized address (the cookie is not consulted).
-        navigate(localizePath(delocalizePath(pathname), nextLocale));
+        navigateLocale(nextLocale);
         return;
       }
       // The cookie is the source of truth for a chosen locale; only an
@@ -186,15 +212,10 @@ export function I18nProvider({ children }) {
       writeCookie(cookieName, nextLocale);
       setCookieLocale(nextLocale);
     },
-    [pathname, navigate],
+    [navigateLocale],
   );
 
-  useEffect(() => {
-    _switchLocale = setLocale;
-    return () => {
-      _switchLocale = null;
-    };
-  }, [setLocale]);
+  usePublishedSetter(setLocale);
 
   return createElement(
     I18nContext.Provider,
@@ -303,6 +324,22 @@ export function useTranslation() {
 // The catalog is a static import (bundled with the route chunk), so the right
 // language is present synchronously during prerender.
 export function LocaleRoute({ locale, catalog, children }) {
+  const navigateLocale = useLocaleNavigate();
+  // Its own navigate-backed setter rather than the I18nProvider's: a page that
+  // uses neither rx.t nor a formatting var never pulls the provider in.
+  const setLocale = useCallback(
+    (nextLocale) => {
+      if (!locales.includes(nextLocale)) {
+        console.error(
+          `Invalid locale "${nextLocale}". Supported locales: ${locales.join(", ")}.`,
+        );
+        return;
+      }
+      navigateLocale(nextLocale);
+    },
+    [navigateLocale],
+  );
+  usePublishedSetter(setLocale);
   useEffect(() => {
     const root = document.documentElement;
     root.lang = locale;
@@ -310,7 +347,7 @@ export function LocaleRoute({ locale, catalog, children }) {
   }, [locale]);
   return createElement(
     I18nContext.Provider,
-    { value: { locale, catalog, setLocale: switchLocale } },
+    { value: { locale, catalog, setLocale } },
     children,
   );
 }
@@ -382,15 +419,16 @@ export function HreflangLinks({ children }) {
   return createElement(Fragment, null, ...links, children);
 }
 
-// A crawlable language switcher: real <a> links to the current page in each
-// locale (so crawlers follow them and the URL stays the source of truth).
+// A language switcher: one <a> per locale. With URL routing these are real
+// links to the current page in each locale, so crawlers follow them and the
+// URL stays the source of truth; without it there is only one URL per page, so
+// they set the locale through the provider (and cookie) instead.
 export function LanguageSwitcher(props) {
-  const { pathname } = useLocation();
+  const { pathname, search, hash } = useLocation();
   const basename = useBasename();
+  const { locale: active, setLocale } = useContext(I18nContext);
   const base = delocalizePath(pathname);
-  const active = locales.find(
-    (locale) => localizePath(base, locale) === pathname,
-  );
+  const here = basename + pathname + search + hash;
   return createElement(
     "nav",
     props,
@@ -399,9 +437,15 @@ export function LanguageSwitcher(props) {
         "a",
         {
           key: locale,
-          href: basename + localizePath(base, locale),
+          href: urlRouting ? basename + localizePath(base, locale) : here,
           hrefLang: locale,
           "aria-current": locale === active ? "true" : undefined,
+          onClick: urlRouting
+            ? undefined
+            : (event) => {
+                event.preventDefault();
+                setLocale(locale);
+              },
         },
         locale,
       ),

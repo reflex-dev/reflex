@@ -27,15 +27,24 @@ def test_config_default_locale_must_be_supported():
         I18nConfig(locales=["en", "de"], default_locale="fr")
 
 
-@pytest.mark.parametrize("locale", ["123", "e", "en/US", "en US", "", "de-", "en\n"])
+@pytest.mark.parametrize(
+    "locale", ["123", "e", "en/US", "en US", "", "de-", "en\n", "sr_Latn", "en_US"]
+)
 def test_config_rejects_invalid_locale(locale: str):
+    # Underscore tags are rejected rather than normalized: a locale is used
+    # verbatim as a URL segment, an Intl tag and an Accept-Language match.
     with pytest.raises(ValueError, match="Invalid locale"):
         I18nConfig(locales=["en", locale])
 
 
 def test_config_accepts_language_tags():
-    config = I18nConfig(locales=["en", "pt-BR", "zh-Hant", "sr_Latn"])
-    assert config.locales == ("en", "pt-BR", "zh-Hant", "sr_Latn")
+    config = I18nConfig(locales=["en", "pt-BR", "zh-Hant"])
+    assert config.locales == ("en", "pt-BR", "zh-Hant")
+
+
+def test_config_rejects_duplicate_locales():
+    with pytest.raises(ValueError, match="must not repeat"):
+        I18nConfig(locales=["en", "de", "en"])
 
 
 def test_active_config_roundtrip():

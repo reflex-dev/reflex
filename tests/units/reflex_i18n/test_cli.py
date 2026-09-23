@@ -11,6 +11,7 @@ from reflex_i18n.cli import (
     LocaleStats,
     _app_source_dir,
     _catalog_stats,
+    _report,
     check_command,
     extract_catalog,
     extract_command,
@@ -105,6 +106,25 @@ def test_catalog_stats_counts_missing_and_obsolete(tmp_path: Path):
     stats = _catalog_stats(catalog, "de")
     assert stats.missing == 2  # both extracted messages untranslated
     assert stats.locale == "de"
+
+
+def test_init_rejects_a_locale_that_is_not_a_language_tag():
+    from click.testing import CliRunner
+
+    # The argument becomes a catalog filename, so it is validated before any
+    # path is built from it (and before the app is compiled).
+    result = CliRunner().invoke(i18n_cli, ["init", "../../escape"])
+    assert result.exit_code != 0
+    assert "Invalid locale" in result.output
+
+
+def test_report_marks_the_default_locale_as_the_source_catalog(capsys):
+    # The default locale's empty msgstr entries are the source text, not a
+    # translation gap, so they must not be reported as missing.
+    _report(LocaleStats("en", missing=7), is_source=True)
+    output = capsys.readouterr().out
+    assert "source catalog" in output
+    assert "missing" not in output
 
 
 def test_locale_stats_incomplete():

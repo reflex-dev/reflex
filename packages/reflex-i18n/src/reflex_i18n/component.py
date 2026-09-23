@@ -7,6 +7,9 @@ from typing import Any
 from reflex_base.components.component import Component
 from reflex_base.vars.base import Var
 
+# Outside the ErrorBoundary (55) so error fallback UI can translate too.
+_PROVIDER_PRIORITY = 58
+
 
 class I18nProvider(Component):
     """Provides the active locale and message catalog via React context.
@@ -51,8 +54,19 @@ class HreflangLinks(Component):
 
 
 class LanguageSwitcher(Component):
-    """A crawlable language switcher: one ``<a>`` link per locale."""
+    """A language switcher: one ``<a>`` per locale (crawlable with URL routing)."""
 
     library = "$/utils/i18n"
 
     tag = "LanguageSwitcher"
+
+    @staticmethod
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
+        """Pull in the provider so the switcher can read and set the locale.
+
+        Returns:
+            The provider app wrap.
+        """
+        # A page may use the switcher without any rx.t or rx.i18n formatting
+        # var, neither of which would then drag the provider in.
+        return {(_PROVIDER_PRIORITY, "I18nProvider"): I18nProvider.create()}

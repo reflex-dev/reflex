@@ -47,7 +47,9 @@ _ = gettext
 
 # "date", "datetime" and "time" are intentionally omitted (see the import
 # above): reachable as rx.i18n.date/.time/.datetime but excluded from
-# `import *` so they cannot shadow the stdlib names.
+# `import *` so they cannot shadow the stdlib names. "locale" is omitted for a
+# different reason: `import *` resolves every exported name, and that one only
+# builds once an I18nPlugin is configured.
 __all__ = [
     "LOCALE_COOKIE_NAME",
     "I18nConfig",
@@ -64,7 +66,6 @@ __all__ = [
     "format_time",
     "gettext",
     "language_switcher",
-    "locale",
     "locale_url",
     "ngettext",
     "number",
