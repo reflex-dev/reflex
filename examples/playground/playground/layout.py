@@ -36,6 +36,14 @@ def bench_hooks() -> rx.Component:
         rx.el.span(ROOT_MARKER, id="bench-marker-root"),
         rx.el.span(BenchState.last_seq, id="bench-seq"),
         rx.el.button("set_seq(7)", on_click=BenchState.set_seq(7), id="bench-set-seq"),
+        rx.el.span(
+            BenchState.parts_total,
+            " ",
+            BenchState.parts_scaled,
+            " ",
+            BenchState.parts_label,
+            id="bench-parts",
+        ),
         rx.el.span(BenchState.handler_value, id="bench-handler-value"),
         rx.el.button(
             "bench_value", on_click=BenchState.bench_value, id="bench-handler"

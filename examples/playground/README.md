@@ -21,6 +21,7 @@ except `#bench-marker-leaf`, which only the index page renders.
 | --- | --- |
 | `bench-hydrated` | Present (and empty) once the page is hydrated: websocket connected and the first state update applied. With Playwright, wait for it with `state="attached"`. |
 | `bench-seq` | `BenchState.last_seq`, which the event handler `BenchState.set_seq(seq: int)` sets. The button `#bench-set-seq` fires `set_seq(7)`. Over the websocket, the handler is `reflex___state____state.playground___state____bench_state.set_seq`. |
+| `bench-parts` | The computed var chain `BenchState.parts_total` → `parts_scaled` → `parts_label`, which reads the vars `set_seq_complex` sets. |
 | `bench-handler-value` | `BenchState.handler_value`, which the event handler `BenchState.bench_value()` sets to `HANDLER_MARKER`. The button `#bench-handler` fires it. |
 | `bench-marker-root` | `ROOT_MARKER` of `playground/layout.py`, which every page imports. |
 | `bench-marker-leaf` | `LEAF_MARKER` of `playground/components/marker.py`, which only the index page imports. |
@@ -36,6 +37,21 @@ The hot reload benchmarks rewrite exactly the string literal on a line carrying 
 
 Keep each target on its own line, in exactly this form. `assets/logo.svg` and
 `assets/playground.css` are there for the asset hot reload benchmarks.
+
+The event benchmarks send these `BenchState` handlers over the websocket, each with the
+payload `{"seq": <int>}`. Every one sets `last_seq` to `seq`, so the delta of
+`reflex___state____state.playground___state____bench_state` echoes it as
+`last_seq_rx_state_`:
+
+| Handler | Also does |
+| --- | --- |
+| `set_seq` | Nothing else. |
+| `set_seq_complex` | Sets `part_a`, `part_b` and `part_c`, which the `#bench-parts` computed var chain reads. |
+| `set_seq_cross` | Increments `PlaygroundState.count` through `get_state` (an async handler). |
+| `set_seq_background` | Runs as a background task: yields once, then sets `last_seq` in `async with self`. |
+
+The websocket event name is the handler's full name, for example
+`reflex___state____state.playground___state____bench_state.set_seq_complex`.
 
 ## Changing the app
 
