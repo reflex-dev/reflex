@@ -174,7 +174,8 @@ async def run_workflows(
             Starts and runs from this process wake it immediately.
         lease: How long a claim lasts without renewal; a crashed worker's steps run
             again after it expires. Renewed while a step runs.
-        shutdown_timeout: How long to let running steps finish on exit.
+        shutdown_timeout: How long to let the claim in progress and the running
+            steps finish on exit.
         lanes: The lanes this process serves. A step declared in another lane is
             left alone, so a worker with a GPU can be the only one that renders
             and an ordinary one carries on with the rest.
@@ -214,10 +215,16 @@ async def run_workflows(
         # in it: a claim that has committed has leased its rows, and cancelled
         # there they would wait out the lease instead of running.
         runner.stop()
+        # One deadline for all of it: a claim that cannot finish -- a database
+        # that stopped answering -- is cancelled when it passes, rather than
+        # holding shutdown up for good.
+        deadline = asyncio.get_running_loop().time() + shutdown_timeout.total_seconds()
         try:
-            await loop
+            with contextlib.suppress(asyncio.TimeoutError):
+                await asyncio.wait_for(loop, shutdown_timeout.total_seconds())
         finally:
-            await runner.drain(shutdown_timeout)
+            left = max(0.0, deadline - asyncio.get_running_loop().time())
+            await runner.drain(datetime.timedelta(seconds=left))
             ear.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await ear

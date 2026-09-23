@@ -819,9 +819,12 @@ async def stop_workers(
     """
     for worker in workers:
         worker.stop()
-    await asyncio.gather(*loops)
-    for worker in workers:
-        await worker.drain(datetime.timedelta(seconds=5))
+    try:
+        await asyncio.gather(*loops)
+    finally:
+        # Drained whatever a loop did, so no step outlives the test.
+        for worker in workers:
+            await worker.drain(datetime.timedelta(seconds=5))
 
 
 def status_is(
@@ -2135,12 +2138,16 @@ async def test_a_worker_stopping_mid_claim_runs_what_it_claimed(
         lease=datetime.timedelta(minutes=5),
     )
     await worker.__aenter__()
-    await asyncio.wait_for(claimed_rows.wait(), 30)
-    # The worker is told to stop while its claim is still returning.
-    stopping = asyncio.create_task(worker.__aexit__(None, None, None))
-    await asyncio.sleep(0.2)
-    release.set()
-    await stopping
+    stopping = None
+    try:
+        await asyncio.wait_for(claimed_rows.wait(), 30)
+        # The worker is told to stop while its claim is still returning.
+        stopping = asyncio.create_task(worker.__aexit__(None, None, None))
+        await asyncio.sleep(0.2)
+    finally:
+        # Whatever happened above, the worker stops and the runtime is restored.
+        release.set()
+        await (stopping or worker.__aexit__(None, None, None))
 
     rows = await Parting.by(Parting.key.in_(keys)).all()
     taken = [
@@ -2372,3 +2379,35 @@ async def test_a_worker_with_a_single_connection_still_runs(session_factory):
             await wait_until(done, timeout=15)
     finally:
         await engine.dispose()
+
+
+async def test_a_claim_that_never_returns_does_not_hold_up_shutdown(
+    session_factory, monkeypatch
+):
+    await Parting(key=f"stuck-{uuid.uuid4().hex}").start(Parting.work)
+    claiming, never = asyncio.Event(), asyncio.Event()
+    real_claim = runner.claim
+
+    async def stuck_claim(runtime_, cls, limit, steps=None):
+        if cls is not Parting:
+            return await real_claim(runtime_, cls, limit, steps)
+        # A database that has stopped answering.
+        claiming.set()
+        await never.wait()
+        return []
+
+    monkeypatch.setattr(runner, "claim", stuck_claim)
+    worker = run_workflows(
+        session_factory,
+        workflows=[Parting],
+        poll_interval=datetime.timedelta(milliseconds=50),
+        lease=LEASE,
+        shutdown_timeout=datetime.timedelta(milliseconds=500),
+    )
+    await worker.__aenter__()
+    try:
+        await asyncio.wait_for(claiming.wait(), 10)
+    finally:
+        started = time.monotonic()
+        await asyncio.wait_for(worker.__aexit__(None, None, None), 10)
+    assert time.monotonic() - started < 2
