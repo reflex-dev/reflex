@@ -6319,6 +6319,34 @@ def test_unannotated_backend_var_shadowing_inherited_var_raises() -> None:
             _shadowed_value = 2
 
 
+def test_backend_var_shadowing_with_supported_descriptors_is_allowed() -> None:
+    """Supported descriptors can replace an inherited backend var."""
+
+    class ShadowParent(BaseState):
+        _shadowed_value: int = 1
+
+    class PropertyChild(ShadowParent):
+        @property
+        def _shadowed_value(self) -> int:  # pyright: ignore[reportIncompatibleVariableOverride]
+            return 2
+
+    class CachedPropertyChild(ShadowParent):
+        @functools.cached_property
+        def _shadowed_value(self) -> int:  # pyright: ignore[reportIncompatibleVariableOverride]
+            return 2
+
+    class ClassMethodChild(ShadowParent):
+        @classmethod
+        def _shadowed_value(cls) -> int:  # pyright: ignore[reportIncompatibleVariableOverride]
+            return 2
+
+    assert isinstance(PropertyChild.__dict__["_shadowed_value"], property)
+    assert isinstance(
+        CachedPropertyChild.__dict__["_shadowed_value"], functools.cached_property
+    )
+    assert isinstance(ClassMethodChild.__dict__["_shadowed_value"], classmethod)
+
+
 def test_base_var_shadowing_non_state_descriptor_does_not_raise() -> None:
     """Re-annotating to win over a descriptor from a non-state base is not a shadow."""
     from reflex_base.vars.hybrid_property import hybrid_property

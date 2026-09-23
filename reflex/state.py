@@ -1445,13 +1445,20 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             )
             raise BaseVarShadowsInheritedVarError(msg)
 
+        # Backend declarations include unannotated assignments, so inspect
+        # class attributes in addition to resolved annotations.
         for name in set(cls._get_type_hints()) | cls.__dict__.keys():
+            value = cls.__dict__.get(name)
             if (
                 not name.startswith("_")
                 or name.startswith("__")
                 or name not in cls.inherited_backend_vars
                 or name not in cls.__dict__
-                or callable(cls.__dict__[name])
+                or callable(value)
+                or isinstance(
+                    value,
+                    (property, functools.cached_property, classmethod, staticmethod),
+                )
             ):
                 continue
             msg = (
