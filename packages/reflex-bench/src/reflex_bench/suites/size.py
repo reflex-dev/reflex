@@ -40,6 +40,7 @@ from reflex_bench.drivers.app_process import cache_env, run_cli
 from reflex_bench.registry import Metric, SampleResult, benchmark
 
 EXPORT_ARGS = ("export", "--frontend-only", "--no-zip", "--env", "prod")
+# 10 minutes: a cold export also installs the frontend packages.
 EXPORT_TIMEOUT_S = 600.0
 FIRST_PAGE = "index.html"
 ASSETS = "assets"
@@ -303,6 +304,7 @@ def copy_example(name: str, dest: Path) -> None:
     kind="track",
     params={"app": ["playground"]},
     metrics=METRICS,
+    # The export's 10 minutes plus 1 minute to copy the app.
     setup_timeout=EXPORT_TIMEOUT_S + 60,
     # One sample; the export in setup_cache takes most of the time.
     estimate=20,
