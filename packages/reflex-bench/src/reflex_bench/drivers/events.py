@@ -305,12 +305,17 @@ class EventShape:
             such as :func:`seq_payload`.
         delta_key: The state whose delta echoes the sequence number.
         seq_var: The var that echoes it, e.g. ``last_seq_rx_state_``.
+        ordered: Whether the server answers a session's events in the order
+            they were sent. Then an answer that overtakes an outstanding event
+            means that event's answer was lost; background tasks, which may
+            finish in any order, set it to ``False``.
     """
 
     name: str
     payload: Callable[[int], dict[str, Any]]
     delta_key: str
     seq_var: str
+    ordered: bool = True
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -697,12 +702,21 @@ class _Session:
         if not outstanding or seq < outstanding[0] or seq > len(self.sent):
             # A late answer to an event already counted as unanswered, or a repeat.
             return
-        if seq != outstanding[0]:
+        if seq == outstanding[0]:
+            outstanding.popleft()
+        else:
+            if self.plan.shape.ordered:
+                # The events before it lost their answers.
+                while outstanding[0] != seq:
+                    outstanding.popleft()
+                outstanding.popleft()
+            elif seq in outstanding:
+                # It finished before an earlier event, which stays outstanding.
+                outstanding.remove(seq)
+            else:
+                return
             if seq >= self.first_measured:
                 self.out_of_order += 1
-            while outstanding[0] != seq:
-                outstanding.popleft()
-        outstanding.popleft()
         self.answered[seq - 1] = now
         if not outstanding:
             self._idle.set()

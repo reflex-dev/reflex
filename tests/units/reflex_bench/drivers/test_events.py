@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import dataclasses
 import json
 import multiprocessing
 import threading
@@ -327,30 +328,31 @@ def test_dropped_seqs_are_unanswered_not_dropped():
     assert result.out_of_order == 4
 
 
+class Reordering(Scripted):
+    """Answers seq 5 only after seq 6."""
+
+    def __init__(self) -> None:
+        """Hold nothing yet."""
+        super().__init__()
+        self.held: dict[ServerConnection, dict[str, Any]] = {}
+
+    async def seq_event(self, ws, event, seq):
+        """Swap the answers of seq 5 and 6.
+
+        Returns:
+            Whether to answer now.
+        """
+        if seq == 5:
+            self.held[ws] = event
+            return False
+        if seq == 6:
+            await ws.send(self.reply(event))
+            await ws.send(self.reply(self.held.pop(ws)))
+            return False
+        return True
+
+
 def test_a_reordered_pair_counts_out_of_order():
-    class Reordering(Scripted):
-        """Answers seq 5 only after seq 6."""
-
-        def __init__(self) -> None:
-            """Hold nothing yet."""
-            super().__init__()
-            self.held: dict[ServerConnection, dict[str, Any]] = {}
-
-        async def seq_event(self, ws, event, seq):
-            """Swap the answers of seq 5 and 6.
-
-            Returns:
-                Whether to answer now.
-            """
-            if seq == 5:
-                self.held[ws] = event
-                return False
-            if seq == 6:
-                await ws.send(self.reply(event))
-                await ws.send(self.reply(self.held.pop(ws)))
-                return False
-            return True
-
     with serving(Reordering()) as url:
         result = run_inline(plan(url, sessions=2, rate=40.0, warmup_s=0.0))
     # Seq 6 arrived while 5 was outstanding: 5 counts as unanswered, and its
@@ -358,6 +360,18 @@ def test_a_reordered_pair_counts_out_of_order():
     assert result.out_of_order == 2
     assert result.unanswered == 2
     assert result.answered == result.sent - 2
+
+
+def test_an_unordered_shape_takes_answers_in_any_order():
+    # Background tasks may finish in any order, so a late answer still counts.
+    unordered = dataclasses.replace(SHAPE, ordered=False)
+    with serving(Reordering()) as url:
+        result = run_inline(
+            plan(url, sessions=2, rate=40.0, warmup_s=0.0, shape=unordered)
+        )
+    assert result.out_of_order == 2
+    assert result.unanswered == 0
+    assert result.answered == result.sent
 
 
 def test_a_new_token_is_adopted():

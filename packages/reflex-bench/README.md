@@ -265,8 +265,10 @@ shapes, managers and session counts, the knee and `at_1hz` run with
 
 - **Shapes**: `simple` (`set_seq`), `complex` (three vars behind a chain of
   three computed vars), `cross` (`get_state` of another state), `background` (a
-  background task). SharedState fan-out and contention come with the
-  playground's SharedState surface.
+  background task). Background tasks may finish in any order, so for
+  `background` an answer that overtakes an earlier event counts as
+  `out_of_order` without making that event unanswered. SharedState fan-out and
+  contention come with the playground's SharedState surface.
 - **`manager`**: `memory` and `disk`, plus `redis` when `REFLEX_REDIS_URL` is set
   in the harness's environment when the suite is imported. The URL reaches only
   the redis instances: reflex uses redis whenever a URL is configured.
@@ -290,7 +292,9 @@ shapes, managers and session counts, the knee and `at_1hz` run with
   a 120-bucket log histogram (10 μs to 100 s) for pooled percentiles on display.
 - **CPU per event** is the server tree's CPU time in the measured window divided
   by the answered events: from its cgroup scope (`cpu_method: cgroup`) or,
-  without one, summed over its processes with psutil (`cpu_method: psutil`).
+  without one, summed over its processes with psutil (`cpu_method: psutil`),
+  including the children they reaped, so a worker that exits in the window
+  still counts. A CPU time that goes back fails the sample.
 - **Pinning**: on Linux with four CPUs or more, the server runs on the lower
   half of the CPUs (CPU 0 excluded) and the generator on the upper half, with
   up to 4 generator processes (1 up to 10 sessions); `pinning` in the extra

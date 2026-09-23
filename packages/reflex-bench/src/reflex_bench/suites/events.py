@@ -30,7 +30,7 @@ import contextlib
 import os
 import shutil
 import threading
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -101,11 +101,12 @@ CALIBRATION_CLOSED_WINDOW = Window(1.0, 3.0)
 CALIBRATION_STEP_WINDOW = Window(1.0, 2.0)
 
 
-def _shape(handler: str) -> EventShape:
+def _shape(handler: str, *, ordered: bool = True) -> EventShape:
     """Describe a ``BenchState`` handler of the playground.
 
     Args:
         handler: The handler's name.
+        ordered: Whether a session's events are answered in the order sent.
 
     Returns:
         The event shape: payload ``{"seq": n}``, echoed as ``last_seq``.
@@ -115,6 +116,7 @@ def _shape(handler: str) -> EventShape:
         payload=seq_payload,
         delta_key=BENCH_STATE,
         seq_var=SEQ_VAR,
+        ordered=ordered,
     )
 
 
@@ -122,7 +124,8 @@ SHAPES = {
     "simple": _shape("set_seq"),
     "complex": _shape("set_seq_complex"),
     "cross": _shape("set_seq_cross"),
-    "background": _shape("set_seq_background"),
+    # Background tasks take the state lock in whatever order they get to it.
+    "background": _shape("set_seq_background", ordered=False),
     # SharedState fan-out (one event updating many sessions) and SharedState
     # contention (many sessions writing one shared state) need the playground's
     # SharedState surface (ENG-12609); nothing is registered for them yet.
@@ -289,12 +292,41 @@ def cpu_per_event(cpu_s: float, answered: int) -> float:
         Seconds of CPU per event.
 
     Raises:
-        ValueError: Without answered events.
+        ValueError: Without answered events, or when the CPU time went back.
     """
     if answered <= 0:
         msg = "no answered event to divide the CPU time by"
         raise ValueError(msg)
+    if cpu_s < 0:
+        msg = (
+            f"the server's CPU time went back by {-cpu_s:.3f} s: a process of its"
+            " tree was reaped outside it"
+        )
+        raise ValueError(msg)
     return cpu_s / answered
+
+
+def tree_cpu_s(processes: Iterable[psutil.Process]) -> float:
+    """Sum the CPU time of a process tree, with the children its processes reaped.
+
+    A process that exits stops reporting its own time, but its parent's
+    ``children_user``/``children_system`` gain it once reaped, so the sum keeps
+    growing while the tree reaps its own processes.
+
+    Args:
+        processes: The tree's processes still running.
+
+    Returns:
+        Seconds of user and system time.
+    """
+    total = 0.0
+    for proc in processes:
+        with contextlib.suppress(psutil.NoSuchProcess):
+            times = proc.cpu_times()
+            total += (
+                times.user + times.system + times.children_user + times.children_system
+            )
+    return total
 
 
 def copy_tracked(source: Path, target: Path) -> None:
@@ -486,12 +518,7 @@ class _Backend:
         if self._scope is not None:
             return self._scope.read().cpu_s
         assert isinstance(self._server, AppProcess)
-        total = 0.0
-        for proc in self._tree(self._server.pid):
-            with contextlib.suppress(psutil.NoSuchProcess):
-                times = proc.cpu_times()
-                total += times.user + times.system
-        return total
+        return tree_cpu_s(self._tree(self._server.pid))
 
     def run(
         self, mode: Mode, rate: float | None, window: Window

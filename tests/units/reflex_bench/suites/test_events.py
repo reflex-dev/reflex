@@ -9,8 +9,10 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
-from typing import Any
+from types import SimpleNamespace
+from typing import Any, cast
 
+import psutil
 import pytest
 from reflex_bench import cli, registry
 from reflex_bench.drivers.events import LoadResult, Mode
@@ -99,6 +101,10 @@ def test_the_shapes_are_the_playground_handlers():
     for shape in suite.SHAPES.values():
         assert (shape.delta_key, shape.seq_var) == (state, "last_seq_rx_state_")
         assert shape.payload(7) == {"seq": 7}
+    # Background tasks may finish in any order; the others answer in order.
+    assert [name for name, shape in suite.SHAPES.items() if not shape.ordered] == [
+        "background"
+    ]
 
 
 def test_server_env(tmp_path: Path):
@@ -178,6 +184,51 @@ def test_cpu_per_event():
     assert suite.cpu_per_event(2.4, 12_000) == pytest.approx(200e-6)
     with pytest.raises(ValueError, match="no answered event"):
         suite.cpu_per_event(1.0, 0)
+    with pytest.raises(ValueError, match="went back"):
+        suite.cpu_per_event(-0.2, 12_000)
+
+
+class FakeProcess:
+    """A process whose CPU times are given, or that is gone."""
+
+    def __init__(self, own: float = 0.0, reaped: float = 0.0, gone: bool = False):
+        """Set the CPU seconds.
+
+        Args:
+            own: Its own user and system time.
+            reaped: The time of the children it reaped.
+            gone: Whether it exited.
+        """
+        self.own, self.reaped, self.gone = own, reaped, gone
+
+    def cpu_times(self) -> SimpleNamespace:
+        """Report the CPU times, split evenly between user and system.
+
+        Returns:
+            The times.
+
+        Raises:
+            psutil.NoSuchProcess: When the process is gone.
+        """
+        if self.gone:
+            raise psutil.NoSuchProcess(1)
+        return SimpleNamespace(
+            user=self.own / 2,
+            system=self.own / 2,
+            children_user=self.reaped / 2,
+            children_system=self.reaped / 2,
+        )
+
+
+def tree_cpu(*processes: FakeProcess) -> float:
+    return suite.tree_cpu_s(cast("list[psutil.Process]", list(processes)))
+
+
+def test_tree_cpu_keeps_the_time_of_a_process_that_exits():
+    # A worker at 5 s uses 1 s more, exits, and granian reaps it (0.5 s itself).
+    start = tree_cpu(FakeProcess(own=3.0), FakeProcess(own=5.0))
+    end = tree_cpu(FakeProcess(own=3.5, reaped=6.0), FakeProcess(gone=True))
+    assert end - start == pytest.approx(1.5)
 
 
 def test_copy_tracked_files_leaves_out_build_output(tmp_path: Path):
