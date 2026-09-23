@@ -353,7 +353,10 @@ the event benchmarks do.
 - **What PSS shows**: the memory the tree holds from the kernel, shared pages
   split between the processes. CPython and glibc keep freed memory for reuse
   and rarely hand it back, so a number that does not drop means the process did
-  not shrink, not that something leaks.
+  not shrink, not that something leaks. File-backed pages are also split with
+  processes outside the tree that map the same files (the harness's own
+  interpreter), so `pss_file` moves by a few MB between otherwise identical
+  samples; `pss_anon` is the steadier trend.
 - **Per session**: the sessions connect and hydrate like page loads, then stay
   idle, held by `reflex_bench.drivers.events.hold_sessions` in a separate
   process. The server runs with `REFLEX_REDIS_TOKEN_EXPIRATION=<expiry_s>`

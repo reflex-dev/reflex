@@ -95,6 +95,8 @@ MIB = 1024**2
 CGROUP = "cgroup"
 COMPILE_TIMEOUT_S = 600.0
 HOOK_TIMEOUT_S = 300.0
+# Each of the start and the first /ping; a normal start takes 1 to 3 s.
+START_TIMEOUT_S = 120.0
 SETUP_TIMEOUT_S = 900.0
 # Reads of a settled tree: the median of three, one second apart.
 READS = 3
@@ -307,7 +309,6 @@ def start_server(
     env: dict[str, str],
     *,
     scope: CgroupScope | None,
-    timeout: float = HOOK_TIMEOUT_S,
 ) -> AppProcess:
     """Start the playground backend until ``/ping`` answers.
 
@@ -316,7 +317,6 @@ def start_server(
         started: Stops the server in ``conclude``.
         env: Its environment.
         scope: The cgroup scope to run it in, if any.
-        timeout: Seconds to become ready, and then to answer.
 
     Returns:
         The server.
@@ -329,11 +329,11 @@ def start_server(
         reflex_version=ctx.subject.reflex_version,
         env=env,
         scope=scope,
-        start_timeout=timeout,
+        start_timeout=START_TIMEOUT_S,
     )
     started.add(app.stop)
     app.start()
-    app.wait_http_ready(timeout=timeout)
+    app.wait_http_ready(timeout=START_TIMEOUT_S)
     return app
 
 
@@ -937,7 +937,7 @@ class _Playground:
     warmup=1,
     timeout=COMPILE_TIMEOUT_S + 60,
     setup_timeout=SETUP_TIMEOUT_S,
-    estimate=30,
+    estimate=6,
 )
 class CompilePeak(_Playground):
     """Peak memory of `reflex compile` or `reflex export --env prod` on the compiled playground, whole tree."""
@@ -1022,7 +1022,7 @@ class CompilePeak(_Playground):
     },
     timeout=HOOK_TIMEOUT_S,
     setup_timeout=SETUP_TIMEOUT_S,
-    estimate=12,
+    estimate=9,
 )
 class Idle(_Playground):
     """PSS of the idle backend tree, the median of three reads a second apart."""
@@ -1075,7 +1075,7 @@ benchmark(
     },
     timeout=HOOK_TIMEOUT_S,
     setup_timeout=SETUP_TIMEOUT_S,
-    estimate=12,
+    estimate=9,
 )(Idle)
 
 
@@ -1098,7 +1098,7 @@ benchmark(
     },
     timeout=600,
     setup_timeout=SETUP_TIMEOUT_S,
-    estimate=180,
+    estimate=155,
 )
 class PerSession(_Playground):
     """Bytes per connected session over a sweep of held sessions (0, 100, 500 and 1000), and the residual after disconnect and after expiry."""
@@ -1203,7 +1203,7 @@ class PerSession(_Playground):
     },
     timeout=900,
     setup_timeout=SETUP_TIMEOUT_S,
-    estimate=60,
+    estimate=45,
 )
 class Leak(_Playground):
     """Anonymous PSS against answered events over a closed-loop run; fails on a slope that does not flatten."""
@@ -1339,7 +1339,7 @@ class Leak(_Playground):
     },
     timeout=600,
     setup_timeout=SETUP_TIMEOUT_S,
-    estimate=30,
+    estimate=15,
 )
 class Boot512(_Playground):
     """Compile, boot and serve the playground each under MemoryMax=512M with swap off; any OOM fails the sample."""
@@ -1413,7 +1413,7 @@ class Boot512(_Playground):
     },
     timeout=600,
     setup_timeout=SETUP_TIMEOUT_S,
-    estimate=90,
+    estimate=45,
 )
 class MinLimit(_Playground):
     """Bisect the smallest MemoryMax (64 to 1024 MiB, 32 MiB steps) that booting and serving the playground pass."""
