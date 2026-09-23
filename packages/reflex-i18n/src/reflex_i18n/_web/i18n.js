@@ -428,7 +428,10 @@ export function LanguageSwitcher(props) {
   const basename = useBasename();
   const { locale: active, setLocale } = useContext(I18nContext);
   const base = delocalizePath(pathname);
-  const here = basename + pathname + search + hash;
+  // Keep the query string and fragment: switching language must not drop the
+  // filters or the anchor the visitor is on. The clean canonical URL for each
+  // locale is emitted by HreflangLinks, so crawlers still see one per page.
+  const rest = search + hash;
   return createElement(
     "nav",
     props,
@@ -437,7 +440,10 @@ export function LanguageSwitcher(props) {
         "a",
         {
           key: locale,
-          href: urlRouting ? basename + localizePath(base, locale) : here,
+          href:
+            basename +
+            (urlRouting ? localizePath(base, locale) : pathname) +
+            rest,
           hrefLang: locale,
           "aria-current": locale === active ? "true" : undefined,
           onClick: urlRouting

@@ -163,7 +163,7 @@ class PriceState(rx.State):
     quantity: float = 3.5
     total: float = 41.9
     tax_rate: float = 0.19
-    created: datetime.datetime = datetime.datetime.now(datetime.UTC)
+    created: datetime.datetime = datetime.datetime.now(datetime.timezone.utc)
 
 
 def price_row():
