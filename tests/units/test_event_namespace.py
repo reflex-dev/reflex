@@ -822,6 +822,34 @@ async def test_channel_binary_rejected_when_not_accepted(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("binary", [False, True])
+@pytest.mark.parametrize("event", sorted(RESERVED_EVENTS))
+async def test_channel_reserved_inbound_name_is_rejected(
+    namespace: WebsocketEventNamespace, mock_app: Mock, event: str, binary: bool
+):
+    """A client may not send a message under a reserved name, on either frame kind.
+
+    A handler that relays what it receives would answer such a message with a
+    send the channel API refuses, so the name never reaches it.
+    """
+    channel = RecordingChannel(accepts_binary=True)
+    mock_app._channels = {"probe": channel}
+    websocket = FakeWebSocket()
+    websocket.feed(
+        [OPEN_MESSAGE, None, "probe"],
+        encode_channel_frame(event, {"fig": "f1"}, "probe", [b"\x00"])
+        if binary
+        else [event, {"fig": "f1"}, "probe"],
+    )
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert channel.messages == []
+    assert channel_frames(websocket)[-1][1]["code"] == "reserved_event"
+    assert websocket.close_code is None
+
+
+@pytest.mark.asyncio
 async def test_malformed_binary_frame_closes_connection(
     namespace: WebsocketEventNamespace, mock_app: Mock
 ):
@@ -1309,6 +1337,42 @@ console.log(JSON.stringify(result));
     assert 1024 < int(multibyte.group(1)) < 4 * 400
     assert report["errors"] == ["message_too_large"]
     # Only the message that fits was ever handed to the transport.
+    assert report["sent"] == 1
+
+
+@pytest.mark.skipif(not NODE, reason="Requires node to run the client")
+def test_client_refuses_to_emit_reserved_message_names(tmp_path: Path):
+    """The handle's own lifecycle names cannot be put on the wire.
+
+    Emitting one is a consumer confusing `channel.on("connect")` with a
+    message, and the backend answers it with an error; throwing reports the
+    mistake where it was made.
+    """
+    report = _run_client_script(
+        tmp_path,
+        f"""
+import {{ getChannel }} from {CLIENT_MODULE};
+
+const result = {{ sent: 0, refused: [] }};
+const channel = getChannel("probe");
+channel._transport = {{ _maxMessageSize: 0, _send: () => {{ result.sent += 1; }} }};
+channel.connected = true;
+for (const name of {json.dumps(sorted(RESERVED_EVENTS))}) {{
+    try {{
+        channel.emit(name, {{ fig: "f1" }});
+    }} catch (error) {{
+        result.refused.push(name);
+    }}
+}}
+channel.emit("push", {{ fig: "f1" }});
+
+console.log(JSON.stringify(result));
+""",
+    )
+
+    assert report["refused"] == sorted(RESERVED_EVENTS)
+    # Only the message under a usable name reached the transport, and nothing
+    # was queued behind it either.
     assert report["sent"] == 1
 
 

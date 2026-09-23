@@ -122,7 +122,10 @@ server sends are not capped by it — mind the section below on sharing the
 connection.
 
 `connect`, `disconnect` and `error` are reserved message names: the client
-handle reports its own lifecycle under them, so `session.send` refuses them.
+handle reports its own lifecycle under them, so neither end puts one on the
+wire. `session.send` and `channel.emit` refuse them, and a message that arrives
+under one is answered with a `reserved_event` error instead of reaching
+`on_message`.
 
 ## Using a channel from the frontend
 

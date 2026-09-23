@@ -302,6 +302,12 @@ class ReflexChannel extends LocalEmitter {
    * @param buffers Binary attachments (ArrayBuffers or typed arrays).
    */
   emit(event, data, buffers = []) {
+    if (LIFECYCLE_EVENTS.has(event)) {
+      throw new Error(
+        `Channel message name "${event}" is reserved: this handle reports its ` +
+          "own lifecycle under it, and the backend refuses it.",
+      );
+    }
     if (buffers?.length > MAX_MESSAGE_BUFFERS) {
       throw new Error(
         `Channel message "${event}" carries ${buffers.length} attachments, ` +

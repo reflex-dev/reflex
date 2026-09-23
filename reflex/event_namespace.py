@@ -20,7 +20,7 @@ from reflex_base.environment import environment
 from reflex_base.event import _EVENT_FIELDS, Event
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from reflex.channels import MAX_MESSAGE_BUFFERS, ChannelSession
+from reflex.channels import MAX_MESSAGE_BUFFERS, RESERVED_EVENTS, ChannelSession
 from reflex.istate.data import SessionData
 from reflex.istate.manager.token import BaseStateToken
 from reflex.state import StateUpdate
@@ -897,6 +897,17 @@ class WebsocketEventNamespace(BaseEventNamespace):
                 return
             if event == CLOSE_MESSAGE:
                 await self._close_channel_session(sid, channel_name)
+                return
+            if event in RESERVED_EVENTS:
+                # The reservation holds in both directions, so a handler that
+                # relays what it receives cannot be made to attempt a send the
+                # channel API refuses.
+                await self._send_channel_error(
+                    sid,
+                    channel_name,
+                    "reserved_event",
+                    f"Channel message name {event!r} is reserved.",
+                )
                 return
             if buffers and not session.channel.accepts_binary:
                 await self._send_channel_error(
