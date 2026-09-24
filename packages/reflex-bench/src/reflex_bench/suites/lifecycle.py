@@ -2,21 +2,31 @@
 
 Every benchmark starts reflex as a user does, through the app driver, and the
 harness owns every cache reflex reads, so no cache of the host or of CI reaches
-a measured phase:
+a measured phase. No measured phase downloads anything: a cold state is an
+empty directory that primed local copies fill, so a sample measures reflex and
+bun, not the network.
 
 ====================  =============================  ======================  =========================
 State                 ``REFLEX_DIR`` (bun,           ``BUN_INSTALL_CACHE_    app and ``.web``
                       templates)                     DIR``                   (``node_modules``)
 ====================  =============================  ======================  =========================
-``init.cold``         fresh per sample               untouched               fresh empty directory
+``init.cold``         fresh per sample, bun copied   untouched               fresh empty directory
+                      from the shared one
 ``init.warm``         shared, primed                 untouched               fresh empty directory
-``compile.cold``      shared, primed                 fresh per sample        fresh copy per sample
+``compile.cold``      shared, primed                 shared, primed          fresh copy per sample,
+                                                                             with the primed lockfile
 all others            shared, primed                 host default            ``ctx.cache_dir/app``,
                                                                              primed by one compile
 ====================  =============================  ======================  =========================
 
 The shared ``REFLEX_DIR`` is ``ctx.subject_cache_dir / "reflex"``, one per
 subject: the first instance that needs it downloads bun, the others find it.
+The shared bun package cache is ``ctx.subject_cache_dir / "bun-cache"``, filled
+by ``compile.cold``'s untimed priming compile of a kept playground copy. Each
+sample's copy also gets that compile's lockfile (``reflex.lock/``, or
+``.web/bun.lock`` on 0.8), so ``bun install`` links every package from the cache
+and never asks the registry (verified with strace: no bytes on any external
+socket; bun's ``connect`` calls on a UDP socket only look up the local address).
 
 When its ``REFLEX_DIR`` holds no bun, reflex takes one from ``PATH`` if it is
 new enough (1.3 for reflex 0.8.23, 1.4 for 0.9), so a host bun would make a
@@ -118,6 +128,9 @@ STARTUP = {
     ),
 }
 _BUN = ("bun", "bunx")
+# Where a compile leaves bun's lockfile: the root directory of reflex 0.9, and
+# .web of 0.8. Without one, bun re-resolves the packages from the registry.
+_LOCKFILES = (Path("reflex.lock"), Path(".web") / "bun.lock")
 # Numbers the hot reload edits, unique across the arms of one process.
 _EDITS = itertools.count(1)
 
@@ -249,6 +262,18 @@ def _prime_reflex_dir(ctx: Context) -> None:
         shutil.rmtree(scratch, ignore_errors=True)
 
 
+def _bun_cache(ctx: Context) -> Path:
+    """Return the subject's shared bun package cache.
+
+    Args:
+        ctx: The benchmark context.
+
+    Returns:
+        ``BUN_INSTALL_CACHE_DIR`` for ``compile.cold`` and its priming compile.
+    """
+    return ctx.subject_cache_dir / "bun-cache"
+
+
 def _record_collector(ctx: Context) -> None:
     """Choose the collector of a ``time`` benchmark once and record it in ``dims``.
 
@@ -314,10 +339,18 @@ def _timed(
 
 @_daily(id="lifecycle.init.cold", estimate=4)
 class InitCold:
-    """`reflex init --template blank` with a fresh REFLEX_DIR: bun is downloaded (network-bound)."""
+    """`reflex init --template blank` with a fresh REFLEX_DIR holding only a copy of the primed bun."""
 
     env: dict[str, str]
     deleted: dict[str, int]
+
+    def setup_cache(self, ctx: Context) -> None:
+        """Fill the shared REFLEX_DIR, the source of each sample's bun.
+
+        Args:
+            ctx: The benchmark context.
+        """
+        _prime_reflex_dir(ctx)
 
     def setup(self, ctx: Context) -> None:
         """Point REFLEX_DIR into the work directory.
@@ -329,15 +362,18 @@ class InitCold:
         self.env = _env(ctx, reflex_dir=ctx.workdir / "reflex")
 
     def prepare(self, ctx: Context) -> None:
-        """Delete the previous sample's app and REFLEX_DIR, measuring them first.
+        """Replace the previous sample's app and REFLEX_DIR, copying bun into the new one.
 
         Args:
             ctx: The benchmark context.
         """
         app, reflex_dir = ctx.workdir / "app", ctx.workdir / "reflex"
-        self.deleted = {"web": _size(app / ".web"), "reflex_dir": _size(reflex_dir)}
+        self.deleted = {"web": _size(app / ".web")}
         _remove(app, reflex_dir)
         app.mkdir()
+        shutil.copytree(
+            ctx.subject_cache_dir / "reflex" / "bun", reflex_dir / "bun", symlinks=True
+        )
 
     def sample(self, ctx: Context) -> SampleResult:
         """Initialize the app.
@@ -406,42 +442,51 @@ class InitWarm:
     id="lifecycle.compile.cold",
     params=PLAYGROUND,
     timeout=SLOW_S + MARGIN_S,
-    estimate=10,
+    estimate=1.5,
 )
 class CompileCold:
-    """`reflex compile` of a fresh copy with an empty bun cache: template copy, package install, compile."""
+    """`reflex compile` of a fresh copy with the primed lockfile and bun cache: template copy, package linking, compile."""
 
     env: dict[str, str]
     deleted: dict[str, int]
 
     def setup_cache(self, ctx: Context) -> None:
-        """Fill REFLEX_DIR.
+        """Fill REFLEX_DIR and the subject's bun package cache with an untimed compile of a kept copy.
 
         Args:
             ctx: The benchmark context.
         """
         _prime_reflex_dir(ctx)
+        app = ensure_fixture(ctx.cache_dir, describe_playground, materialize_playground)
+        _run(ctx, ["compile"], cwd=app, env=_env(ctx, bun_cache=_bun_cache(ctx)))
 
     def setup(self, ctx: Context) -> None:
-        """Point bun's package cache into the work directory.
+        """Point bun's package cache at the subject's primed one.
 
         Args:
             ctx: The benchmark context.
         """
         ctx.fixture = describe_playground()
         _record_collector(ctx)
-        self.env = _env(ctx, bun_cache=ctx.workdir / "bun-cache")
+        self.env = _env(ctx, bun_cache=_bun_cache(ctx))
 
     def prepare(self, ctx: Context) -> None:
-        """Replace the previous sample's app and bun cache with a fresh copy, measuring them first.
+        """Replace the previous sample's app with a fresh copy holding the primed lockfile.
 
         Args:
             ctx: The benchmark context.
         """
-        app, bun_cache = ctx.workdir / "app", ctx.workdir / "bun-cache"
-        self.deleted = {"web": _size(app / ".web"), "bun_cache": _size(bun_cache)}
-        _remove(app, bun_cache)
+        app = ctx.workdir / "app"
+        self.deleted = {"web": _size(app / ".web")}
+        _remove(app)
         materialize_playground(app)
+        for lockfile in _LOCKFILES:
+            primed = ctx.cache_dir / "app" / lockfile
+            if primed.is_dir():
+                shutil.copytree(primed, app / lockfile)
+            elif primed.is_file():
+                (app / lockfile).parent.mkdir(exist_ok=True)
+                shutil.copy2(primed, app / lockfile)
 
     def sample(self, ctx: Context) -> SampleResult:
         """Compile the app.

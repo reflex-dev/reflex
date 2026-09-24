@@ -281,9 +281,13 @@ The `lifecycle.*` benchmarks (`reflex_bench/suites/lifecycle.py`) time `init`,
 `compile`, `export`, `run` until HTTP-ready and `import reflex as rx; rx.App;
 rx.State` (the import alone is lazy), each in a cache state its id names
 (`cold`, `warm`, `incremental`); the module docstring lists which caches each
-one starts from. The warm ones share one `REFLEX_DIR` per subject
-(`ctx.subject_cache_dir/reflex`), so a subject downloads bun once; the cold ones
-start from a fresh one. Each `time` benchmark chooses its collector once, in
+one starts from. No sample downloads anything: a subject downloads bun once,
+into its shared `REFLEX_DIR` (`ctx.subject_cache_dir/reflex`), and installs the
+playground's packages once, into its shared bun cache
+(`ctx.subject_cache_dir/bun-cache`); a cold state is a fresh directory that
+these primed copies fill (`init.cold` gets a copy of bun, `compile.cold` a fresh
+app copy with the primed lockfile that links its packages from the cache), so a
+sample measures reflex and bun, not the network. Each `time` benchmark chooses its collector once, in
 `setup`, and records it in `dims` (`collector: cgroup | fallback`), so cgroup
 peaks and PSS peaks never share a series.
 

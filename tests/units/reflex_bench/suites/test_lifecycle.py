@@ -67,6 +67,11 @@ class FakeCli:
         """
         assert python == Path(sys.executable)
         self.calls.append(Call(list(args), cwd, dict(env), kwargs))
+        if args[:1] == ["init"]:
+            # reflex init leaves a bun in REFLEX_DIR.
+            bun = Path(env["REFLEX_DIR"]) / "bun" / "bin" / "bun"
+            bun.parent.mkdir(parents=True, exist_ok=True)
+            bun.write_bytes(b"x")
         phases = kwargs.get("phases", False)
         empty = ClassTotals(wall_s=0.0, cpu_s=0.0, intervals=[])
         interpreter = ClassTotals(wall_s=2.5, cpu_s=3.0, intervals=[(0.0, 2.5)])
@@ -271,8 +276,12 @@ def _cold_env(ctx: Context, call: Call, name: str, path: Path) -> None:
 def test_init_cold(cli: FakeCli, ctx: Context):
     bench = _instance("lifecycle.init.cold", ctx)
     (first, second) = _run(bench, ctx, samples=2)
-    assert [call.args for call in cli.calls] == [["init", "--template", "blank"]] * 2
-    for call in cli.calls:
+    prime, *samples = cli.calls
+    # setup_cache fills the shared REFLEX_DIR once; each sample gets a fresh one.
+    assert prime.args == ["init", "--template", "blank"]
+    assert prime.env["REFLEX_DIR"] == str(ctx.subject_cache_dir / "reflex")
+    assert [call.args for call in samples] == [["init", "--template", "blank"]] * 2
+    for call in samples:
         assert call.cwd == ctx.workdir / "app"
         _cold_env(ctx, call, "REFLEX_DIR", ctx.workdir / "reflex")
         assert "BUN_INSTALL_CACHE_DIR" not in call.env
@@ -281,12 +290,16 @@ def test_init_cold(cli: FakeCli, ctx: Context):
         assert call.kwargs["scope"] is None
     assert ctx.fixture is None
     assert ctx.dims == {"collector": "fallback"}
-    assert _extra(first)["deleted_bytes"] == {"web": 0, "reflex_dir": 0}
+    assert _extra(first)["deleted_bytes"] == {"web": 0}
     assert TIME_EXTRA | {"deleted_bytes"} == _extra(second).keys()
 
 
-def test_init_cold_prepare_starts_from_nothing(cli: FakeCli, ctx: Context):
+def test_init_cold_prepare_starts_from_a_copy_of_the_primed_bun(
+    cli: FakeCli, ctx: Context
+):
+    _primed_bun(ctx)
     bench = _instance("lifecycle.init.cold", ctx)
+    bench.setup_cache(ctx)
     bench.setup(ctx)
     app, reflex_dir = ctx.workdir / "app", ctx.workdir / "reflex"
     (app / ".web").mkdir(parents=True)
@@ -294,11 +307,14 @@ def test_init_cold_prepare_starts_from_nothing(cli: FakeCli, ctx: Context):
     (app / "rxconfig.py").write_text("x", encoding="utf-8")
     (reflex_dir / "bun" / "bin").mkdir(parents=True)
     (reflex_dir / "bun" / "bin" / "bun").write_bytes(b"x" * 1000)
+    (reflex_dir / "reflex_best_registry.cached").write_bytes(b"x")
     bench.prepare(ctx)
     assert list(app.iterdir()) == []
-    assert not reflex_dir.exists()
+    # Only bun comes from the primed REFLEX_DIR: no download, everything else cold.
+    assert [path.name for path in reflex_dir.iterdir()] == ["bun"]
+    assert (reflex_dir / "bun" / "bin" / "bun").read_bytes() == b"x"
     result = bench.sample(ctx)
-    assert _extra(result)["deleted_bytes"] == {"web": 100, "reflex_dir": 1000}
+    assert _extra(result)["deleted_bytes"] == {"web": 100}
 
 
 def test_init_warm(cli: FakeCli, ctx: Context):
@@ -321,9 +337,12 @@ def test_a_reflex_dir_holding_a_bun_is_not_primed_again(cli: FakeCli, ctx: Conte
     # One shared REFLEX_DIR per subject: the first instance downloads bun.
     _primed_bun(ctx)
     _run(_instance("lifecycle.init.warm", ctx), ctx)
+    _run(_instance("lifecycle.init.cold", ctx), ctx)
     _run(_instance("lifecycle.compile.cold", ctx), ctx)
     assert [call.args for call in cli.calls] == [
         ["init", "--template", "blank"],
+        ["init", "--template", "blank"],
+        ["compile"],
         ["compile"],
     ]
 
@@ -331,28 +350,35 @@ def test_a_reflex_dir_holding_a_bun_is_not_primed_again(cli: FakeCli, ctx: Conte
 def test_compile_cold(cli: FakeCli, ctx: Context):
     bench = _instance("lifecycle.compile.cold", ctx)
     results = _run(bench, ctx, samples=2)
-    prime, *samples = cli.calls
-    assert prime.args == ["init", "--template", "blank"]
-    assert prime.env["REFLEX_DIR"] == str(ctx.subject_cache_dir / "reflex")
+    init, prime, *samples = cli.calls
+    assert init.args == ["init", "--template", "blank"]
+    assert init.env["REFLEX_DIR"] == str(ctx.subject_cache_dir / "reflex")
+    # setup_cache fills the subject's bun package cache with an untimed compile
+    # of a kept copy; each sample compiles a fresh copy from that cache.
+    bun_cache = ctx.subject_cache_dir / "bun-cache"
+    assert (prime.args, prime.cwd) == (["compile"], ctx.cache_dir / "app")
+    assert "phases" not in prime.kwargs
+    assert prime.env["BUN_INSTALL_CACHE_DIR"] == str(bun_cache)
     for call in samples:
         assert call.args == ["compile"]
         assert call.cwd == ctx.workdir / "app"
         assert call.env["REFLEX_DIR"] == str(ctx.subject_cache_dir / "reflex")
-        _cold_env(ctx, call, "BUN_INSTALL_CACHE_DIR", ctx.workdir / "bun-cache")
+        assert call.env["BUN_INSTALL_CACHE_DIR"] == str(bun_cache)
+        assert call.kwargs["phases"] is True
     assert ctx.fixture == fixtures.describe_playground()
-    # Each sample compiles a fresh copy of the playground.
+    assert json.loads((ctx.cache_dir / fixtures.STAMP).read_text()) == ctx.fixture
     assert (ctx.workdir / "app" / "rxconfig.py").is_file()
     assert not (ctx.workdir / "app" / fixtures.HASH_FILE).exists()
     assert TIME_EXTRA | {"deleted_bytes"} == _extra(results[0]).keys()
 
 
-def test_compile_cold_prepare_removes_the_previous_copy_and_bun_cache(
+def test_compile_cold_prepare_removes_the_previous_copy_but_not_the_bun_cache(
     cli: FakeCli, ctx: Context
 ):
     bench = _instance("lifecycle.compile.cold", ctx)
     bench.setup(ctx)
     bench.prepare(ctx)
-    app, bun_cache = ctx.workdir / "app", ctx.workdir / "bun-cache"
+    app, bun_cache = ctx.workdir / "app", ctx.subject_cache_dir / "bun-cache"
     # What the previous sample's compile left behind.
     (app / ".web" / "node_modules").mkdir(parents=True)
     (app / ".web" / "node_modules" / "react.js").write_bytes(b"x" * 250)
@@ -362,10 +388,28 @@ def test_compile_cold_prepare_removes_the_previous_copy_and_bun_cache(
     bench.prepare(ctx)
     assert not (app / ".web").exists()
     assert not (app / "reflex.lock").exists()
-    assert not bun_cache.exists()
+    assert (bun_cache / "react@19" / "index.js").is_file()
     assert (app / "rxconfig.py").is_file()
     result = bench.sample(ctx)
-    assert _extra(result)["deleted_bytes"] == {"web": 250, "bun_cache": 400}
+    assert _extra(result)["deleted_bytes"] == {"web": 250}
+
+
+def test_compile_cold_prepare_copies_the_primed_lockfiles(cli: FakeCli, ctx: Context):
+    bench = _instance("lifecycle.compile.cold", ctx)
+    bench.setup_cache(ctx)
+    bench.setup(ctx)
+    primed = ctx.cache_dir / "app"
+    # What the priming compile left: the root lockfile directory of reflex 0.9
+    # and the .web lockfile of 0.8.
+    (primed / "reflex.lock").mkdir()
+    (primed / "reflex.lock" / "bun.lock").write_text("root", encoding="utf-8")
+    (primed / ".web" / "node_modules").mkdir(parents=True)
+    (primed / ".web" / "bun.lock").write_text("web", encoding="utf-8")
+    bench.prepare(ctx)
+    app = ctx.workdir / "app"
+    assert (app / "reflex.lock" / "bun.lock").read_text(encoding="utf-8") == "root"
+    assert (app / ".web" / "bun.lock").read_text(encoding="utf-8") == "web"
+    assert sorted(path.name for path in (app / ".web").iterdir()) == ["bun.lock"]
 
 
 def test_compile_warm(cli: FakeCli, ctx: Context):
