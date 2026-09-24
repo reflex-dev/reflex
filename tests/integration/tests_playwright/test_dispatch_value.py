@@ -45,6 +45,16 @@ def DispatchValueApp():
                 on_click=Child.items.dispatch_value(["pending"]),
                 id="add",
             ),
+            rx.button(
+                "Late",
+                # Dispatched in turn, after the script before it.
+                on_click=[
+                    rx.call_script("void 0"),
+                    State.status.dispatch_value("late"),
+                    State.work,
+                ],
+                id="late",
+            ),
             rx.text(State.status, id="status"),
             rx.text(State.items.join(","), id="items"),
         )
@@ -93,7 +103,7 @@ def test_dispatch_value(dispatch_value_app: AppHarness, page: Page):
 
 
 def test_dispatch_value_before_connecting(dispatch_value_app: AppHarness, page: Page):
-    """A dispatched value shows right away while the backend is unreachable.
+    """A dispatched value leading its events shows while the backend is unreachable.
 
     Args:
         dispatch_value_app: AppHarness running the test app.
@@ -107,4 +117,9 @@ def test_dispatch_value_before_connecting(dispatch_value_app: AppHarness, page: 
     status = page.locator("#status")
     expect(status).to_have_text("idle")
     page.click("#work")
+    expect(status).to_have_text("working")
+
+    # Events before a dispatched value run first: here they wait for the backend.
+    page.click("#late")
+    page.wait_for_timeout(500)
     expect(status).to_have_text("working")

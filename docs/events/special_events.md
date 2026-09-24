@@ -58,3 +58,7 @@ Only state vars sent to the client can be dispatched; backend vars have no
 value on the frontend. Since the backend only sends the vars that changed, a
 handler should set any var it lets the frontend change, as `work` sets
 `loading` above.
+
+Events keep their order: a value dispatched after other frontend events, like
+`rx.call_script`, is shown once they have run, so put `dispatch_value` first to
+show it right away, even before the app has connected to the backend.

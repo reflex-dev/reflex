@@ -917,8 +917,6 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if (
             var_data is None
             or not var_data.field_name
-            # A backend computed var, maybe behind a cast forwarding its attributes.
-            or getattr(self, "_backend", False)
             or self._js_expr
             != f"{format_state_name(var_data.state)}.{var_data.field_name}{FIELD_MARKER}"
         ):
@@ -1747,6 +1745,17 @@ class ToOperation:
     def __post_init__(self):
         """Post initialization."""
         object.__delattr__(self, "_js_expr")
+
+    def dispatch_value(self, value: Any) -> EventSpec:
+        """Show a value for the var converted on the frontend right away.
+
+        Args:
+            value: The value to show.
+
+        Returns:
+            An event setting the value on the frontend only.
+        """
+        return self._original.dispatch_value(value)
 
     def _hash_key(self) -> tuple[Any, ...]:
         """Return the canonical identity of this var.
@@ -2659,6 +2668,24 @@ class ComputedVar(Var[RETURN_TYPE]):
             msg = "ComputedVar dependencies must be Var instances or var names (non-empty strings)."
             raise TypeError(msg)
         return deps
+
+    @override
+    def dispatch_value(self, value: Any) -> EventSpec:
+        """Show a value for this computed var on the frontend right away.
+
+        Args:
+            value: The value to show.
+
+        Returns:
+            An event setting the value on the frontend only.
+
+        Raises:
+            TypeError: If the computed var is not sent to the client.
+        """
+        if self._backend:
+            msg = f"`dispatch_value` needs a state var sent to the client, not the backend var {self!s}."
+            raise TypeError(msg)
+        return super().dispatch_value(value)
 
     @override
     def _replace(

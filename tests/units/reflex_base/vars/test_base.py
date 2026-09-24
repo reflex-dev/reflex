@@ -971,6 +971,7 @@ class DispatchValueState(State):
     """A state whose vars are dispatched on the frontend."""
 
     status: Field[str] = field("")
+    counts: Field[dict[str, int]] = field(default_factory=dict)
 
     @computed_var
     def upper(self) -> str:
@@ -998,6 +999,12 @@ def test_dispatch_value():
                 LiteralVar.create({"status_rx_state_": State.router.page.path})
             ),
         }
+    assert (
+        DispatchValueState.counts
+        .dispatch_value({"a": 1})
+        .args[1][1]
+        .equals(LiteralVar.create({"counts_rx_state_": {"a": 1}}))
+    )
     assert (
         DispatchValueState.upper
         .dispatch_value("A")
