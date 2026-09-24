@@ -4537,10 +4537,13 @@ class BaseStateMeta(ABCMeta):
         own_fields = _unannotated_fields(namespace) | _annotated_fields(
             namespace, lookup_order
         )
+        annotations = annotations_from_namespace(namespace)
         for key, value in namespace.items():
             if (
                 key in inherited_fields
                 and key not in own_fields
+                # Annotated names, like ClassVars, are declared as annotated.
+                and key not in annotations
                 and not callable(value)
                 and not _is_descriptor(value)
             ):

@@ -7,7 +7,7 @@ import threading
 import traceback
 import typing
 import weakref
-from typing import Any, Literal, TypeVar
+from typing import Any, ClassVar, Literal, TypeVar
 
 import pytest
 from reflex_base.constants import RouteArgType
@@ -1022,3 +1022,16 @@ def test_backend_field_is_not_type_checked():
     model = Model()  # pyright: ignore[reportCallIssue]
     model._value = 1
     assert model._value == 1
+
+
+def test_classvar_over_inherited_field_is_not_a_field():
+    """A ClassVar redeclaring an inherited field stays a class attribute."""
+
+    class Parent(State):
+        count: int = 0
+
+    class Child(Parent):
+        count: ClassVar[int] = 5  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    assert Child.get_fields()["count"] is Parent.get_fields()["count"]
+    assert "count" not in Child.base_vars
