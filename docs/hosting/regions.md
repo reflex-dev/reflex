@@ -77,16 +77,16 @@ rx.el.table(
                 rx.el.div(
                     "Region",
                 ),
-                class_name="px-6 py-3 text-left text-sm font-semibold text-secondary-12 text-nowrap",
+                class_name="px-6 py-3 text-left text-sm font-semibold text-foreground text-nowrap",
             ),
             rx.el.th(
                 rx.el.div(
                     "Country",
                 ),
-                class_name="px-6 py-3 text-left text-sm font-semibold text-secondary-12 text-nowrap",
+                class_name="px-6 py-3 text-left text-sm font-semibold text-foreground text-nowrap",
             ),
         ),
-        class_name="bg-secondary-2",
+        class_name="bg-muted",
     ),
     rx.el.tbody(
         *[
@@ -94,7 +94,7 @@ rx.el.table(
                 rx.el.td(
                     rx.el.div(
                         region,
-                        class_name="h-5 rounded-md border justify-start items-center inline-flex bg-secondary-1 text-xs font-medium shrink-0 px-1.5 w-fit text-secondary-12 border-secondary-6",
+                        class_name="h-5 rounded-md border justify-start items-center inline-flex bg-background text-xs font-medium shrink-0 px-1.5 w-fit text-foreground border-border",
                     ),
                     class_name="px-6 py-3",
                 ),
@@ -108,15 +108,15 @@ rx.el.table(
                         REGIONS_DICT[region],
                         class_name="flex flex-row items-center gap-2",
                     ),
-                    class_name="px-6 py-3 text-sm font-medium text-secondary-9",
+                    class_name="px-6 py-3 text-sm font-medium text-subtle-foreground",
                 ),
-                class_name="even:bg-secondary-2 odd:bg-secondary-1 hover:bg-secondary-3",
+                class_name="even:bg-muted odd:bg-background hover:bg-accent",
             )
             for region in REGIONS_DICT.keys()
         ],
-        class_name="divide-y divide-secondary-4",
+        class_name="divide-y divide-border-subtle",
     ),
-    class_name="w-full table-fixed rounded-xl overflow-hidden divide-y divide-secondary-4",
+    class_name="w-full table-fixed rounded-xl overflow-hidden divide-y divide-border-subtle",
 )
 ```
 

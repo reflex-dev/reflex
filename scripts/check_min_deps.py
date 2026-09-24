@@ -20,7 +20,9 @@ workspace package to an unreleased ``*.dev`` version (e.g. ``reflex-base >= 0.9.
 while that version is still unpublished, which would otherwise make resolution from PyPI
 impossible. For such pins — and only those — a wheel is built from the sibling's local
 checkout into a temporary directory that is offered to the resolver as an extra
-``--find-links`` index, so every *non-dev* dependency is still required to resolve from
+``--find-links`` index. When a declared development floor satisfies the requirement, the
+temporary wheel uses that version so older ancestor tags cannot make it unresolvable.
+Every *non-dev* dependency is still required to resolve from
 PyPI. A local index is used rather than an extra editable install target because build
 environments (a package whose build backend sets ``require-runtime-dependencies`` resolves
 its own runtime dependencies to build) are resolved separately from the install targets and
@@ -44,6 +46,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -278,14 +281,15 @@ def discover_packages() -> list[Package]:
         if name in SKIP_PACKAGES:
             continue
         project = _load_pyproject(project_file)["project"]
-        if not project.get("dependencies"):
+        extras = tuple(project.get("optional-dependencies", {}))
+        if not project.get("dependencies") and not extras:
             continue
         packages.append(
             Package(
                 name=name,
                 project_dir=project_file.parent,
                 source_dir=_single_source_dir(project_file.parent / "src"),
-                extras=tuple(project.get("optional-dependencies", {})),
+                extras=extras,
                 local_dev_sources=_local_dev_sources(project, workspace_dirs),
             )
         )
@@ -369,6 +373,42 @@ def _pyright_errors(report: dict) -> dict[tuple[str, int, int, str], str]:
     return errors
 
 
+def _dev_build_version(project: dict, dependency_name: str) -> str | None:
+    """Choose a declared development floor that satisfies a sibling's requirements.
+
+    Args:
+        project: The consuming package's project metadata.
+        dependency_name: The sibling's canonical distribution name.
+
+    Returns:
+        The lowest usable declared development version, or None to use normal versioning.
+    """
+    requirements = [
+        Requirement(dependency)
+        for dependency in _published_dependencies(project)
+        if _parse_requirement(dependency)[0] == dependency_name
+    ]
+    candidates: set[Version] = set()
+    for requirement in requirements:
+        for specifier in requirement.specifier:
+            if specifier.operator not in _LOWER_BOUND_OPERATORS:
+                continue
+            try:
+                version = Version(specifier.version)
+            except InvalidVersion:
+                continue
+            if version.is_devrelease:
+                candidates.add(version)
+    return next(
+        (
+            str(version)
+            for version in sorted(candidates)
+            if all(version in requirement.specifier for requirement in requirements)
+        ),
+        None,
+    )
+
+
 def _build_dev_wheelhouse(package: Package, wheelhouse: Path) -> str | None:
     """Build wheels for the package's unpublished ``*.dev`` siblings into a local index.
 
@@ -380,7 +420,12 @@ def _build_dev_wheelhouse(package: Package, wheelhouse: Path) -> str | None:
         ``None`` on success, otherwise the captured output of the failing build.
     """
     wheelhouse.mkdir(parents=True, exist_ok=True)
+    project = _load_pyproject(package.project_dir / "pyproject.toml")["project"]
     for source in package.local_dev_sources:
+        name = canonicalize_name(
+            _load_pyproject(source / "pyproject.toml")["project"]["name"]
+        )
+        version = _dev_build_version(project, name)
         build = _run(
             [
                 "uv",
@@ -395,6 +440,9 @@ def _build_dev_wheelhouse(package: Package, wheelhouse: Path) -> str | None:
                 str(source),
             ],
             cwd=REPO_ROOT,
+            env={**os.environ, "UV_DYNAMIC_VERSIONING_BYPASS": version}
+            if version is not None
+            else None,
         )
         if build.returncode != 0:
             return build.stdout
