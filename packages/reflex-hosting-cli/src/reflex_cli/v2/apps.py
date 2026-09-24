@@ -571,7 +571,10 @@ def delete_app(
             try:
                 app_name_from_search = authenticated_client.api.apps.get(app_id).name
             except NotFoundError as err:
-                logger.error(f"No application found with ID '{app_id}'")
+                message = f"No application found with ID '{app_id}'"
+                logger.error(message)
+                if as_json:
+                    print_json({"app_id": app_id, "deleted": False, "message": message})
                 raise click.exceptions.Exit(1) from err
 
         if not app_id:

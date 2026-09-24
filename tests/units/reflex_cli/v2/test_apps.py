@@ -1833,7 +1833,7 @@ def test_app_logs_json_output_names_the_servers_reason(mocker: MockFixture):
 
 
 def test_delete_app_json_output_when_app_is_gone(mocker: MockFixture):
-    """An unknown app ID answers through the exit status, like the other failures."""
+    """An unknown app ID exits non-zero but still prints the JSON result."""
     client = _authed(mocker)
     client.api.apps.get.side_effect = api_error(404, "no such app")
 
@@ -1842,7 +1842,11 @@ def test_delete_app_json_output_when_app_is_gone(mocker: MockFixture):
     )
 
     assert result.exit_code == 1
-    assert result.stdout == ""
+    assert json.loads(result.stdout) == {
+        "app_id": "app123",
+        "deleted": False,
+        "message": "No application found with ID 'app123'",
+    }
     client.api.apps.delete.assert_not_called()
 
 
