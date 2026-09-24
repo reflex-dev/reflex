@@ -60,10 +60,11 @@ _PREVIOUS_RELEASE_PICKLE_KEYS: dict[str, Any] = {
     "_backend_vars": {},
 }
 
-# If the state is this large, it's considered a performance issue.
-TOO_LARGE_SERIALIZED_STATE = environment.REFLEX_STATE_SIZE_LIMIT.get() * 1024
-# Only warn about each state class size once.
-_WARNED_ABOUT_STATE_SIZE: set[str] = set()
+if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
+    # If the state is this large, it's considered a performance issue.
+    TOO_LARGE_SERIALIZED_STATE = environment.REFLEX_STATE_SIZE_LIMIT.get() * 1024
+    # Only warn about each state class size once.
+    _WARNED_ABOUT_STATE_SIZE: set[str] = set()
 
 # Per state class, the names its dev-mode __setattr__ has found declared.
 _SETTABLE_NAMES: dict[type, set[str]] = {}
