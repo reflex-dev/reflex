@@ -15,6 +15,7 @@ import sys
 import threading
 from collections.abc import AsyncGenerator, Callable, Mapping
 from textwrap import dedent
+from types import MethodType
 from typing import Any, ClassVar, Literal, TypeVar, cast
 from unittest.mock import AsyncMock, Mock
 
@@ -2016,7 +2017,14 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
             return counter
 
     if use_partial:
-        HandlerState.handler = functools.partial(HandlerState.handler.fn)  # pyright: ignore [reportFunctionMemberAccess]
+
+        class MethodPartial(functools.partial):
+            """A partial binding like a method, as partials do from Python 3.14."""
+
+            def __get__(self, instance: Any, owner: Any = None) -> Any:
+                return self if instance is None else MethodType(self, instance)
+
+        HandlerState.handler = MethodPartial(HandlerState.handler.fn)  # pyright: ignore [reportFunctionMemberAccess]
         assert isinstance(HandlerState.handler, functools.partial)
     else:
         assert isinstance(HandlerState.handler, EventHandler)
@@ -6419,3 +6427,11 @@ def test_setstate_drops_the_legacy_router_entry():
     assert "router" not in state.__dict__
     # ...and `router` still resolves through the switchboard to live fields.
     assert state.router.session.client_token == ""
+
+
+def test_previous_release_pickle_keys_are_reserved():
+    """A field cannot take the name older pickles kept the backend vars under."""
+    with pytest.raises(StateValueError, match="_backend_vars"):
+
+        class ClashingState(BaseState):
+            _backend_vars: dict = {}  # pyright: ignore[reportIncompatibleVariableOverride]

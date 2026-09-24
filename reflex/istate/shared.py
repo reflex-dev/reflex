@@ -12,6 +12,7 @@ from reflex_base.event import Event, get_hydrate_event
 from reflex_base.event.context import EventContext
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import ReflexRuntimeError
+from reflex_base.vars.base import _owner_state
 from typing_extensions import Self
 
 from reflex.istate.delta import _suppress_delta_recording
@@ -127,6 +128,14 @@ async def _patch_state(
     finally:
         original_parent_state.substates[state_name] = original_state
         linked_state.parent_state = linked_parent_state
+        # Computed vars reading this state cached the linked state's values:
+        # recompute them from the original state it is swapped back for.
+        original_cls = type(original_state)
+        original_state._mark_dirty_computed_vars(
+            name
+            for name, f in original_cls.get_fields().items()
+            if f._owner is original_cls
+        )
 
 
 class SharedStateBaseInternal(State):
@@ -294,6 +303,14 @@ class SharedStateBaseInternal(State):
         ):
             return self._rehydrate()
 
+    def _linked_locks_holder(self) -> "SharedStateBaseInternal":
+        """Get the state holding the locks on the linked states of this tree.
+
+        Returns:
+            The SharedStateBaseInternal instance of this state's tree.
+        """
+        return _owner_state(self, SharedStateBaseInternal)
+
     async def _internal_patch_linked_state(
         self, token: str, full_delta: bool = False
     ) -> Self:
@@ -310,22 +327,30 @@ class SharedStateBaseInternal(State):
         Returns:
             The state that was linked into the tree.
         """
-        if self._exit_stack is None or self._held_locks is None:
+        from reflex.istate.manager import get_state_manager
+
+        holder = self._linked_locks_holder()
+        if holder._exit_stack is None or holder._held_locks is None:
             msg = "Cannot link shared state outside of _modify_linked_states context."
             raise ReflexRuntimeError(msg)
 
-        ctx = EventContext.get()
+        linked_token = BaseStateToken(ident=token, cls=type(self))
+        try:
+            ctx = EventContext.get()
+        except LookupError:
+            # Modifying a state directly through the state manager.
+            ctx = None
+        locked_root: BaseState | None = None
         # Get the newly linked state and update pointers/delta for subsequent events.
-        if token not in self._held_locks:
-            async with self._held_locks_lock:
-                if token not in self._held_locks:
-                    locked_root: BaseState = await self._exit_stack.enter_async_context(
-                        ctx.modify_state(
-                            BaseStateToken(ident=token, cls=type(self)),
-                            with_links=False,
-                        )
+        if token not in holder._held_locks:
+            async with holder._held_locks_lock:
+                if token not in holder._held_locks:
+                    locked_root = await holder._exit_stack.enter_async_context(
+                        ctx.modify_state(linked_token, with_links=False)
+                        if ctx is not None
+                        else get_state_manager().modify_state(linked_token)
                     )
-                    self._held_locks.setdefault(token, {})
+                    holder._held_locks.setdefault(token, {})
                     # Set client_token on the linked root so that subsequent get_state
                     # calls when directly modifying a linked token will load the
                     # associated instance.
@@ -336,19 +361,24 @@ class SharedStateBaseInternal(State):
                             session, client_token=token
                         )
         # Locked in this event, now or earlier.
-        linked_root_state: BaseState = ctx.state_locks.held[token][0]
+        if ctx is not None:
+            linked_root_state: BaseState = ctx.state_locks.held[token][0]
+        elif locked_root is not None:
+            linked_root_state = locked_root
+        else:
+            linked_root_state = await get_state_manager().get_state(linked_token)
         linked_state = await linked_root_state.get_state(type(self))
         if not isinstance(linked_state, SharedState):
             msg = f"Linked state for token {token} is not a SharedState."
             raise ReflexRuntimeError(msg)
         # Avoid unnecessary dirtiness of shared state when there are no changes.
-        if type(self) not in self._held_locks[token]:
-            self._held_locks[token][type(self)] = linked_state
+        if type(self) not in holder._held_locks[token]:
+            holder._held_locks[token][type(self)] = linked_state
         if self.rx_router_session.client_token not in linked_state._linked_from:
             linked_state._linked_from.add(self.rx_router_session.client_token)
         if linked_state._linked_to != token:
             linked_state._linked_to = token
-        await self._exit_stack.enter_async_context(
+        await holder._exit_stack.enter_async_context(
             _patch_state(
                 original_state=self,
                 linked_state=linked_state,
@@ -363,11 +393,11 @@ class SharedStateBaseInternal(State):
         Returns:
             The list of linked states currently held.
         """
-        if self._held_locks is None:
+        if (held_locks := self._linked_locks_holder()._held_locks) is None:
             return []
         return [
             linked_state
-            for linked_state_cls_to_instance in self._held_locks.values()
+            for linked_state_cls_to_instance in held_locks.values()
             for linked_state in linked_state_cls_to_instance.values()
             if isinstance(linked_state, SharedState)
         ]
@@ -389,14 +419,15 @@ class SharedStateBaseInternal(State):
         Yields:
             None.
         """
-        if self._exit_stack is not None:
+        holder = self._linked_locks_holder()
+        if holder._exit_stack is not None:
             msg = "Cannot nest _modify_linked_states contexts."
             raise ReflexRuntimeError(msg)
         if self._reflex_internal_links is None:
             msg = "No linked states to modify."
             raise ReflexRuntimeError(msg)
-        self._exit_stack = contextlib.AsyncExitStack()
-        self._held_locks = {}
+        holder._exit_stack = exit_stack = contextlib.AsyncExitStack()
+        holder._held_locks = {}
         current_dirty_vars: dict[str, set[str]] = {}
         affected_tokens: set[str] = set()
         try:
@@ -421,7 +452,7 @@ class SharedStateBaseInternal(State):
                 ):
                     linked_state.dirty_vars.update(dv)
                     linked_state._mark_dirty()
-            async with self._exit_stack:
+            async with exit_stack:
                 yield None
                 # Collect dirty vars and other affected clients that need to be updated.
                 for linked_state in self._held_locks_linked_states():
@@ -455,7 +486,7 @@ class SharedStateBaseInternal(State):
                         affected_tokens, current_dirty_vars
                     )
         finally:
-            self._exit_stack = None
+            holder._exit_stack = None
 
         # Only propagate dirty vars when we are not already propagating from another state.
         if previous_dirty_vars is None:

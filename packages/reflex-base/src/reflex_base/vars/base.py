@@ -3764,6 +3764,7 @@ _RESERVED_FIELD_ATTRS = frozenset({
     "_owner",
     "_name",
     "_backend",
+    "_tracked",
     "_plain_types",
     "_var",
 })
@@ -3783,7 +3784,8 @@ def _owner_state(state: Any, owner: type) -> Any:
     """
     instance = state
     while type(instance) is not owner:
-        instance = instance.parent_state
+        # A plain model without a state tree has no parent_state.
+        instance = getattr(instance, "parent_state", None)
         if instance is None:
             return state
     return instance
@@ -3838,6 +3840,8 @@ class Field(Generic[FIELD_TYPE]):
     _name: str = ""
     # Whether the value stays on the backend, never sent to the client.
     _backend: bool = False
+    # Whether the owner tracks changes, like a state; a plain model does not.
+    _tracked: bool = False
     # Classes whose instances match the type without the full type check.
     _plain_types: frozenset[Any] = frozenset()
     # The Var standing for the field on its owner, if sent to the client.
@@ -3916,6 +3920,7 @@ class Field(Generic[FIELD_TYPE]):
         self._owner = owner
         self._name = name
         self._backend = not self.is_var or name.startswith("_")
+        self._tracked = hasattr(owner, "_mark_dirty")
         type_ = self.outer_type_
         self._plain_types = frozenset(
             arg
@@ -3980,11 +3985,13 @@ class Field(Generic[FIELD_TYPE]):
             if type(instance) is self._owner
             else _owner_state(instance, self._owner)  # pyright: ignore[reportArgumentType]
         )
-        _check_writable(state)
+        if self._tracked:
+            _check_writable(state)
         if isinstance(value, self._proxy):
             value = value.__wrapped__  # pyright: ignore[reportAttributeAccessIssue]
         if (
-            self.is_var
+            # Only values sent to the client are type checked.
+            not self._backend
             and type(value) not in self._plain_types
             and not _isinstance(
                 value, self.outer_type_, nested=1, treat_var_as_type=False
@@ -3995,7 +4002,8 @@ class Field(Generic[FIELD_TYPE]):
                 f" '{self.outer_type_}', but got '{value}' of type '{type(value)}'."
             )
         state.__dict__[self._name] = value
-        self._mark_dirty(state)
+        if self._tracked:
+            self._mark_dirty(state)
 
     def _mark_dirty(self, state: Any) -> None:
         """Record that the field changed on a state instance.
@@ -4104,7 +4112,7 @@ class Field(Generic[FIELD_TYPE]):
             value = state.__dict__[self._name]
         except KeyError:
             value = state.__dict__[self._name] = self.default_value()
-        if self.is_var and is_mutable_type(type(value)):
+        if self._tracked and self.is_var and is_mutable_type(type(value)):
             return self._proxy(wrapped=value, state=state, field_name=self._name)
         return value
 
@@ -4298,11 +4306,21 @@ def _validate_state_declaration(
         root: The state class whose namespace the new class may not shadow.
         lookup_order: The bases of the new class in method resolution order.
         namespace: The unmodified class namespace.
+
+    Raises:
+        StateValueError: If a declaration uses the name of a base's slot.
     """
-    seen = namespace.keys() | annotations_from_namespace(namespace).keys()
-    for member in seen:
+    declared = namespace.keys() | annotations_from_namespace(namespace).keys()
+    for member in declared:
         _validate_state_name(root, member, namespace.get(member))
+    seen = set(declared)
     for base in lookup_order:
+        if not declared.isdisjoint(slots := base.__dict__.get("__slots__", ())):
+            msg = (
+                f"State names {sorted(declared.intersection(slots))} are reserved by "
+                f"{base.__name__}; use different names instead."
+            )
+            raise StateValueError(msg)
         if (
             not issubclass(base, root)
             and base is not EvenMoreBasicBaseState
@@ -4519,6 +4537,17 @@ class BaseStateMeta(ABCMeta):
         own_fields = _unannotated_fields(namespace) | _annotated_fields(
             namespace, lookup_order
         )
+        for key, value in namespace.items():
+            if (
+                key in inherited_fields
+                and key not in own_fields
+                and not callable(value)
+                and not _is_descriptor(value)
+            ):
+                # A new default for an inherited field declares a field of its own.
+                own_fields[key] = _field_with_default(
+                    value, inherited_fields[key].annotated_type
+                )
 
         # The fields are the class attributes: descriptors storing the values.
         namespace.update(own_fields)
