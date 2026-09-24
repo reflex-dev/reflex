@@ -907,9 +907,18 @@ def get_authenticated_client(
         try:
             with console.status("Validating access token ..."):
                 me = _validate(access_token, api)
-        except TokenValidationError as err:
+        except TokenAccessDeniedError as err:
             api.close()
             logger.error(rejected_token_message(source, err))
+            if source is TokenSource.CONFIG:
+                delete_token_from_config()
+            raise click.exceptions.Exit(1) from err
+        except TokenValidationError as err:
+            api.close()
+            logger.error(
+                f"Unable to validate the access token from the {source.value}: "
+                f"{err} (auth request id: {err.request_id})"
+            )
             raise click.exceptions.Exit(1) from err
         return AuthenticatedClient(api, me)
 

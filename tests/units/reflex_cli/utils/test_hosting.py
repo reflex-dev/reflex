@@ -450,6 +450,62 @@ def test_rejected_token_in_non_interactive_mode_does_not_prompt(
     ]
 
 
+def test_rejected_config_token_in_non_interactive_mode_is_removed(
+    mocker: MockerFixture,
+):
+    """A saved token the control plane refuses is dropped from the config.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("stale-token", TokenSource.CONFIG),
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting._validate",
+        side_effect=TokenAccessDeniedError("access denied", request_id="req-1"),
+    )
+    delete = mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
+
+    with pytest.raises(click.exceptions.Exit):
+        get_authenticated_client(token=None, interactive=False)
+
+    delete.assert_called_once_with()
+
+
+def test_unvalidated_token_in_non_interactive_mode_is_not_called_rejected(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """A timeout or server error fails without calling the token rejected.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("saved-token", TokenSource.CONFIG),
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting._validate",
+        side_effect=TokenValidationError("server error", request_id="req-2"),
+    )
+    delete = mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
+    browser = mocker.patch("reflex_cli.utils.hosting._authenticate_on_browser")
+
+    with pytest.raises(click.exceptions.Exit) as exc_info:
+        get_authenticated_client(token=None, interactive=False)
+
+    assert exc_info.value.exit_code == 1
+    delete.assert_not_called()
+    browser.assert_not_called()
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == [
+        "Unable to validate the access token from the config file: server error (auth request id: req-2)"
+    ]
+
+
 def test_scale_arguments_are_pure_when_type_is_unspecified():
     """Reading the scale arguments must not settle the type on the object."""
     scale_params = ScaleParams(vm_type="shared-1x")
