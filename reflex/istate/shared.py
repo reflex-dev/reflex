@@ -127,6 +127,14 @@ async def _patch_state(
     finally:
         original_parent_state.substates[state_name] = original_state
         linked_state.parent_state = linked_parent_state
+        # Computed vars reading this state cached the linked state's values:
+        # recompute them from the original state it is swapped back for.
+        original_cls = type(original_state)
+        original_state._mark_dirty_computed_vars(
+            name
+            for name, f in original_cls.get_fields().items()
+            if f._owner is original_cls
+        )
 
 
 class SharedStateBaseInternal(State):

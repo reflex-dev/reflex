@@ -6455,3 +6455,11 @@ def test_setstate_drops_the_legacy_router_entry():
     assert "router" not in state.__dict__
     # ...and `router` still resolves through the switchboard to live fields.
     assert state.router.session.client_token == ""
+
+
+def test_previous_release_pickle_keys_are_reserved():
+    """A field cannot take the name older pickles kept the backend vars under."""
+    with pytest.raises(StateValueError, match="_backend_vars"):
+
+        class ClashingState(BaseState):
+            _backend_vars: dict = {}  # pyright: ignore[reportIncompatibleVariableOverride]
