@@ -233,8 +233,17 @@ a benchmark, so the subject's commands come first on `PATH`. Each command runs i
 included. Peak memory and CPU come from a transient cgroup v2 scope when
 `systemd-run` works (user manager, or sudo on CI), else from PSS sampling
 (`memory_method: pss_sampling`, never compared with cgroup peaks);
-`reflex-bench doctor` shows which. `selftest.app.compile` and
-`selftest.app.dev_ready` exercise all of it against a blank app.
+`reflex-bench doctor` shows which. With `phases=True`, `attribution()` splits
+the command's wall and CPU time between three classes of processes sampled
+from its tree: `install` (`bun`/`npm`/`pnpm`/`yarn` `install`/`add` and what
+they start), `frontend` (`node`, `vite`, `react-router`, `esbuild` and what
+they start) and `python`, the interpreter and everything else. A tool's wall
+is the time it was alive; python's is the total minus the time any tool was
+alive, when the interpreter only waits. `cpu` per class is checked against
+the measured total (`mismatch` beyond 10 %), `idle` is wall time not spent on
+CPU, and `python_breakdown` keeps the `[timing]` phases of the compile.
+`selftest.app.compile` and `selftest.app.dev_ready` exercise all of it against
+a blank app.
 `run_cli(..., prefix=("-c", "import reflex"))` runs other interpreter
 arguments than `-m reflex` through the same process tree code.
 

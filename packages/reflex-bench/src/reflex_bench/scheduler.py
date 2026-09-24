@@ -564,7 +564,7 @@ def _outlier_warning(
 
 
 def _phase_warning(entry: BenchmarkDoc, arm: str) -> str | None:
-    """Count an arm's timed samples whose phase attribution overshoots their total.
+    """Count an arm's timed samples whose process tree CPU misses the measured total.
 
     Args:
         entry: The benchmark entry; samples carry the attribution in
@@ -572,8 +572,8 @@ def _phase_warning(entry: BenchmarkDoc, arm: str) -> str | None:
         arm: The arm.
 
     Returns:
-        E.g. ``phases: 2 of 10 samples exceed the total by more than 5 %``, or
-        ``None`` when no sample does.
+        E.g. ``phases: 2 of 10 samples' process tree CPU is off the measured
+        total by more than 10 %``, or ``None`` when no sample's is.
     """
     mismatches = [
         bool(extra["phases"].get("mismatch"))
@@ -583,8 +583,8 @@ def _phase_warning(entry: BenchmarkDoc, arm: str) -> str | None:
     if not any(mismatches):
         return None
     return (
-        f"phases: {sum(mismatches)} of {len(mismatches)} samples exceed the total"
-        f" by more than {100 * MISMATCH_TOLERANCE:g} %"
+        f"phases: {sum(mismatches)} of {len(mismatches)} samples' process tree CPU"
+        f" is off the measured total by more than {100 * MISMATCH_TOLERANCE:g} %"
     )
 
 

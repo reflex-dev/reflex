@@ -83,53 +83,188 @@ def test_parse_timing_sums_repeats_and_keeps_unknown_labels():
     })
 
 
-def _tree(install: float = 0.0, frontend: float = 0.0) -> phases.TreeReport:
+def _totals(
+    cpu: float = 0.0, intervals: list[tuple[float, float]] | None = None
+) -> phases.ClassTotals:
+    intervals = intervals or []
+    return phases.ClassTotals(
+        wall_s=sum(end - start for start, end in intervals),
+        cpu_s=cpu,
+        intervals=intervals,
+    )
+
+
+def _tree(
+    python: phases.ClassTotals | None = None,
+    install: phases.ClassTotals | None = None,
+    frontend: phases.ClassTotals | None = None,
+) -> phases.TreeReport:
     return phases.TreeReport(
         classes={
-            "install": phases.ClassTotals(wall_s=install, cpu_s=0.0, intervals=[]),
-            "frontend": phases.ClassTotals(wall_s=frontend, cpu_s=0.0, intervals=[]),
+            "python": python or _totals(),
+            "install": install or _totals(),
+            "frontend": frontend or _totals(),
         },
         processes=[],
     )
 
 
-def test_attribute_splits_the_total():
+def test_attribute_a_python_only_compile():
+    # A warm compile: the interpreter is the whole wall, its labels a part of it.
     parts = phases.attribute(
-        10.0,
-        {"compile": 1.0, "install": 3.0, "write": 0.5},
-        _tree(install=2.5, frontend=1.0),
+        1.1,
+        1.0,
+        {"compile": 0.03, "assets": 0.0, "write": 0.01},
+        _tree(python=_totals(cpu=0.98, intervals=[(0.0, 1.1)])),
     )
-    assert parts == pytest.approx({
-        "total": 10.0,
-        "python": 1.5,
-        "install": 2.5,
-        "frontend": 1.0,
-        "other": 5.0,
-        "mismatch": False,
-    })
-
-
-def test_attribute_without_a_tree_leaves_the_rest_to_other():
-    parts = phases.attribute(2.0, {"compile": 0.5, "install": 1.0}, None)
-    assert parts == pytest.approx({
-        "total": 2.0,
-        "python": 0.5,
+    assert parts == {
+        "total": 1.1,
+        "cpu_total": 1.0,
+        "python": pytest.approx(1.1),
         "install": 0.0,
         "frontend": 0.0,
-        "other": 1.5,
+        "idle": pytest.approx(0.12),
+        "cpu": {"python": 0.98, "install": 0.0, "frontend": 0.0},
+        "python_breakdown": {"compile": 0.03, "assets": 0.0, "write": 0.01},
         "mismatch": False,
-    })
+    }
+
+
+def test_attribute_a_cold_compile_with_an_install():
+    # Two `bun add` runs; the interpreter only waits while they run, so their
+    # wall leaves the python part, and the `install` label (which wraps them)
+    # leaves the breakdown.
+    parts = phases.attribute(
+        6.0,
+        2.5,
+        {"compile": 0.05, "install": 3.9, "write": 0.02},
+        _tree(
+            python=_totals(cpu=1.5, intervals=[(0.0, 6.0)]),
+            install=_totals(cpu=1.0, intervals=[(0.8, 4.2), (4.2, 4.6)]),
+        ),
+    )
+    assert parts["python"] == pytest.approx(2.2)
+    assert parts["install"] == pytest.approx(3.8)
+    assert parts["frontend"] == pytest.approx(0.0)
+    assert parts["cpu"] == {"python": 1.5, "install": 1.0, "frontend": 0.0}
+    # Waiting on the network (install) and on the child (python) is idle time.
+    assert parts["idle"] == pytest.approx(0.7 + 2.8)
+    assert parts["python_breakdown"] == {"compile": 0.05, "write": 0.02}
+    assert parts["mismatch"] is False
+
+
+def test_attribute_an_export_with_a_frontend_build():
+    # A parallel build burns more CPU than its wall; it has no idle time.
+    parts = phases.attribute(
+        6.0,
+        9.0,
+        {"compile": 0.05},
+        _tree(
+            python=_totals(cpu=1.0, intervals=[(0.0, 6.0)]),
+            frontend=_totals(cpu=8.0, intervals=[(1.0, 5.0)]),
+        ),
+    )
+    assert parts["python"] == pytest.approx(2.0)
+    assert parts["frontend"] == pytest.approx(4.0)
+    assert parts["install"] == pytest.approx(0.0)
+    assert parts["idle"] == pytest.approx(1.0)
+    assert parts["mismatch"] is False
+
+
+def test_attribute_overlapping_tools_and_intervals_beyond_the_total():
+    # The python part loses the union of the tools' time once, and a lifetime
+    # the sampler saw past the end of the command is clipped to it.
+    parts = phases.attribute(
+        6.0,
+        3.0,
+        {},
+        _tree(
+            python=_totals(cpu=1.0, intervals=[(0.0, 6.0)]),
+            install=_totals(cpu=1.0, intervals=[(1.0, 3.0)]),
+            frontend=_totals(cpu=1.0, intervals=[(2.0, 7.0)]),
+        ),
+    )
+    assert parts["python"] == pytest.approx(1.0)
+    assert parts["install"] == pytest.approx(2.0)
+    assert parts["frontend"] == pytest.approx(4.0)
+    assert parts["mismatch"] is False
 
 
 @pytest.mark.parametrize(
-    ("install", "mismatch"),
-    [(0.24, False), (0.25, False), (0.26, True), (0.5, True)],
+    ("tree_cpu", "mismatch"),
+    [(1.79, True), (1.9, False), (2.0, False), (2.1, False), (2.21, True)],
 )
-def test_attribute_flags_parts_beyond_the_total(install: float, mismatch: bool):
-    # The parts may exceed the total by 5 % (sampling jitter), not more.
-    parts = phases.attribute(1.0, {"compile": 0.8}, _tree(install=install))
+def test_attribute_flags_tree_cpu_off_the_measured_total(
+    tree_cpu: float, mismatch: bool
+):
+    # The classes' CPU may differ from the cgroup or rusage total by 10 %
+    # (sampling lag, processes shorter than the interval), not more.
+    parts = phases.attribute(
+        3.0, 2.0, {}, _tree(python=_totals(cpu=tree_cpu, intervals=[(0.0, 3.0)]))
+    )
     assert parts["mismatch"] is mismatch
-    assert parts["other"] == pytest.approx(0.2 - install)
+
+
+def _record(
+    pid: int, ppid: int, cmdline: list[str], seen: tuple[float, float], cpu: float
+) -> phases.ProcessRecord:
+    return phases.ProcessRecord(
+        pid=pid,
+        ppid=ppid,
+        cmdline=cmdline,
+        first_seen=seen[0],
+        last_seen=seen[1],
+        cpu_s=cpu,
+    )
+
+
+def test_report_classes_a_synthetic_compile_tree():
+    # python -m reflex compile (root) runs a shell, `bun add` with a postinstall
+    # `node`, and a `vite build`; everything not under a tool is python.
+    records = [
+        _record(
+            100, 1, ["/venv/bin/python", "-m", "reflex", "compile"], (0.0, 6.0), 1.5
+        ),
+        _record(101, 100, ["/bin/sh", "-c", "git rev-parse"], (0.1, 0.2), 0.01),
+        _record(102, 100, ["/r/bun/bin/bun", "add", "react"], (0.8, 4.2), 0.7),
+        _record(
+            103, 102, ["node", "/w/node_modules/x/postinstall.js"], (3.0, 4.0), 0.3
+        ),
+        _record(
+            104,
+            100,
+            ["node", "/w/node_modules/vite/bin/vite.js", "build"],
+            (4.5, 5.5),
+            2.0,
+        ),
+        _record(
+            105,
+            104,
+            ["/w/node_modules/@esbuild/linux-x64/bin/esbuild"],
+            (4.6, 5.4),
+            1.0,
+        ),
+    ]
+    sampler = phases.TreePhases(100)
+    sampler._records = {(r.pid, r.first_seen): r for r in records}
+    report = sampler._report()
+    assert {r.pid: r.kind for r in report.processes} == {
+        100: "python",
+        101: "python",
+        102: "install",
+        103: "install",
+        104: "frontend",
+        105: "frontend",
+    }
+    totals = {
+        name: (c.wall_s, c.cpu_s, c.intervals) for name, c in report.classes.items()
+    }
+    assert totals == {
+        "python": (pytest.approx(6.0), pytest.approx(1.51), [(0.0, 6.0)]),
+        "install": (pytest.approx(3.4), pytest.approx(1.0), [(0.8, 4.2)]),
+        "frontend": (pytest.approx(1.0), pytest.approx(3.0), [(4.5, 5.5)]),
+    }
+    assert report.to_dict()["processes"] == 6
 
 
 @pytest.mark.parametrize(
@@ -158,6 +293,7 @@ def test_attribute_flags_parts_beyond_the_total(install: float, mismatch: bool):
             "frontend",
         ),
         (["/root/.bun/bin/bun", "run", "export"], None),
+        (["/w/node_modules/@esbuild/linux-x64/bin/esbuild", "--service"], "frontend"),
         (["/usr/bin/python3", "-m", "reflex", "compile"], None),
         (["/usr/bin/python3", "tool.py", "--runtime", "node"], None),
         (["/tmp/r0823/bin/python", "/tmp/r0823/bin/granian", "--port", "8000"], None),
@@ -195,6 +331,10 @@ def test_tree_phases_samples_a_real_tree(tmp_path: Path):
     report = sampler.stop()
     install, frontend = report.classes["install"], report.classes["frontend"]
     assert install.wall_s == pytest.approx(0.4, abs=0.25)
+    # The root interpreter is recorded too, as python, with the CPU it used.
+    root_record = next(p for p in report.processes if p.pid == root.pid)
+    assert root_record.kind == "python"
+    assert report.classes["python"].cpu_s == root_record.cpu_s > 0
     assert frontend.wall_s == pytest.approx(0.4, abs=0.25)
     assert len(install.intervals) == len(frontend.intervals) == 1
     # Frontend work starts after the install finished.
@@ -208,7 +348,6 @@ def test_tree_phases_samples_a_real_tree(tmp_path: Path):
     # `sleep` children inherit the class of the tool that started them.
     sleeps = [p for p in report.processes if Path(p.cmdline[0]).name == "sleep"]
     assert sorted(str(p.kind) for p in sleeps) == ["frontend", "install"]
-    assert root.pid not in {p.pid for p in report.processes}
 
 
 def test_tree_phases_raises_when_sampling_fails(monkeypatch: pytest.MonkeyPatch):

@@ -899,14 +899,14 @@ class CliResult:
         return self
 
     def attribution(self) -> Attribution | None:
-        """Split the wall time into Python phases, installs, frontend tools and the rest.
+        """Split the wall and CPU time between the interpreter, installs and frontend tools.
 
         Returns:
             The attribution, or ``None`` without ``phases``.
         """
         if self.tree is None:
             return None
-        return attribute(self.wall_s, self.timing, self.tree)
+        return attribute(self.wall_s, self.cpu_s, self.timing, self.tree)
 
 
 def run_cli(

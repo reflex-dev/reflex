@@ -667,7 +667,7 @@ def test_dims_stay_empty_when_setup_fails(tmp_path: Path):
 
 
 def _phases(mismatch: bool) -> dict[str, Any]:
-    return {"phases": {"total": 1.0, "other": 0.0, "mismatch": mismatch}}
+    return {"phases": {"total": 1.0, "python": 1.0, "mismatch": mismatch}}
 
 
 def test_phase_mismatches_warn_on_the_wall_metric(tmp_path: Path, fixed_timer):
@@ -680,7 +680,10 @@ def test_phase_mismatches_warn_on_the_wall_metric(tmp_path: Path, fixed_timer):
     )
     runner = Scheduler(make_subject(), Policy(runs=3), home=tmp_path, seed=1)
     entry = runner.run_one(planned)
-    warning = "phases: 2 of 3 samples exceed the total by more than 5 %"
+    warning = (
+        "phases: 2 of 3 samples' process tree CPU is off the measured total"
+        " by more than 10 %"
+    )
     assert entry["metrics"]["wall"]["warnings"] == [warning]
     assert len(entry["metrics"]["wall"]["samples"]["A"]) == 4
     # finalize() rebuilds the warnings from the samples, so the check survives it.
@@ -700,5 +703,8 @@ def test_phase_mismatches_are_counted_per_arm():
     entry["sample_extra"] = [_phases(index == 3) for index in range(6)]
     scheduler.finalize(entry, 0.95)
     assert entry["metrics"]["wall"]["warnings"] == [
-        "[B] phases: 1 of 3 samples exceed the total by more than 5 %"
+        (
+            "[B] phases: 1 of 3 samples' process tree CPU is off the measured total"
+            " by more than 10 %"
+        )
     ]

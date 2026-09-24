@@ -69,6 +69,7 @@ class FakeCli:
         self.calls.append(Call(list(args), cwd, dict(env), kwargs))
         phases = kwargs.get("phases", False)
         empty = ClassTotals(wall_s=0.0, cpu_s=0.0, intervals=[])
+        interpreter = ClassTotals(wall_s=2.5, cpu_s=3.0, intervals=[(0.0, 2.5)])
         if kwargs.get("scope") is not None:
             method = "cgroup"
         else:
@@ -83,7 +84,9 @@ class FakeCli:
             peak_mem_bytes=None if method is None else 300_000_000,
             memory_method=method,
             timing={"compile": 0.5} if phases else {},
-            tree=TreeReport(classes={"install": empty, "frontend": empty})
+            tree=TreeReport(
+                classes={"python": interpreter, "install": empty, "frontend": empty}
+            )
             if phases
             else None,
         )
@@ -391,10 +394,13 @@ def test_compile_warm(cli: FakeCli, ctx: Context):
     assert extra.keys() == TIME_EXTRA
     assert extra["phases"] == {
         "total": 2.5,
-        "python": 0.5,
+        "cpu_total": 3.25,
+        "python": 2.5,
         "install": 0.0,
         "frontend": 0.0,
-        "other": 2.0,
+        "idle": 0.0,
+        "cpu": {"python": 3.0, "install": 0.0, "frontend": 0.0},
+        "python_breakdown": {"compile": 0.5},
         "mismatch": False,
     }
     assert extra["returncode"] == 0

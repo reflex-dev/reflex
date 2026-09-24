@@ -1,15 +1,22 @@
 """Where the wall time of a reflex command goes.
 
-reflex logs ``[timing] <label>: <seconds>s`` at debug level for each compile
-phase (``console.timing`` in 0.8.23, ``log.timing`` in 0.9), and
-:func:`parse_timing` maps the labels of both versions to stable phase names.
-:class:`TreePhases` samples the command's process tree and splits the time of its
-children between package installs and frontend tools. :func:`attribute`
-combines both into a breakdown of the command's wall time.
+:class:`TreePhases` samples the command's process tree and sorts every process
+into one of three classes: ``install`` (``bun``/``npm``/``pnpm``/``yarn``
+``install``/``add`` and what they start), ``frontend`` (``node``, ``vite``,
+``react-router``, ``esbuild`` and what they start) and ``python``, the reflex
+interpreter and everything else. :func:`attribute` turns the classes into the
+command's CPU and wall time per class, checked against the CPU time the cgroup
+or rusage measured.
+
+reflex also logs ``[timing] <label>: <seconds>s`` at debug level for each
+compile phase (``console.timing`` in 0.8.23, ``log.timing`` in 0.9);
+:func:`parse_timing` maps the labels of both versions to stable phase names,
+and the attribution keeps them as the finer breakdown of the python part.
 """
 
 from __future__ import annotations
 
+import itertools
 import re
 import time
 from collections.abc import Iterable, Mapping, Sequence
@@ -36,17 +43,19 @@ PHASE_LABELS = {
     # 0.9, where one phase evaluates, collects imports and memoizes.
     "Compile pages": "compile",
 }
+PYTHON = "python"
 INSTALL = "install"
 FRONTEND = "frontend"
-CLASSES = (INSTALL, FRONTEND)
-# How far the measured parts may exceed the total (sampling jitter) before the
-# attribution is flagged as a mismatch.
-MISMATCH_TOLERANCE = 0.05
+TOOLS = (INSTALL, FRONTEND)
+CLASSES = (PYTHON, *TOOLS)
+# How far the classes' CPU time may differ from the measured total (sampling
+# lag, processes shorter than the interval) before the attribution is flagged.
+MISMATCH_TOLERANCE = 0.10
 
 _TIMING = re.compile(r"\[timing\] (?P<label>.+?): (?P<seconds>\d+(?:\.\d+)?)s\s*$")
 _PACKAGE_MANAGERS = frozenset({"bun", "npm", "pnpm", "yarn"})
 _INSTALL_COMMANDS = frozenset({"install", "add", "i", "ci"})
-_FRONTEND_TOOLS = frozenset({"node", "vite", "react-router"})
+_FRONTEND_TOOLS = frozenset({"node", "vite", "react-router", "esbuild"})
 _SCRIPT_SUFFIX = re.compile(r"\.(?:exe|cmd|[cm]?js)$")
 
 
@@ -92,7 +101,8 @@ def classify(cmdline: Sequence[str]) -> str | None:
 
     Returns:
         ``install`` for ``bun``/``npm``/``pnpm``/``yarn`` ``install``/``add``/``i``/``ci``,
-        ``frontend`` for ``node``, ``vite`` and ``react-router``, else ``None``.
+        ``frontend`` for ``node``, ``vite``, ``react-router`` and ``esbuild``,
+        else ``None``.
     """
     names = [_tool_name(arg) for arg in cmdline[:2]]
     for index, name in enumerate(names):
@@ -106,18 +116,22 @@ def classify(cmdline: Sequence[str]) -> str | None:
 
 
 def _merge_intervals(
-    intervals: Iterable[tuple[float, float]],
+    intervals: Iterable[tuple[float, float]], until: float = float("inf")
 ) -> list[tuple[float, float]]:
     """Merge overlapping or touching intervals.
 
     Args:
         intervals: ``(start, end)`` pairs in any order.
+        until: The end of the range kept; later parts are clipped away.
 
     Returns:
         Disjoint intervals, sorted by start.
     """
     merged: list[tuple[float, float]] = []
     for start, end in sorted(intervals):
+        end = min(end, until)
+        if start >= end:
+            continue
         if merged and start <= merged[-1][1]:
             merged[-1] = (merged[-1][0], max(merged[-1][1], end))
         else:
@@ -125,9 +139,21 @@ def _merge_intervals(
     return merged
 
 
+def _length(intervals: Iterable[tuple[float, float]]) -> float:
+    """Sum the lengths of intervals.
+
+    Args:
+        intervals: ``(start, end)`` pairs.
+
+    Returns:
+        The total length.
+    """
+    return sum((end - start for start, end in intervals), 0.0)
+
+
 @dataclass
 class ProcessRecord:
-    """One descendant seen by :class:`TreePhases`.
+    """One process seen by :class:`TreePhases`.
 
     Attributes:
         pid: The process id.
@@ -136,8 +162,8 @@ class ProcessRecord:
         first_seen: When a sample first saw it, in seconds since the sampler's origin.
         last_seen: When a sample last saw it.
         cpu_s: Its user and system CPU time at the last sample.
-        kind: ``install``, ``frontend`` or ``None``; the class of its topmost
-            classified ancestor in the tree, else its own.
+        kind: The class of its topmost ``install`` or ``frontend`` ancestor
+            (itself included), else ``python``; ``None`` until the report.
     """
 
     pid: int
@@ -169,8 +195,8 @@ class TreeReport:
     """What :class:`TreePhases` saw.
 
     Attributes:
-        classes: Totals for ``install`` and ``frontend``, zero when not seen.
-        processes: Every descendant seen.
+        classes: Totals per class in :data:`CLASSES`, zero when not seen.
+        processes: Every process seen, the root included.
     """
 
     classes: dict[str, ClassTotals]
@@ -196,11 +222,11 @@ class TreeReport:
 
 
 class TreePhases:
-    """Sample a process tree on a thread and attribute its children's time.
+    """Sample a process tree on a thread and total the time of each class.
 
-    Each sample records every descendant's command line, first and last sighting
-    and CPU time. Lifetimes are only known to the sampling interval, and a
-    process that lives shorter than it can be missed.
+    Each sample records every process's command line, first and last sighting
+    and CPU time. Lifetimes and CPU times are only known to the sampling
+    interval, and a process that lives shorter than it can be missed.
     """
 
     def __init__(
@@ -209,7 +235,7 @@ class TreePhases:
         """Prepare the sampler.
 
         Args:
-            root_pid: The root of the tree; only its descendants are recorded.
+            root_pid: The root of the tree.
             interval: Seconds between samples.
             t0: The ``time.perf_counter()`` origin of the recorded times;
                 defaults to now.
@@ -250,7 +276,7 @@ class TreePhases:
         return self.report
 
     def _sample(self) -> None:
-        """Record the descendants alive right now."""
+        """Record the root and the descendants alive right now."""
         if self._root is None:
             return
         now = time.perf_counter() - self.t0
@@ -258,14 +284,14 @@ class TreePhases:
             children = self._root.children(recursive=True)
         except psutil.NoSuchProcess:
             return
-        for child in children:
+        for child in (self._root, *children):
             self._observe(child, now)
 
     def _observe(self, child: psutil.Process, now: float) -> None:
-        """Record one sighting of a descendant; one that just exited is skipped.
+        """Record one sighting of a process; one that just exited is skipped.
 
         Args:
-            child: The descendant.
+            child: The process.
             now: The time of the sample.
         """
         try:
@@ -305,7 +331,7 @@ class TreePhases:
                 seen.add(pid)
                 kind = own[pid] or kind
                 pid = by_pid[pid].ppid
-            record.kind = kind
+            record.kind = kind or PYTHON
         classes = {}
         for name in CLASSES:
             members = [record for record in records if record.kind == name]
@@ -313,7 +339,7 @@ class TreePhases:
                 (record.first_seen, record.last_seen) for record in members
             )
             classes[name] = ClassTotals(
-                wall_s=sum((end - start for start, end in intervals), 0.0),
+                wall_s=_length(intervals),
                 cpu_s=sum((record.cpu_s for record in members), 0.0),
                 intervals=intervals,
             )
@@ -321,47 +347,63 @@ class TreePhases:
 
 
 class Attribution(TypedDict):
-    """A command's wall time split into its parts, in seconds.
+    """A command's time per class of processes, in seconds.
 
-    ``other`` is the rest (interpreter start-up, imports, reflex's own work
-    outside the timed phases) and goes negative when the parts overlap.
-    ``mismatch`` flags parts that exceed the total by more than
-    :data:`MISMATCH_TOLERANCE`.
+    ``install`` and ``frontend`` are the wall time a tool of the class was
+    alive, ``python`` is ``total`` minus the time any tool was alive: the
+    interpreter only waits then. The three sum to ``total``, plus the time
+    an install and a frontend tool overlapped. ``cpu`` is the CPU time of each
+    class's processes, ``cpu_total`` the command's from the cgroup or rusage,
+    and ``mismatch`` flags a difference beyond :data:`MISMATCH_TOLERANCE`.
+    ``idle`` is the wall time not spent on CPU, summed over the classes whose
+    processes are single-threaded enough to have any: the interpreter's I/O
+    and imports, an install's downloads. ``python_breakdown`` is the
+    ``[timing]`` phases, without ``install``, which wraps the install tools.
     """
 
     total: float
+    cpu_total: float
     python: float
     install: float
     frontend: float
-    other: float
+    idle: float
+    cpu: dict[str, float]
+    python_breakdown: dict[str, float]
     mismatch: bool
 
 
 def attribute(
-    total_s: float, timing: Mapping[str, float], tree: TreeReport | None
+    total_s: float, cpu_s: float, timing: Mapping[str, float], tree: TreeReport
 ) -> Attribution:
-    """Split a command's wall time into Python phases, installs, frontend tools and the rest.
-
-    Package installs come from the process tree rather than the ``install``
-    timing phase, which wraps them, so they are not counted twice.
+    """Split a command's wall and CPU time between the interpreter, installs and frontend tools.
 
     Args:
         total_s: The command's wall time.
+        cpu_s: The command's CPU time, from the cgroup or rusage.
         timing: Seconds per phase from :func:`parse_timing`.
-        tree: The command's process tree, if it was sampled.
+        tree: The command's sampled process tree.
 
     Returns:
-        The attribution, flagged when the parts do not fit into the total.
+        The attribution, flagged when the tree's CPU time misses the measured one.
     """
-    python = sum(seconds for phase, seconds in timing.items() if phase != INSTALL)
-    install = tree.classes[INSTALL].wall_s if tree is not None else 0.0
-    frontend = tree.classes[FRONTEND].wall_s if tree is not None else 0.0
-    measured = python + install + frontend
+    tools = {
+        name: _merge_intervals(tree.classes[name].intervals, total_s) for name in TOOLS
+    }
+    wall = {name: _length(intervals) for name, intervals in tools.items()}
+    wall[PYTHON] = total_s - _length(
+        _merge_intervals(itertools.chain.from_iterable(tools.values()))
+    )
+    cpu = {name: tree.classes[name].cpu_s for name in CLASSES}
     return {
         "total": total_s,
-        "python": python,
-        "install": install,
-        "frontend": frontend,
-        "other": total_s - measured,
-        "mismatch": measured > total_s * (1 + MISMATCH_TOLERANCE),
+        "cpu_total": cpu_s,
+        "python": wall[PYTHON],
+        "install": wall[INSTALL],
+        "frontend": wall[FRONTEND],
+        "idle": sum(max(wall[name] - cpu[name], 0.0) for name in CLASSES),
+        "cpu": cpu,
+        "python_breakdown": {
+            phase: seconds for phase, seconds in timing.items() if phase != INSTALL
+        },
+        "mismatch": abs(sum(cpu.values()) - cpu_s) > cpu_s * MISMATCH_TOLERANCE,
     }
