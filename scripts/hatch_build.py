@@ -1,5 +1,6 @@
 """Custom build hook for Hatch."""
 
+import json
 import pathlib
 import subprocess
 import sys
@@ -24,6 +25,27 @@ class CustomBuilder(BuildHookInterface):
             / f".reflex-{self.metadata.version}.pyi_generated"
         )
 
+    def stubs_are_complete(self) -> bool:
+        """Report whether every stub this package ships is already present.
+
+        The generator logs and skips a module it cannot import, so a failed run
+        can leave some stubs written and others missing. `pyi_hashes.json` names
+        the full set; without it, treat the stubs as incomplete and regenerate.
+
+        Returns:
+            Whether every expected stub exists.
+        """
+        root = pathlib.Path(self.root)
+        hashes = root / "pyi_hashes.json"
+        if not hashes.exists():
+            return False
+        expected = [
+            root / name
+            for name in json.loads(hashes.read_text())
+            if name.startswith("reflex/")
+        ]
+        return bool(expected) and all(stub.exists() for stub in expected)
+
     def initialize(self, version: str, build_data: dict[str, Any]) -> None:
         """Initialize the build hook.
 
@@ -35,11 +57,7 @@ class CustomBuilder(BuildHookInterface):
         # would replace the developer's stubs with whatever the installing
         # environment resolves to. A fresh checkout has none — they are
         # gitignored — and there the install is what creates them.
-        if (
-            version == "editable"
-            and next((pathlib.Path(self.root) / "reflex").rglob("*.pyi"), None)
-            is not None
-        ):
+        if version == "editable" and self.stubs_are_complete():
             return
 
         if self.marker().exists():

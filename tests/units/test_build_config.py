@@ -1,6 +1,7 @@
 """Tests for the file selection of the workspace's hatch build configs."""
 
 import importlib.util
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -144,30 +145,40 @@ def build_hook(root: Path, directory: Path):
     return module, hook
 
 
+EXPECTED_STUBS = ["reflex/__init__.pyi", "reflex/experimental/memo.pyi"]
+
+
 @pytest.mark.parametrize(
-    ("build_version", "stub_present", "regenerates"),
+    ("build_version", "present", "regenerates"),
     [
         # An editable install builds against the checkout, so it must not
         # rewrite stubs that are already there from whatever the installing
         # environment resolved to.
-        ("editable", True, False),
+        ("editable", EXPECTED_STUBS, False),
         # A fresh clone has no stubs — they are gitignored — so the editable
         # install that `uv sync` performs is what creates them.
-        ("editable", False, True),
-        ("standard", True, True),
+        ("editable", [], True),
+        # The generator logs and skips a module it cannot import, so a failed
+        # run leaves a partial set that must not suppress the next one.
+        ("editable", EXPECTED_STUBS[:1], True),
+        ("standard", EXPECTED_STUBS, True),
     ],
+    ids=["complete", "fresh-checkout", "partial", "standard"],
 )
 def test_build_hook_regenerates_stubs(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     build_version: str,
-    stub_present: bool,
+    present: list[str],
     regenerates: bool,
 ):
     (tmp_path / "scripts").mkdir()
-    stub = tmp_path / "reflex" / "__init__.pyi"
-    stub.parent.mkdir()
-    if stub_present:
+    (tmp_path / "pyi_hashes.json").write_text(
+        json.dumps(dict.fromkeys([*EXPECTED_STUBS, "packages/other/mod.pyi"], ""))
+    )
+    written = [tmp_path / name for name in present]
+    for stub in written:
+        stub.parent.mkdir(parents=True, exist_ok=True)
         stub.write_text("# generated")
 
     runs = []
@@ -179,6 +190,7 @@ def test_build_hook_regenerates_stubs(
     hook.initialize(build_version, {})
 
     assert bool(runs) is regenerates
-    # The generator is stubbed out, so a run that proceeded leaves the file
-    # unlinked; one that was skipped leaves it as it was.
-    assert stub.exists() is (stub_present and not regenerates)
+    if not regenerates:
+        # The generator is stubbed out, so a run that proceeded would have left
+        # these unlinked.
+        assert all(stub.exists() for stub in written)
