@@ -314,14 +314,13 @@ class SharedStateBaseInternal(State):
             msg = "Cannot link shared state outside of _modify_linked_states context."
             raise ReflexRuntimeError(msg)
 
-        linked_root_state = None
-
+        ctx = EventContext.get()
         # Get the newly linked state and update pointers/delta for subsequent events.
         if token not in self._held_locks:
             async with self._held_locks_lock:
                 if token not in self._held_locks:
-                    linked_root_state = await self._exit_stack.enter_async_context(
-                        EventContext.get().modify_state(
+                    locked_root: BaseState = await self._exit_stack.enter_async_context(
+                        ctx.modify_state(
                             BaseStateToken(ident=token, cls=type(self)),
                             with_links=False,
                         )
@@ -330,17 +329,14 @@ class SharedStateBaseInternal(State):
                     # Set client_token on the linked root so that subsequent get_state
                     # calls when directly modifying a linked token will load the
                     # associated instance.
-                    if (
-                        session := linked_root_state.rx_router_session
-                    ).client_token != token:
+                    if (session := locked_root.rx_router_session).client_token != token:
                         import dataclasses as dc
 
-                        linked_root_state.rx_router_session = dc.replace(
+                        locked_root.rx_router_session = dc.replace(
                             session, client_token=token
                         )
-        if linked_root_state is None:
-            # Locked earlier in this event.
-            linked_root_state = EventContext.get().state_locks.held[token][0]
+        # Locked in this event, now or earlier.
+        linked_root_state: BaseState = ctx.state_locks.held[token][0]
         linked_state = await linked_root_state.get_state(type(self))
         if not isinstance(linked_state, SharedState):
             msg = f"Linked state for token {token} is not a SharedState."
