@@ -438,6 +438,10 @@ class BaseState(CoreState, state_root=True):
     # A special event handler for setting base vars.
     setvar: ClassVar[EventHandler]
 
+    # Held the backend vars in pickles of previous releases: reserved, so that
+    # loading one of those cannot clash with a field.
+    _backend_vars: ClassVar[None] = None
+
     def __init__(
         self,
         parent_state: BaseState | None = None,

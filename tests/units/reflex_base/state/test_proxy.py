@@ -340,9 +340,35 @@ class InheritedListState(BaseState):
 
     items: list[int] = []
 
+    @rx.event
+    def add_item(self, value: int):
+        """Append to the list.
+
+        Args:
+            value: The value to append.
+        """
+        self.items.append(value)
+
 
 class InheritedListSubState(InheritedListState):
     """A substate changing the inherited list from a background task."""
+
+
+class RedeclaringState(BaseState):
+    """A root state whose handler writes a var its substate redeclares."""
+
+    count: int = 0
+
+    @rx.event
+    def bump(self):
+        """Increment the count."""
+        self.count += 1
+
+
+class RedeclaringSubState(RedeclaringState):
+    """A substate with a count of its own."""
+
+    count: int = 10
 
 
 @pytest.mark.asyncio
@@ -375,6 +401,134 @@ async def test_inherited_mutable_var_marks_its_owner(
     assert emitted_deltas == [
         (token, {InheritedListState.get_full_name(): {"items" + FIELD_MARKER: [1]}}),
     ]
+    async with state_manager.modify_state(state_token) as root:
+        assert root.items == [1]  # pyright: ignore [reportAttributeAccessIssue]
+
+
+@pytest.mark.asyncio
+async def test_failed_reload_releases_the_lock(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Entering a state releases the lock it took when reloading the state fails.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    state_token = BaseStateToken(
+        ident=attached_mock_event_context.token, cls=InheritedListSubState
+    )
+    async with attached_mock_event_context.state_manager.modify_state(
+        state_token
+    ) as root:
+        state = _detached_state(
+            root.get_substate(InheritedListSubState.get_full_name().split(".")),
+            attached_mock_event_context,
+        )
+
+    def fail_to_load(self, state_cls):
+        raise RuntimeError
+
+    monkeypatch.setattr(BaseState, "get_state", fail_to_load)
+    with pytest.raises(RuntimeError):
+        async with state:
+            pass
+    monkeypatch.undo()
+
+    ctx = attached_mock_event_context
+    assert not ctx.state_locks.held
+
+    async def reacquire():
+        async with ctx.state_manager.modify_state(state_token):
+            pass
+
+    await asyncio.wait_for(reacquire(), 5)
+
+
+@pytest.mark.asyncio
+async def test_nested_entry_that_took_the_lock_raises(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+) -> None:
+    """Entering a state again inside the `async with` that locked it raises.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+    """
+    state_token = BaseStateToken(ident=token, cls=InheritedListSubState)
+    async with state_manager.modify_state(state_token) as root:
+        state = _detached_state(
+            root.get_substate(InheritedListSubState.get_full_name().split(".")),
+            attached_mock_event_context,
+        )
+
+    async with state:
+        with pytest.raises(ImmutableStateError, match="Do not nest"):
+            async with state:
+                pass
+        state.add_item(1)  # pyright: ignore [reportAttributeAccessIssue]
+
+
+@pytest.mark.asyncio
+async def test_inherited_handler_runs_on_its_state(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+) -> None:
+    """An inherited event handler writes the vars of the state declaring it.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+    """
+    state_token = BaseStateToken(ident=token, cls=RedeclaringSubState)
+    async with state_manager.modify_state(state_token) as root:
+        state = _detached_state(
+            root.get_substate(RedeclaringSubState.get_full_name().split(".")),
+            attached_mock_event_context,
+        )
+
+    async with state:
+        state.bump()  # pyright: ignore [reportAttributeAccessIssue]
+    async with state_manager.modify_state(state_token) as root:
+        assert root.count == 1  # pyright: ignore [reportAttributeAccessIssue]
+        substate = root.get_substate(RedeclaringSubState.get_full_name().split("."))
+        assert substate.count == 10  # pyright: ignore [reportAttributeAccessIssue]
+
+
+@pytest.mark.asyncio
+async def test_inherited_handler_is_guarded(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+) -> None:
+    """An inherited event handler writes only while the state's lock is held.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+    """
+    state_token = BaseStateToken(ident=token, cls=InheritedListSubState)
+    async with state_manager.modify_state(state_token) as root:
+        state = _detached_state(
+            root.get_substate(InheritedListSubState.get_full_name().split(".")),
+            attached_mock_event_context,
+        )
+
+    with pytest.raises(ImmutableStateError):
+        state.add_item(0)  # pyright: ignore [reportAttributeAccessIssue]
+    async with state:
+        state.add_item(1)  # pyright: ignore [reportAttributeAccessIssue]
     async with state_manager.modify_state(state_token) as root:
         assert root.items == [1]  # pyright: ignore [reportAttributeAccessIssue]
 
