@@ -367,8 +367,20 @@ def sync_root_package_json_to_web() -> bool:
 
     output_path = get_web_lockfile_path(constants.PackageJson.PATH)
     rendered = _compile_package_json()
-    if output_path.exists() and output_path.read_text() == rendered:
-        return False
+    if output_path.exists():
+        existing = output_path.read_text()
+        if existing == rendered:
+            return False
+        try:
+            # Package managers reformat this file after installs. Preserve their
+            # formatting when every JSON value is unchanged, including its type.
+            existing_json = json.dumps(json.loads(existing), sort_keys=True)
+            rendered_json = json.dumps(json.loads(rendered), sort_keys=True)
+        except json.JSONDecodeError:
+            pass
+        else:
+            if existing_json == rendered_json:
+                return False
 
     changed = output_path.exists()
     path_ops.mkdir(output_path.parent)

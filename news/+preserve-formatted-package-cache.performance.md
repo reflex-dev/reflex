@@ -1,0 +1,1 @@
+Avoid reinstalling frontend dependencies solely because the package manager reformatted `package.json`. Actual changes to dependency versions, scripts, and other manifest values still invalidate the install cache.

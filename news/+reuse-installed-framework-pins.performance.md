@@ -1,0 +1,1 @@
+Speed up frontend setup during deploys by reusing matching framework dependencies after installing from a persisted lockfile. Repair npm development dependency placement and keep build tools installed when `NODE_ENV=production`.
