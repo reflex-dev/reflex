@@ -948,12 +948,11 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if kwargs.get("_var_full_name_needs_state_prefix", False) is not False:
             msg = "The _var_full_name_needs_state_prefix argument is not supported for Var."
             raise TypeError(msg)
+        var_data = kwargs.pop("_var_data", self._var_data)
         value_with_replaced = dataclasses.replace(
             self,
             _var_type=_var_type or self._var_type,
-            _var_data=VarData.merge(
-                kwargs.get("_var_data", self._var_data), merge_var_data
-            ),
+            _var_data=VarData.merge(var_data, merge_var_data),
             **kwargs,
         )
 
