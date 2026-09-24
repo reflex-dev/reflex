@@ -23,6 +23,7 @@ from collections.abc import (
     Callable,
     Collection,
     Coroutine,
+    Iterable,
     Mapping,
     Sequence,
 )
@@ -35,7 +36,7 @@ from reflex_base import constants, otel
 from reflex_base.components.component import Component, ComponentStyle
 from reflex_base.config import get_config, reload_config
 from reflex_base.context.base import BaseContext
-from reflex_base.environment import environment
+from reflex_base.environment import auto_reload_cooldown, environment
 from reflex_base.event import (
     _EVENT_FIELDS,
     Event,
@@ -607,6 +608,10 @@ class App(MiddlewareMixin, LifespanMixin):
         # Set up the state manager.
         self._state_manager = StateManager.create()
 
+        # Read the auto-reload cooldown now so a deprecated name warns at startup
+        # rather than on the first frontend error that consults it.
+        auto_reload_cooldown()
+
         # Set up the Socket.IO AsyncServer.
         if not self.sio:
             self.sio = AsyncServer(
@@ -622,8 +627,8 @@ class App(MiddlewareMixin, LifespanMixin):
                 ),
                 cors_credentials=config.transport == "websocket",
                 max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
-                ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
-                ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
+                ping_interval=environment.REFLEX_SOCKET_INTERVAL.get().total_seconds(),
+                ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get().total_seconds(),
                 json=SimpleNamespace(
                     dumps=staticmethod(_sio_dumps),
                     loads=staticmethod(_sio_loads),
@@ -2065,6 +2070,18 @@ def _sio_loads(data: str | bytes, **kwargs: Any) -> Any:
     return json.loads(data, **kwargs)
 
 
+def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, str]:
+    """Decode raw ASGI scope header pairs into a str-keyed dict.
+
+    Args:
+        headers: Raw (name, value) byte pairs from the ASGI scope.
+
+    Returns:
+        A dict mapping decoded header names to decoded values.
+    """
+    return {k.decode("utf-8"): v.decode("utf-8") for (k, v) in headers}
+
+
 class EventNamespace(AsyncNamespace):
     """The event namespace."""
 
@@ -2169,14 +2186,11 @@ class EventNamespace(AsyncNamespace):
         asgi_scope = environ.get("asgi.scope", {})
 
         # Get the client headers.
-        headers = {
-            k.decode("utf-8"): v.decode("utf-8")
-            for (k, v) in asgi_scope.get("headers", [])
-        }
+        headers = _decode_asgi_headers(asgi_scope.get("headers", []))
 
         # Get the client IP
         try:
-            client_ip = asgi_scope["client"][0]
+            client_ip: str = asgi_scope["client"][0]
             headers["asgi-scope-client"] = client_ip
         except (KeyError, IndexError):
             client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")

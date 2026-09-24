@@ -16,6 +16,7 @@ import sys
 import time
 from collections.abc import Callable, Coroutine, Iterator, Mapping, Sequence
 from contextvars import ContextVar
+from datetime import timedelta
 from hashlib import md5
 from types import FunctionType
 from typing import (
@@ -34,7 +35,7 @@ from typing import (
 
 from reflex_base import constants
 from reflex_base.constants.state import FIELD_MARKER
-from reflex_base.environment import PerformanceMode, environment
+from reflex_base.environment import PerformanceMode, auto_reload_cooldown, environment
 from reflex_base.event import (
     EVENT_ACTIONS_MARKER,
     Event,
@@ -3048,7 +3049,7 @@ class FrontendEventExceptionState(State):
         ):
             yield call_script(
                 f"const last_reload = parseInt(window.sessionStorage.getItem('{LAST_RELOADED_KEY}')) || 0;"
-                f"if (Date.now() - last_reload > {environment.REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS.get()})"
+                f"if (Date.now() - last_reload > {auto_reload_cooldown() // timedelta(milliseconds=1)})"
                 "{"
                 f"window.sessionStorage.setItem('{LAST_RELOADED_KEY}', Date.now().toString());"
                 "window.location.reload();"
