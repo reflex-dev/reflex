@@ -1,11 +1,14 @@
 """Tests for the file selection of the workspace's hatch build configs."""
 
+import importlib.util
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from hatchling.builders.plugin.interface import BuilderInterface
 from hatchling.builders.sdist import SdistBuilder
 from hatchling.builders.wheel import WheelBuilder
+from hatchling.metadata.core import ProjectMetadata
 
 REPO_ROOT = Path(__file__).parents[2]
 
@@ -110,3 +113,64 @@ def test_package_ships_only_its_own_stubs(
     # Anything a package keeps beside `src` — fixtures, docs, a vendored
     # checkout — is not part of what it distributes.
     assert not config.include_path("tests/golden.pyi")
+
+
+def build_hook(root: Path, directory: Path):
+    """Load the stub-generating build hook and instantiate it against a root.
+
+    Args:
+        root: The project root the hook runs against.
+        directory: The build output directory.
+
+    Returns:
+        The hook's module and an instance bound to `root`.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    spec = importlib.util.spec_from_file_location("hatch_build", REPO_ROOT / BUILD_HOOK)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    hook = module.CustomBuilder(
+        str(root),
+        {},
+        WheelBuilder(str(root)).config,
+        ProjectMetadata(
+            str(root), None, {"project": {"name": "reflex", "version": "0.0.0"}}
+        ),
+        str(directory),
+        "wheel",
+    )
+    return module, hook
+
+
+@pytest.mark.parametrize(
+    ("build_version", "regenerates"), [("editable", False), ("standard", True)]
+)
+def test_build_hook_skips_editable_installs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    build_version: str,
+    regenerates: bool,
+):
+    """An editable install must leave the working tree's stubs untouched.
+
+    `uv pip install -e .` builds an editable wheel against the checkout, so
+    regenerating there rewrites the developer's stubs from whatever the
+    installing environment resolved to.
+    """
+    (tmp_path / "scripts").mkdir()
+    stub = tmp_path / "reflex" / "__init__.pyi"
+    stub.parent.mkdir()
+    stub.write_text("# generated")
+
+    runs = []
+    module, hook = build_hook(tmp_path, tmp_path / "dist")
+    monkeypatch.setattr(
+        module, "subprocess", SimpleNamespace(run=lambda *a, **kw: runs.append(a))
+    )
+
+    hook.initialize(build_version, {})
+
+    assert bool(runs) is regenerates
+    assert stub.exists() is not regenerates

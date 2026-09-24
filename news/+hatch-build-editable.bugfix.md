@@ -1,0 +1,1 @@
+An editable install (`uv pip install -e .`, `pip install -e .`) no longer regenerates the checkout's `.pyi` stubs. The build hook rebuilt them from whatever the installing environment resolved to, so an install run against pinned or minimum dependency versions left the working tree with stubs that did not match it.

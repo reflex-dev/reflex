@@ -31,6 +31,12 @@ class CustomBuilder(BuildHookInterface):
             version: The version being built.
             build_data: Additional build data.
         """
+        # An editable install builds against the working tree, so regenerating
+        # would replace the developer's stubs with whatever the installing
+        # environment resolves to.
+        if version == "editable":
+            return
+
         if self.marker().exists():
             return
 
