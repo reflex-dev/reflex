@@ -299,8 +299,7 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 def test_copy_example_copies_tracked_files_only(repo: Path, tmp_path: Path):
-    dest = tmp_path / "cache" / "app"
-    _write(dest, {"old.py": b"", ".web/build/client/index.html": b""})
+    dest = tmp_path / "work" / "app"
     size.copy_example("demo", dest)
     copied = sorted(p.relative_to(dest).as_posix() for p in dest.rglob("*"))
     assert copied == ["demo", "demo/demo.py", "rxconfig.py"]
@@ -311,23 +310,46 @@ def test_copy_example_fails_clearly_without_the_example(repo: Path, tmp_path: Pa
         size.copy_example("missing", tmp_path / "app")
 
 
-def test_setup_cache_exports_a_fresh_copy(
-    repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
-    calls = []
+def _fake_export(monkeypatch: pytest.MonkeyPatch) -> list[tuple[Path, Any, Any]]:
+    calls: list[tuple[Path, Any, Any]] = []
 
-    def fake_run_cli(python: Path, args: list[str], **kwargs: Any) -> SimpleNamespace:
+    def fake_run_cli(python: Path, args: Any, **kwargs: Any) -> SimpleNamespace:
         calls.append((python, args, kwargs))
+        _write(kwargs["cwd"] / ".web" / "build" / "client", {"index.html": b""})
         return SimpleNamespace(check=lambda: None)
 
     monkeypatch.setattr(size, "run_cli", fake_run_cli)
-    cache = tmp_path / "cache"
-    cache.mkdir()
-    ctx = make_context(cache, {"app": "demo"})
-    size.ExportSize().setup_cache(ctx)
+    return calls
+
+
+def test_setup_exports_into_the_work_directory(
+    repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    calls = _fake_export(monkeypatch)
+    work, cache = tmp_path / "work", tmp_path / "cache"
+    ctx = make_context(work, {"app": "demo"}, cache_dir=cache)
+    size.ExportSize().setup(ctx)
     ((python, args, kwargs),) = calls
     assert python == ctx.subject.python
     assert list(args) == ["export", "--frontend-only", "--no-zip", "--env", "prod"]
-    assert kwargs["cwd"] == cache / "app"
+    assert kwargs["cwd"] == work / "app"
     assert kwargs["env"]["REFLEX_DIR"] == str(cache / "reflex")
-    assert (cache / "app" / "rxconfig.py").read_text() == "config = 1\n"
+    assert (work / "app" / "rxconfig.py").read_text() == "config = 1\n"
+    assert not (cache / "app").exists()
+
+
+def test_each_session_exports_its_own_copy(
+    repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    calls = _fake_export(monkeypatch)
+    cache = tmp_path / "cache"
+    arms = [
+        make_context(tmp_path / arm, {"app": "demo"}, cache_dir=cache) for arm in "AB"
+    ]
+    for ctx in arms:
+        size.ExportSize().setup(ctx)
+    assert [kwargs["cwd"] for _, _, kwargs in calls] == [
+        tmp_path / "A" / "app",
+        tmp_path / "B" / "app",
+    ]
+    assert all((ctx.workdir / "app" / ".web" / "build").is_dir() for ctx in arms)

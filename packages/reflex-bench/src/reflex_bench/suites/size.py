@@ -1,8 +1,9 @@
 """Size benchmarks: what a production export of an example app ships and occupies.
 
 One ``reflex export`` gives every size, so ``size.export`` is one benchmark with
-a metric per size rather than one benchmark, and one export, per size. The
-export runs once in ``setup_cache``; ``sample`` measures the files on disk.
+a metric per size rather than one benchmark, and one export, per size. ``setup``
+exports into the instance's work directory; ``sample`` measures the files on
+disk.
 
 - ``initial_*``: the JavaScript and CSS the first page loads, the files that the
   prerendered ``index.html`` references with ``<link rel="modulepreload">``,
@@ -180,9 +181,11 @@ def measure_export(app: Path, *, reflex_version: str | None) -> SampleResult:
         replaced (``#2``, ``#3``, ... tell apart names that differ only in their
         hash), ``initial_files`` (the first page's files in page order), ``html``
         (the page parsed), ``sidecar_bytes``, ``reflex_version``,
-        ``fixture_hash`` (the app's ``.content-hash``), ``bun_lock`` (the hash
-        of the frontend packages' lockfile, which moves when a dependency's
-        release is installed) and the ``compressors``' versions.
+        ``fixture_hash`` (the app's committed ``.content-hash``, the hash the
+        result series are keyed on; a work-tree edit shows in the subject's
+        ``dirty`` flag), ``bun_lock`` (the hash of the frontend packages'
+        lockfile, which moves when a dependency's release is installed) and the
+        ``compressors``' versions.
 
     Raises:
         FileNotFoundError: When the build has no first page or lacks a file the
@@ -268,14 +271,14 @@ def measure_export(app: Path, *, reflex_version: str | None) -> SampleResult:
 
 
 def copy_example(name: str, dest: Path) -> None:
-    """Copy the files git tracks of ``examples/<name>`` to a fresh directory.
+    """Copy the files git tracks of ``examples/<name>`` to a new directory.
 
     The example comes from the git checkout of the working directory, whatever
     reflex is measured, so every subject builds the same app.
 
     Args:
         name: The example app, e.g. ``playground``.
-        dest: Where to copy it; anything already there is removed first.
+        dest: Where to copy it.
 
     Raises:
         FileNotFoundError: When the working directory is not in a checkout that
@@ -287,8 +290,6 @@ def copy_example(name: str, dest: Path) -> None:
     if root is None or not listing:
         msg = f"{example} is not tracked in a git checkout around {Path.cwd()}; run reflex-bench from the reflex repository"
         raise FileNotFoundError(msg)
-    if dest.exists():
-        shutil.rmtree(dest)
     for tracked in filter(None, listing.split("\0")):
         source = root / tracked
         # A tracked file deleted in the work tree is left out.
@@ -306,22 +307,23 @@ def copy_example(name: str, dest: Path) -> None:
     metrics=METRICS,
     # The export's 10 minutes plus 1 minute to copy the app.
     setup_timeout=EXPORT_TIMEOUT_S + 60,
-    # One sample; the export in setup_cache takes most of the time.
+    # One sample; the export in setup takes most of the time.
     estimate=20,
 )
 class ExportSize:
     """Export an example app for production and measure its bundle and footprint."""
 
-    def setup_cache(self, ctx: Context) -> None:
-        """Copy the app into the cache directory and export it.
+    def setup(self, ctx: Context) -> None:
+        """Copy the app into the work directory and export it.
 
-        Every run exports afresh, so the build never mixes in a previous one;
-        reflex's data directory (bun) stays in the cache directory.
+        Each session (instance and arm) gets its own export, kept with the work
+        directory; only reflex's data directory (bun) lives in the cache
+        directory.
 
         Args:
             ctx: The benchmark context; ``app`` names the example.
         """
-        app = ctx.cache_dir / "app"
+        app = ctx.workdir / "app"
         copy_example(ctx.params["app"], app)
         run_cli(
             ctx.subject.python,
@@ -341,5 +343,5 @@ class ExportSize:
             Every metric, with the per-file breakdown as extra data.
         """
         return measure_export(
-            ctx.cache_dir / "app", reflex_version=ctx.subject.reflex_version
+            ctx.workdir / "app", reflex_version=ctx.subject.reflex_version
         )

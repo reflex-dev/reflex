@@ -38,12 +38,18 @@ def make_subject(reflex_version: str | None = "0.9.12") -> Subject:
     )
 
 
-def make_context(tmp_path: Path, params: Mapping[str, Any] | None = None) -> Context:
+def make_context(
+    tmp_path: Path,
+    params: Mapping[str, Any] | None = None,
+    *,
+    cache_dir: Path | None = None,
+) -> Context:
     """Build a context for calling hooks directly.
 
     Args:
-        tmp_path: A scratch directory for the work and cache directories.
+        tmp_path: The work directory, and the cache directory unless given.
         params: The parameters hooks see.
+        cache_dir: The cache directory.
 
     Returns:
         The context.
@@ -52,7 +58,7 @@ def make_context(tmp_path: Path, params: Mapping[str, Any] | None = None) -> Con
         subject=make_subject(),
         params=dict(params or {}),
         workdir=tmp_path,
-        cache_dir=tmp_path,
+        cache_dir=cache_dir or tmp_path,
         env={},
         rng=random.Random(0),
         log=logging.getLogger("reflex_bench.test"),

@@ -84,7 +84,7 @@ def make_console(
     )
 
 
-def _print_lines(
+def print_lines(
     console: Console, lines: Sequence[Line], right: Sequence[int] = ()
 ) -> None:
     """Print rows in aligned columns, with full-width lines in between.
@@ -312,7 +312,7 @@ def render_run(console: Console, doc: ResultDoc) -> None:
                 Text(f"  {WARN} {warning}", style="yellow")
                 for warning in metric["warnings"]
             )
-    _print_lines(console, lines, right=(3,))
+    print_lines(console, lines, right=(3,))
     statuses = Counter(entry["status"] for entry in doc["benchmarks"])
     if set(statuses) - {"ok"}:
         total = len(doc["benchmarks"])
@@ -457,7 +457,7 @@ def render_comparison(console: Console, doc: ResultDoc) -> None:
             )
         )
     else:
-        _print_lines(console, lines)
+        print_lines(console, lines)
     if geomean := geomean_line(doc):
         console.print(Text(geomean))
     console.print(Text(counts_line(doc)))

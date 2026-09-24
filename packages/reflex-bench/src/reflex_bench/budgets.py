@@ -26,8 +26,8 @@ from pathlib import Path
 import click
 from rich.text import Text
 
-from reflex_bench.report.format import DOT, format_pct
-from reflex_bench.report.table import make_console
+from reflex_bench.report.format import CROSS, DOT, format_pct
+from reflex_bench.report.table import Line, make_console, print_lines
 from reflex_bench.schema import (
     BenchmarkDoc,
     ResultDoc,
@@ -42,8 +42,7 @@ SCHEMA_ID = "reflex-bench-budgets/1"
 # always runs from its source tree.
 DEFAULT_PATH = Path(__file__).resolve().parents[2] / "budgets.json"
 _COLUMNS = ("benchmark", "metric", "value", "budget", "delta", "verdict")
-_RIGHT_ALIGNED = frozenset({2, 3, 4})
-_GAP = "   "
+_RIGHT_ALIGNED = (2, 3, 4)
 
 # Instance name to metric name to budget.
 Budgets = dict[str, dict[str, int]]
@@ -63,8 +62,9 @@ def load(path: Path) -> Budgets:
         Instance name to metric name to budget, in file order.
 
     Raises:
-        BudgetsError: When the file is not JSON, has another schema, or a budget
-            is not a whole number of at least 0.
+        BudgetsError: When the file is not JSON, has another schema, or its
+            budgets are not whole numbers of at least 0 keyed by instance and
+            metric.
     """
     try:
         doc = json.loads(path.read_text(encoding="utf-8"))
@@ -72,25 +72,15 @@ def load(path: Path) -> Budgets:
         msg = f"{path} is not valid JSON: {exc}"
         raise BudgetsError(msg) from exc
     if not isinstance(doc, dict) or doc.get("schema") != SCHEMA_ID:
-        schema = doc.get("schema") if isinstance(doc, dict) else None
-        msg = f"{path}: schema must be {SCHEMA_ID!r}, got {schema!r}"
+        msg = f"{path}: schema must be {SCHEMA_ID!r}"
         raise BudgetsError(msg)
     budgets = doc.get("budgets")
-    if not isinstance(budgets, dict):
-        msg = f"{path}: budgets must be an object keyed by benchmark instance"
-        raise BudgetsError(msg)
-    problems: list[str] = []
-    for name, limits in budgets.items():
-        if not isinstance(limits, dict):
-            problems.append(f"{name}: expected an object of metric budgets")
-            continue
-        problems.extend(
-            f"{name}.{metric}: expected a whole number >= 0, got {budget!r}"
-            for metric, budget in limits.items()
-            if isinstance(budget, bool) or not isinstance(budget, int) or budget < 0
-        )
-    if problems:
-        msg = f"{path} is not a valid budgets file:\n  " + "\n  ".join(problems)
+    if not isinstance(budgets, dict) or any(
+        not isinstance(limits, dict)
+        or any(type(budget) is not int or budget < 0 for budget in limits.values())
+        for limits in budgets.values()
+    ):
+        msg = f"{path}: budgets must map instance names to objects of whole-number metric budgets >= 0"
         raise BudgetsError(msg)
     return budgets
 
@@ -107,6 +97,7 @@ class BudgetRow:
             not be read.
         unit: The metric's unit, when the result has the metric.
         error: Why the value could not be read.
+        detail: The benchmark's own error, when it did not finish ``ok``.
     """
 
     benchmark: str
@@ -115,6 +106,7 @@ class BudgetRow:
     value: float | None = None
     unit: str | None = None
     error: str | None = None
+    detail: str | None = None
 
     @property
     def exceeded(self) -> bool:
@@ -143,18 +135,16 @@ def _check_one(
     if entry is None:
         return BudgetRow(name, metric, budget, error="not in the result")
     if entry["status"] != "ok":
-        reason = entry["status"] + (f": {entry['error']}" if entry["error"] else "")
-        return BudgetRow(name, metric, budget, error=reason)
+        return BudgetRow(
+            name, metric, budget, error=entry["status"], detail=entry["error"]
+        )
     found = entry["metrics"].get(metric)
     if found is None:
         return BudgetRow(name, metric, budget, error="metric not in the result")
+    # An ok entry has at least one timed sample in every arm.
     values = [
         value for arm in found["samples"] for value in timed_values(entry, metric, arm)
     ]
-    if not values:
-        return BudgetRow(
-            name, metric, budget, unit=found["unit"], error="no timed samples"
-        )
     return BudgetRow(name, metric, budget, value=max(values), unit=found["unit"])
 
 
@@ -177,18 +167,6 @@ def check(doc: ResultDoc, budgets: Budgets) -> list[BudgetRow]:
     ]
 
 
-def _number(value: float) -> str:
-    """Format a value as budgets.json writes it.
-
-    Args:
-        value: The value.
-
-    Returns:
-        E.g. ``248193``, ready to paste.
-    """
-    return str(int(value)) if float(value).is_integer() else f"{value:g}"
-
-
 def _delta(row: BudgetRow, value: float) -> str:
     """Format how far a value is from its budget.
 
@@ -200,48 +178,43 @@ def _delta(row: BudgetRow, value: float) -> str:
         E.g. ``-11,807 B (-4.5 %)``: negative is headroom.
     """
     delta = value - row.budget
-    text = f"{delta:+,.0f}" if float(delta).is_integer() else f"{delta:+g}"
+    text = f"{delta:+,.0f}"
     if row.unit not in {None, "1"}:
         text += f" {row.unit}"
     return text + (f" ({format_pct(delta / row.budget)})" if row.budget else "")
 
 
-def format_table(rows: Sequence[BudgetRow]) -> list[Text]:
-    """Lay out checked budgets as a table.
+def table_lines(rows: Sequence[BudgetRow]) -> list[Line]:
+    """Lay out checked budgets for :func:`print_lines`.
 
     Args:
         rows: The checked budgets.
 
     Returns:
-        The header and one line per budget: benchmark, metric, value, budget,
-        delta in the metric's unit and in percent of the budget, and verdict.
+        The header and one row per budget: benchmark, metric, value (as
+        budgets.json writes it, ready to paste), budget, delta in the metric's
+        unit and in percent of the budget, and verdict. A benchmark that did not
+        finish ``ok`` gets its error printed once, after its rows.
     """
-    # Each row's cells and the style of its verdict.
-    table: list[tuple[list[str], str]] = [(list(_COLUMNS), "")]
+    lines: list[Line] = [[Text(column, style="bold") for column in _COLUMNS]]
+    detailed: set[str] = set()
     for row in rows:
         if row.value is None:
-            cells = ["-", _number(row.budget), "", f"error: {row.error}"]
+            cells = ["-", str(row.budget), "", f"error: {row.error}"]
         else:
             cells = [
-                _number(row.value),
-                _number(row.budget),
+                f"{row.value:.0f}",
+                str(row.budget),
                 _delta(row, row.value),
                 "over budget" if row.exceeded else "ok",
             ]
         style = "bold red" if row.value is None or row.exceeded else ""
-        table.append(([row.benchmark, row.metric, *cells], style))
-    widths = [max(len(cells[i]) for cells, _ in table) for i in range(len(_COLUMNS))]
-    last = len(_COLUMNS) - 1
-    lines: list[Text] = []
-    for index, (cells, style) in enumerate(table):
-        line = Text(style="bold" if index == 0 else "")
-        for i, cell in enumerate(cells):
-            if i in _RIGHT_ALIGNED:
-                cell = cell.rjust(widths[i])
-            elif i < last:
-                cell = cell.ljust(widths[i])
-            line.append(f"{_GAP if i else ''}{cell}", style=style if i == last else "")
-        lines.append(line)
+        lines.append([row.benchmark, row.metric, *cells[:-1], Text(cells[-1], style)])
+        if row.detail and row.benchmark not in detailed:
+            detailed.add(row.benchmark)
+            lines.append(
+                Text(f"{CROSS} {row.benchmark}: {row.error}: {row.detail}", style)
+            )
     return lines
 
 
@@ -284,8 +257,7 @@ def check_command(result: Path, budgets_path: Path) -> int:
     except (SchemaError, BudgetsError) as exc:
         raise click.UsageError(str(exc)) from exc
     console = make_console(plain=in_ci())
-    for line in format_table(rows):
-        console.print(line)
+    print_lines(console, table_lines(rows), right=_RIGHT_ALIGNED)
     over = sum(row.exceeded for row in rows)
     unchecked = sum(row.value is None for row in rows)
     console.print()

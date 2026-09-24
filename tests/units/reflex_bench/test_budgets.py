@@ -117,7 +117,6 @@ def test_a_metric_over_budget_exits_2_with_the_delta(tmp_path: Path):
             "failed: RuntimeError: reflex export exited with 1",
         ),
         (_doc(), {NAME: {"node_modules": 1}}, "metric not in the result"),
-        (_doc(warmup=1), BUDGETS, "no timed samples"),
     ],
 )
 def test_a_budget_that_cannot_be_checked_exits_1(
@@ -126,6 +125,15 @@ def test_a_budget_that_cannot_be_checked_exits_1(
     result = _check(tmp_path, doc, limits)
     assert result.exit_code == 1, result.output
     assert error in result.output
+
+
+def test_a_failed_benchmark_prints_its_error_once(tmp_path: Path):
+    error = "RuntimeError: reflex export exited with 1"
+    result = _check(tmp_path, _doc(status="failed", error=error), BUDGETS)
+    assert result.exit_code == 1, result.output
+    assert result.output.count(error) == 1
+    rows = [line for line in result.output.splitlines() if line.startswith(NAME)]
+    assert [row.split()[-2:] for row in rows] == [["error:", "failed"]] * 2
 
 
 def test_an_unchecked_budget_wins_over_one_exceeded(tmp_path: Path):
@@ -162,13 +170,19 @@ def test_the_largest_timed_sample_is_checked():
         ("not json", "is not valid JSON"),
         ('{"schema": "other/1", "budgets": {}}', "schema"),
         ('{"schema": "reflex-bench-budgets/1"}', "budgets"),
-        ('{"schema": "reflex-bench-budgets/1", "budgets": {"x": 1}}', "x"),
+        ('{"schema": "reflex-bench-budgets/1", "budgets": {"x": 1}}', "budgets"),
         (
             '{"schema": "reflex-bench-budgets/1", "budgets": {"x": {"m": 1.5}}}',
-            "x.m",
+            "budgets",
         ),
-        ('{"schema": "reflex-bench-budgets/1", "budgets": {"x": {"m": -1}}}', "x.m"),
-        ('{"schema": "reflex-bench-budgets/1", "budgets": {"x": {"m": true}}}', "x.m"),
+        (
+            '{"schema": "reflex-bench-budgets/1", "budgets": {"x": {"m": -1}}}',
+            "budgets",
+        ),
+        (
+            '{"schema": "reflex-bench-budgets/1", "budgets": {"x": {"m": true}}}',
+            "budgets",
+        ),
     ],
 )
 def test_invalid_budget_files(tmp_path: Path, content: str, message: str):

@@ -241,12 +241,13 @@ included. Peak memory and CPU come from a transient cgroup v2 scope when
 ## Size budgets
 
 `size.export[app=playground]` (suites `pr` and `daily`) measures what a
-production build of `examples/playground` ships. Its `setup_cache` copies the
-files git tracks of the example into the cache directory, replacing the previous
-copy, and runs `reflex export --frontend-only --no-zip --env prod` there; bun
-stays cached in reflex's data directory next to it. `sample` then measures the
-files on disk. One export gives every metric, and every metric is exact, so one
-sample is taken:
+production build of `examples/playground` ships. Its `setup` copies the files
+git tracks of the example into the instance's work directory (each arm of an
+`ab` run gets its own copy; `--keep` keeps it) and runs `reflex export
+--frontend-only --no-zip --env prod` there; bun stays cached in reflex's data
+directory under the cache directory. `sample` then measures the files on disk.
+One export gives every metric, and every metric is exact, so one sample is
+taken:
 
 | Metric | What |
 | --- | --- |
@@ -265,9 +266,11 @@ extra data also holds the per-file breakdown `files`: `raw`, `gzip`, `brotli` an
 hash of names in `assets/` replaced (`assets/chunk-5KNZJZUH-q9CrfzJj.js` becomes
 `assets/chunk-5KNZJZUH-HASH.js`; `#2` marks a second name that differed only in
 its hash), plus `initial_files` in page order, `html` (the page parsed),
-`reflex_version`, `fixture_hash` (the playground's `.content-hash`), `bun_lock`
-(the hash of `.web/bun.lock`) and the `compressors`' versions. Apps with a
-`frontend_path` are not supported.
+`reflex_version`, `fixture_hash` (the playground's committed `.content-hash`,
+the hash the result series are keyed on and that CI keeps current; an
+uncommitted playground edit shows in the subject's `dirty` flag instead),
+`bun_lock` (the hash of `.web/bun.lock`) and the `compressors`' versions. Apps
+with a `frontend_path` are not supported.
 
 Two samples of one export are identical, but two exports of one commit are not
 quite: reflex bundles `.web/reflex.json`, with a random `project_hash` and the
@@ -278,12 +281,16 @@ same up to a byte or two (the number of digits of the project hash), compressed
 sizes move by a few bytes and `web_dir` by a few dozen: two runs in separate
 bench homes measured `total_gzip` 328,699 and 328,683 B, `total_brotli` 263,247
 and 263,218 B, `web_dir` 2,142,835 and 2,142,814 B, with the same `total_raw`,
-`chunks` and `node_modules`. That is far below the budgets' headroom and the
-3 % threshold of exact comparisons, so the metrics stay exact and no file is
-left out of the breakdown. Reflex pins its own frontend packages, but their
-dependencies are resolved when the export installs them (the playground commits
-no lockfile), so a new release of one can change the sizes of the same commit;
-a different `bun_lock` tells such a change apart from a change in the code.
+`chunks` and `node_modules`. So `assume="exact"` means deterministic up to about
+150 B per export here: an A/A `ab` run shows differences of a few bytes, far
+below the budgets' headroom and the 3 % threshold of exact comparisons, so the
+metrics stay exact and no file is left out of the breakdown. Reflex pins its own
+frontend packages, but their dependencies are resolved when the export installs
+them (the playground commits no lockfile), so a new release of one can change
+the sizes of the same commit; a different `bun_lock` tells such a change apart
+from a change in the code. `node_modules` drifts this way over time (25 kB in
+18 hours on one commit), so its budget can go red on a pull request that
+changed nothing related; raising it in that pull request is the expected fix.
 
 `packages/reflex-bench/budgets.json` caps metrics, as whole numbers in the
 metric's unit:
