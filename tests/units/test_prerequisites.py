@@ -1837,6 +1837,43 @@ def test_prefer_npm_over_bun_implicit_from_npm_lock(tmp_path, monkeypatch):
         assert js_runtimes.prefer_npm_over_bun() is True
 
 
+def test_prefer_npm_over_bun_implicit_logs_notice_once(
+    tmp_path, monkeypatch, caplog: pytest.LogCaptureFixture
+):
+    """Implicit npm from a persisted lockfile says why and how to switch back."""
+    monkeypatch.delenv("REFLEX_USE_NPM", raising=False)
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    js_runtimes._log_implicit_npm_notice.cache_clear()
+    root_dir = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR
+    root_dir.mkdir(parents=True)
+    (root_dir / constants.Node.LOCKFILE_PATH).write_text("{}")
+
+    with chdir(tmp_path), caplog.at_level("INFO"):
+        assert js_runtimes.prefer_npm_over_bun() is True
+        assert js_runtimes.prefer_npm_over_bun() is True
+
+    notices = [m for m in caplog.messages if "REFLEX_USE_NPM=0" in m]
+    assert len(notices) == 1
+    assert constants.Node.LOCKFILE_PATH in notices[0]
+
+
+def test_prefer_npm_over_bun_explicit_npm_logs_no_notice(
+    tmp_path, monkeypatch, caplog: pytest.LogCaptureFixture
+):
+    """An explicit REFLEX_USE_NPM=1 needs no lockfile notice."""
+    monkeypatch.setenv("REFLEX_USE_NPM", "1")
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    js_runtimes._log_implicit_npm_notice.cache_clear()
+    root_dir = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR
+    root_dir.mkdir(parents=True)
+    (root_dir / constants.Node.LOCKFILE_PATH).write_text("{}")
+
+    with chdir(tmp_path), caplog.at_level("INFO"):
+        assert js_runtimes.prefer_npm_over_bun() is True
+
+    assert not [m for m in caplog.messages if "REFLEX_USE_NPM=0" in m]
+
+
 def test_prefer_npm_over_bun_implicit_disabled_when_bun_lock_present(
     tmp_path, monkeypatch
 ):
