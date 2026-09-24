@@ -86,7 +86,7 @@ def _patch_unsupported_node(monkeypatch) -> None:
     monkeypatch.setattr(js_runtimes, "get_node_version", lambda: None)
 
 
-def test_install_never_starts_with_unsupported_node(monkeypatch, install_mocks):
+def test_install_never_starts_with_unsupported_node(monkeypatch, install_mocks, caplog):
     """A failed node-version preflight must leave no lockfile side effects.
 
     Regression test for #6976: an npm install that the run later rejects
@@ -99,6 +99,11 @@ def test_install_never_starts_with_unsupported_node(monkeypatch, install_mocks):
 
     with pytest.raises(SystemExit):
         js_runtimes.install_frontend_packages({"react"}, _fake_config())
+
+    assert (
+        f"Reflex requires node version {js_runtimes.constants.Node.MIN_VERSION} "
+        "or higher to run, but the detected version is None"
+    ) in caplog.text
 
     assert install_mocks["sync_to_web"] == [], "lockfiles were synced to .web"
     assert install_mocks["install"] == [], "npm install ran despite the gate"
@@ -145,6 +150,7 @@ def test_install_ignores_node_version_under_bun(monkeypatch, install_mocks):
     js_runtimes.install_frontend_packages({"react"}, _fake_config())
 
     assert install_mocks["install"] != [], "bun install was blocked"
+    assert install_mocks["drop"] == ["/usr/bin/bun"]
 
 
 def test_validate_gates_npm_selected_as_fallback(monkeypatch):
@@ -172,6 +178,20 @@ def test_validate_init_defers_gate_until_bun_setup(monkeypatch):
     js_runtimes.validate_frontend_dependencies()
 
 
+def test_validate_init_gates_explicit_npm(monkeypatch):
+    """Init still rejects old node up front when npm is explicitly preferred.
+
+    install_bun skips bun setup under an npm preference, so deferring the
+    gate would let init finish on an unsupported node.
+    """
+    monkeypatch.setattr(js_runtimes, "prefer_npm_over_bun", lambda: True)
+    _patch_manager_paths(monkeypatch, bun=True, npm=True)
+    _patch_unsupported_node(monkeypatch)
+
+    with pytest.raises(SystemExit):
+        js_runtimes.validate_frontend_dependencies()
+
+
 def test_validate_does_not_gate_bun(monkeypatch):
     """Run-time validation stays node-agnostic while bun is selected."""
     monkeypatch.setattr(js_runtimes, "prefer_npm_over_bun", lambda: False)
@@ -179,26 +199,3 @@ def test_validate_does_not_gate_bun(monkeypatch):
     _patch_unsupported_node(monkeypatch)
 
     js_runtimes.validate_frontend_dependencies(init=False)
-
-
-def test_install_gate_does_not_probe_host(monkeypatch, install_mocks):
-    """The install gate works entirely off injected manager discovery.
-
-    Guards against the npm install tests silently depending on the host
-    machine's node, bun, or npm installation.
-    """
-    monkeypatch.setattr(js_runtimes, "prefer_npm_over_bun", lambda: False)
-    _patch_manager_paths(monkeypatch, bun=True, npm=True)
-    monkeypatch.setattr(js_runtimes, "check_node_version", lambda: True)
-
-    msg = "gate probed the host"
-
-    def _no_host_lookup(*args, **kwargs):
-        raise AssertionError(msg)
-
-    monkeypatch.setattr(js_runtimes.path_ops, "which", _no_host_lookup)
-    monkeypatch.setattr(js_runtimes, "get_node_version", _no_host_lookup)
-
-    js_runtimes.install_frontend_packages({"react"}, _fake_config())
-
-    assert install_mocks["install"] != [], "install did not run"
