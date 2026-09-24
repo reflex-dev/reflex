@@ -30,20 +30,19 @@ class CustomBuilder(BuildHookInterface):
 
         The generator logs and skips a module it cannot import, so a failed run
         can leave some stubs written and others missing. `pyi_hashes.json` names
-        the full set; without it, treat the stubs as incomplete and regenerate.
+        the full set.
 
         Returns:
             Whether every expected stub exists.
         """
         root = pathlib.Path(self.root)
-        hashes = root / "pyi_hashes.json"
-        if not hashes.exists():
+        try:
+            names = json.loads((root / "pyi_hashes.json").read_text())
+        except (OSError, ValueError):
+            # Absent, unreadable, or half-written by an interrupted generator
+            # run, which writes it in place. Regenerate rather than fail here.
             return False
-        expected = [
-            root / name
-            for name in json.loads(hashes.read_text())
-            if name.startswith("reflex/")
-        ]
+        expected = [root / name for name in names if name.startswith("reflex/")]
         return bool(expected) and all(stub.exists() for stub in expected)
 
     def initialize(self, version: str, build_data: dict[str, Any]) -> None:

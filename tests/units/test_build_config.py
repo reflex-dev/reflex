@@ -190,7 +190,34 @@ def test_build_hook_regenerates_stubs(
     hook.initialize(build_version, {})
 
     assert bool(runs) is regenerates
-    if not regenerates:
-        # The generator is stubbed out, so a run that proceeded would have left
-        # these unlinked.
+    # The generator is stubbed out, so a run that proceeded leaves the stubs it
+    # would have rewritten unlinked; one that was skipped leaves them as found.
+    if regenerates:
+        assert not any(stub.exists() for stub in written)
+    else:
         assert all(stub.exists() for stub in written)
+
+
+@pytest.mark.parametrize(
+    "manifest", ["", '{"reflex/__init__.pyi"', "[]"], ids=["empty", "truncated", "list"]
+)
+def test_build_hook_regenerates_on_an_unreadable_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, manifest: str
+):
+    """A manifest left half-written by an interrupted run must not fail the build."""
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "pyi_hashes.json").write_text(manifest)
+    for name in EXPECTED_STUBS:
+        stub = tmp_path / name
+        stub.parent.mkdir(parents=True, exist_ok=True)
+        stub.write_text("# generated")
+
+    runs = []
+    module, hook = build_hook(tmp_path, tmp_path / "dist")
+    monkeypatch.setattr(
+        module, "subprocess", SimpleNamespace(run=lambda *a, **kw: runs.append(a))
+    )
+
+    hook.initialize("editable", {})
+
+    assert runs

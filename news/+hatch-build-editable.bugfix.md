@@ -1,1 +1,1 @@
-An editable install (`uv sync`, `pip install -e .`) no longer regenerates `.pyi` stubs that the checkout already has. The build hook rebuilt them from whatever the installing environment resolved to, so installing against pinned or minimum dependency versions left the working tree with stubs that did not match it. A checkout without stubs still gets them generated.
+An editable install (`uv sync`, `pip install -e .`) no longer overwrites `.pyi` stubs that the checkout already has. A checkout missing any of them still gets them generated.
