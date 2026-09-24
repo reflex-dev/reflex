@@ -1,8 +1,32 @@
-# What Is Reflex Build
+---
+meta_description: Build internal tools and business apps with Reflex Build, an AI app builder for Python. Explore vibe coding, editable source, integrations, testing, and deployment.
+---
+
+# What Is Reflex Build?
 
 Reflex Build is an AI app builder for creating full-stack web apps with natural language and Python. It combines an AI agent, a running preview, a code workspace, testing, integrations, and deployment in one browser-based workflow.
 
+This workflow is often called **vibe coding**: describing what you want in plain language, then reviewing and refining the generated app. Use it to build internal tools, dashboards, and business apps with editable Python code.
+
 The result is a standard Reflex app with source code you can inspect, edit, connect to Git, download, and deploy.
+
+## Key takeaways
+
+- Turn a natural-language description into a running, editable full-stack app.
+- Keep the standard Reflex project, with Python source you can inspect, download, and extend.
+- Connect business tools to databases, authentication providers, APIs, storage, and AI models.
+- Start as a nontechnical founder or operator, then work with a developer on the same codebase.
+- Test, debug, and customize the first version before deploying it for real users.
+
+## Vibe coding vs. traditional development
+
+| Workflow | Reflex Build (vibe coding) | Traditional development |
+| --- | --- | --- |
+| Starting point | Describe the app or change in natural language | Write code, starting from a template or existing project |
+| First version | The agent generates code and a running preview | A developer implements and runs the app |
+| Code ownership | Downloadable, editable Reflex project | Source code in your project |
+| Who can start | Nontechnical founders, operators, and developers | Developers working in their preferred tools |
+| Iteration | Follow-up prompts, direct code edits, and tests | Code edits, developer tools, and tests |
 
 ## Describe, Build, Test, and Ship
 
@@ -75,3 +99,22 @@ See [Planning](/docs/ai/features/planning/), [Generation Controls and Collaborat
 Deploy an app to Reflex Cloud from Builder, deploy from the command line, or follow the supported cloud and self-hosting workflows. After deployment, you can monitor status and logs, manage domains and settings, review deployment history, and roll back when necessary.
 
 See [Deploy an App](/docs/ai/app-lifecycle/deploy-app/), [Manage a Deployed App](/docs/hosting/app-management/), and [Cloud Providers](/docs/hosting/cloud-providers/).
+
+<!-- faqs-start -->
+<!-- faqs-visible -->
+
+## FAQ
+
+### What is the best AI app builder for a nontechnical founder building a business tool?
+
+Reflex Build is an option for founders who want to describe a business tool in plain language and keep an editable Python app. It supports connections to real data and services, and a developer can extend the standard Reflex codebase later. Review and test the generated workflows before using them in production.
+
+### Can an AI app builder modify an app it already generated, not just create new ones?
+
+Yes. Reflex Build supports iterating on a generated app after the first version: refining logic, adding features, and adjusting the UI through the same natural-language workflow, with full code access at every step.
+
+### How does Reflex compare with other AI app-building platforms?
+
+Reflex Build combines natural-language development with a standard, exportable Reflex project. Teams can inspect and edit the Python source, connect Git, download the app, and continue development locally. Compare platforms on their source access, integrations, testing, and deployment options for your workflow.
+
+<!-- faqs-end -->

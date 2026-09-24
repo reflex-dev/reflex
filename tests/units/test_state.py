@@ -1454,7 +1454,7 @@ def test_computed_var_cached():
     assert comp_v_calls == 2
 
 
-def test_computed_var_cached_depends_on_non_cached():
+async def test_computed_var_cached_depends_on_non_cached():
     """Test that a cached var is recalculated if it depends on non-cached ComputedVar."""
 
     class ComputedState(BaseState):
@@ -1474,18 +1474,20 @@ def test_computed_var_cached_depends_on_non_cached():
 
     cs = ComputedState()
     assert cs.dirty_vars == set()
-    assert cs.get_delta() == {
+    assert await cs._get_resolved_delta() == {
         cs.get_name(): {"no_cache_v" + FIELD_MARKER: 0, "dep_v" + FIELD_MARKER: 0}
     }
     cs._clean()
     assert cs.dirty_vars == set()
     # no_cache_v is recomputed, but the value is unchanged, so it is not resent.
-    assert cs.get_delta() == {cs.get_name(): {"dep_v" + FIELD_MARKER: 0}}
+    assert await cs._get_resolved_delta() == {
+        cs.get_name(): {"dep_v" + FIELD_MARKER: 0}
+    }
     cs._clean()
     assert cs.dirty_vars == set()
     cs.v = 1
     assert cs.dirty_vars == {"v", "comp_v", "dep_v", "no_cache_v"}
-    assert cs.get_delta() == {
+    assert await cs._get_resolved_delta() == {
         cs.get_name(): {
             "v" + FIELD_MARKER: 1,
             "no_cache_v" + FIELD_MARKER: 1,
@@ -1495,15 +1497,19 @@ def test_computed_var_cached_depends_on_non_cached():
     }
     cs._clean()
     assert cs.dirty_vars == set()
-    assert cs.get_delta() == {cs.get_name(): {"dep_v" + FIELD_MARKER: 1}}
+    assert await cs._get_resolved_delta() == {
+        cs.get_name(): {"dep_v" + FIELD_MARKER: 1}
+    }
     cs._clean()
     assert cs.dirty_vars == set()
-    assert cs.get_delta() == {cs.get_name(): {"dep_v" + FIELD_MARKER: 1}}
+    assert await cs._get_resolved_delta() == {
+        cs.get_name(): {"dep_v" + FIELD_MARKER: 1}
+    }
     cs._clean()
     assert cs.dirty_vars == set()
 
 
-def test_uncached_computed_var_unchanged_omitted_from_delta():
+async def test_uncached_computed_var_unchanged_omitted_from_delta():
     """An uncached var that recomputes to the same value is left out of the delta."""
     calls = 0
 
@@ -1517,24 +1523,26 @@ def test_uncached_computed_var_unchanged_omitted_from_delta():
             return self.v
 
     ucs = UncachedState()
-    assert ucs.get_delta() == {ucs.get_name(): {"no_cache_v" + FIELD_MARKER: 0}}
+    assert await ucs._get_resolved_delta() == {
+        ucs.get_name(): {"no_cache_v" + FIELD_MARKER: 0}
+    }
     assert calls == 1
     ucs._clean()
 
     # Still recomputed, but the unchanged value is not sent again.
-    assert ucs.get_delta() == {}
+    assert await ucs._get_resolved_delta() == {}
     assert calls == 2
     ucs._clean()
 
     ucs.v = 1
-    assert ucs.get_delta() == {
+    assert await ucs._get_resolved_delta() == {
         ucs.get_name(): {"v" + FIELD_MARKER: 1, "no_cache_v" + FIELD_MARKER: 1}
     }
     ucs._clean()
-    assert ucs.get_delta() == {}
+    assert await ucs._get_resolved_delta() == {}
 
 
-def test_uncached_computed_var_scalar_key_distinguishes_types():
+async def test_uncached_computed_var_scalar_key_distinguishes_types():
     """Python-equal but JSON-distinct scalars are not suppressed as unchanged."""
     values = iter([1, True, 1.0])
 
@@ -1548,11 +1556,12 @@ def test_uncached_computed_var_scalar_key_distinguishes_types():
     # 1, True and 1.0 are all Python-equal, but the client would receive 1,
     # true and 1.0, so each one has to be sent.
     for expected_type in (int, bool, float):
-        assert type(ss.get_delta()[ss.get_name()][key]) is expected_type
+        delta = await ss._get_resolved_delta()
+        assert type(delta[ss.get_name()][key]) is expected_type
         ss._clean()
 
 
-def test_uncached_computed_var_nan_value_not_resent():
+async def test_uncached_computed_var_nan_value_not_resent():
     """NaN is keyed by its serialized form, so an unchanged NaN is not resent."""
 
     class NanState(BaseState):
@@ -1561,9 +1570,11 @@ def test_uncached_computed_var_nan_value_not_resent():
             return float("nan")
 
     ns = NanState()
-    assert math.isnan(ns.get_delta()[ns.get_name()]["v" + FIELD_MARKER])
+    assert math.isnan(
+        (await ns._get_resolved_delta())[ns.get_name()]["v" + FIELD_MARKER]
+    )
     ns._clean()
-    assert ns.get_delta() == {}
+    assert await ns._get_resolved_delta() == {}
 
 
 class UncachedRedisState(BaseState):
@@ -1590,11 +1601,11 @@ class UncachedRedisState(BaseState):
         return [self._v]
 
 
-def test_uncached_computed_var_records_last_value_for_redis():
+async def test_uncached_computed_var_records_last_value_for_redis():
     """Recorded delta keys mark the state touched and survive serialization."""
     urs = UncachedRedisState()
     assert urs._was_touched is False
-    assert urs.get_delta() == {
+    assert await urs._get_resolved_delta() == {
         urs.get_name(): {
             "scalar_v" + FIELD_MARKER: 0,
             "list_v" + FIELD_MARKER: [0],
@@ -1606,16 +1617,16 @@ def test_uncached_computed_var_records_last_value_for_redis():
     # Recomputing unchanged values does not force another redis write.
     urs._clean()
     urs._was_touched = False
-    assert urs.get_delta() == {}
+    assert await urs._get_resolved_delta() == {}
     assert urs._was_touched is False
 
     # A state restored from its serialized form still knows what was sent.
     restored = BaseState._deserialize(urs._serialize())
     assert isinstance(restored, UncachedRedisState)
-    assert restored.get_delta() == {}
+    assert await restored._get_resolved_delta() == {}
 
     restored._v = 1
-    assert restored.get_delta() == {
+    assert await restored._get_resolved_delta() == {
         restored.get_name(): {
             "scalar_v" + FIELD_MARKER: 1,
             "list_v" + FIELD_MARKER: [1],
@@ -1623,7 +1634,7 @@ def test_uncached_computed_var_records_last_value_for_redis():
     }
 
 
-def test_uncached_computed_var_mutable_value_mutated_in_place():
+async def test_uncached_computed_var_mutable_value_mutated_in_place():
     """An uncached var returning a state-owned mutable value still sees mutations."""
 
     class UncachedMutableState(BaseState):
@@ -1634,23 +1645,25 @@ def test_uncached_computed_var_mutable_value_mutated_in_place():
             return self.items
 
     ums = UncachedMutableState()
-    assert ums.get_delta() == {ums.get_name(): {"all_items" + FIELD_MARKER: []}}
+    assert await ums._get_resolved_delta() == {
+        ums.get_name(): {"all_items" + FIELD_MARKER: []}
+    }
     ums._clean()
-    assert ums.get_delta() == {}
+    assert await ums._get_resolved_delta() == {}
     ums._clean()
 
     ums.items.append("a")
-    assert ums.get_delta() == {
+    assert await ums._get_resolved_delta() == {
         ums.get_name(): {
             "items" + FIELD_MARKER: ["a"],
             "all_items" + FIELD_MARKER: ["a"],
         }
     }
     ums._clean()
-    assert ums.get_delta() == {}
+    assert await ums._get_resolved_delta() == {}
 
 
-def test_uncached_computed_var_recorded_per_client_token():
+async def test_uncached_computed_var_recorded_per_client_token():
     """A value already sent to one client is still sent to another client.
 
     A single state instance can serve multiple clients (linked shared states),
@@ -1665,20 +1678,24 @@ def test_uncached_computed_var_recorded_per_client_token():
     mcs = MultiClientState()
     mcs.router = RouterData(session=SessionData(client_token="token_a"))
     mcs._clean()
-    assert mcs.get_delta() == {mcs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}}
+    assert await mcs._get_resolved_delta() == {
+        mcs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}
+    }
     mcs._clean()
-    assert mcs.get_delta() == {}
+    assert await mcs._get_resolved_delta() == {}
     mcs._clean()
 
     # The same state instance now produces a delta for a different client.
     mcs.router = RouterData(session=SessionData(client_token="token_b"))
     mcs._clean()
-    assert mcs.get_delta() == {mcs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}}
+    assert await mcs._get_resolved_delta() == {
+        mcs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}
+    }
     mcs._clean()
-    assert mcs.get_delta() == {}
+    assert await mcs._get_resolved_delta() == {}
 
 
-def test_uncached_computed_var_unkeyable_value_always_sent():
+async def test_uncached_computed_var_unkeyable_value_always_sent():
     """A value that cannot be serialized has no key and is always sent."""
 
     class CircularState(BaseState):
@@ -1689,10 +1706,11 @@ def test_uncached_computed_var_unkeyable_value_always_sent():
             return value
 
     cs = CircularState()
-    # Compare the keys only: the values are self-referential.
-    assert list(cs.get_delta()[cs.get_name()]) == ["circular" + FIELD_MARKER]
-    cs._clean()
-    assert list(cs.get_delta()[cs.get_name()]) == ["circular" + FIELD_MARKER]
+    for _ in range(2):
+        # Compare the keys only: the values are self-referential.
+        delta = await cs._get_resolved_delta()
+        assert list(delta[cs.get_name()]) == ["circular" + FIELD_MARKER]
+        cs._clean()
 
 
 async def test_uncached_async_computed_var_unchanged_omitted_from_delta():
@@ -1719,6 +1737,146 @@ async def test_uncached_async_computed_var_unchanged_omitted_from_delta():
     }
     aus._clean()
     assert await aus._get_resolved_delta() == {}
+
+
+# Withholding an async var can only close the wrapper coroutine; the getter
+# coroutine it holds is then collected unawaited, which a filter cannot reach
+# and this test is not about.
+@pytest.mark.filterwarnings(
+    "ignore:coroutine '.*_awaitable_result' was never awaited:RuntimeWarning",
+)
+@pytest.mark.parametrize("mode", ["dropped", "replaced"])
+@pytest.mark.parametrize("is_async", [False, True])
+async def test_uncached_var_withheld_by_delta_override_is_resent(
+    mode: str, is_async: bool, monkeypatch: pytest.MonkeyPatch
+):
+    """An uncached var withheld by a `get_delta` override is sent once released.
+
+    Downstream packages wrap `get_delta` to keep vars the current user may not
+    see out of the delta, either by dropping the key or by replacing the value
+    with a public placeholder. Neither value reaches the client, so the real one
+    has to be delivered as soon as the override stops withholding it -- even
+    though the var recomputes to the value that was withheld.
+
+    Args:
+        mode: Whether the override drops the key or replaces its value.
+        is_async: Whether the uncached var is an async one.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+
+    class WithheldState(BaseState):
+        n: int = 0
+
+        @rx.var(cache=False)
+        def secret(self) -> str:
+            return f"secret-{self.n}"
+
+    class AsyncWithheldState(BaseState):
+        n: int = 0
+
+        @rx.var(cache=False)
+        async def secret(self) -> str:
+            return f"secret-{self.n}"
+
+    state_cls = AsyncWithheldState if is_async else WithheldState
+    full_name = state_cls.get_full_name()
+    key = "secret" + FIELD_MARKER
+    withholding = True
+    # Bound through the base class: neither state overrides `get_delta`, and the
+    # wrapper below replaces it on both, so its `self` is only a `BaseState`.
+    original_get_delta = BaseState.get_delta
+
+    def withholding_get_delta(self: BaseState) -> Delta:
+        delta = original_get_delta(self)
+        if not withholding:
+            return delta
+        filtered: Delta = {}
+        for name, subdelta in delta.items():
+            withheld_subdelta = dict(subdelta)
+            if key in withheld_subdelta:
+                value = withheld_subdelta.pop(key)
+                if inspect.iscoroutine(value):
+                    # Withheld before `_resolve_delta` could await it.
+                    value.close()
+                if mode == "replaced":
+                    withheld_subdelta[key] = "anon"
+            if withheld_subdelta:
+                filtered[name] = withheld_subdelta
+        return filtered
+
+    monkeypatch.setattr(state_cls, "get_delta", withholding_get_delta)
+
+    def expected_withheld(**other_vars: Any) -> Delta:
+        subdelta = {name + FIELD_MARKER: value for name, value in other_vars.items()}
+        if mode == "replaced":
+            subdelta[key] = "anon"
+        return {full_name: subdelta} if subdelta else {}
+
+    state = state_cls()
+    assert await state._get_resolved_delta() == expected_withheld()
+    state._clean()
+
+    # The value changes while it is still withheld: the client never sees it.
+    state.n = 1
+    assert await state._get_resolved_delta() == expected_withheld(n=1)
+    state._clean()
+
+    # The override releases the var: the value the client never got is sent...
+    withholding = False
+    assert await state._get_resolved_delta() == {full_name: {key: "secret-1"}}
+    state._clean()
+
+    # ...and, having been delivered, it is not sent again.
+    assert await state._get_resolved_delta() == {}
+    state._clean()
+
+    # Withhold a fresh value, then release one the client was already sent. A
+    # dropped key leaves the client on that value, so there is nothing to send;
+    # a placeholder overwrote it, so the record it invalidated has to go and the
+    # value has to be delivered again.
+    withholding = True
+    state.n = 2
+    assert await state._get_resolved_delta() == expected_withheld(n=2)
+    state._clean()
+
+    withholding = False
+    state.n = 1
+    restored: Delta = {full_name: {"n" + FIELD_MARKER: 1}}
+    if mode == "replaced":
+        restored[full_name][key] = "secret-1"
+    assert await state._get_resolved_delta() == restored
+
+
+async def test_uncached_computed_var_recorded_only_once_delivered():
+    """A delta that is built but never delivered does not count as sent.
+
+    `get_delta` may be wrapped downstream by a filter that drops entries from
+    it, so only the delta returned by `_get_resolved_delta` -- what the caller
+    goes on to emit -- records the values the client has.
+    """
+
+    class UndeliveredState(BaseState):
+        @rx.var(cache=False)
+        def v(self) -> int:
+            return 1
+
+    us = UndeliveredState()
+    expected = {UndeliveredState.get_full_name(): {"v" + FIELD_MARKER: 1}}
+
+    # Building a delta is not delivering it: the value is still owed.
+    assert us.get_delta() == expected
+    us._clean()
+    assert us.get_delta() == expected
+    us._clean()
+
+    assert await us._get_resolved_delta() == expected
+    us._clean()
+    assert await us._get_resolved_delta() == {}
+    us._clean()
+
+    # Nor is such a delta deduped against what the client has: leaving a value
+    # out is only safe where its delivery is what records it.
+    assert us.get_delta() == expected
 
 
 def test_get_delta_tolerates_zero_argument_override(test_state: TestState, monkeypatch):
@@ -1751,7 +1909,7 @@ def test_get_delta_tolerates_zero_argument_override(test_state: TestState, monke
     assert ChildState.get_full_name() in seen
 
 
-def test_discarded_delta_does_not_record_values_of_substates():
+async def test_discarded_delta_does_not_record_values_of_substates():
     """A delta built only for its side effects does not count as sent, at any depth."""
 
     class DiscardedParentState(BaseState):
@@ -1769,13 +1927,46 @@ def test_discarded_delta_does_not_record_values_of_substates():
 
     # A discarded traversal must not record the values it computed...
     with _suppress_delta_recording():
-        assert dps.get_delta() == expected
+        assert await dps._get_resolved_delta() == expected
     dps._clean()
 
     # ...so the client still receives them on the next real delta.
-    assert dps.get_delta() == expected
+    assert await dps._get_resolved_delta() == expected
     dps._clean()
-    assert dps.get_delta() == {}
+    assert await dps._get_resolved_delta() == {}
+
+
+async def test_suppressed_delta_inside_a_delivered_one_records_nothing(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Suppression holds wherever it is entered, not only at the top of a delta.
+
+    `_suppress_delta_recording` describes the block it wraps, so a `get_delta`
+    override that enters it records nothing even though the traversal reaching
+    that override is the one being delivered.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+
+    class SuppressingState(BaseState):
+        @rx.var(cache=False)
+        def v(self) -> int:
+            return 1
+
+    expected = {SuppressingState.get_full_name(): {"v" + FIELD_MARKER: 1}}
+    original_get_delta = BaseState.get_delta
+
+    def suppressing_get_delta(self: BaseState) -> Delta:
+        with _suppress_delta_recording():
+            return original_get_delta(self)
+
+    monkeypatch.setattr(SuppressingState, "get_delta", suppressing_get_delta)
+
+    ss = SuppressingState()
+    for _ in range(2):
+        assert await ss._get_resolved_delta() == expected
+        ss._clean()
 
 
 def test_delta_methods_take_no_arguments():
@@ -2734,6 +2925,7 @@ class BackgroundTaskState(BaseState):
     order: list[str] = []
     dict_list: dict[str, list[int]] = {"foo": [1, 2, 3]}
     dc: ModelDC = ModelDC()
+    _started: ClassVar[asyncio.Event | None] = None
 
     @rx.var(cache=False)
     def computed_order(self) -> list[str]:
@@ -2745,11 +2937,16 @@ class BackgroundTaskState(BaseState):
         return self.order
 
     @rx.event(background=True)
-    async def background_task(self):
+    async def background_task(self, startup_delay: float = 0):
         """A background task that updates the state."""
+        if startup_delay:
+            await asyncio.sleep(startup_delay)
         async with self:
             assert not self.order
             self.order.append("background_task:start")
+
+        if BackgroundTaskState._started is not None:
+            BackgroundTaskState._started.set()
 
         assert isinstance(self, StateProxy)
         with pytest.raises(ImmutableStateError):
@@ -2822,7 +3019,7 @@ class BackgroundTaskState(BaseState):
 
     async def bad_chain1(self):
         """Test that a background task cannot be chained."""
-        await self.background_task()
+        await self.background_task(0)
 
     async def bad_chain2(self):
         """Test that a background task generator cannot be chained."""
@@ -2831,12 +3028,15 @@ class BackgroundTaskState(BaseState):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("startup_delay", [0, 0.6])
 async def test_background_task_no_block(
     mock_app: rx.App,
     token: str,
     mock_base_state_event_processor: BaseStateEventProcessor,
     emitted_deltas: list,
     state_manager: StateManager,
+    startup_delay: float,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """Test that a background task does not block other events.
 
@@ -2846,18 +3046,22 @@ async def test_background_task_no_block(
         mock_base_state_event_processor: The event processor.
         emitted_deltas: List to capture emitted deltas.
         state_manager: A state manager instance.
+        startup_delay: Delay before the background task acquires its first lock.
+        monkeypatch: Reset the test-only startup signal after each case.
     """
+    background_started = asyncio.Event()
+    monkeypatch.setattr(BackgroundTaskState, "_started", background_started)
     async with mock_base_state_event_processor as processor:
         # Start background task
         await processor.enqueue(
             token,
             Event(
                 name=f"{BackgroundTaskState.get_full_name()}.background_task",
-                payload={},
+                payload={"startup_delay": startup_delay},
             ),
         )
-        # Wait for the background task coroutine to start
-        await asyncio.sleep(0.5 if CI else 0.1)
+
+        await asyncio.wait_for(background_started.wait(), timeout=10)
 
         # Process another normal event while background task is polling
         await processor.enqueue(
@@ -3867,7 +4071,7 @@ async def test_get_state(token: str, attached_mock_event_context: EventContext):
     ])
     grandchild_state.value2 = "set_value"
 
-    assert test_state.get_delta() == {
+    assert await test_state._get_resolved_delta() == {
         GrandchildState.get_full_name(): {
             "value2" + FIELD_MARKER: "set_value",
         },
@@ -3918,7 +4122,7 @@ async def test_get_state(token: str, attached_mock_event_context: EventContext):
         expected_delta[GrandchildState3.get_full_name()] = {
             "computed" + FIELD_MARKER: "",
         }
-    assert new_test_state.get_delta() == expected_delta
+    assert await new_test_state._get_resolved_delta() == expected_delta
 
 
 @pytest.mark.asyncio

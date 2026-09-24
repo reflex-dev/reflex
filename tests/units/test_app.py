@@ -250,6 +250,28 @@ def test_custom_auth_admin() -> type[AuthProvider]:
     return TestAuthProvider
 
 
+def test_app_warns_about_a_deprecated_duration_name_at_startup(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """The auto-reload cooldown is only consulted on a frontend error.
+
+    Reading it while the app is set up surfaces the deprecation when the app
+    starts, where a developer will actually see it.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_AUTO_RELOAD_COOLDOWN", raising=False)
+    monkeypatch.setenv("REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS", "5000")
+    monkeypatch.setattr("reflex_base.environment._WARNED_SUPERSEDED", set())
+
+    with unittest.mock.patch("reflex_base.utils.console.deprecate") as deprecate:
+        App(_state=EmptyState)
+
+    feature_names = [call.kwargs["feature_name"] for call in deprecate.call_args_list]
+    assert "REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS" in feature_names
+
+
 def test_default_app(app: App):
     """Test creating an app with no args.
 
@@ -3031,6 +3053,34 @@ def test_minimal_static_app_wrap_omits_state_providers(
     assert EVENT_LOOP_CONTEXT_HOOK not in root_contents
     assert "jsx(StateProvider" not in root_contents
     assert "jsx(EventLoopProvider" not in root_contents
+
+
+def test_sticky_badge_wrap_keeps_lower_priority_wrap_renderable(
+    mocker: MockerFixture,
+) -> None:
+    """The badge and the lower-priority portal must be Fragment siblings.
+
+    ``_app_root`` nests each lower-priority wrap inside the previous one, and
+    the badge compiles to a memo that never reads ``props.children``. A wrap
+    below it -- ``rx.data_editor`` registers its ``<div id="portal">`` at
+    priority -1 -- would therefore be emitted into the app root but never
+    reach the DOM, so the badge wrap has to keep it as a sibling.
+    """
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app = App(theme=None, enable_state=False)
+    app._setup_sticky_badge()
+    app.extra_app_wraps[-1, "DataEditorPortal"] = lambda _: rx.el.div(id="portal")
+
+    root_contents = compile_app_root_from_page_wraps(app, {})
+    chain = root_contents[root_contents.index("function AppWrap({children})") :]
+    badge_symbol = _find_mirrored_memo_symbol(chain, "MemoizedBadge")
+
+    # Neither the badge nor the portal may become the other's parent.
+    assert (
+        f"jsx(Fragment,{{}},jsx({badge_symbol},{{}},),"
+        'jsx("div",{id:"portal",ref:ref_portal},))'
+    ) in chain
 
 
 def test_event_triggers_collect_state_providers_via_var_app_wrap() -> None:

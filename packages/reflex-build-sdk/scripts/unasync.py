@@ -2,8 +2,9 @@
 
 The ``_async`` packages are the source of truth; each module is copied to the
 matching ``_sync`` package with the async syntax and names replaced, then
-formatted with ruff. Run with ``--check`` to fail when the generated files are
-stale instead of writing them.
+formatted with ruff. The httpx2 transport and its tests are generated from the
+httpx ones the same way. Run with ``--check`` to fail when the generated files
+are stale instead of writing them.
 """
 
 from __future__ import annotations
@@ -25,40 +26,72 @@ DIRECTORIES = {
     / "tests/units/reflex_build_sdk/_sync",
 }
 
-SUBSTITUTIONS = [
-    (re.compile(pattern), replacement)
-    for pattern, replacement in (
-        (r"\bAsync([A-Z]\w*)", r"\1"),
-        (r"\bAsynchronous\b", "Synchronous"),
-        (r"\basynchronous\b", "synchronous"),
-        (r"\basync def\b", "def"),
-        (r"\basync with\b", "with"),
-        (r"\basync for\b", "for"),
-        (r"\bawait ", ""),
-        (r"\b__aenter__\b", "__enter__"),
-        (r"\b__aexit__\b", "__exit__"),
-        (r"\b__aiter__\b", "__iter__"),
-        (r"\b__anext__\b", "__next__"),
-        (r"\baclose\b", "close"),
-        (r"\baread\b", "read"),
-        (r"\baiter_bytes\b", "iter_bytes"),
-        (r"\bimport asyncio\b", "import time"),
-        (r"\basyncio\.sleep\b", "time.sleep"),
-        (r"\b_async\b", "_sync"),
-    )
-]
+Substitutions = list[tuple[re.Pattern[str], str]]
 
 
-def unasync_source(source: str) -> str:
-    """Translate asynchronous source code to its synchronous equivalent.
+def _compile(*substitutions: tuple[str, str]) -> Substitutions:
+    return [
+        (re.compile(pattern), replacement) for pattern, replacement in substitutions
+    ]
+
+
+UNASYNC = _compile(
+    (r"\bAsync([A-Z]\w*)", r"\1"),
+    (r"\basync_(\w)", r"\1"),
+    (r"\bAiohttpTransport\b", "Httpx2Transport"),
+    (r"\bAsynchronous\b", "Synchronous"),
+    (r"\basynchronous\b", "synchronous"),
+    (r"\basync def\b", "def"),
+    (r"\basync with\b", "with"),
+    (r"\basync for\b", "for"),
+    (r"\bawait ", ""),
+    (r"\b__aenter__\b", "__enter__"),
+    (r"\b__aexit__\b", "__exit__"),
+    (r"\b__aiter__\b", "__iter__"),
+    (r"\b__anext__\b", "__next__"),
+    (r"\baclose\b", "close"),
+    (r"\baread\b", "read"),
+    (r"\baiter_bytes\b", "iter_bytes"),
+    (r"\bimport asyncio\b", "import time"),
+    (r"\basyncio\.sleep\b", "time.sleep"),
+    (r"\b_async\b", "_sync"),
+)
+
+# httpx2 is a fork of httpx with the same API under another name.
+TO_HTTPX2 = _compile(
+    (r"\bhttpx\b", "httpx2"),
+    (r"Httpx(?=Transport)", "Httpx2"),
+)
+
+# Ends the first line of every generated module.
+GENERATED_BY = "by packages/reflex-build-sdk/scripts/unasync.py. Do not edit."
+
+# The trees searched for generated files that are no longer generated.
+GENERATED_ROOTS = (
+    ROOT / "packages/reflex-build-sdk/src",
+    ROOT / "tests/units/reflex_build_sdk",
+)
+
+# Source file -> generated file, for files generated with TO_HTTPX2.
+FILES = {
+    ROOT / "packages/reflex-build-sdk/src/reflex_build_sdk/transports/_httpx.py": ROOT
+    / "packages/reflex-build-sdk/src/reflex_build_sdk/transports/_httpx2.py",
+    ROOT / "tests/units/reflex_build_sdk/transports/test_httpx.py": ROOT
+    / "tests/units/reflex_build_sdk/transports/test_httpx2.py",
+}
+
+
+def substitute(source: str, substitutions: Substitutions) -> str:
+    """Apply substitutions to source code.
 
     Args:
-        source: The asynchronous module source.
+        source: The source code.
+        substitutions: The patterns to replace, with their replacements, in order.
 
     Returns:
-        The synchronous module source, not yet formatted.
+        The substituted source, not yet formatted.
     """
-    for pattern, replacement in SUBSTITUTIONS:
+    for pattern, replacement in substitutions:
         source = pattern.sub(replacement, source)
     return source
 
@@ -74,20 +107,20 @@ def _ruff(args: list[str], source: str, filename: Path) -> str:
     ).stdout
 
 
-def generate(source_path: Path) -> str:
-    """Generate the synchronous version of an asynchronous module.
+def generate(source_path: Path, substitutions: Substitutions) -> str:
+    """Generate a module from its source module.
 
     Args:
-        source_path: The asynchronous module.
+        source_path: The source module.
+        substitutions: The substitutions turning it into the generated module.
 
     Returns:
-        The formatted synchronous module source.
+        The formatted generated module source.
     """
     header = (
-        f"# Generated from {source_path.relative_to(ROOT).as_posix()} by "
-        "packages/reflex-build-sdk/scripts/unasync.py. Do not edit.\n"
+        f"# Generated from {source_path.relative_to(ROOT).as_posix()} {GENERATED_BY}\n"
     )
-    source = header + unasync_source(source_path.read_text())
+    source = header + substitute(source_path.read_text(), substitutions)
     # Renamed imports can fall out of sort order and shortened lines can fit
     # on fewer lines, so the output is formatted like any checked-in module.
     # Ruff is pointed at the source path: it tells first-party imports apart by
@@ -97,16 +130,26 @@ def generate(source_path: Path) -> str:
 
 
 def expected_files() -> dict[Path, str]:
-    """Generate every synchronous module.
+    """Generate every module.
 
     Returns:
         The content of each generated module, by path.
     """
-    return {
-        target_dir / source_path.relative_to(source_dir): generate(source_path)
+    expected = {
+        target_dir / source_path.relative_to(source_dir): generate(source_path, UNASYNC)
         for source_dir, target_dir in DIRECTORIES.items()
         for source_path in sorted(source_dir.rglob("*.py"))
     }
+    expected.update(
+        (target_path, generate(source_path, TO_HTTPX2))
+        for source_path, target_path in FILES.items()
+    )
+    return expected
+
+
+def _is_generated(path: Path) -> bool:
+    with path.open() as file:
+        return file.readline().rstrip("\n").endswith(GENERATED_BY)
 
 
 def stale_files(expected: dict[Path, str]) -> list[Path]:
@@ -130,7 +173,16 @@ def stale_files(expected: dict[Path, str]) -> list[Path]:
         for path in sorted(target_dir.rglob("*.py"))
         if path not in expected
     )
-    return stale
+    # Generated files outside DIRECTORIES share their directory with source files,
+    # so only those carrying the generated header are orphans.
+    stale.extend(
+        path
+        for root in GENERATED_ROOTS
+        for path in sorted(root.rglob("*.py"))
+        if path not in expected and _is_generated(path)
+    )
+    # The scans overlap in the DIRECTORIES targets.
+    return list(dict.fromkeys(stale))
 
 
 def main() -> int:
