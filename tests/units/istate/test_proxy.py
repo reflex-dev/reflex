@@ -340,6 +340,23 @@ class InheritedListSubState(InheritedListState):
     """A substate changing the inherited list from a background task."""
 
 
+class RedeclaringState(BaseState):
+    """A root state whose handler writes a var its substate redeclares."""
+
+    count: int = 0
+
+    @rx.event
+    def bump(self):
+        """Increment the count."""
+        self.count += 1
+
+
+class RedeclaringSubState(RedeclaringState):
+    """A substate with a count of its own."""
+
+    count: int = 10
+
+
 @pytest.mark.asyncio
 async def test_inherited_mutable_var_marks_its_owner(
     token: str,
@@ -398,6 +415,33 @@ async def test_inherited_handler_is_guarded_by_the_proxy(
         proxy.add_item(1)
     async with state_manager.modify_state(state_token) as root:
         assert root.items == [1]  # pyright: ignore [reportAttributeAccessIssue]
+
+
+@pytest.mark.asyncio
+async def test_inherited_handler_runs_on_its_state(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+) -> None:
+    """An inherited event handler called through a StateProxy writes its own state's vars.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+    """
+    state_token = BaseStateToken(ident=token, cls=RedeclaringSubState)
+    async with state_manager.modify_state(state_token) as root:
+        proxy = StateProxy(
+            root.get_substate(RedeclaringSubState.get_full_name().split("."))
+        )
+
+    async with proxy:
+        proxy.bump()
+    async with state_manager.modify_state(state_token) as root:
+        assert root.count == 1  # pyright: ignore [reportAttributeAccessIssue]
+        substate = root.get_substate(RedeclaringSubState.get_full_name().split("."))
+        assert substate.count == 10  # pyright: ignore [reportAttributeAccessIssue]
 
 
 @pytest.mark.asyncio

@@ -323,13 +323,16 @@ class StateProxy(wrapt.ObjectProxy):
                 ),
                 field_name=value._self_field_name,
             )
-        if isinstance(value, MethodType) and (
-            value.__self__ is self.__wrapped__
-            # An inherited event handler is bound to the ancestor state.
-            or _is_ancestor(value.__self__, self.__wrapped__)
-        ):
-            # Rebind methods and event handlers to the proxy instance
-            value = type(value)(value.__func__, self)
+        if isinstance(value, MethodType):
+            if value.__self__ is self.__wrapped__:
+                # Rebind methods and event handlers to the proxy instance
+                value = type(value)(value.__func__, self)
+            elif _is_ancestor(value.__self__, self.__wrapped__):
+                # An inherited event handler runs on the ancestor declaring it.
+                value = type(value)(
+                    value.__func__,
+                    type(self)(value.__self__, parent_state_proxy=self),  # pyright: ignore[reportArgumentType]
+                )
         return value
 
     def __setattr__(self, name: str, value: Any) -> None:
