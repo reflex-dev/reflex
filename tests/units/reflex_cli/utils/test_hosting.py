@@ -1022,6 +1022,45 @@ def test_watch_reports_a_deployment_that_went_live(caplog: pytest.LogCaptureFixt
     assert "completed successfully" in _log_messages(caplog, SUCCESS)[-1]
 
 
+def test_watch_reports_the_message_the_api_narrated():
+    """The status is the sentence the API wrote, as `apps status` reports it."""
+    client = _client()
+
+    def wait(_deployment_id, *, on_status, **_kwargs):
+        on_status("Deployment completed successfully! app running at https://x")
+        return _watch_report()
+
+    client.api.deployments.wait.side_effect = wait
+
+    result = watch_deployment_status(str(uuid.UUID(int=5)), client)
+
+    assert result.outcome is WatchOutcome.SUCCEEDED
+    assert (
+        result.status == "Deployment completed successfully! app running at https://x"
+    )
+
+
+def test_watch_prefers_the_report_over_a_stale_message():
+    """A message the SDK could not read an outcome from is not the answer.
+
+    The SDK reads the report precisely because the message went stale, so
+    handing that message back would report the line it fetched the report to
+    get past.
+    """
+    client = _client()
+
+    def wait(_deployment_id, *, on_status, **_kwargs):
+        on_status("got bad response from the deployment service")
+        return _watch_report()
+
+    client.api.deployments.wait.side_effect = wait
+
+    result = watch_deployment_status(str(uuid.UUID(int=5)), client)
+
+    assert result.outcome is WatchOutcome.SUCCEEDED
+    assert result.status == "Running"
+
+
 def test_watch_reports_a_build_awaiting_approval(caplog: pytest.LogCaptureFixture):
     """A build held for approval says so rather than claiming it deployed.
 

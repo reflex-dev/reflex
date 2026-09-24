@@ -1497,6 +1497,21 @@ def watch_deployment_status(
         last_status = message
         logger.info(message)
 
+    def narrated(recorded: str) -> str:
+        """Choose between the narrated status and the deployment's recorded one.
+
+        Args:
+            recorded: The status from the deployment's report.
+
+        Returns:
+            The last message the API narrated, when that message settled the
+            deployment itself. A message the SDK could not read an outcome from
+            is why it asked for the report, and reporting it back would answer
+            with the stale line the report was fetched to get past.
+
+        """
+        return last_status if status_message_outcome(last_status) else recorded
+
     def stopped_following(reason: str) -> WatchResult:
         """Hand the deployment back to the user and stop watching it.
 
@@ -1522,7 +1537,7 @@ def watch_deployment_status(
                 report = client.api.deployments.wait(deployment_id, on_status=note)
             except DeploymentFailedError as ex:
                 _report_deployment_failure(deployment_id, ex.report, str(ex))
-                return WatchResult(WatchOutcome.FAILED, last_status or ex.report.status)
+                return WatchResult(WatchOutcome.FAILED, narrated(ex.report.status))
             except NotFoundError:
                 # The id parses but names nothing, so there is no deployment to
                 # report on and nothing to wait for.
@@ -1556,7 +1571,7 @@ def watch_deployment_status(
     # The status the watch reports is the message the API narrated, the same
     # string `apps status` without --watch reports, rather than the report's
     # bare state -- one command should not name the same thing two ways.
-    return WatchResult(WatchOutcome.SUCCEEDED, last_status or report.status)
+    return WatchResult(WatchOutcome.SUCCEEDED, narrated(report.status))
 
 
 def fetch_token(request_id: str, client: ReflexBuild | None = None) -> str:
