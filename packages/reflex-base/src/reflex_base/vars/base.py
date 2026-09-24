@@ -4258,6 +4258,21 @@ class BaseStateMeta(ABCMeta):
                 # here or on a base; a field would shadow it with a stored value.
                 continue
 
+            if isinstance(value, dataclasses.Field):
+                # A dataclasses.field(...) default keeps the default on the
+                # Field object; unpack it like rx.field(...) so the Field
+                # itself is never kept as the default (deep-copying it fails
+                # on its metadata mappingproxy).
+                value = field(
+                    default=value.default,
+                    default_factory=(
+                        None
+                        if value.default_factory is MISSING
+                        else value.default_factory
+                    ),
+                )
+                namespace[key] = value
+
             if value is MISSING:
                 value = Field(
                     annotated_type=annotation,
