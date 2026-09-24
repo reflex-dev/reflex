@@ -321,6 +321,49 @@ async def test_router_proxy_mutable_context(
         assert root.router._page.params == {"x": "after"}
 
 
+class InheritedListState(BaseState):
+    """A root state storing a list var its substate inherits."""
+
+    items: list[int] = []
+
+
+class InheritedListSubState(InheritedListState):
+    """A substate changing the inherited list from a background task."""
+
+
+@pytest.mark.asyncio
+async def test_inherited_mutable_var_marks_its_owner(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+) -> None:
+    """An in-place change to an inherited var through a StateProxy dirties the state storing it.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+        emitted_deltas: The captured state updates.
+    """
+    state_token = BaseStateToken(ident=token, cls=InheritedListSubState)
+    async with state_manager.modify_state(state_token) as root:
+        proxy = StateProxy(
+            root.get_substate(InheritedListSubState.get_full_name().split("."))
+        )
+
+    with pytest.raises(ImmutableStateError):
+        proxy.items.append(0)
+    async with proxy:
+        proxy.items.append(1)
+
+    assert emitted_deltas == [
+        (token, {InheritedListState.get_full_name(): {"items" + FIELD_MARKER: [1]}}),
+    ]
+    async with state_manager.modify_state(state_token) as root:
+        assert root.items == [1]  # pyright: ignore [reportAttributeAccessIssue]
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("proxy_cls", [StateProxy, ReadOnlyStateProxy])
 @pytest.mark.parametrize("state_cls", [RouterProxyState, RouterProxySubState])

@@ -6325,6 +6325,46 @@ def test_composite_var_dep_tracks_fields_in_every_state():
         state_cls._potentially_dirty_states.discard(consumer_name)
 
 
+def test_setstate_migrates_older_pickles():
+    """Older pickles kept backend vars in a dict of their own and the dirty sets."""
+
+    class LegacyPickleState(BaseState):
+        count: int = 0
+        _secret: str = ""
+
+    state = LegacyPickleState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state.__setstate__({
+        "count": 3,
+        "_backend_vars": {"_secret": "s"},
+        "dirty_vars": {"count"},
+        "dirty_substates": set(),
+    })
+
+    assert state.count == 3
+    assert state._secret == "s"
+    assert state.dirty_vars == set()
+    assert "_backend_vars" not in state.__dict__
+
+
+def test_substate_on_its_own_holds_inherited_vars():
+    """A substate instantiated without its parent stores the vars it inherits."""
+
+    class OrphanParent(BaseState):
+        value: int = 1
+
+        def bump(self):
+            self.value += 1
+
+    class OrphanChild(OrphanParent):
+        pass
+
+    child = OrphanChild(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert child.value == 1
+    child.bump()
+    assert child.value == 2
+    assert child.__dict__["value"] == 2
+
+
 def test_setstate_drops_the_legacy_router_entry():
     """Unpickling a pre-split state must not route `router` through the setter.
 
