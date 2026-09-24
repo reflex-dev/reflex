@@ -438,8 +438,12 @@ async def test_inherited_handler_runs_on_its_state(
 
     async with proxy:
         proxy.bump()
+    # A handler taken before entering runs on the state reloaded by entering.
+    bump = proxy.bump
+    async with proxy:
+        bump()
     async with state_manager.modify_state(state_token) as root:
-        assert root.count == 1  # pyright: ignore [reportAttributeAccessIssue]
+        assert root.count == 2  # pyright: ignore [reportAttributeAccessIssue]
         substate = root.get_substate(RedeclaringSubState.get_full_name().split("."))
         assert substate.count == 10  # pyright: ignore [reportAttributeAccessIssue]
 

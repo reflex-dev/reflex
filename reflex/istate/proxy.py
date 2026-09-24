@@ -98,6 +98,30 @@ def _is_ancestor(obj: Any, state: BaseState) -> bool:
     return False
 
 
+def _call_on_ancestor(
+    proxy: StateProxy, func: Callable, owner: type, /, *args: Any, **kwargs: Any
+) -> Any:
+    """Call an inherited event handler on the ancestor declaring it.
+
+    The ancestor is found when called, in the tree the proxy wraps then: entering
+    the proxy may have reloaded the tree since the handler was accessed.
+
+    Args:
+        proxy: The proxy the handler was accessed through.
+        func: The function of the handler.
+        owner: The class of the ancestor declaring the handler.
+        *args: The positional arguments of the call.
+        **kwargs: The keyword arguments of the call.
+
+    Returns:
+        The return value of the handler.
+    """
+    ancestor = proxy.__wrapped__.parent_state
+    while type(ancestor) is not owner:
+        ancestor = ancestor.parent_state
+    return func(type(proxy)(ancestor, parent_state_proxy=proxy), *args, **kwargs)
+
+
 class StateProxy(wrapt.ObjectProxy):
     """Proxy of a state instance to control mutability of vars for a background task.
 
@@ -329,9 +353,8 @@ class StateProxy(wrapt.ObjectProxy):
                 value = type(value)(value.__func__, self)
             elif _is_ancestor(value.__self__, self.__wrapped__):
                 # An inherited event handler runs on the ancestor declaring it.
-                value = type(value)(
-                    value.__func__,
-                    type(self)(value.__self__, parent_state_proxy=self),  # pyright: ignore[reportArgumentType]
+                value = functools.partial(
+                    _call_on_ancestor, self, value.__func__, type(value.__self__)
                 )
         return value
 
