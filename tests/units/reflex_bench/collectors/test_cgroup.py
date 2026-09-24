@@ -225,8 +225,23 @@ def test_wrap_for_the_user_manager():
     assert _unit(scope.wrap(["true"])) != unit
 
 
+@pytest.fixture
+def oom_policy(monkeypatch: pytest.MonkeyPatch) -> Callable[[bool], None]:
+    """Set whether the host's systemd accepts ``OOMPolicy=`` on scopes.
+
+    Returns:
+        A setter.
+    """
+
+    def set_supported(supported: bool) -> None:
+        monkeypatch.setattr(cgroup, "oom_policy_supported", lambda mode: supported)
+
+    return set_supported
+
+
 @posix_only
-def test_wrap_with_sudo_keeps_the_user_and_path():
+def test_wrap_with_sudo_keeps_the_user_and_path(oom_policy: Callable[[bool], None]):
+    oom_policy(True)
     scope = cgroup.CgroupScope(mode="sudo", limit_bytes=512 * 1024**2)
     argv = scope.wrap(["python", "-m", "reflex"], env={"PATH": "/venv/bin:/usr/bin"})
     assert argv == [
@@ -235,14 +250,50 @@ def test_wrap_with_sudo_keeps_the_user_and_path():
         "--setenv=PATH=/venv/bin:/usr/bin",
         "-p", "MemoryAccounting=yes", "-p", "CPUAccounting=yes",
         "-p", "MemoryMax=536870912", "-p", "MemorySwapMax=0",
+        "-p", "OOMPolicy=continue",
         "--", "python", "-m", "reflex",
     ]  # fmt: skip
 
 
-def test_wrap_can_allow_swap_under_a_limit():
+def test_wrap_leaves_oom_policy_out_where_systemd_lacks_it(
+    oom_policy: Callable[[bool], None],
+):
+    oom_policy(False)
+    argv = cgroup.CgroupScope(mode="user", limit_bytes=1000).wrap(["x"])
+    assert "MemoryMax=1000" in argv
+    assert not any(arg.startswith("OOMPolicy") for arg in argv)
+
+
+def test_wrap_can_allow_swap_under_a_limit(oom_policy: Callable[[bool], None]):
+    oom_policy(True)
     argv = cgroup.CgroupScope(mode="user", limit_bytes=1000, swap_max=None).wrap(["x"])
     assert "MemoryMax=1000" in argv
     assert not any(arg.startswith("MemorySwapMax") for arg in argv)
+
+
+@pytest.mark.parametrize(
+    ("result", "supported"),
+    [((True, ""), True), ((False, "Unknown assignment: OOMPolicy=continue"), False)],
+)
+def test_oom_policy_supported_tries_it(
+    monkeypatch: pytest.MonkeyPatch, result: tuple[bool, str], supported: bool
+):
+    cgroup.oom_policy_supported.cache_clear()
+    seen: list[Sequence[str]] = []
+
+    def run(argv: Sequence[str]) -> tuple[bool, str]:
+        seen.append(argv)
+        return result
+
+    monkeypatch.setattr(cgroup, "_run", run)
+    try:
+        assert cgroup.oom_policy_supported("user") is supported
+        assert cgroup.oom_policy_supported("user") is supported
+    finally:
+        cgroup.oom_policy_supported.cache_clear()
+    (argv,) = seen
+    assert argv[:3] == ["systemd-run", "--user", "--scope"]
+    assert argv[-4:] == ["-p", "OOMPolicy=continue", "--", "true"]
 
 
 @pytest.fixture

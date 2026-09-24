@@ -225,6 +225,24 @@ def probe() -> tuple[ScopeMode | None, str | None]:
     return None, "; ".join(reasons)
 
 
+@functools.cache
+def oom_policy_supported(mode: ScopeMode) -> bool:
+    """Check whether systemd accepts ``OOMPolicy=continue`` on scopes, by trying it.
+
+    With the default ``OOMPolicy=stop``, systemd 253 and later stops a whole scope
+    after an OOM kill in it, so ``memory.events`` is gone before anyone reads it.
+    Older versions reject the property on scopes and do not stop them.
+
+    Args:
+        mode: How scopes are started.
+
+    Returns:
+        Whether the property is accepted.
+    """
+    policy = (*_ACCOUNTING, "-p", "OOMPolicy=continue")
+    return _run([*_scope_argv(mode, None, policy, os.environ.get("PATH")), "true"])[0]
+
+
 def status() -> tuple[bool, str]:
     """Describe cgroup scope support for ``reflex-bench doctor``.
 
@@ -345,6 +363,9 @@ class CgroupScope:
             properties += ["-p", f"MemoryMax={self.limit_bytes}"]
             if self.swap_max is not None:
                 properties += ["-p", f"MemorySwapMax={self.swap_max}"]
+            # An OOM kill must leave the scope running so its counters stay readable.
+            if oom_policy_supported(self.mode):
+                properties += ["-p", "OOMPolicy=continue"]
         path = (os.environ if env is None else env).get("PATH")
         return [*_scope_argv(self.mode, self.unit, properties, path), *argv]
 
