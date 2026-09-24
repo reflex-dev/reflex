@@ -106,7 +106,7 @@ CALIBRATION_CLOSED_WINDOW = Window(1.0, 3.0)
 CALIBRATION_STEP_WINDOW = Window(1.0, 2.0)
 
 
-def _shape(handler: str, *, ordered: bool = True) -> EventShape:
+def bench_shape(handler: str, *, ordered: bool = True) -> EventShape:
     """Describe a ``BenchState`` handler of the playground.
 
     Args:
@@ -126,11 +126,11 @@ def _shape(handler: str, *, ordered: bool = True) -> EventShape:
 
 
 SHAPES = {
-    "simple": _shape("set_seq"),
-    "complex": _shape("set_seq_complex"),
-    "cross": _shape("set_seq_cross"),
+    "simple": bench_shape("set_seq"),
+    "complex": bench_shape("set_seq_complex"),
+    "cross": bench_shape("set_seq_cross"),
     # Background tasks take the state lock in whatever order they get to it.
-    "background": _shape("set_seq_background", ordered=False),
+    "background": bench_shape("set_seq_background", ordered=False),
     # SharedState fan-out (one event updating many sessions) and SharedState
     # contention (many sessions writing one shared state) need the playground's
     # SharedState surface (ENG-12609); nothing is registered for them yet.
@@ -426,7 +426,7 @@ def prepare_app(ctx: Context) -> None:
     ).check()
 
 
-def _checked(result: LoadResult) -> LoadResult:
+def checked_load(result: LoadResult) -> LoadResult:
     """Make sure a load result measures the server.
 
     Args:
@@ -616,7 +616,7 @@ class _Backend:
         """
         result, cpu_s = self.run(mode, rate, window)
         assert cpu_s is not None
-        return _checked(result), cpu_s
+        return checked_load(result), cpu_s
 
     def extra(self, result: LoadResult, **more: Any) -> dict[str, Any]:
         """Describe a sample: the load result, how CPU was read and the pinning.
@@ -629,7 +629,8 @@ class _Backend:
             The sample's extra data.
         """
         return {
-            **result.to_dict(),
+            **result.summary(),
+            "histogram": result.histogram,
             "cpu_method": self.cpu_method,
             "pinning": self.pinning,
             **more,
@@ -1016,7 +1017,7 @@ class Calibrate(_OnBackend):
             msg = f"{len(errors)} of {closed.sessions} sessions failed: {errors[0]}"
             raise LoadError(msg)
         opened, _ = backend.run("open", CALIBRATION_RATE, CALIBRATION_STEP_WINDOW)
-        _checked(opened)
+        checked_load(opened)
         assert opened.lag_s is not None
         if opened.unanswered:
             msg = (

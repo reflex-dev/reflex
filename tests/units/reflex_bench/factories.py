@@ -294,3 +294,54 @@ def make_load_result(**changes: Any) -> LoadResult:
         "reply_frame": None,
     }
     return LoadResult(**{**values, **changes})
+
+
+def fake_rollup(
+    pss_kb: int, anon_kb: int, file_kb: int, clean_kb: int, dirty_kb: int
+) -> str:
+    """Render a /proc/<pid>/smaps_rollup file, laid out like the kernel's.
+
+    Args:
+        pss_kb: The Pss line, in kB.
+        anon_kb: Pss_Anon and Anonymous.
+        file_kb: Pss_File.
+        clean_kb: Private_Clean.
+        dirty_kb: Private_Dirty and Pss_Dirty.
+
+    Returns:
+        The file content.
+    """
+    return (
+        "562e4b119000-7ffc9d511000 ---p 00000000 00:00 0                          [rollup]\n"
+        f"Rss:            {pss_kb * 3:8d} kB\n"
+        f"Pss:            {pss_kb:8d} kB\n"
+        f"Pss_Dirty:      {dirty_kb:8d} kB\n"
+        f"Pss_Anon:       {anon_kb:8d} kB\n"
+        f"Pss_File:       {file_kb:8d} kB\n"
+        "Pss_Shmem:             0 kB\n"
+        "Shared_Clean:       1500 kB\n"
+        "Shared_Dirty:          0 kB\n"
+        f"Private_Clean:  {clean_kb:8d} kB\n"
+        f"Private_Dirty:  {dirty_kb:8d} kB\n"
+        "Referenced:         1644 kB\n"
+        f"Anonymous:      {anon_kb:8d} kB\n"
+        "Swap:                  0 kB\n"
+        "SwapPss:               0 kB\n"
+    )
+
+
+def fake_proc(root: Path, pid: int, comm: str, rollup: str) -> None:
+    """Write a process's /proc files atomically, so a sampler never reads half a file.
+
+    Args:
+        root: The fake /proc.
+        pid: The process.
+        comm: Its command name.
+        rollup: Its smaps_rollup content.
+    """
+    directory = root / str(pid)
+    directory.mkdir(parents=True, exist_ok=True)
+    for name, content in (("comm", comm + "\n"), ("smaps_rollup", rollup)):
+        partial = directory / f".{name}.partial"
+        partial.write_text(content, encoding="utf-8")
+        partial.replace(directory / name)

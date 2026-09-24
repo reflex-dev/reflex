@@ -336,8 +336,8 @@ the event benchmarks do.
 | `memory.compile.peak` | `daily` | `command` compile, export | `reflex compile` or `reflex export --env prod` of the compiled playground | `peak_mem` |
 | `memory.idle` | `smoke` (memory), `daily` | `manager` | 5 s after `/ping` answers, the median of three PSS reads a second apart | `pss`, `pss_anon`, `pss_file` |
 | `memory.idle.allocator` | (`all`) | `allocator` mimalloc, arena2 | the same with `PYTHONMALLOC=mimalloc` or `MALLOC_ARENA_MAX=2` | the same |
-| `memory.per_session` | `daily` (`max_sessions=500`) | `manager`, `max_sessions` (1000) | hold 0, 100, 500 and 1000 idle sessions, fit PSS per session; disconnect; wait for the states to expire | `bytes_per_session`, `bytes_per_session_ci_hi`, `residual_after_disconnect`, `residual_after_expiry` |
-| `memory.leak` | `daily` (`events=50000`) | `manager`, `events` (100000) | a closed loop of 10 sessions while the tree's anonymous PSS is sampled | `bytes_per_event`, `bytes_per_event_ci_hi`, `growth` |
+| `memory.per_session` | `daily` (`max_sessions=500`) | `manager`, `max_sessions` (1000) | hold 0, 50, 100, 250, 500 and 1000 idle sessions, fit PSS per session; disconnect; wait for the states to expire | `bytes_per_session`, `bytes_per_session_ci_hi`, `residual_after_disconnect`, `residual_after_expiry` |
+| `memory.leak` | `daily` (`events=50000`) | `manager`, `events` (100000) | a closed loop of 10 sessions while the tree's anonymous PSS is sampled | `passed`, `bytes_per_event_ci_hi` |
 | `memory.boot_512mb` | `daily` (memory) | `manager` | compile, then boot and serve, under `MemoryMax=512M` with swap off | `passed`, `peak_compile`, `peak_boot`, `peak_serve` |
 | `memory.boot.min_limit` | (`all`) | `manager` memory | bisects `MemoryMax` from 64 to 1024 MiB in 32 MiB steps over boot and serve | `min_limit` |
 
@@ -345,7 +345,9 @@ the event benchmarks do.
   can start one (user systemd, or `sudo systemd-run` on CI), else from PSS
   sampled every 50 ms; steady-state values are the summed PSS of the server's
   process tree on every host, with the scope's `memory.current`, `anon` and
-  `file` in the extra data when there is one. `memory_method` in the dims
+  `file` in the extra data when a scope holds the running server (the compile
+  peak reads its scope after the command exited, so it records only whether
+  the peak was reset). `memory_method` in the dims
   (`cgroup` or `pss_sampling`) names the collector of the values, so cgroup and
   PSS numbers never share a series. The limit benchmarks need a scope and fail
   with `cgroup scopes are unavailable: <reason>` without one: nothing else can
@@ -367,26 +369,35 @@ the event benchmarks do.
   over the idle baseline. `baseline_bytes_per_session` in the extra data is the
   same sweep against the in-harness echo server: the floor of a Python
   `websockets` server, not of python-socketio (the harness does not depend on
-  python-socketio). The sweep's steps below `max_sessions` are 100 and 500.
+  python-socketio). The sweep's steps below `max_sessions` are 50, 100, 250
+  and 500, so the slope's t interval has at least three degrees of freedom;
+  each step costs about 7 s on the server and again on the echo server.
 - **Leak**: a 5 s closed-loop probe sizes the warmup (`warmup_events`, hidden,
   5000) and the window (`events`, with 10 % of room); the tree is sampled every
-  hundredth of the window, between 0.1 s and 1 s apart. The x axis is answered events
-  (`answered_per_second` of the load), the y axis the anonymous PSS: file-backed
-  pages do not leak. The sample fails with `LeakDetected` when the upper end of
-  the slope's 95 % interval exceeds `tolerance_bytes_per_event` (hidden, 100 B,
-  that is 100 MB per million events) *and* the second half of the window still
-  grows at more than half the first half's rate: heap warm-up flattens out, a
-  leak does not. One 1 MiB arena step in 50 000 events is about 30 B per event.
-  An unanswered event or a failed session fails the sample, since the event
-  count would be wrong. `timeline` in the extra data holds up to 500
-  `[events, anonymous PSS, largest process USS]` points.
+  hundredth of the window, between 0.1 s and 1 s apart. The x axis is the events
+  answered since the window started (`answered_per_second` of the load), the y
+  axis the anonymous PSS: file-backed pages do not leak. The sample fails with
+  `LeakDetected` when the upper end of the slope's 95 % interval exceeds
+  `tolerance_bytes_per_event` (hidden, 100 B, that is 100 MB per million
+  events) *and* each half of the window grows on its own (the lower end of its
+  slope's interval is above zero): heap warm-up flattens out and one allocator
+  step lifts one half only, a leak grows through both. One 1 MiB arena step in
+  50 000 events is about 30 B per event. An unanswered event or a failed
+  session fails the sample, since the event count would be wrong. `passed` is
+  the gate; the slope itself and the growth over the window are in the extra
+  data (`slope_bytes_per_event`, `growth_bytes`), since near zero they move by
+  hundreds of percent between identical runs. `timeline` in the extra data
+  holds up to 500 `[events, anonymous PSS, USS of the python processes]`
+  points.
 - **512 MiB**: the compile runs in one scope, the server boots and serves 5
   closed-loop sessions for 5 s in another, each with `MemoryMax=<limit_mb>M`
   (hidden, 512) and `MemorySwapMax=0`, and each scope is read before its tree
   stops. A phase that fails, or any `oom` or `oom_kill` in `memory.events`,
   fails the sample with `MemoryLimitExceeded` naming the phase, the counters,
-  the peak and the log tail. `memory.peak` cannot be reset before Linux 6.12, so
-  the serve peak includes the boot. The published 512 MiB number comes from an
+  the peak and the log tail. The peak is reset between boot and serve where
+  the kernel can (Linux 6.12 and later; `peak_reset` in the extra data says
+  so), else the serve peak includes the boot. The published 512 MiB number
+  comes from an
   amd64 reference profile (Fly's `shared-cpu` machines are amd64); arm64 runs
   are a trend.
 - **Allocators**: `--param allocator=mimalloc|arena2` also works on `memory.idle`,

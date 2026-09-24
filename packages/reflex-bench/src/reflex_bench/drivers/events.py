@@ -440,6 +440,18 @@ class LoadResult:
         """
         return dataclasses.asdict(self)
 
+    def summary(self) -> dict[str, Any]:
+        """Describe the result without its arrays.
+
+        Returns:
+            Every field but the histogram and the per-second counts.
+        """
+        return {
+            name: value
+            for name, value in self.to_dict().items()
+            if name not in {"histogram", "answered_per_second"}
+        }
+
 
 class GeneratorSaturated(RuntimeError):  # noqa: N818 - the name states the verdict
     """The generator fell behind, so its result would measure the generator, not the server."""
@@ -451,8 +463,7 @@ class GeneratorSaturated(RuntimeError):  # noqa: N818 - the name states the verd
             reason: What :meth:`LoadResult.check` found.
             result: The result.
         """
-        details = {k: v for k, v in result.to_dict().items() if k != "histogram"}
-        super().__init__(f"{reason}; result: {json.dumps(details)}")
+        super().__init__(f"{reason}; result: {json.dumps(result.summary())}")
         self.result = result
 
 

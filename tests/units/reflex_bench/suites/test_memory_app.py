@@ -21,7 +21,8 @@ from reflex_bench import cli
 from reflex_bench.collectors.cgroup import CgroupScope
 from reflex_bench.drivers.app_process import OWNER_ENV
 from reflex_bench.schema import load
-from reflex_bench.suites import memory
+from reflex_bench.store import HOME_ENV
+from reflex_bench.suites import events as events_suite
 from reflex_bench.suites.events import copy_tracked
 
 pytestmark = pytest.mark.skipif(
@@ -62,18 +63,19 @@ def run(tmp_path: Path, *args: str) -> list[dict[str, Any]]:
     return [dict(entry) for entry in load(out)["benchmarks"]]
 
 
-def assert_nothing_left() -> None:
-    """Check that no app, generator, hold or echo process and no scope unit is left."""
-    me = psutil.Process()
-    mine = {me.pid, *(parent.pid for parent in me.parents())}
+def assert_nothing_left(home: Path) -> None:
+    """Check that no app process of this run and no scope unit is left.
+
+    Args:
+        home: This run's bench home; the apps it started carry it in their
+            environment next to the owner token, other runs' apps do not.
+    """
     left = []
     for proc in psutil.process_iter(["pid", "cmdline"]):
-        if proc.pid in mine:
-            continue
         try:
-            command = " ".join(proc.info["cmdline"] or ())
-            if OWNER_ENV in proc.environ() or "reflex_bench" in command:
-                left.append(f"{proc.pid}: {command}")
+            environ = proc.environ()
+            if OWNER_ENV in environ and environ.get(HOME_ENV) == str(home):
+                left.append(f"{proc.pid}: {' '.join(proc.info['cmdline'] or ())}")
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
     assert left == []
@@ -128,7 +130,7 @@ def test_each_memory_benchmark_once(tmp_path: Path, home: Path):
     levels = found["memory.per_session"]["sample_extra"][0]["levels"]
     assert [level["sessions"] for level in levels] == [0, 25, 50]
     assert found["memory.idle"]["metrics"]["pss"]["samples"]["A"][0] > 50 * 1024**2
-    assert_nothing_left()
+    assert_nothing_left(home)
 
 
 def test_the_512mb_gate(tmp_path: Path, home: Path):
@@ -144,14 +146,14 @@ def test_the_512mb_gate(tmp_path: Path, home: Path):
     for phase in ("compile", "boot", "serve"):
         assert extra["phases"][phase]["oom_kill"] == 0
         assert 0 < extra["phases"][phase]["memory_peak_bytes"] <= 512 * 1024**2
-    assert_nothing_left()
+    assert_nothing_left(home)
 
 
 def test_a_deliberate_leak_fails_and_the_playground_passes(
     tmp_path: Path, home: Path, monkeypatch: pytest.MonkeyPatch
 ):
     leaky = tmp_path / "leaky"
-    copy_tracked(memory.PLAYGROUND, leaky)
+    copy_tracked(events_suite.PLAYGROUND, leaky)
     state = leaky / "playground" / "state.py"
     source = state.read_text(encoding="utf-8")
     marker = "    @rx.event\n    def bench_value(self):"
@@ -165,12 +167,12 @@ def test_a_deliberate_leak_fails_and_the_playground_passes(
         source.replace(marker, LEAK_HANDLER.lstrip("\n") + marker, 1), encoding="utf-8"
     )
 
-    def copy_leaky(target: Path) -> None:
+    def copy_leaky(source: Path, target: Path) -> None:
         shutil.rmtree(target, ignore_errors=True)
         shutil.copytree(leaky, target)
 
     with monkeypatch.context() as patch:
-        patch.setattr(memory, "copy_app", copy_leaky)
+        patch.setattr(events_suite, "copy_tracked", copy_leaky)
         (leak,) = run(
             tmp_path,
             "memory.leak",
@@ -181,7 +183,7 @@ def test_a_deliberate_leak_fails_and_the_playground_passes(
         )  # fmt: skip
     assert leak["status"] == "failed"
     assert leak["error"].startswith("LeakDetected: memory grows by ")
-    assert_nothing_left()
+    assert_nothing_left(home)
 
     (plain,) = run(
         tmp_path,
@@ -191,5 +193,5 @@ def test_a_deliberate_leak_fails_and_the_playground_passes(
         "--param", "events=3000",
     )  # fmt: skip
     assert plain["status"] == "ok", plain["error"]
-    assert len(plain["metrics"]["bytes_per_event"]["samples"]["A"]) == 3
-    assert_nothing_left()
+    assert plain["metrics"]["passed"]["samples"]["A"] == [1.0, 1.0, 1.0]
+    assert_nothing_left(home)

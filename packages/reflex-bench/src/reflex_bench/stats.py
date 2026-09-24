@@ -1052,29 +1052,26 @@ def t_quantile_975(df: float) -> float:
     return low_t
 
 
-def linear_slope_ci(
-    xs: Sequence[float], ys: Sequence[float], confidence: float = 0.95
-) -> SlopeFit:
-    """Fit a line by ordinary least squares, with a confidence interval of its slope.
+def linear_slope_ci(xs: Sequence[float], ys: Sequence[float]) -> SlopeFit:
+    """Fit a line by ordinary least squares, with the 95 % confidence interval of its slope.
 
     The interval is ``slope ± t * se``, with ``se`` the standard error of the
-    slope and ``t`` the two-sided Student quantile at ``n - 2`` degrees of
-    freedom, as ``scipy.stats.linregress`` and ``scipy.stats.t.ppf`` give it.
+    slope and ``t`` the two-sided 97.5 % Student quantile at ``n - 2`` degrees
+    of freedom, as ``scipy.stats.linregress`` and ``scipy.stats.t.ppf`` give it.
     Values without any spread in ``ys`` fit exactly: slope 0, a zero-width
     interval and ``r2`` 0.
 
     Args:
         xs: The x values.
         ys: The y values, paired with ``xs``.
-        confidence: The confidence level; only 0.95 is tabulated.
 
     Returns:
         The slope, intercept, interval, coefficient of determination and the
         number of points.
 
     Raises:
-        ValueError: On unpaired values, fewer than 3 points, x values that are
-            all equal or another confidence level.
+        ValueError: On unpaired values, fewer than 3 points or x values that
+            are all equal.
     """
     n = len(xs)
     if n != len(ys):
@@ -1082,9 +1079,6 @@ def linear_slope_ci(
         raise ValueError(msg)
     if n < 3:
         msg = f"a slope interval needs at least 3 points, got {n}"
-        raise ValueError(msg)
-    if not math.isclose(confidence, 0.95):
-        msg = f"only the 0.95 confidence level is tabulated, got {confidence}"
         raise ValueError(msg)
     mean_x = math.fsum(xs) / n
     mean_y = math.fsum(ys) / n

@@ -23,17 +23,14 @@ from reflex_bench.collectors.cgroup import CgroupReading
 from reflex_bench.collectors.pss import PssReading, PssResult
 from reflex_bench.context import Context
 from reflex_bench.drivers.app_process import AppStartError, CliResult
-from reflex_bench.drivers.events import LoadPlan, LoadResult
+from reflex_bench.drivers.events import Endpoint, LoadPlan, LoadResult
 from reflex_bench.scheduler import Planned, Policy, Scheduler, plan
 from reflex_bench.suites import events as events_suite
 from reflex_bench.suites import memory
 
-from tests.units.reflex_bench.collectors.test_pss import (  # noqa: F401 - tree is a fixture
-    _fake,
-    _rollup,
-    tree,
-)
 from tests.units.reflex_bench.factories import (
+    fake_proc,
+    fake_rollup,
     make_context,
     make_load_result,
     make_subject,
@@ -120,9 +117,9 @@ def test_declarations():
 @pytest.mark.parametrize(
     ("largest", "counts"),
     [
-        (1000, (0, 100, 500, 1000)),
-        (500, (0, 100, 500)),
-        (200, (0, 100, 200)),
+        (1000, (0, 50, 100, 250, 500, 1000)),
+        (500, (0, 50, 100, 250, 500)),
+        (200, (0, 50, 100, 200)),
         # Three counts at least, so the fit has an interval.
         (50, (0, 25, 50)),
         (2, (0, 1, 2)),
@@ -293,16 +290,23 @@ def fakes(monkeypatch: pytest.MonkeyPatch) -> Fakes:
                 msg = f"cgroup scopes are unavailable: {state.scope_reason}"
                 raise RuntimeError(msg)
             self.limit_bytes = limit_bytes
+            self.reset = False
             state.scopes.append((limit_bytes, swap_max))
 
         @staticmethod
         def available() -> str | None:
             return state.scope_reason
 
+        def reset_peak(self) -> None:
+            log.append("reset peak")
+            self.reset = True
+
         def read(self) -> CgroupReading:
             phase = next(phases) if self.limit_bytes is not None else "unlimited"
             log.append(f"read {phase}")
-            return reading(oom_kill=int(phase == state.oom_kill_at))
+            return reading(
+                oom_kill=int(phase == state.oom_kill_at), peak_reset=self.reset
+            )
 
     def run_cli(python, args, *, cwd, env, timeout, scope=None, phases=False, sample_memory=False):  # fmt: skip
         log.append(f"run_cli {args[0]}")
@@ -380,8 +384,8 @@ def fakes(monkeypatch: pytest.MonkeyPatch) -> Fakes:
             log.append("load stop")
 
     class FakeHold:
-        def __init__(self, url: str, count: int):
-            self.pid = ECHO_PID if url == "http://echo" else APP_PID
+        def __init__(self, endpoint: Endpoint, count: int):
+            self.pid = ECHO_PID if endpoint.backend_url == "http://echo" else APP_PID
             self.count = count
             self.open = False
 
@@ -411,17 +415,14 @@ def fakes(monkeypatch: pytest.MonkeyPatch) -> Fakes:
 
     monkeypatch.setattr(memory, "CgroupScope", FakeScope)
     monkeypatch.setattr(memory, "run_cli", run_cli)
+    # setup_cache compiles through the events suite's prepare_app.
+    monkeypatch.setattr(events_suite, "run_cli", run_cli)
     monkeypatch.setattr(memory, "AppProcess", FakeApp)
     monkeypatch.setattr(memory, "LoadRunner", FakeRunner)
-    monkeypatch.setattr(
-        memory,
-        "hold_sessions",
-        lambda url, count, *, reflex_version: FakeHold(url, count),
-    )
+    monkeypatch.setattr(memory, "hold_sessions", FakeHold)
     monkeypatch.setattr(memory, "EchoProcess", FakeEcho)
     monkeypatch.setattr(memory, "tree_pss", state.tree_pss)
-    monkeypatch.setattr(memory, "largest_uss", lambda pid: 60 * MIB)
-    monkeypatch.setattr(memory, "copy_app", lambda target: None)
+    monkeypatch.setattr(events_suite, "copy_tracked", lambda source, target: None)
     monkeypatch.setattr(memory, "SETTLE_S", 0.0)
     monkeypatch.setattr(memory, "READ_INTERVAL_S", 0.0)
     monkeypatch.setattr(memory, "EXPIRY_MARGIN_S", 0.0)
@@ -454,15 +455,8 @@ def test_compile_peak_with_a_scope_reads_the_cgroup(tmp_path: Path, fakes: Fakes
     assert entry["dims"] == {"memory_method": "cgroup"}
     assert entry["metrics"]["peak_mem"]["samples"]["A"] == [300 * MIB]
     (extra,) = entry["sample_extra"]
-    assert extra == {
-        "memory_method": "cgroup",
-        "returncode": 0,
-        "memory_current_bytes": 200 * MIB,
-        "anon_bytes": 150 * MIB,
-        "file_bytes": 40 * MIB,
-        "memory_peak_bytes": 300 * MIB,
-        "peak_reset": False,
-    }
+    # The scope is read after the command exited, so only the peak is data.
+    assert extra == {"memory_method": "cgroup", "returncode": 0, "peak_reset": False}
     # setup_cache compiled once, then the sample exported with no limit.
     assert fakes.log == ["run_cli compile", "run_cli export", "read unlimited"]
     assert fakes.scopes == [(None, 0)]
@@ -496,7 +490,6 @@ def test_idle_reads_the_settled_tree(
     assert extra["memory_method"] == "pss_sampling"
     assert extra["uss_bytes"] == {"python": 140 * MIB}
     assert extra["processes"] == 4
-    assert extra["worker_uss_bytes"] == 60 * MIB
     assert ("memory_current_bytes" in extra) is (scope_reason is None)
     (env,) = fakes.envs
     assert env["REFLEX_STATE_MANAGER_MODE"] == "disk"
@@ -552,13 +545,13 @@ def test_settled_pss_refuses_a_gone_tree(monkeypatch: pytest.MonkeyPatch):
 def test_idle_reads_a_real_tree_from_proc(
     tmp_path: Path,
     fakes: Fakes,
-    tree: tuple[int, int],  # noqa: F811
+    tree: tuple[int, int],
     monkeypatch: pytest.MonkeyPatch,
 ):
     parent, child = tree
     proc = tmp_path / "proc"
-    _fake(proc, parent, "python", _rollup(50_000, 45_000, 5_000, 200, 44_800))
-    _fake(proc, child, "python", _rollup(90_000, 75_000, 15_000, 8_000, 73_000))
+    fake_proc(proc, parent, "python", fake_rollup(50_000, 45_000, 5_000, 200, 44_800))
+    fake_proc(proc, child, "python", fake_rollup(90_000, 75_000, 15_000, 8_000, 73_000))
     monkeypatch.setattr(
         memory, "tree_pss", functools.partial(pss.tree_pss, proc_root=proc)
     )
@@ -588,34 +581,32 @@ def test_per_session_fits_the_sweep(tmp_path: Path, fakes: Fakes):
     assert metrics["residual_after_disconnect"]["samples"]["A"] == [500 * PER_SESSION]
     assert metrics["residual_after_expiry"]["samples"]["A"] == [500 * PER_SESSION]
     (extra,) = entry["sample_extra"]
-    assert [level["sessions"] for level in extra["levels"]] == [0, 100, 500]
+    counts = [0, 50, 100, 250, 500]
+    assert [level["sessions"] for level in extra["levels"]] == counts
     assert extra["r2"] == pytest.approx(1.0)
     assert extra["baseline_bytes_per_session"] == pytest.approx(ECHO_PER_SESSION)
-    assert [level["sessions"] for level in extra["baseline_levels"]] == [0, 100, 500]
-    assert extra["session_errors"] == []
+    assert [level["sessions"] for level in extra["baseline_levels"]] == counts
+    assert "session_errors" not in extra
     assert extra["expiry_s"] == 1
     (env,) = fakes.envs
     assert env["REFLEX_REDIS_TOKEN_EXPIRATION"] == "1"
     # Monotone holds, closed before the residual; the echo floor meanwhile.
+    holds = ["hold 50", "hold 50", "hold 150", "hold 250"]
+    closes = ["close 50", "close 50", "close 150", "close 250"]
+    kills = ["kill hold 250", "kill hold 150", "kill hold 50", "kill hold 50"]
     assert fakes.log == [
         "run_cli compile",
         "app start",
-        "hold 100",
-        "hold 400",
-        "close 100",
-        "close 400",
+        *holds,
+        *closes,
         "echo start",
-        "hold 100",
-        "hold 400",
-        "close 100",
-        "close 400",
+        *holds,
+        *closes,
         "echo stop",
         # conclude: everything, newest first.
-        "kill hold 400",
-        "kill hold 100",
+        *kills,
         "echo stop",
-        "kill hold 400",
-        "kill hold 100",
+        *kills,
         "app stop",
     ]
 
@@ -638,8 +629,8 @@ def test_conclude_stops_the_holds_and_the_server_after_a_failure(
     def failing(pid: int) -> PssReading:
         nonlocal reads
         reads += 1
-        # Three reads per level: the fifth level read is the 500 sessions'.
-        if reads > 7:
+        # Three reads per level: the fourth level's reads are the 250 sessions'.
+        if reads > 10:
             msg = "the process tree of pid 1001 is gone"
             raise RuntimeError(msg)
         return fakes.tree_pss(pid)
@@ -648,7 +639,12 @@ def test_conclude_stops_the_holds_and_the_server_after_a_failure(
     entry = run(tmp_path, "memory.per_session", max_sessions=500)
     assert entry["status"] == "failed"
     assert "is gone" in entry["error"]
-    assert fakes.log[-3:] == ["kill hold 400", "kill hold 100", "app stop"]
+    assert fakes.log[-4:] == [
+        "kill hold 150",
+        "kill hold 50",
+        "kill hold 50",
+        "app stop",
+    ]
 
 
 def leak_result(rate: float) -> Callable[[LoadPlan], LoadResult]:
@@ -662,7 +658,7 @@ def leak_result(rate: float) -> Callable[[LoadPlan], LoadResult]:
     """
 
     def build(plan: LoadPlan) -> LoadResult:
-        seconds = math.ceil(plan.warmup_s + plan.duration_s)
+        seconds = math.ceil(plan.duration_s)
         answered = round(rate * plan.duration_s)
         return make_load_result(
             mode="closed", offered_rate=None, response_s=None, lag_s=None,
@@ -696,19 +692,22 @@ def test_a_flat_server_passes_the_leak_gate(tmp_path: Path, fakes: Fakes):
     fakes.answer_load = True
     entry = run(tmp_path, "memory.leak", events=1000, warmup_events=0)
     assert entry["status"] == "ok", entry["error"]
-    assert entry["metrics"]["bytes_per_event"]["samples"]["A"] == [0.0]
-    assert entry["metrics"]["growth"]["samples"]["A"] == [0.0]
+    assert entry["metrics"]["passed"]["samples"]["A"] == [1.0]
+    assert entry["metrics"]["bytes_per_event_ci_hi"]["samples"]["A"] == [0.0]
+    assert "bytes_per_event" not in entry["metrics"]
     (extra,) = entry["sample_extra"]
     assert extra["memory_method"] == "pss_sampling"
     assert extra["samples"] >= 10
     assert extra["unanswered"] == 0
     assert extra["events_measured"] == 2000
-    assert extra["warmup_events"] == 0
+    assert extra["warmup_s"] == 0
+    assert extra["slope_bytes_per_event"] == pytest.approx(0.0)
+    assert extra["growth_bytes"] == pytest.approx(0.0)
     assert "histogram" not in extra["generator"]
     assert "answered_per_second" not in extra["generator"]
-    # [events, anonymous PSS, worker USS], events increasing over the window.
+    # [events, anonymous PSS, USS of the python processes], events increasing.
     timeline = extra["timeline"]
-    assert timeline[0][1:] == [int(150 * MIB * 0.85), 60 * MIB]
+    assert timeline[0][1:] == [int(150 * MIB * 0.85), 150 * MIB - 10 * MIB]
     assert [point[0] for point in timeline] == sorted(point[0] for point in timeline)
     assert 0 <= timeline[0][0] < timeline[-1][0] <= 2000
 
@@ -722,22 +721,26 @@ def test_unanswered_events_fail_the_leak_sample(tmp_path: Path, fakes: Fakes):
 
 
 def timeline(
-    anon: Callable[[float], float], events: int = 50_000, samples: int = 100
+    anon: Callable[[float], float],
+    events: int = 50_000,
+    samples: int = 100,
+    noise: float = 8192,
 ) -> tuple[list[float], list[float]]:
-    """Build a timeline of anonymous memory against events, with a little noise.
+    """Build a timeline of anonymous memory against events, with deterministic noise.
 
     Args:
         anon: Bytes at a given event count.
         events: The events of the window.
         samples: The number of samples.
+        noise: The amplitude of the noise, in bytes; well below one arena by
+            default.
 
     Returns:
         The events and the bytes of each sample.
     """
     xs = [events * index / (samples - 1) for index in range(samples)]
-    # Deterministic noise of +-8 kB, well below one arena.
     ys = [
-        60 * MIB + anon(x) + 8192 * math.sin(3.1 * index) for index, x in enumerate(xs)
+        60 * MIB + anon(x) + noise * math.sin(3.1 * index) for index, x in enumerate(xs)
     ]
     return xs, ys
 
@@ -746,7 +749,7 @@ def test_a_heap_that_warms_up_and_flattens_is_no_leak():
     # 12 MiB in the first 20 % of the window, then flat.
     leak = memory.fit_leak(*timeline(lambda x: 12 * MIB * min(x / 10_000, 1.0)))
     assert leak.fit.ci_hi > 100
-    assert leak.second.slope < memory.SECOND_HALF_SHARE * leak.first.slope
+    assert leak.first.ci_lo > 0 > leak.second.ci_lo
     assert leak.verdict(100) is None
 
 
@@ -763,6 +766,30 @@ def test_one_arena_step_in_a_long_window_is_no_leak():
     leak = memory.fit_leak(*timeline(lambda x: MIB * (x > 25_000)))
     assert 20 < leak.fit.slope < 40
     assert leak.fit.ci_hi < 100
+    assert leak.verdict(100) is None
+
+
+@pytest.mark.parametrize("at", [0.5, 0.75])
+def test_one_allocator_step_past_the_tolerance_is_no_leak(at: float):
+    # A 4 MiB step, 80 B per event over the window, with 20 kB of noise: the
+    # whole window's interval passes the tolerance, but only the half with the
+    # step grows.
+    leak = memory.fit_leak(
+        *timeline(lambda x: 4 * MIB * (x > at * 50_000), samples=95, noise=20_000)
+    )
+    assert leak.fit.ci_hi > 100
+    assert leak.verdict(100) is None
+
+
+def test_a_slow_steady_ramp_in_noise_is_a_leak():
+    leak = memory.fit_leak(*timeline(lambda x: 200 * x, samples=95, noise=20_000))
+    verdict = leak.verdict(100)
+    assert verdict is not None
+    assert "memory grows by 20" in verdict
+
+
+def test_plain_noise_is_no_leak():
+    leak = memory.fit_leak(*timeline(lambda x: 0.0, samples=95, noise=20_000))
     assert leak.verdict(100) is None
 
 
@@ -816,6 +843,9 @@ def test_the_512mb_gate_passes_with_three_peaks(tmp_path: Path, fakes: Fakes):
     assert extra["limit_mb"] == 512
     assert set(extra["phases"]) == {"compile", "boot", "serve"}
     assert all(phase["oom_kill"] == 0 for phase in extra["phases"].values())
+    # The peak was reset between the boot and the serve.
+    assert extra["peak_reset"] is True
+    assert extra["phases"]["boot"]["memory_peak_bytes"] == 300 * MIB
     # Every limited scope is 512 MiB with swap off.
     assert fakes.scopes == [(512 * MIB, 0), (512 * MIB, 0)]
     # Each scope is read before its tree stops.
@@ -825,6 +855,7 @@ def test_the_512mb_gate_passes_with_three_peaks(tmp_path: Path, fakes: Fakes):
         "read compile",
         "app start",
         "read boot",
+        "reset peak",
         "load 5x5s",
         "read serve",
         "app stop",
@@ -946,7 +977,10 @@ def test_started_runs_every_stop_and_raises_after():
     assert stopped == ["hold", "app"]
 
 
-def test_largest_uss_is_the_worker(tree: tuple[int, int]):  # noqa: F811
-    parent, _ = tree
-    assert memory.largest_uss(parent) > 0
-    assert memory.largest_uss(2**22 + 7) == 0
+def test_largest_uss_is_the_command_with_the_most():
+    reading = pss_reading(100 * MIB)
+    reading = dataclasses.replace(
+        reading, uss_bytes={"python": 70 * MIB, "bun": 5 * MIB}
+    )
+    assert memory.largest_uss(reading) == 70 * MIB
+    assert memory.largest_uss(PssReading(0, 0, 0, {}, 0)) == 0

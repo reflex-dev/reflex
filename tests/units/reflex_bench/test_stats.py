@@ -613,8 +613,6 @@ def test_linear_slope_ci_needs_three_points_and_spread_in_x():
         stats.linear_slope_ci([1.0, 2.0, 3.0], [1.0, 2.0])
     with pytest.raises(ValueError, match="x values are all equal"):
         stats.linear_slope_ci([4.0, 4.0, 4.0], [1.0, 2.0, 3.0])
-    with pytest.raises(ValueError, match=r"only the 0\.95 confidence level"):
-        stats.linear_slope_ci([1.0, 2.0, 3.0], [1.0, 2.0, 3.0], confidence=0.99)
 
 
 @pytest.mark.parametrize(

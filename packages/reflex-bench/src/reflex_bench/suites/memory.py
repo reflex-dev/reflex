@@ -24,8 +24,7 @@ enforced by a scope, so the limit ids fail without one.
 
 ``memory.compile.peak`` is the scorecard's compile peak, not the peak that a
 timed compile sample (``lifecycle.compile``) records as a by-product at
-``--loglevel debug``: it runs in its own untimed pass at the default log level,
-reads ``anon`` and ``file`` next to the peak so a page cache rise is visible,
+``--loglevel debug``: it runs in its own untimed pass at the default log level
 and covers ``export``. Peaks per phase of one command (Python, bun, vite) would
 need ``memory.peak`` resets timed by live ``[timing]`` parsing and Linux 6.12,
 so there are none.
@@ -34,7 +33,9 @@ so there are none.
 set to ``expiry_s`` (120 s by default): no state manager frees a state when its
 session disconnects, so the residual drops only after the expiration, and only
 where the manager expires states (reflex 0.9 memory and disk managers, the
-0.8 disk manager; the 0.8 memory manager keeps every state).
+0.8 disk manager; the 0.8 memory manager keeps every state). Its sweep holds
+0, 50, 100, 250 and 500 sessions (and 1000 in ``all``), so the slope's t
+interval has at least three degrees of freedom.
 """
 
 from __future__ import annotations
@@ -51,7 +52,6 @@ from collections.abc import Callable, Iterable, Sequence
 from pathlib import Path
 from typing import Any, TypeVar
 
-import psutil
 from packaging.version import Version
 
 from reflex_bench.collectors import SamplingLoop
@@ -68,7 +68,7 @@ from reflex_bench.drivers.app_process import (
 )
 from reflex_bench.drivers.echo_server import EchoProcess
 from reflex_bench.drivers.events import (
-    EventShape,
+    Endpoint,
     LoadError,
     LoadPlan,
     LoadResult,
@@ -76,7 +76,6 @@ from reflex_bench.drivers.events import (
     SessionHold,
     hold_sessions,
     raise_fd_limit,
-    seq_payload,
 )
 from reflex_bench.registry import Metric, SampleResult, benchmark
 from reflex_bench.report.format import format_value
@@ -84,10 +83,11 @@ from reflex_bench.stats import SlopeFit, linear_slope_ci
 from reflex_bench.suites.events import (
     BENCH_STATE,
     MANAGERS,
-    PLAYGROUND,
     SEQ_VAR,
     app_env,
-    copy_tracked,
+    bench_shape,
+    checked_load,
+    prepare_app,
 )
 from reflex_bench.suites.events import server_env as manager_env
 
@@ -103,7 +103,7 @@ READS = 3
 READ_INTERVAL_S = 1.0
 SETTLE_S = 5.0
 # Session counts of a sweep below its largest one.
-SWEEP_STEPS = (100, 500)
+SWEEP_STEPS = (50, 100, 250, 500)
 EXPIRY_MARGIN_S = 10.0
 # A leak window is sized from a closed-loop probe, with room for a slower run.
 PROBE_S = 5.0
@@ -112,8 +112,6 @@ LEAK_SAMPLES = 100
 MIN_HALF_SAMPLES = 3
 GROWTH_SAMPLES = 5
 TIMELINE_POINTS = 500
-# A leak keeps its slope in the second half; heap warm-up flattens out.
-SECOND_HALF_SHARE = 0.5
 BOOT_TIMEOUT_S = 60.0
 LIMIT_COMPILE_TIMEOUT_S = 240.0
 SERVE_SESSIONS = 5
@@ -191,21 +189,6 @@ class _Started:
         with contextlib.ExitStack() as stack:
             for stop in stops:
                 stack.callback(stop)
-
-
-def copy_app(target: Path) -> None:
-    """Copy the playground's tracked files into a directory, replacing it.
-
-    Args:
-        target: Where the app goes.
-
-    Raises:
-        RuntimeError: Outside a reflex checkout, where the playground is missing.
-    """
-    if not PLAYGROUND.is_dir():
-        msg = f"the playground app is missing: {PLAYGROUND}"
-        raise RuntimeError(msg)
-    copy_tracked(PLAYGROUND, target)
 
 
 def app_dir(ctx: Context) -> Path:
@@ -387,30 +370,20 @@ def settled_pss(pid: int) -> PssReading:
     )
 
 
-def largest_uss(pid: int) -> int:
-    """Find the unique memory of the biggest process of a tree: the server's worker.
+def largest_uss(reading: PssReading) -> int:
+    """Find the unique memory of the command holding the most: the server's python processes.
 
     Args:
-        pid: The root of the tree.
+        reading: The tree's memory.
 
     Returns:
-        The largest USS in bytes; 0 when no process could be read.
+        The largest USS summed per command name, in bytes.
     """
-    try:
-        root = psutil.Process(pid)
-        procs = [root, *root.children(recursive=True)]
-    except psutil.NoSuchProcess:
-        return 0
-    largest = 0
-    for proc in procs:
-        # A root-owned sudo of the sudo scope mode cannot be read.
-        with contextlib.suppress(psutil.Error):
-            largest = max(largest, proc.memory_full_info().uss)
-    return largest
+    return max(reading.uss_bytes.values(), default=0)
 
 
 def cgroup_extra(reading: CgroupReading) -> dict[str, int]:
-    """Describe what a scope held at the end of a sample.
+    """Describe what a scope holds while its server runs.
 
     Args:
         reading: The scope's counters.
@@ -426,23 +399,6 @@ def cgroup_extra(reading: CgroupReading) -> dict[str, int]:
     }
 
 
-def bench_shape(handler: str) -> EventShape:
-    """Describe a ``BenchState`` handler of the playground that echoes ``seq``.
-
-    Args:
-        handler: The handler's name.
-
-    Returns:
-        The event shape.
-    """
-    return EventShape(
-        name=f"{BENCH_STATE}.{handler}",
-        payload=seq_payload,
-        delta_key=BENCH_STATE,
-        seq_var=SEQ_VAR,
-    )
-
-
 def sessions_sweep(largest: int) -> tuple[int, ...]:
     """Choose the session counts of a sweep.
 
@@ -450,8 +406,9 @@ def sessions_sweep(largest: int) -> tuple[int, ...]:
         largest: The last count.
 
     Returns:
-        0, the steps 100 and 500 below ``largest``, and ``largest``; with half
-        of ``largest`` added when fewer than three counts are left to fit.
+        0, the steps 50, 100, 250 and 500 below ``largest``, and ``largest``;
+        with half of ``largest`` added when fewer than three counts are left
+        to fit.
 
     Raises:
         ValueError: When ``largest`` is below 2.
@@ -502,20 +459,15 @@ class _Sweep:
 
 
 def sweep_sessions(
-    url: str,
-    pid: int,
-    counts: Sequence[int],
-    started: _Started,
-    reflex_version: str | None,
+    endpoint: Endpoint, pid: int, counts: Sequence[int], started: _Started
 ) -> _Sweep:
     """Hold more and more sessions against a server and read its settled PSS at each count.
 
     Args:
-        url: The server's URL.
+        endpoint: Where the sessions connect.
         pid: The root of the server's process tree.
         counts: The session counts, increasing from 0.
         started: Stops the holds in ``conclude``.
-        reflex_version: The subject's reflex version.
 
     Returns:
         The levels and the holds, still open.
@@ -528,7 +480,7 @@ def sweep_sessions(
         if count > held:
             if not holds:
                 first_hold = time.monotonic()
-            hold = hold_sessions(url, count - held, reflex_version=reflex_version)
+            hold = hold_sessions(endpoint, count - held)
             started.add(hold.kill)
             holds.append(hold)
             hold.ready()
@@ -546,12 +498,12 @@ def sweep_sessions(
 
 
 def events_at(per_second: Sequence[int], elapsed: Iterable[float]) -> list[float]:
-    """Count the events answered by given times since the start of a load.
+    """Count the events answered by given times since the start of a window.
 
     Args:
-        per_second: Answers per second since the start, as
+        per_second: Answers per second of the window, as
             :attr:`~reflex_bench.drivers.events.LoadResult.answered_per_second`.
-        elapsed: Seconds since the start.
+        elapsed: Seconds since the window started.
 
     Returns:
         The answered events at each time, linear within a second.
@@ -594,12 +546,14 @@ class LeakFit:
 
         Returns:
             Why it leaks: the interval's upper end is past the tolerance *and*
-            the second half still grows at more than half the first half's
-            rate (heap warm-up flattens out, a leak does not); else ``None``.
+            each half grows on its own (its interval is above zero). Heap
+            warm-up flattens out and an allocator step lifts one half only; a
+            leak grows through both. Else ``None``.
         """
         if not (
             self.fit.ci_hi > tolerance
-            and self.second.slope > SECOND_HALF_SHARE * self.first.slope
+            and self.first.ci_lo > 0
+            and self.second.ci_lo > 0
         ):
             return None
         return (
@@ -654,8 +608,8 @@ def thin(points: Sequence[_T], limit: int) -> list[_T]:
     return [points[round(index * step)] for index in range(limit)]
 
 
-def checked_load(result: LoadResult) -> LoadResult:
-    """Make sure the events of a load were all answered, so they can be counted.
+def complete_load(result: LoadResult) -> LoadResult:
+    """Make sure a load measures the server and every event of it was answered.
 
     Args:
         result: The result.
@@ -664,34 +618,13 @@ def checked_load(result: LoadResult) -> LoadResult:
         The result.
 
     Raises:
-        LoadError: On failed sessions, unanswered events or no answer at all.
+        LoadError: On unanswered events, whose count would be wrong.
     """
-    if errors := result.session_errors:
-        msg = f"{len(errors)} of {result.sessions} sessions failed: {errors[0]}"
-        raise LoadError(msg)
+    checked_load(result)
     if result.unanswered:
         msg = f"{result.unanswered} of {result.sent} events were not answered, so the event count is wrong"
         raise LoadError(msg)
-    if not result.answered:
-        msg = "the server answered no event"
-        raise LoadError(msg)
     return result
-
-
-def generator_summary(result: LoadResult) -> dict[str, Any]:
-    """Describe a load for a sample's extra data, without its arrays.
-
-    Args:
-        result: The result.
-
-    Returns:
-        Every field but the histogram and the per-second counts.
-    """
-    return {
-        name: value
-        for name, value in result.to_dict().items()
-        if name not in {"histogram", "answered_per_second"}
-    }
 
 
 def read_or_none(scope: CgroupScope) -> CgroupReading | None:
@@ -785,7 +718,8 @@ def boot_and_serve(
     """Boot the server under a limit and serve a short closed-loop load, in one scope.
 
     The scope is read after the boot and after the load, before the server
-    stops; ``memory.peak`` cannot be reset before Linux 6.12, so the serve
+    stops. The peak is reset between the two where the kernel can (Linux 6.12
+    and later; ``peak_reset`` in the serve reading says so); elsewhere the serve
     phase's peak covers the boot too.
 
     Args:
@@ -828,9 +762,9 @@ def boot_and_serve(
             )
             raise error from exc
         boot = limit_check("boot", limit_mb, read_or_none(scope), None, app.logs())
+        scope.reset_peak()
         plan = LoadPlan(
-            backend_url=app.backend_url,
-            reflex_version=ctx.subject.reflex_version,
+            endpoint=Endpoint(app.backend_url),
             shape=bench_shape("set_seq"),
             sessions=SERVE_SESSIONS,
             mode="closed",
@@ -850,12 +784,11 @@ def boot_and_serve(
         problem = None
         if not app.is_running():
             problem = "the server exited"
-        elif load.session_errors:
-            problem = (
-                f"{len(load.session_errors)} sessions failed: {load.session_errors[0]}"
-            )
-        elif load.unanswered or not load.answered:
-            problem = f"{load.unanswered} of {load.sent} events were not answered"
+        else:
+            try:
+                complete_load(load)
+            except LoadError as exc:
+                problem = str(exc)
         serve = limit_check("serve", limit_mb, serve, problem, app.logs())
     finally:
         app.stop()
@@ -887,15 +820,7 @@ class _Playground:
         Args:
             ctx: The benchmark context.
         """
-        app = app_dir(ctx)
-        copy_app(app)
-        run_cli(
-            ctx.subject.python,
-            ["compile"],
-            cwd=app,
-            env=app_env(ctx),
-            timeout=COMPILE_TIMEOUT_S,
-        ).check()
+        prepare_app(ctx)
 
     def setup(self, ctx: Context) -> None:
         """Record the memory method, and an allocator variant, in the dims.
@@ -967,8 +892,8 @@ class CompilePeak(_Playground):
             ctx: The benchmark context.
 
         Returns:
-            The peak, with the end state of the scope or the USS per command at
-            the sampled peak.
+            The peak, with whether the scope's peak was reset or the USS per
+            command at the sampled peak.
         """
         args = ["compile"]
         if ctx.params["command"] == "export":
@@ -995,9 +920,7 @@ class CompilePeak(_Playground):
         }
         if result.cgroup is not None:
             peak = result.cgroup.memory_peak_bytes
-            extra.update(
-                cgroup_extra(result.cgroup), peak_reset=result.cgroup.peak_reset
-            )
+            extra["peak_reset"] = result.cgroup.peak_reset
         else:
             assert result.pss is not None
             peak = result.pss.peak_bytes
@@ -1048,7 +971,6 @@ class Idle(_Playground):
             "memory_method": PSS_METHOD,
             "uss_bytes": reading.uss_bytes,
             "processes": reading.processes,
-            "worker_uss_bytes": largest_uss(app.pid),
         }
         if scope is not None:
             extra.update(cgroup_extra(scope.read()))
@@ -1098,10 +1020,10 @@ benchmark(
     },
     timeout=600,
     setup_timeout=SETUP_TIMEOUT_S,
-    estimate=155,
+    estimate=185,
 )
 class PerSession(_Playground):
-    """Bytes per connected session over a sweep of held sessions (0, 100, 500 and 1000), and the residual after disconnect and after expiry."""
+    """Bytes per connected session over a sweep of held sessions (0, 50, 100, 250, 500 and 1000), and the residual after disconnect and after expiry."""
 
     def sample(self, ctx: Context) -> SampleResult:
         """Sweep held sessions, disconnect them, wait for their expiry; the echo server's floor meanwhile.
@@ -1122,14 +1044,12 @@ class PerSession(_Playground):
         assert started is not None
         counts = sessions_sweep(int(ctx.params["max_sessions"]))
         expiry_s = float(ctx.params["expiry_s"])
-        version = ctx.subject.reflex_version
         raise_fd_limit(counts[-1])
         scope = new_scope()
         env = server_env(ctx, REFLEX_REDIS_TOKEN_EXPIRATION=f"{expiry_s:g}")
         app = start_server(ctx, started, env, scope=scope)
-        sweep = sweep_sessions(app.backend_url, app.pid, counts, started, version)
-        errors = sweep.close()
-        if errors:
+        sweep = sweep_sessions(Endpoint(app.backend_url), app.pid, counts, started)
+        if errors := sweep.close():
             msg = f"{len(errors)} sessions failed while held: {errors[0]}"
             raise LoadError(msg)
         time.sleep(SETTLE_S)
@@ -1146,7 +1066,7 @@ class PerSession(_Playground):
         echo = EchoProcess(delta_key=BENCH_STATE, seq_var=SEQ_VAR)
         started.add(echo.stop)
         echo_url = echo.start()
-        floor = sweep_sessions(echo_url, echo.pid, counts, started, version)
+        floor = sweep_sessions(Endpoint(echo_url), echo.pid, counts, started)
         if errors := floor.close():
             msg = f"{len(errors)} sessions failed while held by the echo server: {errors[0]}"
             raise LoadError(msg)
@@ -1168,7 +1088,6 @@ class PerSession(_Playground):
             "baseline_bytes_per_session": floor_fit.slope,
             "baseline_ci": [floor_fit.ci_lo, floor_fit.ci_hi],
             "baseline_levels": floor.levels,
-            "session_errors": errors,
         }
         if scope is not None:
             extra.update(cgroup_extra(scope.read()))
@@ -1197,9 +1116,15 @@ class PerSession(_Playground):
     },
     suite_params={"daily": {"events": [50_000]}},
     metrics={
-        "bytes_per_event": _bytes("slope of the anonymous PSS over answered events"),
-        "bytes_per_event_ci_hi": _bytes("upper end of the slope's 95 % interval"),
-        "growth": _bytes("anonymous PSS at the end of the window minus at its start"),
+        "passed": Metric(
+            unit="1",
+            direction="higher",
+            assume="exact",
+            description="1 when the leak gate passes; a failure is the 0",
+        ),
+        "bytes_per_event_ci_hi": _bytes(
+            "upper end of the 95 % interval of the anonymous PSS slope over answered events"
+        ),
     },
     timeout=900,
     setup_timeout=SETUP_TIMEOUT_S,
@@ -1215,8 +1140,8 @@ class Leak(_Playground):
             ctx: The benchmark context.
 
         Returns:
-            The slope, its interval's upper end and the growth, with the
-            downsampled timeline and the load.
+            The gate outcome and the slope's upper end, with the slope, the
+            growth, the downsampled timeline and the load.
 
         Raises:
             LeakDetected: When the memory keeps growing with the events.
@@ -1232,8 +1157,7 @@ class Leak(_Playground):
 
         def plan(warmup_s: float, duration_s: float) -> LoadPlan:
             return LoadPlan(
-                backend_url=app.backend_url,
-                reflex_version=ctx.subject.reflex_version,
+                endpoint=Endpoint(app.backend_url),
                 shape=shape,
                 sessions=int(params["sessions"]),
                 mode="closed",
@@ -1242,7 +1166,7 @@ class Leak(_Playground):
                 duration_s=duration_s,
             )
 
-        rate = checked_load(run_owned(started, plan(1.0, PROBE_S))).answered_rate
+        rate = complete_load(run_owned(started, plan(1.0, PROBE_S))).answered_rate
         warmup_s = math.ceil(params["warmup_events"] / rate)
         duration_s = math.ceil(params["events"] / rate * DURATION_MARGIN)
         points: list[tuple[float, int, int]] = []
@@ -1255,7 +1179,7 @@ class Leak(_Playground):
             points.append((
                 time.perf_counter(),
                 reading.pss_anon_bytes,
-                largest_uss(app.pid),
+                largest_uss(reading),
             ))
 
         window: dict[str, float] = {}
@@ -1271,9 +1195,9 @@ class Leak(_Playground):
             )
         finally:
             sampler.stop()
-        checked_load(result)
-        start = window["start"] - warmup_s
-        measured = [p for p in points if window["start"] <= p[0] <= window["end"]]
+        complete_load(result)
+        start = window["start"]
+        measured = [p for p in points if start <= p[0] <= window["end"]]
         events = events_at(result.answered_per_second, (p[0] - start for p in measured))
         anon = [float(p[1]) for p in measured]
         leak = fit_leak(events, anon)
@@ -1286,8 +1210,8 @@ class Leak(_Playground):
             "sessions": result.sessions,
             "event": params["event"],
             "probe_rate": rate,
+            "warmup_s": warmup_s,
             "events_measured": result.answered,
-            "warmup_events": sum(result.answered_per_second[:warmup_s]),
             "samples": len(measured),
             "unanswered": result.unanswered,
             "slope_bytes_per_event": leak.fit.slope,
@@ -1305,17 +1229,12 @@ class Leak(_Playground):
                 ],
                 TIMELINE_POINTS,
             ),
-            "generator": generator_summary(result),
+            "generator": result.summary(),
         }
         if scope is not None:
             extra.update(cgroup_extra(scope.read()))
         return SampleResult(
-            {
-                "bytes_per_event": leak.fit.slope,
-                "bytes_per_event_ci_hi": leak.fit.ci_hi,
-                "growth": leak.growth,
-            },
-            extra=extra,
+            {"passed": 1, "bytes_per_event_ci_hi": leak.fit.ci_hi}, extra=extra
         )
 
 
@@ -1397,7 +1316,7 @@ class Boot512(_Playground):
                     for name, r in phases.items()
                 },
                 "peak_reset": serve.peak_reset,
-                "generator": generator_summary(load),
+                "generator": load.summary(),
             },
         )
 

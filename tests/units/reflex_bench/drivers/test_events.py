@@ -644,6 +644,15 @@ def test_the_closed_loop_self_check_only_watches_cpu():
     assert healthy(**closed, generator_cpu_fraction=0.9).check() is not None
 
 
+def test_the_summary_leaves_the_arrays_out():
+    result = healthy()
+    summary = result.summary()
+    assert "histogram" not in summary
+    assert "answered_per_second" not in summary
+    assert summary["answered"] == result.answered
+    assert set(result.to_dict()) - set(summary) == {"histogram", "answered_per_second"}
+
+
 def test_generator_saturated_carries_the_result():
     result = healthy(generator_cpu_fraction=0.8)
     reason = result.check()
