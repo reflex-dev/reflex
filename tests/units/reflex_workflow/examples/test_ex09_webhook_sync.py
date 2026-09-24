@@ -7,7 +7,9 @@ successful writes.
 
 from __future__ import annotations
 
+import asyncio
 import datetime
+import time
 import uuid
 
 import pytest
@@ -34,6 +36,11 @@ def reaches(entity_id: str, status: str):
     """
 
     async def check() -> bool:
+        """Tell whether the entity has reached the status.
+
+        Returns:
+            Whether it has.
+        """
         row = await Entity.by(Entity.entity_id == entity_id).get()
         return row is not None and row.status == status
 
@@ -53,6 +60,11 @@ def at_version(entity_id: str, version: int, status: str):
     """
 
     async def check() -> bool:
+        """Tell whether the entity has applied the version and reached the status.
+
+        Returns:
+            Whether it has.
+        """
         row = await Entity.by(Entity.entity_id == entity_id).get()
         return row is not None and (row.version, row.status) == (version, status)
 
@@ -245,3 +257,40 @@ async def test_a_callback_outlives_the_worker_that_asked_for_it(database):
     row = await read_directly(database, entity)
     assert (row.written or {})["warehouse-job"] == job
     assert world.attempts("warehouse.write") == 1
+
+
+async def test_a_retired_entity_comes_back_for_a_new_event(running, monkeypatch):
+    monkeypatch.setattr(
+        ex09_webhook_sync, "IDLE_DEADLINE", datetime.timedelta(milliseconds=300)
+    )
+    entity = uuid.uuid4().hex
+    assert await receive(entity, {"name": "first"}, version=1) == 1
+    await confirmed(entity)
+    await eventually(reaches(entity, "retired"))
+
+    monkeypatch.setattr(ex09_webhook_sync, "IDLE_DEADLINE", datetime.timedelta(days=30))
+    assert await receive(entity, {"name": "second"}, version=2) == 1
+    await confirmed(entity)
+    await eventually(at_version(entity, 2, "idle"))
+
+
+async def test_callbacks_about_other_jobs_do_not_put_the_deadline_off(
+    running, monkeypatch
+):
+    monkeypatch.setattr(
+        ex09_webhook_sync, "CALLBACK_DEADLINE", datetime.timedelta(seconds=1)
+    )
+    entity = uuid.uuid4().hex
+    assert await receive(entity, {"name": "first"}, version=1) == 1
+    await eventually(reaches(entity, "awaiting-callback"))
+
+    # Callbacks about jobs this version never started keep arriving, faster than
+    # the deadline; the wait still gives up when its own deadline passes.
+    started = time.monotonic()
+    stale = 0
+    while await reaches(entity, "awaiting-callback")():
+        assert time.monotonic() - started < 5, "the deadline kept being put off"
+        stale += 1
+        await callback(entity, f"someone-elses-job-{stale}")
+        await asyncio.sleep(0.2)
+    assert stale > 1

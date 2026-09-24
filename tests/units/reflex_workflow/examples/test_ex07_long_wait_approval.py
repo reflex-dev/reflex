@@ -37,6 +37,11 @@ def reaches(request_id: str, status: str):
     """
 
     async def check() -> bool:
+        """Tell whether the request has reached the status.
+
+        Returns:
+            Whether it has.
+        """
         row = await Request.by(Request.request_id == request_id).get()
         return row is not None and row.status == status
 

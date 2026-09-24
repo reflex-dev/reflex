@@ -184,7 +184,9 @@ class RunHandle(Generic[W]):
             runtime.wake.set()
         return updated
 
-    async def deliver(self, call: Call[W], *, key: str | None = None) -> int:
+    async def deliver(
+        self, call: Call[W], *, key: str | None = None, restart: bool = False
+    ) -> int:
         """Deliver an event to matching runs.
 
         A run waiting for this step runs it now with the delivered arguments. A run
@@ -196,6 +198,10 @@ class RunHandle(Generic[W]):
         Args:
             call: The step call the event carries, e.g. ``Expense.decide("approve")``.
             key: Identifies the event; repeats of it are ignored.
+            restart: Whether a run that has finished takes the event too, by
+                starting again with this step: for a run that lives as long as
+                its events keep coming, such as a conversation that closed when
+                it went quiet.
 
         Returns:
             How many runs accepted the event.
@@ -244,10 +250,10 @@ class RunHandle(Generic[W]):
                 pending_event=None,
                 attempts=0,
                 last_error=None,
-                # A timeout step for this wait may still be running; the new
-                # version fences its commit, so the event need not wait out
-                # that step's lease to run.
-                claimed_until=None,
+                # A timeout step for this wait may still be running: the new
+                # version fences its commit, and its lease stays, so the event's
+                # step does not run beside it. It gives the lease back as soon
+                # as it is done.
                 wf_version=cls.wf_version + 1,
                 **remembered,
             )
@@ -257,6 +263,33 @@ class RunHandle(Generic[W]):
         async with runtime.session_factory() as session, session.begin():
             accepted = len((await session.execute(buffered)).all())
             accepted += len((await session.execute(applied)).all())
+            if restart:
+                # A finished run matches neither of the above: nothing is
+                # scheduled and it waits for nothing.
+                restarted = (
+                    update(cls)
+                    .where(
+                        *self.where,
+                        cls.next_step.is_(None),
+                        cls.waiting_for.is_(None),
+                        fresh,
+                    )
+                    .values(
+                        next_step=call.step.name,
+                        next_args=call.encode(),
+                        wake_at=func.now(),
+                        pending_event=None,
+                        children_left=None,
+                        attempts=0,
+                        last_error=None,
+                        claimed_until=None,
+                        wf_version=cls.wf_version + 1,
+                        **remembered,
+                    )
+                    .returning(cls.wf_version)
+                    .execution_options(synchronize_session=False)
+                )
+                accepted += len((await session.execute(restarted)).all())
             if accepted:
                 await notify.announce(session, cls.__tablename__)
         if accepted:

@@ -21,7 +21,7 @@ from typing import Any
 
 from reflex_workflow import Call, Step, Wait, Workflow, step, wait_for
 from reflex_workflow.engine.runtime import current
-from sqlalchemy import Integer, String, UniqueConstraint, select
+from sqlalchemy import DateTime, Integer, String, UniqueConstraint, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Mapped, mapped_column
@@ -65,6 +65,11 @@ class Entity(Base, Workflow):
     version: Mapped[int] = mapped_column(Integer, default=0)
     fields: Mapped[dict[str, Any] | None] = mapped_column(JSONB, default=None)
     written: Mapped[dict[str, str] | None] = mapped_column(JSONB, default=None)
+    # When the warehouse has to have answered by, for the job this version
+    # started; a callback about another job does not move it.
+    callback_by: Mapped[datetime.datetime | None] = mapped_column(
+        DateTime(timezone=True), default=None
+    )
     status: Mapped[str] = mapped_column(String, default="new")
 
     @step(retries=RETRIES, backoff=BACKOFF)
@@ -143,6 +148,7 @@ class Entity(Base, Workflow):
         following = DESTINATIONS.index(destination) + 1
         if destination == "warehouse":
             # The warehouse takes the job and answers when it has run it.
+            self.callback_by = now() + CALLBACK_DEADLINE
             return self.awaiting_callback()
         if following < len(DESTINATIONS):
             return Entity.push(DESTINATIONS[following])
@@ -152,12 +158,13 @@ class Entity(Base, Workflow):
         """Wait for the warehouse to say it has run this version's job.
 
         Returns:
-            The wait for the callback.
+            The wait for the callback, for whatever is left of its deadline.
         """
         self.status = "awaiting-callback"
+        left = (self.callback_by or now()) - now()
         return wait_for(
             Entity.confirm,
-            timeout=CALLBACK_DEADLINE,
+            timeout=max(left, datetime.timedelta()),
             on_timeout=Entity.give_up_on_callback,
         )
 
@@ -194,6 +201,15 @@ class Entity(Base, Workflow):
         self.status = "retired"
 
 
+def now() -> datetime.datetime:
+    """Return the current moment.
+
+    Returns:
+        Now, in UTC.
+    """
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
 async def receive(entity_id: str, fields: dict[str, Any], version: int) -> int:
     """Take a webhook about one entity.
 
@@ -221,8 +237,9 @@ async def receive(entity_id: str, fields: dict[str, Any], version: int) -> int:
     if added is None:
         return 0
     if not await Entity(entity_id=entity_id).start(Entity.idle):
+        # An entity retired after a quiet month comes back for a new event.
         await Entity.by(Entity.entity_id == entity_id).deliver(
-            Entity.idle(), key=f"{entity_id}:v{version}"
+            Entity.idle(), key=f"{entity_id}:v{version}", restart=True
         )
     return 1
 

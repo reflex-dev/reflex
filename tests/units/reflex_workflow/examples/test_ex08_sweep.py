@@ -77,6 +77,11 @@ async def sweep_once(database, name: str) -> Sweep:
     assert await schedule_sweep(name)
 
     async def swept() -> bool:
+        """Tell whether the sweeper has finished a pass.
+
+        Returns:
+            Whether it has.
+        """
         row = await Sweep.by(Sweep.name == name).get()
         return row is not None and row.passes >= 1
 
@@ -145,6 +150,11 @@ async def test_two_sweepers_at_once_start_one_collection_per_occurrence(database
     async with worker(database):
 
         async def both_swept() -> bool:
+            """Tell whether both sweepers have finished a pass.
+
+            Returns:
+                Whether they have.
+            """
             rows = await Sweep.by(Sweep.name.in_(names)).all()
             return len(rows) == 2 and all(row.passes >= 1 for row in rows)
 
@@ -196,6 +206,17 @@ async def test_a_collection_that_fails_to_start_is_not_lost(database, monkeypatc
     blips = [RuntimeError("the database blinked")]
 
     async def start_or_blip(due: dict[str, object]) -> bool:
+        """Start a collection, failing the first attempt for the flaky item.
+
+        Args:
+            due: The watch's item, deadline, and signal count.
+
+        Returns:
+            Whether this call started the collection.
+
+        Raises:
+            RuntimeError: On the flaky item's first attempt.
+        """
         if due["item"] == item and blips:
             raise blips.pop()
         return await real_start(due)

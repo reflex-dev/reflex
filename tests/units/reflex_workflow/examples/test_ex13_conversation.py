@@ -106,6 +106,11 @@ def said(conversation: str, *fragments: str):
     """
 
     def check() -> bool:
+        """Tell whether the agent has said each fragment, in order.
+
+        Returns:
+            Whether it has.
+        """
         spoken = " ".join(replies(conversation))
         position = 0
         for fragment in fragments:
@@ -130,6 +135,11 @@ def transfer_is(key: str, status: str):
     """
 
     async def check() -> bool:
+        """Tell whether the transfer has reached the status.
+
+        Returns:
+            Whether it has.
+        """
         row = await Transfer.by(Transfer.key == key).get()
         return row is not None and row.status == status
 
@@ -148,6 +158,11 @@ def conversation_is(conversation: str, status: str):
     """
 
     async def check() -> bool:
+        """Tell whether the conversation has reached the status.
+
+        Returns:
+            Whether it has.
+        """
         row = await Conversation.by(Conversation.conversation == conversation).get()
         return row is not None and row.status == status
 
@@ -386,6 +401,11 @@ async def test_a_reply_racing_the_reminder_stops_it(database, monkeypatch):
     async def reminder_has_started() -> bool:
         # Started and still running, or already sent: a reminder that did not
         # wait for the lock is done before a poll would see it running.
+        """Tell whether the reminder step is running or has sent its reminder.
+
+        Returns:
+            Whether it has.
+        """
         async with database() as session:
             row = (
                 await session.execute(

@@ -267,7 +267,7 @@ async def claim_group(
         (pk, version) for each claimed row.
     """
     pk_cols = rows.mapper(cls).primary_key
-    gate = func.hashtext(f"{cls.__tablename__}:{value}")
+    gate = func.hashtext(bucket_key(cls, value))
     running = (
         select(func.count())
         .select_from(cls)

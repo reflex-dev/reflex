@@ -51,6 +51,11 @@ async def run_report(name: str, scheduled: datetime.datetime, tz: str) -> Weekly
         )
 
     async def shared() -> bool:
+        """Tell whether the report has been shared.
+
+        Returns:
+            Whether it has.
+        """
         row = await WeeklyUpdate.by(WeeklyUpdate.name == name).get()
         return row is not None and row.status == "shared"
 

@@ -263,7 +263,12 @@ async def finish_child(session: AsyncSession, parent: dict[str, Any]) -> None:
             # moved on and may have fanned out again, counts for nothing. The
             # version is left alone so every child of the fan-out still matches;
             # nothing else can touch a parked parent, and its claim bumps it.
-            cls.wf_version == parent["fan_out"],
+            *(
+                (cls.wf_version == parent["fan_out"],)
+                if "fan_out" in parent
+                # Written before children carried the fan-out's version.
+                else ()
+            ),
             cls.children_left > 0,
         )
         .values(
@@ -304,8 +309,52 @@ async def record_attempt(
     )
 
 
+@dataclasses.dataclass(slots=True)
+class Lease:
+    """The lease a running step holds on its row, as it last wrote it.
+
+    Attributes:
+        until: When it runs out; the value is also what identifies it, since
+            every claim and renewal writes a new one.
+    """
+
+    until: datetime.datetime | None
+
+
+async def release(
+    runtime: Runtime, cls: type[Workflow], pk: list[Any], lease: Lease
+) -> None:
+    """Give back the lease of a step whose commit was fenced.
+
+    An event applied while a step runs moves the run on but leaves the step's
+    lease in place, so nothing else runs the row while the step might still be
+    acting. Once it is done the lease is its own to give back, and only its own:
+    a worker that took the row over has written a lease of its own.
+
+    Args:
+        runtime: The running engine.
+        cls: The workflow class.
+        pk: The row's primary key values.
+        lease: The lease the step held.
+    """
+    async with runtime.session_factory() as session, session.begin():
+        released = (
+            await session.execute(
+                update(cls)
+                .where(*rows.pk_filter(cls, pk), cls.claimed_until == lease.until)
+                .values(claimed_until=None)
+                .returning(cls.wf_version)
+                .execution_options(synchronize_session=False)
+            )
+        ).first()
+        if released is not None:
+            await notify.announce(session, cls.__tablename__)
+    if released is not None:
+        runtime.wake.set()
+
+
 async def keep_lease(
-    runtime: Runtime, cls: type[Workflow], pk: list[Any], version: int
+    runtime: Runtime, cls: type[Workflow], pk: list[Any], version: int, lease: Lease
 ) -> None:
     """Extend a claim while its step runs, so a slow step isn't claimed twice.
 
@@ -314,22 +363,29 @@ async def keep_lease(
         cls: The workflow class.
         pk: The row's primary key values.
         version: The row version the claim is for.
+        lease: The lease the step holds, updated with each renewal.
     """
+    # Most steps are done before the first renewal is due, so the statement is
+    # built only once one is.
+    await asyncio.sleep(runtime.lease.total_seconds() / 3)
     stmt = (
         update(cls)
         .where(*rows.pk_filter(cls, pk), cls.wf_version == version)
         .values(claimed_until=func.now() + runtime.lease)
+        .returning(cls.claimed_until)
         .execution_options(synchronize_session=False)
     )
     while True:
-        await asyncio.sleep(runtime.lease.total_seconds() / 3)
         try:
             async with runtime.session_factory() as session, session.begin():
-                await session.execute(stmt)
+                renewed = (await session.execute(stmt)).scalar_one_or_none()
+            if renewed is not None:
+                lease.until = renewed
         except Exception:
             logger.exception(
                 "reflex_workflow could not extend a lease on %s", cls.__qualname__
             )
+        await asyncio.sleep(runtime.lease.total_seconds() / 3)
 
 
 async def execute(
@@ -359,6 +415,7 @@ async def execute(
             return "stale"
         columns = rows.user_columns(cls)
         before = rows.snapshot(row, columns)
+        held = Lease(row.claimed_until)
         session.expunge(row)
 
     # A buffered event for the step the row waits on takes precedence over its
@@ -380,7 +437,7 @@ async def execute(
     repeat: Schedule | None = None
     scheduled: Scheduled | None = None
     began = time.monotonic()
-    lease = asyncio.create_task(keep_lease(runtime, cls, pk, version))
+    lease = asyncio.create_task(keep_lease(runtime, cls, pk, version, held))
     try:
         scheduled = await invoke(row, current, stored)
     except Exception as err:
@@ -399,6 +456,7 @@ async def execute(
             outcome = "failed"
         values |= {"attempts": attempts, "last_error": error}
         recorded = error
+        attempt = attempts
     else:
         repeat = scheduled.repeat
         after = rows.snapshot(row, columns)
@@ -407,6 +465,7 @@ async def execute(
         values |= {"attempts": 0, "last_error": None}
         recorded = None
         outcome = "ok"
+        attempt = attempts + 1
     finally:
         lease.cancel()
         with contextlib.suppress(asyncio.CancelledError):
@@ -458,6 +517,7 @@ async def execute(
             committed = (await session.execute(stmt)).first()
             if committed is None:
                 await session.rollback()
+                await release(runtime, cls, pk, held)
                 return "fenced"
             await record_attempt(
                 session,
@@ -465,7 +525,7 @@ async def execute(
                 pk,
                 {
                     "step": current,
-                    "attempt": attempts + 1 if outcome == "ok" else attempts,
+                    "attempt": attempt,
                     "outcome": outcome,
                     "error": recorded,
                     "took_ms": int((time.monotonic() - began) * 1000),

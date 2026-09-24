@@ -30,6 +30,11 @@ def reaches(topic: str, status: str):
     """
 
     async def check() -> bool:
+        """Tell whether the post has reached the status.
+
+        Returns:
+            Whether it has.
+        """
         row = await SocialPost.by(SocialPost.topic == topic).get()
         return row is not None and row.status == status
 

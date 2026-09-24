@@ -29,6 +29,11 @@ def reaches(event_id: str, status: str):
     """
 
     async def check() -> bool:
+        """Tell whether the request has reached the status.
+
+        Returns:
+            Whether it has.
+        """
         row = await SupportRequest.by(SupportRequest.event_id == event_id).get()
         return row is not None and row.status == status
 

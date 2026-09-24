@@ -30,6 +30,11 @@ def reaches(upload_id: str, status: str):
     """
 
     async def check() -> bool:
+        """Tell whether the invoice has reached the status.
+
+        Returns:
+            Whether it has.
+        """
         row = await Invoice.by(Invoice.upload_id == upload_id).get()
         return row is not None and row.status == status
 

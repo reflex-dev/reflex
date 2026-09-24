@@ -28,6 +28,11 @@ def assembled(name: str):
     """
 
     async def check() -> bool:
+        """Tell whether the upload has been assembled.
+
+        Returns:
+            Whether it has.
+        """
         row = await Upload.by(Upload.name == name).get()
         return row is not None and row.status.startswith("assembled")
 

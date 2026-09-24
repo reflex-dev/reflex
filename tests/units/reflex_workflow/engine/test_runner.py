@@ -18,7 +18,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 import psycopg
 import pytest
 import pytest_asyncio
-from sqlalchemy import String, func, insert, select, update
+from sqlalchemy import String, func, insert, literal, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -860,6 +860,11 @@ def status_is(
     """
 
     async def check() -> bool:
+        """Tell whether the row has reached the status.
+
+        Returns:
+            Whether it has.
+        """
         row = await cls.by(cls.key == key).get()
         return row is not None and row.status == status
 
@@ -911,6 +916,11 @@ async def test_exhausted_retries_stop_and_discard_the_steps_changes(session_fact
     await Doomed(key=key).start(Doomed.call())
 
     async def stopped() -> bool:
+        """Tell whether the run has stopped.
+
+        Returns:
+            Whether it has.
+        """
         row = await Doomed.by(Doomed.key == key).get()
         return row is not None and row.next_step is None
 
@@ -1034,6 +1044,11 @@ async def test_competing_workers_run_each_step_once(session_factory):
         await Racer(key=key).start(Racer.go)
 
     async def all_done() -> bool:
+        """Tell whether every run has finished.
+
+        Returns:
+            Whether it has.
+        """
         return all([await status_is(Racer, key, "done")() for key in keys])
 
     try:
@@ -1400,6 +1415,8 @@ async def test_a_schedule_that_cannot_say_when_stops_the_run(session_factory):
             )
         ).scalar_one()
     assert (latest.outcome, latest.error) == ("failed", row.last_error)
+    # The step itself ran once; it was its schedule that failed.
+    assert latest.attempt == 1
 
 
 async def test_a_run_can_buffer_another_event_after_one_was_consumed(session_factory):
@@ -1565,6 +1582,11 @@ async def test_one_customer_cannot_run_more_than_its_limit(session_factory):
     await start_many(Tenant, small, 2, customer=small)
 
     async def all_done() -> bool:
+        """Tell whether every run has finished.
+
+        Returns:
+            Whether it has.
+        """
         rows = await Tenant.by(Tenant.customer.in_([busy, small])).all()
         return len(rows) == 10 and all(row.status == "done" for row in rows)
 
@@ -1584,6 +1606,11 @@ async def test_a_busy_customer_does_not_starve_a_quiet_one(session_factory):
     await start_many(Tenant, one, 1, customer=one)
 
     async def quiet_done() -> bool:
+        """Tell whether the quiet customer's run has finished.
+
+        Returns:
+            Whether it has.
+        """
         row = await Tenant.by(Tenant.key == f"{one}-0").get()
         return row is not None and row.status == "done"
 
@@ -1615,6 +1642,11 @@ async def test_a_limit_holds_across_workers(session_factory):
     keys = await start_many(Tenant, customer, 12, customer=customer)
 
     async def all_done() -> bool:
+        """Tell whether every run has finished.
+
+        Returns:
+            Whether it has.
+        """
         rows = await Tenant.by(Tenant.key.in_(keys)).all()
         return len(rows) == len(keys) and all(row.status == "done" for row in rows)
 
@@ -1675,6 +1707,11 @@ async def test_a_rate_limit_lets_through_a_burst_then_refills(session_factory):
     await start_many(Metered, provider, 8, provider=provider)
 
     async def all_done() -> bool:
+        """Tell whether every run has finished.
+
+        Returns:
+            Whether it has.
+        """
         rows = await Metered.by(Metered.provider == provider).all()
         return len(rows) == 8 and all(row.status == "done" for row in rows)
 
@@ -1708,6 +1745,11 @@ async def test_a_rate_limit_holds_across_workers(session_factory):
     await start_many(Metered, provider, 6, provider=provider)
 
     async def all_done() -> bool:
+        """Tell whether every run has finished.
+
+        Returns:
+            Whether it has.
+        """
         rows = await Metered.by(Metered.provider == provider).all()
         return len(rows) == 6 and all(row.status == "done" for row in rows)
 
@@ -1733,6 +1775,11 @@ async def test_two_providers_do_not_spend_each_others_tokens(session_factory):
     await start_many(Metered, two, 3, provider=two)
 
     async def second_done() -> bool:
+        """Tell whether the second provider's runs have finished.
+
+        Returns:
+            Whether it has.
+        """
         rows = await Metered.by(Metered.provider == two).all()
         return len(rows) == 3 and all(row.status == "done" for row in rows)
 
@@ -2060,6 +2107,11 @@ async def test_history_records_a_run_that_gave_up(session_factory):
     await Doomed(key=key).start(Doomed.call())
 
     async def stopped() -> bool:
+        """Tell whether the run has stopped.
+
+        Returns:
+            Whether it has.
+        """
         row = await Doomed.by(Doomed.key == key).get()
         return row is not None and row.next_step is None
 
@@ -2123,6 +2175,17 @@ async def test_a_worker_stopping_mid_claim_runs_what_it_claimed(
     real_claim = runner.claim
 
     async def claim_then_pause(runtime_, cls, limit, steps=None):
+        """Claim, then pause once Parting rows are leased but not yet started.
+
+        Args:
+            runtime_: The running engine.
+            cls: The workflow class.
+            limit: Most rows to claim.
+            steps: The steps the worker may run.
+
+        Returns:
+            What the claim took.
+        """
         claimed = await real_claim(runtime_, cls, limit, steps)
         if cls is Parting and claimed:
             # The rows are leased and committed; the worker has not started them.
@@ -2174,7 +2237,7 @@ async def test_run_abandons_a_wait_and_the_event_held_for_it(session_factory):
     assert (row.status, row.waiting_for, row.pending_event) == ("expired", None, None)
 
 
-async def test_an_event_for_a_run_whose_timeout_is_running_runs_at_once(
+async def test_an_event_for_a_run_whose_timeout_is_running_runs_once_it_ends(
     session_factory,
 ):
     key = uuid.uuid4().hex
@@ -2187,11 +2250,34 @@ async def test_an_event_for_a_run_whose_timeout_is_running_runs_at_once(
     assert await handle.deliver(RaceReview.decide("approve")) == 1
     row = await handle.get()
     assert row is not None
-    # The expiry's lease does not hold the decision back: it is claimable now.
-    assert (row.next_step, row.claimed_until) == ("decide", None)
+    # The expiry still holds the row, so the decision cannot run beside it.
+    assert row.next_step == "decide"
+    assert row.claimed_until is not None
 
+    # Fenced, the expiry gives its lease back rather than making the decision
+    # wait out the rest of it.
     assert await expiring == "fenced"
+    row = await handle.get()
+    assert row is not None
+    assert row.claimed_until is None
     assert await step_row(RaceReview, pk) == "ok"
+
+
+async def test_a_step_gives_back_only_its_own_lease(session_factory):
+    key = uuid.uuid4().hex
+    await RaceReview(key=key).start(RaceReview.submit())
+    pk = await pk_of(RaceReview, key)
+    # Another worker holds the row now, with a lease of its own.
+    await claim_row(RaceReview, pk)
+    theirs = await RaceReview.by(RaceReview.key == key).get()
+    assert theirs is not None
+    assert theirs.claimed_until is not None
+
+    stale = execute.Lease(theirs.claimed_until - datetime.timedelta(minutes=5))
+    await execute.release(runtime.current(), RaceReview, pk, stale)
+    row = await RaceReview.by(RaceReview.key == key).get()
+    assert row is not None
+    assert row.claimed_until == theirs.claimed_until
 
 
 async def test_an_event_held_while_a_step_ran_is_dropped_when_nothing_can_take_it(
@@ -2309,6 +2395,7 @@ async def test_a_fan_out_announces_its_children(session_factory):
         await Batch(key=key, size=2).start(Batch.split())
 
         async def listen() -> None:
+            """Collect notifications until one names the child table."""
             async for notice in conn.notifies():
                 heard.append(notice.payload)
                 if notice.payload == "wf_test_item":
@@ -2324,6 +2411,17 @@ async def test_a_wake_during_a_pass_is_not_lost(session_factory, monkeypatch):
     real_claim = runner.claim
 
     async def claim_and_hear(runtime_, cls, limit, steps=None):
+        """Stand in for a claim of Parting during which a notification lands.
+
+        Args:
+            runtime_: The running engine.
+            cls: The workflow class.
+            limit: Most rows to claim.
+            steps: The steps the worker may run.
+
+        Returns:
+            What the claim took: nothing, for Parting.
+        """
         if cls is not Parting:
             return await real_claim(runtime_, cls, limit, steps)
         passes.append(time.monotonic())
@@ -2373,6 +2471,11 @@ async def test_a_worker_with_a_single_connection_still_runs(session_factory):
             await Parting(key=key).start(Parting.work)
 
             async def done() -> bool:
+                """Tell whether the run has finished.
+
+                Returns:
+                    Whether it has.
+                """
                 row = await Parting.by(Parting.key == key).get()
                 return row is not None and row.status == "done"
 
@@ -2389,6 +2492,17 @@ async def test_a_claim_that_never_returns_does_not_hold_up_shutdown(
     real_claim = runner.claim
 
     async def stuck_claim(runtime_, cls, limit, steps=None):
+        """Stand in for a claim of Parting against a database that stopped answering.
+
+        Args:
+            runtime_: The running engine.
+            cls: The workflow class.
+            limit: Most rows to claim.
+            steps: The steps the worker may run.
+
+        Returns:
+            What the claim took; for Parting it never returns.
+        """
         if cls is not Parting:
             return await real_claim(runtime_, cls, limit, steps)
         # A database that has stopped answering.
@@ -2411,3 +2525,41 @@ async def test_a_claim_that_never_returns_does_not_hold_up_shutdown(
         started = time.monotonic()
         await asyncio.wait_for(worker.__aexit__(None, None, None), 10)
     assert time.monotonic() - started < 2
+
+
+async def test_a_finished_run_takes_an_event_only_when_asked_to_restart(
+    session_factory,
+):
+    key = uuid.uuid4().hex
+    await RaceReview(key=key).start(RaceReview.submit(arm=False))
+    pk = await pk_of(RaceReview, key)
+    assert await step_row(RaceReview, pk) == "ok"
+    handle = RaceReview.by(RaceReview.key == key)
+
+    assert await handle.deliver(RaceReview.decide("approve")) == 0
+    assert await handle.deliver(RaceReview.decide("approve"), restart=True) == 1
+    assert await step_row(RaceReview, pk) == "ok"
+    row = await handle.get()
+    assert row is not None
+    assert row.status == "decided:approve:manager"
+
+
+async def test_a_child_that_does_not_name_its_fan_out_still_counts(session_factory):
+    key = uuid.uuid4().hex
+    await Parked(key=key, size=1).start(Parked.split)
+    parent = await pk_of(Parked, key)
+    assert await step_row(Parked, parent) == "ok"
+    # A child pointing at its parent the way children did before they named the
+    # fan-out they belong to.
+    async with session_factory() as session, session.begin():
+        await session.execute(
+            update(Piece)
+            .where(Piece.key == f"{key}-0")
+            .values(parent=Piece.parent.op("-")(literal("fan_out", String)))
+        )
+
+    assert await step_row(Piece, await pk_of(Piece, f"{key}-0")) == "ok"
+    row = await Parked.by(Parked.key == key).get()
+    assert row is not None
+    assert row.children_left == 0
+    assert row.wake_at is not None

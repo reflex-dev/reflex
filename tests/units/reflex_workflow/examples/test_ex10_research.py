@@ -30,6 +30,11 @@ def reported(name: str):
     """
 
     async def check() -> bool:
+        """Tell whether the import has been reported.
+
+        Returns:
+            Whether it has.
+        """
         row = await Research.by(Research.name == name).get()
         return row is not None and row.status == "reported"
 

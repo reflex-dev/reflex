@@ -110,6 +110,10 @@ lost; a run that goes on to wait for something else, or stops, discards it. Pass
 the last sixteen. `timeout` and `on_timeout` go together and are optional; without them
 the run waits indefinitely.
 
+A run that has finished refuses events. For one that lives as long as its events keep
+coming, such as a conversation that closes when it goes quiet, `restart=True` has a
+finished run take the event by starting again with the step it names.
+
 ## Schedules
 
 A step that returns `every(...)` keeps running on a schedule, which is either an interval

@@ -469,24 +469,28 @@ class Transfer(Base, Workflow):
         await wake(self.conversation, f"action:{self.key}")
 
 
-async def wake(conversation: str, key: str) -> int:
-    """Tell a conversation something new is in its transcript.
+async def wake(conversation: str, key: str) -> None:
+    """Tell a conversation the transcript entry ``key`` has arrived.
 
     A conversation that is waiting takes a turn now; one in the middle of a turn
-    keeps the wake until it waits again. Either way the turn reads the transcript,
-    so a wake that finds nothing new is harmless and one that is refused because
-    another is already held loses nothing.
+    keeps the wake until it waits again; one that closed opens again. A
+    conversation that has already read the entry is left alone, so a repeat of
+    a wake that did land, or a redelivered message, costs nothing. And since the
+    turn reads the transcript, a wake refused because another is already held
+    loses nothing either.
 
     Args:
         conversation: The conversation.
-        key: What the wake is for, so a repeat of it is ignored.
-
-    Returns:
-        Whether the conversation took it, now or when it next waits.
+        key: The transcript entry that arrived, which also keys the wake.
     """
-    return await Conversation.by(Conversation.conversation == conversation).deliver(
-        Conversation.turn(), key=key
+    entry = (
+        select(Message.id)
+        .where(Message.conversation == conversation, Message.key == key)
+        .scalar_subquery()
     )
+    await Conversation.by(
+        Conversation.conversation == conversation, Conversation.seen < entry
+    ).deliver(Conversation.turn(), key=key, restart=True)
 
 
 async def receive(conversation: str, customer: str, message: str, text: str) -> None:
@@ -508,24 +512,9 @@ async def receive(conversation: str, customer: str, message: str, text: str) -> 
     async with current().session_factory() as session, session.begin():
         await session.execute(arrival_lock(conversation))
         await write(session, conversation, key, "customer", text)
-        written = await session.scalar(
-            select(Message.id).where(
-                Message.conversation == conversation, Message.key == key
-            )
-        )
     # A redelivery wakes the conversation too: the first delivery may have been
-    # written and then lost before it woke anything. The wake's key makes the
-    # repeat of one that did land a no-op.
-    if not await wake(conversation, key):
-        # A closed conversation takes no wake: the customer coming back opens it
-        # again, if this message is still unread. Only a finished run is
-        # restarted, never one in the middle of a turn, whose held wake already
-        # covers the message.
-        await Conversation.by(
-            Conversation.conversation == conversation,
-            Conversation.next_step.is_(None),
-            Conversation.seen < written,
-        ).run(Conversation.turn)
+    # written and then lost before it woke anything.
+    await wake(conversation, key)
 
 
 async def confirm(transfer: str, answer: str, click: str) -> int:

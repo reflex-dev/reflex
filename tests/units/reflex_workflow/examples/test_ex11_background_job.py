@@ -30,6 +30,11 @@ def finished(run_id: str):
     """
 
     async def check() -> bool:
+        """Tell whether the job has reached its last stage.
+
+        Returns:
+            Whether it has.
+        """
         seen = await progress(run_id)
         return seen is not None and seen["stage"] == "done"
 

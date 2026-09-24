@@ -98,6 +98,12 @@ def test_a_weekday_range_can_end_on_sunday_by_name():
     assert days == ["Fri", "Sat", "Sun", "Fri"]
 
 
+def test_a_sunday_to_sunday_range_is_sunday_alone():
+    sundays = Cron("0 9 * * SUN-SUN")
+    when = datetime.datetime(2026, 9, 21, 12, tzinfo=UTC)
+    assert all((when := sundays(when)).isoweekday() == 7 for _ in range(3))
+
+
 def test_a_moment_without_a_timezone_is_refused():
     with pytest.raises(ValueError, match="timezone-aware"):
         Cron("0 9 * * *")(datetime.datetime(2026, 9, 21, 12))

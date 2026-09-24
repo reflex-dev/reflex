@@ -77,8 +77,9 @@ def parse_field(field: str, index: int) -> frozenset[int]:
                     if dash
                     else (high if step_text else first)
                 )
-                # A range that ends on Sunday by name, like FRI-SUN, ends on 7.
-                if index == 4 and dash and end.lower() == "sun":
+                # A range that ends on Sunday by name, like FRI-SUN, ends on 7;
+                # one that starts there too, SUN-SUN, is Sunday alone.
+                if index == 4 and dash and end.lower() == "sun" and first:
                     last = 7
             except ValueError:
                 msg = f"{term!r} is not a number, a name, or a range."

@@ -76,6 +76,12 @@ async def runtime() -> AsyncIterator[Runtime]:
 
     @event.listens_for(engine.sync_engine, "connect")
     def nested_loops_only(dbapi_connection, _record):
+        """Keep a new connection's planner to nested loops.
+
+        Args:
+            dbapi_connection: The new connection.
+            _record: Its pool record.
+        """
         cursor = dbapi_connection.cursor()
         cursor.execute("SET enable_hashjoin = off")
         cursor.execute("SET enable_mergejoin = off")
