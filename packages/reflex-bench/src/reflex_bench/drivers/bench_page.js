@@ -2,7 +2,8 @@
 // every document of a benchmark's browser context, reloaded ones included.
 // Marks record when the page itself saw a condition hold, on two clocks:
 // performance.now() (since navigation start) and Date.now() (the epoch, which
-// the harness maps onto its own clock).
+// the harness maps onto its own clock), with the document's __BENCH_ALIVE tag
+// (null in a reloaded document, which lost it).
 (() => {
   if (window.__bench) return;
   // Watches armed with persist survive a reload in sessionStorage and are
@@ -37,7 +38,6 @@
     delete active[id];
   };
   const bench = {
-    timeOrigin: performance.timeOrigin,
     marks: read(MARKS),
     paints: {},
     lcp: null,
@@ -83,7 +83,11 @@
       }
       const check = () => {
         if (!bench.holds(kind, selector, expected)) return false;
-        const mark = { perf: performance.now(), epoch: Date.now() };
+        const mark = {
+          perf: performance.now(),
+          epoch: Date.now(),
+          alive: window.__BENCH_ALIVE ?? null,
+        };
         bench.marks[id] = mark;
         if (persist) {
           update(MARKS, (marks) => {

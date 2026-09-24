@@ -46,6 +46,9 @@ def test_registrations():
             min_version,
             kind,
         )
+    for id in ("browser.dev.ready", "browser.preview.ready", "browser.prod.ready"):
+        # The first start of a run is much slower than the rest.
+        assert found[id].warmup == 1
     ready = found["browser.dev.ready"]
     assert list(ready.metrics) == [
         "process_ready",
@@ -65,6 +68,13 @@ def test_registrations():
         "tbt": "s",
         "ws_bytes": "B",
         "transfer_bytes": "B",
+    }
+    # The same page transfers the same bytes in every sample.
+    assert {
+        name for name, metric in pageload.metrics.items() if metric.assume == "exact"
+    } == {
+        "ws_bytes",
+        "transfer_bytes",
     }
 
 
@@ -101,7 +111,7 @@ def test_ready_measures_the_three_tiers_in_order(
         "http_after_process_s": 0.5,
         "interactive_after_http_s": 1.0,
     }
-    assert extra["fixture_hash"] == fixtures.fixture_hash()
+    assert extra["fixture_hash"] == fixtures.fixture_hash("playground")
     assert extra["lcp_s"] == pytest.approx(2.6)
     assert extra["console"] == {"warning": 1}
     tab = FakeBrowser.created[0].tabs[0]
@@ -156,21 +166,16 @@ class _PageloadTab(FakeTab):
     """A page with paint timings, long tasks and traffic."""
 
     ws_bytes = 1234
+    transfer_bytes = 98_765
 
     def timings(self) -> dict[str, object]:
+        self.calls.append(("timings",))
         return {
             "fcp": 500.0,
             "lcp": 650.0,
             "longtasks": [{"start": 100.0, "duration": 90.0}],
             "loafs": [],
-            "time_origin": 0.0,
         }
-
-    def settle(self, seconds: float) -> None:
-        self.calls.append(("settle", seconds))
-
-    def transfer_bytes(self) -> int:
-        return 98_765
 
 
 def test_pageload(ctx: Context, monkeypatch: pytest.MonkeyPatch):
@@ -194,10 +199,11 @@ def test_pageload(ctx: Context, monkeypatch: pytest.MonkeyPatch):
         "transfer_bytes": 98_765,
     }
     tab = browser.tabs[0]
-    assert ("settle", suite.SETTLE_S) in tab.calls
+    # The sample ends with the page's own timings: nothing waits after interactive.
+    assert tab.calls == [("timings",)]
     assert result.extra is not None
     assert result.extra["cpu"] == 4
-    assert result.extra["fixture_hash"] == fixtures.fixture_hash()
+    assert result.extra["fixture_hash"] == fixtures.fixture_hash("playground")
     bench.conclude(ctx)
     assert tab.closed
     assert app.calls[-1] != "stop"  # one server for the whole instance

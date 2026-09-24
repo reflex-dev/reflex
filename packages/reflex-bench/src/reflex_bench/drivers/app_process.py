@@ -624,65 +624,21 @@ def _owned_by(proc: psutil.Process, token: str) -> bool:
         return False
 
 
-def owned_processes(token: str) -> list[psutil.Process]:
-    """Find the processes carrying an owner token, and everything they spawned.
-
-    Descendants count whatever their environment: Chromium starts its helpers
-    with an empty one.
+def kill_processes(procs: Sequence[psutil.Process]) -> None:
+    """SIGKILL processes and the process groups they lead, and wait until they are gone.
 
     Args:
-        token: The owner token.
-
-    Returns:
-        The processes, the harness excluded.
-    """
-    me = os.getpid()
-    children: dict[int, list[psutil.Process]] = {}
-    pending: list[psutil.Process] = []
-    for proc in psutil.process_iter(["ppid"]):
-        if proc.pid == me:
-            continue
-        children.setdefault(proc.info["ppid"], []).append(proc)
-        if _owned_by(proc, token):
-            pending.append(proc)
-    found: dict[int, psutil.Process] = {}
-    while pending:
-        proc = pending.pop()
-        if proc.pid not in found:
-            found[proc.pid] = proc
-            pending.extend(children.get(proc.pid, ()))
-    return list(found.values())
-
-
-def kill_owned(token: str, extra: Sequence[psutil.Process] = ()) -> None:
-    """SIGKILL the processes of an owner token and the process groups they lead.
-
-    Killing a group also reaches a child that left the tree (its parent died)
-    without the token. The scan repeats for processes spawned meanwhile, as
-    :meth:`_ProcessTree.kill` does.
-
-    Args:
-        token: The owner token (see :func:`owned_processes`).
-        extra: More processes to kill, e.g. a parent without the token.
+        procs: The processes; a group leader takes its whole group with it.
 
     Raises:
         RuntimeError: When a process survives SIGKILL.
     """
-    known: set[int] = set()
-    alive: list[psutil.Process] = []
-    for _ in range(3):
-        late = [
-            proc for proc in [*owned_processes(token), *extra] if proc.pid not in known
-        ]
-        known.update(proc.pid for proc in late)
-        alive = _alive([*alive, *late])
-        if not alive:
-            return
-        for proc in alive:
-            if _pgid(proc) == proc.pid:
-                _signal_group(proc.pid, signal.SIGKILL)
-            _signal(proc, signal.SIGKILL)
-        alive = _wait_gone(alive, _KILL_GRACE_S)
+    alive = _alive(procs)
+    for proc in alive:
+        if _pgid(proc) == proc.pid:
+            _signal_group(proc.pid, signal.SIGKILL)
+        _signal(proc, signal.SIGKILL)
+    alive = _wait_gone(alive, _KILL_GRACE_S)
     if alive:
         msg = f"processes survived SIGKILL: {', '.join(map(_describe, alive))}"
         raise RuntimeError(msg)
@@ -796,8 +752,7 @@ class _ProcessTree:
         """Find every process of the tree.
 
         Returns:
-            The root, its descendants and every process carrying the owner token,
-            with theirs.
+            The root, its descendants and every process carrying the owner token.
         """
         found: dict[int, psutil.Process] = {}
         try:
@@ -805,8 +760,12 @@ class _ProcessTree:
                 found[proc.pid] = proc
         except psutil.NoSuchProcess:
             pass
-        for proc in owned_processes(self.token):
-            found.setdefault(proc.pid, proc)
+        me = os.getpid()
+        found.update(
+            (proc.pid, proc)
+            for proc in psutil.process_iter()
+            if proc.pid not in found and proc.pid != me and _owned_by(proc, self.token)
+        )
         return list(found.values())
 
     def kill(self, timeout: float) -> None:

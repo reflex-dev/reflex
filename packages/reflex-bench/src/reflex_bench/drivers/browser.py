@@ -12,24 +12,24 @@ Thread rules: the sync Playwright API only works on the thread that started it
 thread``). The scheduler runs every hook of an instance on one thread, but runs
 the teardown hooks on a fresh thread after a timeout or Ctrl-C. So
 :meth:`Browser.close` closes normally on the owner thread and kills from any
-other, and :meth:`Browser.kill` never touches Playwright: it SIGKILLs Chromium,
-found through the owner token in its environment together with the helpers it
-spawned, and the Playwright driver, so a hook still blocked in the page gets an
-error at once. Browsers still open when the interpreter exits are killed.
+other, and :meth:`Browser.kill` never touches Playwright: it SIGKILLs the
+Playwright driver (the harness's child) and the process group Chromium's root
+(the driver's child) leads with all its helpers, both found at :meth:`start`,
+so a hook still blocked in the page gets an error at once. Browsers still open
+when the interpreter exits are killed.
 
 Clocks: a mark carries ``performance.now()`` (since navigation start) and
 ``Date.now()``. The :class:`Anchor` taken at start maps the wall clock onto
 ``time.perf_counter()``, on which an app's readiness and log times count
-(:attr:`~reflex_bench.drivers.app_process.AppProcess.t0`).
+(:attr:`~reflex_bench.drivers.app_process.AppProcess.t0`). ``Date.now()`` has
+millisecond resolution, so a page time maps within 1 ms plus the anchor's spread.
 """
 
 from __future__ import annotations
 
 import atexit
 import contextlib
-import os
 import re
-import secrets
 import threading
 import time
 import uuid
@@ -40,7 +40,7 @@ from typing import TYPE_CHECKING, Any
 
 import psutil
 
-from reflex_bench.drivers.app_process import OWNER_ENV, kill_owned, owned_processes
+from reflex_bench.drivers.app_process import kill_processes
 
 if TYPE_CHECKING:
     from playwright.sync_api import Browser as PlaywrightBrowser
@@ -49,7 +49,6 @@ if TYPE_CHECKING:
         ConsoleMessage,
         Page,
         Playwright,
-        Response,
         WebSocket,
     )
 
@@ -62,7 +61,9 @@ _ANCHOR_READS = 3
 # A socket.io event frame: "42", an optional namespace, then ["name", ...].
 _SOCKETIO_EVENT = re.compile(r'42(?:/[^,]*,)?\["([^"]+)"')
 
-Mark = dict[str, float]
+# {"perf": ms since navigation start, "epoch": Date.now(), "alive": the
+# document's tag (see Tab.set_alive) or None}.
+Mark = dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -72,7 +73,8 @@ class Anchor:
     Attributes:
         perf: The middle of the two ``perf_counter`` reads.
         epoch: ``time.time()``.
-        spread: The time between the two reads: how far off the pair can be.
+        spread: The time between the two reads: the harness's share of the
+            mapping error, below the 1 ms resolution of a page's ``Date.now()``.
     """
 
     perf: float
@@ -132,6 +134,9 @@ class Tab:
         cdp: A DevTools session of the page, e.g. for ``Network.setCacheDisabled``.
         ws_bytes: Payload bytes of the page's websocket frames, both directions.
         ws_events: How often each socket.io event arrived, by name.
+        transfer_bytes: Bytes received over the wire for the page's HTTP
+            responses, headers included, as the encoded data length of the
+            DevTools ``Network.loadingFinished`` events.
         page_errors: The page's uncaught errors since :meth:`raise_errors`,
             oldest first.
         last_error: The text of the last console error since
@@ -149,22 +154,23 @@ class Tab:
         self.cdp = cdp
         self.ws_bytes = 0
         self.ws_events: Counter[str] = Counter()
+        self.transfer_bytes = 0
         self.page_errors: list[str] = []
         self.last_error: str | None = None
         self._console: Counter[str] = Counter()
-        self._responses: list[Response] = []
         page.on("pageerror", lambda error: self.page_errors.append(str(error)))
         page.on("console", self._on_console)
         page.on("websocket", self._on_websocket)
-        page.on("response", self._on_response)
+        cdp.send("Network.enable")
+        cdp.on("Network.loadingFinished", self._on_loading_finished)
 
-    def _on_response(self, response: Response) -> None:
-        """Keep a response, for :meth:`transfer_bytes`.
+    def _on_loading_finished(self, event: dict[str, Any]) -> None:
+        """Count a finished HTTP response's wire bytes.
 
         Args:
-            response: The response.
+            event: The ``Network.loadingFinished`` event.
         """
-        self._responses.append(response)
+        self.transfer_bytes += event["encodedDataLength"]
 
     def _on_console(self, message: ConsoleMessage) -> None:
         """Count console errors and warnings.
@@ -211,8 +217,7 @@ class Tab:
             id: The mark id.
 
         Returns:
-            ``{"perf": ms since navigation start, "epoch": Date.now()}``, or
-            ``None`` when the page did not record it (yet).
+            The mark, or ``None`` when the page did not record it (yet).
         """
         return self.page.evaluate("id => window.__bench.marks[id] ?? null", id)
 
@@ -306,14 +311,6 @@ class Tab:
             timeout=timeout * 1000,
         ).json_value()["value"]
 
-    def pending(self) -> list[str]:
-        """List the watches still waiting.
-
-        Returns:
-            Their mark ids.
-        """
-        return self.page.evaluate("() => window.__bench.pending()")
-
     def set_alive(self) -> str:
         """Tag the current document; a full reload replaces it and loses the tag.
 
@@ -378,24 +375,12 @@ class Tab:
         Returns:
             ``fcp`` and ``lcp`` (ms since navigation start, ``None`` when not
             observed), ``longtasks`` and ``loafs`` (``{"start", "duration"}`` in
-            ms) and ``time_origin`` (``performance.timeOrigin``).
+            ms).
         """
         return self.page.evaluate(
             "() => { const b = window.__bench; return {"
             " fcp: b.paints['first-contentful-paint'] ?? null, lcp: b.lcp,"
-            " longtasks: b.longtasks, loafs: b.loafs, time_origin: b.timeOrigin }; }"
-        )
-
-    def transfer_bytes(self) -> int:
-        """Sum the encoded body sizes of every HTTP response of the page.
-
-        Returns:
-            Bytes received, as they came over the wire (compressed when served so).
-        """
-        return sum(
-            response.request.sizes()["responseBodySize"]
-            for response in self._responses
-            if response.status != 101
+            " longtasks: b.longtasks, loafs: b.loafs }; }"
         )
 
     def raise_errors(self) -> None:
@@ -438,7 +423,6 @@ class Interactive:
         fcp_s: First contentful paint, in seconds since the app's t0.
         lcp_s: The largest contentful paint so far, in seconds since the app's
             t0, when observed.
-        navigation_start: Navigation start, in seconds since the epoch.
     """
 
     tab: Tab
@@ -446,7 +430,6 @@ class Interactive:
     nav_to_interactive_s: float
     fcp_s: float
     lcp_s: float | None
-    navigation_start: float
 
 
 _LIVE: set[Browser] = set()
@@ -472,37 +455,12 @@ def _hydration_mark(tab: Tab) -> Mark:
     return mark
 
 
-def _driver_of(token: str) -> psutil.Process | None:
-    """Find the Playwright driver of a browser: the parent of its owned root.
-
-    Playwright starts its driver with the harness's environment, so the driver
-    does not carry the owner token; it is the harness's child that started the
-    browser.
-
-    Args:
-        token: The browser's owner token.
-
-    Returns:
-        The driver, or ``None`` when it cannot be told.
-    """
-    owned = owned_processes(token)
-    pids = {proc.pid for proc in owned}
-    me = os.getpid()
-    for proc in owned:
-        with contextlib.suppress(psutil.Error):
-            parent = proc.parent()
-            if parent is not None and parent.pid not in pids and parent.ppid() == me:
-                return parent
-    return None
-
-
 class Browser:
     """A headless Chromium, used from the thread that started it.
 
     Attributes:
         headless: Whether Chromium runs headless (the headless shell).
         cpu_throttle: The CPU slowdown applied to every page (1: none).
-        token: The owner token in Chromium's environment.
         anchor: The clock anchor, taken at :meth:`start`.
     """
 
@@ -516,22 +474,13 @@ class Browser:
         """
         self.headless = headless
         self.cpu_throttle = cpu_throttle
-        self.token = secrets.token_hex(8)
         self.anchor: Anchor | None = None
         self._owner: threading.Thread | None = None
         self._playwright: Playwright | None = None
         self._browser: PlaywrightBrowser | None = None
-        self._driver: psutil.Process | None = None
+        # Chromium's root, leading the group of its helpers, and the driver.
+        self._processes: tuple[psutil.Process, ...] = ()
         self._closed = False
-
-    @property
-    def closed(self) -> bool:
-        """Whether the browser was closed or killed.
-
-        Returns:
-            True once it was.
-        """
-        return self._closed
 
     def start(self) -> None:
         """Start Playwright and Chromium; the calling thread owns the browser.
@@ -549,11 +498,14 @@ class Browser:
         self._owner = threading.current_thread()
         with _LIVE_LOCK:
             _LIVE.add(self)
-        self._playwright = sync_playwright().start()
-        self._browser = self._playwright.chromium.launch(
-            headless=self.headless, env={**os.environ, OWNER_ENV: self.token}
+        playwright = self._playwright = sync_playwright().start()
+        self._browser = playwright.chromium.launch(headless=self.headless)
+        # The driver is the node process behind Playwright's pipe transport, a
+        # child of the harness; Chromium's root is the driver's child.
+        driver = psutil.Process(
+            playwright._impl_obj._connection._transport._proc.pid  # pyright: ignore[reportAttributeAccessIssue]
         )
-        self._driver = _driver_of(self.token)
+        self._processes = (*driver.children(), driver)
         self.anchor = Anchor.take()
         if self._closed:
             # Another thread killed the browser while this one started it.
@@ -647,7 +599,6 @@ class Browser:
             nav_to_interactive_s=mark["perf"] / 1000,
             fcp_s=since_t0(fcp),
             lcp_s=None if lcp is None else since_t0(lcp),
-            navigation_start=navigation_start,
         )
 
     def close_tab(self, tab: Tab) -> None:
@@ -680,16 +631,14 @@ class Browser:
             self.kill()
 
     def kill(self) -> None:
-        """SIGKILL Chromium and the Playwright driver, from any thread; idempotent.
+        """SIGKILL Chromium's process group and the Playwright driver, from any thread; idempotent.
 
-        Chromium is found through the owner token in its environment, with the
-        helpers it spawned, and the driver by the pid found at :meth:`start`.
         Nothing here touches Playwright.
         """
         self._closed = True
         with _LIVE_LOCK:
             _LIVE.discard(self)
-        kill_owned(self.token, () if self._driver is None else (self._driver,))
+        kill_processes(self._processes)
 
 
 def _kill_live_browsers() -> None:

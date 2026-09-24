@@ -38,10 +38,12 @@ def test_playground_dir_outside_a_checkout_raises(
         fixtures.playground_dir()
 
 
-def test_fixture_hash_is_the_playground_content_hash():
+def test_fixture_hash_is_the_fixtures_content_hash():
     content_hash = (REPO / "examples" / "playground" / ".content-hash").read_text()
-    assert fixtures.fixture_hash() == content_hash.strip()
-    assert fixtures.fixture_hash().startswith("sha256:")
+    assert fixtures.fixture_hash("playground") == content_hash.strip()
+    assert fixtures.fixture_hash("playground").startswith("sha256:")
+    with pytest.raises(RuntimeError, match="examples/missing"):
+        fixtures.fixture_hash("missing")
 
 
 def test_fixtures_offer_the_playground_only():

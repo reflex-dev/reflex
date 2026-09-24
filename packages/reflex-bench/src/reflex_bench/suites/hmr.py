@@ -11,22 +11,22 @@ A sample:
    for :data:`QUIET_S`), tags the document (``__BENCH_ALIVE``), builds the
    edit's new content in memory and arms the page's watch for its unique value;
 2. ``sample`` writes the edit (``t0`` is taken just before the one
-   ``os.replace``), waits for the page's mark, waits until the page is quiet
-   again and reads the tag back: ``latency`` is the mark's ``Date.now()`` minus
-   ``t0``, both on the wall clock;
-3. ``conclude`` restores the file and waits until the page shows the original
-   again and is quiet.
+   ``os.replace``) and returns as soon as the page's mark is there: ``latency``
+   is the mark's ``Date.now()`` minus ``t0``, both on the wall clock, and the
+   mark's copy of the tag tells whether the page reloaded to show the edit;
+3. ``conclude`` waits until the page is quiet again and reads the tag back (a
+   reload right after a hot update must not pass for one), restores the file
+   and waits until the page shows the original again and is quiet.
 
-A changed tag means the page reloaded instead of updating. For the render,
-handler and reconnect benchmarks that is no hot reload sample: the sample
-restores, settles and retries with a new value, up to :data:`TRIES` times,
-counting each reload in ``full_reloads``, and fails with :class:`FullReloadError`
-when every try reloads; ``latency`` only ever holds a hot update. For the style
-and asset benchmarks the change may only show through a reload: ``latency`` is
-the time until it shows by whatever means, and ``full_reloads`` records whether
-the page reloaded. A change a dev page never shows by itself (no hot update, no
-reload) fails the sample after :data:`WAIT_S`, saying what the backend and the
-page did meanwhile (:func:`describe_miss`).
+A lost tag means the page reloaded instead of updating, counted in
+``full_reloads``. For the render, handler and reconnect benchmarks that is no
+hot reload sample: ``conclude`` fails it with :class:`FullReloadError`, so
+``latency`` only ever holds a hot update. For the style and asset benchmarks
+the change may only show through a reload: ``latency`` is the time until it
+shows by whatever means. A change a dev page never shows by itself (no hot
+update, no reload) fails the sample, saying what the backend and the page did
+meanwhile (:func:`describe_miss`). Every hook's waits share one deadline,
+:data:`WAIT_S` after the hook started, within the hooks' :data:`TIMEOUT_S`.
 
 Preview mode (reflex 0.9.8+) serves a static build: a hot reload rebuilds it,
 and it shows after a refresh. Preview benchmarks whose change needs a new page
@@ -65,18 +65,14 @@ from reflex_bench.registry import Metric, SampleResult, benchmark
 QUIET_S = 0.5
 # How often a page is clicked or reloaded until it shows an edit.
 POLL_S = 0.25
-# How long a hook waits for the page, within the hooks' TIMEOUT_S.
+# The most a hook waits for the page, all its waits together, within the
+# hooks' TIMEOUT_S.
 WAIT_S = 90.0
 TIMEOUT_S = 120.0
 SETUP_TIMEOUT_S = 660.0
-# Tries of an edit that reloads the page before the sample fails.
-TRIES = 3
 # Loose on purpose: granian versions may word their reload line differently.
 WATCHER = re.compile(r"Changes detected")
 TIMING = "[timing]"
-# An error line in the app's output: vite's and the page's "Error: ...", a
-# traceback's "NameError: ...", granian's "[ERROR] ...".
-ERROR_LINE = re.compile(r"(?:^|\s)(?:\w*Error:|\[ERROR\])")
 # Log line times and the edit's time come from different clocks, mapped onto
 # each other with millisecond resolution.
 _CLOCK_SLACK_S = 0.005
@@ -94,7 +90,35 @@ METRICS = {
 
 
 class FullReloadError(RuntimeError):
-    """Every try of an edit reloaded the page instead of updating it."""
+    """The page reloaded instead of applying a hot update."""
+
+
+def _deadline() -> float:
+    """Start a hook's wait budget.
+
+    Returns:
+        ``time.monotonic()`` plus :data:`WAIT_S`.
+    """
+    return time.monotonic() + WAIT_S
+
+
+def _left(deadline: float) -> float:
+    """Tell how long a wait may still take.
+
+    Args:
+        deadline: The hook's deadline.
+
+    Returns:
+        Seconds until it.
+
+    Raises:
+        TimeoutError: When it passed.
+    """
+    left = deadline - time.monotonic()
+    if left <= 0:
+        msg = f"the page kept the hook waiting for more than {WAIT_S:g} s"
+        raise TimeoutError(msg)
+    return left
 
 
 def watcher_line(
@@ -148,55 +172,13 @@ def hops(
     }
 
 
-def last_error_line(lines: Sequence[tuple[float, str]], edit_at: float) -> str | None:
-    """Find the app's last error line after an edit.
-
-    Args:
-        lines: The app's log lines, with their times since the app's t0.
-        edit_at: When the edit was written, in seconds since the app's t0.
-
-    Returns:
-        The line, if any.
-    """
-    return next(
-        (
-            line
-            for at, line in reversed(lines)
-            if at >= edit_at - _CLOCK_SLACK_S and ERROR_LINE.search(line)
-        ),
-        None,
-    )
-
-
-def _one_line(text: str) -> str:
-    """Collapse a message's whitespace and bound its length, for the result's error field.
-
-    Args:
-        text: The message.
-
-    Returns:
-        At most 200 characters on one line.
-    """
-    return " ".join(text.split())[:200]
-
-
-def describe_miss(
-    steps: dict[str, float | None],
-    reloaded: bool | None,
-    *,
-    app_error: str | None = None,
-    page_error: str | None = None,
-    console_error: str | None = None,
-) -> str:
+def describe_miss(steps: dict[str, float | None], reloaded: bool | None) -> str:
     """Say what the backend and the page did with a change the page never showed.
 
     Args:
         steps: The change's :func:`hops`.
         reloaded: Whether the page reloaded meanwhile; ``None`` when the harness
             reloads it itself.
-        app_error: The app's last error line since the change (:func:`last_error_line`).
-        page_error: The page's last uncaught error meanwhile.
-        console_error: The page's last console error meanwhile.
 
     Returns:
         The facts, e.g. ``granian saw it after 0.15 s, the last [timing] line
@@ -213,12 +195,6 @@ def describe_miss(
     ]
     if reloaded is not None:
         facts.append("the page reloaded" if reloaded else "the page did not reload")
-    if app_error is not None:
-        facts.append(f"the app's last error line: {_one_line(app_error)}")
-    if page_error is not None:
-        facts.append(f"the page's last uncaught error: {_one_line(page_error)}")
-    if console_error is not None:
-        facts.append(f"the page's last console error: {_one_line(console_error)}")
     return ", ".join(facts)
 
 
@@ -260,8 +236,8 @@ class _HotReload:
     path = "/"
     kind = "text"
     selector = "#bench-marker-leaf"
-    # A reload means the edit was no hot update: restore and try again.
-    retry_on_reload = True
+    # A reload means the edit was no hot update: the sample fails.
+    hot_update_only = True
     # Clicked every POLL_S until the page shows the edit, for a change that
     # only shows through an event.
     click: str | None = None
@@ -273,6 +249,8 @@ class _HotReload:
     original: str | None = None
     alive: str | None = None
     expected: str | None = None
+    # Whether the last sample's page reloaded; None until the sample returned.
+    reloaded: bool | None = None
     edits = 0
 
     @property
@@ -295,18 +273,19 @@ class _HotReload:
         """
         return find_target(app, "leaf")
 
-    def original_value(self, tab: Tab) -> str | None:
+    def original_value(self, tab: Tab, deadline: float) -> str | None:
         """Tell what the page shows for the unedited app, once it has settled.
 
         Args:
             tab: The page.
+            deadline: The hook's deadline.
 
         Returns:
             The value a restore brings back.
         """
         # Stylesheets and images may still load after the page is hydrated.
-        tab.wait_quiet(QUIET_S, WAIT_S)
-        return tab.wait_value(self.kind, self.selector, WAIT_S)
+        tab.wait_quiet(QUIET_S, _left(deadline))
+        return tab.wait_value(self.kind, self.selector, _left(deadline))
 
     def plan(self) -> str:
         """Build the next edit's content.
@@ -383,7 +362,7 @@ class _HotReload:
         browser = self.browser = Browser()
         browser.start()
         tab = self.tab = browser.interactive(app, self.path).tab
-        self.original = self.original_value(tab)
+        self.original = self.original_value(tab, _deadline())
 
     def prepare(self, ctx: Context) -> None:
         """Wait for a quiet page, tag the document and arm the watch of a new edit.
@@ -391,46 +370,46 @@ class _HotReload:
         Args:
             ctx: The benchmark context.
         """
-        self._arm()
-
-    def _arm(self) -> None:
-        """Get the page and the next edit ready."""
         tab = self.tab
         assert tab is not None
-        tab.wait_quiet(QUIET_S, WAIT_S)
+        tab.wait_quiet(QUIET_S, _left(_deadline()))
+        tab.drain_console()
         self.alive = tab.set_alive()
+        self.reloaded = None
         self.edits += 1
         self.expected = self.plan()
         tab.watch("edit", self.kind, self.selector, self.expected)
 
-    def _until(self, tab: Tab, id: str, t0: int) -> tuple[Mark, int]:
+    def _until(self, tab: Tab, id: str, t0: int, deadline: float) -> tuple[Mark, int]:
         """Wait for a mark, clicking or reloading every POLL_S when the change needs it.
 
         Args:
             tab: The page.
             id: The mark id.
             t0: ``time.time_ns()`` just before the change.
+            deadline: The hook's deadline.
 
         Returns:
             The mark, and the clicks or reloads it took.
 
         Raises:
-            TimeoutError: When the page does not show the change within WAIT_S,
-                with what the backend and the page did meanwhile.
+            TimeoutError: When the page does not show the change before the
+                deadline, with what the backend and the page did meanwhile.
         """
         count = 0
+        mark = None
         if self.click is None and not self.reloads_itself:
-            mark = tab.poll_mark(id, WAIT_S)
+            left = deadline - time.monotonic()
+            if left > 0:
+                mark = tab.poll_mark(id, left)
         else:
-            deadline = time.monotonic() + WAIT_S
-            mark = None
-            while mark is None and time.monotonic() < deadline:
+            while mark is None and (left := deadline - time.monotonic()) > 0:
                 if self.click is None:
                     tab.reload()
                 else:
                     tab.click(self.click)
                 count += 1
-                mark = tab.poll_mark(id, POLL_S)
+                mark = tab.poll_mark(id, min(POLL_S, left))
         if mark is None:
             how = ""
             if self.click is not None:
@@ -441,13 +420,10 @@ class _HotReload:
             facts = describe_miss(
                 hops(lines, edit_at, None, watcher_line(lines, edit_at)),
                 None if self.reloads_itself else tab.alive() != self.alive,
-                app_error=last_error_line(lines, edit_at),
-                page_error=tab.page_errors[-1] if tab.page_errors else None,
-                console_error=tab.last_error,
             )
             msg = (
                 f"the page did not show the {id} ({self.kind} of {self.selector})"
-                f" within {WAIT_S:g} s{how}: {facts}"
+                f" within the hook's {WAIT_S:g} s{how}: {facts}"
             )
             raise TimeoutError(msg)
         return mark, count
@@ -469,51 +445,36 @@ class _HotReload:
         return browser.anchor.perf_at(t0 / 1e9) - app.t0, app.log_lines()
 
     def sample(self, ctx: Context) -> SampleResult:
-        """Make the change and time it until the page shows it.
+        """Make the change and return once the page shows it.
 
         Args:
             ctx: The benchmark context.
 
         Returns:
-            The latency and the full reloads, with the hops as extra data.
-
-        Raises:
-            FullReloadError: When every try reloaded the page.
+            The latency and whether the page reloaded to show the change, with
+            the hops as extra data.
         """
         browser, tab = self.browser, self.tab
         assert browser is not None
         assert browser.anchor is not None
         assert tab is not None
-        tab.drain_console()
-        full_reloads = 0
-        while True:
-            t0 = self.trigger()
-            mark, repeats = self._until(tab, "edit", t0)
-            if self.reloads_itself:
-                break
-            # A reload right after a hot update must not pass for one.
-            tab.wait_quiet(QUIET_S, WAIT_S)
-            if tab.alive() == self.alive:
-                break
-            full_reloads += 1
-            if not self.retry_on_reload:
-                break
-            if full_reloads == TRIES:
-                msg = f"all {TRIES} tries reloaded the page instead of updating it"
-                raise FullReloadError(msg)
-            self._settle()
-            self._arm()
+        deadline = _deadline()
+        t0 = self.trigger()
+        mark, repeats = self._until(tab, "edit", t0, deadline)
         edit_at, lines = self._log_since(t0)
         watcher = watcher_line(lines, edit_at)
         steps = hops(lines, edit_at, mark["epoch"] / 1000 - t0 / 1e9, watcher)
         tab.raise_errors()
+        reloaded = self.reloaded = (
+            not self.reloads_itself and mark["alive"] != self.alive
+        )
         extra: dict[str, Any] = {
             "marker": self.expected,
             "hops": steps,
             "watcher_line": None if watcher is None else watcher[1],
             "console": tab.drain_console(),
             "anchor_spread_s": browser.anchor.spread,
-            "fixture_hash": fixture_hash(),
+            "fixture_hash": fixture_hash(ctx.params["app"]),
             **self.extras(tab),
         }
         if self.click is not None:
@@ -523,7 +484,7 @@ class _HotReload:
         return SampleResult(
             {
                 "latency": self.latency(mark, t0, steps),
-                "full_reloads": full_reloads,
+                "full_reloads": int(reloaded),
             },
             extra,
         )
@@ -531,30 +492,45 @@ class _HotReload:
     def conclude(self, ctx: Context) -> None:
         """Restore the file and wait until the page shows the original and is quiet.
 
+        From a thread that does not own the browser (after a timeout the sample
+        is still blocked in the page on the owner thread), restores the file
+        and kills the browser, which ends the blocked wait.
+
         Args:
             ctx: The benchmark context.
-        """
-        self._settle()
 
-    def _settle(self) -> None:
-        """Undo the change and let the page settle; kill the browser from a foreign thread."""
+        Raises:
+            FullReloadError: When the page reloaded instead of applying the hot
+                update, also right after showing it.
+        """
         edit, tab, browser = self.edit, self.tab, self.browser
-        restored_at = None
-        if edit is not None and edit.edited:
-            restored_at = edit.restore()
-        if browser is None or tab is None:
+        if browser is None or tab is None or not browser.owns_thread():
+            if edit is not None and edit.edited:
+                edit.restore()
+            if browser is not None and not browser.owns_thread():
+                browser.kill()
             return
-        if not browser.owns_thread():
-            # After a timeout the sample is still blocked in the page on the
-            # owner thread; killing the browser ends it.
-            browser.kill()
-            return
+        deadline = _deadline()
         # A change the page never showed must not stay pending.
         tab.unwatch("edit")
-        if restored_at is not None:
+        # Only a returned sample of a hot update has a document to check.
+        check = (
+            self.hot_update_only
+            and not self.reloads_itself
+            and self.reloaded is not None
+        )
+        reloaded = self.reloaded
+        if check and not reloaded:
+            tab.wait_quiet(QUIET_S, _left(deadline))
+            reloaded = tab.alive() != self.alive
+        if edit is not None and edit.edited:
+            restored_at = edit.restore()
             tab.watch("restore", self.kind, self.selector, self.original)
-            self._until(tab, "restore", restored_at)
-        tab.wait_quiet(QUIET_S, WAIT_S)
+            self._until(tab, "restore", restored_at, deadline)
+        tab.wait_quiet(QUIET_S, _left(deadline))
+        if check and reloaded:
+            msg = "the page reloaded instead of applying the hot update"
+            raise FullReloadError(msg)
 
     def cleanup(self, ctx: Context) -> None:
         """Restore an edit left behind, close the browser and stop the app.
@@ -657,11 +633,12 @@ class Handler(_HotReload):
         """
         return find_target(app, "handler")
 
-    def original_value(self, tab: Tab) -> str | None:
+    def original_value(self, tab: Tab, deadline: float) -> str | None:
         """Tell what a click shows with the unedited handler.
 
         Args:
             tab: The page.
+            deadline: The hook's deadline.
 
         Returns:
             The handler marker's original literal.
@@ -683,7 +660,7 @@ class Css(_HotReload):
 
     kind = "style:font-size"
     selector = ".bench-hooks"
-    retry_on_reload = False
+    hot_update_only = False
 
     def target(self, app: Path) -> Target:
         """Find the hooks' font size.
@@ -729,7 +706,7 @@ class Asset(_HotReload):
 
     kind = "naturalWidth"
     selector = 'img[alt="Playground logo"]'
-    retry_on_reload = False
+    hot_update_only = False
 
     def target(self, app: Path) -> Target:
         """Find the logo's root element.
@@ -750,7 +727,6 @@ class Asset(_HotReload):
         """
         super().setup(ctx)
         assert self.tab is not None
-        self.tab.cdp.send("Network.enable")
         self.tab.cdp.send("Network.setCacheDisabled", {"cacheDisabled": True})
 
     def plan(self) -> str:
@@ -863,7 +839,7 @@ class Watcher(RenderLeaf):
     counted.
     """
 
-    retry_on_reload = False
+    hot_update_only = False
 
     def latency(self, mark: Mark, t0: int, steps: dict[str, float | None]) -> float:
         """Take the watcher's time.

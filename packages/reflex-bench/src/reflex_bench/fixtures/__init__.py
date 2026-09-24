@@ -22,11 +22,14 @@ _OUTPUT = (".venv", ".web", ".states", "__pycache__", "reflex.lock", "uv.lock", 
 _KEEP = frozenset({".web", "reflex.lock"})
 
 
-def playground_dir() -> Path:
-    """Locate ``examples/playground`` in the checkout the harness runs from.
+def fixture_dir(name: str) -> Path:
+    """Locate a fixture app under ``examples/`` in the checkout the harness runs from.
+
+    Args:
+        name: The app's directory name.
 
     Returns:
-        The playground directory.
+        The app directory.
 
     Raises:
         RuntimeError: When the harness does not run from a checkout, e.g. from an
@@ -34,27 +37,36 @@ def playground_dir() -> Path:
     """
     # packages/reflex-bench/src/reflex_bench/fixtures/__init__.py
     root = Path(__file__).resolve().parents[5]
-    playground = root / "examples" / "playground"
-    if (
-        not (root / "pyproject.toml").is_file()
-        or not (playground / ".content-hash").is_file()
-    ):
+    app = root / "examples" / name
+    if not (root / "pyproject.toml").is_file() or not (app / ".content-hash").is_file():
         msg = (
-            "examples/playground not found next to reflex-bench: the fixture apps"
+            f"examples/{name} not found next to reflex-bench: the fixture apps"
             " are read from the reflex checkout, so run reflex-bench from one"
             f" (searched {root})"
         )
         raise RuntimeError(msg)
-    return playground
+    return app
 
 
-def fixture_hash() -> str:
-    """Read the playground's content hash (``scripts/hash_examples.py``).
+def playground_dir() -> Path:
+    """Locate ``examples/playground``.
+
+    Returns:
+        The playground directory.
+    """
+    return fixture_dir("playground")
+
+
+def fixture_hash(name: str) -> str:
+    """Read a fixture app's content hash (``scripts/hash_examples.py``).
+
+    Args:
+        name: The app's directory name.
 
     Returns:
         E.g. ``sha256:5c66…``.
     """
-    return (playground_dir() / ".content-hash").read_text(encoding="utf-8").strip()
+    return (fixture_dir(name) / ".content-hash").read_text(encoding="utf-8").strip()
 
 
 def stage_playground(dst: Path) -> None:

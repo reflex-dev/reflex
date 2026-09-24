@@ -25,7 +25,7 @@ import psutil
 import pytest
 from reflex_bench import machine
 from reflex_bench.drivers import browser as browser_module
-from reflex_bench.drivers.app_process import Readiness, owned_processes
+from reflex_bench.drivers.app_process import Readiness
 from reflex_bench.drivers.browser import Anchor, Browser
 from reflex_bench.scheduler import ABANDON_GRACE_S
 
@@ -35,6 +35,43 @@ needs_chromium = pytest.mark.skipif(
     reason="no Playwright chromium (uv run playwright install --only-shell chromium)",
 )
 _T = TypeVar("_T")
+
+
+def leftovers(browser: Browser, wait: float = 1.0) -> list[psutil.Process]:
+    """Find what a browser left running: its driver and Chromium's process group.
+
+    Args:
+        browser: The browser.
+        wait: Seconds to keep looking while helpers of a killed group still exit.
+
+    Returns:
+        The processes still running (a zombie counts as gone).
+    """
+    *roots, driver = browser._processes
+    groups = {root.pid for root in roots}
+
+    def pgid(proc: psutil.Process) -> int | None:
+        try:
+            return os.getpgid(proc.pid)
+        except OSError:
+            return None
+
+    def running(proc: psutil.Process) -> bool:
+        try:
+            return proc.status() != psutil.STATUS_ZOMBIE
+        except psutil.NoSuchProcess:
+            return False
+
+    deadline = time.monotonic() + wait
+    while True:
+        left = [
+            proc
+            for proc in psutil.process_iter()
+            if (proc.pid == driver.pid or pgid(proc) in groups) and running(proc)
+        ]
+        if not left or time.monotonic() >= deadline:
+            return left
+        time.sleep(0.02)
 
 
 class _QuietHandler(http.server.SimpleHTTPRequestHandler):
@@ -101,7 +138,7 @@ def browser(owner: ThreadPoolExecutor) -> Iterator[Browser]:
     on(owner, browser.start)
     yield browser
     on(owner, browser.close)
-    assert owned_processes(browser.token) == []
+    assert leftovers(browser) == []
 
 
 def test_playwright_is_imported_lazily():
@@ -129,7 +166,7 @@ def test_the_page_script_is_one_file_next_to_the_driver():
 def test_marks_carry_both_clocks_and_map_onto_the_harness_clock(
     owner: ThreadPoolExecutor, browser: Browser, site: str
 ):
-    def load() -> tuple[list[float], dict[str, float], dict[str, Any], float]:
+    def load() -> tuple[list[float], dict[str, Any], dict[str, Any], float, int]:
         tab = browser.new_page()
         started = time.perf_counter()
         tab.page.goto(f"{site}/bench_page.html", wait_until="commit")
@@ -140,12 +177,18 @@ def test_marks_carry_both_clocks_and_map_onto_the_harness_clock(
         before = time.perf_counter()
         now = tab.page.evaluate("Date.now()")
         after = time.perf_counter()
-        return [started, seen, before, after], mark, tab.timings(), now
+        return (
+            [started, seen, before, after],
+            mark,
+            tab.timings(),
+            now,
+            tab.transfer_bytes,
+        )
 
-    (started, seen, before, after), mark, timings, now = on(owner, load)
+    (started, seen, before, after), mark, timings, now, transfer = on(owner, load)
     # performance.now() since navigation start and Date.now() of one moment.
     assert mark["perf"] >= 100
-    assert timings["time_origin"] + mark["perf"] == pytest.approx(mark["epoch"], abs=5)
+    assert mark["alive"] is None
     assert browser.anchor is not None
     # Date.now() has millisecond resolution.
     assert (
@@ -160,6 +203,9 @@ def test_marks_carry_both_clocks_and_map_onto_the_harness_clock(
     assert 0 < timings["fcp"] < mark["perf"]
     assert timings["lcp"] is not None
     assert timings["longtasks"] == []
+    # The document's wire bytes: its body plus headers.
+    body = (HTML / "bench_page.html").stat().st_size
+    assert body < transfer < body + 1000
 
 
 @needs_chromium
@@ -192,9 +238,14 @@ def test_rearming_clears_the_mark_and_unwatch_ends_a_watch(
         first = tab.wait_mark("leaf", 10)
         # A new watch under the same id must not find the old mark.
         tab.watch("leaf", "text", "#bench-marker-leaf", "m-never")
-        found = {"first": first, "stale": tab.mark("leaf"), "armed": tab.pending()}
+        pending = "() => window.__bench.pending()"
+        found = {
+            "first": first,
+            "stale": tab.mark("leaf"),
+            "armed": tab.page.evaluate(pending),
+        }
         tab.unwatch("leaf")
-        found["unwatched"] = tab.pending()
+        found["unwatched"] = tab.page.evaluate(pending)
         tab.wait_quiet(0.3, 10)  # nothing pending holds it up
         found["width"] = tab.wait_value("naturalWidth", 'img[alt="logo"]', 10)
         found["missing"] = tab.read("text", "#missing")
@@ -242,23 +293,23 @@ def test_a_reload_keeps_watches_and_marks_but_not_the_alive_token(
         tab.watch("reloaded", "text", "#bench-marker-leaf", "m-reloaded-leaf")
         found["update"] = tab.wait_mark("update", 10)
         found["after_update"] = tab.alive()
-        tab.wait_mark("reloaded", 10)
+        found["reloaded"] = tab.wait_mark("reloaded", 10)
         found["after_reload"] = tab.alive()
-        found["pending"] = tab.pending()
         # The reloaded document still reports the mark the first one recorded.
         found["kept"] = tab.mark("update")
         # Arming the id again forgets its mark in later documents too.
         tab.watch("update", "text", "#bench-marker-leaf", "m-never")
         tab.reload()
-        found["rearmed"] = tab.mark("update"), tab.pending()
+        found["rearmed"] = tab.mark("update")
         return found
 
     found = on(owner, reload)
-    assert found["after_update"] == found["token"]
+    # A mark carries the tag of the document that recorded it.
+    assert found["after_update"] == found["token"] == found["update"]["alive"]
     assert found["after_reload"] is None
-    assert found["pending"] == []
+    assert found["reloaded"]["alive"] is None
     assert found["kept"] == found["update"]
-    assert found["rearmed"] == (None, ["update"])
+    assert found["rearmed"] is None
 
 
 @needs_chromium
@@ -326,20 +377,21 @@ def test_interactive_fills_tier_3(
     assert 0.1 <= result.interactive_ready < elapsed
     assert result.nav_to_interactive_s >= 0.1
     assert 0 < result.fcp_s < result.interactive_ready
-    # Navigation started after the app's t0 and before the page was interactive.
-    assert browser.anchor is not None
-    navigation_start = browser.anchor.perf_at(result.navigation_start)
-    assert app.t0 < navigation_start < app.t0 + result.interactive_ready
 
 
 @needs_chromium
 def test_close_on_the_owner_thread_leaves_nothing(owner: ThreadPoolExecutor):
     browser = Browser()
     on(owner, browser.start)
-    assert owned_processes(browser.token)
+    *roots, driver = browser._processes
+    assert driver.ppid() == os.getpid()
+    assert [root.ppid() for root in roots] == [driver.pid]
+    # Chromium's root leads the group of its helpers.
+    assert {os.getpgid(root.pid) for root in roots} == {root.pid for root in roots}
+    assert len(leftovers(browser, wait=0)) > len(roots) + 1
     on(owner, browser.close)
-    assert browser.closed
-    assert owned_processes(browser.token) == []
+    assert browser._closed
+    assert leftovers(browser) == []
     on(owner, browser.close)  # idempotent
 
 
@@ -349,9 +401,7 @@ def test_close_from_another_thread_kills_and_ends_a_blocked_wait(
 ):
     browser = Browser()
     on(owner, browser.start)
-    driver = browser._driver
-    assert driver is not None
-    assert driver.ppid() == os.getpid()
+    driver = browser._processes[-1]
     blocked = threading.Event()
 
     def wait_forever() -> None:
@@ -379,8 +429,8 @@ def test_close_from_another_thread_kills_and_ends_a_blocked_wait(
         waiting.result(timeout=ABANDON_GRACE_S)
     assert time.monotonic() - started < ABANDON_GRACE_S
     assert kills == [threading.current_thread().name]
-    assert browser.closed
-    assert owned_processes(browser.token) == []
+    assert browser._closed
+    assert leftovers(browser) == []
     assert not driver.is_running() or driver.status() == psutil.STATUS_ZOMBIE
     browser.kill()  # idempotent
     with pytest.raises(RuntimeError, match="closed"):
@@ -419,7 +469,7 @@ def test_kill_never_signals_pid_1_or_below(
     browser.kill()
     assert signal.SIGKILL in {sig for _, sig in sent}
     assert min(pid for pid, _ in sent) > 1
-    assert owned_processes(browser.token) == []
+    assert leftovers(browser) == []
 
 
 @needs_chromium
@@ -427,5 +477,5 @@ def test_exit_kills_browsers_still_open(owner: ThreadPoolExecutor):
     browser = Browser()
     on(owner, browser.start)
     browser_module._kill_live_browsers()
-    assert browser.closed
-    assert owned_processes(browser.token) == []
+    assert browser._closed
+    assert leftovers(browser) == []

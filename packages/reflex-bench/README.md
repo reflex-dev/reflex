@@ -303,23 +303,25 @@ animation frame entries (`tab.timings()`). `tab.set_alive()` tags the document
 and `tab.alive()` reads the tag back: a full reload loses it. Uncaught page
 errors fail a sample (`tab.raise_errors()`), console errors and warnings are
 counted (`tab.drain_console()`, the last error's text in `tab.last_error`), and
-websocket payload bytes and encoded HTTP response sizes are summed per page.
+websocket payload bytes and HTTP wire bytes (headers included, from the
+DevTools `Network.loadingFinished` events) are summed per page.
 
 **Clocks.** A mark carries `performance.now()` (since navigation start) and
 `Date.now()`. `browser.anchor`, the tightest of three back-to-back reads of
 `time.perf_counter()` and `time.time()` taken at start, maps page time onto
 `perf_counter()`: `anchor.perf_at(epoch) - app.t0` puts a page event on the
-app's timeline, with millisecond resolution; the anchor's spread (well under a
-microsecond) is stored with the samples.
+app's timeline within 1 ms (`Date.now()`'s resolution) plus the anchor's
+spread, the harness's own share (well under a microsecond), which is stored
+with the samples.
 
 **Threads.** The sync API refuses calls from any thread but the one that
 started it (`greenlet.error: Cannot switch to a different thread`), and
 teardown hooks run on a fresh thread after a timeout or Ctrl-C. `close()`
 closes normally on the owner thread and kills from any other; `kill()` never
-touches Playwright: it SIGKILLs Chromium (found through the
-`REFLEX_BENCH_OWNER` token in its environment, with the helpers it spawned,
-whose environment is empty) and the Playwright driver, so a hook still blocked
-in the page gets an error at once. `close_tab()` from another thread kills the
+touches Playwright: it SIGKILLs the Playwright driver (the harness's child) and
+the process group Chromium's root (the driver's child) leads with all its
+helpers, both found at `start()`, so a hook still blocked in the page gets an
+error at once. `close_tab()` from another thread kills the
 browser too: after a timeout the instance is over. Browsers still open when the
 harness exits are killed. A `Browser` belongs to one instance and arm; during
 `ab` two of them coexist. Playwright is imported on `start()`, which keeps
@@ -332,7 +334,7 @@ harness exits are killed. A `Browser` belongs to one instance and arm; during
 | `browser.dev.ready` | pr, daily | `reflex run` start to `process_ready` (tier 1), `http_ready` (tier 2) and `interactive_ready` (tier 3), seconds since the spawn; also `nav_to_interactive` (in the page) and `fcp` |
 | `browser.preview.ready` | daily (reflex 0.9.8+) | the same with `--env preview` |
 | `browser.prod.ready` | daily | the same with `--env prod`, frontend build included |
-| `browser.prod.pageload[cpu=1\|4]` | daily | loading `/` of one prod server in a fresh context (cold cache), CPU throttled 4 times with `cpu=4`: `fcp`, `lcp`, `interactive`, `tbt` (long tasks' time beyond 50 ms before interactive), `ws_bytes`, `transfer_bytes` |
+| `browser.prod.pageload[cpu=1\|4]` | daily | loading `/` of one prod server in a fresh context (cold cache), CPU throttled 4 times with `cpu=4`, read as soon as the page is interactive: `fcp`, `lcp` (the same paint on the playground), `interactive`, `tbt` (long tasks' time beyond 50 ms before interactive), `ws_bytes`, `transfer_bytes` (wire bytes, headers included; both exact: the same page transfers the same bytes) |
 
 The `ready` samples store the gaps between the tiers in `extra["gaps"]`. Page
 load metrics are noisy: read the median and its confidence interval over at
@@ -344,11 +346,13 @@ Each `hmr.*` instance starts one app (`reflex run --loglevel debug`) and one
 page, then per sample rewrites the staged app and waits until the page shows
 the change. The edit's content is built in `prepare`; `sample` writes it to a
 sibling temporary file and moves it over the target, taking `t0` just before
-that one `os.replace`. `latency` is the page's mark minus `t0`, on the wall
-clock of both. Every edit writes a unique value, so a stale page never
-satisfies a watch. `conclude` restores the file and waits until the page shows
-the original and has been quiet for 0.5 s (no pending watch, no DOM change),
-which is also the wait between edits. `warmup` is 3 edits.
+that one `os.replace`, and returns as soon as the page's mark is there.
+`latency` is the page's mark minus `t0`, on the wall clock of both. Every edit
+writes a unique value, so a stale page never satisfies a watch. `conclude`
+waits until the page has been quiet for 0.5 s (no pending watch, no DOM
+change), restores the file and waits until the page shows the original and is
+quiet again, which is also the wait between edits. Every hook's waits share
+one 90 s deadline. `warmup` is 3 edits.
 
 | Id | Edit | Done when the page shows |
 | --- | --- | --- |
@@ -366,18 +370,17 @@ that shows after a refresh, so preview twins whose change needs a new page
 reload it (waiting for its load event) every 250 ms until it shows
 (`extra["reloads"]`).
 
-`full_reloads` counts the samples' page reloads (a lost `tab.alive()` tag). For
-the render, handler and reconnect benchmarks a reload is no hot update: the
-sample restores, settles and retries with a new value, up to 3 times, and fails
-with `FullReloadError` when every try reloads, so `latency` only holds hot
+`full_reloads` records whether the sample's page reloaded to show the change
+(the mark carries the document's `tab.alive()` tag; a reloaded document lost
+it). For the render, handler and reconnect benchmarks a reload is no hot
+update: `conclude` fails the sample with `FullReloadError`, also when the page
+reloads right after showing the hot update, so `latency` only holds hot
 updates. For `hmr.css` and `hmr.asset` a reload may be how the change shows:
-`latency` is the time until it shows and `full_reloads` records whether the
-page reloaded. A change the page never shows by itself (no hot update, no
-reload, within 90 s) fails the sample: the harness does not refresh a dev page
-for it. The error then says when granian saw the change, when the reload's last
-`[timing]` line came, whether the page reloaded, and the app's last error line
-and the page's last uncaught and console errors, so it tells which side dropped
-the change. `extra["hops"]` places each sample's backend steps, in seconds
+`latency` is the time until it shows. A change the page never shows by itself
+(no hot update, no reload, within the deadline) fails the sample: the harness
+does not refresh a dev page for it. The error then says when granian saw the
+change, when the reload's last `[timing]` line came and whether the page
+reloaded, so it tells which side dropped the change. `extra["hops"]` places each sample's backend steps, in seconds
 since the edit: `watcher_seen_s` (granian's line), `compile_done_s` (the
 reload's last `[timing]` line) and `dom_updated_s` (the page's mark).
 

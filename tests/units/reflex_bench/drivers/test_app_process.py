@@ -8,10 +8,8 @@ children as each test scripts it.
 
 from __future__ import annotations
 
-import contextlib
 import json
 import os
-import secrets
 import signal
 import subprocess
 import sys
@@ -706,55 +704,27 @@ def test_t0_and_timed_log_lines(app_dir: Path, fake: Configure, apps: list[AppPr
     assert readiness.ready_line in times
 
 
-# A session leader carrying the owner token whose child drops its environment
-# (as Chromium's helpers do) and leaves an orphan behind in the leader's group.
-_OWNED_TREE = """
-import os, subprocess, sys, time
-orphan = "import subprocess, sys; print(subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(3600)']).pid, flush=True)"
-subprocess.run([sys.executable, "-c", orphan], env={}, check=True)
-child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(3600)"], env={})
-print(os.getpid(), child.pid, flush=True)
-time.sleep(3600)
-"""
-
-
 @posix_only
-def test_owned_processes_and_kill_owned():
-    token = secrets.token_hex(8)
+def test_kill_processes_takes_a_leaders_group_and_waits():
+    # A session leader whose child leaves its group: only the group dies.
     leader = subprocess.Popen(
-        [sys.executable, "-c", _OWNED_TREE],
-        env={**os.environ, app_process.OWNER_ENV: token},
-        stdout=subprocess.PIPE,
-        text=True,
+        [sys.executable, "-c", "import time; time.sleep(3600)"],
         start_new_session=True,
     )
     other = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(3600)"])
     try:
-        assert leader.stdout is not None
-        orphan = int(leader.stdout.readline())
-        root, child = map(int, leader.stdout.readline().split())
-        assert root == leader.pid
-        # The child is found through its parent; the orphan left the tree.
-        assert {proc.pid for proc in app_process.owned_processes(token)} == {
-            root,
-            child,
-        }
-        app_process.kill_owned(token, extra=[psutil.Process(other.pid)])
-        # SIGKILL to the leader's process group also reaches the orphan.
-        assert _running([root, child, orphan, other.pid]) == []
-        assert app_process.owned_processes(token) == []
-        app_process.kill_owned(token)  # nothing left: a no-op
+        app_process.kill_processes([psutil.Process(leader.pid)])
+        assert _running([leader.pid]) == []
+        assert _running([other.pid]) == [other.pid]
+        app_process.kill_processes([psutil.Process(leader.pid)])  # gone: a no-op
     finally:
-        # The whole group, also when the code under test failed to kill it.
-        with contextlib.suppress(ProcessLookupError):
-            os.killpg(leader.pid, signal.SIGKILL)
         for proc in (leader, other):
             proc.kill()
             proc.wait()
 
 
 @posix_only
-def test_kill_owned_never_signals_pid_1_or_the_harness(
+def test_kill_processes_never_signals_pid_1_or_the_harness(
     monkeypatch: pytest.MonkeyPatch,
 ):
     targets: list[int] = []
@@ -762,9 +732,7 @@ def test_kill_owned_never_signals_pid_1_or_the_harness(
     monkeypatch.setattr(os, "killpg", lambda pgid, sig: targets.append(pgid))
     monkeypatch.setattr(app_process, "_KILL_GRACE_S", 0.05)
     with pytest.raises(RuntimeError, match="survived SIGKILL"):
-        app_process.kill_owned(
-            secrets.token_hex(8), extra=[psutil.Process(1), psutil.Process()]
-        )
+        app_process.kill_processes([psutil.Process(1), psutil.Process()])
     assert targets == []
 
 

@@ -16,7 +16,7 @@ from typing import Any
 from reflex_bench.drivers.app_process import Readiness
 from reflex_bench.drivers.browser import Anchor, Interactive
 
-Mark = dict[str, float]
+Mark = dict[str, Any]
 
 
 class FakeApp:
@@ -147,6 +147,7 @@ class FakeTab:
         Returns:
             The token, ``None`` after a reload.
         """
+        self.calls.append(("alive",))
         return self.token
 
     def read(self, kind: str, selector: str) -> str | None:
@@ -218,7 +219,7 @@ class FakeTab:
                 self.token = None
         if kind != "changed" and expected is not None:
             self.values[selector] = expected
-        return {"perf": 1000.0, "epoch": time.time() * 1000 + 2}
+        return {"perf": 1000.0, "epoch": time.time() * 1000 + 2, "alive": self.token}
 
     def poll_mark(self, id: str, timeout: float) -> Mark | None:
         """Wait a little for a mark.
@@ -353,7 +354,6 @@ class FakeBrowser:
             nav_to_interactive_s=0.8,
             fcp_s=2.5,
             lcp_s=2.6,
-            navigation_start=time.time() - 0.8,
         )
 
     def owns_thread(self) -> bool:

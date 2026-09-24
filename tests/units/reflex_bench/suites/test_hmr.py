@@ -9,6 +9,7 @@ import signal
 import socket
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -117,15 +118,15 @@ def test_hook_sequence(ctx: Context):
     tab.calls.clear()
     result = bench.sample(ctx)
     assert isinstance(result, SampleResult)
-    # The edit was on disk before the wait.
+    # The edit was on disk before the wait, and the sample ends at the mark.
     assert f'"{marker}"'.encode() in _file(ctx, LEAF)
-    assert tab.calls == [("poll_mark", "edit"), ("wait_quiet", hmr.QUIET_S)]
+    assert tab.calls == [("poll_mark", "edit")]
     assert result.values["full_reloads"] == 0
     assert 0 < result.values["latency"] < 1
     extra = result.extra
     assert extra is not None
     assert extra["marker"] == marker
-    assert extra["fixture_hash"] == fixtures.fixture_hash()
+    assert extra["fixture_hash"] == fixtures.fixture_hash("playground")
     assert extra["console"] == {"warning": 1}
     hops = extra["hops"]
     assert 0 < hops["watcher_seen_s"] <= hops["compile_done_s"] <= hops["dom_updated_s"]
@@ -135,8 +136,12 @@ def test_hook_sequence(ctx: Context):
     tab.calls.clear()
     bench.conclude(ctx)
     assert _file(ctx, LEAF) == original
+    # A reload right after the hot update must not pass for one: the tag is
+    # read again once the page is quiet, before the restore.
     assert tab.calls == [
         ("unwatch", "edit"),
+        ("wait_quiet", hmr.QUIET_S),
+        ("alive",),
         ("watch", "restore", "text", "#bench-marker-leaf", "m-initial-leaf"),
         ("poll_mark", "restore"),
         ("wait_quiet", hmr.QUIET_S),
@@ -186,19 +191,12 @@ def test_a_change_the_page_never_shows_fails_clearly(ctx: Context):
     bench.prepare(ctx)
     tab = _tab(bench)
     tab.misses = 1
-    tab.page_errors = ["Error: first", "Error: [react-router:hmr] no update"]
-    tab.last_error = "[vite] failed\n  to update"
-    # Logged a minute from now: after the edit.
-    FakeApp.created[0].log("Error: No module update found", delay=60)
     with pytest.raises(TimeoutError) as info:
         bench.sample(ctx)
     assert str(info.value) == (
         'the page did not show the edit (naturalWidth of img[alt="Playground logo"])'
-        " within 90 s: granian printed no reload line, no [timing] line followed,"
-        " the page did not reload,"
-        " the app's last error line: Error: No module update found,"
-        " the page's last uncaught error: Error: [react-router:hmr] no update,"
-        " the page's last console error: [vite] failed to update"
+        " within the hook's 90 s: granian printed no reload line, no [timing]"
+        " line followed, the page did not reload"
     )
     bench.conclude(ctx)
     assert _file(ctx, "assets/logo.svg") == original
@@ -212,33 +210,8 @@ def test_describe_miss_tells_which_side_dropped_the_change():
         " the page did not reload"
     )
     # Preview twins reload the page themselves: nothing to say about reloads.
-    assert hmr.describe_miss(steps, None, console_error="x" * 300).endswith(
-        f"1.19 s, the page's last console error: {'x' * 200}"
-    )
-    assert hmr.describe_miss(
-        steps, True, app_error="  Error:  no update", page_error="Error:\n  boom"
-    ).endswith(
-        "the page reloaded, the app's last error line: Error: no update,"
-        " the page's last uncaught error: Error: boom"
-    )
-
-
-def test_last_error_line_after_the_edit():
-    lines = [
-        (0.5, "Error: an earlier failure"),
-        (2.1, "Debug: [timing] Compile pages: 0.06s"),
-        (2.2, "Debug: compiled ErrorBoundary wrappers"),  # not an error
-        (2.3, "  Error:  No module update found for route routes/.$._index"),
-        (
-            2.3,
-            "    at http://localhost:3000/@id/__x00__virtual:react-router/hmr-runtime",
-        ),
-        (2.4, "Debug: done"),
-    ]
-    assert hmr.last_error_line(lines, edit_at=2.0) == lines[3][1]
-    assert hmr.last_error_line(lines[:3], edit_at=2.0) is None
-    for line in ("[ERROR] Unexpected exit from worker-1", "NameError: name 'x'"):
-        assert hmr.last_error_line([(2.5, line)], edit_at=2.0) == line
+    assert hmr.describe_miss(steps, None).endswith("1.19 s")
+    assert hmr.describe_miss(steps, True).endswith("the page reloaded")
 
 
 def test_conclude_on_a_foreign_thread_kills_the_browser(ctx: Context):
@@ -264,42 +237,98 @@ def test_conclude_on_a_foreign_thread_kills_the_browser(ctx: Context):
     assert FakeApp.created[0].calls[-1] == "stop"
 
 
-def test_full_reloads_are_retried_with_new_markers(ctx: Context):
-    bench = hmr.RenderLeaf()
-    original = _file(ctx, LEAF)
-    bench.setup(ctx)
-    _tab(bench).reloads = 2
-    bench.prepare(ctx)
-    result = bench.sample(ctx)
-    assert result.values["full_reloads"] == 2
-    tab = _tab(bench)
-    markers = [call[4] for call in tab.calls if call[:2] == ("watch", "edit")]
-    assert len(markers) == 3
-    assert len(set(markers)) == 3
-    # Each reloaded try was restored before the next one.
-    restores = [call for call in tab.calls if call[:2] == ("watch", "restore")]
-    assert len(restores) == 2
-    assert result.extra is not None
-    assert result.extra["marker"] == markers[-1]
-    bench.conclude(ctx)
-    assert _file(ctx, LEAF) == original
-    bench.cleanup(ctx)
-
-
-def test_reloading_on_every_try_fails(ctx: Context):
+def test_a_full_reload_is_counted_and_fails_the_sample_in_conclude(ctx: Context):
     bench = hmr.Handler()
     original = _file(ctx, "playground/state.py")
     bench.setup(ctx)
-    _tab(bench).reloads = hmr.TRIES
+    _tab(bench).reloads = 1
     bench.prepare(ctx)
-    with pytest.raises(hmr.FullReloadError, match=f"all {hmr.TRIES} tries"):
-        bench.sample(ctx)
-    bench.conclude(ctx)
+    # The mark came from a reloaded document: the sample says so and returns.
+    result = bench.sample(ctx)
+    assert result.values["full_reloads"] == 1
+    with pytest.raises(hmr.FullReloadError, match="reloaded"):
+        bench.conclude(ctx)
+    # The file was restored before the failure.
     assert _file(ctx, "playground/state.py") == original
     bench.cleanup(ctx)
 
 
-def test_style_and_asset_changes_count_a_reload_without_retrying(ctx: Context):
+def test_a_reload_right_after_the_hot_update_fails_the_sample(ctx: Context):
+    bench = hmr.RenderLeaf()
+    bench.setup(ctx)
+    bench.prepare(ctx)
+    result = bench.sample(ctx)
+    assert result.values["full_reloads"] == 0
+    # The page reloads before it is quiet again.
+    _tab(bench).token = None
+    with pytest.raises(hmr.FullReloadError, match="reloaded"):
+        bench.conclude(ctx)
+    bench.cleanup(ctx)
+
+
+def test_conclude_does_not_check_the_tag_after_a_failed_sample(ctx: Context):
+    bench = hmr.RenderLeaf()
+    bench.setup(ctx)
+    bench.prepare(ctx)
+    _tab(bench).fail = TimeoutError("the page never showed the marker")
+    with pytest.raises(TimeoutError):
+        bench.sample(ctx)
+    _tab(bench).fail = None
+    _tab(bench).token = None
+    bench.conclude(ctx)  # no FullReloadError on top of the sample's failure
+    bench.cleanup(ctx)
+
+
+def test_every_wait_of_a_hook_shares_one_deadline(
+    ctx: Context, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(hmr, "WAIT_S", 1.0)
+    timeouts: list[tuple[str, float]] = []
+
+    class SlowTab(FakeTab):
+        def wait_quiet(self, seconds: float, timeout: float) -> None:
+            timeouts.append(("wait_quiet", timeout))
+            time.sleep(0.3)
+
+        def poll_mark(self, id: str, timeout: float) -> dict[str, Any] | None:
+            timeouts.append(("poll_mark", timeout))
+            time.sleep(0.3)
+            return super().poll_mark(id, timeout)
+
+    monkeypatch.setattr(FakeBrowser, "tab_class", SlowTab)
+    bench = hmr.RenderLeaf()
+    bench.setup(ctx)
+    bench.prepare(ctx)
+    bench.sample(ctx)
+    timeouts.clear()
+    bench.conclude(ctx)
+    assert [name for name, _ in timeouts] == ["wait_quiet", "poll_mark", "wait_quiet"]
+    first, second, third = (timeout for _, timeout in timeouts)
+    assert first <= 1.0
+    assert second <= first - 0.3
+    assert third <= second - 0.3
+    bench.cleanup(ctx)
+
+
+def test_a_passed_deadline_fails_the_wait(
+    ctx: Context, monkeypatch: pytest.MonkeyPatch
+):
+    class SlowTab(FakeTab):
+        def wait_quiet(self, seconds: float, timeout: float) -> None:
+            time.sleep(0.15)
+
+    monkeypatch.setattr(FakeBrowser, "tab_class", SlowTab)
+    bench = hmr.RenderLeaf()
+    bench.setup(ctx)
+    bench.prepare(ctx)
+    bench.sample(ctx)
+    monkeypatch.setattr(hmr, "WAIT_S", 0.1)
+    with pytest.raises(TimeoutError, match=r"0\.1 s"):
+        bench.conclude(ctx)
+    bench.cleanup(ctx)
+
+
+def test_style_and_asset_changes_count_a_reload_without_failing(ctx: Context):
     for cls, path in (
         (hmr.Css, "assets/playground.css"),
         (hmr.Asset, "assets/logo.svg"),
@@ -452,8 +481,13 @@ def test_reconnect_kills_the_worker_and_clicks_on_the_counter(
     assert result.values["full_reloads"] == 0
     tab.calls.clear()
     bench.conclude(ctx)
-    # Nothing to restore: the page only has to settle.
-    assert tab.calls == [("unwatch", "edit"), ("wait_quiet", hmr.QUIET_S)]
+    # Nothing to restore: the page only has to settle, and keep its document.
+    assert tab.calls == [
+        ("unwatch", "edit"),
+        ("wait_quiet", hmr.QUIET_S),
+        ("alive",),
+        ("wait_quiet", hmr.QUIET_S),
+    ]
     bench.cleanup(ctx)
 
 

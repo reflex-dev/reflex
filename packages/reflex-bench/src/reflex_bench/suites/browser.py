@@ -17,8 +17,6 @@ from reflex_bench.fixtures import app_dir, app_env, fixture_hash, prime
 from reflex_bench.registry import Metric, SampleResult, benchmark
 
 APP_TIMEOUT_S = 600.0
-# How long a page load runs on after it is interactive, for late paints and tasks.
-SETTLE_S = 0.5
 # The main thread budget of a task; what a long task takes beyond it blocks input.
 BLOCKING_MS = 50.0
 
@@ -128,7 +126,7 @@ class _Ready:
                 "lcp_s": result.lcp_s,
                 "console": tab.drain_console(),
                 "anchor_spread_s": browser.anchor.spread if browser.anchor else None,
-                "fixture_hash": fixture_hash(),
+                "fixture_hash": fixture_hash("playground"),
             },
         )
 
@@ -162,6 +160,7 @@ class _Ready:
     suites=("pr", "daily"),
     kind="startup",
     metrics=READY_METRICS,
+    warmup=1,
     timeout=APP_TIMEOUT_S,
     setup_timeout=APP_TIMEOUT_S + 60,
     estimate=8,
@@ -177,6 +176,7 @@ class DevReady(_Ready):
     suites=("daily",),
     kind="startup",
     metrics=READY_METRICS,
+    warmup=1,
     timeout=APP_TIMEOUT_S,
     setup_timeout=APP_TIMEOUT_S + 60,
     estimate=30,
@@ -193,6 +193,7 @@ class PreviewReady(_Ready):
     suites=("daily",),
     kind="startup",
     metrics=READY_METRICS,
+    warmup=1,
     timeout=APP_TIMEOUT_S,
     setup_timeout=APP_TIMEOUT_S + 60,
     estimate=40,
@@ -230,10 +231,16 @@ class ProdReady(_Ready):
             description="total blocking time before interactive",
         ),
         "ws_bytes": Metric(
-            unit="B", direction="lower", description="websocket payload bytes"
+            unit="B",
+            direction="lower",
+            assume="exact",
+            description="websocket payload bytes",
         ),
         "transfer_bytes": Metric(
-            unit="B", direction="lower", description="encoded HTTP response bodies"
+            unit="B",
+            direction="lower",
+            assume="exact",
+            description="HTTP response bytes over the wire, headers included",
         ),
     },
     warmup=1,
@@ -247,8 +254,10 @@ class ProdPageload:
     One prod server serves every sample of an instance on purpose: a prod start
     includes a full frontend build, and during `ab` the other arm's idle server
     does not touch page load. The times are page-relative (ms since navigation
-    start, stored in seconds). Page loads are noisy: read the median and its
-    confidence interval over at least 6 runs; outliers are counted, not dropped.
+    start, stored in seconds), read as soon as the page is interactive; on the
+    playground the first contentful paint is also the largest, so ``fcp`` and
+    ``lcp`` coincide. Page loads are noisy: read the median and its confidence
+    interval over at least 6 runs; outliers are counted, not dropped.
     """
 
     app: AppProcess | None = None
@@ -283,7 +292,7 @@ class ProdPageload:
         browser.start()
 
     def sample(self, ctx: Context) -> SampleResult:
-        """Load / until it is interactive, then let it settle and read its timings.
+        """Load / until it is interactive and read its timings.
 
         Args:
             ctx: The benchmark context.
@@ -300,7 +309,6 @@ class ProdPageload:
         assert app is not None
         result = browser.interactive(app)
         tab = self.tab = result.tab
-        tab.settle(SETTLE_S)
         timings = tab.timings()
         tab.raise_errors()
         if timings["lcp"] is None:
@@ -314,14 +322,14 @@ class ProdPageload:
                 "interactive": result.nav_to_interactive_s,
                 "tbt": total_blocking_time(timings["longtasks"], interactive_ms),
                 "ws_bytes": tab.ws_bytes,
-                "transfer_bytes": tab.transfer_bytes(),
+                "transfer_bytes": tab.transfer_bytes,
             },
             extra={
                 "cpu": ctx.params["cpu"],
                 "long_tasks": len(timings["longtasks"]),
                 "long_animation_frames": len(timings["loafs"]),
                 "console": tab.drain_console(),
-                "fixture_hash": fixture_hash(),
+                "fixture_hash": fixture_hash("playground"),
             },
         )
 
