@@ -346,7 +346,7 @@ def _compile_client_storage_recursive(
     session_storage: dict[str, dict[str, Any]] = {}
     state_name = state.get_full_name()
     for name, field in state.__fields__.items():
-        if name in state.inherited_vars:
+        if field._owner is not state:
             # only include vars defined in this state
             continue
         state_key = f"{state_name}.{name}" + FIELD_MARKER

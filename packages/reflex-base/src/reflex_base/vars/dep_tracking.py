@@ -208,10 +208,11 @@ class DependencyTracker:
                 type(self)(func=cast(FunctionType, ref_obj), state_cls=target_state)
             )
         elif (
-            instruction.argval in target_state.backend_vars
+            # A field or other data descriptor (a user-defined one may mark
+            # itself dirty), or a computed var.
+            hasattr(type(static_obj), "__set__")
             or instruction.argval in target_state.vars
         ):
-            # var access
             self.dependencies.setdefault(target_state.get_full_name(), set()).add(
                 instruction.argval
             )

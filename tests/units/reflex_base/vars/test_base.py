@@ -679,13 +679,13 @@ def test_var_operation_str_interpolation_matches_tagged_form() -> None:
 @pytest.mark.parametrize(
     "name",
     [
-        "_get_was_touched",
-        "_update_was_touched",
+        "_init_bookkeeping",
+        "_get_root_state",
         "_was_touched",
         "dirty_vars",
         "get_fields",
         "get_full_name",
-        "backend_vars",
+        "computed_vars",
         "__fields__",
         "setvar",
     ],
@@ -712,10 +712,10 @@ def test_reserved_annotation_only(clean_registration_context):
     Args:
         clean_registration_context: An isolated state registry.
     """
-    with pytest.raises(StateValueError, match="_get_was_touched"):
+    with pytest.raises(StateValueError, match="_init_bookkeeping"):
 
         class ShadowState(BaseState):
-            _get_was_touched: int
+            _init_bookkeeping: int
 
 
 @pytest.mark.parametrize("state_mixin", [False, True])
@@ -726,17 +726,17 @@ def test_reserved_mixin_var(state_mixin: bool, clean_registration_context):
         state_mixin: Whether the mixin subclasses BaseState.
         clean_registration_context: An isolated state registry.
     """
-    with pytest.raises(StateValueError, match="_update_was_touched"):
+    with pytest.raises(StateValueError, match="_get_root_state"):
         mixin = type(
             "Mixin",
             (BaseState,) if state_mixin else (),
-            {"__module__": __name__, "_update_was_touched": 7},
+            {"__module__": __name__, "_get_root_state": 7},
             **({"mixin": True} if state_mixin else {}),
         )
         type("MixedState", (mixin, BaseState), {"__module__": __name__})
 
 
-@pytest.mark.parametrize("name", ["_get_was_touched", "get_fields"])
+@pytest.mark.parametrize("name", ["_init_bookkeeping", "get_fields"])
 def test_reserved_computed_var(name: str, clean_registration_context):
     """Reject computed vars that replace framework methods.
 
@@ -820,7 +820,7 @@ def test_non_state_models_keep_their_namespace():
     assert Model().get_state == 7
 
 
-@pytest.mark.parametrize("name", ["get_fields", "_get_was_touched"])
+@pytest.mark.parametrize("name", ["get_fields", "_init_bookkeeping"])
 @pytest.mark.parametrize("state_first", [False, True])
 def test_reserved_model_mixin(name: str, state_first: bool, clean_registration_context):
     """Reject inherited model fields before the field collector sees them.

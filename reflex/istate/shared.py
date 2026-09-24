@@ -4,7 +4,8 @@ import asyncio
 import contextlib
 import logging
 from collections.abc import AsyncIterator
-from typing import TypeVar
+from dataclasses import MISSING
+from typing import TYPE_CHECKING, TypeVar
 
 from reflex_base.constants import ROUTER_DATA, ROUTER_VARS
 from reflex_base.event import Event, get_hydrate_event
@@ -108,8 +109,12 @@ async def _patch_state(
     linked_state.parent_state = original_parent_state
     try:
         if full_delta:
-            linked_state.dirty_vars.update(linked_state.base_vars)
-            linked_state.dirty_vars.update(linked_state._backend_vars)
+            linked_cls = type(linked_state)
+            linked_state.dirty_vars.update(
+                name
+                for name, f in linked_cls.get_fields().items()
+                if f._owner is linked_cls
+            )
             linked_state.dirty_vars.update(linked_state.computed_vars)
             linked_state._mark_dirty()
         # Apply the updates into the existing state tree for rehydrate.
@@ -130,22 +135,33 @@ async def _patch_state(
 class SharedStateBaseInternal(State):
     """The private base state for all shared states."""
 
-    _exit_stack: contextlib.AsyncExitStack | None = None
-    _held_locks: dict[str, dict[type[BaseState], BaseState]] | None = None
-    _held_locks_lock: asyncio.Lock = asyncio.Lock()
+    # Per-event bookkeeping: neither tracked nor persisted.
+    __slots__ = (
+        "_exit_stack",
+        "_held_locks",
+        "_held_locks_lock",
+        "_previous_dirty_vars",
+    )
+    if TYPE_CHECKING:
+        _exit_stack: contextlib.AsyncExitStack | None
+        _held_locks: dict[str, dict[type[BaseState], BaseState]] | None
+        _held_locks_lock: asyncio.Lock
+        # The dirty vars of the last event, applied to linked clients; None
+        # outside of shared states.
+        _previous_dirty_vars: set[str] | None
 
-    def __getstate__(self):
-        """Override redis serialization to remove temporary fields.
+    @_override_base_method
+    def _init_bookkeeping(self, parent_state: BaseState | None = None) -> None:
+        """Initialize the instance bookkeeping slots.
 
-        Returns:
-            The state dictionary without temporary fields.
+        Args:
+            parent_state: The parent state.
         """
-        s = super().__getstate__()
-        s.pop("_previous_dirty_vars", None)
-        s.pop("_exit_stack", None)
-        s.pop("_held_locks", None)
-        s.pop("_held_locks_lock", None)
-        return s
+        super()._init_bookkeeping(parent_state)
+        self._exit_stack = None
+        self._held_locks = None
+        self._held_locks_lock = asyncio.Lock()
+        self._previous_dirty_vars = None
 
     @_override_base_method
     def _clean(self):
@@ -153,29 +169,10 @@ class SharedStateBaseInternal(State):
 
         This is necessary for applying dirty vars from one event to other linked states.
         """
-        if (
-            previous_dirty_vars := getattr(self, "_previous_dirty_vars", None)
-        ) is not None:
+        if (previous_dirty_vars := self._previous_dirty_vars) is not None:
             previous_dirty_vars.clear()
             previous_dirty_vars.update(self.dirty_vars)
         super()._clean()
-
-    @_override_base_method
-    def _mark_dirty(self):
-        """Override BaseState._mark_dirty to avoid marking certain vars as dirty.
-
-        Since these internal fields are not persisted to redis, they shouldn't cause the
-        state to be considered dirty either.
-        """
-        self.dirty_vars.discard("_previous_dirty_vars")
-        self.dirty_vars.discard("_exit_stack")
-        self.dirty_vars.discard("_held_locks")
-        self.dirty_vars.discard("_held_locks_lock")
-        # Only mark dirty if there are still dirty vars, or any substate is dirty
-        if self.dirty_vars or any(
-            substate.dirty_vars for substate in self.substates.values()
-        ):
-            super()._mark_dirty()
 
     def _rehydrate(self):
         """Get the events to rehydrate the state.
@@ -442,7 +439,7 @@ class SharedStateBaseInternal(State):
                             linked_state._previous_dirty_vars
                         )
                     if (
-                        BaseState._get_was_touched(linked_state)
+                        linked_state._was_touched
                         or linked_state._previous_dirty_vars is not None
                     ):
                         affected_tokens.update(
@@ -501,10 +498,7 @@ class SharedStateBaseInternal(State):
                     current_dirty_vars[substate.get_full_name()] = set(
                         substate._previous_dirty_vars
                     )
-                if (
-                    BaseState._get_was_touched(substate)
-                    or substate._previous_dirty_vars
-                ):
+                if substate._was_touched or substate._previous_dirty_vars:
                     affected_tokens.update(substate._linked_from)
             substate._collect_shared_token_updates(affected_tokens, current_dirty_vars)
 
@@ -514,7 +508,16 @@ class SharedState(SharedStateBaseInternal, mixin=True):
 
     _linked_from: set[str] = set()
     _linked_to: str = ""
-    _previous_dirty_vars: set[str] = set()
+
+    @_override_base_method
+    def _init_bookkeeping(self, parent_state: BaseState | None = None) -> None:
+        """Initialize the instance bookkeeping slots, tracking the last dirty vars.
+
+        Args:
+            parent_state: The parent state.
+        """
+        super()._init_bookkeeping(parent_state)
+        self._previous_dirty_vars = set()
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -527,8 +530,10 @@ class SharedState(SharedStateBaseInternal, mixin=True):
         cls._mixin = False
         super().__init_subclass__(**kwargs)
         root_state = cls.get_root_state()
-        if root_state.backend_vars["_reflex_internal_links"] is None:
-            root_state.backend_vars["_reflex_internal_links"] = {}
+        links = root_state.get_fields()["_reflex_internal_links"]
+        if links.default is None:
+            # Linked states in the app: every client gets a links dict.
+            links.default, links.default_factory = MISSING, dict
         if root_state is State:
             # Always fetch SharedStateBaseInternal to access
             # `_modify_linked_states` without having to use `.get_state()` which

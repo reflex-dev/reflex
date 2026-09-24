@@ -1160,12 +1160,10 @@ def test_interval_computed_vars_resolve_through_state_proxy(
     assert IntervalState._interval_computed_var_names == frozenset({"timed"})
 
 
-def test_fast_path_skips_names_a_subclass_defines():
-    """A subclass defining a fast-pathed framework name keeps the full lookup for it.
+def test_subclass_overrides_a_framework_method():
+    """A marked override of a BaseState method is what the state instance uses.
 
-    The fast path bypasses var resolution, so it must not apply to a name the
-    state itself defines (here a marked override of a BaseState method). The
-    class is a detached root (not a substate of ``State``) so the shadowed
+    The class is a detached root (not a substate of ``State``) so the shadowed
     method never reaches the framework paths that other tests exercise on the
     shared state tree.
     """
@@ -1185,8 +1183,5 @@ def test_fast_path_skips_names_a_subclass_defines():
             "get_value": get_value,
         },
     )
-    assert "get_value" in BaseState._fast_attr_names
-    assert "get_value" not in ShadowState._fast_attr_names
-    assert "dirty_vars" in ShadowState._fast_attr_names
     state = ShadowState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     assert state.get_value("k") == "shadow:k"

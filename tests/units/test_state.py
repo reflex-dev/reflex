@@ -30,12 +30,12 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import (
-    BaseVarShadowsInheritedVarError,
     InvalidLockWarningThresholdError,
     LockExpiredError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateSerializationError,
+    StateValueError,
     UnretrievableVarValueError,
 )
 from reflex_base.utils.format import json_dumps
@@ -368,8 +368,8 @@ def test_base_class_vars(test_state):
     fields = test_state.get_fields()
     cls = type(test_state)
 
-    for field_name in fields:
-        if field_name.startswith("_") or field_name in cls.get_skip_vars():
+    for field_name, f in fields.items():
+        if f._backend or f._owner is not cls:
             continue
         prop = getattr(cls, field_name)
         assert isinstance(prop, Var)
@@ -615,19 +615,6 @@ def test_get_class_var():
             ChildState.get_name(),
             "invalid_var",
         ))
-
-
-def test_set_class_var():
-    """Test setting the var of a class."""
-    with pytest.raises(AttributeError):
-        TestState.num3  # pyright: ignore [reportAttributeAccessIssue]
-    TestState._set_var(
-        "num3", Var(_js_expr="num3", _var_type=int)._var_set_state(TestState)
-    )
-    var = TestState.num3  # pyright: ignore [reportAttributeAccessIssue]
-    assert var._js_expr == TestState.get_full_name() + ".num3"
-    assert var._var_type is int
-    assert var._var_state == TestState.get_full_name()
 
 
 def test_set_parent_and_substates(test_state, child_state, grandchild_state):
@@ -886,26 +873,17 @@ def test_reset_does_not_reset_inherited_backend_vars(
 def test_backend_vars_does_not_include_inherited(
     test_state: TestState, child_state: ChildState
 ):
-    """Test that _backend_vars only contains non-inherited backend vars.
-
-    This ensures that each state instance only copies backend vars it owns,
-    not those inherited from parent states (which remain in the parent).
+    """Test that an inherited backend var is stored only on the parent instance.
 
     Args:
         test_state: A state with backend vars.
         child_state: A child state inheriting from test_state.
     """
-    # ChildState inherits _backend from TestState
-    assert "_backend" in TestState.backend_vars
-    assert "_backend" in ChildState.backend_vars  # Present in the combined dict
-    assert "_backend" in ChildState.inherited_backend_vars  # But marked as inherited
-
-    # The child state instance's _backend_vars should NOT contain _backend
-    # (it's inherited, so it's stored only in the parent instance)
-    assert "_backend" not in child_state._backend_vars
-
-    # But the parent instance's _backend_vars should contain it
-    assert "_backend" in test_state._backend_vars
+    # ChildState inherits _backend from TestState, which stores it.
+    assert ChildState.get_fields()["_backend"]._owner is TestState
+    child_state._backend = 5
+    assert test_state.__dict__["_backend"] == 5
+    assert "_backend" not in child_state.__dict__
 
 
 def test_setting_inherited_backend_var_does_not_mark_child_touched(
@@ -924,13 +902,12 @@ def test_setting_inherited_backend_var_does_not_mark_child_touched(
     assert not test_state._was_touched
     assert not child_state._was_touched
 
-    # Modify an inherited backend var through the child
-    # (This routes through __setattr__ to the parent)
+    # Modify an inherited backend var through the child: the field is bound
+    # to the parent, which stores it.
     child_state._backend = 99
 
-    # Call _get_was_touched to update the flags based on dirty_vars
-    parent_touched = test_state._get_was_touched()
-    child_touched = child_state._get_was_touched()
+    parent_touched = test_state._was_touched
+    child_touched = child_state._was_touched
 
     # The parent should be marked as touched (the var belongs to it)
     assert parent_touched
@@ -1133,13 +1110,13 @@ def test_add_var():
     assert "dynamic_int" not in ds1.__dict__
     assert not hasattr(ds1, "dynamic_int")
     ds1.add_var("dynamic_int", int, 42)
-    # Existing instances get the BaseVar
-    assert ds1.dynamic_int.equals(DynamicState.dynamic_int)  # pyright: ignore [reportAttributeAccessIssue]
-    # New instances get an actual value with the default
+    # Existing and new instances get the default
+    assert ds1.dynamic_int == 42  # pyright: ignore [reportAttributeAccessIssue]
     assert DynamicState().dynamic_int == 42  # pyright: ignore[reportAttributeAccessIssue]
+    assert isinstance(DynamicState.dynamic_int, Var)  # pyright: ignore [reportAttributeAccessIssue]
 
     ds1.add_var("dynamic_list", list[int], [5, 10])
-    assert ds1.dynamic_list.equals(DynamicState.dynamic_list)  # pyright: ignore [reportAttributeAccessIssue]
+    assert ds1.dynamic_list == [5, 10]  # pyright: ignore [reportAttributeAccessIssue]
     ds2 = DynamicState()
     assert ds2.dynamic_list == [5, 10]  # pyright: ignore[reportAttributeAccessIssue]
     ds2.dynamic_list.append(15)  # pyright: ignore[reportAttributeAccessIssue]
@@ -1147,8 +1124,8 @@ def test_add_var():
     assert DynamicState().dynamic_list == [5, 10]  # pyright: ignore[reportAttributeAccessIssue]
 
     ds1.add_var("dynamic_dict", dict[str, int], {"k1": 5, "k2": 10})
-    assert ds1.dynamic_dict.equals(DynamicState.dynamic_dict)  # pyright: ignore [reportAttributeAccessIssue]
-    assert ds2.dynamic_dict.equals(DynamicState.dynamic_dict)  # pyright: ignore [reportAttributeAccessIssue]
+    assert ds1.dynamic_dict == {"k1": 5, "k2": 10}  # pyright: ignore [reportAttributeAccessIssue]
+    assert ds2.dynamic_dict == {"k1": 5, "k2": 10}  # pyright: ignore [reportAttributeAccessIssue]
     assert DynamicState().dynamic_dict == {"k1": 5, "k2": 10}  # pyright: ignore[reportAttributeAccessIssue]
 
 
@@ -3548,10 +3525,8 @@ def test_mutable_copy(mutable_state: MutableTestState, copy_func: Callable):
         assert getattr(ms_copy, attr) is not getattr(mutable_state, attr)
     ms_copy.custom.array.append(42)
     assert "custom" in ms_copy.dirty_vars
-    if copy_func is copy.copy:
-        assert "custom" in mutable_state.dirty_vars
-    else:
-        assert not mutable_state.dirty_vars
+    # The copy tracks its own changes.
+    assert not mutable_state.dirty_vars
 
 
 @pytest.mark.parametrize(
@@ -4297,15 +4272,12 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
 
 @pytest.mark.parametrize("name", constants.ROUTER_VARS)
 def test_router_field_names_are_reserved(name):
-    """A substate cannot replace framework-owned router storage.
+    """A state cannot replace framework-owned router storage.
 
-    The guard is the framework's general inherited-var shadow detection, not
-    anything router-specific: the router fields live on `BaseState`, so a
-    substate redeclaring one shadows an inherited var like any other. Note
-    this covers substates only -- a direct `BaseState` subclass starts its own
-    root and has no inherited var to shadow.
+    The router fields are declared on `BaseState`, so their names are reserved
+    like any other framework member.
     """
-    with pytest.raises(BaseVarShadowsInheritedVarError):
+    with pytest.raises(StateValueError, match=name):
         type(
             "InvalidRouterState",
             (State,),
@@ -4486,7 +4458,7 @@ def test_router_is_listed_as_a_var_and_inherited_by_substates() -> None:
         """A substate that only inherits the router."""
 
     assert constants.ROUTER in State.vars
-    assert constants.ROUTER in RouterVarListingState.inherited_vars
+    assert constants.ROUTER in RouterVarListingState.vars
     assert constants.ROUTER not in State.base_vars
     assert constants.ROUTER not in State.computed_vars
 
@@ -5070,18 +5042,19 @@ def test_mixin_state() -> None:
     """Test that a mixin state works correctly."""
     assert "num" in UsesMixinState.base_vars
     assert "num" in UsesMixinState.vars
-    assert UsesMixinState.backend_vars == {
-        "_backend": 0,
-        "_backend_no_default": {},
-        "_reflex_internal_links": None,
-    }
+    fields = UsesMixinState.get_fields()
+    assert fields["_backend"]._owner is UsesMixinState
+    assert fields["_backend_no_default"]._owner is UsesMixinState
 
     assert "computed" in UsesMixinState.computed_vars
     assert "computed" in UsesMixinState.vars
 
-    assert (
-        UsesMixinState(_reflex_internal_init=True)._backend_no_default  # pyright: ignore [reportCallIssue]
-        is not UsesMixinState.backend_vars["_backend_no_default"]
+    state = UsesMixinState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert state._backend == 0
+    assert state._backend_no_default == {}
+    other = UsesMixinState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert state.get_value("_backend_no_default") is not other.get_value(
+        "_backend_no_default"
     )
 
     assert UsesMixinState.get_parent_state() == State
@@ -5090,10 +5063,11 @@ def test_mixin_state() -> None:
 
 def test_child_mixin_state() -> None:
     """Test that mixin vars are only applied to the highest state in the hierarchy."""
-    assert "num" in ChildUsesMixinState.inherited_vars
+    assert ChildUsesMixinState.get_fields()["num"]._owner is UsesMixinState
+    assert "num" in ChildUsesMixinState.vars
     assert "num" not in ChildUsesMixinState.base_vars
 
-    assert "computed" in ChildUsesMixinState.inherited_vars
+    assert "computed" in ChildUsesMixinState.vars
     assert "computed" not in ChildUsesMixinState.computed_vars
 
     assert ChildUsesMixinState.get_parent_state() == UsesMixinState
@@ -5102,10 +5076,10 @@ def test_child_mixin_state() -> None:
 
 def test_grandchild_mixin_state() -> None:
     """Test that a mixin can inherit from a concrete state class."""
-    assert "num" in GrandchildUsesMixinState.inherited_vars
+    assert "num" in GrandchildUsesMixinState.vars
     assert "num" not in GrandchildUsesMixinState.base_vars
 
-    assert "computed" in GrandchildUsesMixinState.inherited_vars
+    assert "computed" in GrandchildUsesMixinState.vars
     assert "computed" not in GrandchildUsesMixinState.computed_vars
 
     assert ChildMixinState.get_parent_state() == ChildUsesMixinState
@@ -5116,14 +5090,14 @@ def test_grandchild_mixin_state() -> None:
 
 
 def test_bare_mixin_state() -> None:
-    """Test that a mixin can inherit from a concrete state class."""
-    assert "_bare_mixin" not in BareMixinState.inherited_vars
+    """Test that a plain mixin's backend attribute becomes a backend var."""
+    assert BareMixinState.get_fields()["_bare_mixin"]._owner is BareMixinState
     assert "_bare_mixin" not in BareMixinState.base_vars
 
     assert BareMixinState.get_parent_state() == State
     assert BareMixinState.get_root_state() == State
 
-    assert "_bare_mixin" not in ChildBareMixinState.inherited_vars
+    assert ChildBareMixinState.get_fields()["_bare_mixin"]._owner is BareMixinState
     assert "_bare_mixin" not in ChildBareMixinState.base_vars
 
     assert ChildBareMixinState.get_parent_state() == BareMixinState
@@ -5278,7 +5252,7 @@ def test_backend_var_inherits_field_default_and_surfaces_factory_errors():
     class InheritsDefault(WithDefault, BaseState):
         _n: int
 
-    assert InheritsDefault.backend_vars["_n"] == 3
+    assert InheritsDefault()._n == 3  # pyright: ignore [reportCallIssue]
 
     def _boom() -> int:
         msg = "factory blew up"
@@ -5287,10 +5261,11 @@ def test_backend_var_inherits_field_default_and_surfaces_factory_errors():
     class WithFailingFactory:
         _n = field(default_factory=_boom)
 
-    with pytest.raises(ValueError, match="factory blew up"):
+    class FactoryState(WithFailingFactory, BaseState):
+        _n: int
 
-        class FactoryState(WithFailingFactory, BaseState):
-            _n: int
+    with pytest.raises(ValueError, match="factory blew up"):
+        _ = FactoryState()._n  # pyright: ignore [reportCallIssue]
 
 
 def test_assignment_through_property_setter():
@@ -5354,8 +5329,8 @@ async def test_deserialize_gc_state_disk(token):
         s = await root.get_state(State)
         s.num += 1
         c = await root.get_state(Child)
-        assert s._get_was_touched()
-        assert not c._get_was_touched()
+        assert s._was_touched
+        assert not c._was_touched
     await dsm.close()
 
     dsm2 = StateManagerDisk()
@@ -6013,8 +5988,8 @@ def test_override_base_method_skips_event_handler_wrapping():
     assert OverrideState().custom_override() == 42
 
 
-def test_descriptor_attribute_not_in_backend_vars():
-    """A custom descriptor on a state should appear in vars/base_vars but not backend_vars."""
+def test_descriptor_attribute_is_not_a_field():
+    """A custom descriptor on a state keeps its own access, and computed vars can depend on it."""
 
     class _IntDescriptor:
         def __init__(self):
@@ -6038,14 +6013,13 @@ def test_descriptor_attribute_not_in_backend_vars():
         def doubled(self) -> int:
             return self._desc_value * 2
 
-    # The descriptor should not be tracked as a backend var or a base var
-    # (only pydantic-backed public fields go into base_vars).
-    assert "_desc_value" not in DescriptorState.backend_vars
+    assert "_desc_value" not in DescriptorState.get_fields()
     assert "_desc_value" not in DescriptorState.base_vars
-    # But it should be visible in vars for dependency tracking.
-    assert "_desc_value" in DescriptorState.vars
-    # Descriptor remains the class-level attribute (not overwritten by a Var).
+    # Descriptor remains the class-level attribute (not overwritten by a field).
     assert isinstance(DescriptorState.__dict__["_desc_value"], _IntDescriptor)
+    state = DescriptorState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state._desc_value = 3
+    assert state.doubled == 6
 
     # A computed var depending on the descriptor must register the dependency.
     deps = DescriptorState._var_dependencies.get("_desc_value", set())
@@ -6087,14 +6061,6 @@ def test_descriptor_overrides_inherited_descriptor():
 
     # The child class's descriptor wins on the class itself.
     assert ChildDescState.__dict__["_shared"] is child_descriptor
-    # The override drops the inherited entry so dependency tracking attaches
-    # to the child class rather than the parent.
-    assert "_shared" not in ChildDescState.inherited_vars
-    assert "_shared" not in ChildDescState.inherited_backend_vars
-    assert "_shared" not in ChildDescState.backend_vars
-    # The child's Var (not the parent's) is what shows up in vars.
-    child_var = ChildDescState.vars["_shared"]
-    assert child_var is not ParentDescState.vars["_shared"]
     # Child's computed var depends on child's _shared, parent's stays at parent.
     child_deps = ChildDescState._var_dependencies.get("_shared", set())
     parent_deps = ParentDescState._var_dependencies.get("_shared", set())
@@ -6268,7 +6234,7 @@ def test_setattr_alias_annotated_var(mocker: MockerFixture):
     Args:
         mocker: Pytest mock fixture.
     """
-    error_mock = mocker.patch("reflex.state.logger.error")
+    error_mock = mocker.patch("reflex_base.vars.base.logger.error")
     state = AliasAnnotatedState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     state.assign()
     assert state.name == "y"
@@ -6283,16 +6249,34 @@ def test_setattr_alias_annotated_var(mocker: MockerFixture):
     error_mock.assert_called_once()
 
 
-def test_base_var_shadowing_inherited_var_raises() -> None:
-    """A base var shadowing an inherited var raises instead of being dropped silently."""
+def test_redeclared_var_is_independent_of_the_inherited_one() -> None:
+    """A substate redeclaring an inherited var gets its own var, stored on the substate."""
 
     class ShadowParent(BaseState):
         shadowed_value: int = 1
 
-    with pytest.raises(BaseVarShadowsInheritedVarError, match="shadowed_value"):
+        def set_value(self):
+            self.shadowed_value = 2
 
-        class ShadowChild(ShadowParent):
-            shadowed_value: str = "ninety-nine"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+    class ShadowChild(ShadowParent):
+        shadowed_value: str = "ninety-nine"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+    child_var = cast("Var", ShadowChild.shadowed_value)
+    assert child_var._var_type is str
+    assert child_var._js_expr != cast("Var", ShadowParent.shadowed_value)._js_expr
+
+    parent = ShadowParent()  # pyright: ignore [reportCallIssue]
+    child = cast("ShadowChild", parent.substates[ShadowChild.get_name()])
+    # The inherited handler runs on the parent, which declared it.
+    child.set_value()
+    assert parent.shadowed_value == 2
+    assert child.shadowed_value == "ninety-nine"
+    child.shadowed_value = "changed"
+    assert parent.shadowed_value == 2
+    assert parent.get_delta() == {
+        ShadowParent.get_full_name(): {"shadowed_value" + FIELD_MARKER: 2},
+        ShadowChild.get_full_name(): {"shadowed_value" + FIELD_MARKER: "changed"},
+    }
 
 
 def test_base_var_shadowing_non_state_descriptor_does_not_raise() -> None:
@@ -6316,8 +6300,8 @@ def test_base_var_shadowing_non_state_descriptor_does_not_raise() -> None:
     assert isinstance(DescriptorChild.descriptor_value, Var)
 
 
-def test_base_var_shadowing_raises_when_descriptor_outranks_state_field() -> None:
-    """A descriptor closer than the state field does not exempt a dropped declaration."""
+def test_redeclared_var_wins_over_a_closer_descriptor() -> None:
+    """A var declared on the class itself wins over any inherited descriptor."""
     from reflex_base.vars.hybrid_property import hybrid_property
 
     class CloserMixin:
@@ -6328,28 +6312,11 @@ def test_base_var_shadowing_raises_when_descriptor_outranks_state_field() -> Non
     class OutrankedParent(BaseState):
         outranked_value: int = 1  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
 
-    with pytest.raises(BaseVarShadowsInheritedVarError, match="outranked_value"):
+    class OutrankedChild(CloserMixin, OutrankedParent):
+        outranked_value: str = "x"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
 
-        class OutrankedChild(CloserMixin, OutrankedParent):
-            outranked_value: str = "x"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
-
-
-def test_base_var_shadowing_raises_despite_state_field_outranking_descriptor() -> None:
-    """A dropped redeclaration raises even where a state field outranks a descriptor."""
-    from reflex_base.vars.hybrid_property import hybrid_property
-
-    class OutrankedMixin:
-        @hybrid_property
-        def redeclared_value(self) -> int:
-            return 1
-
-    class DescriptorOwningParent(OutrankedMixin, BaseState):
-        redeclared_value: int = 5  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
-
-    with pytest.raises(BaseVarShadowsInheritedVarError, match="redeclared_value"):
-
-        class RedeclaringChild(DescriptorOwningParent):
-            redeclared_value: str = "shadowed"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+    assert OutrankedChild.get_fields()["outranked_value"]._owner is OutrankedChild
+    assert cast("Var", OutrankedChild.outranked_value)._var_type is str
 
 
 def test_base_var_bare_reannotation_does_not_raise() -> None:

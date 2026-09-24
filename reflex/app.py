@@ -1688,7 +1688,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     else state
                 )
                 for dep in dep_set:
-                    if dep not in state_cls.vars and dep not in state_cls.backend_vars:
+                    if dep not in state_cls.vars and not hasattr(state_cls, dep):
                         msg = f"ComputedVar {var._name} on state {state.__name__} has an invalid dependency {state_name}.{dep}"
                         raise exceptions.VarDependencyError(msg)
 
