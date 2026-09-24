@@ -80,6 +80,24 @@ def _dataclass_proxy_namespace(wrapped_cls: type) -> dict[str, Any]:
     }
 
 
+def _is_ancestor(obj: Any, state: BaseState) -> bool:
+    """Whether an object is an ancestor of a state in its tree.
+
+    Args:
+        obj: The object.
+        state: The state.
+
+    Returns:
+        True if the object is a parent, grandparent, etc. of the state.
+    """
+    parent = state.parent_state
+    while parent is not None:
+        if parent is obj:
+            return True
+        parent = parent.parent_state
+    return False
+
+
 class StateProxy(wrapt.ObjectProxy):
     """Proxy of a state instance to control mutability of vars for a background task.
 
@@ -305,7 +323,11 @@ class StateProxy(wrapt.ObjectProxy):
                 ),
                 field_name=value._self_field_name,
             )
-        if isinstance(value, MethodType) and value.__self__ is self.__wrapped__:
+        if isinstance(value, MethodType) and (
+            value.__self__ is self.__wrapped__
+            # An inherited event handler is bound to the ancestor state.
+            or _is_ancestor(value.__self__, self.__wrapped__)
+        ):
             # Rebind methods and event handlers to the proxy instance
             value = type(value)(value.__func__, self)
         return value

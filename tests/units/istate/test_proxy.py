@@ -326,6 +326,15 @@ class InheritedListState(BaseState):
 
     items: list[int] = []
 
+    @rx.event
+    def add_item(self, value: int):
+        """Append to the list.
+
+        Args:
+            value: The value to append.
+        """
+        self.items.append(value)
+
 
 class InheritedListSubState(InheritedListState):
     """A substate changing the inherited list from a background task."""
@@ -360,6 +369,33 @@ async def test_inherited_mutable_var_marks_its_owner(
     assert emitted_deltas == [
         (token, {InheritedListState.get_full_name(): {"items" + FIELD_MARKER: [1]}}),
     ]
+    async with state_manager.modify_state(state_token) as root:
+        assert root.items == [1]  # pyright: ignore [reportAttributeAccessIssue]
+
+
+@pytest.mark.asyncio
+async def test_inherited_handler_is_guarded_by_the_proxy(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+) -> None:
+    """An inherited event handler called through a StateProxy runs on the proxy.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+    """
+    state_token = BaseStateToken(ident=token, cls=InheritedListSubState)
+    async with state_manager.modify_state(state_token) as root:
+        proxy = StateProxy(
+            root.get_substate(InheritedListSubState.get_full_name().split("."))
+        )
+
+    with pytest.raises(ImmutableStateError):
+        proxy.add_item(0)
+    async with proxy:
+        proxy.add_item(1)
     async with state_manager.modify_state(state_token) as root:
         assert root.items == [1]  # pyright: ignore [reportAttributeAccessIssue]
 

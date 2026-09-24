@@ -15,6 +15,7 @@ import sys
 import threading
 from collections.abc import AsyncGenerator, Callable, Mapping
 from textwrap import dedent
+from types import MethodType
 from typing import Any, ClassVar, Literal, TypeVar, cast
 from unittest.mock import AsyncMock, Mock
 
@@ -2016,7 +2017,14 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
             return counter
 
     if use_partial:
-        HandlerState.handler = functools.partial(HandlerState.handler.fn)  # pyright: ignore [reportFunctionMemberAccess]
+
+        class MethodPartial(functools.partial):
+            """A partial binding like a method, as partials do from Python 3.14."""
+
+            def __get__(self, instance: Any, owner: Any = None) -> Any:
+                return self if instance is None else MethodType(self, instance)
+
+        HandlerState.handler = MethodPartial(HandlerState.handler.fn)  # pyright: ignore [reportFunctionMemberAccess]
         assert isinstance(HandlerState.handler, functools.partial)
     else:
         assert isinstance(HandlerState.handler, EventHandler)
