@@ -146,9 +146,8 @@ class Event:
                 msg = f"Unexpected event type, {type(e)}."
                 raise ValueError(msg)
             name = format.format_event_handler(e.handler)
-            # Detach mutable values from any state-bound proxies (e.g.
-            # ImmutableMutableProxy from a background task's StateProxy),
-            # copying only subtrees that are actually proxied.
+            # Detach mutable values from state-bound proxies, copying only
+            # subtrees that are actually proxied.
             payload = {
                 k._js_expr: _detach_state_proxies(v._decode()) for k, v in e.args
             }

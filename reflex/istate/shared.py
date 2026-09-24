@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, TypeVar
 
 from reflex_base.constants import ROUTER_DATA, ROUTER_VARS
 from reflex_base.event import Event, get_hydrate_event
+from reflex_base.event.context import EventContext
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from typing_extensions import Self
@@ -309,8 +310,6 @@ class SharedStateBaseInternal(State):
         Returns:
             The state that was linked into the tree.
         """
-        from reflex.istate.manager import get_state_manager
-
         if self._exit_stack is None or self._held_locks is None:
             msg = "Cannot link shared state outside of _modify_linked_states context."
             raise ReflexRuntimeError(msg)
@@ -322,8 +321,9 @@ class SharedStateBaseInternal(State):
             async with self._held_locks_lock:
                 if token not in self._held_locks:
                     linked_root_state = await self._exit_stack.enter_async_context(
-                        get_state_manager().modify_state(
-                            BaseStateToken(ident=token, cls=type(self))
+                        EventContext.get().modify_state(
+                            BaseStateToken(ident=token, cls=type(self)),
+                            with_links=False,
                         )
                     )
                     self._held_locks.setdefault(token, {})
@@ -339,9 +339,8 @@ class SharedStateBaseInternal(State):
                             session, client_token=token
                         )
         if linked_root_state is None:
-            linked_root_state = await get_state_manager().get_state(
-                BaseStateToken(ident=token, cls=type(self))
-            )
+            # Locked earlier in this event.
+            linked_root_state = EventContext.get().state_locks.held[token][0]
         linked_state = await linked_root_state.get_state(type(self))
         if not isinstance(linked_state, SharedState):
             msg = f"Linked state for token {token} is not a SharedState."

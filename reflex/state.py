@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import builtins
 import contextlib
 import copy
@@ -38,6 +39,7 @@ from reflex_base.event import (
     EventSpec,
     call_script,
 )
+from reflex_base.event.context import EventContext
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
     DynamicComponentInvalidSignatureError,
@@ -90,7 +92,6 @@ from reflex.istate.delta import (
     clean_state,
     resolve_delta,
 )
-from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
 from reflex.istate.proxy import MutableProxy
 from reflex.istate.storage import ClientStorageBase
 from reflex.utils import console, format, types
@@ -498,6 +499,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
     # Instance bookkeeping, kept out of `__dict__`: never a field, never pickled.
     __slots__ = (
+        "_event_context",
         "_was_touched",
         "dirty_substates",
         "dirty_vars",
@@ -517,6 +519,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         dirty_substates: set[str] = field(default_factory=set, is_var=False)
         # Whether the state was modified since it was last persisted.
         _was_touched: bool = field(default=False, is_var=False)
+        # On a root state, the event context that last held its lock; None for
+        # a state no event context manages, which is always writable.
+        _event_context: EventContext | None = field(default=None, is_var=False)
 
     # The routing path that triggered the state
     router_data: builtins.dict[str, Any] = field(
@@ -608,6 +613,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         setattr_(self, "dirty_vars", set())
         setattr_(self, "dirty_substates", set())
         setattr_(self, "_was_touched", False)
+        setattr_(self, "_event_context", None)
 
     def __repr__(self) -> str:
         """Get the string representation of the state.
@@ -1441,8 +1447,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
     def reset(self):
         """Reset the fields of this state and its substates to their default values."""
-        # The class of the state, also when `self` is a StateProxy.
-        cls = self.__class__
+        cls = type(self)
         for name, f in cls.__fields__.items():
             # Never reset the router data; inherited fields reset with their state.
             if f._owner is cls and name not in _ROUTER_FIELD_NAMES:
@@ -1803,10 +1808,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         # Only computed vars declared with an interval can expire; the class
         # keeps that subset so this stays O(interval vars), not O(all vars).
         computed_vars = self.computed_vars
-        # __class__, not type(): a StateProxy reports the wrapped state's class.
         return {
             cvar
-            for cvar in self.__class__._interval_computed_var_names
+            for cvar in type(self)._interval_computed_var_names
             if computed_vars[cvar].needs_update(instance=self)
         }
 
@@ -1930,24 +1934,106 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         return d
 
     async def __aenter__(self) -> Self:
-        """Enter the async context manager protocol.
+        """Hold the lock on the state tree for the running event, making this state writable.
 
-        This is a no-op for the State class and mainly used in background-tasks/StateProxy.
+        Unless the running event context holds the lock already, like in a
+        regular event handler, this takes it and reloads the tree, putting this
+        state in it if it was reloaded since. A state that no event context
+        manages is always writable, so entering it does nothing.
 
         Returns:
-            The unmodified state (self)
+            This state.
         """
+        root = self._get_root_state()
+        if (bound := root._event_context) is None:
+            return self
+        current = EventContext._context_var.get(None)
+        # A state of another client, or kept past its event (like by a
+        # callback), enters under the context it was loaded in.
+        ctx = current if current is not None and current.token == bound.token else bound
+        entered = ctx.state_locks.entered_states
+        if (entry := entered.get(id(self))) is not None:
+            entry[0] += 1
+            return self
+        from reflex.istate.manager.token import BaseStateToken
+
+        held = ctx.state_locks.held.get(ctx.token)
+        lock = reset = None
+        if held is not None and held[1] is asyncio.current_task():
+            live_root = held[0]
+        else:
+            reset = EventContext.set(ctx) if ctx is not current else None
+            lock = ctx.modify_state(BaseStateToken(ident=ctx.token, cls=type(self)))
+            try:
+                live_root = await lock.__aenter__()
+            except BaseException:
+                if reset is not None:
+                    EventContext.reset(reset)
+                raise
+            ctx.state_locks.entered = True
+        live = await live_root.get_state(type(self))
+        if live is not self:
+            self._take_place_of(live)
+        entered[id(self)] = [1, lock, reset, live]
         return self
 
     async def __aexit__(self, *exc_info: Any) -> None:
-        """Exit the async context manager protocol.
-
-        This should not be used for the State class, but exists for
-        type-compatibility with StateProxy.
+        """Release the lock taken by entering the state, emitting the changes made.
 
         Args:
             exc_info: The exception info tuple.
         """
+        if (ctx := EventContext._context_var.get(None)) is None or (
+            entry := ctx.state_locks.entered_states.get(id(self))
+        ) is None:
+            return
+        entry[0] -= 1
+        if entry[0]:
+            return
+        del ctx.state_locks.entered_states[id(self)]
+        _, lock, reset, live = entry
+        if live is not self:
+            # Hand the place back to the loaded instance, which the state
+            # manager saves; this state keeps the values it had.
+            live._take_place_of(self)
+        if lock is None:
+            return
+        try:
+            root = live._get_root_state()
+            delta = await root._get_resolved_delta()
+            root._clean()
+            if delta:
+                await ctx.emit_delta(delta)
+        finally:
+            try:
+                await lock.__aexit__(*exc_info)
+            finally:
+                if reset is not None:
+                    EventContext.reset(reset)
+
+    def _take_place_of(self, other: BaseState) -> None:
+        """Take the place of another instance of this state in its tree, with its values.
+
+        Makes an instance kept from before the state was reloaded live again.
+
+        Args:
+            other: The instance of this state in the tree.
+        """
+        vars(self).clear()
+        vars(self).update(vars(other))
+        for klass in type(self).__mro__:
+            for name in klass.__dict__.get("__slots__", ()):
+                object.__setattr__(self, name, getattr(other, name))
+        for substate in self.substates.values():
+            substate.parent_state = self
+        if self.parent_state is not None:
+            self.parent_state.substates[self.get_name()] = self
+        elif (ctx := self._event_context) is not None:
+            # The lock held on the tree covers its new root.
+            held = ctx.state_locks.held
+            for token, (root, task) in held.items():
+                if root is other:
+                    held[token] = (self, task)
 
     def __getstate__(self):
         """Get the state for redis serialization.

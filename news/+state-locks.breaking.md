@@ -1,0 +1,1 @@
+Background tasks now receive the state itself instead of a `StateProxy`: the state is read-only outside of `async with self`, and writable inside it. `StateProxy`, `ReadOnlyStateProxy` and `ImmutableMutableProxy` are removed from `reflex.istate.proxy`; `rx.get_state` returns the state, read-only until entered with `async with`.

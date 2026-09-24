@@ -50,6 +50,7 @@ from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
     ComputedVarSignatureError,
     EventHandlerShadowsBuiltInStateMethodError,
+    ImmutableStateError,
     ReflexRuntimeError,
     StateValueError,
     UntypedComputedVarError,
@@ -3788,6 +3789,33 @@ def _owner_state(state: Any, owner: type) -> Any:
     return instance
 
 
+def _check_writable(state: Any) -> None:
+    """Raise unless the running event context holds the lock on a state's tree.
+
+    A state that no event context manages, like one instantiated on its own,
+    is always writable.
+
+    Args:
+        state: The state about to change.
+
+    Raises:
+        ImmutableStateError: If the state is read-only here.
+    """
+    root = state
+    while (parent := root.parent_state) is not None:
+        root = parent
+    if (bound := root._event_context) is None:
+        return
+    # The event context running now, which must hold the lock.
+    ctx = bound._context_var.get(None)
+    if ctx is None or not ctx.state_locks.holds(root):
+        msg = (
+            f"{type(state).__name__} is read-only outside of the event that holds "
+            "its lock. Use `async with self` to modify state."
+        )
+        raise ImmutableStateError(msg)
+
+
 class Field(Generic[FIELD_TYPE]):
     """A state field: its declaration, and the descriptor holding its value.
 
@@ -3952,6 +3980,7 @@ class Field(Generic[FIELD_TYPE]):
             if type(instance) is self._owner
             else _owner_state(instance, self._owner)  # pyright: ignore[reportArgumentType]
         )
+        _check_writable(state)
         if isinstance(value, self._proxy):
             value = value.__wrapped__  # pyright: ignore[reportAttributeAccessIssue]
         if (

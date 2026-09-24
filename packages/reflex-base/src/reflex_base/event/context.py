@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import dataclasses
 import functools
 import uuid
-from collections.abc import Callable, Mapping
+from collections.abc import AsyncIterator, Callable, Mapping
 from typing import TYPE_CHECKING, Any, Protocol
 
 from reflex_base import otel
@@ -16,6 +18,7 @@ if TYPE_CHECKING:
     from opentelemetry.context import Context
 
     from reflex.istate.manager import StateManager
+    from reflex.istate.manager.token import StateToken
     from reflex_base.event import Event
 
 
@@ -74,6 +77,34 @@ class EmitDeltaProtocol(Protocol):
         ...
 
 
+@dataclasses.dataclass(eq=False, slots=True)
+class StateLocks:
+    """The state locks an event context holds, making those states writable in it."""
+
+    # The root state of each locked tree, and the task that took the lock, by token.
+    held: dict[str, tuple[Any, asyncio.Task | None]] = dataclasses.field(
+        default_factory=dict
+    )
+
+    # Whether a state lock was taken by entering a state (`async with state`).
+    entered: bool = False
+
+    # The states entered in this context, by id: how many times, the lock taken
+    # entering it (None if held already) and the context var token to reset.
+    entered_states: dict[int, list[Any]] = dataclasses.field(default_factory=dict)
+
+    def holds(self, root: Any) -> bool:
+        """Whether a state tree is locked.
+
+        Args:
+            root: The root state of the tree.
+
+        Returns:
+            True if the lock on the tree is held.
+        """
+        return any(locked is root for locked, _ in self.held.values())
+
+
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True, eq=False)
 class EventContext(BaseContext):
     """The context for an event."""
@@ -107,6 +138,43 @@ class EventContext(BaseContext):
     # Routing data of the event being processed. Inherited by fork(), so an
     # event a handler yields resolves against the view that produced it.
     router_data: dict[str, Any] = dataclasses.field(default_factory=dict, repr=False)
+
+    # The state locks held in this context. Not inherited by fork().
+    state_locks: StateLocks = dataclasses.field(
+        default_factory=StateLocks, init=False, repr=False
+    )
+
+    @contextlib.asynccontextmanager
+    async def modify_state(
+        self, token: StateToken, *, with_links: bool = True, **context: Any
+    ) -> AsyncIterator[Any]:
+        """Hold the lock on a state tree; its states are writable in this context meanwhile.
+
+        Binds the tree to this context, so its states are read-only once the lock
+        is released, and entering one of them takes the lock again here.
+
+        Args:
+            token: The token of the state to modify.
+            with_links: Whether to patch in the linked states of the tree.
+            **context: The state modification context.
+
+        Yields:
+            The root state of the locked tree.
+        """
+        manager = self.state_manager
+        modify = manager.modify_state_with_links if with_links else manager.modify_state
+        async with modify(token, **context) as root:
+            root._event_context = self
+            held = self.state_locks.held
+            previous = held.get(token.ident)
+            held[token.ident] = (root, asyncio.current_task())
+            try:
+                yield root
+            finally:
+                if previous is None:
+                    held.pop(token.ident, None)
+                else:
+                    held[token.ident] = previous
 
     def fork(self, token: str | None = None) -> EventContext:
         """Return a new EventContext with the specified fields replaced.

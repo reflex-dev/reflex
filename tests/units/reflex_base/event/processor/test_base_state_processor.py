@@ -810,8 +810,9 @@ async def test_ensure_locked_returns_a_root_only_while_the_lock_is_held(
 ):
     """ensure_locked passes a locked root through and refuses everything else.
 
-    Foreground callers hand in the root they locked; a plain substate or an
-    un-entered proxy holds no lock, so there is nothing safe to flush.
+    Foreground callers hand in the root they locked, and a background handler
+    inside ``async with self`` holds the lock through its event context; a
+    state outside of the lock has nothing safe to flush.
 
     Args:
         wired_app: The App wired to the processor's state manager.
@@ -820,27 +821,28 @@ async def test_ensure_locked_returns_a_root_only_while_the_lock_is_held(
     """
     from reflex_base.event.processor.base_state_processor import ensure_locked
 
-    from reflex.istate.proxy import StateProxy
-
     root_ctx = real_base_state_processor._root_context
     assert root_ctx is not None
-    EventContext.set(root_ctx.fork(token=token))
-    root = await root_ctx.state_manager.get_state(
-        BaseStateToken(ident=token, cls=State)
-    )
+    ctx = root_ctx.fork(token=token)
+    EventContext.set(ctx)
+    state_token = BaseStateToken(ident=token, cls=OnLoadInternalState)
+    root = await root_ctx.state_manager.get_state(state_token)
     substate = await root.get_state(OnLoadInternalState)
 
     assert ensure_locked(substate, root) is root
     assert ensure_locked(substate, None) is None
-    assert ensure_locked(StateProxy(substate), None) is None
+    async with ctx.modify_state(state_token) as locked_root:
+        locked_substate = await locked_root.get_state(OnLoadInternalState)
+        assert ensure_locked(locked_substate, None) is locked_root
+    assert ensure_locked(locked_substate, None) is None
 
 
-async def test_failed_context_enter_does_not_mark_the_proxy_entered(
+async def test_failed_context_enter_does_not_mark_the_state_entered(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
     token: str,
 ):
-    """A proxy whose enter failed still gets the compatibility flush.
+    """A background state whose enter failed still gets the compatibility flush.
 
     The entered flag means "a context opened whose exit will flush". If
     ``__aenter__`` raises before that and the handler swallows it, the
@@ -852,17 +854,16 @@ async def test_failed_context_enter_does_not_mark_the_proxy_entered(
         real_base_state_processor: The unmocked BaseStateEventProcessor.
         token: The client token.
     """
-    from reflex.istate.proxy import StateProxy
-
     root_ctx = real_base_state_processor._root_context
     assert root_ctx is not None
-    EventContext.set(root_ctx.fork(token=token))
+    ctx = root_ctx.fork(token=token)
+    EventContext.set(ctx)
     root = await root_ctx.state_manager.get_state(
         BaseStateToken(ident=token, cls=State)
     )
+    # As loaded by an event whose lock was released since.
+    root._event_context = ctx
     substate = await root.get_state(OnLoadInternalState)
-
-    proxy = StateProxy(substate)
 
     def raise_on_modify(*args, **kwargs):
         msg = "state manager unavailable"
@@ -874,12 +875,13 @@ async def test_failed_context_enter_does_not_mark_the_proxy_entered(
     )
     try:
         with pytest.raises(RuntimeError, match="state manager unavailable"):
-            async with proxy:
+            async with substate:
                 pass
     finally:
         object.__setattr__(root_ctx.state_manager, "modify_state_with_links", original)
 
-    assert proxy._self_entered_context is False
+    assert not ctx.state_locks.entered
+    assert not ctx.state_locks.entered_states
 
 
 def _client_event(spec: Any, router_data: dict[str, Any]) -> Event:
