@@ -263,12 +263,10 @@ async def finish_child(session: AsyncSession, parent: dict[str, Any]) -> None:
             # moved on and may have fanned out again, counts for nothing. The
             # version is left alone so every child of the fan-out still matches;
             # nothing else can touch a parked parent, and its claim bumps it.
-            *(
-                (cls.wf_version == parent["fan_out"],)
-                if "fan_out" in parent
-                # Written before children carried the fan-out's version.
-                else ()
-            ),
+            # A pointer without the fan-out's version predates children naming
+            # it, and no longer knows which join it counts toward: it counts
+            # toward none, rather than possibly toward the wrong one.
+            cls.wf_version == parent.get("fan_out"),
             cls.children_left > 0,
         )
         .values(

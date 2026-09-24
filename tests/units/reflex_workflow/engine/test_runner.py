@@ -2544,7 +2544,9 @@ async def test_a_finished_run_takes_an_event_only_when_asked_to_restart(
     assert row.status == "decided:approve:manager"
 
 
-async def test_a_child_that_does_not_name_its_fan_out_still_counts(session_factory):
+async def test_a_child_that_does_not_name_its_fan_out_counts_toward_none(
+    session_factory,
+):
     key = uuid.uuid4().hex
     await Parked(key=key, size=1).start(Parked.split)
     parent = await pk_of(Parked, key)
@@ -2558,8 +2560,9 @@ async def test_a_child_that_does_not_name_its_fan_out_still_counts(session_facto
             .values(parent=Piece.parent.op("-")(literal("fan_out", String)))
         )
 
+    # It finishes without failing, and without counting toward a join it can no
+    # longer tell apart from a later one.
     assert await step_row(Piece, await pk_of(Piece, f"{key}-0")) == "ok"
     row = await Parked.by(Parked.key == key).get()
     assert row is not None
-    assert row.children_left == 0
-    assert row.wake_at is not None
+    assert (row.children_left, row.wake_at) == (1, None)

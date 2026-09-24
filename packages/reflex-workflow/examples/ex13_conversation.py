@@ -111,6 +111,28 @@ async def write(
     )
 
 
+async def arrive(
+    conversation: str, key: str, role: str, text: str = "", **data: Any
+) -> None:
+    """Add an inbound entry -- a customer's message, an action's outcome.
+
+    A turn takes the inbound entries up to the highest id it has seen, so they
+    have to commit in the order their ids are handed out, or one committing late
+    with a lower id would never be read. Each is written under the
+    conversation's arrival lock, which also orders it against a reminder.
+
+    Args:
+        conversation: The conversation.
+        key: The entry's key within the conversation.
+        role: ``customer`` or ``action``.
+        text: What it says.
+        **data: What an action returned.
+    """
+    async with current().session_factory() as session, session.begin():
+        await session.execute(arrival_lock(conversation))
+        await write(session, conversation, key, role, text, **data)
+
+
 async def transcript(conversation: str, seen: int) -> list[Message]:
     """Read what the agent may see: what arrived up to ``seen``, and its own work.
 
@@ -456,16 +478,14 @@ class Transfer(Base, Workflow):
             status: ``sent``, ``declined`` or ``expired``.
         """
         self.status = status
-        async with current().session_factory() as session, session.begin():
-            await write(
-                session,
-                self.conversation,
-                f"action:{self.key}",
-                "action",
-                amount=self.amount,
-                to=self.to,
-                status=status,
-            )
+        await arrive(
+            self.conversation,
+            f"action:{self.key}",
+            "action",
+            amount=self.amount,
+            to=self.to,
+            status=status,
+        )
         await wake(self.conversation, f"action:{self.key}")
 
 
@@ -509,9 +529,7 @@ async def receive(conversation: str, customer: str, message: str, text: str) -> 
         Conversation.turn
     )
     key = f"customer:{message}"
-    async with current().session_factory() as session, session.begin():
-        await session.execute(arrival_lock(conversation))
-        await write(session, conversation, key, "customer", text)
+    await arrive(conversation, key, "customer", text)
     # A redelivery wakes the conversation too: the first delivery may have been
     # written and then lost before it woke anything.
     await wake(conversation, key)

@@ -30,7 +30,7 @@ from examples.ex13_conversation import (
 )
 from examples.services import world
 from reflex_workflow import connect_workflows
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from .conftest import eventually, worker
@@ -458,3 +458,43 @@ async def test_a_redelivered_message_whose_wake_was_lost_is_answered(
             )
         await receive(conversation, conversation, "m2", "send 9 to hu")
         await eventually(said(conversation, "Please confirm sending 9 to hu."))
+
+
+async def test_an_outcome_waits_its_turn_behind_a_message_being_written(database):
+    conversation = new_conversation()
+
+    async def outcome_waits() -> bool:
+        """Tell whether the outcome is waiting for the conversation's lock.
+
+        Returns:
+            Whether it is.
+        """
+        async with database() as session:
+            return bool(
+                await session.scalar(
+                    text(
+                        "SELECT count(*) FROM pg_locks WHERE locktype = 'advisory'"
+                        " AND NOT granted"
+                        " AND objid::bigint = hashtext(:lock)::bigint & 4294967295"
+                    ),
+                    {"lock": f"chat:{conversation}"},
+                )
+            )
+
+    async with worker(database):
+        await receive(conversation, conversation, "m1", "send 8 to ivy")
+        await eventually(said(conversation, "Please confirm sending 8 to ivy."))
+        [transfer] = await transfer_of(conversation)
+        await eventually(transfer_is(transfer.key, "awaiting confirmation"))
+
+        # A customer's message is being accepted, holding the conversation's
+        # lock. The transfer's outcome arrives meanwhile, and must not take an id
+        # after the message's and commit before it: it waits for the lock.
+        async with database() as session, session.begin():
+            await session.execute(arrival_lock(conversation))
+            assert await confirm(transfer.key, "yes", "click-1") == 1
+            await eventually(outcome_waits)
+            rows = await transcript_of(database, conversation)
+            assert [m for m in rows if m.role == "action"] == []
+
+        await eventually(said(conversation, "Transfer of 8 to ivy: sent."))

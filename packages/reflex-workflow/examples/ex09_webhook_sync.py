@@ -21,7 +21,7 @@ from typing import Any
 
 from reflex_workflow import Call, Step, Wait, Workflow, step, wait_for
 from reflex_workflow.engine.runtime import current
-from sqlalchemy import DateTime, Integer, String, UniqueConstraint, select
+from sqlalchemy import DateTime, Integer, String, UniqueConstraint, func, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Mapped, mapped_column
@@ -148,20 +148,24 @@ class Entity(Base, Workflow):
         following = DESTINATIONS.index(destination) + 1
         if destination == "warehouse":
             # The warehouse takes the job and answers when it has run it.
-            self.callback_by = now() + CALLBACK_DEADLINE
-            return self.awaiting_callback()
+            at = await database_now()
+            self.callback_by = at + CALLBACK_DEADLINE
+            return self.awaiting_callback(at)
         if following < len(DESTINATIONS):
             return Entity.push(DESTINATIONS[following])
         return Entity.idle
 
-    def awaiting_callback(self) -> Wait[Entity]:
+    def awaiting_callback(self, at: datetime.datetime) -> Wait[Entity]:
         """Wait for the warehouse to say it has run this version's job.
+
+        Args:
+            at: Now, by the database's clock, which is the clock the wait runs on.
 
         Returns:
             The wait for the callback, for whatever is left of its deadline.
         """
         self.status = "awaiting-callback"
-        left = (self.callback_by or now()) - now()
+        left = (self.callback_by or at) - at
         return wait_for(
             Entity.confirm,
             timeout=max(left, datetime.timedelta()),
@@ -180,7 +184,7 @@ class Entity(Base, Workflow):
             about a job an older version started.
         """
         if job != (self.written or {}).get("warehouse"):
-            return self.awaiting_callback()
+            return self.awaiting_callback(await database_now())
         self.written = {**(self.written or {}), "warehouse-job": job}
         self.status = "synchronized"
         return Entity.idle
@@ -201,13 +205,14 @@ class Entity(Base, Workflow):
         self.status = "retired"
 
 
-def now() -> datetime.datetime:
-    """Return the current moment.
+async def database_now() -> datetime.datetime:
+    """Read the database's clock, which the engine's timers run on.
 
     Returns:
-        Now, in UTC.
+        Now, as the database has it.
     """
-    return datetime.datetime.now(datetime.timezone.utc)
+    async with current().session_factory() as session:
+        return (await session.execute(select(func.now()))).scalar_one()
 
 
 async def receive(entity_id: str, fields: dict[str, Any], version: int) -> int:
