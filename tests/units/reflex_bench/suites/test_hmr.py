@@ -183,23 +183,71 @@ def test_conclude_restores_after_a_failed_sample(ctx: Context):
     bench.cleanup(ctx)
 
 
-def test_a_change_the_page_never_shows_fails_clearly(ctx: Context):
-    # hmr.css and hmr.asset in dev: no hot update, no reload.
-    bench = hmr.Asset()
-    original = _file(ctx, "assets/logo.svg")
+def test_a_change_the_page_never_shows_fails_clearly(
+    ctx: Context, monkeypatch: pytest.MonkeyPatch
+):
+    # hmr.css in dev: no hot update, no reload.
+    monkeypatch.setattr(hmr, "WAIT_S", 0.3)
+    bench = hmr.Css()
+    original = _file(ctx, "assets/playground.css")
     bench.setup(ctx)
     bench.prepare(ctx)
     tab = _tab(bench)
-    tab.misses = 1
+    tab.misses = 10**9
     with pytest.raises(TimeoutError) as info:
         bench.sample(ctx)
     assert str(info.value) == (
-        'the page did not show the edit (naturalWidth of img[alt="Playground logo"])'
-        " within the hook's 90 s: granian printed no reload line, no [timing]"
-        " line followed, the page did not reload"
+        "the page did not show the edit (style:font-size of .bench-hooks)"
+        " within the hook's 0.3 s: granian printed no reload line, no [timing]"
+        " line followed, the page did not reload; the page shows '12px'"
     )
+    tab.misses = 0
     bench.conclude(ctx)
-    assert _file(ctx, "assets/logo.svg") == original
+    assert _file(ctx, "assets/playground.css") == original
+    bench.cleanup(ctx)
+
+
+def test_a_css_update_the_page_does_not_apply_fails_fast(
+    ctx: Context, monkeypatch: pytest.MonkeyPatch
+):
+    # Vite delivered the stylesheet's hot update, the page fetched it, and the
+    # computed style stayed: waiting the deadline out would only burn time.
+    monkeypatch.setattr(hmr, "APPLY_S", 0.05)
+
+    class DroppingTab(FakeTab):
+        def poll_mark(self, id: str, timeout: float) -> dict[str, Any] | None:
+            self.calls.append(("poll_mark", id))
+            if id != "edit":
+                return self._show(id)
+            if not any("hmr update" in line for _, line in self.app.lines):
+                self.app.log("Changes detected, reloading workers..")
+                self.app.log("[timing] Compile pages: 0.10s")
+                self.app.log(
+                    "Debug: 11:11:19 PM [vite] (client) hmr update"
+                    " /styles/__reflex_global_styles.css?direct"
+                )
+            time.sleep(0.02)
+            return None
+
+    monkeypatch.setattr(FakeBrowser, "tab_class", DroppingTab)
+    bench = hmr.Css()
+    original = _file(ctx, "assets/playground.css")
+    bench.setup(ctx)
+    bench.prepare(ctx)
+    started = time.monotonic()
+    with pytest.raises(hmr.DroppedUpdateError) as info:
+        bench.sample(ctx)
+    assert time.monotonic() - started < 1.0
+    message = str(info.value)
+    assert message.startswith(
+        "the page did not show the edit (style:font-size of .bench-hooks):"
+        " vite sent the stylesheet's hot update "
+    )
+    assert "but the page did not apply it" in message
+    assert "still '12px'" in message
+    assert "the page did not reload" in message
+    bench.conclude(ctx)
+    assert _file(ctx, "assets/playground.css") == original
     bench.cleanup(ctx)
 
 
@@ -305,8 +353,9 @@ def test_every_wait_of_a_hook_shares_one_deadline(
     assert [name for name, _ in timeouts] == ["wait_quiet", "poll_mark", "wait_quiet"]
     first, second, third = (timeout for _, timeout in timeouts)
     assert first <= 1.0
-    assert second <= first - 0.3
-    assert third <= second - 0.3
+    # The mark is polled in POLL_S chunks, each within what is left.
+    assert second <= min(hmr.POLL_S, first - 0.3)
+    assert third <= first - 0.6
     bench.cleanup(ctx)
 
 
@@ -328,23 +377,49 @@ def test_a_passed_deadline_fails_the_wait(
     bench.cleanup(ctx)
 
 
-def test_style_and_asset_changes_count_a_reload_without_failing(ctx: Context):
-    for cls, path in (
-        (hmr.Css, "assets/playground.css"),
-        (hmr.Asset, "assets/logo.svg"),
-    ):
-        bench = cls()
-        original = _file(ctx, path)
-        bench.setup(ctx)
-        _tab(bench).reloads = 1
-        bench.prepare(ctx)
-        result = bench.sample(ctx)
-        assert result.values["full_reloads"] == 1
-        assert result.values["latency"] > 0
-        assert _file(ctx, path) != original
-        bench.conclude(ctx)
-        assert _file(ctx, path) == original
-        bench.cleanup(ctx)
+def test_a_style_change_counts_a_reload_without_failing(ctx: Context):
+    bench = hmr.Css()
+    original = _file(ctx, "assets/playground.css")
+    bench.setup(ctx)
+    _tab(bench).reloads = 1
+    bench.prepare(ctx)
+    result = bench.sample(ctx)
+    assert result.values["full_reloads"] == 1
+    assert result.values["latency"] > 0
+    assert _file(ctx, "assets/playground.css") != original
+    bench.conclude(ctx)
+    assert _file(ctx, "assets/playground.css") == original
+    bench.cleanup(ctx)
+
+
+def test_an_asset_change_is_shown_by_the_harness_reloading_the_page(ctx: Context):
+    # Vite has no module for a public file: a change to one reaches no page, in
+    # dev mode as in preview, so the harness refreshes until it shows.
+    bench = hmr.Asset()
+    assert bench.reloads_itself
+    original = _file(ctx, "assets/logo.svg")
+    bench.setup(ctx)
+    bench.prepare(ctx)
+    tab = _tab(bench)
+    tab.misses = 1
+    tab.calls.clear()
+    result = bench.sample(ctx)
+    assert [call[0] for call in tab.calls[:4]] == [
+        "reload",
+        "poll_mark",
+        "reload",
+        "poll_mark",
+    ]
+    assert result.values["full_reloads"] == 0
+    assert result.values["latency"] > 0
+    assert result.extra is not None
+    assert result.extra["reloads"] == 2
+    assert _file(ctx, "assets/logo.svg") != original
+    tab.calls.clear()
+    bench.conclude(ctx)
+    assert ("reload",) in tab.calls
+    assert _file(ctx, "assets/logo.svg") == original
+    bench.cleanup(ctx)
 
 
 def test_css_edit_changes_the_font_size_of_the_hooks(ctx: Context):

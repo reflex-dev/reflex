@@ -360,7 +360,7 @@ one 90 s deadline. `warmup` is 3 edits.
 | `hmr.render.root` | the `root` pragma literal (every page) | the new text in `#bench-marker-root` |
 | `hmr.handler` | the `handler` pragma literal, set by an event handler | the new value in `#bench-handler-value`; the harness clicks `#bench-handler` every 250 ms (`extra["clicks"]`) |
 | `hmr.css` | the `.bench-hooks` font size in `assets/playground.css` | the computed font size |
-| `hmr.asset` | `assets/logo.svg` gets a `width` and `height` | the logo's `naturalWidth` (HTTP cache off) |
+| `hmr.asset` | `assets/logo.svg` gets a `width` and `height` | the logo's `naturalWidth` (HTTP cache off); the harness refreshes the page every 250 ms (`extra["reloads"]`) |
 | `hmr.reconnect` | none: SIGKILL of granian's worker, then SIGHUP to its supervisor, since granian's dev reloader never respawns a worker that died on its own | `#count` changes on `/counter`; the harness clicks `#increment` every 250 ms |
 | `hmr.watcher` | the `leaf` literal | `latency` is granian's `Changes detected` line (its `reload_tick` is 100 ms) |
 
@@ -375,12 +375,19 @@ reload it (waiting for its load event) every 250 ms until it shows
 it). For the render, handler and reconnect benchmarks a reload is no hot
 update: `conclude` fails the sample with `FullReloadError`, also when the page
 reloads right after showing the hot update, so `latency` only holds hot
-updates. For `hmr.css` and `hmr.asset` a reload may be how the change shows:
-`latency` is the time until it shows. A change the page never shows by itself
-(no hot update, no reload, within the deadline) fails the sample: the harness
-does not refresh a dev page for it. The error then says when granian saw the
-change, when the reload's last `[timing]` line came and whether the page
-reloaded, so it tells which side dropped the change. `extra["hops"]` places each sample's backend steps, in seconds
+updates. For `hmr.css` a reload may be how the change shows: `latency` is the
+time until it shows. A change the page never shows by itself (no hot update,
+no reload, within the deadline) fails the sample: the harness does not refresh
+a dev page for it. The error then says when granian saw the change, when the
+reload's last `[timing]` line came and whether the page reloaded, so it tells
+which side dropped the change. A stylesheet hot update that vite logged
+(`[vite] ... hmr update`) 5 s ago without the page applying it fails the sample
+at once (`DroppedUpdateError`, naming the value the page still shows) instead
+of waiting the deadline out. `hmr.asset` refreshes the page itself in every
+mode: vite has no module for a file of `public/`, so a change to one reaches
+no page and a user refreshes for it; `latency` is the time until a refresh
+shows the new file and `extra["reloads"]` counts the refreshes.
+`extra["hops"]` places each sample's backend steps, in seconds
 since the edit: `watcher_seen_s` (granian's line), `compile_done_s` (the
 reload's last `[timing]` line) and `dom_updated_s` (the page's mark).
 

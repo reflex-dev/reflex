@@ -21,12 +21,19 @@ A sample:
 A lost tag means the page reloaded instead of updating, counted in
 ``full_reloads``. For the render, handler and reconnect benchmarks that is no
 hot reload sample: ``conclude`` fails it with :class:`FullReloadError`, so
-``latency`` only ever holds a hot update. For the style and asset benchmarks
-the change may only show through a reload: ``latency`` is the time until it
-shows by whatever means. A change a dev page never shows by itself (no hot
-update, no reload) fails the sample, saying what the backend and the page did
-meanwhile (:func:`describe_miss`). Every hook's waits share one deadline,
-:data:`WAIT_S` after the hook started, within the hooks' :data:`TIMEOUT_S`.
+``latency`` only ever holds a hot update. For the style benchmark the change
+may only show through a reload: ``latency`` is the time until it shows by
+whatever means. A change a dev page never shows by itself (no hot update, no
+reload) fails the sample, saying what the backend and the page did meanwhile
+(:func:`describe_miss`); a stylesheet hot update vite delivered that the page
+did not apply within :data:`APPLY_S` fails it at once
+(:class:`DroppedUpdateError`) instead of waiting the deadline out. Every hook's
+waits share one deadline, :data:`WAIT_S` after the hook started, within the
+hooks' :data:`TIMEOUT_S`.
+
+Vite has no module for a file of ``public/`` (an asset), so a change to one
+reaches no page: the asset benchmark refreshes the page every :data:`POLL_S`
+until it shows the new file, as a user would, in every mode.
 
 Preview mode (reflex 0.9.8+) serves a static build: a hot reload rebuilds it,
 and it shows after a refresh. Preview benchmarks whose change needs a new page
@@ -68,10 +75,17 @@ POLL_S = 0.25
 # The most a hook waits for the page, all its waits together, within the
 # hooks' TIMEOUT_S.
 WAIT_S = 90.0
+# How long the page gets to apply a hot update vite delivered before the
+# update counts as dropped.
+APPLY_S = 5.0
 TIMEOUT_S = 120.0
 SETUP_TIMEOUT_S = 660.0
 # Loose on purpose: granian versions may word their reload line differently.
 WATCHER = re.compile(r"Changes detected")
+# Vite's log line for a hot update it sent, e.g. "[vite] (client) hmr update
+# /styles/__reflex_global_styles.css?direct" (the path may wrap onto the next
+# line).
+VITE_UPDATE = re.compile(r"\[vite\].*hmr update")
 TIMING = "[timing]"
 # Log line times and the edit's time come from different clocks, mapped onto
 # each other with millisecond resolution.
@@ -91,6 +105,10 @@ METRICS = {
 
 class FullReloadError(RuntimeError):
     """The page reloaded instead of applying a hot update."""
+
+
+class DroppedUpdateError(RuntimeError):
+    """Vite delivered a hot update the page did not apply."""
 
 
 def _deadline() -> float:
@@ -395,13 +413,17 @@ class _HotReload:
         Raises:
             TimeoutError: When the page does not show the change before the
                 deadline, with what the backend and the page did meanwhile.
+            DroppedUpdateError: When the page can no longer show the change
+                (:meth:`dropped`).
         """
         count = 0
         mark = None
         if self.click is None and not self.reloads_itself:
-            left = deadline - time.monotonic()
-            if left > 0:
-                mark = tab.poll_mark(id, left)
+            while mark is None and (left := deadline - time.monotonic()) > 0:
+                mark = tab.poll_mark(id, min(POLL_S, left))
+                if mark is None and (why := self.dropped(tab, t0)) is not None:
+                    msg = f"the page did not show the {id} ({self.kind} of {self.selector}): {why}"
+                    raise DroppedUpdateError(msg)
         else:
             while mark is None and (left := deadline - time.monotonic()) > 0:
                 if self.click is None:
@@ -423,10 +445,23 @@ class _HotReload:
             )
             msg = (
                 f"the page did not show the {id} ({self.kind} of {self.selector})"
-                f" within the hook's {WAIT_S:g} s{how}: {facts}"
+                f" within the hook's {WAIT_S:g} s{how}: {facts}; the page shows"
+                f" {tab.read(self.kind, self.selector)!r}"
             )
             raise TimeoutError(msg)
         return mark, count
+
+    def dropped(self, tab: Tab, t0: int) -> str | None:
+        """Tell whether the page can no longer show a change by itself.
+
+        Args:
+            tab: The page.
+            t0: ``time.time_ns()`` just before the change.
+
+        Returns:
+            What happened, or ``None`` while the change may still show.
+        """
+        return None
 
     def _log_since(self, t0: int) -> tuple[float, list[tuple[float, str]]]:
         """Read the app's log and place a change on its clock.
@@ -689,6 +724,39 @@ class Css(_HotReload):
         self.edit.prepare(size)
         return size
 
+    def dropped(self, tab: Tab, t0: int) -> str | None:
+        """Tell whether vite's hot update of the stylesheet came and went unapplied.
+
+        Args:
+            tab: The page.
+            t0: ``time.time_ns()`` just before the change.
+
+        Returns:
+            The facts once vite logged the update :data:`APPLY_S` ago and the
+            page neither shows the value nor reloaded; ``None`` before that.
+        """
+        edit_at, lines = self._log_since(t0)
+        update = next(
+            (
+                at
+                for at, line in lines
+                if at >= edit_at - _CLOCK_SLACK_S and VITE_UPDATE.search(line)
+            ),
+            None,
+        )
+        if update is None:
+            return None
+        assert self.app is not None
+        ago = time.perf_counter() - self.app.t0 - update
+        if ago < APPLY_S or tab.alive() != self.alive:
+            return None
+        return (
+            f"vite sent the stylesheet's hot update {ago:.1f} s ago"
+            f" ({update - edit_at:.2f} s after the edit) but the page did not"
+            f" apply it: {self.kind[6:]} of {self.selector} is still"
+            f" {tab.read(self.kind, self.selector)!r}, the page did not reload"
+        )
+
 
 @_hmr("hmr.css.preview", estimate=PREVIEW_ESTIMATE_S)
 class CssPreview(Css):
@@ -699,14 +767,25 @@ class CssPreview(Css):
 
 @_hmr("hmr.asset")
 class Asset(_HotReload):
-    """Give the navbar logo an intrinsic size until the page shows the new image.
+    """Give the navbar logo an intrinsic size, refreshing until the page shows the new image.
 
-    The browser cache is off for this page, so a reload fetches the image.
+    Vite has no module for a file of ``public/``, so the change reaches no
+    page: the harness refreshes every :data:`POLL_S` (``extra["reloads"]``),
+    as a user would, and ``latency`` is the time until a refresh shows the new
+    file. The browser cache is off for this page, so a refresh fetches it.
     """
 
     kind = "naturalWidth"
     selector = 'img[alt="Playground logo"]'
-    hot_update_only = False
+
+    @property
+    def reloads_itself(self) -> bool:
+        """The harness refreshes the page in every mode.
+
+        Returns:
+            True.
+        """
+        return True
 
     def target(self, app: Path) -> Target:
         """Find the logo's root element.
