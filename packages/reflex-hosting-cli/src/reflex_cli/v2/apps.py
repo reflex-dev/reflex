@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 import logging
 from typing import Any
 
@@ -23,6 +24,8 @@ logger = logging.getLogger(__name__)
 
 # How many log lines `apps logs --follow` prints before prompting for more.
 _LOGS_PAGE_SIZE = 100
+# The window `logs` reads when the caller names neither an offset nor a range.
+_LOGS_DEFAULT_WINDOW = datetime.timedelta(hours=1)
 
 
 @click.group()
@@ -659,7 +662,6 @@ def app_logs(
     follow: bool = False,
 ):
     """Retrieve logs for a given application."""
-    import datetime
     import pprint
 
     from reflex_cli.utils import hosting
@@ -695,7 +697,7 @@ def app_logs(
             raise click.exceptions.Exit(1)
 
         if offset is None and start is None and end is None:
-            offset = 3600
+            offset = int(_LOGS_DEFAULT_WINDOW.total_seconds())
         if not offset and not (start and end):
             logger.error("must provide both start and end")
             raise click.exceptions.Exit(1)
