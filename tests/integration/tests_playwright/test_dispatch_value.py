@@ -90,3 +90,21 @@ def test_dispatch_value(dispatch_value_app: AppHarness, page: Page):
 
     page.click("#add")
     expect(page.locator("#items")).to_have_text("pending")
+
+
+def test_dispatch_value_before_connecting(dispatch_value_app: AppHarness, page: Page):
+    """A dispatched value shows right away while the backend is unreachable.
+
+    Args:
+        dispatch_value_app: AppHarness running the test app.
+        page: Playwright page.
+    """
+    assert dispatch_value_app.frontend_url is not None
+    # Hold the websocket without ever reaching the backend.
+    page.route_web_socket("**/_event/**", lambda ws: None)
+    page.goto(dispatch_value_app.frontend_url)
+
+    status = page.locator("#status")
+    expect(status).to_have_text("idle")
+    page.click("#work")
+    expect(status).to_have_text("working")

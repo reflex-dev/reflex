@@ -977,6 +977,11 @@ class DispatchValueState(State):
         """Return the status in upper case."""
         return self.status.upper()
 
+    @computed_var(backend=True)
+    def backend_upper(self) -> str:
+        """Return the status in upper case, on the backend only."""
+        return self.status.upper()
+
 
 class DispatchValueSubstate(DispatchValueState):
     """A substate inheriting the dispatched vars."""
@@ -1007,6 +1012,7 @@ def test_dispatch_value():
         LiteralVar.create("a"),
         DispatchValueState.status.upper(),
         DispatchValueState.status + "a",
+        DispatchValueState.backend_upper,
     ],
 )
 def test_dispatch_value_needs_state_var(var: Var):

@@ -917,6 +917,8 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if (
             var_data is None
             or not var_data.field_name
+            # A backend computed var, maybe behind a cast forwarding its attributes.
+            or getattr(self, "_backend", False)
             or self._js_expr
             != f"{format_state_name(var_data.state)}.{var_data.field_name}{FIELD_MARKER}"
         ):

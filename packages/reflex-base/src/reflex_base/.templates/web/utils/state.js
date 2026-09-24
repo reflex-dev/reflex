@@ -334,19 +334,6 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
-  if (event.name == "_dispatch_value") {
-    // A speculative update, shown until the backend sends the var.
-    const dispatchSubstate = eventLoop.dispatch[event.payload.state];
-    if (dispatchSubstate === undefined) {
-      console.warn(
-        `No state ${event.payload.state} is mounted to dispatch a value to.`,
-      );
-    } else {
-      dispatchSubstate(event.payload.delta);
-    }
-    return;
-  }
-
   if (event.name == "_set_value") {
     const ref =
       event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
@@ -502,10 +489,30 @@ export const queueEvents = async (
   navigate,
   params,
 ) => {
+  const queued = [];
+  for (const event of events) {
+    if (event === undefined || event === null) {
+      continue;
+    }
+    if (event.name == "_dispatch_value") {
+      // A speculative update, shown right away (even before the socket is
+      // connected) until the backend sends the var.
+      const dispatchSubstate = eventLoop.dispatch[event.payload.state];
+      if (dispatchSubstate === undefined) {
+        console.warn(
+          `No state ${event.payload.state} is mounted to dispatch a value to.`,
+        );
+      } else {
+        dispatchSubstate(event.payload.delta);
+      }
+    } else {
+      queued.push(event);
+    }
+  }
   if (prepend) {
-    event_queue.unshift(...events.filter((e) => e !== undefined && e !== null));
+    event_queue.unshift(...queued);
   } else {
-    event_queue.push(...events.filter((e) => e !== undefined && e !== null));
+    event_queue.push(...queued);
   }
   await processEvent(resolveSocket(socket), navigate, params);
 };
