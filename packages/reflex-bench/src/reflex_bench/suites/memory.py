@@ -7,6 +7,10 @@ per sample, as in :mod:`reflex_bench.suites.events`:
 - ``memory.compile.peak``: the peak of ``reflex compile`` or ``reflex export
   --env prod`` over the whole process tree, bun, node and vite included.
 - ``memory.idle``: the PSS of the idle server tree.
+- ``memory.dev.idle``: the same for ``reflex run --env dev``, the backend and
+  the vite dev server, once the page answers HTTP (no browser, so vite has
+  transformed only what that request needed); the dev server's node, bun and
+  esbuild processes are split from the python ones.
 - ``memory.per_session``: the bytes each connected session adds, fitted over a
   sweep of held sessions, and what is left after they disconnect and after
   their states expire.
@@ -48,7 +52,7 @@ import shutil
 import statistics
 import threading
 import time
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, TypeVar
 
@@ -125,6 +129,9 @@ ALLOCATORS = {
     "arena2": {"MALLOC_ARENA_MAX": "2"},
 }
 MIMALLOC_PYTHON = (3, 13)
+# Name prefixes of the frontend dev server's processes (vite's node shows as
+# node-MainThread); everything else is the backend.
+FRONTEND_COMMANDS = ("node", "bun", "esbuild")
 
 _T = TypeVar("_T")
 
@@ -292,14 +299,18 @@ def start_server(
     env: dict[str, str],
     *,
     scope: CgroupScope | None,
+    dev: bool = False,
 ) -> AppProcess:
-    """Start the playground backend until ``/ping`` answers.
+    """Start the playground until it answers HTTP.
 
     Args:
         ctx: The benchmark context.
         started: Stops the server in ``conclude``.
         env: Its environment.
         scope: The cgroup scope to run it in, if any.
+        dev: Start ``reflex run --env dev``, backend and frontend dev server,
+            until the page answers HTTP; else the production backend alone,
+            until ``/ping`` answers.
 
     Returns:
         The server.
@@ -307,8 +318,8 @@ def start_server(
     app = AppProcess(
         ctx.subject.python,
         app_dir(ctx),
-        mode="prod",
-        backend_only=True,
+        mode="dev" if dev else "prod",
+        backend_only=not dev,
         reflex_version=ctx.subject.reflex_version,
         env=env,
         scope=scope,
@@ -380,6 +391,21 @@ def largest_uss(reading: PssReading) -> int:
         The largest USS summed per command name, in bytes.
     """
     return max(reading.uss_bytes.values(), default=0)
+
+
+def split_uss(uss_bytes: Mapping[str, int]) -> tuple[int, int]:
+    """Split the unique memory per command between the backend and the frontend dev server.
+
+    Args:
+        uss_bytes: USS summed per command name.
+
+    Returns:
+        The backend's and the frontend's USS, in bytes.
+    """
+    frontend = sum(
+        size for name, size in uss_bytes.items() if name.startswith(FRONTEND_COMMANDS)
+    )
+    return sum(uss_bytes.values()) - frontend, frontend
 
 
 def cgroup_extra(reading: CgroupReading) -> dict[str, int]:
@@ -948,7 +974,7 @@ class CompilePeak(_Playground):
     estimate=9,
 )
 class Idle(_Playground):
-    """PSS of the idle backend tree, the median of three reads a second apart."""
+    """PSS of the idle server tree, the median of three reads a second apart; the production backend, or the dev server with ``mode=dev``."""
 
     def sample(self, ctx: Context) -> SampleResult:
         """Start the server, let it idle, and read its tree.
@@ -957,19 +983,24 @@ class Idle(_Playground):
             ctx: The benchmark context.
 
         Returns:
-            The tree's PSS, with the USS per command and, with a scope, the
-            cgroup's view of the same server.
+            The tree's PSS, with the USS per command, split between the backend
+            and the frontend dev server, and, with a scope, the cgroup's view of
+            the same server.
         """
         require_pss()
         started = self.started
         assert started is not None
         scope = new_scope()
-        app = start_server(ctx, started, server_env(ctx), scope=scope)
+        dev = ctx.params.get("mode") == "dev"
+        app = start_server(ctx, started, server_env(ctx), scope=scope, dev=dev)
         time.sleep(float(ctx.params["idle_s"]))
         reading = settled_pss(app.pid)
+        backend, frontend = split_uss(reading.uss_bytes)
         extra: dict[str, Any] = {
             "memory_method": PSS_METHOD,
             "uss_bytes": reading.uss_bytes,
+            "backend_uss_bytes": backend,
+            "frontend_uss_bytes": frontend,
             "processes": reading.processes,
         }
         if scope is not None:
@@ -998,6 +1029,24 @@ benchmark(
     timeout=HOOK_TIMEOUT_S,
     setup_timeout=SETUP_TIMEOUT_S,
     estimate=9,
+)(Idle)
+
+
+# The dev server: what `reflex run` holds while a developer works.
+benchmark(
+    id="memory.dev.idle",
+    suites=("daily",),
+    kind="track",
+    params={"manager": ("memory",)},
+    hidden_params={"idle_s": 10, "allocator": "default", "mode": "dev"},
+    metrics={
+        "pss": _bytes("summed PSS of the idle dev server tree, backend and vite"),
+        "pss_anon": _bytes("its anonymous part"),
+        "pss_file": _bytes("its file-backed part"),
+    },
+    timeout=HOOK_TIMEOUT_S,
+    setup_timeout=SETUP_TIMEOUT_S,
+    estimate=25,
 )(Idle)
 
 

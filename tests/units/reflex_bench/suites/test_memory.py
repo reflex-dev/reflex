@@ -58,6 +58,7 @@ def test_instance_ids_per_suite():
         "memory.boot_512mb[manager=memory]",
         "memory.compile.peak[command=compile]",
         "memory.compile.peak[command=export]",
+        "memory.dev.idle[manager=memory]",
         *(f"memory.idle[manager={m}]" for m in managers),
         *(f"memory.leak[manager={m},events=50000]" for m in managers),
         *(f"memory.per_session[manager={m},max_sessions=500]" for m in managers),
@@ -67,6 +68,7 @@ def test_instance_ids_per_suite():
         *(f"memory.boot_512mb[manager={m}]" for m in managers),
         "memory.compile.peak[command=compile]",
         "memory.compile.peak[command=export]",
+        "memory.dev.idle[manager=memory]",
         *(f"memory.idle[manager={m}]" for m in managers),
         "memory.idle.allocator[allocator=mimalloc]",
         "memory.idle.allocator[allocator=arena2]",
@@ -90,6 +92,7 @@ def test_declarations():
         "memory.boot.min_limit": 0,
         "memory.boot_512mb": 0,
         "memory.compile.peak": 1,
+        "memory.dev.idle": 0,
         "memory.idle": 0,
         "memory.idle.allocator": 0,
         "memory.leak": 0,
@@ -110,8 +113,9 @@ def test_declarations():
             assert (metric.unit, metric.direction) in {("B", "lower"), ("1", "higher")}
     passed = found["memory.boot_512mb"].metrics["passed"]
     assert (passed.assume, passed.direction) == ("exact", "higher")
-    # The allocator variants reuse the idle benchmark.
+    # The allocator variants and the dev server reuse the idle benchmark.
     assert found["memory.idle.allocator"].cls is found["memory.idle"].cls
+    assert found["memory.dev.idle"].cls is found["memory.idle"].cls
 
 
 @pytest.mark.parametrize(
@@ -237,6 +241,7 @@ class Fakes:
         grow: The server's anonymous memory growth per second of load.
         loading_since: When the last load with a window started.
         app_pid: The pid the fake server reports.
+        modes: The mode and ``backend_only`` of every started server.
     """
 
     log: list[str] = dataclasses.field(default_factory=list)
@@ -254,6 +259,7 @@ class Fakes:
     grow: float = 0.0
     loading_since: float | None = None
     app_pid: int = APP_PID
+    modes: list[tuple[str, bool]] = dataclasses.field(default_factory=list)
 
     def tree_pss(self, pid: int) -> PssReading:
         """Read a fake server tree: its sessions and its load show.
@@ -339,7 +345,7 @@ def fakes(monkeypatch: pytest.MonkeyPatch) -> Fakes:
 
     class FakeApp:
         def __init__(self, python, app_dir, *, mode, reflex_version, env, backend_only, scope, start_timeout):  # fmt: skip
-            assert (mode, backend_only) == ("prod", True)
+            state.modes.append((mode, backend_only))
             state.envs.append(env)
             self.pid = state.app_pid
             self.backend_url = "http://localhost:8000"
@@ -501,6 +507,48 @@ def test_idle_reads_the_settled_tree(
         if scope_reason is None
         else ["app start", "app stop"]
     )
+
+
+def test_idle_runs_the_production_backend(tmp_path: Path, fakes: Fakes):
+    entry = run(tmp_path, "memory.idle", idle_s=0)
+    assert entry["status"] == "ok", entry["error"]
+    assert fakes.modes == [("prod", True)]
+    (extra,) = entry["sample_extra"]
+    assert (extra["backend_uss_bytes"], extra["frontend_uss_bytes"]) == (140 * MIB, 0)
+
+
+def test_dev_idle_runs_the_dev_server_and_splits_its_memory(
+    tmp_path: Path, fakes: Fakes, monkeypatch: pytest.MonkeyPatch
+):
+    dev_tree = dataclasses.replace(
+        pss_reading(900 * MIB),
+        uss_bytes={"python3.12": 250 * MIB, "node": 520 * MIB, "bun": 30 * MIB},
+        processes=7,
+    )
+    monkeypatch.setattr(memory, "tree_pss", lambda pid: dev_tree)
+    entry = run(tmp_path, "memory.dev.idle", idle_s=0)
+    assert entry["status"] == "ok", entry["error"]
+    # The backend and the vite dev server, both started by `reflex run --env dev`.
+    assert fakes.modes == [("dev", False)]
+    assert entry["metrics"]["pss"]["samples"]["A"] == [900 * MIB]
+    (extra,) = entry["sample_extra"]
+    assert extra["backend_uss_bytes"] == 250 * MIB
+    assert extra["frontend_uss_bytes"] == 550 * MIB
+    assert extra["processes"] == 7
+
+
+@pytest.mark.parametrize(
+    ("uss", "split"),
+    [
+        ({}, (0, 0)),
+        ({"python": 10, "granian": 5}, (15, 0)),
+        ({"python3.12": 10, "node": 20, "bun": 3, "esbuild": 4}, (10, 27)),
+        # Vite's node renames its process to its main thread's name.
+        ({"python": 118, "node-MainThread": 162, "bun": 1}, (118, 163)),
+    ],
+)
+def test_split_uss(uss: dict[str, int], split: tuple[int, int]):
+    assert memory.split_uss(uss) == split
 
 
 def test_an_allocator_variant_is_a_separate_series(tmp_path: Path, fakes: Fakes):
