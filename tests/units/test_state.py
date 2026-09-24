@@ -1333,18 +1333,11 @@ def test_conditional_computed_vars():
                 return self.t1
             return self.t2
 
-    ms = MainState()
-    # Initially there are no dirty computed vars.
-    assert ms._dirty_computed_vars(from_vars={"flag"}) == {
-        (MainState.get_full_name(), "rendered_var")
-    }
-    assert ms._dirty_computed_vars(from_vars={"t2"}) == {
-        (MainState.get_full_name(), "rendered_var")
-    }
-    assert ms._dirty_computed_vars(from_vars={"t1"}) == {
-        (MainState.get_full_name(), "rendered_var")
-    }
-    assert ms.computed_vars["rendered_var"]._deps(objclass=MainState) == {
+    for name in ("flag", "t1", "t2"):
+        assert MainState._var_dependencies[name] == {
+            (MainState.get_full_name(), "rendered_var")
+        }
+    assert MainState.computed_vars["rendered_var"]._deps(objclass=MainState) == {
         MainState.get_full_name(): {"flag", "t1", "t2"}
     }
 

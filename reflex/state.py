@@ -14,7 +14,7 @@ import pickle
 import re
 import sys
 import time
-from collections.abc import Callable, Coroutine, Iterator, Mapping, Sequence
+from collections.abc import Callable, Coroutine, Iterable, Iterator, Mapping, Sequence
 from contextvars import ContextVar
 from datetime import timedelta
 from hashlib import md5
@@ -616,6 +616,9 @@ class _RouterDescriptor(property):
 
 
 all_base_state_classes: dict[str, None] = {}
+
+# Per state class, the names its dev-mode __setattr__ has found declared.
+_SETTABLE_NAMES: dict[type, set[str]] = {}
 
 # The fields holding router data, which reset() leaves alone.
 _ROUTER_FIELD_NAMES = frozenset((*constants.ROUTER_VARS, constants.ROUTER_DATA))
@@ -1574,20 +1577,22 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                 SetUndefinedStateVarError: If the state declares nothing to assign.
             """
             cls = type(self)
-            if not (
-                # Dunder names, like computed var caches, and mangled private names.
-                name.startswith((
-                    "__",
-                    f"_{getattr(cls, '__original_name__', cls.__name__)}__",
-                ))
-                # A field, a property, or a bookkeeping slot handles the assignment.
-                or _has_data_descriptor(cls, name)
-            ):
-                msg = (
-                    f"The state variable '{name}' has not been defined in '{cls.__name__}'. "
-                    f"All state variables must be declared before they can be set."
-                )
-                raise SetUndefinedStateVarError(msg)
+            if name not in (settable := _SETTABLE_NAMES.setdefault(cls, set())):
+                if not (
+                    # Dunder names, like computed var caches, and mangled private names.
+                    name.startswith((
+                        "__",
+                        f"_{getattr(cls, '__original_name__', cls.__name__)}__",
+                    ))
+                    # A field, a property, or a bookkeeping slot handles the assignment.
+                    or _has_data_descriptor(cls, name)
+                ):
+                    msg = (
+                        f"The state variable '{name}' has not been defined in '{cls.__name__}'. "
+                        f"All state variables must be declared before they can be set."
+                    )
+                    raise SetUndefinedStateVarError(msg)
+                settable.add(name)
             object.__setattr__(self, name, value)
 
     def reset(self):
@@ -1908,32 +1913,37 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             return await value
         return value
 
-    def _mark_dirty_computed_vars(self) -> None:
-        """Mark ComputedVars that need to be recalculated based on dirty_vars."""
-        # Append expired computed vars to dirty_vars to trigger recalculation
-        self.dirty_vars.update(self._expired_computed_vars())
-        # Append always dirty computed vars to dirty_vars to trigger recalculation
-        self.dirty_vars.update(self._always_dirty_computed_vars)
+    def _mark_dirty_computed_vars(self, var_names: Iterable[str] | None = None) -> None:
+        """Invalidate the computed vars depending on changed vars of this state, transitively.
 
-        dirty_vars = self.dirty_vars
-        while dirty_vars:
-            calc_vars, dirty_vars = dirty_vars, set()
-            for state_name, cvar in self._dirty_computed_vars(from_vars=calc_vars):
-                if state_name == self.get_full_name():
-                    defining_state = self
+        Uncached and expired computed vars recompute on access, so they count as
+        changed along with any var.
+
+        Args:
+            var_names: The changed vars of this state; all its dirty vars if omitted.
+        """
+        if self._always_dirty_computed_vars or self._interval_computed_var_names:
+            recomputed = (
+                self._always_dirty_computed_vars | self._expired_computed_vars()
+            )
+            self.dirty_vars.update(recomputed)
+            if var_names is not None:
+                var_names = (*var_names, *recomputed)
+        pending = [
+            (self, name)
+            for name in (self.dirty_vars if var_names is None else var_names)
+        ]
+        while pending:
+            state, name = pending.pop()
+            for state_name, cvar_name in state._var_dependencies.get(name, ()):
+                if state_name == state.get_full_name():
+                    target = state
                 else:
-                    defining_state = self._get_root_state().get_substate(
-                        tuple(state_name.split("."))
-                    )
-                defining_state.dirty_vars.add(cvar)
-                actual_var = defining_state.computed_vars.get(cvar)
-                if actual_var is not None:
-                    actual_var.mark_dirty(instance=defining_state)
-                if defining_state is self:
-                    dirty_vars.add(cvar)
-                else:
-                    # mark dirty where this var is defined
-                    defining_state._mark_dirty()
+                    target = state._get_root_state().get_substate(state_name.split("."))
+                    target._mark_ancestors_dirty()
+                target.computed_vars[cvar_name].mark_dirty(instance=target)
+                target.dirty_vars.add(cvar_name)
+                pending.append((target, cvar_name))
 
     def _expired_computed_vars(self) -> set[str]:
         """Determine ComputedVars that need to be recalculated based on the expiration time.
@@ -1949,25 +1959,6 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             cvar
             for cvar in self.__class__._interval_computed_var_names
             if computed_vars[cvar].needs_update(instance=self)
-        }
-
-    def _dirty_computed_vars(
-        self, from_vars: set[str] | None = None, include_backend: bool = True
-    ) -> set[tuple[str, str]]:
-        """Determine ComputedVars that need to be recalculated based on the given vars.
-
-        Args:
-            from_vars: find ComputedVar that depend on this set of vars. If unspecified, will use the dirty_vars.
-            include_backend: whether to include backend vars in the calculation.
-
-        Returns:
-            Set of computed vars to include in the delta.
-        """
-        return {
-            (state_name, cvar)
-            for dirty_var in from_vars or self.dirty_vars
-            for state_name, cvar in self._var_dependencies.get(dirty_var, set())
-            if include_backend or not self.computed_vars[cvar]._backend
         }
 
     def get_delta(self) -> Delta:
@@ -2068,19 +2059,27 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             _commit_delta_records(pending, delta)
         return delta
 
-    def _mark_dirty(self):
-        """Mark the substate and all parent states as dirty."""
-        state_name = self.get_name()
-        if (
-            self.parent_state is not None
-            and state_name not in self.parent_state.dirty_substates
-        ):
-            self.parent_state.dirty_substates.add(self.get_name())
-            self.parent_state._mark_dirty()
+    def _mark_dirty(self, var_names: Iterable[str] | None = None) -> None:
+        """Mark this state and its ancestors dirty, invalidating dependent computed vars.
 
-        # have to mark computed vars dirty to allow access to newly computed
-        # values within the same ComputedVar function
-        self._mark_dirty_computed_vars()
+        Computed vars are invalidated right away, so that one read later in the
+        same event handler is recomputed.
+
+        Args:
+            var_names: The vars of this state that changed; all its dirty vars if omitted.
+        """
+        self._mark_ancestors_dirty()
+        self._mark_dirty_computed_vars(var_names)
+
+    def _mark_ancestors_dirty(self) -> None:
+        """Record this state as a dirty substate of each of its ancestors."""
+        state = self
+        while (parent := state.parent_state) is not None:
+            name = state.get_name()
+            if name in parent.dirty_substates:
+                return
+            parent.dirty_substates.add(name)
+            state = parent
 
     def _clean(self):
         """Reset the dirty vars."""

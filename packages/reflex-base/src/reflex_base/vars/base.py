@@ -3758,7 +3758,14 @@ FIELD_TYPE = TypeVar("FIELD_TYPE")
 # Custom attrs never copied from a source field: get_field_type duck-types
 # pydantic fields on `.annotation`, so carrying it over would shadow the
 # real class annotation; the binding attrs belong to the source's own class.
-_RESERVED_FIELD_ATTRS = frozenset({"annotation", "_owner", "_name", "_backend", "_var"})
+_RESERVED_FIELD_ATTRS = frozenset({
+    "annotation",
+    "_owner",
+    "_name",
+    "_backend",
+    "_plain_types",
+    "_var",
+})
 
 
 def _owner_state(state: Any, owner: type) -> Any:
@@ -3803,6 +3810,8 @@ class Field(Generic[FIELD_TYPE]):
     _name: str = ""
     # Whether the value stays on the backend, never sent to the client.
     _backend: bool = False
+    # Classes whose instances match the type without the full type check.
+    _plain_types: frozenset[type] = frozenset()
     # The Var standing for the field on its owner, if sent to the client.
     _var: Var | None = None
 
@@ -3879,6 +3888,12 @@ class Field(Generic[FIELD_TYPE]):
         self._owner = owner
         self._name = name
         self._backend = not self.is_var or name.startswith("_")
+        type_ = self.outer_type_
+        self._plain_types = frozenset(
+            arg
+            for arg in (get_args(type_) if types.is_union(type_) else (type_,))
+            if isinstance(arg, type) and not get_args(arg)
+        )
 
     def _copy(self) -> Field:
         """Copy the declaration, unbound, to bind it to another class.
@@ -3939,8 +3954,12 @@ class Field(Generic[FIELD_TYPE]):
         )
         if isinstance(value, self._proxy):
             value = value.__wrapped__  # pyright: ignore[reportAttributeAccessIssue]
-        if self.is_var and not _isinstance(
-            value, self.outer_type_, nested=1, treat_var_as_type=False
+        if (
+            self.is_var
+            and type(value) not in self._plain_types
+            and not _isinstance(
+                value, self.outer_type_, nested=1, treat_var_as_type=False
+            )
         ):
             logger.error(
                 f"Expected field '{type(state).__name__}.{self._name}' to receive type"
@@ -3957,7 +3976,7 @@ class Field(Generic[FIELD_TYPE]):
         """
         state.dirty_vars.add(self._name)
         state._was_touched = True
-        state._mark_dirty()
+        state._mark_dirty((self._name,))
 
     @overload
     def __get__(self: Field[None], instance: None, owner: Any) -> NoneVar: ...
