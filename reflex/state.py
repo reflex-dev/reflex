@@ -980,6 +980,14 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                 if k not in own_descriptor_names
             }
 
+        descriptor_names = {
+            name
+            for name, value in cls.__dict__.items()
+            if name in cls.inherited_backend_vars
+            and hasattr(type(value), "__get__")
+            and not isinstance(value, (Field, Var))
+        }
+
         # Base vars silently lose to an inherited var of the same name; warn about it.
         cls._check_overridden_inherited_vars()
 
@@ -1006,6 +1014,12 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             **cls.inherited_backend_vars,
             **new_backend_vars,
         }
+        if descriptor_names:
+            cls.__fields__ = {
+                name: field
+                for name, field in cls.get_fields().items()
+                if name not in descriptor_names
+            }
 
         # Set the base and computed vars.
         cls.base_vars = {
@@ -1410,7 +1424,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
     @classmethod
     def _check_overridden_inherited_vars(cls) -> None:
-        """Reject base vars that shadow a var inherited from a parent state.
+        """Reject vars that shadow a var inherited from a parent state.
 
         Such a redeclaration is dropped: the field never becomes a base var,
         so reads and writes resolve to the parent's var, and the raw default left in
@@ -1420,7 +1434,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         to the inherited Var and stays reactive — that form is inert, not a shadow.
 
         Raises:
-            BaseVarShadowsInheritedVarError: When a base var shadows an inherited var.
+            BaseVarShadowsInheritedVarError: When a var shadows an inherited var.
         """
         parent_state = cls.get_parent_state()
         if parent_state is None:
@@ -1438,6 +1452,44 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             # a merely inherited one is the same object.
             parent_field = parent_fields.get(name)
             if parent_field is None or parent_field is own_field:
+                continue
+            msg = (
+                f"The var `{name}` in {cls.__module__}.{cls.__name__} shadows a var "
+                f"inherited from {parent_state.__module__}.{parent_state.__name__}; "
+                "use a different name instead"
+            )
+            raise BaseVarShadowsInheritedVarError(msg)
+
+        descriptor_names = {
+            name
+            for name, value in cls.__dict__.items()
+            if name in cls.inherited_backend_vars
+            and hasattr(type(value), "__get__")
+            and not isinstance(value, (Field, Var))
+        }
+        if descriptor_names:
+            cls.inherited_backend_vars = {
+                name: var
+                for name, var in cls.inherited_backend_vars.items()
+                if name not in descriptor_names
+            }
+            cls.__fields__ = {
+                name: field
+                for name, field in cls.get_fields().items()
+                if name not in descriptor_names
+            }
+
+        # Backend declarations include unannotated assignments, so inspect
+        # class attributes in addition to resolved annotations.
+        for name in set(cls._get_type_hints()) | cls.__dict__.keys():
+            value = cls.__dict__.get(name)
+            if (
+                not name.startswith("_")
+                or name.startswith("__")
+                or name not in cls.inherited_backend_vars
+                or name not in cls.__dict__
+                or callable(value)
+            ):
                 continue
             msg = (
                 f"The var `{name}` in {cls.__module__}.{cls.__name__} shadows a var "

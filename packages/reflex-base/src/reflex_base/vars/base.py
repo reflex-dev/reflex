@@ -4226,7 +4226,8 @@ class BaseStateMeta(ABCMeta):
             elif (
                 not key.startswith("__")
                 and not callable(value)
-                and not isinstance(value, (staticmethod, classmethod, property, Var))
+                and not hasattr(type(value), "__get__")
+                and not isinstance(value, Var)
             ):
                 if types.is_immutable(value):
                     new_value = Field(
@@ -4253,9 +4254,11 @@ class BaseStateMeta(ABCMeta):
             declared = (
                 value if value is not MISSING else _inherited_value(lookup_order, key)
             )
-            if isinstance(declared, property):
-                # A (hybrid) property under an annotated name stays a descriptor,
-                # here or on a base; a field would shadow it with a stored value.
+            if hasattr(type(declared), "__get__") and not isinstance(
+                declared, (Field, Var)
+            ):
+                # Descriptors under annotated names stay descriptors; a field
+                # would shadow them with stored state.
                 continue
 
             if value is MISSING:
@@ -4283,6 +4286,16 @@ class BaseStateMeta(ABCMeta):
                 )
 
             own_fields[key] = value
+
+        descriptor_names = {
+            key
+            for key, value in namespace.items()
+            if key in inherited_fields
+            and hasattr(type(value), "__get__")
+            and not isinstance(value, (Field, Var))
+        }
+        for key in descriptor_names:
+            inherited_fields.pop(key, None)
 
         namespace["__own_fields__"] = own_fields
         namespace["__inherited_fields__"] = inherited_fields

@@ -1,0 +1,1 @@
+Substate declarations that redeclare an inherited backend variable now raise `BaseVarShadowsInheritedVarError` instead of silently using the parent variable. Rename the child variable to preserve the intended state behavior.
