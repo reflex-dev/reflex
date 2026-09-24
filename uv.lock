@@ -4748,10 +4748,14 @@ name = "reflex-workflow"
 source = { editable = "packages/reflex-workflow" }
 dependencies = [
     { name = "sqlalchemy", extra = ["asyncio"] },
+    { name = "tzdata", marker = "sys_platform == 'win32'" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.20,<3.0" }]
+requires-dist = [
+    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.20,<3.0" },
+    { name = "tzdata", marker = "sys_platform == 'win32'", specifier = ">=2024.1" },
+]
 
 [[package]]
 name = "requests"
