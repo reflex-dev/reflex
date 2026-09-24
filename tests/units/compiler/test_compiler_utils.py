@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 
 import pytest
+from reflex_base import constants
 from reflex_base.registry import RegistrationContext
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.base.script import Script
@@ -12,6 +13,7 @@ from reflex.compiler import utils
 from reflex.compiler.utils import compile_state, create_document_root
 from reflex.compiler.utils import write_file as compiler_write_file
 from reflex.constants.state import FIELD_MARKER
+from reflex.environment import environment
 from reflex.state import State
 from reflex.utils.path_ops import write_file
 from reflex.vars.base import computed_var
@@ -104,18 +106,38 @@ def test_restore_bundled_libraries_ignores_missing_artifact(
     utils._restore_bundled_libraries()
 
 
-def test_document_preloads_the_global_stylesheet():
-    """Render-blocking CSS should be discoverable alongside early resource hints."""
+def _global_stylesheet_links() -> list[list[str]]:
+    """Render the framework link tags of a fresh document head.
+
+    Returns:
+        The rendered props of every ``Link`` in the head.
+    """
     head = create_document_root().children[0]
-    links = [
+    return [
         child.render()["props"] for child in head.children if isinstance(child, Link)
     ]
+
+
+def test_document_preloads_the_global_stylesheet_in_prod():
+    """Production builds hint the render-blocking CSS ahead of the stylesheet link."""
+    environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
+    try:
+        links = _global_stylesheet_links()
+    finally:
+        environment.REFLEX_ENV_MODE.set(None)
     preload = next(props for props in links if 'rel:"preload"' in props)
     stylesheet = next(props for props in links if 'rel:"stylesheet"' in props)
     assert next(prop for prop in preload if prop.startswith("href:")) == next(
         prop for prop in stylesheet if prop.startswith("href:")
     )
     assert 'as:"style"' in preload
+
+
+def test_document_does_not_preload_the_global_stylesheet_in_dev():
+    """Dev builds link the stylesheet once so Vite's css-update swaps that link."""
+    links = _global_stylesheet_links()
+    assert not any('rel:"preload"' in props for props in links)
+    assert sum('rel:"stylesheet"' in props for props in links) == 1
 
 
 class CompileStateState(State):
