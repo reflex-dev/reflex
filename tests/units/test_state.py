@@ -6362,8 +6362,8 @@ def test_pickle_keeps_generated_defaults():
 
     class GeneratedDefaultState(BaseState):
         count: int = 0
-        session_id: str = field(default_factory=lambda: uuid.uuid4().hex)
-        _token: str = field(default_factory=lambda: uuid.uuid4().hex)
+        session_id: Field[str] = field(default_factory=lambda: uuid.uuid4().hex)
+        _token: Field[str] = field(default_factory=lambda: uuid.uuid4().hex)
 
     state = GeneratedDefaultState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     state.count = 1
