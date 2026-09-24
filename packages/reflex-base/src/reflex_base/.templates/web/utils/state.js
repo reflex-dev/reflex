@@ -336,7 +336,14 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
   if (event.name == "_dispatch_value") {
     // A speculative update, shown until the backend sends the var.
-    eventLoop.dispatch[event.payload.state]?.(event.payload.delta);
+    const dispatchSubstate = eventLoop.dispatch[event.payload.state];
+    if (dispatchSubstate === undefined) {
+      console.warn(
+        `No state ${event.payload.state} is mounted to dispatch a value to.`,
+      );
+    } else {
+      dispatchSubstate(event.payload.delta);
+    }
     return;
   }
 
