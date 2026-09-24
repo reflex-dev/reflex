@@ -653,7 +653,12 @@ class EventHandler(EventActionsMixin):
             instance of the handler's state (an ancestor of ``instance`` for
             an inherited handler).
         """
-        if instance is None or self.state is None:
+        if (
+            instance is None
+            or self.state is None
+            # Held by a class that is not its state, nor a substate of it.
+            or not isinstance(instance, self.state)
+        ):
             return self
         state = (
             instance

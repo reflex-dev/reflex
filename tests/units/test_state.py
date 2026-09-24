@@ -10,6 +10,7 @@ import json
 import logging
 import math
 import os
+import pickle
 import sys
 import threading
 from collections.abc import AsyncGenerator, Callable, Mapping
@@ -6332,6 +6333,9 @@ def test_setstate_migrates_older_pickles():
         count: int = 0
         _secret: str = ""
 
+    class LegacyPickleSubstate(LegacyPickleState):
+        pass
+
     state = LegacyPickleState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     state.__setstate__({
         "count": 3,
@@ -6344,6 +6348,59 @@ def test_setstate_migrates_older_pickles():
     assert state._secret == "s"
     assert state.dirty_vars == set()
     assert "_backend_vars" not in state.__dict__
+
+    # Substate pickles carried copies of inherited backend vars; they are dropped.
+    substate = LegacyPickleSubstate(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    substate.__setstate__({"_backend_vars": {"_secret": "stale"}, "dirty_vars": set()})
+    assert "_secret" not in substate.__dict__
+    assert "dirty_vars" not in substate.__dict__
+
+
+def test_pickle_keeps_generated_defaults():
+    """A default from a factory is saved even if the field was never read."""
+    import uuid
+
+    class GeneratedDefaultState(BaseState):
+        count: int = 0
+        session_id: str = field(default_factory=lambda: uuid.uuid4().hex)
+        _token: str = field(default_factory=lambda: uuid.uuid4().hex)
+
+    state = GeneratedDefaultState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state.count = 1
+    blob = pickle.dumps(state)
+    first, second = pickle.loads(blob), pickle.loads(blob)
+    assert first.session_id == second.session_id == state.session_id
+    assert first._token == second._token == state._token
+
+
+def test_bookkeeping_fields_are_not_proxied():
+    """A field declared with is_var=False, like router_data, is returned as is."""
+    state = BaseState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state.router_data = {"headers": {"a": "b"}}
+    assert type(state.router_data) is dict
+    assert type(state.router_data["headers"]) is dict
+
+
+def test_handler_held_by_another_class_is_not_bound():
+    """An event handler on a class that is not its state stays an EventHandler."""
+
+    class HandlerState(BaseState):
+        count: int = 0
+
+        def increment(self):
+            self.count += 1
+
+    class Holder:
+        on_done = HandlerState.increment
+
+    class OtherHandlerState(BaseState):
+        on_done = HandlerState.increment
+
+    assert isinstance(Holder().on_done, EventHandler)
+    assert isinstance(
+        OtherHandlerState(_reflex_internal_init=True).on_done,  # pyright: ignore [reportCallIssue]
+        EventHandler,
+    )
 
 
 def test_substate_on_its_own_holds_inherited_vars():

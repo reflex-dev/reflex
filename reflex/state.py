@@ -96,10 +96,33 @@ from reflex.istate.storage import ClientStorageBase
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
 
-# Keys of older pickles that are no longer stored in the instance dict: the
-# RouterData from before the router split (not `constants.ROUTER`: the name is
-# frozen into payloads already on disk), and the dirty tracking now in slots.
-_LEGACY_PICKLE_KEYS = ("router", "dirty_vars", "dirty_substates")
+# Entries in each pickle for workers of the previous release, which kept the
+# dirty tracking and backend vars in the instance dict. Remove in 1.0.
+_PREVIOUS_RELEASE_PICKLE_KEYS: dict[str, Any] = {
+    "dirty_vars": set(),
+    "dirty_substates": set(),
+    "_backend_vars": {},
+}
+
+
+@functools.cache
+def _stale_pickle_keys(cls: type) -> frozenset[str]:
+    """Get the keys of older pickles that are not restored into the instance dict.
+
+    Args:
+        cls: The state class.
+
+    Returns:
+        The slot names of the class, now holding bookkeeping, and the RouterData
+        entry from before the router split (not `constants.ROUTER`: the name is
+        frozen into payloads already on disk).
+    """
+    return frozenset(
+        {"router"}.union(
+            *(klass.__dict__.get("__slots__", ()) for klass in cls.__mro__)
+        )
+    )
+
 
 # Shared empty router defaults. Each is a frozen dataclass whose members are
 # themselves immutable, so one instance can back every state's field instead
@@ -1754,9 +1777,14 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             (self, name)
             for name in (self.dirty_vars if var_names is None else var_names)
         ]
+        seen: set[tuple[str, str]] = set()
         while pending:
             state, name = pending.pop()
-            for state_name, cvar_name in state._var_dependencies.get(name, ()):
+            for dependent in state._var_dependencies.get(name, ()):
+                if dependent in seen:
+                    continue
+                seen.add(dependent)
+                state_name, cvar_name = dependent
                 if state_name == state.get_full_name():
                     target = state
                 else:
@@ -1934,7 +1962,15 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Returns:
             The state dict for serialization.
         """
-        return self.__dict__.copy()
+        cls = type(self)
+        fields = vars(self)
+        # A field not read yet gets its default saved, so a generated one (like
+        # a uuid) is the same when the state is loaded again.
+        for name, f in cls.__fields__.items():
+            if f._owner is cls and name not in fields:
+                fields[name] = f.default_value()
+        # Empty entries that let workers of the previous release load it.
+        return {**fields, **_PREVIOUS_RELEASE_PICKLE_KEYS}
 
     def __setstate__(self, state: builtins.dict[str, Any]):
         """Set the state from redis deserialization.
@@ -1945,11 +1981,16 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             state: The state dict for deserialization.
         """
         self._init_bookkeeping()
-        for key in _LEGACY_PICKLE_KEYS:
-            state.pop(key, None)
+        cls = type(self)
         # Older pickles kept the backend vars in a dict of their own.
         state.update(state.pop("_backend_vars", {}))
-        vars(self).update(state)
+        stale = _stale_pickle_keys(cls)
+        fields = cls.__fields__
+        vars(self).update(
+            (key, value)
+            for key, value in state.items()
+            if key not in stale and ((f := fields.get(key)) is None or f._owner is cls)
+        )
 
     def _check_state_size(
         self,

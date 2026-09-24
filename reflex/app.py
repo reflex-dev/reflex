@@ -52,6 +52,7 @@ from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
+from reflex_base.vars.dep_tracking import is_dependency
 from reflex_components_core.base.error_boundary import ErrorBoundary
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.banner import (
@@ -1688,7 +1689,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     else state
                 )
                 for dep in dep_set:
-                    if dep not in state_cls.vars and not hasattr(state_cls, dep):
+                    if not is_dependency(state_cls, dep):
                         msg = f"ComputedVar {var._name} on state {state.__name__} has an invalid dependency {state_name}.{dep}"
                         raise exceptions.VarDependencyError(msg)
 

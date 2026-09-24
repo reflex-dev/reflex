@@ -4061,7 +4061,8 @@ class Field(Generic[FIELD_TYPE]):
 
         Returns:
             The Var (or this field, if it has none) for class access, else the
-            value, wrapped in a MutableProxy if mutable.
+            value, wrapped in a MutableProxy if mutable (and not a bookkeeping
+            field declared with ``is_var=False``).
         """
         if instance is None:
             return self if self._var is None else self._var
@@ -4074,7 +4075,7 @@ class Field(Generic[FIELD_TYPE]):
             value = state.__dict__[self._name]
         except KeyError:
             value = state.__dict__[self._name] = self.default_value()
-        if is_mutable_type(type(value)):
+        if self.is_var and is_mutable_type(type(value)):
             return self._proxy(wrapped=value, state=state, field_name=self._name)
         return value
 
