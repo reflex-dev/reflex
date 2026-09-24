@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 
 from reflex_base import constants
 from reflex_base.event import Event, get_hydrate_event
+from reflex_base.state.delta import _resolve_delta
 
-from reflex.istate.delta import _resolve_delta
 from reflex.middleware.middleware import Middleware
 from reflex.state import BaseState, StateUpdate
 

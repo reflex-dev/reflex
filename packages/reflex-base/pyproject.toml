@@ -12,6 +12,7 @@ dependencies = [
   "rich >=13,<16",
   "typing_extensions >=4.13.0",
   "platformdirs >=4.3.7,<5.0",
+  "wrapt >=1.17.0,<2.4",
 ]
 
 [project.optional-dependencies]

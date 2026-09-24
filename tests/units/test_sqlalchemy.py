@@ -3,11 +3,11 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+from reflex_base.state.proxy import MutableProxy
 from reflex_base.utils.serializers import serializer
 
 import reflex.constants
 import reflex.model
-from reflex.istate.proxy import MutableProxy
 from reflex.model import (
     ModelRegistry,
     alembic_autogenerate,

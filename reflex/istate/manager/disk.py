@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Generic, cast
 
 from reflex_base.environment import state_manager_disk_debounce
+from reflex_base.state.token import TOKEN_TYPE, BaseStateToken, StateToken
 from typing_extensions import Unpack, override
 
 from reflex.istate.manager import (
@@ -19,7 +20,6 @@ from reflex.istate.manager import (
     StateModificationContext,
     _default_token_expiration,
 )
-from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex.state import BaseState
 from reflex.utils import path_ops, prerequisites
 from reflex.utils.misc import run_in_thread

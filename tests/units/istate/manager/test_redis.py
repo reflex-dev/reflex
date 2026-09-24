@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
+from reflex_base.state.token import BaseStateToken
 from reflex_base.utils.exceptions import EnvironmentVarValueError
 
 from reflex.istate.manager.redis import (
@@ -16,7 +17,6 @@ from reflex.istate.manager.redis import (
     _default_lock_expiration,
     _default_oplock_hold_time_ms,
 )
-from reflex.istate.manager.token import BaseStateToken
 from reflex.state import BaseState
 from tests.units.mock_redis import mock_redis, real_redis
 

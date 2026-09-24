@@ -26,9 +26,9 @@ def LifespanApp(
     from contextlib import asynccontextmanager
 
     from reflex_base.registry import RegistrationContext
+    from reflex_base.state.token import BaseStateToken
 
     import reflex as rx
-    from reflex.istate.manager.token import BaseStateToken
 
     lifespan_task_global = 0
     lifespan_context_global = 0

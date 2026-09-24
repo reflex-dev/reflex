@@ -29,6 +29,9 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event, EventHandler
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.state.delta import _suppress_delta_recording
+from reflex_base.state.proxy import MutableProxy
+from reflex_base.state.token import BaseStateToken
 from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import (
     InvalidLockWarningThresholdError,
@@ -54,13 +57,10 @@ from reflex.istate.data import (
     URLData,
     _FrozenDictStrStr,
 )
-from reflex.istate.delta import _suppress_delta_recording
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
-from reflex.istate.manager.token import BaseStateToken
-from reflex.istate.proxy import MutableProxy
 from reflex.state import (
     BaseState,
     Delta,
@@ -2382,10 +2382,10 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
     """
     from unittest.mock import patch
 
+    from reflex_base.utils import console
     from reflex_base.utils import log as _base_log
 
     from reflex.state import State
-    from reflex.utils import console
 
     legacy_token = f"{token}_{OnLoadState.get_full_name()}"
     dedupe_state = _base_log._dedupe_filter().seen.copy()

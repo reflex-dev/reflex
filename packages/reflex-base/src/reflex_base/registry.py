@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from reflex.state import BaseState
     from reflex_base.config import Config
     from reflex_base.event import EventChain, EventHandler
+    from reflex_base.state.core import CoreState
     from reflex_base.utils.types import ArgsSpec
     from reflex_base.vars.base import Var
 
@@ -263,7 +264,7 @@ class RegistrationContext(BaseContext):
         return handler
 
     def get_substates(
-        self, base_state_cls: type[BaseState] | str
+        self, base_state_cls: type[CoreState] | str
     ) -> set[type[BaseState]]:
         """Get the substates for a base state class.
 

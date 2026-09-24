@@ -337,7 +337,7 @@ def test_from_event_type_shares_plain_payload_values():
 
 def test_from_event_type_detaches_proxied_payload_values():
     """A MutableProxy payload value is detached from the state by copy."""
-    from reflex.istate.proxy import MutableProxy
+    from reflex_base.state.proxy import MutableProxy
 
     state = _ProxyPayloadState()
     proxied = state.rows
@@ -354,7 +354,7 @@ def test_from_event_type_detaches_proxied_payload_values():
 
 def test_from_event_type_detaches_nested_proxied_payload_values():
     """Proxies nested in plain containers are detached; clean parts shared."""
-    from reflex.istate.proxy import MutableProxy
+    from reflex_base.state.proxy import MutableProxy
 
     state = _ProxyPayloadState()
     plain = [{"z": 9}]
