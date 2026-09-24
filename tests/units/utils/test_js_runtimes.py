@@ -7,6 +7,9 @@ import pytest
 
 from reflex.utils import js_runtimes
 
+BUN_PATH = Path("/usr/bin/bun")
+NPM_PATH = Path("/usr/bin/npm")
+
 
 @pytest.fixture
 def install_mocks(monkeypatch):
@@ -67,12 +70,12 @@ def _patch_manager_paths(monkeypatch, bun: bool, npm: bool) -> None:
     monkeypatch.setattr(
         js_runtimes.path_ops,
         "get_bun_path",
-        lambda: Path("/usr/bin/bun") if bun else None,
+        lambda: BUN_PATH if bun else None,
     )
     monkeypatch.setattr(
         js_runtimes.path_ops,
         "get_npm_path",
-        lambda: Path("/usr/bin/npm") if npm else None,
+        lambda: NPM_PATH if npm else None,
     )
 
 
@@ -150,7 +153,7 @@ def test_install_ignores_node_version_under_bun(monkeypatch, install_mocks):
     js_runtimes.install_frontend_packages({"react"}, _fake_config())
 
     assert install_mocks["install"] != [], "bun install was blocked"
-    assert install_mocks["drop"] == ["/usr/bin/bun"]
+    assert install_mocks["drop"] == [str(BUN_PATH)]
 
 
 def test_validate_gates_npm_selected_as_fallback(monkeypatch):
