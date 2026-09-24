@@ -184,7 +184,7 @@ class ClientStateVar(Var):
             _global_ref=global_ref,
             _var_type=default_var._var_type,
             _var_data=VarData.merge(
-                default_var._var_data,
+                default_var._get_all_var_data(),
                 VarData(
                     hooks=hooks,
                     imports=imports,

@@ -1,8 +1,12 @@
 """Tests for reflex.experimental.client_state."""
 
+from typing import cast
+
 import pytest
+from reflex_base.vars.base import Var
 
 from reflex.experimental.client_state import ClientStateVar
+from reflex.state import BaseState
 
 
 @pytest.mark.parametrize("global_ref", [True, False])
@@ -29,3 +33,26 @@ def test_setter_carries_client_state_hooks(
     assert setter_var_data is not None
     assert set(cs_var_data.hooks) <= set(setter_var_data.hooks)
     assert any("useState" in hook for hook in setter_var_data.hooks)
+
+
+def test_setter_carries_backend_default_hooks() -> None:
+    """A backend-derived default brings its state context hook to the setter.
+
+    Regression: ``create`` merged only the default's own ``_var_data``, so a
+    setter-only component compiled ``useState(<state>.field)`` without the
+    ``useContext`` hook that defines ``<state>``, raising a ReferenceError.
+    """
+
+    class ClientStateDefaultState(BaseState):
+        default_text: str = "hi"
+
+    default = cast("Var", ClientStateDefaultState.default_text)
+    default_var_data = default._get_all_var_data()
+    assert default_var_data is not None
+
+    cs = ClientStateVar.create("backend_default", default=default)
+    for var in (cs, cs.value, cs.set, cs.set_value("changed")):
+        var_data = var._get_all_var_data()
+        assert var_data is not None
+        assert var_data.state == default_var_data.state
+        assert set(default_var_data.hooks) <= set(var_data.hooks)

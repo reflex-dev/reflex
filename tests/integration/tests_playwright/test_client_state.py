@@ -14,12 +14,14 @@ def ClientStateApp():
 
     class ClientStateAppState(rx.State):
         show: bool = False
+        default_text: str = "from backend"
 
         @rx.event
         def reveal(self):
             self.show = True
 
     shared = rx._x.client_state(default="initial")
+    backend_default = rx._x.client_state(default=ClientStateAppState.default_text)
 
     def index():
         return rx.box(
@@ -38,9 +40,23 @@ def ClientStateApp():
             rx.button("set", on_click=shared.set_value("clicked"), id="setter"),
         )
 
+    def backend_default_page():
+        return rx.box(
+            rx.input(
+                value=backend_default.value,
+                placeholder=ClientStateAppState.default_text,
+                read_only=True,
+                id="backend-reader",
+            ),
+            rx.button(
+                "set", on_click=backend_default.set_value("changed"), id="setter"
+            ),
+        )
+
     app = rx.App()
     app.add_page(index)
     app.add_page(siblings)
+    app.add_page(backend_default_page, route="/backend-default")
 
 
 @pytest.fixture(scope="module")
@@ -112,4 +128,21 @@ def test_setter_works_before_reader_mounts(
     page.click("#setter")
     page.click("#reveal")
     expect(page.locator("#late-reader")).to_have_text("clicked")
+    assert errors == []
+
+
+def test_setter_with_backend_default(client_state_app: AppHarness, page: Page) -> None:
+    """A setter-only sibling works when the default comes from backend state.
+
+    Args:
+        client_state_app: Running app harness.
+        page: Playwright page.
+    """
+    assert client_state_app.frontend_url is not None
+    errors = _collect_page_errors(page)
+    page.goto(client_state_app.frontend_url.removesuffix("/") + "/backend-default")
+
+    expect(page.locator("#backend-reader")).to_have_value("from backend")
+    page.click("#setter")
+    expect(page.locator("#backend-reader")).to_have_value("changed")
     assert errors == []
