@@ -39,8 +39,9 @@ from reflex_components_core.el.elements.metadata import Head, Link, Meta, Title
 from reflex_components_core.el.elements.other import Html
 from reflex_components_core.el.elements.sectioning import Body
 
+from reflex.istate.delta import _resolve_delta
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
-from reflex.state import BaseState, _resolve_delta
+from reflex.state import BaseState
 from reflex.utils import path_ops
 from reflex.utils.prerequisites import get_web_dir
 

@@ -13,13 +13,9 @@ from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from typing_extensions import Self
 
+from reflex.istate.delta import _suppress_delta_recording
 from reflex.istate.manager.token import BaseStateToken
-from reflex.state import (
-    BaseState,
-    State,
-    _override_base_method,
-    _suppress_delta_recording,
-)
+from reflex.state import BaseState, State, _override_base_method
 
 logger = logging.getLogger(__name__)
 
