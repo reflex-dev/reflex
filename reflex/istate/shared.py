@@ -469,8 +469,11 @@ class SharedStateBaseInternal(State):
         finally:
             self._exit_stack = None
 
-        # Only propagate dirty vars when we are not already propagating from another state.
-        if previous_dirty_vars is None:
+        # Only propagate dirty vars when we are not already propagating from
+        # another state, and only when some other client is linked: every event
+        # in an app that defines a SharedState lands here, most with nothing to
+        # propagate and no need for the registered App the fan-out reads.
+        if previous_dirty_vars is None and affected_tokens:
             _do_update_other_tokens(
                 affected_tokens=affected_tokens,
                 previous_dirty_vars=current_dirty_vars,
