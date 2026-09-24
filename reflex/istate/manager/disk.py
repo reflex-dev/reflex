@@ -11,7 +11,7 @@ from hashlib import md5
 from pathlib import Path
 from typing import Any, Generic, cast
 
-from reflex_base.environment import environment
+from reflex_base.environment import state_manager_disk_debounce
 from typing_extensions import Unpack, override
 
 from reflex.istate.manager import (
@@ -93,7 +93,7 @@ class StateManagerDisk(StateManager):
     )
     _write_queue_task: asyncio.Task | None = None
     _write_debounce_seconds: float = dataclasses.field(
-        default=environment.REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS.get()
+        default_factory=lambda: state_manager_disk_debounce().total_seconds()
     )
 
     def __post_init__(self):
