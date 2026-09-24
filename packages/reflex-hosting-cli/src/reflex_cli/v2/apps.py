@@ -24,8 +24,6 @@ logger = logging.getLogger(__name__)
 
 # How many log lines `apps logs --follow` prints before prompting for more.
 _LOGS_PAGE_SIZE = 100
-# The window `logs` reads when the caller names neither an offset nor a range.
-_LOGS_DEFAULT_WINDOW = datetime.timedelta(hours=1)
 
 
 @click.group()
@@ -696,18 +694,21 @@ def app_logs(
             logger.error("No valid app_id or app_name provided.")
             raise click.exceptions.Exit(1)
 
-        if offset is None and start is None and end is None:
-            offset = int(_LOGS_DEFAULT_WINDOW.total_seconds())
-        if not offset and not (start and end):
-            logger.error("must provide both start and end")
-            raise click.exceptions.Exit(1)
-
+        since: datetime.datetime | None = None
+        until: datetime.datetime | None = None
         if offset:
             until = datetime.datetime.now(datetime.timezone.utc)
             since = until - datetime.timedelta(seconds=offset)
-        else:
-            since = datetime.datetime.fromtimestamp(start, datetime.timezone.utc)  # pyright: ignore[reportArgumentType]
-            until = datetime.datetime.fromtimestamp(end, datetime.timezone.utc)  # pyright: ignore[reportArgumentType]
+        elif start or end:
+            if not (start and end):
+                logger.error("must provide both start and end")
+                raise click.exceptions.Exit(1)
+            since = datetime.datetime.fromtimestamp(start, datetime.timezone.utc)
+            until = datetime.datetime.fromtimestamp(end, datetime.timezone.utc)
+        # Asked for no window at all: send none, so the span is the API's own
+        # rather than one this command invented. A window of its own would
+        # report nothing for an app whose last line predates it, where the
+        # command has always answered with the most recent lines it could find.
 
         # Following means prompting between pages, which never returns on its
         # own, so it needs somebody at the terminal and a stream that is not

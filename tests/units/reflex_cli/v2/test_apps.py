@@ -59,6 +59,7 @@ def app_summary(name: str = "test-app", **fields) -> AppSummary:
         "description": "",
         "project_id": _PROJECT_ID,
         "provider": "fly",
+        "disable_secrets": False,
         **fields,
     })
 
@@ -85,6 +86,15 @@ def app(name: str = "test-app", **fields) -> App:
         "max_instances": None,
         "has_deployments": True,
         "latest_deployment": None,
+        "backend_url": None,
+        "disable_secrets": False,
+        "weekly_report_enabled": False,
+        "source_thread_id": None,
+        "unreleased_provider": None,
+        "any_environment_live": False,
+        "any_environment_stopped": False,
+        "any_environment_paused": False,
+        "any_environment_credit_paused": False,
         **fields,
     })
 
@@ -116,6 +126,8 @@ def deployment_record(**fields) -> DeploymentRecord:
         "environment_id": None,
         "environment_name": None,
         "can_rollback": True,
+        "updated_by": None,
+        "promoted_from_id": None,
         **fields,
     })
 
@@ -146,7 +158,13 @@ def log_record(message: str) -> LogRecord:
         The record.
     """
     return LogRecord(
-        ns=0, timestamp="2024-11-29T12:00:00Z", name="app", message=message
+        ns=0,
+        timestamp="2024-11-29T12:00:00Z",
+        name="app",
+        message=message,
+        event_id=None,
+        stream_id=None,
+        revision_id=None,
     )
 
 
@@ -730,11 +748,32 @@ def test_app_logs_success(mocker: MockFixture, caplog: pytest.LogCaptureFixture)
 
     assert result.exit_code == 0, result.output
     assert client.api.apps.logs.call_args.args == ("app123",)
-    # An hour back from now by default, which the SDK pages through.
+    # No window was asked for, so none is sent: the span is the API's own. A
+    # window of this command's invention would report nothing for an app whose
+    # last line predates it.
     window = client.api.apps.logs.call_args.kwargs
-    assert (window["end"] - window["start"]).total_seconds() == 3600
+    assert window["start"] is None
+    assert window["end"] is None
     infos = [r.getMessage() for r in caplog.records if r.levelno == logging.INFO]
     assert sum("log" in message for message in infos) == 3
+
+
+def test_app_logs_offset_sends_that_window(mocker: MockFixture):
+    """An offset is still the window it asks for, counted back from now.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
+    client = _authed(mocker)
+    client.api.apps.logs.return_value = log_records("log1")
+
+    result = runner.invoke(
+        hosting_cli, ["apps", "logs", "app123", "--offset", "3600", "--follow", "false"]
+    )
+
+    assert result.exit_code == 0, result.output
+    window = client.api.apps.logs.call_args.kwargs
+    assert (window["end"] - window["start"]).total_seconds() == 3600
 
 
 def test_app_logs_failure(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
@@ -795,10 +834,17 @@ def test_list_apps_no_project(mocker: MockFixture):
     client.api.apps.list.assert_called_once_with(project_id="default_project")
     mock_print_table.assert_called_once_with(
         [
-            [str(_APP_ID), "App1", "", str(_PROJECT_ID), "fly"],
-            [str(uuid.UUID(int=23)), "App2", "", str(_PROJECT_ID), "fly"],
+            [str(_APP_ID), "App1", "", str(_PROJECT_ID), "fly", "False"],
+            [str(uuid.UUID(int=23)), "App2", "", str(_PROJECT_ID), "fly", "False"],
         ],
-        headers=["id", "name", "description", "project_id", "provider"],
+        headers=[
+            "id",
+            "name",
+            "description",
+            "project_id",
+            "provider",
+            "disable_secrets",
+        ],
     )
 
 
@@ -813,8 +859,15 @@ def test_list_apps_with_project(mocker: MockFixture):
     assert result.exit_code == 0, result.output
     client.api.apps.list.assert_called_once_with(project_id="project123")
     mock_print_table.assert_called_once_with(
-        [[str(_APP_ID), "App1", "", str(_PROJECT_ID), "fly"]],
-        headers=["id", "name", "description", "project_id", "provider"],
+        [[str(_APP_ID), "App1", "", str(_PROJECT_ID), "fly", "False"]],
+        headers=[
+            "id",
+            "name",
+            "description",
+            "project_id",
+            "provider",
+            "disable_secrets",
+        ],
     )
 
 
@@ -833,6 +886,7 @@ def test_list_apps_json_output(mocker: MockFixture):
             "description": "",
             "project_id": str(_PROJECT_ID),
             "provider": "fly",
+            "disable_secrets": False,
         }
     ]
 
@@ -1732,6 +1786,7 @@ def test_json_output_keeps_human_messages_off_stdout(mocker: MockFixture):
             "description": "",
             "project_id": str(_PROJECT_ID),
             "provider": "fly",
+            "disable_secrets": False,
         }
     ]
 

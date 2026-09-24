@@ -71,6 +71,7 @@ def app_summary(name: str = "fake-app", **fields) -> AppSummary:
         "description": "",
         "project_id": _PROJECT_ID,
         "provider": "fly",
+        "disable_secrets": False,
         **fields,
     })
 
@@ -97,6 +98,15 @@ def app(name: str = "fake-app", **fields) -> App:
         "max_instances": None,
         "has_deployments": True,
         "latest_deployment": None,
+        "backend_url": None,
+        "disable_secrets": False,
+        "weekly_report_enabled": False,
+        "source_thread_id": None,
+        "unreleased_provider": None,
+        "any_environment_live": False,
+        "any_environment_stopped": False,
+        "any_environment_paused": False,
+        "any_environment_credit_paused": False,
         **fields,
     })
 
@@ -119,6 +129,9 @@ def project(name: str = "fake-project", **fields) -> Project:
         "owner_email": "owner@example.com",
         "seats": 1,
         "apps": [],
+        "org_cpu_usage": 0.0,
+        "org_ram_usage": 0.0,
+        "org_running_deployments": 0,
         **fields,
     })
 

@@ -1155,6 +1155,9 @@ def test_as_json_document_keeps_the_keys_the_api_sent():
         vm_type_ram=1.0,
         updated_at=None,
         updated_by=None,
+        strategy="rolling",
+        persistent=False,
+        screenshot_uri=None,
     )
 
     document = as_json_document(deployment)

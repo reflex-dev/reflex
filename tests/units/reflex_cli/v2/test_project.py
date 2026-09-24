@@ -73,6 +73,9 @@ def _project(name: str = "test_project") -> Project:
         owner_email="owner@example.com",
         seats=1,
         apps=[],
+        org_cpu_usage=0.0,
+        org_ram_usage=0.0,
+        org_running_deployments=0,
     )
 
 
@@ -110,6 +113,7 @@ def _member(email: str = "someone@example.com") -> ProjectMember:
         role="admin",
         base_tier="admin",
         permissions=["deploy"],
+        role_permissions=["deploy"],
         is_service_account=False,
     )
 
@@ -603,6 +607,7 @@ def test_get_project_role_users_as_json(mocker: MockFixture):
             "email": "someone@example.com",
             "role": "admin",
             "base_tier": "admin",
+            "role_permissions": ["deploy"],
             "permissions": ["deploy"],
             "is_service_account": False,
         }
