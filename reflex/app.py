@@ -2462,8 +2462,11 @@ class EventNamespace(AsyncNamespace):
 
         # Update client state to apply new sid/token for running background tasks.
         if self.app._state is not None:
-            async with self.app.state_manager.modify_state(
-                BaseStateToken(ident=new_token or token, cls=self.app._state)
+            ident = new_token or token
+            with self.app.set_contexts():
+                ctx = EventContext.get().fork(token=ident)
+            async with ctx.modify_state(
+                BaseStateToken(ident=ident, cls=self.app._state), with_links=False
             ) as state:
                 state.router_data[constants.RouteVar.SESSION_ID] = sid
                 # Record the identity the state was loaded under; duplicate-token

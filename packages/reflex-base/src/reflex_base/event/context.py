@@ -151,7 +151,8 @@ class EventContext(BaseContext):
         """Hold the lock on a state tree; its states are writable in this context meanwhile.
 
         Binds the tree to this context, so its states are read-only once the lock
-        is released, and entering one of them takes the lock again here.
+        is released, and entering one of them takes the lock again here. This
+        context is the active one while the lock is held.
 
         Args:
             token: The token of the state to modify.
@@ -163,18 +164,27 @@ class EventContext(BaseContext):
         """
         manager = self.state_manager
         modify = manager.modify_state_with_links if with_links else manager.modify_state
-        async with modify(token, **context) as root:
-            root._event_context = self
-            held = self.state_locks.held
-            previous = held.get(token.ident)
-            held[token.ident] = (root, asyncio.current_task())
-            try:
-                yield root
-            finally:
-                if previous is None:
-                    held.pop(token.ident, None)
-                else:
-                    held[token.ident] = previous
+        reset = (
+            self._context_var.set(self)
+            if self._context_var.get(None) is not self
+            else None
+        )
+        try:
+            async with modify(token, **context) as root:
+                root._event_context = self
+                held = self.state_locks.held
+                previous = held.get(token.ident)
+                held[token.ident] = (root, asyncio.current_task())
+                try:
+                    yield root
+                finally:
+                    if previous is None:
+                        held.pop(token.ident, None)
+                    else:
+                        held[token.ident] = previous
+        finally:
+            if reset is not None:
+                self._context_var.reset(reset)
 
     def fork(self, token: str | None = None) -> EventContext:
         """Return a new EventContext with the specified fields replaced.
