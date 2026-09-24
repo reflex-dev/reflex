@@ -1,21 +1,31 @@
 """Tests for state manager token expiration."""
 
 import asyncio
+import gc
 import time
+import weakref
 from collections.abc import AsyncGenerator, Callable
 
 import pytest
 import pytest_asyncio
 
+from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.token import BaseStateToken
 from reflex.state import BaseState
+from reflex.utils import prerequisites
 
 
 class ExpiringState(BaseState):
     """A test state for expiration-specific manager tests."""
 
     value: int = 0
+
+
+class ExpiringChildState(ExpiringState):
+    """A substate of the expiration test state."""
+
+    child_value: int = 0
 
 
 async def _poll_until(
@@ -73,6 +83,125 @@ async def test_memory_state_manager_evicts_expired_state(
             and token not in state_manager_memory._token_expires_at
         )
     )
+
+
+@pytest.mark.asyncio
+async def test_memory_state_manager_frees_expired_state_tree(
+    state_manager_memory: StateManagerMemory,
+    token: str,
+):
+    """Expired state trees should be freed without a cyclic garbage collection."""
+    root = await state_manager_memory.get_state(
+        BaseStateToken(ident=token, cls=ExpiringChildState)
+    )
+    root_ref = weakref.ref(root)
+    child_ref = weakref.ref(await root.get_state(ExpiringChildState))
+    del root
+
+    gc.disable()
+    try:
+        await _poll_until(lambda: token not in state_manager_memory.states)
+        assert root_ref() is None
+        assert child_ref() is None
+    finally:
+        gc.enable()
+
+
+@pytest_asyncio.fixture(loop_scope="function")
+async def state_manager_disk(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> AsyncGenerator[StateManagerDisk]:
+    """Create a disk state manager with a short expiration and no write debounce.
+
+    Args:
+        tmp_path: A temporary directory for the state files.
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Yields:
+        The disk state manager under test.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(token_expiration=1, _write_debounce_seconds=0)
+    yield state_manager
+    await state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_disk_state_manager_evicts_expired_lock_and_state_tree(
+    state_manager_disk: StateManagerDisk,
+    token: str,
+):
+    """Expired tokens should drop their lock and free their state tree."""
+    async with state_manager_disk.modify_state(
+        BaseStateToken(ident=token, cls=ExpiringChildState)
+    ) as root:
+        root_ref = weakref.ref(root)
+        child_ref = weakref.ref(await root.get_state(ExpiringChildState))
+    del root
+    assert token in state_manager_disk._states_locks
+
+    gc.disable()
+    try:
+        await _poll_until(lambda: token not in state_manager_disk.states)
+        assert token not in state_manager_disk._states_locks
+        assert root_ref() is None
+        assert child_ref() is None
+    finally:
+        gc.enable()
+
+
+@pytest.mark.asyncio
+async def test_disk_state_manager_keeps_held_token(
+    state_manager_disk: StateManagerDisk,
+    token: str,
+):
+    """A token whose lock is held should not expire until the lock is released."""
+    state_token = BaseStateToken(ident=token, cls=ExpiringChildState)
+    async with state_manager_disk.modify_state(state_token) as root:
+        await asyncio.sleep(1.5)
+        assert state_manager_disk.states[token] is root
+        assert state_manager_disk._states_locks[token].locked()
+        assert len(root.substates) == 1
+
+    await _poll_until(lambda: token not in state_manager_disk._states_locks)
+    assert token not in state_manager_disk.states
+
+
+@pytest.mark.asyncio
+async def test_disk_state_manager_set_state_refreshes_expiration(
+    state_manager_disk: StateManagerDisk,
+    token: str,
+):
+    """Persisting a state should start a fresh expiration window."""
+    state_token = BaseStateToken(ident=token, cls=ExpiringChildState)
+    state = await state_manager_disk.get_state(state_token)
+    touched_at, _ = state_manager_disk._token_last_touched[token]
+
+    await asyncio.sleep(0.05)
+    await state_manager_disk.set_state(state_token, state)
+
+    assert state_manager_disk._token_last_touched[token][0] > touched_at
+
+
+@pytest.mark.asyncio
+async def test_disk_state_manager_writes_expired_pending_state_tree(
+    state_manager_disk: StateManagerDisk,
+    token: str,
+):
+    """A state tree that expires before its debounced write is still fully written."""
+    state_manager_disk._write_debounce_seconds = 2
+    first_token = BaseStateToken(ident=f"{token}-first", cls=ExpiringChildState)
+    pending_token = BaseStateToken(ident=token, cls=ExpiringChildState)
+    async with state_manager_disk.modify_state(first_token):
+        pass
+    await asyncio.sleep(0.5)
+    async with state_manager_disk.modify_state(pending_token) as root:
+        child = await root.get_state(ExpiringChildState)
+        child.child_value = 1
+    del root, child
+
+    await _poll_until(lambda: token not in state_manager_disk.states, timeout=5)
+    assert state_manager_disk.token_path(pending_token).exists()
 
 
 @pytest.mark.asyncio

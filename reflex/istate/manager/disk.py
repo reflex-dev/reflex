@@ -18,6 +18,7 @@ from reflex.istate.manager import (
     StateManager,
     StateModificationContext,
     _default_token_expiration,
+    _release_state_tree,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex.state import BaseState
@@ -55,8 +56,8 @@ class StateManagerDisk(StateManager):
     # The token expiration time (s).
     token_expiration: int = dataclasses.field(default_factory=_default_token_expiration)
 
-    # Last time a token was touched.
-    _token_last_touched: dict[str, float] = dataclasses.field(
+    # Last time and token for each touched cache key.
+    _token_last_touched: dict[str, tuple[float, StateToken]] = dataclasses.field(
         default_factory=dict,
         init=False,
     )
@@ -176,7 +177,7 @@ class StateManagerDisk(StateManager):
         """
         token = self._coerce_token(token)
         root_state = self.states.get(token.cache_key)
-        self._token_last_touched[token.cache_key] = time.time()
+        self._token_last_touched[token.cache_key] = (time.time(), token)
         if root_state is not None:
             # Retrieved state from memory.
             return root_state
@@ -230,6 +231,30 @@ class StateManagerDisk(StateManager):
             for substate_substate in substate.substates.values():
                 await self.set_state_for_substate(token, substate_substate)
 
+    def _is_locked(self, token: StateToken) -> bool:
+        """Check whether a token's lock is currently held.
+
+        Args:
+            token: The token to check.
+
+        Returns:
+            Whether the token's lock is held.
+        """
+        state_lock = self._states_locks.get(token.lock_key)
+        return state_lock is not None and state_lock.locked()
+
+    def _purge_token(self, token: StateToken):
+        """Remove a token from in-memory state bookkeeping.
+
+        Args:
+            token: The token to purge.
+        """
+        self._token_last_touched.pop(token.cache_key, None)
+        self._states_locks.pop(token.lock_key, None)
+        state = self.states.pop(token.cache_key, None)
+        if state is not None and isinstance(token, BaseStateToken):
+            _release_state_tree(state)
+
     async def _process_write_queue_delay(self):
         """Wait for the debounce period before processing the write queue again."""
         now = time.time()
@@ -247,9 +272,14 @@ class StateManagerDisk(StateManager):
             # No items left, wait a bit before checking again.
             await asyncio.sleep(self._write_debounce_seconds)
         else:
-            # Debounce is disabled, so sleep until the next token expiration.
+            # Debounce is disabled, so sleep until the next unlocked token expiration.
             oldest_token_last_touch = min(
-                self._token_last_touched.values(), default=now
+                (
+                    last_touched
+                    for last_touched, token in self._token_last_touched.values()
+                    if not self._is_locked(token)
+                ),
+                default=now,
             )
             next_expiration_in = self.token_expiration - (now - oldest_token_last_touch)
             await asyncio.sleep(next_expiration_in)
@@ -277,11 +307,17 @@ class StateManagerDisk(StateManager):
                     await self.set_state_for_substate(
                         token, self._write_queue.pop(token).state
                     )
-                # Check for expired states to purge.
-                for cache_key, last_touched in list(self._token_last_touched.items()):
-                    if now - last_touched > self.token_expiration:
-                        self._token_last_touched.pop(cache_key)
-                        self.states.pop(cache_key, None)
+                # Purge expired states that are neither locked nor pending a write.
+                pending_keys = {token.cache_key for token in self._write_queue}
+                for cache_key, (last_touched, token) in list(
+                    self._token_last_touched.items()
+                ):
+                    if (
+                        now - last_touched > self.token_expiration
+                        and cache_key not in pending_keys
+                        and not self._is_locked(token)
+                    ):
+                        self._purge_token(token)
                 await run_in_thread(self._purge_expired_states)
                 await self._process_write_queue_delay()
             except asyncio.CancelledError:  # noqa: PERF203
@@ -338,6 +374,7 @@ class StateManagerDisk(StateManager):
             context: The state modification context.
         """
         token = self._coerce_token(token)
+        self._token_last_touched[token.cache_key] = (time.time(), token)
         if self._write_debounce_seconds > 0:
             # Deferred write to reduce disk IO overhead.
             if token not in self._write_queue:
