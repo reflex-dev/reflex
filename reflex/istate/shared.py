@@ -327,28 +327,23 @@ class SharedStateBaseInternal(State):
         Returns:
             The state that was linked into the tree.
         """
-        from reflex.istate.manager import get_state_manager
-
         holder = self._linked_locks_holder()
         if holder._exit_stack is None or holder._held_locks is None:
             msg = "Cannot link shared state outside of _modify_linked_states context."
             raise ReflexRuntimeError(msg)
 
-        linked_token = BaseStateToken(ident=token, cls=type(self))
-        try:
-            ctx = EventContext.get()
-        except LookupError:
-            # Modifying a state directly through the state manager.
-            ctx = None
-        locked_root: BaseState | None = None
+        ctx = EventContext.get()
         # Get the newly linked state and update pointers/delta for subsequent events.
         if token not in holder._held_locks:
             async with holder._held_locks_lock:
                 if token not in holder._held_locks:
-                    locked_root = await holder._exit_stack.enter_async_context(
-                        ctx.modify_state(linked_token, with_links=False)
-                        if ctx is not None
-                        else get_state_manager().modify_state(linked_token)
+                    locked_root: BaseState = (
+                        await holder._exit_stack.enter_async_context(
+                            ctx.modify_state(
+                                BaseStateToken(ident=token, cls=type(self)),
+                                with_links=False,
+                            )
+                        )
                     )
                     holder._held_locks.setdefault(token, {})
                     # Set client_token on the linked root so that subsequent get_state
@@ -361,12 +356,7 @@ class SharedStateBaseInternal(State):
                             session, client_token=token
                         )
         # Locked in this event, now or earlier.
-        if ctx is not None:
-            linked_root_state: BaseState = ctx.state_locks.held[token][0]
-        elif locked_root is not None:
-            linked_root_state = locked_root
-        else:
-            linked_root_state = await get_state_manager().get_state(linked_token)
+        linked_root_state: BaseState = ctx.state_locks.held[token][0]
         linked_state = await linked_root_state.get_state(type(self))
         if not isinstance(linked_state, SharedState):
             msg = f"Linked state for token {token} is not a SharedState."
