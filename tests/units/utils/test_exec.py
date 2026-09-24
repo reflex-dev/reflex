@@ -743,3 +743,82 @@ def test_run_granian_backend_refuses_requests_while_the_app_is_broken(tmp_path: 
             process.kill()
             process.join()
         port_queue.close()
+
+
+def _make_app_layout(
+    root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    module: str,
+    init_dirs: list[str],
+    module_file: str,
+):
+    """Lay out an app module on disk and point the config at it.
+
+    Args:
+        root: Directory that stands in for the project root.
+        monkeypatch: The pytest monkeypatch fixture.
+        module: Dotted module name the config resolves to.
+        init_dirs: Package directories (relative to root) that get an ``__init__.py``.
+        module_file: Path (relative to root) of the app module file.
+    """
+    for init_dir in init_dirs:
+        (root / init_dir).mkdir(parents=True, exist_ok=True)
+        (root / init_dir / "__init__.py").touch()
+    (root / module_file).parent.mkdir(parents=True, exist_ok=True)
+    (root / module_file).touch()
+    monkeypatch.chdir(root)
+    monkeypatch.setattr(sys, "path", [str(root), *sys.path])
+    monkeypatch.setattr(exec_utils, "get_app_module", lambda: module)
+
+
+@pytest.mark.parametrize(
+    ("module", "init_dirs", "module_file", "missing"),
+    [
+        ("myapp.myapp", [], "myapp/myapp.py", "myapp"),
+        ("pkg.sub.app", ["pkg/sub"], "pkg/sub/app.py", "pkg"),
+        ("pkg.sub", ["pkg"], "pkg/sub/__init__.py", "pkg/sub"),
+    ],
+)
+def test_get_app_file_rejects_missing_package_init(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    module: str,
+    init_dirs: list[str],
+    module_file: str,
+    missing: str,
+):
+    """A package without ``__init__.py`` makes Granian import the app under another name."""
+    _make_app_layout(tmp_path, monkeypatch, module, init_dirs, module_file)
+    if module_file.endswith("__init__.py"):
+        (tmp_path / module_file).unlink()
+
+    with pytest.raises(ImportError, match=r"has no `__init__\.py`") as exc_info:
+        exec_utils.get_app_file()
+    assert str(tmp_path / missing / "__init__.py") in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    ("module", "init_dirs", "module_file"),
+    [
+        ("myapp.myapp", ["myapp"], "myapp/myapp.py"),
+        ("pkg.sub.app", ["pkg", "pkg/sub"], "pkg/sub/app.py"),
+        ("pkg.sub", ["pkg", "pkg/sub"], "pkg/sub/__init__.py"),
+        ("app", [], "app.py"),
+    ],
+)
+def test_get_app_file_matches_granian_module_name(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    module: str,
+    init_dirs: list[str],
+    module_file: str,
+):
+    """Granian must import the app file under the module name the compiler used."""
+    from granian._internal import prepare_import
+
+    _make_app_layout(tmp_path, monkeypatch, module, init_dirs, module_file)
+
+    app_file = exec_utils.get_app_file()
+
+    assert app_file == tmp_path / module_file
+    assert prepare_import(str(app_file)) == module

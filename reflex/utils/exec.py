@@ -471,7 +471,8 @@ def get_app_file() -> Path:
         The app file for the backend.
 
     Raises:
-        ImportError: If the app module is not found.
+        ImportError: If the app module is not found, or a package on its path
+            has no ``__init__.py``.
     """
     current_working_dir = str(Path.cwd())
     if current_working_dir not in sys.path:
@@ -482,6 +483,19 @@ def get_app_file() -> Path:
     if module_path is None:
         msg = f"Module {app_module} not found. Make sure the module is installed."
         raise ImportError(msg)
+    # Granian derives the module name from the file by walking up through
+    # directories with an __init__.py. A missing one would load the app under a
+    # shorter name than the compiler used, so state names would not match.
+    package_depth = app_module.count(".") + (module_path.name == "__init__.py")
+    for package_dir in module_path.parents[:package_depth]:
+        init_file = package_dir / "__init__.py"
+        if not init_file.is_file():
+            msg = (
+                f"App package `{package_dir.name}` has no `__init__.py`. "
+                f"Create an empty {init_file} so the backend imports "
+                f"`{app_module}` under the same name the frontend was compiled with."
+            )
+            raise ImportError(msg)
     return module_path
 
 
