@@ -66,6 +66,7 @@ from reflex.app import (
     ComponentCallable,
     EventNamespace,
     _ContextMiddleware,
+    _decode_asgi_headers,
     _sio_dumps,
     _sio_loads,
     default_overlay_component,
@@ -4425,6 +4426,25 @@ def test_call_marks_later_dev_backend_worker_as_hot_reload(
 
     compile_mock.assert_called_once()
     assert compile_mock.call_args.kwargs["trigger"] == "hot_reload"
+
+
+def test_decode_asgi_headers():
+    """_decode_asgi_headers decodes raw ASGI header pairs into a str dict."""
+    assert _decode_asgi_headers([]) == {}
+    assert _decode_asgi_headers([
+        (b"host", b"example.com"),
+        (b"x-forwarded-for", b"10.0.0.1, 10.0.0.2"),
+    ]) == {
+        "host": "example.com",
+        "x-forwarded-for": "10.0.0.1, 10.0.0.2",
+    }
+    # Later duplicates win, matching dict comprehension semantics.
+    assert _decode_asgi_headers([
+        (b"cookie", b"a=1"),
+        (b"cookie", b"b=2"),
+    ]) == {"cookie": "b=2"}
+    # Names and values are decoded as UTF-8.
+    assert _decode_asgi_headers([(b"x-name", "café".encode())]) == {"x-name": "café"}
 
 
 def test_call_ignores_stale_marker_without_dev_backend_reload(
