@@ -438,7 +438,12 @@ def on_event_harness():
     from reflex.app import App, EventNamespace
 
     app = App()
-    app._event_processor = mock.Mock(enqueue=mock.AsyncMock())
+    app._event_processor = mock.Mock(
+        enqueue=mock.AsyncMock(),
+        _root_context=EventContext(
+            token="", state_manager=app.state_manager, enqueue_impl=mock.AsyncMock()
+        ),
+    )
     namespace = EventNamespace("/event", app)
 
     sid = "benchmark-sid"

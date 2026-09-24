@@ -89,9 +89,12 @@ class StateLocks:
     # Whether a state lock was taken by entering a state (`async with state`).
     entered: bool = False
 
-    # The states entered in this context, by id: how many times, the lock taken
-    # entering it (None if held already) and the context var token to reset.
-    entered_states: dict[int, list[Any]] = dataclasses.field(default_factory=dict)
+    # The states entered in this context, by id and entering task: how many
+    # times, the lock taken entering it (None if held already) and the context
+    # var token to reset.
+    entered_states: dict[tuple[int, Any], list[Any]] = dataclasses.field(
+        default_factory=dict
+    )
 
     def holds(self, root: Any) -> bool:
         """Whether a state tree is locked.

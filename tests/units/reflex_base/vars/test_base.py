@@ -7,7 +7,7 @@ import threading
 import traceback
 import typing
 import weakref
-from typing import Any, Literal, TypeVar
+from typing import Any, ClassVar, Literal, TypeVar
 
 import pytest
 from reflex_base.constants import RouteArgType
@@ -1017,3 +1017,74 @@ def test_dispatch_value_needs_state_var(var: Var):
     """
     with pytest.raises(TypeError, match="dispatch_value"):
         var.dispatch_value("b")
+
+
+def test_inherited_field_on_plain_model():
+    """An inherited field of a model without a state tree reads from the model itself."""
+
+    class Model(EvenMoreBasicBaseState):
+        x: int = 1
+
+    class SubModel(Model):
+        pass
+
+    model = SubModel()
+    assert model.x == 1
+    model.x = 2
+    assert model.x == 2
+
+
+def test_new_default_for_inherited_field_declares_a_field():
+    """Assigning a default to an inherited field redeclares it with that default."""
+
+    class Parent(State):
+        count: int = 0
+
+    class Child(Parent):
+        count = 5
+
+    child_field = Child.get_fields()["count"]
+    assert child_field is not Parent.get_fields()["count"]
+    assert child_field.default == 5
+    assert child_field.outer_type_ is int
+    assert "count" in Child.base_vars
+
+
+def test_slot_names_are_reserved():
+    """A state cannot declare a name a base keeps in a slot."""
+
+    class Root(EvenMoreBasicBaseState, state_root=True):
+        pass
+
+    class Base(Root):
+        __slots__ = ("_bookkeeping",)
+
+    with pytest.raises(StateValueError, match="_bookkeeping"):
+
+        class Shadow(Base):
+            _bookkeeping: int = 0
+
+
+def test_backend_field_is_not_type_checked():
+    """Setting a backend var skips the type check, like a generic one it cannot run."""
+    T = TypeVar("T")
+
+    class Model(EvenMoreBasicBaseState):
+        _value: T  # pyright: ignore[reportGeneralTypeIssues]
+
+    model = Model()  # pyright: ignore[reportCallIssue]
+    model._value = 1
+    assert model._value == 1
+
+
+def test_classvar_over_inherited_field_is_not_a_field():
+    """A ClassVar redeclaring an inherited field stays a class attribute."""
+
+    class Parent(State):
+        count: int = 0
+
+    class Child(Parent):
+        count: ClassVar[int] = 5  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    assert Child.get_fields()["count"] is Parent.get_fields()["count"]
+    assert "count" not in Child.base_vars

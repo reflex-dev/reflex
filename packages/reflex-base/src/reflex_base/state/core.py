@@ -22,6 +22,7 @@ from reflex_base.state.delta import Delta, build_delta, clean_state, resolve_del
 from reflex_base.state.proxy import MutableProxy
 from reflex_base.state.token import BaseStateToken
 from reflex_base.utils.exceptions import (
+    ImmutableStateError,
     SetUndefinedStateVarError,
     StateSchemaMismatchError,
     StateSerializationError,
@@ -584,6 +585,10 @@ class CoreState(EvenMoreBasicBaseState):
 
         Returns:
             This state.
+
+        Raises:
+            ImmutableStateError: If this task entered the state already, taking
+                its lock.
         """
         root = self._get_root_state()
         if (bound := root._event_context) is None:
@@ -593,7 +598,11 @@ class CoreState(EvenMoreBasicBaseState):
         # callback), enters under the context it was loaded in.
         ctx = current if current is not None and current.token == bound.token else bound
         entered = ctx.state_locks.entered_states
-        if (entry := entered.get(id(self))) is not None:
+        key = (id(self), asyncio.current_task())
+        if (entry := entered.get(key)) is not None:
+            if entry[1] is not None:
+                msg = "The state is already mutable. Do not nest `async with self` blocks."
+                raise ImmutableStateError(msg)
             entry[0] += 1
             return self
         held = ctx.state_locks.held.get(ctx.token)
@@ -610,10 +619,18 @@ class CoreState(EvenMoreBasicBaseState):
                     EventContext.reset(reset)
                 raise
             ctx.state_locks.entered = True
-        live = await live_root.get_state(type(self))
+        try:
+            live = await live_root.get_state(type(self))
+        except BaseException:
+            # Nothing entered: release what was taken for it.
+            if lock is not None:
+                await lock.__aexit__(*sys.exc_info())
+            if reset is not None:
+                EventContext.reset(reset)
+            raise
         if live is not self:
             self._take_place_of(live)
-        entered[id(self)] = [1, lock, reset, live]
+        entered[key] = [1, lock, reset, live]
         return self
 
     async def __aexit__(self, *exc_info: Any) -> None:
@@ -623,13 +640,15 @@ class CoreState(EvenMoreBasicBaseState):
             exc_info: The exception info tuple.
         """
         if (ctx := EventContext._context_var.get(None)) is None or (
-            entry := ctx.state_locks.entered_states.get(id(self))
+            entry := ctx.state_locks.entered_states.get(
+                key := (id(self), asyncio.current_task())
+            )
         ) is None:
             return
         entry[0] -= 1
         if entry[0]:
             return
-        del ctx.state_locks.entered_states[id(self)]
+        del ctx.state_locks.entered_states[key]
         _, lock, reset, live = entry
         if live is not self:
             # Hand the place back to the loaded instance, which the state
