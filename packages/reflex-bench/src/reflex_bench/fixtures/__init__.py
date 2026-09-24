@@ -118,8 +118,8 @@ def materialize_playground(dest: Path) -> FixtureDoc:
 def ensure_fixture(
     cache_dir: Path,
     describe: Callable[[], FixtureDoc],
-    make: Callable[[Path], FixtureDoc],
-) -> tuple[Path, FixtureDoc]:
+    make: Callable[[Path], object],
+) -> Path:
     """Reuse the app in a cache directory while it is the wanted fixture, else rebuild it.
 
     The app lives in ``cache_dir / "app"`` with a ``fixture.json`` stamp next to
@@ -130,11 +130,11 @@ def ensure_fixture(
     Args:
         cache_dir: The benchmark's ``ctx.cache_dir``.
         describe: Describes the wanted fixture, e.g. :func:`describe_playground`.
-        make: Writes the fixture into a new directory and describes it, e.g.
+        make: Writes the fixture into a new directory, e.g.
             :func:`materialize_playground`.
 
     Returns:
-        The app directory and its description.
+        The app directory.
     """
     app, stamp = cache_dir / "app", cache_dir / STAMP
     wanted = describe()
@@ -143,27 +143,26 @@ def ensure_fixture(
     except (OSError, ValueError):
         current = None
     if current == wanted and app.is_dir():
-        return app, wanted
+        return app
     stamp.unlink(missing_ok=True)
     if app.exists():
         shutil.rmtree(app)
-    doc = make(app)
-    stamp.write_text(json.dumps(doc, sort_keys=True) + "\n", encoding="utf-8")
-    return app, doc
+    make(app)
+    stamp.write_text(json.dumps(wanted, sort_keys=True) + "\n", encoding="utf-8")
+    return app
 
 
-def bump_marker(path: Path, target: str) -> str:
-    """Give a hot reload target a new string, leaving every other line as it is.
+def bump_marker(path: Path, target: str, n: int) -> str:
+    """Set a hot reload target's string to ``m-<n>-<target>``, leaving every other line as it is.
 
     A target is a module-level constant on a line of its own that carries the
-    target's pragma: ``NAME = "m-initial-leaf"  # bench:hmr-target leaf``. Its
-    string becomes ``m-<n + 1>-<target>``, where ``n`` is the number in the
-    current string (0 for any other string), so every bump changes the file,
-    also in an app reused from an earlier run or by the other arm of an A/B run.
+    target's pragma: ``NAME = "m-initial-leaf"  # bench:hmr-target leaf``. The
+    caller keeps ``n`` unique, so every edit differs from the ones before it.
 
     Args:
         path: The module holding the target.
         target: The target's name, e.g. ``leaf``.
+        n: The edit number.
 
     Returns:
         The new string, e.g. ``m-1-leaf``.
@@ -174,13 +173,10 @@ def bump_marker(path: Path, target: str) -> str:
     text = path.read_text(encoding="utf-8")
     matches = [match for match in _TARGET.finditer(text) if match["name"] == target]
     if len(matches) != 1:
-        count = len(matches) or "no"
-        plural = "s" if len(matches) > 1 else ""
-        msg = f"{path} has {count} hot reload target{plural} {target}"
+        msg = f"{path} has {len(matches)} hot reload target lines for {target}"
         raise ValueError(msg)
     (match,) = matches
-    counted = re.fullmatch(rf"m-(\d+)-{re.escape(target)}", match["value"])
-    value = f"m-{int(counted[1]) + 1 if counted else 1}-{target}"
+    value = f"m-{n}-{target}"
     path.write_text(
         text[: match.start()]
         + match["head"]

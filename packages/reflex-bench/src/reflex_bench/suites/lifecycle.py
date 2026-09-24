@@ -9,13 +9,14 @@ State                 ``REFLEX_DIR`` (bun,           ``BUN_INSTALL_CACHE_    app
                       templates)                     DIR``                   (``node_modules``)
 ====================  =============================  ======================  =========================
 ``init.cold``         fresh per sample               untouched               fresh empty directory
-``init.warm``         ``ctx.cache_dir/reflex``,      untouched               fresh empty directory
-                      primed
-``compile.cold``      ``ctx.cache_dir/reflex``,      fresh per sample        fresh copy per sample
-                      primed
-all others            ``ctx.cache_dir/reflex``,      host default            ``ctx.cache_dir/app``,
-                      primed                                                 primed by one compile
+``init.warm``         shared, primed                 untouched               fresh empty directory
+``compile.cold``      shared, primed                 fresh per sample        fresh copy per sample
+all others            shared, primed                 host default            ``ctx.cache_dir/app``,
+                                                                             primed by one compile
 ====================  =============================  ======================  =========================
+
+The shared ``REFLEX_DIR`` is ``ctx.subject_cache_dir / "reflex"``, one per
+subject: the first instance that needs it downloads bun, the others find it.
 
 When its ``REFLEX_DIR`` holds no bun, reflex takes one from ``PATH`` if it is
 new enough (1.3 for reflex 0.8.23, 1.4 for 0.9), so a host bun would make a
@@ -25,13 +26,14 @@ cold start warm and make versions run different buns. Commands run with each
 The ``time`` benchmarks report ``wall`` (from just before the spawn to the end
 of the command, without the harness's own overhead), ``cpu`` and ``peak_mem``
 of the whole process tree, from a cgroup scope where the host has them, else
-from the reaped children and PSS sampling (``cpu_method``, ``memory_method``).
-Whole-run peaks only: per-phase peaks need Linux 6.12. Samples are taken with
-``phases=True``: its ``--loglevel debug`` costs 0.04 % of a warm playground
-compile (n = 10 per arm, interleaved ABBA against ``--loglevel info``: medians
-1.1013 s and 1.1009 s), below the 2 % above which phases would come from a
-separate untimed compile. The process tree and PSS samplers add another 3 %
-locally, the same in both arms of a comparison.
+from the reaped children and PSS sampling. The collector is chosen once per
+instance and recorded in ``dims`` (``collector: cgroup | fallback``), so the
+two never share a series. Whole-run peaks only: per-phase peaks need Linux
+6.12. Samples are taken with ``phases=True``: its ``--loglevel debug`` costs
+0.04 % of a warm playground compile (n = 10 per arm, interleaved ABBA against
+``--loglevel info``: medians 1.1013 s and 1.1009 s), below the 2 % above which
+phases would come from a separate untimed compile. The process tree and PSS
+samplers add another 3 % locally, the same in both arms of a comparison.
 
 ``export`` rebuilds the frontend and writes both zips every time: after
 priming, the first two exports of the playground are within 2 to 8 % of each
@@ -49,9 +51,11 @@ from __future__ import annotations
 import dataclasses
 import functools
 import hashlib
+import itertools
 import json
 import os
 import shutil
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -79,6 +83,8 @@ MARGIN_S = 30.0
 HTTP_S = 20.0
 
 INIT = ["init", "--template", "blank"]
+# import reflex alone is lazy; the two attributes load the framework.
+IMPORT = "import reflex as rx; rx.App; rx.State"
 PLAYGROUND = {"app": ["playground"]}
 PAGES = {"pages": [1, 10, 100, 1000]}
 GEN_HIDDEN = {
@@ -112,6 +118,28 @@ STARTUP = {
     ),
 }
 _BUN = ("bun", "bunx")
+# Numbers the hot reload edits, unique across the arms of one process.
+_EDITS = itertools.count(1)
+
+_daily = functools.partial(
+    benchmark,
+    suites=("daily",),
+    metrics=TIME,
+    timeout=QUICK_S + MARGIN_S,
+    setup_timeout=PRIME_S + MARGIN_S,
+)
+_playground = functools.partial(_daily, params=PLAYGROUND, warmup=1)
+_ready = functools.partial(_playground, kind="startup", metrics=STARTUP)
+_scale = functools.partial(
+    benchmark,
+    params=PAGES,
+    hidden_params=GEN_HIDDEN,
+    metrics=TIME,
+    warmup=1,
+    timeout=SLOW_S + MARGIN_S,
+    setup_timeout=PRIME_S + MARGIN_S,
+    estimate=18,
+)
 
 
 def _hide_bun(path: str, views: Path) -> str:
@@ -147,7 +175,7 @@ def _env(
 
     Args:
         ctx: The benchmark context.
-        reflex_dir: ``REFLEX_DIR``; ``ctx.cache_dir / "reflex"`` by default.
+        reflex_dir: ``REFLEX_DIR``; the subject's shared one by default.
         bun_cache: ``BUN_INSTALL_CACHE_DIR``; the host's by default.
 
     Returns:
@@ -156,7 +184,8 @@ def _env(
     env = {
         **ctx.env,
         **cache_env(
-            reflex_dir=reflex_dir or ctx.cache_dir / "reflex", bun_cache=bun_cache
+            reflex_dir=reflex_dir or ctx.subject_cache_dir / "reflex",
+            bun_cache=bun_cache,
         ),
     }
     env["PATH"] = _hide_bun(env.get("PATH", ""), ctx.workdir / "path")
@@ -203,17 +232,30 @@ def _run(ctx: Context, args: list[str], *, cwd: Path, env: dict[str, str]) -> No
 
 
 def _prime_reflex_dir(ctx: Context) -> None:
-    """Fill the cache directory's ``REFLEX_DIR`` (bun, templates) with an untimed init.
+    """Fill the subject's shared ``REFLEX_DIR`` (bun, templates) with an untimed init.
+
+    Nothing runs when it already holds a bun: one download per subject.
 
     Args:
         ctx: The benchmark context.
     """
+    if (ctx.subject_cache_dir / "reflex" / "bun" / "bin" / "bun").is_file():
+        return
     scratch = ctx.workdir / "prime"
     scratch.mkdir(exist_ok=True)
     try:
         _run(ctx, INIT, cwd=scratch, env=_env(ctx))
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
+
+
+def _record_collector(ctx: Context) -> None:
+    """Choose the collector of a ``time`` benchmark once and record it in ``dims``.
+
+    Args:
+        ctx: The benchmark context.
+    """
+    ctx.dims["collector"] = "cgroup" if CgroupScope.available() is None else "fallback"
 
 
 def _timed(
@@ -242,7 +284,7 @@ def _timed(
     Raises:
         RuntimeError: When the command fails or no collector measured its memory.
     """
-    scope = CgroupScope() if CgroupScope.available() is None else None
+    scope = CgroupScope() if ctx.dims["collector"] == "cgroup" else None
     result = run_cli(
         ctx.subject.python,
         args,
@@ -270,27 +312,7 @@ def _timed(
     )
 
 
-def _gen_params(ctx: Context) -> GenParams:
-    """Read the generator parameters of a scaling tier.
-
-    Args:
-        ctx: The benchmark context.
-
-    Returns:
-        ``pages`` and the hidden parameters, as generator parameters.
-    """
-    return GenParams(**{
-        f.name: ctx.params[f.name] for f in dataclasses.fields(GenParams)
-    })
-
-
-@benchmark(
-    id="lifecycle.init.cold",
-    suites=("daily",),
-    metrics=TIME,
-    timeout=QUICK_S + MARGIN_S,
-    estimate=4,
-)
+@_daily(id="lifecycle.init.cold", estimate=4)
 class InitCold:
     """`reflex init --template blank` with a fresh REFLEX_DIR: bun is downloaded (network-bound)."""
 
@@ -303,6 +325,7 @@ class InitCold:
         Args:
             ctx: The benchmark context.
         """
+        _record_collector(ctx)
         self.env = _env(ctx, reflex_dir=ctx.workdir / "reflex")
 
     def prepare(self, ctx: Context) -> None:
@@ -335,14 +358,7 @@ class InitCold:
         )
 
 
-@benchmark(
-    id="lifecycle.init.warm",
-    suites=("daily",),
-    metrics=TIME,
-    timeout=QUICK_S + MARGIN_S,
-    setup_timeout=PRIME_S + MARGIN_S,
-    estimate=1,
-)
+@_daily(id="lifecycle.init.warm", estimate=1)
 class InitWarm:
     """`reflex init --template blank` in an empty directory, with bun and the templates in REFLEX_DIR."""
 
@@ -362,6 +378,7 @@ class InitWarm:
         Args:
             ctx: The benchmark context.
         """
+        _record_collector(ctx)
         self.env = _env(ctx)
 
     def prepare(self, ctx: Context) -> None:
@@ -385,13 +402,10 @@ class InitWarm:
         return _timed(ctx, INIT, cwd=ctx.workdir / "app", env=self.env, timeout=QUICK_S)
 
 
-@benchmark(
+@_daily(
     id="lifecycle.compile.cold",
-    suites=("daily",),
     params=PLAYGROUND,
-    metrics=TIME,
     timeout=SLOW_S + MARGIN_S,
-    setup_timeout=PRIME_S + MARGIN_S,
     estimate=10,
 )
 class CompileCold:
@@ -415,6 +429,7 @@ class CompileCold:
             ctx: The benchmark context.
         """
         ctx.fixture = describe_playground()
+        _record_collector(ctx)
         self.env = _env(ctx, bun_cache=ctx.workdir / "bun-cache")
 
     def prepare(self, ctx: Context) -> None:
@@ -448,62 +463,32 @@ class CompileCold:
 
 
 class _Primed:
-    """The playground in the cache directory, primed by one untimed compile.
-
-    ``sample`` compiles it, after giving ``edit``'s hot reload target a new
-    string when set.
-    """
+    """An app in the cache directory, primed by one untimed compile."""
 
     app_dir: Path
     env: dict[str, str]
-    edit: tuple[Path, str] | None = None
-    marker: str | None = None
 
-    def describe(self, ctx: Context) -> FixtureDoc:
-        """Describe the app.
-
-        Args:
-            ctx: The benchmark context.
-
-        Returns:
-            The playground's description.
-        """
-        return describe_playground()
-
-    def make(self, ctx: Context, dest: Path) -> FixtureDoc:
-        """Write the app.
-
-        Args:
-            ctx: The benchmark context.
-            dest: The new app directory.
-
-        Returns:
-            The app's description.
-        """
-        return materialize_playground(dest)
-
-    def timeout(self, ctx: Context) -> float:
-        """Give the timeout of one compile.
+    def fixture(
+        self, ctx: Context
+    ) -> tuple[Callable[[], FixtureDoc], Callable[[Path], object]]:
+        """Choose the app.
 
         Args:
             ctx: The benchmark context.
 
         Returns:
-            Seconds.
+            How to describe it and how to write it, as :func:`ensure_fixture`
+            takes them: the playground's.
         """
-        return QUICK_S
+        return describe_playground, materialize_playground
 
     def setup_cache(self, ctx: Context) -> None:
-        """Copy the app unless its copy is current, then prime it (REFLEX_DIR, .web, packages).
+        """Write the app unless its copy is current, then prime it (REFLEX_DIR, .web, packages).
 
         Args:
             ctx: The benchmark context.
         """
-        app, _ = ensure_fixture(
-            ctx.cache_dir,
-            functools.partial(self.describe, ctx),
-            functools.partial(self.make, ctx),
-        )
+        app = ensure_fixture(ctx.cache_dir, *self.fixture(ctx))
         _run(ctx, ["compile"], cwd=app, env=_env(ctx))
 
     def setup(self, ctx: Context) -> None:
@@ -512,9 +497,32 @@ class _Primed:
         Args:
             ctx: The benchmark context.
         """
-        ctx.fixture = self.describe(ctx)
+        describe, _ = self.fixture(ctx)
+        ctx.fixture = describe()
         self.app_dir = ctx.cache_dir / "app"
         self.env = _env(ctx)
+
+
+class _Compile(_Primed):
+    """``reflex compile`` of the primed app, after an edit of ``edit``'s hot reload target when set.
+
+    ``conclude`` restores the edited module, so the cached app stays the
+    fixture its stamp describes.
+    """
+
+    timeout = QUICK_S
+    edit: tuple[Path, str] | None = None
+    restore: tuple[Path, bytes] | None = None
+    marker: str | None = None
+
+    def setup(self, ctx: Context) -> None:
+        """Record the fixture and the collector and build the environment.
+
+        Args:
+            ctx: The benchmark context.
+        """
+        super().setup(ctx)
+        _record_collector(ctx)
 
     def prepare(self, ctx: Context) -> None:
         """Give the edited hot reload target, if any, a new string.
@@ -523,7 +531,9 @@ class _Primed:
             ctx: The benchmark context.
         """
         if self.edit is not None:
-            self.marker = bump_marker(*self.edit)
+            path, target = self.edit
+            self.restore = (path, path.read_bytes())
+            self.marker = bump_marker(path, target, next(_EDITS))
 
     def sample(self, ctx: Context) -> SampleResult:
         """Compile the app.
@@ -540,36 +550,27 @@ class _Primed:
             ["compile"],
             cwd=self.app_dir,
             env=self.env,
-            timeout=self.timeout(ctx),
+            timeout=self.timeout,
             **edited,
         )
 
+    def conclude(self, ctx: Context) -> None:
+        """Restore the edited module.
 
-@benchmark(
-    id="lifecycle.compile.warm",
-    suites=("pr", "daily"),
-    params=PLAYGROUND,
-    metrics=TIME,
-    warmup=1,
-    timeout=QUICK_S + MARGIN_S,
-    setup_timeout=PRIME_S + MARGIN_S,
-    estimate=1.3,
-)
-class CompileWarm(_Primed):
+        Args:
+            ctx: The benchmark context.
+        """
+        if self.restore is not None:
+            self.restore[0].write_bytes(self.restore[1])
+
+
+@_playground(id="lifecycle.compile.warm", suites=("pr", "daily"), estimate=1.3)
+class CompileWarm(_Compile):
     """`reflex compile` of the primed playground, unchanged since the last compile."""
 
 
-@benchmark(
-    id="lifecycle.compile.incremental",
-    suites=("pr", "daily"),
-    params=PLAYGROUND,
-    metrics=TIME,
-    warmup=1,
-    timeout=QUICK_S + MARGIN_S,
-    setup_timeout=PRIME_S + MARGIN_S,
-    estimate=1.3,
-)
-class CompileIncremental(_Primed):
+@_playground(id="lifecycle.compile.incremental", suites=("pr", "daily"), estimate=1.3)
+class CompileIncremental(_Compile):
     """`reflex compile` of the primed playground after an edit of the leaf component."""
 
     def setup(self, ctx: Context) -> None:
@@ -582,7 +583,7 @@ class CompileIncremental(_Primed):
         self.edit = (self.app_dir / "playground" / "components" / "marker.py", "leaf")
 
 
-class _Export(_Primed):
+class _Export(_Compile):
     """``reflex export`` of the primed playground, zipped into the work directory."""
 
     mode: str
@@ -615,32 +616,14 @@ class _Export(_Primed):
         return _timed(ctx, args, cwd=self.app_dir, env=self.env, timeout=QUICK_S)
 
 
-@benchmark(
-    id="lifecycle.export.dev",
-    suites=("daily",),
-    params=PLAYGROUND,
-    metrics=TIME,
-    warmup=1,
-    timeout=QUICK_S + MARGIN_S,
-    setup_timeout=PRIME_S + MARGIN_S,
-    estimate=7,
-)
+@_playground(id="lifecycle.export.dev", estimate=7)
 class ExportDev(_Export):
     """`reflex export --env dev` of the primed playground: frontend build and both zips."""
 
     mode = "dev"
 
 
-@benchmark(
-    id="lifecycle.export.prod",
-    suites=("daily",),
-    params=PLAYGROUND,
-    metrics=TIME,
-    warmup=1,
-    timeout=QUICK_S + MARGIN_S,
-    setup_timeout=PRIME_S + MARGIN_S,
-    estimate=7,
-)
+@_playground(id="lifecycle.export.prod", estimate=7)
 class ExportProd(_Export):
     """`reflex export --env prod` of the primed playground: frontend build and both zips."""
 
@@ -648,12 +631,32 @@ class ExportProd(_Export):
 
 
 class _Ready(_Primed):
-    """``reflex run`` of the primed playground until it answers HTTP; conclude stops it."""
+    """``reflex run`` of the primed playground until it answers HTTP; conclude stops it.
+
+    ``prepare`` plans the run, so ``conclude`` (also on a fresh thread after a
+    timeout) always stops the app ``sample`` starts or was about to start.
+    """
 
     mode: Mode = "dev"
     backend_only = False
     start_timeout = QUICK_S
-    app: AppProcess | None = None
+    app: AppProcess
+
+    def prepare(self, ctx: Context) -> None:
+        """Plan the run.
+
+        Args:
+            ctx: The benchmark context.
+        """
+        self.app = AppProcess(
+            ctx.subject.python,
+            self.app_dir,
+            mode=self.mode,
+            reflex_version=ctx.subject.reflex_version,
+            env=self.env,
+            backend_only=self.backend_only,
+            start_timeout=self.start_timeout,
+        )
 
     def sample(self, ctx: Context) -> SampleResult:
         """Start the app and wait for tiers 1 (process-ready) and 2 (HTTP-ready).
@@ -664,18 +667,8 @@ class _Ready(_Primed):
         Returns:
             Seconds from the spawn to each tier, with the readiness as extra data.
         """
-        # conclude() may run on another thread after a timeout and clear self.app.
-        app = self.app = AppProcess(
-            ctx.subject.python,
-            self.app_dir,
-            mode=self.mode,
-            reflex_version=ctx.subject.reflex_version,
-            env=self.env,
-            backend_only=self.backend_only,
-            start_timeout=self.start_timeout,
-        )
-        readiness = app.start()
-        http_ready = app.wait_http_ready(timeout=HTTP_S)
+        readiness = self.app.start()
+        http_ready = self.app.wait_http_ready(timeout=HTTP_S)
         return SampleResult(
             {"process_ready": readiness.process_ready, "http_ready": http_ready},
             extra={"readiness": dataclasses.asdict(readiness)},
@@ -687,37 +680,15 @@ class _Ready(_Primed):
         Args:
             ctx: The benchmark context.
         """
-        if self.app is not None:
-            self.app.stop()
-            self.app = None
+        self.app.stop()
 
 
-@benchmark(
-    id="lifecycle.run.dev.ready",
-    suites=("daily",),
-    kind="startup",
-    params=PLAYGROUND,
-    metrics=STARTUP,
-    warmup=1,
-    timeout=QUICK_S + MARGIN_S,
-    setup_timeout=PRIME_S + MARGIN_S,
-    estimate=4,
-)
+@_ready(id="lifecycle.run.dev.ready", estimate=4)
 class RunDevReady(_Ready):
     """`reflex run --env dev` of the primed playground until the Vite dev server answers GET /."""
 
 
-@benchmark(
-    id="lifecycle.run.prod.ready",
-    suites=("daily",),
-    kind="startup",
-    params=PLAYGROUND,
-    metrics=STARTUP,
-    warmup=1,
-    timeout=SLOW_S + MARGIN_S,
-    setup_timeout=PRIME_S + MARGIN_S,
-    estimate=8,
-)
+@_ready(id="lifecycle.run.prod.ready", timeout=SLOW_S + MARGIN_S, estimate=8)
 class RunProdReady(_Ready):
     """`reflex run --env prod` of the primed playground: compile, frontend build and start."""
 
@@ -725,15 +696,9 @@ class RunProdReady(_Ready):
     start_timeout = SLOW_S
 
 
-@benchmark(
+@_ready(
     id="lifecycle.run.preview.ready",
-    suites=("daily",),
-    kind="startup",
-    params=PLAYGROUND,
-    metrics=STARTUP,
-    warmup=1,
     timeout=SLOW_S + MARGIN_S,
-    setup_timeout=PRIME_S + MARGIN_S,
     estimate=6,
     min_version="0.9.8",
 )
@@ -744,17 +709,7 @@ class RunPreviewReady(_Ready):
     start_timeout = SLOW_S
 
 
-@benchmark(
-    id="lifecycle.run.backend_only.ready",
-    suites=("daily",),
-    kind="startup",
-    params=PLAYGROUND,
-    metrics=STARTUP,
-    warmup=1,
-    timeout=QUICK_S + MARGIN_S,
-    setup_timeout=PRIME_S + MARGIN_S,
-    estimate=2,
-)
+@_ready(id="lifecycle.run.backend_only.ready", estimate=2)
 class RunBackendOnlyReady(_Ready):
     """`reflex run --backend-only` of the primed playground until /ping answers: the scale-to-zero start."""
 
@@ -768,15 +723,15 @@ class RunBackendOnlyReady(_Ready):
         "wall": Metric(
             unit="s",
             direction="lower",
-            description="A fresh interpreter importing reflex.",
+            description="A fresh interpreter importing reflex and loading App and State.",
         )
     },
     warmup=1,
     timeout=QUICK_S + MARGIN_S,
-    estimate=0.03,
+    estimate=0.5,
 )
 class Import:
-    """`python -c "import reflex"` in a fresh interpreter."""
+    """`python -c "import reflex as rx; rx.App; rx.State"` in a fresh interpreter: the framework's import graph."""
 
     def sample(self, ctx: Context) -> dict[str, float]:
         """Import reflex once.
@@ -793,73 +748,50 @@ class Import:
             cwd=ctx.workdir,
             env=ctx.env,
             timeout=QUICK_S,
-            prefix=("-c", "import reflex"),
+            prefix=("-c", IMPORT),
         ).check()
         return {"wall": result.wall_s}
 
 
-class _Generated(_Primed):
+class _Generated(_Compile):
     """A generated app of the tier's GenParams instead of the playground."""
 
-    def describe(self, ctx: Context) -> FixtureDoc:
-        """Describe the app.
+    def fixture(
+        self, ctx: Context
+    ) -> tuple[Callable[[], FixtureDoc], Callable[[Path], object]]:
+        """Choose the app.
 
         Args:
             ctx: The benchmark context.
 
         Returns:
-            The generated app's description.
+            The generator's ``describe`` and ``generate`` for ``pages`` and the
+            hidden parameters.
         """
-        return generate.describe(_gen_params(ctx))
+        params = GenParams(**{
+            f.name: ctx.params[f.name] for f in dataclasses.fields(GenParams)
+        })
+        return (
+            functools.partial(generate.describe, params),
+            functools.partial(generate.generate, params=params),
+        )
 
-    def make(self, ctx: Context, dest: Path) -> FixtureDoc:
-        """Write the app.
+    def setup(self, ctx: Context) -> None:
+        """Give the largest tier the long compile timeout.
 
         Args:
             ctx: The benchmark context.
-            dest: The new app directory.
-
-        Returns:
-            The app's description.
         """
-        return generate.generate(dest, _gen_params(ctx))
-
-    def timeout(self, ctx: Context) -> float:
-        """Give the timeout of one compile, which grows with the tier.
-
-        Args:
-            ctx: The benchmark context.
-
-        Returns:
-            Seconds.
-        """
-        return SLOW_S if ctx.params["pages"] >= 1000 else QUICK_S
+        super().setup(ctx)
+        self.timeout = SLOW_S if ctx.params["pages"] >= 1000 else QUICK_S
 
 
-@benchmark(
-    id="lifecycle.scale.compile.warm",
-    params=PAGES,
-    hidden_params=GEN_HIDDEN,
-    metrics=TIME,
-    warmup=1,
-    timeout=SLOW_S + MARGIN_S,
-    setup_timeout=PRIME_S + MARGIN_S,
-    estimate=18,
-)
+@_scale(id="lifecycle.scale.compile.warm")
 class ScaleCompileWarm(_Generated):
     """`reflex compile` of a primed generated app, unchanged since the last compile."""
 
 
-@benchmark(
-    id="lifecycle.scale.compile.incremental",
-    params=PAGES,
-    hidden_params=GEN_HIDDEN,
-    metrics=TIME,
-    warmup=1,
-    timeout=SLOW_S + MARGIN_S,
-    setup_timeout=PRIME_S + MARGIN_S,
-    estimate=18,
-)
+@_scale(id="lifecycle.scale.compile.incremental")
 class ScaleCompileIncremental(_Generated):
     """`reflex compile` of a primed generated app after an edit of its first leaf target."""
 

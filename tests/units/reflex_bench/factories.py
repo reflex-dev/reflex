@@ -53,6 +53,7 @@ def make_context(tmp_path: Path, params: Mapping[str, Any] | None = None) -> Con
         params=dict(params or {}),
         workdir=tmp_path,
         cache_dir=tmp_path,
+        subject_cache_dir=tmp_path,
         env={},
         rng=random.Random(0),
         log=logging.getLogger("reflex_bench.test"),

@@ -638,10 +638,22 @@ def _fixtured(hook: str, fail_in: str | None = None) -> Planned:
 def test_the_fixture_a_benchmark_drives_is_recorded_in_dims(tmp_path: Path, hook: str):
     entry = _run(_fixtured(hook), tmp_path, runs=1)
     assert entry["status"] == "ok"
-    assert entry["dims"] == {
-        "fixture": "playground",
-        "fixture_hash": FIXTURE["content_hash"],
-    }
+    assert entry["dims"] == {"fixture": "playground"}
+    assert entry["fixture_hash"] == FIXTURE["content_hash"]
+
+
+def test_dims_a_hook_sets_are_recorded(tmp_path: Path):
+    def set_dims(self: Any, ctx: Context) -> None:
+        ctx.dims["collector"] = "cgroup"
+
+    bench = Benchmark.define(
+        type("Dimmed", (), {"setup": set_dims, "sample": lambda self, ctx: None}),
+        id="t.dims",
+        metrics={"wall": WALL},
+    )
+    entry = _run(Planned(bench, ParamSet({})), tmp_path, runs=1)
+    assert entry["dims"] == {"collector": "cgroup"}
+    assert "fixture_hash" not in entry
 
 
 def test_dims_stay_empty_without_a_fixture(tmp_path: Path):

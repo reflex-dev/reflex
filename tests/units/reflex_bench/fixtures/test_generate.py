@@ -261,27 +261,6 @@ def test_every_generated_module_is_valid_python(tmp_path: Path, params: GenParam
         compile(path.read_text(encoding="utf-8"), str(path), "exec")
 
 
-@pytest.mark.parametrize(
-    "fields",
-    [
-        {"pages": 0},
-        {"pages": 1, "components_per_page": 0},
-        {"pages": 1, "state_vars": 0},
-        {"pages": 1, "substate_depth": -1},
-        {"pages": 1, "computed_vars": -1},
-    ],
-)
-def test_params_that_make_no_app_are_rejected(fields: dict[str, int]):
-    with pytest.raises(ValueError, match="GenParams"):
-        GenParams(**fields)
-
-
-def test_generate_refuses_a_directory_with_files(tmp_path: Path):
-    (tmp_path / "stray.py").write_text("", encoding="utf-8")
-    with pytest.raises(FileExistsError, match="not empty"):
-        generate.generate(tmp_path, GenParams(pages=1))
-
-
 def test_main_writes_a_tree(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
     dest = tmp_path / "app"
     assert generate.main(["--pages", "3", "--components-per-page", "4", str(dest)]) == 0

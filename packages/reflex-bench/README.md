@@ -242,10 +242,13 @@ arguments than `-m reflex` through the same process tree code.
 
 A fixture is the app a benchmark drives, described by a `FixtureDoc` (`name`,
 `content_hash`, `params`). A benchmark sets `ctx.fixture` in `setup_cache` or
-`setup`, and its entry records the name and hash in `dims`
-(`{"fixture": "playground", "fixture_hash": "sha256:…"}`), which are part of the
-pairing and series keys: an edited fixture starts a new series. One invocation
-drives several fixtures, so the document-level `fixture` stays `null`.
+`setup`, and its entry records the name in `dims` (`{"fixture": "playground"}`,
+part of the pairing and series keys) and the hash in `fixture_hash` (part of
+the series key only): an edited fixture pairs with its old self and `compare`
+reports the pair as not comparable, `fixture content hash differs`, unless
+`--force`. Hooks record anything else that separates series in `ctx.dims`.
+One invocation drives several fixtures, so the document-level `fixture` stays
+`null`.
 
 - **The playground**, `examples/playground`: a committed app whose hash is the
   line in its `.content-hash` (see its README for the element ids and hot reload
@@ -261,13 +264,19 @@ drives several fixtures, so the document-level `fixture` stays `null`.
 `ensure_fixture(ctx.cache_dir, describe, make)` keeps the app in
 `cache_dir/app` with a `fixture.json` stamp, and rebuilds it when the stamp no
 longer matches: `setup_cache` directories are keyed by subject and parameters,
-not by the app. `bump_marker(path, target)` gives a hot reload target a new
-string (`m-<n>-<target>`) that differs from the one in the file.
+not by the app. `bump_marker(path, target, n)` sets a hot reload target's
+string to `m-<n>-<target>`; the benchmark restores the module in `conclude`, so
+the cached app stays the fixture its stamp describes.
 
 The `lifecycle.*` benchmarks (`reflex_bench/suites/lifecycle.py`) time `init`,
-`compile`, `export`, `run` until HTTP-ready and `import reflex`, each in a cache
-state its id names (`cold`, `warm`, `incremental`); the module docstring lists
-which caches each one starts from.
+`compile`, `export`, `run` until HTTP-ready and `import reflex as rx; rx.App;
+rx.State` (the import alone is lazy), each in a cache state its id names
+(`cold`, `warm`, `incremental`); the module docstring lists which caches each
+one starts from. The warm ones share one `REFLEX_DIR` per subject
+(`ctx.subject_cache_dir/reflex`), so a subject downloads bun once; the cold ones
+start from a fresh one. Each `time` benchmark chooses its collector once, in
+`setup`, and records it in `dims` (`collector: cgroup | fallback`), so cgroup
+peaks and PSS peaks never share a series.
 
 ## How samples are taken
 
@@ -357,7 +366,7 @@ One JSON document per invocation, schema `reflex-bench/1` (see
 kind, CI run, seed), `subjects` (arm `A`, and `B` for `ab`), `machine` (with
 `profile_id`), optional `fixture`, `policy` and `benchmarks`. Each benchmark
 entry keeps its status, error and traceback tail (and `failed_arms`, the arms
-whose hooks failed), every raw sample per arm (warmups included and marked in
+whose hooks failed), its `dims` and `fixture_hash`, every raw sample per arm (warmups included and marked in
 `sample_meta`), per-sample extra data, and the derived summaries, warnings and
 comparisons. Documents are validated on load and before every write.
 

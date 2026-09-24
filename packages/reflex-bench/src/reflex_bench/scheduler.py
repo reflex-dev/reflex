@@ -56,7 +56,7 @@ from reflex_bench.schema import (
     sample_indices,
     timed_values,
 )
-from reflex_bench.store import cache_dir, slug
+from reflex_bench.store import cache_dir, slug, subject_cache_dir
 
 TRACEBACK_LINES = 50
 ABANDON_GRACE_S = 5.0
@@ -657,6 +657,7 @@ def make_context(
         params=planned.params.merged,
         workdir=Path(tempfile.mkdtemp(prefix=f"reflex-bench-{slug(planned.name)}-")),
         cache_dir=cache,
+        subject_cache_dir=subject_cache_dir(home, subject.identity),
         env=subject_env(subject.python),
         rng=random.Random(derive_seed(seed, planned.name, arm)),
         log=logging.getLogger(f"reflex_bench.{planned.benchmark.id}"),
@@ -704,8 +705,10 @@ class Session:
         """Create the context and run the setup hooks.
 
         ``setup_cache`` runs once per cache directory, then ``setup`` runs. The
-        fixture a hook set in ``ctx.fixture`` is recorded in the entry's
-        ``dims``, which are part of the pairing and series keys.
+        ``ctx.dims`` the hooks set and the name of the fixture in ``ctx.fixture``
+        are recorded in the entry's ``dims``, which are part of the pairing and
+        series keys; the fixture's content hash in ``fixture_hash``, part of the
+        series key only.
         """
         bench = self.planned.benchmark
         scheduler = self._scheduler
@@ -727,10 +730,10 @@ class Session:
         except Exception as exc:
             self._errors.append(exc)
             return
+        self.entry["dims"].update(self.ctx.dims)
         if (fixture := self.ctx.fixture) is not None:
-            self.entry["dims"].update(
-                fixture=fixture["name"], fixture_hash=fixture["content_hash"]
-            )
+            self.entry["dims"]["fixture"] = fixture["name"]
+            self.entry["fixture_hash"] = fixture["content_hash"]
 
     def sample_once(
         self, *, round: int, order: int, warmup: bool

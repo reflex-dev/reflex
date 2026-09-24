@@ -125,6 +125,27 @@ def test_different_profiles_are_not_compared_unless_forced():
     assert head.get("compared_to", {}).get("forced") is True
 
 
+def test_an_edited_fixture_is_reported_not_compared_unless_forced():
+    base, head = _docs(shift=1.10)
+    for doc, digit in ((base, "a"), (head, "b")):
+        doc["benchmarks"][0]["dims"] = {"fixture": "playground"}
+        doc["benchmarks"][0]["fixture_hash"] = "sha256:" + digit * 64
+    _compare(base, head)
+    compared_to = head.get("compared_to")
+    assert compared_to is not None
+    assert compared_to["only_in_base"] == compared_to["only_in_head"] == []
+    assert compared_to["not_comparable"] == [
+        {
+            "id": "selftest.noise[cv=2]",
+            "reasons": [
+                "fixture content hash differs: sha256:aaaaaaaaaaaa vs sha256:bbbbbbbbbbbb"
+            ],
+        }
+    ]
+    _compare(base, head, force=True)
+    assert _verdicts(head)["selftest.noise[cv=2]:value"] == "regressed"
+
+
 def test_failed_entries_and_entries_on_one_side():
     base, head = _docs()
     base["benchmarks"][0]["status"] = "failed"

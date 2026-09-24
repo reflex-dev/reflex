@@ -100,18 +100,17 @@ def test_materialize_playground_skips_build_output(
     assert _files(tmp_path / "app") == (_tracked() - {".content-hash"}) | set(kept)
 
 
-def _counting_make(doc: FixtureDoc, made: list[Path]) -> Callable[[Path], FixtureDoc]:
+def _counting_make(doc: FixtureDoc, made: list[Path]) -> Callable[[Path], None]:
     """Build a ``make`` that writes one file and counts its calls.
 
     Returns:
         The function.
     """
 
-    def make(dest: Path) -> FixtureDoc:
+    def make(dest: Path) -> None:
         dest.mkdir()
         (dest / "rxconfig.py").write_text(doc["content_hash"], encoding="utf-8")
         made.append(dest)
-        return doc
 
     return make
 
@@ -125,33 +124,39 @@ DOC: FixtureDoc = {
 
 def test_ensure_fixture_reuses_an_app_whose_stamp_matches(tmp_path: Path):
     made: list[Path] = []
-    app, doc = fixtures.ensure_fixture(tmp_path, lambda: DOC, _counting_make(DOC, made))
-    assert (app, doc) == (tmp_path / "app", DOC)
+    app = fixtures.ensure_fixture(tmp_path, lambda: DOC, _counting_make(DOC, made))
+    assert app == tmp_path / "app"
     assert json.loads((tmp_path / fixtures.STAMP).read_text(encoding="utf-8")) == DOC
     # What priming added to the app survives the reuse.
     (app / ".web").mkdir()
-    assert fixtures.ensure_fixture(
-        tmp_path, lambda: DOC, _counting_make(DOC, made)
-    ) == (app, DOC)
+    assert (
+        fixtures.ensure_fixture(tmp_path, lambda: DOC, _counting_make(DOC, made)) == app
+    )
     assert made == [app]
     assert (app / ".web").is_dir()
 
 
 def test_ensure_fixture_rebuilds_on_a_changed_stamp(tmp_path: Path):
     made: list[Path] = []
-    app, _ = fixtures.ensure_fixture(tmp_path, lambda: DOC, _counting_make(DOC, made))
+    app = fixtures.ensure_fixture(tmp_path, lambda: DOC, _counting_make(DOC, made))
     (app / ".web").mkdir()
     changed: FixtureDoc = {**DOC, "content_hash": "sha256:" + "2" * 64}
-    assert fixtures.ensure_fixture(
-        tmp_path, lambda: changed, _counting_make(changed, made)
-    ) == (app, changed)
+    assert (
+        fixtures.ensure_fixture(
+            tmp_path, lambda: changed, _counting_make(changed, made)
+        )
+        == app
+    )
     assert made == [app, app]
+    assert (
+        json.loads((tmp_path / fixtures.STAMP).read_text(encoding="utf-8")) == changed
+    )
     assert not (app / ".web").exists()
     assert (app / "rxconfig.py").read_text(encoding="utf-8") == changed["content_hash"]
 
 
 def test_ensure_fixture_rebuilds_after_an_interrupted_make(tmp_path: Path):
-    def broken(dest: Path) -> FixtureDoc:
+    def broken(dest: Path) -> None:
         dest.mkdir()
         msg = "interrupted"
         raise KeyboardInterrupt(msg)
@@ -169,7 +174,7 @@ def test_ensure_fixture_rebuilds_after_an_interrupted_make(tmp_path: Path):
 
 def test_ensure_fixture_rebuilds_a_missing_app(tmp_path: Path):
     made: list[Path] = []
-    app, _ = fixtures.ensure_fixture(tmp_path, lambda: DOC, _counting_make(DOC, made))
+    app = fixtures.ensure_fixture(tmp_path, lambda: DOC, _counting_make(DOC, made))
     shutil.rmtree(app)
     fixtures.ensure_fixture(tmp_path, lambda: DOC, _counting_make(DOC, made))
     assert made == [app, app]
@@ -187,22 +192,13 @@ OTHER = "m-initial-leaf"
 def test_bump_marker_rewrites_exactly_the_pragma_line(tmp_path: Path):
     path = tmp_path / "marker.py"
     path.write_text(MARKER, encoding="utf-8")
-    assert fixtures.bump_marker(path, "leaf") == "m-1-leaf"
-    assert fixtures.bump_marker(path, "leaf-3") == "m-1-leaf-3"
-    assert fixtures.bump_marker(path, "leaf") == "m-2-leaf"
+    assert fixtures.bump_marker(path, "leaf", 1) == "m-1-leaf"
+    assert fixtures.bump_marker(path, "leaf-3", 1) == "m-1-leaf-3"
+    assert fixtures.bump_marker(path, "leaf", 7) == "m-7-leaf"
     assert path.read_text(encoding="utf-8") == MARKER.replace(
         '"m-initial-leaf"  # bench:hmr-target leaf\n',
-        '"m-2-leaf"  # bench:hmr-target leaf\n',
+        '"m-7-leaf"  # bench:hmr-target leaf\n',
     ).replace('"m-initial-leaf-3"', '"m-1-leaf-3"')
-
-
-def test_bump_marker_continues_from_the_value_in_the_file(tmp_path: Path):
-    # Every bump changes the file, also for a new run on a reused app.
-    path = tmp_path / "marker.py"
-    path.write_text('LEAF = "m-41-leaf"  # bench:hmr-target leaf\n', encoding="utf-8")
-    assert fixtures.bump_marker(path, "leaf") == "m-42-leaf"
-    path.write_text('LEAF = "hand-edited"  # bench:hmr-target leaf\n', encoding="utf-8")
-    assert fixtures.bump_marker(path, "leaf") == "m-1-leaf"
 
 
 @pytest.mark.parametrize(
@@ -210,14 +206,14 @@ def test_bump_marker_continues_from_the_value_in_the_file(tmp_path: Path):
     [
         (
             'X = "m-initial-root"  # bench:hmr-target root\n',
-            "no hot reload target leaf",
+            "0 hot reload target lines for leaf",
         ),
-        (MARKER + MARKER, "2 hot reload targets leaf"),
+        (MARKER + MARKER, "2 hot reload target lines for leaf"),
     ],
 )
 def test_bump_marker_needs_exactly_one_target(tmp_path: Path, text: str, message: str):
     path = tmp_path / "marker.py"
     path.write_text(text, encoding="utf-8")
     with pytest.raises(ValueError, match=message):
-        fixtures.bump_marker(path, "leaf")
+        fixtures.bump_marker(path, "leaf", 1)
     assert path.read_text(encoding="utf-8") == text

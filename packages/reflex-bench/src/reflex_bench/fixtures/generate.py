@@ -131,22 +131,6 @@ class GenParams:
     computed_vars: int = 5
     seed: int = 42
 
-    def __post_init__(self) -> None:
-        """Reject sizes that make no app.
-
-        Raises:
-            ValueError: When a count is below its minimum.
-        """
-        if (
-            min(self.pages, self.components_per_page, self.state_vars) < 1
-            or min(self.substate_depth, self.computed_vars) < 0
-        ):
-            msg = (
-                "GenParams needs pages, components_per_page and state_vars >= 1 and"
-                f" substate_depth and computed_vars >= 0, got {self}"
-            )
-            raise ValueError(msg)
-
 
 def describe(params: GenParams) -> FixtureDoc:
     """Describe the app :func:`generate` writes for some parameters.
@@ -423,19 +407,12 @@ def generate(dest: Path, params: GenParams) -> FixtureDoc:
     """Write a generated app.
 
     Args:
-        dest: The app directory; created when missing, and it must be empty.
+        dest: The app directory; created when missing.
         params: The parameters.
 
     Returns:
         The app's description, as :func:`describe` gives it.
-
-    Raises:
-        FileExistsError: When ``dest`` holds files.
     """
-    dest.mkdir(parents=True, exist_ok=True)
-    if any(dest.iterdir()):
-        msg = f"{dest} is not empty"
-        raise FileExistsError(msg)
     leaf_pages = _leaf_pages(params)
     leaves = set(leaf_pages)
     files = {

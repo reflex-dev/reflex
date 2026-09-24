@@ -6,6 +6,7 @@ Layout under the bench home (``<git root or cwd>/.reflex-bench``, or
     results/<profile_id>/<NNNN>_<short sha>[_dirty]_<UTC timestamp>.json
     results/<profile_id>/.claims/<NNNN>      reserves each autosave number
     baselines/<profile_id>/<name>.json
+    cache/<subject identity>/                what all of a subject's benchmarks share
     cache/<subject identity>/<benchmark id>/<params hash>/      setup_cache results
 """
 
@@ -83,6 +84,19 @@ def slug(text: str) -> str:
     return re.sub(r"[^A-Za-z0-9._=-]+", "-", text).strip("-") or "_"
 
 
+def subject_cache_dir(home: Path, subject_identity: str) -> Path:
+    """Return the persistent directory shared by every benchmark of a subject.
+
+    Args:
+        home: The bench home.
+        subject_identity: The subject's :attr:`~reflex_bench.context.Subject.identity`.
+
+    Returns:
+        The directory (not created).
+    """
+    return home / "cache" / slug(subject_identity)
+
+
 def cache_dir(
     home: Path, subject_identity: str, benchmark_id: str, params: Mapping[str, Any]
 ) -> Path:
@@ -101,7 +115,7 @@ def cache_dir(
         The directory (not created).
     """
     digest = hashlib.sha256(canonical(params).encode()).hexdigest()[:12]
-    return home / "cache" / slug(subject_identity) / slug(benchmark_id) / digest
+    return subject_cache_dir(home, subject_identity) / slug(benchmark_id) / digest
 
 
 def _counter(path: Path) -> int | None:
@@ -322,12 +336,12 @@ def series_key(doc: ResultDoc, entry: BenchmarkDoc) -> SeriesKey:
 
     Returns:
         The id, canonical params and dims, machine profile, fixture content hash
-        and benchmark version.
+        (the entry's, else the document's) and benchmark version.
     """
     fixture = doc.get("fixture")
     return SeriesKey(
         *entry_key(entry),
         doc["machine"]["profile_id"],
-        fixture["content_hash"] if fixture else None,
+        entry.get("fixture_hash", fixture["content_hash"] if fixture else None),
         entry["version"],
     )

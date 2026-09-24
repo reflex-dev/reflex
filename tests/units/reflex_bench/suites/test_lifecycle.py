@@ -5,6 +5,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import os
+import re
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -68,6 +69,10 @@ class FakeCli:
         self.calls.append(Call(list(args), cwd, dict(env), kwargs))
         phases = kwargs.get("phases", False)
         empty = ClassTotals(wall_s=0.0, cpu_s=0.0, intervals=[])
+        if kwargs.get("scope") is not None:
+            method = "cgroup"
+        else:
+            method = "pss_sampling" if kwargs.get("sample_memory") else None
         return CliResult(
             args=[*args, *(["--loglevel", "debug"] if phases else [])],
             returncode=0,
@@ -75,8 +80,8 @@ class FakeCli:
             lines=[],
             timeout_s=kwargs["timeout"],
             cpu_s=3.25,
-            peak_mem_bytes=300_000_000 if kwargs.get("sample_memory") else None,
-            memory_method="pss_sampling" if kwargs.get("sample_memory") else None,
+            peak_mem_bytes=None if method is None else 300_000_000,
+            memory_method=method,
             timing={"compile": 0.5} if phases else {},
             tree=TreeReport(classes={"install": empty, "frontend": empty})
             if phases
@@ -95,7 +100,7 @@ class FakeApp:
         self.python = python
         self.app_dir = app_dir
         self.kwargs = kwargs
-        self.stopped = 0
+        self.stopped = False
         self.readiness: Readiness | None = None
 
     def start(self) -> Readiness:
@@ -105,9 +110,12 @@ class FakeApp:
             The readiness.
 
         Raises:
-            AppStartError: With ``fail_start``.
+            AppStartError: With ``fail_start``, or once stopped.
         """
         FakeApp.started.append(self)
+        if self.stopped:
+            msg = "reflex run was stopped before it started"
+            raise AppStartError(msg, [])
         if FakeApp.fail_start:
             msg = "reflex run exited with code 1 before it was ready"
             raise AppStartError(msg, ["Error: broken"])
@@ -125,8 +133,21 @@ class FakeApp:
         return 1.5
 
     def stop(self, timeout: float = 10.0) -> None:
-        """Count the stop."""
-        self.stopped += 1
+        """Record the stop."""
+        self.stopped = True
+
+
+class FakeScope:
+    """Stands in for CgroupScope on a host with scopes."""
+
+    @staticmethod
+    def available() -> str | None:
+        """Report scopes as available.
+
+        Returns:
+            ``None``.
+        """
+        return None
 
 
 @pytest.fixture
@@ -146,14 +167,23 @@ def cli(monkeypatch: pytest.MonkeyPatch) -> FakeCli:
 @pytest.fixture
 def ctx(tmp_path: Path) -> Context:
     work, cache, bins = tmp_path / "work", tmp_path / "cache", tmp_path / "bin"
-    for directory in (work, cache, bins):
+    shared = tmp_path / "shared"
+    for directory in (work, cache, shared, bins):
         directory.mkdir()
     return dataclasses.replace(
         make_context(tmp_path),
         workdir=work,
         cache_dir=cache,
+        subject_cache_dir=shared,
         env={"PATH": str(bins), "KEEP": "1"},
     )
+
+
+def _primed_bun(ctx: Context) -> None:
+    """Put a bun into the subject's shared REFLEX_DIR, as a priming init does."""
+    bun = ctx.subject_cache_dir / "reflex" / "bun" / "bin" / "bun"
+    bun.parent.mkdir(parents=True)
+    bun.write_bytes(b"x")
 
 
 def _instance(bench_id: str, ctx: Context, **params: Any) -> Any:
@@ -247,6 +277,7 @@ def test_init_cold(cli: FakeCli, ctx: Context):
         assert call.kwargs["sample_memory"] is True
         assert call.kwargs["scope"] is None
     assert ctx.fixture is None
+    assert ctx.dims == {"collector": "fallback"}
     assert _extra(first)["deleted_bytes"] == {"web": 0, "reflex_dir": 0}
     assert TIME_EXTRA | {"deleted_bytes"} == _extra(second).keys()
 
@@ -277,10 +308,21 @@ def test_init_warm(cli: FakeCli, ctx: Context):
     assert not prime.cwd.exists()
     assert "phases" not in prime.kwargs
     for call in (prime, *samples):
-        assert call.env["REFLEX_DIR"] == str(ctx.cache_dir / "reflex")
+        assert call.env["REFLEX_DIR"] == str(ctx.subject_cache_dir / "reflex")
     assert [call.args for call in samples] == [["init", "--template", "blank"]] * 2
     assert all(call.cwd == ctx.workdir / "app" for call in samples)
     assert all(call.kwargs["phases"] for call in samples)
+
+
+def test_a_reflex_dir_holding_a_bun_is_not_primed_again(cli: FakeCli, ctx: Context):
+    # One shared REFLEX_DIR per subject: the first instance downloads bun.
+    _primed_bun(ctx)
+    _run(_instance("lifecycle.init.warm", ctx), ctx)
+    _run(_instance("lifecycle.compile.cold", ctx), ctx)
+    assert [call.args for call in cli.calls] == [
+        ["init", "--template", "blank"],
+        ["compile"],
+    ]
 
 
 def test_compile_cold(cli: FakeCli, ctx: Context):
@@ -288,11 +330,11 @@ def test_compile_cold(cli: FakeCli, ctx: Context):
     results = _run(bench, ctx, samples=2)
     prime, *samples = cli.calls
     assert prime.args == ["init", "--template", "blank"]
-    assert prime.env["REFLEX_DIR"] == str(ctx.cache_dir / "reflex")
+    assert prime.env["REFLEX_DIR"] == str(ctx.subject_cache_dir / "reflex")
     for call in samples:
         assert call.args == ["compile"]
         assert call.cwd == ctx.workdir / "app"
-        assert call.env["REFLEX_DIR"] == str(ctx.cache_dir / "reflex")
+        assert call.env["REFLEX_DIR"] == str(ctx.subject_cache_dir / "reflex")
         _cold_env(ctx, call, "BUN_INSTALL_CACHE_DIR", ctx.workdir / "bun-cache")
     assert ctx.fixture == fixtures.describe_playground()
     # Each sample compiles a fresh copy of the playground.
@@ -334,9 +376,10 @@ def test_compile_warm(cli: FakeCli, ctx: Context):
     assert (sample.args, sample.cwd) == (["compile"], app)
     assert sample.kwargs["phases"] is True
     for call in (prime, sample):
-        assert call.env["REFLEX_DIR"] == str(ctx.cache_dir / "reflex")
+        assert call.env["REFLEX_DIR"] == str(ctx.subject_cache_dir / "reflex")
         assert "BUN_INSTALL_CACHE_DIR" not in call.env
         assert call.env["KEEP"] == "1"
+    assert ctx.dims == {"collector": "fallback"}
     assert json.loads((ctx.cache_dir / fixtures.STAMP).read_text()) == ctx.fixture
     assert ctx.fixture == {
         "name": "playground",
@@ -358,6 +401,20 @@ def test_compile_warm(cli: FakeCli, ctx: Context):
     assert extra["peak_reset"] is None
 
 
+def test_the_collector_is_chosen_in_setup_and_recorded_in_dims(
+    cli: FakeCli, ctx: Context, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(lifecycle, "CgroupScope", FakeScope)
+    bench = _instance("lifecycle.compile.warm", ctx)
+    bench.setup(ctx)
+    assert ctx.dims == {"collector": "cgroup"}
+    # A later change of the host does not reach the samples.
+    monkeypatch.setattr(FakeScope, "available", staticmethod(lambda: "gone"))
+    bench.sample(ctx)
+    assert isinstance(cli.calls[-1].kwargs["scope"], FakeScope)
+    assert cli.calls[-1].kwargs["sample_memory"] is False
+
+
 def test_compile_warm_reuses_the_primed_app(cli: FakeCli, ctx: Context):
     _run(_instance("lifecycle.compile.warm", ctx), ctx)
     web = ctx.cache_dir / "app" / ".web"
@@ -371,22 +428,37 @@ def test_compile_incremental_rewrites_the_leaf_marker(cli: FakeCli, ctx: Context
     bench.setup_cache(ctx)
     bench.setup(ctx)
     marker = ctx.cache_dir / "app" / "playground" / "components" / "marker.py"
-    original = marker.read_text(encoding="utf-8").splitlines()
-    for count in (1, 2, 3):
+    original = marker.read_text(encoding="utf-8")
+    markers = []
+    for _ in range(3):
         bench.prepare(ctx)
         result = bench.sample(ctx)
-        lines = marker.read_text(encoding="utf-8").splitlines()
-        changed = [
-            (old, new) for old, new in zip(original, lines, strict=True) if old != new
-        ]
-        assert changed == [
-            (
-                'LEAF_MARKER = "m-initial-leaf"  # bench:hmr-target leaf',
-                f'LEAF_MARKER = "m-{count}-leaf"  # bench:hmr-target leaf',
-            )
-        ]
-        assert _extra(result)["marker"] == f"m-{count}-leaf"
+        value = _extra(result)["marker"]
+        assert re.fullmatch(r"m-\d+-leaf", value)
+        assert marker.read_text(encoding="utf-8") == original.replace(
+            'LEAF_MARKER = "m-initial-leaf"  # bench:hmr-target leaf',
+            f'LEAF_MARKER = "{value}"  # bench:hmr-target leaf',
+        )
+        markers.append(value)
+        # conclude restores the cached app to the fixture its stamp describes.
+        bench.conclude(ctx)
+        assert marker.read_text(encoding="utf-8") == original
+    assert len(set(markers)) == 3
     assert [call.args for call in cli.calls] == [["compile"]] * 4
+
+
+def test_the_arms_of_an_aa_run_make_distinct_edits(cli: FakeCli, ctx: Context):
+    arms = [_instance("lifecycle.compile.incremental", ctx) for _ in "AB"]
+    arms[0].setup_cache(ctx)
+    for arm in arms:
+        arm.setup(ctx)
+    markers = []
+    for _ in range(2):
+        for arm in arms:
+            arm.prepare(ctx)
+            markers.append(_extra(arm.sample(ctx))["marker"])
+            arm.conclude(ctx)
+    assert len(set(markers)) == 4
 
 
 def test_exports(cli: FakeCli, ctx: Context):
@@ -431,8 +503,8 @@ def test_run_ready(
     assert app.kwargs["mode"] == mode
     assert app.kwargs["backend_only"] is backend_only
     assert app.kwargs["reflex_version"] == ctx.subject.reflex_version
-    assert app.kwargs["env"]["REFLEX_DIR"] == str(ctx.cache_dir / "reflex")
-    assert app.stopped == 1
+    assert app.kwargs["env"]["REFLEX_DIR"] == str(ctx.subject_cache_dir / "reflex")
+    assert app.stopped
     assert result.values == {"process_ready": 1.25, "http_ready": 1.5}
     assert result.extra == {
         "readiness": {
@@ -444,8 +516,7 @@ def test_run_ready(
         }
     }
     assert ctx.fixture == fixtures.describe_playground()
-    # The app runs only during the sample: none is left for the other arm.
-    assert bench.app is None
+    assert ctx.dims == {}
 
 
 def test_conclude_stops_the_app_when_the_sample_raised(cli: FakeCli, ctx: Context):
@@ -453,13 +524,27 @@ def test_conclude_stops_the_app_when_the_sample_raised(cli: FakeCli, ctx: Contex
     bench.setup_cache(ctx)
     bench.setup(ctx)
     FakeApp.fail_start = True
+    bench.prepare(ctx)
     with pytest.raises(AppStartError):
         bench.sample(ctx)
     bench.conclude(ctx)
     (app,) = FakeApp.started
-    assert app.stopped == 1
+    assert app.stopped
+
+
+def test_conclude_stops_the_app_before_a_late_sample_can_start_it(
+    cli: FakeCli, ctx: Context
+):
+    # conclude runs on a fresh thread after a timeout; the app it stops is the
+    # one sample would start, so nothing starts after it.
+    bench = _instance("lifecycle.run.dev.ready", ctx)
+    bench.setup_cache(ctx)
+    bench.setup(ctx)
+    bench.prepare(ctx)
     bench.conclude(ctx)
-    assert app.stopped == 1
+    with pytest.raises(AppStartError, match="stopped before it started"):
+        bench.sample(ctx)
+    assert FakeApp.started[0].stopped
 
 
 def test_import(cli: FakeCli, ctx: Context):
@@ -467,7 +552,9 @@ def test_import(cli: FakeCli, ctx: Context):
     result = bench.sample(ctx)
     (call,) = cli.calls
     assert call.args == []
-    assert call.kwargs["prefix"] == ("-c", "import reflex")
+    assert call.kwargs["prefix"] == ("-c", lifecycle.IMPORT)
+    # import reflex alone is lazy; the attributes load the framework.
+    assert lifecycle.IMPORT == "import reflex as rx; rx.App; rx.State"
     assert call.cwd == ctx.workdir
     assert call.env == ctx.env
     assert not call.kwargs.get("phases")
@@ -514,10 +601,10 @@ def test_scale_compile_incremental_edits_the_first_leaf_target(
     manifest = json.loads((app / generate.MANIFEST).read_text(encoding="utf-8"))
     first = next(t for t in manifest["targets"] if t["name"].startswith("leaf-"))
     bench.prepare(ctx)
-    result = bench.sample(ctx)
-    assert _extra(result)["marker"] == f"m-1-{first['name']}"
+    marker = _extra(bench.sample(ctx))["marker"]
+    assert re.fullmatch(rf"m-\d+-{first['name']}", marker)
     text = (app / first["path"]).read_text(encoding="utf-8")
-    assert f'"m-1-{first["name"]}"  # bench:hmr-target {first["name"]}' in text
+    assert f'"{marker}"  # bench:hmr-target {first["name"]}' in text
 
 
 def test_the_host_bun_is_hidden(cli: FakeCli, ctx: Context, tmp_path: Path):
