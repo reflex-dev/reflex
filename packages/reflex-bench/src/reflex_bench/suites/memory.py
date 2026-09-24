@@ -34,12 +34,18 @@ need ``memory.peak`` resets timed by live ``[timing]`` parsing and Linux 6.12,
 so there are none.
 
 ``memory.per_session`` runs its server with ``REFLEX_REDIS_TOKEN_EXPIRATION``
-set to ``expiry_s`` (120 s by default): no state manager frees a state when its
-session disconnects, so the residual drops only after the expiration, and only
-where the manager expires states (reflex 0.9 memory and disk managers, the
-0.8 disk manager; the 0.8 memory manager keeps every state). Its sweep holds
-0, 50, 100, 250 and 500 sessions (and 1000 in ``all``), so the slope's t
-interval has at least three degrees of freedom.
+set to ``expiry_s``, sized from the sweep it is about to run (its settling
+and reading time plus an allowance per hold and a margin, about 23 s for 500
+sessions) unless the parameter is given: no state manager frees a state when
+its session disconnects, so the residual drops only after the expiration, and
+only where the manager expires states (reflex 0.9 memory and disk managers,
+the 0.8 disk manager; the 0.8 memory manager keeps every state). Its sweep
+holds 0, 50, 100, 250 and 500 sessions (and 1000 in ``all``), so the slope's t
+interval has at least three degrees of freedom. The tree's PSS is flat within
+0.2 MiB from the moment a hold is ready (measured at every level, against
+steps of 8 to 47 MiB), so each level settles for a second and is read three
+times half a second apart. The echo server's floor is the same sweep, measured
+once per instance while the first sample's states expire.
 """
 
 from __future__ import annotations
@@ -102,13 +108,18 @@ HOOK_TIMEOUT_S = 300.0
 # Each of the start and the first /ping; a normal start takes 1 to 3 s.
 START_TIMEOUT_S = 120.0
 SETUP_TIMEOUT_S = 900.0
-# Reads of a settled tree: the median of three, one second apart.
+# Reads of a settled tree: the median of three, half a second apart.
 READS = 3
-READ_INTERVAL_S = 1.0
-SETTLE_S = 5.0
+READ_INTERVAL_S = 0.5
+SETTLE_S = 1.0
 # Session counts of a sweep below its largest one.
 SWEEP_STEPS = (50, 100, 250, 500)
-EXPIRY_MARGIN_S = 10.0
+# Time allowed to each hold when the expiration is sized; a hold of up to 250
+# sessions is ready in under a second.
+HOLD_S = 2.0
+# Slack of the sized expiration over the sweep, and after the expiration
+# before the residual is read.
+EXPIRY_MARGIN_S = 5.0
 # A leak window is sized from a closed-loop probe, with room for a slower run.
 PROBE_S = 5.0
 DURATION_MARGIN = 1.1
@@ -446,6 +457,19 @@ def sessions_sweep(largest: int) -> tuple[int, ...]:
     if len(counts) < 3:
         counts.insert(1, largest // 2)
     return tuple(counts)
+
+
+def sweep_seconds(levels: int) -> float:
+    """Bound the time from a sweep's first hold to its residual read.
+
+    Args:
+        levels: The session counts of the sweep above 0.
+
+    Returns:
+        The seconds each level and the disconnect settle and read, plus
+        ``HOLD_S`` for each level's hold.
+    """
+    return (levels + 1) * (SETTLE_S + (READS - 1) * READ_INTERVAL_S) + levels * HOLD_S
 
 
 @dataclasses.dataclass
@@ -1055,7 +1079,7 @@ benchmark(
     suites=("daily",),
     kind="track",
     params={"manager": MANAGERS, "max_sessions": (1000,)},
-    hidden_params={"expiry_s": 120, "allocator": "default"},
+    hidden_params={"expiry_s": 0, "allocator": "default"},
     suite_params={"daily": {"max_sessions": [500]}},
     metrics={
         "bytes_per_session": _bytes("slope of the server's PSS over held sessions"),
@@ -1069,13 +1093,15 @@ benchmark(
     },
     timeout=600,
     setup_timeout=SETUP_TIMEOUT_S,
-    estimate=185,
+    estimate=40,
 )
 class PerSession(_Playground):
     """Bytes per connected session over a sweep of held sessions (0, 50, 100, 250, 500 and 1000), and the residual after disconnect and after expiry."""
 
+    floor: _Sweep | None = None
+
     def sample(self, ctx: Context) -> SampleResult:
-        """Sweep held sessions, disconnect them, wait for their expiry; the echo server's floor meanwhile.
+        """Sweep held sessions, disconnect them, wait for their expiry; the echo server's floor meanwhile, once.
 
         Args:
             ctx: The benchmark context.
@@ -1092,7 +1118,10 @@ class PerSession(_Playground):
         started = self.started
         assert started is not None
         counts = sessions_sweep(int(ctx.params["max_sessions"]))
-        expiry_s = float(ctx.params["expiry_s"])
+        # 0 sizes the expiration from the sweep: the states must outlive it.
+        expiry_s = float(ctx.params["expiry_s"]) or float(
+            math.ceil(sweep_seconds(len(counts) - 1) + EXPIRY_MARGIN_S)
+        )
         raise_fd_limit(counts[-1])
         scope = new_scope()
         env = server_env(ctx, REFLEX_REDIS_TOKEN_EXPIRATION=f"{expiry_s:g}")
@@ -1111,15 +1140,19 @@ class PerSession(_Playground):
             )
             raise RuntimeError(msg)
         expires_at = sweep.last_ready + expiry_s + EXPIRY_MARGIN_S
-        # The transport's own cost, while the states expire.
-        echo = EchoProcess(delta_key=BENCH_STATE, seq_var=SEQ_VAR)
-        started.add(echo.stop)
-        echo_url = echo.start()
-        floor = sweep_sessions(Endpoint(echo_url), echo.pid, counts, started)
-        if errors := floor.close():
-            msg = f"{len(errors)} sessions failed while held by the echo server: {errors[0]}"
-            raise LoadError(msg)
-        echo.stop()
+        # The transport's own cost, while the states expire; it does not
+        # depend on the subject, so one sweep serves every sample.
+        floor = self.floor
+        if floor is None:
+            echo = EchoProcess(delta_key=BENCH_STATE, seq_var=SEQ_VAR)
+            started.add(echo.stop)
+            echo_url = echo.start()
+            floor = sweep_sessions(Endpoint(echo_url), echo.pid, counts, started)
+            if errors := floor.close():
+                msg = f"{len(errors)} sessions failed while held by the echo server: {errors[0]}"
+                raise LoadError(msg)
+            echo.stop()
+            self.floor = floor
         time.sleep(max(0.0, expires_at - time.monotonic()))
         expired = settled_pss(app.pid)
         baseline = sweep.levels[0]["pss"]

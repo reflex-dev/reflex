@@ -242,6 +242,7 @@ class Fakes:
         loading_since: When the last load with a window started.
         app_pid: The pid the fake server reports.
         modes: The mode and ``backend_only`` of every started server.
+        hold_delay: Seconds every hold takes to be ready.
     """
 
     log: list[str] = dataclasses.field(default_factory=list)
@@ -260,6 +261,7 @@ class Fakes:
     loading_since: float | None = None
     app_pid: int = APP_PID
     modes: list[tuple[str, bool]] = dataclasses.field(default_factory=list)
+    hold_delay: float = 0.0
 
     def tree_pss(self, pid: int) -> PssReading:
         """Read a fake server tree: its sessions and its load show.
@@ -396,6 +398,7 @@ def fakes(monkeypatch: pytest.MonkeyPatch) -> Fakes:
             self.open = False
 
         def ready(self) -> None:
+            time.sleep(state.hold_delay)
             log.append(f"hold {self.count}")
             state.held[self.pid] = state.held.get(self.pid, 0) + self.count
             self.open = True
@@ -435,12 +438,15 @@ def fakes(monkeypatch: pytest.MonkeyPatch) -> Fakes:
     return state
 
 
-def run(tmp_path: Path, bench_id: str, **params: Any) -> dict[str, Any]:
-    """Run one instance through the scheduler, one timed sample, no warmup.
+def run(
+    tmp_path: Path, bench_id: str, *, runs: int = 1, **params: Any
+) -> dict[str, Any]:
+    """Run one instance through the scheduler, timed samples only, no warmup.
 
     Args:
         tmp_path: The bench home.
         bench_id: The benchmark id.
+        runs: The sample count.
         **params: Parameter overrides.
 
     Returns:
@@ -449,7 +455,7 @@ def run(tmp_path: Path, bench_id: str, **params: Any) -> dict[str, Any]:
     bench = registry.discover()[bench_id]
     overrides = {"manager": "memory", **params}
     (params_set,) = bench.expand({key: str(value) for key, value in overrides.items()})
-    policy = Policy(runs=1, warmup=0)
+    policy = Policy(runs=runs, warmup=0)
     runner = Scheduler(make_subject(), policy, home=tmp_path, seed=1)
     return dict(runner.run_one(Planned(bench, params_set)))
 
@@ -659,6 +665,30 @@ def test_per_session_fits_the_sweep(tmp_path: Path, fakes: Fakes):
     ]
 
 
+def test_sweep_seconds_bounds_the_levels_and_the_disconnect(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr(memory, "SETTLE_S", 2.0)
+    monkeypatch.setattr(memory, "READ_INTERVAL_S", 0.5)
+    monkeypatch.setattr(memory, "HOLD_S", 1.0)
+    # Four levels and the disconnect each settle 2 s and read twice more 0.5 s
+    # apart; each level's hold has 1 s.
+    assert memory.sweep_seconds(4) == pytest.approx(5 * 3.0 + 4 * 1.0)
+
+
+def test_per_session_sizes_the_expiration_from_the_sweep(
+    tmp_path: Path, fakes: Fakes, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(memory, "HOLD_S", 0.25)
+    entry = run(tmp_path, "memory.per_session", max_sessions=500)
+    assert entry["status"] == "ok", entry["error"]
+    (extra,) = entry["sample_extra"]
+    # Four holds of 0.25 s, no settling and no margin, rounded up.
+    assert extra["expiry_s"] == 1
+    (env,) = fakes.envs
+    assert env["REFLEX_REDIS_TOKEN_EXPIRATION"] == "1"
+
+
 def test_per_session_fails_when_the_sweep_outlasts_the_expiration(
     tmp_path: Path, fakes: Fakes, monkeypatch: pytest.MonkeyPatch
 ):
@@ -667,6 +697,28 @@ def test_per_session_fails_when_the_sweep_outlasts_the_expiration(
     assert entry["status"] == "failed"
     assert "not less than the token expiration of 1 s" in entry["error"]
     assert fakes.log[-1] == "app stop"
+
+
+def test_per_session_fails_when_the_holds_outlast_the_sized_expiration(
+    tmp_path: Path, fakes: Fakes, monkeypatch: pytest.MonkeyPatch
+):
+    # Sized for 0.1 s holds (1 s rounded up), the holds take 2 s.
+    monkeypatch.setattr(memory, "HOLD_S", 0.1)
+    fakes.hold_delay = 0.5
+    entry = run(tmp_path, "memory.per_session", max_sessions=500)
+    assert entry["status"] == "failed"
+    assert "not less than the token expiration of 1 s" in entry["error"]
+
+
+def test_per_session_measures_the_echo_floor_once_per_instance(
+    tmp_path: Path, fakes: Fakes
+):
+    entry = run(tmp_path, "memory.per_session", runs=2, max_sessions=500, expiry_s=1)
+    assert entry["status"] == "ok", entry["error"]
+    assert fakes.log.count("echo start") == 1
+    first, second = entry["sample_extra"]
+    assert second["baseline_levels"] == first["baseline_levels"]
+    assert second["baseline_bytes_per_session"] == pytest.approx(ECHO_PER_SESSION)
 
 
 def test_conclude_stops_the_holds_and_the_server_after_a_failure(
@@ -983,13 +1035,14 @@ def test_every_sample_names_its_memory_method(tmp_path: Path, fakes: Fakes):
     fakes.scope_reason = None
     fakes.load = leak_result(1000.0)
     fakes.answer_load = True
-    for bench_id, params in (
+    cases: list[tuple[str, dict[str, Any]]] = [
         ("memory.compile.peak", {"command": "compile"}),
         ("memory.idle", {"idle_s": 0}),
         ("memory.per_session", {"max_sessions": 50, "expiry_s": 1}),
         ("memory.leak", {"events": 1000, "warmup_events": 0}),
         ("memory.boot_512mb", {}),
-    ):
+    ]
+    for bench_id, params in cases:
         entry = run(tmp_path / bench_id, bench_id, **params)
         assert entry["status"] == "ok", (bench_id, entry["error"])
         (extra,) = entry["sample_extra"]

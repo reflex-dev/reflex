@@ -362,16 +362,21 @@ the event benchmarks do.
 - **Per session**: the sessions connect and hydrate like page loads, then stay
   idle, held by `reflex_bench.drivers.events.hold_sessions` in a separate
   process. The server runs with `REFLEX_REDIS_TOKEN_EXPIRATION=<expiry_s>`
-  (hidden, 120 s), longer than the sweep: no state manager frees a state when
-  its session disconnects, reflex 0.9's memory and disk managers and 0.8's disk
-  manager free it after the expiration, and 0.8's memory manager never does. A
-  sweep that outlasts the expiration fails the sample. The residuals are PSS
-  over the idle baseline. `baseline_bytes_per_session` in the extra data is the
-  same sweep against the in-harness echo server: the floor of a Python
-  `websockets` server, not of python-socketio (the harness does not depend on
-  python-socketio). The sweep's steps below `max_sessions` are 50, 100, 250
-  and 500, so the slope's t interval has at least three degrees of freedom;
-  each step costs about 7 s on the server and again on the echo server.
+  (hidden; 0, the default, sizes it from the sweep: its settling and reading
+  time, 2 s per hold and a 5 s margin, 23 s for 500 sessions), longer than the
+  sweep: no state manager frees a state when its session disconnects, reflex
+  0.9's memory and disk managers and 0.8's disk manager free it after the
+  expiration, and 0.8's memory manager never does. A sweep that outlasts the
+  expiration fails the sample; a slow host can raise `expiry_s`. The residuals
+  are PSS over the idle baseline. `baseline_bytes_per_session` in the extra
+  data is the same sweep against the in-harness echo server: the floor of a
+  Python `websockets` server, not of python-socketio (the harness does not
+  depend on python-socketio); it is measured once per instance, while the
+  first sample's states expire. The sweep's steps below `max_sessions` are 50,
+  100, 250 and 500, so the slope's t interval has at least three degrees of
+  freedom. The tree's PSS is flat within 0.2 MiB from the moment a hold is
+  ready (against steps of 8 to 47 MiB), so a step settles for 1 s and is read
+  three times 0.5 s apart: about 2.5 s each, and a sample about 40 s.
 - **Leak**: a 5 s closed-loop probe sizes the warmup (`warmup_events`, hidden,
   5000) and the window (`events`, with 10 % of room); the tree is sampled every
   hundredth of the window, between 0.1 s and 1 s apart. The x axis is the events
