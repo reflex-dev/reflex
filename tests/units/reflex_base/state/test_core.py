@@ -26,8 +26,9 @@ class Child(Parent):
 
 def _tree() -> tuple[Parent, Child]:
     parent = Parent()
-    child = Child(parent_state=parent)
-    parent.substates[Child.get_name()] = child
+    # Typed as the reflex BaseState, which the tree of any app state holds.
+    child = Child(parent_state=parent)  # pyright: ignore[reportArgumentType]
+    parent.substates[Child.get_name()] = child  # pyright: ignore[reportArgumentType]
     return parent, child
 
 

@@ -334,6 +334,12 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
+  if (event.name == "_dispatch_value") {
+    // A speculative update, shown until the backend sends the var.
+    eventLoop.dispatch[event.payload.state]?.(event.payload.delta);
+    return;
+  }
+
   if (event.name == "_set_value") {
     const ref =
       event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;

@@ -84,6 +84,7 @@ if TYPE_CHECKING:
     from reflex.state import BaseState
     from reflex_base.components.component import BaseComponent
     from reflex_base.constants.colors import Color
+    from reflex_base.event import EventSpec
     from reflex_base.state.core import CoreState
 
     from .color import LiteralColorVar
@@ -893,6 +894,39 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             A deepcopy of the var.
         """
         return self
+
+    def dispatch_value(self, value: Any) -> EventSpec:
+        """Show a value for this state var on the frontend right away.
+
+        Keeps the app snappy for distant users, like by showing a spinner as
+        soon as a button is clicked: the value is shown before any event
+        reaches the backend, until the backend sends a value for the var.
+
+        Args:
+            value: The value to show.
+
+        Returns:
+            An event setting the value on the frontend only.
+
+        Raises:
+            TypeError: If the var is not a state var sent to the client.
+        """
+        from reflex_base.event import _dispatch_value
+
+        var_data = self._get_all_var_data()
+        if (
+            var_data is None
+            or not var_data.field_name
+            or self._js_expr
+            != f"{format_state_name(var_data.state)}.{var_data.field_name}{FIELD_MARKER}"
+        ):
+            msg = (
+                f"`dispatch_value` needs a state var sent to the client, not {self!s}."
+            )
+            raise TypeError(msg)
+        return _dispatch_value(
+            var_data.state, {var_data.field_name + FIELD_MARKER: value}
+        )
 
     def equals(self, other: Var) -> builtins.bool:
         """Check if two vars are equal.

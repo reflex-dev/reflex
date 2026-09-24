@@ -67,4 +67,6 @@ export const eventLoop = {
     console.warn("addEvents called before EventLoopProvider mounted", events);
   },
   connectErrors: [],
+  // The substate -> reducer dispatch registry, for frontend-only updates.
+  dispatch: {},
 };

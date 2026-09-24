@@ -20,6 +20,7 @@ from reflex_base.vars.base import (
     BaseStateMeta,
     CachedVarOperation,
     EvenMoreBasicBaseState,
+    Field,
     LiteralVar,
     Var,
     VarData,
@@ -964,3 +965,55 @@ def test_state_roots_do_not_share_reserved_names():
 
         class ShadowA(RootA):
             alpha: int = 3
+
+
+class DispatchValueState(State):
+    """A state whose vars are dispatched on the frontend."""
+
+    status: Field[str] = field("")
+
+    @computed_var
+    def upper(self) -> str:
+        """Return the status in upper case."""
+        return self.status.upper()
+
+
+class DispatchValueSubstate(DispatchValueState):
+    """A substate inheriting the dispatched vars."""
+
+
+def test_dispatch_value():
+    """A state var dispatches a delta for the state declaring it, on the frontend only."""
+    for var in (DispatchValueState.status, DispatchValueSubstate.status):
+        spec = var.dispatch_value(State.router.page.path)
+        assert spec.handler.fn.__qualname__ == "_dispatch_value"
+        assert {str(key): str(value) for key, value in spec.args} == {
+            "state": f'"{DispatchValueState.get_full_name()}"',
+            "delta": str(
+                LiteralVar.create({"status_rx_state_": State.router.page.path})
+            ),
+        }
+    assert (
+        DispatchValueState.upper
+        .dispatch_value("A")
+        .args[1][1]
+        .equals(LiteralVar.create({"upper_rx_state_": "A"}))
+    )
+
+
+@pytest.mark.parametrize(
+    "var",
+    [
+        LiteralVar.create("a"),
+        DispatchValueState.status.upper(),
+        DispatchValueState.status + "a",
+    ],
+)
+def test_dispatch_value_needs_state_var(var: Var):
+    """Only a state var itself can be dispatched.
+
+    Args:
+        var: A var that is not a state var.
+    """
+    with pytest.raises(TypeError, match="dispatch_value"):
+        var.dispatch_value("b")
