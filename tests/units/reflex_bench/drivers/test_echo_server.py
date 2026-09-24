@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from reflex_bench.drivers import events
 from reflex_bench.drivers.echo_server import EchoProcess
-from reflex_bench.drivers.events import EventShape, LoadPlan, run_load
+from reflex_bench.drivers.events import Endpoint, EventShape, LoadPlan, run_load
 
 STATE = "reflex___state____state.playground___state____bench_state"
 SEQ_VAR = "last_seq_rx_state_"
@@ -26,8 +26,7 @@ def test_echo_process_answers_a_load_and_stops():
         )
         result = run_load(
             LoadPlan(
-                backend_url=url,
-                reflex_version=None,
+                endpoint=Endpoint(url),
                 shape=shape,
                 sessions=2,
                 mode="closed",

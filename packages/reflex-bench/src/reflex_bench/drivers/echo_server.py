@@ -35,8 +35,8 @@ from reflex_bench.drivers.events import (
     ON_LOAD_EVENT,
     PING,
     ROOT_STATE,
-    _event_loop,
     emit_frame,
+    event_loop,
 )
 
 
@@ -191,7 +191,7 @@ def _serve_process(
             asyncio.get_running_loop().add_reader(conn.fileno(), parent_gone.set)
             await parent_gone.wait()
 
-    _event_loop().run_until_complete(main())
+    event_loop().run_until_complete(main())
 
 
 class EchoProcess:

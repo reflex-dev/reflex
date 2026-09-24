@@ -24,13 +24,15 @@ from reflex_bench.drivers import events
 from reflex_bench.drivers.app_process import free_ports
 from reflex_bench.drivers.echo_server import EchoServer
 from reflex_bench.drivers.events import (
+    EVENT_PREFIX,
+    Endpoint,
     EventShape,
     GeneratorSaturated,
     LoadError,
     LoadPlan,
     LoadResult,
     LoadRunner,
-    decode,
+    open_sessions,
     run_load,
 )
 from websockets.asyncio.server import ServerConnection
@@ -88,8 +90,7 @@ def serving(server: EchoServer) -> Iterator[str]:
 
 def plan(url: str, **overrides: Any) -> LoadPlan:
     values: dict[str, Any] = {
-        "backend_url": url,
-        "reflex_version": "0.9.12",
+        "endpoint": Endpoint(url),
         "shape": SHAPE,
         "sessions": 2,
         "mode": "open",
@@ -121,7 +122,7 @@ def run_inline(
             on_start(asyncio.get_running_loop())
         return asyncio.sleep(0, time.perf_counter_ns() + 20_000_000)
 
-    loop = events._event_loop()
+    loop = events.event_loop()
     try:
         shard = loop.run_until_complete(
             events._run_sessions(load, range(load.sessions), start)
@@ -191,49 +192,54 @@ def test_event_frames_always_carry_the_token():
     )
     frames = events._Frames(SHAPE, "tok", "/")
     assert frames.event(7) == frame
-    assert decode(frames.event(8)).data[1]["payload"] == {"seq": 8}
-
-
-def test_decode_the_handshake():
-    opened = decode(
-        '0{"sid":"abc","upgrades":[],"pingTimeout":120000,"pingInterval":25000,"maxPayload":1000000}'
-    )
-    assert opened.kind == "open"
-    assert opened.data["pingInterval"] == 25000
-    assert decode(events.CONNECT_FRAME) == events.Packet("connect", "/_event")
-    ack = decode('40/_event,{"sid":"xyz"}')
-    assert ack == events.Packet("connect", "/_event", {"sid": "xyz"})
-    refused = decode('44/_event,{"message":"Unable to connect"}')
-    assert refused == events.Packet(
-        "connect_error", "/_event", {"message": "Unable to connect"}
-    )
-
-
-def test_decode_pings_disconnects_and_events():
-    assert decode("2").kind == "ping"
-    assert decode(events.PONG).kind == "pong"
-    assert decode("1").kind == "close"
-    assert decode("6").kind == "noop"
-    assert decode(events.DISCONNECT_FRAME) == events.Packet("disconnect", "/_event")
-    assert decode('42/_event,["new_token","fresh"]') == events.Packet(
-        "event", "/_event", ["new_token", "fresh"]
-    )
-    # The default namespace has no prefix.
-    assert decode('42["event",{}]').namespace == "/"
-
-
-def test_decode_rejects_binary_packets():
-    with pytest.raises(events.ProtocolError, match="binary"):
-        decode(b"\x00\x01")
-    with pytest.raises(events.ProtocolError, match="binary"):
-        decode('451-/_event,["event",{"_placeholder":true,"num":0}]')
+    name, event = json.loads(frames.event(8)[len(EVENT_PREFIX) :])
+    assert (name, event["payload"]) == ("event", {"seq": 8})
 
 
 def test_replies_of_both_versions_carry_the_same_delta():
     for reply in (HEAD_REPLY, OLD_REPLY):
-        name, update = decode(reply).data
+        name, update = json.loads(reply[len(EVENT_PREFIX) :])
         assert name == "event"
         assert update["delta"] == {STATE: {SEQ_VAR: 7}}
+
+
+def test_a_refused_namespace_fails_the_session():
+    class Refusing(Scripted):
+        """Refuses the namespace, as python-socketio does when on_connect rejects."""
+
+        async def on_connect(self, ws, sid):
+            """Send a connect_error instead of the ack."""
+            await ws.send('44/_event,{"message":"Unable to connect"}')
+
+    with serving(Refusing()) as url:
+        result = run_inline(plan(url, sessions=1))
+    assert result.sent == 0
+    (error,) = result.session_errors
+    assert "refused /_event" in error
+    assert "Unable to connect" in error
+
+
+def test_an_unexpected_frame_fails_the_session():
+    # reflex never sends binary attachments; anything the generator does not
+    # speak ends the session with a reason instead of being ignored.
+    class Binary(Scripted):
+        """Sends a binary frame instead of answering seq 3."""
+
+        async def seq_event(self, ws, event, seq):
+            """Send bytes once.
+
+            Returns:
+                Whether to answer.
+            """
+            if seq == 3:
+                await ws.send(b"\x00\x01")
+                return False
+            return True
+
+    with serving(Binary()) as url:
+        result = run_inline(plan(url, sessions=1, rate=20.0, warmup_s=0.0))
+    (error,) = result.session_errors
+    assert "unexpected frame" in error
 
 
 def test_the_plan_checks_its_rate():
@@ -283,6 +289,47 @@ def test_every_event_is_answered():
     assert result.reply_frame is not None
     assert f'"{SEQ_VAR}":' in result.reply_frame
     json.dumps(result.to_dict(), allow_nan=False)
+
+
+def test_answers_after_the_window_do_not_count_in_the_rates():
+    # The drain collects late answers so they are not unanswered, but the
+    # throughput is what the server answered within the window.
+    class LateAtTheEnd(Scripted):
+        """Stalls 0.6 s at seq 20, so it and the later events answer past the window."""
+
+        async def seq_event(self, ws, event, seq):
+            """Stall once.
+
+            Returns:
+                True.
+            """
+            if seq == 20:
+                await asyncio.sleep(0.6)
+            return True
+
+    with serving(LateAtTheEnd()) as url:
+        result = run_inline(plan(url, sessions=1, rate=50.0, warmup_s=0.0))
+    assert result.sent == result.answered == 25
+    assert result.unanswered == 0
+    assert result.achieved_send_rate == pytest.approx(50.0)
+    # 19 answers arrived before the 0.5 s window ended.
+    assert result.answered_per_second == [19]
+    assert result.answered_rate == pytest.approx(38.0)
+    # The late answers still count in the response tail.
+    assert result.response_s is not None
+    assert result.response_s["max"] >= 0.6
+
+
+def test_answers_are_counted_per_second_of_the_window():
+    with serving(Scripted()) as url:
+        result = run_inline(
+            plan(url, sessions=2, rate=50.0, warmup_s=0.0, duration_s=1.5)
+        )
+    assert result.sent == 75
+    assert len(result.answered_per_second) == 2
+    assert sum(result.answered_per_second) <= result.answered
+    assert result.answered_rate == pytest.approx(sum(result.answered_per_second) / 1.5)
+    assert result.answered_per_second[0] == pytest.approx(50, abs=2)
 
 
 def test_a_slow_server_shows_in_service_and_response():
@@ -503,7 +550,12 @@ def test_closed_loop_reports_service_time_only():
     assert result.service_s is not None
     assert result.answered > 0
     assert result.unanswered == 0
-    assert result.answered_rate == pytest.approx(result.answered / 0.5)
+    # Each session's event in flight at the end of the window is answered in
+    # the drain: it is not unanswered, but it is not throughput either.
+    in_window = sum(result.answered_per_second)
+    assert 0 <= result.answered - in_window <= 2
+    assert result.answered_rate == pytest.approx(in_window / 0.5)
+    assert result.answered_rate <= result.achieved_send_rate
     assert result.histogram["of"] == "service_s"
 
 
@@ -535,10 +587,9 @@ QUICK_SERVICE = {"p50": 0.001, "p99": 0.002, "max": 0.004}
             },
             "send lag p99 4.00 ms exceeds 3.00 ms",
         ),
-        # ...or to half the service time p99.
         (
             {"lag_s": {"p50": 1e-4, "p99": 0.007, "max": 0.009}},
-            "send lag p99 7.00 ms exceeds 5.85 ms",
+            "send lag p99 7.00 ms exceeds 1.00 ms",
         ),
         ({"generator_cpu_fraction": 0.8}, "80 % of a core"),
         ({"achieved_send_rate": 390.0}, "sent 390 ev/s"),
@@ -558,12 +609,11 @@ def test_the_self_check_passes_a_healthy_result():
     assert healthy(lag_s=lag, response_s=SLOW, service_s=QUICK_SERVICE).check() is None
 
 
-def test_the_self_check_tolerates_machine_noise():
-    # Measured on a VM with 1-2 % steal time at 50 ev/s: host preemption
-    # stalled the generator (2 % CPU) and the server alike. The lag tail is
-    # within half the server's own service time tail, so it is noise, not
-    # saturation.
-    noisy = healthy(
+def test_the_self_check_judges_the_generator_alone():
+    # A host stall delayed both the generator (2 % CPU) and the server on a VM
+    # with steal time. The lag is the generator's own, whatever the server's
+    # service tail did, and it inflates the response tail, so the load fails.
+    stalled = healthy(
         offered_rate=50.0,
         achieved_send_rate=50.0,
         response_s={
@@ -577,7 +627,9 @@ def test_the_self_check_tolerates_machine_noise():
         lag_s={"p50": 0.00022, "p99": 0.00645, "max": 0.02773},
         generator_cpu_fraction=0.02,
     )
-    assert noisy.check() is None
+    check = stalled.check()
+    assert check is not None
+    assert "send lag p99 6.45 ms exceeds 1.00 ms" in check
 
 
 def test_the_closed_loop_self_check_only_watches_cpu():
@@ -680,3 +732,72 @@ def test_a_generator_process_ends_when_its_parent_goes_away():
         conn.close()
         proc.join(10)
         assert proc.exitcode is not None
+
+
+class Counting(Scripted):
+    """Counts the hydrations and the disconnects."""
+
+    def __init__(self) -> None:
+        """Count nothing yet."""
+        super().__init__()
+        self.hydrated = 0
+        self.left = 0
+
+    async def on_event(self, ws, event):
+        """Count on_load_internal, then answer."""
+        if event["name"] == events.ON_LOAD_EVENT:
+            self.hydrated += 1
+        await super().on_event(ws, event)
+
+    async def handle(self, ws):
+        """Count a connection that ends."""
+        try:
+            await super().handle(ws)
+        finally:
+            self.left += 1
+
+
+def test_open_sessions_primes_and_closes_them():
+    server = Counting()
+    with serving(server) as url:
+        loop = events.event_loop()
+
+        async def hold() -> list[str]:
+            async with open_sessions(Endpoint(url), 3) as pool:
+                assert server.hydrated == 3
+                assert server.left == 0
+                return pool.errors
+
+        try:
+            errors = loop.run_until_complete(hold())
+        finally:
+            loop.close()
+    assert errors == []
+    assert server.left == 3
+
+
+def test_open_sessions_reports_the_sessions_that_fail(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    class NeverHydrated(Scripted):
+        """Ignores on_load_internal, so is_hydrated never becomes true."""
+
+        async def on_event(self, ws, event):
+            """Answer everything but on_load_internal."""
+            if event["name"] != events.ON_LOAD_EVENT:
+                await super().on_event(ws, event)
+
+    monkeypatch.setattr(events, "PRIME_TIMEOUT_S", 0.5)
+    with serving(NeverHydrated()) as url:
+        loop = events.event_loop()
+
+        async def hold() -> list[str]:
+            async with open_sessions(Endpoint(url), 2) as pool:
+                return pool.errors
+
+        try:
+            errors = loop.run_until_complete(hold())
+        finally:
+            loop.close()
+    assert len(errors) == 2
+    assert all("not hydrated within 0.5 s" in error for error in errors)

@@ -257,11 +257,11 @@ shapes, managers and session counts, the knee and `at_1hz` run with
 
 | Benchmark | Suites | Parameters | Load | Metrics |
 | --- | --- | --- | --- | --- |
-| `events.<shape>.capacity` | `smoke`, `daily` (simple, `manager=memory`, `sessions=10`) | `manager`, `sessions` 1, 10, 50, 200 | closed loop, 3 s after 1 s | `throughput`, `service_p50`, `cpu_us_per_event` |
-| `events.<shape>.latency` | `smoke`, `daily` (simple, `manager=memory`, `sessions=10`, `rate=500`) | `manager`, `sessions`, `rate` | open loop, 5 s after 1 s | `response_p50`, `p90`, `p99`, `max`, `throughput`, `unanswered`, `cpu_us_per_event` |
+| `events.<shape>.capacity` | `smoke`, `daily` (simple, `manager=memory`, `sessions=10`) | `manager`, `sessions` 1, 10, 50, 200 | closed loop, 3 s after 1 s | `throughput`, `service_p50`, `cpu_per_event` |
+| `events.<shape>.latency` | `smoke`, `daily` (simple, `manager=memory`, `sessions=10`, `rate=500`) | `manager`, `sessions`, `rate` | open loop, 5 s after 1 s | `response_p50`, `p90`, `p99`, `max`, `throughput`, `unanswered`, `cpu_per_event` |
 | `events.simple.knee` | (`all`) | `manager`, `sessions` | open loop at 10 % to 110 % of the capacity, 4 s after 1 s each | `knee_rate`, `low_load_p99` |
-| `events.sessions.at_1hz` | (`all`) | `manager`, `sessions` 50, 200, 1000 | open loop, 1 ev/s per session, 10 s after 3 s | `response_p50`, `response_p99`, `unanswered`, `cpu_us_per_event` |
-| `selftest.events.calibrate` | `selftest` | | the generator against an echo server | `closed_ceiling`, `open_max_rate` |
+| `events.sessions.at_1hz` | (`all`) | `manager`, `sessions` 50, 200, 1000 | open loop, 1 ev/s per session, 10 s after 3 s | `response_p50`, `response_p99`, `unanswered`, `cpu_per_event` |
+| `selftest.events.calibrate` | `selftest` | | the generator against an echo server: closed loop, then open loop at 3000 ev/s | `closed_ceiling`, `open_lag_p99` |
 
 - **Shapes**: `simple` (`set_seq`), `complex` (three vars behind a chain of
   three computed vars), `cross` (`get_state` of another state), `background` (a
@@ -286,6 +286,11 @@ shapes, managers and session counts, the knee and `at_1hz` run with
   without an answer count as `unanswered`, never dropped. The closed loop sends
   the next event when the previous one is answered: it measures capacity and
   service time (answer minus actual send), never user latency.
+- **Rates count the window only**: `throughput` (`answered_rate`) is the
+  answers that arrived within the measured window divided by its length, the
+  same as `answered_per_second` summed. The drain after the window only decides
+  which events are `unanswered`; the answers it collects still count in the
+  response percentiles.
 - **Per run, not pooled**: every sample's percentiles come from that run's
   events; `response_p99` of a run with fewer than 10 000 answered events is kept
   with `p99_underpowered` in its extra data. Each sample's extra data also holds
@@ -296,19 +301,20 @@ shapes, managers and session counts, the knee and `at_1hz` run with
   including the children they reaped, so a worker that exits in the window
   still counts. A CPU time that goes back fails the sample.
 - **Pinning**: on Linux with four CPUs or more, the server runs on the lower
-  half of the CPUs (CPU 0 excluded) and the generator on the upper half, with
-  up to 4 generator processes (1 up to 10 sessions); `pinning` in the extra
-  data records the split.
+  half of the physical cores (CPU 0 excluded) and the generator on the upper
+  half, so no core is shared between them through SMT (the kernel's
+  `thread_siblings_list`; without it every CPU counts as a core), with up to 4
+  generator processes (1 up to 10 sessions); `pinning` in the extra data
+  records the split.
 - **Self-check**: a load fails it when a generator process used more than
   75 % of a core, when the p99 of the send lag (actual minus planned send
-  time) exceeds the largest of 1 ms, 10 % of the median response and half the
-  service time p99 (a lag tail within the server's own tail is machine noise,
-  such as VM steal time, not saturation), or when less than 98 % of the
-  offered events went out in the window. On a shared machine a single host
-  stall of the generator's CPU fails a short window now and then, so the load
-  is taken again, up to twice; `rejected` in the extra data lists the reasons.
-  The sample fails with `generator saturated` when every attempt does.
-  `selftest.events.calibrate` shows how far the generator goes on a machine.
+  time) exceeds the larger of 1 ms and 10 % of the median response, or when
+  less than 98 % of the offered events went out in the window. The rules judge
+  the generator alone: a lag tail inflates the response tail by as much,
+  whatever caused it, so the sample fails with `generator saturated` at once
+  and is never taken again. `selftest.events.calibrate` fails the same way
+  when the generator cannot offer 3000 ev/s, three times the highest fixed rate
+  of the suite, against an echo server.
 
 Not parameters yet: injected redis latency, uvicorn instead of granian, and
 more than one backend worker.

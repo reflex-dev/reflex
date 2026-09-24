@@ -36,6 +36,8 @@ count as unanswered; none is dropped.
 **Processes.** :class:`LoadRunner` shards the sessions round-robin over spawned
 processes with one event loop each, starts their schedules together once every
 session is primed, and merges what they measured into a :class:`LoadResult`.
+:func:`open_sessions` primes sessions on the caller's loop without a load, for
+measurements of idle sessions.
 """
 
 from __future__ import annotations
@@ -46,20 +48,28 @@ import collections
 import contextlib
 import dataclasses
 import json
+import math
 import multiprocessing
 import multiprocessing.connection
 import os
 import select
 import selectors
 import signal
-import string
 import sys
 import threading
 import time
 import traceback
 import urllib.parse
 import uuid
-from collections.abc import Awaitable, Callable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterable,
+    Iterator,
+    Mapping,
+    Sequence,
+)
 from dataclasses import dataclass
 from multiprocessing.connection import Connection
 from multiprocessing.process import BaseProcess
@@ -82,11 +92,14 @@ ON_LOAD_EVENT = (
     f"{ROOT_STATE}.reflex___state____on_load_internal_state.on_load_internal"
 )
 HYDRATED_VAR = "is_hydrated_rx_state_"
+OPEN_PREFIX = "0"
+CLOSE = "1"
+PING = "2"
+PONG = "3"
 CONNECT_FRAME = f"40{NAMESPACE},"
 DISCONNECT_FRAME = f"41{NAMESPACE},"
 EVENT_PREFIX = f"42{NAMESPACE},"
-PING = "2"
-PONG = "3"
+CONNECT_ERROR_PREFIX = f"44{NAMESPACE},"
 
 PRIME_TIMEOUT_S = 30.0
 PRIME_CONCURRENCY = 64
@@ -100,9 +113,6 @@ KILL_GRACE_S = 5.0
 CPU_LIMIT = 0.75
 LAG_FLOOR_S = 1e-3
 LAG_SHARE = 0.1
-# Machine noise (VM steal, interrupts) that stalls the generator stalls the
-# server too; a lag tail within half the service time tail is that noise.
-LAG_SERVICE_SHARE = 0.5
 SEND_RATE_SHARE = 0.98
 
 HISTOGRAM_LO_S = 1e-5
@@ -112,22 +122,6 @@ RESPONSE_PERCENTILES = {"p50": 50, "p90": 90, "p99": 99, "p999": 99.9, "max": 10
 SERVICE_PERCENTILES = {"p50": 50, "p99": 99, "max": 100}
 PRIME_PERCENTILES = {"p50": 50, "max": 100}
 
-_ENGINE_KINDS = {
-    "0": "open",
-    "1": "close",
-    "2": "ping",
-    "3": "pong",
-    "5": "upgrade",
-    "6": "noop",
-}
-_SOCKET_KINDS = {
-    "0": "connect",
-    "1": "disconnect",
-    "2": "event",
-    "3": "ack",
-    "4": "connect_error",
-}
-
 
 class ProtocolError(Exception):
     """The server sent a frame the generator does not speak."""
@@ -135,58 +129,6 @@ class ProtocolError(Exception):
 
 class LoadError(RuntimeError):
     """The load did not run: sessions could not start, a generator process failed, or it was stopped."""
-
-
-@dataclass(frozen=True)
-class Packet:
-    """A decoded frame: an engine.io packet, or the socket.io packet a message carries.
-
-    Attributes:
-        kind: ``open``, ``close``, ``ping``, ``pong``, ``upgrade`` or ``noop``
-            for engine.io packets; ``connect``, ``disconnect``, ``event``,
-            ``ack`` or ``connect_error`` for socket.io packets.
-        namespace: The socket.io namespace, ``/`` by default.
-        data: The payload: parsed JSON, or the raw text of an engine.io packet.
-    """
-
-    kind: str
-    namespace: str | None = None
-    data: Any = None
-
-
-def decode(frame: str | bytes) -> Packet:
-    """Decode one websocket frame of the event protocol.
-
-    Args:
-        frame: The frame.
-
-    Returns:
-        The packet.
-
-    Raises:
-        ProtocolError: On binary frames and packets (socket.io attachments,
-            which reflex never sends) and unknown packet types.
-    """
-    if isinstance(frame, bytes):
-        msg = "binary frames (socket.io attachments) are not supported"
-        raise ProtocolError(msg)
-    engine, body = frame[:1], frame[1:]
-    if engine != "4":
-        if (kind := _ENGINE_KINDS.get(engine)) is None:
-            msg = f"unknown engine.io packet {frame[:40]!r}"
-            raise ProtocolError(msg)
-        return Packet(kind, data=json.loads(body) if kind == "open" else body or None)
-    socket, body = body[:1], body[1:]
-    if (kind := _SOCKET_KINDS.get(socket)) is None:
-        what = "binary" if socket in {"5", "6"} else "unknown"
-        msg = f"{what} socket.io packet {frame[:40]!r} is not supported"
-        raise ProtocolError(msg)
-    namespace = "/"
-    if body.startswith("/"):
-        namespace, _, body = body.partition(",")
-    # An ack id may precede the data.
-    body = body.lstrip(string.digits)
-    return Packet(kind, namespace, json.loads(body) if body else None)
 
 
 def emit_frame(*args: Any) -> str:
@@ -318,14 +260,28 @@ class EventShape:
     ordered: bool = True
 
 
+@dataclass(frozen=True)
+class Endpoint:
+    """Where sessions connect: a reflex backend and the page they load.
+
+    The protocol is the same from 0.8.23 to HEAD (every event carries the
+    token), so nothing here depends on the reflex version.
+
+    Attributes:
+        backend_url: The backend's URL, e.g. ``http://localhost:8000``.
+        pathname: The page route the sessions hydrate and send events from.
+    """
+
+    backend_url: str
+    pathname: str = "/"
+
+
 @dataclass(frozen=True, kw_only=True)
 class LoadPlan:
     """One load run.
 
     Attributes:
-        backend_url: The backend's URL.
-        reflex_version: The subject's reflex version. The protocol is the same
-            from 0.8.23 to HEAD, so it is only recorded.
+        endpoint: The backend and page the sessions connect to.
         shape: The event every session sends.
         sessions: The number of sessions (browser tabs).
         mode: ``open`` sends on a schedule, ``closed`` after each answer.
@@ -333,21 +289,18 @@ class LoadPlan:
             ``None`` for the closed loop.
         warmup_s: Seconds of load before the measured window; not measured.
         duration_s: The measured window.
-        pathname: The page route of the events.
         drain_s: Seconds after the window to wait for outstanding answers.
         processes: The number of generator processes.
         cpus: The CPUs of the generator processes (Linux), or ``None``.
     """
 
-    backend_url: str
-    reflex_version: str | None
+    endpoint: Endpoint
     shape: EventShape
     sessions: int
     mode: Mode
     rate: float | None
     warmup_s: float
     duration_s: float
-    pathname: str = "/"
     drain_s: float = 5.0
     processes: int = 1
     cpus: Sequence[int] | None = None
@@ -379,21 +332,25 @@ class LoadResult:
 
     Latencies are in seconds, as percentile maps (``p50``, ``p99``, ``max``, ...).
     Only events planned (open loop) or sent (closed loop) in the measured window
-    count.
+    count. The rates count what happened within the window; the drain after it
+    only decides which events are ``unanswered``.
 
     Attributes:
         sessions: The number of sessions.
         mode: ``open`` or ``closed``.
         processes: The number of generator processes.
         cpus: The CPUs of the generator processes, or ``None``.
-        reflex_version: The subject's reflex version.
         warmup_s: The warmup before the window.
         duration_s: The length of the window.
         offered_rate: The planned rate (open loop), or ``None``.
         achieved_send_rate: Events sent within the window per second.
-        answered_rate: Answered events per second: the throughput.
+        answered_rate: Answers that arrived within the window per second: the
+            throughput, ``sum(answered_per_second) / duration_s``.
         sent: The events sent.
-        answered: The events answered.
+        answered: The events answered by the end of the drain.
+        answered_per_second: Answers that arrived in each second of the window:
+            entry ``i`` counts those ``i`` to ``i + 1`` seconds after it
+            started, merged over processes.
         unanswered: The events sent but not answered by the end of the drain.
         out_of_order: The answers that arrived while a lower sequence number
             was outstanding.
@@ -416,7 +373,6 @@ class LoadResult:
     mode: Mode
     processes: int
     cpus: list[int] | None
-    reflex_version: str | None
     warmup_s: float
     duration_s: float
     offered_rate: float | None
@@ -424,6 +380,7 @@ class LoadResult:
     answered_rate: float
     sent: int
     answered: int
+    answered_per_second: list[int]
     unanswered: int
     out_of_order: int
     session_errors: list[str]
@@ -438,12 +395,15 @@ class LoadResult:
     def check(self) -> str | None:
         """Check that the generator kept up, so the result measures the server.
 
+        The rules judge the generator alone: the send lag is actual minus
+        planned send time, whatever the server did, and a lag tail inflates the
+        response tail by as much.
+
         Returns:
             ``None``, or why the generator was saturated: a process used more
             than 75 % of a core, or, in the open loop, the send lag p99
-            exceeded the largest of 1 ms, 10 % of the median response and half
-            the service time p99, or fewer than 98 % of the offered events went
-            out in the window.
+            exceeded the larger of 1 ms and 10 % of the median response, or
+            fewer than 98 % of the offered events went out in the window.
         """
         if self.generator_cpu_fraction > CPU_LIMIT:
             return (
@@ -454,16 +414,12 @@ class LoadResult:
         if self.mode != "open":
             return None
         if self.lag_s is not None and self.response_s is not None:
-            limit = max(
-                LAG_FLOOR_S,
-                LAG_SHARE * self.response_s["p50"],
-                LAG_SERVICE_SHARE * (self.service_s or {}).get("p99", 0.0),
-            )
+            limit = max(LAG_FLOOR_S, LAG_SHARE * self.response_s["p50"])
             if self.lag_s["p99"] > limit:
                 return (
                     f"generator saturated: send lag p99 {1e3 * self.lag_s['p99']:.2f} ms"
-                    f" exceeds {1e3 * limit:.2f} ms (the largest of 1 ms, 10 % of the"
-                    " median response and half the service time p99)"
+                    f" exceeds {1e3 * limit:.2f} ms (the larger of 1 ms and 10 % of"
+                    " the median response)"
                 )
         if (
             self.offered_rate is not None
@@ -535,17 +491,22 @@ class _Session:
     ``answered`` is 0 until the answering delta arrives.
     """
 
-    def __init__(self, index: int, plan: LoadPlan) -> None:
+    def __init__(
+        self, index: int, endpoint: Endpoint, shape: EventShape | None
+    ) -> None:
         """Prepare the session; :meth:`prime` connects it.
 
         Args:
             index: The session's index among all sessions.
-            plan: The load plan.
+            endpoint: Where to connect.
+            shape: The event it sends, or ``None`` for a session that only
+                hydrates and stays open.
         """
         self.index = index
-        self.plan = plan
+        self.endpoint = endpoint
+        self.shape = shape
         self.token = str(uuid.uuid4())
-        self.frames = _Frames(plan.shape, self.token, plan.pathname)
+        self.frames = self._frames()
         self.ws: ClientConnection | None = None
         self.error: str | None = None
         self.prime_ns: int | None = None
@@ -556,12 +517,20 @@ class _Session:
         self.outstanding: collections.deque[int] = collections.deque()
         self.first_measured = sys.maxsize
         self.out_of_order = 0
-        self._delta_key = plan.shape.delta_key
-        self._seq_var = plan.shape.seq_var
         self._hydrated = asyncio.Event()
         self._idle = asyncio.Event()
         self._reader: asyncio.Task[None] | None = None
         self._closing = False
+
+    def _frames(self) -> _Frames | None:
+        """Encode the session's events with its current token.
+
+        Returns:
+            The encoder, or ``None`` for a session without events.
+        """
+        if self.shape is None:
+            return None
+        return _Frames(self.shape, self.token, self.endpoint.pathname)
 
     def _fail(self, reason: str) -> None:
         """Mark the session failed and wake whatever waits on it.
@@ -597,33 +566,38 @@ class _Session:
         """
         started = time.perf_counter_ns()
         ws = self.ws = await connect(
-            event_url(self.plan.backend_url, self.token),
+            event_url(self.endpoint.backend_url, self.token),
             proxy=None,
             open_timeout=None,
             max_size=MAX_FRAME_BYTES,
             ping_interval=None,
             close_timeout=1,
         )
-        if decode(await ws.recv()).kind != "open":
-            msg = "the server did not open an engine.io session"
+        opened = await ws.recv()
+        if not (isinstance(opened, str) and opened.startswith(OPEN_PREFIX)):
+            msg = f"the server did not open an engine.io session: {opened[:40]!r}"
             raise ProtocolError(msg)
         await ws.send(CONNECT_FRAME)
         while True:
             message = await ws.recv()
-            if isinstance(message, str) and message.startswith(EVENT_PREFIX):
-                # python-socketio sends events of the connect handler first.
-                self._on_emit(json.loads(message[len(EVENT_PREFIX) :]), message, 0)
-                continue
-            packet = decode(message)
-            if packet.kind == "connect" and packet.namespace == NAMESPACE:
-                break
-            if packet.kind == "connect_error":
-                msg = f"the server refused {NAMESPACE}: {packet.data}"
-                raise ProtocolError(msg)
-            if packet.kind == "ping":
-                await ws.send(PONG)
+            if isinstance(message, str):
+                if message.startswith(EVENT_PREFIX):
+                    # python-socketio sends events of the connect handler first.
+                    self._on_emit(json.loads(message[len(EVENT_PREFIX) :]), message, 0)
+                    continue
+                if message.startswith(CONNECT_FRAME):
+                    break
+                if message.startswith(CONNECT_ERROR_PREFIX):
+                    reason = message[len(CONNECT_ERROR_PREFIX) :]
+                    msg = f"the server refused {NAMESPACE}: {reason}"
+                    raise ProtocolError(msg)
+                if message == PING:
+                    await ws.send(PONG)
+                    continue
+            msg = f"unexpected frame in the handshake: {message[:40]!r}"
+            raise ProtocolError(msg)
         self._reader = asyncio.create_task(self._read())
-        pathname = self.plan.pathname
+        pathname = self.endpoint.pathname
         await ws.send(
             event_frame(HYDRATE_EVENT, {}, token=self.token, pathname=pathname)
         )
@@ -647,13 +621,16 @@ class _Session:
                     self._on_emit(json.loads(message[start:]), message, now)
                 elif message == PING:
                     await ws.send(PONG)
-                elif decode(message).kind in {"disconnect", "close"}:
-                    self._fail(f"the server disconnected the session ({message})")
+                elif message in {DISCONNECT_FRAME, CLOSE}:
+                    self._fail(f"the server disconnected the session ({message!r})")
+                    return
+                else:
+                    self._fail(f"unexpected frame: {message[:40]!r}")
                     return
         except ConnectionClosed as exc:
             if not self._closing:
                 self._fail(f"the websocket closed: {exc}")
-        except (ProtocolError, ValueError) as exc:
+        except ValueError as exc:
             self._fail(f"{type(exc).__name__}: {exc}")
         else:
             if not self._closing:
@@ -672,8 +649,12 @@ class _Session:
             delta = args[1].get("delta")
             if not delta:
                 return
-            state = delta.get(self._delta_key)
-            if state is not None and (seq := state.get(self._seq_var)):
+            shape = self.shape
+            if (
+                shape is not None
+                and (state := delta.get(shape.delta_key)) is not None
+                and (seq := state.get(shape.seq_var))
+            ):
                 if self.reply_frame is None:
                     self.reply_frame = frame
                 self._answer(seq, now)
@@ -686,7 +667,7 @@ class _Session:
         elif name == "new_token":
             # The token was in use by another session; reflex hands out a new one.
             self.token = args[1]
-            self.frames = _Frames(self.plan.shape, self.token, self.plan.pathname)
+            self.frames = self._frames()
         elif name == "reload":
             # 0.8.23: the server lost the session's state and dropped the event.
             self._fail("the server asked the page to reload")
@@ -705,7 +686,8 @@ class _Session:
         if seq == outstanding[0]:
             outstanding.popleft()
         else:
-            if self.plan.shape.ordered:
+            assert self.shape is not None
+            if self.shape.ordered:
                 # The events before it lost their answers.
                 while outstanding[0] != seq:
                     outstanding.popleft()
@@ -737,18 +719,21 @@ class _Session:
         self.answered.append(0)
         self.outstanding.append(seq)
 
-    async def run(self, t0: int, measure_from: int, end: int, drain_until: int) -> None:
+    async def run(
+        self, plan: LoadPlan, t0: int, measure_from: int, end: int, drain_until: int
+    ) -> None:
         """Send the events of the plan's loop, then wait for the outstanding answers.
 
         Args:
+            plan: The load plan.
             t0: The start of the schedule.
             measure_from: The start of the measured window.
             end: The end of the window, when sending stops.
             drain_until: When to stop waiting for answers.
         """
         try:
-            if self.plan.mode == "open":
-                await self._send_open(t0, measure_from, end)
+            if plan.mode == "open":
+                await self._send_open(plan, t0, measure_from, end)
             else:
                 timeout = (drain_until - time.perf_counter_ns()) / 1e9
                 await asyncio.wait_for(
@@ -761,18 +746,22 @@ class _Session:
         except ConnectionClosed as exc:
             self._fail(f"the websocket closed: {exc}")
 
-    async def _send_open(self, t0: int, measure_from: int, end: int) -> None:
+    async def _send_open(
+        self, plan: LoadPlan, t0: int, measure_from: int, end: int
+    ) -> None:
         """Send on the session's schedule; late events go out at once.
 
         Args:
+            plan: The load plan.
             t0: The start of the schedule.
             measure_from: The start of the measured window.
             end: The end of the window.
         """
-        plan = self.plan
         assert plan.rate is not None
         ws = self.ws
+        frames = self.frames
         assert ws is not None
+        assert frames is not None
         clock = time.perf_counter_ns
         schedule = schedule_ns(self.index, plan.sessions, plan.rate, end - t0)
         for seq, offset in enumerate(schedule, start=1):
@@ -784,7 +773,7 @@ class _Session:
             if self.error is not None:
                 return
             self._record(seq, planned, now, measure_from)
-            await ws.send(self.frames.event(seq))
+            await ws.send(frames.event(seq))
 
     async def _send_closed(self, t0: int, measure_from: int, end: int) -> None:
         """Send the next event once the previous one is answered, until the window ends.
@@ -795,7 +784,9 @@ class _Session:
             end: The end of the window.
         """
         ws = self.ws
+        frames = self.frames
         assert ws is not None
+        assert frames is not None
         idle = self._idle
         clock = time.perf_counter_ns
         await asyncio.sleep(max(0, t0 - clock()) / 1e9)
@@ -804,7 +795,7 @@ class _Session:
             seq += 1
             self._record(seq, now, now, measure_from)
             idle.clear()
-            await ws.send(self.frames.event(seq))
+            await ws.send(frames.event(seq))
             await idle.wait()
 
     async def _drain(self, until: int) -> None:
@@ -838,6 +829,70 @@ class _Session:
                 await self._reader
 
 
+class SessionPool:
+    """Sessions on the running event loop, primed together and closed together.
+
+    Priming connects each session and hydrates it like a page load; a session
+    that fails records why instead of raising. Between :meth:`prime` and
+    :meth:`close` the sessions stay open and answer the server's pings.
+    """
+
+    def __init__(
+        self,
+        endpoint: Endpoint,
+        indices: Iterable[int],
+        shape: EventShape | None = None,
+    ) -> None:
+        """Prepare the sessions; nothing connects yet.
+
+        Args:
+            endpoint: Where they connect.
+            indices: Their indices among all sessions of a load.
+            shape: The event they send, or ``None`` for idle sessions.
+        """
+        self.sessions = [_Session(index, endpoint, shape) for index in indices]
+
+    @property
+    def errors(self) -> list[str]:
+        """Describe the sessions that failed.
+
+        Returns:
+            ``session <index>: <reason>`` per failed session, so far.
+        """
+        return [f"session {s.index}: {s.error}" for s in self.sessions if s.error]
+
+    async def prime(self) -> None:
+        """Connect and hydrate every session, up to ``PRIME_CONCURRENCY`` at a time."""
+        gate = asyncio.Semaphore(PRIME_CONCURRENCY)
+        await asyncio.gather(*(session.prime(gate) for session in self.sessions))
+
+    async def close(self) -> None:
+        """Leave the namespace and close every websocket."""
+        await asyncio.gather(*(session.close() for session in self.sessions))
+
+
+@contextlib.asynccontextmanager
+async def open_sessions(
+    endpoint: Endpoint, count: int, shape: EventShape | None = None
+) -> AsyncIterator[SessionPool]:
+    """Prime sessions on the running loop and close them when the context ends.
+
+    Args:
+        endpoint: Where they connect.
+        count: How many.
+        shape: The event they send, or ``None`` for idle sessions.
+
+    Yields:
+        The primed pool; check its ``errors``.
+    """
+    pool = SessionPool(endpoint, range(count), shape)
+    try:
+        await pool.prime()
+        yield pool
+    finally:
+        await pool.close()
+
+
 @dataclass
 class _Shard:
     """What one generator process measured, sent back to the parent.
@@ -849,6 +904,8 @@ class _Shard:
         sent: The measured events sent.
         sent_in_window: Those sent before the window ended.
         answered: Those answered.
+        answered_per_second: Those answered before the window ended, per second
+            of the window.
         out_of_order: Answers that overtook an outstanding event.
         response_ns: Answer minus planned send time, per answered event.
         service_ns: Answer minus actual send time, per answered event.
@@ -863,6 +920,7 @@ class _Shard:
     sent: int = 0
     sent_in_window: int = 0
     answered: int = 0
+    answered_per_second: list[int] = dataclasses.field(default_factory=list)
     out_of_order: int = 0
     response_ns: array.array = dataclasses.field(
         default_factory=lambda: array.array("q")
@@ -874,17 +932,19 @@ class _Shard:
     cpu_fraction: float = 0.0
     reply_frame: str | None = None
 
-    def add(self, session: _Session, end: int) -> None:
+    def add(self, session: _Session, measure_from: int, end: int) -> None:
         """Add a session's measured events.
 
         Args:
             session: The session.
-            end: The end of the measured window.
+            measure_from: The start of the measured window.
+            end: Its end.
         """
         self.out_of_order += session.out_of_order
         if self.reply_frame is None:
             self.reply_frame = session.reply_frame
         planned, sent, answered = session.planned, session.sent, session.answered
+        per_second = self.answered_per_second
         for index in range(session.first_measured - 1, len(sent)):
             sent_at = sent[index]
             self.sent += 1
@@ -894,6 +954,8 @@ class _Shard:
                 self.answered += 1
                 self.service_ns.append(received - sent_at)
                 self.response_ns.append(received - planned[index])
+                if received < end:
+                    per_second[(received - measure_from) // 1_000_000_000] += 1
 
 
 async def _run_sessions(
@@ -912,32 +974,33 @@ async def _run_sessions(
     Returns:
         The measurements.
     """
-    sessions = [_Session(index, plan) for index in indices]
-    gate = asyncio.Semaphore(PRIME_CONCURRENCY)
-    await asyncio.gather(*(session.prime(gate) for session in sessions))
+    pool = SessionPool(plan.endpoint, indices, plan.shape)
+    await pool.prime()
+    sessions = pool.sessions
     shard = _Shard(
         sessions=len(sessions),
         errors=[],
         prime_ns=[s.prime_ns for s in sessions if s.prime_ns is not None],
+        answered_per_second=[0] * math.ceil(plan.duration_s),
     )
     try:
-        t0 = await start([f"session {s.index}: {s.error}" for s in sessions if s.error])
+        t0 = await start(pool.errors)
         if t0 is not None:
             measure_from = t0 + int(plan.warmup_s * 1e9)
             end = measure_from + int(plan.duration_s * 1e9)
             drain_until = end + int(plan.drain_s * 1e9)
             shard.cpu_fraction = await _measure_cpu(
                 asyncio.gather(
-                    *(s.run(t0, measure_from, end, drain_until) for s in sessions)
+                    *(s.run(plan, t0, measure_from, end, drain_until) for s in sessions)
                 ),
                 measure_from,
                 end,
             )
             for session in sessions:
-                shard.add(session, end)
+                shard.add(session, measure_from, end)
     finally:
-        await asyncio.gather(*(session.close() for session in sessions))
-    shard.errors = [f"session {s.index}: {s.error}" for s in sessions if s.error]
+        await pool.close()
+    shard.errors = pool.errors
     return shard
 
 
@@ -1000,8 +1063,8 @@ if sys.platform == "linux":
             return super().select(timeout)
 
 
-def _event_loop() -> asyncio.AbstractEventLoop:
-    """Create the event loop of a generator process.
+def event_loop() -> asyncio.AbstractEventLoop:
+    """Create an event loop for sessions.
 
     Returns:
         On Linux, a loop whose timers keep microsecond precision; elsewhere the
@@ -1028,19 +1091,23 @@ def _merge(plan: LoadPlan, shards: Sequence[_Shard]) -> LoadResult:
     latencies = response if open_loop else service
     sent = sum(shard.sent for shard in shards)
     answered = sum(shard.answered for shard in shards)
+    answered_per_second = [
+        sum(counts)
+        for counts in zip(*(s.answered_per_second for s in shards), strict=True)
+    ]
     return LoadResult(
         sessions=sum(shard.sessions for shard in shards),
         mode=plan.mode,
         processes=len(shards),
         cpus=None if plan.cpus is None else list(plan.cpus),
-        reflex_version=plan.reflex_version,
         warmup_s=plan.warmup_s,
         duration_s=plan.duration_s,
         offered_rate=plan.rate,
         achieved_send_rate=sum(s.sent_in_window for s in shards) / plan.duration_s,
-        answered_rate=answered / plan.duration_s,
+        answered_rate=sum(answered_per_second) / plan.duration_s,
         sent=sent,
         answered=answered,
+        answered_per_second=answered_per_second,
         unanswered=sent - answered,
         out_of_order=sum(shard.out_of_order for shard in shards),
         session_errors=[error for shard in shards for error in shard.errors],
@@ -1086,6 +1153,22 @@ def _summary(
     return {name: value / 1e9 for name, value in zip(spec, found, strict=True)}
 
 
+async def wait_readable(conn: Connection) -> None:
+    """Wait until a pipe has a message, or its other end closed.
+
+    Args:
+        conn: The pipe.
+    """
+    loop = asyncio.get_running_loop()
+    readable = loop.create_future()
+    fd = conn.fileno()
+    loop.add_reader(fd, lambda: readable.done() or readable.set_result(None))
+    try:
+        await readable
+    finally:
+        loop.remove_reader(fd)
+
+
 async def _handshake(conn: Connection, errors: list[str]) -> int | None:
     """Report the primed sessions to the parent and wait for the start.
 
@@ -1100,18 +1183,13 @@ async def _handshake(conn: Connection, errors: list[str]) -> int | None:
         The start of the schedule, or ``None`` when the parent aborts.
     """
     conn.send(("ready", errors))
-    loop = asyncio.get_running_loop()
-    readable = loop.create_future()
-    fd = conn.fileno()
-    loop.add_reader(fd, lambda: readable.done() or readable.set_result(None))
-    try:
-        await readable
-    finally:
-        loop.remove_reader(fd)
+    await wait_readable(conn)
     kind, value = conn.recv()
     if kind != "go":
         return None
     # Anything more on the pipe means the parent stopped the run or died.
+    loop = asyncio.get_running_loop()
+    fd = conn.fileno()
     task = asyncio.current_task()
     assert task is not None
 
@@ -1137,7 +1215,7 @@ def _worker(plan: LoadPlan, indices: Sequence[int], conn: Connection) -> None:
         if plan.cpus is not None and hasattr(os, "sched_setaffinity"):
             os.sched_setaffinity(0, plan.cpus)
         raise_fd_limit(len(indices))
-        loop = _event_loop()
+        loop = event_loop()
         shard = loop.run_until_complete(
             _run_sessions(plan, indices, lambda errors: _handshake(conn, errors))
         )

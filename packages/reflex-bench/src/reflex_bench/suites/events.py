@@ -20,8 +20,8 @@ per second. Everything else runs with ``--suite all`` or by name.
 The shapes are the playground's ``BenchState.set_seq*`` handlers. The state
 manager is a parameter; ``redis`` joins ``memory`` and ``disk`` when
 ``REFLEX_REDIS_URL`` is set in the harness's environment. On Linux with four
-CPUs or more, the server runs on the lower half of the CPUs (not CPU 0) and the
-generator on the upper half.
+CPUs or more, the server runs on the lower half of the physical cores (not CPU
+0) and the generator on the upper half, so no core is shared through SMT.
 """
 
 from __future__ import annotations
@@ -41,6 +41,7 @@ from reflex_bench.context import Context, git
 from reflex_bench.drivers.app_process import AppProcess, cache_env, run_cli
 from reflex_bench.drivers.echo_server import EchoProcess
 from reflex_bench.drivers.events import (
+    Endpoint,
     EventShape,
     GeneratorSaturated,
     LoadError,
@@ -69,13 +70,17 @@ KNEE_P99_FACTOR = 3.0
 LATENCY_SHARE = 0.5
 UNDERPOWERED_P99 = 10_000
 CALIBRATION_SESSIONS = 10
-CALIBRATION_SHARES = (0.1, 0.2, 0.3, 0.4, 0.5)
-# Loads taken again when only the self-check rejects one: on a shared machine a
-# host stall of the generator's CPU now and then fails the lag check of a short
-# window, while a saturated generator fails every attempt.
-RETAKES = 2
+# The calibration offers a multiple of the highest fixed rate the suite uses:
+# at_1hz with 1000 sessions, or the latency point of smoke and daily. The rates
+# relative to a probed capacity (the knee, rate=auto) are covered by the
+# self-check of each load.
+CALIBRATION_FACTOR = 3
+CALIBRATION_RATE = CALIBRATION_FACTOR * float(
+    max(*AT_1HZ_SESSIONS, *CHEAP_LATENCY["rate"])
+)
 COMPILE_TIMEOUT_S = 600.0
 HOOK_TIMEOUT_S = 600.0
+SYSFS_CPU = Path("/sys/devices/system/cpu")
 
 
 class Window(NamedTuple):
@@ -204,23 +209,57 @@ def server_env(
     return result
 
 
-def split_cpus(allowed: Sequence[int]) -> dict[str, list[int]] | None:
-    """Split CPUs between the server and the generator.
+def cpu_cores(allowed: Iterable[int], sysfs: Path) -> list[list[int]] | None:
+    """Group CPUs by physical core, from the kernel's topology.
 
     Args:
         allowed: The CPUs the harness may use.
+        sysfs: The ``cpu`` directory of sysfs.
 
     Returns:
-        ``{"server": lower half minus CPU 0, "generator": upper half}``, or
-        ``None`` with fewer than four CPUs.
+        The allowed CPUs of each core, by lowest CPU, or ``None`` when the
+        topology of any CPU cannot be read.
+    """
+    wanted = set(allowed)
+    cores: dict[int, list[int]] = {}
+    for cpu in sorted(wanted):
+        try:
+            listing = (
+                sysfs / f"cpu{cpu}" / "topology" / "thread_siblings_list"
+            ).read_text()
+        except OSError:
+            return None
+        siblings: list[int] = []
+        for part in listing.strip().split(","):
+            first, _, last = part.partition("-")
+            siblings.extend(range(int(first), int(last or first) + 1))
+        cores.setdefault(min(siblings), []).append(cpu)
+    return list(cores.values())
+
+
+def split_cpus(
+    allowed: Sequence[int], cores: Sequence[Sequence[int]] | None
+) -> dict[str, list[int]] | None:
+    """Split CPUs between the server and the generator, whole cores to each side.
+
+    Args:
+        allowed: The CPUs the harness may use.
+        cores: The allowed CPUs of each physical core, or ``None`` to treat
+            every CPU as its own core.
+
+    Returns:
+        ``{"server": the lower half of the cores minus CPU 0, "generator":
+        the upper half}``, or ``None`` with fewer than four CPUs.
     """
     cpus = sorted(allowed)
     if len(cpus) < 4:
         return None
-    half = len(cpus) // 2
+    if cores is None:
+        cores = [[cpu] for cpu in cpus]
+    half = len(cores) // 2
     return {
-        "server": [cpu for cpu in cpus[:half] if cpu != 0],
-        "generator": cpus[half:],
+        "server": sorted(cpu for core in cores[:half] for cpu in core if cpu != 0),
+        "generator": sorted(cpu for core in cores[half:] for cpu in core),
     }
 
 
@@ -232,7 +271,8 @@ def pinning() -> dict[str, list[int]] | None:
     """
     if not hasattr(os, "sched_getaffinity"):
         return None
-    return split_cpus(sorted(os.sched_getaffinity(0)))
+    allowed = sorted(os.sched_getaffinity(0))
+    return split_cpus(allowed, cpu_cores(allowed, SYSFS_CPU))
 
 
 def generator_processes(sessions: int, cpus: Sequence[int] | None) -> int:
@@ -434,7 +474,6 @@ class _Backend:
         self._server: AppProcess | EchoProcess | None = None
         self._scope: CgroupScope | None = None
         self._runner: LoadRunner | None = None
-        self.rejected: list[str] = []
 
     @property
     def cpu_method(self) -> str:
@@ -541,8 +580,7 @@ class _Backend:
         sessions = self.ctx.params.get("sessions", CALIBRATION_SESSIONS)
         generator = None if self.pinning is None else self.pinning["generator"]
         plan = LoadPlan(
-            backend_url=self.url,
-            reflex_version=self.ctx.subject.reflex_version,
+            endpoint=Endpoint(self.url),
             shape=self.shape,
             sessions=sessions,
             mode=mode,
@@ -563,29 +601,6 @@ class _Backend:
         result = runner.run(lambda edge: marks.__setitem__(edge, self.server_cpu_s()))
         return result, marks["end"] - marks["start"]
 
-    def retaken(
-        self, mode: Mode, rate: float | None, window: Window
-    ) -> tuple[LoadResult, float | None]:
-        """Run one load, and again up to ``RETAKES`` times while only the self-check fails.
-
-        :attr:`rejected` keeps the reasons of the loads taken again.
-
-        Args:
-            mode: ``open`` or ``closed``.
-            rate: The offered rate of the open loop.
-            window: How long the load runs.
-
-        Returns:
-            The last load's result and the server's CPU seconds in its window.
-        """
-        self.rejected = []
-        while True:
-            result, cpu_s = self.run(mode, rate, window)
-            reason = None if result.session_errors else result.check()
-            if reason is None or len(self.rejected) == RETAKES:
-                return result, cpu_s
-            self.rejected.append(reason)
-
     def load(
         self, *, mode: Mode, rate: float | None, window: Window
     ) -> tuple[LoadResult, float]:
@@ -599,25 +614,24 @@ class _Backend:
         Returns:
             The checked result and the server's CPU seconds in the window.
         """
-        result, cpu_s = self.retaken(mode, rate, window)
+        result, cpu_s = self.run(mode, rate, window)
         assert cpu_s is not None
         return _checked(result), cpu_s
 
     def extra(self, result: LoadResult, **more: Any) -> dict[str, Any]:
-        """Describe a sample: the load result, how CPU was read, the pinning and retakes.
+        """Describe a sample: the load result, how CPU was read and the pinning.
 
         Args:
             result: The load result.
             **more: Further entries.
 
         Returns:
-            The sample's extra data, with ``rejected`` when loads were taken again.
+            The sample's extra data.
         """
         return {
             **result.to_dict(),
             "cpu_method": self.cpu_method,
             "pinning": self.pinning,
-            **({"rejected": self.rejected} if self.rejected else {}),
             **more,
         }
 
@@ -739,7 +753,7 @@ def _register(name: str, shape: EventShape) -> None:
             "service_p50": Metric(
                 unit="s", direction="lower", description="answer time minus send time"
             ),
-            "cpu_us_per_event": CPU_PER_EVENT,
+            "cpu_per_event": CPU_PER_EVENT,
         },
         timeout=HOOK_TIMEOUT_S,
         setup_timeout=COMPILE_TIMEOUT_S + 60,
@@ -768,7 +782,7 @@ def _register(name: str, shape: EventShape) -> None:
                 {
                     "throughput": result.answered_rate,
                     "service_p50": result.service_s["p50"],
-                    "cpu_us_per_event": cpu_per_event(cpu_s, result.answered),
+                    "cpu_per_event": cpu_per_event(cpu_s, result.answered),
                 },
                 extra=self.backend.extra(result),
             )
@@ -786,7 +800,7 @@ def _register(name: str, shape: EventShape) -> None:
             "response_max": _latency("maximum"),
             "throughput": THROUGHPUT,
             "unanswered": UNANSWERED,
-            "cpu_us_per_event": CPU_PER_EVENT,
+            "cpu_per_event": CPU_PER_EVENT,
         },
         timeout=HOOK_TIMEOUT_S,
         setup_timeout=COMPILE_TIMEOUT_S + 60,
@@ -827,7 +841,7 @@ def _register(name: str, shape: EventShape) -> None:
                     **_response(result, "p50", "p90", "p99", "max"),
                     "throughput": result.answered_rate,
                     "unanswered": result.unanswered,
-                    "cpu_us_per_event": cpu_per_event(cpu_s, result.answered),
+                    "cpu_per_event": cpu_per_event(cpu_s, result.answered),
                 },
                 extra=self.backend.extra(
                     result, probed_capacity=self.capacity, **_underpowered(result)
@@ -877,7 +891,7 @@ class Knee(_OnPlayground):
         assert backend is not None
         steps = []
         for share in KNEE_SHARES:
-            result, _ = backend.retaken("open", share * self.capacity, KNEE_WINDOW)
+            result, _ = backend.run("open", share * self.capacity, KNEE_WINDOW)
             if errors := result.session_errors:
                 msg = f"{len(errors)} sessions failed at {share:.0%} of the capacity: {errors[0]}"
                 raise LoadError(msg)
@@ -911,7 +925,7 @@ class Knee(_OnPlayground):
         "response_p50": _latency("p50"),
         "response_p99": _latency("p99"),
         "unanswered": UNANSWERED,
-        "cpu_us_per_event": CPU_PER_EVENT,
+        "cpu_per_event": CPU_PER_EVENT,
     },
     timeout=HOOK_TIMEOUT_S,
     setup_timeout=COMPILE_TIMEOUT_S + 60,
@@ -939,7 +953,7 @@ class AtOneHz(_OnPlayground):
             {
                 **_response(result, "p50", "p99"),
                 "unanswered": result.unanswered,
-                "cpu_us_per_event": cpu_per_event(cpu_s, result.answered),
+                "cpu_per_event": cpu_per_event(cpu_s, result.answered),
             },
             extra=self.backend.extra(result, **_underpowered(result)),
         )
@@ -955,17 +969,20 @@ class AtOneHz(_OnPlayground):
             direction="higher",
             description="closed-loop rate of 10 sessions against the echo server",
         ),
-        "open_max_rate": Metric(
-            unit="ev/s",
-            direction="higher",
-            description="the highest open-loop rate that passes the self-check",
+        "open_lag_p99": Metric(
+            unit="s",
+            direction="lower",
+            description=(
+                f"send lag p99 of the open loop at {CALIBRATION_RATE:.0f} ev/s,"
+                f" {CALIBRATION_FACTOR}x the highest fixed rate of the suite"
+            ),
         ),
     },
     timeout=HOOK_TIMEOUT_S,
-    estimate=25,
+    estimate=8,
 )
 class Calibrate(_OnBackend):
-    """Run the generator against an echo server, which answers at once: how far it goes before it saturates."""
+    """Run the generator against an echo server, which answers at once: the closed-loop ceiling, and the open loop at 3x the highest rate the suite offers."""
 
     def setup(self, ctx: Context) -> None:
         """Start the echo server.
@@ -977,48 +994,44 @@ class Calibrate(_OnBackend):
         self.backend.start_echo()
 
     def sample(self, ctx: Context) -> SampleResult:
-        """Measure the closed-loop ceiling, then open-loop steps up to half of it.
+        """Measure the closed-loop ceiling, then offer the calibration rate.
 
         Args:
             ctx: The benchmark context.
 
         Returns:
-            The ceiling and the highest open-loop rate that passed the self-check,
-            with each step's lag, CPU and check as extra data.
+            The ceiling and the open loop's send lag p99, with both results as
+            extra data.
+
+        Raises:
+            GeneratorSaturated: When the generator does not keep up at the
+                calibration rate, so the suite's rates are beyond it.
+            LoadError: When sessions fail.
         """
         backend = self.backend
         assert backend is not None
+        # The ceiling is where the generator saturates, so only sessions can fail it.
         closed, _ = backend.run("closed", None, CALIBRATION_CLOSED_WINDOW)
-        steps = []
-        for share in CALIBRATION_SHARES:
-            result, _ = backend.run(
-                "open", share * closed.answered_rate, CALIBRATION_STEP_WINDOW
+        if errors := closed.session_errors:
+            msg = f"{len(errors)} of {closed.sessions} sessions failed: {errors[0]}"
+            raise LoadError(msg)
+        opened, _ = backend.run("open", CALIBRATION_RATE, CALIBRATION_STEP_WINDOW)
+        _checked(opened)
+        assert opened.lag_s is not None
+        if opened.unanswered:
+            msg = (
+                f"generator saturated: {opened.unanswered} events unanswered"
+                f" at {CALIBRATION_RATE:.0f} ev/s"
             )
-            assert result.lag_s is not None
-            steps.append({
-                "offered": result.offered_rate,
-                "answered": result.answered_rate,
-                "unanswered": result.unanswered,
-                "lag_p99_s": result.lag_s["p99"],
-                "generator_cpu_fraction": result.generator_cpu_fraction,
-                "check": result.check(),
-            })
-        passing = [
-            step["offered"]
-            for step in steps
-            if step["check"] is None and step["unanswered"] == 0
-        ]
+            raise GeneratorSaturated(msg, opened)
         return SampleResult(
             {
                 "closed_ceiling": closed.answered_rate,
-                "open_max_rate": max(passing, default=0.0),
+                "open_lag_p99": opened.lag_s["p99"],
             },
             extra={
-                "closed": {
-                    "service_s": closed.service_s,
-                    "generator_cpu_fraction": closed.generator_cpu_fraction,
-                },
-                "steps": steps,
+                "closed": closed.to_dict(),
+                "open": opened.to_dict(),
                 "pinning": backend.pinning,
             },
         )

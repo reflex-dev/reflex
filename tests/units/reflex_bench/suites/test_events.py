@@ -133,8 +133,45 @@ def test_server_env(tmp_path: Path):
         ([0, 1, 2], None),
     ],
 )
-def test_split_cpus(allowed, expected):
-    assert suite.split_cpus(allowed) == expected
+def test_split_cpus_without_topology(allowed, expected):
+    assert suite.split_cpus(allowed, cores=None) == expected
+
+
+def test_split_cpus_gives_whole_cores_to_each_side():
+    # A Ryzen 5600: CPUs 6-11 are the SMT siblings of 0-5. Neither side gets a
+    # sibling of the other side's core.
+    cores = [[cpu, cpu + 6] for cpu in range(6)]
+    assert suite.split_cpus(range(12), cores=cores) == {
+        "server": [1, 2, 6, 7, 8],
+        "generator": [3, 4, 5, 9, 10, 11],
+    }
+    # Two cores with SMT: one each.
+    assert suite.split_cpus([0, 1, 2, 3], cores=[[0, 2], [1, 3]]) == {
+        "server": [2],
+        "generator": [1, 3],
+    }
+
+
+def fake_sysfs(tmp_path: Path, siblings: dict[int, str]) -> Path:
+    for cpu, listing in siblings.items():
+        topology = tmp_path / f"cpu{cpu}" / "topology"
+        topology.mkdir(parents=True)
+        (topology / "thread_siblings_list").write_text(listing + "\n")
+    return tmp_path
+
+
+def test_cpu_cores_groups_smt_siblings_from_sysfs(tmp_path: Path):
+    sysfs = fake_sysfs(
+        tmp_path, {0: "0,4", 4: "0,4", 1: "1,5", 5: "1,5", 2: "2-3", 3: "2-3"}
+    )
+    assert suite.cpu_cores([0, 1, 2, 3, 4, 5], sysfs) == [[0, 4], [1, 5], [2, 3]]
+    # A CPU outside the allowed set is left out of its core.
+    assert suite.cpu_cores([0, 1, 2, 3, 5], sysfs) == [[0], [1, 5], [2, 3]]
+
+
+def test_cpu_cores_is_none_without_a_readable_topology(tmp_path: Path):
+    assert suite.cpu_cores([0, 1, 2, 3], tmp_path) is None
+    assert suite.cpu_cores([0, 1, 2, 3], fake_sysfs(tmp_path, {0: "0"})) is None
 
 
 def test_generator_processes():
@@ -304,6 +341,9 @@ def run_instance(
     monkeypatch.setattr(
         suite._Backend, "start_app", lambda self: calls.append(("app",))
     )
+    monkeypatch.setattr(
+        suite._Backend, "start_echo", lambda self: calls.append(("echo",))
+    )
     monkeypatch.setattr(suite._Backend, "run", run)
     monkeypatch.setattr(
         suite._Backend, "stop_load", lambda self: calls.append(("stop_load",))
@@ -401,12 +441,11 @@ def test_latency_at_a_fixed_rate_still_warms_the_backend(
     assert entry["metrics"]["unanswered"]["samples"]["A"] == [0.0]
 
 
-def test_a_load_the_self_check_rejects_is_retaken(
+def test_a_load_the_self_check_rejects_fails_the_sample(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    # A host stall of the generator's CPU fails the lag check of one load.
-    reason = STALLED.check()
-    assert reason is not None
+    # A stalled generator contaminates the tail; the sample fails at once and
+    # is never taken again, which would drop the stall windows from the tails.
     entry, calls = run_instance(
         tmp_path,
         monkeypatch,
@@ -414,36 +453,16 @@ def test_a_load_the_self_check_rejects_is_retaken(
         {"manager": "memory", "sessions": "10", "rate": "500"},
         {"closed": CLOSED, "open": [STALLED, make_load_result()]},
     )
-    assert entry["status"] == "ok", entry["error"]
-    probe = ("run", "closed", None, suite.PROBE_WINDOW)
-    load = ("run", "open", 500.0, suite.LATENCY_WINDOW)
-    assert calls == [("app",), probe, load, load, ("stop_load",), ("stop",)]
-    assert entry["metrics"]["response_p99"]["samples"]["A"] == [0.0119]
-    (extra,) = entry["sample_extra"]
-    assert extra["rejected"] == [reason]
-
-
-def test_a_load_that_fails_the_self_check_every_time_fails_the_sample(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
-    entry, calls = run_instance(
-        tmp_path,
-        monkeypatch,
-        "events.simple.latency",
-        {"manager": "memory", "sessions": "10", "rate": "500"},
-        {"closed": CLOSED, "open": STALLED},
-    )
     assert entry["status"] == "failed"
     assert entry["error"].startswith(
         "GeneratorSaturated: generator saturated: send lag"
     )
     probe = ("run", "closed", None, suite.PROBE_WINDOW)
     load = ("run", "open", 500.0, suite.LATENCY_WINDOW)
-    retakes = [load] * (1 + suite.RETAKES)
-    assert calls == [("app",), probe, *retakes, ("stop_load",), ("stop",)]
+    assert calls == [("app",), probe, load, ("stop_load",), ("stop",)]
 
 
-def test_failed_sessions_are_never_retaken(
+def test_failed_sessions_fail_the_latency_sample(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     failed = make_load_result(
@@ -481,8 +500,47 @@ def test_a_failed_probe_stops_the_backend(
     assert entry["status"] == "failed"
     assert "generator saturated" in entry["error"]
     probe = ("run", "closed", None, suite.PROBE_WINDOW)
-    # A saturated generator fails every attempt; cleanup stops the backend.
-    assert calls == [("app",), *[probe] * (1 + suite.RETAKES), ("stop",)]
+    assert calls == [("app",), probe, ("stop",)]
+
+
+def test_calibration_offers_three_times_the_highest_suite_rate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    # at_1hz with 1000 sessions offers 1000 ev/s, the highest fixed rate.
+    assert pytest.approx(3000.0) == suite.CALIBRATION_RATE
+    step = make_load_result(offered_rate=3000.0, achieved_send_rate=2999.0)
+    entry, calls = run_instance(
+        tmp_path,
+        monkeypatch,
+        "selftest.events.calibrate",
+        {},
+        {"closed": CLOSED, "open": step},
+    )
+    assert entry["status"] == "ok", entry["error"]
+    closed = ("run", "closed", None, suite.CALIBRATION_CLOSED_WINDOW)
+    opened = ("run", "open", 3000.0, suite.CALIBRATION_STEP_WINDOW)
+    assert calls == [("echo",), closed, opened, ("stop_load",), ("stop",)]
+    metrics = entry["metrics"]
+    assert metrics["closed_ceiling"]["samples"]["A"] == [1200.0]
+    assert metrics["open_lag_p99"]["samples"]["A"] == [0.00021]
+    (extra,) = entry["sample_extra"]
+    assert extra["open"]["offered_rate"] == pytest.approx(3000.0)
+    assert "steps" not in extra
+
+
+def test_calibration_fails_when_the_generator_cannot_offer_the_rate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    entry, calls = run_instance(
+        tmp_path,
+        monkeypatch,
+        "selftest.events.calibrate",
+        {},
+        {"closed": CLOSED, "open": STALLED},
+    )
+    assert entry["status"] == "failed"
+    assert entry["error"].startswith("GeneratorSaturated: generator saturated")
+    assert calls[-1] == ("stop",)
 
 
 def test_capacity_reports_throughput_and_cpu_per_event(
@@ -493,7 +551,7 @@ def test_capacity_reports_throughput_and_cpu_per_event(
     metrics = entry["metrics"]
     assert metrics["throughput"]["samples"]["A"] == [1200.0]
     assert metrics["service_p50"]["samples"]["A"] == [0.003]
-    assert metrics["cpu_us_per_event"]["samples"]["A"] == [pytest.approx(1e-4)]
+    assert metrics["cpu_per_event"]["samples"]["A"] == [pytest.approx(1e-4)]
     (extra,) = entry["sample_extra"]
     assert extra["answered"] == 12_000
     assert extra["cpu_method"] in {"cgroup", "psutil"}
