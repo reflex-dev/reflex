@@ -33,8 +33,13 @@ class CustomBuilder(BuildHookInterface):
         """
         # An editable install builds against the working tree, so regenerating
         # would replace the developer's stubs with whatever the installing
-        # environment resolves to.
-        if version == "editable":
+        # environment resolves to. A fresh checkout has none — they are
+        # gitignored — and there the install is what creates them.
+        if (
+            version == "editable"
+            and next((pathlib.Path(self.root) / "reflex").rglob("*.pyi"), None)
+            is not None
+        ):
             return
 
         if self.marker().exists():

@@ -145,24 +145,30 @@ def build_hook(root: Path, directory: Path):
 
 
 @pytest.mark.parametrize(
-    ("build_version", "regenerates"), [("editable", False), ("standard", True)]
+    ("build_version", "stub_present", "regenerates"),
+    [
+        # An editable install builds against the checkout, so it must not
+        # rewrite stubs that are already there from whatever the installing
+        # environment resolved to.
+        ("editable", True, False),
+        # A fresh clone has no stubs — they are gitignored — so the editable
+        # install that `uv sync` performs is what creates them.
+        ("editable", False, True),
+        ("standard", True, True),
+    ],
 )
-def test_build_hook_skips_editable_installs(
+def test_build_hook_regenerates_stubs(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     build_version: str,
+    stub_present: bool,
     regenerates: bool,
 ):
-    """An editable install must leave the working tree's stubs untouched.
-
-    `uv pip install -e .` builds an editable wheel against the checkout, so
-    regenerating there rewrites the developer's stubs from whatever the
-    installing environment resolved to.
-    """
     (tmp_path / "scripts").mkdir()
     stub = tmp_path / "reflex" / "__init__.pyi"
     stub.parent.mkdir()
-    stub.write_text("# generated")
+    if stub_present:
+        stub.write_text("# generated")
 
     runs = []
     module, hook = build_hook(tmp_path, tmp_path / "dist")
@@ -173,4 +179,6 @@ def test_build_hook_skips_editable_installs(
     hook.initialize(build_version, {})
 
     assert bool(runs) is regenerates
-    assert stub.exists() is not regenerates
+    # The generator is stubbed out, so a run that proceeded leaves the file
+    # unlinked; one that was skipped leaves it as it was.
+    assert stub.exists() is (stub_present and not regenerates)
