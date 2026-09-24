@@ -16,7 +16,7 @@ def navbar() -> rx.Component:
         The logo and a link to each page.
     """
     return rx.hstack(
-        rx.image(src="/logo.svg", alt="Playground logo", width="2em", height="2em"),
+        rx.image(src="/favicon.ico", alt="Reflex logo", width="2em", height="2em"),
         *[rx.link(label, href=href) for label, href in NAV_LINKS],
         align="center",
         spacing="4",

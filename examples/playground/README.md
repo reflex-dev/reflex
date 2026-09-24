@@ -34,8 +34,9 @@ The hot reload benchmarks rewrite exactly the string literal on a line carrying 
 | `ROOT_MARKER = "m-initial-root"  # bench:hmr-target root` | `playground/layout.py` | `#bench-marker-root` |
 | `HANDLER_MARKER = "m-initial-handler"  # bench:hmr-target handler` | `playground/state.py` | `#bench-handler-value`, once `bench_value` runs |
 
-Keep each target on its own line, in exactly this form. `assets/logo.svg` and
-`assets/playground.css` are there for the asset hot reload benchmarks.
+Keep each target on its own line, in exactly this form. `assets/favicon.ico` (the one
+`reflex init` creates) and `assets/playground.css` are there for the asset hot reload
+benchmarks.
 
 ## Changing the app
 
