@@ -1929,7 +1929,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             self.dirty_vars.update(recomputed)
             if var_names is not None:
                 var_names = (*var_names, *recomputed)
-        pending = [
+        pending: list[tuple[BaseState, str]] = [
             (self, name)
             for name in (self.dirty_vars if var_names is None else var_names)
         ]

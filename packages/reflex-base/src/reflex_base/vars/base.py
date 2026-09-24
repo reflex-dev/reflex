@@ -3811,7 +3811,7 @@ class Field(Generic[FIELD_TYPE]):
     # Whether the value stays on the backend, never sent to the client.
     _backend: bool = False
     # Classes whose instances match the type without the full type check.
-    _plain_types: frozenset[type] = frozenset()
+    _plain_types: frozenset[Any] = frozenset()
     # The Var standing for the field on its owner, if sent to the client.
     _var: Var | None = None
 
