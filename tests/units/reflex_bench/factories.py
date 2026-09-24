@@ -288,6 +288,7 @@ def make_load_result(**changes: Any) -> LoadResult:
         },
         "service_s": {"p50": 0.003, "p99": 0.0117, "max": 0.044},
         "lag_s": {"p50": 4e-05, "p99": 0.00021, "max": 0.0009},
+        "spread_s": None,
         "generator_cpu_fraction": 0.18,
         "prime_s": {"p50": 0.09, "max": 0.21},
         "histogram": {"of": "response_s", "lo_s": 1e-05, "hi_s": 100.0, "counts": []},

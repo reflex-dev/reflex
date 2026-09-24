@@ -26,6 +26,14 @@ CHEAP = [
     "events.simple.capacity[manager=memory,sessions=10]",
     "events.simple.latency[manager=memory,sessions=10,rate=500]",
 ]
+# The shared state points daily adds: contention at the cheap point, and the
+# fan-out at two of its sizes.
+DAILY_SHARED = [
+    "events.shared_contention.capacity[manager=memory,sessions=10]",
+    "events.shared_contention.latency[manager=memory,sessions=10,rate=auto]",
+    "events.shared_fanout.broadcast[manager=memory,linked=5]",
+    "events.shared_fanout.broadcast[manager=memory,linked=25]",
+]
 
 
 def selected(suite_name: str | None, *filters: str) -> list[Planned]:
@@ -40,19 +48,30 @@ def names(suite_name: str | None, *filters: str) -> list[str]:
 def test_instance_ids_and_params():
     everything = names(None, "events.*")
     assert suite.MANAGERS[:2] == ("memory", "disk")
-    # Capacity and latency per shape, one knee (simple) and the 1 Hz sessions.
-    assert len(everything) == len(suite.MANAGERS) * (4 * (4 + 4) + 4 + 3)
+    # Capacity and latency per shape (contention included), one knee (simple),
+    # the 1 Hz sessions and the fan-out sizes.
+    assert len(everything) == len(suite.MANAGERS) * (5 * (4 + 4) + 4 + 3 + 4)
     assert "events.simple.capacity[manager=memory,sessions=1]" in everything
     assert "events.simple.capacity[manager=disk,sessions=200]" in everything
     assert "events.cross.latency[manager=memory,sessions=10,rate=auto]" in everything
     assert "events.simple.knee[manager=disk,sessions=50]" in everything
     assert "events.sessions.at_1hz[manager=memory,sessions=1000]" in everything
+    assert "events.shared_contention.capacity[manager=disk,sessions=200]" in everything
+    assert (
+        "events.shared_contention.latency[manager=memory,sessions=50,rate=auto]"
+        in everything
+    )
+    for linked in (1, 5, 25, 100):
+        assert f"events.shared_fanout.broadcast[manager=memory,linked={linked}]" in (
+            everything
+        )
     assert not [name for name in everything if name.startswith("events.cross.knee")]
+    assert not [name for name in everything if "shared_fanout.capacity" in name]
 
 
-def test_smoke_and_daily_run_two_cheap_points():
+def test_smoke_runs_two_cheap_points_and_daily_adds_the_shared_state():
     assert names("smoke", "events.*") == CHEAP
-    assert names("daily", "events.*") == CHEAP
+    assert sorted(names("daily", "events.*")) == sorted(CHEAP + DAILY_SHARED)
 
 
 def test_daily_events_fit_the_ci_budget():
@@ -60,7 +79,7 @@ def test_daily_events_fit_the_ci_budget():
     total = sum(
         cli._estimate(p.benchmark, Policy()) for p in selected("daily", "events.*")
     )
-    assert total <= 3 * 60
+    assert total <= 6 * 60
 
 
 def test_suites():
@@ -73,6 +92,11 @@ def test_suites():
         assert found[f"events.{shape}.latency"].suites == ()
     assert found["events.simple.knee"].suites == ()
     assert found["events.sessions.at_1hz"].suites == ()
+    # The shared state shapes need the playground's board: daily and all, never pr.
+    assert found["events.shared_contention.capacity"].suites == ("daily",)
+    assert found["events.shared_contention.latency"].suites == ("daily",)
+    assert found["events.shared_fanout.broadcast"].suites == ("daily",)
+    assert not names("pr", "events.*")
     assert found["selftest.events.calibrate"].suites == ("selftest",)
     assert "events.sessions.at_1hz[manager=memory,sessions=50]" in names("all")
     assert "events.simple.knee[manager=memory,sessions=10]" in names("all")
@@ -107,6 +131,80 @@ def test_the_shapes_are_the_playground_handlers():
     assert [name for name, shape in suite.SHAPES.items() if not shape.ordered] == [
         "background"
     ]
+    assert all(shape.client_var is None for shape in suite.SHAPES.values())
+
+
+def test_the_shared_shapes_are_the_board_handler():
+    board = "reflex___state____state.playground___state____board_state"
+    fanout, contention = (
+        suite.SHARED_SHAPES["shared_fanout"],
+        suite.SHARED_SHAPES["shared_contention"],
+    )
+    for shape in (fanout, contention):
+        assert shape.name == f"{board}.set_seq_shared"
+        assert (shape.delta_key, shape.seq_var) == (board, "last_seq_rx_state_")
+        assert shape.payload(7) == {"seq": 7}
+        assert shape.ordered
+    # Every linked session receives the fan-out; a contending session takes
+    # only its own echo.
+    assert fanout.client_var is None
+    assert contention.client_var == "last_client_rx_state_"
+    # The board's linked clients are wiped by a fresh token per load.
+    link, again = suite.join_link(), suite.join_link()
+    assert link.name == f"{board}.join"
+    assert link.delta_key == board
+    assert link.payload["token"] != again.payload["token"]
+    assert "_" not in link.payload["token"]
+
+
+class FakeRunner:
+    """A load runner that records its plan and answers with a canned result."""
+
+    plans: list[Any] = []
+
+    def __init__(self, plan: Any) -> None:
+        """Record the plan.
+
+        Args:
+            plan: The load plan.
+        """
+        self.plans.append(plan)
+
+    def run(self, on_window: Any = None) -> LoadResult:
+        """Answer with the canned result.
+
+        Args:
+            on_window: Ignored.
+
+        Returns:
+            The result.
+        """
+        return CLOSED
+
+
+def test_a_linked_backend_joins_a_fresh_board_per_load(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr(suite, "LoadRunner", FakeRunner)
+    monkeypatch.setattr(FakeRunner, "plans", [])
+    ctx = cast("Any", SimpleNamespace(params={"manager": "memory"}))
+    shared = suite._Backend(
+        ctx, suite.SHARED_SHAPES["shared_fanout"], sessions=25, linked=True
+    )
+    shared.url = "http://127.0.0.1:1"
+    shared.run("fanout", None, suite.PROBE_WINDOW)
+    shared.run("fanout", None, suite.FANOUT_WINDOW)
+    private = suite._Backend(ctx, suite.SHAPES["simple"], sessions=50)
+    private.url = shared.url
+    private.run("closed", None, suite.PROBE_WINDOW)
+    first, second, plain = FakeRunner.plans
+    assert first.link is not None
+    assert second.link is not None
+    assert first.link.name == suite.join_link().name
+    assert first.link.payload["token"] != second.link.payload["token"]
+    assert (first.sessions, first.processes, first.mode) == (25, 1, "fanout")
+    assert plain.link is None
+    assert plain.sessions == 50
 
 
 def test_server_env(tmp_path: Path):
@@ -561,6 +659,45 @@ def test_capacity_reports_throughput_and_cpu_per_event(
     # The histogram pools over runs; the per-second counts are a run's own.
     assert "histogram" in extra
     assert "answered_per_second" not in extra
+
+
+FANOUT = make_load_result(
+    mode="fanout",
+    sessions=25,
+    offered_rate=None,
+    response_s=None,
+    lag_s=None,
+    answered=600,
+    answered_rate=200.0,
+    service_s={"p50": 0.004, "p99": 0.011, "max": 0.02},
+    spread_s={"p50": 0.0015, "p99": 0.004, "max": 0.006},
+)
+
+
+def test_fanout_reports_the_broadcast_time_and_spread(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    entry, calls = run_instance(
+        tmp_path,
+        monkeypatch,
+        "events.shared_fanout.broadcast",
+        {"manager": "memory", "linked": "25"},
+        {"fanout": FANOUT},
+    )
+    assert entry["status"] == "ok", entry["error"]
+    # The warm-up probe is a fan-out too, and the sample counts one sender.
+    assert calls[:2] == [("app",), ("run", "fanout", None, suite.PROBE_WINDOW)]
+    assert calls[2] == ("run", "fanout", None, suite.FANOUT_WINDOW)
+    assert calls[-1] == ("stop",)
+    metrics = entry["metrics"]
+    assert metrics["throughput"]["samples"]["A"] == [200.0]
+    assert metrics["broadcast_p50"]["samples"]["A"] == [0.004]
+    assert metrics["broadcast_p99"]["samples"]["A"] == [0.011]
+    assert metrics["fanout_spread_p50"]["samples"]["A"] == [0.0015]
+    assert metrics["cpu_per_event"]["samples"]["A"] == [pytest.approx(1.2 / 600)]
+    (extra,) = entry["sample_extra"]
+    assert extra["spread_s"] == FANOUT.spread_s
+    assert extra["p99_underpowered"] is True
 
 
 def test_a_saturated_generator_fails_the_sample(

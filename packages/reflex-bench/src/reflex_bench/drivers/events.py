@@ -17,21 +17,27 @@ one websocket, one token and one state::
     client  41/_event,                            leave the namespace
 
 A session is primed like a page load, with ``hydrate`` and ``on_load_internal``,
-until a delta sets ``is_hydrated``. Every event carries the token: 0.8.23
-requires it, HEAD ignores it.
+until a delta sets ``is_hydrated``, then with the plan's :class:`LinkEvent` if
+it has one (joining a shared state token), until a delta of the linked state
+acknowledges it. Every event carries the token: 0.8.23 requires it, HEAD
+ignores it.
 
-**Open and closed loop.** In the open loop each session sends on a fixed
-schedule whatever the server does, late events are sent at once (never
+**Open, closed and fan-out loop.** In the open loop each session sends on a
+fixed schedule whatever the server does, late events are sent at once (never
 skipped), and latency counts from the *planned* send time, so a stall shows in
 every event it delays: there is no coordinated omission. The closed loop sends
 the next event when the previous one is answered; it measures capacity and
-service time, never user latency.
+service time, never user latency. The fan-out loop is a closed loop of the
+first session alone, whose event is answered once every session received its
+delta: the service time is the broadcast time of a shared state.
 
 **Correlation.** Each event carries a sequence number that the answering delta
 echoes (:class:`EventShape`); per session the numbers increase. A delta for
 ``N`` while a lower number is outstanding counts as out of order, and the lower
 numbers count as unanswered. Events without an answer by the end of the drain
-count as unanswered; none is dropped.
+count as unanswered; none is dropped. Sessions linked to one shared state
+receive each other's deltas, so a shape with a ``client_var`` sends the
+session's index as ``client`` and takes only the deltas echoing it as answers.
 
 **Processes.** :class:`LoadRunner` shards the sessions round-robin over spawned
 processes with one event loop each, starts their schedules together once every
@@ -84,7 +90,7 @@ from reflex_bench import stats
 if sys.platform != "win32":
     import resource
 
-Mode = Literal["open", "closed"]
+Mode = Literal["open", "closed", "fanout"]
 
 NAMESPACE = "/_event"
 ROOT_STATE = "reflex___state____state"
@@ -252,6 +258,11 @@ class EventShape:
             they were sent. Then an answer that overtakes an outstanding event
             means that event's answer was lost; background tasks, which may
             finish in any order, set it to ``False``.
+        client_var: The var that echoes the payload's ``client``, e.g.
+            ``last_client_rx_state_``. When set, every event carries the
+            session's index as ``client``, and only a delta echoing it answers
+            the session's events: the deltas a shared state fans out from other
+            sessions carry their index instead.
     """
 
     name: str
@@ -259,6 +270,23 @@ class EventShape:
     delta_key: str
     seq_var: str
     ordered: bool = True
+    client_var: str | None = None
+
+
+@dataclass(frozen=True)
+class LinkEvent:
+    """An event every session sends once hydrated, before its load: joining a shared state.
+
+    Attributes:
+        name: The full event handler name, e.g.
+            ``reflex___state____state.playground___state____board_state.join``.
+        payload: The handler's arguments, e.g. ``{"token": "board-1"}``.
+        delta_key: The linked state, whose next delta acknowledges the link.
+    """
+
+    name: str
+    payload: Mapping[str, Any]
+    delta_key: str
 
 
 @dataclass(frozen=True)
@@ -285,14 +313,18 @@ class LoadPlan:
         endpoint: The backend and page the sessions connect to.
         shape: The event every session sends.
         sessions: The number of sessions (browser tabs).
-        mode: ``open`` sends on a schedule, ``closed`` after each answer.
+        mode: ``open`` sends on a schedule, ``closed`` after each answer, and
+            ``fanout`` from the first session only, an event answered once
+            every session received its delta.
         rate: The total offered rate of the open loop, in events per second;
-            ``None`` for the closed loop.
+            ``None`` for the other loops.
         warmup_s: Seconds of load before the measured window; not measured.
         duration_s: The measured window.
         drain_s: Seconds after the window to wait for outstanding answers.
         processes: The number of generator processes.
         cpus: The CPUs of the generator processes (Linux), or ``None``.
+        link: An event every session sends once hydrated, before the load, or
+            ``None``.
     """
 
     endpoint: Endpoint
@@ -305,22 +337,28 @@ class LoadPlan:
     drain_s: float = 5.0
     processes: int = 1
     cpus: Sequence[int] | None = None
+    link: LinkEvent | None = None
 
     def __post_init__(self) -> None:
         """Check the plan.
 
         Raises:
             ValueError: On a rate that does not fit the mode, more processes than
-                sessions, or negative times.
+                sessions, a fan-out over several processes, or negative times.
         """
         if self.mode == "open" and not (self.rate and self.rate > 0):
             msg = "an open loop needs a positive rate"
             raise ValueError(msg)
-        if self.mode == "closed" and self.rate is not None:
-            msg = "a closed loop sends as fast as it is answered and takes no rate"
+        if self.mode != "open" and self.rate is not None:
+            msg = (
+                f"a {self.mode} loop sends as fast as it is answered and takes no rate"
+            )
             raise ValueError(msg)
         if not 1 <= self.processes <= self.sessions:
             msg = f"{self.processes} processes for {self.sessions} sessions: need at least one session per process"
+            raise ValueError(msg)
+        if self.mode == "fanout" and self.processes != 1:
+            msg = "a fan-out counts the arrivals at every session, so it runs in one process"
             raise ValueError(msg)
         if self.duration_s <= 0 or self.warmup_s < 0 or self.drain_s < 0:
             msg = "duration must be positive, warmup and drain not negative"
@@ -336,9 +374,12 @@ class LoadResult:
     count. The rates count what happened within the window; the drain after it
     only decides which events are ``unanswered``.
 
+    In a fan-out, ``answered`` counts the events every session received, and
+    ``service_s`` is the time until the last session had the delta.
+
     Attributes:
         sessions: The number of sessions.
-        mode: ``open`` or ``closed``.
+        mode: ``open``, ``closed`` or ``fanout``.
         processes: The number of generator processes.
         cpus: The CPUs of the generator processes, or ``None``.
         warmup_s: The warmup before the window.
@@ -361,9 +402,11 @@ class LoadResult:
         service_s: Answer time minus actual send time.
         lag_s: Actual minus planned send time: how late the generator was.
             Open loop only.
+        spread_s: Last minus first arrival of an event's delta over the
+            sessions. Fan-out only.
         generator_cpu_fraction: The busiest generator process's CPU seconds per
             second of the window.
-        prime_s: The time sessions took to connect and hydrate.
+        prime_s: The time sessions took to connect, hydrate and link.
         histogram: Counts of the latencies in ``of`` (``response_s`` or
             ``service_s``) in log-spaced buckets from ``lo_s`` to ``hi_s``, so
             runs can be pooled for display.
@@ -388,6 +431,7 @@ class LoadResult:
     response_s: dict[str, float] | None
     service_s: dict[str, float] | None
     lag_s: dict[str, float] | None
+    spread_s: dict[str, float] | None
     generator_cpu_fraction: float
     prime_s: dict[str, float] | None
     histogram: dict[str, Any]
@@ -470,15 +514,20 @@ class GeneratorSaturated(RuntimeError):  # noqa: N818 - the name states the verd
 class _Frames:
     """Encodes a session's events; only the payload changes between them."""
 
-    def __init__(self, shape: EventShape, token: str, pathname: str) -> None:
+    def __init__(
+        self, shape: EventShape, token: str, pathname: str, index: int
+    ) -> None:
         """Split the event frame around its payload.
 
         Args:
             shape: The event.
             token: The session's token.
             pathname: The page route.
+            index: The session's index, sent as ``client`` for a shape with a
+                ``client_var``.
         """
         self._payload = shape.payload
+        self._client = {"client": index} if shape.client_var is not None else {}
         template = event_frame(shape.name, None, token=token, pathname=pathname)
         head, marker, self._tail = template.partition('"payload":null')
         self._head = head + marker.removesuffix("null")
@@ -492,7 +541,9 @@ class _Frames:
         Returns:
             The frame.
         """
-        payload = json.dumps(self._payload(seq), separators=(",", ":"))
+        payload = json.dumps(
+            {**self._payload(seq), **self._client}, separators=(",", ":")
+        )
         return f"{self._head}{payload}{self._tail}"
 
 
@@ -504,7 +555,11 @@ class _Session:
     """
 
     def __init__(
-        self, index: int, endpoint: Endpoint, shape: EventShape | None
+        self,
+        index: int,
+        endpoint: Endpoint,
+        shape: EventShape | None,
+        link: LinkEvent | None = None,
     ) -> None:
         """Prepare the session; :meth:`prime` connects it.
 
@@ -513,10 +568,12 @@ class _Session:
             endpoint: Where to connect.
             shape: The event it sends, or ``None`` for a session that only
                 hydrates and stays open.
+            link: The event it sends once hydrated, or ``None``.
         """
         self.index = index
         self.endpoint = endpoint
         self.shape = shape
+        self.link = link
         self.token = str(uuid.uuid4())
         self.frames = self._frames()
         self.ws: ClientConnection | None = None
@@ -529,7 +586,9 @@ class _Session:
         self.outstanding: collections.deque[int] = collections.deque()
         self.first_measured = sys.maxsize
         self.out_of_order = 0
+        self.fanout: _Fanout | None = None
         self._hydrated = asyncio.Event()
+        self._linked = asyncio.Event()
         self._idle = asyncio.Event()
         self._reader: asyncio.Task[None] | None = None
         self._closing = False
@@ -542,7 +601,7 @@ class _Session:
         """
         if self.shape is None:
             return None
-        return _Frames(self.shape, self.token, self.endpoint.pathname)
+        return _Frames(self.shape, self.token, self.endpoint.pathname, self.index)
 
     def _fail(self, reason: str) -> None:
         """Mark the session failed and wake whatever waits on it.
@@ -553,10 +612,11 @@ class _Session:
         if self.error is None:
             self.error = reason
         self._hydrated.set()
+        self._linked.set()
         self._idle.set()
 
     async def prime(self, gate: asyncio.Semaphore) -> None:
-        """Connect, join the namespace and hydrate like a page load; failures are recorded.
+        """Connect, join the namespace, hydrate like a page load and link; failures are recorded.
 
         Args:
             gate: Limits how many sessions connect at once.
@@ -565,16 +625,17 @@ class _Session:
             try:
                 await asyncio.wait_for(self._open(), PRIME_TIMEOUT_S)
             except asyncio.TimeoutError:
-                self._fail(f"not hydrated within {PRIME_TIMEOUT_S:g} s")
+                step = "linked" if self._hydrated.is_set() else "hydrated"
+                self._fail(f"not {step} within {PRIME_TIMEOUT_S:g} s")
             except Exception as exc:
                 self._fail(f"could not connect: {type(exc).__name__}: {exc}")
 
     async def _open(self) -> None:
-        """Run the handshake and the hydration events.
+        """Run the handshake, the hydration events and the link event.
 
         Raises:
             ProtocolError: When the server does not open or refuses the namespace.
-            ConnectionError: When the session failed while hydrating.
+            ConnectionError: When the session failed while hydrating or linking.
         """
         started = time.perf_counter_ns()
         ws = self.ws = await connect(
@@ -619,6 +680,15 @@ class _Session:
         await self._hydrated.wait()
         if self.error is not None:
             raise ConnectionError(self.error)
+        if (link := self.link) is not None:
+            await ws.send(
+                event_frame(
+                    link.name, link.payload, token=self.token, pathname=pathname
+                )
+            )
+            await self._linked.wait()
+            if self.error is not None:
+                raise ConnectionError(self.error)
         self.prime_ns = time.perf_counter_ns() - started
 
     async def _read(self) -> None:
@@ -666,10 +736,26 @@ class _Session:
                 shape is not None
                 and (state := delta.get(shape.delta_key)) is not None
                 and (seq := state.get(shape.seq_var))
+                and (
+                    shape.client_var is None
+                    or state.get(shape.client_var) == self.index
+                )
             ):
                 if self.reply_frame is None:
                     self.reply_frame = frame
-                self._answer(seq, now)
+                if self.fanout is None:
+                    self._answer(seq, now)
+                else:
+                    self.fanout.arrival(self.index, seq, now)
+            # The linked state's delta acknowledges the link; the hydration
+            # delta carries the state too, but comes before the link is sent.
+            if (
+                self._hydrated.is_set()
+                and not self._linked.is_set()
+                and self.link is not None
+                and self.link.delta_key in delta
+            ):
+                self._linked.set()
             if (
                 not self._hydrated.is_set()
                 and (root := delta.get(ROOT_STATE))
@@ -854,6 +940,7 @@ class SessionPool:
         endpoint: Endpoint,
         indices: Iterable[int],
         shape: EventShape | None = None,
+        link: LinkEvent | None = None,
     ) -> None:
         """Prepare the sessions; nothing connects yet.
 
@@ -861,8 +948,9 @@ class SessionPool:
             endpoint: Where they connect.
             indices: Their indices among all sessions of a load.
             shape: The event they send, or ``None`` for idle sessions.
+            link: The event they send once hydrated, or ``None``.
         """
-        self.sessions = [_Session(index, endpoint, shape) for index in indices]
+        self.sessions = [_Session(index, endpoint, shape, link) for index in indices]
 
     @property
     def errors(self) -> list[str]:
@@ -874,7 +962,7 @@ class SessionPool:
         return [f"session {s.index}: {s.error}" for s in self.sessions if s.error]
 
     async def prime(self) -> None:
-        """Connect and hydrate every session, up to ``PRIME_CONCURRENCY`` at a time."""
+        """Connect, hydrate and link every session, up to ``PRIME_CONCURRENCY`` at a time."""
         gate = asyncio.Semaphore(PRIME_CONCURRENCY)
         await asyncio.gather(*(session.prime(gate) for session in self.sessions))
 
@@ -922,6 +1010,8 @@ class _Shard:
         response_ns: Answer minus planned send time, per answered event.
         service_ns: Answer minus actual send time, per answered event.
         lag_ns: Actual minus planned send time, per sent event.
+        spread_ns: Last minus first arrival over the sessions, per answered
+            event of a fan-out.
         cpu_fraction: The process's CPU seconds per second of the window.
         reply_frame: One frame that answered an event.
     """
@@ -941,6 +1031,7 @@ class _Shard:
         default_factory=lambda: array.array("q")
     )
     lag_ns: array.array = dataclasses.field(default_factory=lambda: array.array("q"))
+    spread_ns: array.array = dataclasses.field(default_factory=lambda: array.array("q"))
     cpu_fraction: float = 0.0
     reply_frame: str | None = None
 
@@ -986,7 +1077,7 @@ async def _run_sessions(
     Returns:
         The measurements.
     """
-    pool = SessionPool(plan.endpoint, indices, plan.shape)
+    pool = SessionPool(plan.endpoint, indices, plan.shape, plan.link)
     await pool.prime()
     sessions = pool.sessions
     shard = _Shard(
@@ -1001,19 +1092,83 @@ async def _run_sessions(
             measure_from = t0 + int(plan.warmup_s * 1e9)
             end = measure_from + int(plan.duration_s * 1e9)
             drain_until = end + int(plan.drain_s * 1e9)
-            shard.cpu_fraction = await _measure_cpu(
-                asyncio.gather(
+            fanout = _Fanout(sessions) if plan.mode == "fanout" else None
+            if fanout is None:
+                senders = sessions
+                work = asyncio.gather(
                     *(s.run(plan, t0, measure_from, end, drain_until) for s in sessions)
-                ),
-                measure_from,
-                end,
-            )
-            for session in sessions:
+                )
+            else:
+                senders = sessions[:1]
+                work = fanout.sender.run(plan, t0, measure_from, end, drain_until)
+            shard.cpu_fraction = await _measure_cpu(work, measure_from, end)
+            for session in senders:
                 shard.add(session, measure_from, end)
+            if fanout is not None:
+                shard.spread_ns.extend(fanout.measured_spread())
     finally:
         await pool.close()
     shard.errors = pool.errors
     return shard
+
+
+class _Fanout:
+    """The arrivals of one sender's deltas at every session, answering an event once all have it.
+
+    The sender runs the closed loop, so one event is in flight at a time; its
+    delta reaches the sender like any other session's.
+    """
+
+    def __init__(self, sessions: Sequence[_Session]) -> None:
+        """Route every session's arrivals here.
+
+        Args:
+            sessions: The linked sessions; the first one sends.
+        """
+        self.sender = sessions[0]
+        self._sessions = len(sessions)
+        self._spread = array.array("q")
+        self._seq = 0
+        self._first = 0
+        self._pending = 0
+        self._got = bytearray(self._sessions)
+        for session in sessions:
+            session.fanout = self
+
+    def arrival(self, index: int, seq: int, now: int) -> None:
+        """Count a session's arrival of the event in flight.
+
+        Args:
+            index: The session.
+            seq: The sequence number the delta echoes.
+            now: When it arrived.
+        """
+        sender = self.sender
+        if seq != len(sender.sent):
+            # A late delta of an event the loop gave up on.
+            return
+        if seq != self._seq:
+            self._seq, self._first, self._pending = seq, now, self._sessions
+            self._got[:] = bytes(self._sessions)
+            self._spread.extend([0] * (seq - len(self._spread)))
+        if self._got[index]:
+            return
+        self._got[index] = 1
+        self._pending -= 1
+        if self._pending == 0:
+            self._spread[seq - 1] = now - self._first
+            sender._answer(seq, now)
+
+    def measured_spread(self) -> Iterator[int]:
+        """Yield the spread of each answered event of the measured window.
+
+        Yields:
+            Last minus first arrival, in nanoseconds.
+        """
+        sender = self.sender
+        for index in range(sender.first_measured - 1, len(self._spread)):
+            if sender.answered[index]:
+                yield self._spread[index]
 
 
 async def _measure_cpu(work: Awaitable[Any], start: int, end: int) -> float:
@@ -1128,6 +1283,11 @@ def _merge(plan: LoadPlan, shards: Sequence[_Shard]) -> LoadResult:
         lag_s=(
             _summary([v for s in shards for v in s.lag_ns], SERVICE_PERCENTILES)
             if open_loop
+            else None
+        ),
+        spread_s=(
+            _summary([v for s in shards for v in s.spread_ns], SERVICE_PERCENTILES)
+            if plan.mode == "fanout"
             else None
         ),
         generator_cpu_fraction=max(shard.cpu_fraction for shard in shards),

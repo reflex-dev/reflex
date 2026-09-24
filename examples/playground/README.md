@@ -1,8 +1,9 @@
 # Reflex playground
 
-A small multi-page Reflex app: a navigation bar, a counter, a dynamic route and a list
-rendered with `rx.foreach`. It targets reflex 0.8.23 and later, and it is the app the
-Reflex macro benchmarks drive through the real `reflex` CLI.
+A small multi-page Reflex app: a navigation bar, a counter, a dynamic route, a list
+rendered with `rx.foreach` and a board shared between sessions with `rx.SharedState`.
+It targets reflex 0.8.23 and later, and it is the app the Reflex macro benchmarks drive
+through the real `reflex` CLI.
 
 ```bash
 uv run reflex run
@@ -10,12 +11,13 @@ uv run reflex run
 
 From the repository root, `uv run --directory examples/playground --project ../.. reflex run`
 runs it against this checkout instead of the latest release. The pages are `/`,
-`/counter` and `/item/[item_id]` (for example `/item/42`).
+`/counter`, `/board` and `/item/[item_id]` (for example `/item/42`).
 
 ## Benchmark contract
 
 The benchmarks rely on these element ids. Every page renders them through `layout.py`,
-except `#bench-marker-leaf`, which only the index page renders.
+except `#bench-marker-leaf`, which only the index page renders, and the `board-*` ids,
+which only `/board` renders.
 
 | Id | Shows |
 | --- | --- |
@@ -25,6 +27,9 @@ except `#bench-marker-leaf`, which only the index page renders.
 | `bench-handler-value` | `BenchState.handler_value`, which the event handler `BenchState.bench_value()` sets to `HANDLER_MARKER`. The button `#bench-handler` fires it. |
 | `bench-marker-root` | `ROOT_MARKER` of `playground/layout.py`, which every page imports. |
 | `bench-marker-leaf` | `LEAF_MARKER` of `playground/components/marker.py`, which only the index page imports. |
+| `board-join` | A button firing `BoardState.join("lobby")`, which links the session to the board `lobby`. |
+| `board-count` | `BoardState.count`, shared by every session linked to the same board; `#board-increment` fires `BoardState.increment`. |
+| `board-seq` | `BoardState.last_seq` and `BoardState.last_client`, which `set_seq_shared` sets. |
 
 The hot reload benchmarks rewrite exactly the string literal on a line carrying a
 `# bench:hmr-target <name>` pragma, then wait for the new value to show:
@@ -52,6 +57,17 @@ payload `{"seq": <int>}`. Every one sets `last_seq` to `seq`, so the delta of
 
 The websocket event name is the handler's full name, for example
 `reflex___state____state.playground___state____bench_state.set_seq_complex`.
+
+The shared state benchmarks use `BoardState`, an `rx.SharedState`, whose full name on the
+wire is `reflex___state____state.playground___state____board_state`:
+
+| Handler | Payload | Does |
+| --- | --- | --- |
+| `join` | `{"token": <str>}` | Links the session to the board `token` (`_link_to`); the reply delta carries every `BoardState` var. |
+| `set_seq_shared` | `{"seq": <int>, "client": <int>}` (`client` defaults to 0) | Sets `last_seq` and `last_client`, so the delta echoes them as `last_seq_rx_state_` and `last_client_rx_state_` to the sender and to every other session linked to the same board. |
+
+A benchmark links its sessions to a fresh board token per load, so no board carries
+the linked clients of an earlier load.
 
 ## Changing the app
 

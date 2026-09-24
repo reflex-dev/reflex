@@ -26,6 +26,7 @@ pytestmark = pytest.mark.skipif(
 ECHO_KEY = (
     '"reflex___state____state.playground___state____bench_state":{"last_seq_rx_state_":'
 )
+BOARD_KEY = '"reflex___state____state.playground___state____board_state":{'
 SUBJECTS = [
     "workspace",
     pytest.param(
@@ -98,4 +99,44 @@ def test_simple_events_for_real(
     assert extra["offered_rate"] == pytest.approx(20.0)
     assert _owned_processes() == []
     # The generator processes are gone too.
+    assert multiprocessing.active_children() == []
+
+
+@pytest.mark.parametrize("reflex", SUBJECTS)
+def test_shared_events_for_real(
+    reflex: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("REFLEX_BENCH_HOME", str(tmp_path / "home"))
+    monkeypatch.delenv("CI", raising=False)
+    out = tmp_path / "result.json"
+    result = CliRunner().invoke(
+        cli.cli,
+        [
+            "run", "events.shared_fanout.broadcast", "events.shared_contention.capacity",
+            "--reflex", reflex,
+            "--param", "manager=memory", "--param", "linked=3", "--param", "sessions=3",
+            "--runs", "1", "--no-save", "--json", str(out),
+        ],
+    )  # fmt: skip
+    assert result.exit_code == 0, result.output
+    entries = {entry["id"]: entry for entry in load(out)["benchmarks"]}
+    assert set(entries) == {
+        "events.shared_fanout.broadcast",
+        "events.shared_contention.capacity",
+    }
+    for entry in entries.values():
+        assert entry["status"] == "ok", entry["error"]
+        (extra,) = entry["sample_extra"]
+        assert extra is not None
+        assert extra["session_errors"] == []
+        assert extra["sessions"] == 3
+        assert BOARD_KEY in extra["reply_frame"]
+        assert '"last_client_rx_state_":' in extra["reply_frame"]
+    fanout = entries["events.shared_fanout.broadcast"]
+    (extra,) = fanout["sample_extra"]
+    assert extra is not None
+    assert extra["unanswered"] == 0
+    assert extra["spread_s"]["max"] > 0
+    assert fanout["metrics"]["broadcast_p50"]["samples"]["A"][0] > 0
+    assert _owned_processes() == []
     assert multiprocessing.active_children() == []
