@@ -1181,7 +1181,7 @@ def test_watch_hands_back_a_control_plane_that_stays_unreachable(
     # than spinning against a control plane that is not coming back.
     mocker.patch(
         "reflex_cli.utils.hosting.monotonic",
-        side_effect=[0.0, _WATCH_UNREACHABLE_GRACE + 1],
+        side_effect=[0.0, _WATCH_UNREACHABLE_GRACE.total_seconds() + 1],
     )
     request = Request(method="GET", url="https://build.reflex.dev", headers={})
     deployment = uuid.UUID(int=5)

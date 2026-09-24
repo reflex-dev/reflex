@@ -70,7 +70,7 @@ FRONTEND_ARCHIVE = "frontend.zip"
 # Per socket operation on an upload, not per upload. A link that cannot move one
 # chunk in this long -- roughly 17 kbps -- cannot finish an upload inside the
 # window its signature was issued for either.
-UPLOAD_IO_TIMEOUT = 120.0
+UPLOAD_IO_TIMEOUT = datetime.timedelta(minutes=2)
 
 
 class ScaleType(str, Enum):
@@ -780,7 +780,7 @@ def upload_client(client: AuthenticatedClient) -> ReflexBuild:
     return ReflexBuild(
         token=client.token,
         base_url=constants.Hosting.HOSTING_SERVICE,
-        timeout=UPLOAD_IO_TIMEOUT,
+        timeout=UPLOAD_IO_TIMEOUT.total_seconds(),
     )
 
 
@@ -1359,13 +1359,13 @@ def _strip_terminal_controls(text: str) -> str:
 
 # How long the watch waits out a dropped connection before looking again. The
 # deployment outlives the connection, so the watch does too.
-_WATCH_RETRY_SLEEP = 2.0
+_WATCH_RETRY_SLEEP = datetime.timedelta(seconds=2)
 
 # How long the control plane may stay unreachable before the watch hands the
 # deployment back. Long enough to ride out a reconnecting VPN or a flapping
 # link, short enough that a real outage does not hang a CI job until it is
 # killed.
-_WATCH_UNREACHABLE_GRACE = 300.0
+_WATCH_UNREACHABLE_GRACE = datetime.timedelta(minutes=5)
 
 # "failed" is not one of the markers the SDK reads a status message for -- the
 # ones it documents cover the statuses the pipeline publishes -- and is kept
@@ -1539,9 +1539,9 @@ def watch_deployment_status(
                     logger.warning(
                         "lost contact with the deployment service; still trying."
                     )
-                if now - unreachable_since >= _WATCH_UNREACHABLE_GRACE:
+                if now - unreachable_since >= _WATCH_UNREACHABLE_GRACE.total_seconds():
                     return stopped_following(error_message(ex))
-                time.sleep(_WATCH_RETRY_SLEEP)
+                time.sleep(_WATCH_RETRY_SLEEP.total_seconds())
                 continue
             except ReflexBuildError as ex:
                 return stopped_following(error_message(ex))
