@@ -1,6 +1,7 @@
 """Tests for reflex.istate.proxy."""
 
 import asyncio
+import contextvars
 import dataclasses
 import pickle
 import subprocess
@@ -222,6 +223,18 @@ class RouterProxySubState(RouterProxyState):
     """A substate inheriting its router fields from the root state."""
 
 
+class InheritedVarProxyState(BaseState):
+    """A root state defining the mutable vars its substate inherits."""
+
+    items: list[int] = []
+    data: dict[str, list[int]] = {"a": [1]}
+    _backend_items: list[int] = []
+
+
+class InheritedVarProxySubState(InheritedVarProxyState):
+    """A substate inheriting its mutable vars from the root state."""
+
+
 @pytest.mark.parametrize("state_cls", [RouterProxyState, RouterProxySubState])
 @pytest.mark.parametrize("proxy_cls", [StateProxy, ReadOnlyStateProxy])
 @pytest.mark.parametrize(
@@ -365,6 +378,163 @@ async def test_router_proxy_nested_context(
         assert root.router._page.params["x"] == (
             "refreshed" if proxy_cls is ReadOnlyStateProxy else "after"
         )
+
+
+@pytest.mark.asyncio
+async def test_inherited_var_proxy_mutable_context(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+) -> None:
+    """In-place mutations of inherited vars dirty the state that defines them.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+        emitted_deltas: The captured state updates.
+    """
+    state_token = BaseStateToken(ident=token, cls=InheritedVarProxySubState)
+    async with state_manager.modify_state(state_token) as root:
+        proxy = StateProxy(
+            root.get_substate(InheritedVarProxySubState.get_full_name().split("."))
+        )
+
+    with pytest.raises(ImmutableStateError):
+        proxy.items.append(1)
+    with pytest.raises(ImmutableStateError):
+        proxy.data["a"].append(2)
+    with pytest.raises(ImmutableStateError):
+        proxy._backend_items.append(3)
+
+    async with proxy:
+        proxy.items.append(1)
+        proxy.data["a"].append(2)
+        proxy._backend_items.append(3)
+        root = proxy.__wrapped__._get_root_state()
+        assert root.dirty_vars == {"items", "data", "_backend_items"}
+        assert not proxy.__wrapped__.dirty_vars
+        assert BaseState._get_was_touched(root)
+
+    assert emitted_deltas == [
+        (
+            token,
+            {
+                InheritedVarProxyState.get_full_name(): {
+                    "items" + FIELD_MARKER: [1],
+                    "data" + FIELD_MARKER: {"a": [1, 2]},
+                },
+            },
+        ),
+    ]
+    async with state_manager.modify_state(state_token) as root:
+        assert isinstance(root, InheritedVarProxyState)
+        assert root.items == [1]
+        assert root.data == {"a": [1, 2]}
+        assert root._backend_items == [3]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("proxy_cls", [StateProxy, ReadOnlyStateProxy])
+async def test_inherited_var_proxy_nested_context(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    proxy_cls: type[StateProxy],
+) -> None:
+    """Inherited var proxies refresh from the defining state and respect read-only access.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+        emitted_deltas: The captured state updates.
+        proxy_cls: The background or read-only proxy type.
+    """
+    state_token = BaseStateToken(ident=token, cls=InheritedVarProxySubState)
+    async with state_manager.modify_state(state_token) as root:
+        proxy = proxy_cls(
+            root.get_substate(InheritedVarProxySubState.get_full_name().split("."))
+        )
+        items = proxy.items
+        nested = proxy.data["a"]
+
+    async with state_manager.modify_state(state_token) as root:
+        assert isinstance(root, InheritedVarProxyState)
+        root.items = [0]
+        root._clean()
+
+    if proxy_cls is ReadOnlyStateProxy:
+        for container in (items, nested):
+            with pytest.raises(ImmutableStateError, match="read-only"):
+                async with container:
+                    pass
+    else:
+        async with items:
+            assert items == [0]
+            items.append(1)
+        async with nested:
+            nested.append(2)
+
+    with pytest.raises(ImmutableStateError):
+        items.append(3)
+    with pytest.raises(ImmutableStateError):
+        nested.append(3)
+
+    root_name = InheritedVarProxyState.get_full_name()
+    async with state_manager.modify_state(state_token) as root:
+        assert isinstance(root, InheritedVarProxyState)
+        if proxy_cls is ReadOnlyStateProxy:
+            assert not emitted_deltas
+            assert root.items == [0]
+            assert root.data == {"a": [1]}
+        else:
+            assert emitted_deltas == [
+                (token, {root_name: {"items" + FIELD_MARKER: [0, 1]}}),
+                (token, {root_name: {"data" + FIELD_MARKER: {"a": [1, 2]}}}),
+            ]
+            assert root.items == [0, 1]
+            assert root.data == {"a": [1, 2]}
+
+
+@pytest.mark.asyncio
+async def test_inherited_var_proxy_outside_event_context(
+    token: str,
+    attached_mock_event_context: EventContext,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+) -> None:
+    """Inherited vars stay reachable from code that does not see the event context.
+
+    A background task may use its state from a function that
+    `loop.run_in_executor` runs without the caller's context variables.
+
+    Args:
+        token: The client token.
+        attached_mock_event_context: The attached event context.
+        emitted_deltas: The captured state updates.
+    """
+    async with attached_mock_event_context.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=InheritedVarProxySubState)
+    ) as root:
+        proxy = StateProxy(
+            root.get_substate(InheritedVarProxySubState.get_full_name().split("."))
+        )
+    detached = contextvars.Context()
+
+    assert detached.run(lambda: proxy.items) == []
+    with pytest.raises(ImmutableStateError):
+        detached.run(lambda: proxy.items.append(1))
+    async with proxy:
+        detached.run(lambda: proxy.items.append(1))
+
+    assert emitted_deltas == [
+        (
+            token,
+            {InheritedVarProxyState.get_full_name(): {"items" + FIELD_MARKER: [1]}},
+        ),
+    ]
 
 
 @pytest.mark.asyncio

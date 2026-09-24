@@ -128,7 +128,13 @@ class StateProxy(wrapt.ObjectProxy):
         self._self_event = event
         self._self_substate_path = tuple(state_instance.get_full_name().split("."))
         self._self_substate_token = BaseStateToken(
-            ident=EventContext.get().token,
+            # A linked proxy shares its parent's client, and may be built on
+            # attribute access outside the event context (e.g. in an executor).
+            ident=(
+                EventContext.get().token
+                if parent_state_proxy is None
+                else parent_state_proxy._self_substate_token.ident
+            ),
             cls=state_instance.__class__,
         )
         self._self_actx = None
@@ -149,6 +155,20 @@ class StateProxy(wrapt.ObjectProxy):
         if self._self_parent_state_proxy is not None:
             return self._self_parent_state_proxy._is_mutable() or self._self_mutable
         return self._self_mutable
+
+    def _linked_proxy(self, state: BaseState) -> StateProxy:
+        """Get a proxy for a state in this proxy's tree, guarded by this proxy.
+
+        Args:
+            state: The state instance to proxy.
+
+        Returns:
+            This proxy if it wraps the state, otherwise a proxy of the state
+            linked to this one, which is mutable only while this one is.
+        """
+        if state is self.__wrapped__:
+            return self
+        return type(self)(state, parent_state_proxy=self)
 
     async def __aenter__(self) -> Self:
         """Enter the async context manager protocol.
@@ -269,13 +289,8 @@ class StateProxy(wrapt.ObjectProxy):
 
             # Router fields belong to the root. A linked proxy keeps their dirty
             # tracking there while enforcing the calling proxy's mutation guard.
-            root_state = self.__wrapped__._get_root_state()
-            router_proxy = (
-                self
-                if root_state is self.__wrapped__
-                else type(self)(root_state, parent_state_proxy=self)
-            )
-            return _router_fget(cast("BaseState", router_proxy))
+            root_proxy = self._linked_proxy(self.__wrapped__._get_root_state())
+            return _router_fget(cast("BaseState", root_proxy))
 
         if name in ["substates", "parent_state"] and not self._is_mutable():
             msg = (
@@ -289,9 +304,10 @@ class StateProxy(wrapt.ObjectProxy):
             # ensure mutations to these containers are blocked unless proxy is _mutable
             return ImmutableMutableProxy(
                 wrapped=value.__wrapped__,
-                # The proxy stands in for the wrapped state, and is passed
-                # deliberately so mutability is still gated on this proxy.
-                state=cast("BaseState", self),
+                # The proxy stands in for the state defining the field (a parent
+                # state for an inherited var), so that state is marked dirty,
+                # while mutability is still gated on this proxy.
+                state=cast("BaseState", self._linked_proxy(value._self_state)),
                 field_name=value._self_field_name,
             )
         if isinstance(value, functools.partial) and value.args[0] is self.__wrapped__:

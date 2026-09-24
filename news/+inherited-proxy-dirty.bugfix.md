@@ -1,0 +1,1 @@
+Fix background tasks losing in-place changes to vars a substate inherits from its parent state: mutating an inherited list, dict, set or dataclass var (e.g. `self.items.append(...)` inside `async with self`) now updates the frontend and is saved by the Redis and disk state managers.
