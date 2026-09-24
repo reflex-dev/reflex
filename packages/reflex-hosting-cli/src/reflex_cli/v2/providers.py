@@ -136,9 +136,11 @@ def _as_account_row(connection: GcpConnection) -> dict[str, Any]:
         The same connection in the provider account listing's shape.
 
     """
+    from reflex_cli.utils import hosting
+
     return {
         "id": str(connection.id),
-        "provider": "gcp",
+        "provider": hosting.PROVIDER_GCP,
         "name": connection.name,
         "is_default": connection.is_default,
         "config": {
@@ -175,6 +177,8 @@ def _connection_row(
         The row's cells, in header order.
 
     """
+    from reflex_cli.utils import hosting
+
     config = connection.get("config") or {}
     if runtime_service_accounts is None:
         runs_as = unknown_label
@@ -185,7 +189,7 @@ def _connection_row(
         )
     return [
         str(connection.get("name") or ""),
-        str(connection.get("provider") or "gcp"),
+        str(connection.get("provider") or hosting.PROVIDER_GCP),
         str(connection.get("project_id") or config.get("project_id") or ""),
         str(connection.get("region") or config.get("region") or ""),
         runs_as,
