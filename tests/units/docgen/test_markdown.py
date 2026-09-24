@@ -48,6 +48,17 @@ def test_basic_frontmatter():
     assert doc.frontmatter.title == "Test"
 
 
+@pytest.mark.parametrize("prefix", ["", "\ufeff", " \n\n", "\ufeff \n"])
+@pytest.mark.parametrize("newline", ["\n", "\r\n"])
+def test_frontmatter_encodings_do_not_leak_into_body(prefix, newline):
+    """Accept metadata boundaries consistently without rendering YAML as prose."""
+    source = (prefix + "---\ntitle: Test\n---\n# Hello\n").replace("\n", newline)
+    doc = parse_document(source)
+    assert doc.frontmatter is not None
+    assert doc.frontmatter.title == "Test"
+    assert doc.blocks == (HeadingBlock(level=1, children=(TextSpan(text="Hello"),)),)
+
+
 def test_multiline_frontmatter():
     """Multi-line YAML frontmatter is preserved."""
     source = "---\ncomponents:\n  - rx.button\n\nButton: |\n  lambda **props: rx.button(**props)\n---\n# Button\n"

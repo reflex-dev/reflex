@@ -292,6 +292,61 @@ def test_deprecate_dedupes_and_renders(capsys):
     assert "removed in 1.0" in out
 
 
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "<string>",
+        "<frozen importlib._bootstrap>",
+        "<frozen importlib._bootstrap_external>",
+    ],
+)
+def test_generated_code_is_never_a_user_call_site(filename: str):
+    """Code the interpreter generated has a pseudo-name, not a path.
+
+    Args:
+        filename: The pseudo-filename the generated code object carries.
+    """
+    assert log._is_framework_filename(filename)
+
+
+@pytest.mark.parametrize("filename", ["<stdin>", "<ipython-input-3-a1b2c3d4>"])
+def test_an_interactive_call_site_is_still_reported(filename: str):
+    """A REPL line and a notebook cell are the user's own code.
+
+    They are bracketed like generated code but are exactly the location a
+    deprecation should name, so the rule must not swallow them.
+
+    Args:
+        filename: The pseudo-filename an interactive session carries.
+    """
+    assert not log._is_framework_filename(filename)
+
+
+def test_an_ordinary_path_is_still_classified_by_location(tmp_path):
+    """The rule must not swallow a real file outside the framework.
+
+    Args:
+        tmp_path: pytest temporary directory fixture.
+    """
+    assert not log._is_framework_filename(str(tmp_path / "app.py"))
+
+
+def test_deprecate_skips_frames_compiled_from_strings(capsys):
+    """A `<string>` code object is not a user call site, so the location skips it."""
+    namespace: dict[str, object] = {}
+    exec(
+        "def emit():\n"
+        "    log.deprecate(feature_name='StringFeature', reason='Use x.',"
+        " deprecation_version='0.1.0', removal_version='1.0')\n",
+        {"log": log},
+        namespace,
+    )
+    namespace["emit"]()  # pyright: ignore[reportCallIssue]
+    out, _ = capsys.readouterr()
+    assert "<string>" not in out
+    assert "test_log.py" in out
+
+
 def test_deprecate_json_extras(monkeypatch, capsys):
     """Deprecations carry structured metadata in JSON mode."""
     monkeypatch.setenv("REFLEX_LOG_JSON", "true")

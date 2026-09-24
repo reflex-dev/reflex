@@ -35,7 +35,7 @@ from reflex_base import constants, otel
 from reflex_base.components.component import Component, ComponentStyle
 from reflex_base.config import get_config, reload_config
 from reflex_base.context.base import BaseContext
-from reflex_base.environment import environment
+from reflex_base.environment import auto_reload_cooldown, environment
 from reflex_base.event import (
     _EVENT_FIELDS,
     Event,
@@ -76,7 +76,7 @@ from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
-from reflex.istate.data import RouterData
+from reflex.istate.data import SessionData
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
 from reflex.route import (
@@ -607,6 +607,10 @@ class App(MiddlewareMixin, LifespanMixin):
         # Set up the state manager.
         self._state_manager = StateManager.create()
 
+        # Read the auto-reload cooldown now so a deprecated name warns at startup
+        # rather than on the first frontend error that consults it.
+        auto_reload_cooldown()
+
         # Set up the Socket.IO AsyncServer.
         if not self.sio:
             self.sio = AsyncServer(
@@ -622,8 +626,8 @@ class App(MiddlewareMixin, LifespanMixin):
                 ),
                 cors_credentials=config.transport == "websocket",
                 max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
-                ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
-                ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
+                ping_interval=environment.REFLEX_SOCKET_INTERVAL.get().total_seconds(),
+                ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get().total_seconds(),
                 json=SimpleNamespace(
                     dumps=staticmethod(_sio_dumps),
                     loads=staticmethod(_sio_loads),
@@ -1646,7 +1650,11 @@ class App(MiddlewareMixin, LifespanMixin):
             sticky_badge._add_style_recursive({})
             return sticky_badge
 
-        self.app_wraps[0, "StickyBadge"] = lambda _: memoized_badge()
+        # The badge memo renders no children, and `_app_root` nests every
+        # lower-priority wrap inside the previous one, so keep the badge inside
+        # a Fragment: wraps below it (e.g. the `rx.data_editor` portal at
+        # priority -1) then stay siblings of the badge and reach the DOM.
+        self.app_wraps[0, "StickyBadge"] = lambda _: Fragment.create(memoized_badge())
 
     def _apply_decorated_pages(self):
         """Add @rx.page decorated pages to the app."""
@@ -2093,6 +2101,10 @@ class EventNamespace(AsyncNamespace):
         # Number of client_error reports logged per SID, for rate limiting.
         self._client_error_counts: dict[str, int] = {}
 
+        # Connection-scoped router_data entries per SID, computed once at
+        # connect time instead of for every event on the connection.
+        self._static_router_data: dict[str, dict[str, Any]] = {}
+
         # Start time and count of the current process-wide client_error window.
         self._client_error_window_start = 0.0
         self._client_error_window_count = 0
@@ -2144,6 +2156,51 @@ class EventNamespace(AsyncNamespace):
         if otel.enabled:
             otel.record_connection(1)
 
+        # Headers, client IP, and session id cannot change for the lifetime of
+        # the connection; compute them once instead of on every event.
+        self._static_router_data[sid] = self._build_static_router_data(sid, environ)
+
+    def _build_static_router_data(self, sid: str, environ: dict) -> dict[str, Any]:
+        """Build the connection-scoped router_data entries for a socket.
+
+        Args:
+            sid: The Socket.IO session id.
+            environ: The request information, including HTTP headers.
+
+        Returns:
+            The router_data entries that are constant for the connection.
+        """
+        asgi_scope = environ.get("asgi.scope", {})
+
+        # Get the client headers.
+        headers = {
+            k.decode("utf-8"): v.decode("utf-8")
+            for (k, v) in asgi_scope.get("headers", [])
+        }
+
+        # Get the client IP
+        try:
+            client_ip = asgi_scope["client"][0]
+            headers["asgi-scope-client"] = client_ip
+        except (KeyError, IndexError):
+            client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
+
+        # Unroll reverse proxy forwarded headers.
+        client_ip = (
+            headers
+            .get(
+                "x-forwarded-for",
+                client_ip,
+            )
+            .partition(",")[0]
+            .strip()
+        )
+        return {
+            constants.RouteVar.SESSION_ID: sid,
+            constants.RouteVar.HEADERS: headers,
+            constants.RouteVar.CLIENT_IP: client_ip,
+        }
+
     def on_disconnect(self, sid: str) -> asyncio.Task | None:
         """Event for when the websocket disconnects.
 
@@ -2156,6 +2213,7 @@ class EventNamespace(AsyncNamespace):
         if otel.enabled:
             otel.record_connection(-1)
         self._client_error_counts.pop(sid, None)
+        self._static_router_data.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
@@ -2248,45 +2306,33 @@ class EventNamespace(AsyncNamespace):
             msg = f"Failed to deserialize event data: {fields}."
             raise exceptions.EventDeserializationError(msg) from ex
 
-        # Get the event environment.
-        if self.app.sio is None:
-            msg = "Socket.IO is not initialized."
-            raise RuntimeError(msg)
-        environ = self.app.sio.get_environ(sid, self.namespace)
-        if environ is None:
-            msg = "Socket.IO environ is not initialized."
-            raise RuntimeError(msg)
-
-        # Get the client headers.
-        headers = {
-            k.decode("utf-8"): v.decode("utf-8")
-            for (k, v) in environ["asgi.scope"]["headers"]
-        }
-
-        # Get the client IP
-        try:
-            client_ip = environ["asgi.scope"]["client"][0]
-            headers["asgi-scope-client"] = client_ip
-        except (KeyError, IndexError):
-            client_ip = environ.get("REMOTE_ADDR", "0.0.0.0")
-
-        # Unroll reverse proxy forwarded headers.
-        client_ip = (
-            headers
-            .get(
-                "x-forwarded-for",
-                client_ip,
+        static_router_data = self._static_router_data.get(sid)
+        if static_router_data is None:
+            # The connection was not seen by on_connect (e.g. namespace created
+            # after the socket connected); fall back to the connection environ.
+            if self.app.sio is None:
+                msg = "Socket.IO is not initialized."
+                raise RuntimeError(msg)
+            environ = self.app.sio.get_environ(sid, self.namespace)
+            if environ is None:
+                msg = "Socket.IO environ is not initialized."
+                raise RuntimeError(msg)
+            static_router_data = self._static_router_data[sid] = (
+                self._build_static_router_data(sid, environ)
             )
-            .partition(",")[0]
-            .strip()
-        )
         router_data = event.router_data
+        router_data.update(static_router_data)
+        # The cached headers reach the event, and from there `state.router_data`,
+        # which is a plain mutable dict: sharing the mapping would let a handler
+        # mutating `self.router_data["headers"]` corrupt the connection cache for
+        # every later event on this socket. The shallow copy is ~17x cheaper than
+        # the per-event header decode it replaced, so the cache still pays off.
+        router_data[constants.RouteVar.HEADERS] = static_router_data[
+            constants.RouteVar.HEADERS
+        ].copy()
         router_data.update({
             constants.RouteVar.QUERY: format.format_query_params(event.router_data),
             constants.RouteVar.CLIENT_TOKEN: token,
-            constants.RouteVar.SESSION_ID: sid,
-            constants.RouteVar.HEADERS: headers,
-            constants.RouteVar.CLIENT_IP: client_ip,
         })
         router_data[constants.RouteVar.PATH] = "/" + (
             self.app.router(path) or "404"
@@ -2408,4 +2454,11 @@ class EventNamespace(AsyncNamespace):
                 BaseStateToken(ident=new_token or token, cls=self.app._state)
             ) as state:
                 state.router_data[constants.RouteVar.SESSION_ID] = sid
-                state.router = RouterData.from_router_data(state.router_data)
+                # Record the identity the state was loaded under; duplicate-token
+                # handling can hand back a fresh one here.
+                state.router_data[constants.RouteVar.CLIENT_TOKEN] = new_token or token
+                # Rebuild from router_data to keep the session var in step with it.
+                if (
+                    session := SessionData.from_router_data(state.router_data)
+                ) != state.rx_router_session:
+                    state.rx_router_session = session

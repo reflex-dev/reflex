@@ -326,6 +326,22 @@ class MemoComponentDefinition(MemoDefinition):
     # imports collection, so descendants emit their refs/imports/hooks in the
     # page scope rather than being duplicated inside the memo body.
     passthrough_hole_child: Component | None = None
+    # For wrappers built by the auto-memoize plugin: make the wrapper
+    # transparent to its parent by forwarding runtime-injected props to the
+    # root component of the memo body. The compiled function destructures
+    # ``({children, ...rest})`` — ``rest`` includes ``ref`` via React 19
+    # ref-as-prop — and the root renders ``mergeSlotProps(rest, {...own})``,
+    # which merges following Radix ``Slot`` semantics (own props win, ``on*``
+    # handlers compose, refs compose, ``className`` concatenates, and
+    # object-valued props deep-merge). Set only when the root renders a tag
+    # that can carry props and a ref.
+    forward_root_props: bool = False
+    # The camelCased JS prop that carries the root's DOM ref when the root
+    # does not accept ``ref`` directly (from the component class's
+    # ``_dom_ref_prop``, e.g. DebounceInput's ``inputRef``). The generated
+    # ``mergeSlotProps`` call routes a runtime-injected ref to this prop so it
+    # reaches the real element instead of a class-component instance.
+    root_ref_prop: str | None = None
     # The JS function the compiled function component is wrapped in — React's
     # ``memo`` by default. ``None`` exports the bare function component. The
     # wrapper's ``VarData`` supplies its imports, so a custom wrapper brings
@@ -2172,6 +2188,22 @@ def create_passthrough_component_memo(
 
     # ``export_name`` is the content-hashed tag, which reads as noise in the
     # React DevTools tree. Name the memo after the Python class it wraps.
+    # Wrappers whose memo body renders ``component`` as its root are made
+    # transparent to their parent: props and refs set on the wrapper at
+    # runtime (e.g. injected by a Radix ``asChild``/``Slot`` parent cloning
+    # its child element) reach the root component instead of being dropped by
+    # the wrapper's destructured signature. This holds for passthrough and
+    # snapshot bodies alike — both render ``component`` as the outermost
+    # element. Untagged roots (``Bare``, ``Cond``, ``Match``, ``Foreach``)
+    # render no element to attach to; an empty tag (``Upload``) and
+    # ``Fragment`` both render a ``Fragment``, which accepts neither props nor
+    # refs.
+    forward_root_props = bool(
+        component.tag
+        and not isinstance(component, Fragment)
+        and component._render().name
+    )
+    dom_ref_prop = type(component)._dom_ref_prop if forward_root_props else None
     definition = MemoComponentDefinition(
         fn=passthrough,
         python_name=passthrough.__name__,
@@ -2183,6 +2215,10 @@ def create_passthrough_component_memo(
         auto_memo_wrapper=True,
         display_name=type(component).__qualname__,
         passthrough_hole_child=captured_hole_child[0] if captured_hole_child else None,
+        forward_root_props=forward_root_props,
+        root_ref_prop=(
+            format.to_camel_case(dom_ref_prop) if dom_ref_prop is not None else None
+        ),
     )
 
     return _create_component_wrapper(definition), definition

@@ -96,7 +96,7 @@ fetch-retries=0
 def _determine_react_router_version() -> str:
     # Requires Node >= 22.22.0 and React >= 19.2.7; keep Node.MIN_VERSION and
     # _determine_react_version in step when bumping.
-    default_version = "8.3.1"
+    default_version = "8.4.0"
     if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
         logger.warning(
             f"You have requested react-router@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
@@ -145,6 +145,10 @@ class PackageJson(SimpleNamespace):
             "react-helmet": "6.1.0",
             "react-dom": cls._react_version,
             "isbot": "5.2.2",
+            # Deep prop merging in $/utils/state's mergeSlotProps. This is
+            # the single owner of the pin — components (e.g. plotly) import
+            # "mergician" unversioned and collapse onto this version.
+            "mergician": "v2.0.2",
             "socket.io-client": "4.8.3",
             "universal-cookie": "8.1.2",
         }

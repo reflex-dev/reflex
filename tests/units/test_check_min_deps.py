@@ -1,7 +1,10 @@
 """Unit tests for scripts/check_min_deps.py (the minimum-dependency-version checker)."""
 
+import os
+import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 
@@ -61,6 +64,8 @@ def test_discover_packages_records_optional_extras():
     by_name = {p.name: p for p in check_min_deps.discover_packages()}
     # The root package declares a `db` optional-dependency group.
     assert "db" in by_name["reflex"].extras
+    # reflex-build-sdk has no required dependencies, only extras.
+    assert set(by_name["reflex-build-sdk"].extras) == {"aiohttp", "httpx", "httpx2"}
 
 
 def test_pyright_errors_keys_and_filters_severity():
@@ -324,6 +329,60 @@ def test_build_dev_wheelhouse_reports_build_failure(
 
     assert detail == "boom"
     assert len(fake_run.commands) == 1, "the first failure should stop the build"
+
+
+@pytest.mark.parametrize(
+    ("requirement", "version"),
+    [
+        ("reflex-base>=0.9.12.dev0", "0.9.12.dev0"),
+        ("reflex-base>=0.9.12.dev0,>=0.9.12.dev2", "0.9.12.dev2"),
+        ("reflex-base==0.9.12.dev3", "0.9.12.dev3"),
+        ("reflex-base>0.9.12.dev0", None),
+    ],
+)
+def test_dev_wheel_version_satisfies_declared_floor(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    requirement: str,
+    version: str | None,
+):
+    """Development wheels honor usable declared floors without changing the parent env.
+
+    Args:
+        monkeypatch: Environment and build-process patching fixture.
+        tmp_path: Temporary consumer and sibling package directory.
+        requirement: The consumer's unpublished dependency requirement.
+        version: The declared version to use, or None to retain normal versioning.
+    """
+    consumer = tmp_path / "consumer"
+    sibling = tmp_path / "sibling"
+    consumer.mkdir()
+    sibling.mkdir()
+    (consumer / "pyproject.toml").write_text(
+        f'[project]\nname = "consumer"\ndependencies = ["{requirement}"]\n'
+    )
+    (sibling / "pyproject.toml").write_text('[project]\nname = "reflex-base"\n')
+    package = check_min_deps.Package(
+        name="consumer",
+        project_dir=consumer,
+        source_dir=consumer,
+        extras=(),
+        local_dev_sources=(sibling,),
+    )
+    monkeypatch.delenv("UV_DYNAMIC_VERSIONING_BYPASS", raising=False)
+    build = Mock(return_value=subprocess.CompletedProcess([], 0, stdout=""))
+    monkeypatch.setattr(check_min_deps, "_run", build)
+
+    assert check_min_deps._build_dev_wheelhouse(package, tmp_path / "wheels") is None
+
+    env = build.call_args.kwargs.get("env")
+    if version is None:
+        assert env is None
+    else:
+        assert env is not None
+        assert env["UV_DYNAMIC_VERSIONING_BYPASS"] == version
+        assert env["PATH"] == os.environ["PATH"]
+    assert "UV_DYNAMIC_VERSIONING_BYPASS" not in os.environ
 
 
 def test_check_package_reports_failed_wheelhouse_build(monkeypatch: pytest.MonkeyPatch):

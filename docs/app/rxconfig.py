@@ -1,4 +1,5 @@
 import reflex as rx
+import reflex_xy
 from reflex_site_shared.plugins import SharedSiteStylesPlugin
 
 from agent_files import AgentFilesPlugin
@@ -16,6 +17,7 @@ config = rx.Config(
     ],
     telemetry_enabled=False,
     plugins=[
+        reflex_xy.XYPlugin(),
         rx.plugins.TailwindV4Plugin(),
         SharedSiteStylesPlugin(),
         rx.plugins.SitemapPlugin(trailing_slash="always"),
