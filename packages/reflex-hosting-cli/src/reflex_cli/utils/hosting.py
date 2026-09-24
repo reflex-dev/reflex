@@ -1799,30 +1799,28 @@ def generate_config(interactive: bool = True, token: str | None = None) -> Path 
 def get_vm_types() -> list[dict]:
     """Retrieve the available VM types.
 
+    A refused or unreachable request raises rather than reading as an empty
+    listing: a caller cannot tell "there are none" from "we could not ask".
+
     Returns:
         list[dict]: A list of VM types as dictionaries.
 
     """
-    try:
-        with new_client() as client:
-            vm_types = client.deployments.vm_types()
-    except Exception as ex:
-        logger.error(f"Unable to get vmtypes due to {ex}.")
-        return []
+    with new_client() as client:
+        vm_types = client.deployments.vm_types()
     return [dataclasses.asdict(vm_type) for vm_type in vm_types]
 
 
 def get_regions() -> list[dict]:
     """Get the supported regions from the hosting server.
 
+    A refused or unreachable request raises rather than reading as an empty
+    listing: a caller cannot tell "there are none" from "we could not ask".
+
     Returns:
         list[dict]: A list of dict representation of the region information.
 
     """
-    try:
-        with new_client() as client:
-            regions = client.deployments.regions()
-    except Exception as ex:
-        logger.error(f"Unable to get regions due to {ex}.")
-        return []
+    with new_client() as client:
+        regions = client.deployments.regions()
     return [{"name": region.name, "code": region.code} for region in regions]

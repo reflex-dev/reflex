@@ -92,7 +92,7 @@ def test_get_vm_types_invalid_response(mocker: MockFixture):
 
 
 def test_get_vm_types_http_error(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
-    """A failed read is reported rather than raised at the user.
+    """A failed read exits non-zero rather than reading as an empty listing.
 
     Args:
         mocker: Pytest mocker fixture.
@@ -106,10 +106,27 @@ def test_get_vm_types_http_error(mocker: MockFixture, caplog: pytest.LogCaptureF
     mock_console_print = mocker.patch("reflex_cli.utils.console.print")
     result = runner.invoke(hosting_cli, ["vmtypes"])
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == 1
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
-    assert errors == ["Unable to get vmtypes due to 500 : Invalid token."]
-    mock_console_print.assert_called_once_with("[]")
+    assert errors == ["Invalid token"]
+    mock_console_print.assert_not_called()
+
+
+def test_get_vm_types_http_error_writes_no_json_document(mocker: MockFixture):
+    """A caller reading --json is not handed `[]` for a request that failed.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    client = mocker.MagicMock()
+    client.deployments.vm_types.side_effect = api_error(500, "Invalid token")
+    client.__enter__.return_value = client
+    mocker.patch("reflex_cli.utils.hosting.new_client", return_value=client)
+
+    result = runner.invoke(hosting_cli, ["vmtypes", "--json"])
+
+    assert result.exit_code == 1
+    assert result.stdout == ""
 
 
 def test_get_deployment_regions_success(mocker: MockerFixture):
@@ -182,9 +199,28 @@ def test_get_deployment_regions_http_error(
 
     result = runner.invoke(hosting_cli, ["regions"])
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == 1
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
-    assert errors == ["Unable to get regions due to 500 : Invalid token."]
+    assert errors == ["Invalid token"]
+
+
+def test_get_deployment_regions_http_error_writes_no_json_document(
+    mocker: MockerFixture,
+):
+    """A caller reading --json is not handed `[]` for a request that failed.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    client = mocker.MagicMock()
+    client.deployments.regions.side_effect = api_error(500, "Invalid token")
+    client.__enter__.return_value = client
+    mocker.patch("reflex_cli.utils.hosting.new_client", return_value=client)
+
+    result = runner.invoke(hosting_cli, ["regions", "--json"])
+
+    assert result.exit_code == 1
+    assert result.stdout == ""
 
 
 def test_create_token_json_output(mocker: MockFixture):

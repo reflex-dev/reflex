@@ -90,7 +90,8 @@ def get_vm_types(
 
     console.set_log_level(loglevel)
 
-    vmtypes = hosting.get_vm_types()
+    with hosting.reporting_api_errors():
+        vmtypes = hosting.get_vm_types()
     if as_json:
         print_json(vmtypes)
         return
@@ -164,7 +165,8 @@ def get_deployment_regions(
 
     console.set_log_level(loglevel)
 
-    list_regions_info = hosting.get_regions()
+    with hosting.reporting_api_errors():
+        list_regions_info = hosting.get_regions()
     if as_json:
         print_json(list_regions_info)
         return
