@@ -1,8 +1,9 @@
-"""Transports built on httpx."""
+# Generated from packages/reflex-build-sdk/src/reflex_build_sdk/transports/_httpx.py by packages/reflex-build-sdk/scripts/unasync.py. Do not edit.
+"""Transports built on httpx2."""
 
 from __future__ import annotations
 
-import httpx
+import httpx2
 
 from reflex_build_sdk.transports._base import (
     DEFAULT_CONNECT_TIMEOUT,
@@ -13,28 +14,28 @@ from reflex_build_sdk.transports._base import (
 )
 
 # Raised before the request left the client, so the server never saw it.
-_UNSENT_ERRORS = (httpx.ConnectError, httpx.ConnectTimeout, httpx.PoolTimeout)
+_UNSENT_ERRORS = (httpx2.ConnectError, httpx2.ConnectTimeout, httpx2.PoolTimeout)
 
 
-def _default_timeout() -> httpx.Timeout:
-    return httpx.Timeout(DEFAULT_TIMEOUT, connect=DEFAULT_CONNECT_TIMEOUT)
+def _default_timeout() -> httpx2.Timeout:
+    return httpx2.Timeout(DEFAULT_TIMEOUT, connect=DEFAULT_CONNECT_TIMEOUT)
 
 
 def _build_request(
-    client: httpx.Client | httpx.AsyncClient, request: Request
-) -> httpx.Request:
+    client: httpx2.Client | httpx2.AsyncClient, request: Request
+) -> httpx2.Request:
     return client.build_request(
         request.method,
         request.url,
         headers=request.headers,
         content=request.content,
-        timeout=httpx.USE_CLIENT_DEFAULT
+        timeout=httpx2.USE_CLIENT_DEFAULT
         if request.timeout is None
         else request.timeout,
     )
 
 
-def _to_response(request: Request, response: httpx.Response) -> Response:
+def _to_response(request: Request, response: httpx2.Response) -> Response:
     return Response(
         request=request,
         status_code=response.status_code,
@@ -44,19 +45,19 @@ def _to_response(request: Request, response: httpx.Response) -> Response:
     )
 
 
-def _to_error(request: Request, error: httpx.TransportError) -> TransportError:
+def _to_error(request: Request, error: httpx2.TransportError) -> TransportError:
     return TransportError(
         str(error) or type(error).__name__,
         request=request,
         sent=not isinstance(error, _UNSENT_ERRORS),
-        timed_out=isinstance(error, httpx.TimeoutException),
+        timed_out=isinstance(error, httpx2.TimeoutException),
     )
 
 
-class HttpxTransport:
-    """Sends the synchronous client's requests with an ``httpx.Client``."""
+class Httpx2Transport:
+    """Sends the synchronous client's requests with an ``httpx2.Client``."""
 
-    def __init__(self, client: httpx.Client | None = None) -> None:
+    def __init__(self, client: httpx2.Client | None = None) -> None:
         """Create the transport.
 
         Args:
@@ -66,7 +67,7 @@ class HttpxTransport:
         """
         self._owns_client = client is None
         self._client = (
-            httpx.Client(timeout=_default_timeout()) if client is None else client
+            httpx2.Client(timeout=_default_timeout()) if client is None else client
         )
 
     def send(self, request: Request) -> Response:
@@ -83,7 +84,7 @@ class HttpxTransport:
         """
         try:
             response = self._client.send(_build_request(self._client, request))
-        except httpx.TransportError as ex:
+        except httpx2.TransportError as ex:
             raise _to_error(request, ex) from ex
         return _to_response(request, response)
 
@@ -93,10 +94,10 @@ class HttpxTransport:
             self._client.close()
 
 
-class AsyncHttpxTransport:
-    """Sends the asynchronous client's requests with an ``httpx.AsyncClient``."""
+class AsyncHttpx2Transport:
+    """Sends the asynchronous client's requests with an ``httpx2.AsyncClient``."""
 
-    def __init__(self, client: httpx.AsyncClient | None = None) -> None:
+    def __init__(self, client: httpx2.AsyncClient | None = None) -> None:
         """Create the transport.
 
         Args:
@@ -106,7 +107,7 @@ class AsyncHttpxTransport:
         """
         self._owns_client = client is None
         self._client = (
-            httpx.AsyncClient(timeout=_default_timeout()) if client is None else client
+            httpx2.AsyncClient(timeout=_default_timeout()) if client is None else client
         )
 
     async def send(self, request: Request) -> Response:
@@ -123,7 +124,7 @@ class AsyncHttpxTransport:
         """
         try:
             response = await self._client.send(_build_request(self._client, request))
-        except httpx.TransportError as ex:
+        except httpx2.TransportError as ex:
             raise _to_error(request, ex) from ex
         return _to_response(request, response)
 

@@ -49,6 +49,9 @@ class Me:
     # None for a token with full access. Tokens from ``reflex login`` are always
     # restricted, if only to the permissions chosen when approving the login.
     access: TokenAccess | None = None
+    # The app an app token was provisioned for, which is how code running in a
+    # deployed app learns its id. None for user and service account tokens.
+    app_id: uuid.UUID | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -60,6 +63,31 @@ class Token:
     expires_at: datetime.datetime = field(metadata=json_name("expiration"))
     org_name: str
     access: AccessScope | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CreatedToken:
+    """A new access token, with its secret value."""
+
+    # The token. It is only returned once, so store it securely.
+    token: str
+    name: str
+    expires_at: datetime.datetime | None = field(metadata=json_name("expiration"))
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class RotatedToken:
+    """An access token that replaced another, with its secret value."""
+
+    # The token. It is only returned once, so store it securely.
+    token: str
+    # The name of the replaced token, which the new one takes.
+    name: str
+    expires_at: datetime.datetime | None = field(metadata=json_name("expiration"))
+    # Whether the replaced token was revoked. False when revoking it failed after
+    # the new token was created: both are live, and the replaced one must be
+    # revoked with ``tokens.revoke``.
+    previous_revoked: bool
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -145,10 +173,10 @@ class DeploymentRecord:
     """A deployment in an app's history."""
 
     id: uuid.UUID
-    # The URL the app is served at.
-    url: str
-    # The URL the app's backend is served at.
-    backend_url: str
+    # The URL the app is served at, if it has one.
+    url: str | None
+    # The URL the app's backend is served at, if it has one.
+    backend_url: str | None
     # E.g. ``"Running"``, ``"Stopped"`` or ``"Failed"``.
     status: str
     pause_reason: str | None

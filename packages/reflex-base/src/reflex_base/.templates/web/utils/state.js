@@ -489,15 +489,10 @@ export const queueEvents = async (
   params,
 ) => {
   if (prepend) {
-    // Drain the existing queue and place it after the given events.
-    events = [
-      ...events,
-      ...Array.from({ length: event_queue.length }).map(() =>
-        event_queue.shift(),
-      ),
-    ];
+    event_queue.unshift(...events.filter((e) => e !== undefined && e !== null));
+  } else {
+    event_queue.push(...events.filter((e) => e !== undefined && e !== null));
   }
-  event_queue.push(...events.filter((e) => e !== undefined && e !== null));
   await processEvent(resolveSocket(socket), navigate, params);
 };
 
@@ -508,8 +503,8 @@ export const queueEvents = async (
  * @param params The params object from React Router
  */
 export const processEvent = async (socket, navigate, params) => {
-  // Only proceed if the socket is up or no event in the queue uses state, otherwise we throw the event into the void
-  if (isStateful() && !(socket && socket.connected)) {
+  // A connected socket can dispatch without inspecting the queued event types.
+  if (!(socket && socket.connected) && isStateful()) {
     return;
   }
 

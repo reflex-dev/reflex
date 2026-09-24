@@ -15,10 +15,19 @@ from reflex_build_sdk import (
     LoginTimeoutError,
 )
 from reflex_build_sdk.transports import Request, Response, TransportError
-from reflex_build_sdk.types import AccessScope, LoginRequest, Me, Token, TokenAccess
+from reflex_build_sdk.types import (
+    AccessScope,
+    CreatedToken,
+    LoginRequest,
+    Me,
+    RotatedToken,
+    Token,
+    TokenAccess,
+)
 
 from tests.units.reflex_build_sdk.conftest import (
     AsyncMockTransport,
+    Handler,
     MockAPI,
     json_body,
     reply,
@@ -58,6 +67,7 @@ ME = {
     "is_service_account": False,
     "impersonated_by": None,
     "impersonation_expires_at": None,
+    "app_id": None,
     "_memo": {},
     "_project_of": {},
     "_org_projects": None,
@@ -106,6 +116,20 @@ async def test_me_scoped_token(client: AsyncReflexBuild, mock_api: MockAPI):
     )
 
 
+async def test_me_app_token(client: AsyncReflexBuild, mock_api: MockAPI):
+    # An app token grants nothing: its access map is empty.
+    app_id = str(uuid.uuid4())
+    body = {
+        **ME,
+        "access": {"permissions": {}, "all_projects": True, "project_ids": []},
+        "app_id": app_id,
+    }
+    mock_api.add("POST", "/api/v1/authenticate/me", reply(200, json=body))
+    me = await client.auth.me()
+    assert me.app_id == uuid.UUID(app_id)
+    assert me.access == TokenAccess(permissions={})
+
+
 async def test_me_invalid_token(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
@@ -118,8 +142,23 @@ async def test_me_invalid_token(client: AsyncReflexBuild, mock_api: MockAPI):
 
 async def test_create_token(client: AsyncReflexBuild, mock_api: MockAPI):
     token_id = str(uuid.uuid4())
-    mock_api.add("POST", "/api/v1/user/token", reply(200, json=token_id))
-    assert await client.auth.tokens.create("ci") == token_id
+    mock_api.add(
+        "POST",
+        "/api/v1/user/token/create",
+        reply(
+            200,
+            json={
+                "token": token_id,
+                "name": "ci",
+                "expiration": "2026-10-16T10:00:00+00:00",
+            },
+        ),
+    )
+    assert await client.auth.tokens.create("ci") == CreatedToken(
+        token=token_id,
+        name="ci",
+        expires_at=datetime.datetime(2026, 10, 16, 10, tzinfo=datetime.timezone.utc),
+    )
     assert json_body(mock_api.requests[0]) == {
         "name": "ci",
         "expiration": None,
@@ -127,7 +166,11 @@ async def test_create_token(client: AsyncReflexBuild, mock_api: MockAPI):
 
 
 async def test_create_scoped_token(client: AsyncReflexBuild, mock_api: MockAPI):
-    mock_api.add("POST", "/api/v1/user/token", reply(200, json="token"))
+    mock_api.add(
+        "POST",
+        "/api/v1/user/token/create",
+        reply(200, json={"token": "token", "name": "deploy", "expiration": None}),
+    )
     await client.auth.tokens.create(
         "deploy",
         expires_in_days=7,
@@ -187,19 +230,75 @@ async def test_revoke_token(client: AsyncReflexBuild, mock_api: MockAPI):
     assert json_body(mock_api.requests[0]) == {"token_id": token}
 
 
-async def test_refresh_token(client: AsyncReflexBuild, mock_api: MockAPI):
+async def test_revoke_self(client: AsyncReflexBuild, mock_api: MockAPI):
+    mock_api.add("POST", "/api/v1/user/token/revoke-self", reply(204))
+    assert await client.auth.tokens.revoke_self() is None
+    (request,) = mock_api.requests
+    assert request.headers["X-API-TOKEN"] == "test-token"
+    assert request.content is None
+
+
+@pytest.mark.parametrize("previous_revoked", [True, False])
+async def test_refresh_token(
+    client: AsyncReflexBuild, mock_api: MockAPI, previous_revoked: bool
+):
     old, new = str(uuid.uuid4()), str(uuid.uuid4())
-    mock_api.add("POST", "/api/v1/user/token/refresh", reply(200, json=new))
-    assert await client.auth.tokens.refresh(old) == new
+    mock_api.add(
+        "POST",
+        "/api/v1/user/token/rotate",
+        reply(
+            200,
+            json={
+                "token": new,
+                "name": "ci",
+                "expiration": None,
+                "previous_revoked": previous_revoked,
+            },
+        ),
+    )
+    assert await client.auth.tokens.refresh(old) == RotatedToken(
+        token=new, name="ci", expires_at=None, previous_revoked=previous_revoked
+    )
     assert json_body(mock_api.requests[0]) == {"token_id": old}
 
 
-async def test_refresh_token_is_not_retried(
-    client: AsyncReflexBuild, mock_api: MockAPI
+def _lose_response(request: Request) -> Response:
+    msg = "connection reset after the request was processed"
+    raise TransportError(msg, request=request, sent=True)
+
+
+# Failures after which the server may have processed the request.
+AMBIGUOUS_FAILURES = pytest.mark.parametrize(
+    ("handler", "error"),
+    [(reply(503), APIStatusError), (_lose_response, APIConnectionError)],
+    ids=["unavailable", "lost_response"],
+)
+
+
+@AMBIGUOUS_FAILURES
+async def test_create_token_is_not_retried(
+    client: AsyncReflexBuild,
+    mock_api: MockAPI,
+    handler: Handler,
+    error: type[Exception],
 ):
-    # Each attempt would mint another token and revoke the one before.
-    mock_api.add("POST", "/api/v1/user/token/refresh", reply(503))
-    with pytest.raises(APIStatusError):
+    # A retry would create another token with the same name.
+    mock_api.add("POST", "/api/v1/user/token/create", handler)
+    with pytest.raises(error):
+        await client.auth.tokens.create("ci")
+    assert len(mock_api.requests) == 1
+
+
+@AMBIGUOUS_FAILURES
+async def test_refresh_token_is_not_retried(
+    client: AsyncReflexBuild,
+    mock_api: MockAPI,
+    handler: Handler,
+    error: type[Exception],
+):
+    # A retry would mint another token and revoke the one just issued.
+    mock_api.add("POST", "/api/v1/user/token/rotate", handler)
+    with pytest.raises(error):
         await client.auth.tokens.refresh(str(uuid.uuid4()))
     assert len(mock_api.requests) == 1
 
@@ -291,11 +390,7 @@ async def test_finish_login_waits_for_approval(mock_api: MockAPI):
 async def test_finish_login_does_not_retry_a_lost_response(
     client: AsyncReflexBuild, mock_api: MockAPI
 ):
-    def lose_response(request: Request) -> Response:
-        msg = "connection reset after the token was handed out"
-        raise TransportError(msg, request=request, sent=True)
-
-    mock_api.add("GET", "/api/v1/cli/token", lose_response)
+    mock_api.add("GET", "/api/v1/cli/token", _lose_response)
     # A retry would find the token gone and keep waiting for a done approval.
     with pytest.raises(APIConnectionError, match="connection reset"):
         await client.auth.finish_login(LOGIN, poll_interval=0)
