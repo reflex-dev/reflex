@@ -533,7 +533,10 @@ def compile_experimental_component_memo(
         # Swap children for JSX render: the memo body template emits a
         # ``{children}`` hole in place of the real descendants.
         render.children = [hole_child]
-        rendered = render.render() if analysis is None else analysis.rendered
+        # The analysis render is shared by every body with the same content
+        # hash, so emission (e.g. ``_splice_transparent_root_props``) must
+        # rebind keys on a shallow copy rather than mutate it.
+        rendered = render.render() if analysis is None else {**analysis.rendered}
     else:
         render = _apply_component_style_for_compile(copy.deepcopy(definition.component))
         hooks = render._get_all_hooks()

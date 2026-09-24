@@ -68,7 +68,27 @@ def test_memo_emission_reuses_unchanged_body_analysis():
         ) as render:
             compiled, _ = utils.compile_experimental_component_memo(definition)
             render.assert_not_called()
-        assert compiled["render"] is analysis.rendered
+        assert compiled["render"]["children"] is analysis.rendered["children"]
+
+
+def test_memo_analysis_render_is_not_mutated_by_emission():
+    """Bodies sharing one analysis each splice transparent root props once."""
+    with RegistrationContext.ensure_context().fork() as context:
+        _, first = memo.create_passthrough_component_memo(
+            Div.create("child", id="shared"), source_module="app.page_a"
+        )
+        _, second = memo.create_passthrough_component_memo(
+            Div.create("child", id="shared"), source_module="app.page_b"
+        )
+        analysis = context._memo_body_analyses[
+            first.component.__dict__["_memo_analysis_key"]
+        ]
+        original_props = list(analysis.rendered["props"])
+        for definition in (first, second):
+            compiled, _ = utils.compile_experimental_component_memo(definition)
+            (props,) = compiled["render"]["props"]
+            assert props.count("mergeSlotProps") == 1
+        assert analysis.rendered["props"] == original_props
 
 
 def test_memo_analysis_is_reset_with_registration_context():
@@ -166,4 +186,5 @@ def test_memo_analysis_does_not_bypass_custom_copy():
     with RegistrationContext.ensure_context().fork():
         _, definition = memo.create_passthrough_component_memo(CopyDiv.create("child"))
         compiled, _ = utils.compile_experimental_component_memo(definition)
-        assert '"data-copy":2' in compiled["render"]["props"]
+        (props,) = compiled["render"]["props"]
+        assert '"data-copy":2' in props
