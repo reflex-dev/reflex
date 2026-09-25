@@ -2,14 +2,18 @@ from __future__ import annotations
 
 import importlib.metadata
 import logging
+import os
 import uuid
 from collections.abc import Callable
+from typing import Any
 from unittest.mock import MagicMock
 
 import click
 import pytest
 from packaging import version
 from pytest_mock import MockerFixture, MockFixture
+from reflex_base.config import Config, get_config
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.log import SUCCESS
 from reflex_build_sdk.types import (
     App,
@@ -450,6 +454,47 @@ def test_deploy_non_interactive_no_app_name_and_id(
     ]
 
 
+@pytest.mark.parametrize(
+    ("tier", "forced"),
+    [("Free", True), ("Inactive", True), ("Pro", False), ("Enterprise", False)],
+)
+def test_deploy_forces_badge_for_free_tier(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    tier: str,
+    forced: bool,
+):
+    """A deploy without a paid plan exports with the badge, whatever the app sets.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        monkeypatch: Fixture restoring the env var the deploy persists.
+        tier: The tier of the deploying org.
+        forced: Whether the badge should be forced on.
+    """
+    _common_deploy_mocks(mocker, tier=tier)
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_app", return_value=app_summary("fake-app")
+    )
+    # Set (not deleted) so monkeypatch removes what the deploy persists.
+    monkeypatch.setenv("REFLEX_SHOW_BUILT_WITH_REFLEX", "")
+    exported_with: list[bool | None] = []
+    with RegistrationContext():
+        config = Config(app_name="fake_app", show_built_with_reflex=False)
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=lambda *_: exported_with.append(
+                get_config().show_built_with_reflex
+            ),
+            interactive=False,
+        )
+
+    assert exported_with == [forced, forced]
+    assert (os.environ["REFLEX_SHOW_BUILT_WITH_REFLEX"] == "True") is forced
+
+
 def test_deploy_non_interactive_export_failure(
     mocker: MockerFixture, mock_export_import_error_fn: MagicMock
 ):
@@ -634,17 +679,20 @@ def test_deploy_create_deployment_multiple_apps_interactive(
     )
 
 
-def _common_deploy_mocks(mocker: MockerFixture, *, selected_project: str | None = None):
+def _common_deploy_mocks(
+    mocker: MockerFixture, *, selected_project: str | None = None, **identity: Any
+):
     """Set up a deploy that reaches the submit without any of it being real.
 
     Args:
         mocker: The pytest-mock fixture.
         selected_project: The project the config has selected, if any.
+        identity: Overrides for the identity behind the token, e.g. ``tier``.
 
     Returns:
         The client the deploy under test will receive.
     """
-    client = fake_client(user_id="user-uuid")
+    client = fake_client(user_id="user-uuid", **identity)
     client.api.apps.reserve_hostname.return_value = _RESERVATION
     client.api.apps.set_provider.return_value = ProviderChange(provider="fly")
     client.api.deployments.create.return_value = uuid.UUID(int=41)

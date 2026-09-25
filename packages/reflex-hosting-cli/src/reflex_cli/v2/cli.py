@@ -582,6 +582,29 @@ def _warn_if_full_deploy_outlives_deploy(
         raise
 
 
+def _enforce_badge_for_free_tier(client: AuthenticatedClient) -> None:
+    """Force the "Built with Reflex" badge on when the deploying org has no paid plan.
+
+    Older reflex releases honor an app's ``show_built_with_reflex=False`` on any
+    tier, so the CLI overrides the loaded config itself; persisting it in the
+    environment also covers a config the export reloads.
+
+    Args:
+        client: The authenticated client the deploy is running under.
+    """
+    from reflex_cli.utils import hosting
+
+    tier = hosting.get_token_tier(client) or ""
+    if tier.lower() in constants.Hosting.PAID_TIERS:
+        return
+    from reflex.config import get_config
+
+    config = get_config()
+    # Reflex releases that predate the badge have no setting to force.
+    if hasattr(config, "show_built_with_reflex"):
+        config._set_persistent(show_built_with_reflex=True)
+
+
 def deploy(
     export_fn: Callable[[str, str, str, bool, bool, bool, bool], None]
     | Callable[[str, str, str, bool, bool, bool], None],
@@ -971,6 +994,8 @@ def deploy(
                     """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
                 )
                 raise click.exceptions.Exit(1) from None
+
+        _enforce_badge_for_free_tier(authenticated_client)
 
         # Compile the app in production mode: backend first then frontend.
         temporary_dir = tempfile.TemporaryDirectory()
