@@ -353,8 +353,10 @@ class LoadPlan:
             ValueError: On a rate that does not fit the mode, more processes than
                 sessions, a fan-out over several processes, or negative times.
         """
-        if self.mode == "open" and not (self.rate and self.rate > 0):
-            msg = "an open loop needs a positive rate"
+        if self.mode == "open" and not (
+            self.rate and self.rate > 0 and math.isfinite(self.rate)
+        ):
+            msg = "an open loop needs a finite positive rate"
             raise ValueError(msg)
         if self.mode != "open" and self.rate is not None:
             msg = (

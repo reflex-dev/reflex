@@ -250,6 +250,8 @@ def test_an_unexpected_frame_fails_the_session():
 def test_the_plan_checks_its_rate():
     with pytest.raises(ValueError, match="positive rate"):
         plan("http://localhost:8000", rate=None)
+    with pytest.raises(ValueError, match="finite positive rate"):
+        plan("http://localhost:8000", rate=float("inf"))
     with pytest.raises(ValueError, match="closed loop"):
         plan("http://localhost:8000", mode="closed", rate=10.0)
     with pytest.raises(ValueError, match="at least one session per process"):
