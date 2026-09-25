@@ -703,7 +703,7 @@ class EnvironmentVariables:
     REFLEX_REDIS_MAX_CONNECTIONS: EnvVar[int | None] = env_var(None)
 
     # How long to wait for a free redis connection once REFLEX_REDIS_MAX_CONNECTIONS is reached.
-    REFLEX_REDIS_POOL_TIMEOUT: EnvVar[timedelta] = env_var(timedelta(seconds=20))
+    REFLEX_REDIS_POOL_TIMEOUT: EnvVar[timedelta] = env_var(timedelta(seconds=2))
 
     # Whether to ignore the redis config error. Some redis servers only allow out-of-band configuration.
     REFLEX_IGNORE_REDIS_CONFIG_ERROR: EnvVar[bool] = env_var(False)

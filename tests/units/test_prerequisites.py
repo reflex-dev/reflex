@@ -2474,21 +2474,43 @@ def test_get_redis_max_connections(redis_url: str, monkeypatch: pytest.MonkeyPat
     assert redis.auto_close_connection_pool
 
 
+@pytest.mark.parametrize("cap", ["0", "-1", "1", "2"])
+def test_get_redis_rejects_cap_without_command_headroom(
+    redis_url: str, monkeypatch: pytest.MonkeyPatch, cap: str
+):
+    """The two token pub/sub listeners cannot occupy every connection."""
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", cap)
+    with pytest.raises(ValueError, match="at least 3"):
+        prerequisites.get_redis()
+
+
+def test_get_redis_rejects_pool_wait_longer_than_state_lock(
+    redis_url: str, monkeypatch: pytest.MonkeyPatch
+):
+    """A saturated pool cannot wait past the state-lock lifetime."""
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
+    monkeypatch.setenv("REFLEX_REDIS_POOL_TIMEOUT", "20")
+    with pytest.raises(ValueError, match="shorter than"):
+        prerequisites.get_redis()
+
+
 async def test_get_redis_max_connections_waits_for_release(
     redis_url: str, monkeypatch: pytest.MonkeyPatch
 ):
     """At the cap, a caller waits for a free connection rather than failing."""
-    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "1")
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
     redis = prerequisites.get_redis()
     assert redis is not None
     pool = redis.connection_pool
     monkeypatch.setattr(pool, "ensure_connection", mock.AsyncMock())
 
-    first = await pool.get_connection()
+    connections = [await pool.get_connection() for _ in range(3)]
     waiter = asyncio.create_task(pool.get_connection())
     await asyncio.sleep(0.05)
     assert not waiter.done()
 
-    await pool.release(first)
-    assert await asyncio.wait_for(waiter, timeout=1) is first
+    await pool.release(connections[0])
+    assert await asyncio.wait_for(waiter, timeout=1) is connections[0]
+    for connection in connections[1:]:
+        await pool.release(connection)
     await pool.disconnect()

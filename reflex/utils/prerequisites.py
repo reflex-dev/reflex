@@ -460,15 +460,31 @@ def get_redis() -> Redis | None:
         return None
     if (redis_url := parse_redis_url()) is None:
         return None
-    if not (max_connections := environment.REFLEX_REDIS_MAX_CONNECTIONS.get()):
+    max_connections = environment.REFLEX_REDIS_MAX_CONNECTIONS.get()
+    if max_connections is None:
         return Redis.from_url(
             redis_url,
             retry_on_error=[RedisError],
         )
+    # The token manager keeps two pub/sub listeners on this separate client;
+    # leave at least one connection for ordinary commands.
+    if max_connections < 3:
+        msg = "REFLEX_REDIS_MAX_CONNECTIONS must be at least 3 when set."
+        raise ValueError(msg)
+    timeout = environment.REFLEX_REDIS_POOL_TIMEOUT.get().total_seconds()
+    # A state lock defaults to ten seconds. Do not wait longer for a pool
+    # connection while holding that lock; reserve time for the state write.
+    lock_expiration_seconds = get_config().redis_lock_expiration / 1000
+    if timeout >= lock_expiration_seconds:
+        msg = (
+            "REFLEX_REDIS_POOL_TIMEOUT must be shorter than "
+            "the configured redis_lock_expiration."
+        )
+        raise ValueError(msg)
     pool = BlockingConnectionPool.from_url(
         redis_url,
         max_connections=max_connections,
-        timeout=environment.REFLEX_REDIS_POOL_TIMEOUT.get().total_seconds(),
+        timeout=timeout,
         retry_on_error=[RedisError],
     )
     return Redis.from_pool(pool)
