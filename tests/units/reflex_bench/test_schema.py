@@ -153,6 +153,14 @@ def test_wrong_container_types_are_rejected(
     assert schema.validate(doc) == [error]
 
 
+@pytest.mark.parametrize(("key", "value"), [("warmup", "false"), ("arm", ["A"])])
+def test_sample_meta_types_are_checked(doc: schema.ResultDoc, key: str, value: Any):
+    doc["benchmarks"][0]["sample_meta"][1][key] = value
+    assert schema.validate(doc) == [
+        "benchmarks[0].sample_meta[1]: arm must be a string, warmup a boolean"
+    ]
+
+
 def test_samples_must_align_with_sample_meta(doc: schema.ResultDoc):
     doc["benchmarks"][0]["metrics"]["wall"]["samples"]["A"].pop()
     doc["benchmarks"][0]["sample_extra"].pop()
