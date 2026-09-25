@@ -5235,6 +5235,27 @@ def test_settable_names_are_kept_per_class():
     assert "num" not in parent_names
 
 
+def test_substate_takes_place_of_twin_built_in_its_tree():
+    """A substate takes the place of a twin that never held an event context."""
+
+    class TwinRoot(BaseState):
+        pass
+
+    class TwinChild(TwinRoot):
+        value: int = 0
+
+    name = TwinChild.get_name()
+    tree = TwinRoot()  # pyright: ignore [reportCallIssue]
+    twin_tree = TwinRoot()  # pyright: ignore [reportCallIssue]
+    kept, live = tree.substates[name], twin_tree.substates[name]
+    live.value = 3  # pyright: ignore [reportAttributeAccessIssue]
+
+    kept._take_place_of(live)
+    assert kept.value == 3  # pyright: ignore [reportAttributeAccessIssue]
+    assert kept.parent_state is twin_tree
+    assert twin_tree.substates[name] is kept
+
+
 def test_backend_var_inherits_field_default_and_surfaces_factory_errors():
     """A Field on a plain base supplies its default; a failing factory is not swallowed."""
 

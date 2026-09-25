@@ -275,7 +275,9 @@ class StateNode(EvenMoreBasicBaseState):
         setattr_(self, "dirty_vars", set())
         setattr_(self, "dirty_substates", set())
         setattr_(self, "_was_touched", False)
-        setattr_(self, "_event_context", None)
+        if parent_state is None:
+            # Only a root holds the event context managing its tree.
+            setattr_(self, "_event_context", None)
 
     def __init_subclass__(cls, **kwargs):
         """Give the new state class its own set of names found settable.
@@ -692,7 +694,8 @@ class StateNode(EvenMoreBasicBaseState):
         vars(self).update(vars(other))
         for klass in type(self).__mro__:
             for name in _slot_names(vars(klass)):
-                object.__setattr__(self, name, getattr(other, name))
+                # A substate built in its tree never sets `_event_context`.
+                object.__setattr__(self, name, getattr(other, name, None))
         for substate in self.substates.values():
             substate.parent_state = self  # pyright: ignore[reportAttributeAccessIssue]
         if self.parent_state is not None:
