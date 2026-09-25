@@ -186,9 +186,9 @@ class BaseStateToken(StateToken["BaseState"]):
         Returns:
             The deserialized BaseState instance.
         """
-        from reflex_base.state.core import CoreState
+        from reflex_base.state.node import StateNode
 
-        return CoreState._deserialize(data, fp)  # pyright: ignore[reportReturnType]
+        return StateNode._deserialize(data, fp)  # pyright: ignore[reportReturnType]
 
     @classmethod
     def get_and_reset_touched_state(cls, state: BaseState) -> bool:

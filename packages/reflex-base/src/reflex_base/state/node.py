@@ -1,4 +1,4 @@
-"""The core of a state: its place in the state tree, dirty tracking, locking and pickling."""
+"""A node of a state tree: its place in the tree, dirty tracking, locking and pickling."""
 
 from __future__ import annotations
 
@@ -192,8 +192,11 @@ def is_serializable(value: Any) -> bool:
         return False
 
 
-class CoreState(EvenMoreBasicBaseState):
+class StateNode(EvenMoreBasicBaseState):
     """A node of a state tree: dirty tracking, deltas, locking and pickling of its fields.
+
+    Linked to its parent and substates, as in every ``rx.State`` tree; a plain
+    ``EvenMoreBasicBaseState`` class holds fields with no tree around them.
 
     Subclasses fill in the class-level var bookkeeping below when they are
     created. The nodes of a tree are typed as the reflex ``BaseState``, the
@@ -517,7 +520,7 @@ class CoreState(EvenMoreBasicBaseState):
             self.dirty_vars.update(recomputed)
             if var_names is not None:
                 var_names = (*var_names, *recomputed)
-        pending: list[tuple[CoreState, str]] = [
+        pending: list[tuple[StateNode, str]] = [
             (self, name)
             for name in (self.dirty_vars if var_names is None else var_names)
         ]
@@ -669,7 +672,7 @@ class CoreState(EvenMoreBasicBaseState):
                 if reset is not None:
                     EventContext.reset(reset)
 
-    def _take_place_of(self, other: CoreState) -> None:
+    def _take_place_of(self, other: StateNode) -> None:
         """Take the place of another instance of this state in its tree, with its values.
 
         Makes an instance kept from before the state was reloaded live again.

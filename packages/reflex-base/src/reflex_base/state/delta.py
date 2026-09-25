@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Final, NamedTuple
 from reflex_base.constants.state import FIELD_MARKER
 
 if TYPE_CHECKING:
-    from reflex_base.state.core import CoreState
+    from reflex_base.state.node import StateNode
     from reflex_base.vars.base import ComputedVar
 
 Delta = dict[str, dict[str, Any]]
@@ -46,7 +46,7 @@ class _DeltaRecord(NamedTuple):
     state_name: str
     key: str
     value: Any
-    instance: CoreState
+    instance: StateNode
     attr: str
     stored: tuple[str, Any] | None
 
@@ -147,7 +147,7 @@ async def _resolve_delta(delta: Delta) -> Delta:
 
 def _record_or_drop_delta_value(
     cvar: ComputedVar,
-    instance: CoreState,
+    instance: StateNode,
     value: Any,
     token: str,
     state_name: str,
@@ -178,7 +178,7 @@ def _record_or_drop_delta_value(
 
 async def _drop_unchanged_delta_value(
     cvar: ComputedVar,
-    instance: CoreState,
+    instance: StateNode,
     value: Coroutine[None, None, Any],
     token: str,
     state_name: str,
@@ -205,7 +205,7 @@ async def _drop_unchanged_delta_value(
     )
 
 
-def build_delta(state: CoreState) -> Delta:
+def build_delta(state: StateNode) -> Delta:
     """Get the delta for a state and its dirty substates.
 
     Recurses through each substate's ``get_delta`` method, so an override of it
@@ -273,7 +273,7 @@ def build_delta(state: CoreState) -> Delta:
     return delta
 
 
-async def resolve_delta(state: CoreState) -> Delta:
+async def resolve_delta(state: StateNode) -> Delta:
     """Get the delta to deliver to the client, with all coroutines resolved.
 
     What this returns is what the caller delivers to the client -- past any
@@ -299,7 +299,7 @@ async def resolve_delta(state: CoreState) -> Delta:
     return delta
 
 
-def clean_state(state: CoreState) -> None:
+def clean_state(state: StateNode) -> None:
     """Reset the dirty vars of a state and, through their ``_clean``, its dirty substates.
 
     Args:

@@ -37,10 +37,10 @@ from reflex_base.event import (
 )
 from reflex_base.event.context import EventContext
 from reflex_base.registry import RegistrationContext
-from reflex_base.state.core import CoreState
-from reflex_base.state.core import is_serializable as is_serializable
 from reflex_base.state.delta import Delta as Delta
 from reflex_base.state.delta import DeltaMapping, _resolve_delta
+from reflex_base.state.node import StateNode
+from reflex_base.state.node import is_serializable as is_serializable
 from reflex_base.state.proxy import MutableProxy as MutableProxy
 from reflex_base.utils.exceptions import (
     DynamicComponentInvalidSignatureError,
@@ -394,7 +394,7 @@ all_base_state_classes: dict[str, None] = {}
 _ROUTER_FIELD_NAMES = frozenset((*constants.ROUTER_VARS, constants.ROUTER_DATA))
 
 
-class BaseState(CoreState, state_root=True):
+class BaseState(StateNode, state_root=True):
     """The state of the app."""
 
     # The event handlers.

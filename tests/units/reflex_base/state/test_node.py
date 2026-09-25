@@ -1,13 +1,13 @@
-"""Tests for reflex_base.state.core."""
+"""Tests for reflex_base.state.node."""
 
 import pickle
 
 import pytest
-from reflex_base.state.core import CoreState
+from reflex_base.state.node import StateNode
 from reflex_base.utils.exceptions import SetUndefinedStateVarError
 
 
-class Root(CoreState, state_root=True):
+class Root(StateNode, state_root=True):
     """A state root without the app-level machinery of rx.State."""
 
 
