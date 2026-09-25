@@ -7,7 +7,6 @@
 .mypy_cache/
 assets/external/*
 dist/*
-examples/
 .web
 .states
 .idea
@@ -21,6 +20,7 @@ requirements.txt
 .pyi_generator_diff
 reflex.db
 .codspeed
+.reflex-bench/
 .env
 .env.*
 node_modules
