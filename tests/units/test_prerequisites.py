@@ -1855,6 +1855,7 @@ def test_prefer_npm_over_bun_implicit_logs_notice_once(
     notices = [m for m in caplog.messages if "REFLEX_USE_NPM=0" in m]
     assert len(notices) == 1
     assert constants.Node.LOCKFILE_PATH in notices[0]
+    assert "Preferring npm" in notices[0]
 
 
 def test_prefer_npm_over_bun_explicit_npm_logs_no_notice(

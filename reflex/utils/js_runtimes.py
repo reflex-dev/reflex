@@ -114,13 +114,13 @@ def _persisted_lockfile_implies_npm() -> bool:
 
 @functools.cache
 def _log_implicit_npm_notice(root_dir: Path) -> None:
-    """Say once per lock directory why npm was picked without REFLEX_USE_NPM.
+    """Say once per lock directory why npm is preferred without REFLEX_USE_NPM.
 
     Args:
         root_dir: The ``reflex.lock/`` directory holding the npm lockfile.
     """
     logger.info(
-        f"Using npm because {root_dir.name}/ has {constants.Node.LOCKFILE_PATH} "
+        f"Preferring npm because {root_dir.name}/ has {constants.Node.LOCKFILE_PATH} "
         f"and no {constants.Bun.LOCKFILE_PATH}. "
         "Run once with REFLEX_USE_NPM=0 to switch this project back to bun."
     )
