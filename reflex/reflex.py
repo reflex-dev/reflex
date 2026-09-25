@@ -20,13 +20,74 @@ from reflex.utils.cli_options import log_options
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from importlib.metadata import EntryPoint
     from typing import Literal
 
     from click.shell_completion import CompletionItem
     from reflex_base.constants.base import LITERAL_ENV
 
 
-@click.group
+class _PluginGroup(click.Group):
+    """The root command group, extended with commands contributed by plugins.
+
+    Any package can add a subcommand by declaring a ``reflex.cli`` entry point
+    resolving to a ``click.Command`` (e.g. ``reflex-i18n`` provides ``i18n``).
+    Entry points are scanned only when a name misses the built-in commands or
+    the whole list is needed, so startup does not pay for the scan, and each
+    command loads on first use, so a broken plugin only breaks its own command.
+    """
+
+    _plugins_loaded = False
+
+    def _load_plugins(self) -> None:
+        """Register the ``reflex.cli`` entry points, at most once."""
+        if self._plugins_loaded:
+            return
+        self._plugins_loaded = True
+
+        from importlib.metadata import entry_points
+
+        for entry_point in entry_points(group="reflex.cli"):
+            # A plugin must not (silently) replace a built-in or another
+            # plugin's command.
+            if entry_point.name in self.commands:
+                console.warn(
+                    f"CLI command {entry_point.name!r} from {entry_point.value!r} "
+                    f"is already registered; skipping."
+                )
+                continue
+            self.add_command(_PluginCommand(entry_point), name=entry_point.name)
+
+    def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
+        """Resolve a command, consulting plugins only if it is not built in.
+
+        Args:
+            ctx: The click context.
+            cmd_name: The name to resolve.
+
+        Returns:
+            The command, or None if nothing provides it.
+        """
+        command = super().get_command(ctx, cmd_name)
+        if command is None:
+            self._load_plugins()
+            command = super().get_command(ctx, cmd_name)
+        return command
+
+    def list_commands(self, ctx: click.Context) -> list[str]:
+        """List the built-in and plugin command names.
+
+        Args:
+            ctx: The click context.
+
+        Returns:
+            The sorted command names.
+        """
+        self._load_plugins()
+        return super().list_commands(ctx)
+
+
+@click.group(cls=_PluginGroup)
 @click.version_option(constants.Reflex.VERSION, message="%(version)s")
 def cli():
     """Reflex CLI to create, run, and deploy apps."""
@@ -253,6 +314,46 @@ class _LazyCommand(click.Command):
             Metadata from the resolved command.
         """
         return self._resolve().to_info_dict(ctx)
+
+
+class _PluginCommand(_LazyCommand):
+    """A plugin-contributed command, loaded from its entry point on first use."""
+
+    def __init__(self, entry_point: EntryPoint) -> None:
+        """Initialize a plugin command.
+
+        Args:
+            entry_point: The ``reflex.cli`` entry point providing the command.
+        """
+        dist = entry_point.dist
+        source = dist.name if dist is not None else entry_point.value
+        super().__init__(
+            name=entry_point.name,
+            import_path=entry_point.value,
+            help=f"Provided by {source}.",
+        )
+        self._entry_point = entry_point
+
+    def _resolve(self) -> click.Command:
+        """Load and validate the plugin's command.
+
+        Returns:
+            The resolved command.
+
+        Raises:
+            ClickException: If the entry point does not resolve to a Click command.
+        """
+        if self._resolved_command is not None:
+            return self._resolved_command
+        command = self._entry_point.load()
+        if not isinstance(command, click.Command):
+            msg = (
+                f"CLI command {self.name!r} from {self._entry_point.value!r} "
+                "is not a click.Command."
+            )
+            raise click.ClickException(msg)
+        self._resolved_command = command
+        return command
 
 
 def _init(
