@@ -4307,7 +4307,7 @@ def _validate_state_declaration(
         _validate_state_name(root, member, namespace.get(member))
     seen = set(declared)
     for base in lookup_order:
-        if not declared.isdisjoint(slots := base.__dict__.get("__slots__", ())):
+        if not declared.isdisjoint(slots := _slot_names(vars(base))):
             msg = (
                 f"State names {sorted(declared.intersection(slots))} are reserved by "
                 f"{base.__name__}; use different names instead."
@@ -4328,7 +4328,7 @@ def _unannotated_fields(namespace: Mapping[str, Any]) -> dict[str, Field]:
         The fields by name.
     """
     annotations = annotations_from_namespace(namespace)
-    slots = namespace.get("__slots__", ())
+    slots = _slot_names(namespace)
     fields = {}
     for key, value in namespace.items():
         if key in annotations or key in slots:
@@ -4364,7 +4364,7 @@ def _annotated_fields(
     Returns:
         The fields by name.
     """
-    slots = namespace.get("__slots__", ())
+    slots = _slot_names(namespace)
     fields = {}
     for key, annotation in types.resolve_annotations(
         annotations_from_namespace(namespace), namespace["__module__"]
@@ -4430,6 +4430,19 @@ def _is_descriptor(value: Any) -> bool:
     return hasattr(type(value), "__get__") and not isinstance(
         value, (Field, FunctionType)
     )
+
+
+def _slot_names(namespace: Mapping[str, Any]) -> tuple[str, ...]:
+    """Get the names a class namespace declares in ``__slots__``.
+
+    Args:
+        namespace: The class namespace, like ``vars(cls)``.
+
+    Returns:
+        The slot names; a single string declares one slot.
+    """
+    slots = namespace.get("__slots__", ())
+    return (slots,) if isinstance(slots, str) else tuple(slots)
 
 
 def _is_tree_state(cls: Any) -> bool:

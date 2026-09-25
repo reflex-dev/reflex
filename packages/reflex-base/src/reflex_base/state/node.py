@@ -34,6 +34,7 @@ from reflex_base.vars.base import (
     EvenMoreBasicBaseState,
     Var,
     _is_tree_state,
+    _slot_names,
     field,
 )
 
@@ -136,9 +137,7 @@ def _stale_pickle_keys(cls: type) -> frozenset[str]:
         frozen into payloads already on disk).
     """
     return frozenset(
-        {"router"}.union(
-            *(klass.__dict__.get("__slots__", ()) for klass in cls.__mro__)
-        )
+        {"router"}.union(*(_slot_names(vars(klass)) for klass in cls.__mro__))
     )
 
 
@@ -692,7 +691,7 @@ class StateNode(EvenMoreBasicBaseState):
         vars(self).clear()
         vars(self).update(vars(other))
         for klass in type(self).__mro__:
-            for name in klass.__dict__.get("__slots__", ()):
+            for name in _slot_names(vars(klass)):
                 object.__setattr__(self, name, getattr(other, name))
         for substate in self.substates.values():
             substate.parent_state = self  # pyright: ignore[reportAttributeAccessIssue]
