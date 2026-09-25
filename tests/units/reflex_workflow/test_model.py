@@ -9,7 +9,7 @@ unnecessary ignores reported, pyright fails if one of them stops being an error.
 from __future__ import annotations
 
 import datetime
-from typing import Literal
+from typing import Literal, cast
 
 import pytest
 from reflex_workflow import (
@@ -28,7 +28,7 @@ from reflex_workflow import (
 )
 from reflex_workflow.engine import claim
 from reflex_workflow.model import check_call
-from sqlalchemy import String
+from sqlalchemy import Index, String, Table, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from typing_extensions import assert_type
 
@@ -327,3 +327,49 @@ def test_arguments_a_step_cannot_take_are_rejected_where_the_call_is_made():
     with pytest.raises(TypeError, match="cannot take those arguments"):
         check_call(Expense, Expense.decide("approve", "again"))  # pyright: ignore[reportCallIssue]
     check_call(Expense, Expense.decide("approve"))
+
+
+def held_event_index(cls: type[Workflow]) -> Index | None:
+    """Find the index that covers the runs holding an event, if the class has it.
+
+    Args:
+        cls: The workflow class.
+
+    Returns:
+        The index, or None.
+    """
+    name = f"ix_{cls.__tablename__}_held_event"
+    table = cls.__table__  # pyright: ignore[reportAttributeAccessIssue]
+    return next((index for index in table.indexes if index.name == name), None)
+
+
+def test_a_workflow_is_indexed_by_the_events_it_holds():
+    class Parked(Base, Workflow):
+        """A workflow that takes the table arguments the mixin gives it."""
+
+        __tablename__ = "wf_model_parked"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+
+    index = held_event_index(Parked)
+    assert index is not None
+    # Only the parked runs that hold an answer, which is a handful of them.
+    assert [column.name for column in index.columns] == ["waiting_for"]
+    assert index.dialect_options["postgresql"]["where"] is not None
+
+
+def test_a_workflow_that_declares_its_own_table_arguments_keeps_that_index():
+    class Constrained(Base, Workflow):
+        """A workflow with table arguments of its own, as applications have."""
+
+        __tablename__ = "wf_model_constrained"
+        __table_args__ = (UniqueConstraint("reference", name="uq_wf_model_reference"),)
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        reference: Mapped[str] = mapped_column(String(32))
+
+    # Through __table_args__ the mixin's index would have been replaced by this
+    # class's own, and nothing would have said so.
+    assert held_event_index(Constrained) is not None
+    table = cast(Table, Constrained.__table__)
+    assert "uq_wf_model_reference" in {c.name for c in table.constraints}

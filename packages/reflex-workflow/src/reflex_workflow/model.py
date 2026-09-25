@@ -589,6 +589,32 @@ class AttemptLog:
         ATTEMPTS = cls
 
 
+def index_held_events(cls: type[Workflow]) -> None:
+    """Index the runs holding an event for the wait they are parked on.
+
+    A claim asks for the rows whose held event is for the wait they are on, and
+    only a handful of parked runs ever hold one. Without this, finding them
+    means reading every parked run, on every poll of every worker, however idle
+    the table is.
+
+    Attached here rather than through ``__table_args__``, which a workflow that
+    declares table arguments of its own would replace: an index the engine needs
+    would then be missing from exactly the tables that say the most about
+    themselves, and nothing would say so.
+
+    Args:
+        cls: The workflow class, already mapped to its table.
+    """
+    table = getattr(cls, "__table__", None)
+    if table is None:
+        return
+    Index(
+        f"ix_{table.name}_held_event",
+        table.c.waiting_for,
+        postgresql_where=table.c.pending_event.is_not(None),
+    )
+
+
 class Workflow:
     """Mixin that turns a mapped SQLAlchemy model into a durable workflow.
 
@@ -662,6 +688,7 @@ class Workflow:
             )
             raise ValueError(msg)
         REGISTRY[table] = cls
+        index_held_events(cls)
 
     async def start(self: W, first: StepRef[W]) -> bool:
         """Insert this row and schedule its first step.
