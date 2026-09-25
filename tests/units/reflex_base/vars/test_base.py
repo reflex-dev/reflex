@@ -16,6 +16,7 @@ from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
 from reflex_base.vars.base import (
+    FIELD_TYPE,
     GLOBAL_CACHE,
     BaseStateMeta,
     CachedVarOperation,
@@ -36,7 +37,7 @@ from reflex_base.vars.base import (
 from reflex_base.vars.number import NumberVar
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
-from typing_extensions import TypeAliasType, TypeVarTuple, Unpack
+from typing_extensions import Self, TypeAliasType, TypeVarTuple, Unpack
 
 from reflex.state import BaseState, State, _override_base_method
 
@@ -1061,6 +1062,64 @@ def test_new_default_for_inherited_field_declares_a_field():
     assert child_field.default == 5
     assert child_field.outer_type_ is int
     assert "count" in Child.base_vars
+
+
+class TaggedField(Field[FIELD_TYPE]):
+    """A field subclass with an attribute of its own."""
+
+    def __init__(self, *args: Any, tag: str = "", **kwargs: Any):
+        """Initialize the field.
+
+        Args:
+            *args: The arguments of Field.
+            tag: The tag of the field.
+            **kwargs: The keyword arguments of Field.
+        """
+        super().__init__(*args, **kwargs)
+        self.tag = tag
+
+    def _replace(self, **kwargs: Any) -> Self:
+        """Derive a field, keeping the tag.
+
+        Args:
+            **kwargs: The arguments to replace.
+
+        Returns:
+            The new field.
+        """
+        return super()._replace(**{"tag": self.tag, **kwargs})
+
+
+def test_field_subclass_is_kept():
+    """A field declared with a Field subclass stays one wherever it is copied."""
+
+    class Parent(State):
+        annotated: int = TaggedField(default=1, tag="a")  # pyright: ignore[reportAssignmentType]
+        generic: TaggedField[int] = TaggedField(default=2, tag="g")
+        unannotated = TaggedField(default="x", tag="u")
+
+    class Child(Parent):
+        annotated = 3
+
+    class Mixin(State, mixin=True):
+        mixed: int = TaggedField(default=4, tag="m")  # pyright: ignore[reportAssignmentType]
+
+    class UsesMixin(Mixin, State):
+        pass
+
+    for cls, name, tag, default in (
+        (Parent, "annotated", "a", 1),
+        (Parent, "generic", "g", 2),
+        (Parent, "unannotated", "u", "x"),
+        (Child, "annotated", "a", 3),
+        (UsesMixin, "mixed", "m", 4),
+    ):
+        declared = cls.get_fields()[name]
+        assert type(declared) is TaggedField, (cls, name)
+        assert declared.tag == tag
+        assert declared.default_value() == default
+    assert Parent.get_fields()["generic"].outer_type_ is int
+    assert UsesMixin.get_fields()["mixed"] is not Mixin.get_fields()["mixed"]
 
 
 def test_slot_names_are_reserved():

@@ -630,7 +630,7 @@ class BaseState(StateNode, state_root=True):
                 # Declared by a plain base, which holds no field of its own.
                 f = declared
             if f._owner not in tree_states:
-                f = f._copy()
+                f = f._replace()
                 _bind_attr(cls, name, f)
             fields[name] = f
 
