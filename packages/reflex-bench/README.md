@@ -463,6 +463,37 @@ Then compare the two snapshots by line:
 `first, second = map(tracemalloc.Snapshot.load, sorted(glob.glob("/tmp/heap-*.bin")))`
 and print `second.compare_to(first, "lineno")[:20]`.
 
+## Wire sizes
+
+`reflex_bench.suites.wire` counts the bytes that cross the event websocket: what
+a slow link pays for, which no timing or CPU metric shows. One session connects
+to a fresh production backend per sample (`reflex run --env prod
+--backend-only`, one granian worker, the memory state manager) and sums the
+payload bytes of every frame it sends and receives (a text frame's UTF-8
+length; the HTTP handshake is not a frame). Sizes are deterministic for a given
+app and reflex version, so every metric is exact and a sample is one run.
+
+| Benchmark | Suites | Parameters | One sample | Metrics |
+| --- | --- | --- | --- | --- |
+| `wire.hydrate` | `pr`, `smoke`, `daily` | | connect and hydrate the playground's index route, until the delta that sets `is_hydrated` | `hydrate_sent_bytes`, `hydrate_received_bytes`, `hydrate_frames` (received) |
+| `wire.event` | `pr`, `smoke` (simple), `daily` | `shape` simple, complex, cross, background | after hydration, one `BenchState.set_seq*` event: the request frame, and every frame received until the delta echoing its sequence number | `request_bytes`, `response_bytes`, `response_frames` |
+| `wire.delta` | `daily` | `change` set_scalar, append_item, set_one_item, set_dict_key, update_row_field | the same for one small change to a large collection of the generated `wire_delta` app | `response_bytes` |
+
+- **Replies span frames**: `response_bytes` sums every frame from the request
+  until the echo, so 0.8.23's empty update before a background task's delta
+  counts, as does any delta of another state. The extra data keeps the echo
+  frame (`reply`), the largest frame, and `delta_bytes`, the bytes of each
+  substate's part of the deltas re-serialized compactly.
+- **`wire.delta`** does not use the playground: its `setup_cache` writes a
+  small app whose state holds 1000 ints in a list, 1000 keys in a dict and 200
+  dict rows, and compiles it. Every handler also sets `last_seq` (the echo), so
+  the deltas differ only by the collection they carry; `set_scalar` is the
+  control. A whole collection resent for a one-item change shows as
+  `response_bytes` far above the control's.
+- **Dims**: `fixture` names the app (`playground` or `wire_delta`); for
+  `wire.delta`, `fixture_hash` is the generated source's content hash, so a
+  change to the generator starts a new series.
+
 ## How samples are taken
 
 After the warmup runs, the first timed sample decides the run count (hyperfine's
