@@ -157,8 +157,11 @@ class StateManagerDisk(StateManager):
             try:
                 with token_path.open(mode="rb") as file:
                     return token.deserialize(fp=file)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(
+                    f"Failed to load state for {token!r} from {token_path}: {e!r}. "
+                    "The corrupted state file will be replaced with a default state."
+                )
         return None
 
     async def populate_substates(
