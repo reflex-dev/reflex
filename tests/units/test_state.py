@@ -2813,8 +2813,8 @@ async def test_state_read_only_until_entered(
     # As loaded by an event whose lock was released since.
     parent_state._event_context = attached_mock_event_context
 
-    # cannot use normal contextmanager protocol
-    with pytest.raises(TypeError), grandchild_state:  # pyright: ignore [reportGeneralTypeIssues]
+    # cannot use normal contextmanager protocol: Python 3.10 raises AttributeError.
+    with pytest.raises((TypeError, AttributeError)), grandchild_state:  # pyright: ignore [reportGeneralTypeIssues]
         pass
 
     with pytest.raises(ImmutableStateError):
