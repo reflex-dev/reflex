@@ -466,6 +466,10 @@ def _terminate_process_tree_windows(process: subprocess.Popen, timeout: float) -
 
     try:
         root = psutil.Process(process.pid)
+        # The Popen handle refers to the original child. Once it exits, the
+        # numeric PID may be reused by an unrelated process; never sweep it.
+        if process.poll() is not None:
+            return
     except psutil.NoSuchProcess:
         return
 

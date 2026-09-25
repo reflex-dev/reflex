@@ -565,10 +565,22 @@ def _pid_gone(pid: int) -> bool:
         os.kill(pid, 0)
     except ProcessLookupError:
         return True
-    stat = Path(f"/proc/{pid}/stat")
-    if stat.exists():
-        return stat.read_text().split()[2] in ("Z", "X")
-    return False
+    if sys.platform == "linux":
+        stat = Path(f"/proc/{pid}/stat")
+        if stat.exists():
+            try:
+                return stat.read_text().split()[2] in ("Z", "X")
+            except FileNotFoundError:
+                return True
+    import psutil
+
+    try:
+        return psutil.Process(pid).status() in (
+            psutil.STATUS_ZOMBIE,
+            psutil.STATUS_DEAD,
+        )
+    except psutil.NoSuchProcess:
+        return True
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="signal semantics are POSIX")

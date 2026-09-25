@@ -264,14 +264,23 @@ def _process_gone(pid: int) -> bool:
         os.kill(pid, 0)
     except ProcessLookupError:
         return True
-    stat = Path(f"/proc/{pid}/stat")
-    if stat.exists():
-        try:
-            return stat.read_text().split()[2] in ("Z", "X")
-        except FileNotFoundError:
-            # Reaped between the existence check and the read.
-            return True
-    return False
+    if sys.platform == "linux":
+        stat = Path(f"/proc/{pid}/stat")
+        if stat.exists():
+            try:
+                return stat.read_text().split()[2] in ("Z", "X")
+            except FileNotFoundError:
+                return True
+    # On non-Linux POSIX, psutil identifies zombies without /proc.
+    import psutil
+
+    try:
+        return psutil.Process(pid).status() in (
+            psutil.STATUS_ZOMBIE,
+            psutil.STATUS_DEAD,
+        )
+    except psutil.NoSuchProcess:
+        return True
 
 
 def _run_context_in_thread(*fns) -> tuple[threading.Thread, list[BaseException]]:
@@ -1052,6 +1061,19 @@ def test_windows_kill_job_terminates_tree_after_root_exit(monkeypatch):
     assert terminated_jobs == [4242], (
         "kill-on-close job was not terminated for an exited root"
     )
+
+
+def test_windows_teardown_never_sweeps_a_reused_exited_root_pid(monkeypatch):
+    """An exited Popen cannot grant ownership of a new process at its old PID."""
+    unrelated = _FakeProc(1, children=[_FakeProc(2)])
+    _install_fake_psutil(monkeypatch, unrelated)
+    root = _fake_popen(1)
+    root.poll.return_value = 0
+
+    processes._terminate_process_tree_windows(root, timeout=0.1)
+
+    assert not unrelated.terminated
+    assert not unrelated._children[0].terminated
 
 
 def test_windows_teardown_falls_back_to_psutil_without_job(monkeypatch):
