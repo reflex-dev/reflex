@@ -4424,6 +4424,11 @@ def _annotated_fields(
             fields[key] = Field(annotated_type=annotation)
         elif isinstance(value, Field):
             fields[key] = value._replace(annotated_type=annotation)
+        elif isinstance(inherited := _inherited_value(lookup_order, key), Field):
+            # A new default for an inherited field keeps its kind of field.
+            fields[key] = inherited._replace(
+                annotated_type=annotation, **_default_arguments(value)
+            )
         else:
             fields[key] = Field._with_default(value, annotation)
     return fields
