@@ -4813,7 +4813,12 @@ async def event_namespace_with_processor_mock() -> AsyncGenerator[EventNamespace
         The EventNamespace instance.
     """
     app = App()
-    app._event_processor = Mock(enqueue=AsyncMock())
+    app._event_processor = Mock(
+        enqueue=AsyncMock(),
+        _root_context=EventContext(
+            token="", state_manager=app.state_manager, enqueue_impl=AsyncMock()
+        ),
+    )
     event_namespace = EventNamespace("/event", app)
     yield event_namespace
     # The token manager is backed by redis when one is configured; drop the
@@ -4935,6 +4940,38 @@ async def test_link_token_to_sid_records_the_connecting_identity(
     assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == new_token
     assert state.rx_router_session.client_token == new_token
     assert state.rx_router_session.session_id == "sid2"
+
+
+@pytest.mark.asyncio
+async def test_link_token_to_sid_updates_a_state_an_earlier_event_held(
+    token: str,
+    event_namespace_with_processor_mock: EventNamespace,
+):
+    """Reconnecting updates the session of a state an earlier event had locked.
+
+    The in-memory state manager hands back the same instance, still bound to
+    the event context that last held its lock.
+
+    Args:
+        token: A token.
+        event_namespace_with_processor_mock: The event namespace fixture.
+    """
+    event_namespace = event_namespace_with_processor_mock
+    app = event_namespace.app
+    assert app._state is not None
+    state_token = BaseStateToken(ident=token, cls=app._state)
+    async with app._event_processor._root_context.fork(token=token).modify_state(  # pyright: ignore[reportOptionalMemberAccess]
+        state_token
+    ):
+        pass
+
+    await event_namespace.link_token_to_sid("sid1", token)
+
+    # Read as the next event does: with oplock, a lease holder writes back
+    # lazily, so `get_state` could still read the stored copy.
+    async with app.state_manager.modify_state(state_token) as state:
+        assert state.rx_router_session.session_id == "sid1"
+        assert state.rx_router_session.client_token == token
 
 
 @pytest.mark.asyncio

@@ -711,13 +711,9 @@ def event_namespace_factory() -> Generator[Callable[[], EventNamespace], None, N
     created_objs = []
 
     def new_event_namespace() -> EventNamespace:
-        state = Mock()
-        state.router_data = {}
-
-        mock_app = Mock()
-        mock_app.state_manager.modify_state = Mock(
-            return_value=AsyncMock(__aenter__=AsyncMock(return_value=state))
-        )
+        # These tests cover token management only: without a state, linking a
+        # token to a sid does not load the client's state.
+        mock_app = Mock(_state=None)
 
         event_namespace = EventNamespace(namespace=namespace, app=mock_app)
         event_namespace.emit = AsyncMock()

@@ -1861,12 +1861,13 @@ class App(MiddlewareMixin, LifespanMixin):
             try:
                 forked_context = EventContext.get().fork(token=token.ident)
             except LookupError:
-                pass
+                modify_state = self.state_manager.modify_state_with_links
             else:
                 reset_token = EventContext.set(forked_context)
                 rebind.callback(EventContext.reset, reset_token)
+                modify_state = forked_context.modify_state
             # Get exclusive access to the state.
-            async with self.state_manager.modify_state_with_links(
+            async with modify_state(
                 token, previous_dirty_vars=previous_dirty_vars, **context
             ) as state:
                 # No other event handler can modify the state while in this context.
@@ -2461,8 +2462,11 @@ class EventNamespace(AsyncNamespace):
 
         # Update client state to apply new sid/token for running background tasks.
         if self.app._state is not None:
-            async with self.app.state_manager.modify_state(
-                BaseStateToken(ident=new_token or token, cls=self.app._state)
+            ident = new_token or token
+            with self.app.set_contexts():
+                ctx = EventContext.get().fork(token=ident)
+            async with ctx.modify_state(
+                BaseStateToken(ident=ident, cls=self.app._state), with_links=False
             ) as state:
                 state.router_data[constants.RouteVar.SESSION_ID] = sid
                 # Record the identity the state was loaded under; duplicate-token

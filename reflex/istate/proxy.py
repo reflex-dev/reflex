@@ -2,37 +2,29 @@
 
 from __future__ import annotations
 
-import asyncio
 import copy
 import dataclasses
 import functools
 import inspect
 import json
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from importlib import import_module
 from importlib.util import find_spec
-from types import MethodType
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, SupportsIndex, TypeVar, cast
 
 import wrapt
-from reflex_base import constants
-from reflex_base.event import Event
-from reflex_base.event.context import EventContext
-from reflex_base.utils.exceptions import ImmutableStateError
 from reflex_base.utils.serializers import can_serialize, serialize, serializer
 from reflex_base.utils.types import (
     _MUTABLE_BUILTIN_TYPES,
     _MUTABLE_MODEL_BASES,
     is_mutable_type,
 )
-from reflex_base.vars.base import Field
+from reflex_base.vars.base import Field, _check_writable
 from typing_extensions import Self
 
-from reflex.istate.manager.token import BaseStateToken
-
 if TYPE_CHECKING:
-    from reflex.state import BaseState, StateUpdate
+    from reflex.state import BaseState
 
 T_STATE = TypeVar("T_STATE", bound="BaseState")
 T = TypeVar("T")
@@ -78,404 +70,6 @@ def _dataclass_proxy_namespace(wrapped_cls: type) -> dict[str, Any]:
         # `__match_args__` under `@dataclass(match_args=False)`.
         if attr not in instance_fields and hasattr(wrapped_cls, attr)
     }
-
-
-def _is_ancestor(obj: Any, state: BaseState) -> bool:
-    """Whether an object is an ancestor of a state in its tree.
-
-    Args:
-        obj: The object.
-        state: The state.
-
-    Returns:
-        True if the object is a parent, grandparent, etc. of the state.
-    """
-    parent = state.parent_state
-    while parent is not None:
-        if parent is obj:
-            return True
-        parent = parent.parent_state
-    return False
-
-
-def _call_on_ancestor(
-    proxy: StateProxy, func: Callable, owner: type, /, *args: Any, **kwargs: Any
-) -> Any:
-    """Call an inherited event handler on the ancestor declaring it.
-
-    The ancestor is found when called, in the tree the proxy wraps then: entering
-    the proxy may have reloaded the tree since the handler was accessed.
-
-    Args:
-        proxy: The proxy the handler was accessed through.
-        func: The function of the handler.
-        owner: The class of the ancestor declaring the handler.
-        *args: The positional arguments of the call.
-        **kwargs: The keyword arguments of the call.
-
-    Returns:
-        The return value of the handler.
-    """
-    ancestor = proxy.__wrapped__.parent_state
-    while type(ancestor) is not owner:
-        ancestor = ancestor.parent_state
-    return func(type(proxy)(ancestor, parent_state_proxy=proxy), *args, **kwargs)
-
-
-class StateProxy(wrapt.ObjectProxy):
-    """Proxy of a state instance to control mutability of vars for a background task.
-
-    Since a background task runs against a state instance without holding the
-    state_manager lock for the token, the reference may become stale if the same
-    state is modified by another event handler.
-
-    The proxy object ensures that writes to the state are blocked unless
-    explicitly entering a context which refreshes the state from state_manager
-    and holds the lock for the token until exiting the context. After exiting
-    the context, a StateUpdate may be emitted to the frontend to notify the
-    client of the state change.
-
-    A background task will be passed the `StateProxy` as `self`, so mutability
-    can be safely performed inside an `async with self` block.
-
-        class State(rx.State):
-            counter: int = 0
-
-            @rx.event(background=True)
-            async def bg_increment(self):
-                await asyncio.sleep(1)
-                async with self:
-                    self.counter += 1
-    """
-
-    if TYPE_CHECKING:
-        # wrapt-stubs types `ObjectProxy.__new__` as returning `ObjectProxy`
-        # rather than `Self`, which loses the subclass type at every call site.
-        def __new__(cls, *args: Any, **kwargs: Any) -> Self:  # noqa: D102
-            ...
-
-    def __init__(
-        self,
-        state_instance: BaseState,
-        event: Event | None = None,
-        parent_state_proxy: StateProxy | None = None,
-    ):
-        """Create a proxy for a state instance.
-
-        If `get_state` is used on a StateProxy, the resulting state will be
-        linked to the given state via parent_state_proxy. The first state in the
-        chain is the state that initiated the background task.
-
-        Args:
-            state_instance: The state instance to proxy.
-            event: The event associated with the state modification context.
-            parent_state_proxy: The parent state proxy, for linked mutability and context tracking.
-        """
-        super().__init__(state_instance)
-        self._self_event = event
-        self._self_substate_path = tuple(state_instance.get_full_name().split("."))
-        self._self_substate_token = BaseStateToken(
-            ident=EventContext.get().token,
-            cls=state_instance.__class__,
-        )
-        self._self_actx = None
-        self._self_mutable = False
-        self._self_actx_lock = asyncio.Lock()
-        self._self_actx_lock_holder = None
-        self._self_parent_state_proxy = parent_state_proxy
-        # Whether `async with self` was ever entered; a background handler that
-        # never did emitted no delta, so the processor flushes once for it.
-        self._self_entered_context = False
-
-    def _is_mutable(self) -> bool:
-        """Check if the state is mutable.
-
-        Returns:
-            Whether the state is mutable.
-        """
-        if self._self_parent_state_proxy is not None:
-            return self._self_parent_state_proxy._is_mutable() or self._self_mutable
-        return self._self_mutable
-
-    async def __aenter__(self) -> Self:
-        """Enter the async context manager protocol.
-
-        Sets mutability to True and enters the `App.modify_state` async context,
-        which refreshes the state from state_manager and holds the lock for the
-        given state token until exiting the context.
-
-        Background tasks should avoid blocking calls while inside the context.
-
-        Returns:
-            This StateProxy instance in mutable mode.
-
-        Raises:
-            ImmutableStateError: If the state is already mutable.
-        """
-        if self._self_parent_state_proxy is not None:
-            parent_state = (
-                await self._self_parent_state_proxy.__aenter__()
-            ).__wrapped__
-            super().__setattr__(
-                "__wrapped__",
-                await parent_state.get_state(self._self_substate_token.cls),
-            )
-            self._self_entered_context = True
-            return self
-        current_task = asyncio.current_task()
-        if (
-            self._self_actx_lock.locked()
-            and current_task == self._self_actx_lock_holder
-        ):
-            msg = "The state is already mutable. Do not nest `async with self` blocks."
-            raise ImmutableStateError(msg)
-
-        ctx = EventContext.get()
-
-        await self._self_actx_lock.acquire()
-        try:
-            self._self_actx_lock_holder = current_task
-            self._self_actx = ctx.state_manager.modify_state_with_links(
-                token=self._self_substate_token, event=self._self_event
-            )
-            mutable_state = await self._self_actx.__aenter__()
-            self._self_mutable = True
-            self._self_entered_context = True
-            super().__setattr__(
-                "__wrapped__", mutable_state.get_substate(self._self_substate_path)
-            )
-        except (Exception, asyncio.CancelledError):
-            # Restore the proxy to a consistent state since __aexit__ will not be called when __aenter__ raises.
-            await self.__aexit__(*sys.exc_info())
-            raise
-        return self
-
-    async def __aexit__(self, *exc_info: Any) -> None:
-        """Exit the async context manager protocol.
-
-        Sets proxy mutability to False and persists any state changes.
-
-        Args:
-            exc_info: The exception info tuple.
-        """
-        if self._self_parent_state_proxy is not None:
-            await self._self_parent_state_proxy.__aexit__(*exc_info)
-            return
-        try:
-            if self._self_mutable and self._self_actx is not None:
-                root_state = self.__wrapped__._get_root_state()
-                delta = await root_state._get_resolved_delta()
-                root_state._clean()
-                # When the frontend vars are modified emit the delta to the frontend.
-                if delta:
-                    ctx = EventContext.get()
-                    await ctx.emit_delta(delta)
-        finally:
-            try:
-                if self._self_mutable and self._self_actx is not None:
-                    await self._self_actx.__aexit__(*exc_info)
-            finally:
-                self._self_actx = None
-                self._self_mutable = False
-                self._self_actx_lock_holder = None
-                self._self_actx_lock.release()
-
-    def __enter__(self):
-        """Enter the regular context manager protocol.
-
-        This is not supported for background tasks, and exists only to raise a more useful exception
-        when the StateProxy is used incorrectly.
-
-        Raises:
-            TypeError: always, because only async contextmanager protocol is supported.
-        """
-        msg = "Background task must use `async with self` to modify state."
-        raise TypeError(msg)
-
-    def __exit__(self, *exc_info: Any) -> None:
-        """Exit the regular context manager protocol.
-
-        Args:
-            exc_info: The exception info tuple.
-        """
-
-    def __getattr__(self, name: str) -> Any:
-        """Get the attribute from the underlying state instance.
-
-        Args:
-            name: The name of the attribute.
-
-        Returns:
-            The value of the attribute.
-
-        Raises:
-            ImmutableStateError: If the state is not in mutable mode.
-        """
-        if name == constants.ROUTER:
-            from reflex.state import _router_fget
-
-            # Router fields belong to the root. A linked proxy keeps their dirty
-            # tracking there while enforcing the calling proxy's mutation guard.
-            root_state = self.__wrapped__._get_root_state()
-            router_proxy = (
-                self
-                if root_state is self.__wrapped__
-                else type(self)(root_state, parent_state_proxy=self)
-            )
-            return _router_fget(cast("BaseState", router_proxy))
-
-        if name in ["substates", "parent_state"] and not self._is_mutable():
-            msg = (
-                "Background task StateProxy is immutable outside of a context "
-                "manager. Use `async with self` to modify state."
-            )
-            raise ImmutableStateError(msg)
-
-        value = super().__getattr__(name)  # pyright: ignore[reportAttributeAccessIssue]
-        if not name.startswith("_self_") and isinstance(value, MutableProxy):
-            # Ensure mutations to these containers are blocked unless proxy is
-            # mutable. An inherited field lives on an ancestor state: proxy
-            # that one, linked to this proxy for mutability.
-            owner = value._self_state
-            return ImmutableMutableProxy(
-                wrapped=value.__wrapped__,
-                state=cast(
-                    "BaseState",
-                    self
-                    if owner is self.__wrapped__
-                    else type(self)(owner, parent_state_proxy=self),
-                ),
-                field_name=value._self_field_name,
-            )
-        if isinstance(value, MethodType):
-            if value.__self__ is self.__wrapped__:
-                # Rebind methods and event handlers to the proxy instance
-                value = type(value)(value.__func__, self)
-            elif _is_ancestor(value.__self__, self.__wrapped__):
-                # An inherited event handler runs on the ancestor declaring it.
-                value = functools.partial(
-                    _call_on_ancestor, self, value.__func__, type(value.__self__)
-                )
-        return value
-
-    def __setattr__(self, name: str, value: Any) -> None:
-        """Set the attribute on the underlying state instance.
-
-        If the attribute is internal, set it on the proxy instance instead.
-
-        Args:
-            name: The name of the attribute.
-            value: The value of the attribute.
-
-        Raises:
-            ImmutableStateError: If the state is not in mutable mode.
-        """
-        from reflex.state import BaseState
-
-        if (
-            name.startswith("_self_")  # wrapper attribute
-            or self._is_mutable()  # lock held
-            or name in BaseState.__slots__  # bookkeeping, never persisted
-        ):
-            super().__setattr__(name, value)
-            return
-
-        msg = (
-            "Background task StateProxy is immutable outside of a context "
-            "manager. Use `async with self` to modify state."
-        )
-        raise ImmutableStateError(msg)
-
-    def get_substate(self, path: Sequence[str]) -> BaseState:
-        """Only allow substate access with lock held.
-
-        Args:
-            path: The path to the substate.
-
-        Returns:
-            The substate.
-
-        Raises:
-            ImmutableStateError: If the state is not in mutable mode.
-        """
-        if not self._is_mutable():
-            msg = (
-                "Background task StateProxy is immutable outside of a context "
-                "manager. Use `async with self` to modify state."
-            )
-            raise ImmutableStateError(msg)
-        return self.__wrapped__.get_substate(path)
-
-    async def get_state(self, state_cls: type[T_STATE]) -> T_STATE:
-        """Get an instance of the state associated with this token.
-
-        Args:
-            state_cls: The class of the state.
-
-        Returns:
-            The state.
-
-        Raises:
-            ImmutableStateError: If the state is not in mutable mode.
-        """
-        if not self._is_mutable():
-            msg = (
-                "Background task StateProxy is immutable outside of a context "
-                "manager. Use `async with self` to modify state."
-            )
-            raise ImmutableStateError(msg)
-        return type(self)(
-            await self.__wrapped__.get_state(state_cls),
-            event=self._self_event,
-            parent_state_proxy=self,
-        )  # pyright: ignore [reportReturnType]
-
-    async def _as_state_update(self, *args, **kwargs) -> StateUpdate:
-        """Temporarily allow mutability to access parent_state.
-
-        Args:
-            *args: The args to pass to the underlying state instance.
-            **kwargs: The kwargs to pass to the underlying state instance.
-
-        Returns:
-            The state update.
-        """
-        original_mutable = self._self_mutable
-        self._self_mutable = True
-        try:
-            return await self.__wrapped__._as_state_update(*args, **kwargs)
-        finally:
-            self._self_mutable = original_mutable
-
-
-class ReadOnlyStateProxy(StateProxy):
-    """A read-only proxy for a state."""
-
-    def __setattr__(self, name: str, value: Any) -> None:
-        """Prevent setting attributes on the state for read-only proxy.
-
-        Args:
-            name: The attribute name.
-            value: The attribute value.
-
-        Raises:
-            NotImplementedError: Always raised when trying to set an attribute on proxied state.
-        """
-        if name.startswith("_self_"):
-            # Special case attributes of the proxy itself, not applied to the wrapped object.
-            super().__setattr__(name, value)
-            return
-        msg = "This is a read-only state proxy."
-        raise NotImplementedError(msg)
-
-    def mark_dirty(self):
-        """Mark the state as dirty.
-
-        Raises:
-            NotImplementedError: Always raised when trying to mark the proxied state as dirty.
-        """
-        msg = "This is a read-only state proxy."
-        raise NotImplementedError(msg)
 
 
 def __getattr__(name: str) -> Any:
@@ -535,7 +129,7 @@ class MutableProxy(wrapt.ObjectProxy):
     # Dynamically generated classes for tracking dataclass mutations.
     __dataclass_proxies__: dict[tuple[type, type], type] = {}
     _self_path: tuple[_AccessSpec, ...] = ()
-    # The state (or StateProxy) whose async context this proxy has entered.
+    # The state whose async context this proxy has entered.
     _self_actx_state: BaseState | None = None
 
     def __new__(
@@ -618,7 +212,6 @@ class MutableProxy(wrapt.ObjectProxy):
         Raises:
             RuntimeError: If this proxy is already in an async context or cannot
                 be refreshed from its bound state field.
-            ImmutableStateError: If this proxy is bound to a read-only state proxy.
         """
         if self._self_actx_state is not None:
             msg = (
@@ -629,11 +222,6 @@ class MutableProxy(wrapt.ObjectProxy):
         if _UNREFRESHABLE_ACCESS_SPEC in self._self_path:
             self._raise_refresh_error()
         context_state = self._self_state
-        if isinstance(context_state, ReadOnlyStateProxy):
-            # Entering the owning StateProxy would set it mutable, silently
-            # bypassing the read-only guarantee of `get_state()` wrappers.
-            msg = "This is a read-only state proxy."
-            raise ImmutableStateError(msg)
         self._self_actx_state = context_state
         aenter_ok = False
         try:
@@ -699,14 +287,6 @@ class MutableProxy(wrapt.ObjectProxy):
         finally:
             self._self_actx_state = None
 
-    def _dirty_state(self) -> BaseState:
-        """Get the state whose field changes along with the wrapped object.
-
-        Returns:
-            The state instance holding the field.
-        """
-        return self._self_state
-
     def _mark_dirty(
         self,
         wrapped: Callable | None = None,
@@ -716,7 +296,8 @@ class MutableProxy(wrapt.ObjectProxy):
     ) -> Any:
         """Mark the field dirty, then call a wrapped function.
 
-        Intended for use with `FunctionWrapper` from the `wrapt` library.
+        Intended for use with `FunctionWrapper` from the `wrapt` library. Where
+        the state is read-only, raises before the change.
 
         Args:
             wrapped: The wrapped function.
@@ -727,7 +308,8 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The result of the wrapped function.
         """
-        state = self._dirty_state()
+        state = self._self_state
+        _check_writable(state)
         type(state).__fields__[self._self_field_name]._mark_dirty(state)
         if wrapped is not None:
             return wrapped(*args, **(kwargs or {}))
@@ -1032,35 +614,6 @@ def _json_encoder_default_wrapper(self: json.JSONEncoder, o: Any) -> Any:
 
 
 json.JSONEncoder.default = _json_encoder_default_wrapper
-
-
-class ImmutableMutableProxy(MutableProxy):
-    """A proxy for a mutable object that tracks changes.
-
-    This wrapper comes from StateProxy, and will raise an exception if an attempt is made
-    to modify the wrapped object when the StateProxy is immutable.
-    """
-
-    # Ensure that recursively wrapped proxies use ImmutableMutableProxy as base.
-    __base_proxy__ = "ImmutableMutableProxy"
-
-    def _dirty_state(self) -> BaseState:
-        """Get the state holding the field, if the StateProxy is mutable.
-
-        Returns:
-            The state instance behind the StateProxy.
-
-        Raises:
-            ImmutableStateError: if the StateProxy is not mutable.
-        """
-        state = cast("StateProxy", self._self_state)
-        if not state._is_mutable():
-            msg = (
-                "Background task StateProxy is immutable outside of a context "
-                "manager. Use `async with self` to modify state."
-            )
-            raise ImmutableStateError(msg)
-        return state.__wrapped__
 
 
 Field._proxy = MutableProxy

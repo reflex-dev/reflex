@@ -14,7 +14,6 @@ from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
 from reflex.istate.manager.token import BaseStateToken
-from reflex.istate.proxy import StateProxy
 from reflex.utils import types
 from reflex_base import otel
 from reflex_base.event.context import EventContext
@@ -236,21 +235,19 @@ async def chain_updates(
         await _route_events(ctx, fixed_events)
 
 
-def ensure_locked(
-    state: BaseState | StateProxy, root_state: BaseState | None
-) -> BaseState | None:
+def ensure_locked(state: BaseState, root_state: BaseState | None) -> BaseState | None:
     """The root to flush deltas from, only while the state lock is held.
 
     Foreground handlers pass the locked root in. A background handler
-    yielding from inside ``async with self`` is suspended while its proxy
-    still holds the lock, so flushing through the proxy's root keeps the
-    documented ordering: deltas reach the frontend before the yielded event.
-    Outside the proxy context there is no lock, and flushing there is the
-    unlocked snapshot/clean that discards concurrent writes. Evaluated per
-    yield: a generator can move between inside and outside the context.
+    yielding from inside ``async with self`` is suspended while its event
+    context still holds the lock, so flushing its root keeps the documented
+    ordering: deltas reach the frontend before the yielded event. Outside the
+    block there is no lock, and flushing there is the unlocked snapshot/clean
+    that discards concurrent writes. Evaluated per yield: a generator can move
+    between inside and outside the block.
 
     Args:
-        state: The state the handler runs against, possibly a StateProxy.
+        state: The state the handler runs against.
         root_state: The locked root passed by foreground callers, if any.
 
     Returns:
@@ -258,15 +255,14 @@ def ensure_locked(
     """
     if root_state is not None:
         return root_state
-    if isinstance(state, StateProxy) and state._is_mutable():
-        return state.__wrapped__._get_root_state()
-    return None
+    root = state._get_root_state()
+    return root if EventContext.get().state_locks.holds(root) else None
 
 
 async def process_event(
     handler: EventHandler,
     payload: dict,
-    state: BaseState | StateProxy,
+    state: BaseState,
     root_state: BaseState | None,
 ):
     """Process event.
@@ -415,7 +411,7 @@ class BaseStateEventProcessor(EventProcessor):
         router_data = ctx.router_data
         acquire_start = perf_counter() if otel.enabled else 0.0
         # Get the state for the session exclusively.
-        async with ctx.state_manager.modify_state_with_links(
+        async with ctx.modify_state(
             BaseStateToken(
                 ident=ctx.token,
                 cls=registered_handler.states[0],
@@ -474,20 +470,20 @@ class BaseStateEventProcessor(EventProcessor):
                     root_state=root_state,
                 )
                 return
-        # Otherwise drop the state lock and start processing the background task
-        # with a proxy state. No root_state: the lock is no longer held, and
+        # Otherwise drop the state lock and start processing the background task,
+        # whose state is read-only until entered. No root_state: the lock is no
+        # longer held, and
         # under a shared state tree (opportunistic locking, in-memory manager)
         # computing a delta here races whatever event holds the lock now -- a
         # foreground write landing between this task's dirty-var snapshot and
         # its _clean() would be discarded before any delta carries it. A
         # background task's own state changes are emitted (and cleaned) by its
         # `async with self` context exits, which re-acquire the lock.
-        proxy = StateProxy(substate)
         handler_error: BaseException | None = None
         try:
             await process_event(
                 handler=registered_handler.handler,
-                state=proxy,
+                state=substate,
                 payload=event.payload,
                 root_state=None,
             )
@@ -495,7 +491,7 @@ class BaseStateEventProcessor(EventProcessor):
             handler_error = ex
             raise
         finally:
-            if not proxy._self_entered_context:
+            if not ctx.state_locks.entered:
                 # A handler that never entered `async with self` emitted nothing,
                 # but every background event used to flush a delta (refreshing
                 # uncached computed vars, and any dirty vars the preamble left,
@@ -503,7 +499,7 @@ class BaseStateEventProcessor(EventProcessor):
                 # also when the handler raises, so the client gets the same
                 # refresh regardless of how the task ended.
                 try:
-                    async with ctx.state_manager.modify_state_with_links(
+                    async with ctx.modify_state(
                         BaseStateToken(
                             ident=ctx.token,
                             cls=registered_handler.states[0],

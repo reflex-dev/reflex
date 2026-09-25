@@ -146,9 +146,8 @@ class Event:
                 msg = f"Unexpected event type, {type(e)}."
                 raise ValueError(msg)
             name = format.format_event_handler(e.handler)
-            # Detach mutable values from any state-bound proxies (e.g.
-            # ImmutableMutableProxy from a background task's StateProxy),
-            # copying only subtrees that are actually proxied.
+            # Detach mutable values from state-bound proxies, copying only
+            # subtrees that are actually proxied.
             payload = {
                 k._js_expr: _detach_state_proxies(v._decode()) for k, v in e.args
             }
@@ -472,6 +471,23 @@ class EventActionsMixin:
         )
 
 
+def _call_on_owner(
+    instance: "BaseState", handler: "EventHandler", /, *args: Any, **kwargs: Any
+) -> Any:
+    """Call an inherited event handler on the ancestor of a state declaring it.
+
+    Args:
+        instance: The state the handler was accessed on.
+        handler: The handler.
+        *args: The positional arguments of the call.
+        **kwargs: The keyword arguments of the call.
+
+    Returns:
+        The return value of the handler.
+    """
+    return handler.fn(_owner_state(instance, handler.state), *args, **kwargs)  # pyright: ignore[reportArgumentType]
+
+
 def _no_chain_background_task(state: "BaseState", fn: Callable) -> Callable:
     """Protect against directly chaining a background task from another event handler.
 
@@ -650,8 +666,8 @@ class EventHandler(EventActionsMixin):
 
         Returns:
             This handler for class access, else its function bound to the
-            instance of the handler's state (an ancestor of ``instance`` for
-            an inherited handler).
+            instance of the handler's state (for an inherited handler, the
+            ancestor of ``instance`` declaring it, found when called).
         """
         if (
             instance is None
@@ -660,14 +676,15 @@ class EventHandler(EventActionsMixin):
             or not isinstance(instance, self.state)
         ):
             return self
-        state = (
-            instance
-            if type(instance) is self.state
-            else _owner_state(instance, self.state)
-        )
         if self.is_background:
-            return _no_chain_background_task(state, self.fn)
-        return types.MethodType(self.fn, state)
+            return _no_chain_background_task(
+                _owner_state(instance, self.state), self.fn
+            )
+        if type(instance) is self.state:
+            return types.MethodType(self.fn, instance)
+        # An inherited handler runs on the ancestor declaring it, found when
+        # called: entering the state may have reloaded its tree since.
+        return partial(_call_on_owner, instance, self)
 
     def __call__(self, *args: Any, **kwargs: Any) -> "EventSpec":
         """Pass arguments to the handler to get an event spec.

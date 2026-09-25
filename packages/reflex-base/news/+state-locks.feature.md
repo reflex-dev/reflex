@@ -1,0 +1,1 @@
+`EventContext.modify_state` holds the lock on a state tree for the event, and `EventContext.state_locks` records the locks it holds: a state loaded by an event is writable only while its event holds its lock.

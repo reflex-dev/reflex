@@ -61,7 +61,7 @@ from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
-from reflex.istate.proxy import MutableProxy, StateProxy
+from reflex.istate.proxy import MutableProxy
 from reflex.state import (
     BaseState,
     Delta,
@@ -2767,14 +2767,14 @@ class ModelDC:
 
 
 @pytest.mark.asyncio
-async def test_state_proxy(
+async def test_state_read_only_until_entered(
     grandchild_state: GrandchildState,
     token: str,
     attached_mock_base_state_event_processor: BaseStateEventProcessor,
     emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
     attached_mock_event_context: EventContext,
 ):
-    """Test that the state proxy works.
+    """A state loaded by an event is read-only once the lock is released, until entered.
 
     Args:
         grandchild_state: A grandchild state.
@@ -2810,49 +2810,33 @@ async def test_state_proxy(
                 ex=state_manager.token_expiration,
             )
 
-    sp = StateProxy(grandchild_state)
-    assert sp.__wrapped__ == grandchild_state
-    assert sp._self_substate_path == tuple(grandchild_state.get_full_name().split("."))
-    assert not sp._self_mutable
-    assert sp._self_actx is None
+    # As loaded by an event whose lock was released since.
+    parent_state._event_context = attached_mock_event_context
 
-    # cannot use normal contextmanager protocol
-    with pytest.raises(TypeError), sp:
+    # cannot use normal contextmanager protocol: Python 3.10 raises AttributeError.
+    with pytest.raises((TypeError, AttributeError)), grandchild_state:  # pyright: ignore [reportGeneralTypeIssues]
         pass
 
     with pytest.raises(ImmutableStateError):
-        # cannot directly modify state proxy outside of async context
-        sp.value2 = "16"
+        # cannot directly modify the state outside of async context
+        grandchild_state.value2 = "16"
 
-    with pytest.raises(ImmutableStateError):
-        # Cannot get_state
-        await sp.get_state(ChildState)
+    # Reading, including other states in the tree, is allowed.
+    assert await grandchild_state.get_state(ChildState) is child_state
+    assert grandchild_state.get_substate([]) is grandchild_state
+    assert grandchild_state.parent_state is child_state
 
-    with pytest.raises(ImmutableStateError):
-        # Cannot access get_substate
-        sp.get_substate([])
-
-    with pytest.raises(ImmutableStateError):
-        # Cannot access parent state
-        sp.parent_state.get_name()
-
-    with pytest.raises(ImmutableStateError):
-        # Cannot access substates
-        sp.substates[""]
-
-    async with sp:
-        assert sp._self_actx is not None
-        assert sp._self_mutable  # proxy is mutable inside context
+    async with grandchild_state:
         if isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
             # For in-process store, only one instance of the state exists
-            assert sp.__wrapped__ is grandchild_state
+            assert grandchild_state.parent_state is child_state
         else:
-            # When redis is used, a new+updated instance is assigned to the proxy
-            assert sp.__wrapped__ is not grandchild_state
-        sp.value2 = "42"
-    assert not sp._self_mutable  # proxy is not mutable after exiting context
-    assert sp._self_actx is None
-    assert sp.value2 == "42"
+            # When redis is used, the state takes the place of the reloaded one.
+            assert grandchild_state.parent_state is not child_state
+        grandchild_state.value2 = "42"
+    with pytest.raises(ImmutableStateError):
+        grandchild_state.value2 = "43"
+    assert grandchild_state.value2 == "42"
 
     if environment.REFLEX_OPLOCK_ENABLED.get():
         await state_manager.close()
@@ -2869,7 +2853,9 @@ async def test_state_proxy(
         assert gotten_state is parent_state
     else:
         assert gotten_state is not parent_state
-    gotten_grandchild_state = gotten_state.get_substate(sp._self_substate_path)
+    gotten_grandchild_state = gotten_state.get_substate(
+        grandchild_state.get_full_name().split(".")
+    )
     assert gotten_grandchild_state is not None
     assert isinstance(gotten_grandchild_state, GrandchildState)
     assert gotten_grandchild_state.value2 == "42"
@@ -2927,7 +2913,6 @@ class BackgroundTaskState(BaseState):
         if BackgroundTaskState._started is not None:
             BackgroundTaskState._started.set()
 
-        assert isinstance(self, StateProxy)
         with pytest.raises(ImmutableStateError):
             self.order.append("bad idea")
 
@@ -2955,10 +2940,10 @@ class BackgroundTaskState(BaseState):
         while len(self.order) == 1:
             await asyncio.sleep(0.01)
             async with self:
-                pass  # update proxy instance
+                pass  # reload the state
 
         async with self:
-            # Methods on ImmutableMutableProxy should return their wrapped return value.
+            # Methods on MutableProxy should return their wrapped return value.
             assert self.dict_list.pop("foo") == [1, 2, 3]
 
             self.order.append("background_task:stop")
@@ -3119,7 +3104,6 @@ class YieldFromBackgroundState(BaseState):
 
     counter: int = 0
     follow_up_self_type: str = ""
-    follow_up_was_proxy: bool = True
     dict_field: dict[str, int] = {"a": 1}
 
     @rx.event(background=True)
@@ -3129,8 +3113,6 @@ class YieldFromBackgroundState(BaseState):
         Yields:
             A reference to the non-background follow_up handler.
         """
-        # Sanity check: the background handler itself receives a StateProxy.
-        assert isinstance(self, StateProxy)
         yield YieldFromBackgroundState.follow_up()
 
     @rx.event(background=True)
@@ -3140,10 +3122,7 @@ class YieldFromBackgroundState(BaseState):
         Yields:
             A reference to the non-background follow_up handler.
         """
-        assert isinstance(self, StateProxy)
         async with self:
-            # Inside the lock, `self` is still a StateProxy (now mutable).
-            assert isinstance(self, StateProxy)
             self.counter += 1
             yield YieldFromBackgroundState.follow_up()
 
@@ -3155,8 +3134,8 @@ class YieldFromBackgroundState(BaseState):
             A reference to the non-background follow_up_with_arg handler,
             passing `self.dict_field` (a state-owned mutable) as the argument.
         """
-        # Access the mutable through the StateProxy (returns ImmutableMutableProxy)
-        # and pass it as an argument to the yielded non-background handler.
+        # Access the mutable outside the lock (a read-only MutableProxy) and
+        # pass it as an argument to the yielded non-background handler.
         yield YieldFromBackgroundState.follow_up_with_arg(self.dict_field)
 
     @rx.event
@@ -3164,13 +3143,9 @@ class YieldFromBackgroundState(BaseState):
         """A non-background handler invoked via yield from a background handler.
 
         Writes to state directly (no `async with self`); this only works if
-        `self` is the real state, not a StateProxy.
+        its event holds the lock.
         """
-        # Record what we observed *before* mutating, in case the write fails.
-        self.follow_up_was_proxy = isinstance(self, StateProxy)
         self.follow_up_self_type = type(self).__name__
-        # If `self` were a StateProxy outside an `async with self` block, this
-        # would raise ImmutableStateError.
         self.counter += 1
 
     @rx.event
@@ -3180,8 +3155,8 @@ class YieldFromBackgroundState(BaseState):
         Args:
             arg: A dict argument that the handler will mutate.
         """
-        # Mutating the arg should succeed: it must NOT be an
-        # ImmutableMutableProxy bound to the (now-immutable) trigger StateProxy.
+        # Mutating the arg should succeed: it must NOT be a MutableProxy bound
+        # to the trigger's (now read-only) state.
         arg["b"] = 2
         # Persist a copy onto the (real) state so the test can verify what was seen.
         self.dict_field = dict(arg)
@@ -3205,8 +3180,8 @@ async def test_yielded_non_background_event_receives_real_state(
 ):
     """A non-background event yielded by a background event must run on the real state.
 
-    The yielded handler must NOT receive a StateProxy and must be able to
-    modify state directly without `async with self`. This holds whether the
+    The yielded handler must be able to modify state directly without
+    `async with self`. This holds whether the
     yield happens outside or inside the background handler's `async with self`.
 
     Args:
@@ -3237,8 +3212,6 @@ async def test_yielded_non_background_event_receives_real_state(
     assert isinstance(state, YieldFromBackgroundState)
     # Direct mutation by the yielded handler succeeded and was persisted.
     assert state.counter == expected_counter
-    # The yielded handler did not receive a StateProxy.
-    assert state.follow_up_was_proxy is False
     assert state.follow_up_self_type == YieldFromBackgroundState.__name__
 
 
@@ -3252,9 +3225,8 @@ async def test_yielded_event_arg_from_background_state_is_mutable(
     """A mutable arg passed by a background event must be mutable in the yielded handler.
 
     Regression: when a background handler yields ``Handler(self.some_dict)``,
-    ``self.some_dict`` is an ``ImmutableMutableProxy`` tied to the trigger's
-    ``StateProxy``. Once the trigger releases the lock, that proxy refuses
-    writes -- so the yielded non-background handler can't mutate the arg it
+    ``self.some_dict`` is a ``MutableProxy`` tied to the trigger's state,
+    which is read-only outside of its lock: that proxy refuses writes -- so the yielded non-background handler can't mutate the arg it
     was given. The arg must be unwrapped (or otherwise made mutable) before
     being delivered to the yielded handler.
 
@@ -5261,6 +5233,27 @@ def test_settable_names_are_kept_per_class():
     assert "val" in parent_names
     assert "num" in child_names
     assert "num" not in parent_names
+
+
+def test_substate_takes_place_of_twin_built_in_its_tree():
+    """A substate takes the place of a twin that never held an event context."""
+
+    class TwinRoot(BaseState):
+        pass
+
+    class TwinChild(TwinRoot):
+        value: int = 0
+
+    name = TwinChild.get_name()
+    tree = TwinRoot()  # pyright: ignore [reportCallIssue]
+    twin_tree = TwinRoot()  # pyright: ignore [reportCallIssue]
+    kept, live = tree.substates[name], twin_tree.substates[name]
+    live.value = 3  # pyright: ignore [reportAttributeAccessIssue]
+
+    kept._take_place_of(live)
+    assert kept.value == 3  # pyright: ignore [reportAttributeAccessIssue]
+    assert kept.parent_state is twin_tree
+    assert twin_tree.substates[name] is kept
 
 
 def test_backend_var_inherits_field_default_and_surfaces_factory_errors():
