@@ -664,7 +664,7 @@ def test_download_var_data_url_keeps_hash_and_percent():
         check=True,
         timeout=30,
     )
-    assert json.loads(result.stdout) == rows
+    assert result.stdout == json.dumps(rows, separators=(",", ":"))
 
 
 def test_event_actions():

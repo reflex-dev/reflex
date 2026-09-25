@@ -548,6 +548,9 @@ class ArgsFunctionOperationBuilder(CachedVarOperation, BuilderFunctionVar):
 JSON_STRINGIFY = FunctionStringVar.create(
     "JSON.stringify", _var_type=ReflexCallable[[Any], str]
 )
+ENCODE_URI_COMPONENT = FunctionStringVar.create(
+    "encodeURIComponent", _var_type=ReflexCallable[[str], str]
+)
 ARRAY_ISARRAY = FunctionStringVar.create(
     "Array.isArray", _var_type=ReflexCallable[[Any], bool]
 )

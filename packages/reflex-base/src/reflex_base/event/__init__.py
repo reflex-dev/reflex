@@ -56,6 +56,7 @@ from reflex_base.utils.types import (
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.function import (
+    ENCODE_URI_COMPONENT,
     ArgsFunctionOperation,
     ArgsFunctionOperationBuilder,
     BuilderFunctionVar,
@@ -1793,10 +1794,7 @@ def download(
                 is_data_url,
                 data.to(str),
                 f"data:{mime_type},"
-                + FunctionStringVar
-                .create("encodeURIComponent")
-                .call(data.to_string())
-                .to(str),
+                + ENCODE_URI_COMPONENT.call(data.to_string()).to(str),
             )
         elif isinstance(data, bytes):
             if mime_type is None:
