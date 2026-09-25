@@ -473,7 +473,9 @@ class BaseState(StateNode, state_root=True):
         if self._mixin:
             msg = f"{type(self).__name__} is a state mixin and cannot be instantiated directly."
             raise ReflexRuntimeError(msg)
-        super().__init__(parent_state, **kwargs)
+        # StateNode.__init__, inlined: a new session builds every state of its tree.
+        self._init_bookkeeping(parent_state)
+        super(StateNode, self).__init__(**kwargs)
 
         # Setup the substates (for memory state manager only).
         if init_substates:
