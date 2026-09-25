@@ -9,6 +9,7 @@ import json
 import types
 import typing
 import uuid
+from collections.abc import Collection
 from pathlib import Path
 from typing import Any, Literal, Union
 
@@ -155,14 +156,18 @@ def type_problems(
 
 
 def model_problems(
-    model: type, component: dict[str, Any], models: dict[type, tuple[str, ...]]
+    model: type,
+    component: dict[str, Any],
+    models: dict[type, tuple[str, ...]],
+    unmapped: Collection[str] = (),
 ) -> list[str]:
-    """Find where a model cannot decode the objects its schema component describes.
+    """Find where a model cannot decode its schema's objects or drops properties.
 
     Args:
         model: The SDK dataclass.
         component: The schema component the model is checked against.
         models: The schema components each SDK model is checked against.
+        unmapped: The properties the model deliberately has no field for.
 
     Returns:
         A description of each incompatibility.
@@ -170,8 +175,14 @@ def model_problems(
     hints = typing.get_type_hints(model)
     properties = component.get("properties", {})
     required = set(component.get("required", []))
-    problems = []
-    for field in dataclasses.fields(model):
+    fields = dataclasses.fields(model)
+    mapped = {json_key(field) for field in fields}
+    problems = [
+        f"{model.__name__}: no field for {key!r}"
+        for key in properties
+        if key not in mapped and key not in unmapped
+    ]
+    for field in fields:
         key = json_key(field)
         path = f"{model.__name__}.{field.name}"
         if key not in properties:

@@ -109,6 +109,9 @@ class AppSummary:
     # Where the app is hosted: ``"fly"`` for Reflex Build, ``"gcp"`` for a connected
     # Google Cloud account.
     provider: str
+    # Whether the app's secrets are sensitive: their values cannot be read or
+    # changed.
+    disable_secrets: bool
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -131,6 +134,14 @@ class AppDeployment:
     vm_type_cpu: float
     # Memory per machine, in GB.
     vm_type_ram: float
+    # How new instances replaced old ones: ``"immediate"``, ``"rolling"``,
+    # ``"bluegreen"`` or ``"canary"``.
+    strategy: str
+    # Whether the app's machines keep running when idle instead of pausing.
+    persistent: bool = field(metadata=json_name("persist"))
+    # A preview image of the running app, taken when an immediate rollout became
+    # ready. None for other strategies.
+    screenshot_uri: str | None
     updated_at: datetime.datetime | None = field(metadata=json_name("last_updated"))
     updated_by: User | None = field(metadata=json_name("last_updated_by"))
 
@@ -151,9 +162,29 @@ class App:
     full_deploy: bool
     min_instances: int | None
     max_instances: int | None
+    # Whether the app's secrets are sensitive: their values cannot be read or
+    # changed.
+    disable_secrets: bool
+    # Whether the app opted into the weekly usage email. The email only covers apps
+    # that are not full deploy and had traffic that week.
+    weekly_report_enabled: bool
+    # The builder thread the app was published from; None for an app deployed from
+    # the CLI.
+    source_thread_id: uuid.UUID | None
+    # A provider the app moved off whose teardown is unfinished.
+    unreleased_provider: str | None
     has_deployments: bool
+    # The URL the production environment's backend is served at. None while
+    # production has no deployment.
+    backend_url: str | None
     # None until a deployment of the production environment is fully provisioned.
     latest_deployment: AppDeployment | None
+    # Whether any of the app's environments is live, stopped by its owner, paused,
+    # or paused for lack of credit. ``latest_deployment`` describes production only.
+    any_environment_live: bool
+    any_environment_stopped: bool
+    any_environment_paused: bool
+    any_environment_credit_paused: bool
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -189,9 +220,14 @@ class DeploymentRecord:
     updated_at: datetime.datetime | None = field(metadata=json_name("last_updated"))
     # The user who deployed it.
     deployed_by: User | None = field(metadata=json_name("deployment_user"))
+    updated_by: User | None = field(metadata=json_name("last_updated_by"))
     vm_type: VmType | None
     environment_id: uuid.UUID | None
     environment_name: str | None
+    # The deployment this one was promoted from, for a promoted deployment.
+    promoted_from_id: uuid.UUID | None = field(
+        metadata=json_name("promoted_from_deployment_id")
+    )
     # Whether the app can be rolled back to this deployment.
     can_rollback: bool
 
@@ -576,7 +612,8 @@ class LogRecord:
     ns: int
     # When the line was logged, as an ISO 8601 string.
     timestamp: str
-    # The name of the process or service that logged the line.
+    # What the line was read from: the app's name on Reflex Build, or its Cloud Run
+    # service's on Google Cloud. The same for every line of a page.
     name: str
     # The log line, or the structured record for JSON logs.
     message: str | dict[str, Any]
@@ -584,6 +621,12 @@ class LogRecord:
     log_level: str | None = None
     region: str | None = None
     deployment_id: str | None = None
+    # The log store's id for the line.
+    event_id: str | None = None
+    # The stream the line came from, and its revision where the provider reports
+    # one.
+    stream_id: str | None = None
+    revision_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -633,8 +676,15 @@ class ProjectAppDeployment:
     reflex_version: str | None
     python_version: str | None
     created_at: datetime.datetime = field(metadata=json_name("timestamp"))
+    # Blank and zero for callers viewing the project as another user.
+    vm_type_name: str
+    vm_type_cpu: float
+    # Memory per machine, in GB.
+    vm_type_ram: float
     # The user who deployed it.
     deployed_by: User | None = field(metadata=json_name("deployment_user"))
+    updated_at: datetime.datetime | None = field(metadata=json_name("last_updated"))
+    updated_by: User | None = field(metadata=json_name("last_updated_by"))
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -644,6 +694,8 @@ class ProjectApp:
     id: uuid.UUID
     name: str
     description: str
+    # Whether the app was made in the builder, and so can be opened there.
+    from_builder: bool = field(metadata=json_name("build"))
     # The deployment serving the app, if any.
     current_deployment: ProjectAppDeployment | None
     latest_deployment: ProjectAppDeployment | None
@@ -660,6 +712,11 @@ class Project:
     owner_email: str = field(metadata=json_name("project_owner_email"))
     # The number of members.
     seats: int = field(metadata=json_name("project_seats"))
+    # Usage across the whole organization, which its quotas are enforced on.
+    org_cpu_usage: float
+    # Memory in use, in GB.
+    org_ram_usage: float
+    org_running_deployments: int
     apps: list[ProjectApp]
 
 
@@ -685,6 +742,8 @@ class ProjectMember:
     # The name of the member's role.
     role: str
     base_tier: str
+    # The permissions the member's role adds to its base tier.
+    role_permissions: list[str]
     # Every permission the member has on the project, including inherited ones.
     permissions: list[str]
     is_service_account: bool

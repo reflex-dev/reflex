@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
-import json
 import logging
 import os
 import re
@@ -13,7 +12,7 @@ import tempfile
 import uuid
 from collections.abc import Callable, Iterator
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import click
 from packaging import version
@@ -21,6 +20,11 @@ from packaging import version
 from reflex_cli import constants
 from reflex_cli.utils import console, log
 from reflex_cli.utils.dependency import extract_domain
+
+if TYPE_CHECKING:
+    from reflex_build_sdk.types import App, AppSummary, GcpConnection
+
+    from reflex_cli.utils.hosting import AuthenticatedClient
 
 logger = logging.getLogger(__name__)
 
@@ -80,9 +84,65 @@ def logout(
     logger.log(log.SUCCESS, "Successfully logged out.")
 
 
+def _create_app(
+    client: AuthenticatedClient,
+    app_name: str,
+    project_id: str | None,
+    description: str | None,
+) -> App:
+    """Create the app this deploy is for, reporting a refusal rather than raising.
+
+    Args:
+        client: The authenticated client.
+        app_name: The name to create the app under.
+        project_id: The project to create it in, or None for the default one.
+        description: A description for the app, if one was given.
+
+    Returns:
+        The new app.
+
+    Raises:
+        Exit: If the API refused to create it.
+
+    """
+    from reflex_build_sdk import ReflexBuildError
+
+    from reflex_cli.utils import hosting
+
+    try:
+        app = client.api.apps.create(
+            app_name, project_id=project_id, description=description
+        )
+    except ReflexBuildError as ex:
+        hosting.exit_reporting(
+            ex, f"could not create the app: {hosting.error_message(ex)}"
+        )
+    logger.info(f"created app. \nName: {app.name} \nId: {app.id}")
+    return app
+
+
+def _project_name(project_id: str, client: AuthenticatedClient) -> str | None:
+    """Look up a project's name for a prompt, best effort.
+
+    Args:
+        project_id: The project to name.
+        client: The authenticated client.
+
+    Returns:
+        The project's name, or None when it could not be read -- the prompt
+        falls back to the id rather than failing over a label.
+
+    """
+    try:
+        return client.api.projects.get(project_id).name
+    except Exception as ex:
+        logger.debug(f"Unable to read the name of project {project_id}: {ex}")
+        return None
+
+
 def _resolve_gcp_connection(
-    gcp_connection: str | None, target: str | None, client: Any
-) -> dict[str, Any] | None:
+    gcp_connection: str | None, target: str | None, client: AuthenticatedClient
+) -> GcpConnection | None:
     """Resolve ``--gcp-connection`` against the org's named GCP connections.
 
     Args:
@@ -91,7 +151,7 @@ def _resolve_gcp_connection(
         client: The authenticated client.
 
     Returns:
-        The matching connection dict, or None when none was named.
+        The matching connection, or None when none was named.
 
     Raises:
         Exit: If the deploy is not targeting GCP, the connections cannot be
@@ -118,9 +178,7 @@ def _resolve_gcp_connection(
         raise click.exceptions.Exit(1) from ex
     match = hosting.find_gcp_connection(connections, gcp_connection)
     if match is None:
-        known = ", ".join(
-            sorted(str(c.get("name")) for c in connections if c.get("name"))
-        )
+        known = ", ".join(sorted(c.name for c in connections if c.name))
         connected = f" Connected: {known}." if known else ""
         logger.error(
             f"No GCP connection named {gcp_connection!r} in this organization."
@@ -181,16 +239,16 @@ def _gcp_service_name_from_hostname(hostname: str | None) -> str | None:
 
 
 def _pin_app_provider(
-    app: dict[str, Any],
+    app: App | AppSummary,
     target: str,
-    connection: dict[str, Any] | None,
-    client: Any,
+    connection: GcpConnection | None,
+    client: AuthenticatedClient,
     service_name: str | None = None,
 ) -> None:
     """Write the app's provider (and connection), aborting the deploy on refusal.
 
     Args:
-        app: The resolved app dict (must contain "id").
+        app: The resolved app.
         target: The backend provider value to pin.
         connection: The GCP connection to deploy through, if one was named.
         client: The authenticated client.
@@ -201,26 +259,27 @@ def _pin_app_provider(
         Exit: If the server refused the change.
 
     """
+    from reflex_build_sdk import ReflexBuildError
+
     from reflex_cli.utils import hosting
 
-    result = hosting.set_app_provider(
-        app["id"],
-        target,
-        client=client,
-        provider_account_id=str(connection["id"]) if connection else None,
-        service_name=service_name,
-    )
-    if isinstance(result, str) and result.startswith("set provider failed"):
-        logger.error(result)
-        raise click.exceptions.Exit(1)
+    try:
+        client.api.apps.set_provider(
+            app.id,
+            target,
+            provider_account_id=connection.id if connection else None,
+            service_name=service_name,
+        )
+    except ReflexBuildError as ex:
+        hosting.exit_reporting(ex, f"set provider failed: {hosting.error_message(ex)}")
 
 
 def _resolve_deploy_provider(
-    app: dict[str, Any],
+    app: App | AppSummary,
     provider_arg: str | None,
     interactive: bool,
     app_was_created: bool,
-    client: Any,
+    client: AuthenticatedClient,
     gcp_connection: str | None = None,
     hostname: str | None = None,
 ) -> str | None:
@@ -232,7 +291,7 @@ def _resolve_deploy_provider(
     warning, when it differs from the app's current provider).
 
     Args:
-        app: The resolved app dict (must contain "id" and "name").
+        app: The resolved app.
         provider_arg: The ``--provider`` value, if the user passed one.
         interactive: Whether to prompt.
         app_was_created: Whether the app was just created in this deploy (a
@@ -257,7 +316,7 @@ def _resolve_deploy_provider(
     """
     from reflex_cli.utils import hosting
 
-    current = app.get("provider")
+    current = app.provider
 
     if provider_arg is not None:
         # Explicit --provider always wins; validated by the caller already.
@@ -269,7 +328,7 @@ def _resolve_deploy_provider(
             # whatever the app already targets.
             target = current
         else:
-            region = gcp_status.get("region")
+            region = gcp_status.region
             console.print(
                 "This organization has Google Cloud connected"
                 + (f" (region {region})" if region else "")
@@ -294,18 +353,16 @@ def _resolve_deploy_provider(
         if connection is not None:
             _pin_app_provider(app, hosting.PROVIDER_GCP, connection, client)
             project = (
-                f" (project {connection['project_id']})"
-                if connection.get("project_id")
-                else ""
+                f" (project {connection.project_id})" if connection.project_id else ""
             )
             logger.info(
-                f"Deploying through GCP connection '{connection.get('name')}'{project}."
+                f"Deploying through GCP connection '{connection.name}'{project}."
             )
         return target or current
 
     if not app_was_created and current is not None:
         logger.warning(
-            f"Switching '{app['name']}' from {hosting.provider_display_name(current)} "
+            f"Switching '{app.name}' from {hosting.provider_display_name(current)} "
             f"to {hosting.provider_display_name(target)} tears down its current "
             "deployment on the old provider; this deploy brings it back up on the "
             "new one."
@@ -326,7 +383,7 @@ def _resolve_deploy_provider(
         else None
     )
     _pin_app_provider(app, target, connection, client, service_name=service_name)
-    via = f" through connection '{connection.get('name')}'" if connection else ""
+    via = f" through connection '{connection.name}'" if connection else ""
     logger.info(f"Deploying to {hosting.provider_display_name(target)}{via}.")
     if service_name:
         logger.info(f"Requested Cloud Run service name '{service_name}'.")
@@ -335,7 +392,7 @@ def _resolve_deploy_provider(
 
 @contextlib.contextmanager
 def _restore_provider_on_failure(
-    app: dict[str, Any], switched_from: str | None, client: Any
+    app: App | AppSummary, switched_from: str | None, client: AuthenticatedClient
 ) -> Iterator[None]:
     """Re-pin the previous provider if the deploy fails after a switch.
 
@@ -346,7 +403,7 @@ def _restore_provider_on_failure(
     ``reflex cloud apps rollback`` target for recovery.
 
     Args:
-        app: The resolved app dict (must contain "id" and "name").
+        app: The resolved app.
         switched_from: The provider to restore to, or None if no destructive
             switch happened (nothing to undo).
         client: The authenticated client.
@@ -355,6 +412,8 @@ def _restore_provider_on_failure(
         None.
 
     """
+    from reflex_build_sdk import ReflexBuildError
+
     from reflex_cli.utils import hosting
 
     try:
@@ -362,17 +421,19 @@ def _restore_provider_on_failure(
     except BaseException:
         if switched_from is not None:
             label = hosting.provider_display_name(switched_from)
-            restore = hosting.set_app_provider(app["id"], switched_from, client=client)
-            if isinstance(restore, str) and restore.startswith("set provider failed"):
+            try:
+                client.api.apps.set_provider(app.id, switched_from)
+            except ReflexBuildError as restore_ex:
                 logger.warning(
-                    f"Deploy failed after switching '{app['name']}' provider, and "
-                    f"restoring {label} also failed: {restore}. Check the app in "
+                    f"Deploy failed after switching '{app.name}' provider, and "
+                    f"restoring {label} also failed: "
+                    f"{hosting.error_message(restore_ex)}. Check the app in "
                     "the Reflex Cloud dashboard."
                 )
             else:
                 logger.warning(
                     f"Deploy failed after switching provider; restored "
-                    f"'{app['name']}' to {label}. Recover its previous deployment "
+                    f"'{app.name}' to {label}. Recover its previous deployment "
                     "with `reflex cloud apps rollback`."
                 )
         raise
@@ -408,10 +469,10 @@ def _warn_if_bounds_outlive_deploy(app_name: str, applied: bool) -> Iterator[Non
 
 
 def _apply_full_deploy(
-    app: dict[str, Any],
+    app: App | AppSummary,
     full_deploy: bool | None,
     provider: str | None,
-    client: Any,
+    client: AuthenticatedClient,
 ) -> bool:
     """Set the app's hosting mode, before its hostname is reserved.
 
@@ -421,7 +482,7 @@ def _apply_full_deploy(
     against, which is why the mode has to be written before it is reserved.
 
     Args:
-        app: The resolved app dict (must contain "id" and "name").
+        app: The resolved app.
         full_deploy: The requested mode; None leaves the app's mode alone.
         provider: The provider this deploy is targeting.
         client: The authenticated client.
@@ -434,6 +495,8 @@ def _apply_full_deploy(
             or the server refused the change.
 
     """
+    from reflex_build_sdk import APIStatusError
+
     from reflex_cli.utils import hosting
 
     if full_deploy is None:
@@ -453,31 +516,32 @@ def _apply_full_deploy(
         return False
 
     try:
-        result = hosting.set_app_full_deploy(app["id"], full_deploy, client=client)
+        result = client.api.apps.set_full_deploy(app.id, full_deploy)
+    except APIStatusError as ex:
+        # A status the server answered with is a refusal it definitely applied
+        # nothing for; anything else falls through to the hedge below.
+        logger.error(f"set full deploy failed: {hosting.error_message(ex)}")
+        raise click.exceptions.Exit(1) from ex
     except BaseException:
         # A dropped connection says nothing about whether the server applied the
         # change, and applying it stops a running app, so hedge rather than
         # re-raise into a failure path that reports nothing about the app being
         # down. The warning context below is not entered on this path.
         logger.warning(
-            f"Lost contact while changing the hosting mode of '{app['name']}'. "
+            f"Lost contact while changing the hosting mode of '{app.name}'. "
             "The change stops a running app, and it may have been applied, so "
             "check the app in the Reflex Cloud dashboard before relying on it "
             "still being up."
         )
         raise
-    if isinstance(result, str):
-        logger.error(result)
-        raise click.exceptions.Exit(1)
-
-    stopped = bool(result.get("stopped"))
-    if stopped and not result.get("stop_confirmed", True):
+    stopped = result.stopped
+    if stopped and not result.stop_confirmed:
         logger.warning(
-            f"'{app['name']}' was stopped to change its hosting mode, but the "
+            f"'{app.name}' was stopped to change its hosting mode, but the "
             "provider did not confirm the teardown. This deploy may be refused "
             "until that clears; check the app in the Reflex Cloud dashboard."
         )
-    if result.get("full_deploy"):
+    if result.full_deploy:
         logger.info(
             "Full deploy: the frontend is served from the provider, on the same "
             "origin as the backend."
@@ -592,7 +656,7 @@ def deploy(
         Exit: If the command fails.
 
     """
-    import httpx
+    from reflex_build_sdk import ReflexBuildError
 
     from reflex_cli.utils import hosting
 
@@ -662,24 +726,18 @@ def deploy(
         result = hosting.search_project(
             project_name, client=authenticated_client, interactive=interactive
         )
-        project_id = hosting.normalize_project_id(result.get("id")) if result else None
+        project_id = hosting.normalize_project_id(str(result.id)) if result else None
 
     selected_project_id = hosting.get_selected_project()
 
-    validated_project: dict[str, Any] | None = None
+    validated_project = None
     try:
         if not project_id:
             project_id = selected_project_id
         if project_id:
-            validated_project = hosting.get_project(
-                project_id, client=authenticated_client
-            )
-    except httpx.HTTPStatusError as ex:
-        try:
-            logger.error(ex.response.json().get("detail"))
-        except json.JSONDecodeError:
-            logger.error(ex.response.text)
-        raise click.exceptions.Exit(1) from ex
+            validated_project = authenticated_client.api.projects.get(project_id)
+    except ReflexBuildError as ex:
+        hosting.exit_reporting(ex, hosting.error_message(ex))
 
     envs = envs or []
 
@@ -708,25 +766,29 @@ def deploy(
                 interactive=interactive,
             )
         else:
-            app = hosting.get_app(app_id or "", client=authenticated_client)
-            app_name = app.get("name")
+            app = authenticated_client.api.apps.get(app_id or "")
+            app_name = app.name
     except click.exceptions.Exit:
         raise
+    except ReflexBuildError as ex:
+        hosting.exit_reporting(ex, f"Deployment failed: {hosting.error_message(ex)}")
     except Exception as ex:
         logger.error(f"Deployment failed: {ex}")
         raise click.exceptions.Exit(1) from ex
 
     if app and interactive and not project and not app_id:
         default_project_id = selected_project_id
-        app_project_id = app.get("project_id")
+        app_project_id = str(app.project_id)
 
         if app_project_id and (
             not default_project_id or app_project_id != default_project_id
         ):
-            app_project_name = (app.get("project") or {}).get("name") or app_project_id
+            app_project_name = (
+                _project_name(app_project_id, authenticated_client) or app_project_id
+            )
             if (
                 console.ask(
-                    f"Deploy to app '{app['name']}' in project '{app_project_name}'?",
+                    f"Deploy to app '{app.name}' in project '{app_project_name}'?",
                     choices=["y", "n"],
                     default="y",
                 )
@@ -753,11 +815,7 @@ def deploy(
                 if needs_confirmation:
                     if project_id:
                         project_display_name = (
-                            (
-                                validated_project.get("name")
-                                if validated_project
-                                else None
-                            )
+                            (validated_project.name if validated_project else None)
                             or project_name
                             or project_id
                         )
@@ -767,15 +825,10 @@ def deploy(
                             authenticated_client
                         )
                         if fallback_project_id:
-                            try:
-                                fallback_project = hosting.get_project(
-                                    fallback_project_id, client=authenticated_client
-                                )
-                                project_display_name = (
-                                    fallback_project.get("name") or project_display_name
-                                )
-                            except Exception:
-                                pass
+                            project_display_name = (
+                                _project_name(fallback_project_id, authenticated_client)
+                                or project_display_name
+                            )
 
                     if (
                         console.ask(
@@ -792,31 +845,23 @@ def deploy(
                 description = console.ask(
                     "App Description (Enter to skip)",
                 )
-            app = hosting.create_app(
-                app_name=app_name or "",
-                description=description,
-                project_id=project_id,
-                client=authenticated_client,
+            app = _create_app(
+                authenticated_client, app_name or "", project_id, description
             )
             app_was_created = True
-            logger.info(f"created app. \nName: {app['name']} \nId: {app['id']}")
         else:
             logger.error("Please create an app to deploy.")
             raise click.exceptions.Exit(1)
     elif not app:
-        app = hosting.create_app(
-            app_name=app_name or "",
-            description=description or "",
-            project_id=project_id,
-            client=authenticated_client,
+        app = _create_app(
+            authenticated_client, app_name or "", project_id, description or ""
         )
         app_was_created = True
-        logger.info(f"created app. \nName: {app['name']} \nId: {app['id']}")
 
     # Choose/confirm the hosting provider before reserving the hostname: the
     # reserved URL is baked into the exported frontend, and a GCP app resolves
     # to a *.run.app backend URL, so the provider must be pinned first.
-    previous_provider = app.get("provider")
+    previous_provider = app.provider
     effective_provider = _resolve_deploy_provider(
         app=app,
         provider_arg=provider,
@@ -856,51 +901,55 @@ def deploy(
 
         # at this point, if project_id is None, the App should have the correct project_id and
         # we should use that going forward to pass validation checks.
-        project_id = project_id or app.get("project_id")
+        project_id = project_id or str(app.project_id)
 
         # Ahead of the hosting-mode change below, which stops a running app: a
         # deployment argument the server rejects would otherwise take the app
         # down for a deploy that never gets submitted. The provider switch above
         # is destructive too, but it has a restore; this does not.
-        validation_message = hosting.validate_deployment_args(
-            app_name=app_name,
-            app_id=app.get("id"),
-            project_id=project_id,
-            regions=regions,
-            vmtype=vmtype,
-            hostname=hostname,
-            client=authenticated_client,
-        )
-
-        if validation_message != "success":
-            logger.error(validation_message)
-            raise click.exceptions.Exit(1)
+        deploy_regions = dict.fromkeys(regions, 1) if regions else None
+        try:
+            authenticated_client.api.deployments.check(
+                app.id,
+                app_name=app_name,
+                project_id=project_id,
+                regions=deploy_regions,
+                vm_type=vmtype,
+                hostname=hostname,
+            )
+        except ReflexBuildError as ex:
+            hosting.exit_reporting(
+                ex, f"deployment failed: {hosting.error_message(ex)}"
+            )
 
         # Inside the provider guard (a refused mode change must still restore the
         # provider it was asked for) and ahead of the reserve below, whose URL is
         # what the frontend is compiled against.
         failure_guards.enter_context(
             _warn_if_full_deploy_outlives_deploy(
-                app["name"],
+                app.name,
                 _apply_full_deploy(
                     app, full_deploy, effective_provider, authenticated_client
                 ),
             )
         )
-        urls = hosting.get_hostname(
-            app_id=app["id"],
-            app_name=app["name"],
-            hostname=hostname,
-            client=authenticated_client,
-        )
-        if "error" in urls:
-            logger.error(urls["error"])
+        subdomain = hosting.extract_subdomain(hostname) if hostname else None
+        if hostname and subdomain is None:
+            logger.error("bad hostname provided")
             raise click.exceptions.Exit(1)
+        try:
+            urls = authenticated_client.api.apps.reserve_hostname(
+                app.id, app.name, hostname=subdomain
+            )
+        except ReflexBuildError as ex:
+            hosting.exit_reporting(
+                ex, f"deployment failed: {hosting.error_message(ex)}"
+            )
         server_url = (
-            os.getenv("REFLEX_OVERRIDE_BACKEND_URL") or urls["server"]
+            os.getenv("REFLEX_OVERRIDE_BACKEND_URL") or urls.backend_url
         )  # backend
         host_url = (
-            os.getenv("REFLEX_OVERRIDE_FRONTEND_URL") or urls["hostname"]
+            os.getenv("REFLEX_OVERRIDE_FRONTEND_URL") or urls.frontend_url
         )  # frontend
         processed_envs = hosting.process_envs(envs) if envs else None
 
@@ -910,7 +959,13 @@ def deploy(
                     dotenv_values,  # pyright: ignore[reportMissingImports]
                 )
 
-                processed_envs = dotenv_values(envfile)
+                # A bare `KEY` line with no `=` parses to None, which names
+                # no value to set; only assignments become secrets.
+                processed_envs = {
+                    name: value
+                    for name, value in dotenv_values(envfile).items()
+                    if value is not None
+                }
             except ImportError:
                 logger.error(
                     """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
@@ -993,7 +1048,7 @@ def deploy(
         if bounds_applied:
             try:
                 bounds_error = hosting.set_instance_bounds(
-                    app_id=app["id"],
+                    app_id=str(app.id),
                     min_instances=min_instances,
                     max_instances=max_instances,
                     client=authenticated_client,
@@ -1004,7 +1059,7 @@ def deploy(
                 # rather than report either outcome as fact.
                 logger.warning(
                     f"Lost contact while setting the instance bounds of "
-                    f"'{app['name']}'; they may or may not have been applied. "
+                    f"'{app.name}'; they may or may not have been applied. "
                     "Check the app in the Reflex Cloud dashboard before relying "
                     "on its scaling."
                 )
@@ -1013,31 +1068,42 @@ def deploy(
                 logger.error(bounds_error)
                 raise click.exceptions.Exit(1)
 
-        with _warn_if_bounds_outlive_deploy(app["name"], bounds_applied):
-            result = hosting.create_deployment(
-                app_id=app.get("id"),
-                app_name=app_name,
-                project_id=project_id,
-                regions=regions,
-                zip_dir=Path(temporary_dir_path),
-                hostname=extract_domain(host_url) if hostname else None,
-                vmtype=vmtype,
-                secrets=processed_envs,
-                client=authenticated_client,
-                packages=packages,
-                strategy=strategy,
-                description=deployment_description,
-            )
-            if "failed" in result:
-                logger.error(result)
-                raise click.exceptions.Exit(1)
-    hosting_ui_url = f"{constants.Hosting.HOSTING_SERVICE_UI}/project/{app['project_id']}/app/{app['id']}/"
+        with _warn_if_bounds_outlive_deploy(app.name, bounds_applied):
+            try:
+                with (
+                    console.transfer_progress() as progress,
+                    hosting.upload_client(authenticated_client) as uploader,
+                ):
+                    upload = progress.add_task("uploading the build")
+                    result = str(
+                        uploader.deployments.create(
+                            app.id,
+                            backend=temporary_dir_path / hosting.BACKEND_ARCHIVE,
+                            frontend=temporary_dir_path / hosting.FRONTEND_ARCHIVE,
+                            regions=deploy_regions,
+                            vm_type=vmtype,
+                            hostname=extract_domain(host_url) if hostname else None,
+                            secrets=processed_envs,
+                            packages=packages,
+                            strategy=strategy,  # pyright: ignore[reportArgumentType]
+                            description=deployment_description,
+                            on_upload_progress=lambda sent, total: progress.update(
+                                upload, completed=sent, total=total
+                            ),
+                        )
+                    )
+            except ReflexBuildError as ex:
+                hosting.exit_reporting(
+                    ex, f"deployment failed: {hosting.error_message(ex)}"
+                )
+    hosting_ui_url = (
+        f"{constants.Hosting.HOSTING_SERVICE_UI}/project/{app.project_id}/app/{app.id}/"
+    )
     console.print(
         f"deployment progress can now be viewed on the website: {hosting_ui_url}"
     )
     console.print(
         f"you are now safe to exit this command.\nfollow along with the deployment with the following command: \n  reflex cloud apps status {result} --watch"
     )
-    status = hosting.watch_deployment_status(result, client=authenticated_client)
-    if status is False:
+    if hosting.watch_deployment_status(result, client=authenticated_client).failed:
         raise click.exceptions.Exit(1)
