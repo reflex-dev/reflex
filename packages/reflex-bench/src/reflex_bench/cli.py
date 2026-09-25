@@ -1035,14 +1035,16 @@ def ab_command(
 
     started = time.perf_counter()
     live = console.is_terminal and not in_ci()
+    # The --aa arms share one scheduler, so their shared cache directory is set up once.
     schedulers = [
         Scheduler(subject, policy, home=home, seed=seed, keep=keep)
-        for subject in (base_subject, head_subject)
+        for subject in ((head_subject,) if aa else (base_subject, head_subject))
     ]
     with _Progress(console, live=live, ndjson=ndjson) as progress:
         doc["benchmarks"] = ab.run(
             plan(benchmarks, overrides, suite),
-            *schedulers,
+            schedulers[0],
+            schedulers[-1],
             order=order,
             on_event=progress.emit,
         )
