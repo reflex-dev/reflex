@@ -370,7 +370,10 @@ def test_authenticate_without_token_in_non_interactive_mode(mocker: MockerFixtur
     Args:
         mocker: Pytest mocker fixture.
     """
-    mocker.patch("reflex_cli.utils.hosting.get_existing_access_token", return_value="")
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("", TokenSource.NONE),
+    )
     with pytest.raises(click.exceptions.Exit):
         get_authenticated_client(token=None, interactive=False)
 
@@ -382,15 +385,125 @@ def test_authenticate_with_env_token_in_non_interactive_mode(mocker: MockerFixtu
         mocker: Pytest mocker fixture.
     """
     mocker.patch(
-        "reflex_cli.utils.hosting.get_existing_access_token", return_value="env_token"
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("env_token", TokenSource.ENVIRONMENT),
     )
     client = _client()
-    get_auth_client = mocker.patch(
-        "reflex_cli.utils.hosting.get_authentication_client", return_value=client
+    new_client = mocker.patch(
+        "reflex_cli.utils.hosting.new_client", return_value=client.api
+    )
+    validate = mocker.patch(
+        "reflex_cli.utils.hosting._validate", return_value=client.me
+    )
+    browser = mocker.patch("reflex_cli.utils.hosting._authenticate_on_browser")
+
+    result = get_authenticated_client(token=None, interactive=False)
+
+    assert result.api is client.api
+    assert result.me is client.me
+    new_client.assert_called_once_with("env_token")
+    validate.assert_called_once_with("env_token", client.api)
+    browser.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("token", "source"),
+    [
+        (None, TokenSource.ENVIRONMENT),
+        ("bogus-token", TokenSource.OPTION),
+    ],
+)
+def test_rejected_token_in_non_interactive_mode_does_not_prompt(
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+    token: str | None,
+    source: TokenSource,
+):
+    """A rejected token fails straight away instead of starting a browser login.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+        token: The token passed with --token, if any.
+        source: Where the rejected token came from.
+    """
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("bogus-token", TokenSource.ENVIRONMENT),
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting._validate",
+        side_effect=TokenAccessDeniedError("access denied", request_id="req-1"),
+    )
+    browser = mocker.patch(
+        "reflex_cli.utils.hosting._authenticate_on_browser", return_value=("", None)
     )
 
-    assert get_authenticated_client(token=None, interactive=False) is client
-    get_auth_client.assert_called_once_with(None)
+    with pytest.raises(click.exceptions.Exit) as exc_info:
+        get_authenticated_client(token=token, interactive=False)
+
+    assert exc_info.value.exit_code == 1
+    browser.assert_not_called()
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == [
+        f"The access token from the {source.value} was rejected: access denied (auth request id: req-1)"
+    ]
+
+
+def test_rejected_config_token_in_non_interactive_mode_is_removed(
+    mocker: MockerFixture,
+):
+    """A saved token the control plane refuses is dropped from the config.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("stale-token", TokenSource.CONFIG),
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting._validate",
+        side_effect=TokenAccessDeniedError("access denied", request_id="req-1"),
+    )
+    delete = mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
+
+    with pytest.raises(click.exceptions.Exit):
+        get_authenticated_client(token=None, interactive=False)
+
+    delete.assert_called_once_with()
+
+
+def test_unvalidated_token_in_non_interactive_mode_is_not_called_rejected(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """A timeout or server error fails without calling the token rejected.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("saved-token", TokenSource.CONFIG),
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting._validate",
+        side_effect=TokenValidationError("server error", request_id="req-2"),
+    )
+    delete = mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
+    browser = mocker.patch("reflex_cli.utils.hosting._authenticate_on_browser")
+
+    with pytest.raises(click.exceptions.Exit) as exc_info:
+        get_authenticated_client(token=None, interactive=False)
+
+    assert exc_info.value.exit_code == 1
+    delete.assert_not_called()
+    browser.assert_not_called()
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == [
+        "Unable to validate the access token from the config file: server error (auth request id: req-2)"
+    ]
 
 
 def test_scale_arguments_are_pure_when_type_is_unspecified():

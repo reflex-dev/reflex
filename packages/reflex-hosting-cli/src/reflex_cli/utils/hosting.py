@@ -465,6 +465,22 @@ def get_existing_access_token_with_source() -> tuple[str, TokenSource]:
     return "", TokenSource.NONE
 
 
+def rejected_token_message(source: TokenSource, err: TokenValidationError) -> str:
+    """Describe a token the control plane would not validate.
+
+    Args:
+        source: Where the token was loaded from.
+        err: The validation error.
+
+    Returns:
+        The message to report.
+    """
+    return (
+        f"The access token from the {source.value} was rejected: {err} "
+        f"(auth request id: {err.request_id})"
+    )
+
+
 def get_existing_access_token() -> str:
     """Fetch the access token from the existing config if applicable.
 
@@ -874,14 +890,37 @@ def get_authenticated_client(
         An authenticated client.
 
     Raises:
-        Exit: If no token is provided in non-interactive mode, or the browser
-            login did not produce one.
+        Exit: If no token is provided in non-interactive mode, the token is
+            rejected in non-interactive mode, or the browser login did not
+            produce one.
 
     """
-    env_token = get_existing_access_token() if not token else ""
-    if not token and not env_token and not interactive:
-        logger.error("Token is required for non-interactive mode.")
-        raise click.exceptions.Exit(1)
+    if not interactive:
+        if token:
+            access_token, source = token, TokenSource.OPTION
+        else:
+            access_token, source = get_existing_access_token_with_source()
+        if not access_token:
+            logger.error("Token is required for non-interactive mode.")
+            raise click.exceptions.Exit(1)
+        api = new_client(access_token)
+        try:
+            with console.status("Validating access token ..."):
+                me = _validate(access_token, api)
+        except TokenAccessDeniedError as err:
+            api.close()
+            logger.error(rejected_token_message(source, err))
+            if source is TokenSource.CONFIG:
+                delete_token_from_config()
+            raise click.exceptions.Exit(1) from err
+        except TokenValidationError as err:
+            api.close()
+            logger.error(
+                f"Unable to validate the access token from the {source.value}: "
+                f"{err} (auth request id: {err.request_id})"
+            )
+            raise click.exceptions.Exit(1) from err
+        return AuthenticatedClient(api, me)
 
     if (client := get_authentication_client(token)) is not None:
         return client
