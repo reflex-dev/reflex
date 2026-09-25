@@ -1,3 +1,4 @@
+import asyncio
 import importlib.metadata
 import json
 import shutil
@@ -10,6 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Protocol
+from unittest import mock
 
 import pytest
 from click.testing import CliRunner
@@ -2444,3 +2446,91 @@ def test_ensure_installation_id_keeps_legacy_install_unmarked(
 
     assert install_id == 12345
     assert prerequisites.has_uuid_distinct_id_semantics() is False
+
+
+@pytest.fixture
+def redis_url(monkeypatch: pytest.MonkeyPatch) -> str:
+    """Point get_redis at a redis url without a running server.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+
+    Returns:
+        The redis url.
+    """
+    url = "redis://localhost:6379"
+    monkeypatch.setattr(prerequisites, "parse_redis_url", lambda: url)
+    monkeypatch.delenv("REFLEX_REDIS_MAX_CONNECTIONS", raising=False)
+    monkeypatch.delenv("REFLEX_REDIS_POOL_TIMEOUT", raising=False)
+    return url
+
+
+def test_get_redis_pool_unbounded_by_default(redis_url: str):
+    """Without a cap, get_redis keeps redis-py's default pool."""
+    from redis.asyncio import BlockingConnectionPool
+
+    redis = prerequisites.get_redis()
+
+    assert redis is not None
+    assert not isinstance(redis.connection_pool, BlockingConnectionPool)
+
+
+def test_get_redis_max_connections(redis_url: str, monkeypatch: pytest.MonkeyPatch):
+    """REFLEX_REDIS_MAX_CONNECTIONS caps the pool and makes it wait instead of raise."""
+    from redis.asyncio import BlockingConnectionPool
+    from redis.exceptions import RedisError
+
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
+    monkeypatch.setenv("REFLEX_REDIS_POOL_TIMEOUT", "5")
+
+    redis = prerequisites.get_redis()
+
+    assert redis is not None
+    pool = redis.connection_pool
+    assert isinstance(pool, BlockingConnectionPool)
+    assert pool.max_connections == 3
+    assert pool.timeout == 5
+    assert pool.connection_kwargs["retry_on_error"] == [RedisError]
+    assert redis.auto_close_connection_pool
+
+
+@pytest.mark.parametrize("cap", ["0", "-1", "1", "2"])
+def test_get_redis_rejects_cap_without_command_headroom(
+    redis_url: str, monkeypatch: pytest.MonkeyPatch, cap: str
+):
+    """The two token pub/sub listeners cannot occupy every connection."""
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", cap)
+    with pytest.raises(ValueError, match="at least 3"):
+        prerequisites.get_redis()
+
+
+def test_get_redis_rejects_pool_wait_longer_than_state_lock(
+    redis_url: str, monkeypatch: pytest.MonkeyPatch
+):
+    """A saturated pool cannot wait past the state-lock lifetime."""
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
+    monkeypatch.setenv("REFLEX_REDIS_POOL_TIMEOUT", "20")
+    with pytest.raises(ValueError, match="shorter than"):
+        prerequisites.get_redis()
+
+
+async def test_get_redis_max_connections_waits_for_release(
+    redis_url: str, monkeypatch: pytest.MonkeyPatch
+):
+    """At the cap, a caller waits for a free connection rather than failing."""
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
+    redis = prerequisites.get_redis()
+    assert redis is not None
+    pool = redis.connection_pool
+    monkeypatch.setattr(pool, "ensure_connection", mock.AsyncMock())
+
+    connections = [await pool.get_connection() for _ in range(3)]
+    waiter = asyncio.create_task(pool.get_connection())
+    await asyncio.sleep(0.05)
+    assert not waiter.done()
+
+    await pool.release(connections[0])
+    assert await asyncio.wait_for(waiter, timeout=1) is connections[0]
+    for connection in connections[1:]:
+        await pool.release(connection)
+    await pool.disconnect()

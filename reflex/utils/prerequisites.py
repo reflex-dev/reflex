@@ -446,21 +446,48 @@ def compile_or_validate_app(
 def get_redis() -> Redis | None:
     """Get the asynchronous redis client.
 
+    When REFLEX_REDIS_MAX_CONNECTIONS is set, the client uses a blocking pool of
+    that size, so callers wait for a free connection instead of opening more.
+
     Returns:
         The asynchronous redis client.
     """
     try:
-        from redis.asyncio import Redis
+        from redis.asyncio import BlockingConnectionPool, Redis
         from redis.exceptions import RedisError
     except ImportError:
         logger.debug("Redis package not installed.")
         return None
-    if (redis_url := parse_redis_url()) is not None:
+    if (redis_url := parse_redis_url()) is None:
+        return None
+    max_connections = environment.REFLEX_REDIS_MAX_CONNECTIONS.get()
+    if max_connections is None:
         return Redis.from_url(
             redis_url,
             retry_on_error=[RedisError],
         )
-    return None
+    # The token manager keeps two pub/sub listeners on this separate client;
+    # leave at least one connection for ordinary commands.
+    if max_connections < 3:
+        msg = "REFLEX_REDIS_MAX_CONNECTIONS must be at least 3 when set."
+        raise ValueError(msg)
+    timeout = environment.REFLEX_REDIS_POOL_TIMEOUT.get().total_seconds()
+    # A state lock defaults to ten seconds. Do not wait longer for a pool
+    # connection while holding that lock; reserve time for the state write.
+    lock_expiration_seconds = get_config().redis_lock_expiration / 1000
+    if timeout >= lock_expiration_seconds:
+        msg = (
+            "REFLEX_REDIS_POOL_TIMEOUT must be shorter than "
+            "the configured redis_lock_expiration."
+        )
+        raise ValueError(msg)
+    pool = BlockingConnectionPool.from_url(
+        redis_url,
+        max_connections=max_connections,
+        timeout=timeout,
+        retry_on_error=[RedisError],
+    )
+    return Redis.from_pool(pool)
 
 
 def get_redis_sync() -> RedisSync | None:
