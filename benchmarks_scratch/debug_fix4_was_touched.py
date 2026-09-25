@@ -12,10 +12,10 @@ def run(label: str, cmd: list[str]) -> int:
 
 
 def main():
-    ruff = run("ruff", ["ruff", "check", "tests/units/istate/test_proxy.py"])
+    ruff = run("ruff", ["ruff", "check", "tests/units/istate/test_proxy.py", "tests/units/reflex_base/vars/test_base.py"])
     tests = run(
         "pytest",
-        [sys.executable, "-m", "pytest", "tests/units/istate/test_proxy.py", "-q", "--no-header", "-p", "no:cacheprovider"],
+        [sys.executable, "-m", "pytest", "tests/units/istate/test_proxy.py", "tests/units/reflex_base/vars/test_base.py", "-q", "--no-header", "-p", "no:cacheprovider"],
     )
     print(f"RESULTS: ruff={ruff} pytest={tests}")
 
