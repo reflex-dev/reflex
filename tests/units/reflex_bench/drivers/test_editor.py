@@ -71,6 +71,14 @@ def test_text_targets_of_the_assets(app: Path):
     assert svg.span == (0, 4)
 
 
+def test_text_target_starts_after_the_anchor(tmp_path: Path):
+    path = tmp_path / "style.css"
+    path.write_text(".a { color: red; }\n.b { color: blue; }\n")
+    target = text_target(path, "b", after=".b {")
+    assert target.line_no == 2
+    assert target.span[0] == path.read_bytes().index(b"blue")
+
+
 def test_text_target_not_found(app: Path):
     with pytest.raises(LookupError, match=r"'0\.75rem' not found after '\.missing \{'"):
         text_target(app / "assets" / "playground.css", "0.75rem", after=".missing {")

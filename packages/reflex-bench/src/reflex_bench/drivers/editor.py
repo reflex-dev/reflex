@@ -112,8 +112,9 @@ def text_target(path: Path, literal: str, *, after: str = "") -> Target:
         LookupError: When the text (after ``after``) is not in the file.
     """
     data = path.read_bytes()
-    anchor = data.find(after.encode())
-    start = data.find(literal.encode(), max(anchor, 0))
+    marker = after.encode()
+    anchor = data.find(marker)
+    start = data.find(literal.encode(), max(anchor, 0) + len(marker))
     if anchor < 0 or start < 0:
         where = f" after {after!r}" if after else ""
         msg = f"{literal!r} not found{where} in {path}"
