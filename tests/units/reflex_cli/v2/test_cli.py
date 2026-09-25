@@ -454,6 +454,7 @@ def test_deploy_non_interactive_no_app_name_and_id(
     ]
 
 
+@pytest.mark.parametrize("token", [None, "deploy-token"])
 @pytest.mark.parametrize(
     ("tier", "forced"),
     [("Free", True), ("Inactive", True), ("Pro", False), ("Enterprise", False)],
@@ -463,14 +464,18 @@ def test_deploy_forces_badge_for_free_tier(
     monkeypatch: pytest.MonkeyPatch,
     tier: str,
     forced: bool,
+    token: str | None,
 ):
     """A deploy without a paid plan exports with the badge, whatever the app sets.
 
+    The export also sees the deploy's token, so reflex resolves the same tier.
+
     Args:
         mocker: The pytest-mock fixture.
-        monkeypatch: Fixture restoring the env var the deploy persists.
+        monkeypatch: Fixture restoring the env vars the deploy persists.
         tier: The tier of the deploying org.
         forced: Whether the badge should be forced on.
+        token: The token passed to the deploy.
     """
     _common_deploy_mocks(mocker, tier=tier)
     mocker.patch(
@@ -478,20 +483,23 @@ def test_deploy_forces_badge_for_free_tier(
     )
     # Set (not deleted) so monkeypatch removes what the deploy persists.
     monkeypatch.setenv("REFLEX_SHOW_BUILT_WITH_REFLEX", "")
-    exported_with: list[bool | None] = []
+    monkeypatch.setenv("REFLEX_ACCESS_TOKEN", "")
+    exported_with: list[tuple[bool | None, str]] = []
     with RegistrationContext():
         config = Config(app_name="fake_app", show_built_with_reflex=False)
         mocker.patch("reflex_base.config._get_config", return_value=config)
 
         cli.deploy(
             app_name="fake-app",
-            export_fn=lambda *_: exported_with.append(
-                get_config().show_built_with_reflex
-            ),
+            export_fn=lambda *_: exported_with.append((
+                get_config().show_built_with_reflex,
+                os.environ["REFLEX_ACCESS_TOKEN"],
+            )),
             interactive=False,
+            token=token,
         )
 
-    assert exported_with == [forced, forced]
+    assert exported_with == [(forced, token or "")] * 2
     assert (os.environ["REFLEX_SHOW_BUILT_WITH_REFLEX"] == "True") is forced
 
 

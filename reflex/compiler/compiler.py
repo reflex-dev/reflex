@@ -1233,10 +1233,8 @@ _PAID_TIERS = frozenset(("pro", "team", "enterprise"))
 def _resolve_show_built_with_reflex(configured: bool | None) -> bool:
     """Decide whether the compiled app shows the "Built with Reflex" badge.
 
-    Deploys for a tier without a paid plan always show it, even when the app
-    opts out. An unresolved tier (the deploy authenticated with a token reflex
-    cannot see, e.g. ``reflex deploy --token``) keeps the app's own setting, as
-    the hosting CLI enforces the badge from the tier it authenticated with.
+    Deploys always show it unless the tier is a paid plan, even when the app
+    opts out; a tier that cannot be resolved counts as unpaid.
 
     Args:
         configured: The app's ``show_built_with_reflex`` setting.
@@ -1249,8 +1247,7 @@ def _resolve_show_built_with_reflex(configured: bool | None) -> bool:
         if tier in _PAID_TIERS:
             # Paid deploys hide the badge unless the app opts in.
             return bool(configured)
-        if tier != "anonymous":
-            return True
+        return True
     return configured is not False
 
 

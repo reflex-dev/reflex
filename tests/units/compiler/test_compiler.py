@@ -1891,10 +1891,9 @@ def test_compile_app_drops_event_caches_from_earlier_compiles(
         (constants.CompileContext.DEPLOY, "pro", None, False),
         (constants.CompileContext.DEPLOY, "enterprise", False, False),
         (constants.CompileContext.DEPLOY, "team", True, True),
-        # An unresolved tier (e.g. `reflex deploy --token`) keeps the app's own
-        # setting; the hosting CLI enforces the badge from the tier it verified.
+        # A tier that cannot be resolved counts as unpaid.
         (constants.CompileContext.DEPLOY, "anonymous", None, True),
-        (constants.CompileContext.DEPLOY, "anonymous", False, False),
+        (constants.CompileContext.DEPLOY, "anonymous", False, True),
         # Outside of deploys the badge shows unless the app opts out.
         (constants.CompileContext.EXPORT, "free", None, True),
         (constants.CompileContext.EXPORT, "free", False, False),
