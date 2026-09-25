@@ -120,3 +120,12 @@ def test_failures_in_head_lead_the_report():
     assert text.splitlines()[0].endswith("1 unchanged \N{MIDDLE DOT} 1 failed in head")
     assert "- `selftest.sleep`: **regressed** (ok in base, timeout in head)" in text
     assert "No regressions" not in text
+
+
+def test_nothing_compared_says_so():
+    base = make_doc([make_entry("selftest.gone", {"wall": (WALL, SLEEP)})])
+    head = make_doc([make_entry("selftest.new", {"wall": (WALL, SLEEP)})])
+    compare.compare(base, head, threshold=0.03, alpha=0.01, resamples=200)
+    text = markdown.render_comparison(head)
+    assert "No regressions" not in text
+    assert "No comparable metrics." in text

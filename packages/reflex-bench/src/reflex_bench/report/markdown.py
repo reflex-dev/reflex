@@ -130,7 +130,12 @@ def render_comparison(doc: ResultDoc) -> str:
     if attention:
         lines += [*_table(_COMPARISON_HEADER, attention), ""]
     elif not failures:
-        lines += ["No regressions, improvements or inconclusive results.", ""]
+        lines += [
+            "No regressions, improvements or inconclusive results."
+            if unchanged
+            else "No comparable metrics.",
+            "",
+        ]
     if geomean := geomean_line(doc):
         lines.append(geomean)
     if unchanged:
