@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import logging
+import signal
+import sys
+import threading
 from collections.abc import Callable
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
+from types import FrameType
 from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 import click
@@ -436,21 +440,43 @@ def _run_dev(
             running_mode.has_backend(),
         ))
 
-    # Start the frontend and backend.
-    with processes.run_concurrently_context(*commands):
-        # In dev mode, run the backend on the main thread.
-        if running_mode.has_backend() and backend_port:
-            exec.run_backend(
-                backend_host,
-                int(backend_port),
-                config.loglevel.subprocess_level(),
-                running_mode.has_frontend(),
-            )
-            # The windows uvicorn bug workaround
-            # https://github.com/reflex-dev/reflex/issues/2335
-            if constants.IS_WINDOWS and exec.frontend_process:
-                # Sends SIGTERM in windows
-                exec.kill(exec.frontend_process.pid)
+    frontend_only = running_mode.has_frontend() and not running_mode.has_backend()
+    install_handlers = (
+        frontend_only
+        and sys.platform != "win32"
+        and threading.current_thread() is threading.main_thread()
+    )
+    old_handlers = {}
+    if install_handlers:
+
+        def stop_frontend(signum: int, frame: FrameType | None) -> None:
+            raise SystemExit(0)
+
+        old_handlers = {
+            sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGINT)
+        }
+        for sig in old_handlers:
+            signal.signal(sig, stop_frontend)
+    try:
+        with processes.run_concurrently_context(
+            *commands, interrupt_on_failure=not frontend_only
+        ) as tasks:
+            if frontend_only and tasks:
+                tasks[0].result()
+            elif running_mode.has_backend() and backend_port:
+                exec.run_backend(
+                    backend_host,
+                    int(backend_port),
+                    config.loglevel.subprocess_level(),
+                    running_mode.has_frontend(),
+                )
+                # The windows uvicorn bug workaround
+                # https://github.com/reflex-dev/reflex/issues/2335
+                if constants.IS_WINDOWS and exec.frontend_process:
+                    exec.kill(exec.frontend_process.pid)
+    finally:
+        for sig, handler in old_handlers.items():
+            signal.signal(sig, handler)
 
 
 def _run_preview(running_mode: constants.RunningMode, port: int, host: str):

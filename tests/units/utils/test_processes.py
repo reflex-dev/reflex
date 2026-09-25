@@ -1,9 +1,12 @@
 """Test process utilities."""
 
+import contextlib
 import logging
+import os
 import signal
 import socket
 import subprocess
+import sys
 import threading
 import time
 from contextlib import closing
@@ -416,3 +419,66 @@ def test_stream_logs_still_fails_on_a_real_error_exit(caplog):
         list(stream_logs("Starting frontend", process))
 
     assert any("failed with exit code 1" in r.getMessage() for r in caplog.records)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX process groups")
+def test_frontend_group_ends_with_run_context(tmp_path):
+    """The opted-in frontend and its child are both stopped at context exit."""
+    grandchild_pid = tmp_path / "grandchild.pid"
+    ready = threading.Event()
+    root: list[subprocess.Popen[str]] = []
+
+    def frontend():
+        code = (
+            "import subprocess,sys,time\n"
+            "p=subprocess.Popen([sys.executable,'-c','import time;time.sleep(60)'])\n"
+            f"open({str(grandchild_pid)!r},'w').write(str(p.pid))\n"
+            "time.sleep(60)\n"
+        )
+        p = subprocess.Popen(
+            [sys.executable, "-c", code],
+            start_new_session=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        root.append(p)
+        processes.track_frontend(p)
+        ready.set()
+        p.wait()
+
+    with run_concurrently_context(frontend):
+        assert ready.wait(DEFAULT_TIMEOUT)
+        deadline = time.monotonic() + DEFAULT_TIMEOUT
+        while not grandchild_pid.exists() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        assert grandchild_pid.exists()
+    assert root[0].poll() is not None
+    grandchild = int(grandchild_pid.read_text())
+    deadline = time.monotonic() + DEFAULT_TIMEOUT
+    while time.monotonic() < deadline:
+        try:
+            os.kill(grandchild, 0)
+        except ProcessLookupError:
+            break
+        # The orphan may remain a zombie until init reaps it.
+        import psutil
+
+        if psutil.Process(grandchild).status() == psutil.STATUS_ZOMBIE:
+            break
+        time.sleep(0.05)
+    else:
+        with contextlib.suppress(ProcessLookupError):
+            os.kill(grandchild, signal.SIGKILL)
+        pytest.fail("frontend grandchild remained runnable")
+
+
+def test_run_context_leaves_untracked_process_alone():
+    """A child without frontend opt-in is not stopped by cleanup."""
+    child = subprocess.Popen([sys.executable, "-c", "import time;time.sleep(30)"])
+    try:
+        with run_concurrently_context(lambda: None):
+            pass
+        assert child.poll() is None
+    finally:
+        child.terminate()
+        child.wait(timeout=DEFAULT_TIMEOUT)

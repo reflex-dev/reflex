@@ -291,6 +291,8 @@ def run_process_and_launch_url(
             }
             if constants.IS_WINDOWS and backend_present:
                 kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
+            elif not constants.IS_WINDOWS:
+                kwargs["start_new_session"] = True
             process = processes.new_process(
                 run_command,
                 cwd=get_web_dir(),
@@ -299,6 +301,7 @@ def run_process_and_launch_url(
             )
             global frontend_process
             frontend_process = process
+            processes.track_frontend(process)
         if process.stdout:
             for line in processes.stream_logs("Starting frontend", process):
                 new_content, new_hash = get_package_json_and_hash(json_file_path)

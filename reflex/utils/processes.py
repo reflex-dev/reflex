@@ -11,6 +11,7 @@ import socket
 import subprocess
 import sys
 import threading
+import time
 from _thread import interrupt_main
 from collections.abc import Callable, Generator, Sequence
 from concurrent import futures
@@ -264,6 +265,43 @@ def new_process(
     return fn(non_empty_args, **kwargs)
 
 
+# The frontend is the only child enrolled in run teardown. Each worker gets
+# its own context, so unrelated calls to new_process are never signaled.
+_run_children = threading.local()
+
+
+def _stop_frontend(process: subprocess.Popen[str], timeout: float = 5.0) -> None:
+    """Stop the frontend and its POSIX process group when the run ends."""
+    if sys.platform == "win32":
+        if process.poll() is None:
+            process.terminate()
+        return
+    # The frontend starts in its own session, so its PID is its group ID.
+    # The root may have exited before teardown; descendants can still hold
+    # that group open. Reuse of the numeric ID is a narrow residual race once
+    # the root has been reaped by the log reader.
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            os.killpg(process.pid, 0)
+        except ProcessLookupError:
+            return
+        time.sleep(0.05)
+    with contextlib.suppress(ProcessLookupError):
+        os.killpg(process.pid, signal.SIGKILL)
+
+
+def track_frontend(process: subprocess.Popen[str]) -> None:
+    """Enroll a spawned frontend in its run context when one is active."""
+    children = getattr(_run_children, "frontends", None)
+    if children is not None:
+        children.append(process)
+
+
 def _interrupt_main_thread():
     """Deliver a SIGINT to the main thread to break it out of a blocking call.
 
@@ -283,6 +321,7 @@ def _interrupt_main_thread():
 @contextlib.contextmanager
 def run_concurrently_context(
     *fns: Callable[..., Any] | tuple[Callable[..., Any], ...],
+    interrupt_on_failure: bool = True,
 ) -> Generator[list[futures.Future], None, None]:
     """Run functions concurrently in a thread pool.
 
@@ -293,6 +332,7 @@ def run_concurrently_context(
 
     Args:
         *fns: The functions to run.
+        interrupt_on_failure: Whether to wake the main thread if a task fails.
 
     Yields:
         The futures for the functions.
@@ -343,12 +383,22 @@ def run_concurrently_context(
 
     # Run the functions concurrently.
     executor = None
+    frontends: list[subprocess.Popen[str]] = []
+
+    def run_with_children(fn: tuple[Callable[..., Any], ...]) -> Any:
+        _run_children.frontends = frontends
+        try:
+            return fn[0](*fn[1:])
+        finally:
+            _run_children.frontends = None
+
     try:
         executor = futures.ThreadPoolExecutor(max_workers=len(fns))
         # Submit the tasks.
-        tasks = [executor.submit(*fn) for fn in fns]
-        for task in tasks:
-            task.add_done_callback(wake_main_thread)
+        tasks = [executor.submit(run_with_children, fn) for fn in fns]
+        if interrupt_on_failure:
+            for task in tasks:
+                task.add_done_callback(wake_main_thread)
 
         try:
             try:
@@ -364,6 +414,8 @@ def run_concurrently_context(
                 # does not wait).
                 with interrupt_lock:
                     in_body = False
+                for child in frontends:
+                    _stop_frontend(child)
 
             # Get the results in the order completed to check any exceptions.
             for task in futures.as_completed(tasks):
@@ -375,6 +427,8 @@ def run_concurrently_context(
             raise_first_failure(tasks)
             raise
     finally:
+        for child in frontends:
+            _stop_frontend(child)
         # Shutdown the executor
         if executor:
             executor.shutdown(wait=False)

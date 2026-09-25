@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import subprocess
@@ -431,3 +432,108 @@ def test_init_records_version_check_after_frontend_setup(
     reflex._init("demo")
 
     assert events == ["frontend", "version"]
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+@pytest.mark.parametrize("mode", ["frontend", "fullstack"])
+@pytest.mark.parametrize("sig", ["SIGTERM", "SIGINT"])
+def test_no_tty_run_stops_frontend(tmp_path, mode, sig):
+    """Headless full-stack and frontend-only runs stop their process tree."""
+    import signal
+    import time
+
+    import psutil
+
+    from reflex.testing import DEFAULT_TIMEOUT
+
+    pids = tmp_path / "children"
+    driver = tmp_path / "driver.py"
+    driver.write_text(
+        """import signal, subprocess, sys, time, types
+from reflex.utils import build, exec as exec_mod, processes, telemetry
+
+def frontend(*args):
+    code = "import subprocess,sys,time\\n" + \
+        "p=subprocess.Popen([sys.executable,'-c','import time;time.sleep(60)'])\\n" + \
+        "print(p.pid,flush=True);time.sleep(60)\\n"
+    p = subprocess.Popen([sys.executable,"-c",code],start_new_session=True,
+                         stdout=subprocess.PIPE,text=True)
+    grandchild = int(p.stdout.readline())
+    processes.track_frontend(p)
+    open(PIDS,"w").write(f"{p.pid} {grandchild}")
+    p.wait()
+
+def backend(*args):
+    def stop(sig,frame): raise SystemExit(0)
+    signal.signal(signal.SIGTERM,stop)
+    signal.signal(signal.SIGINT,stop)
+    while True: time.sleep(1)
+
+exec_mod.run_frontend=frontend
+exec_mod.run_backend=backend
+telemetry.send=lambda *a,**k:None
+build.setup_frontend=lambda *a,**k:None
+import reflex.reflex as rx
+rx._compile_app=lambda:None
+rx.get_config=lambda:types.SimpleNamespace(_set_persistent=lambda **k:None,
+    loglevel=types.SimpleNamespace(subprocess_level=lambda:None))
+from reflex_base import constants
+rx._run_dev(MODE,3000,PORT,"127.0.0.1")
+"""
+        .replace("PIDS", repr(str(pids)))
+        .replace(
+            "MODE",
+            "constants.RunningMode.FRONTEND_ONLY"
+            if mode == "frontend"
+            else "constants.RunningMode.FULLSTACK",
+        )
+        .replace("PORT", "None" if mode == "frontend" else "8000")
+    )
+    launcher = subprocess.Popen(
+        [sys.executable, str(driver)],
+        cwd=tmp_path,
+        start_new_session=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    child = grandchild = None
+    try:
+        deadline = time.monotonic() + DEFAULT_TIMEOUT
+        while not pids.exists() and time.monotonic() < deadline:
+            if launcher.poll() is not None:
+                pytest.fail(f"launcher exited early: {launcher.returncode}")
+            time.sleep(0.01)
+        assert pids.exists(), "frontend did not start"
+        child, grandchild = map(int, pids.read_text().split())
+        os.kill(launcher.pid, getattr(signal, sig))
+        try:
+            returncode = launcher.wait(timeout=DEFAULT_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            pytest.fail("no-TTY launcher hung after signal")
+        assert returncode == 0
+        for pid in (child, grandchild):
+            deadline = time.monotonic() + DEFAULT_TIMEOUT
+            while time.monotonic() < deadline:
+                try:
+                    if psutil.Process(pid).status() in (
+                        psutil.STATUS_ZOMBIE,
+                        psutil.STATUS_DEAD,
+                    ):
+                        break
+                except psutil.NoSuchProcess:
+                    break
+                time.sleep(0.05)
+            else:
+                pytest.fail(f"frontend descendant {pid} survived signal")
+    finally:
+        if launcher.poll() is None:
+            os.killpg(launcher.pid, signal.SIGKILL)
+            launcher.wait(timeout=DEFAULT_TIMEOUT)
+        if child is not None:
+            with contextlib.suppress(ProcessLookupError):
+                os.killpg(child, signal.SIGKILL)
+        for pid in (child, grandchild):
+            if pid is not None:
+                with contextlib.suppress(ProcessLookupError):
+                    os.kill(pid, signal.SIGKILL)
