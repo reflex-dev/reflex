@@ -695,8 +695,8 @@ class _ProcessTree:
         self.pid = self.pgid = self.proc.pid
         self.root = psutil.Process(self.pid)
         self.exited_at: float | None = None
-        self._reaped = threading.Event()
-        self._reaper: threading.Thread | None = None
+        self._exited = threading.Event()
+        self._exit_watcher: threading.Thread | None = None
         assert self.proc.stdout is not None
         self.output = _Output(
             self.proc.stdout,
@@ -709,10 +709,11 @@ class _ProcessTree:
             _LIVE.add(self)
 
     def wait_exit(self, timeout: float) -> float | None:
-        """Wait for the root to exit, and reap it.
+        """Wait for the root to exit.
 
-        A blocking ``waitpid`` on a thread takes the exit time exactly, where
-        ``Popen.wait(timeout)`` would poll.
+        A blocking ``waitid`` on a thread takes the exit time exactly, where
+        ``Popen.wait(timeout)`` would poll. The root stays a zombie until
+        :meth:`kill` reaps it, so a collector can still read its final counters.
 
         Args:
             timeout: Seconds to wait.
@@ -721,19 +722,21 @@ class _ProcessTree:
             When the root exited, in seconds since the spawn, or ``None`` after
             the timeout.
         """
-        if self._reaper is None:
-            self._reaper = threading.Thread(
-                target=self._reap, name="reflex-bench reaper", daemon=True
+        if self._exit_watcher is None:
+            self._exit_watcher = threading.Thread(
+                target=self._watch_exit, name="reflex-bench exit watcher", daemon=True
             )
-            self._reaper.start()
-        self._reaped.wait(max(0.0, timeout))
+            self._exit_watcher.start()
+        self._exited.wait(max(0.0, timeout))
         return self.exited_at
 
-    def _reap(self) -> None:
-        """Wait for the root and note when it exited."""
-        self.proc.wait()
+    def _watch_exit(self) -> None:
+        """Wait for the root to exit, without reaping it, and note when."""
+        # kill() may reap the root first, after a timeout.
+        with contextlib.suppress(ChildProcessError):
+            os.waitid(os.P_PID, self.pid, os.WEXITED | os.WNOWAIT)
         self.exited_at = time.perf_counter() - self.t0
-        self._reaped.set()
+        self._exited.set()
 
     def exited(self) -> bool:
         """Check whether the root exited, without reaping it.
@@ -1012,10 +1015,12 @@ def run_cli(
                 # Let the keeper exit with the command's status before the teardown.
                 tree.wait_exit(_KILL_GRACE_S)
         try:
-            tree.kill(_KILL_GRACE_S)
+            # The exited root is still a zombie: the final sample takes its CPU
+            # time and that of the children it reaped.
+            tree_report = tree_sampler.stop() if tree_sampler else None
         finally:
             try:
-                tree_report = tree_sampler.stop() if tree_sampler else None
+                tree.kill(_KILL_GRACE_S)
             finally:
                 memory = memory_sampler.stop() if memory_sampler else None
     lines = tree.output.lines()

@@ -48,8 +48,9 @@ INSTALL = "install"
 FRONTEND = "frontend"
 TOOLS = (INSTALL, FRONTEND)
 CLASSES = (PYTHON, *TOOLS)
-# How far the classes' CPU time may differ from the measured total (sampling
-# lag, processes shorter than the interval) before the attribution is flagged.
+# How far the classes' CPU time may differ from the measured total (processes
+# that outlived their parent's last sample, e.g. killed at the teardown) before
+# the attribution is flagged.
 MISMATCH_TOLERANCE = 0.10
 
 _TIMING = re.compile(r"\[timing\] (?P<label>.+?): (?P<seconds>\d+(?:\.\d+)?)s\s*$")
@@ -162,6 +163,10 @@ class ProcessRecord:
         first_seen: When a sample first saw it, in seconds since the sampler's origin.
         last_seen: When a sample last saw it.
         cpu_s: Its user and system CPU time at the last sample.
+        children_cpu_s: The CPU time of the children it had reaped at the last
+            sample, their own reaped children included.
+        reaped: ``(previous, now, cpu_s)`` for each sample where
+            ``children_cpu_s`` grew by ``cpu_s`` since the sample at ``previous``.
         kind: The class of its topmost ``install`` or ``frontend`` ancestor
             (itself included), else ``python``; ``None`` until the report.
     """
@@ -172,6 +177,8 @@ class ProcessRecord:
     first_seen: float
     last_seen: float
     cpu_s: float
+    children_cpu_s: float = 0.0
+    reaped: list[tuple[float, float, float]] = field(default_factory=list)
     kind: str | None = None
 
 
@@ -181,7 +188,8 @@ class ClassTotals:
 
     Attributes:
         wall_s: The length of the union of the class's process lifetimes.
-        cpu_s: The CPU time of the class's processes.
+        cpu_s: The CPU time of the class's processes, with what their parents
+            reaped of them after the last sample that saw them.
         intervals: The union as disjoint ``(start, end)`` intervals.
     """
 
@@ -224,9 +232,12 @@ class TreeReport:
 class TreePhases:
     """Sample a process tree on a thread and total the time of each class.
 
-    Each sample records every process's command line, first and last sighting
-    and CPU time. Lifetimes and CPU times are only known to the sampling
-    interval, and a process that lives shorter than it can be missed.
+    Each sample records every process's command line, first and last sighting,
+    CPU time and the CPU time of the children it reaped. Lifetimes are only
+    known to the sampling interval, and a process that lives shorter than it
+    can be missed; its CPU time is not, as long as its parent is sampled after
+    reaping it. The root's own final time needs a sample after it exited and
+    before it is reaped.
     """
 
     def __init__(
@@ -300,7 +311,7 @@ class TreePhases:
                 times = child.cpu_times()
                 record = self._records.get(key)
                 if record is None:
-                    self._records[key] = ProcessRecord(
+                    record = self._records[key] = ProcessRecord(
                         pid=child.pid,
                         ppid=child.ppid(),
                         cmdline=child.cmdline(),
@@ -309,10 +320,18 @@ class TreePhases:
                         cpu_s=times.user + times.system,
                     )
                 else:
-                    record.last_seen = now
                     record.cpu_s = times.user + times.system
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             return
+        children_cpu_s = times.children_user + times.children_system
+        if children_cpu_s > record.children_cpu_s:
+            record.reaped.append((
+                record.last_seen,
+                now,
+                children_cpu_s - record.children_cpu_s,
+            ))
+            record.children_cpu_s = children_cpu_s
+        record.last_seen = now
 
     def _report(self) -> TreeReport:
         """Classify the recorded processes and total each class.
@@ -332,18 +351,56 @@ class TreePhases:
                 kind = own[pid] or kind
                 pid = by_pid[pid].ppid
             record.kind = kind or PYTHON
+        cpu: dict[str, float] = dict.fromkeys(CLASSES, 0.0)
+        for record in records:
+            cpu[record.kind or PYTHON] += record.cpu_s
+            self._credit_reaped(record, records, cpu)
         classes = {}
         for name in CLASSES:
-            members = [record for record in records if record.kind == name]
             intervals = _merge_intervals(
-                (record.first_seen, record.last_seen) for record in members
+                (record.first_seen, record.last_seen)
+                for record in records
+                if record.kind == name
             )
             classes[name] = ClassTotals(
-                wall_s=_length(intervals),
-                cpu_s=sum((record.cpu_s for record in members), 0.0),
-                intervals=intervals,
+                wall_s=_length(intervals), cpu_s=cpu[name], intervals=intervals
             )
         return TreeReport(classes=classes, processes=records)
+
+    @staticmethod
+    def _credit_reaped(
+        parent: ProcessRecord, records: Sequence[ProcessRecord], cpu: dict[str, float]
+    ) -> None:
+        """Credit the CPU time of the parent's reaped children that no sample saw.
+
+        A child stops reporting its own time once it exits, but the parent's
+        ``children_user``/``children_system`` gain its whole time once reaped,
+        so what the samples missed of it (its last interval, or all of it when
+        it lived shorter than one) is the parent's gain less what was sampled
+        of the children reaped in the same window. It goes to those children's
+        classes, in proportion to their sampled time (equally when none was),
+        or to the parent's class when no sample ever saw them.
+
+        Args:
+            parent: The record whose ``reaped`` gains are credited.
+            records: Every record, for the parent's children.
+            cpu: The CPU time per class, added to.
+        """
+        for previous, now, gained in parent.reaped:
+            seen = [
+                (record.kind or PYTHON, record.cpu_s + record.children_cpu_s)
+                for record in records
+                if record.ppid == parent.pid and previous <= record.last_seen < now
+            ]
+            sampled = sum(cpu_s for _, cpu_s in seen)
+            unseen = gained - sampled
+            if unseen <= 0.0:
+                continue
+            if not seen:
+                cpu[parent.kind or PYTHON] += unseen
+                continue
+            for kind, cpu_s in seen:
+                cpu[kind] += unseen * (cpu_s / sampled if sampled else 1 / len(seen))
 
 
 class Attribution(TypedDict):

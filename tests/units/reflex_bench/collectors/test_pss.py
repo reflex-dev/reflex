@@ -69,23 +69,38 @@ def test_uss_adds_up_processes_with_the_same_name(
     }
 
 
+def _sampled(sampler: pss.PssSampler, count: int, timeout: float = 30) -> None:
+    """Wait until the sampler took at least ``count`` samples.
+
+    A sample under way when the fake ``/proc`` changed may still show the old
+    values: two more samples guarantee one taken after the change.
+    """
+    deadline = time.monotonic() + timeout
+    while len(sampler._timeline) < count:
+        assert time.monotonic() < deadline, "the sampler stalled"
+        time.sleep(0.005)
+
+
 def test_sampler_reports_the_peak(tmp_path: Path, tree: tuple[int, int]):
     parent, child = tree
     fake_proc(tmp_path, parent, "python3", fake_rollup(1000, 400, 600, 50, 350))
     fake_proc(tmp_path, child, "bun", fake_rollup(1000, 400, 600, 50, 350))
     sampler = pss.PssSampler(parent, interval=0.01, proc_root=tmp_path).start()
-    time.sleep(0.1)
+    _sampled(sampler, 2)
     fake_proc(tmp_path, child, "bun", fake_rollup(9000, 8000, 1000, 50, 7950))
-    time.sleep(0.1)
+    _sampled(sampler, 4)
     fake_proc(tmp_path, child, "bun", fake_rollup(2000, 1000, 1000, 50, 950))
-    time.sleep(0.1)
+    _sampled(sampler, 6)
     result = sampler.stop()
     assert result.method == "pss_sampling"
     assert result.peak_bytes == 10_000 * 1024
     assert result.peak is not None
     assert result.peak.uss_bytes["bun"] == 8000 * 1024
-    assert result.samples >= 10
+    assert result.samples >= 6
     assert len(result.timeline) == result.samples
+    # Every state was sampled: before the peak, at it and after it.
+    assert [value for _, value in result.timeline][-1] == 3000 * 1024
+    assert min(value for _, value in result.timeline) == 2000 * 1024
     times = [t for t, _ in result.timeline]
     assert times == sorted(times)
     assert max(value for _, value in result.timeline) == result.peak_bytes

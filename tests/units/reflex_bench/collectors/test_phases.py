@@ -198,7 +198,7 @@ def test_attribute_flags_tree_cpu_off_the_measured_total(
     tree_cpu: float, mismatch: bool
 ):
     # The classes' CPU may differ from the cgroup or rusage total by 10 %
-    # (sampling lag, processes shorter than the interval), not more.
+    # (processes that outlived their parent's last sample), not more.
     parts = phases.attribute(
         3.0, 2.0, {}, _tree(python=_totals(cpu=tree_cpu, intervals=[(0.0, 3.0)]))
     )
@@ -265,6 +265,34 @@ def test_report_classes_a_synthetic_compile_tree():
         "frontend": (pytest.approx(1.0), pytest.approx(3.0), [(4.5, 5.5)]),
     }
     assert report.to_dict()["processes"] == 6
+
+
+def test_report_credits_what_the_parents_reaped_after_the_last_sample():
+    # The root reaped `bun add` and `vite build` in one sampling window and a
+    # `git` it ran in another; each gain beyond what was sampled of the reaped
+    # children goes to their classes. The root itself was seen to the end.
+    root = _record(100, 1, ["/venv/bin/python", "-m", "reflex", "compile"], (0, 6), 1.5)
+    root.children_cpu_s = 2.3
+    root.reaped = [(0.0, 0.1, 0.05), (4.0, 4.1, 2.25)]
+    bun = _record(102, 100, ["/r/bun/bin/bun", "add", "react"], (0.8, 4.0), 0.5)
+    # The postinstall `node` bun reaped shows in bun's gain and its total alike.
+    bun.children_cpu_s = 0.4
+    bun.reaped = [(3.0, 3.1, 0.4)]
+    node = _record(103, 102, ["node", "postinstall.js"], (2.9, 3.0), 0.1)
+    vite = _record(104, 100, ["node", "vite.js", "build"], (1.0, 4.0), 1.0)
+    later = _record(105, 100, ["node", "sirv"], (4.05, 6.0), 0.2)
+    sampler = phases.TreePhases(100)
+    sampler._records = {
+        (r.pid, r.first_seen): r for r in (root, bun, node, vite, later)
+    }
+    cpu = {name: c.cpu_s for name, c in sampler._report().classes.items()}
+    # git was never seen: its 0.05 s go to the root's class. bun reaped 0.4 s of
+    # node and saw 0.1 s: 0.3 s more install. The root reaped bun (0.5 + 0.4
+    # seen) and vite (1.0 seen) for 2.25 s: the 0.35 s unseen split 0.9:1.0
+    # between install and frontend. sirv, alive at 4.1, is not part of it.
+    assert cpu["python"] == pytest.approx(1.55)
+    assert cpu["install"] == pytest.approx(0.6 + 0.3 + 0.35 * 0.9 / 1.9)
+    assert cpu["frontend"] == pytest.approx(1.2 + 0.35 * 1.0 / 1.9)
 
 
 @pytest.mark.parametrize(
@@ -348,6 +376,49 @@ def test_tree_phases_samples_a_real_tree(tmp_path: Path):
     # `sleep` children inherit the class of the tool that started them.
     sleeps = [p for p in report.processes if Path(p.cmdline[0]).name == "sleep"]
     assert sorted(str(p.kind) for p in sleeps) == ["frontend", "install"]
+
+
+@posix_only
+def test_tree_phases_credits_a_reaped_child_from_its_parent(tmp_path: Path):
+    # A `node` spins for 0.3 s of CPU time and is reaped by the root between
+    # two samples: the root's children time credits what the samples missed of
+    # it, to the frontend class.
+    node = tmp_path / "node"
+    node.symlink_to(sys.executable)
+    code = (
+        "import subprocess, sys, time\n"
+        f"child = subprocess.Popen([{str(node)!r}, '-c', 'import time\\n"
+        "end = time.process_time() + 0.3\\nwhile time.process_time() < end: pass'])\n"
+        "print('spawned', flush=True)\n"
+        "child.wait()\n"
+        "print('reaped', flush=True)\n"
+        "sys.stdin.readline()\n"
+    )
+    root = subprocess.Popen(
+        [sys.executable, "-c", code],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    assert root.stdout is not None
+    assert root.stdin is not None
+    try:
+        assert root.stdout.readline() == "spawned\n"
+        # One sample while the child runs, the final one after it was reaped.
+        sampler = phases.TreePhases(root.pid, interval=3600).start()
+        assert root.stdout.readline() == "reaped\n"
+        report = sampler.stop()
+    finally:
+        root.stdin.close()
+        root.wait(30)
+    frontend = report.classes["frontend"]
+    # The kernel counts in 10 ms ticks.
+    assert frontend.cpu_s == pytest.approx(0.3, abs=0.03)
+    (child,) = [p for p in report.processes if p.kind == "frontend"]
+    assert child.cpu_s < frontend.cpu_s
+    root_record = next(p for p in report.processes if p.pid == root.pid)
+    assert root_record.children_cpu_s == pytest.approx(frontend.cpu_s)
+    assert report.classes["python"].cpu_s == root_record.cpu_s
 
 
 def test_tree_phases_raises_when_sampling_fails(monkeypatch: pytest.MonkeyPatch):
