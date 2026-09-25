@@ -2475,7 +2475,10 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         for prop in delta_vars:
             if types.is_backend_base_variable(prop, type(self)):
                 continue
-            value = self.get_value(prop)
+            # `delta_vars` only holds locally defined base vars and frontend
+            # computed vars, so the raw attribute is the value to send: skip
+            # `get_value` and the MutableProxy it would wrap and unwrap.
+            value = object.__getattribute__(self, prop)
             key = prop + FIELD_MARKER
             if pending is not None and prop in always_dirty_computed_vars:
                 # Uncached computed vars are recomputed for every delta; only
