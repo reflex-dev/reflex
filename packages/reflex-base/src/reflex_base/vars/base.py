@@ -3872,8 +3872,10 @@ class Field(Generic[FIELD_TYPE]):
         self.is_var = is_var
         if annotated_type is not MISSING:
             type_origin = get_origin(annotated_type) or annotated_type
-            if type_origin is Field and (
-                args := getattr(annotated_type, "__args__", None)
+            if (
+                isinstance(type_origin, type)
+                and issubclass(type_origin, Field)
+                and (args := getattr(annotated_type, "__args__", None))
             ):
                 annotated_type: GenericType = args[0]
                 type_origin = get_origin(annotated_type) or annotated_type
@@ -3928,19 +3930,39 @@ class Field(Generic[FIELD_TYPE]):
             if isinstance(arg, type) and not get_args(arg)
         )
 
-    def _copy(self) -> Field:
-        """Copy the declaration, unbound, to bind it to another class.
+    def _replace(self, **kwargs: Any) -> Self:
+        """Derive an unbound field of the same class, with some arguments replaced.
+
+        A subclass taking arguments of its own passes them on, like
+        ``super()._replace(**{"tag": self.tag, **kwargs})``.
+
+        Args:
+            **kwargs: The arguments of the new field to replace.
 
         Returns:
             The new field.
         """
-        return Field(
-            default=self.default,
-            default_factory=self.default_factory,
-            is_var=self.is_var,
-            annotated_type=self.annotated_type,
-            source_field=self,
-        )
+        return type(self)(**{
+            "default": self.default,
+            "default_factory": self.default_factory,
+            "is_var": self.is_var,
+            "annotated_type": self.annotated_type,
+            "source_field": self,
+            **kwargs,
+        })
+
+    @classmethod
+    def _with_default(cls, value: Any, annotated_type: Any = MISSING) -> Self:
+        """Create a field defaulting to a value, copied per instance if mutable.
+
+        Args:
+            value: The default value.
+            annotated_type: The type of the field.
+
+        Returns:
+            The field.
+        """
+        return cls(annotated_type=annotated_type, **_default_arguments(value))
 
     def default_value(self) -> FIELD_TYPE | None:
         """Get the default value for the field.
@@ -4348,19 +4370,11 @@ def _unannotated_fields(namespace: Mapping[str, Any]) -> dict[str, Field]:
         if isinstance(value, Field):
             if value.annotated_type is not Any:
                 fields[key] = value
-            elif value.default is not MISSING:
-                fields[key] = Field(
-                    default=value.default,
-                    is_var=value.is_var,
-                    annotated_type=figure_out_type(value.default),
-                    source_field=value,
-                )
             else:
-                fields[key] = Field(
-                    default_factory=value.default_factory,
-                    is_var=value.is_var,
-                    annotated_type=Any,
-                    source_field=value,
+                fields[key] = value._replace(
+                    annotated_type=Any
+                    if value.default is MISSING
+                    else figure_out_type(value.default)
                 )
         elif (
             not key.startswith("__")
@@ -4368,7 +4382,7 @@ def _unannotated_fields(namespace: Mapping[str, Any]) -> dict[str, Field]:
             and not isinstance(value, (staticmethod, classmethod, Var))
             and not _is_descriptor(value)
         ):
-            fields[key] = _field_with_default(value, figure_out_type(value))
+            fields[key] = Field._with_default(value, figure_out_type(value))
     return fields
 
 
@@ -4409,34 +4423,27 @@ def _annotated_fields(
         if value is MISSING:
             fields[key] = Field(annotated_type=annotation)
         elif isinstance(value, Field):
-            fields[key] = Field(
-                default=value.default,
-                default_factory=value.default_factory,
-                is_var=value.is_var,
-                annotated_type=annotation,
-                source_field=value,
-            )
+            fields[key] = value._replace(annotated_type=annotation)
         else:
-            fields[key] = _field_with_default(value, annotation)
+            fields[key] = Field._with_default(value, annotation)
     return fields
 
 
-def _field_with_default(value: Any, annotated_type: Any) -> Field:
-    """Create a field defaulting to a value, copied per instance if mutable.
+def _default_arguments(value: Any) -> dict[str, Any]:
+    """Get the field arguments defaulting to a value, copied per instance if mutable.
 
     Args:
         value: The default value.
-        annotated_type: The type of the field.
 
     Returns:
-        The field.
+        The default and default factory arguments of a field.
     """
     if types.is_immutable(value):
-        return Field(default=value, annotated_type=annotated_type)
-    return Field(
-        default_factory=functools.partial(copy.deepcopy, value),
-        annotated_type=annotated_type,
-    )
+        return {"default": value, "default_factory": None}
+    return {
+        "default": MISSING,
+        "default_factory": functools.partial(copy.deepcopy, value),
+    }
 
 
 def _is_descriptor(value: Any) -> bool:
@@ -4541,15 +4548,15 @@ class BaseStateMeta(ABCMeta):
         for key, value in namespace.items():
             if (
                 key in inherited_fields
-                and key not in own_fields
                 # Annotated names, like ClassVars, are declared as annotated.
                 and key not in annotations
+                and not isinstance(value, Field)
                 and not callable(value)
                 and not _is_descriptor(value)
             ):
                 # A new default for an inherited field declares a field of its own.
-                own_fields[key] = _field_with_default(
-                    value, inherited_fields[key].annotated_type
+                own_fields[key] = inherited_fields[key]._replace(
+                    **_default_arguments(value)
                 )
 
         # The fields are the class attributes: descriptors storing the values.
@@ -4617,16 +4624,7 @@ class EvenMoreBasicBaseState(metaclass=BaseStateMeta):
             var: The variable to add a field for.
             default_value: The default value of the field.
         """
-        if types.is_immutable(default_value):
-            new_field = Field(
-                default=default_value,
-                annotated_type=var._var_type,
-            )
-        else:
-            new_field = Field(
-                default_factory=functools.partial(copy.deepcopy, default_value),
-                annotated_type=var._var_type,
-            )
+        new_field = Field._with_default(default_value, var._var_type)
         cls.__fields__[name] = new_field
         setattr(cls, name, new_field)
         new_field.__set_name__(cls, name)
