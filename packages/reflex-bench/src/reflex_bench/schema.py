@@ -420,6 +420,14 @@ def _check_benchmark(
         for i, meta in enumerate(metas)
     ):
         return
+    mistyped = [
+        f"{path}.sample_meta[{i}]: arm must be a string, warmup a boolean"
+        for i, meta in enumerate(metas)
+        if not (isinstance(meta["arm"], str) and isinstance(meta["warmup"], bool))
+    ]
+    if mistyped:
+        errors.extend(mistyped)
+        return
     per_arm = Counter(meta["arm"] for meta in metas)
     errors.extend(
         f"{path}.sample_meta: arm {arm!r} is not in subjects"

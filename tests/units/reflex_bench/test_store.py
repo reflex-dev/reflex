@@ -86,18 +86,27 @@ def test_bench_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 
 
 def test_cache_dir_is_per_subject_benchmark_and_params(tmp_path: Path):
-    one = store.cache_dir(tmp_path, "git:main", "lifecycle.compile", {"a": 1, "b": 2})
-    assert one.parent == tmp_path / "cache" / "git-main" / "lifecycle.compile"
+    one = store.cache_dir(tmp_path, "0123abcd", "lifecycle.compile", {"a": 1, "b": 2})
+    assert one.parent == tmp_path / "cache" / "0123abcd" / "lifecycle.compile"
     assert (
-        store.subject_cache_dir(tmp_path, "git:main") == tmp_path / "cache" / "git-main"
+        store.subject_cache_dir(tmp_path, "0123abcd") == tmp_path / "cache" / "0123abcd"
     )
     assert one == store.cache_dir(
-        tmp_path, "git:main", "lifecycle.compile", {"b": 2, "a": 1}
+        tmp_path, "0123abcd", "lifecycle.compile", {"b": 2, "a": 1}
     )
     assert one != store.cache_dir(
-        tmp_path, "git:main", "lifecycle.compile", {"a": 1, "b": 3}
+        tmp_path, "0123abcd", "lifecycle.compile", {"a": 1, "b": 3}
     )
     assert store.slug("a.b[x=1,y=2]") == "a.b-x=1-y=2"
+
+
+def test_subject_cache_dir_keeps_distinct_identities_apart(tmp_path: Path):
+    assert store.subject_cache_dir(tmp_path, "0123abcd-dirty") == (
+        tmp_path / "cache" / "0123abcd-dirty"
+    )
+    one = store.subject_cache_dir(tmp_path, "path:/tmp/a-b/c")
+    assert one != store.subject_cache_dir(tmp_path, "path:/tmp/a/b-c")
+    assert one.name.startswith("path-tmp-a-b-c-")
 
 
 def test_autosave_skips_numbers_claimed_by_concurrent_runs(
