@@ -30,8 +30,6 @@ from reflex_bench.schema import FixtureDoc
 HASH_FILE = ".content-hash"
 STAMP = "fixture.json"
 COMPILE_TIMEOUT_S = 600.0
-# What running an app leaves in its directory: never copied from the checkout.
-_OUTPUT = (".venv", ".web", ".states", "__pycache__", "reflex.lock", "uv.lock", "*.db")
 # Kept in a staged copy, so a restaged app compiles warm.
 _KEEP = frozenset({".web", "reflex.lock"})
 # Build output and local state, as examples/playground/.gitignore lists them.
@@ -163,8 +161,8 @@ def materialize_playground(dest: Path) -> FixtureDoc:
 def stage_playground(dst: Path) -> None:
     """Copy the playground to ``dst``, replacing its sources but not its build.
 
-    Build and run output is never copied; ``dst``'s own ``.web`` and
-    ``reflex.lock`` stay, so a restaged app compiles warm.
+    Build output, local state and the hash file are never copied; ``dst``'s
+    own ``.web`` and ``reflex.lock`` stay, so a restaged app compiles warm.
 
     Args:
         dst: The staged app directory, created if needed.
@@ -177,12 +175,8 @@ def stage_playground(dst: Path) -> None:
                 shutil.rmtree(entry)
             else:
                 entry.unlink()
-    shutil.copytree(
-        playground_dir(),
-        dst,
-        ignore=shutil.ignore_patterns(*_OUTPUT),
-        dirs_exist_ok=True,
-    )
+    root = playground_dir()
+    shutil.copytree(root, dst, ignore=_ignore(root), dirs_exist_ok=True)
 
 
 FIXTURES: dict[str, Callable[[Path], None]] = {"playground": stage_playground}
