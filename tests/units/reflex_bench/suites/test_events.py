@@ -7,7 +7,9 @@ for real.
 
 from __future__ import annotations
 
+import os
 import subprocess
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
@@ -19,9 +21,17 @@ from reflex_bench.drivers.events import LoadResult, Mode
 from reflex_bench.scheduler import Planned, Policy, Scheduler, plan
 from reflex_bench.suites import events as suite
 
+import reflex as rx
+from reflex.istate.shared import SharedStateBaseInternal
 from tests.units.reflex_bench.factories import make_load_result, make_subject
 
 SHAPES = ("background", "complex", "cross", "simple")
+# The playground's states as the workspace's reflex names them: the shared
+# state sits under reflex's internal parent of shared states.
+STATES = suite.PlaygroundStates(
+    bench=f"{rx.State.get_full_name()}.playground___state____bench_state",
+    board=f"{SharedStateBaseInternal.get_full_name()}.playground___state____board_state",
+)
 CHEAP = [
     "events.simple.capacity[manager=memory,sessions=10]",
     "events.simple.latency[manager=memory,sessions=10,rate=500]",
@@ -116,29 +126,58 @@ def test_redis_is_measured_only_with_a_redis_url():
     )
 
 
+def test_the_subject_names_the_playground_states(tmp_path: Path):
+    # The workspace's interpreter is the subject: it imports the real playground.
+    (tmp_path / "app").symlink_to(suite.PLAYGROUND)
+    ctx = cast(
+        "Any",
+        SimpleNamespace(
+            subject=SimpleNamespace(python=Path(sys.executable)),
+            cache_dir=tmp_path,
+            env=dict(os.environ),
+        ),
+    )
+    assert suite.playground_states(ctx) == STATES
+
+
+def test_a_subject_without_the_states_fails_clearly(tmp_path: Path):
+    (tmp_path / "app").mkdir()
+    ctx = cast(
+        "Any",
+        SimpleNamespace(
+            subject=SimpleNamespace(python=Path(sys.executable)),
+            cache_dir=tmp_path,
+            env=dict(os.environ),
+        ),
+    )
+    with pytest.raises(RuntimeError, match="cannot import the playground's states"):
+        suite.playground_states(ctx)
+
+
 def test_the_shapes_are_the_playground_handlers():
-    state = "reflex___state____state.playground___state____bench_state"
-    assert {name: shape.name for name, shape in suite.SHAPES.items()} == {
+    shapes = {name: shape_of(STATES) for name, shape_of in suite.SHAPES.items()}
+    state = STATES.bench
+    assert {name: shape.name for name, shape in shapes.items()} == {
         "simple": f"{state}.set_seq",
         "complex": f"{state}.set_seq_complex",
         "cross": f"{state}.set_seq_cross",
         "background": f"{state}.set_seq_background",
     }
-    for shape in suite.SHAPES.values():
+    for shape in shapes.values():
         assert (shape.delta_key, shape.seq_var) == (state, "last_seq_rx_state_")
         assert shape.payload(7) == {"seq": 7}
     # Background tasks may finish in any order; the others answer in order.
-    assert [name for name, shape in suite.SHAPES.items() if not shape.ordered] == [
+    assert [name for name, shape in shapes.items() if not shape.ordered] == [
         "background"
     ]
-    assert all(shape.client_var is None for shape in suite.SHAPES.values())
+    assert all(shape.client_var is None for shape in shapes.values())
 
 
 def test_the_shared_shapes_are_the_board_handler():
-    board = "reflex___state____state.playground___state____board_state"
+    board = STATES.board
     fanout, contention = (
-        suite.SHARED_SHAPES["shared_fanout"],
-        suite.SHARED_SHAPES["shared_contention"],
+        suite.SHARED_SHAPES["shared_fanout"](STATES),
+        suite.SHARED_SHAPES["shared_contention"](STATES),
     )
     for shape in (fanout, contention):
         assert shape.name == f"{board}.set_seq_shared"
@@ -150,7 +189,7 @@ def test_the_shared_shapes_are_the_board_handler():
     assert fanout.client_var is None
     assert contention.client_var == "last_client_rx_state_"
     # The board's linked clients are wiped by a fresh token per load.
-    link, again = suite.join_link(), suite.join_link()
+    link, again = suite.join_link(board), suite.join_link(board)
     assert link.name == f"{board}.join"
     assert link.delta_key == board
     assert link.payload["token"] != again.payload["token"]
@@ -189,18 +228,19 @@ def test_a_linked_backend_joins_a_fresh_board_per_load(
     monkeypatch.setattr(FakeRunner, "plans", [])
     ctx = cast("Any", SimpleNamespace(params={"manager": "memory"}))
     shared = suite._Backend(
-        ctx, suite.SHARED_SHAPES["shared_fanout"], sessions=25, linked=True
+        ctx, suite.SHARED_SHAPES["shared_fanout"](STATES), sessions=25, linked=True
     )
     shared.url = "http://127.0.0.1:1"
     shared.run("fanout", None, suite.PROBE_WINDOW)
     shared.run("fanout", None, suite.FANOUT_WINDOW)
-    private = suite._Backend(ctx, suite.SHAPES["simple"], sessions=50)
+    private = suite._Backend(ctx, suite.SHAPES["simple"](STATES), sessions=50)
     private.url = shared.url
     private.run("closed", None, suite.PROBE_WINDOW)
     first, second, plain = FakeRunner.plans
     assert first.link is not None
     assert second.link is not None
-    assert first.link.name == suite.join_link().name
+    assert first.link.name == f"{STATES.board}.join"
+    assert first.link.delta_key == STATES.board
     assert first.link.payload["token"] != second.link.payload["token"]
     assert (first.sessions, first.processes, first.mode) == (25, 1, "fanout")
     assert plain.link is None
@@ -445,6 +485,7 @@ def run_instance(
         return (canned.pop(0) if isinstance(canned, list) else canned), 1.2
 
     monkeypatch.setattr(suite, "prepare_app", lambda ctx: None)
+    monkeypatch.setattr(suite, "playground_states", lambda ctx: STATES)
     monkeypatch.setattr(
         suite._Backend, "start_app", lambda self: calls.append(("app",))
     )
