@@ -99,20 +99,28 @@ def fixture_hash(name: str) -> str:
     return (fixture_dir(name) / HASH_FILE).read_text(encoding="utf-8").strip()
 
 
-def describe_playground() -> FixtureDoc:
-    """Describe the playground by its committed content hash.
+def describe_fixture(name: str) -> FixtureDoc:
+    """Describe a fixture app under ``examples/`` by its committed content hash.
 
     The hash is read, never recomputed: computing it needs git, and the
     ``hash-examples`` pre-commit hook and CI keep the committed line current.
 
+    Args:
+        name: The app's directory name.
+
+    Returns:
+        ``{"name": name, "content_hash": <the line>, "params": {}}``.
+    """
+    return {"name": name, "content_hash": fixture_hash(name), "params": {}}
+
+
+def describe_playground() -> FixtureDoc:
+    """Describe the playground by its committed content hash.
+
     Returns:
         ``{"name": "playground", "content_hash": <the line>, "params": {}}``.
     """
-    return {
-        "name": "playground",
-        "content_hash": fixture_hash("playground"),
-        "params": {},
-    }
+    return describe_fixture("playground")
 
 
 def _ignore(root: Path) -> Callable[[str, list[str]], set[str]]:

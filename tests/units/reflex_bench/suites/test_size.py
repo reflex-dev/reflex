@@ -287,7 +287,11 @@ def _git(cwd: Path, *args: str) -> None:
 def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     root = tmp_path / "repo"
     demo = root / "examples" / "demo"
-    tracked = {"rxconfig.py": b"config = 1\n", "demo/demo.py": b"app = 1\n"}
+    tracked = {
+        "rxconfig.py": b"config = 1\n",
+        "demo/demo.py": b"app = 1\n",
+        ".content-hash": b"sha256:abc123\n",
+    }
     _write(demo, {**tracked, "deleted.py": b""})
     _write(root, {".gitignore": b".web/\n"})
     _git(root, "init", "-q")
@@ -302,7 +306,7 @@ def test_copy_example_copies_tracked_files_only(repo: Path, tmp_path: Path):
     dest = tmp_path / "work" / "app"
     size.copy_example("demo", dest)
     copied = sorted(p.relative_to(dest).as_posix() for p in dest.rglob("*"))
-    assert copied == ["demo", "demo/demo.py", "rxconfig.py"]
+    assert copied == [".content-hash", "demo", "demo/demo.py", "rxconfig.py"]
 
 
 def test_copy_example_fails_clearly_without_the_example(repo: Path, tmp_path: Path):
@@ -336,6 +340,11 @@ def test_setup_exports_into_the_work_directory(
     assert kwargs["env"]["REFLEX_DIR"] == str(cache / "reflex")
     assert (work / "app" / "rxconfig.py").read_text() == "config = 1\n"
     assert not (cache / "app").exists()
+    assert ctx.fixture == {
+        "name": "demo",
+        "content_hash": "sha256:abc123",
+        "params": {},
+    }
 
 
 def test_each_session_exports_its_own_copy(

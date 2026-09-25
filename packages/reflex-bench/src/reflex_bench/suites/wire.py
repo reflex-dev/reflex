@@ -73,6 +73,7 @@ from reflex_bench.drivers.events import (
     event_url,
     seq_payload,
 )
+from reflex_bench.fixtures import describe_fixture
 from reflex_bench.registry import Metric, SampleResult, benchmark
 from reflex_bench.suites.events import (
     COMPILE_TIMEOUT_S,
@@ -666,12 +667,12 @@ class _OneSession:
         prepare_app(ctx)
 
     def setup(self, ctx: Context) -> None:
-        """Name the fixture in the dims.
+        """Record the fixture.
 
         Args:
             ctx: The benchmark context.
         """
-        ctx.dims["fixture"] = self.fixture
+        ctx.fixture = describe_fixture(self.fixture)
 
     def prepare(self, ctx: Context) -> None:
         """Get ready to stop what the sample starts.
@@ -876,13 +877,16 @@ class Delta(_OneSession):
         prepare_delta_app(ctx)
 
     def setup(self, ctx: Context) -> None:
-        """Name the fixture and its content hash in the dims.
+        """Record the generated app as the fixture.
 
         Args:
             ctx: The benchmark context.
         """
-        super().setup(ctx)
-        ctx.dims["fixture_hash"] = fixture_hash()
+        ctx.fixture = {
+            "name": self.fixture,
+            "content_hash": fixture_hash(),
+            "params": {},
+        }
 
     def sample(self, ctx: Context) -> SampleResult:
         """Send the change.

@@ -13,7 +13,13 @@ from collections.abc import Iterable, Mapping
 from reflex_bench.context import Context
 from reflex_bench.drivers.app_process import AppProcess, Mode
 from reflex_bench.drivers.browser import Browser, Tab
-from reflex_bench.fixtures import app_dir, app_env, fixture_hash, prime
+from reflex_bench.fixtures import (
+    app_dir,
+    app_env,
+    describe_playground,
+    fixture_hash,
+    prime,
+)
 from reflex_bench.registry import Metric, SampleResult, benchmark
 
 APP_TIMEOUT_S = 600.0
@@ -76,11 +82,12 @@ class _Ready:
         prime(ctx)
 
     def setup(self, ctx: Context) -> None:
-        """Start the browser.
+        """Record the fixture and start the browser.
 
         Args:
             ctx: The benchmark context.
         """
+        ctx.fixture = describe_playground()
         browser = self.browser = Browser()
         browser.start()
 
@@ -273,11 +280,12 @@ class ProdPageload:
         prime(ctx)
 
     def setup(self, ctx: Context) -> None:
-        """Start the prod app and the browser.
+        """Record the fixture and start the prod app and the browser.
 
         Args:
             ctx: The benchmark context.
         """
+        ctx.fixture = describe_playground()
         app_path = app_dir(ctx)
         app = self.app = AppProcess(
             ctx.subject.python,

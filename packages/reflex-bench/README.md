@@ -579,8 +579,8 @@ app and reflex version, so every metric is exact and a sample is one run.
   control. A whole collection resent for a one-item change shows as
   `response_bytes` far above the control's.
 - **Dims**: `fixture` names the app (`playground` or `wire_delta`); for
-  `wire.delta`, `fixture_hash` is the generated source's content hash, so a
-  change to the generator starts a new series.
+  `wire.delta`, the entry's `fixture_hash` is the generated source's content
+  hash, so `compare` rejects a pair across a change to the generator.
 
 `AppProcess.t0` is the `time.perf_counter()` taken just before the spawn, the
 origin of every readiness time, and `AppProcess.log_lines()` returns the output

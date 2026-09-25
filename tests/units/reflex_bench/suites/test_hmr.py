@@ -98,6 +98,7 @@ def test_hook_sequence(ctx: Context):
     bench = hmr.RenderLeaf()
     original = _file(ctx, LEAF)
     bench.setup(ctx)
+    assert ctx.fixture == fixtures.describe_playground()
     app = FakeApp.created[0]
     assert (app.mode, app.phases) == ("dev", True)
     assert app.calls == ["start", "http", "interactive /"]
