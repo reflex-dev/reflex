@@ -610,19 +610,23 @@ async def execute(
         )
         if row is None:
             return "missing"
-        if row.wf_version != version:
-            # Moved on before the step started, so nothing of this claim will
-            # run and nothing will come back to give its lease up. Only its own:
-            # a worker that took the row over has written a lease of its own,
-            # which this leaves alone.
-            if until is not None:
-                await release(runtime, cls, pk, held)
-            return "stale"
-        columns = rows.user_columns(cls)
-        before = rows.snapshot(row, columns)
-        if until is None:
-            held.until = row.claimed_until
+        moved_on = row.wf_version != version
+        if not moved_on:
+            columns = rows.user_columns(cls)
+            before = rows.snapshot(row, columns)
+            if until is None:
+                held.until = row.claimed_until
         session.expunge(row)
+    if moved_on:
+        # Moved on before the step started, so nothing of this claim will run
+        # and nothing will come back to give its lease up. Given back out here,
+        # once the connection that read the row is back in the pool: a pool that
+        # can only ever hand out one would otherwise be waiting on itself. Only
+        # its own lease: a worker that took the row over has written one of its
+        # own, which this leaves alone.
+        if until is not None:
+            await release(runtime, cls, pk, held)
+        return "stale"
 
     # A buffered event for the step the row waits on takes precedence over its
     # timeout, which is what ``next_step`` holds while waiting.

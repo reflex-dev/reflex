@@ -3074,3 +3074,39 @@ async def test_a_lease_taken_over_by_another_worker_is_not_given_back(session_fa
     assert row is not None
     # Only the lease this worker wrote was ever its to give back.
     assert row.claimed_until == theirs.until
+
+
+async def test_a_preempted_claim_gives_its_lease_back_on_a_pool_of_one(
+    session_factory,
+):
+    key = uuid.uuid4().hex
+    await RaceReview(key=key).start(RaceReview.submit())
+    pk = await pk_of(RaceReview, key)
+    taken = await claim_row(RaceReview, pk)
+    assert await RaceReview.by(RaceReview.key == key).run(RaceReview.expire()) == 1
+
+    # A pool that can only ever hand out one connection, which is what giving
+    # the lease back while still holding the one that read the row waits for.
+    narrow = create_async_engine(ASYNC_URL, pool_size=1, max_overflow=0, pool_timeout=5)
+    try:
+        outcome = await asyncio.wait_for(
+            execute.execute(
+                runtime.Runtime(
+                    async_sessionmaker(narrow, expire_on_commit=False),
+                    asyncio.Event(),
+                    LEASE,
+                ),
+                RaceReview,
+                pk,
+                taken.version,
+                execute.Lease(taken.until),
+            ),
+            timeout=15,
+        )
+    finally:
+        await narrow.dispose()
+
+    assert outcome == "stale"
+    row = await RaceReview.by(RaceReview.key == key).get()
+    assert row is not None
+    assert row.claimed_until is None
