@@ -112,6 +112,12 @@ def test_a_column_that_will_not_say_what_it_holds_keeps_what_was_stored():
     assert rows.loaded_key(Shapes.__table__.c.private, "as it stood") == "as it stood"
 
 
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+def test_a_float_key_json_has_no_form_of_is_refused(value):
+    with pytest.raises(TypeError, match="primary key cannot be"):
+        rows.json_pk([value])
+
+
 def test_a_key_the_engine_cannot_store_is_refused_by_name():
     class Opaque:
         """A key type with no form the engine knows."""

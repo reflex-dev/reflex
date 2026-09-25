@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import datetime
 import decimal
+import math
 import uuid
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, NamedTuple
@@ -100,6 +101,15 @@ def json_pk(pk: Sequence[Any]) -> list[Any]:
     """
     stored: list[Any] = []
     for value in pk:
+        if isinstance(value, float) and not math.isfinite(value):
+            # As in a step's arguments: NaN and infinity are not json, and
+            # Postgres refuses them in jsonb.
+            msg = (
+                f"A workflow's primary key cannot be {value}: the engine records "
+                "keys in its history and fan-out columns as json, which has no "
+                "form for it."
+            )
+            raise TypeError(msg)
         if value is None or isinstance(value, (str, int, float)):
             stored.append(value)
             continue
