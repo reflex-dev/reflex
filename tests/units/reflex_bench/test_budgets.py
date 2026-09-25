@@ -107,6 +107,27 @@ def test_a_metric_over_budget_exits_2_with_the_delta(tmp_path: Path):
     assert "1 over budget" in result.output
 
 
+def test_a_fractional_value_keeps_its_fraction(tmp_path: Path):
+    entry = make_entry(
+        "size.export",
+        {"initial_gzip": (SIZE, [250_000.5])},
+        params={"app": "playground"},
+    )
+    result = _check(tmp_path, make_doc([entry]), {NAME: {"initial_gzip": 250_000}})
+    assert result.exit_code == 2, result.output
+    row = next(line for line in result.output.splitlines() if "initial_gzip" in line)
+    assert row.split()[2:] == [
+        "250000.500",
+        "250000",
+        "+0.500",
+        "B",
+        "(+0.0",
+        "%)",
+        "over",
+        "budget",
+    ]
+
+
 @pytest.mark.parametrize(
     ("doc", "limits", "error"),
     [

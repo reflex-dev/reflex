@@ -42,7 +42,7 @@ import dataclasses
 import hashlib
 import json
 import random
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -56,6 +56,14 @@ MAX_LEAF_TARGETS = 10
 _SOURCE = Path(__file__)
 # The root state's field types, in turn.
 _TYPES = ("int", "str", "float", "bool", "list[str]")
+# The smallest size the command line takes: the app needs a page and a field.
+_MINIMUMS = {
+    "pages": 1,
+    "components_per_page": 0,
+    "state_vars": 1,
+    "substate_depth": 0,
+    "computed_vars": 0,
+}
 
 _RXCONFIG = '''\
 """Reflex configuration of the generated benchmark app."""
@@ -436,6 +444,26 @@ def generate(dest: Path, params: GenParams) -> FixtureDoc:
     return describe(params)
 
 
+def _at_least(minimum: int) -> Callable[[str], int]:
+    """Make an argparse type for an integer of at least a minimum.
+
+    Args:
+        minimum: The smallest accepted value.
+
+    Returns:
+        The parser of the argument.
+    """
+
+    def parse(text: str) -> int:
+        value = int(text)
+        if value < minimum:
+            msg = f"must be at least {minimum}"
+            raise argparse.ArgumentTypeError(msg)
+        return value
+
+    return parse
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Write a generated app from the command line.
 
@@ -453,19 +481,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     fields = dataclasses.fields(GenParams)
     for field in fields:
         flag = "--" + field.name.replace("_", "-")
+        minimum = _MINIMUMS.get(field.name)
+        kind = int if minimum is None else _at_least(minimum)
         if field.default is dataclasses.MISSING:
-            parser.add_argument(flag, type=int, required=True)
+            parser.add_argument(flag, type=kind, required=True)
         else:
-            parser.add_argument(flag, type=int, default=field.default)
+            parser.add_argument(flag, type=kind, default=field.default)
     args = parser.parse_args(argv)
-    try:
-        params = GenParams(**{
-            field.name: getattr(args, field.name) for field in fields
-        })
-    except ValueError as exc:
-        parser.error(str(exc))
-    doc = generate(args.dest, params)
-    print(f"wrote {args.dest} ({doc['content_hash']})")  # noqa: T201
+    dest: Path = args.dest
+    if dest.exists() and (not dest.is_dir() or any(dest.iterdir())):
+        parser.error(f"{dest} is not empty")
+    params = GenParams(**{field.name: getattr(args, field.name) for field in fields})
+    doc = generate(dest, params)
+    print(f"wrote {dest} ({doc['content_hash']})")  # noqa: T201
     return 0
 
 

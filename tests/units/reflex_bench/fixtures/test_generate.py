@@ -267,3 +267,34 @@ def test_main_writes_a_tree(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
     assert len(list((dest / "genapp" / "pages").glob("page_*.py"))) == 3
     expected = generate.describe(GenParams(pages=3, components_per_page=4))
     assert expected["content_hash"] in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        ["--pages", "0"],
+        ["--state-vars", "0"],
+        ["--components-per-page", "-1"],
+        ["--substate-depth", "-1"],
+        ["--computed-vars", "-1"],
+    ],
+)
+def test_main_rejects_sizes_that_make_no_app(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], args: list[str]
+):
+    with pytest.raises(SystemExit) as info:
+        generate.main(["--pages", "2", *args, str(tmp_path / "app")])
+    assert info.value.code == 2
+    assert "at least" in capsys.readouterr().err
+    assert not (tmp_path / "app").exists()
+
+
+def test_main_refuses_a_non_empty_destination(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+):
+    (tmp_path / "stale.py").write_text("", encoding="utf-8")
+    with pytest.raises(SystemExit) as info:
+        generate.main(["--pages", "1", str(tmp_path)])
+    assert info.value.code == 2
+    assert "is not empty" in capsys.readouterr().err
+    assert not (tmp_path / "genapp").exists()
