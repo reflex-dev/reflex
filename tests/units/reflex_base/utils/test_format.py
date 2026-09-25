@@ -1,9 +1,36 @@
 """Unit tests for reflex_base.utils.format."""
 
+import pytest
 from reflex_base import constants
+from reflex_base.style import Style
 from reflex_base.utils import format
+from reflex_base.vars.base import Var
 
 import reflex as rx
+
+
+@pytest.mark.parametrize(
+    ("prop", "formatted"),
+    [
+        ({"a": "red", "b": 1}, '({ ["a"] : "red", ["b"] : 1 })'),
+        ({"a": Var(_js_expr="x")}, '({ ["a"] : x })'),
+        (Style({"color": "red"}), '({ ["color"] : "red" })'),
+    ],
+)
+def test_format_prop_dict(prop: dict, formatted: str):
+    """Dict props format as JS object literals, keeping nested vars as JS.
+
+    Args:
+        prop: The dict prop to format.
+        formatted: The expected formatted prop.
+    """
+    assert format.format_prop(prop) == formatted
+
+
+def test_format_prop_dict_invalid_value():
+    """A dict value with no JS representation raises a TypeError."""
+    with pytest.raises(TypeError, match="Could not format prop"):
+        format.format_prop({"a": object()})
 
 
 def test_format_queue_events_dispatches_through_add_events():

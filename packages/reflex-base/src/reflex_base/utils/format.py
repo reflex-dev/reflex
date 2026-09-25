@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Any
 from rich.markup import escape as escape_markup
 
 from reflex_base import constants
-from reflex_base.utils import exceptions
 
 if TYPE_CHECKING:
     from reflex_base.components.component import ComponentStyle
@@ -378,13 +377,10 @@ def format_prop(
         The formatted prop to display within a tag.
 
     Raises:
-        exceptions.InvalidStylePropError: If the style prop value is not a valid type.
         TypeError: If the prop is not valid.
-        ValueError: If the prop is not a string.
     """
     # import here to avoid circular import.
     from reflex_base.event import EventChain
-    from reflex_base.utils import serializers
     from reflex_base.vars import Var
 
     try:
@@ -392,8 +388,8 @@ def format_prop(
         if isinstance(prop, Var):
             return str(prop)
 
-        # Handle event props.
-        if isinstance(prop, EventChain):
+        # Handle event props and dicts, whose values may be vars.
+        if isinstance(prop, (EventChain, dict)):
             return str(Var.create(prop))
 
         # Handle other types.
@@ -402,23 +398,13 @@ def format_prop(
                 return prop
             return json_dumps(prop)
 
-        # For dictionaries, convert any properties to strings.
-        if isinstance(prop, dict):
-            prop = serializers.serialize_dict(prop)  # pyright: ignore [reportAttributeAccessIssue]
-
-        else:
-            # Dump the prop as JSON.
-            prop = json_dumps(prop)
-    except exceptions.InvalidStylePropError:
-        raise
+        # Dump the prop as JSON.
+        prop = json_dumps(prop)
     except TypeError as e:
         msg = f"Could not format prop: {prop} of type {type(prop)}"
         raise TypeError(msg) from e
 
     # Wrap the variable in braces.
-    if not isinstance(prop, str):
-        msg = f"Invalid prop: {prop}. Expected a string."
-        raise ValueError(msg)
     return wrap(prop, "{", check_first=False)
 
 
