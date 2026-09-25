@@ -201,7 +201,9 @@ async def test_disk_state_manager_writes_expired_pending_state_tree(
     del root, child
 
     await _poll_until(lambda: token not in state_manager_disk.states, timeout=5)
-    assert state_manager_disk.token_path(pending_token).exists()
+    written_child = await state_manager_disk.load_state(pending_token)
+    assert isinstance(written_child, ExpiringChildState)
+    assert written_child.child_value == 1
 
 
 @pytest.mark.asyncio
