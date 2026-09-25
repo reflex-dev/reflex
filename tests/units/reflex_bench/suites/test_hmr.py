@@ -417,7 +417,7 @@ def test_an_asset_change_is_shown_by_the_harness_reloading_the_page(ctx: Context
     assert _file(ctx, "assets/mark.svg") != original
     tab.calls.clear()
     bench.conclude(ctx)
-    assert ("reload",) in tab.calls
+    assert any(call[0] == "reload" for call in tab.calls)
     assert _file(ctx, "assets/mark.svg") == original
     bench.cleanup(ctx)
 
@@ -510,7 +510,27 @@ def test_preview_reloads_the_page_itself(ctx: Context):
     assert result.extra["reloads"] == 2
     tab.calls.clear()
     bench.conclude(ctx)
-    assert ("reload",) in tab.calls
+    assert any(call[0] == "reload" for call in tab.calls)
+    bench.cleanup(ctx)
+
+
+def test_a_reload_by_the_harness_is_bounded_by_the_hooks_remaining_time(
+    ctx: Context, monkeypatch: pytest.MonkeyPatch
+):
+    # A stalled preview page must not hold a reload past the hook's deadline.
+    monkeypatch.setattr(hmr, "WAIT_S", 0.3)
+    bench = hmr.RenderLeafPreview()
+    bench.setup(ctx)
+    bench.prepare(ctx)
+    tab = _tab(bench)
+    tab.misses = 10**9
+    with pytest.raises(TimeoutError, match="while refreshing it"):
+        bench.sample(ctx)
+    timeouts = [call[1] for call in tab.calls if call[0] == "reload"]
+    assert timeouts
+    assert all(0 < timeout <= 0.3 for timeout in timeouts)
+    tab.misses = 0
+    bench.conclude(ctx)
     bench.cleanup(ctx)
 
 

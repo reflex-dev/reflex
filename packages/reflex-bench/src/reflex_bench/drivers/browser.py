@@ -357,9 +357,13 @@ class Tab:
             selector,
         )
 
-    def reload(self) -> None:
-        """Reload the page and return once it has loaded, stylesheets and images included."""
-        self.page.reload(wait_until="load", timeout=NAV_TIMEOUT_S * 1000)
+    def reload(self, timeout: float = NAV_TIMEOUT_S) -> None:
+        """Reload the page and return once it has loaded, stylesheets and images included.
+
+        Args:
+            timeout: Seconds to wait for the load.
+        """
+        self.page.reload(wait_until="load", timeout=timeout * 1000)
 
     def settle(self, seconds: float) -> None:
         """Let the page run for a while, delivering its events.

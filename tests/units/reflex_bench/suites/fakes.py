@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from reflex_bench.drivers.app_process import Readiness
-from reflex_bench.drivers.browser import Anchor, Interactive
+from reflex_bench.drivers.browser import NAV_TIMEOUT_S, Anchor, Interactive
 
 Mark = dict[str, Any]
 
@@ -258,9 +258,13 @@ class FakeTab:
         self.calls.append(("click", selector))
         return True
 
-    def reload(self) -> None:
-        """Record a reload by the harness; the document token goes."""
-        self.calls.append(("reload",))
+    def reload(self, timeout: float = NAV_TIMEOUT_S) -> None:
+        """Record a reload by the harness; the document token goes.
+
+        Args:
+            timeout: Seconds the harness gives the reload.
+        """
+        self.calls.append(("reload", timeout))
         self.token = None
 
     def raise_errors(self) -> None:
