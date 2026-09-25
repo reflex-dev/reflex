@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import dataclasses
-import os
 import random
 import shutil
 import sys
@@ -15,7 +14,7 @@ from typing import Any
 
 import pytest
 from reflex_bench import scheduler, store
-from reflex_bench.context import BASE_ENV, Context
+from reflex_bench.context import BASE_ENV, Context, subject_env
 from reflex_bench.registry import Benchmark, Metric, ParamSet
 from reflex_bench.scheduler import Planned, Policy, Scheduler
 
@@ -515,8 +514,7 @@ def test_setup_cache_gets_one_cache_dir_per_param_set(tmp_path: Path):
     assert dirs[1].parent == dirs[2].parent
 
 
-def test_make_context(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("PATH", os.pathsep.join(["/usr/local/bin", "/usr/bin"]))
+def test_make_context(tmp_path: Path):
     planned = _recorder([], params={"n": [7]}, hidden_params={"shift": 2.0})
     subject = dataclasses.replace(
         make_subject(), python=tmp_path / "venv" / "bin" / "python"
@@ -531,13 +529,7 @@ def test_make_context(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         assert ctx.cache_dir == store.cache_dir(
             tmp_path, subject.identity, "t.rec", {"n": 7}
         )
-        assert all(ctx.env[key] == value for key, value in BASE_ENV.items())
-        # Commands the subject starts by name come from its own environment.
-        assert ctx.env["PATH"].split(os.pathsep) == [
-            str(tmp_path / "venv" / "bin"),
-            "/usr/local/bin",
-            "/usr/bin",
-        ]
+        assert ctx.env == subject_env(subject.python)
         expected = random.Random(scheduler.derive_seed(3, "t.rec[n=7]", "B"))
         assert ctx.rng.random() == expected.random()
     finally:

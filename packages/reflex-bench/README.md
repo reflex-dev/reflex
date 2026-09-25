@@ -190,6 +190,52 @@ keeps a heavy process (a server) alive between samples runs two of them at
 once, which distorts both arms. Start per-sample processes in `prepare` or
 `sample` and stop them in `conclude`. This is not enforced.
 
+## Driving reflex
+
+Benchmarks start the reflex under test as a user does, `<python> -m reflex ...`
+with the subject's interpreter, through `reflex_bench.drivers.app_process`:
+
+```python
+from reflex_bench.collectors.cgroup import CgroupScope
+from reflex_bench.drivers.app_process import AppProcess, cache_env, run_cli
+
+env = {**ctx.env, **cache_env(reflex_dir=ctx.cache_dir / "reflex")}
+scope = CgroupScope() if CgroupScope.available() is None else None
+result = run_cli(
+    ctx.subject.python,
+    ["compile"],
+    cwd=app,
+    env=env,
+    timeout=600,
+    scope=scope,
+    phases=True,
+    sample_memory=scope is None,
+).check()  # wall_s, cpu_s, peak_mem_bytes, timing, attribution()
+
+self.app = AppProcess(
+    ctx.subject.python,
+    app,
+    mode="prod",
+    reflex_version=ctx.subject.reflex_version,
+    env=env,
+)
+readiness = self.app.start()  # process-ready: ready lines + every port accepts TCP
+self.app.wait_http_ready()  # GET / (or /ping without a frontend) answers 200
+# conclude(): self.app.stop() kills the whole process tree
+```
+
+The driver picks free ports, expects the ready lines of the subject's version
+and mode (0.8.23 prod runs sirv and the backend on two ports, 0.9 prod one
+port) and never trusts a line without a TCP probe. It runs with the `env` it
+is given: pass `ctx.env`, or `reflex_bench.context.subject_env(python)` outside
+a benchmark, so the subject's commands come first on `PATH`. Each command runs in its own session; `stop()` and the end of
+`run_cli` kill the whole tree, children that started their own session
+included. Peak memory and CPU come from a transient cgroup v2 scope when
+`systemd-run` works (user manager, or sudo on CI), else from PSS sampling
+(`memory_method: pss_sampling`, never compared with cgroup peaks);
+`reflex-bench doctor` shows which. `selftest.app.compile` and
+`selftest.app.dev_ready` exercise all of it against a blank app.
+
 ## How samples are taken
 
 After the warmup runs, the first timed sample decides the run count (hyperfine's
