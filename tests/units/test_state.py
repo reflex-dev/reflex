@@ -54,7 +54,6 @@ from reflex.istate.data import (
     HeaderData,
     RouterData,
     RouterDataVar,
-    SessionData,
     URLData,
     _FrozenDictStrStr,
 )
@@ -1635,11 +1634,17 @@ async def test_uncached_computed_var_mutable_value_mutated_in_place():
     assert await ums._get_resolved_delta() == {}
 
 
-async def test_uncached_computed_var_recorded_per_client_token():
+async def test_uncached_computed_var_recorded_per_client_token(
+    mock_root_event_context: EventContext,
+):
     """A value already sent to one client is still sent to another client.
 
     A single state instance can serve multiple clients (linked shared states),
-    so the recorded value only suppresses the delta for the client that got it.
+    so the recorded value only suppresses the delta for the client of the event
+    context it is delivered in.
+
+    Args:
+        mock_root_event_context: The mock root event context.
     """
 
     class MultiClientState(BaseState):
@@ -1648,23 +1653,17 @@ async def test_uncached_computed_var_recorded_per_client_token():
             return 1
 
     mcs = MultiClientState()
-    mcs.router = RouterData(session=SessionData(client_token="token_a"))
-    mcs._clean()
-    assert await mcs._get_resolved_delta() == {
-        mcs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}
-    }
-    mcs._clean()
-    assert await mcs._get_resolved_delta() == {}
-    mcs._clean()
-
-    # The same state instance now produces a delta for a different client.
-    mcs.router = RouterData(session=SessionData(client_token="token_b"))
-    mcs._clean()
-    assert await mcs._get_resolved_delta() == {
-        mcs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}
-    }
-    mcs._clean()
-    assert await mcs._get_resolved_delta() == {}
+    for client in ("token_a", "token_b"):
+        reset = EventContext.set(mock_root_event_context.fork(token=client))
+        try:
+            mcs._clean()
+            assert await mcs._get_resolved_delta() == {
+                mcs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}
+            }
+            mcs._clean()
+            assert await mcs._get_resolved_delta() == {}
+        finally:
+            EventContext.reset(reset)
 
 
 async def test_uncached_computed_var_unkeyable_value_always_sent():

@@ -484,14 +484,6 @@ class StateNode(EvenMoreBasicBaseState):
         msg = f"Invalid key type: {type(key)}. Expected str."
         raise TypeError(msg)
 
-    def _client_token(self) -> str:
-        """Get the token of the client this state belongs to.
-
-        Returns:
-            The client token, keying the uncached values it was last sent.
-        """
-        return ""
-
     def _mark_dirty(self, var_names: Iterable[str] | None = None) -> None:
         """Mark this state and its ancestors dirty, invalidating dependent computed vars.
 
