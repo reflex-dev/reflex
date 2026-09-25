@@ -10,6 +10,9 @@ from collections.abc import Iterator
 import psutil
 import pytest
 
+# reflex-bench measures Linux process trees, /proc and cgroups.
+collect_ignore_glob = [] if sys.platform == "linux" else ["*"]
+
 
 @pytest.fixture
 def tree() -> Iterator[tuple[int, int]]:
