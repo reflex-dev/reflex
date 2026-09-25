@@ -528,3 +528,104 @@ def test_log_histogram_custom_range():
         0,
         1,
     ]
+
+
+def _series(name: str) -> tuple[list[float], list[float]]:
+    """Build the series whose regression goldens scipy computed.
+
+    Args:
+        name: ``N4``, ``N5``, ``N12``, ``N32``, ``N100`` or ``CONSTANT``.
+
+    Returns:
+        The x and y values.
+    """
+    return {
+        "N4": ([1, 2, 3, 4], [2.1, 3.9, 6.2, 7.8]),
+        "N5": (
+            [0, 1000, 2000, 3000, 4000],
+            [61304832, 61304832, 62353408, 62353408, 63401984],
+        ),
+        "N12": (
+            [917 * i for i in range(12)],
+            [100.0 + 2.5 * i + ((i * 7) % 5 - 2) for i in range(12)],
+        ),
+        "N32": (
+            [1.5 * i for i in range(32)],
+            [-3 * math.sqrt(i) + 0.7 * (i % 3) for i in range(32)],
+        ),
+        "N100": (
+            list(range(100)),
+            [5e7 + 12.0 * i + 4096 * math.sin(0.7 * i) for i in range(100)],
+        ),
+        "CONSTANT": (list(range(6)), [7.0] * 6),
+    }[name]
+
+
+@pytest.mark.parametrize(
+    ("name", "slope", "intercept", "ci_lo", "ci_hi", "r2"),
+    [
+        ("N4", 1.94, 0.15000000000000036, 1.5503782241645947, 2.329621775835405, 0.9956613756613755),
+        ("N5", 524.288, 61095116.8, 190.58431829908267, 857.9916817009173, 0.8928571428571426),
+        ("N12", 0.002733907314059986, 99.7948717948718, 0.0024213646770400972, 0.003046449951079875, 0.9743503402370511),
+        ("N32", -0.2949792340586751, -3.493352456122328, -0.3243546562711104, -0.2656038118462398, 0.9334182036044749),
+        ("N100", 5.633855838415915, 50000319.847557604, -14.319773555007707, 25.587485231839537, 0.0031933056425778304),
+    ],
+)  # fmt: skip
+def test_linear_slope_ci_matches_scipy(name, slope, intercept, ci_lo, ci_hi, r2):
+    """Goldens from scipy 1.18.1, outside the repository, for the series of ``_series``.
+
+    fit = scipy.stats.linregress(xs, ys)
+    t = scipy.stats.t.ppf(0.975, len(xs) - 2)
+    print(fit.slope, fit.intercept, fit.slope - t * fit.stderr,
+          fit.slope + t * fit.stderr, fit.rvalue**2)
+
+    The t quantile comes from a table with interpolation in 1/df, which is exact
+    at df 2, 3 and 10 and within 3e-5 of scipy at df 30 and 98.
+    """
+    xs, ys = _series(name)
+    fit = stats.linear_slope_ci(xs, ys)
+    assert fit.n == len(xs)
+    assert fit.slope == pytest.approx(slope, rel=1e-9)
+    assert fit.intercept == pytest.approx(intercept, rel=1e-9)
+    assert fit.r2 == pytest.approx(r2, rel=1e-9)
+    assert fit.ci_lo == pytest.approx(ci_lo, rel=1e-4)
+    assert fit.ci_hi == pytest.approx(ci_hi, rel=1e-4)
+
+
+def test_linear_slope_ci_of_a_constant_series_is_flat():
+    # scipy 1.18.1 returns slope 0.0 and intercept 7.0 but NaN for r and the
+    # standard error; without any variance the fit explains nothing (r2 0) and
+    # the slope is known exactly.
+    fit = stats.linear_slope_ci(*_series("CONSTANT"))
+    assert (fit.slope, fit.intercept, fit.ci_lo, fit.ci_hi, fit.r2) == (
+        0.0,
+        7.0,
+        0.0,
+        0.0,
+        0.0,
+    )
+
+
+def test_linear_slope_ci_needs_three_points_and_spread_in_x():
+    with pytest.raises(ValueError, match="at least 3 points"):
+        stats.linear_slope_ci([1.0, 2.0], [1.0, 2.0])
+    with pytest.raises(ValueError, match="same length"):
+        stats.linear_slope_ci([1.0, 2.0, 3.0], [1.0, 2.0])
+    with pytest.raises(ValueError, match="x values are all equal"):
+        stats.linear_slope_ci([4.0, 4.0, 4.0], [1.0, 2.0, 3.0])
+
+
+@pytest.mark.parametrize(
+    ("df", "expected"),
+    [
+        # scipy.stats.t.ppf(0.975, df) for rows of the table and between them.
+        (1, 12.706204736174694),
+        (30, 2.0422724563012378),
+        (34, 2.0322445093177186),
+        (98, 1.9844674545084815),
+        (1000, 1.9623390808264083),
+    ],
+)
+def test_t_quantile_interpolates_in_one_over_df(df, expected):
+    # The largest error over df 1..100000 is 2.6e-5 relative, at df 34.
+    assert stats.t_quantile_975(df) == pytest.approx(expected, rel=3e-5)

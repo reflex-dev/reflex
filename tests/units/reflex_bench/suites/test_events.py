@@ -57,7 +57,9 @@ def test_smoke_and_daily_run_two_cheap_points():
 
 def test_daily_events_fit_the_ci_budget():
     # The estimate `list` shows with the default policy (10 runs at least).
-    total = sum(cli._estimate(p.benchmark, Policy()) for p in selected("daily"))
+    total = sum(
+        cli._estimate(p.benchmark, Policy()) for p in selected("daily", "events.*")
+    )
     assert total <= 3 * 60
 
 
@@ -556,6 +558,9 @@ def test_capacity_reports_throughput_and_cpu_per_event(
     assert extra["answered"] == 12_000
     assert extra["cpu_method"] in {"cgroup", "psutil"}
     assert "pinning" in extra
+    # The histogram pools over runs; the per-second counts are a run's own.
+    assert "histogram" in extra
+    assert "answered_per_second" not in extra
 
 
 def test_a_saturated_generator_fails_the_sample(

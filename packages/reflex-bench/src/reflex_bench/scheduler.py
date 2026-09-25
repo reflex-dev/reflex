@@ -677,7 +677,8 @@ class Session:
     def _setup(self) -> None:
         """Create the context and run the setup hooks.
 
-        ``setup_cache`` runs once per cache directory, then ``setup`` runs.
+        ``setup_cache`` runs once per cache directory, then ``setup`` runs and
+        the dims it set go into the entry.
         """
         bench = self.planned.benchmark
         scheduler = self._scheduler
@@ -696,6 +697,7 @@ class Session:
                 )
                 scheduler._cache_done.add(self.ctx.cache_dir)
             self._hooks.call("setup", self._instance.setup, bench.setup_timeout)
+            self.entry["dims"].update(self.ctx.dims)
         except Exception as exc:
             self._errors.append(exc)
 

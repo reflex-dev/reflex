@@ -6,6 +6,8 @@ the process that the calibration runs it in.
 
 from __future__ import annotations
 
+import psutil
+import pytest
 from reflex_bench.drivers import events
 from reflex_bench.drivers.echo_server import EchoProcess
 from reflex_bench.drivers.events import Endpoint, EventShape, LoadPlan, run_load
@@ -16,8 +18,12 @@ SEQ_VAR = "last_seq_rx_state_"
 
 def test_echo_process_answers_a_load_and_stops():
     echo = EchoProcess(delta_key=STATE, seq_var=SEQ_VAR)
+    with pytest.raises(RuntimeError, match="not started"):
+        _ = echo.pid
     url = echo.start()
     try:
+        # The memory benchmarks read the server's memory by its pid.
+        assert psutil.Process(echo.pid).name().startswith("python")
         shape = EventShape(
             name=f"{STATE}.set_seq",
             payload=events.seq_payload,

@@ -174,7 +174,11 @@ included), `workdir` (fresh per instance, removed after `cleanup` unless
 parameter set, for `setup_cache` results; the hook decides what to reuse),
 `env` (the environment for subprocesses: telemetry and update checks off,
 `NO_COLOR`, `PYTHONUNBUFFERED`, `PYTHONHASHSEED=0`, granian, the subject's
-interpreter directory first on `PATH`), `rng` (seeded), `log` and `arm`.
+interpreter directory first on `PATH`), `rng` (seeded), `log`, `arm` and
+`dims`: `setup` may name how the values are measured there, e.g.
+`ctx.dims["memory_method"] = "cgroup"`, and the scheduler copies it into the
+entry's `dims`, which are part of the series key, so differently measured
+values never pair up in a comparison.
 
 All hooks of an instance run on one worker thread, so thread-bound resources
 (such as a sync Playwright browser) work across hooks. A hook that misses its
@@ -318,6 +322,146 @@ shapes, managers and session counts, the knee and `at_1hz` run with
 
 Not parameters yet: injected redis latency, uvicorn instead of granian, and
 more than one backend worker.
+
+## Memory benchmarks
+
+`reflex_bench.suites.memory` answers how much memory the playground takes,
+whether it grows, and whether it fits a 512 MiB box. Samples are untimed:
+every metric is bytes (lower is better) except `passed`. Each sample starts a
+fresh backend (`reflex run --env prod --backend-only`, one granian worker), as
+the event benchmarks do.
+
+| Benchmark | Suites | Parameters | One sample | Metrics |
+| --- | --- | --- | --- | --- |
+| `memory.compile.peak` | `daily` | `command` compile, export | `reflex compile` or `reflex export --env prod` of the compiled playground | `peak_mem` |
+| `memory.idle` | `smoke` (memory), `daily` | `manager` | 5 s after `/ping` answers, the median of three PSS reads a second apart | `pss`, `pss_anon`, `pss_file` |
+| `memory.idle.allocator` | (`all`) | `allocator` mimalloc, arena2 | the same with `PYTHONMALLOC=mimalloc` or `MALLOC_ARENA_MAX=2` | the same |
+| `memory.per_session` | `daily` (`max_sessions=500`) | `manager`, `max_sessions` (1000) | hold 0, 50, 100, 250, 500 and 1000 idle sessions, fit PSS per session; disconnect; wait for the states to expire | `bytes_per_session`, `bytes_per_session_ci_hi`, `residual_after_disconnect`, `residual_after_expiry` |
+| `memory.leak` | `daily` (`events=50000`) | `manager`, `events` (100000) | a closed loop of 10 sessions while the tree's anonymous PSS is sampled | `passed`, `bytes_per_event_ci_hi` |
+| `memory.boot_512mb` | `daily` (memory) | `manager` | compile, then boot and serve, under `MemoryMax=512M` with swap off | `passed`, `peak_compile`, `peak_boot`, `peak_serve` |
+| `memory.boot.min_limit` | (`all`) | `manager` memory | bisects `MemoryMax` from 64 to 1024 MiB in 32 MiB steps over boot and serve | `min_limit` |
+
+- **Methods**: peaks come from a cgroup v2 scope's `memory.peak` where the host
+  can start one (user systemd, or `sudo systemd-run` on CI), else from PSS
+  sampled every 50 ms; steady-state values are the summed PSS of the server's
+  process tree on every host, with the scope's `memory.current`, `anon` and
+  `file` in the extra data when a scope holds the running server (the compile
+  peak reads its scope after the command exited, so it records only whether
+  the peak was reset). `memory_method` in the dims
+  (`cgroup` or `pss_sampling`) names the collector of the values, so cgroup and
+  PSS numbers never share a series. The limit benchmarks need a scope and fail
+  with `cgroup scopes are unavailable: <reason>` without one: nothing else can
+  enforce a limit. `reflex-bench doctor` shows what the host has.
+- **What PSS shows**: the memory the tree holds from the kernel, shared pages
+  split between the processes. CPython and glibc keep freed memory for reuse
+  and rarely hand it back, so a number that does not drop means the process did
+  not shrink, not that something leaks. File-backed pages are also split with
+  processes outside the tree that map the same files (the harness's own
+  interpreter), so `pss_file` moves by a few MB between otherwise identical
+  samples; `pss_anon` is the steadier trend.
+- **Per session**: the sessions connect and hydrate like page loads, then stay
+  idle, held by `reflex_bench.drivers.events.hold_sessions` in a separate
+  process. The server runs with `REFLEX_REDIS_TOKEN_EXPIRATION=<expiry_s>`
+  (hidden; 0, the default, sizes it from the sweep: its settling and reading
+  time, 2 s per hold and a 5 s margin, 23 s for 500 sessions), longer than the
+  sweep: no state manager frees a state when its session disconnects, reflex
+  0.9's memory and disk managers and 0.8's disk manager free it after the
+  expiration, and 0.8's memory manager never does. A sweep that outlasts the
+  expiration fails the sample; a slow host can raise `expiry_s`. The residuals
+  are PSS over the idle baseline. `baseline_bytes_per_session` in the extra
+  data is the same sweep against the in-harness echo server: the floor of a
+  Python `websockets` server, not of python-socketio (the harness does not
+  depend on python-socketio); it is measured once per instance, while the
+  first sample's states expire. The sweep's steps below `max_sessions` are 50,
+  100, 250 and 500, so the slope's t interval has at least three degrees of
+  freedom. The tree's PSS is flat within 0.2 MiB from the moment a hold is
+  ready (against steps of 8 to 47 MiB), so a step settles for 1 s and is read
+  three times 0.5 s apart: about 2.5 s each, and a sample about 40 s.
+- **Leak**: a 5 s closed-loop probe sizes the warmup (`warmup_events`, hidden,
+  5000) and the window (`events`, with 10 % of room); the tree is sampled every
+  hundredth of the window, between 0.1 s and 1 s apart. The x axis is the events
+  answered since the window started (`answered_per_second` of the load), the y
+  axis the anonymous PSS: file-backed pages do not leak. The sample fails with
+  `LeakDetected` when the upper end of the slope's 95 % interval exceeds
+  `tolerance_bytes_per_event` (hidden, 100 B, that is 100 MB per million
+  events) *and* each half of the window grows on its own (the lower end of its
+  slope's interval is above zero): heap warm-up flattens out and one allocator
+  step lifts one half only, a leak grows through both. One 1 MiB arena step in
+  50 000 events is about 30 B per event. An unanswered event or a failed
+  session fails the sample, since the event count would be wrong. `passed` is
+  the gate; the slope itself and the growth over the window are in the extra
+  data (`slope_bytes_per_event`, `growth_bytes`), since near zero they move by
+  hundreds of percent between identical runs. `timeline` in the extra data
+  holds up to 500 `[events, anonymous PSS, USS of the python processes]`
+  points.
+- **512 MiB**: the compile runs in one scope, the server boots and serves 5
+  closed-loop sessions for 5 s in another, each with `MemoryMax=<limit_mb>M`
+  (hidden, 512) and `MemorySwapMax=0`, and each scope is read before its tree
+  stops. A phase that fails, or any `oom` or `oom_kill` in `memory.events`,
+  fails the sample with `MemoryLimitExceeded` naming the phase, the counters,
+  the peak and the log tail. The peak is reset between boot and serve where
+  the kernel can (Linux 6.12 and later; `peak_reset` in the extra data says
+  so), else the serve peak includes the boot. The published 512 MiB number
+  comes from an
+  amd64 reference profile (Fly's `shared-cpu` machines are amd64); arm64 runs
+  are a trend.
+- **Allocators**: `--param allocator=mimalloc|arena2` also works on `memory.idle`,
+  `memory.per_session` and `memory.leak`, and puts the allocator in the dims.
+  mimalloc needs the subject's Python to be 3.13 or later.
+
+Not measured yet: a leak per session (connect/disconnect churn) or per page
+load, redis's `used_memory` per session, and peaks per phase within one command
+(they need `memory.peak` resets, Linux 6.12).
+
+**Finding a leak** (manual; tracemalloc slows the server and inflates its
+memory, so it never runs in a measured sample). Add a temporary handler to the
+app's state:
+
+```python
+@rx.event
+def heap_snapshot(self, seq: int):
+    import time, tracemalloc
+
+    tracemalloc.take_snapshot().dump(f"/tmp/heap-{time.time_ns()}.bin")
+    self.last_seq = seq
+```
+
+start the backend with tracemalloc on in every process
+(`PYTHONTRACEMALLOC=25 GRANIAN_WORKERS=1 REFLEX_STATE_MANAGER_MODE=memory
+python -m reflex run --env prod --backend-only --backend-port 8000`), and drive
+it with the generator: a snapshot, a load, another snapshot.
+
+```python
+from reflex_bench.drivers.events import EventShape, LoadPlan, run_load, seq_payload
+
+state = "reflex___state____state.playground___state____bench_state"
+
+
+def load(handler: str, sessions: int, duration_s: float) -> None:
+    shape = EventShape(f"{state}.{handler}", seq_payload, state, "last_seq_rx_state_")
+    run_load(
+        LoadPlan(
+            backend_url="http://localhost:8000",
+            reflex_version=None,
+            shape=shape,
+            sessions=sessions,
+            mode="closed",
+            rate=None,
+            warmup_s=0,
+            duration_s=duration_s,
+        )
+    )
+
+
+if __name__ == "__main__":
+    load("heap_snapshot", 1, 0.001)
+    load("set_seq", 10, 60)
+    load("heap_snapshot", 1, 0.001)
+```
+
+Then compare the two snapshots by line:
+`first, second = map(tracemalloc.Snapshot.load, sorted(glob.glob("/tmp/heap-*.bin")))`
+and print `second.compare_to(first, "lineno")[:20]`.
 
 ## How samples are taken
 

@@ -2,91 +2,25 @@
 
 from __future__ import annotations
 
-import contextlib
 import os
 import subprocess
 import sys
 import time
-from collections.abc import Iterator
 from pathlib import Path
 
 import psutil
 import pytest
 from reflex_bench.collectors import pss
 
+from tests.units.reflex_bench.factories import fake_proc, fake_rollup
+
 linux_only = pytest.mark.skipif(sys.platform != "linux", reason="/proc is Linux-only")
-
-
-def _rollup(
-    pss_kb: int, anon_kb: int, file_kb: int, clean_kb: int, dirty_kb: int
-) -> str:
-    """Render a /proc/<pid>/smaps_rollup file, laid out like the kernel's.
-
-    Returns:
-        The file content.
-    """
-    return (
-        "562e4b119000-7ffc9d511000 ---p 00000000 00:00 0                          [rollup]\n"
-        f"Rss:            {pss_kb * 3:8d} kB\n"
-        f"Pss:            {pss_kb:8d} kB\n"
-        f"Pss_Dirty:      {dirty_kb:8d} kB\n"
-        f"Pss_Anon:       {anon_kb:8d} kB\n"
-        f"Pss_File:       {file_kb:8d} kB\n"
-        "Pss_Shmem:             0 kB\n"
-        "Shared_Clean:       1500 kB\n"
-        "Shared_Dirty:          0 kB\n"
-        f"Private_Clean:  {clean_kb:8d} kB\n"
-        f"Private_Dirty:  {dirty_kb:8d} kB\n"
-        "Referenced:         1644 kB\n"
-        f"Anonymous:      {anon_kb:8d} kB\n"
-        "Swap:                  0 kB\n"
-        "SwapPss:               0 kB\n"
-    )
-
-
-def _fake(root: Path, pid: int, comm: str, rollup: str) -> None:
-    """Write a process's /proc files atomically, so a sampler never reads half a file."""
-    directory = root / str(pid)
-    directory.mkdir(parents=True, exist_ok=True)
-    for name, content in (("comm", comm + "\n"), ("smaps_rollup", rollup)):
-        partial = directory / f".{name}.partial"
-        partial.write_text(content, encoding="utf-8")
-        partial.replace(directory / name)
-
-
-@pytest.fixture
-def tree() -> Iterator[tuple[int, int]]:
-    """Start a real process with one child, so psutil finds a real tree.
-
-    Yields:
-        The parent and child pids.
-    """
-    code = (
-        "import subprocess, sys, time\n"
-        "child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)'])\n"
-        "print(child.pid, flush=True)\n"
-        "time.sleep(60)\n"
-    )
-    parent = subprocess.Popen(
-        [sys.executable, "-c", code], stdout=subprocess.PIPE, text=True
-    )
-    assert parent.stdout is not None
-    child = psutil.Process(int(parent.stdout.readline()))
-    try:
-        yield parent.pid, child.pid
-    finally:
-        # psutil checks the process identity, so a reused pid is never signalled.
-        with contextlib.suppress(psutil.NoSuchProcess):
-            child.kill()
-        parent.kill()
-        parent.wait()
-        parent.stdout.close()
 
 
 def test_tree_pss_sums_the_tree(tmp_path: Path, tree: tuple[int, int]):
     parent, child = tree
-    _fake(tmp_path, parent, "python3", _rollup(1000, 400, 600, 50, 350))
-    _fake(tmp_path, child, "bun", _rollup(3000, 2500, 500, 100, 2000))
+    fake_proc(tmp_path, parent, "python3", fake_rollup(1000, 400, 600, 50, 350))
+    fake_proc(tmp_path, child, "bun", fake_rollup(3000, 2500, 500, 100, 2000))
     reading = pss.tree_pss(parent, proc_root=tmp_path)
     assert reading.pss_bytes == 4000 * 1024
     assert reading.pss_anon_bytes == 2900 * 1024
@@ -99,7 +33,7 @@ def test_tree_pss_skips_processes_that_exit_mid_read(
     tmp_path: Path, tree: tuple[int, int]
 ):
     parent, _ = tree
-    _fake(tmp_path, parent, "python3", _rollup(1000, 400, 600, 50, 350))
+    fake_proc(tmp_path, parent, "python3", fake_rollup(1000, 400, 600, 50, 350))
     # No files for the child: it exited between listing the tree and reading it.
     reading = pss.tree_pss(parent, proc_root=tmp_path)
     assert reading.pss_bytes == 1000 * 1024
@@ -116,7 +50,7 @@ def test_tree_pss_of_a_gone_process_is_empty(tmp_path: Path):
 
 def test_tree_pss_reads_names_that_are_not_utf8(tmp_path: Path, tree: tuple[int, int]):
     parent, _ = tree
-    _fake(tmp_path, parent, "python3", _rollup(1000, 400, 600, 50, 350))
+    fake_proc(tmp_path, parent, "python3", fake_rollup(1000, 400, 600, 50, 350))
     # The kernel cuts names at 15 bytes, which can split a UTF-8 character.
     (tmp_path / str(parent) / "comm").write_bytes(b"worker-\xe2\x9c\n")
     reading = pss.tree_pss(parent, proc_root=tmp_path)
@@ -128,8 +62,8 @@ def test_uss_adds_up_processes_with_the_same_name(
     tmp_path: Path, tree: tuple[int, int]
 ):
     parent, child = tree
-    _fake(tmp_path, parent, "python3", _rollup(1000, 400, 600, 50, 350))
-    _fake(tmp_path, child, "python3", _rollup(2000, 400, 600, 100, 900))
+    fake_proc(tmp_path, parent, "python3", fake_rollup(1000, 400, 600, 50, 350))
+    fake_proc(tmp_path, child, "python3", fake_rollup(2000, 400, 600, 100, 900))
     assert pss.tree_pss(parent, proc_root=tmp_path).uss_bytes == {
         "python3": 1400 * 1024
     }
@@ -137,13 +71,13 @@ def test_uss_adds_up_processes_with_the_same_name(
 
 def test_sampler_reports_the_peak(tmp_path: Path, tree: tuple[int, int]):
     parent, child = tree
-    _fake(tmp_path, parent, "python3", _rollup(1000, 400, 600, 50, 350))
-    _fake(tmp_path, child, "bun", _rollup(1000, 400, 600, 50, 350))
+    fake_proc(tmp_path, parent, "python3", fake_rollup(1000, 400, 600, 50, 350))
+    fake_proc(tmp_path, child, "bun", fake_rollup(1000, 400, 600, 50, 350))
     sampler = pss.PssSampler(parent, interval=0.01, proc_root=tmp_path).start()
     time.sleep(0.1)
-    _fake(tmp_path, child, "bun", _rollup(9000, 8000, 1000, 50, 7950))
+    fake_proc(tmp_path, child, "bun", fake_rollup(9000, 8000, 1000, 50, 7950))
     time.sleep(0.1)
-    _fake(tmp_path, child, "bun", _rollup(2000, 1000, 1000, 50, 950))
+    fake_proc(tmp_path, child, "bun", fake_rollup(2000, 1000, 1000, 50, 950))
     time.sleep(0.1)
     result = sampler.stop()
     assert result.method == "pss_sampling"
@@ -159,7 +93,7 @@ def test_sampler_reports_the_peak(tmp_path: Path, tree: tuple[int, int]):
 
 def test_sampler_is_a_context_manager(tmp_path: Path, tree: tuple[int, int]):
     parent, _ = tree
-    _fake(tmp_path, parent, "python3", _rollup(1000, 400, 600, 50, 350))
+    fake_proc(tmp_path, parent, "python3", fake_rollup(1000, 400, 600, 50, 350))
     with pss.PssSampler(parent, interval=0.01, proc_root=tmp_path) as sampler:
         time.sleep(0.05)
     assert sampler.result is not None
@@ -212,7 +146,7 @@ def test_available_on_linux():
     assert pss.available() is None
 
 
-def test_available_without_smaps_rollup(tmp_path: Path):
+def test_available_without_smapsfake_rollup(tmp_path: Path):
     reason = pss.available(proc_root=tmp_path)
     assert reason is not None
     assert "smaps_rollup" in reason
