@@ -767,7 +767,7 @@ class CssPreview(Css):
 
 @_hmr("hmr.asset")
 class Asset(_HotReload):
-    """Give the navbar logo an intrinsic size, refreshing until the page shows the new image.
+    """Give the benchmark mark an intrinsic size, refreshing until the page shows the new image.
 
     Vite has no module for a file of ``public/``, so the change reaches no
     page: the harness refreshes every :data:`POLL_S` (``extra["reloads"]``),
@@ -776,7 +776,7 @@ class Asset(_HotReload):
     """
 
     kind = "naturalWidth"
-    selector = 'img[alt="Playground logo"]'
+    selector = "#bench-mark"
 
     @property
     def reloads_itself(self) -> bool:
@@ -788,15 +788,15 @@ class Asset(_HotReload):
         return True
 
     def target(self, app: Path) -> Target:
-        """Find the logo's root element.
+        """Find the mark's root element.
 
         Args:
             app: The staged app.
 
         Returns:
-            The ``<svg`` of ``assets/logo.svg``, which has only a viewBox.
+            The ``<svg`` of ``assets/mark.svg``, which has only a viewBox.
         """
-        return text_target(app / "assets" / "logo.svg", "<svg")
+        return text_target(app / "assets" / "mark.svg", "<svg")
 
     def setup(self, ctx: Context) -> None:
         """Open the page and turn its HTTP cache off.
@@ -835,7 +835,7 @@ class Asset(_HotReload):
 
 @_hmr("hmr.asset.preview", estimate=PREVIEW_ESTIMATE_S)
 class AssetPreview(Asset):
-    """Give the logo an intrinsic size in preview mode, refreshing until the page shows it."""
+    """Give the mark an intrinsic size in preview mode, refreshing until the page shows it."""
 
     mode = "preview"
 

@@ -232,7 +232,7 @@ def _extra(result: SampleResult) -> dict[str, Any]:
 def test_the_suites():
     benchmarks = discover().values()
     lifecycle_ids = {bench.id for bench in select(benchmarks, ["lifecycle.*"])}
-    assert {bench.id for bench in select(benchmarks, suite="pr")} == {
+    assert {bench.id for bench in select(benchmarks, ["lifecycle.*"], "pr")} == {
         "lifecycle.compile.warm",
         "lifecycle.compile.incremental",
     }

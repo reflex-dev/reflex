@@ -39,6 +39,7 @@ def bench_hooks() -> rx.Component:
         rx.el.span("Benchmark hooks:"),
         rx.cond(BenchState.is_hydrated, rx.el.span(id="bench-hydrated")),
         rx.el.span(ROOT_MARKER, id="bench-marker-root"),
+        rx.image(src="/mark.svg", alt="Playground mark", id="bench-mark", width="1em"),
         rx.el.span(BenchState.last_seq, id="bench-seq"),
         rx.el.button("set_seq(7)", on_click=BenchState.set_seq(7), id="bench-set-seq"),
         rx.el.span(

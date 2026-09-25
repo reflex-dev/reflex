@@ -66,7 +66,7 @@ def test_text_targets_of_the_assets(app: Path):
     )
     lines = css.original.decode().splitlines()
     assert lines[css.line_no - 1].strip() == "font-size: 0.75rem;"
-    svg = text_target(app / "assets" / "logo.svg", "<svg")
+    svg = text_target(app / "assets" / "mark.svg", "<svg")
     assert svg.line_no == 1
     assert svg.span == (0, 4)
 

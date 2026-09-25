@@ -29,7 +29,7 @@ ORIGINAL = {
     "#bench-marker-root": "m-initial-root",
     "#bench-handler-value": "",
     ".bench-hooks": "12px",
-    'img[alt="Playground logo"]': "300",
+    "#bench-mark": "300",
     "#count": "0",
 }
 
@@ -397,7 +397,7 @@ def test_an_asset_change_is_shown_by_the_harness_reloading_the_page(ctx: Context
     # dev mode as in preview, so the harness refreshes until it shows.
     bench = hmr.Asset()
     assert bench.reloads_itself
-    original = _file(ctx, "assets/logo.svg")
+    original = _file(ctx, "assets/mark.svg")
     bench.setup(ctx)
     bench.prepare(ctx)
     tab = _tab(bench)
@@ -414,11 +414,11 @@ def test_an_asset_change_is_shown_by_the_harness_reloading_the_page(ctx: Context
     assert result.values["latency"] > 0
     assert result.extra is not None
     assert result.extra["reloads"] == 2
-    assert _file(ctx, "assets/logo.svg") != original
+    assert _file(ctx, "assets/mark.svg") != original
     tab.calls.clear()
     bench.conclude(ctx)
     assert ("reload",) in tab.calls
-    assert _file(ctx, "assets/logo.svg") == original
+    assert _file(ctx, "assets/mark.svg") == original
     bench.cleanup(ctx)
 
 
@@ -437,17 +437,17 @@ def test_css_edit_changes_the_font_size_of_the_hooks(ctx: Context):
     bench.cleanup(ctx)
 
 
-def test_asset_edit_sizes_the_logo_with_the_cache_off(ctx: Context):
+def test_asset_edit_sizes_the_mark_with_the_cache_off(ctx: Context):
     bench = hmr.Asset()
     bench.setup(ctx)
     tab = _tab(bench)
     assert ("cdp", "Network.setCacheDisabled", {"cacheDisabled": True}) in tab.calls
     bench.prepare(ctx)
     _, _, kind, selector, width = tab.calls[-1]
-    assert (kind, selector) == ("naturalWidth", 'img[alt="Playground logo"]')
+    assert (kind, selector) == ("naturalWidth", "#bench-mark")
     assert width != ORIGINAL[selector]
     result = bench.sample(ctx)
-    svg = _file(ctx, "assets/logo.svg").decode()
+    svg = _file(ctx, "assets/mark.svg").decode()
     assert svg.startswith(f'<svg width="{width}" height="{width}"')
     assert result.extra is not None
     assert result.extra["cache_disabled"] is True
@@ -462,7 +462,7 @@ def test_style_and_asset_edits_skip_the_original_value(
     # before the edit is written.
     for cls, selector, original, planned in (
         (hmr.Css, ".bench-hooks", "20.25px", "61.25px"),
-        (hmr.Asset, 'img[alt="Playground logo"]', "42", "442"),
+        (hmr.Asset, "#bench-mark", "42", "442"),
     ):
         monkeypatch.setattr(FakeBrowser, "values", {**ORIGINAL, selector: original})
         bench = cls()

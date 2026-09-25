@@ -305,6 +305,22 @@ sample measures reflex and bun, not the network. Each `time` benchmark chooses i
 `setup`, and records it in `dims` (`collector: cgroup | fallback`), so cgroup
 peaks and PSS peaks never share a series.
 
+## Fixture apps
+
+The browser and hot reload benchmarks drive `examples/playground` (see its
+README for the element ids and `# bench:hmr-target` pragmas they rely on). The
+harness reads it from the checkout it runs in, never from the subject's
+environment, so `reflex-bench` must run from a reflex checkout.
+`reflex_bench.fixtures.prime(ctx)` copies it into the instance's cache directory
+(`<cache>/app/<arm>`: in an A/A run both arms share a cache directory, and two
+servers must not run in one app), without build output, and compiles it once
+(bun and the frontend packages), so the benchmarks' own starts are warm. The
+staged copy is what the hot reload benchmarks edit; the checkout never changes.
+Every sample records the playground's `.content-hash` in
+`extra["fixture_hash"]`. `reflex_bench.fixtures.FIXTURES` maps the `app`
+parameter of the hot reload benchmarks to a staging function; `playground` is
+the only one so far.
+
 ## Event benchmarks
 
 `reflex_bench.suites.events` measures how many events the playground
@@ -562,22 +578,6 @@ origin of every readiness time, and `AppProcess.log_lines()` returns the output
 with the time each line was read (seconds since `t0`), so other clocks and log
 lines can be put on one timeline.
 
-## Fixture apps
-
-The browser and hot reload benchmarks drive `examples/playground` (see its
-README for the element ids and `# bench:hmr-target` pragmas they rely on). The
-harness reads it from the checkout it runs in, never from the subject's
-environment, so `reflex-bench` must run from a reflex checkout.
-`reflex_bench.fixtures.prime(ctx)` copies it into the instance's cache directory
-(`<cache>/app/<arm>`: in an A/A run both arms share a cache directory, and two
-servers must not run in one app), without build output, and compiles it once
-(bun and the frontend packages), so the benchmarks' own starts are warm. The
-staged copy is what the hot reload benchmarks edit; the checkout never changes.
-Every sample records the playground's `.content-hash` in
-`extra["fixture_hash"]`. `reflex_bench.fixtures.FIXTURES` maps the `app`
-parameter of the hot reload benchmarks to a staging function; `playground` is
-the only one so far.
-
 ## Driving a browser
 
 `reflex_bench.drivers.browser` drives headless Chromium through Playwright's
@@ -675,7 +675,7 @@ one 90 s deadline. `warmup` is 3 edits.
 | `hmr.render.root` | the `root` pragma literal (every page) | the new text in `#bench-marker-root` |
 | `hmr.handler` | the `handler` pragma literal, set by an event handler | the new value in `#bench-handler-value`; the harness clicks `#bench-handler` every 250 ms (`extra["clicks"]`) |
 | `hmr.css` | the `.bench-hooks` font size in `assets/playground.css` | the computed font size |
-| `hmr.asset` | `assets/logo.svg` gets a `width` and `height` | the logo's `naturalWidth` (HTTP cache off); the harness refreshes the page every 250 ms (`extra["reloads"]`) |
+| `hmr.asset` | `assets/mark.svg` gets a `width` and `height` | `#bench-mark`'s `naturalWidth` (HTTP cache off); the harness refreshes the page every 250 ms (`extra["reloads"]`) |
 | `hmr.reconnect` | none: SIGKILL of granian's worker, then SIGHUP to its supervisor, since granian's dev reloader never respawns a worker that died on its own | `#count` changes on `/counter`; the harness clicks `#increment` every 250 ms |
 | `hmr.watcher` | the `leaf` literal | `latency` is granian's `Changes detected` line (its `reload_tick` is 100 ms) |
 
