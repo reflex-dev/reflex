@@ -62,6 +62,7 @@ from reflex_base.vars.base import (
     Var,
     _inherited_value,
     _is_descriptor,
+    _slot_names,
     _validate_state_name,
     computed_var,
     dispatch,
@@ -118,9 +119,7 @@ def _stale_pickle_keys(cls: type) -> frozenset[str]:
         frozen into payloads already on disk).
     """
     return frozenset(
-        {"router"}.union(
-            *(klass.__dict__.get("__slots__", ()) for klass in cls.__mro__)
-        )
+        {"router"}.union(*(_slot_names(vars(klass)) for klass in cls.__mro__))
     )
 
 
