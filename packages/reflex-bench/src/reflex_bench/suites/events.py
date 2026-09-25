@@ -303,7 +303,8 @@ def split_cpus(
 
     Returns:
         ``{"server": the lower half of the cores minus CPU 0, "generator":
-        the upper half}``, or ``None`` with fewer than four CPUs.
+        the upper half}``, or ``None`` with fewer than four CPUs or when CPU 0
+        is the whole lower half.
     """
     cpus = sorted(allowed)
     if len(cpus) < 4:
@@ -311,8 +312,11 @@ def split_cpus(
     if cores is None:
         cores = [[cpu] for cpu in cpus]
     half = len(cores) // 2
+    server = sorted(cpu for core in cores[:half] for cpu in core if cpu != 0)
+    if not server:
+        return None
     return {
-        "server": sorted(cpu for core in cores[:half] for cpu in core if cpu != 0),
+        "server": server,
         "generator": sorted(cpu for core in cores[half:] for cpu in core),
     }
 

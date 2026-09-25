@@ -151,7 +151,12 @@ def emit_frame(*args: Any) -> str:
 
 
 def event_frame(
-    name: str, payload: Mapping[str, Any] | None, *, token: str, pathname: str = "/"
+    name: str,
+    payload: Mapping[str, Any] | None,
+    *,
+    token: str,
+    pathname: str = "/",
+    query: Mapping[str, str] | None = None,
 ) -> str:
     """Encode an event as the reflex frontend sends it.
 
@@ -160,11 +165,13 @@ def event_frame(
         payload: The handler's arguments.
         token: The session's token.
         pathname: The page route the event comes from.
+        query: The route's parameters, e.g. ``{"item_id": "42"}`` on
+            ``/item/42`` of a ``/item/[item_id]`` page.
 
     Returns:
         The frame.
     """
-    router_data = {"pathname": pathname, "asPath": pathname, "query": {}}
+    router_data = {"pathname": pathname, "asPath": pathname, "query": dict(query or {})}
     return emit_frame(
         "event",
         {"name": name, "payload": payload, "router_data": router_data, "token": token},
