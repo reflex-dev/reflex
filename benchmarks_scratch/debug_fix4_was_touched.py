@@ -1,24 +1,23 @@
-"""Validate review-fix commits on eng-10095: proxy + validation depth tests."""
+"""Validate RUF029 fix on eng-10095: ruff + proxy tests."""
 
 import subprocess
 import sys
 
 
+def run(label: str, cmd: list[str]) -> int:
+    proc = subprocess.run(cmd, check=False, capture_output=True, text=True)
+    tail = "\n".join((proc.stdout + proc.stderr).strip().splitlines()[-4:])
+    print(f"[{label}] exit={proc.returncode}\n{tail}\n", flush=True)
+    return proc.returncode
+
+
 def main():
-    proc = subprocess.run(
-        [
-            sys.executable, "-m", "pytest",
-            "tests/units/istate/test_proxy.py",
-            "tests/units/reflex_base/utils/test_types.py",
-            "tests/units/test_state.py",
-            "-q", "--no-header", "-p", "no:cacheprovider",
-        ],
-        check=False,
-        capture_output=True,
-        text=True,
+    ruff = run("ruff", ["ruff", "check", "tests/units/istate/test_proxy.py"])
+    tests = run(
+        "pytest",
+        [sys.executable, "-m", "pytest", "tests/units/istate/test_proxy.py", "-q", "--no-header", "-p", "no:cacheprovider"],
     )
-    print("\n".join(proc.stdout.strip().splitlines()[-6:]), flush=True)
-    print(f"exit={proc.returncode}", flush=True)
+    print(f"RESULTS: ruff={ruff} pytest={tests}")
 
 
 main()
