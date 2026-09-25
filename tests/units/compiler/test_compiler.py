@@ -761,6 +761,17 @@ def test_compile_nonexistent_stylesheet(tmp_path, mocker: MockerFixture):
         compiler.compile_root_stylesheet(stylesheets)
 
 
+@pytest.fixture
+def dev_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pin dev mode, whose document head omits the stylesheet preload.
+
+    Args:
+        monkeypatch: Selects dev mode and restores the previous mode afterwards.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
+
+
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root():
     """Test that the document root is created correctly."""
     # Test with no components.
@@ -773,7 +784,7 @@ def test_create_document_root():
     assert isinstance(lang, LiteralStringVar)
     assert lang.equals(Var.create("en"))
     # No children in head.
-    assert len(root.children[0].children) == 7
+    assert len(root.children[0].children) == 6
     assert isinstance(root.children[0].children[1], Meta)
     char_set = root.children[0].children[1].char_set  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(char_set, LiteralStringVar)
@@ -784,8 +795,7 @@ def test_create_document_root():
     assert name.equals(Var.create("viewport"))
     assert isinstance(root.children[0].children[3], document.Meta)
     assert isinstance(root.children[0].children[4], Link)
-    assert isinstance(root.children[0].children[5], Link)
-    assert isinstance(root.children[0].children[6], Links)
+    assert isinstance(root.children[0].children[5], Links)
 
 
 def test_add_meta_accepts_dynamic_description():
@@ -822,6 +832,7 @@ def test_add_meta_drops_empty_description():
     assert not any(isinstance(child, Description) for child in page.children)
 
 
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root_with_scripts():
     # Test with components.
     comps = [
@@ -834,7 +845,7 @@ def test_create_document_root_with_scripts():
         html_custom_attrs={"project": "reflex"},
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 9
+    assert len(root.children[0].children) == 8
     names = [c.tag for c in root.children[0].children]
     assert names == [
         "script",
@@ -843,7 +854,6 @@ def test_create_document_root_with_scripts():
         "meta",
         "meta",
         "Meta",
-        "link",
         "link",
         "Links",
     ]
@@ -854,6 +864,7 @@ def test_create_document_root_with_scripts():
     assert root.custom_attrs == {"project": "reflex"}
 
 
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root_with_meta_char_set():
     # Test with components.
     comps = [
@@ -863,12 +874,13 @@ def test_create_document_root_with_meta_char_set():
         head_components=comps,
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 7
+    assert len(root.children[0].children) == 6
     names = [c.tag for c in root.children[0].children]
-    assert names == ["script", "meta", "meta", "Meta", "link", "link", "Links"]
+    assert names == ["script", "meta", "meta", "Meta", "link", "Links"]
     assert str(root.children[0].children[1].char_set) == '"cp1252"'  # pyright: ignore [reportAttributeAccessIssue]
 
 
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root_with_meta_viewport():
     # Test with components.
     comps = [
@@ -879,9 +891,9 @@ def test_create_document_root_with_meta_viewport():
         head_components=comps,
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 8
+    assert len(root.children[0].children) == 7
     names = [c.tag for c in root.children[0].children]
-    assert names == ["script", "meta", "meta", "meta", "Meta", "link", "link", "Links"]
+    assert names == ["script", "meta", "meta", "meta", "Meta", "link", "Links"]
     assert str(root.children[0].children[1].http_equiv) == '"refresh"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].name) == '"viewport"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].content) == '"foo"'  # pyright: ignore [reportAttributeAccessIssue]
