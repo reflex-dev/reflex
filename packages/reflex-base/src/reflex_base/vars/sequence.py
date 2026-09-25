@@ -40,6 +40,7 @@ from .number import (
     NumberVar,
     boolify,
     raise_unsupported_operand_types,
+    ternary_operation,
 )
 
 if TYPE_CHECKING:
@@ -1635,19 +1636,31 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
         if step is None:
             return f"{self._array!s}.slice({normalized_start!s}, {normalized_end!s})"
         if not isinstance(step, Var):
-            if step < 0:
-                actual_start = end + 1 if end is not None else 0
-                actual_end = start + 1 if start is not None else self._array.length()
-                return str(self._array[actual_start:actual_end].reverse()[::-step])
             if step == 0:
                 msg = "slice step cannot be zero"
                 raise ValueError(msg)
-            return f"{self._array!s}.slice({normalized_start!s}, {normalized_end!s}).filter((_, i) => i % {step!s} === 0)"
+            if step > 0:
+                return f"{self._array!s}.slice({normalized_start!s}, {normalized_end!s}).filter((_, i) => i % {step!s} === 0)"
 
-        actual_start_reverse = end + 1 if end is not None else 0
-        actual_end_reverse = start + 1 if start is not None else self._array.length()
+        # A negative step walks back from `start` (inclusive) to `end` (exclusive),
+        # which is the reversed forward slice `[end + 1:start + 1]`. Index -1 is
+        # the last element, so the bound after it is the length, not 0.
+        length = self._array.length()
 
-        return f"{self.step!s} > 0 ? {self._array!s}.slice({normalized_start!s}, {normalized_end!s}).filter((_, i) => i % {step!s} === 0) : {self._array!s}.slice({actual_start_reverse!s}, {actual_end_reverse!s}).reverse().filter((_, i) => i % {-step!s} === 0)"
+        def index_after(index: NumberVar | int) -> NumberVar | int:
+            if isinstance(index, int):
+                return length if index == -1 else index + 1
+            return ternary_operation(index == -1, length, index + 1).to(int)
+
+        actual_start_reverse = 0 if end is None else index_after(end)
+        actual_end_reverse = length if start is None else index_after(start)
+
+        if not isinstance(step, Var):
+            return str(
+                self._array[actual_start_reverse:actual_end_reverse].reverse()[::-step]
+            )
+
+        return f"({step!s} > 0 ? {self._array!s}.slice({normalized_start!s}, {normalized_end!s}).filter((_, i) => i % {step!s} === 0) : {self._array!s}.slice({actual_start_reverse!s}, {actual_end_reverse!s}).reverse().filter((_, i) => i % {-step!s} === 0))"
 
     @classmethod
     def create(
