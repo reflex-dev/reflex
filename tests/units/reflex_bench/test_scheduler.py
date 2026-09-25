@@ -15,10 +15,11 @@ from typing import Any
 import pytest
 from reflex_bench import scheduler, store
 from reflex_bench.context import BASE_ENV, Context, subject_env
-from reflex_bench.registry import Benchmark, Metric, ParamSet
+from reflex_bench.registry import Benchmark, Metric, ParamSet, SampleResult
 from reflex_bench.scheduler import Planned, Policy, Scheduler
+from reflex_bench.schema import FixtureDoc
 
-from .factories import WALL, make_subject
+from .factories import WALL, make_ab_entry, make_subject
 
 
 def _recorder(
@@ -615,3 +616,113 @@ def test_skip_reason(tmp_path: Path):
         "unsupported",
         "requires reflex >= 0.9.0 (subject has 0.8.23)",
     )
+
+
+FIXTURE: FixtureDoc = {
+    "name": "playground",
+    "content_hash": "sha256:" + "a" * 64,
+    "params": {},
+}
+
+
+def _fixtured(hook: str, fail_in: str | None = None) -> Planned:
+    """Build a planned instance whose ``hook`` sets ``ctx.fixture``.
+
+    Args:
+        hook: ``setup_cache`` or ``setup``.
+        fail_in: A hook that raises.
+
+    Returns:
+        The planned instance.
+    """
+
+    def set_fixture(self: Any, ctx: Context) -> None:
+        ctx.fixture = FIXTURE
+
+    def fail(self: Any, ctx: Context) -> None:
+        msg = "broke"
+        raise RuntimeError(msg)
+
+    hooks: dict[str, Any] = {hook: set_fixture, "sample": lambda self, ctx: None}
+    if fail_in is not None:
+        hooks[fail_in] = fail
+    bench = Benchmark.define(
+        type("Fixtured", (), hooks), id="t.fixture", metrics={"wall": WALL}
+    )
+    return Planned(bench, ParamSet({}))
+
+
+@pytest.mark.parametrize("hook", ["setup_cache", "setup"])
+def test_the_fixture_a_benchmark_drives_is_recorded_in_dims(tmp_path: Path, hook: str):
+    entry = _run(_fixtured(hook), tmp_path, runs=1)
+    assert entry["status"] == "ok"
+    assert entry["dims"] == {"fixture": "playground"}
+    assert entry["fixture_hash"] == FIXTURE["content_hash"]
+
+
+def test_dims_a_hook_sets_are_recorded(tmp_path: Path):
+    def set_dims(self: Any, ctx: Context) -> None:
+        ctx.dims["collector"] = "cgroup"
+
+    bench = Benchmark.define(
+        type("Dimmed", (), {"setup": set_dims, "sample": lambda self, ctx: None}),
+        id="t.dims",
+        metrics={"wall": WALL},
+    )
+    entry = _run(Planned(bench, ParamSet({})), tmp_path, runs=1)
+    assert entry["dims"] == {"collector": "cgroup"}
+    assert "fixture_hash" not in entry
+
+
+def test_dims_stay_empty_without_a_fixture(tmp_path: Path):
+    assert _run(_recorder([]), tmp_path, runs=1)["dims"] == {}
+
+
+def test_dims_stay_empty_when_setup_fails(tmp_path: Path):
+    entry = _run(_fixtured("setup_cache", fail_in="setup"), tmp_path, runs=1)
+    assert entry["status"] == "failed"
+    assert entry["dims"] == {}
+
+
+def _phases(mismatch: bool) -> dict[str, Any]:
+    return {"phases": {"total": 1.0, "python": 1.0, "mismatch": mismatch}}
+
+
+def test_phase_mismatches_warn_on_the_wall_metric(tmp_path: Path, fixed_timer):
+    # The warmup mismatch is not counted; timed samples are never dropped.
+    flags = iter([True, True, False, True])
+    planned = _recorder(
+        [],
+        sample=lambda ctx: SampleResult({}, extra=_phases(next(flags))),
+        warmup=1,
+    )
+    runner = Scheduler(make_subject(), Policy(runs=3), home=tmp_path, seed=1)
+    entry = runner.run_one(planned)
+    warning = (
+        "phases: 2 of 3 samples' process tree CPU is off the measured total"
+        " by more than 10 %"
+    )
+    assert entry["metrics"]["wall"]["warnings"] == [warning]
+    assert len(entry["metrics"]["wall"]["samples"]["A"]) == 4
+    # finalize() rebuilds the warnings from the samples, so the check survives it.
+    scheduler.finalize(entry, 0.95)
+    assert entry["metrics"]["wall"]["warnings"] == [warning]
+
+
+def test_samples_within_the_phase_tolerance_do_not_warn(tmp_path: Path, fixed_timer):
+    planned = _recorder([], sample=lambda ctx: SampleResult({}, extra=_phases(False)))
+    entry = _run(planned, tmp_path, runs=3)
+    assert entry["metrics"]["wall"]["warnings"] == []
+
+
+def test_phase_mismatches_are_counted_per_arm():
+    entry = make_ab_entry("t.ab", {"wall": (WALL, {"A": [1.0] * 3, "B": [1.0] * 3})})
+    # Samples alternate A, B; the second sample of arm B mismatches.
+    entry["sample_extra"] = [_phases(index == 3) for index in range(6)]
+    scheduler.finalize(entry, 0.95)
+    assert entry["metrics"]["wall"]["warnings"] == [
+        (
+            "[B] phases: 1 of 3 samples' process tree CPU is off the measured total"
+            " by more than 10 %"
+        )
+    ]

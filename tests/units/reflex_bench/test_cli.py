@@ -104,16 +104,26 @@ def test_min_runs_alone_raises_the_default_max_runs(home: Path):
     assert (policy["min_runs"], policy["max_runs"]) == (40, 40)
 
 
-def test_list_hides_self_tests_by_default(home: Path):
+@pytest.mark.parametrize(
+    "benchmark_id",
+    [
+        "events.simple.capacity[manager=memory,sessions=10]",
+        "lifecycle.compile.warm[app=playground]",
+    ],
+)
+def test_list_shows_each_suite_and_hides_self_tests(home: Path, benchmark_id: str):
     result = invoke("list")
     assert result.exit_code == 0
-    assert "events.simple.capacity[manager=memory,sessions=10]" in result.output
+    assert benchmark_id in result.output
     assert "selftest." not in result.output
-    result = invoke("list", "nothing.*")
-    assert result.exit_code == 0
+
+
+def test_list_says_when_nothing_is_selected(home: Path):
+    empty = invoke("list", "nothing.*")
+    assert empty.exit_code == 0
     assert (
         "no benchmarks selected (self-tests are listed with --suite selftest)"
-        in result.output
+        in empty.output
     )
 
 

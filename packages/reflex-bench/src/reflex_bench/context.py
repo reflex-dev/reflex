@@ -18,7 +18,7 @@ from importlib import metadata
 from pathlib import Path
 from typing import Any
 
-from reflex_bench.schema import SubjectDoc
+from reflex_bench.schema import FixtureDoc, SubjectDoc
 
 BASE_ENV = {
     "REFLEX_TELEMETRY_ENABLED": "false",
@@ -207,22 +207,30 @@ class Context:
         cache_dir: A persistent directory per subject identity, benchmark id and
             parameter set for ``setup_cache`` results; it survives across
             invocations, so hooks decide what to reuse.
+        subject_cache_dir: A persistent directory per subject identity, shared
+            by all its benchmarks, for what every instance would otherwise
+            prime again (a bun download).
         env: The environment for subprocesses (see :func:`subject_env`).
         rng: A seeded random generator.
         log: A logger for the benchmark.
         arm: The arm being measured, ``A`` or ``B``.
-        dims: How the values were measured, e.g. ``{"memory_method": "cgroup"}``;
-            ``setup`` fills it and the scheduler copies it into the entry's
-            ``dims``, which are part of the series key. It must not depend on
-            the arm.
+        dims: What a hook records to tell this instance's series from others
+            with the same id and parameters, e.g. ``{"memory_method": "cgroup"}``;
+            copied into the entry's ``dims`` after ``setup``. It must not depend
+            on the arm.
+        fixture: The app the benchmark drives; set in ``setup_cache`` or
+            ``setup``, its name is recorded in the entry's ``dims`` and its
+            content hash in the entry's ``fixture_hash``.
     """
 
     subject: Subject
     params: dict[str, Any]
     workdir: Path
     cache_dir: Path
+    subject_cache_dir: Path
     env: dict[str, str]
     rng: random.Random
     log: logging.Logger
     arm: str = "A"
-    dims: dict[str, str] = field(default_factory=dict)
+    dims: dict[str, Any] = field(default_factory=dict)
+    fixture: FixtureDoc | None = None

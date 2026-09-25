@@ -88,6 +88,9 @@ def test_bench_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
 def test_cache_dir_is_per_subject_benchmark_and_params(tmp_path: Path):
     one = store.cache_dir(tmp_path, "git:main", "lifecycle.compile", {"a": 1, "b": 2})
     assert one.parent == tmp_path / "cache" / "git-main" / "lifecycle.compile"
+    assert (
+        store.subject_cache_dir(tmp_path, "git:main") == tmp_path / "cache" / "git-main"
+    )
     assert one == store.cache_dir(
         tmp_path, "git:main", "lifecycle.compile", {"b": 2, "a": 1}
     )
@@ -140,6 +143,24 @@ def test_series_keys_differ_by_params_profile_and_version(doc: ResultDoc):
     assert base.differences(_key(other_fixture)) == [
         "fixture content hash differs: none vs abc"
     ]
+
+
+def test_the_entry_fixture_hash_is_in_the_series_key_but_not_the_pairing_key(
+    doc: ResultDoc,
+):
+    playground = copy.deepcopy(doc)
+    playground["benchmarks"][0]["dims"] = {"fixture": "playground"}
+    playground["benchmarks"][0]["fixture_hash"] = "sha256:" + "a" * 64
+    edited = copy.deepcopy(playground)
+    edited["benchmarks"][0]["fixture_hash"] = "sha256:" + "b" * 64
+    assert _key(playground) != _key(doc)
+    assert _key(playground).differences(_key(edited)) == [
+        "fixture content hash differs: sha256:aaaaaaaaaaaa vs sha256:bbbbbbbbbbbb"
+    ]
+    # The edited fixture still pairs with the old one, so compare reports it.
+    assert store.entry_key(playground["benchmarks"][0]) == store.entry_key(
+        edited["benchmarks"][0]
+    )
 
 
 def test_hidden_params_are_not_part_of_the_series_key(doc: ResultDoc):

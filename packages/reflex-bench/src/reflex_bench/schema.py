@@ -226,6 +226,7 @@ class SampleMetaDoc(TypedDict):
 class _BenchmarkDocOptional(TypedDict, total=False):
     hidden_params: dict[str, Any]
     failed_arms: list[str]
+    fixture_hash: str
 
 
 class BenchmarkDoc(_BenchmarkDocOptional):
@@ -236,7 +237,10 @@ class BenchmarkDoc(_BenchmarkDocOptional):
     that arm. ``hidden_params`` records overridden hidden parameters, which are not
     part of the name or the series key. ``failed_arms`` lists the arms whose hooks
     made the instance fail or time out; an arm not listed only stopped early.
-    Without it, the status applies to every arm.
+    Without it, the status applies to every arm. ``fixture_hash`` is the content
+    hash of the app the instance drove (its name is in ``dims``): part of the
+    series key, not of the pairing key, so an edited app is reported as not
+    comparable instead of unpaired.
     """
 
     id: str

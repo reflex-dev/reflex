@@ -42,6 +42,7 @@ from typing import Any, TypeVar
 from packaging.version import InvalidVersion, Version
 
 from reflex_bench import stats
+from reflex_bench.collectors.phases import MISMATCH_TOLERANCE
 from reflex_bench.context import Context, Subject, subject_env
 from reflex_bench.registry import Benchmark, Instance, ParamSet, SampleResult
 from reflex_bench.schema import (
@@ -55,7 +56,7 @@ from reflex_bench.schema import (
     sample_indices,
     timed_values,
 )
-from reflex_bench.store import cache_dir, slug
+from reflex_bench.store import cache_dir, slug, subject_cache_dir
 
 TRACEBACK_LINES = 50
 ABANDON_GRACE_S = 5.0
@@ -565,11 +566,37 @@ def _outlier_warning(
     )
 
 
+def _phase_warning(entry: BenchmarkDoc, arm: str) -> str | None:
+    """Count an arm's timed samples whose process tree CPU misses the measured total.
+
+    Args:
+        entry: The benchmark entry; samples carry the attribution in
+            ``extra["phases"]``.
+        arm: The arm.
+
+    Returns:
+        E.g. ``phases: 2 of 10 samples' process tree CPU is off the measured
+        total by more than 10 %``, or ``None`` when no sample's is.
+    """
+    mismatches = [
+        bool(extra["phases"].get("mismatch"))
+        for meta, extra in zip(entry["sample_meta"], entry["sample_extra"], strict=True)
+        if meta["arm"] == arm and not meta["warmup"] and extra and extra.get("phases")
+    ]
+    if not any(mismatches):
+        return None
+    return (
+        f"phases: {sum(mismatches)} of {len(mismatches)} samples' process tree CPU"
+        f" is off the measured total by more than {100 * MISMATCH_TOLERANCE:g} %"
+    )
+
+
 def finalize(entry: BenchmarkDoc, confidence: float) -> None:
     """Derive summaries and warnings from an entry's timed samples.
 
     Warmup samples are excluded. Exact metrics warn about any variance; other
-    metrics get the stability and severe-outlier warnings.
+    metrics get the stability and severe-outlier warnings. The ``wall`` metric
+    also warns when the phase attribution of samples exceeds their total.
 
     Args:
         entry: The benchmark entry, updated in place.
@@ -600,6 +627,8 @@ def finalize(entry: BenchmarkDoc, confidence: float) -> None:
                 found = stats.stability_warnings(values, values[0], metric["direction"])
                 if outliers := _outlier_warning(entry, arm, values, summary):
                     found.append(outliers)
+            if name == "wall" and (phases := _phase_warning(entry, arm)):
+                found.append(phases)
             prefix = f"[{arm}] " if len(arms) > 1 else ""
             metric["warnings"].extend(prefix + warning for warning in found)
 
@@ -631,6 +660,7 @@ def make_context(
         params=planned.params.merged,
         workdir=Path(tempfile.mkdtemp(prefix=f"reflex-bench-{slug(planned.name)}-")),
         cache_dir=cache,
+        subject_cache_dir=subject_cache_dir(home, subject.identity),
         env=subject_env(subject.python),
         rng=random.Random(derive_seed(seed, planned.name, arm)),
         log=logging.getLogger(f"reflex_bench.{planned.benchmark.id}"),
@@ -677,8 +707,11 @@ class Session:
     def _setup(self) -> None:
         """Create the context and run the setup hooks.
 
-        ``setup_cache`` runs once per cache directory, then ``setup`` runs and
-        the dims it set go into the entry.
+        ``setup_cache`` runs once per cache directory, then ``setup`` runs. The
+        ``ctx.dims`` the hooks set and the name of the fixture in ``ctx.fixture``
+        are recorded in the entry's ``dims``, which are part of the pairing and
+        series keys; the fixture's content hash in ``fixture_hash``, part of the
+        series key only.
         """
         bench = self.planned.benchmark
         scheduler = self._scheduler
@@ -697,9 +730,13 @@ class Session:
                 )
                 scheduler._cache_done.add(self.ctx.cache_dir)
             self._hooks.call("setup", self._instance.setup, bench.setup_timeout)
-            self.entry["dims"].update(self.ctx.dims)
         except Exception as exc:
             self._errors.append(exc)
+            return
+        self.entry["dims"].update(self.ctx.dims)
+        if (fixture := self.ctx.fixture) is not None:
+            self.entry["dims"]["fixture"] = fixture["name"]
+            self.entry["fixture_hash"] = fixture["content_hash"]
 
     def sample_once(
         self, *, round: int, order: int, warmup: bool

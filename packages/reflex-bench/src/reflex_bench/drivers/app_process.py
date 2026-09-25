@@ -899,14 +899,14 @@ class CliResult:
         return self
 
     def attribution(self) -> Attribution | None:
-        """Split the wall time into Python phases, installs, frontend tools and the rest.
+        """Split the wall and CPU time between the interpreter, installs and frontend tools.
 
         Returns:
             The attribution, or ``None`` without ``phases``.
         """
         if self.tree is None:
             return None
-        return attribute(self.wall_s, self.timing, self.tree)
+        return attribute(self.wall_s, self.cpu_s, self.timing, self.tree)
 
 
 def run_cli(
@@ -919,6 +919,7 @@ def run_cli(
     scope: CgroupScope | None = None,
     phases: bool = False,
     sample_memory: bool = False,
+    prefix: Sequence[str] = ("-m", "reflex"),
 ) -> CliResult:
     """Run a one-shot reflex command (``init``, ``compile``, ``export``) and measure it.
 
@@ -938,6 +939,8 @@ def run_cli(
         phases: Log at debug level, parse the ``[timing]`` lines and sample the
             process tree for :meth:`CliResult.attribution`.
         sample_memory: Without a scope, sample the tree's PSS for its peak.
+        prefix: The interpreter arguments before ``args``; e.g.
+            ``("-c", "import reflex")`` with no ``args`` times the import.
 
     Returns:
         The result; :meth:`CliResult.check` raises on failure.
@@ -951,7 +954,7 @@ def run_cli(
         raise RuntimeError(msg)
     args = [*args, *(("--loglevel", "debug") if phases else ())]
     env = _reflex_env(env)
-    argv = [str(python), "-m", "reflex", *args]
+    argv = [str(python), *prefix, *args]
     if scope is not None:
         argv = scope.wrap(["/bin/sh", "-c", _KEEPER, "sh", *argv], env=env)
     cpu_before = _children_cpu_s()
