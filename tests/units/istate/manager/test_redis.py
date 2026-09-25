@@ -1,8 +1,11 @@
 """Tests specific to redis state manager."""
 
 import asyncio
+import dataclasses
 import os
+import sys
 import time
+import types
 import uuid
 from collections.abc import AsyncGenerator
 from typing import Any
@@ -34,6 +37,12 @@ class SubState1(RedisTestState):
 
 class SubState2(RedisTestState):
     """A test substate for redis state manager tests."""
+
+
+class RedisAppObjectState(BaseState):
+    """A root state holding an instance of an app-defined class."""
+
+    _entry: Any = None
 
 
 @pytest.fixture
@@ -153,6 +162,46 @@ async def test_modify(
     )
     assert isinstance(final_state, root_state)
     assert final_state.count == 3
+
+
+async def test_get_state_discards_unpicklable_state(
+    state_manager_redis: StateManagerRedis,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A stored state referencing a class that no longer exists is replaced.
+
+    After a deploy moves or deletes a class held in a state var, unpickling the
+    stored state fails before the schema check. The tab must get a fresh state
+    instead of failing on every event until the redis key expires.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    state_manager_redis._oplock_enabled = False
+
+    module_name = "_reflex_test_moved_module"
+    module = types.ModuleType(module_name)
+    monkeypatch.setitem(sys.modules, module_name, module)
+
+    @dataclasses.dataclass
+    class Entry:
+        name: str
+
+    Entry.__module__ = module_name
+    Entry.__qualname__ = "Entry"
+    module.Entry = Entry  # pyright: ignore[reportAttributeAccessIssue]
+
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=RedisAppObjectState)
+    async with state_manager_redis.modify_state(token) as state:
+        state._entry = Entry("a")
+
+    # The deploy: the class now lives elsewhere, the old module is gone.
+    monkeypatch.delitem(sys.modules, module_name)
+
+    fresh_state = await state_manager_redis.get_state(token)
+    assert isinstance(fresh_state, RedisAppObjectState)
+    assert fresh_state._entry is None
 
 
 async def test_modify_oplock(
