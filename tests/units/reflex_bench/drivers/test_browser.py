@@ -376,7 +376,14 @@ def test_interactive_fills_tier_3(
     elapsed = time.perf_counter() - app.t0
     assert 0.1 <= result.interactive_ready < elapsed
     assert result.nav_to_interactive_s >= 0.1
-    assert 0 < result.fcp_s < result.interactive_ready
+    # The first paint is presented on its own schedule: a loaded host can show
+    # it after the 100 ms hydration timer fired. Both times map from the page's
+    # clock onto t0, so their distance is the page's own.
+    assert 0 < result.fcp_s < elapsed
+    page_fcp_s = on(owner, result.tab.timings)["fcp"] / 1000
+    assert result.fcp_s - result.interactive_ready == pytest.approx(
+        page_fcp_s - result.nav_to_interactive_s, abs=1e-6
+    )
 
 
 @needs_chromium

@@ -91,8 +91,8 @@ if SPEC.get("linger"):
     print("FAKE_LINGER", lingering.pid, flush=True)
 for line in SPEC.get("lines", []):
     say(line)
-end = time.monotonic() + SPEC.get("busy_s", 0)
-while time.monotonic() < end:
+end = time.process_time() + SPEC.get("busy_s", 0)
+while time.process_time() < end:
     pass
 if ARGS[:1] == ["run"]:
     time.sleep(SPEC.get("bind_after_s", 0))
@@ -798,8 +798,8 @@ def test_run_cli_with_phases(app_dir: Path, fake: Configure):
     })
     assert result.tree is not None
     assert set(result.tree.classes) == {"python", "install", "frontend"}
-    # The fake spins for 0.3 s; rusage counts the reaped child's CPU time.
-    assert result.cpu_s >= 0.2
+    # The fake spins for 0.3 s of CPU time; rusage counts the reaped child's.
+    assert result.cpu_s >= 0.3
     attribution = result.attribution()
     assert attribution is not None
     assert attribution["total"] == attribution["python"] == result.wall_s
@@ -809,8 +809,9 @@ def test_run_cli_with_phases(app_dir: Path, fake: Configure):
         "assets": 0.0,
         "write": 0.0,
     })
-    # The spinning fake is the python class; the sampler saw most of its CPU.
-    assert attribution["cpu"]["python"] >= 0.2
+    # The spinning fake is the python class. Its final sample is taken once it
+    # exited, so its whole CPU time is seen however late the sampler ran.
+    assert attribution["cpu"]["python"] == pytest.approx(result.cpu_s, abs=0.03)
     assert attribution["mismatch"] is False
 
 
