@@ -6,6 +6,7 @@ import dataclasses
 import datetime
 import functools
 import inspect
+import io
 import json
 import logging
 import math
@@ -14,6 +15,7 @@ import sys
 import threading
 from collections.abc import AsyncGenerator, Callable, Mapping
 from textwrap import dedent
+from types import ModuleType
 from typing import Any, ClassVar, Literal, TypeVar, cast
 from unittest.mock import AsyncMock, Mock
 
@@ -35,6 +37,7 @@ from reflex_base.utils.exceptions import (
     LockExpiredError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
+    StateSchemaMismatchError,
     StateSerializationError,
     UnretrievableVarValueError,
 )
@@ -5428,6 +5431,55 @@ def test_fallback_pickle():
 
     with pytest.raises(StateSerializationError):
         _ = state3._serialize()
+
+
+class AppObjectState(BaseState):
+    """A root state holding an instance of an app-defined class."""
+
+    _entry: Any = None
+
+
+@pytest.mark.parametrize("breakage", ["module_removed", "class_removed", "truncated"])
+@pytest.mark.parametrize("use_fp", [False, True])
+def test_deserialize_unreadable_state_raises_schema_mismatch(
+    breakage: str, use_fp: bool, monkeypatch: pytest.MonkeyPatch
+):
+    """A stored state that can no longer be unpickled is treated as a schema mismatch.
+
+    Args:
+        breakage: How the stored state became unreadable.
+        use_fp: Whether to deserialize from a file object instead of bytes.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    module_name = "_reflex_test_moved_module"
+    module = ModuleType(module_name)
+    monkeypatch.setitem(sys.modules, module_name, module)
+
+    @dataclasses.dataclass
+    class Entry:
+        name: str
+
+    Entry.__module__ = module_name
+    Entry.__qualname__ = "Entry"
+    module.Entry = Entry  # pyright: ignore[reportAttributeAccessIssue]
+
+    state = AppObjectState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state._entry = Entry("a")
+    data = state._serialize()
+    assert isinstance(BaseState._deserialize(data=data), AppObjectState)
+
+    if breakage == "module_removed":
+        monkeypatch.delitem(sys.modules, module_name)
+    elif breakage == "class_removed":
+        monkeypatch.delattr(module, "Entry")
+    else:
+        data = data[: len(data) // 2]
+
+    with pytest.raises(StateSchemaMismatchError):
+        if use_fp:
+            BaseState._deserialize(fp=io.BytesIO(data))
+        else:
+            BaseState._deserialize(data=data)
 
 
 def test_typed_state() -> None:
