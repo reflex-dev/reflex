@@ -4009,8 +4009,9 @@ class Field(Generic[FIELD_TYPE]):
         )
         if self._tracked:
             _check_writable(state)
-        if isinstance(value, self._proxy):
-            value = value.__wrapped__  # pyright: ignore[reportAttributeAccessIssue]
+            # Only a tracked owner, like a state, hands out proxies to unwrap.
+            if isinstance(value, self._proxy):
+                value = value.__wrapped__  # pyright: ignore[reportAttributeAccessIssue]
         if (
             # Only values sent to the client are type checked.
             not self._backend
