@@ -1036,6 +1036,9 @@ def test_field_subclass_is_kept():
     class Child(Parent):
         annotated = 3
 
+    class AnnotatedChild(Parent):
+        annotated: int = 5
+
     class Mixin(State, mixin=True):
         mixed: int = TaggedField(default=4, tag="m")  # pyright: ignore[reportAssignmentType]
 
@@ -1047,6 +1050,7 @@ def test_field_subclass_is_kept():
         (Parent, "generic", "g", 2),
         (Parent, "unannotated", "u", "x"),
         (Child, "annotated", "a", 3),
+        (AnnotatedChild, "annotated", "a", 5),
         (UsesMixin, "mixed", "m", 4),
     ):
         declared = cls.get_fields()[name]
