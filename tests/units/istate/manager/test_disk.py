@@ -124,3 +124,63 @@ async def test_set_state_persists_untouched_base_state(
     assert isinstance(persisted_state, DiskPersistState)
     assert math.isclose(persisted_state.num, 9.5)
     await fresh_state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_load_state_logs_error_for_corrupted_file(tmp_path, monkeypatch, caplog):
+    """Test that load_state logs an error when a corrupted state file is encountered.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest caplog fixture.
+    """
+    import logging
+
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = StateToken(ident="client", cls=dict)
+
+    # Write a corrupted pickle file directly to the states directory.
+    corrupted_content = b"not a valid pickle file"
+    token_path = state_manager.token_path(token)
+    token_path.parent.mkdir(parents=True, exist_ok=True)
+    token_path.write_bytes(corrupted_content)
+
+    # load_state should return None and log an error.
+    result = await state_manager.load_state(token)
+    assert result is None
+
+    # Verify that an error was logged.
+    error_logs = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert len(error_logs) == 1
+    assert "Failed to load state" in error_logs[0].message
+    assert str(token_path) in error_logs[0].message
+
+    await state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_load_state_returns_none_for_missing_file(tmp_path, monkeypatch, caplog):
+    """Test that load_state returns None without logging an error for missing files.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest caplog fixture.
+    """
+    import logging
+
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = StateToken(ident="nonexistent_client", cls=dict)
+
+    # load_state should return None without logging an error.
+    result = await state_manager.load_state(token)
+    assert result is None
+
+    # Verify that no error was logged.
+    error_logs = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert len(error_logs) == 0
+
+    await state_manager.close()
