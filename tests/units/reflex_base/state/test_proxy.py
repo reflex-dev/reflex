@@ -941,8 +941,11 @@ async def test_immutable_mutable_proxy_async_context_clears_state_when_cleanup_f
             vars(entered)["data"] = 0
         return entered
 
+    original_aexit = BaseState.__aexit__
+
     async def fail_exit(self: BaseState, *exc_info: Any) -> None:
-        await asyncio.sleep(0)
+        # Release the lock taken on entering, then fail.
+        await original_aexit(self, *exc_info)
         msg = "cleanup failed"
         raise RuntimeError(msg)
 

@@ -631,7 +631,6 @@ class StateNode(EvenMoreBasicBaseState):
                 if reset is not None:
                     EventContext.reset(reset)
                 raise
-            ctx.state_locks.entered = True
         try:
             live = await live_root.get_state(type(self))
         except BaseException:
@@ -641,6 +640,8 @@ class StateNode(EvenMoreBasicBaseState):
             if reset is not None:
                 EventContext.reset(reset)
             raise
+        if lock is not None:
+            ctx.state_locks.entered = True
         if live is not self:
             self._take_place_of(live)
         entered[key] = [1, lock, reset, live]
