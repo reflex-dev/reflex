@@ -286,7 +286,7 @@ class LinkEvent:
 
     Attributes:
         name: The full event handler name, e.g.
-            ``reflex___state____state.playground___state____board_state.join``.
+            ``reflex___state____state.reflex___istate___shared____shared_state_base_internal.playground___state____board_state.join``.
         payload: The handler's arguments, e.g. ``{"token": "board-1"}``.
         delta_key: The linked state, whose next delta acknowledges the link.
     """

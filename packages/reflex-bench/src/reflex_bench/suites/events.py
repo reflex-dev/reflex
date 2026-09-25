@@ -36,9 +36,11 @@ from __future__ import annotations
 import contextlib
 import os
 import shutil
+import subprocess
 import threading
 import uuid
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from functools import partial
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -65,8 +67,13 @@ from reflex_bench.fixtures import describe_playground
 from reflex_bench.registry import Metric, SampleResult, benchmark
 
 PLAYGROUND = Path(__file__).resolve().parents[5] / "examples" / "playground"
-BENCH_STATE = "reflex___state____state.playground___state____bench_state"
-BOARD_STATE = "reflex___state____state.playground___state____board_state"
+# Prints the full names of the playground's states, which depend on the subject:
+# a shared state sits under an internal parent state.
+STATES_SCRIPT = (
+    "from playground.state import BenchState, BoardState;"
+    " print(BenchState.get_full_name(), BoardState.get_full_name())"
+)
+STATES_TIMEOUT_S = 60.0
 SEQ_VAR = "last_seq_rx_state_"
 CLIENT_VAR = "last_client_rx_state_"
 SESSIONS = (1, 10, 50, 200)
@@ -124,10 +131,58 @@ CALIBRATION_CLOSED_WINDOW = Window(1.0, 3.0)
 CALIBRATION_STEP_WINDOW = Window(1.0, 2.0)
 
 
-def bench_shape(handler: str, *, ordered: bool = True) -> EventShape:
+class PlaygroundStates(NamedTuple):
+    """The full names of the playground's states in one subject.
+
+    Attributes:
+        bench: ``BenchState``.
+        board: ``BoardState``, the shared state.
+    """
+
+    bench: str
+    board: str
+
+
+# The echo server echoes whatever state an event names.
+ECHO_STATES = PlaygroundStates(bench="bench_state", board="board_state")
+
+
+def playground_states(ctx: Context) -> PlaygroundStates:
+    """Ask the subject's interpreter for the full names of the playground's states.
+
+    Args:
+        ctx: The benchmark context, after ``prepare_app``.
+
+    Returns:
+        The names.
+
+    Raises:
+        RuntimeError: When the subject cannot import the playground's states.
+    """
+    result = subprocess.run(
+        [str(ctx.subject.python), "-c", STATES_SCRIPT],
+        cwd=ctx.cache_dir / "app",
+        env=app_env(ctx),
+        capture_output=True,
+        text=True,
+        timeout=STATES_TIMEOUT_S,
+        check=False,
+    )
+    if result.returncode:
+        problem = (result.stderr.strip().splitlines() or ["no output"])[-1]
+        msg = f"the subject cannot import the playground's states: {problem}"
+        raise RuntimeError(msg)
+    bench, board = result.stdout.split()[-2:]
+    return PlaygroundStates(bench=bench, board=board)
+
+
+def bench_shape(
+    states: PlaygroundStates, handler: str, *, ordered: bool = True
+) -> EventShape:
     """Describe a ``BenchState`` handler of the playground.
 
     Args:
+        states: The subject's state names.
         handler: The handler's name.
         ordered: Whether a session's events are answered in the order sent.
 
@@ -135,18 +190,21 @@ def bench_shape(handler: str, *, ordered: bool = True) -> EventShape:
         The event shape: payload ``{"seq": n}``, echoed as ``last_seq``.
     """
     return EventShape(
-        name=f"{BENCH_STATE}.{handler}",
+        name=f"{states.bench}.{handler}",
         payload=seq_payload,
-        delta_key=BENCH_STATE,
+        delta_key=states.bench,
         seq_var=SEQ_VAR,
         ordered=ordered,
     )
 
 
-def board_shape(*, client_var: str | None = None) -> EventShape:
+def board_shape(
+    states: PlaygroundStates, *, client_var: str | None = None
+) -> EventShape:
     """Describe ``BoardState.set_seq_shared``, whose delta reaches every linked session.
 
     Args:
+        states: The subject's state names.
         client_var: The var echoing the sender's index, when only the session's
             own events count as answered.
 
@@ -154,41 +212,46 @@ def board_shape(*, client_var: str | None = None) -> EventShape:
         The event shape: payload ``{"seq": n}``, echoed as ``last_seq``.
     """
     return EventShape(
-        name=f"{BOARD_STATE}.set_seq_shared",
+        name=f"{states.board}.set_seq_shared",
         payload=seq_payload,
-        delta_key=BOARD_STATE,
+        delta_key=states.board,
         seq_var=SEQ_VAR,
         client_var=client_var,
     )
 
 
+ShapeOf = Callable[[PlaygroundStates], EventShape]
+
 # The wire suite measures one unlinked session per shape, so the shared shapes
 # are kept apart.
-SHAPES = {
-    "simple": bench_shape("set_seq"),
-    "complex": bench_shape("set_seq_complex"),
-    "cross": bench_shape("set_seq_cross"),
+SHAPES: dict[str, ShapeOf] = {
+    "simple": partial(bench_shape, handler="set_seq"),
+    "complex": partial(bench_shape, handler="set_seq_complex"),
+    "cross": partial(bench_shape, handler="set_seq_cross"),
     # Background tasks take the state lock in whatever order they get to it.
-    "background": bench_shape("set_seq_background", ordered=False),
+    "background": partial(bench_shape, handler="set_seq_background", ordered=False),
 }
-SHARED_SHAPES = {
+SHARED_SHAPES: dict[str, ShapeOf] = {
     # One session sends; its event is answered once every linked session has the delta.
-    "shared_fanout": board_shape(),
+    "shared_fanout": board_shape,
     # Every session sends and receives the others' deltas; only its own echo answers.
-    "shared_contention": board_shape(client_var=CLIENT_VAR),
+    "shared_contention": partial(board_shape, client_var=CLIENT_VAR),
 }
 
 
-def join_link() -> LinkEvent:
+def join_link(board: str) -> LinkEvent:
     """Link a load's sessions to a fresh board, so no board keeps an earlier load's clients.
+
+    Args:
+        board: The full name of ``BoardState``.
 
     Returns:
         The ``BoardState.join`` event with a token reflex accepts (no underscore).
     """
     return LinkEvent(
-        name=f"{BOARD_STATE}.join",
+        name=f"{board}.join",
         payload={"token": uuid.uuid4().hex},
-        delta_key=BOARD_STATE,
+        delta_key=board,
     )
 
 
@@ -535,7 +598,8 @@ class _Backend:
             ctx: The benchmark context.
             shape: The event the sessions send.
             sessions: The number of sessions of every load.
-            linked: Whether every load first links its sessions to a fresh board.
+            linked: Whether every load first links its sessions to a fresh board,
+                the state of ``shape``.
         """
         self.ctx = ctx
         self.shape = shape
@@ -665,7 +729,7 @@ class _Backend:
                 1 if mode == "fanout" else generator_processes(sessions, generator)
             ),
             cpus=generator,
-            link=join_link() if self.linked else None,
+            link=join_link(self.shape.delta_key) if self.linked else None,
         )
         with self._lock:
             if self._stopped:
@@ -760,13 +824,14 @@ class _OnPlayground(_OnBackend):
     """Hooks of a benchmark against the playground backend.
 
     Attributes:
-        event: The event the sessions send.
+        event: The name of the event the sessions send, in ``SHAPES`` or
+            ``SHARED_SHAPES``.
         linked: Whether every load first links its sessions to a fresh board.
         sessions_param: The parameter giving the number of sessions.
         probe: The mode of the closed-loop probe of ``setup``.
     """
 
-    event: EventShape
+    event: str
     linked = False
     sessions_param = "sessions"
     probe: Mode = "closed"
@@ -781,7 +846,7 @@ class _OnPlayground(_OnBackend):
         prepare_app(ctx)
 
     def setup(self, ctx: Context) -> None:
-        """Record the fixture, start the backend and probe its capacity with a short closed loop.
+        """Record the fixture, name the states, start the backend and probe its capacity with a short closed loop.
 
         The probe also warms the backend (imports on first use, caches), so no
         sample meets it cold.
@@ -792,7 +857,7 @@ class _OnPlayground(_OnBackend):
         ctx.fixture = describe_playground()
         self.backend = _Backend(
             ctx,
-            self.event,
+            (SHAPES | SHARED_SHAPES)[self.event](playground_states(ctx)),
             sessions=ctx.params[self.sessions_param],
             linked=self.linked,
         )
@@ -827,12 +892,12 @@ def _underpowered(result: LoadResult) -> dict[str, bool]:
     return {"p99_underpowered": True} if result.answered < UNDERPOWERED_P99 else {}
 
 
-def _register(name: str, shape: EventShape, *, shared: bool = False) -> None:
+def _register(name: str, *, shared: bool = False) -> None:
     """Register the capacity and latency benchmarks of one event shape.
 
     Args:
-        name: The shape's name in the benchmark ids.
-        shape: The event.
+        name: The shape's name in ``SHAPES`` or ``SHARED_SHAPES``, and in the
+            benchmark ids.
         shared: Whether the sessions share one board; then the benchmarks join
             ``daily`` at the cheap point, at the rate their own capacity sets.
     """
@@ -863,7 +928,7 @@ def _register(name: str, shape: EventShape, *, shared: bool = False) -> None:
     class Capacity(_OnPlayground):
         """Closed loop, 3 s after 1 s of warmup: the most events per second the backend answers."""
 
-        event = shape
+        event = name
         linked = shared
 
         def sample(self, ctx: Context) -> SampleResult:
@@ -911,7 +976,7 @@ def _register(name: str, shape: EventShape, *, shared: bool = False) -> None:
     class Latency(_OnPlayground):
         """Open loop, 5 s after 1 s of warmup, at half the capacity (or --param rate=): the response times."""
 
-        event = shape
+        event = name
         linked = shared
         rate = 0.0
 
@@ -952,9 +1017,9 @@ def _register(name: str, shape: EventShape, *, shared: bool = False) -> None:
             )
 
 
-for _name, _shape_of in SHAPES.items():
-    _register(_name, _shape_of)
-_register("shared_contention", SHARED_SHAPES["shared_contention"], shared=True)
+for _name in SHAPES:
+    _register(_name)
+_register("shared_contention", shared=True)
 
 
 @benchmark(
@@ -993,7 +1058,7 @@ _register("shared_contention", SHARED_SHAPES["shared_contention"], shared=True)
 class Fanout(_OnPlayground):
     """One of the sessions linked to a board sends, closed loop, 3 s after 1 s of warmup: the time until every linked session has the delta."""
 
-    event = SHARED_SHAPES["shared_fanout"]
+    event = "shared_fanout"
     linked = True
     sessions_param = "linked"
     probe: Mode = "fanout"
@@ -1044,7 +1109,7 @@ class Fanout(_OnPlayground):
 class Knee(_OnPlayground):
     """Open-loop steps from 10 % to 110 % of the capacity, 4 s after 1 s of warmup each: where the backend stops keeping up."""
 
-    event = SHAPES["simple"]
+    event = "simple"
 
     def sample(self, ctx: Context) -> SampleResult:
         """Run the steps and find the knee.
@@ -1106,7 +1171,7 @@ class Knee(_OnPlayground):
 class AtOneHz(_OnPlayground):
     """Many sessions sending one simple event per second, 10 s after 3 s of warmup: the cost of idle-ish users."""
 
-    event = SHAPES["simple"]
+    event = "simple"
 
     def sample(self, ctx: Context) -> SampleResult:
         """Offer one event per second per session.
@@ -1162,7 +1227,9 @@ class Calibrate(_OnBackend):
         Args:
             ctx: The benchmark context.
         """
-        self.backend = _Backend(ctx, SHAPES["simple"], sessions=CALIBRATION_SESSIONS)
+        self.backend = _Backend(
+            ctx, SHAPES["simple"](ECHO_STATES), sessions=CALIBRATION_SESSIONS
+        )
         self.backend.start_echo()
 
     def sample(self, ctx: Context) -> SampleResult:

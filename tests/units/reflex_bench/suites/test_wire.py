@@ -38,11 +38,14 @@ from reflex_bench.drivers.events import (
 from reflex_bench.scheduler import Planned, Policy, Scheduler, plan
 from reflex_bench.suites import events as events_suite
 from reflex_bench.suites import wire
-from reflex_bench.suites.events import BENCH_STATE, SEQ_VAR, SHAPES
+from reflex_bench.suites.events import SEQ_VAR
 
 from tests.units.reflex_bench.drivers.test_events import serving
 from tests.units.reflex_bench.factories import make_subject
+from tests.units.reflex_bench.suites.test_events import STATES
 
+BENCH_STATE = STATES.bench
+SHAPES = {name: shape_of(STATES) for name, shape_of in events_suite.SHAPES.items()}
 PLAYGROUND_STATE = "reflex___state____state.playground___state____playground_state"
 OPEN = '0{"sid":"abc","upgrades":[],"pingInterval":25000,"pingTimeout":20000}'
 ACK = '40/_event,{"sid":"abc"}'
@@ -622,6 +625,7 @@ def fakes(monkeypatch: pytest.MonkeyPatch) -> Fakes:
         lambda source, target: log.append("copy playground"),
     )
     monkeypatch.setattr(wire, "run_cli", run_cli)
+    monkeypatch.setattr(wire, "playground_states", lambda ctx: STATES)
     monkeypatch.setattr(wire, "AppProcess", FakeApp)
     monkeypatch.setattr(wire, "connect", connect)
     return state

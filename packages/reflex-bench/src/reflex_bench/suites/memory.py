@@ -92,12 +92,14 @@ from reflex_bench.registry import Metric, SampleResult, benchmark
 from reflex_bench.report.format import format_value
 from reflex_bench.stats import SlopeFit, linear_slope_ci
 from reflex_bench.suites.events import (
-    BENCH_STATE,
+    ECHO_STATES,
     MANAGERS,
     SEQ_VAR,
+    PlaygroundStates,
     app_env,
     bench_shape,
     checked_load,
+    playground_states,
     prepare_app,
 )
 from reflex_bench.suites.events import server_env as manager_env
@@ -764,7 +766,7 @@ def limit_check(
 
 
 def boot_and_serve(
-    ctx: Context, started: _Started, limit_mb: int
+    ctx: Context, started: _Started, limit_mb: int, states: PlaygroundStates
 ) -> tuple[CgroupReading, CgroupReading, LoadResult]:
     """Boot the server under a limit and serve a short closed-loop load, in one scope.
 
@@ -777,6 +779,7 @@ def boot_and_serve(
         ctx: The benchmark context.
         started: Stops the server and the load in ``conclude``.
         limit_mb: ``MemoryMax`` of the scope, in MiB; swap is off.
+        states: The subject's state names.
 
     Returns:
         The counters after the boot and after the load, and the load.
@@ -816,7 +819,7 @@ def boot_and_serve(
         scope.reset_peak()
         plan = LoadPlan(
             endpoint=Endpoint(app.backend_url),
-            shape=bench_shape("set_seq"),
+            shape=bench_shape(states, "set_seq"),
             sessions=SERVE_SESSIONS,
             mode="closed",
             rate=None,
@@ -856,6 +859,7 @@ class _Playground:
     """
 
     started: _Started | None = None
+    states: PlaygroundStates | None = None
 
     def memory_method(self) -> str:
         """Name the collector of the benchmark's values.
@@ -874,12 +878,13 @@ class _Playground:
         prepare_app(ctx)
 
     def setup(self, ctx: Context) -> None:
-        """Record the fixture, and the memory method and an allocator variant in the dims.
+        """Record the fixture, the memory method and an allocator variant in the dims, and name the states.
 
         Args:
             ctx: The benchmark context.
         """
         ctx.fixture = describe_playground()
+        self.states = playground_states(ctx)
         ctx.dims["memory_method"] = self.memory_method()
         allocator = ctx.params.get("allocator", "default")
         if allocator != "default":
@@ -1146,7 +1151,7 @@ class PerSession(_Playground):
         # depend on the subject, so one sweep serves every sample.
         floor = self.floor
         if floor is None:
-            echo = EchoProcess(delta_key=BENCH_STATE, seq_var=SEQ_VAR)
+            echo = EchoProcess(delta_key=ECHO_STATES.bench, seq_var=SEQ_VAR)
             started.add(echo.stop)
             echo_url = echo.start()
             floor = sweep_sessions(Endpoint(echo_url), echo.pid, counts, started)
@@ -1237,7 +1242,8 @@ class Leak(_Playground):
         params = ctx.params
         scope = new_scope()
         app = start_server(ctx, started, server_env(ctx), scope=scope)
-        shape = bench_shape(params["event"])
+        assert self.states is not None
+        shape = bench_shape(self.states, params["event"])
 
         def plan(warmup_s: float, duration_s: float) -> LoadPlan:
             return LoadPlan(
@@ -1385,7 +1391,8 @@ class Boot512(_Playground):
         compile_reading = limit_check(
             "compile", limit_mb, compiled.cgroup, problem, compiled.lines
         )
-        boot, serve, load = boot_and_serve(ctx, started, limit_mb)
+        assert self.states is not None
+        boot, serve, load = boot_and_serve(ctx, started, limit_mb, self.states)
         phases = {"compile": compile_reading, "boot": boot, "serve": serve}
         return SampleResult(
             {
@@ -1441,14 +1448,15 @@ class MinLimit(_Playground):
         Raises:
             MemoryLimitExceeded: When even the largest limit fails.
         """
-        started = self.started
+        started, states = self.started, self.states
         assert started is not None
+        assert states is not None
         limits = list(range(MIN_LIMIT_MB, MAX_LIMIT_MB + 1, LIMIT_STEP_MB))
         steps: list[dict[str, Any]] = []
 
         def passes(index: int) -> bool:
             try:
-                _, serve, _ = boot_and_serve(ctx, started, limits[index])
+                _, serve, _ = boot_and_serve(ctx, started, limits[index], states)
             except MemoryLimitExceeded as exc:
                 steps.append({
                     "limit_mb": limits[index],

@@ -26,7 +26,8 @@ pytestmark = pytest.mark.skipif(
 ECHO_KEY = (
     '"reflex___state____state.playground___state____bench_state":{"last_seq_rx_state_":'
 )
-BOARD_KEY = '"reflex___state____state.playground___state____board_state":{'
+# The board's parent states depend on the subject.
+BOARD_KEY = '.playground___state____board_state":{'
 SUBJECTS = [
     "workspace",
     pytest.param(

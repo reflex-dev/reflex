@@ -79,7 +79,9 @@ from reflex_bench.suites.events import (
     COMPILE_TIMEOUT_S,
     SEQ_VAR,
     SHAPES,
+    PlaygroundStates,
     app_env,
+    playground_states,
     prepare_app,
     server_env,
 )
@@ -805,6 +807,17 @@ class Hydrate(_OneSession):
 class Event(_OneSession):
     """Websocket bytes of one playground event after hydration: the request frame and the reply."""
 
+    states: PlaygroundStates | None = None
+
+    def setup(self, ctx: Context) -> None:
+        """Record the fixture and name the subject's states.
+
+        Args:
+            ctx: The benchmark context.
+        """
+        super().setup(ctx)
+        self.states = playground_states(ctx)
+
     def sample(self, ctx: Context) -> SampleResult:
         """Send one event of the shape.
 
@@ -814,7 +827,8 @@ class Event(_OneSession):
         Returns:
             The request and reply sizes.
         """
-        shape = SHAPES[ctx.params["shape"]]
+        assert self.states is not None
+        shape = SHAPES[ctx.params["shape"]](self.states)
         return self.exchange(ctx, lambda session: session.exchange(shape, 1))
 
 

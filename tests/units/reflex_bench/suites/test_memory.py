@@ -35,6 +35,7 @@ from tests.units.reflex_bench.factories import (
     make_load_result,
     make_subject,
 )
+from tests.units.reflex_bench.suites.test_events import STATES
 
 MIB = 1024**2
 APP_PID = 1001
@@ -424,6 +425,7 @@ def fakes(monkeypatch: pytest.MonkeyPatch) -> Fakes:
 
     monkeypatch.setattr(memory, "CgroupScope", FakeScope)
     monkeypatch.setattr(memory, "run_cli", run_cli)
+    monkeypatch.setattr(memory, "playground_states", lambda ctx: STATES)
     # setup_cache compiles through the events suite's prepare_app.
     monkeypatch.setattr(events_suite, "run_cli", run_cli)
     monkeypatch.setattr(memory, "AppProcess", FakeApp)
@@ -787,6 +789,7 @@ def test_a_leaking_server_fails_the_leak_gate(tmp_path: Path, fakes: Fakes):
     assert "in the second half after" in error
     probe, measured = fakes.plans
     assert (probe.mode, probe.duration_s, probe.sessions) == ("closed", 5.0, 10)
+    assert probe.shape.name == measured.shape.name == f"{STATES.bench}.set_seq"
     # 1000 events at the probe's 1000 ev/s, with 10 % of room: 2 s.
     assert (measured.warmup_s, measured.duration_s) == (0, 2)
     assert fakes.log[-2:] == ["load stop", "app stop"]
@@ -969,6 +972,7 @@ def test_the_512mb_gate_passes_with_three_peaks(tmp_path: Path, fakes: Fakes):
     ]
     (serve,) = fakes.plans
     assert (serve.mode, serve.sessions, serve.duration_s) == ("closed", 5, 5.0)
+    assert serve.shape.delta_key == STATES.bench
 
 
 @pytest.mark.parametrize("phase", ["compile", "boot", "serve"])
@@ -1001,7 +1005,8 @@ def test_min_limit_bisects_to_the_smallest_passing_limit(
 ):
     tried: list[int] = []
 
-    def boot_and_serve(ctx, started, limit_mb):
+    def boot_and_serve(ctx, started, limit_mb, states):
+        assert states == STATES
         tried.append(limit_mb)
         if limit_mb < 288:
             msg = f"phase boot under MemoryMax={limit_mb}M: oom=1, oom_kill=1"
@@ -1025,7 +1030,7 @@ def test_min_limit_bisects_to_the_smallest_passing_limit(
 def test_min_limit_fails_when_even_the_largest_limit_fails(
     tmp_path: Path, fakes: Fakes, monkeypatch: pytest.MonkeyPatch
 ):
-    def boot_and_serve(ctx, started, limit_mb):
+    def boot_and_serve(ctx, started, limit_mb, states):
         msg = f"phase boot under MemoryMax={limit_mb}M: oom=0, oom_kill=1"
         raise memory.MemoryLimitExceeded(msg)
 
