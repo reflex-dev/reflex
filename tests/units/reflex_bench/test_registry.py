@@ -89,14 +89,18 @@ def test_version_covers_inherited_hooks():
 
 def test_duplicate_ids_are_an_error(fresh_registry):
     registry.register(Benchmark.define(_Sampler, id="t.dup", metrics={"wall": WALL}))
-    # The same class may re-register, e.g. after a module reload.
-    registry.register(Benchmark.define(_Sampler, id="t.dup", metrics={"wall": WALL}))
+    # A module reload recreates the class under the same module and qualname.
+    reloaded = type("_Sampler", (_Sampler,), {"__module__": _Sampler.__module__})
+    registry.register(Benchmark.define(reloaded, id="t.dup", metrics={"wall": WALL}))
+    assert registry.REGISTRY["t.dup"].cls is reloaded
 
     class Other(_Sampler):
         """Another class."""
 
-    with pytest.raises(ValueError, match=r"duplicate benchmark id 't\.dup'"):
-        registry.register(Benchmark.define(Other, id="t.dup", metrics={"wall": WALL}))
+    elsewhere = type("_Sampler", (_Sampler,), {"__module__": "other_module"})
+    for cls in (Other, elsewhere):
+        with pytest.raises(ValueError, match=r"duplicate benchmark id 't\.dup'"):
+            registry.register(Benchmark.define(cls, id="t.dup", metrics={"wall": WALL}))
 
 
 @pytest.mark.parametrize(
