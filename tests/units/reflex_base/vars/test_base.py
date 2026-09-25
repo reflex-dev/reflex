@@ -3,6 +3,8 @@
 import dataclasses
 import gc
 import pickle
+import subprocess
+import sys
 import threading
 import traceback
 import typing
@@ -1124,6 +1126,23 @@ def test_field_subclass_is_kept():
         assert declared.default_value() == default
     assert Parent.get_fields()["generic"].outer_type_ is int
     assert UsesMixin.get_fields()["mixed"] is not Mixin.get_fields()["mixed"]
+
+
+def test_plain_model_without_reflex():
+    """A plain model's fields work in a process that never imports reflex."""
+    code = """
+import sys
+from reflex_base.vars import EvenMoreBasicBaseState
+
+class Model(EvenMoreBasicBaseState):
+    count: int = 0
+
+model = Model(count=3)
+model.count = 4
+assert model.count == 4
+assert "reflex" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 def test_slot_names_are_reserved():
