@@ -44,11 +44,16 @@ def render():
 
 If you want to interact with a toast, a few props are available to customize the behavior.
 
-By passing a `ToastAction` to the `action` or `cancel` prop, you can trigger an action when the toast is clicked or when it is closed.
+By passing a dict with `label` and `on_click` keys to the `action` or `cancel` prop, you can trigger an action when the toast is clicked or when it is dismissed.
 
 ```python demo
 rx.button(
-    "Show Toast", on_click=rx.toast("Hello, World!", duration=5000, close_button=True)
+    "Show Toast",
+    on_click=rx.toast(
+        "Item deleted",
+        action={"label": "Undo", "on_click": rx.console_log("Undo clicked")},
+        cancel={"label": "Dismiss", "on_click": rx.console_log("Dismiss clicked")},
+    ),
 )
 ```
 
@@ -94,8 +99,8 @@ The following props are available for customization:
 - `duration`: `int`: Time in milliseconds that should elapse before automatically closing the toast.
 - `position`: `LiteralPosition`: Position of the toast.
 - `dismissible`: `bool`: If false, it'll prevent the user from dismissing the toast.
-- `action`: `ToastAction`: Renders a primary button, clicking it will close the toast.
-- `cancel`: `ToastAction`: Renders a secondary button, clicking it will close the toast.
+- `action`: `dict`: A dict with `label` and `on_click` keys. Renders a primary button, clicking it will close the toast.
+- `cancel`: `dict`: A dict with `label` and `on_click` keys. Renders a secondary button, clicking it will close the toast.
 - `id`: `str | Var`: Custom id for the toast.
 - `unstyled`: `bool`: Removes the default styling, which allows for easier customization.
 - `style`: `Style`: Custom style for the toast.
