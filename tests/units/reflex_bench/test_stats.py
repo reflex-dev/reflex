@@ -481,3 +481,50 @@ def test_spearman_is_nan_without_variation():
     assert math.isnan(stats.spearman([2.0], [1.0]))
     with pytest.raises(ValueError, match="same length"):
         stats.spearman([1.0, 2.0], [1.0])
+
+
+@pytest.mark.parametrize(
+    ("values", "ps", "expected"),
+    [
+        # The nearest-rank examples of the Wikipedia article "Percentile".
+        ([15, 20, 35, 40, 50], [5, 30, 40, 50, 100], [15, 20, 20, 35, 50]),
+        ([3, 6, 7, 8, 8, 10, 13, 15, 16, 20], [25, 50, 75, 100], [7, 8, 15, 20]),
+        # Unsorted input; 0 is the minimum.
+        ([50, 15, 40, 35, 20], [0, 50, 100], [15, 35, 50]),
+        # 99.9 % of 1000 is rank 999 exactly, which float arithmetic would round up.
+        (list(range(1, 1001)), [50, 90, 99, 99.9, 100], [500, 900, 990, 999, 1000]),
+        # Fewer than 100 values: p99 is the maximum.
+        (list(range(1, 51)), [99], [50]),
+    ],
+)
+def test_percentiles_use_the_nearest_rank(values, ps, expected):
+    assert stats.percentiles(values, ps) == expected
+
+
+def test_percentiles_need_values():
+    with pytest.raises(ValueError, match="empty"):
+        stats.percentiles([], [50])
+
+
+def test_log_histogram_buckets():
+    # 120 buckets over 7 decades: 120 / 7 buckets per decade, so the decades
+    # from 10 μs start at buckets 0, 17, 34, 51, 68, 85 and 102.
+    values = [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 0.1, 1.0, 10.0, 100.0, 1e3]
+    counts = stats.log_histogram(values)
+    assert len(counts) == 120
+    assert sum(counts) == len(values)
+    expected = [0] * 120
+    # Below the range and the lower edge share the first bucket; the upper
+    # edge and beyond share the last.
+    for bucket in (0, 0, 17, 34, 51, 68, 85, 102, 119, 119):
+        expected[bucket] += 1
+    assert counts == expected
+
+
+def test_log_histogram_custom_range():
+    assert stats.log_histogram([0.0, 1.5, 2.5, 9.0], lo=1.0, hi=16.0, buckets=4) == [
+        2,
+        1,
+        0,
+        1,
+    ]

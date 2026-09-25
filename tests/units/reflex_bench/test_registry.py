@@ -77,6 +77,26 @@ def test_duplicate_ids_are_an_error(fresh_registry):
         ({"suites": ("all",)}, "unknown suites"),
         ({"timeout": 0}, "timeouts > 0"),
         ({"min_version": "not a version"}, "is not a version"),
+        (
+            {"params": {"n": [1, 2]}, "suite_params": {"smoke": {"n": [1]}}},
+            "suite_params name suite 'smoke', which the benchmark is not in",
+        ),
+        (
+            {
+                "suites": ("smoke",),
+                "params": {"n": [1, 2]},
+                "suite_params": {"smoke": {"m": [1]}},
+            },
+            "suite_params of 'smoke' name undeclared parameter 'm'",
+        ),
+        (
+            {
+                "suites": ("smoke",),
+                "params": {"n": [1, 2]},
+                "suite_params": {"smoke": {"n": []}},
+            },
+            "suite_params of 'smoke': parameter 'n' has no values",
+        ),
     ],
 )
 def test_invalid_declarations(kwargs, message):
@@ -139,6 +159,26 @@ def test_overrides_restrict_or_replace_values_and_keep_types():
     assert bench.expand({"pages": "250"})[0].params["pages"] == 250
     assert bench.expand({"env": "staging"})[0].params["env"] == "staging"
     assert bench.param_names == {"pages", "env", "shift"}
+
+
+def test_suite_params_narrow_the_grid_of_one_suite():
+    bench = Benchmark.define(
+        _Sampler,
+        id="t.grid",
+        metrics={"wall": WALL},
+        suites=("smoke", "daily"),
+        params={"sessions": [1, 10, 50], "rate": ["auto"]},
+        suite_params={"smoke": {"sessions": [10], "rate": [50]}},
+    )
+    assert [p.params for p in bench.expand(suite="smoke")] == [
+        {"sessions": 10, "rate": 50}
+    ]
+    assert len(bench.expand(suite="daily")) == 3
+    assert len(bench.expand()) == 3
+    # --param still wins.
+    assert [p.params for p in bench.expand({"sessions": "50"}, suite="smoke")] == [
+        {"sessions": 50, "rate": 50}
+    ]
 
 
 def test_coerce_param():
