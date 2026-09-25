@@ -740,6 +740,27 @@ def test_reserved_mixin_var(state_mixin: bool, clean_registration_context):
         type("MixedState", (mixin, BaseState), {"__module__": __name__})
 
 
+@pytest.mark.parametrize("state_base", [False, True])
+def test_reserved_slot_of_base(state_base: bool, clean_registration_context):
+    """Reject a declaration using a slot name of a non-root base.
+
+    Args:
+        state_base: Whether the slotted base is a state or a Python mixin.
+        clean_registration_context: An isolated state registry.
+    """
+    slotted = type(
+        "Slotted",
+        (BaseState,) if state_base else (),
+        {"__module__": __name__, "__slots__": ("cache",)},
+    )
+    with pytest.raises(StateValueError, match=r"\['cache'\] are reserved by Slotted"):
+        type(
+            "SlotShadowState",
+            (slotted,) if state_base else (slotted, BaseState),
+            {"__module__": __name__, "__annotations__": {"cache": int}, "cache": 0},
+        )
+
+
 @pytest.mark.parametrize("name", ["_init_bookkeeping", "get_fields"])
 def test_reserved_computed_var(name: str, clean_registration_context):
     """Reject computed vars that replace framework methods.

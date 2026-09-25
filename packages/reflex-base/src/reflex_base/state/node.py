@@ -67,9 +67,6 @@ if environment.REFLEX_PERF_MODE.get() != PerformanceMode.OFF:
     # Only warn about each state class size once.
     _WARNED_ABOUT_STATE_SIZE: set[str] = set()
 
-# Per state class, the names its dev-mode __setattr__ has found declared.
-_SETTABLE_NAMES: dict[type, set[str]] = {}
-
 
 def _is_picklable(obj: Any, dumps: Callable[[object], bytes]) -> bool:
     try:
@@ -221,6 +218,9 @@ class StateNode(EvenMoreBasicBaseState):
     # Set of substates which always need to be recomputed
     _always_dirty_substates: ClassVar[set[str]] = set()
 
+    # The names the dev-mode __setattr__ has found declared, per state class.
+    _settable_names: ClassVar[set[str]] = set()
+
     # Vars on this class sent to the client, and computed vars that expire on
     # an interval; recomputed with the dependency dicts, i.e. at class creation
     # and after any var is added.
@@ -278,6 +278,15 @@ class StateNode(EvenMoreBasicBaseState):
         setattr_(self, "_was_touched", False)
         setattr_(self, "_event_context", None)
 
+    def __init_subclass__(cls, **kwargs):
+        """Give the new state class its own set of names found settable.
+
+        Args:
+            **kwargs: The kwargs to pass to the parent class.
+        """
+        super().__init_subclass__(**kwargs)
+        cls._settable_names = set()
+
     if TYPE_CHECKING or environment.REFLEX_ENV_MODE.get() != constants.Env.PROD:
 
         def __setattr__(self, name: str, value: Any):
@@ -294,7 +303,7 @@ class StateNode(EvenMoreBasicBaseState):
                 SetUndefinedStateVarError: If the state declares nothing to assign.
             """
             cls = type(self)
-            if name not in (settable := _SETTABLE_NAMES.setdefault(cls, set())):
+            if name not in (settable := cls._settable_names):
                 if not (
                     # Dunder names, like computed var caches, and mangled private names.
                     name.startswith((
