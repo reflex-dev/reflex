@@ -71,10 +71,11 @@ def drift_warnings(entry: BenchmarkDoc) -> None:
             positions.setdefault(meta["arm"], []).append(position)
     for name, metric in entry["metrics"].items():
         for arm, where in sorted(positions.items()):
-            rho = stats.spearman(timed_values(entry, name, arm), where)
+            values = timed_values(entry, name, arm)
+            rho = stats.spearman(values, where)
             if abs(rho) < DRIFT_RHO:
                 continue
-            p = stats.spearman_p(rho, len(where))
+            p = stats.spearman_p(values, where)
             if p < DRIFT_P:
                 metric["warnings"].append(
                     f"drift: {name} trends with time in arm {arm}"
