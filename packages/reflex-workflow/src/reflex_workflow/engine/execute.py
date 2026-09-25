@@ -582,7 +582,7 @@ async def execute(
     cls: type[Workflow],
     pk: list[Any],
     version: int,
-    until: datetime.datetime | None = None,
+    held: Lease | None = None,
 ) -> str:
     """Run a claimed row's step and commit its result if the row hasn't moved.
 
@@ -591,15 +591,17 @@ async def execute(
         cls: The workflow class.
         pk: The row's primary key values.
         version: The row version that was claimed.
-        until: The lease the claim wrote. Given it, a claim that turns out to
-            have been moved on before its step started gives that lease back at
-            once, rather than leaving the row held until it runs out.
+        held: The lease the claim wrote, which renewals keep up to date. Given
+            it, a claim moved on before its step started gives that lease back
+            at once rather than leaving the row held until it runs out, and
+            whoever holds this can give it back on the step's behalf.
 
     Returns:
         The outcome: ok, retry, failed, stale, fenced, or missing.
     """
     factory = runtime.session_factory
-    held = Lease(until)
+    until = held.until if held is not None else None
+    held = held if held is not None else Lease(None)
     async with factory() as session:
         # Every column, deferred ones too: the step runs on a detached row, which
         # cannot load one it reads later.

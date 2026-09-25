@@ -7,16 +7,20 @@ import contextlib
 import datetime
 import logging
 from collections.abc import AsyncIterator, Collection, Iterable, Sequence
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from reflex_workflow.engine.claim import claim
-from reflex_workflow.engine.execute import execute
+from reflex_workflow.engine.execute import Lease, execute, release
 from reflex_workflow.engine.notify import wake_on_notify
 from reflex_workflow.engine.runtime import Runtime, replace_current
 from reflex_workflow.model import DEFAULT_LANE, REGISTRY, Workflow, steps_in
 
 logger = logging.getLogger(__name__)
+
+# How long a cancelled step's row is given to be handed back on the way out.
+GIVE_BACK = datetime.timedelta(seconds=5)
 
 
 class Runner:
@@ -56,6 +60,11 @@ class Runner:
         self.max_concurrency = max_concurrency
         self.poll_interval = poll_interval
         self.inflight: set[asyncio.Task[str]] = set()
+        # The row and lease behind each running step, so one this worker
+        # cancels on the way out can be given back rather than left held.
+        self.holding: dict[
+            asyncio.Task[str], tuple[type[Workflow], list[Any], Lease]
+        ] = {}
         self.stopping = False
         # Where the next pass starts, so a busy table cannot always go first.
         self.turn = 0
@@ -79,15 +88,20 @@ class Runner:
             )
             return 0
         for taken in claimed:
+            held = Lease(taken.until)
             task = asyncio.create_task(
-                execute(self.runtime, cls, taken.pk, taken.version, taken.until)
+                execute(self.runtime, cls, taken.pk, taken.version, held)
             )
             self.inflight.add(task)
+            self.holding[task] = (cls, taken.pk, held)
             task.add_done_callback(self._finished)
         return len(claimed)
 
     def _finished(self, task: asyncio.Task[str]) -> None:
         self.inflight.discard(task)
+        # A step that ran to the end has settled its own lease.
+        if not task.cancelled():
+            self.holding.pop(task, None)
         self.runtime.wake.set()
         if not task.cancelled() and (err := task.exception()) is not None:
             logger.error(
@@ -137,19 +151,47 @@ class Runner:
         self.runtime.wake.set()
 
     async def drain(self, timeout: datetime.timedelta) -> None:
-        """Let running steps finish, then cancel the rest.
+        """Let running steps finish, then cancel the rest and give their rows back.
 
         Call it once the loop has stopped, so no step starts after it looked. A
-        cancelled step keeps its lease until it expires, then runs again.
+        step that is cancelled has its lease given back, so the run carries on
+        under the next worker rather than waiting out a lease nobody holds --
+        which is what a deploy in the middle of a long step would otherwise cost
+        it. The lease is given back after the step is finished with, and only
+        ever the value this worker last wrote, so a row another worker has since
+        taken over is left alone.
 
         Args:
             timeout: How long to wait for running steps.
         """
         if self.inflight:
             await asyncio.wait(self.inflight, timeout=timeout.total_seconds())
-        for task in list(self.inflight):
+        cancelled = list(self.inflight)
+        for task in cancelled:
             task.cancel()
-        await asyncio.gather(*self.inflight, return_exceptions=True)
+        await asyncio.gather(*cancelled, return_exceptions=True)
+        for task in cancelled:
+            cls, pk, held = self.holding.pop(task, (None, None, None))
+            if cls is None or pk is None or held is None:
+                continue
+            # Best effort, and bounded: shutdown carries on whatever the
+            # database has to say, since the lease runs out by itself anyway.
+            try:
+                await asyncio.wait_for(
+                    release(self.runtime, cls, pk, held), GIVE_BACK.total_seconds()
+                )
+            except asyncio.CancelledError:
+                raise
+            except asyncio.TimeoutError:
+                logger.warning(
+                    "reflex_workflow ran out of time giving back a lease on %s",
+                    cls.__qualname__,
+                )
+            except Exception:
+                logger.exception(
+                    "reflex_workflow could not give back a lease on %s",
+                    cls.__qualname__,
+                )
 
 
 @contextlib.asynccontextmanager

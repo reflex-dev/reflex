@@ -385,7 +385,9 @@ row for them, if every worker is down at the time.
 ## Guarantees
 
 - A step runs at least once. A worker claims a row with a lease that it renews while
-  the step runs; if the worker dies, the row is claimed again once the lease expires.
+  the step runs; if the worker dies, the row is claimed again once the lease expires. A
+  worker shutting down gives back the lease of any step it has to cancel, so a deploy
+  that interrupts a long step does not cost that run a whole lease.
   So a step can run twice: make it safe to repeat (unique constraints, provider
   idempotency keys).
 - A step commits only if the row hasn't moved since it was claimed. A step whose lease

@@ -801,6 +801,27 @@ class Joined(Base, Workflow):
         self.status = "reported"
 
 
+# Held shut while a test needs its step to still be running at shutdown.
+LINGERING = asyncio.Event()
+
+
+class Lingering(Base, Workflow):
+    """A step still running when its worker is told to stop; no worker runs it."""
+
+    __tablename__ = "wf_test_lingering"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    key: Mapped[str] = mapped_column(String, unique=True)
+    status: Mapped[str] = mapped_column(String, default="new")
+
+    @step
+    async def work(self):
+        """Stay in the step until the test lets go."""
+        EVENTS.append(f"lingering:{self.key}")
+        await LINGERING.wait()
+        self.status = "done"
+
+
 class Crowded(Base, Workflow):
     """A workflow one customer may run only one of, to see what a pass considers."""
 
@@ -1231,7 +1252,7 @@ async def test_a_worker_whose_lease_was_taken_over_cannot_commit(session_factory
     [first] = await claim.claim(rt, Gated, 1)
     pk = first.pk
     stale = asyncio.create_task(
-        execute.execute(rt, Gated, pk, first.version, first.until)
+        execute.execute(rt, Gated, pk, first.version, execute.Lease(first.until))
     )
     await wait_until(lambda: f"gated-start:{key}" in EVENTS)
 
@@ -1244,7 +1265,7 @@ async def test_a_worker_whose_lease_was_taken_over_cannot_commit(session_factory
         )
     [second] = await claim.claim(rt, Gated, 1)
     fresh = asyncio.create_task(
-        execute.execute(rt, Gated, pk, second.version, second.until)
+        execute.execute(rt, Gated, pk, second.version, execute.Lease(second.until))
     )
     await wait_until(lambda: EVENTS.count(f"gated-start:{key}") == 2)
 
@@ -1305,7 +1326,9 @@ async def test_an_event_beats_a_timeout_that_is_already_running(session_factory)
     await asyncio.sleep(1.1)
     timing_out = await claim_row(RaceReview, pk)
     expiring = asyncio.create_task(
-        execute.execute(rt, RaceReview, pk, timing_out.version, timing_out.until)
+        execute.execute(
+            rt, RaceReview, pk, timing_out.version, execute.Lease(timing_out.until)
+        )
     )
     await wait_until(lambda: f"expire-start:{key}" in EVENTS)
     handle = RaceReview.by(RaceReview.key == key)
@@ -1371,7 +1394,9 @@ async def claim_row(
 
 
 async def pk_of(
-    cls: type[RaceReview | Repeating | Batch | Parked | Piece | Joined | Leaf],
+    cls: type[
+        RaceReview | Repeating | Batch | Parked | Piece | Joined | Leaf | Lingering
+    ],
     key: str,
 ) -> list[int]:
     """Look up a row's primary key.
@@ -1402,7 +1427,9 @@ async def step_row(
         The step's outcome.
     """
     taken = await claim_row(cls, pk)
-    return await execute.execute(runtime.current(), cls, pk, taken.version, taken.until)
+    return await execute.execute(
+        runtime.current(), cls, pk, taken.version, execute.Lease(taken.until)
+    )
 
 
 async def arm_wait(key: str) -> list[int]:
@@ -1707,7 +1734,7 @@ async def test_a_fan_out_that_loses_its_row_starts_no_children(session_factory):
     # children go in with that commit, so they must be refused with it.
     claimed = await claim_row(Batch, pk)
     splitting = asyncio.create_task(
-        execute.execute(rt, Batch, pk, claimed.version, claimed.until)
+        execute.execute(rt, Batch, pk, claimed.version, execute.Lease(claimed.until))
     )
     await wait_until(lambda: f"split:{key}" in EVENTS)
     await claim_row(Batch, pk)
@@ -2337,7 +2364,9 @@ async def test_an_attempt_whose_commit_was_refused_is_not_recorded(session_facto
     # The row is taken over while the step runs, so its commit is refused.
     claimed = await claim_row(RaceReview, pk)
     running = asyncio.create_task(
-        execute.execute(rt, RaceReview, pk, claimed.version, claimed.until)
+        execute.execute(
+            rt, RaceReview, pk, claimed.version, execute.Lease(claimed.until)
+        )
     )
     await asyncio.sleep(0.2)
     await claim_row(RaceReview, pk)
@@ -2585,7 +2614,8 @@ async def test_a_step_can_use_a_deferred_column(session_factory):
             runtime.current(),
             Deferring,
             [row.id],
-            *(await claim_row(Deferring, [row.id]))[1:],
+            (taken := await claim_row(Deferring, [row.id])).version,
+            execute.Lease(taken.until),
         )
         == "ok"
     )
@@ -2949,7 +2979,7 @@ async def test_a_claim_moved_on_before_it_ran_gives_its_lease_back(session_facto
     assert await RaceReview.by(RaceReview.key == key).run(RaceReview.expire()) == 1
     assert (
         await execute.execute(
-            runtime.current(), RaceReview, pk, taken.version, taken.until
+            runtime.current(), RaceReview, pk, taken.version, execute.Lease(taken.until)
         )
         == "stale"
     )
@@ -2995,3 +3025,52 @@ async def test_a_group_of_rows_with_no_group_is_held_to_its_limit_too(session_fa
     # Equality matches no NULL, so without a null-safe comparison this group
     # looks idle and takes a place a group that could run should have.
     assert None not in groups
+
+
+async def stopped_mid_step(key: str) -> runner.Runner:
+    """Run a lingering step, then stop the worker while it is still in it.
+
+    Args:
+        key: The row's key.
+
+    Returns:
+        The stopped worker, with its step still to be drained.
+    """
+    LINGERING.clear()
+    await Lingering(key=key).start(Lingering.work)
+    worker = runner.Runner(
+        runtime.current(), [Lingering], 4, datetime.timedelta(milliseconds=50)
+    )
+    loop = asyncio.create_task(worker.loop())
+    await wait_until(lambda: f"lingering:{key}" in EVENTS)
+    worker.stop()
+    await loop
+    return worker
+
+
+async def test_a_step_cancelled_on_the_way_out_gives_its_row_back(session_factory):
+    key = uuid.uuid4().hex
+    worker = await stopped_mid_step(key)
+
+    # The deploy lands mid-step: what is still running is cancelled.
+    await worker.drain(datetime.timedelta(milliseconds=100))
+
+    row = await Lingering.by(Lingering.key == key).get()
+    assert row is not None
+    # Free for the next worker at once, rather than after a lease nobody holds.
+    assert row.claimed_until is None
+    assert row.next_step == "work"
+
+
+async def test_a_lease_taken_over_by_another_worker_is_not_given_back(session_factory):
+    key = uuid.uuid4().hex
+    worker = await stopped_mid_step(key)
+
+    # Another worker takes the row over while this one is still shutting down.
+    theirs = await claim_row(Lingering, await pk_of(Lingering, key))
+    await worker.drain(datetime.timedelta(milliseconds=100))
+
+    row = await Lingering.by(Lingering.key == key).get()
+    assert row is not None
+    # Only the lease this worker wrote was ever its to give back.
+    assert row.claimed_until == theirs.until
