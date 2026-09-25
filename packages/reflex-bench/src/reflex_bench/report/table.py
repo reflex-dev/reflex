@@ -325,6 +325,14 @@ def render_run(console: Console, doc: ResultDoc) -> None:
                 )
             )
         )
+    if doc.get("interrupted"):
+        console.print()
+        console.print(
+            Text(
+                f"{WARN} interrupted: only the benchmarks that finished are listed",
+                style="yellow",
+            )
+        )
 
 
 def _side_text(side: ComparisonSideDoc, unit: str, exact: bool, scale: Scale) -> str:

@@ -71,6 +71,13 @@ def test_fixture_is_optional_and_nullable(doc: schema.ResultDoc):
     assert schema.validate(doc) == []
 
 
+def test_interrupted_is_an_optional_boolean(doc: schema.ResultDoc):
+    doc["interrupted"] = True
+    assert schema.validate(doc) == []
+    doc["interrupted"] = "yes"  # pyright: ignore[reportGeneralTypeIssues]
+    assert schema.validate(doc) == ["interrupted: expected a boolean"]
+
+
 def test_unknown_keys_are_allowed_for_forward_compatibility(doc: schema.ResultDoc):
     extended = copy.deepcopy(doc)
     extended["future"] = {"anything": 1}  # pyright: ignore[reportGeneralTypeIssues]

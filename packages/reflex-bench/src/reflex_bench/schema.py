@@ -303,6 +303,7 @@ class ComparedToDoc(_ComparedToDocOptional):
 class _ResultDocOptional(TypedDict, total=False):
     fixture: FixtureDoc | None
     compared_to: ComparedToDoc
+    interrupted: bool
 
 
 class ResultDoc(_ResultDocOptional):
@@ -502,6 +503,8 @@ def validate(obj: object) -> list[str]:
         _object(doc["fixture"], FixtureDoc, "fixture", errors)
     if "compared_to" in doc:
         _object(doc["compared_to"], ComparedToDoc, "compared_to", errors)
+    if not isinstance(doc.get("interrupted", False), bool):
+        errors.append("interrupted: expected a boolean")
     subjects = doc["subjects"]
     if not isinstance(subjects, dict) or not subjects:
         errors.append("subjects: expected a non-empty object")

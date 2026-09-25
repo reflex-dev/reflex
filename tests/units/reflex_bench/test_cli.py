@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import _thread
 import dataclasses
 import json
 import os
@@ -193,6 +194,54 @@ def test_run_autosaves_and_resolves_baselines(home: Path):
         assert result.exit_code == 0, result.output
         assert f"reflex-bench compare {ref} this run" in result.output
         assert "~ below threshold" in result.output
+
+
+@pytest.fixture
+def interrupting() -> Iterator[None]:
+    """Register a benchmark whose first sample interrupts the harness like Ctrl-C.
+
+    Yields:
+        Nothing; the benchmark is unregistered afterwards.
+    """
+
+    class Interrupting:
+        """Samples once, then the main thread receives a KeyboardInterrupt."""
+
+        def sample(self, ctx: Context) -> dict[str, float]:
+            _thread.interrupt_main()
+            return {"value": 1.0}
+
+    bench = Benchmark.define(
+        Interrupting, id="test.interrupting", metrics={"value": Metric("s", "lower")}
+    )
+    registry.register(bench)
+    try:
+        yield
+    finally:
+        registry.REGISTRY.pop(bench.id)
+
+
+def test_interrupted_run_saves_the_finished_benchmarks(home: Path, interrupting: None):
+    result = invoke(
+        "run",
+        "selftest.exact",
+        "test.interrupting",
+        "--runs",
+        "3",
+        "--json",
+        "out.json",
+    )
+    assert result.exit_code == cli.EXIT_INTERRUPTED, result.output
+    assert "interrupted" in result.output
+    (saved,) = (home / "results" / "test-profile").glob("*.json")
+    for path in (Path("out.json"), saved):
+        doc = load(path)
+        assert doc.get("interrupted") is True
+        assert [entry["id"] for entry in doc["benchmarks"]] == ["selftest.exact"]
+        assert doc["benchmarks"][0]["status"] == "ok"
+    shown = invoke("show", "out.json")
+    assert shown.exit_code == 0, shown.output
+    assert "interrupted" in shown.output
 
 
 def test_known_regression_fails_with_exit_code_2(home: Path):
