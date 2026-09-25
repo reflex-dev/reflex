@@ -4967,9 +4967,11 @@ async def test_link_token_to_sid_updates_a_state_an_earlier_event_held(
 
     await event_namespace.link_token_to_sid("sid1", token)
 
-    state = await app.state_manager.get_state(state_token)
-    assert state.rx_router_session.session_id == "sid1"
-    assert state.rx_router_session.client_token == token
+    # Read as the next event does: with oplock, a lease holder writes back
+    # lazily, so `get_state` could still read the stored copy.
+    async with app.state_manager.modify_state(state_token) as state:
+        assert state.rx_router_session.session_id == "sid1"
+        assert state.rx_router_session.client_token == token
 
 
 @pytest.mark.asyncio
