@@ -5,11 +5,12 @@ from typing import cast
 from urllib.parse import parse_qsl
 
 import pytest
+from reflex_base import constants
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import StringVar
 
 import reflex as rx
-from reflex.istate.data import ReflexURL, ReflexURLCastedVar
+from reflex.istate.data import HeaderData, ReflexURL, ReflexURLCastedVar
 
 SAMPLE_URL = "https://example.com:3000/posts/123?tab=comments&sort=new#top"
 
@@ -364,10 +365,6 @@ def test_reflex_url_query_parameter_named_self():
 
 def test_header_data_keeps_raw_header_named_self():
     """A request header called ``self`` is kept in ``raw_headers``."""
-    from reflex_base import constants
-
-    from reflex.istate.data import HeaderData
-
     headers = HeaderData.from_router_data({
         constants.RouteVar.HEADERS: {"self": "x", "origin": "http://localhost:3000"}
     })
