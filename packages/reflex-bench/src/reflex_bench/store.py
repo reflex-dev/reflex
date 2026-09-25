@@ -92,9 +92,14 @@ def subject_cache_dir(home: Path, subject_identity: str) -> Path:
         subject_identity: The subject's :attr:`~reflex_bench.context.Subject.identity`.
 
     Returns:
-        The directory (not created).
+        The directory (not created), named after the identity, with a hash of
+        the identity appended when the name had to change to be a path component.
     """
-    return home / "cache" / slug(subject_identity)
+    name = slug(subject_identity)
+    if name != subject_identity:
+        digest = hashlib.sha256(subject_identity.encode()).hexdigest()[:12]
+        name = f"{name}-{digest}"
+    return home / "cache" / name
 
 
 def cache_dir(

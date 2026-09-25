@@ -900,8 +900,8 @@ src/<commit>/               git worktrees of git: subjects
 locks/                      locks of venv and worktree builds
 ```
 
-The cache is keyed by the subject's commit (its spec when the commit is
-unknown).
+The cache is keyed by the subject's commit (its spec, slugged and suffixed with
+a hash of the spec, when the commit is unknown).
 
 The machine profile id is `<os>-<arch>-<cpu model>-py<major.minor>`, for example
 `linux-x86_64-ryzen-9-7950x-py3.12`; `REFLEX_BENCH_PROFILE` overrides it (other
