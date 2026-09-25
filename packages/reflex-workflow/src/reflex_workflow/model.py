@@ -38,6 +38,10 @@ P = ParamSpec("P")
 
 DEFAULT_BACKOFF = datetime.timedelta(seconds=30)
 
+# How long a retry may be put off, however many have failed. Doubling without a
+# cap runs past what a timestamp can hold, and past what a timedelta can first.
+DEFAULT_MAX_BACKOFF = datetime.timedelta(hours=1)
+
 # The lane a step runs in unless it says otherwise, and the one a worker serves
 # unless it is told otherwise.
 DEFAULT_LANE = "default"
@@ -206,6 +210,7 @@ class Step(Generic[W, P]):
         retries: int,
         backoff: datetime.timedelta,
         lane: str = DEFAULT_LANE,
+        max_backoff: datetime.timedelta = DEFAULT_MAX_BACKOFF,
     ) -> None:
         """Wrap a step method.
 
@@ -214,12 +219,17 @@ class Step(Generic[W, P]):
             retries: How many times to retry the step after it raises.
             backoff: Delay before the first retry; each retry doubles it.
             lane: Which workers may run it.
+            max_backoff: The longest a retry is put off.
         """
         self.fn = fn
         self.name = fn.__name__
         self.retries = retries
         self.backoff = backoff
         self.lane = lane
+        self.max_backoff = max_backoff
+        # Taken once: every call that schedules this step checks its arguments
+        # against it, rather than the step finding out when it is run.
+        self.signature = inspect.signature(fn)
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> Call[W]:
         """Bind arguments to this step.
@@ -261,7 +271,7 @@ def as_call(ref: StepRef[W]) -> Call[W]:
     if isinstance(ref, Call):
         return ref
     try:
-        inspect.signature(ref.fn).bind(None)
+        ref.signature.bind(None)
     except TypeError:
         msg = f"{ref!r} takes arguments; call it with them, e.g. {ref.name}(...)."
         raise TypeError(msg) from None
@@ -285,19 +295,31 @@ def same_class(a: type, b: type) -> bool:
     return (a.__module__, a.__qualname__) == (b.__module__, b.__qualname__)
 
 
-def check_owner(cls: type[Workflow], call: Call[Any]) -> None:
-    """Reject a step call that belongs to a different workflow class.
+def check_call(cls: type[Workflow], call: Call[Any]) -> None:
+    """Reject a step call of another workflow, or arguments its step cannot take.
+
+    Checked where the call is made rather than where it is run: a webhook body
+    that does not fit the step it addresses is refused while there is still a
+    caller to tell, instead of taking the run's wait and failing every attempt.
 
     Args:
         cls: The workflow class the call is for.
         call: The step call.
 
     Raises:
-        TypeError: If the step is not one of ``cls``'s steps.
+        TypeError: If the step is not one of ``cls``'s steps, or its arguments
+            do not fit it.
     """
     if cls.__workflow_steps__.get(call.step.name) is not call.step:
         msg = f"{call.step!r} is not a step of {cls.__qualname__}."
         raise TypeError(msg)
+    try:
+        # None stands in for the row it will be called on, which is not loaded
+        # until the step runs.
+        call.step.signature.bind(None, *call.args, **call.kwargs)
+    except TypeError as err:
+        msg = f"{call.step!r} cannot take those arguments: {err}"
+        raise TypeError(msg) from None
 
 
 @overload
@@ -310,6 +332,7 @@ def step(
     retries: int = 0,
     backoff: datetime.timedelta = DEFAULT_BACKOFF,
     lane: str = DEFAULT_LANE,
+    max_backoff: datetime.timedelta = DEFAULT_MAX_BACKOFF,
 ) -> Callable[[StepFn[W, P]], Step[W, P]]: ...
 
 
@@ -320,6 +343,7 @@ def step(
     retries: int = 0,
     backoff: datetime.timedelta = DEFAULT_BACKOFF,
     lane: str = DEFAULT_LANE,
+    max_backoff: datetime.timedelta = DEFAULT_MAX_BACKOFF,
 ) -> Step[W, P] | Callable[[StepFn[W, P]], Step[W, P]]:
     """Declare a workflow step.
 
@@ -333,13 +357,14 @@ def step(
         lane: Which workers may run this step. A step in a lane of its own runs
             only on workers told to serve that lane, so work that needs a GPU, a
             browser, or a particular network can be kept off the others.
+        max_backoff: The longest a retry is put off, however many have failed.
 
     Returns:
         The step, or a decorator that makes one.
     """
 
     def make(method: StepFn[W, P]) -> Step[W, P]:
-        return Step(method, retries, backoff, lane)
+        return Step(method, retries, backoff, lane, max_backoff)
 
     return make(fn) if fn is not None else make
 
@@ -368,7 +393,7 @@ def child(row: C, first: StepRef[C]) -> Child:
         The child, for ``fan_out``.
     """
     call = as_call(first)
-    check_owner(type(row), call)
+    check_call(type(row), call)
     return Child(row, call)
 
 

@@ -49,17 +49,22 @@ are type-checked against the step's signature, a bare step that needs arguments 
 type error, and so is passing one workflow's step to another.
 
 - **Start a run**: `await Onboarding(user_id=u, email=e).start(Onboarding.welcome)`. A
-  row that hits a unique constraint is not inserted, so a key never starts two runs.
+  row that hits a unique constraint is not inserted, so a key never starts two runs. It
+  returns whether a run was started, and a row the database keyed itself is given that
+  key, so `row.id` addresses the run that was just started.
 - **Advance a run from outside** (a webhook, a button):
   `await Onboarding.by(Onboarding.user_id == u).run(Onboarding.activated("pro"))` runs the
-  step now on every matching row, replacing whatever was scheduled.
+  step now on every matching row, replacing whatever was scheduled. A step already running
+  keeps its lease, so the new step starts once that one is done rather than beside it.
 - **A step returns** another step (run now), `wake_in(step, delay)` (run later),
   `wait_for(step, ...)` (run when an event arrives), `every(step, schedule)` (run again
   and again), `fan_out(children, then=step)` (run many at once), or `None` (stop). Step
   arguments are stored as JSON until the step runs, so they must be JSON-serializable.
-- **Failures**: `@step(retries=N, backoff=timedelta(seconds=30))` retries with doubling backoff; after the
-  last attempt the row stops with `last_error` set. A failed step's changes to the row are
-  discarded.
+- **Failures**: `@step(retries=N, backoff=timedelta(seconds=30))` retries with doubling backoff, up to
+  `max_backoff` (an hour by default); after the last attempt the row stops with `last_error` set. A
+  failed step's changes to the row are discarded. A step whose body succeeds but whose commit the
+  database refuses — a value too long for its column, a child that breaks a constraint — counts as a
+  failed attempt too, and is retried the same way.
 
 The mixin adds twelve columns: `next_step`, `next_args`, `wake_at`, `attempts`,
 `last_error`, `claimed_until`, `waiting_for`, `pending_event`, `recent_event_keys`,
@@ -105,10 +110,13 @@ await Expense.by(Expense.id == expense_id).deliver(
 
 `deliver` returns how many runs accepted the event. An event that arrives before the run
 gets to its wait is held and applied as soon as the wait arms, so a fast reply is never
-lost; a run that goes on to wait for something else, or stops, discards it. Passing a
-`key` makes delivery idempotent: a run refuses a key it has already taken, remembering
-the last sixteen. `timeout` and `on_timeout` go together and are optional; without them
-the run waits indefinitely.
+lost; a run that goes on to wait for something else, or stops, discards it. A wait takes
+one event: while a run is holding an answer for the wait it is on, a second delivery is
+refused and `deliver` returns 0 for it, rather than replacing an answer already given.
+Passing a `key` makes delivery idempotent: a run refuses a key it has already taken,
+remembering the last sixteen. Arguments are checked against the step they address, so a
+payload that does not fit it is refused rather than failing once it runs. `timeout` and
+`on_timeout` go together and are optional; without them the run waits indefinitely.
 
 A run that has finished refuses events. For one that lives as long as its events keep
 coming, such as a conversation that closes when it goes quiet, `restart=True` has a
@@ -141,6 +149,16 @@ boot:
 
 ```python
 await Digest(name="daily").start(Digest.send)
+```
+
+A schedule lives in the step's return value, so it lasts only as long as the step keeps
+succeeding: once a scheduled step has used up its retries, the run stops and the schedule
+is over. Declaring it again on boot does not bring it back, because the row is still
+there. Give a step that has to keep its schedule enough retries to ride out what it
+depends on, and re-arm a stopped one with `run`:
+
+```python
+await Digest.by(Digest.name == "daily").run(Digest.send)
 ```
 
 An interval counts from the run's last scheduled time rather than from the moment the

@@ -741,6 +741,81 @@ class Deferring(Base, Workflow):
         self.notes += "worked"
 
 
+class Cramped(Base, Workflow):
+    """A step whose body succeeds and whose commit cannot land."""
+
+    __tablename__ = "wf_test_cramped"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    key: Mapped[str] = mapped_column(String, unique=True)
+    label: Mapped[str] = mapped_column(String(4), default="")
+
+    @step(retries=1, backoff=datetime.timedelta(milliseconds=50))
+    async def work(self):
+        """Write more into a column than it can hold, having recorded the attempt."""
+        EVENTS.append(f"cramped:{self.key}")
+        self.label = "longer than the column"
+
+
+class Leaf(Base, Workflow):
+    """A child a test finishes by hand, to watch what its parent counts."""
+
+    __tablename__ = "wf_test_leaf"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    key: Mapped[str] = mapped_column(String, unique=True)
+    status: Mapped[str] = mapped_column(String, default="new")
+
+    @step
+    async def work(self):
+        """Finish, which is what the parent counts."""
+        EVENTS.append(f"leaf:{self.key}")
+        self.status = "done"
+
+
+class Joined(Base, Workflow):
+    """A parent whose children a test finishes one at a time."""
+
+    __tablename__ = "wf_test_joined"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    key: Mapped[str] = mapped_column(String, unique=True)
+    status: Mapped[str] = mapped_column(String, default="new")
+
+    @step
+    async def split(self):
+        """Fan out to three leaves.
+
+        Returns:
+            The fan-out, and the report to run once they are all done.
+        """
+        return fan_out(
+            (child(Leaf(key=f"{self.key}-{index}"), Leaf.work) for index in range(3)),
+            then=Joined.report,
+        )
+
+    @step
+    async def report(self):
+        """Record that every leaf is done."""
+        EVENTS.append(f"joined-report:{self.key}")
+        self.status = "reported"
+
+
+class Crowded(Base, Workflow):
+    """A workflow one customer may run only one of, to see what a pass considers."""
+
+    __tablename__ = "wf_test_crowded"
+    __workflow_limit__ = Limit(by="customer", at_most=1)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    key: Mapped[str] = mapped_column(String, unique=True)
+    customer: Mapped[str] = mapped_column(String)
+
+    @step
+    async def work(self):
+        """Do nothing; this workflow is only ever claimed, never run."""
+
+
 class Ticket(Base, Workflow):
     """A run keyed by columns json has no form of, and a number beside them."""
 
@@ -834,6 +909,7 @@ WORKFLOWS = [
     Ticket,
     Slot,
     Window,
+    Cramped,
 ]
 
 
@@ -1260,7 +1336,9 @@ async def test_a_repeat_of_a_delivered_key_is_ignored(session_factory):
 
 # The tables a test drives by hand, rather than leaving to a worker.
 async def claim_row(
-    cls: type[RaceReview | Repeating | Batch | Parked | Piece | Deferring],
+    cls: type[
+        RaceReview | Repeating | Batch | Parked | Piece | Deferring | Joined | Leaf
+    ],
     pk: list[int],
 ) -> int:
     """Claim one row the way the engine does, by primary key.
@@ -1284,7 +1362,8 @@ async def claim_row(
 
 
 async def pk_of(
-    cls: type[RaceReview | Repeating | Batch | Parked | Piece], key: str
+    cls: type[RaceReview | Repeating | Batch | Parked | Piece | Joined | Leaf],
+    key: str,
 ) -> list[int]:
     """Look up a row's primary key.
 
@@ -1301,7 +1380,8 @@ async def pk_of(
 
 
 async def step_row(
-    cls: type[RaceReview | Repeating | Batch | Parked | Piece], pk: list[int]
+    cls: type[RaceReview | Repeating | Batch | Parked | Piece | Joined | Leaf],
+    pk: list[int],
 ) -> str:
     """Claim and run one step of a row.
 
@@ -1537,14 +1617,9 @@ async def test_a_fan_out_runs_its_children_and_reports_once_they_are_done(
     assert [EVENTS.count(f"item:{key}-{index}") for index in range(4)] == [1] * 4
     items = await row.children(Item).all()
     assert len(items) == 4
-    # Each points at the parent, and at the one fan-out it belongs to.
-    assert all(
-        item.parent is not None
-        and {key: value for key, value in item.parent.items() if key != "fan_out"}
-        == row.as_parent()
-        for item in items
-    )
-    assert len({item.parent["fan_out"] for item in items if item.parent}) == 1
+    # Each still points at the parent, which is what finds them again, and none
+    # still names the fan-out it was counted toward.
+    assert all(item.parent == row.as_parent() for item in items)
 
 
 async def test_children_run_at_the_same_time(session_factory):
@@ -2684,3 +2759,163 @@ async def test_a_child_that_does_not_name_its_fan_out_counts_toward_none(
     row = await Parked.by(Parked.key == key).get()
     assert row is not None
     assert (row.children_left, row.wake_at) == (1, None)
+
+
+async def test_a_commit_that_cannot_land_counts_as_the_attempt_failing(
+    session_factory,
+):
+    key = uuid.uuid4().hex
+    await Cramped(key=key).start(Cramped.work)
+
+    async def gave_up() -> bool:
+        """Tell whether the run has stopped trying.
+
+        Returns:
+            Whether it has.
+        """
+        row = await Cramped.by(Cramped.key == key).get()
+        return row is not None and row.next_step is None and row.last_error is not None
+
+    await wait_until(gave_up)
+    row = await Cramped.by(Cramped.key == key).get()
+    assert row is not None
+    # Counted, so the step's own retry limit applies to it: without that the row
+    # keeps its schedule and runs the body again after every lease, for good.
+    assert EVENTS.count(f"cramped:{key}") == 2
+    assert row.attempts == 2
+    assert "DataError" in (row.last_error or "")
+    # The commit was rolled back, so none of the step's own work was kept.
+    assert row.label == ""
+    assert [(a.attempt, a.outcome) for a in await row.history()] == [
+        (2, "failed"),
+        (1, "retry"),
+    ]
+
+
+async def test_a_second_event_cannot_take_a_wait_that_already_holds_one(
+    session_factory,
+):
+    key = uuid.uuid4().hex
+    await RaceReview(key=key).start(RaceReview.submit())
+    held = RaceReview.by(RaceReview.key == key)
+    # The first arrives before the wait is armed, so it is held for it.
+    assert await held.deliver(RaceReview.decide("approve"), key="first") == 1
+    pk = await arm_wait(key)
+
+    # The wait has its answer: a second decision neither overwrites the first
+    # nor fences the step that is about to run it.
+    assert await held.deliver(RaceReview.decide("reject"), key="second") == 0
+
+    row = await RaceReview.by(RaceReview.key == key).get()
+    assert row is not None
+    # Due now rather than at its timeout, so it is not left behind every run
+    # with a nearer deadline while it already has what it was waiting for.
+    assert row.wake_at is not None
+    assert row.wake_at < datetime.datetime.now(datetime.timezone.utc) + LEASE
+
+    assert await step_row(RaceReview, pk) == "ok"
+    assert await status_is(RaceReview, key, "decided:approve:manager")()
+    assert EVENTS.count(f"decide:{key}") == 1
+
+
+async def test_a_child_run_again_does_not_release_its_parent_while_siblings_work(
+    session_factory,
+):
+    key = uuid.uuid4().hex
+    await Joined(key=key).start(Joined.split)
+    parent_pk = await pk_of(Joined, key)
+    assert await step_row(Joined, parent_pk) == "ok"
+
+    leaf_pk = await pk_of(Leaf, f"{key}-0")
+    assert await step_row(Leaf, leaf_pk) == "ok"
+    parent = await Joined.by(Joined.key == key).get()
+    assert parent is not None
+    assert parent.children_left == 2
+
+    # The operator runs the finished child again while its siblings are still
+    # going, and it counts for nothing the second time.
+    assert await Leaf.by(Leaf.key == f"{key}-0").run(Leaf.work) == 1
+    assert await step_row(Leaf, leaf_pk) == "ok"
+
+    parent = await Joined.by(Joined.key == key).get()
+    assert parent is not None
+    assert parent.children_left == 2
+    assert EVENTS.count(f"joined-report:{key}") == 0
+    assert EVENTS.count(f"leaf:{key}-0") == 2
+
+
+async def test_run_leaves_a_step_already_in_flight_its_lease(session_factory):
+    key = uuid.uuid4().hex
+    await RaceReview(key=key).start(RaceReview.submit())
+    pk = await pk_of(RaceReview, key)
+    await claim_row(RaceReview, pk)
+
+    assert await RaceReview.by(RaceReview.key == key).run(RaceReview.expire()) == 1
+    row = await RaceReview.by(RaceReview.key == key).get()
+    # The lease stays, so the step asked for here runs once the one in flight is
+    # done rather than beside it.
+    assert row is not None
+    assert row.claimed_until is not None
+
+
+async def test_start_gives_the_row_the_key_the_database_made(session_factory):
+    key = uuid.uuid4().hex
+    row = Chain(key=key)
+    assert row.id is None
+
+    assert await row.start(Chain.first) is True
+
+    # The caller can address the run it just started without a key of its own.
+    assert row.id is not None
+    found = await Chain.by(Chain.id == row.id).get()
+    assert found is not None
+    assert found.key == key
+
+
+async def test_a_customer_at_its_limit_does_not_hide_another_customers_work(
+    session_factory,
+):
+    now = datetime.datetime.now(datetime.timezone.utc)
+    async with session_factory() as session, session.begin():
+        for index in range(claim.GROUPS_PER_PASS):
+            # A customer running all it may, with more waiting behind it, and
+            # waiting longer than every customer after it.
+            await session.execute(
+                insert(Crowded).values(
+                    key=f"busy-{index}-{now}",
+                    customer=f"busy-{index}-{now}",
+                    next_step="work",
+                    wake_at=now - datetime.timedelta(minutes=10),
+                    claimed_until=now + datetime.timedelta(minutes=5),
+                    attempts=0,
+                    wf_version=0,
+                )
+            )
+            await session.execute(
+                insert(Crowded).values(
+                    key=f"busy-{index}-{now}-waiting",
+                    customer=f"busy-{index}-{now}",
+                    next_step="work",
+                    wake_at=now - datetime.timedelta(minutes=9),
+                    attempts=0,
+                    wf_version=0,
+                )
+            )
+        await session.execute(
+            insert(Crowded).values(
+                key=f"free-{now}",
+                customer=f"free-{now}",
+                next_step="work",
+                wake_at=now - datetime.timedelta(minutes=1),
+                attempts=0,
+                wf_version=0,
+            )
+        )
+
+    # One free slot, and the customers a pass looks at first can use none of it.
+    claimed = await claim.claim(runtime.current(), Crowded, 1)
+    assert len(claimed) == 1
+    [(pk, _)] = claimed
+    row = await Crowded.by(Crowded.id == pk[0]).get()
+    assert row is not None
+    assert row.customer == f"free-{now}"

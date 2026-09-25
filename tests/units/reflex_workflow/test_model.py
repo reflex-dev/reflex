@@ -27,7 +27,7 @@ from reflex_workflow import (
     wake_in,
 )
 from reflex_workflow.engine import claim
-from reflex_workflow.model import check_owner
+from reflex_workflow.model import check_call
 from sqlalchemy import String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from typing_extensions import assert_type
@@ -170,8 +170,8 @@ def test_steps_defined_on_a_shared_base_belong_to_each_table():
     assert (
         First.__workflow_steps__ == Second.__workflow_steps__ == {"begin": Shared.begin}
     )
-    check_owner(First, Shared.begin())
-    check_owner(Second, Shared.begin())
+    check_call(First, Shared.begin())
+    check_call(Second, Shared.begin())
 
 
 def test_step_arguments_are_checked():
@@ -236,7 +236,7 @@ def test_a_bare_step_that_needs_arguments_is_rejected():
 
 def test_another_workflows_step_is_rejected_at_runtime():
     with pytest.raises(TypeError, match="not a step of Expense"):
-        check_owner(Expense, Other.go())
+        check_call(Expense, Other.go())
 
 
 def test_a_class_of_the_same_name_from_another_module_cannot_take_a_table():
@@ -317,3 +317,13 @@ def test_only_one_bucket_table_may_be_mapped(monkeypatch):
 
         class Second(Base, RateBucket):
             __tablename__ = "wf_model_rate_again"
+
+
+def test_arguments_a_step_cannot_take_are_rejected_where_the_call_is_made():
+    # A webhook body that does not fit the step it addresses is refused while
+    # there is still a caller to tell.
+    with pytest.raises(TypeError, match="cannot take those arguments"):
+        check_call(Expense, Expense.decide(verdikt="approve"))  # pyright: ignore[reportCallIssue]
+    with pytest.raises(TypeError, match="cannot take those arguments"):
+        check_call(Expense, Expense.decide("approve", "again"))  # pyright: ignore[reportCallIssue]
+    check_call(Expense, Expense.decide("approve"))

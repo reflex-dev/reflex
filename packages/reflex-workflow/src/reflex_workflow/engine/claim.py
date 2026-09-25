@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
 from reflex_workflow import model
 from reflex_workflow.engine import rows
@@ -114,15 +115,21 @@ def lease(
 async def waiting_groups(
     runtime: Runtime,
     cls: type[Workflow],
+    spec: Limit,
     group: Any,
     most: int,
     steps: Collection[str] | None,
 ) -> list[Any]:
-    """Return the groups with work waiting, the longest-waiting first.
+    """Return the groups with work a pass could take, the longest-waiting first.
+
+    A group already running all it may is left out rather than counted against
+    the handful of groups a pass considers: it would take nothing anyway, and
+    passing it over here is what lets the worker reach the group behind it.
 
     Args:
         runtime: The running engine.
         cls: The workflow class.
+        spec: The workflow's limit.
         group: The column that says which group a row belongs to.
         most: How many groups to return.
         steps: The steps this worker may run, or None for all of them.
@@ -137,6 +144,18 @@ async def waiting_groups(
         .order_by(func.min(cls.wake_at).nullsfirst())
         .limit(most)
     )
+    if spec.at_most is not None:
+        running = aliased(cls)
+        stmt = stmt.having(
+            select(func.count())
+            .select_from(running)
+            .where(
+                getattr(running, spec.by) == group,
+                running.claimed_until > func.now(),
+            )
+            .scalar_subquery()
+            < spec.at_most
+        )
     async with runtime.session_factory() as session:
         return list((await session.execute(stmt)).scalars().all())
 
@@ -342,7 +361,9 @@ async def claim(
         msg = f"{cls.__qualname__} has no column {spec.by!r} to limit by."
         raise TypeError(msg)
     taken: list[tuple[list[Any], int]] = []
-    groups = await waiting_groups(runtime, cls, group, limit * GROUPS_PER_PASS, steps)
+    groups = await waiting_groups(
+        runtime, cls, spec, group, limit * GROUPS_PER_PASS, steps
+    )
     for value in groups:
         free = limit - len(taken)
         if free <= 0:

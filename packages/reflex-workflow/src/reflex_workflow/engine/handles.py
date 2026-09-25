@@ -18,7 +18,7 @@ from reflex_workflow.model import (
     StepRef,
     Workflow,
     as_call,
-    check_owner,
+    check_call,
 )
 
 if TYPE_CHECKING:
@@ -39,7 +39,7 @@ def insertion(row: Workflow, first: Call[Any], parent: dict[str, Any] | None = N
         An insert that does nothing if the row is already there, returning its key.
     """
     cls = type(row)
-    check_owner(cls, first)
+    check_call(cls, first)
     mapper = rows.mapper(cls)
     values: dict[str, Any] = {
         attr.columns[0].key: value
@@ -68,6 +68,9 @@ def insertion(row: Workflow, first: Call[Any], parent: dict[str, Any] | None = N
 async def start(row: W, first: Call[W]) -> bool:
     """Insert a row and schedule its first step, unless it already exists.
 
+    A row the database keyed itself is given its key here, so the caller can
+    address the run it just started without a key of its own to look it up by.
+
     Args:
         row: A transient instance of a workflow class.
         first: The first step call.
@@ -83,6 +86,8 @@ async def start(row: W, first: Call[W]) -> bool:
             await notify.announce(session, type(row).__tablename__)
     if inserted is None:
         return False
+    for key, value in zip(rows.pk_keys(type(row)), inserted, strict=True):
+        setattr(row, key, value)
     runtime.wake.set()
     return True
 
@@ -147,6 +152,10 @@ class RunHandle(Generic[W]):
         abandoned along with any event held for it, and children of a fan-out it
         was joining no longer count toward it.
 
+        A step already running keeps its lease, so the step asked for here starts
+        once that one is done rather than beside it: two steps of one run never
+        act at the same time, however they were scheduled.
+
         Args:
             call: The step call, e.g. ``Expense.decide("approve")``, or a step
                 that takes no arguments.
@@ -157,7 +166,7 @@ class RunHandle(Generic[W]):
         runtime = current()
         cls = self.cls
         call = as_call(call)
-        check_owner(cls, call)
+        check_call(cls, call)
         stmt = (
             update(cls)
             .where(*self.where)
@@ -170,7 +179,6 @@ class RunHandle(Generic[W]):
                 children_left=None,
                 attempts=0,
                 last_error=None,
-                claimed_until=None,
                 wf_version=cls.wf_version + 1,
             )
             .returning(cls.wf_version)
@@ -208,7 +216,7 @@ class RunHandle(Generic[W]):
         """
         runtime = current()
         cls = self.cls
-        check_owner(cls, call)
+        check_call(cls, call)
         fresh = (
             or_(
                 cls.recent_event_keys.is_(None),
@@ -241,7 +249,15 @@ class RunHandle(Generic[W]):
         )
         applied = (
             update(cls)
-            .where(*self.where, cls.waiting_for == call.step.name, fresh)
+            .where(
+                *self.where,
+                cls.waiting_for == call.step.name,
+                # A wait ends once. An event already held for this one is on its
+                # way to being run, so a second is neither applied over it nor
+                # buffered behind it: the wait has its answer.
+                cls.pending_event.is_(None),
+                fresh,
+            )
             .values(
                 next_step=call.step.name,
                 next_args=call.encode(),
