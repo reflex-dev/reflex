@@ -10,6 +10,7 @@ from PyPI (rolldown-vite 7.2.10). Both were exported from a copy of the
 playground's tracked files, on Linux:
 
 ```console
+$ mkdir -p /tmp/rb-size
 $ git ls-files -z examples/playground | xargs -0 -I{} cp --parents {} /tmp/rb-size/
 $ cd /tmp/rb-size/examples/playground
 $ $PY -m reflex export --frontend-only --no-zip --env prod
@@ -18,3 +19,5 @@ $ cp .web/build/client/index.html head-index.html   # or 0.8.23-index.html
 
 with `PY` the workspace interpreter for `head-index.html` and a Python 3.12
 venv with `reflex==0.8.23` (its `bin` first on `PATH`) for `0.8.23-index.html`.
+Then, in the copied file, delete every element of the `<body>` except its
+inline `<script type="module">`; keep the `<head>` unchanged.

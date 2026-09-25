@@ -554,15 +554,20 @@ def resolved(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, str]]:
 
 
 @pytest.fixture
-def shifted() -> Iterator[None]:
+def shifted() -> Iterator[list[str]]:
     """Register a benchmark whose values are 20 % higher for the subject 2.0.
 
     Yields:
-        Nothing; the benchmark is unregistered afterwards.
+        The arm of every ``setup_cache`` call; the benchmark is unregistered
+        afterwards.
     """
+    cached: list[str] = []
 
     class Shifted:
         """Log-normal values around 1 s, 1.2 s for the subject 2.0."""
+
+        def setup_cache(self, ctx: Context) -> None:
+            cached.append(ctx.arm)
 
         def sample(self, ctx: Context) -> dict[str, float]:
             shift = 1.2 if ctx.subject.spec == "2.0" else 1.0
@@ -573,7 +578,7 @@ def shifted() -> Iterator[None]:
     )
     registry.register(bench)
     try:
-        yield
+        yield cached
     finally:
         registry.REGISTRY.pop(bench.id)
 
@@ -619,7 +624,9 @@ def test_subject_errors_exit_with_1(home: Path, monkeypatch: pytest.MonkeyPatch)
     assert "uv pip install failed: no reflex 9.9.9" in result.output
 
 
-def test_ab_finds_a_shift_between_subjects(home: Path, resolved: list, shifted: None):
+def test_ab_finds_a_shift_between_subjects(
+    home: Path, resolved: list, shifted: list[str]
+):
     result = invoke(
         "ab", "test.shifted", "--base", "1.0", "--head", "2.0", "--rounds", "12",
         "--seed", "3", "--no-save", "--json", "ab.json", "--fail-on", "regression",
@@ -648,7 +655,7 @@ def test_ab_finds_a_shift_between_subjects(home: Path, resolved: list, shifted: 
     assert "runs Python" not in result.output
 
 
-def test_ab_a_a_control(home: Path, resolved: list, shifted: None):
+def test_ab_a_a_control(home: Path, resolved: list, shifted: list[str]):
     result = invoke(
         "ab", "test.shifted", "--head", "2.0", "--aa", "--rounds", "12",
         "--seed", "3", "--json", "aa.json", "--fail-on", "regression",
@@ -658,6 +665,8 @@ def test_ab_a_a_control(home: Path, resolved: list, shifted: None):
     doc = load(Path("aa.json"))
     assert doc["invocation"]["kind"] == "aa"
     assert doc["subjects"]["A"] == doc["subjects"]["B"]
+    # Both arms share one cache directory, set up once before either opens.
+    assert shifted == ["A"]
     comparison = doc["benchmarks"][0]["metrics"]["value"]["comparison"]
     assert comparison is not None
     assert comparison["verdict"] in {"unchanged", "inconclusive"}
@@ -665,7 +674,9 @@ def test_ab_a_a_control(home: Path, resolved: list, shifted: None):
     assert len(list((home / "results" / "test-profile").glob("*.json"))) == 1
 
 
-def test_ab_random_order_is_reproducible(home: Path, resolved: list, shifted: None):
+def test_ab_random_order_is_reproducible(
+    home: Path, resolved: list, shifted: list[str]
+):
     def orders(seed: str) -> list[str]:
         result = invoke(
             "ab", "test.shifted", "--base", "1.0", "--head", "2.0", "--rounds", "8",
@@ -768,7 +779,7 @@ def test_prune_rejects_invalid_ages(home: Path, age: str):
 
 
 def test_ab_warns_when_the_arms_run_different_pythons(
-    home: Path, monkeypatch: pytest.MonkeyPatch, shifted: None
+    home: Path, monkeypatch: pytest.MonkeyPatch, shifted: list[str]
 ):
     def resolve(spec: str, **kwargs: Any) -> Subject:
         python = "3.12.3" if spec == "1.0" else "3.14.7"

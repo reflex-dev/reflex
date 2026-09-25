@@ -260,9 +260,12 @@ def _fake_playground(root: Path) -> Path:
     (source / "app" / "app.py").write_text("import reflex as rx\n")
     (source / "app" / "__pycache__" / "app.cpython-314.pyc").write_bytes(b"\0")
     (source / "rxconfig.py").write_text("config = None\n")
-    for output in (".venv", ".web", ".states", "reflex.lock"):
+    for output in (".venv", ".web", ".states", "reflex.lock", "uploaded_files"):
         (source / output).mkdir()
         (source / output / "junk").write_text("x")
+    (source / "assets" / "external").mkdir(parents=True)
+    (source / "assets" / "external" / "junk.js").write_text("x")
+    (source / "assets" / "logo.svg").write_text("<svg/>")
     return source
 
 
@@ -272,7 +275,7 @@ def test_stage_skips_build_output(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     dst = tmp_path / "staged"
     fixtures.stage_playground(dst)
     staged = sorted(p.relative_to(dst).as_posix() for p in dst.rglob("*"))
-    assert staged == ["app", "app/app.py", "rxconfig.py"]
+    assert staged == ["app", "app/app.py", "assets", "assets/logo.svg", "rxconfig.py"]
 
 
 def test_stage_replaces_sources_and_keeps_the_staged_build(
