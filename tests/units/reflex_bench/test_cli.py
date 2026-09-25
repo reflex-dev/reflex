@@ -244,6 +244,18 @@ def test_interrupted_run_saves_the_finished_benchmarks(home: Path, interrupting:
     assert "interrupted" in shown.output
 
 
+def test_interrupted_run_keeps_the_named_baseline(home: Path, interrupting: None):
+    assert invoke("run", "selftest.exact", "--save-as", "main").exit_code == 0
+    baseline = home / "baselines" / "test-profile" / "main.json"
+    before = baseline.read_bytes()
+    result = invoke(
+        "run", "selftest.exact", "test.interrupting", "--runs", "3", "--save-as", "main"
+    )
+    assert result.exit_code == cli.EXIT_INTERRUPTED, result.output
+    assert "not saved as baseline main" in result.output
+    assert baseline.read_bytes() == before
+
+
 def test_known_regression_fails_with_exit_code_2(home: Path):
     assert _noise_run("base.json", "--seed", "1").exit_code == 0
     result = _noise_run(

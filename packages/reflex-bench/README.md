@@ -70,7 +70,7 @@ inconclusive result with `--fail-on-inconclusive`. A benchmark that fails or
 times out is reported with its status and does not stop the run; when comparing,
 one that fails or times out in head but not in base (or is new) is a regression.
 Ctrl-C during `run` exits with `130` after saving the benchmarks that finished,
-marked with `"interrupted": true`; the benchmark in progress is left out.
+marked with `"interrupted": true`; the benchmark in progress is left out, and `--save-as` keeps the old baseline.
 
 With `CI=true` the output is plain (no colors, no live progress, one line per
 finished benchmark) and `--fail-on` defaults to `regression`. Nothing else changes.

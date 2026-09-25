@@ -657,7 +657,9 @@ def _finish(
     saved = []
     if save:
         saved.append(autosave(doc, home))
-    if save_as:
+    if save_as and doc.get("interrupted"):
+        console.print(Text(f"interrupted: not saved as baseline {save_as}"))
+    elif save_as:
         saved.append(save_baseline(doc, save_as, home))
     if json_path is not None:
         dump(doc, json_path)
