@@ -3979,7 +3979,8 @@ class Field(Generic[FIELD_TYPE]):
             if type(instance) is self._owner
             else _owner_state(instance, self._owner)  # pyright: ignore[reportArgumentType]
         )
-        if isinstance(value, self._proxy):
+        # Only a tracked owner, like a state, hands out proxies to unwrap.
+        if self._tracked and isinstance(value, self._proxy):
             value = value.__wrapped__  # pyright: ignore[reportAttributeAccessIssue]
         if (
             # Only values sent to the client are type checked.
