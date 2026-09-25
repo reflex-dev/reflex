@@ -12,16 +12,23 @@ generator of :mod:`reflex_bench.drivers.events`:
 - ``events.simple.knee``: open-loop steps from 10 % to 110 % of the probed
   capacity; the knee is the highest rate the backend still keeps up with.
 - ``events.sessions.at_1hz``: many sessions sending one event per second.
+- ``events.shared_contention.*``: capacity and latency with every session
+  linked to one ``rx.SharedState`` token, so each event is fanned out to all
+  the others.
+- ``events.shared_fanout.broadcast``: one of the linked sessions sends, and an
+  event is answered once every linked session received its delta.
 
-CI minutes are scarce, so ``smoke`` and ``daily`` run two points only: the
-simple shape with the memory manager and 10 sessions, its latency at 500 events
-per second. Everything else runs with ``--suite all`` or by name.
+CI minutes are scarce, so ``smoke`` runs two points only: the simple shape
+with the memory manager and 10 sessions, its latency at 500 events per second.
+``daily`` adds the shared state at the same point and two fan-out sizes.
+Everything else runs with ``--suite all`` or by name.
 
-The shapes are the playground's ``BenchState.set_seq*`` handlers. The state
-manager is a parameter; ``redis`` joins ``memory`` and ``disk`` when
-``REFLEX_REDIS_URL`` is set in the harness's environment. On Linux with four
-CPUs or more, the server runs on the lower half of the physical cores (not CPU
-0) and the generator on the upper half, so no core is shared through SMT.
+The shapes are the playground's ``BenchState.set_seq*`` handlers, and
+``BoardState.set_seq_shared`` for the shared state. The state manager is a
+parameter; ``redis`` joins ``memory`` and ``disk`` when ``REFLEX_REDIS_URL`` is
+set in the harness's environment. On Linux with four CPUs or more, the server
+runs on the lower half of the physical cores (not CPU 0) and the generator on
+the upper half, so no core is shared through SMT.
 """
 
 from __future__ import annotations
@@ -30,6 +37,7 @@ import contextlib
 import os
 import shutil
 import threading
+import uuid
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -44,6 +52,7 @@ from reflex_bench.drivers.events import (
     Endpoint,
     EventShape,
     GeneratorSaturated,
+    LinkEvent,
     LoadError,
     LoadPlan,
     LoadResult,
@@ -56,12 +65,19 @@ from reflex_bench.registry import Metric, SampleResult, benchmark
 
 PLAYGROUND = Path(__file__).resolve().parents[5] / "examples" / "playground"
 BENCH_STATE = "reflex___state____state.playground___state____bench_state"
+BOARD_STATE = "reflex___state____state.playground___state____board_state"
 SEQ_VAR = "last_seq_rx_state_"
+CLIENT_VAR = "last_client_rx_state_"
 SESSIONS = (1, 10, 50, 200)
 AT_1HZ_SESSIONS = (50, 200, 1000)
+# Sessions linked to one board in the fan-out, the sender included.
+LINKED = (1, 5, 25, 100)
 # The one point of the grid smoke and daily run, and its latency's offered rate.
 CHEAP = {"manager": ("memory",), "sessions": (10,)}
 CHEAP_LATENCY = {**CHEAP, "rate": (500,)}
+# Daily's shared state points: the contention's rate follows its own capacity.
+CHEAP_CONTENTION_LATENCY = {**CHEAP, "rate": ("auto",)}
+CHEAP_FANOUT = {"manager": ("memory",), "linked": (5, 25)}
 KNEE_SHARES = (0.10, 0.50, 0.70, 0.80, 0.90, 0.95, 1.00, 1.10)
 # A step keeps up when it answers 99 % of the offered rate, leaves nothing
 # unanswered and keeps its p99 within 3x the p99 of the 10 % step.
@@ -99,6 +115,7 @@ class Window(NamedTuple):
 # answers thousands of events, and CI minutes are scarce.
 CAPACITY_WINDOW = Window(1.0, 3.0)
 LATENCY_WINDOW = Window(1.0, 5.0)
+FANOUT_WINDOW = Window(1.0, 3.0)
 PROBE_WINDOW = Window(1.0, 2.0)
 KNEE_WINDOW = Window(1.0, 4.0)
 AT_1HZ_WINDOW = Window(3.0, 10.0)
@@ -125,16 +142,53 @@ def bench_shape(handler: str, *, ordered: bool = True) -> EventShape:
     )
 
 
+def board_shape(*, client_var: str | None = None) -> EventShape:
+    """Describe ``BoardState.set_seq_shared``, whose delta reaches every linked session.
+
+    Args:
+        client_var: The var echoing the sender's index, when only the session's
+            own events count as answered.
+
+    Returns:
+        The event shape: payload ``{"seq": n}``, echoed as ``last_seq``.
+    """
+    return EventShape(
+        name=f"{BOARD_STATE}.set_seq_shared",
+        payload=seq_payload,
+        delta_key=BOARD_STATE,
+        seq_var=SEQ_VAR,
+        client_var=client_var,
+    )
+
+
+# The wire suite measures one unlinked session per shape, so the shared shapes
+# are kept apart.
 SHAPES = {
     "simple": bench_shape("set_seq"),
     "complex": bench_shape("set_seq_complex"),
     "cross": bench_shape("set_seq_cross"),
     # Background tasks take the state lock in whatever order they get to it.
     "background": bench_shape("set_seq_background", ordered=False),
-    # SharedState fan-out (one event updating many sessions) and SharedState
-    # contention (many sessions writing one shared state) need the playground's
-    # SharedState surface (ENG-12609); nothing is registered for them yet.
 }
+SHARED_SHAPES = {
+    # One session sends; its event is answered once every linked session has the delta.
+    "shared_fanout": board_shape(),
+    # Every session sends and receives the others' deltas; only its own echo answers.
+    "shared_contention": board_shape(client_var=CLIENT_VAR),
+}
+
+
+def join_link() -> LinkEvent:
+    """Link a load's sessions to a fresh board, so no board keeps an earlier load's clients.
+
+    Returns:
+        The ``BoardState.join`` event with a token reflex accepts (no underscore).
+    """
+    return LinkEvent(
+        name=f"{BOARD_STATE}.join",
+        payload={"token": uuid.uuid4().hex},
+        delta_key=BOARD_STATE,
+    )
 
 
 def managers(environ: Mapping[str, str]) -> tuple[str, ...]:
@@ -458,15 +512,26 @@ class _Backend:
     ``sample``; a load started after :meth:`stop` raises.
     """
 
-    def __init__(self, ctx: Context, shape: EventShape) -> None:
+    def __init__(
+        self,
+        ctx: Context,
+        shape: EventShape,
+        *,
+        sessions: int,
+        linked: bool = False,
+    ) -> None:
         """Plan the backend; nothing starts yet.
 
         Args:
             ctx: The benchmark context.
             shape: The event the sessions send.
+            sessions: The number of sessions of every load.
+            linked: Whether every load first links its sessions to a fresh board.
         """
         self.ctx = ctx
         self.shape = shape
+        self.sessions = sessions
+        self.linked = linked
         self.pinning = pinning()
         self.url: str | None = None
         self._lock = threading.Lock()
@@ -502,7 +567,7 @@ class _Backend:
     def start_app(self) -> None:
         """Start the playground backend and pin it to the server CPUs."""
         ctx = self.ctx
-        raise_fd_limit(ctx.params["sessions"])
+        raise_fd_limit(self.sessions)
         states = ctx.workdir / "states"
         shutil.rmtree(states, ignore_errors=True)
         self._scope = CgroupScope() if CgroupScope.available() is None else None
@@ -565,7 +630,7 @@ class _Backend:
         """Run one load against the server.
 
         Args:
-            mode: ``open`` or ``closed``.
+            mode: ``open``, ``closed`` or ``fanout``.
             rate: The offered rate of the open loop.
             window: How long the load runs.
 
@@ -577,7 +642,7 @@ class _Backend:
             LoadError: When the backend was stopped or the load failed.
         """
         assert self.url is not None
-        sessions = self.ctx.params.get("sessions", CALIBRATION_SESSIONS)
+        sessions = self.sessions
         generator = None if self.pinning is None else self.pinning["generator"]
         plan = LoadPlan(
             endpoint=Endpoint(self.url),
@@ -587,8 +652,11 @@ class _Backend:
             rate=rate,
             warmup_s=window.warmup_s,
             duration_s=window.duration_s,
-            processes=generator_processes(sessions, generator),
+            processes=(
+                1 if mode == "fanout" else generator_processes(sessions, generator)
+            ),
             cpus=generator,
+            link=join_link() if self.linked else None,
         )
         with self._lock:
             if self._stopped:
@@ -607,7 +675,7 @@ class _Backend:
         """Run one load against the reflex server and check it.
 
         Args:
-            mode: ``open`` or ``closed``.
+            mode: ``open``, ``closed`` or ``fanout``.
             rate: The offered rate of the open loop.
             window: How long the load runs.
 
@@ -680,9 +748,19 @@ class _OnBackend:
 
 
 class _OnPlayground(_OnBackend):
-    """Hooks of a benchmark against the playground backend."""
+    """Hooks of a benchmark against the playground backend.
+
+    Attributes:
+        event: The event the sessions send.
+        linked: Whether every load first links its sessions to a fresh board.
+        sessions_param: The parameter giving the number of sessions.
+        probe: The mode of the closed-loop probe of ``setup``.
+    """
 
     event: EventShape
+    linked = False
+    sessions_param = "sessions"
+    probe: Mode = "closed"
     capacity = 0.0
 
     def setup_cache(self, ctx: Context) -> None:
@@ -702,9 +780,14 @@ class _OnPlayground(_OnBackend):
         Args:
             ctx: The benchmark context.
         """
-        self.backend = _Backend(ctx, self.event)
+        self.backend = _Backend(
+            ctx,
+            self.event,
+            sessions=ctx.params[self.sessions_param],
+            linked=self.linked,
+        )
         self.backend.start_app()
-        probe, _ = self.backend.load(mode="closed", rate=None, window=PROBE_WINDOW)
+        probe, _ = self.backend.load(mode=self.probe, rate=None, window=PROBE_WINDOW)
         self.capacity = probe.answered_rate
 
 
@@ -734,14 +817,21 @@ def _underpowered(result: LoadResult) -> dict[str, bool]:
     return {"p99_underpowered": True} if result.answered < UNDERPOWERED_P99 else {}
 
 
-def _register(name: str, shape: EventShape) -> None:
+def _register(name: str, shape: EventShape, *, shared: bool = False) -> None:
     """Register the capacity and latency benchmarks of one event shape.
 
     Args:
         name: The shape's name in the benchmark ids.
         shape: The event.
+        shared: Whether the sessions share one board; then the benchmarks join
+            ``daily`` at the cheap point, at the rate their own capacity sets.
     """
-    cheap = ("smoke", "daily") if name == "simple" else ()
+    if name == "simple":
+        cheap, latency_params = ("smoke", "daily"), CHEAP_LATENCY
+    elif shared:
+        cheap, latency_params = ("daily",), CHEAP_CONTENTION_LATENCY
+    else:
+        cheap, latency_params = (), CHEAP_LATENCY
 
     @benchmark(
         id=f"events.{name}.capacity",
@@ -764,6 +854,7 @@ def _register(name: str, shape: EventShape) -> None:
         """Closed loop, 3 s after 1 s of warmup: the most events per second the backend answers."""
 
         event = shape
+        linked = shared
 
         def sample(self, ctx: Context) -> SampleResult:
             """Load the backend as fast as it answers.
@@ -793,7 +884,7 @@ def _register(name: str, shape: EventShape) -> None:
         suites=cheap,
         kind="latency",
         params={"manager": MANAGERS, "sessions": SESSIONS, "rate": ("auto",)},
-        suite_params=dict.fromkeys(cheap, CHEAP_LATENCY),
+        suite_params=dict.fromkeys(cheap, latency_params),
         metrics={
             "response_p50": _latency("p50"),
             "response_p90": _latency("p90"),
@@ -811,6 +902,7 @@ def _register(name: str, shape: EventShape) -> None:
         """Open loop, 5 s after 1 s of warmup, at half the capacity (or --param rate=): the response times."""
 
         event = shape
+        linked = shared
         rate = 0.0
 
         def setup(self, ctx: Context) -> None:
@@ -852,6 +944,75 @@ def _register(name: str, shape: EventShape) -> None:
 
 for _name, _shape_of in SHAPES.items():
     _register(_name, _shape_of)
+_register("shared_contention", SHARED_SHAPES["shared_contention"], shared=True)
+
+
+@benchmark(
+    id="events.shared_fanout.broadcast",
+    suites=("daily",),
+    kind="latency",
+    params={"manager": MANAGERS, "linked": LINKED},
+    suite_params={"daily": CHEAP_FANOUT},
+    metrics={
+        "throughput": Metric(
+            unit="ev/s",
+            direction="higher",
+            description="events per second received by every linked session",
+        ),
+        "broadcast_p50": Metric(
+            unit="s",
+            direction="lower",
+            description="p50 of the time until the last linked session had the delta",
+        ),
+        "broadcast_p99": Metric(
+            unit="s",
+            direction="lower",
+            description="p99 of the time until the last linked session had the delta",
+        ),
+        "fanout_spread_p50": Metric(
+            unit="s",
+            direction="lower",
+            description="p50 of last minus first arrival of the delta over the sessions",
+        ),
+        "cpu_per_event": CPU_PER_EVENT,
+    },
+    timeout=HOOK_TIMEOUT_S,
+    setup_timeout=COMPILE_TIMEOUT_S + 60,
+    estimate=5,
+)
+class Fanout(_OnPlayground):
+    """One of the sessions linked to a board sends, closed loop, 3 s after 1 s of warmup: the time until every linked session has the delta."""
+
+    event = SHARED_SHAPES["shared_fanout"]
+    linked = True
+    sessions_param = "linked"
+    probe: Mode = "fanout"
+
+    def sample(self, ctx: Context) -> SampleResult:
+        """Send from the first linked session, one event at a time.
+
+        Args:
+            ctx: The benchmark context.
+
+        Returns:
+            The broadcast throughput and times, the spread and the CPU per event.
+        """
+        assert self.backend is not None
+        result, cpu_s = self.backend.load(
+            mode="fanout", rate=None, window=FANOUT_WINDOW
+        )
+        assert result.service_s is not None
+        assert result.spread_s is not None
+        return SampleResult(
+            {
+                "throughput": result.answered_rate,
+                "broadcast_p50": result.service_s["p50"],
+                "broadcast_p99": result.service_s["p99"],
+                "fanout_spread_p50": result.spread_s["p50"],
+                "cpu_per_event": cpu_per_event(cpu_s, result.answered),
+            },
+            extra=self.backend.extra(result, **_underpowered(result)),
+        )
 
 
 @benchmark(
@@ -991,7 +1152,7 @@ class Calibrate(_OnBackend):
         Args:
             ctx: The benchmark context.
         """
-        self.backend = _Backend(ctx, SHAPES["simple"])
+        self.backend = _Backend(ctx, SHAPES["simple"], sessions=CALIBRATION_SESSIONS)
         self.backend.start_echo()
 
     def sample(self, ctx: Context) -> SampleResult:

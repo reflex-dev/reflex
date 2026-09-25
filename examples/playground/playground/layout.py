@@ -6,7 +6,12 @@ from playground.state import BenchState
 
 ROOT_MARKER = "m-initial-root"  # bench:hmr-target root
 
-NAV_LINKS = [("Home", "/"), ("Counter", "/counter"), ("Item 42", "/item/42")]
+NAV_LINKS = [
+    ("Home", "/"),
+    ("Counter", "/counter"),
+    ("Board", "/board"),
+    ("Item 42", "/item/42"),
+]
 
 
 def navbar() -> rx.Component:

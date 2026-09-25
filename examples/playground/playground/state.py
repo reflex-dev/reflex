@@ -107,3 +107,36 @@ class BenchState(rx.State):
     def bench_value(self):
         """Show the handler marker, which the hot reload benchmarks rewrite."""
         self.handler_value = HANDLER_MARKER
+
+
+class BoardState(rx.SharedState):
+    """State shared by every session linked to the same board token."""
+
+    count: int = 0
+    last_seq: int = 0
+    last_client: int = 0
+
+    @rx.event
+    async def join(self, token: str):
+        """Link this session to a board, sharing its state with the sessions on it.
+
+        Args:
+            token: The board's token.
+        """
+        await self._link_to(token)
+
+    @rx.event
+    def increment(self):
+        """Increase the shared counter by one."""
+        self.count += 1
+
+    @rx.event
+    def set_seq_shared(self, seq: int, client: int = 0):
+        """Record a benchmark event and its sender; every linked session receives them.
+
+        Args:
+            seq: The sequence number the benchmark sent.
+            client: The benchmark session that sent it.
+        """
+        self.last_seq = seq
+        self.last_client = client

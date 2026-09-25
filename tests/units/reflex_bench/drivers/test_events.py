@@ -28,6 +28,7 @@ from reflex_bench.drivers.events import (
     Endpoint,
     EventShape,
     GeneratorSaturated,
+    LinkEvent,
     LoadError,
     LoadPlan,
     LoadResult,
@@ -190,10 +191,14 @@ def test_event_frames_always_carry_the_token():
         f'42/_event,["event",{{"name":"{STATE}.set_seq","payload":{{"seq":7}},'
         '"router_data":{"pathname":"/","asPath":"/","query":{}},"token":"tok"}]'
     )
-    frames = events._Frames(SHAPE, "tok", "/")
+    frames = events._Frames(SHAPE, "tok", "/", index=3)
     assert frames.event(7) == frame
     name, event = json.loads(frames.event(8)[len(EVENT_PREFIX) :])
     assert (name, event["payload"]) == ("event", {"seq": 8})
+    # A shape with a client var sends the session's index along.
+    contended = events._Frames(CONTENDED_SHAPE, "tok", "/", index=3)
+    _, event = json.loads(contended.event(8)[len(EVENT_PREFIX) :])
+    assert event["payload"] == {"seq": 8, "client": 3}
 
 
 def test_replies_of_both_versions_carry_the_same_delta():
@@ -557,6 +562,189 @@ def test_closed_loop_reports_service_time_only():
     assert result.answered_rate == pytest.approx(in_window / 0.5)
     assert result.answered_rate <= result.achieved_send_rate
     assert result.histogram["of"] == "service_s"
+
+
+BOARD = "reflex___state____state.playground___state____board_state"
+CLIENT_VAR = "last_client_rx_state_"
+LINK = LinkEvent(name=f"{BOARD}.join", payload={"token": "board-1"}, delta_key=BOARD)
+BOARD_SHAPE = EventShape(
+    name=f"{BOARD}.set_seq_shared",
+    payload=events.seq_payload,
+    delta_key=BOARD,
+    seq_var=SEQ_VAR,
+)
+CONTENDED_SHAPE = dataclasses.replace(BOARD_SHAPE, client_var=CLIENT_VAR)
+
+
+class Board(EchoServer):
+    """Answers like the playground's shared board: a join links a connection to a token, and a seq event reaches every linked connection."""
+
+    def __init__(self) -> None:
+        """Link nothing yet."""
+        super().__init__(delta_key=BOARD, seq_var=SEQ_VAR)
+        self.linked: dict[str, list[ServerConnection]] = {}
+        self.names: dict[ServerConnection, list[str]] = {}
+        self.payloads: list[dict[str, Any]] = []
+
+    async def on_event(self, ws: ServerConnection, event: dict[str, Any]) -> None:
+        """Record the event, then answer it: a join acknowledges, a seq event fans out.
+
+        Args:
+            ws: The connection.
+            event: The event.
+        """
+        self.names.setdefault(ws, []).append(event["name"])
+        if event["name"] == LINK.name:
+            self.linked.setdefault(event["payload"]["token"], []).append(ws)
+            await ws.send(events.emit_frame("event", {"delta": {BOARD: {SEQ_VAR: 0}}}))
+        elif event["name"] == BOARD_SHAPE.name:
+            self.payloads.append(event["payload"])
+            delta = {
+                BOARD: {
+                    SEQ_VAR: event["payload"]["seq"],
+                    CLIENT_VAR: event["payload"].get("client", 0),
+                }
+            }
+            for index, linked in enumerate(self.linked_to(ws)):
+                await self.deliver(
+                    linked, index, events.emit_frame("event", {"delta": delta})
+                )
+        else:
+            await super().on_event(ws, event)
+
+    def linked_to(self, ws: ServerConnection) -> list[ServerConnection]:
+        """List the connections that share a token with one.
+
+        Args:
+            ws: The connection.
+
+        Returns:
+            The linked connections, the sender first.
+        """
+        for linked in self.linked.values():
+            if ws in linked:
+                return [ws, *(other for other in linked if other is not ws)]
+        return [ws]
+
+    async def deliver(self, ws: ServerConnection, index: int, frame: str) -> None:
+        """Send a fan-out delta to one linked connection.
+
+        Args:
+            ws: The connection.
+            index: Its place among the linked connections, the sender at 0.
+            frame: The delta.
+        """
+        await ws.send(frame)
+
+
+def board_plan(url: str, **overrides: Any) -> LoadPlan:
+    return plan(url, **{"shape": BOARD_SHAPE, "link": LINK, **overrides})
+
+
+def test_linked_sessions_join_after_hydrating_and_before_the_load():
+    server = Board()
+    with serving(server) as url:
+        result = run_inline(board_plan(url, mode="closed", rate=None, sessions=3))
+    assert result.session_errors == []
+    assert result.answered > 0
+    assert len(server.linked["board-1"]) == 3
+    for names in server.names.values():
+        assert names[:3] == [events.HYDRATE_EVENT, events.ON_LOAD_EVENT, LINK.name]
+        assert set(names[3:]) == {BOARD_SHAPE.name}
+
+
+def test_a_session_whose_join_is_not_acknowledged_fails(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    class Deaf(Board):
+        """Links but never acknowledges."""
+
+        async def on_event(self, ws, event):
+            if event["name"] == LINK.name:
+                return
+            await super().on_event(ws, event)
+
+    monkeypatch.setattr(events, "PRIME_TIMEOUT_S", 0.5)
+    with serving(Deaf()) as url:
+        result = run_inline(board_plan(url, sessions=1))
+    assert result.sent == 0
+    assert result.session_errors == ["session 0: not linked within 0.5 s"]
+
+
+def test_a_fan_out_event_is_answered_once_every_linked_session_has_it():
+    class Trailing(Board):
+        """Delivers to the last linked session 50 ms after the others."""
+
+        async def deliver(self, ws, index, frame):
+            if index == 2:
+                await asyncio.sleep(0.05)
+            await ws.send(frame)
+
+    server = Trailing()
+    with serving(server) as url:
+        result = run_inline(board_plan(url, mode="fanout", rate=None, sessions=3))
+    assert result.session_errors == []
+    assert result.mode == "fanout"
+    assert result.sessions == 3
+    # Only the first session sends, and its payload names no client.
+    assert result.sent > 0
+    assert all(
+        payload == {"seq": seq} for seq, payload in enumerate(server.payloads, 1)
+    )
+    assert result.answered == result.sent
+    assert result.unanswered == 0
+    # An event completes when the trailing session has it, not when the sender does.
+    assert result.service_s is not None
+    assert result.service_s["p50"] >= 0.05
+    assert result.spread_s is not None
+    assert 0.05 <= result.spread_s["p50"] < result.service_s["p50"]
+    assert result.response_s is None
+    assert result.histogram["of"] == "service_s"
+    assert result.answered_rate < 20
+    assert result.check() is None
+
+
+def test_a_fan_out_event_missing_a_session_stays_unanswered():
+    class Skipping(Board):
+        """Never delivers to the second linked session."""
+
+        async def deliver(self, ws, index, frame):
+            if index != 1:
+                await ws.send(frame)
+
+    with serving(Skipping()) as url:
+        result = run_inline(
+            board_plan(url, mode="fanout", rate=None, sessions=3, warmup_s=0.0)
+        )
+    assert result.session_errors == []
+    # The sender and one listener had the first event, which stalls the loop.
+    assert result.sent == 1
+    assert result.answered == 0
+    assert result.unanswered == 1
+    assert result.spread_s is None
+
+
+def test_a_fan_out_runs_in_one_process():
+    with pytest.raises(ValueError, match="one process"):
+        board_plan("http://x", mode="fanout", rate=None, sessions=4, processes=2)
+    with pytest.raises(ValueError, match="takes no rate"):
+        board_plan("http://x", mode="fanout", rate=10.0, sessions=4)
+
+
+def test_contending_sessions_are_answered_by_their_own_echo_only():
+    server = Board()
+    with serving(server) as url:
+        result = run_inline(
+            board_plan(url, shape=CONTENDED_SHAPE, sessions=3, rate=150.0)
+        )
+    assert result.session_errors == []
+    # Every session saw the other sessions' deltas, yet each event has one answer.
+    assert result.sent == 75
+    assert result.answered == result.sent
+    assert result.out_of_order == 0
+    assert sorted({payload["client"] for payload in server.payloads}) == [0, 1, 2]
+    assert result.reply_frame is not None
+    assert f'"{CLIENT_VAR}":' in result.reply_frame
 
 
 def healthy(**overrides: Any) -> LoadResult:
