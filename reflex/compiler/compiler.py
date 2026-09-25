@@ -1227,6 +1227,30 @@ def _read_stateful_pages_marker() -> list[str] | None:
         raise
 
 
+_PAID_TIERS = frozenset(("pro", "team", "enterprise"))
+
+
+def _resolve_show_built_with_reflex(configured: bool | None) -> bool:
+    """Decide whether the compiled app shows the "Built with Reflex" badge.
+
+    Deploys always show it unless the tier is a paid plan, even when the app
+    opts out; a tier that cannot be resolved counts as unpaid.
+
+    Args:
+        configured: The app's ``show_built_with_reflex`` setting.
+
+    Returns:
+        Whether to show the badge.
+    """
+    if get_compile_context() == constants.CompileContext.DEPLOY:
+        tier = prerequisites.get_user_tier()
+        if tier in _PAID_TIERS:
+            # Paid deploys hide the badge unless the app opts in.
+            return bool(configured)
+        return True
+    return configured is not False
+
+
 def compile_app(
     app: App,
     *,
@@ -1344,14 +1368,9 @@ def compile_app(
     app._add_optional_endpoints()
     app._validate_var_dependencies()
 
-    if config.show_built_with_reflex is None:
-        if (
-            get_compile_context() == constants.CompileContext.DEPLOY
-            and prerequisites.get_user_tier() in ["pro", "team", "enterprise"]
-        ):
-            config.show_built_with_reflex = False
-        else:
-            config.show_built_with_reflex = True
+    config.show_built_with_reflex = _resolve_show_built_with_reflex(
+        config.show_built_with_reflex
+    )
 
     if is_prod_mode() and config.show_built_with_reflex:
         app._setup_sticky_badge()
