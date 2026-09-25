@@ -65,7 +65,9 @@ somewhere: ``--wheelhouse DIR`` takes them from a directory, which is how CI reu
 artifacts its build jobs already produced, and a run without it builds them locally instead.
 Building is deliberately not a fallback for a wheelhouse that comes up short — a gap there
 means this check and the build workflow have drifted, and silently building over it would
-both hide that and waste the minutes those jobs already spent.
+both hide that and waste the minutes those jobs already spent. A wheel that falls below a
+declared development floor is rebuilt at that floor either way, since the build jobs number
+every wheel from the tags and no tag reaches a version that has not been released.
 ``--check-dev-pins [package ...]`` instead scans the declared dependencies for
 development-release pins and fails if any are found (used by the publish pipeline to keep
 ``*.dev`` pins out of released package metadata).
@@ -595,7 +597,10 @@ def build_wheelhouse(
     index does not hold is an error naming it, rather than a wheel quietly produced here to
     a different recipe than the one the build workflow follows. That keeps the two from
     drifting apart unnoticed, and a wheel this check cannot use is one those jobs spent
-    their minutes on for nothing.
+    their minutes on for nothing. A wheel below a declared development floor is redone at
+    that floor either way: the build jobs number every wheel from the tags, and such a floor
+    names the unreleased version above them, so the sibling is not missing from their
+    output — no wheel they could have produced meets it.
 
     A wheel that is present but unable to satisfy what is declared against it fails too, for
     a different reason: a package is numbered from the newest tag its checkout reaches, so a
@@ -607,7 +612,7 @@ def build_wheelhouse(
     Args:
         packages: The packages about to be checked.
         wheelhouse: Directory to write the wheels into, holding any already built for it.
-        build: Whether to build what the index does not already cover.
+        build: Whether to build a sibling the index does not hold at all.
 
     Returns:
         A ``(versions, detail)`` tuple mapping each distribution in the index to its version.
@@ -646,7 +651,7 @@ def build_wheelhouse(
         if _satisfies(declared, built):
             continue
         floor = _dev_build_version(declared)
-        if build and floor is not None:
+        if floor is not None:
             detail = _build_sibling(source, wheelhouse, floor)
             if detail is not None:
                 return {}, detail
@@ -997,9 +1002,10 @@ def main() -> int:
         type=Path,
         help="Directory of prebuilt workspace wheels to resolve siblings from. CI points "
         "this at the artifacts the build workflow already produced, and a sibling the "
-        "directory does not usably cover is then an error rather than something built "
-        "over, which would hide a drift between this check and those jobs. Omit it and the "
-        "wheels are built here instead.",
+        "directory does not hold is then an error rather than something built over, "
+        "which would hide a drift between this check and those jobs. One that falls below "
+        "a *.dev floor is still rebuilt at that floor, which names a release the tags have "
+        "not reached. Omit it and the wheels are built here instead.",
     )
     args = parser.parse_args()
 
@@ -1032,10 +1038,10 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="min-deps-wheelhouse-") as tmp:
         wheelhouse = Path(tmp) / "wheelhouse"
         if args.wheelhouse is not None:
-            # Copied rather than used in place, so a wheel built to cover a gap in the
-            # prebuilt set never lands in the caller's directory.
+            # Copied rather than used in place, so a wheel rebuilt at a development floor
+            # never lands in the caller's directory.
             shutil.copytree(args.wheelhouse, wheelhouse)
-        # A caller who supplied the wheels means them to be the whole story; one who
+        # A caller who supplied the wheels means them to cover every sibling; one who
         # did not has nowhere else to get them.
         versions, detail = build_wheelhouse(
             selected, wheelhouse, build=args.wheelhouse is None

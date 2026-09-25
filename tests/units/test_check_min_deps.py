@@ -614,17 +614,21 @@ def test_build_wheelhouse_keeps_a_prebuilt_wheel(
     ]
 
 
+@pytest.mark.parametrize("build", [True, False], ids=["building", "given-wheelhouse"])
 def test_build_wheelhouse_redoes_a_prebuilt_wheel_below_a_development_floor(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, build: bool
 ):
     """A prebuilt wheel that misses a `*.dev` floor is still rebuilt at it.
 
     The build jobs know nothing about the floors declared against them, so a release train
-    whose floor has outrun the tags needs the wheel produced here after all.
+    whose floor has outrun the tags needs the wheel produced here after all. That holds for
+    a given wheelhouse too, which is how CI runs: the sibling is not missing, it is numbered
+    from tags that cannot reach a version nobody has released yet.
 
     Args:
         monkeypatch: Subprocess patching fixture.
         tmp_path: Temporary package and wheelhouse directory.
+        build: Whether the run builds siblings the wheelhouse does not hold.
     """
     fake_run = _FakeRun(built={"reflex-base": "0.9.11.post1.dev0+abc1234"})
     monkeypatch.setattr(check_min_deps, "_run", fake_run)
@@ -634,7 +638,7 @@ def test_build_wheelhouse_redoes_a_prebuilt_wheel_below_a_development_floor(
     package = _consumer(tmp_path, "reflex-base >= 0.9.12.dev0")
 
     versions, detail = check_min_deps.build_wheelhouse(
-        [package], wheelhouse, build=True
+        [package], wheelhouse, build=build
     )
 
     assert detail is None
@@ -931,7 +935,7 @@ def test_main_builds_the_wheels_when_no_wheelhouse_is_given(
 def test_main_takes_a_given_wheelhouse_as_the_whole_story(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ):
-    """--wheelhouse means the build jobs already produced the wheels, so nothing is built.
+    """--wheelhouse means the build jobs produced the wheels, so a missing one is not built.
 
     Args:
         monkeypatch: Argument and function patching fixture.
