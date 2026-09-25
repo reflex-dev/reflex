@@ -440,7 +440,7 @@ def test_frontend_group_ends_with_run_context(tmp_path):
     """The opted-in frontend and its child are both stopped at context exit."""
     grandchild_pid = tmp_path / "grandchild.pid"
     ready = threading.Event()
-    root: list[subprocess.Popen[bytes]] = []
+    root: list[subprocess.Popen[str]] = []
 
     def frontend():
         code = (
@@ -454,6 +454,7 @@ def test_frontend_group_ends_with_run_context(tmp_path):
             start_new_session=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            text=True,
         )
         root.append(p)
         processes.track_frontend(p)
