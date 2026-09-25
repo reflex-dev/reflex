@@ -6295,6 +6295,96 @@ def test_base_var_shadowing_inherited_var_raises() -> None:
             shadowed_value: str = "ninety-nine"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
 
 
+def test_base_var_shadowing_inherited_var_through_mixin_raises() -> None:
+    """A mixin cannot silently shadow a var inherited from the parent state."""
+
+    class ShadowParent(BaseState):
+        shadowed_value: int = 1
+
+    class ShadowMixin(BaseState, mixin=True):
+        shadowed_value: str = "ninety-nine"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="shadowed_value"):
+
+        class ShadowChild(ShadowMixin, ShadowParent):
+            pass
+
+
+def test_base_var_shadowing_parent_before_mixin_does_not_raise() -> None:
+    """A mixin after the parent cannot shadow the parent's class attribute lookup."""
+
+    class ShadowParent(BaseState):
+        shadowed_value: int = 1
+
+    class ShadowMixin(BaseState, mixin=True):
+        shadowed_value: str = "ninety-nine"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+    class ShadowChild(ShadowParent, ShadowMixin):
+        pass
+
+    assert isinstance(ShadowChild.shadowed_value, Var)
+
+
+def test_base_var_duplicate_through_mixins_raises() -> None:
+    """Unrelated mixins cannot silently define the same state var."""
+
+    class FirstMixin(BaseState, mixin=True):
+        duplicated_value: int = 1
+
+    class SecondMixin(BaseState, mixin=True):
+        duplicated_value: int = 2
+
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="duplicated_value"):
+
+        class CombinedState(FirstMixin, SecondMixin, State):
+            pass
+
+
+def test_base_var_duplicate_through_mixins_without_parent_raises() -> None:
+    """Duplicate mixin vars are rejected for a new root state too."""
+
+    class FirstMixin(BaseState, mixin=True):
+        duplicated_value: int = 1
+
+    class SecondMixin(BaseState, mixin=True):
+        duplicated_value: int = 2
+
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="duplicated_value"):
+
+        class RootState(FirstMixin, SecondMixin, BaseState):
+            pass
+
+
+def test_base_var_related_mixins_can_override() -> None:
+    """A mixin subclass may intentionally override its base mixin's var."""
+
+    class BaseMixin(BaseState, mixin=True):
+        value: int = 1
+
+    class ExtendedMixin(BaseMixin, mixin=True):
+        value: int = 2
+
+    class CombinedState(ExtendedMixin, State):
+        pass
+
+    assert isinstance(CombinedState.value, Var)
+
+
+def test_base_var_annotation_only_mixin_does_not_raise() -> None:
+    """An annotation-only mixin declaration does not shadow the parent var."""
+
+    class ShadowParent(BaseState):
+        shadowed_value: int = 1
+
+    class AnnotationOnlyMixin(BaseState, mixin=True):
+        shadowed_value: int
+
+    class ShadowChild(AnnotationOnlyMixin, ShadowParent):
+        pass
+
+    assert isinstance(ShadowChild.shadowed_value, Var)
+
+
 def test_base_var_shadowing_non_state_descriptor_does_not_raise() -> None:
     """Re-annotating to win over a descriptor from a non-state base is not a shadow."""
     from reflex_base.vars.hybrid_property import hybrid_property

@@ -1410,7 +1410,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
     @classmethod
     def _check_overridden_inherited_vars(cls) -> None:
-        """Reject base vars that shadow a var inherited from a parent state.
+        """Reject base vars that collide across mixins or with a parent state.
 
         Such a redeclaration is dropped: the field never becomes a base var,
         so reads and writes resolve to the parent's var, and the raw default left in
@@ -1422,9 +1422,11 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Raises:
             BaseVarShadowsInheritedVarError: When a base var shadows an inherited var.
         """
+        cls._check_mixin_var_collisions()
         parent_state = cls.get_parent_state()
         if parent_state is None:
             return
+        cls._check_mixin_shadows_parent(parent_state)
         parent_fields = parent_state.get_fields()
         for name, own_field in cls.get_fields().items():
             if (
@@ -1445,6 +1447,58 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                 "use a different name instead"
             )
             raise BaseVarShadowsInheritedVarError(msg)
+
+    @classmethod
+    def _check_mixin_var_collisions(cls) -> None:
+        """Reject duplicate vars declared by unrelated state mixins."""
+        mixin_declarations: dict[str, list[type[BaseState]]] = {}
+        for mixin in cls._mixins():
+            for name in mixin.__dict__:
+                field = mixin.get_fields().get(name)
+                if field is not None and field.is_var and not name.startswith("_"):
+                    mixin_declarations.setdefault(name, []).append(mixin)
+
+        for name, declarations in mixin_declarations.items():
+            if any(
+                not (issubclass(first, second) or issubclass(second, first))
+                for index, first in enumerate(declarations)
+                for second in declarations[index + 1 :]
+            ):
+                msg = (
+                    f"The var `{name}` in {cls.__module__}.{cls.__name__} is declared "
+                    "by multiple unrelated state mixins; use a different name instead"
+                )
+                raise BaseVarShadowsInheritedVarError(msg)
+
+    @classmethod
+    def _check_mixin_shadows_parent(cls, parent_state: type[BaseState]) -> None:
+        """Reject vars from preceding mixins that shadow the concrete parent."""
+        parent_mro_index = cls.__mro__.index(parent_state)
+        mixins = tuple(
+            mixin
+            for mixin in cls.__mro__[1:parent_mro_index]
+            if getattr(mixin, "_mixin", False)
+        )
+        parent_fields = parent_state.get_fields()
+        for mixin in mixins:
+            for name in mixin.__dict__:
+                if name.startswith("_"):
+                    continue
+                mixin_field = mixin.get_fields().get(name)
+                if (
+                    mixin_field is None
+                    or not mixin_field.is_var
+                    or name not in cls.inherited_vars
+                ):
+                    continue
+                if name not in parent_fields:
+                    continue
+                msg = (
+                    f"The var `{name}` in {cls.__module__}.{cls.__name__} shadows a var "
+                    f"inherited from {parent_state.__module__}.{parent_state.__name__}; "
+                    "use a different name instead"
+                )
+                raise BaseVarShadowsInheritedVarError(msg)
 
     @classmethod
     def get_skip_vars(cls) -> set[str]:
