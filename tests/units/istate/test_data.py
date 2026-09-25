@@ -5,11 +5,12 @@ from typing import cast
 from urllib.parse import parse_qsl
 
 import pytest
+from reflex_base import constants
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import StringVar
 
 import reflex as rx
-from reflex.istate.data import ReflexURL, ReflexURLCastedVar
+from reflex.istate.data import HeaderData, ReflexURL, ReflexURLCastedVar
 
 SAMPLE_URL = "https://example.com:3000/posts/123?tab=comments&sort=new#top"
 
@@ -349,3 +350,23 @@ def test_pickling_a_url_does_not_store_its_derived_components():
     # occurrence of the URL text in the payload.
     assert blob.count(b"example.com") == 1
     assert b"query_parameters" not in blob
+
+
+def test_reflex_url_query_parameter_named_self():
+    """A query parameter called ``self`` is kept like any other.
+
+    The parsed parameters are passed to the frozen mapping as keyword
+    arguments, so a ``self`` key must not collide with the constructor's own
+    ``self`` argument and crash router URL parsing for that page.
+    """
+    url = ReflexURL("https://example.com/post?self=1&id=2")
+    assert dict(url.query_parameters) == {"self": "1", "id": "2"}
+
+
+def test_header_data_keeps_raw_header_named_self():
+    """A request header called ``self`` is kept in ``raw_headers``."""
+    headers = HeaderData.from_router_data({
+        constants.RouteVar.HEADERS: {"self": "x", "origin": "http://localhost:3000"}
+    })
+    assert headers.raw_headers["self"] == "x"
+    assert headers.origin == "http://localhost:3000"
