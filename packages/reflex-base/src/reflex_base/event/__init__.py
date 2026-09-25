@@ -56,6 +56,7 @@ from reflex_base.utils.types import (
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var, _owner_state
 from reflex_base.vars.function import (
+    ENCODE_URI_COMPONENT,
     ArgsFunctionOperation,
     ArgsFunctionOperationBuilder,
     BuilderFunctionVar,
@@ -1852,10 +1853,13 @@ def download(
             )
 
             # If it's a data: URI, use it as is, otherwise convert the Var to JSON in a data: URI.
+            # The JSON is percent-encoded: a raw `#` would end the URL there and
+            # `%XX` sequences would be decoded, corrupting the downloaded file.
             url = cond(
                 is_data_url,
                 data.to(str),
-                f"data:{mime_type}," + data.to_string(),
+                f"data:{mime_type},"
+                + ENCODE_URI_COMPONENT.call(data.to_string()).to(str),
             )
         elif isinstance(data, bytes):
             if mime_type is None:
