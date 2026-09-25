@@ -2,16 +2,27 @@
 
 from __future__ import annotations
 
+import dataclasses
 import json
+import os
+import platform
+import sys
+import time
+from collections.abc import Callable, Iterator
 from pathlib import Path
+from typing import Any
 
 import pytest
 from click.testing import CliRunner, Result
-from reflex_bench import cli
-from reflex_bench.registry import Metric
+from reflex_bench import cli, registry, subjects
+from reflex_bench.context import Context, Subject
+from reflex_bench.registry import Benchmark, Metric
 from reflex_bench.schema import dump, load, validate
+from reflex_bench.suites.selftest import noise_value
 
 from .factories import WALL, make_doc, make_entry
+
+HARNESS_PYTHON = f"{sys.version_info.major}.{sys.version_info.minor}"
 
 
 @pytest.fixture
@@ -454,3 +465,263 @@ def test_main_entry_point(home: Path, capsys: pytest.CaptureFixture[str]):
         cli.main(["list", "--suite", "selftest"])
     assert excinfo.value.code == 0
     assert "selftest.exact" in capsys.readouterr().out
+
+
+def _subject(spec: str) -> Subject:
+    return Subject(
+        spec=spec,
+        source="pypi",
+        python=Path(sys.executable),
+        reflex_version=spec,
+        commit=None,
+        dirty=None,
+        python_version=platform.python_version(),
+    )
+
+
+@pytest.fixture
+def resolved(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, str]]:
+    """Resolve every spec to a subject named after it, without building anything.
+
+    Returns:
+        The ``(spec, python)`` of every resolve call.
+    """
+    calls: list[tuple[str, str]] = []
+
+    def resolve(
+        spec: str, *, python: str, home: Path, echo: Callable[[str], None]
+    ) -> Subject:
+        calls.append((spec, python))
+        echo(f"resolved {spec}")
+        return _subject(spec)
+
+    monkeypatch.setattr(subjects, "resolve", resolve)
+    return calls
+
+
+@pytest.fixture
+def shifted() -> Iterator[None]:
+    """Register a benchmark whose values are 20 % higher for the subject 2.0.
+
+    Yields:
+        Nothing; the benchmark is unregistered afterwards.
+    """
+
+    class Shifted:
+        """Log-normal values around 1 s, 1.2 s for the subject 2.0."""
+
+        def sample(self, ctx: Context) -> dict[str, float]:
+            shift = 1.2 if ctx.subject.spec == "2.0" else 1.0
+            return {"value": noise_value(ctx.rng, 2, shift)}
+
+    bench = Benchmark.define(
+        Shifted, id="test.shifted", metrics={"value": Metric("s", "lower")}
+    )
+    registry.register(bench)
+    try:
+        yield
+    finally:
+        registry.REGISTRY.pop(bench.id)
+
+
+def test_run_measures_the_requested_subject(home: Path, resolved: list):
+    result = invoke(
+        "run", "selftest.exact", "--reflex", "0.8.23", "--python", "3.11",
+        "--no-save", "--json", "r.json",
+    )  # fmt: skip
+    assert result.exit_code == 0, result.output
+    assert resolved == [("0.8.23", "3.11")]
+    assert result.output.startswith("resolved 0.8.23\n")
+    subject = load(Path("r.json"))["subjects"]["A"]
+    assert (subject["spec"], subject["reflex_version"]) == ("0.8.23", "0.8.23")
+
+
+def test_run_measures_the_workspace_by_default(home: Path, resolved: list):
+    assert invoke("run", "selftest.exact", "--no-save").exit_code == 0
+    assert resolved == [("workspace", HARNESS_PYTHON)]
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        ("run", "selftest.exact", "--reflex", "latest"),
+        ("ab", "selftest.exact", "--base", "latest", "--head", "workspace"),
+    ],
+)
+def test_invalid_subject_specs_are_usage_errors(home: Path, args: tuple[str, ...]):
+    result = invoke(*args)
+    assert result.exit_code == 1
+    assert "expected workspace, a version such as 0.8.23" in result.output
+
+
+def test_subject_errors_exit_with_1(home: Path, monkeypatch: pytest.MonkeyPatch):
+    def resolve(spec: str, **kwargs: Any) -> Subject:
+        msg = "uv pip install failed: no reflex 9.9.9"
+        raise subjects.SubjectError(msg)
+
+    monkeypatch.setattr(subjects, "resolve", resolve)
+    result = invoke("run", "selftest.exact", "--reflex", "9.9.9", "--no-save")
+    assert result.exit_code == 1
+    assert "uv pip install failed: no reflex 9.9.9" in result.output
+
+
+def test_ab_finds_a_shift_between_subjects(home: Path, resolved: list, shifted: None):
+    result = invoke(
+        "ab", "test.shifted", "--base", "1.0", "--head", "2.0", "--rounds", "12",
+        "--seed", "3", "--no-save", "--json", "ab.json", "--fail-on", "regression",
+    )  # fmt: skip
+    assert result.exit_code == 2, result.output
+    assert resolved == [("1.0", HARNESS_PYTHON), ("2.0", HARNESS_PYTHON)]
+    doc = load(Path("ab.json"))
+    assert doc["invocation"]["kind"] == "local"
+    assert doc["policy"]["runs"] == 12
+    assert (doc["subjects"]["A"]["spec"], doc["subjects"]["B"]["spec"]) == (
+        "1.0",
+        "2.0",
+    )
+    (entry,) = doc["benchmarks"]
+    assert [meta["arm"] for meta in entry["sample_meta"][:4]] == ["A", "B", "B", "A"]
+    comparison = entry["metrics"]["value"]["comparison"]
+    assert comparison is not None
+    assert comparison["verdict"] == "regressed"
+    assert (comparison["base"]["arm"], comparison["head"]["arm"]) == ("A", "B")
+    assert (comparison["base"]["n"], comparison["head"]["n"]) == (12, 12)
+    assert "B: reflex 2.0 (2.0)" in result.output
+    assert "value [A]" in result.output
+    assert "value [B]" in result.output
+    assert "reflex-bench compare A=1.0 B=2.0" in result.output
+    assert "1 regressed" in result.output
+    assert "runs Python" not in result.output
+
+
+def test_ab_a_a_control(home: Path, resolved: list, shifted: None):
+    result = invoke(
+        "ab", "test.shifted", "--head", "2.0", "--aa", "--rounds", "12",
+        "--seed", "3", "--json", "aa.json", "--fail-on", "regression",
+    )  # fmt: skip
+    assert result.exit_code == 0, result.output
+    assert resolved == [("2.0", HARNESS_PYTHON)]
+    doc = load(Path("aa.json"))
+    assert doc["invocation"]["kind"] == "aa"
+    assert doc["subjects"]["A"] == doc["subjects"]["B"]
+    comparison = doc["benchmarks"][0]["metrics"]["value"]["comparison"]
+    assert comparison is not None
+    assert comparison["verdict"] in {"unchanged", "inconclusive"}
+    # Saved like any other run.
+    assert len(list((home / "results" / "test-profile").glob("*.json"))) == 1
+
+
+def test_ab_random_order_is_reproducible(home: Path, resolved: list, shifted: None):
+    def orders(seed: str) -> list[str]:
+        result = invoke(
+            "ab", "test.shifted", "--base", "1.0", "--head", "2.0", "--rounds", "8",
+            "--order", "random", "--seed", seed, "--no-save", "--json", "r.json",
+        )  # fmt: skip
+        assert result.exit_code == 0, result.output
+        entry = load(Path("r.json"))["benchmarks"][0]
+        return [meta["arm"] for meta in entry["sample_meta"]]
+
+    assert orders("1") == orders("1")
+    assert orders("1") != orders("2")
+
+
+def test_ab_self_tests_against_the_workspace(home: Path):
+    result = invoke(
+        "ab", "--suite", "selftest", "--base", "workspace", "--head", "workspace",
+        "--rounds", "6", "--no-save", "--json", "ab.json",
+    )  # fmt: skip
+    assert result.exit_code == 0, result.output
+    doc = load(Path("ab.json"))
+    statuses = {entry["id"]: entry["status"] for entry in doc["benchmarks"]}
+    assert statuses == {
+        "selftest.exact": "ok",
+        "selftest.fail": "failed",
+        "selftest.noise": "ok",
+        "selftest.sleep": "ok",
+        "selftest.timeout": "timeout",
+    }
+    noise = next(e for e in doc["benchmarks"] if e["params"] == {"cv": 5})
+    assert {arm: s["n"] for arm, s in noise["metrics"]["value"]["summary"].items()} == {
+        "A": 6,
+        "B": 6,
+    }
+    assert "not compared: selftest.fail: base status is failed" in result.output
+
+
+@pytest.mark.parametrize(
+    ("args", "message"),
+    [
+        (("--head", "2.0"), "--base is required unless --aa is given"),
+        (("--base", "1.0", "--head", "2.0", "--aa"), "--aa takes --head only"),
+        (("--base", "1.0"), "Missing option '--head'"),
+        (("--base", "1.0", "--head", "2.0", "--order", "abab"), "'--order'"),
+        (("--base", "1.0", "--head", "2.0", "--rounds", "0"), "'--rounds'"),
+    ],
+)
+def test_ab_usage_errors(
+    home: Path, resolved: list, args: tuple[str, ...], message: str
+):
+    result = invoke("ab", "selftest.exact", *args)
+    assert result.exit_code == 1
+    assert message in result.output
+    assert resolved == []
+
+
+def _cached_venv(home: Path, key: str, spec: str, age_days: float) -> Path:
+    venv = home / "venvs" / key
+    venv.mkdir(parents=True)
+    manifest = venv / subjects.MANIFEST
+    manifest.write_text(
+        json.dumps({
+            "spec": spec,
+            "source": "pypi",
+            "python": "3.12",
+            "snapshot": None,
+        }),
+        encoding="utf-8",
+    )
+    used = time.time() - age_days * 86_400
+    os.utime(manifest, (used, used))
+    return venv
+
+
+def test_subjects_list_and_prune(home: Path):
+    assert "no cached subject venvs" in invoke("subjects", "list").output
+    old = _cached_venv(home, "a" * 16, "0.8.23", 40)
+    _cached_venv(home, "b" * 16, "git:main", 1)
+    listed = invoke("subjects", "list")
+    assert listed.exit_code == 0, listed.output
+    lines = listed.output.splitlines()
+    assert lines[0].split() == ["spec", "python", "key", "size", "last", "used"]
+    assert lines[1].split()[:3] == ["git:main", "3.12", "b" * 16]
+    assert lines[2].split()[:3] == ["0.8.23", "3.12", "a" * 16]
+    assert lines[-1].startswith("2 venvs")
+
+    pruned = invoke("subjects", "prune", "--older-than", "30d")
+    assert pruned.exit_code == 0, pruned.output
+    assert f"removed {old}" in pruned.output
+    assert not old.exists()
+    assert "nothing to prune" in invoke("subjects", "prune").output
+
+
+@pytest.mark.parametrize("age", ["30", "30 days", "-1d", "d"])
+def test_prune_rejects_invalid_ages(home: Path, age: str):
+    result = invoke("subjects", "prune", "--older-than", age)
+    assert result.exit_code == 1
+    assert "Invalid value for '--older-than'" in result.output
+
+
+def test_ab_warns_when_the_arms_run_different_pythons(
+    home: Path, monkeypatch: pytest.MonkeyPatch, shifted: None
+):
+    def resolve(spec: str, **kwargs: Any) -> Subject:
+        python = "3.12.3" if spec == "1.0" else "3.14.7"
+        return dataclasses.replace(_subject(spec), python_version=python)
+
+    monkeypatch.setattr(subjects, "resolve", resolve)
+    result = invoke(
+        "ab", "test.shifted", "--base", "1.0", "--head", "2.0", "--rounds", "2",
+        "--no-save",
+    )  # fmt: skip
+    assert result.exit_code == 0, result.output
+    assert "arm A runs Python 3.12 and arm B Python 3.14" in result.output

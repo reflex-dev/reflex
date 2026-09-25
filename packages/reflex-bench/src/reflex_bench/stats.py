@@ -21,6 +21,7 @@ CV_WARN = 0.10
 EXTREME_WARN = 0.50
 MODIFIED_Z_WARN = 14.8
 MWU_EXACT_MAX = 20
+SPEARMAN_EXACT_MAX = 10
 RUNS_NEEDED_CAP = 200
 
 
@@ -563,6 +564,96 @@ def bootstrap_diff_ci(
     ci = _bootstrap(a, b, seed, resamples, confidence, _difference)
     assert ci is not None  # every resample has a difference
     return ci
+
+
+def spearman(xs: Sequence[float], ys: Sequence[float]) -> float:
+    """Return Spearman's rank correlation coefficient.
+
+    Ties get average ranks and rho is the Pearson correlation of the ranks
+    (``scipy.stats.spearmanr``).
+
+    Args:
+        xs: One variable.
+        ys: The other variable, paired with ``xs``.
+
+    Returns:
+        Rho between -1 and 1; NaN when either variable is constant or there are
+        fewer than two pairs.
+
+    Raises:
+        ValueError: When the variables differ in length.
+    """
+    if len(xs) != len(ys):
+        msg = f"spearman needs pairs of the same length, got {len(xs)} and {len(ys)}"
+        raise ValueError(msg)
+    # Average ranks keep their sum, so both rank means are (n + 1) / 2.
+    mean = (len(xs) + 1) / 2
+    dx = [rank - mean for rank in _rank(xs)[0]]
+    dy = [rank - mean for rank in _rank(ys)[0]]
+    sxx = math.fsum(d * d for d in dx)
+    syy = math.fsum(d * d for d in dy)
+    if not sxx or not syy:
+        return math.nan
+    return math.fsum(a * b for a, b in zip(dx, dy, strict=True)) / math.sqrt(sxx * syy)
+
+
+def spearman_p(rho: float, n: int) -> float:
+    """Return the two-sided p-value of Spearman's rho under no association.
+
+    Up to 10 pairs the p-value is exact: the share of the ``n!`` pairings of
+    ``n`` distinct ranks whose ``|rho|`` reaches the observed one
+    (``scipy.stats.permutation_test`` with ``permutation_type="pairings"``).
+    Above that it uses the normal approximation ``z = rho * sqrt(n - 1)``.
+
+    Args:
+        rho: Spearman's rho of ``n`` pairs.
+        n: The number of pairs.
+
+    Returns:
+        The p-value; NaN when rho is NaN.
+    """
+    if math.isnan(rho):
+        return math.nan
+    if n > SPEARMAN_EXACT_MAX:
+        return math.erfc(abs(rho) * math.sqrt((n - 1) / 2))
+    # rho = 12 * T / (n^3 - n) - 3 * (n + 1) / (n - 1) with T = sum(i * rank_i).
+    scale = 12 / (n**3 - n)
+    shift = 3 * (n + 1) / (n - 1)
+    # Relative slack so the observed pairing counts itself despite rounding.
+    bound = abs(rho) * (1 - 1e-9)
+    counts = _rank_product_counts(n)
+    extreme = sum(c for t, c in counts.items() if abs(scale * t - shift) >= bound)
+    return extreme / math.factorial(n)
+
+
+@functools.cache
+def _rank_product_counts(n: int) -> dict[int, int]:
+    """Count the permutations ``r`` of ``1..n`` by ``T = sum(i * r_i)``.
+
+    Assigns positions in order over bit masks of the ranks used so far, which
+    takes ``2^n`` states instead of ``n!`` permutations.
+
+    Args:
+        n: The number of ranks.
+
+    Returns:
+        The number of permutations with each ``T``.
+    """
+    layer: dict[int, dict[int, int]] = {0: {0: 1}}
+    for position in range(1, n + 1):
+        following: dict[int, dict[int, int]] = {}
+        for used, counts in layer.items():
+            for rank in range(1, n + 1):
+                bit = 1 << rank
+                if used & bit:
+                    continue
+                target = following.setdefault(used | bit, {})
+                for total, count in counts.items():
+                    key = total + position * rank
+                    target[key] = target.get(key, 0) + count
+        layer = following
+    (counts,) = layer.values()
+    return counts
 
 
 def holm(pvalues: Sequence[float]) -> list[float]:

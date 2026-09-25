@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import random
+from typing import Any
 
 import pytest
 from reflex_bench import compare
@@ -11,7 +12,7 @@ from reflex_bench.registry import Metric
 from reflex_bench.schema import ResultDoc, validate
 from reflex_bench.suites.selftest import noise_value
 
-from .factories import WALL, make_doc, make_entry, make_machine
+from .factories import WALL, make_ab_entry, make_doc, make_entry, make_machine
 
 EXACT = Metric(unit="B", direction="lower", assume="exact")
 
@@ -265,3 +266,59 @@ def test_geomeans_per_unit_family():
     means = compare.geomeans(head)
     assert list(means) == ["time", "bytes"]
     assert means["bytes"] == pytest.approx(241_000 / 238_400 - 1)
+
+
+def _ab_doc(shift: float = 1.0, **entry: Any) -> ResultDoc:
+    samples = {"A": _noise(1, 30, cv=2), "B": _noise(2, 30, cv=2, shift=shift)}
+    return make_doc(
+        [make_ab_entry("selftest.noise", {"value": (WALL, samples)}, **entry)],
+        arms=("A", "B"),
+    )
+
+
+def test_comparing_the_arms_of_one_document():
+    doc = _ab_doc(shift=1.10)
+    _compare(doc, doc, base_arm="A", head_arm="B")
+    (row,) = compare.rows(doc)
+    assert row.comparison["verdict"] == "regressed"
+    assert (row.comparison["base"]["arm"], row.comparison["head"]["arm"]) == ("A", "B")
+    assert (row.comparison["base"]["n"], row.comparison["head"]["n"]) == (30, 30)
+    compared_to = doc.get("compared_to")
+    assert compared_to is not None
+    assert compared_to["only_in_base"] == compared_to["only_in_head"] == []
+    assert compared_to["not_comparable"] == []
+    assert validate(doc) == []
+    _compare(doc, doc, base_arm="A", head_arm="A")
+    assert _verdicts(doc) == {"selftest.noise:value": "unchanged"}
+
+
+def test_a_failure_in_one_arm_of_one_document():
+    head = _ab_doc(status="failed", error="boom", failed_arms=["B"])
+    _compare(head, head, base_arm="A", head_arm="B")
+    assert compare.failed_in_head(head) == [
+        {
+            "id": "selftest.noise",
+            "status": "failed",
+            "base_status": "ok",
+            "error": "boom",
+        }
+    ]
+    base = _ab_doc(status="failed", error="boom", failed_arms=["A"])
+    _compare(base, base, base_arm="A", head_arm="B")
+    compared_to = base.get("compared_to")
+    assert compared_to is not None
+    assert compare.failed_in_head(base) == []
+    assert compared_to["not_comparable"] == [
+        {"id": "selftest.noise", "reasons": ["base status is failed"]}
+    ]
+    # Without failed_arms (documents of single-arm runs) a failure fails every arm.
+    both = _ab_doc(status="failed", error="boom")
+    _compare(both, both, base_arm="A", head_arm="B")
+    compared_to = both.get("compared_to")
+    assert compared_to is not None
+    assert compared_to["not_comparable"] == [
+        {
+            "id": "selftest.noise",
+            "reasons": ["base status is failed", "head status is failed"],
+        }
+    ]

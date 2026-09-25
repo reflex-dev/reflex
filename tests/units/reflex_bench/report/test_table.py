@@ -264,3 +264,23 @@ def test_samples_listing(doc: ResultDoc):
     assert "selftest.sleep[ms=50] \N{MIDDLE DOT} wall [A]" in text
     assert "     0  70.00 ms  warmup" in text
     assert "     1  50.08 ms" in text
+
+
+def test_header_names_every_arm(doc: ResultDoc):
+    doc["subjects"]["B"] = {
+        **doc["subjects"]["A"],
+        "spec": "0.8.23",
+        "source": "pypi",
+        "reflex_version": "0.8.23",
+        "commit": None,
+        "dirty": None,
+    }
+    lines = _render(table.render_header, doc, 0).splitlines()
+    assert lines[:2] == [
+        (
+            "reflex-bench 0.1.0 \N{MIDDLE DOT} A: reflex 0.9.12 (workspace 258d66c,"
+            " dirty) \N{MIDDLE DOT} py 3.12.8"
+        ),
+        "B: reflex 0.8.23 (0.8.23) \N{MIDDLE DOT} py 3.12.8",
+    ]
+    assert lines[2].startswith("machine: ")

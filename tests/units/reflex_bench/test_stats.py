@@ -427,3 +427,57 @@ def test_compare_samples_with_a_zero_base_median_compares_absolutely():
     assert (few.mode, few.effect, few.ci) == ("absolute", 5.0, None)
     negative = stats.compare_samples([-2.0] * 10, [-1.0] * 10, resamples=200, seed=7)
     assert (negative.mode, negative.effect) == ("absolute", 1.0)
+
+
+@pytest.mark.parametrize(
+    ("xs", "ys", "rho"),
+    [
+        # Golden values from scipy.stats.spearmanr(xs, ys).statistic.
+        ([1.0, 2.0, 3.0, 4.0, 5.0], [2.0, 4.0, 9.0, 16.0, 30.0], 0.9999999999999999),
+        ([1.0, 2.0, 3.0, 4.0], [4.0, 3.0, 2.0, 1.0], -1.0),
+        (N10[:8], list(range(8)), -0.19047619047619052),
+        # Ties get average ranks.
+        ([1, 2, 2, 3, 3, 3, 4, 5], [3, 1, 4, 1, 5, 9, 2, 6], 0.31491082421467265),
+        ([1, 2, 2, 3, 3, 3, 4, 5, 5], [3, 4, 4, 5, 5, 6, 6, 7, 8], 0.9697787558034447),
+    ],
+)
+def test_spearman_matches_scipy(xs, ys, rho):
+    assert stats.spearman(xs, ys) == pytest.approx(rho, rel=1e-12)
+
+
+@pytest.mark.parametrize(
+    ("xs", "p"),
+    [
+        # Exact golden values from scipy 1.18.1: scipy.stats.permutation_test(
+        # (xs,), <spearman rho against range(n)>, permutation_type="pairings",
+        # n_resamples=np.inf).pvalue.
+        ([1, 2, 3, 4, 5], 0.016666666666666666),
+        ([8, 7, 6, 5, 4, 3, 2, 1], 4.96031746031746e-05),
+        ([2, 1, 4, 3, 6, 5, 8, 7, 10, 9], 0.00020557760141093475),
+        ([2, 1, 4, 3, 8, 5, 10, 6, 9, 7], 0.010530753968253969),
+        ([3, 1, 4, 10, 5, 9, 2, 6, 8, 7], 0.1912395282186949),
+        # Above 10 pairs, the normal approximation:
+        # 2 * scipy.stats.norm.sf(abs(rho) * sqrt(n - 1)).
+        (
+            [3, 1, 4, 11, 5, 9, 2, 6, 15, 13, 12, 8, 20, 7, 19, 14, 17, 16, 18, 10],
+            0.0018081790065810305,
+        ),
+    ],
+)
+def test_spearman_p_matches_scipy(xs: list[int], p: float):
+    rho = stats.spearman(xs, range(len(xs)))
+    assert stats.spearman_p(rho, len(xs)) == pytest.approx(p, rel=1e-9)
+
+
+def test_spearman_p_of_no_association():
+    assert stats.spearman_p(0.0, 8) == pytest.approx(1.0)
+    assert stats.spearman_p(0.0, 50) == pytest.approx(1.0)
+    assert math.isnan(stats.spearman_p(math.nan, 8))
+
+
+def test_spearman_is_nan_without_variation():
+    # scipy.stats.spearmanr([1.0, 1.0, 1.0], [1.0, 2.0, 3.0]).statistic is nan too.
+    assert math.isnan(stats.spearman([1.0, 1.0, 1.0], [1.0, 2.0, 3.0]))
+    assert math.isnan(stats.spearman([2.0], [1.0]))
+    with pytest.raises(ValueError, match="same length"):
+        stats.spearman([1.0, 2.0], [1.0])

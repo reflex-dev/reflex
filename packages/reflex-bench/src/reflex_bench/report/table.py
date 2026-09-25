@@ -212,20 +212,25 @@ def policy_line(policy: PolicyDoc, seed: int) -> str:
 
 
 def render_header(console: Console, doc: ResultDoc, doctor_warnings: int) -> None:
-    """Print the run header: tool, subject, machine and policy.
+    """Print the run header: tool, subjects (one line per arm), machine and policy.
 
     Args:
         console: Where to print.
         doc: The result document.
         doctor_warnings: How many ``doctor`` checks warn.
     """
-    subject = doc["subjects"]["A"]
-    console.print(
-        Text(
-            f"reflex-bench {doc['tool']['version']}{_SEPARATOR}{subject_label(subject)}"
-            f"{_SEPARATOR}py {subject['python_version']}"
+    subjects = doc["subjects"]
+    prefix = f"reflex-bench {doc['tool']['version']}{_SEPARATOR}"
+    for arm in sorted(subjects):
+        subject = subjects[arm]
+        label = f"{arm}: " if len(subjects) > 1 else ""
+        console.print(
+            Text(
+                f"{prefix}{label}{subject_label(subject)}"
+                f"{_SEPARATOR}py {subject['python_version']}"
+            )
         )
-    )
+        prefix = ""
     console.print(Text(machine_line(doc["machine"])))
     console.print(Text(policy_line(doc["policy"], doc["invocation"]["rng_seed"])))
     if doctor_warnings:

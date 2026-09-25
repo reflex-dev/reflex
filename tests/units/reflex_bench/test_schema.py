@@ -199,3 +199,10 @@ def test_names_and_timed_values(doc: schema.ResultDoc):
     assert schema.timed_values(entry, "wall") == [0.05, 0.051, 0.052]
     assert schema.sample_indices(entry) == [1, 2, 3]
     assert schema.timed_values(entry, "wall", arm="B") == []
+
+
+def test_failed_arms_must_be_subjects(doc: schema.ResultDoc):
+    doc["benchmarks"][0]["failed_arms"] = ["A", "B"]
+    assert schema.validate(doc) == [
+        "benchmarks[0].failed_arms: arm 'B' is not in subjects"
+    ]
