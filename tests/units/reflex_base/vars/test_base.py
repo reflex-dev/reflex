@@ -161,3 +161,7 @@ async def test_async_computed_var_return_type_checked_only_on_recompute(mocker):
     # Cache hits must not re-run the (potentially deep) type check.
     assert await state.wrong_typed == 0
     assert mock_error.call_count == 1
+    # Invalidation triggers a recompute, which re-checks the return type.
+    state.v = 1
+    assert await state.wrong_typed == 1
+    assert mock_error.call_count == 2
