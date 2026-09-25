@@ -5245,6 +5245,24 @@ def test_assignment_to_undeclared_vars():
     state.handle_non_var()
 
 
+def test_settable_names_are_kept_per_class():
+    """The names found settable are kept on each state class, not in a global map."""
+
+    class ParentState(BaseState):
+        val: str = ""
+
+    class ChildState(ParentState):
+        num: int = 0
+
+    ParentState().val = "set"  # pyright: ignore [reportCallIssue]
+    ChildState().num = 1  # pyright: ignore [reportCallIssue]
+    parent_names = ParentState.__dict__["_settable_names"]
+    child_names = ChildState.__dict__["_settable_names"]
+    assert "val" in parent_names
+    assert "num" in child_names
+    assert "num" not in parent_names
+
+
 def test_backend_var_inherits_field_default_and_surfaces_factory_errors():
     """A Field on a plain base supplies its default; a failing factory is not swallowed."""
 
