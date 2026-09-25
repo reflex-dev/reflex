@@ -64,6 +64,7 @@ from reflex_base.vars.base import (
     Var,
     _inherited_value,
     _is_descriptor,
+    _slot_names,
     _validate_state_name,
     computed_var,
     dispatch,
@@ -119,9 +120,7 @@ def _stale_pickle_keys(cls: type) -> frozenset[str]:
         frozen into payloads already on disk).
     """
     return frozenset(
-        {"router"}.union(
-            *(klass.__dict__.get("__slots__", ()) for klass in cls.__mro__)
-        )
+        {"router"}.union(*(_slot_names(vars(klass)) for klass in cls.__mro__))
     )
 
 
@@ -2045,7 +2044,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         vars(self).clear()
         vars(self).update(vars(other))
         for klass in type(self).__mro__:
-            for name in klass.__dict__.get("__slots__", ()):
+            for name in _slot_names(vars(klass)):
                 object.__setattr__(self, name, getattr(other, name))
         for substate in self.substates.values():
             substate.parent_state = self
