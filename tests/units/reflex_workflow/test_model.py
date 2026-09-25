@@ -28,8 +28,9 @@ from reflex_workflow import (
 )
 from reflex_workflow.engine import claim
 from reflex_workflow.model import check_call
-from sqlalchemy import Index, String, Table, UniqueConstraint
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import Column, Index, Integer, String, Table, UniqueConstraint
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import DeclarativeBase, Mapped, declarative_base, mapped_column
 from typing_extensions import assert_type
 
 
@@ -343,6 +344,19 @@ def held_event_index(cls: type[Workflow]) -> Index | None:
     return next((index for index in table.indexes if index.name == name), None)
 
 
+def rendered_predicate(index: Index) -> str:
+    """Return the index's WHERE clause as Postgres will be given it.
+
+    Args:
+        index: The index.
+
+    Returns:
+        The compiled predicate.
+    """
+    where = index.dialect_options["postgresql"]["where"]
+    return str(where.compile(dialect=postgresql.dialect()))
+
+
 def test_a_workflow_is_indexed_by_the_events_it_holds():
     class Parked(Base, Workflow):
         """A workflow that takes the table arguments the mixin gives it."""
@@ -353,9 +367,10 @@ def test_a_workflow_is_indexed_by_the_events_it_holds():
 
     index = held_event_index(Parked)
     assert index is not None
-    # Only the parked runs that hold an answer, which is a handful of them.
+    # Only the parked runs that hold an answer, which is a handful of them:
+    # over all of them it would be the scan it is there to replace.
     assert [column.name for column in index.columns] == ["waiting_for"]
-    assert index.dialect_options["postgresql"]["where"] is not None
+    assert rendered_predicate(index) == "wf_model_parked.pending_event IS NOT NULL"
 
 
 def test_a_workflow_that_declares_its_own_table_arguments_keeps_that_index():
@@ -373,3 +388,18 @@ def test_a_workflow_that_declares_its_own_table_arguments_keeps_that_index():
     assert held_event_index(Constrained) is not None
     table = cast(Table, Constrained.__table__)
     assert "uq_wf_model_reference" in {c.name for c in table.constraints}
+
+
+def test_a_workflow_on_the_older_declarative_base_is_indexed_too():
+    older = declarative_base()
+
+    class Ageing(older, Workflow):
+        """A workflow mapped the way SQLAlchemy asked for before DeclarativeBase."""
+
+        __tablename__ = "wf_model_ageing"
+
+        id = Column(Integer, primary_key=True)
+
+    # That style has no table yet while the class body is being run, so an index
+    # attached from __init_subclass__ would quietly not be there at all.
+    assert held_event_index(Ageing) is not None
