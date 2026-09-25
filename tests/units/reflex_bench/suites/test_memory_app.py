@@ -81,6 +81,8 @@ def assert_nothing_left(home: Path) -> None:
     assert left == []
     # Generator, hold and echo processes are spawned children of this process.
     assert multiprocessing.active_children() == []
+    if shutil.which("systemctl") is None:
+        return
     units = subprocess.run(
         ["systemctl", "--user", "list-units", "reflex-bench-*", "--no-legend"],
         capture_output=True,
