@@ -694,7 +694,7 @@ def test_hybrid_property_backend_var_not_resolved_during_class_creation():
 
     assert calls == []
     # The annotation must not shadow the inherited descriptor with storage.
-    assert "_foo" not in GuardState.backend_vars
+    assert "_foo" not in GuardState.get_fields()
     assert GuardState(_reflex_internal_init=True)._foo == 1  # pyright: ignore[reportCallIssue]
     assert calls == ["getter ran"]
 

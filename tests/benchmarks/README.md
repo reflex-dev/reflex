@@ -87,3 +87,13 @@ exception, sized like the other page benchmarks here.
 
 Timing covers building the operations, not rendering them: `Component.render()`
 memoizes, so a benchmark around it would measure the cache.
+
+## State access benchmarks
+
+```sh
+uv run pytest tests/benchmarks/test_state_access.py --codspeed
+```
+
+Reads and writes of a scalar var through a substate instance, for a var the
+substate declares and one it inherits (stored on the parent instance), plus a
+cached computed var read and an event handler lookup.
