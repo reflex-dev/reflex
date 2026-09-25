@@ -736,8 +736,7 @@ def test_mutable_proxy_cached_per_field():
     assert "items" not in state.__dict__["_mutable_proxy_cache"]
 
 
-@pytest.mark.asyncio
-async def test_state_proxy_reassignment_evicts_cached_proxy(
+def test_state_proxy_reassignment_evicts_cached_proxy(
     attached_mock_event_context: EventContext,
 ):
     """Reassignment through a background-task StateProxy evicts the cached proxy.
