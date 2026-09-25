@@ -231,6 +231,8 @@ def compare(
             strict=True,
         )
     )
+    # Holm rejects nothing until the smallest p-value passes alpha / family size.
+    family_alpha = alpha / max(len(tested), 1)
     for index, item in enumerate(pending):
         p_adj = adjusted.get(index)
         exact = item.metric["assume"] == "exact"
@@ -264,7 +266,7 @@ def compare(
                 item.raw.effect,
                 item.raw.ci,
                 applied,
-                alpha=alpha,
+                alpha=family_alpha,
                 confidence=confidence,
             )
             if verdict == "inconclusive"

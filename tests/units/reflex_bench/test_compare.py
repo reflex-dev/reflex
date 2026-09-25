@@ -7,7 +7,7 @@ import random
 from typing import Any
 
 import pytest
-from reflex_bench import compare
+from reflex_bench import compare, stats
 from reflex_bench.registry import Metric
 from reflex_bench.schema import ResultDoc, validate
 from reflex_bench.suites.selftest import noise_value
@@ -343,3 +343,29 @@ def test_a_failure_in_one_arm_of_one_document():
             "reasons": ["base status is failed", "head status is failed"],
         }
     ]
+
+
+def test_runs_needed_reaches_the_holm_threshold():
+    metrics = [f"m{index}" for index in range(20)]
+    base = make_doc([
+        make_entry(
+            "selftest.many",
+            {
+                name: (WALL, _noise(index, 3, cv=2))
+                for index, name in enumerate(metrics)
+            },
+        )
+    ])
+    head = make_doc([
+        make_entry(
+            "selftest.many",
+            {
+                name: (WALL, _noise(100 + index, 3, cv=2))
+                for index, name in enumerate(metrics)
+            },
+        )
+    ])
+    _compare(base, head)
+    needed = {row.comparison["runs_needed"] for row in compare.rows(head)}
+    # The smallest p-value must pass alpha / 20 before Holm rejects anything.
+    assert needed == {stats.min_runs_for_alpha(0.01 / 20)}
