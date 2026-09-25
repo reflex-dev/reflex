@@ -1436,6 +1436,80 @@ def test_computed_var_cached():
     assert comp_v_calls == 2
 
 
+def test_setattr_wrong_type_logs_error(mocker):
+    """Assigning a value of the wrong type to a base var logs an error in dev mode.
+
+    Args:
+        mocker: Pytest mocker object.
+    """
+
+    class WrongTypeState(BaseState):
+        n: int = 0
+
+    state = WrongTypeState()
+    mock_error = mocker.patch("reflex.utils.console.error")
+    setattr(state, "n", "not an int")  # noqa: B010
+    assert mock_error.call_count == 1
+
+
+def test_computed_var_recompute_after_mid_cycle_read():
+    """A dependency mutated again after a mid-cycle read still invalidates the cache."""
+
+    class FrontierState(BaseState):
+        v: int = 0
+
+        @rx.var
+        def doubled(self) -> int:
+            return self.v * 2
+
+    s = FrontierState()
+    s.v = 1
+    # Reading mid-cycle recomputes and re-caches the value.
+    assert s.doubled == 2
+    # Mutating the same dependency again must invalidate the fresh cache,
+    # even though dirty_vars already contained it.
+    s.v = 2
+    assert s.doubled == 4
+    assert s.get_delta()[s.get_full_name()]["doubled" + FIELD_MARKER] == 4
+
+
+def test_computed_var_recompute_after_mid_cycle_read_across_states():
+    """Cross-state dependency invalidation survives a mid-cycle recompute."""
+
+    class FrontierParentState(BaseState):
+        v: int = 0
+
+    class FrontierChildState(FrontierParentState):
+        @rx.var
+        def doubled(self) -> int:
+            return self.v * 2
+
+    parent = FrontierParentState()
+    child = parent.substates[FrontierChildState.get_name()]
+    assert isinstance(child, FrontierChildState)
+    parent.v = 1
+    assert child.doubled == 2
+    parent.v = 2
+    assert child.doubled == 4
+
+
+def test_interval_computed_vars_precomputed():
+    """Classes precompute which computed vars carry an update interval."""
+
+    class IntervalFreeState(BaseState):
+        @rx.var
+        def untimed(self) -> int:
+            return 2
+
+    class IntervalState(BaseState):
+        @rx.var(interval=15)
+        def timed(self) -> int:
+            return 1
+
+    assert IntervalFreeState._interval_computed_vars == ()
+    assert IntervalState._interval_computed_vars == ("timed",)
+
+
 def test_computed_var_cached_depends_on_non_cached():
     """Test that a cached var is recalculated if it depends on non-cached ComputedVar."""
 
@@ -3242,11 +3316,11 @@ def test_set_base_field_via_setter():
     bfss.dirty_vars.clear()
     assert "c1" not in bfss.dirty_vars
 
-    # Assert identity of MutableProxy
+    # Repeated reads reuse the cached MutableProxy for the same field.
     mp = bfss.c1
     assert isinstance(mp, MutableProxy)
     mp3 = bfss.c1
-    assert mp is not mp3
+    assert mp is mp3
     # Since none of these set calls had values, the state should not be dirty
     assert not bfss.dirty_vars
 
