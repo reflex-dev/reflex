@@ -332,6 +332,14 @@ def _patch_frontend_package_manager(
     package_managers: list[str],
     run_package_manager,
 ):
+    """Stub package-manager execution and its Node-version prerequisite.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        package_managers: The package-manager paths to return from discovery.
+        run_package_manager: The replacement package-manager runner.
+    """
+    monkeypatch.setattr(js_runtimes, "check_node_version", lambda: True)
     monkeypatch.setattr(
         js_runtimes,
         "get_nodejs_compatible_package_managers",
@@ -741,7 +749,19 @@ def test_install_frontend_packages_cache_respects_root_bun_lock(
 
 def test_install_frontend_packages_npm_does_not_create_bogus_bun_lock(
     install_packages_env: InstallPackagesEnv,
+    mocker,
 ):
+    """Mocked npm installs neither probe host Node nor retain stale Bun locks.
+
+    Args:
+        install_packages_env: The isolated frontend install environment.
+        mocker: The pytest mocker fixture.
+    """
+    mocker.patch.object(
+        js_runtimes,
+        "get_node_version",
+        side_effect=AssertionError("Mocked npm install probed host Node"),
+    )
     env = install_packages_env
     env.web_lock.write_text("stale-lock")
     call_count = 0

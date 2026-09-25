@@ -25,6 +25,7 @@ exclude-newer-span = "P7D"
 hatch-reflex-pyi = false
 reflex = false
 reflex-base = false
+reflex-build-sdk = false
 reflex-components-code = false
 reflex-components-core = false
 reflex-components-dataeditor = false
@@ -4632,6 +4633,7 @@ dependencies = [
     { name = "httpx" },
     { name = "packaging" },
     { name = "platformdirs" },
+    { name = "reflex-build-sdk", extra = ["httpx"] },
     { name = "rich" },
 ]
 
@@ -4641,6 +4643,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.25.1,<1.0" },
     { name = "packaging", specifier = ">=24.2" },
     { name = "platformdirs", specifier = ">=3.10.0,<5.0" },
+    { name = "reflex-build-sdk", extras = ["httpx"], editable = "packages/reflex-build-sdk" },
     { name = "rich", specifier = ">=13,<16" },
 ]
 

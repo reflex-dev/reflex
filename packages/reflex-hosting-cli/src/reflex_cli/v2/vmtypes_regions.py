@@ -53,13 +53,22 @@ def create_token(
         duration = 90  # Default duration is 90 days
         logger.info("No duration specified. Using default duration of 90 days.")
 
-    token = hosting.create_token(
-        name=name, expiration=duration, client=authenticated_client
-    )
+    with hosting.reporting_api_errors():
+        created = authenticated_client.api.auth.tokens.create(
+            name, expires_in_days=duration
+        )
     if as_json:
-        print_json({"name": name, "token": token, "expires_in_days": duration})
+        # The name and the expiration are the server's, not the request's: it is
+        # free to clamp the duration it was asked for.
+        print_json({
+            "name": created.name,
+            "token": created.token,
+            "expires_at": created.expires_at.isoformat()
+            if created.expires_at
+            else None,
+        })
         return
-    logger.log(log.SUCCESS, f"Token: {token}")
+    logger.log(log.SUCCESS, f"Token: {created.token}")
 
 
 @vm_types_regions_cli.command("vmtypes")
@@ -81,7 +90,8 @@ def get_vm_types(
 
     console.set_log_level(loglevel)
 
-    vmtypes = hosting.get_vm_types()
+    with hosting.reporting_api_errors():
+        vmtypes = hosting.get_vm_types()
     if as_json:
         print_json(vmtypes)
         return
@@ -155,7 +165,8 @@ def get_deployment_regions(
 
     console.set_log_level(loglevel)
 
-    list_regions_info = hosting.get_regions()
+    with hosting.reporting_api_errors():
+        list_regions_info = hosting.get_regions()
     if as_json:
         print_json(list_regions_info)
         return
