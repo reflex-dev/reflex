@@ -484,14 +484,6 @@ class StateNode(EvenMoreBasicBaseState):
         msg = f"Invalid key type: {type(key)}. Expected str."
         raise TypeError(msg)
 
-    def _client_token(self) -> str:
-        """Get the token of the client this state belongs to.
-
-        Returns:
-            The client token, keying the uncached values it was last sent.
-        """
-        return ""
-
     def _mark_dirty(self, var_names: Iterable[str] | None = None) -> None:
         """Mark this state and its ancestors dirty, invalidating dependent computed vars.
 
@@ -631,7 +623,6 @@ class StateNode(EvenMoreBasicBaseState):
                 if reset is not None:
                     EventContext.reset(reset)
                 raise
-            ctx.state_locks.entered = True
         try:
             live = await live_root.get_state(type(self))
         except BaseException:
@@ -641,6 +632,8 @@ class StateNode(EvenMoreBasicBaseState):
             if reset is not None:
                 EventContext.reset(reset)
             raise
+        if lock is not None:
+            ctx.state_locks.entered = True
         if live is not self:
             self._take_place_of(live)
         entered[key] = [1, lock, reset, live]

@@ -485,14 +485,6 @@ class BaseState(StateNode, state_root=True):
                     _reflex_internal_init=True,
                 )
 
-    def _client_token(self) -> str:
-        """Get the token of the client this state belongs to.
-
-        Returns:
-            The client token of the session.
-        """
-        return self.rx_router_session.client_token
-
     def __repr__(self) -> str:
         """Get the string representation of the state.
 

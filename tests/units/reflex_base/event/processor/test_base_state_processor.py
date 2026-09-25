@@ -664,6 +664,76 @@ async def test_background_event_raising_without_context_still_flushes_a_delta(
     )
 
 
+async def test_background_event_failing_to_enter_still_flushes_a_delta(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A background handler whose ``async with self`` fails to reload still flushes.
+
+    Regression: the lock taken to enter counted as entered before the tree
+    was reloaded, so when reloading failed, the fallback flush was skipped
+    although the handler never entered.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    entering: list[bool] = []
+    handled: list[Exception] = []
+
+    class FailedEnterBgState(State):
+        @rx.var(cache=False)
+        def beat(self) -> int:
+            return 13
+
+        @event(background=True)
+        async def bg(self):
+            entering.append(True)
+            async with self:
+                pass
+
+    original_get_state = BaseState.get_state
+
+    async def get_state_failing_to_enter(self, state_cls):
+        if entering and len(entering) == 1:
+            entering.append(False)
+            msg = "reload failed"
+            raise RuntimeError(msg)
+        return await original_get_state(self, state_cls)
+
+    monkeypatch.setattr(BaseState, "get_state", get_state_failing_to_enter)
+    real_base_state_processor.backend_exception_handler = handled.append
+
+    assert real_base_state_processor._root_context is not None
+    state_manager = real_base_state_processor._root_context.state_manager
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=State)
+    ) as seed_root:
+        seed_root.router_data = {"pathname": "/", "query": {}}
+
+    try:
+        async with real_base_state_processor as processor:
+            await processor.enqueue(
+                token, Event.from_event_type(FailedEnterBgState.bg())[0]
+            )
+            await processor.join(5)
+    finally:
+        State._always_dirty_substates.discard(FailedEnterBgState.get_name())
+
+    assert [type(ex) for ex in handled] == [RuntimeError]
+    state_name = FailedEnterBgState.get_full_name()
+    beat_key = "beat" + FIELD_MARKER
+    assert any(d.get(state_name, {}).get(beat_key) == 13 for _, d in emitted_deltas), (
+        f"no delta refreshed the uncached var after entering failed: {emitted_deltas}"
+    )
+
+
 async def test_background_flush_failure_does_not_mask_handler_exception(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,

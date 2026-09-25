@@ -11,6 +11,7 @@ from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.event.context import EventContext
 
 if TYPE_CHECKING:
     from reflex_base.state.node import StateNode
@@ -229,7 +230,11 @@ def build_delta(state: StateNode) -> Delta:
     # the delta to record them; None when nothing is collecting them.
     pending = _pending_delta_records.get() if always_dirty_computed_vars else None
     # Token of the client this delta is for, used to know which values it has.
-    token = state._client_token() if pending is not None else ""
+    token = (
+        ctx.token
+        if pending is not None and (ctx := EventContext._context_var.get(None))
+        else ""
+    )
     full_name = state.get_full_name()
     subdelta: dict[str, Any] = {}
     for prop in delta_vars:
