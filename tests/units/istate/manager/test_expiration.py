@@ -6,9 +6,9 @@ from collections.abc import AsyncGenerator, Callable
 
 import pytest
 import pytest_asyncio
+from reflex_base.state.token import BaseStateToken
 
 from reflex.istate.manager.memory import StateManagerMemory
-from reflex.istate.manager.token import BaseStateToken
 from reflex.state import BaseState
 
 

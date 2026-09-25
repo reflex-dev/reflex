@@ -250,7 +250,7 @@ def LinkedStateApp():
     @api.get("/api/set-counter/{shared_token}/{value}")
     async def set_counter_api(shared_token: str, value: int):
         """Modify shared state by its shared token from an API route."""
-        from reflex.istate.manager.token import BaseStateToken
+        from reflex_base.state.token import BaseStateToken
 
         async with app.modify_state(
             BaseStateToken(ident=shared_token, cls=SharedState),

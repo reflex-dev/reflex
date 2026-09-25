@@ -4,8 +4,7 @@ import io
 import pickle
 
 import pytest
-
-from reflex.istate.manager.token import BaseStateToken, StateToken
+from reflex_base.state.token import BaseStateToken, StateToken
 
 
 def test_state_token_str():

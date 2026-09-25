@@ -11,12 +11,12 @@ from reflex_base.constants import ROUTER_DATA, ROUTER_VARS
 from reflex_base.event import Event, get_hydrate_event
 from reflex_base.event.context import EventContext
 from reflex_base.registry import RegistrationContext
+from reflex_base.state.delta import _suppress_delta_recording
+from reflex_base.state.token import BaseStateToken
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_base.vars.base import _owner_state
 from typing_extensions import Self
 
-from reflex.istate.delta import _suppress_delta_recording
-from reflex.istate.manager.token import BaseStateToken
 from reflex.state import BaseState, State, _override_base_method
 
 logger = logging.getLogger(__name__)

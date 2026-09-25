@@ -44,13 +44,13 @@ from typing_extensions import LiteralString, dataclass_transform, override
 from reflex_base import constants
 from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.state.proxy import MutableProxy, _check_writable
 from reflex_base.utils import exceptions, imports, serializers, types
 from reflex_base.utils.compat import MISSING_TYPE, annotations_from_namespace
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
     ComputedVarSignatureError,
     EventHandlerShadowsBuiltInStateMethodError,
-    ImmutableStateError,
     ReflexRuntimeError,
     StateValueError,
     UntypedComputedVarError,
@@ -84,6 +84,7 @@ if TYPE_CHECKING:
     from reflex.state import BaseState
     from reflex_base.components.component import BaseComponent
     from reflex_base.constants.colors import Color
+    from reflex_base.state.node import StateNode
 
     from .color import LiteralColorVar
     from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
@@ -2694,7 +2695,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         return f"__last_delta_{self._js_expr}"
 
     def _pending_delta_record(
-        self, instance: BaseState, value: Any, token: str
+        self, instance: StateNode, value: Any, token: str
     ) -> tuple[str, tuple[str, Any] | None] | None:
         """Decide whether the value an uncached var contributes has to be sent.
 
@@ -2733,7 +2734,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             return None
         return attr, recorded
 
-    def needs_update(self, instance: BaseState) -> bool:
+    def needs_update(self, instance: StateNode) -> bool:
         """Check if the computed var needs to be updated.
 
         Args:
@@ -2938,7 +2939,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             )
             return d
 
-    def mark_dirty(self, instance: BaseState) -> None:
+    def mark_dirty(self, instance: StateNode) -> None:
         """Mark this ComputedVar as dirty.
 
         Args:
@@ -3791,33 +3792,6 @@ def _owner_state(state: Any, owner: type) -> Any:
     return instance
 
 
-def _check_writable(state: Any) -> None:
-    """Raise unless the running event context holds the lock on a state's tree.
-
-    A state that no event context manages, like one instantiated on its own,
-    is always writable.
-
-    Args:
-        state: The state about to change.
-
-    Raises:
-        ImmutableStateError: If the state is read-only here.
-    """
-    root = state
-    while (parent := root.parent_state) is not None:
-        root = parent
-    if (bound := root._event_context) is None:
-        return
-    # The event context running now, which must hold the lock.
-    ctx = bound._context_var.get(None)
-    if ctx is None or not ctx.state_locks.holds(root):
-        msg = (
-            f"{type(state).__name__} is read-only outside of the event that holds "
-            "its lock. Use `async with self` to modify state."
-        )
-        raise ImmutableStateError(msg)
-
-
 class Field(Generic[FIELD_TYPE]):
     """A state field: its declaration, and the descriptor holding its value.
 
@@ -3830,11 +3804,6 @@ class Field(Generic[FIELD_TYPE]):
         type_: GenericType
         default: FIELD_TYPE | MISSING_TYPE | None
         default_factory: Callable[[], FIELD_TYPE | None] | None
-
-    # The MutableProxy type, installed by reflex.istate.proxy: mutable values
-    # are wrapped in it when read, so in-place changes mark the field dirty.
-    # Until then no value is a proxy: isinstance against () is always false.
-    _proxy: ClassVar[Any] = ()
 
     # The class and attribute the field is bound to, set by __set_name__.
     _owner: type | None = None
@@ -4010,7 +3979,7 @@ class Field(Generic[FIELD_TYPE]):
         )
         if self._tracked:
             _check_writable(state)
-        if isinstance(value, self._proxy):
+        if isinstance(value, MutableProxy):
             value = value.__wrapped__  # pyright: ignore[reportAttributeAccessIssue]
         if (
             # Only values sent to the client are type checked.
@@ -4136,7 +4105,7 @@ class Field(Generic[FIELD_TYPE]):
         except KeyError:
             value = state.__dict__[self._name] = self.default_value()
         if self._tracked and self.is_var and is_mutable_type(type(value)):
-            return self._proxy(wrapped=value, state=state, field_name=self._name)
+            return MutableProxy(wrapped=value, state=state, field_name=self._name)
         return value
 
 
@@ -4344,11 +4313,7 @@ def _validate_state_declaration(
                 f"{base.__name__}; use different names instead."
             )
             raise StateValueError(msg)
-        if (
-            not issubclass(base, root)
-            and base is not EvenMoreBasicBaseState
-            and base is not object
-        ):
+        if not issubclass(base, root) and base not in root.__mro__:
             _validate_inherited_members(root, base, seen)
         seen.update(vars(base))
 

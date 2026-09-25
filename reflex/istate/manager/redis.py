@@ -17,6 +17,7 @@ from redis import ResponseError
 from redis.asyncio import Redis
 from reflex_base.config import get_config
 from reflex_base.environment import environment, oplock_hold_time
+from reflex_base.state.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex_base.utils.exceptions import (
     EnvironmentVarValueError,
     InvalidLockWarningThresholdError,
@@ -30,7 +31,6 @@ from reflex.istate.manager import (
     StateModificationContext,
     _default_token_expiration,
 )
-from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex.state import BaseState
 from reflex.utils.tasks import ensure_task
 

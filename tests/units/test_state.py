@@ -30,6 +30,9 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event, EventHandler
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.state.delta import _suppress_delta_recording
+from reflex_base.state.proxy import MutableProxy
+from reflex_base.state.token import BaseStateToken
 from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import (
     InvalidLockWarningThresholdError,
@@ -51,17 +54,13 @@ from reflex.istate.data import (
     HeaderData,
     RouterData,
     RouterDataVar,
-    SessionData,
     URLData,
     _FrozenDictStrStr,
 )
-from reflex.istate.delta import _suppress_delta_recording
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
-from reflex.istate.manager.token import BaseStateToken
-from reflex.istate.proxy import MutableProxy
 from reflex.state import (
     BaseState,
     Delta,
@@ -1635,11 +1634,17 @@ async def test_uncached_computed_var_mutable_value_mutated_in_place():
     assert await ums._get_resolved_delta() == {}
 
 
-async def test_uncached_computed_var_recorded_per_client_token():
+async def test_uncached_computed_var_recorded_per_client_token(
+    mock_root_event_context: EventContext,
+):
     """A value already sent to one client is still sent to another client.
 
     A single state instance can serve multiple clients (linked shared states),
-    so the recorded value only suppresses the delta for the client that got it.
+    so the recorded value only suppresses the delta for the client of the event
+    context it is delivered in.
+
+    Args:
+        mock_root_event_context: The mock root event context.
     """
 
     class MultiClientState(BaseState):
@@ -1648,23 +1653,17 @@ async def test_uncached_computed_var_recorded_per_client_token():
             return 1
 
     mcs = MultiClientState()
-    mcs.router = RouterData(session=SessionData(client_token="token_a"))
-    mcs._clean()
-    assert await mcs._get_resolved_delta() == {
-        mcs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}
-    }
-    mcs._clean()
-    assert await mcs._get_resolved_delta() == {}
-    mcs._clean()
-
-    # The same state instance now produces a delta for a different client.
-    mcs.router = RouterData(session=SessionData(client_token="token_b"))
-    mcs._clean()
-    assert await mcs._get_resolved_delta() == {
-        mcs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}
-    }
-    mcs._clean()
-    assert await mcs._get_resolved_delta() == {}
+    for client in ("token_a", "token_b"):
+        reset = EventContext.set(mock_root_event_context.fork(token=client))
+        try:
+            mcs._clean()
+            assert await mcs._get_resolved_delta() == {
+                mcs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}
+            }
+            mcs._clean()
+            assert await mcs._get_resolved_delta() == {}
+        finally:
+            EventContext.reset(reset)
 
 
 async def test_uncached_computed_var_unkeyable_value_always_sent():
@@ -2390,10 +2389,10 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
     """
     from unittest.mock import patch
 
+    from reflex_base.utils import console
     from reflex_base.utils import log as _base_log
 
     from reflex.state import State
-    from reflex.utils import console
 
     legacy_token = f"{token}_{OnLoadState.get_full_name()}"
     dedupe_state = _base_log._dedupe_filter().seen.copy()

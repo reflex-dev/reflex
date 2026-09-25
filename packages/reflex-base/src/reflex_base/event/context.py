@@ -18,8 +18,8 @@ if TYPE_CHECKING:
     from opentelemetry.context import Context
 
     from reflex.istate.manager import StateManager
-    from reflex.istate.manager.token import StateToken
     from reflex_base.event import Event
+    from reflex_base.state.token import StateToken
 
 
 @functools.lru_cache

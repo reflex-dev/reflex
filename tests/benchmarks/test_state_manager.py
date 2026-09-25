@@ -36,12 +36,12 @@ import pytest
 import pytest_asyncio
 from pytest_codspeed import BenchmarkFixture
 from reflex_base.environment import environment
+from reflex_base.state.token import BaseStateToken
 
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
-from reflex.istate.manager.token import BaseStateToken
 from reflex.state import BaseState
 from tests.units.mock_redis import mock_redis
 
