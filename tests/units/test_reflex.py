@@ -431,3 +431,20 @@ def test_init_records_version_check_after_frontend_setup(
     reflex._init("demo")
 
     assert events == ["frontend", "version"]
+
+
+@pytest.mark.parametrize("subcommand", ["init", "migrate", "makemigrations"])
+def test_db_commands_without_db_extra_point_to_install(
+    monkeypatch: pytest.MonkeyPatch, subcommand: str
+):
+    """Db commands exit with the db extra install hint when it is missing.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+        subcommand: The `reflex db` subcommand to run.
+    """
+    monkeypatch.setattr(reflex, "find_spec", lambda name: None)
+    result = click.testing.CliRunner().invoke(reflex.cli, ["db", subcommand])
+    assert result.exit_code == 1
+    assert result.exception is None or isinstance(result.exception, SystemExit)
+    assert "reflex[db]" in result.output
