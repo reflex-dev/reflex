@@ -39,12 +39,18 @@ def make_subject(reflex_version: str | None = "0.9.12") -> Subject:
     )
 
 
-def make_context(tmp_path: Path, params: Mapping[str, Any] | None = None) -> Context:
+def make_context(
+    tmp_path: Path,
+    params: Mapping[str, Any] | None = None,
+    *,
+    cache_dir: Path | None = None,
+) -> Context:
     """Build a context for calling hooks directly.
 
     Args:
-        tmp_path: A scratch directory for the work and cache directories.
+        tmp_path: The work directory, and the cache directory unless given.
         params: The parameters hooks see.
+        cache_dir: The cache directory.
 
     Returns:
         The context.
@@ -53,7 +59,7 @@ def make_context(tmp_path: Path, params: Mapping[str, Any] | None = None) -> Con
         subject=make_subject(),
         params=dict(params or {}),
         workdir=tmp_path,
-        cache_dir=tmp_path,
+        cache_dir=cache_dir or tmp_path,
         subject_cache_dir=tmp_path,
         env={},
         rng=random.Random(0),
@@ -289,6 +295,7 @@ def make_load_result(**changes: Any) -> LoadResult:
         },
         "service_s": {"p50": 0.003, "p99": 0.0117, "max": 0.044},
         "lag_s": {"p50": 4e-05, "p99": 0.00021, "max": 0.0009},
+        "spread_s": None,
         "generator_cpu_fraction": 0.18,
         "prime_s": {"p50": 0.09, "max": 0.21},
         "histogram": {"of": "response_s", "lo_s": 1e-05, "hi_s": 100.0, "counts": []},

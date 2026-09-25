@@ -1,0 +1,12 @@
+{
+  "schema": "reflex-bench-budgets/1",
+  "budgets": {
+    "size.export[app=playground]": {
+      "initial_gzip": 330000,
+      "initial_brotli": 265000,
+      "total_gzip": 350000,
+      "chunks": 16,
+      "node_modules": 170000000
+    }
+  }
+}

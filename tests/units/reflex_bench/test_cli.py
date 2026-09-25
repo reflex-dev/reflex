@@ -98,6 +98,7 @@ def test_min_runs_alone_raises_the_default_max_runs(home: Path):
         "events.simple.capacity[manager=memory,sessions=10]",
         "hmr.render.leaf[app=playground]",
         "lifecycle.compile.warm[app=playground]",
+        "size.export[app=playground]",
     ],
 )
 def test_list_shows_each_suite_and_hides_self_tests(home: Path, benchmark_id: str):
