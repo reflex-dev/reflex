@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import os
 import signal
+import subprocess
 import sys
 import threading
 import time
@@ -679,6 +680,60 @@ def test_signals_never_target_pid_1_or_below(
     assert targets
     assert min(targets) > 1
     assert _running([root]) == []
+
+
+@posix_only
+def test_t0_and_timed_log_lines(app_dir: Path, fake: Configure, apps: list[AppProcess]):
+    env = fake(lines=_replay("head-run-dev.log"))
+    app = AppProcess(
+        Path(sys.executable), app_dir, mode="dev", reflex_version=HEAD, env=env
+    )
+    apps.append(app)
+    with pytest.raises(RuntimeError, match="not started"):
+        _ = app.t0
+    assert app.log_lines() == []
+    before = time.perf_counter()
+    readiness = app.start()
+    # t0 is the origin of every readiness time, taken just before the spawn.
+    assert before <= app.t0 < app.t0 + readiness.process_ready <= time.perf_counter()
+    timed = app.log_lines()
+    assert [line for _, line in timed] == app.logs()
+    times = [at for at, _ in timed]
+    assert times == sorted(times)
+    assert times[0] > 0
+    assert readiness.ready_line in times
+
+
+@posix_only
+def test_kill_processes_takes_a_leaders_group_and_waits():
+    # A session leader whose child leaves its group: only the group dies.
+    leader = subprocess.Popen(
+        [sys.executable, "-c", "import time; time.sleep(3600)"],
+        start_new_session=True,
+    )
+    other = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(3600)"])
+    try:
+        app_process.kill_processes([psutil.Process(leader.pid)])
+        assert _running([leader.pid]) == []
+        assert _running([other.pid]) == [other.pid]
+        app_process.kill_processes([psutil.Process(leader.pid)])  # gone: a no-op
+    finally:
+        for proc in (leader, other):
+            proc.kill()
+            proc.wait()
+
+
+@posix_only
+def test_kill_processes_never_signals_pid_1_or_the_harness(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    targets: list[int] = []
+    monkeypatch.setattr(os, "kill", lambda pid, sig: targets.append(pid))
+    monkeypatch.setattr(os, "killpg", lambda pgid, sig: targets.append(pgid))
+    monkeypatch.setattr(app_process, "_KILL_GRACE_S", 0.05)
+    with pytest.raises(RuntimeError, match="survived SIGKILL"):
+        app_process.kill_processes([psutil.Process(1), psutil.Process()])
+    assert targets == []
 
 
 def test_windows_is_rejected(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):

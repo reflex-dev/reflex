@@ -10,6 +10,9 @@ requires-python = ">=3.10"
 dependencies = [
   "click >=8.2",
   "packaging >=24.2",
+  # 1.49 added `playwright install --only-shell`: headless runs need only the
+  # headless shell.
+  "playwright >=1.49",
   "psutil >=7.0.0,<8.0",
   "rich >=13,<16",
   "websockets >=15,<18",

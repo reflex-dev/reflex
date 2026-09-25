@@ -2,13 +2,16 @@
 
 The playground (``examples/playground``) is committed, with its content hash in
 ``.content-hash``; generated apps (:mod:`reflex_bench.fixtures.generate`) are
-written on demand and never committed. A benchmark puts the description of the
-app it drives in ``ctx.fixture``, and its entry records it in ``dims``.
+written on demand and never committed. The harness reads the playground from
+the checkout it runs from, never from the subject's environment, and benchmarks
+run (and edit) their own copy in their cache directory, so the checkout never
+changes. A benchmark puts the description of the app it drives in
+``ctx.fixture``, and its entry records it in ``dims``.
 
-:func:`ensure_fixture` keeps an app in a ``setup_cache`` directory with a
-``fixture.json`` stamp next to it. Those directories are keyed by subject,
-benchmark and parameters, not by the app, so the stamp is what makes a
-playground edit or a generator change rebuild a primed app.
+Two copies of the playground exist side by side: :func:`ensure_fixture` keeps
+an app in a ``setup_cache`` directory with a ``fixture.json`` stamp next to it,
+so a playground edit or a generator change rebuilds a primed app; :func:`prime`
+restages :data:`FIXTURES` entries per arm and keeps the staged build.
 """
 
 from __future__ import annotations
@@ -20,12 +23,17 @@ import shutil
 from collections.abc import Callable
 from pathlib import Path
 
-from reflex_bench.context import git_root
+from reflex_bench.context import Context
+from reflex_bench.drivers.app_process import cache_env, run_cli
 from reflex_bench.schema import FixtureDoc
 
-PLAYGROUND = Path("examples") / "playground"
 HASH_FILE = ".content-hash"
 STAMP = "fixture.json"
+COMPILE_TIMEOUT_S = 600.0
+# What running an app leaves in its directory: never copied from the checkout.
+_OUTPUT = (".venv", ".web", ".states", "__pycache__", "reflex.lock", "uv.lock", "*.db")
+# Kept in a staged copy, so a restaged app compiles warm.
+_KEEP = frozenset({".web", "reflex.lock"})
 # Build output and local state, as examples/playground/.gitignore lists them.
 _IGNORED = (
     ".web",
@@ -44,25 +52,51 @@ _TARGET = re.compile(
 )
 
 
-def playground_root() -> Path:
-    """Find the playground app of the checkout the harness runs in.
+def fixture_dir(name: str) -> Path:
+    """Locate a fixture app under ``examples/`` in the checkout the harness runs from.
+
+    Args:
+        name: The app's directory name.
 
     Returns:
-        ``examples/playground`` in the git checkout root, or in the working
-        directory outside a checkout, as ``store.bench_home`` finds its root.
+        The app directory.
 
     Raises:
-        FileNotFoundError: When the playground has no ``.content-hash``.
+        RuntimeError: When the harness does not run from a checkout, e.g. from an
+            installed wheel.
     """
-    start = Path.cwd()
-    root = (git_root(start) or start) / PLAYGROUND
-    if not (root / HASH_FILE).is_file():
+    # packages/reflex-bench/src/reflex_bench/fixtures/__init__.py
+    root = Path(__file__).resolve().parents[5]
+    app = root / "examples" / name
+    if not (root / "pyproject.toml").is_file() or not (app / HASH_FILE).is_file():
         msg = (
-            f"{root / HASH_FILE} not found: run reflex-bench in a checkout of"
-            " reflex that has the playground app"
+            f"examples/{name} not found next to reflex-bench: the fixture apps"
+            " are read from the reflex checkout, so run reflex-bench from one"
+            f" (searched {root})"
         )
-        raise FileNotFoundError(msg)
-    return root
+        raise RuntimeError(msg)
+    return app
+
+
+def playground_dir() -> Path:
+    """Locate ``examples/playground``.
+
+    Returns:
+        The playground directory.
+    """
+    return fixture_dir("playground")
+
+
+def fixture_hash(name: str) -> str:
+    """Read a fixture app's content hash (``scripts/hash_examples.py``).
+
+    Args:
+        name: The app's directory name.
+
+    Returns:
+        E.g. ``sha256:5c66…``.
+    """
+    return (fixture_dir(name) / HASH_FILE).read_text(encoding="utf-8").strip()
 
 
 def describe_playground() -> FixtureDoc:
@@ -74,8 +108,11 @@ def describe_playground() -> FixtureDoc:
     Returns:
         ``{"name": "playground", "content_hash": <the line>, "params": {}}``.
     """
-    line = (playground_root() / HASH_FILE).read_text(encoding="utf-8").strip()
-    return {"name": "playground", "content_hash": line, "params": {}}
+    return {
+        "name": "playground",
+        "content_hash": fixture_hash("playground"),
+        "params": {},
+    }
 
 
 def _ignore(root: Path) -> Callable[[str, list[str]], set[str]]:
@@ -110,9 +147,90 @@ def materialize_playground(dest: Path) -> FixtureDoc:
     Returns:
         The playground's description.
     """
-    root = playground_root()
+    root = playground_dir()
     shutil.copytree(root, dest, ignore=_ignore(root))
     return describe_playground()
+
+
+def stage_playground(dst: Path) -> None:
+    """Copy the playground to ``dst``, replacing its sources but not its build.
+
+    Build and run output is never copied; ``dst``'s own ``.web`` and
+    ``reflex.lock`` stay, so a restaged app compiles warm.
+
+    Args:
+        dst: The staged app directory, created if needed.
+    """
+    if dst.is_dir():
+        for entry in dst.iterdir():
+            if entry.name in _KEEP:
+                continue
+            if entry.is_dir() and not entry.is_symlink():
+                shutil.rmtree(entry)
+            else:
+                entry.unlink()
+    shutil.copytree(
+        playground_dir(),
+        dst,
+        ignore=shutil.ignore_patterns(*_OUTPUT),
+        dirs_exist_ok=True,
+    )
+
+
+FIXTURES: dict[str, Callable[[Path], None]] = {"playground": stage_playground}
+
+
+def app_dir(ctx: Context) -> Path:
+    """Name the staged app of a benchmark instance.
+
+    Each arm has its own copy: in an A/A run both arms share one cache
+    directory, and two servers must not run (and hot reload) in one app.
+
+    Args:
+        ctx: The benchmark context.
+
+    Returns:
+        ``<cache_dir>/app/<arm>``.
+    """
+    return ctx.cache_dir / "app" / ctx.arm
+
+
+def app_env(ctx: Context, app: Path) -> dict[str, str]:
+    """Build the environment of reflex commands run in a staged app.
+
+    Args:
+        ctx: The benchmark context.
+        app: The staged app.
+
+    Returns:
+        ``ctx.env`` with the app's ``.web`` and ``.states`` directories.
+    """
+    return {**ctx.env, **cache_env(web_dir=app / ".web", states_dir=app / ".states")}
+
+
+def prime(ctx: Context, fixture: str = "playground") -> Path:
+    """Stage a fixture app for a benchmark instance and compile it once.
+
+    The compile installs bun and the frontend packages, so the benchmark's own
+    starts are warm.
+
+    Args:
+        ctx: The benchmark context.
+        fixture: The :data:`FIXTURES` entry.
+
+    Returns:
+        The staged app.
+    """
+    app = app_dir(ctx)
+    FIXTURES[fixture](app)
+    run_cli(
+        ctx.subject.python,
+        ["compile"],
+        cwd=app,
+        env=app_env(ctx, app),
+        timeout=COMPILE_TIMEOUT_S,
+    ).check()
+    return app
 
 
 def ensure_fixture(

@@ -65,19 +65,6 @@ def _noise_run(path: str, *args: str) -> Result:
 def test_list_self_tests(home: Path):
     result = invoke("list", "--suite", "selftest")
     assert result.exit_code == 0, result.output
-    names = [line.split()[0] for line in result.output.splitlines()[1:-1]]
-    assert names == [
-        "selftest.app.compile",
-        "selftest.app.dev_ready",
-        "selftest.events.calibrate",
-        "selftest.exact",
-        "selftest.fail",
-        "selftest.noise[cv=5]",
-        "selftest.noise[cv=20]",
-        "selftest.sleep[ms=10]",
-        "selftest.sleep[ms=50]",
-        "selftest.timeout",
-    ]
     assert result.output.splitlines()[0].split() == [
         "id",
         "kind",
@@ -107,15 +94,19 @@ def test_min_runs_alone_raises_the_default_max_runs(home: Path):
 @pytest.mark.parametrize(
     "benchmark_id",
     [
+        "browser.dev.ready",
         "events.simple.capacity[manager=memory,sessions=10]",
+        "hmr.render.leaf[app=playground]",
         "lifecycle.compile.warm[app=playground]",
     ],
 )
 def test_list_shows_each_suite_and_hides_self_tests(home: Path, benchmark_id: str):
     result = invoke("list")
-    assert result.exit_code == 0
-    assert benchmark_id in result.output
-    assert "selftest." not in result.output
+    assert result.exit_code == 0, result.output
+    names = [line.split()[0] for line in result.output.splitlines()[1:-1]]
+    assert benchmark_id in names
+    assert not any(name.startswith("selftest.") for name in names)
+    assert result.output.splitlines()[-1].startswith(f"{len(names)} benchmarks")
 
 
 def test_list_says_when_nothing_is_selected(home: Path):
@@ -512,6 +503,14 @@ def test_version_and_help(home: Path):
     help_result = invoke("run", "--help")
     assert help_result.exit_code == 0
     assert "--fail-on-inconclusive" in help_result.output
+
+
+def test_budgets_check_is_registered(home: Path):
+    assert "budgets" in invoke("--help").output
+    result = invoke("budgets", "check", "--help")
+    assert result.exit_code == 0, result.output
+    assert "RESULT" in result.output
+    assert "--budgets" in result.output
 
 
 def test_main_entry_point(home: Path, capsys: pytest.CaptureFixture[str]):

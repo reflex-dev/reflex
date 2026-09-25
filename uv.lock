@@ -4306,6 +4306,7 @@ source = { editable = "packages/reflex-bench" }
 dependencies = [
     { name = "click" },
     { name = "packaging" },
+    { name = "playwright" },
     { name = "psutil" },
     { name = "rich" },
     { name = "websockets", version = "16.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -4316,6 +4317,7 @@ dependencies = [
 requires-dist = [
     { name = "click", specifier = ">=8.2" },
     { name = "packaging", specifier = ">=24.2" },
+    { name = "playwright", specifier = ">=1.49" },
     { name = "psutil", specifier = ">=7.0.0,<8.0" },
     { name = "rich", specifier = ">=13,<16" },
     { name = "websockets", specifier = ">=15,<18" },

@@ -194,7 +194,13 @@ context as the scheduler, for callers other than the scheduler.
 sessions are open at the same time, `setup` to `cleanup`. A benchmark that
 keeps a heavy process (a server) alive between samples runs two of them at
 once, which distorts both arms. Start per-sample processes in `prepare` or
-`sample` and stop them in `conclude`. This is not enforced.
+`sample` and stop them in `conclude`. This is not enforced. Two kinds of
+benchmarks keep one server per instance on purpose, and say why in their
+docstrings: `browser.prod.pageload` (a prod start includes a full frontend
+build, and an idle second server does not touch page load) and the `hmr.*`
+benchmarks (a dev start plus hydration before every edit would multiply their
+run time by about ten, and the other arm's server only idles while this one
+recompiles).
 
 ## Driving reflex
 
@@ -548,6 +554,155 @@ app and reflex version, so every metric is exact and a sample is one run.
 - **Dims**: `fixture` names the app (`playground` or `wire_delta`); for
   `wire.delta`, `fixture_hash` is the generated source's content hash, so a
   change to the generator starts a new series.
+
+`AppProcess.t0` is the `time.perf_counter()` taken just before the spawn, the
+origin of every readiness time, and `AppProcess.log_lines()` returns the output
+with the time each line was read (seconds since `t0`), so other clocks and log
+lines can be put on one timeline.
+
+## Fixture apps
+
+The browser and hot reload benchmarks drive `examples/playground` (see its
+README for the element ids and `# bench:hmr-target` pragmas they rely on). The
+harness reads it from the checkout it runs in, never from the subject's
+environment, so `reflex-bench` must run from a reflex checkout.
+`reflex_bench.fixtures.prime(ctx)` copies it into the instance's cache directory
+(`<cache>/app/<arm>`: in an A/A run both arms share a cache directory, and two
+servers must not run in one app), without build output, and compiles it once
+(bun and the frontend packages), so the benchmarks' own starts are warm. The
+staged copy is what the hot reload benchmarks edit; the checkout never changes.
+Every sample records the playground's `.content-hash` in
+`extra["fixture_hash"]`. `reflex_bench.fixtures.FIXTURES` maps the `app`
+parameter of the hot reload benchmarks to a staging function; `playground` is
+the only one so far.
+
+## Driving a browser
+
+`reflex_bench.drivers.browser` drives headless Chromium through Playwright's
+sync API. Install the browser once:
+
+```console
+$ uv run playwright install --only-shell chromium
+```
+
+Headless runs launch the headless shell, so the full Chromium is not needed
+(`--only-shell` exists from Playwright 1.49). On a bare CI runner add
+`--with-deps` for the system libraries, and cache `~/.cache/ms-playwright`
+keyed on the runner's architecture. `reflex-bench doctor` reports whether a
+chromium is installed.
+
+```python
+from reflex_bench.drivers.browser import Browser
+
+self.browser = Browser(cpu_throttle=1)  # setup(): one browser per instance
+self.browser.start()  # the calling thread owns it
+result = self.browser.interactive(self.app, "/")  # tier 3, also set in app.readiness
+tab = result.tab  # a page in a fresh context (cold cache); tab.page is Playwright's
+tab.watch("edit", "text", "#bench-marker-leaf", marker)
+mark = tab.wait_mark("edit", timeout=90)  # {"perf": ..., "epoch": ...}
+# conclude(): self.browser.close_tab(tab); cleanup(): self.browser.close()
+```
+
+Every page gets `drivers/bench_page.js` as an init script, which runs before
+any page script in every document, reloaded ones included. The page emits the
+"done" signal itself: `tab.watch(id, kind, selector, expected)` has it record a
+*mark* the first time a condition holds (`present`, `text`, `changed`,
+`style:<property>` or `naturalWidth`), checked on every DOM mutation and every
+animation frame (a computed style or a loaded image is no mutation); a watch,
+and its mark once recorded, survives a reload. `#bench-hydrated` is always watched: `interactive()` waits
+for it (tier 3: the websocket connected and the first state update applied).
+The script also collects paint, largest contentful paint, long task and long
+animation frame entries (`tab.timings()`). `tab.set_alive()` tags the document
+and `tab.alive()` reads the tag back: a full reload loses it. Uncaught page
+errors fail a sample (`tab.raise_errors()`), console errors and warnings are
+counted (`tab.drain_console()`, the last error's text in `tab.last_error`), and
+websocket payload bytes and HTTP wire bytes (headers included, from the
+DevTools `Network.loadingFinished` events) are summed per page.
+
+**Clocks.** A mark carries `performance.now()` (since navigation start) and
+`Date.now()`. `browser.anchor`, the tightest of three back-to-back reads of
+`time.perf_counter()` and `time.time()` taken at start, maps page time onto
+`perf_counter()`: `anchor.perf_at(epoch) - app.t0` puts a page event on the
+app's timeline within 1 ms (`Date.now()`'s resolution) plus the anchor's
+spread, the harness's own share (well under a microsecond), which is stored
+with the samples.
+
+**Threads.** The sync API refuses calls from any thread but the one that
+started it (`greenlet.error: Cannot switch to a different thread`), and
+teardown hooks run on a fresh thread after a timeout or Ctrl-C. `close()`
+closes normally on the owner thread and kills from any other; `kill()` never
+touches Playwright: it SIGKILLs the Playwright driver (the harness's child) and
+the process group Chromium's root (the driver's child) leads with all its
+helpers, both found at `start()`, so a hook still blocked in the page gets an
+error at once. `close_tab()` from another thread kills the
+browser too: after a timeout the instance is over. Browsers still open when the
+harness exits are killed. A `Browser` belongs to one instance and arm; during
+`ab` two of them coexist. Playwright is imported on `start()`, which keeps
+`reflex-bench list` about 0.1 s faster.
+
+## Browser benchmarks
+
+| Id | Suites | What one sample measures |
+| --- | --- | --- |
+| `browser.dev.ready` | pr, daily | `reflex run` start to `process_ready` (tier 1), `http_ready` (tier 2) and `interactive_ready` (tier 3), seconds since the spawn; also `nav_to_interactive` (in the page) and `fcp` |
+| `browser.preview.ready` | daily (reflex 0.9.8+) | the same with `--env preview` |
+| `browser.prod.ready` | daily | the same with `--env prod`, frontend build included |
+| `browser.prod.pageload[cpu=1\|4]` | daily | loading `/` of one prod server in a fresh context (cold cache), CPU throttled 4 times with `cpu=4`, read as soon as the page is interactive: `fcp`, `lcp` (the same paint on the playground), `interactive`, `tbt` (long tasks' time beyond 50 ms before interactive), `ws_bytes`, `transfer_bytes` (wire bytes, headers included; both exact: the same page transfers the same bytes) |
+
+The `ready` samples store the gaps between the tiers in `extra["gaps"]`. Page
+load metrics are noisy: read the median and its confidence interval over at
+least 6 runs (outliers are counted, not dropped).
+
+## Hot reload benchmarks
+
+Each `hmr.*` instance starts one app (`reflex run --loglevel debug`) and one
+page, then per sample rewrites the staged app and waits until the page shows
+the change. The edit's content is built in `prepare`; `sample` writes it to a
+sibling temporary file and moves it over the target, taking `t0` just before
+that one `os.replace`, and returns as soon as the page's mark is there.
+`latency` is the page's mark minus `t0`, on the wall clock of both. Every edit
+writes a unique value, so a stale page never satisfies a watch. `conclude`
+waits until the page has been quiet for 0.5 s (no pending watch, no DOM
+change), restores the file and waits until the page shows the original and is
+quiet again, which is also the wait between edits. Every hook's waits share
+one 90 s deadline. `warmup` is 3 edits.
+
+| Id | Edit | Done when the page shows |
+| --- | --- | --- |
+| `hmr.render.leaf` | the `leaf` pragma literal (index page only) | the new text in `#bench-marker-leaf` |
+| `hmr.render.root` | the `root` pragma literal (every page) | the new text in `#bench-marker-root` |
+| `hmr.handler` | the `handler` pragma literal, set by an event handler | the new value in `#bench-handler-value`; the harness clicks `#bench-handler` every 250 ms (`extra["clicks"]`) |
+| `hmr.css` | the `.bench-hooks` font size in `assets/playground.css` | the computed font size |
+| `hmr.asset` | `assets/logo.svg` gets a `width` and `height` | the logo's `naturalWidth` (HTTP cache off); the harness refreshes the page every 250 ms (`extra["reloads"]`) |
+| `hmr.reconnect` | none: SIGKILL of granian's worker, then SIGHUP to its supervisor, since granian's dev reloader never respawns a worker that died on its own | `#count` changes on `/counter`; the harness clicks `#increment` every 250 ms |
+| `hmr.watcher` | the `leaf` literal | `latency` is granian's `Changes detected` line (its `reload_tick` is 100 ms) |
+
+Every benchmark but `hmr.watcher` has a `.preview` twin for `--env preview`
+(reflex 0.9.8+). Preview serves a static build that a hot reload rebuilds and
+that shows after a refresh, so preview twins whose change needs a new page
+reload it (waiting for its load event) every 250 ms until it shows
+(`extra["reloads"]`).
+
+`full_reloads` records whether the sample's page reloaded to show the change
+(the mark carries the document's `tab.alive()` tag; a reloaded document lost
+it). For the render, handler and reconnect benchmarks a reload is no hot
+update: `conclude` fails the sample with `FullReloadError`, also when the page
+reloads right after showing the hot update, so `latency` only holds hot
+updates. For `hmr.css` a reload may be how the change shows: `latency` is the
+time until it shows. A change the page never shows by itself (no hot update,
+no reload, within the deadline) fails the sample: the harness does not refresh
+a dev page for it. The error then says when granian saw the change, when the
+reload's last `[timing]` line came and whether the page reloaded, so it tells
+which side dropped the change. A stylesheet hot update that vite logged
+(`[vite] ... hmr update`) 5 s ago without the page applying it fails the sample
+at once (`DroppedUpdateError`, naming the value the page still shows) instead
+of waiting the deadline out. `hmr.asset` refreshes the page itself in every
+mode: vite has no module for a file of `public/`, so a change to one reaches
+no page and a user refreshes for it; `latency` is the time until a refresh
+shows the new file and `extra["reloads"]` counts the refreshes.
+`extra["hops"]` places each sample's backend steps, in seconds
+since the edit: `watcher_seen_s` (granian's line), `compile_done_s` (the
+reload's last `[timing]` line) and `dom_updated_s` (the page's mark).
 
 ## How samples are taken
 
