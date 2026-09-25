@@ -663,10 +663,9 @@ class Workflow:
         """
         from reflex_workflow.engine import rows
 
-        cls = type(self)
         return {
-            "table": cls.__tablename__,
-            "pk": [getattr(self, key) for key in rows.pk_keys(cls)],
+            "table": type(self).__tablename__,
+            "pk": rows.json_pk(rows.pk_of(self)),
         }
 
     async def history(self, limit: int = 50) -> list[AttemptLog]:
@@ -691,7 +690,7 @@ class Workflow:
             select(ATTEMPTS)
             .where(
                 ATTEMPTS.workflow == cls.__tablename__,
-                ATTEMPTS.run == [getattr(self, key) for key in rows.pk_keys(cls)],
+                ATTEMPTS.run == rows.json_pk(rows.pk_of(self)),
             )
             .order_by(desc(ATTEMPTS.id))
             .limit(limit)

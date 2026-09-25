@@ -300,7 +300,7 @@ async def record_attempt(
     await session.execute(
         insert(model.ATTEMPTS).values(
             workflow=cls.__tablename__,
-            run=list(pk),
+            run=rows.json_pk(pk),
             finished_at=func.now(),
             **attempt,
         )

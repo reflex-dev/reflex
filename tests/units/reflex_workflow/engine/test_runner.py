@@ -18,7 +18,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 import psycopg
 import pytest
 import pytest_asyncio
-from sqlalchemy import String, func, insert, literal, select, update
+from sqlalchemy import DateTime, String, func, insert, literal, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -741,6 +741,79 @@ class Deferring(Base, Workflow):
         self.notes += "worked"
 
 
+class Ticket(Base, Workflow):
+    """A run keyed by columns json has no form of, and a number beside them."""
+
+    __tablename__ = "wf_test_ticket"
+
+    tenant: Mapped[uuid.UUID] = mapped_column(primary_key=True)
+    number: Mapped[int] = mapped_column(primary_key=True)
+    key: Mapped[str] = mapped_column(String, unique=True)
+    status: Mapped[str] = mapped_column(String, default="new")
+
+    @step
+    async def work(self):
+        """Record and stop."""
+        self.status = "done"
+
+
+class Slot(Base, Workflow):
+    """A child keyed by a moment, so the pointer back to its parent is one too."""
+
+    __tablename__ = "wf_test_slot"
+
+    at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), primary_key=True
+    )
+    status: Mapped[str] = mapped_column(String, default="new")
+
+    @step
+    async def fill(self):
+        """Record and stop, which releases the window."""
+        self.status = "filled"
+
+
+class Window(Base, Workflow):
+    """A parent keyed by a moment, joining up with children keyed by one as well."""
+
+    __tablename__ = "wf_test_window"
+
+    at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), primary_key=True
+    )
+    status: Mapped[str] = mapped_column(String, default="new")
+
+    @step
+    async def split(self):
+        """Fan out to a slot a minute into the window, and another after it.
+
+        Returns:
+            The fan-out, gathering once both slots are filled.
+        """
+        return fan_out(
+            [child(Slot(at=slot_at(self.at, n)), Slot.fill) for n in (1, 2)],
+            then=Window.gather,
+        )
+
+    @step
+    async def gather(self):
+        """Record that every slot is filled."""
+        self.status = "gathered"
+
+
+def slot_at(start: datetime.datetime, minute: int) -> datetime.datetime:
+    """Name the moment one of a window's slots is keyed by.
+
+    Args:
+        start: The window's own moment.
+        minute: Which slot.
+
+    Returns:
+        The slot's key.
+    """
+    return start + datetime.timedelta(minutes=minute)
+
+
 WORKFLOWS = [
     Chain,
     Delayed,
@@ -758,6 +831,9 @@ WORKFLOWS = [
     Quiet,
     Noisy,
     Metered,
+    Ticket,
+    Slot,
+    Window,
 ]
 
 
@@ -844,6 +920,7 @@ def status_is(
         | Item
         | Rendered
         | Piece
+        | Ticket
     ],
     key: str,
     status: str,
@@ -2082,6 +2159,47 @@ async def test_a_run_records_what_each_step_did(session_factory):
     ]
     assert all(a.error is None and a.took_ms >= 0 for a in history)
     assert all(a.workflow == "wf_test_chain" and a.run == [row.id] for a in history)
+
+
+async def test_a_run_keyed_by_more_than_json_holds_commits_and_is_recorded(
+    session_factory,
+):
+    tenant, key = uuid.uuid4(), uuid.uuid4().hex
+    await Ticket(tenant=tenant, number=7, key=key).start(Ticket.work)
+    await wait_until(status_is(Ticket, key, "done"))
+
+    row = await Ticket.by(Ticket.key == key).get()
+    assert row is not None
+    history = await row.history()
+    # The key is stored as the text it reads back from, column by column, so
+    # writing the history cannot refuse the step's own commit alongside it.
+    assert [a.run for a in history] == [[str(tenant), 7]]
+    assert [(a.step, a.outcome) for a in history] == [("work", "ok")]
+
+
+async def test_a_fan_out_joins_up_when_its_keys_are_more_than_json_holds(
+    session_factory,
+):
+    start = datetime.datetime.now(datetime.timezone.utc)
+    await Window(at=start).start(Window.split)
+
+    async def gathered() -> bool:
+        """Tell whether the window has joined up with its slots.
+
+        Returns:
+            Whether it has.
+        """
+        row = await Window.by(Window.at == start).get()
+        return row is not None and row.status == "gathered"
+
+    await wait_until(gathered)
+    # Each child pointed back at a parent it could only name as text, and the
+    # count that releases the parent found it again through that pointer.
+    slots = await Slot.by(Slot.at.in_([slot_at(start, n) for n in (1, 2)])).all()
+    assert sorted(slot.status for slot in slots) == ["filled", "filled"]
+    row = await Window.by(Window.at == start).get()
+    assert row is not None
+    assert row.children_left == 0
 
 
 async def test_history_keeps_every_attempt_of_a_step_that_was_retried(session_factory):
