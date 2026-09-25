@@ -761,6 +761,17 @@ def test_compile_nonexistent_stylesheet(tmp_path, mocker: MockerFixture):
         compiler.compile_root_stylesheet(stylesheets)
 
 
+@pytest.fixture
+def dev_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pin dev mode, whose document head omits the stylesheet preload.
+
+    Args:
+        monkeypatch: Selects dev mode and restores the previous mode afterwards.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
+
+
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root():
     """Test that the document root is created correctly."""
     # Test with no components.
@@ -821,6 +832,7 @@ def test_add_meta_drops_empty_description():
     assert not any(isinstance(child, Description) for child in page.children)
 
 
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root_with_scripts():
     # Test with components.
     comps = [
@@ -852,6 +864,7 @@ def test_create_document_root_with_scripts():
     assert root.custom_attrs == {"project": "reflex"}
 
 
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root_with_meta_char_set():
     # Test with components.
     comps = [
@@ -867,6 +880,7 @@ def test_create_document_root_with_meta_char_set():
     assert str(root.children[0].children[1].char_set) == '"cp1252"'  # pyright: ignore [reportAttributeAccessIssue]
 
 
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root_with_meta_viewport():
     # Test with components.
     comps = [
