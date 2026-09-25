@@ -451,7 +451,7 @@ def test_build_wheelhouse_builds_every_source_once(
     )
     assert detail is None
     assert check_min_deps._workspace_pins(package, versions)[0] == [
-        "reflex-base==0.9.12.post1.dev0+abc1234",
+        "reflex-base[pydantic]==0.9.12.post1.dev0+abc1234",
         "reflex-hosting-cli==0.1.71.post1.dev0+abc1234",
     ]
 
@@ -959,3 +959,102 @@ def test_main_takes_a_given_wheelhouse_as_the_whole_story(
     assert check_min_deps.main() == 0
     assert built == [False]
     capsys.readouterr()
+
+
+_SIBLING_WITH_EXTRAS = (
+    '[project]\nname = "reflex-base"\n'
+    "[project.optional-dependencies]\n"
+    'pydantic = ["pydantic>=2"]\nextra = ["rich>=13"]\n'
+)
+
+
+@pytest.mark.parametrize(
+    ("requirement", "expected_latest", "expected_minimum"),
+    [
+        # A published floor stays unpinned for `lowest-direct`, but still carries the extras.
+        (
+            "reflex-base>=0.9.12",
+            "reflex-base[pydantic,extra]==0.9.12.post1.dev0+abc",
+            "reflex-base[pydantic,extra]",
+        ),
+        # A `*.dev` floor is pinned to the workspace build, extras included.
+        (
+            "reflex-base>=0.9.12.dev0",
+            "reflex-base[pydantic,extra]==0.9.12.post1.dev0+abc",
+            "reflex-base[pydantic,extra]==0.9.12.post1.dev0+abc",
+        ),
+        # A build this checkout cannot number high enough is not pinned at either end.
+        (
+            "reflex-base>=0.9.13",
+            "reflex-base[pydantic,extra]",
+            "reflex-base[pydantic,extra]",
+        ),
+    ],
+)
+def test_workspace_pins_requests_every_extra_of_a_direct_sibling(
+    tmp_path: Path, requirement: str, expected_latest: str, expected_minimum: str
+):
+    """A direct sibling is installed with all its extras, at both ends of the delta.
+
+    Code behind a sibling's optional dependencies can need a newer sibling than the package
+    declares, which only shows once those dependencies are installed.
+
+    Args:
+        tmp_path: Temporary package directory.
+        requirement: The consumer's declared dependency on the sibling.
+        expected_latest: The requirement the baseline resolution should add.
+        expected_minimum: The requirement the minimum resolution should add.
+    """
+    package = _consumer(tmp_path, requirement)
+    (tmp_path / "reflex-base" / "pyproject.toml").write_text(_SIBLING_WITH_EXTRAS)
+
+    latest, minimum = check_min_deps._workspace_pins(
+        package, {"reflex-base": check_min_deps.Version("0.9.12.post1.dev0+abc")}
+    )
+
+    assert latest == [expected_latest]
+    assert minimum == [expected_minimum]
+
+
+def test_workspace_pins_leaves_a_transitive_siblings_extras_alone(tmp_path: Path):
+    """A sibling reached only through another is pinned without its extras.
+
+    Naming it with extras would make it a direct requirement, and ``lowest-direct`` would
+    then hold it to a floor the package under test never declared.
+
+    Args:
+        tmp_path: Temporary package directory.
+    """
+    consumer = tmp_path / "consumer"
+    middle = tmp_path / "middle"
+    base = tmp_path / "reflex-base"
+    for directory in (consumer, middle, base):
+        directory.mkdir()
+    (consumer / "pyproject.toml").write_text(
+        '[project]\nname = "consumer"\ndependencies = ["middle>=1.0"]\n'
+    )
+    (middle / "pyproject.toml").write_text(
+        '[project]\nname = "middle"\ndependencies = ["reflex-base>=0.9.12"]\n'
+    )
+    (base / "pyproject.toml").write_text(_SIBLING_WITH_EXTRAS)
+    package = check_min_deps.Package(
+        name="consumer",
+        project_dir=consumer,
+        source_dir=consumer,
+        extras=(),
+        local_sources=(base, middle),
+    )
+
+    latest, minimum = check_min_deps._workspace_pins(
+        package,
+        {
+            "middle": check_min_deps.Version("1.0.post1.dev0+abc"),
+            "reflex-base": check_min_deps.Version("0.9.12.post1.dev0+abc"),
+        },
+    )
+
+    assert latest == [
+        "reflex-base==0.9.12.post1.dev0+abc",
+        "middle==1.0.post1.dev0+abc",
+    ]
+    assert minimum == []

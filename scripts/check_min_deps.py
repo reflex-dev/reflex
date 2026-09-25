@@ -15,6 +15,11 @@ minimum versions means the code depends on a newer dependency than its declared 
 allows — exactly the bug this catches (e.g. calling a pydantic 2.x API while declaring
 ``pydantic >=1.10``).
 
+Both resolutions install every optional-dependency group, of the package itself and of each
+workspace sibling it depends on directly (e.g. ``reflex[db,pydantic,testing]`` when checking
+``reflex-docgen``). A floor that is only too low for code behind an extra is then caught too,
+rather than hidden because that extra's dependencies were never installed at either end.
+
 Workspace siblings are the exception to ``--no-sources``. Every sibling the package
 declares is built from its local checkout into a temporary directory that is offered to the
 resolver as an extra ``--find-links`` index, so ``latest`` means "this workspace" for a
@@ -154,6 +159,19 @@ def _parse_requirement(requirement: str) -> tuple[str, bool]:
     return name, False
 
 
+def _with_extras(target: str, extras: Sequence[str]) -> str:
+    """Append a ``[extra,...]`` suffix to an install target.
+
+    Args:
+        target: A distribution name or project path.
+        extras: The extras to request, possibly none.
+
+    Returns:
+        The target with its extras appended, or unchanged when there are none.
+    """
+    return f"{target}[{','.join(extras)}]" if extras else target
+
+
 @dataclass(frozen=True)
 class Package:
     """A workspace package that can be checked against its minimum dependencies."""
@@ -184,10 +202,7 @@ class Package:
         Returns:
             The path passed to ``uv pip install -e``, with ``[extra,...]`` appended.
         """
-        target = str(self.project_dir)
-        if self.extras:
-            target += "[" + ",".join(self.extras) + "]"
-        return target
+        return _with_extras(str(self.project_dir), self.extras)
 
 
 def _load_pyproject(path: Path) -> dict:
@@ -673,36 +688,55 @@ def _workspace_pins(
     then chose has differed between uv releases. So that floor is pinned to the workspace
     build, the one thing that can satisfy it on purpose rather than by accident.
 
+    Each sibling the package depends on directly is also requested with all of its extras
+    in both lists, so a floor too low for code behind a sibling's optional dependencies is
+    caught too, not only one on its default set.
+
     Args:
         package: The package being checked.
         versions: Every distribution in the wheelhouse, from :func:`build_wheelhouse`.
 
     Returns:
-        A ``(latest, minimum)`` pair of ``name==version`` requirement lists, covering this
-        package's own siblings whose build satisfies what its closure declares for them. One
-        that does not — a checkout whose tags predate the floor — is left out of both, so
-        that sibling resolves from PyPI as it did before. ``minimum`` holds only those the
-        package itself floors at a development release. Siblings another package in the
-        selection needed are not pinned here.
+        A ``(latest, minimum)`` pair of requirement lists. ``latest`` pins this package's own
+        siblings whose build satisfies what its closure declares for them as
+        ``name[extras]==version``. One that does not — a checkout whose tags predate the
+        floor — is left unpinned in both, so that sibling resolves from PyPI as it did
+        before. ``minimum`` pins only those the package itself floors at a development
+        release, and names every other direct sibling with extras unpinned. Siblings another
+        package in the selection needed are not pinned here.
     """
-    requirements = _declared_requirements(
-        _load_pyproject(path / "pyproject.toml")["project"]
-        for path in (package.project_dir, *package.local_sources)
-    )
+    project = _load_pyproject(package.project_dir / "pyproject.toml")["project"]
+    siblings = [
+        _load_pyproject(source / "pyproject.toml")["project"]
+        for source in package.local_sources
+    ]
+    requirements = _declared_requirements([project, *siblings])
     # Only what the package declares itself decides the minimum: ``lowest-direct`` pins its
     # direct dependencies, and a floor a sibling declares is that sibling's own to test.
-    own = _declared_requirements([
-        _load_pyproject(package.project_dir / "pyproject.toml")["project"]
-    ])
-    names = {_distribution_name(source) for source in package.local_sources}
+    own = _declared_requirements([project])
     latest: list[str] = []
     minimum: list[str] = []
-    for name, version in sorted(versions.items()):
-        if name not in names or not _satisfies(requirements.get(name, []), version):
-            continue
-        latest.append(f"{name}=={version}")
-        if _dev_build_version(own.get(name, [])) is not None:
-            minimum.append(f"{name}=={version}")
+    for sibling in siblings:
+        name = canonicalize_name(sibling["name"])
+        version = versions[name]
+        # A direct sibling is requested with every extra it declares, so code the package
+        # reaches through a sibling's optional dependencies is type-checked at both ends. A
+        # transitive one is not: naming it here would make it a direct dependency, which
+        # ``lowest-direct`` would then drop to a floor the package never declared.
+        target = (
+            _with_extras(name, tuple(sibling.get("optional-dependencies", {})))
+            if name in own
+            else name
+        )
+        pinned = _satisfies(requirements.get(name, []), version)
+        if pinned:
+            latest.append(f"{target}=={version}")
+        elif target != name:
+            latest.append(target)
+        if pinned and _dev_build_version(own.get(name, [])) is not None:
+            minimum.append(f"{target}=={version}")
+        elif target != name:
+            minimum.append(target)
     return latest, minimum
 
 
