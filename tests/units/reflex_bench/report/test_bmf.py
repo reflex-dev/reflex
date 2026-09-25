@@ -8,7 +8,7 @@ import pytest
 from reflex_bench.registry import Metric
 from reflex_bench.report.bmf import to_bmf
 
-from tests.units.reflex_bench.factories import WALL, make_doc, make_entry
+from tests.units.reflex_bench.factories import WALL, make_ab_entry, make_doc, make_entry
 
 SLEEP = [
     0.05008,
@@ -49,3 +49,16 @@ def test_bencher_metric_format():
         "selftest.short": {"wall": {"value": 1.5}},
     }
     json.dumps(exported, allow_nan=False)
+
+
+def test_ab_result_exports_the_head_arm():
+    doc = make_doc(
+        [
+            make_ab_entry(
+                "selftest.sleep",
+                {"wall": (WALL, {"A": SLEEP, "B": [2 * v for v in SLEEP]})},
+            )
+        ],
+        arms=("A", "B"),
+    )
+    assert to_bmf(doc)["selftest.sleep"]["wall"]["value"] == pytest.approx(0.10042)

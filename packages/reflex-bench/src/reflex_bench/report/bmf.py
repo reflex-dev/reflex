@@ -11,19 +11,20 @@ from typing import Any
 from reflex_bench.schema import ResultDoc, entry_name
 
 
-def to_bmf(doc: ResultDoc, arm: str = "A") -> dict[str, dict[str, dict[str, Any]]]:
+def to_bmf(doc: ResultDoc) -> dict[str, dict[str, dict[str, Any]]]:
     """Convert a result's summaries to Bencher Metric Format.
 
     Instances without statistics (failed, smoke runs) are left out; exact metrics
-    and metrics without a CI carry only a value.
+    and metrics without a CI carry only a value. An ``ab`` result exports its
+    head, arm B.
 
     Args:
         doc: The result document.
-        arm: The arm to export.
 
     Returns:
         ``{name: {metric: {"value", "lower_value", "upper_value"}}}``.
     """
+    arm = "B" if "B" in doc["subjects"] else "A"
     exported: dict[str, dict[str, dict[str, Any]]] = {}
     for entry in doc["benchmarks"]:
         measures: dict[str, dict[str, Any]] = {}
