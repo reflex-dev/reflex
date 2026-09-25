@@ -611,11 +611,12 @@ async def execute(
         if row is None:
             return "missing"
         moved_on = row.wf_version != version
-        if not moved_on:
-            columns = rows.user_columns(cls)
-            before = rows.snapshot(row, columns)
-            if until is None:
-                held.until = row.claimed_until
+        columns = rows.user_columns(cls)
+        # Nothing for the step's changes to be diffed against where no step of
+        # this claim will run, so the row is not copied for one.
+        before: dict[str, Any] = {} if moved_on else rows.snapshot(row, columns)
+        if not moved_on and until is None:
+            held.until = row.claimed_until
         session.expunge(row)
     if moved_on:
         # Moved on before the step started, so nothing of this claim will run

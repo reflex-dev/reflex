@@ -1368,7 +1368,15 @@ async def test_a_repeat_of_a_delivered_key_is_ignored(session_factory):
 # The tables a test drives by hand, rather than leaving to a worker.
 async def claim_row(
     cls: type[
-        RaceReview | Repeating | Batch | Parked | Piece | Deferring | Joined | Leaf
+        RaceReview
+        | Repeating
+        | Batch
+        | Parked
+        | Piece
+        | Deferring
+        | Joined
+        | Leaf
+        | Lingering
     ],
     pk: list[int],
 ) -> claim.Claimed:
