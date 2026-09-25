@@ -1,0 +1,54 @@
+# Reflex playground
+
+A small multi-page Reflex app: a navigation bar, a counter, a dynamic route and a list
+rendered with `rx.foreach`. It targets reflex 0.8.23 and later, and it is the app the
+Reflex macro benchmarks drive through the real `reflex` CLI.
+
+```bash
+uv run reflex run
+```
+
+From the repository root, `uv run --directory examples/playground --project ../.. reflex run`
+runs it against this checkout instead of the latest release. The pages are `/`,
+`/counter` and `/item/[item_id]` (for example `/item/42`).
+
+## Benchmark contract
+
+The benchmarks rely on these element ids. Every page renders them through `layout.py`,
+except `#bench-marker-leaf`, which only the index page renders.
+
+| Id | Shows |
+| --- | --- |
+| `bench-hydrated` | Present (and empty) once the page is hydrated: websocket connected and the first state update applied. With Playwright, wait for it with `state="attached"`. |
+| `bench-seq` | `BenchState.last_seq`, which the event handler `BenchState.set_seq(seq: int)` sets. The button `#bench-set-seq` fires `set_seq(7)`. Over the websocket, the handler is `reflex___state____state.playground___state____bench_state.set_seq`. |
+| `bench-handler-value` | `BenchState.handler_value`, which the event handler `BenchState.bench_value()` sets to `HANDLER_MARKER`. The button `#bench-handler` fires it. |
+| `bench-marker-root` | `ROOT_MARKER` of `playground/layout.py`, which every page imports. |
+| `bench-marker-leaf` | `LEAF_MARKER` of `playground/components/marker.py`, which only the index page imports. |
+
+The hot reload benchmarks rewrite exactly the string literal on a line carrying a
+`# bench:hmr-target <name>` pragma, then wait for the new value to show:
+
+| Pragma line | File | Shows in |
+| --- | --- | --- |
+| `LEAF_MARKER = "m-initial-leaf"  # bench:hmr-target leaf` | `playground/components/marker.py` | `#bench-marker-leaf` |
+| `ROOT_MARKER = "m-initial-root"  # bench:hmr-target root` | `playground/layout.py` | `#bench-marker-root` |
+| `HANDLER_MARKER = "m-initial-handler"  # bench:hmr-target handler` | `playground/state.py` | `#bench-handler-value`, once `bench_value` runs |
+
+Keep each target on its own line, in exactly this form. `assets/favicon.ico` (the one
+`reflex init` creates) and `assets/playground.css` are there for the asset hot reload
+benchmarks.
+
+## Changing the app
+
+- **Keep it running on reflex 0.8.23.** The benchmarks are backfilled to 0.8.23, so
+  the app imports only `reflex` and uses no API added after 0.8.23, unless guarded like
+  `RadixThemesPlugin` in `rxconfig.py`. The `examples` CI workflow compiles the app with
+  0.8.23 and with this checkout.
+- **Update the content hash.** `.content-hash` identifies this version of the app in
+  the benchmark results, so any change here resets the benchmark baselines. The
+  `hash-examples` pre-commit hook rewrites it (or run
+  `uv run python scripts/hash_examples.py`), and CI fails when it is stale. The hash
+  covers every file git tracks or would track here, so commit new files and delete
+  stray ones.
+- **Commit no lock files.** The app runs against several reflex versions, so
+  `reflex.lock/` and `uv.lock` stay out of git.

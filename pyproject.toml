@@ -292,6 +292,7 @@ preview = true
 "packages/reflex-build-sdk/scripts/*.py" = ["INP001", "T201"]
 "scripts/check_min_deps.py" = ["T201"]
 "scripts/check_outdated_deps.py" = ["T201"]
+"scripts/hash_examples.py" = ["T201"]
 "scripts/verify_pyi.py" = ["T201"]
 # Skill helper scripts are CLIs whose whole job is printing a report.
 ".claude/skills/*/scripts/*.py" = ["T201"]
