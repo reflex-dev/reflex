@@ -557,6 +557,7 @@ app and reflex version, so every metric is exact and a sample is one run.
 | --- | --- | --- | --- | --- |
 | `wire.hydrate` | `pr`, `smoke`, `daily` | | connect and hydrate the playground's index route, until the delta that sets `is_hydrated` | `hydrate_sent_bytes`, `hydrate_received_bytes`, `hydrate_frames` (received) |
 | `wire.event` | `pr`, `smoke` (simple), `daily` | `shape` simple, complex, cross, background | after hydration, one `BenchState.set_seq*` event: the request frame, and every frame received until the delta echoing its sequence number | `request_bytes`, `response_bytes`, `response_frames` |
+| `wire.navigate` | `pr`, `smoke` (item), `daily` | `route` counter (`/counter`), item (`/item/42`, the dynamic `/item/[item_id]` page) | after hydration of `/`, a client-side navigation: the `on_load_internal` frame the frontend's router effect sends from the new route, and every frame received until the delta that sets `is_hydrated` again | `request_bytes`, `response_bytes`, `response_frames` |
 | `wire.delta` | `daily` | `change` set_scalar, append_item, set_one_item, set_dict_key, update_row_field | the same for one small change to a large collection of the generated `wire_delta` app | `response_bytes` |
 
 - **Replies span frames**: `response_bytes` sums every frame from the request
@@ -564,6 +565,13 @@ app and reflex version, so every metric is exact and a sample is one run.
   counts, as does any delta of another state. The extra data keeps the echo
   frame (`reply`), the largest frame, and `delta_bytes`, the bytes of each
   substate's part of the deltas re-serialized compactly.
+- **Keepalives do not count**: an engine.io ping and its pong are timing, not
+  payload, so a slow run moves the same bytes as a fast one.
+- **`wire.navigate`** sends what the frontend sends on a route change: one
+  `on_load_internal` with the new route's `router_data` (`update_vars_internal`
+  goes first only when the browser holds client storage vars, which the
+  playground has none of). The reply carries the root state's `router` and,
+  on the dynamic route, the route argument.
 - **`wire.delta`** does not use the playground: its `setup_cache` writes a
   small app whose state holds 1000 ints in a list, 1000 keys in a dict and 200
   dict rows, and compiles it. Every handler also sets `last_seq` (the echo), so

@@ -252,6 +252,12 @@ def test_split_cpus_gives_whole_cores_to_each_side():
     }
 
 
+def test_split_cpus_is_none_when_cpu_0_is_the_server_side():
+    # A cpuset of CPU 0 alone from its core plus three CPUs of later cores:
+    # the lower half is CPU 0's core, which the server may not use.
+    assert suite.split_cpus([0, 2, 3, 6], cores=[[0], [2, 3], [6]]) is None
+
+
 def fake_sysfs(tmp_path: Path, siblings: dict[int, str]) -> Path:
     for cpu, listing in siblings.items():
         topology = tmp_path / f"cpu{cpu}" / "topology"

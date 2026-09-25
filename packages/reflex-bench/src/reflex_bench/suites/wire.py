@@ -12,6 +12,12 @@ payload bytes of every websocket frame it sends and receives:
   reply until the delta that echoes its sequence number, every frame in
   between included (0.8.23 answers a background task with an empty update
   first).
+- ``wire.navigate[route=...]``: after the hydration of ``/``, a client-side
+  navigation to another playground route (``counter``: ``/counter``; ``item``:
+  ``/item/42``, the dynamic ``/item/[item_id]`` page). The frontend's router
+  effect sends one ``on_load_internal`` from the new route and the reply is
+  complete at the delta that sets ``is_hydrated`` again: the request frame,
+  and every frame received until then.
 - ``wire.delta[change=...]``: the same for one small change to a large
   collection, on a generated app (``wire_delta``) whose state holds 1000 ints
   in a list, 1000 keys in a dict and 200 dict rows: ``append_item``,
@@ -83,6 +89,10 @@ HOOK_TIMEOUT_S = 300.0
 SETUP_TIMEOUT_S = COMPILE_TIMEOUT_S + 60
 CHEAP_SUITES = ("pr", "smoke", "daily")
 WIRE_STATE = "reflex___state____state.wire_delta___state____wire_state"
+ROUTES: dict[str, tuple[str, dict[str, str]]] = {
+    "counter": ("/counter", {}),
+    "item": ("/item/42", {"item_id": "42"}),
+}
 CHANGES = (
     "set_scalar",
     "append_item",
@@ -130,8 +140,8 @@ class Hydration:
     """What a page load moved, from the connect until ``is_hydrated``.
 
     Attributes:
-        sent_bytes: Frame bytes sent: the namespace join, the hydration events
-            and any pong.
+        sent_bytes: Frame bytes sent: the namespace join and the hydration
+            events.
         received_bytes: Frame bytes received: the engine.io open, the namespace
             ack, a ``new_token`` if any, and the deltas.
         sent_frames: The frames sent.
@@ -155,13 +165,14 @@ class Exchange:
 
     Attributes:
         request_bytes: The event frame.
-        response_bytes: Every frame received until the delta that echoes the
-            sequence number, that delta included.
+        response_bytes: Every frame received until the delta that completes
+            the reply (the echo of the sequence number, or ``is_hydrated`` for
+            a navigation), that delta included.
         response_frames: Their number.
         largest_frame_bytes: The largest of them.
         delta_bytes: Per substate, the bytes of its part of the deltas,
             re-serialized compactly.
-        reply: The frame that echoed the sequence number.
+        reply: The frame that completed the reply.
     """
 
     request_bytes: int
@@ -186,6 +197,7 @@ class WireSession:
         self._ws = ws
         self.token = token
         self.pathname = pathname
+        self.query: dict[str, str] = {}
         self.sent_bytes = 0
         self.sent_frames = 0
         self.received_bytes = 0
@@ -209,6 +221,8 @@ class WireSession:
     async def _receive(self) -> tuple[str | bytes, int, list[Any] | None]:
         """Receive a frame and count it; pings are answered, disconnects raise.
 
+        A keepalive ping and its pong are timing, not payload: neither counts.
+
         Returns:
             The frame, its bytes and, for a socket.io event, its arguments.
 
@@ -219,6 +233,9 @@ class WireSession:
         """
         while True:
             message = await self._ws.recv()
+            if message == PING:
+                await self._ws.send(PONG)
+                continue
             size = frame_bytes(message)
             self.received_bytes += size
             self.received_frames += 1
@@ -232,9 +249,6 @@ class WireSession:
                         msg = "the server asked the page to reload"
                         raise ProtocolError(msg)
                     return message, size, args
-                if message == PING:
-                    await self._send(PONG)
-                    continue
                 if message in {DISCONNECT_FRAME, CLOSE}:
                     msg = f"the server disconnected the session ({message!r})"
                     raise ProtocolError(msg)
@@ -290,9 +304,7 @@ class WireSession:
             if isinstance(message, str) and message.startswith(CONNECT_FRAME):
                 # Joined; a new_token, when the server sends one, came before.
                 for name in (HYDRATE_EVENT, ON_LOAD_EVENT):
-                    await self._send(
-                        event_frame(name, {}, token=self.token, pathname=self.pathname)
-                    )
+                    await self._send(self._event(name, {}))
                 continue
             delta = self._delta(args, sizes)
             if delta.get(ROOT_STATE, {}).get(HYDRATED_VAR) is True:
@@ -306,6 +318,20 @@ class WireSession:
             delta_bytes=sizes,
         )
 
+    def _event(self, name: str, payload: dict[str, Any]) -> str:
+        """Encode an event from the session's current route.
+
+        Args:
+            name: The full event handler name.
+            payload: The handler's arguments.
+
+        Returns:
+            The frame.
+        """
+        return event_frame(
+            name, payload, token=self.token, pathname=self.pathname, query=self.query
+        )
+
     async def exchange(self, shape: EventShape, seq: int) -> Exchange:
         """Send one event and read its reply.
 
@@ -316,11 +342,48 @@ class WireSession:
         Returns:
             What the event moved.
         """
-        request = await self._send(
-            event_frame(
-                shape.name, shape.payload(seq), token=self.token, pathname=self.pathname
-            )
+        request = await self._send(self._event(shape.name, shape.payload(seq)))
+        return await self._reply(
+            request,
+            lambda delta: delta.get(shape.delta_key, {}).get(shape.seq_var) == seq,
         )
+
+    async def navigate(self, pathname: str, query: dict[str, str]) -> Exchange:
+        """Change the route like the frontend's client-side navigation.
+
+        The router effect sends one ``on_load_internal`` from the new route
+        (``update_vars_internal`` too when the browser holds client storage
+        vars, which the playground has none of); the reply is complete at the
+        delta that sets ``is_hydrated`` again. Later events come from the new
+        route.
+
+        Args:
+            pathname: The new route, e.g. ``/item/42``.
+            query: Its parameters, e.g. ``{"item_id": "42"}``.
+
+        Returns:
+            What the navigation moved.
+        """
+        self.pathname = pathname
+        self.query = query
+        request = await self._send(self._event(ON_LOAD_EVENT, {}))
+        return await self._reply(
+            request,
+            lambda delta: delta.get(ROOT_STATE, {}).get(HYDRATED_VAR) is True,
+        )
+
+    async def _reply(
+        self, request: int, done: Callable[[dict[str, Any]], bool]
+    ) -> Exchange:
+        """Read frames until the delta that completes a reply.
+
+        Args:
+            request: The request frame's bytes.
+            done: Whether a delta completes the reply.
+
+        Returns:
+            What the request moved.
+        """
         received = self.received_bytes
         frames = self.received_frames
         largest = 0
@@ -329,7 +392,7 @@ class WireSession:
             message, size, args = await self._receive()
             largest = max(largest, size)
             delta = self._delta(args, sizes)
-            if delta.get(shape.delta_key, {}).get(shape.seq_var) == seq:
+            if done(delta):
                 assert isinstance(message, str)
                 return Exchange(
                     request_bytes=request,
@@ -359,6 +422,9 @@ def measure(endpoint: Endpoint, work: Callable[[WireSession], Awaitable[_T]]) ->
         token = str(uuid.uuid4())
         async with connect(
             event_url(endpoint.backend_url, token),
+            # A browser sends the page's origin; the router's page host and
+            # full paths in the deltas come from it.
+            additional_headers={"Origin": endpoint.backend_url},
             proxy=None,
             open_timeout=WIRE_TIMEOUT_S,
             max_size=MAX_FRAME_BYTES,
@@ -650,22 +716,24 @@ class _OneSession:
         app.wait_http_ready(timeout=START_TIMEOUT_S)
         return Endpoint(app.backend_url)
 
-    def exchange(self, ctx: Context, shape: EventShape) -> SampleResult:
-        """Hydrate a session on a fresh backend and send it one event.
+    def exchange(
+        self, ctx: Context, work: Callable[[WireSession], Awaitable[Exchange]]
+    ) -> SampleResult:
+        """Hydrate a session on a fresh backend and measure one request on it.
 
         Args:
             ctx: The benchmark context.
-            shape: The event.
+            work: The request, made on the hydrated session.
 
         Returns:
             The request and reply sizes, with the exchange and the hydration as
             extra data.
         """
 
-        async def work(session: WireSession) -> tuple[Hydration, Exchange]:
-            return await session.hydrate(), await session.exchange(shape, 1)
+        async def hydrated(session: WireSession) -> tuple[Hydration, Exchange]:
+            return await session.hydrate(), await work(session)
 
-        hydration, exchange = measure(self.backend(ctx), work)
+        hydration, exchange = measure(self.backend(ctx), hydrated)
         return SampleResult(
             {
                 "request_bytes": exchange.request_bytes,
@@ -745,7 +813,41 @@ class Event(_OneSession):
         Returns:
             The request and reply sizes.
         """
-        return self.exchange(ctx, SHAPES[ctx.params["shape"]])
+        shape = SHAPES[ctx.params["shape"]]
+        return self.exchange(ctx, lambda session: session.exchange(shape, 1))
+
+
+@benchmark(
+    id="wire.navigate",
+    suites=CHEAP_SUITES,
+    kind="track",
+    params={"route": tuple(ROUTES)},
+    suite_params={"pr": {"route": ("item",)}, "smoke": {"route": ("item",)}},
+    metrics={
+        "request_bytes": _bytes("the on_load_internal frame from the new route"),
+        "response_bytes": _bytes("frames received until the delta setting is_hydrated"),
+        "response_frames": _count(
+            "frames received until the delta setting is_hydrated"
+        ),
+    },
+    timeout=HOOK_TIMEOUT_S,
+    setup_timeout=SETUP_TIMEOUT_S,
+    estimate=4,
+)
+class Navigate(_OneSession):
+    """Websocket bytes of a client-side navigation from the hydrated index route to another playground route."""
+
+    def sample(self, ctx: Context) -> SampleResult:
+        """Navigate to the route.
+
+        Args:
+            ctx: The benchmark context.
+
+        Returns:
+            The request and reply sizes.
+        """
+        pathname, query = ROUTES[ctx.params["route"]]
+        return self.exchange(ctx, lambda session: session.navigate(pathname, query))
 
 
 @benchmark(
@@ -791,7 +893,8 @@ class Delta(_OneSession):
         Returns:
             The reply size, with the request size and the frames as extra data.
         """
-        result = self.exchange(ctx, delta_shape(ctx.params["change"]))
+        shape = delta_shape(ctx.params["change"])
+        result = self.exchange(ctx, lambda session: session.exchange(shape, 1))
         return SampleResult(
             {"response_bytes": result.values["response_bytes"]}, extra=result.extra
         )

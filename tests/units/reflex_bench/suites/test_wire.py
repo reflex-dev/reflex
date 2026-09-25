@@ -114,7 +114,8 @@ def playground_script(
     Args:
         new_token: A token handed out before the namespace ack.
         replies: The frames answering an event, by handler name; other events
-            get one echo of their sequence number.
+            get one echo of their sequence number, and ``on_load_internal``
+            the ``is_hydrated`` delta, with the router's page away from ``/``.
 
     Returns:
         The script.
@@ -128,6 +129,8 @@ def playground_script(
             return []
         event = json.loads(message.partition(",")[2])[1]
         name = event["name"]
+        if replies and name in replies:
+            return replies[name]
         if name == HYDRATE_EVENT:
             return [
                 delta_frame({
@@ -140,13 +143,28 @@ def playground_script(
                 })
             ]
         if name == ON_LOAD_EVENT:
-            return [delta_frame({ROOT_STATE: {HYDRATED_VAR: True}})]
-        if replies and name in replies:
-            return replies[name]
+            return [navigation_reply(event["router_data"])]
         state, _, _handler = name.rpartition(".")
         return [delta_frame({state: {SEQ_VAR: event["payload"]["seq"]}})]
 
     return script
+
+
+def navigation_reply(router_data: dict[str, Any]) -> str:
+    """Build the delta that completes an ``on_load_internal``.
+
+    Args:
+        router_data: The event's router data.
+
+    Returns:
+        ``is_hydrated`` set; away from ``/`` the root state's router too.
+    """
+    root: dict[str, Any] = {HYDRATED_VAR: True}
+    if router_data["pathname"] != "/":
+        root["router_rx_state_"] = {
+            "page": {"path": router_data["pathname"], "params": router_data["query"]}
+        }
+    return delta_frame({ROOT_STATE: root})
 
 
 def run(work: Any) -> Any:
@@ -183,13 +201,14 @@ def test_hydration_counts_every_frame_until_hydrated():
     assert session.token == "tok-2"
 
 
-def test_a_ping_during_hydration_is_answered_and_counted():
+def test_a_ping_during_hydration_is_answered_and_not_counted():
     ws = FakeTransport(playground_script(), greeting=[OPEN, PING])
     hydration = run(wire.WireSession(ws, "tok").hydrate())
     assert ws.sent[:2] == [CONNECT_FRAME, PONG]
-    assert hydration.sent_frames == 4
-    assert hydration.received_frames == 5
-    assert hydration.sent_bytes == size(CONNECT_FRAME, PONG, *ws.sent[2:])
+    # Keepalives are timing, not payload: neither the ping nor the pong counts.
+    assert hydration.sent_frames == 3
+    assert hydration.received_frames == 4
+    assert hydration.sent_bytes == size(CONNECT_FRAME, *ws.sent[2:])
 
 
 @pytest.mark.parametrize(
@@ -279,6 +298,59 @@ def test_an_unrelated_delta_before_the_echo_counts_in_the_reply():
     assert (exchange.response_bytes, exchange.response_frames) == (size(other, echo), 2)
 
 
+def test_a_navigation_sends_on_load_from_the_new_route_until_hydrated_again():
+    ws = FakeTransport(playground_script())
+    session = wire.WireSession(ws, "tok")
+    run(session.hydrate())
+    exchange = run(session.navigate("/item/42", {"item_id": "42"}))
+    request = event_frame(
+        ON_LOAD_EVENT, {}, token="tok", pathname="/item/42", query={"item_id": "42"}
+    )
+    reply = navigation_reply({"pathname": "/item/42", "query": {"item_id": "42"}})
+    assert ws.sent[-1] == request
+    assert '"router_rx_state_":{"page":{"path":"/item/42"' in reply
+    assert exchange == wire.Exchange(
+        request_bytes=size(request),
+        response_bytes=size(reply),
+        response_frames=1,
+        largest_frame_bytes=size(reply),
+        delta_bytes={
+            ROOT_STATE: size(
+                '{"is_hydrated_rx_state_":true,"router_rx_state_":{"page":{"path":"/item/42","params":{"item_id":"42"}}}}'
+            )
+        },
+        reply=reply,
+    )
+    # Later events come from the new route.
+    run(session.exchange(SHAPES["simple"], 2))
+    assert ws.sent[-1] == event_frame(
+        SHAPES["simple"].name,
+        {"seq": 2},
+        token="tok",
+        pathname="/item/42",
+        query={"item_id": "42"},
+    )
+
+
+def test_a_navigation_with_on_load_events_is_summed_until_hydrated():
+    # A page with on_load handlers: is_hydrated goes false, the handlers'
+    # deltas follow, and the chain ends by setting it true again.
+    unhydrated = delta_frame({ROOT_STATE: {HYDRATED_VAR: False}})
+    loaded = delta_frame({PLAYGROUND_STATE: {"count_rx_state_": 3}})
+    hydrated = delta_frame({ROOT_STATE: {HYDRATED_VAR: True}})
+    ws = FakeTransport(
+        playground_script(replies={ON_LOAD_EVENT: [unhydrated, loaded, hydrated]})
+    )
+    session = wire.WireSession(ws, "tok")
+    run(session.hydrate())
+    exchange = run(session.navigate("/counter", {}))
+    assert exchange.response_bytes == size(unhydrated, loaded, hydrated)
+    assert exchange.response_frames == 3
+    assert exchange.reply == hydrated
+    assert set(exchange.delta_bytes) == {ROOT_STATE, PLAYGROUND_STATE}
+    assert not ws.inbox
+
+
 def test_a_disconnect_while_waiting_for_the_reply_fails():
     simple = SHAPES["simple"].name
     ws = FakeTransport(playground_script(replies={simple: [DISCONNECT_FRAME]}))
@@ -291,10 +363,12 @@ def test_measure_connects_hydrates_and_leaves_the_namespace(
 ):
     transports: list[FakeTransport] = []
     urls: list[str] = []
+    headers: list[dict[str, str]] = []
 
     @contextlib.asynccontextmanager
     async def connect(url: str, **kwargs: Any) -> AsyncIterator[FakeTransport]:
         urls.append(url)
+        headers.append(kwargs["additional_headers"])
         transports.append(ws := FakeTransport(playground_script()))
         yield ws
 
@@ -306,6 +380,8 @@ def test_measure_connects_hydrates_and_leaves_the_namespace(
     assert urls[0].startswith(
         "ws://localhost:8000/_event/?EIO=4&transport=websocket&token="
     )
+    # A browser sends the page's origin; the router's page host comes from it.
+    assert headers == [{"Origin": "http://localhost:8000"}]
     assert hydration.received_frames == 4
     assert ws.sent[-1] == DISCONNECT_FRAME
     assert '"pathname":"/page"' in ws.sent[1]
@@ -316,13 +392,26 @@ def test_measure_against_the_echo_server_counts_real_frames():
 
         async def work(
             session: wire.WireSession,
-        ) -> tuple[wire.Hydration, wire.Exchange]:
-            return await session.hydrate(), await session.exchange(SHAPES["simple"], 3)
+        ) -> tuple[wire.Hydration, wire.Exchange, wire.Exchange]:
+            return (
+                await session.hydrate(),
+                await session.exchange(SHAPES["simple"], 3),
+                await session.navigate("/counter", {}),
+            )
 
-        hydration, exchange = wire.measure(Endpoint(url), work)
+        hydration, exchange, navigation = wire.measure(Endpoint(url), work)
     reply = emit_frame("event", {"delta": {BENCH_STATE: {SEQ_VAR: 3}}, "events": []})
     assert exchange.response_bytes == size(reply)
     assert exchange.reply == reply
+    hydrated = emit_frame(
+        "event", {"delta": {ROOT_STATE: {HYDRATED_VAR: True}}, "events": []}
+    )
+    assert navigation.reply == hydrated
+    assert navigation.response_frames == 1
+    # The token is a uuid4, so the request has a fixed length.
+    assert navigation.request_bytes == size(
+        event_frame(ON_LOAD_EVENT, {}, token="x" * 36, pathname="/counter")
+    )
     assert hydration.received_frames == 4
     assert hydration.delta_bytes == {
         ROOT_STATE: size(
@@ -430,13 +519,14 @@ def names(suite: str | None, *filters: str) -> list[str]:
 
 
 def test_instance_ids_per_suite():
-    cheap = ["wire.event[shape=simple]", "wire.hydrate"]
+    cheap = ["wire.event[shape=simple]", "wire.hydrate", "wire.navigate[route=item]"]
     assert names("pr", "wire.*") == cheap
     assert names("smoke", "wire.*") == cheap
     everything = [
         *(f"wire.delta[change={change}]" for change in CHANGES),
         *(f"wire.event[shape={shape}]" for shape in SHAPES),
         "wire.hydrate",
+        *(f"wire.navigate[route={route}]" for route in wire.ROUTES),
     ]
     assert names("daily", "wire.*") == everything
     assert names("all", "wire.*") == everything
@@ -448,16 +538,21 @@ def test_declarations():
         for bench_id, bench in registry.discover().items()
         if bench_id.startswith("wire.")
     }
-    assert set(found) == {"wire.hydrate", "wire.event", "wire.delta"}
+    assert set(found) == {"wire.hydrate", "wire.event", "wire.navigate", "wire.delta"}
     assert set(found["wire.hydrate"].metrics) == {
         "hydrate_sent_bytes",
         "hydrate_received_bytes",
         "hydrate_frames",
     }
-    assert set(found["wire.event"].metrics) == {
-        "request_bytes",
-        "response_bytes",
-        "response_frames",
+    for bench_id in ("wire.event", "wire.navigate"):
+        assert set(found[bench_id].metrics) == {
+            "request_bytes",
+            "response_bytes",
+            "response_frames",
+        }
+    assert wire.ROUTES == {
+        "counter": ("/counter", {}),
+        "item": ("/item/42", {"item_id": "42"}),
     }
     assert set(found["wire.delta"].metrics) == {"response_bytes"}
     for bench in found.values():
@@ -601,9 +696,51 @@ def test_event_measures_one_exchange_per_shape(tmp_path: Path, fakes: Fakes):
     ]
 
 
+def test_navigate_measures_the_route_change_after_hydration(
+    tmp_path: Path, fakes: Fakes
+):
+    entry = run_bench(tmp_path, "wire.navigate", route="item")
+    assert entry["status"] == "ok", entry["error"]
+    assert entry["dims"] == {"fixture": "playground"}
+    samples = {
+        name: metric["samples"]["A"] for name, metric in entry["metrics"].items()
+    }
+    request = event_frame(
+        ON_LOAD_EVENT,
+        {},
+        token="x" * 36,
+        pathname="/item/42",
+        query={"item_id": "42"},
+    )
+    reply = navigation_reply({"pathname": "/item/42", "query": {"item_id": "42"}})
+    assert samples["request_bytes"] == [size(request)]
+    assert samples["response_bytes"] == [size(reply)]
+    assert samples["response_frames"] == [1]
+    (extra,) = entry["sample_extra"]
+    assert extra["reply"] == reply
+    # Hydrated on "/" first: its on_load reply carries no router.
+    assert extra["hydration"]["received_frames"] == 4
+    assert extra["hydration"]["delta_bytes"][ROOT_STATE] == size(
+        '{"is_hydrated_rx_state_":false,"router_rx_state_":{"a":1}}',
+        '{"is_hydrated_rx_state_":true}',
+    )
+    assert fakes.log == [
+        "copy playground",
+        "run_cli compile",
+        "app start",
+        "connect",
+        "app stop",
+    ]
+
+
 def test_delta_generates_its_own_app_and_keys_the_series_on_its_hash(
     tmp_path: Path, fakes: Fakes
 ):
+    # The change's reply carries the whole list, as a resent collection would.
+    items = [*range(1000), 1]
+    fakes.replies[f"{wire.WIRE_STATE}.append_item"] = [
+        delta_frame({wire.WIRE_STATE: {"items_rx_state_": items, SEQ_VAR: 1}})
+    ]
     entry = run_bench(tmp_path, "wire.delta", change="append_item")
     assert entry["status"] == "ok", entry["error"]
     assert entry["dims"] == {
@@ -616,13 +753,18 @@ def test_delta_generates_its_own_app_and_keys_the_series_on_its_hash(
     assert (app / "wire_delta" / "state.py").read_text() == wire.delta_app_files()[
         "wire_delta/state.py"
     ]
-    reply = delta_frame({wire.WIRE_STATE: {SEQ_VAR: 1}})
+    reply = delta_frame({wire.WIRE_STATE: {"items_rx_state_": items, SEQ_VAR: 1}})
     assert entry["metrics"]["response_bytes"]["samples"]["A"] == [size(reply)]
     (extra,) = entry["sample_extra"]
     assert extra["request_bytes"] == size(
         event_frame(f"{wire.WIRE_STATE}.append_item", {"seq": 1}, token="x" * 36)
     )
     assert extra["response_frames"] == 1
+    assert extra["delta_bytes"] == {
+        wire.WIRE_STATE: size(
+            json.dumps({"items_rx_state_": items, SEQ_VAR: 1}, separators=(",", ":"))
+        )
+    }
 
 
 def test_a_failed_sample_still_stops_the_backend(tmp_path: Path, fakes: Fakes):
