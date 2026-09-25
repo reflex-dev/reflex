@@ -167,6 +167,21 @@ def check(doc: ResultDoc, budgets: Budgets) -> list[BudgetRow]:
     ]
 
 
+def _number(value: float, signed: bool = False) -> str:
+    """Format a value or a delta, keeping the fraction of a fractional one.
+
+    Args:
+        value: The value.
+        signed: Whether to write the sign and thousands separators, as a delta.
+
+    Returns:
+        E.g. ``248193`` (a whole value, as budgets.json writes it) or
+        ``+1,024.500``.
+    """
+    digits = "0" if float(value).is_integer() else "3"
+    return format(value, f"{'+,' if signed else ''}.{digits}f")
+
+
 def _delta(row: BudgetRow, value: float) -> str:
     """Format how far a value is from its budget.
 
@@ -178,7 +193,7 @@ def _delta(row: BudgetRow, value: float) -> str:
         E.g. ``-11,807 B (-4.5 %)``: negative is headroom.
     """
     delta = value - row.budget
-    text = f"{delta:+,.0f}"
+    text = _number(delta, signed=True)
     if row.unit not in {None, "1"}:
         text += f" {row.unit}"
     return text + (f" ({format_pct(delta / row.budget)})" if row.budget else "")
@@ -191,10 +206,10 @@ def table_lines(rows: Sequence[BudgetRow]) -> list[Line]:
         rows: The checked budgets.
 
     Returns:
-        The header and one row per budget: benchmark, metric, value (as
-        budgets.json writes it, ready to paste), budget, delta in the metric's
-        unit and in percent of the budget, and verdict. A benchmark that did not
-        finish ``ok`` gets its error printed once, after its rows.
+        The header and one row per budget: benchmark, metric, value (a whole
+        value as budgets.json writes it, ready to paste), budget, delta in the
+        metric's unit and in percent of the budget, and verdict. A benchmark
+        that did not finish ``ok`` gets its error printed once, after its rows.
     """
     lines: list[Line] = [[Text(column, style="bold") for column in _COLUMNS]]
     detailed: set[str] = set()
@@ -203,7 +218,7 @@ def table_lines(rows: Sequence[BudgetRow]) -> list[Line]:
             cells = ["-", str(row.budget), "", f"error: {row.error}"]
         else:
             cells = [
-                f"{row.value:.0f}",
+                _number(row.value),
                 str(row.budget),
                 _delta(row, row.value),
                 "over budget" if row.exceeded else "ok",
