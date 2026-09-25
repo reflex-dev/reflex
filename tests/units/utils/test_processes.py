@@ -294,6 +294,20 @@ def test_run_concurrently_context_no_interrupt_after_pre_body_failure():
     time.sleep(0.1)
 
 
+def test_frontend_registry_stops_late_enrollment_once(monkeypatch):
+    """A worker racing shutdown cannot orphan a frontend or stop it twice."""
+    stopped = []
+    monkeypatch.setattr(processes, "_stop_frontend", stopped.append)
+    registry = processes._FrontendRegistry()
+    first = mock.Mock(spec=subprocess.Popen)
+    late = mock.Mock(spec=subprocess.Popen)
+    registry.register(first)
+    registry.stop_all()
+    registry.register(late)
+    registry.stop_all()
+    assert stopped == [first, late]
+
+
 def _finished_process(returncode: int, output: str = "ready\n") -> mock.MagicMock:
     """Build a Popen stand-in that has already exited with the given code.
 
@@ -426,7 +440,7 @@ def test_frontend_group_ends_with_run_context(tmp_path):
     """The opted-in frontend and its child are both stopped at context exit."""
     grandchild_pid = tmp_path / "grandchild.pid"
     ready = threading.Event()
-    root: list[subprocess.Popen[str]] = []
+    root: list[subprocess.Popen[bytes]] = []
 
     def frontend():
         code = (

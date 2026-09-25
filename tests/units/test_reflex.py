@@ -460,7 +460,8 @@ def frontend(*args):
                          stdout=subprocess.PIPE,text=True)
     grandchild = int(p.stdout.readline())
     processes.track_frontend(p)
-    open(PIDS,"w").write(f"{p.pid} {grandchild}")
+    with open(PIDS,"w") as handshake:
+        handshake.write(f"{p.pid} {grandchild}")
     p.wait()
 
 def backend(*args):
@@ -500,12 +501,17 @@ rx._run_dev(MODE,3000,PORT,"127.0.0.1")
     child = grandchild = None
     try:
         deadline = time.monotonic() + DEFAULT_TIMEOUT
-        while not pids.exists() and time.monotonic() < deadline:
+        while time.monotonic() < deadline:
             if launcher.poll() is not None:
                 pytest.fail(f"launcher exited early: {launcher.returncode}")
+            if pids.exists():
+                parts = pids.read_text().split()
+                if len(parts) == 2:
+                    child, grandchild = map(int, parts)
+                    break
             time.sleep(0.01)
-        assert pids.exists(), "frontend did not start"
-        child, grandchild = map(int, pids.read_text().split())
+        assert child is not None, "frontend did not start"
+        assert grandchild is not None, "frontend grandchild did not start"
         os.kill(launcher.pid, getattr(signal, sig))
         try:
             returncode = launcher.wait(timeout=DEFAULT_TIMEOUT)

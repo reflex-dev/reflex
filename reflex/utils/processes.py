@@ -270,6 +270,33 @@ def new_process(
 _run_children = threading.local()
 
 
+class _FrontendRegistry:
+    """Serialize frontend enrollment and one-time teardown across worker threads."""
+
+    def __init__(self) -> None:
+        """Start with no tracked frontends."""
+        self._lock = threading.Lock()
+        self._frontends: list[subprocess.Popen[str]] = []
+        self._closing = False
+
+    def register(self, process: subprocess.Popen[str]) -> None:
+        """Enroll a child, or stop it if teardown already took the list."""
+        with self._lock:
+            if not self._closing:
+                self._frontends.append(process)
+                return
+        _stop_frontend(process)
+
+    def stop_all(self) -> None:
+        """Stop each enrolled frontend exactly once, including on repeated cleanup."""
+        with self._lock:
+            self._closing = True
+            children = self._frontends
+            self._frontends = []
+        for child in children:
+            _stop_frontend(child)
+
+
 def _stop_frontend(process: subprocess.Popen[str], timeout: float = 5.0) -> None:
     """Stop the frontend and its POSIX process group when the run ends."""
     if sys.platform == "win32":
@@ -284,6 +311,7 @@ def _stop_frontend(process: subprocess.Popen[str], timeout: float = 5.0) -> None
         os.killpg(process.pid, signal.SIGTERM)
     except ProcessLookupError:
         return
+    # Wait up to five seconds by default for the frontend group to exit.
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         try:
@@ -297,9 +325,9 @@ def _stop_frontend(process: subprocess.Popen[str], timeout: float = 5.0) -> None
 
 def track_frontend(process: subprocess.Popen[str]) -> None:
     """Enroll a spawned frontend in its run context when one is active."""
-    children = getattr(_run_children, "frontends", None)
-    if children is not None:
-        children.append(process)
+    registry = getattr(_run_children, "frontends", None)
+    if registry is not None:
+        registry.register(process)
 
 
 def _interrupt_main_thread():
@@ -383,7 +411,7 @@ def run_concurrently_context(
 
     # Run the functions concurrently.
     executor = None
-    frontends: list[subprocess.Popen[str]] = []
+    frontends = _FrontendRegistry()
 
     def run_with_children(fn: tuple[Callable[..., Any], ...]) -> Any:
         _run_children.frontends = frontends
@@ -414,8 +442,7 @@ def run_concurrently_context(
                 # does not wait).
                 with interrupt_lock:
                     in_body = False
-                for child in frontends:
-                    _stop_frontend(child)
+                frontends.stop_all()
 
             # Get the results in the order completed to check any exceptions.
             for task in futures.as_completed(tasks):
@@ -427,8 +454,7 @@ def run_concurrently_context(
             raise_first_failure(tasks)
             raise
     finally:
-        for child in frontends:
-            _stop_frontend(child)
+        frontends.stop_all()
         # Shutdown the executor
         if executor:
             executor.shutdown(wait=False)
