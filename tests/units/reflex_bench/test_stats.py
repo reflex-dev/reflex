@@ -465,14 +465,30 @@ def test_spearman_matches_scipy(xs, ys, rho):
     ],
 )
 def test_spearman_p_matches_scipy(xs: list[int], p: float):
-    rho = stats.spearman(xs, range(len(xs)))
-    assert stats.spearman_p(rho, len(xs)) == pytest.approx(p, rel=1e-9)
+    assert stats.spearman_p(xs, range(len(xs))) == pytest.approx(p, rel=1e-9)
+
+
+@pytest.mark.parametrize(
+    ("xs", "ys", "p"),
+    [
+        # Golden values from permuting xs over ys with itertools.permutations and
+        # counting the pairings whose |rho| reaches the observed one: the ties
+        # stay in the permuted data, as in scipy's pairings permutation test.
+        ([1, 1, 2, 2, 3, 3], range(6), 2 / 90),
+        ([5, 5, 4, 3, 3, 2, 1], range(7), 0.0015873015873015873),
+        ([1, 2, 2, 3, 3, 3, 4, 5], [3, 1, 4, 1, 5, 9, 2, 6], 0.4419642857142857),
+    ],
+)
+def test_spearman_p_keeps_ties(xs: list[int], ys, p: float):
+    assert stats.spearman_p(xs, ys) == pytest.approx(p, rel=1e-9)
 
 
 def test_spearman_p_of_no_association():
-    assert stats.spearman_p(0.0, 8) == pytest.approx(1.0)
-    assert stats.spearman_p(0.0, 50) == pytest.approx(1.0)
-    assert math.isnan(stats.spearman_p(math.nan, 8))
+    assert stats.spearman_p([1, 2, 3, 4], [2, 4, 1, 3]) == pytest.approx(1.0)
+    # Above 10 pairs, the normal approximation: mirrored pairs have rho 0.
+    zero = [x if x % 2 == 0 else 11 - x for x in range(12)]
+    assert stats.spearman_p(range(12), zero) == pytest.approx(1.0)
+    assert math.isnan(stats.spearman_p([1.0, 1.0, 1.0], [1.0, 2.0, 3.0]))
 
 
 def test_spearman_is_nan_without_variation():

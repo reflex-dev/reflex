@@ -13,6 +13,7 @@ from __future__ import annotations
 import functools
 import math
 import random
+from collections import Counter
 from collections.abc import Callable, Iterable, Sequence
 from fractions import Fraction
 from typing import NamedTuple
@@ -621,6 +622,29 @@ def bootstrap_diff_ci(
     return ci
 
 
+def _centered_ranks(
+    xs: Sequence[float], ys: Sequence[float]
+) -> tuple[list[float], list[float]]:
+    """Rank two paired variables and center the ranks.
+
+    Args:
+        xs: One variable.
+        ys: The other variable, paired with ``xs``.
+
+    Returns:
+        Each variable's average ranks minus their mean ``(n + 1) / 2``.
+
+    Raises:
+        ValueError: When the variables differ in length.
+    """
+    if len(xs) != len(ys):
+        msg = f"spearman needs pairs of the same length, got {len(xs)} and {len(ys)}"
+        raise ValueError(msg)
+    # Average ranks keep their sum, so both rank means are (n + 1) / 2.
+    mean = (len(xs) + 1) / 2
+    return [r - mean for r in _rank(xs)[0]], [r - mean for r in _rank(ys)[0]]
+
+
 def spearman(xs: Sequence[float], ys: Sequence[float]) -> float:
     """Return Spearman's rank correlation coefficient.
 
@@ -638,13 +662,7 @@ def spearman(xs: Sequence[float], ys: Sequence[float]) -> float:
     Raises:
         ValueError: When the variables differ in length.
     """
-    if len(xs) != len(ys):
-        msg = f"spearman needs pairs of the same length, got {len(xs)} and {len(ys)}"
-        raise ValueError(msg)
-    # Average ranks keep their sum, so both rank means are (n + 1) / 2.
-    mean = (len(xs) + 1) / 2
-    dx = [rank - mean for rank in _rank(xs)[0]]
-    dy = [rank - mean for rank in _rank(ys)[0]]
+    dx, dy = _centered_ranks(xs, ys)
     sxx = math.fsum(d * d for d in dx)
     syy = math.fsum(d * d for d in dy)
     if not sxx or not syy:
@@ -652,59 +670,74 @@ def spearman(xs: Sequence[float], ys: Sequence[float]) -> float:
     return math.fsum(a * b for a, b in zip(dx, dy, strict=True)) / math.sqrt(sxx * syy)
 
 
-def spearman_p(rho: float, n: int) -> float:
+def spearman_p(xs: Sequence[float], ys: Sequence[float]) -> float:
     """Return the two-sided p-value of Spearman's rho under no association.
 
-    Up to 10 pairs the p-value is exact: the share of the ``n!`` pairings of
-    ``n`` distinct ranks whose ``|rho|`` reaches the observed one
+    Up to 10 pairs the p-value is exact: the share of the ``n!`` pairings of the
+    observed values (ties included) whose ``|rho|`` reaches the observed one
     (``scipy.stats.permutation_test`` with ``permutation_type="pairings"``).
     Above that it uses the normal approximation ``z = rho * sqrt(n - 1)``.
 
     Args:
-        rho: Spearman's rho of ``n`` pairs.
-        n: The number of pairs.
+        xs: One variable.
+        ys: The other variable, paired with ``xs``.
 
     Returns:
         The p-value; NaN when rho is NaN.
+
+    Raises:
+        ValueError: When the variables differ in length.
     """
-    if math.isnan(rho):
+    dx, dy = _centered_ranks(xs, ys)
+    sxx = math.fsum(d * d for d in dx)
+    syy = math.fsum(d * d for d in dy)
+    if not sxx or not syy:
         return math.nan
+    sxy = math.fsum(a * b for a, b in zip(dx, dy, strict=True))
+    n = len(xs)
     if n > SPEARMAN_EXACT_MAX:
-        return math.erfc(abs(rho) * math.sqrt((n - 1) / 2))
-    # rho = 12 * T / (n^3 - n) - 3 * (n + 1) / (n - 1) with T = sum(i * rank_i).
-    scale = 12 / (n**3 - n)
-    shift = 3 * (n + 1) / (n - 1)
+        return math.erfc(abs(sxy) / math.sqrt(sxx * syy) * math.sqrt((n - 1) / 2))
+    # Pairings keep both rank multisets, so |rho| is monotone in |sum(dx * dy)|.
+    # Centered ranks are multiples of 1/2: doubled they are integers.
+    counts = _rank_product_counts(
+        tuple(sorted(Counter(int(2 * d) for d in dx).items())),
+        tuple(int(2 * d) for d in dy),
+    )
     # Relative slack so the observed pairing counts itself despite rounding.
-    bound = abs(rho) * (1 - 1e-9)
-    counts = _rank_product_counts(n)
-    extreme = sum(c for t, c in counts.items() if abs(scale * t - shift) >= bound)
-    return extreme / math.factorial(n)
+    bound = 4 * abs(sxy) * (1 - 1e-9)
+    extreme = sum(c for t, c in counts.items() if abs(t) >= bound)
+    return extreme / sum(counts.values())
 
 
-@functools.cache
-def _rank_product_counts(n: int) -> dict[int, int]:
-    """Count the permutations ``r`` of ``1..n`` by ``T = sum(i * r_i)``.
+@functools.lru_cache(maxsize=64)
+def _rank_product_counts(
+    groups: tuple[tuple[int, int], ...], weights: tuple[int, ...]
+) -> dict[int, int]:
+    """Count the distinct arrangements ``r`` of a multiset by ``sum(w_i * r_i)``.
 
-    Assigns positions in order over bit masks of the ranks used so far, which
-    takes ``2^n`` states instead of ``n!`` permutations.
+    Assigns positions in order over the counts of each value left to place,
+    which takes ``prod(count + 1)`` states instead of ``n!`` permutations.
 
     Args:
-        n: The number of ranks.
+        groups: The values to arrange with their multiplicities.
+        weights: The weight of each position.
 
     Returns:
-        The number of permutations with each ``T``.
+        The number of arrangements with each weighted sum.
     """
-    layer: dict[int, dict[int, int]] = {0: {0: 1}}
-    for position in range(1, n + 1):
-        following: dict[int, dict[int, int]] = {}
-        for used, counts in layer.items():
-            for rank in range(1, n + 1):
-                bit = 1 << rank
-                if used & bit:
+    layer: dict[tuple[int, ...], dict[int, int]] = {
+        tuple(count for _, count in groups): {0: 1}
+    }
+    for weight in weights:
+        following: dict[tuple[int, ...], dict[int, int]] = {}
+        for left, counts in layer.items():
+            for index, (value, _) in enumerate(groups):
+                if not left[index]:
                     continue
-                target = following.setdefault(used | bit, {})
+                state = (*left[:index], left[index] - 1, *left[index + 1 :])
+                target = following.setdefault(state, {})
                 for total, count in counts.items():
-                    key = total + position * rank
+                    key = total + weight * value
                     target[key] = target.get(key, 0) + count
         layer = following
     (counts,) = layer.values()
