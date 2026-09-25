@@ -427,7 +427,7 @@ class _HotReload:
         else:
             while mark is None and (left := deadline - time.monotonic()) > 0:
                 if self.click is None:
-                    tab.reload()
+                    tab.reload(left)
                 else:
                     tab.click(self.click)
                 count += 1
