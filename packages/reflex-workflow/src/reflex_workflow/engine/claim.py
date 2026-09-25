@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import datetime
 from collections.abc import Collection
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -22,6 +23,21 @@ if TYPE_CHECKING:
 # are taken longest-waiting first, so one passed over this time is nearer the
 # front of the next pass.
 GROUPS_PER_PASS = 4
+
+
+class Claimed(NamedTuple):
+    """A row a worker has taken, and what its claim holds it with.
+
+    Attributes:
+        pk: The row's primary key values.
+        version: The version the claim wrote, which fences the step's commit.
+        until: The lease the claim wrote. It identifies the claim as well as
+            timing it, so a step can give back its own lease and no other.
+    """
+
+    pk: list[Any]
+    version: int
+    until: datetime.datetime
 
 
 def claimable(
@@ -87,7 +103,7 @@ def lease(
         steps: The steps this worker may run, or None for all of them.
 
     Returns:
-        The update, returning each claimed key and its new version.
+        The update, returning each claimed key, its new version and its lease.
     """
     pk_cols = rows.mapper(cls).primary_key
     # Materialized so the pick runs exactly once. Inlined as `pk IN (...)`, the
@@ -107,7 +123,7 @@ def lease(
             claimed_until=func.now() + runtime.lease,
             wf_version=cls.wf_version + 1,
         )
-        .returning(*pk_cols, cls.wf_version)
+        .returning(*pk_cols, cls.wf_version, cls.claimed_until)
         .execution_options(synchronize_session=False)
     )
 
@@ -150,7 +166,9 @@ async def waiting_groups(
             select(func.count())
             .select_from(running)
             .where(
-                getattr(running, spec.by) == group,
+                # Not ``==``: a nullable column groups its NULLs together,
+                # and equality matches none of them.
+                getattr(running, spec.by).is_not_distinct_from(group),
                 running.claimed_until > func.now(),
             )
             .scalar_subquery()
@@ -265,7 +283,7 @@ async def claim_group(
     value: Any,
     limit: int,
     steps: Collection[str] | None,
-) -> list[tuple[list[Any], int]]:
+) -> list[Claimed]:
     """Claim one group's due rows, within what it may run and how often it may start.
 
     Claimers of the same group take the same advisory lock first, so neither the
@@ -283,7 +301,7 @@ async def claim_group(
         steps: The steps this worker may run, or None for all of them.
 
     Returns:
-        (pk, version) for each claimed row.
+        What was claimed of the group.
     """
     pk_cols = rows.mapper(cls).primary_key
     gate = func.hashtext(bucket_key(cls, value))
@@ -314,7 +332,7 @@ async def claim_group(
         # the ones it could not use go back rather than throttling later work.
         if spec.rate is not None and len(claimed) < free:
             await refund_tokens(session, cls, value, free - len(claimed))
-    return [(list(pk), version) for *pk, version in claimed]
+    return [Claimed(list(pk), version, until) for *pk, version, until in claimed]
 
 
 async def claim(
@@ -322,7 +340,7 @@ async def claim(
     cls: type[Workflow],
     limit: int,
     steps: Collection[str] | None = None,
-) -> list[tuple[list[Any], int]]:
+) -> list[Claimed]:
     """Claim up to ``limit`` due rows of one workflow table.
 
     A claim is a lease: ``claimed_until`` is set, and the row can't be claimed again
@@ -341,7 +359,7 @@ async def claim(
         steps: The steps this worker may run, when it serves only some lanes.
 
     Returns:
-        (pk, version) for each claimed row, the version being this claim's.
+        What was claimed, each with the version and lease this claim wrote.
 
     Raises:
         TypeError: If the workflow's limit names a column it does not have.
@@ -354,13 +372,13 @@ async def claim(
                     lease(runtime, cls, due(cls, limit, steps), steps)
                 )
             ).all()
-        return [(list(pk), version) for *pk, version in claimed]
+        return [Claimed(list(pk), version, until) for *pk, version, until in claimed]
 
     group = getattr(cls, spec.by, None)
     if group is None:
         msg = f"{cls.__qualname__} has no column {spec.by!r} to limit by."
         raise TypeError(msg)
-    taken: list[tuple[list[Any], int]] = []
+    taken: list[Claimed] = []
     groups = await waiting_groups(
         runtime, cls, spec, group, limit * GROUPS_PER_PASS, steps
     )

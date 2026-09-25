@@ -78,8 +78,10 @@ class Runner:
                 "reflex_workflow could not claim from %s", cls.__qualname__
             )
             return 0
-        for pk, version in claimed:
-            task = asyncio.create_task(execute(self.runtime, cls, pk, version))
+        for taken in claimed:
+            task = asyncio.create_task(
+                execute(self.runtime, cls, taken.pk, taken.version, taken.until)
+            )
             self.inflight.add(task)
             task.add_done_callback(self._finished)
         return len(claimed)

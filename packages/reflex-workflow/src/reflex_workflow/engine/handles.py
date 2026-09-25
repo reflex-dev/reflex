@@ -152,9 +152,10 @@ class RunHandle(Generic[W]):
         abandoned along with any event held for it, and children of a fan-out it
         was joining no longer count toward it.
 
-        A step already running keeps its lease, so the step asked for here starts
-        once that one is done rather than beside it: two steps of one run never
-        act at the same time, however they were scheduled.
+        A step already running keeps its lease, so the step asked for here waits
+        for it rather than starting beside it, and starts as soon as it is done.
+        A step that outlives its lease is the exception the engine makes
+        everywhere: past it the row is claimable again, here as anywhere else.
 
         Args:
             call: The step call, e.g. ``Expense.decide("approve")``, or a step

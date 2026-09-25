@@ -55,7 +55,8 @@ type error, and so is passing one workflow's step to another.
 - **Advance a run from outside** (a webhook, a button):
   `await Onboarding.by(Onboarding.user_id == u).run(Onboarding.activated("pro"))` runs the
   step now on every matching row, replacing whatever was scheduled. A step already running
-  keeps its lease, so the new step starts once that one is done rather than beside it.
+  keeps its lease, so the new step waits for it rather than starting beside it, and starts
+  as soon as it is done or its lease runs out.
 - **A step returns** another step (run now), `wake_in(step, delay)` (run later),
   `wait_for(step, ...)` (run when an event arrives), `every(step, schedule)` (run again
   and again), `fan_out(children, then=step)` (run many at once), or `None` (stop). Step

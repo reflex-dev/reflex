@@ -809,7 +809,8 @@ class Crowded(Base, Workflow):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     key: Mapped[str] = mapped_column(String, unique=True)
-    customer: Mapped[str] = mapped_column(String)
+    # Nullable, because the rows with no customer are a group of their own.
+    customer: Mapped[str | None] = mapped_column(String, default=None)
 
     @step
     async def work(self):
@@ -1227,8 +1228,11 @@ async def test_a_worker_whose_lease_was_taken_over_cannot_commit(session_factory
                 wf_version=0,
             )
         )
-    [(pk, first_claim)] = await claim.claim(rt, Gated, 1)
-    stale = asyncio.create_task(execute.execute(rt, Gated, pk, first_claim))
+    [first] = await claim.claim(rt, Gated, 1)
+    pk = first.pk
+    stale = asyncio.create_task(
+        execute.execute(rt, Gated, pk, first.version, first.until)
+    )
     await wait_until(lambda: f"gated-start:{key}" in EVENTS)
 
     # The first worker stalls past its lease, and a second worker takes the row over.
@@ -1238,8 +1242,10 @@ async def test_a_worker_whose_lease_was_taken_over_cannot_commit(session_factory
             .where(Gated.key == key)
             .values(claimed_until=func.now() - datetime.timedelta(seconds=1))
         )
-    [(_, second_claim)] = await claim.claim(rt, Gated, 1)
-    fresh = asyncio.create_task(execute.execute(rt, Gated, pk, second_claim))
+    [second] = await claim.claim(rt, Gated, 1)
+    fresh = asyncio.create_task(
+        execute.execute(rt, Gated, pk, second.version, second.until)
+    )
     await wait_until(lambda: EVENTS.count(f"gated-start:{key}") == 2)
 
     # The stale worker resumes and tries to commit first; it must lose.
@@ -1298,7 +1304,9 @@ async def test_an_event_beats_a_timeout_that_is_already_running(session_factory)
     # A worker claims the timeout, and the decision lands while it is running.
     await asyncio.sleep(1.1)
     timing_out = await claim_row(RaceReview, pk)
-    expiring = asyncio.create_task(execute.execute(rt, RaceReview, pk, timing_out))
+    expiring = asyncio.create_task(
+        execute.execute(rt, RaceReview, pk, timing_out.version, timing_out.until)
+    )
     await wait_until(lambda: f"expire-start:{key}" in EVENTS)
     handle = RaceReview.by(RaceReview.key == key)
     assert await handle.deliver(RaceReview.decide("approve")) == 1
@@ -1340,7 +1348,7 @@ async def claim_row(
         RaceReview | Repeating | Batch | Parked | Piece | Deferring | Joined | Leaf
     ],
     pk: list[int],
-) -> int:
+) -> claim.Claimed:
     """Claim one row the way the engine does, by primary key.
 
     Args:
@@ -1348,17 +1356,18 @@ async def claim_row(
         pk: The row's primary key.
 
     Returns:
-        The version this claim holds.
+        The version and the lease this claim holds.
     """
     stmt = (
         update(cls)
         .where(cls.id == pk[0])
         .values(claimed_until=func.now() + LEASE, wf_version=cls.wf_version + 1)
-        .returning(cls.wf_version)
+        .returning(cls.wf_version, cls.claimed_until)
         .execution_options(synchronize_session=False)
     )
     async with runtime.current().session_factory() as session, session.begin():
-        return (await session.execute(stmt)).scalar_one()
+        version, until = (await session.execute(stmt)).one()
+        return claim.Claimed(pk, version, until)
 
 
 async def pk_of(
@@ -1392,7 +1401,8 @@ async def step_row(
     Returns:
         The step's outcome.
     """
-    return await execute.execute(runtime.current(), cls, pk, await claim_row(cls, pk))
+    taken = await claim_row(cls, pk)
+    return await execute.execute(runtime.current(), cls, pk, taken.version, taken.until)
 
 
 async def arm_wait(key: str) -> list[int]:
@@ -1696,7 +1706,9 @@ async def test_a_fan_out_that_loses_its_row_starts_no_children(session_factory):
     # The row is taken over while the step runs, so its commit is refused. The
     # children go in with that commit, so they must be refused with it.
     claimed = await claim_row(Batch, pk)
-    splitting = asyncio.create_task(execute.execute(rt, Batch, pk, claimed))
+    splitting = asyncio.create_task(
+        execute.execute(rt, Batch, pk, claimed.version, claimed.until)
+    )
     await wait_until(lambda: f"split:{key}" in EVENTS)
     await claim_row(Batch, pk)
     assert await splitting == "fenced"
@@ -2324,7 +2336,9 @@ async def test_an_attempt_whose_commit_was_refused_is_not_recorded(session_facto
 
     # The row is taken over while the step runs, so its commit is refused.
     claimed = await claim_row(RaceReview, pk)
-    running = asyncio.create_task(execute.execute(rt, RaceReview, pk, claimed))
+    running = asyncio.create_task(
+        execute.execute(rt, RaceReview, pk, claimed.version, claimed.until)
+    )
     await asyncio.sleep(0.2)
     await claim_row(RaceReview, pk)
     assert await running == "fenced"
@@ -2568,7 +2582,10 @@ async def test_a_step_can_use_a_deferred_column(session_factory):
     assert row is not None
     assert (
         await execute.execute(
-            runtime.current(), Deferring, [row.id], await claim_row(Deferring, [row.id])
+            runtime.current(),
+            Deferring,
+            [row.id],
+            *(await claim_row(Deferring, [row.id]))[1:],
         )
         == "ok"
     )
@@ -2915,7 +2932,66 @@ async def test_a_customer_at_its_limit_does_not_hide_another_customers_work(
     # One free slot, and the customers a pass looks at first can use none of it.
     claimed = await claim.claim(runtime.current(), Crowded, 1)
     assert len(claimed) == 1
-    [(pk, _)] = claimed
+    [taken] = claimed
+    pk = taken.pk
     row = await Crowded.by(Crowded.id == pk[0]).get()
     assert row is not None
     assert row.customer == f"free-{now}"
+
+
+async def test_a_claim_moved_on_before_it_ran_gives_its_lease_back(session_factory):
+    key = uuid.uuid4().hex
+    await RaceReview(key=key).start(RaceReview.submit())
+    pk = await pk_of(RaceReview, key)
+    taken = await claim_row(RaceReview, pk)
+
+    # Preempted after the claim and before the step it claimed was even loaded.
+    assert await RaceReview.by(RaceReview.key == key).run(RaceReview.expire()) == 1
+    assert (
+        await execute.execute(
+            runtime.current(), RaceReview, pk, taken.version, taken.until
+        )
+        == "stale"
+    )
+
+    row = await RaceReview.by(RaceReview.key == key).get()
+    assert row is not None
+    # No step ever ran under that claim, so the step asked for instead is
+    # claimable now rather than once a lease nothing used runs out.
+    assert row.claimed_until is None
+
+
+async def test_a_group_of_rows_with_no_group_is_held_to_its_limit_too(session_factory):
+    now = datetime.datetime.now(datetime.timezone.utc)
+    spec = Crowded.__workflow_limit__
+    assert spec is not None
+    async with session_factory() as session, session.begin():
+        # The rows with no customer are one group, and it runs all it may.
+        await session.execute(
+            insert(Crowded).values(
+                key=f"none-running-{now}",
+                customer=None,
+                next_step="work",
+                wake_at=now - datetime.timedelta(minutes=10),
+                claimed_until=now + datetime.timedelta(minutes=5),
+                attempts=0,
+                wf_version=0,
+            )
+        )
+        await session.execute(
+            insert(Crowded).values(
+                key=f"none-waiting-{now}",
+                customer=None,
+                next_step="work",
+                wake_at=now - datetime.timedelta(minutes=9),
+                attempts=0,
+                wf_version=0,
+            )
+        )
+
+    groups = await claim.waiting_groups(
+        runtime.current(), Crowded, spec, Crowded.customer, 10, None
+    )
+    # Equality matches no NULL, so without a null-safe comparison this group
+    # looks idle and takes a place a group that could run should have.
+    assert None not in groups

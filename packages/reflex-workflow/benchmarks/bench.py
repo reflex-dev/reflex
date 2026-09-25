@@ -120,7 +120,11 @@ class Attempt(Base, AttemptLog):
     __tablename__ = "bench_attempt"
 
 
-if not os.environ.get("BENCH_HISTORY"):
+# The driver sets this for the worker processes of the history scenario; named
+# once, since a typo in either place would quietly measure the wrong thing.
+HISTORY_ENV = "BENCH_HISTORY"
+
+if not os.environ.get(HISTORY_ENV):
     model.ATTEMPTS = None
 
 
@@ -232,7 +236,7 @@ def spawn(
     Returns:
         The processes.
     """
-    env = {**os.environ, **({"BENCH_HISTORY": "1"} if history else {})}
+    env = {**os.environ, **({HISTORY_ENV: "1"} if history else {})}
     processes = []
     for index in range(count):
         process = subprocess.Popen(

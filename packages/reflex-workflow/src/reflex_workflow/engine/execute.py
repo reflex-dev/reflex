@@ -224,10 +224,11 @@ def backoff_for(spec: Step[Any, Any], attempts: int) -> datetime.timedelta:
     limit = spec.max_backoff
     if spec.backoff <= NO_DELAY or spec.backoff >= limit:
         return min(spec.backoff, limit)
-    # Only as many doublings as it takes to pass the cap, so the multiplication
-    # cannot overflow however many attempts have failed.
-    doublings = min(attempts - 1, (limit // spec.backoff).bit_length())
-    return min(spec.backoff * 2**doublings, limit)
+    # Held to what fits inside the cap rather than to a count of doublings: the
+    # doubling that passes a cap near the largest timedelta would overflow on
+    # its way to being capped.
+    fits = limit // spec.backoff
+    return spec.backoff * min(2 ** min(attempts - 1, fits.bit_length()), fits)
 
 
 def after_failure(
@@ -577,7 +578,11 @@ async def abandon(
 
 
 async def execute(
-    runtime: Runtime, cls: type[Workflow], pk: list[Any], version: int
+    runtime: Runtime,
+    cls: type[Workflow],
+    pk: list[Any],
+    version: int,
+    until: datetime.datetime | None = None,
 ) -> str:
     """Run a claimed row's step and commit its result if the row hasn't moved.
 
@@ -586,11 +591,15 @@ async def execute(
         cls: The workflow class.
         pk: The row's primary key values.
         version: The row version that was claimed.
+        until: The lease the claim wrote. Given it, a claim that turns out to
+            have been moved on before its step started gives that lease back at
+            once, rather than leaving the row held until it runs out.
 
     Returns:
         The outcome: ok, retry, failed, stale, fenced, or missing.
     """
     factory = runtime.session_factory
+    held = Lease(until)
     async with factory() as session:
         # Every column, deferred ones too: the step runs on a detached row, which
         # cannot load one it reads later.
@@ -600,10 +609,17 @@ async def execute(
         if row is None:
             return "missing"
         if row.wf_version != version:
+            # Moved on before the step started, so nothing of this claim will
+            # run and nothing will come back to give its lease up. Only its own:
+            # a worker that took the row over has written a lease of its own,
+            # which this leaves alone.
+            if until is not None:
+                await release(runtime, cls, pk, held)
             return "stale"
         columns = rows.user_columns(cls)
         before = rows.snapshot(row, columns)
-        held = Lease(row.claimed_until)
+        if until is None:
+            held.until = row.claimed_until
         session.expunge(row)
 
     # A buffered event for the step the row waits on takes precedence over its
