@@ -652,7 +652,7 @@ def _finish(
         compared: Whether the result was compared.
 
     Returns:
-        The exit code.
+        The exit code; ``EXIT_INTERRUPTED`` for an interrupted run.
     """
     saved = []
     if save:
@@ -669,8 +669,12 @@ def _finish(
     for path in kept:
         console.print(Text(f"kept {path}"))
     policy = doc["policy"]
-    code = _exit_code(
-        doc, policy["fail_on"], policy["fail_on_inconclusive"], compared=compared
+    code = (
+        EXIT_INTERRUPTED
+        if doc.get("interrupted")
+        else _exit_code(
+            doc, policy["fail_on"], policy["fail_on_inconclusive"], compared=compared
+        )
     )
     if ndjson:
         click.echo(
@@ -842,7 +846,12 @@ def run(
         scheduler = Scheduler(
             subject, policy, home=home, seed=seed, keep=keep, on_event=progress.emit
         )
-        doc["benchmarks"] = scheduler.run(plan(benchmarks, overrides, suite))
+        try:
+            scheduler.run(plan(benchmarks, overrides, suite))
+        except KeyboardInterrupt:
+            # The instance in progress has no complete entry, so it is left out.
+            doc["interrupted"] = True
+    doc["benchmarks"] = scheduler.finished
     doc["invocation"]["duration_s"] = round(time.perf_counter() - started, 3)
     if not live:
         console.print()

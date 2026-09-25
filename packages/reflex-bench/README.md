@@ -69,6 +69,8 @@ failing, or nothing to compare), `2` regression with `--fail-on regression`, `3`
 inconclusive result with `--fail-on-inconclusive`. A benchmark that fails or
 times out is reported with its status and does not stop the run; when comparing,
 one that fails or times out in head but not in base (or is new) is a regression.
+Ctrl-C during `run` exits with `130` after saving the benchmarks that finished,
+marked with `"interrupted": true`; the benchmark in progress is left out.
 
 With `CI=true` the output is plain (no colors, no live progress, one line per
 finished benchmark) and `--fail-on` defaults to `regression`. Nothing else changes.
@@ -889,7 +891,7 @@ reach p < 0.01.
 One JSON document per invocation, schema `reflex-bench/1` (see
 `reflex_bench/schema.py`): `schema`, `tool`, `invocation` (argv, times, mode,
 kind, CI run, seed), `subjects` (arm `A`, and `B` for `ab`), `machine` (with
-`profile_id`), optional `fixture`, `policy` and `benchmarks`. Each benchmark
+`profile_id`), optional `fixture`, `policy`, `benchmarks` and, after Ctrl-C, `interrupted`. Each benchmark
 entry keeps its status, error and traceback tail (and `failed_arms`, the arms
 whose hooks failed), its `dims` and `fixture_hash`, every raw sample per arm (warmups included and marked in
 `sample_meta`), per-sample extra data, and the derived summaries, warnings and

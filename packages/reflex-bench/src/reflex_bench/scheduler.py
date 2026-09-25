@@ -854,6 +854,7 @@ class Scheduler:
         self.keep = keep
         self.on_event = on_event
         self.kept: list[Path] = []
+        self.finished: list[BenchmarkDoc] = []
         self._cache_done: set[Path] = set()
         self._stuck: dict[str, str] = {}
 
@@ -869,16 +870,18 @@ class Scheduler:
     def run(self, planned: Sequence[Planned]) -> list[BenchmarkDoc]:
         """Run instances one after the other.
 
+        Each entry is appended to :attr:`finished` when its instance ends, so an
+        interrupted run keeps the entries of the instances that ended.
+
         Args:
             planned: The instances.
 
         Returns:
-            One result entry per instance, whatever its status.
+            :attr:`finished`: one result entry per instance, whatever its status.
         """
-        return [
-            self.run_one(item, index=index, total=len(planned))
-            for index, item in enumerate(planned)
-        ]
+        for index, item in enumerate(planned):
+            self.finished.append(self.run_one(item, index=index, total=len(planned)))
+        return self.finished
 
     def skip_reason(self, planned: Planned) -> tuple[Status, str] | None:
         """Tell why an instance must not run against this scheduler's subject.
