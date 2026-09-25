@@ -193,9 +193,19 @@ class Runner:
         """
 
         async def hand_back() -> None:
-            """Give every lease back, in turn."""
+            """Give every lease back, in turn, whatever any one of them does."""
             for cls, pk, held in holding:
-                await release(self.runtime, cls, pk, held)
+                try:
+                    await release(self.runtime, cls, pk, held)
+                except asyncio.CancelledError:  # noqa: PERF203  # once per cancelled row, at shutdown
+                    raise
+                except Exception:
+                    # One row the database will not take back is no reason to
+                    # leave the others held for the rest of their leases.
+                    logger.exception(
+                        "reflex_workflow could not give back a lease on %s",
+                        cls.__qualname__,
+                    )
 
         try:
             await asyncio.wait_for(hand_back(), GIVE_BACK.total_seconds())
@@ -205,8 +215,6 @@ class Runner:
             logger.warning(
                 "reflex_workflow ran out of time giving back %d lease(s)", len(holding)
             )
-        except Exception:
-            logger.exception("reflex_workflow could not give back a lease")
 
 
 @contextlib.asynccontextmanager

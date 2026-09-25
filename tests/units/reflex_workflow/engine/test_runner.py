@@ -3150,3 +3150,38 @@ async def test_giving_rows_back_holds_shutdown_up_by_the_same_bound_either_way(
     # One budget for all five, not one each: the rows left over wait out
     # their leases rather than holding shutdown open a row at a time.
     assert took < (budget * 3).total_seconds()
+
+
+async def test_a_row_the_database_refuses_does_not_strand_the_others(
+    session_factory, monkeypatch
+):
+    keys = [uuid.uuid4().hex for _ in range(3)]
+    worker = await stopped_mid_step(*keys)
+    real = runner.release
+    refused: list[str] = []
+
+    async def refuse_the_first(runtime_, cls, pk, held):
+        """Fail the first lease handed back, and give the rest back for real.
+
+        Args:
+            runtime_: The running engine.
+            cls: The workflow class.
+            pk: The row's primary key values.
+            held: The lease the step held.
+
+        Raises:
+            RuntimeError: For the first row, standing in for a refused write.
+        """
+        refused.append("x")
+        if len(refused) == 1:
+            msg = "the database would not take it back"
+            raise RuntimeError(msg)
+        await real(runtime_, cls, pk, held)
+
+    monkeypatch.setattr(runner, "release", refuse_the_first)
+    await worker.drain(datetime.timedelta(milliseconds=50))
+
+    rows_back = await Lingering.by(Lingering.key.in_(keys)).all()
+    # Every row was tried, and the two that could be given back were.
+    assert len(refused) == 3
+    assert sum(row.claimed_until is None for row in rows_back) == 2
