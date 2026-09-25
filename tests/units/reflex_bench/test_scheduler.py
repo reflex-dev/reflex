@@ -416,7 +416,7 @@ def test_interrupt_runs_conclude_on_a_fresh_thread(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     calls: list[str] = []
-    release = threading.Event()
+    sampling, release = threading.Event(), threading.Event()
     waits = 0
     real_wait = scheduler.concurrent.futures.wait
 
@@ -425,6 +425,7 @@ def test_interrupt_runs_conclude_on_a_fresh_thread(
         waits += 1
         # setup_cache, setup, prepare, then Ctrl-C while sample() blocks.
         if waits == 4:
+            assert sampling.wait(5)
             raise KeyboardInterrupt
         return real_wait(futures, timeout=timeout)
 
@@ -433,6 +434,7 @@ def test_interrupt_runs_conclude_on_a_fresh_thread(
 
         def sample(self, ctx: Context) -> None:
             calls.append("sample")
+            sampling.set()
             release.wait(30)
 
         def conclude(self, ctx: Context) -> None:
@@ -449,7 +451,27 @@ def test_interrupt_runs_conclude_on_a_fresh_thread(
         _run(Planned(bench, ParamSet({})), tmp_path, runs=1)
     assert time.monotonic() - started < 5
     assert release.is_set()
-    assert calls[-2:] == ["conclude", "cleanup"]
+    assert calls == ["sample", "conclude", "cleanup"]
+
+
+def test_an_interrupted_job_that_has_not_started_never_runs(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    busy, ran = threading.Event(), threading.Event()
+    worker = scheduler._Worker("t.worker")
+    # Hold the thread so the next job is still queued when the wait is interrupted.
+    worker._jobs.put((lambda: busy.wait(30), scheduler.concurrent.futures.Future()))
+
+    def interrupted_wait(futures: Any, timeout: float | None = None) -> Any:
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(scheduler.concurrent.futures, "wait", interrupted_wait)
+    with pytest.raises(KeyboardInterrupt):
+        worker.run(ran.set, timeout=30)
+    worker.close()
+    busy.set()
+    assert not worker.join(5)
+    assert not ran.is_set()
 
 
 def test_a_timed_out_hook_finishes_before_its_work_directory_is_removed(

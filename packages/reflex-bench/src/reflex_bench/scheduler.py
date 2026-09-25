@@ -316,7 +316,12 @@ class _Worker:
         """
         future: Future[_T] = Future()
         self._jobs.put((fn, future))
-        done, _ = concurrent.futures.wait((future,), timeout=timeout)
+        try:
+            done, _ = concurrent.futures.wait((future,), timeout=timeout)
+        except BaseException:
+            # Interrupted: a job still queued must not start after the caller moves on.
+            future.cancel()
+            raise
         if not done:
             raise _StuckError
         return future.result()
