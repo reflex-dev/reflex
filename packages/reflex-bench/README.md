@@ -812,8 +812,8 @@ raise `--warmup`) and severe outliers.
 
 Entries are paired by id, parameters and dims, and compared only when their full
 series key matches: id, parameters, dims, machine profile, fixture content hash
-and benchmark version (a hash of the benchmark's source). `compare --force`
-overrides that. For each metric:
+and benchmark version (a hash of the source of the benchmark class and its
+bases). `compare --force` overrides that. For each metric:
 
 - the change is `median(head) / median(base) - 1`, with a percentile bootstrap
   confidence interval (seeded, 10,000 resamples); when the base median is not

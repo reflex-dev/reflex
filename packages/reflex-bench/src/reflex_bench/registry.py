@@ -185,20 +185,26 @@ def _is_json(value: object) -> bool:
 
 
 def _source_version(target: type) -> str:
-    """Hash a benchmark class's source, decorator included.
+    """Hash the source of a benchmark class and its bases, decorators included.
+
+    Inherited measurement hooks are part of the benchmark, so a change to a
+    base class changes the version of every benchmark built on it.
 
     Args:
         target: The benchmark class.
 
     Returns:
-        ``sha256:<hex>``; the qualified name is hashed when the source is not
-        available.
+        ``sha256:<hex>``; a class's qualified name is hashed in place of its
+        source when the source is not available.
     """
-    try:
-        source = inspect.getsource(target)
-    except (OSError, TypeError):
-        source = f"{target.__module__}.{target.__qualname__}"
-    return "sha256:" + hashlib.sha256(source.encode()).hexdigest()
+    digest = hashlib.sha256()
+    for cls in target.__mro__[:-1]:
+        try:
+            source = inspect.getsource(cls)
+        except (OSError, TypeError):
+            source = f"{cls.__module__}.{cls.__qualname__}"
+        digest.update(source.encode())
+    return "sha256:" + digest.hexdigest()
 
 
 @dataclass(frozen=True, eq=False)
@@ -221,8 +227,8 @@ class Benchmark:
         setup_timeout: Seconds allowed for setup_cache, setup and cleanup.
         estimate: Rough seconds per sample, for ``list``.
         min_version: The oldest reflex version the benchmark supports.
-        version: Hash of the class source; results of different versions are
-            never compared.
+        version: Hash of the source of the class and its bases; results of
+            different versions are never compared.
         description: The first line of the class docstring.
     """
 

@@ -50,6 +50,43 @@ def test_decorator_registers_and_returns_the_class(fresh_registry):
     assert len(bench.version) == len("sha256:") + 64
 
 
+class _Doubler:
+    """A benchmark base whose sample differs from _Sampler's."""
+
+    def sample(self, ctx):
+        """Take a different measurement.
+
+        Args:
+            ctx: The benchmark context.
+        """
+
+
+def _leaf(base: type) -> type:
+    """Subclass base without overriding anything.
+
+    Args:
+        base: The class that holds the measurement hooks.
+
+    Returns:
+        A leaf class whose own source is the same for every base.
+    """
+
+    class Leaf(base):
+        """Inherit the measurement."""
+
+    return Leaf
+
+
+def test_version_covers_inherited_hooks():
+    def version(base: type) -> str:
+        return Benchmark.define(
+            _leaf(base), id="t.leaf", metrics={"wall": WALL}
+        ).version
+
+    assert version(_Sampler) == version(_Sampler)
+    assert version(_Sampler) != version(_Doubler)
+
+
 def test_duplicate_ids_are_an_error(fresh_registry):
     registry.register(Benchmark.define(_Sampler, id="t.dup", metrics={"wall": WALL}))
     # The same class may re-register, e.g. after a module reload.
