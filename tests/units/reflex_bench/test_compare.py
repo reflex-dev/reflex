@@ -215,6 +215,16 @@ def test_missing_metric_and_missing_samples_are_not_comparable():
             ],
         }
     ]
+    base, head = _docs()
+    head["benchmarks"][1] = make_entry(
+        "selftest.exact", {"bytes": (EXACT, [241_000])}, warmup=1
+    )
+    _compare(base, head)
+    compared_to = head.get("compared_to")
+    assert compared_to is not None
+    assert compared_to["not_comparable"] == [
+        {"id": "selftest.exact", "reasons": ["metric 'bytes' has no timed samples"]}
+    ]
 
 
 def test_holm_runs_across_all_tested_metrics():
