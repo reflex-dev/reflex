@@ -38,6 +38,7 @@ import brotli
 
 from reflex_bench.context import Context, git, git_root
 from reflex_bench.drivers.app_process import cache_env, run_cli
+from reflex_bench.fixtures import HASH_FILE
 from reflex_bench.registry import Metric, SampleResult, benchmark
 
 EXPORT_ARGS = ("export", "--frontend-only", "--no-zip", "--env", "prod")
@@ -314,7 +315,7 @@ class ExportSize:
     """Export an example app for production and measure its bundle and footprint."""
 
     def setup(self, ctx: Context) -> None:
-        """Copy the app into the work directory and export it.
+        """Record the fixture, copy the app into the work directory and export it.
 
         Each session (instance and arm) gets its own export, kept with the work
         directory; only reflex's data directory (bun) lives in the cache
@@ -323,8 +324,13 @@ class ExportSize:
         Args:
             ctx: The benchmark context; ``app`` names the example.
         """
-        app = ctx.workdir / "app"
-        copy_example(ctx.params["app"], app)
+        name, app = ctx.params["app"], ctx.workdir / "app"
+        copy_example(name, app)
+        ctx.fixture = {
+            "name": name,
+            "content_hash": (app / HASH_FILE).read_text().strip(),
+            "params": {},
+        }
         run_cli(
             ctx.subject.python,
             EXPORT_ARGS,

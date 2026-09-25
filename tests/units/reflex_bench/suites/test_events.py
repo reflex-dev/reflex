@@ -14,7 +14,7 @@ from typing import Any, cast
 
 import psutil
 import pytest
-from reflex_bench import cli, registry
+from reflex_bench import cli, fixtures, registry
 from reflex_bench.drivers.events import LoadResult, Mode
 from reflex_bench.scheduler import Planned, Policy, Scheduler, plan
 from reflex_bench.suites import events as suite
@@ -500,6 +500,8 @@ def test_one_backend_serves_every_sample_of_an_instance(
         runs=3,
     )
     assert entry["status"] == "ok", entry["error"]
+    assert entry["dims"] == {"fixture": "playground"}
+    assert entry["fixture_hash"] == fixtures.fixture_hash("playground")
     # setup warms the backend with the probe, so no sample meets it cold.
     probe = ("run", "closed", None, suite.PROBE_WINDOW)
     load = ("run", "closed", None, suite.CAPACITY_WINDOW)

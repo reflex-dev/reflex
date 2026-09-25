@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from reflex_bench import registry
+from reflex_bench import fixtures, registry
 from reflex_bench.collectors import pss
 from reflex_bench.collectors.cgroup import CgroupReading
 from reflex_bench.collectors.pss import PssReading, PssResult
@@ -464,7 +464,8 @@ def test_compile_peak_with_a_scope_reads_the_cgroup(tmp_path: Path, fakes: Fakes
     fakes.scope_reason = None
     entry = run(tmp_path, "memory.compile.peak", command="export")
     assert entry["status"] == "ok", entry["error"]
-    assert entry["dims"] == {"memory_method": "cgroup"}
+    assert entry["dims"] == {"memory_method": "cgroup", "fixture": "playground"}
+    assert entry["fixture_hash"] == fixtures.fixture_hash("playground")
     assert entry["metrics"]["peak_mem"]["samples"]["A"] == [300 * MIB]
     (extra,) = entry["sample_extra"]
     # The scope is read after the command exited, so only the peak is data.
@@ -477,7 +478,7 @@ def test_compile_peak_with_a_scope_reads_the_cgroup(tmp_path: Path, fakes: Fakes
 def test_compile_peak_without_a_scope_samples_pss(tmp_path: Path, fakes: Fakes):
     entry = run(tmp_path, "memory.compile.peak", command="compile")
     assert entry["status"] == "ok", entry["error"]
-    assert entry["dims"] == {"memory_method": "pss_sampling"}
+    assert entry["dims"] == {"memory_method": "pss_sampling", "fixture": "playground"}
     assert entry["metrics"]["peak_mem"]["samples"]["A"] == [400 * MIB]
     (extra,) = entry["sample_extra"]
     assert extra["memory_method"] == "pss_sampling"
@@ -493,7 +494,7 @@ def test_idle_reads_the_settled_tree(
     entry = run(tmp_path, "memory.idle", manager="disk", idle_s=0)
     assert entry["status"] == "ok", entry["error"]
     # The values are the tree's PSS with or without a scope.
-    assert entry["dims"] == {"memory_method": "pss_sampling"}
+    assert entry["dims"] == {"memory_method": "pss_sampling", "fixture": "playground"}
     metrics = entry["metrics"]
     assert metrics["pss"]["samples"]["A"] == [150 * MIB]
     assert metrics["pss_anon"]["samples"]["A"] == [int(150 * MIB * 0.85)]
@@ -561,7 +562,11 @@ def test_an_allocator_variant_is_a_separate_series(tmp_path: Path, fakes: Fakes)
     entry = run(tmp_path, "memory.idle", idle_s=0, allocator="arena2")
     assert entry["status"] == "ok", entry["error"]
     assert entry["params"] == {"manager": "memory"}
-    assert entry["dims"] == {"memory_method": "pss_sampling", "allocator": "arena2"}
+    assert entry["dims"] == {
+        "memory_method": "pss_sampling",
+        "allocator": "arena2",
+        "fixture": "playground",
+    }
     assert fakes.envs[0]["MALLOC_ARENA_MAX"] == "2"
 
 
@@ -625,7 +630,7 @@ def test_idle_reads_a_real_tree_from_proc(
 def test_per_session_fits_the_sweep(tmp_path: Path, fakes: Fakes):
     entry = run(tmp_path, "memory.per_session", max_sessions=500, expiry_s=1)
     assert entry["status"] == "ok", entry["error"]
-    assert entry["dims"] == {"memory_method": "pss_sampling"}
+    assert entry["dims"] == {"memory_method": "pss_sampling", "fixture": "playground"}
     metrics = entry["metrics"]
     assert metrics["bytes_per_session"]["samples"]["A"] == [pytest.approx(PER_SESSION)]
     assert metrics["bytes_per_session_ci_hi"]["samples"]["A"] == [
@@ -924,14 +929,14 @@ def test_the_512mb_gate_needs_a_scope(tmp_path: Path, fakes: Fakes):
         entry["error"]
         == "RuntimeError: cgroup scopes are unavailable: no cgroup v2 here"
     )
-    assert entry["dims"] == {"memory_method": "cgroup"}
+    assert entry["dims"] == {"memory_method": "cgroup", "fixture": "playground"}
 
 
 def test_the_512mb_gate_passes_with_three_peaks(tmp_path: Path, fakes: Fakes):
     fakes.scope_reason = None
     entry = run(tmp_path, "memory.boot_512mb")
     assert entry["status"] == "ok", entry["error"]
-    assert entry["dims"] == {"memory_method": "cgroup"}
+    assert entry["dims"] == {"memory_method": "cgroup", "fixture": "playground"}
     values = {name: metric["samples"]["A"] for name, metric in entry["metrics"].items()}
     assert values == {
         "passed": [1.0],

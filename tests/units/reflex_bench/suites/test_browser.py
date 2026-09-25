@@ -91,6 +91,7 @@ def test_ready_measures_the_three_tiers_in_order(
 ):
     bench = cls()
     bench.setup(ctx)
+    assert ctx.fixture == fixtures.describe_playground()
     result = bench.sample(ctx)
     app = FakeApp.created[0]
     assert app.mode == mode
@@ -183,6 +184,7 @@ def test_pageload(ctx: Context, monkeypatch: pytest.MonkeyPatch):
     ctx.params = {"cpu": 4}
     bench = suite.ProdPageload()
     bench.setup(ctx)
+    assert ctx.fixture == fixtures.describe_playground()
     app = FakeApp.created[0]
     browser = FakeBrowser.created[0]
     assert app.mode == "prod"

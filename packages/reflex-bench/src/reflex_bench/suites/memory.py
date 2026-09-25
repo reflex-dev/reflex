@@ -87,6 +87,7 @@ from reflex_bench.drivers.events import (
     hold_sessions,
     raise_fd_limit,
 )
+from reflex_bench.fixtures import describe_playground
 from reflex_bench.registry import Metric, SampleResult, benchmark
 from reflex_bench.report.format import format_value
 from reflex_bench.stats import SlopeFit, linear_slope_ci
@@ -873,11 +874,12 @@ class _Playground:
         prepare_app(ctx)
 
     def setup(self, ctx: Context) -> None:
-        """Record the memory method, and an allocator variant, in the dims.
+        """Record the fixture, and the memory method and an allocator variant in the dims.
 
         Args:
             ctx: The benchmark context.
         """
+        ctx.fixture = describe_playground()
         ctx.dims["memory_method"] = self.memory_method()
         allocator = ctx.params.get("allocator", "default")
         if allocator != "default":

@@ -64,7 +64,14 @@ from reflex_bench.context import Context
 from reflex_bench.drivers.app_process import AppProcess, Mode
 from reflex_bench.drivers.browser import Browser, Mark, Tab
 from reflex_bench.drivers.editor import Edit, Target, find_target, text_target
-from reflex_bench.fixtures import FIXTURES, app_dir, app_env, fixture_hash, prime
+from reflex_bench.fixtures import (
+    FIXTURES,
+    app_dir,
+    app_env,
+    describe_fixture,
+    fixture_hash,
+    prime,
+)
 from reflex_bench.registry import Metric, SampleResult, benchmark
 
 # The wait between edits: how long the page must be quiet before an edit and
@@ -358,11 +365,12 @@ class _HotReload:
         prime(ctx, ctx.params["app"])
 
     def setup(self, ctx: Context) -> None:
-        """Start the app with debug logs and open its page until it is hydrated.
+        """Record the fixture, start the app with debug logs and open its page until it is hydrated.
 
         Args:
             ctx: The benchmark context.
         """
+        ctx.fixture = describe_fixture(ctx.params["app"])
         app_path = app_dir(ctx)
         target = self.target(app_path)
         if target is not None:

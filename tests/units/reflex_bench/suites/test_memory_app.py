@@ -140,7 +140,7 @@ def test_the_512mb_gate(tmp_path: Path, home: Path):
         tmp_path, "memory.boot_512mb", "--runs", "1", "--param", "manager=memory"
     )
     assert entry["status"] == "ok", entry["error"]
-    assert entry["dims"] == {"memory_method": "cgroup"}
+    assert entry["dims"] == {"memory_method": "cgroup", "fixture": "playground"}
     assert entry["metrics"]["passed"]["samples"]["A"] == [1.0]
     (extra,) = entry["sample_extra"]
     for phase in ("compile", "boot", "serve"):

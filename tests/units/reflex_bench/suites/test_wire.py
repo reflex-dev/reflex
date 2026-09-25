@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from reflex_bench import registry
+from reflex_bench import fixtures, registry
 from reflex_bench.drivers.app_process import CliResult
 from reflex_bench.drivers.echo_server import EchoServer
 from reflex_bench.drivers.events import (
@@ -638,6 +638,7 @@ def test_hydrate_starts_a_backend_per_sample_and_stops_it(tmp_path: Path, fakes:
     entry = run_bench(tmp_path, "wire.hydrate")
     assert entry["status"] == "ok", entry["error"]
     assert entry["dims"] == {"fixture": "playground"}
+    assert entry["fixture_hash"] == fixtures.fixture_hash("playground")
     # Exact metrics: one sample.
     assert fakes.log == [
         "copy playground",
@@ -677,6 +678,7 @@ def test_event_measures_one_exchange_per_shape(tmp_path: Path, fakes: Fakes):
     entry = run_bench(tmp_path, "wire.event", shape="background")
     assert entry["status"] == "ok", entry["error"]
     assert entry["dims"] == {"fixture": "playground"}
+    assert entry["fixture_hash"] == fixtures.fixture_hash("playground")
     samples = {
         name: metric["samples"]["A"] for name, metric in entry["metrics"].items()
     }
@@ -702,6 +704,7 @@ def test_navigate_measures_the_route_change_after_hydration(
     entry = run_bench(tmp_path, "wire.navigate", route="item")
     assert entry["status"] == "ok", entry["error"]
     assert entry["dims"] == {"fixture": "playground"}
+    assert entry["fixture_hash"] == fixtures.fixture_hash("playground")
     samples = {
         name: metric["samples"]["A"] for name, metric in entry["metrics"].items()
     }
@@ -743,10 +746,8 @@ def test_delta_generates_its_own_app_and_keys_the_series_on_its_hash(
     ]
     entry = run_bench(tmp_path, "wire.delta", change="append_item")
     assert entry["status"] == "ok", entry["error"]
-    assert entry["dims"] == {
-        "fixture": "wire_delta",
-        "fixture_hash": wire.fixture_hash(),
-    }
+    assert entry["dims"] == {"fixture": "wire_delta"}
+    assert entry["fixture_hash"] == wire.fixture_hash()
     assert fakes.log == ["run_cli compile", "app start", "connect", "app stop"]
     (app,) = fakes.compiled
     assert (app / "rxconfig.py").is_file()

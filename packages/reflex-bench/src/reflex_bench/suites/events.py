@@ -61,6 +61,7 @@ from reflex_bench.drivers.events import (
     raise_fd_limit,
     seq_payload,
 )
+from reflex_bench.fixtures import describe_playground
 from reflex_bench.registry import Metric, SampleResult, benchmark
 
 PLAYGROUND = Path(__file__).resolve().parents[5] / "examples" / "playground"
@@ -780,7 +781,7 @@ class _OnPlayground(_OnBackend):
         prepare_app(ctx)
 
     def setup(self, ctx: Context) -> None:
-        """Start the backend and probe its capacity with a short closed loop.
+        """Record the fixture, start the backend and probe its capacity with a short closed loop.
 
         The probe also warms the backend (imports on first use, caches), so no
         sample meets it cold.
@@ -788,6 +789,7 @@ class _OnPlayground(_OnBackend):
         Args:
             ctx: The benchmark context.
         """
+        ctx.fixture = describe_playground()
         self.backend = _Backend(
             ctx,
             self.event,
