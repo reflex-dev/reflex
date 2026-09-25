@@ -2685,7 +2685,9 @@ class ComputedVar(Var[RETURN_TYPE]):
         if self._backend:
             msg = f"`dispatch_value` needs a state var sent to the client, not the backend var {self!s}."
             raise TypeError(msg)
-        return super().dispatch_value(value)
+        # Explicit: the slotted dataclass is a new class, which Python 3.10's
+        # zero-argument super() does not see.
+        return super(ComputedVar, self).dispatch_value(value)
 
     @override
     def _replace(
