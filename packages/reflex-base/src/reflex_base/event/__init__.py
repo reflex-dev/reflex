@@ -54,7 +54,7 @@ from reflex_base.utils.types import (
     typehint_issubclass,
 )
 from reflex_base.vars import VarData
-from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.base import LiteralVar, Var, _owner_state
 from reflex_base.vars.function import (
     ArgsFunctionOperation,
     ArgsFunctionOperationBuilder,
@@ -472,6 +472,43 @@ class EventActionsMixin:
         )
 
 
+def _no_chain_background_task(state: "BaseState", fn: Callable) -> Callable:
+    """Protect against directly chaining a background task from another event handler.
+
+    Args:
+        state: The state instance the background task is bound to.
+        fn: The background task coroutine function / generator.
+
+    Returns:
+        A compatible coroutine function / generator that raises a runtime error.
+
+    Raises:
+        TypeError: If the background task is not async.
+    """
+    name = fn.__name__
+    call = f"{type(state).__name__}.{name}"
+    message = (
+        f"Cannot directly call background task {name!r}, use "
+        f"`yield {call}` or `return {call}` instead."
+    )
+    if inspect.iscoroutinefunction(fn):
+
+        async def _no_chain_background_task_co(*args, **kwargs):  # noqa: RUF029
+            raise RuntimeError(message)
+
+        return _no_chain_background_task_co
+    if inspect.isasyncgenfunction(fn):
+
+        async def _no_chain_background_task_gen(*args, **kwargs):  # noqa: RUF029
+            yield
+            raise RuntimeError(message)
+
+        return _no_chain_background_task_gen
+
+    msg = f"{fn} is marked as a background task, but is not async."
+    raise TypeError(msg)
+
+
 @dataclasses.dataclass(
     init=True,
     frozen=True,
@@ -603,6 +640,34 @@ class EventHandler(EventActionsMixin):
             True if the event handler is marked as superseding.
         """
         return getattr(self.fn, SUPERSEDES_MARKER, False)
+
+    def __get__(self, instance: Any, owner: type | None = None) -> Any:
+        """Get the handler on class access, or its function bound to a state.
+
+        Args:
+            instance: The state instance the handler is accessed on, or None.
+            owner: The class the handler is accessed through.
+
+        Returns:
+            This handler for class access, else its function bound to the
+            instance of the handler's state (an ancestor of ``instance`` for
+            an inherited handler).
+        """
+        if (
+            instance is None
+            or self.state is None
+            # Held by a class that is not its state, nor a substate of it.
+            or not isinstance(instance, self.state)
+        ):
+            return self
+        state = (
+            instance
+            if type(instance) is self.state
+            else _owner_state(instance, self.state)
+        )
+        if self.is_background:
+            return _no_chain_background_task(state, self.fn)
+        return types.MethodType(self.fn, state)
 
     def __call__(self, *args: Any, **kwargs: Any) -> "EventSpec":
         """Pass arguments to the handler to get an event spec.
