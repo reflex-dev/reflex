@@ -1427,13 +1427,9 @@ def compile_app(
     )
     progress.advance(task)
 
-    assets_src = Path.cwd() / constants.Dirs.APP_ASSETS
-    if assets_src.is_dir() and not dry_run:
+    if not dry_run:
         with log.timing(logger, "Copy assets"), otel.span("reflex.compile.copy_assets"):
-            path_ops.update_directory_tree(
-                src=assets_src,
-                dest=Path.cwd() / prerequisites.get_web_dir() / constants.Dirs.PUBLIC,
-            )
+            utils._sync_app_assets()
 
     save_tasks: list[
         tuple[
