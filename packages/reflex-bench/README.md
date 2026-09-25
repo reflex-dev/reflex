@@ -408,13 +408,14 @@ more than one backend worker.
 whether it grows, and whether it fits a 512 MiB box. Samples are untimed:
 every metric is bytes (lower is better) except `passed`. Each sample starts a
 fresh backend (`reflex run --env prod --backend-only`, one granian worker), as
-the event benchmarks do.
+the event benchmarks do; `memory.dev.idle` starts the dev server instead.
 
 | Benchmark | Suites | Parameters | One sample | Metrics |
 | --- | --- | --- | --- | --- |
 | `memory.compile.peak` | `daily` | `command` compile, export | `reflex compile` or `reflex export --env prod` of the compiled playground | `peak_mem` |
 | `memory.idle` | `smoke` (memory), `daily` | `manager` | 5 s after `/ping` answers, the median of three PSS reads a second apart | `pss`, `pss_anon`, `pss_file` |
 | `memory.idle.allocator` | (`all`) | `allocator` mimalloc, arena2 | the same with `PYTHONMALLOC=mimalloc` or `MALLOC_ARENA_MAX=2` | the same |
+| `memory.dev.idle` | `daily` | `manager` memory | the same for `reflex run --env dev`, backend and vite dev server, 10 s after the page answers HTTP (no browser, so vite has transformed only what that request needed); the USS of the node, bun and esbuild processes is split from the python ones in the extra data (`backend_uss_bytes`, `frontend_uss_bytes`) | the same |
 | `memory.per_session` | `daily` (`max_sessions=500`) | `manager`, `max_sessions` (1000) | hold 0, 50, 100, 250, 500 and 1000 idle sessions, fit PSS per session; disconnect; wait for the states to expire | `bytes_per_session`, `bytes_per_session_ci_hi`, `residual_after_disconnect`, `residual_after_expiry` |
 | `memory.leak` | `daily` (`events=50000`) | `manager`, `events` (100000) | a closed loop of 10 sessions while the tree's anonymous PSS is sampled | `passed`, `bytes_per_event_ci_hi` |
 | `memory.boot_512mb` | `daily` (memory) | `manager` | compile, then boot and serve, under `MemoryMax=512M` with swap off | `passed`, `peak_compile`, `peak_boot`, `peak_serve` |
@@ -507,7 +508,7 @@ def heap_snapshot(self, seq: int):
 
 start the backend with tracemalloc on in every process
 (`PYTHONTRACEMALLOC=25 GRANIAN_WORKERS=1 REFLEX_STATE_MANAGER_MODE=memory
-python -m reflex run --env prod --backend-only --backend-port 8000`), and drive
+uv run reflex run --env prod --backend-only --backend-port 8000`), and drive
 it with the generator: a snapshot, a load, another snapshot.
 
 ```python
