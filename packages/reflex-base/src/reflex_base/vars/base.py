@@ -85,7 +85,7 @@ if TYPE_CHECKING:
     from reflex_base.components.component import BaseComponent
     from reflex_base.constants.colors import Color
     from reflex_base.event import EventSpec
-    from reflex_base.state.core import CoreState
+    from reflex_base.state.node import StateNode
 
     from .color import LiteralColorVar
     from .number import BooleanVar, LiteralBooleanVar, LiteralNumberVar, NumberVar
@@ -2758,7 +2758,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         return f"__last_delta_{self._js_expr}"
 
     def _pending_delta_record(
-        self, instance: CoreState, value: Any, token: str
+        self, instance: StateNode, value: Any, token: str
     ) -> tuple[str, tuple[str, Any] | None] | None:
         """Decide whether the value an uncached var contributes has to be sent.
 
@@ -2797,7 +2797,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             return None
         return attr, recorded
 
-    def needs_update(self, instance: CoreState) -> bool:
+    def needs_update(self, instance: StateNode) -> bool:
         """Check if the computed var needs to be updated.
 
         Args:
@@ -3002,7 +3002,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             )
             return d
 
-    def mark_dirty(self, instance: CoreState) -> None:
+    def mark_dirty(self, instance: StateNode) -> None:
         """Mark this ComputedVar as dirty.
 
         Args:
