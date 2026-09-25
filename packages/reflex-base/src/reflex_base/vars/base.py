@@ -84,6 +84,7 @@ if TYPE_CHECKING:
     from reflex.state import BaseState
     from reflex_base.components.component import BaseComponent
     from reflex_base.constants.colors import Color
+    from reflex_base.event import EventSpec
     from reflex_base.state.node import StateNode
 
     from .color import LiteralColorVar
@@ -893,6 +894,35 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             A deepcopy of the var.
         """
         return self
+
+    def dispatch_value(self, value: Any) -> EventSpec:
+        """Show a value for this state var on the frontend right away.
+
+        Args:
+            value: The value to show.
+
+        Returns:
+            An event setting the value on the frontend only.
+
+        Raises:
+            TypeError: If the var is not a state var sent to the client.
+        """
+        from reflex_base.event import _dispatch_value
+
+        var_data = self._get_all_var_data()
+        if (
+            var_data is None
+            or not var_data.field_name
+            or self._js_expr
+            != f"{format_state_name(var_data.state)}.{var_data.field_name}{FIELD_MARKER}"
+        ):
+            msg = (
+                f"`dispatch_value` needs a state var sent to the client, not {self!s}."
+            )
+            raise TypeError(msg)
+        return _dispatch_value(
+            var_data.state, {var_data.field_name + FIELD_MARKER: value}
+        )
 
     def equals(self, other: Var) -> builtins.bool:
         """Check if two vars are equal.
@@ -1711,6 +1741,17 @@ class ToOperation:
     def __post_init__(self):
         """Post initialization."""
         object.__delattr__(self, "_js_expr")
+
+    def dispatch_value(self, value: Any) -> EventSpec:
+        """Show a value for the var converted on the frontend right away.
+
+        Args:
+            value: The value to show.
+
+        Returns:
+            An event setting the value on the frontend only.
+        """
+        return self._original.dispatch_value(value)
 
     def _hash_key(self) -> tuple[Any, ...]:
         """Return the canonical identity of this var.
@@ -2623,6 +2664,26 @@ class ComputedVar(Var[RETURN_TYPE]):
             msg = "ComputedVar dependencies must be Var instances or var names (non-empty strings)."
             raise TypeError(msg)
         return deps
+
+    @override
+    def dispatch_value(self, value: Any) -> EventSpec:
+        """Show a value for this computed var on the frontend right away.
+
+        Args:
+            value: The value to show.
+
+        Returns:
+            An event setting the value on the frontend only.
+
+        Raises:
+            TypeError: If the computed var is not sent to the client.
+        """
+        if self._backend:
+            msg = f"`dispatch_value` needs a state var sent to the client, not the backend var {self!s}."
+            raise TypeError(msg)
+        # Explicit: the slotted dataclass is a new class, which Python 3.10's
+        # zero-argument super() does not see.
+        return super(ComputedVar, self).dispatch_value(value)
 
     @override
     def _replace(

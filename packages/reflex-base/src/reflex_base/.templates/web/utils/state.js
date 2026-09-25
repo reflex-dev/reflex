@@ -149,8 +149,15 @@ export const isStateful = () => {
   if (event_queue.length === 0) {
     return false;
   }
-  return event_queue.some((event) => event.name.startsWith("reflex___state"));
+  return event_queue.some(isStatefulEvent);
 };
+
+/**
+ * Whether an event is handled by the backend.
+ * @param event The event.
+ * @returns True if the event is for a backend event handler.
+ */
+const isStatefulEvent = (event) => event.name.startsWith("reflex___state");
 
 /**
  * Apply a delta to the state.
@@ -334,6 +341,19 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
+  if (event.name == "_dispatch_value") {
+    // A speculative update, shown until the backend sends the var.
+    const dispatchSubstate = eventLoop.dispatch[event.payload.state];
+    if (dispatchSubstate === undefined) {
+      console.warn(
+        `No state ${event.payload.state} is mounted to dispatch a value to.`,
+      );
+    } else {
+      dispatchSubstate(event.payload.delta);
+    }
+    return;
+  }
+
   if (event.name == "_set_value") {
     const ref =
       event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
@@ -489,10 +509,22 @@ export const queueEvents = async (
   navigate,
   params,
 ) => {
+  const queued = events.filter((e) => e !== undefined && e !== null);
   if (prepend) {
-    event_queue.unshift(...events.filter((e) => e !== undefined && e !== null));
+    event_queue.unshift(...queued);
   } else {
-    event_queue.push(...events.filter((e) => e !== undefined && e !== null));
+    for (const event of queued) {
+      if (
+        event.name == "_dispatch_value" &&
+        event_queue.every(isStatefulEvent)
+      ) {
+        // A speculative update is shown right away, even before the socket
+        // connects, unless frontend events queued before it must run first.
+        await applyEvent(event, socket, navigate, params);
+      } else {
+        event_queue.push(event);
+      }
+    }
   }
   await processEvent(resolveSocket(socket), navigate, params);
 };

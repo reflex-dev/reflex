@@ -1718,6 +1718,24 @@ def set_value(ref: str, value: Any) -> EventSpec:
     )
 
 
+def _dispatch_value(state: str, delta: dict[str, Any]) -> EventSpec:
+    """Apply a delta to a state on the frontend only.
+
+    Args:
+        state: The full name of the state.
+        delta: The values of its vars to show, by delta key.
+
+    Returns:
+        An event applying the delta on the frontend.
+    """
+    return server_side(
+        "_dispatch_value",
+        inspect.signature(_dispatch_value),
+        state=state,
+        delta=delta,
+    )
+
+
 def remove_cookie(key: str, options: dict[str, Any] | None = None) -> EventSpec:
     """Remove a cookie on the frontend.
 
@@ -3255,6 +3273,8 @@ class EventNamespace:
     call_script = staticmethod(call_script)
     call_function = staticmethod(call_function)
     run_script = staticmethod(run_script)
+    # For Var.dispatch_value, which imports it lazily.
+    _dispatch_value = staticmethod(_dispatch_value)
     __file__ = __file__
 
     @property
