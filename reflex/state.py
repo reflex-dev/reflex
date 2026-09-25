@@ -457,9 +457,6 @@ class _RouterDescriptor(property):
 
 all_base_state_classes: dict[str, None] = {}
 
-# Per state class, the names its dev-mode __setattr__ has found declared.
-_SETTABLE_NAMES: dict[type, set[str]] = {}
-
 # The fields holding router data, which reset() leaves alone.
 _ROUTER_FIELD_NAMES = frozenset((*constants.ROUTER_VARS, constants.ROUTER_DATA))
 
@@ -487,6 +484,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
     # Set of substates which always need to be recomputed
     _always_dirty_substates: ClassVar[set[str]] = set()
+
+    # The names the dev-mode __setattr__ has found declared, per state class.
+    _settable_names: ClassVar[set[str]] = set()
 
     # Set of states which might need to be recomputed if vars in this state change.
     _potentially_dirty_states: ClassVar[set[str]] = set()
@@ -657,6 +657,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         from reflex_base.utils.exceptions import StateValueError
 
         super().__init_subclass__(**kwargs)
+        cls._settable_names = set()
 
         if cls._mixin:
             return
@@ -1431,7 +1432,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                 SetUndefinedStateVarError: If the state declares nothing to assign.
             """
             cls = type(self)
-            if name not in (settable := _SETTABLE_NAMES.setdefault(cls, set())):
+            if name not in (settable := cls._settable_names):
                 if not (
                     # Dunder names, like computed var caches, and mangled private names.
                     name.startswith((

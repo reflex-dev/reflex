@@ -115,6 +115,8 @@ class ChildState(ParentState):
     value: str = "child"  # Independent of ParentState.value.
 ```
 
+Only a declaration with a default creates a new var: a bare annotation of an inherited var, like `value: str` in `ChildState`, still refers to the parent's var.
+
 ## Accessing Arbitrary States
 
 An event handler in a particular state can access and modify vars in another state instance by calling
