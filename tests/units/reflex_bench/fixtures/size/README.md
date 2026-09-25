@@ -10,6 +10,7 @@ from PyPI (rolldown-vite 7.2.10). Both were exported from a copy of the
 playground's tracked files, on Linux:
 
 ```console
+$ mkdir -p /tmp/rb-size
 $ git ls-files -z examples/playground | xargs -0 -I{} cp --parents {} /tmp/rb-size/
 $ cd /tmp/rb-size/examples/playground
 $ $PY -m reflex export --frontend-only --no-zip --env prod
