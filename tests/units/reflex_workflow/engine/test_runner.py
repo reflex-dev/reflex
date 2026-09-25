@@ -3035,22 +3035,31 @@ async def test_a_group_of_rows_with_no_group_is_held_to_its_limit_too(session_fa
     assert None not in groups
 
 
-async def stopped_mid_step(key: str) -> runner.Runner:
-    """Run a lingering step, then stop the worker while it is still in it.
+async def stopped_mid_step(*keys: str) -> runner.Runner:
+    """Run a lingering step per key, then stop the worker while it is still in them.
 
     Args:
-        key: The row's key.
+        *keys: The rows' keys.
 
     Returns:
-        The stopped worker, with its step still to be drained.
+        The stopped worker, with its steps still to be drained.
     """
     LINGERING.clear()
-    await Lingering(key=key).start(Lingering.work)
+    # The rows an earlier test left behind are claimable again, and would take
+    # the slots this one is watching; park them so the worker sees only these.
+    async with runtime.current().session_factory() as session, session.begin():
+        await session.execute(
+            update(Lingering)
+            .values(next_step=None, wake_at=None)
+            .execution_options(synchronize_session=False)
+        )
+    for key in keys:
+        await Lingering(key=key).start(Lingering.work)
     worker = runner.Runner(
-        runtime.current(), [Lingering], 4, datetime.timedelta(milliseconds=50)
+        runtime.current(), [Lingering], len(keys), datetime.timedelta(milliseconds=50)
     )
     loop = asyncio.create_task(worker.loop())
-    await wait_until(lambda: f"lingering:{key}" in EVENTS)
+    await wait_until(lambda: all(f"lingering:{key}" in EVENTS for key in keys))
     worker.stop()
     await loop
     return worker
@@ -3118,3 +3127,26 @@ async def test_a_preempted_claim_gives_its_lease_back_on_a_pool_of_one(
     row = await RaceReview.by(RaceReview.key == key).get()
     assert row is not None
     assert row.claimed_until is None
+
+
+async def test_giving_rows_back_holds_shutdown_up_by_the_same_bound_either_way(
+    session_factory, monkeypatch
+):
+    keys = [uuid.uuid4().hex for _ in range(5)]
+    worker = await stopped_mid_step(*keys)
+
+    async def never(*args, **kwargs) -> None:
+        """Stand in for a database that has stopped answering."""
+        await asyncio.sleep(3600)
+
+    budget = datetime.timedelta(milliseconds=200)
+    monkeypatch.setattr(runner, "release", never)
+    monkeypatch.setattr(runner, "GIVE_BACK", budget)
+
+    started = time.monotonic()
+    await worker.drain(datetime.timedelta(milliseconds=50))
+    took = time.monotonic() - started
+
+    # One budget for all five, not one each: the rows left over wait out
+    # their leases rather than holding shutdown open a row at a time.
+    assert took < (budget * 3).total_seconds()

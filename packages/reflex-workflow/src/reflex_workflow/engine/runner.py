@@ -170,28 +170,43 @@ class Runner:
         for task in cancelled:
             task.cancel()
         await asyncio.gather(*cancelled, return_exceptions=True)
-        for task in cancelled:
-            cls, pk, held = self.holding.pop(task, (None, None, None))
-            if cls is None or pk is None or held is None:
-                continue
-            # Best effort, and bounded: shutdown carries on whatever the
-            # database has to say, since the lease runs out by itself anyway.
-            try:
-                await asyncio.wait_for(
-                    release(self.runtime, cls, pk, held), GIVE_BACK.total_seconds()
-                )
-            except asyncio.CancelledError:
-                raise
-            except asyncio.TimeoutError:
-                logger.warning(
-                    "reflex_workflow ran out of time giving back a lease on %s",
-                    cls.__qualname__,
-                )
-            except Exception:
-                logger.exception(
-                    "reflex_workflow could not give back a lease on %s",
-                    cls.__qualname__,
-                )
+        holding = [
+            row
+            for task in cancelled
+            if (row := self.holding.pop(task, None)) is not None
+        ]
+        if holding:
+            await self._give_back(holding)
+
+    async def _give_back(
+        self, holding: list[tuple[type[Workflow], list[Any], Lease]]
+    ) -> None:
+        """Hand back the rows of the steps this worker cancelled.
+
+        One budget for all of them rather than one each, so however many were
+        running, shutdown is held up by the same amount at most. What is left
+        over when it runs out waits out its lease, which is what every row of a
+        worker that stopped less politely does anyway.
+
+        Args:
+            holding: The row and lease behind each cancelled step.
+        """
+
+        async def hand_back() -> None:
+            """Give every lease back, in turn."""
+            for cls, pk, held in holding:
+                await release(self.runtime, cls, pk, held)
+
+        try:
+            await asyncio.wait_for(hand_back(), GIVE_BACK.total_seconds())
+        except asyncio.CancelledError:
+            raise
+        except asyncio.TimeoutError:
+            logger.warning(
+                "reflex_workflow ran out of time giving back %d lease(s)", len(holding)
+            )
+        except Exception:
+            logger.exception("reflex_workflow could not give back a lease")
 
 
 @contextlib.asynccontextmanager
