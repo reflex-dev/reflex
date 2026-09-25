@@ -5,14 +5,18 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import signal
 import subprocess
 import sys
+import time
 
 import click
 import click.testing
+import psutil
 import pytest
 
 from reflex import reflex
+from reflex.testing import DEFAULT_TIMEOUT
 
 _CLI_STARTUP_DENIED_MODULES = frozenset({
     "PIL",
@@ -439,13 +443,6 @@ def test_init_records_version_check_after_frontend_setup(
 @pytest.mark.parametrize("sig", ["SIGTERM", "SIGINT"])
 def test_no_tty_run_stops_frontend(tmp_path, mode, sig):
     """Headless full-stack and frontend-only runs stop their process tree."""
-    import signal
-    import time
-
-    import psutil
-
-    from reflex.testing import DEFAULT_TIMEOUT
-
     pids = tmp_path / "children"
     driver = tmp_path / "driver.py"
     driver.write_text(

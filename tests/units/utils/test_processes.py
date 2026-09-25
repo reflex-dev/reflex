@@ -12,6 +12,7 @@ import time
 from contextlib import closing
 from unittest import mock
 
+import psutil
 import pytest
 
 from reflex.testing import DEFAULT_TIMEOUT, AppHarness
@@ -476,8 +477,6 @@ def test_frontend_group_ends_with_run_context(tmp_path):
         except ProcessLookupError:
             break
         # The orphan may remain a zombie until init reaps it.
-        import psutil
-
         if psutil.Process(grandchild).status() == psutil.STATUS_ZOMBIE:
             break
         time.sleep(0.05)
