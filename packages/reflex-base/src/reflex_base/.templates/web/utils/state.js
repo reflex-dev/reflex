@@ -153,12 +153,107 @@ export const isStateful = () => {
 };
 
 /**
+ * Whether a value is a plain object (not an array, Date or class instance).
+ * @param value The value to check.
+ * @returns True if the value is a plain object.
+ */
+const isPlainObject = (value) => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+};
+
+/**
+ * Structurally share the parts of next that deep-equal prev.
+ *
+ * Plain objects and arrays whose contents are unchanged keep the identity of
+ * the previous value, so memoized components and caches keyed on identity
+ * still hit. Any other value is taken from next as is.
+ * @param prev The previous value.
+ * @param next The new value.
+ * @returns prev if deep-equal to next, otherwise next with unchanged parts shared from prev.
+ */
+const replaceEqualDeep = (prev, next) => {
+  if (prev === next) {
+    return prev;
+  }
+  if (Array.isArray(prev) && Array.isArray(next)) {
+    // Allocate only once an element differs; until then prev is the result.
+    let out;
+    for (let i = 0; i < next.length; i++) {
+      const value = replaceEqualDeep(prev[i], next[i]);
+      if (out === undefined && value !== prev[i]) {
+        out = prev.slice(0, i);
+      }
+      out?.push(value);
+    }
+    if (out !== undefined) {
+      return out;
+    }
+    return prev.length === next.length ? prev : prev.slice(0, next.length);
+  }
+  if (isPlainObject(prev) && isPlainObject(next)) {
+    const keys = Object.keys(next);
+    let out;
+    // Spreading next keeps a JSON "__proto__" key an own data property, so the
+    // assignments below never hit the prototype setter.
+    const copyPrefix = (end) => {
+      out = { ...next };
+      for (let j = 0; j < end; j++) {
+        out[keys[j]] = prev[keys[j]];
+      }
+    };
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      if (!Object.hasOwn(prev, key)) {
+        if (out === undefined) {
+          copyPrefix(i);
+        }
+        continue;
+      }
+      const value = replaceEqualDeep(prev[key], next[key]);
+      if (out === undefined && value !== prev[key]) {
+        copyPrefix(i);
+      }
+      if (out !== undefined) {
+        out[key] = value;
+      }
+    }
+    if (out !== undefined) {
+      return out;
+    }
+    if (Object.keys(prev).length === keys.length) {
+      return prev;
+    }
+    // Keys were removed; every remaining value is unchanged.
+    copyPrefix(keys.length);
+    return out;
+  }
+  return next;
+};
+
+/**
  * Apply a delta to the state.
+ *
+ * Unchanged values keep their previous identity, and a delta that changes
+ * nothing returns the same state object so useReducer skips the render.
  * @param state The state to apply the delta to.
  * @param delta The delta to apply.
+ * @returns The new state, or state itself if nothing changed.
  */
 export const applyDelta = (state, delta) => {
-  return { ...state, ...delta };
+  let out;
+  for (const key in delta) {
+    const own = Object.hasOwn(state, key);
+    const value = own ? replaceEqualDeep(state[key], delta[key]) : delta[key];
+    if (!own || value !== state[key]) {
+      out ??= { ...state };
+      out[key] = value;
+    }
+  }
+  return out ?? state;
 };
 
 /**

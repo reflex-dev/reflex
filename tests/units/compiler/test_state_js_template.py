@@ -121,3 +121,86 @@ assert.ok(!('ref' in mergeSlotProps({ref: null}, {inputRef: ownRef}, 'inputRef')
         capture_output=True,
         text=True,
     )
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
+def test_apply_delta_shares_unchanged_values() -> None:
+    """Deltas keep the identity of unchanged plain objects and arrays."""
+    content = STATE_JS_TEMPLATE.read_text()
+    helpers = content[
+        content.index("const isPlainObject =") : content.index(
+            "export const evalReactComponent ="
+        )
+    ]
+    subprocess.run(
+        [
+            "node",
+            "--input-type=module",
+            "--eval",
+            helpers
+            + """
+import assert from 'node:assert/strict';
+const parse = (v) => JSON.parse(JSON.stringify(v));
+const rows = [{id: 1, tags: ['a']}, {id: 2, tags: ['b']}, {id: 3, tags: []}];
+const state = {rows, kpi: {a: 1, b: {c: 2}}, n: 1, s: 'x', none: null};
+
+// A delta equal to the current state returns the same state object.
+assert.equal(applyDelta(state, parse(state)), state);
+assert.equal(applyDelta(state, {}), state);
+
+// One changed row: siblings keep their identity, the changed row does not.
+const delta = parse({rows, kpi: state.kpi});
+delta.rows[1].tags = ['c'];
+const next = applyDelta(state, delta);
+assert.notEqual(next, state);
+assert.equal(next.kpi, state.kpi);
+assert.notEqual(next.rows, rows);
+assert.equal(next.rows[0], rows[0]);
+assert.equal(next.rows[2], rows[2]);
+assert.notEqual(next.rows[1], rows[1]);
+assert.deepEqual(next.rows[1], {id: 2, tags: ['c']});
+assert.deepEqual(rows[1], {id: 2, tags: ['b']});
+assert.equal(next.n, 1);
+
+// Length changes share the common prefix without mutating the old array.
+const grown = applyDelta(state, {rows: parse([...rows, {id: 4, tags: []}])}).rows;
+assert.equal(grown.length, 4);
+assert.equal(grown[2], rows[2]);
+const shrunk = applyDelta(state, {rows: parse(rows.slice(0, 2))}).rows;
+assert.deepEqual(shrunk, rows.slice(0, 2));
+assert.equal(shrunk[1], rows[1]);
+assert.equal(rows.length, 3);
+
+// Added, removed and renamed keys produce a new object with shared values.
+const added = applyDelta(state, {kpi: parse({...state.kpi, d: 3})}).kpi;
+assert.deepEqual(added, {a: 1, b: {c: 2}, d: 3});
+assert.equal(added.b, state.kpi.b);
+const removed = applyDelta(state, {kpi: parse({b: state.kpi.b})}).kpi;
+assert.deepEqual(removed, {b: {c: 2}});
+assert.equal(removed.b, state.kpi.b);
+const undef = {kpi: {a: undefined}};
+assert.deepEqual(applyDelta(undef, {kpi: {b: undefined}}).kpi, {b: undefined});
+
+// Type changes and non-plain values are replaced as before.
+assert.deepEqual(applyDelta(state, {kpi: [1]}).kpi, [1]);
+assert.equal(applyDelta(state, {none: {}}).none.constructor, Object);
+const date = new Date(0);
+const withDate = {d: new Date(0)};
+assert.equal(applyDelta(withDate, {d: date}).d, date);
+
+// A "__proto__" key from JSON stays an own data property.
+const proto = applyDelta({o: {}}, {o: JSON.parse('{"__proto__": {"x": 1}}')}).o;
+assert.equal(Object.getPrototypeOf(proto), Object.prototype);
+assert.deepEqual(Object.getOwnPropertyDescriptor(proto, '__proto__').value, {x: 1});
+const protoState = {o: JSON.parse('{"__proto__": {"x": 1}, "y": [1]}')};
+const protoNext = applyDelta(protoState, {o: JSON.parse('{"__proto__": {"x": 1}, "y": [2]}')}).o;
+assert.equal(Object.getPrototypeOf(protoNext), Object.prototype);
+assert.equal(Object.getOwnPropertyDescriptor(protoNext, '__proto__').value,
+  Object.getOwnPropertyDescriptor(protoState.o, '__proto__').value);
+assert.deepEqual(protoNext.y, [2]);
+""",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
