@@ -4209,14 +4209,18 @@ class BaseStateMeta(ABCMeta):
             if isinstance(value, dataclasses.Field):
                 # Unannotated dataclass fields follow the same conversion as
                 # annotated ones instead of deep-copying their mappingproxy.
-                factory = None if value.default_factory is MISSING else value.default_factory
+                factory = (
+                    None if value.default_factory is MISSING else value.default_factory
+                )
                 value = Field(
                     default=value.default,
                     default_factory=factory,
                     annotated_type=(
                         figure_out_type(value.default)
                         if value.default is not MISSING
-                        else factory if factory in (list, dict, set, tuple) else Any
+                        else factory
+                        if factory in (list, dict, set, tuple)
+                        else Any
                     ),
                 )
                 namespace[key] = value

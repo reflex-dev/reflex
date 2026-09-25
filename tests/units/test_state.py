@@ -5317,7 +5317,7 @@ def test_state_dataclasses_field_without_backend_default():
     class BareBackendState(BaseState):
         _n: int = dataclasses.field()
 
-    state = BareBackendState(_reflex_internal_init=True)
+    state = BareBackendState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     assert state._n == 0
     assert BareBackendState.backend_vars["_n"] == 0
 
@@ -5328,7 +5328,7 @@ def test_state_unannotated_dataclasses_factory():
     class UnannotatedFieldState(BaseState):
         items = dataclasses.field(default_factory=list)
 
-    state = UnannotatedFieldState(_reflex_internal_init=True)
+    state = UnannotatedFieldState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     assert state.items == []
     state.items.append("x")
     state.reset()
