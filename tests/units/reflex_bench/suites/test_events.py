@@ -324,11 +324,12 @@ def test_no_knee_without_a_low_load_measurement():
 
 def test_cpu_per_event():
     # 2.4 CPU seconds over 12 000 answered events is 200 μs each.
-    assert suite.cpu_per_event(2.4, 12_000) == pytest.approx(200e-6)
+    result = make_load_result()
+    assert suite.cpu_per_event(2.4, result) == pytest.approx(200e-6)
     with pytest.raises(ValueError, match="no answered event"):
-        suite.cpu_per_event(1.0, 0)
+        suite.cpu_per_event(1.0, make_load_result(answered_per_second=[0] * 30))
     with pytest.raises(ValueError, match="went back"):
-        suite.cpu_per_event(-0.2, 12_000)
+        suite.cpu_per_event(-0.2, result)
 
 
 class FakeProcess:
@@ -547,6 +548,25 @@ def test_latency_at_a_fixed_rate_still_warms_the_backend(
     assert entry["metrics"]["unanswered"]["samples"]["A"] == [0.0]
 
 
+def test_cpu_per_event_counts_only_answers_inside_the_window(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    # 500 answers arrive in the window and 500 more in the drain; the 1.2 CPU
+    # seconds cover the window only.
+    queued = make_load_result(answered=1000, answered_per_second=[50] * 10 + [0] * 20)
+    entry, _ = run_instance(
+        tmp_path,
+        monkeypatch,
+        "events.simple.latency",
+        {"manager": "memory", "sessions": "10", "rate": "500"},
+        {"closed": CLOSED, "open": queued},
+    )
+    assert entry["status"] == "ok", entry["error"]
+    assert entry["metrics"]["cpu_per_event"]["samples"]["A"] == [
+        pytest.approx(1.2 / 500)
+    ]
+
+
 def test_a_load_the_self_check_rejects_fails_the_sample(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
@@ -675,6 +695,7 @@ FANOUT = make_load_result(
     lag_s=None,
     answered=600,
     answered_rate=200.0,
+    answered_per_second=[20] * 30,
     service_s={"p50": 0.004, "p99": 0.011, "max": 0.02},
     spread_s={"p50": 0.0015, "p99": 0.004, "max": 0.006},
 )

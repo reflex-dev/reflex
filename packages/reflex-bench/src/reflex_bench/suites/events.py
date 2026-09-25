@@ -379,12 +379,15 @@ def find_knee(steps: Sequence[Mapping[str, Any]]) -> tuple[float, float]:
     return max(keeping_up, default=0.0), low_load_p99
 
 
-def cpu_per_event(cpu_s: float, answered: int) -> float:
-    """Divide the server's CPU time by the events it answered.
+def cpu_per_event(cpu_s: float, result: LoadResult) -> float:
+    """Divide the server's CPU time by the events it answered in the same window.
+
+    Answers that arrive in the drain after the window are left out, as the CPU
+    time does not cover the drain.
 
     Args:
         cpu_s: CPU seconds of the server tree in the measured window.
-        answered: The events answered.
+        result: The load result, whose answers per second of the window count.
 
     Returns:
         Seconds of CPU per event.
@@ -392,6 +395,7 @@ def cpu_per_event(cpu_s: float, answered: int) -> float:
     Raises:
         ValueError: Without answered events, or when the CPU time went back.
     """
+    answered = sum(result.answered_per_second)
     if answered <= 0:
         msg = "no answered event to divide the CPU time by"
         raise ValueError(msg)
@@ -878,7 +882,7 @@ def _register(name: str, shape: EventShape, *, shared: bool = False) -> None:
                 {
                     "throughput": result.answered_rate,
                     "service_p50": result.service_s["p50"],
-                    "cpu_per_event": cpu_per_event(cpu_s, result.answered),
+                    "cpu_per_event": cpu_per_event(cpu_s, result),
                 },
                 extra=self.backend.extra(result),
             )
@@ -938,7 +942,7 @@ def _register(name: str, shape: EventShape, *, shared: bool = False) -> None:
                     **_response(result, "p50", "p90", "p99", "max"),
                     "throughput": result.answered_rate,
                     "unanswered": result.unanswered,
-                    "cpu_per_event": cpu_per_event(cpu_s, result.answered),
+                    "cpu_per_event": cpu_per_event(cpu_s, result),
                 },
                 extra=self.backend.extra(
                     result, probed_capacity=self.capacity, **_underpowered(result)
@@ -1013,7 +1017,7 @@ class Fanout(_OnPlayground):
                 "broadcast_p50": result.service_s["p50"],
                 "broadcast_p99": result.service_s["p99"],
                 "fanout_spread_p50": result.spread_s["p50"],
-                "cpu_per_event": cpu_per_event(cpu_s, result.answered),
+                "cpu_per_event": cpu_per_event(cpu_s, result),
             },
             extra=self.backend.extra(result, **_underpowered(result)),
         )
@@ -1119,7 +1123,7 @@ class AtOneHz(_OnPlayground):
             {
                 **_response(result, "p50", "p99"),
                 "unanswered": result.unanswered,
-                "cpu_per_event": cpu_per_event(cpu_s, result.answered),
+                "cpu_per_event": cpu_per_event(cpu_s, result),
             },
             extra=self.backend.extra(result, **_underpowered(result)),
         )
