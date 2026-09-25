@@ -898,10 +898,6 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     def dispatch_value(self, value: Any) -> EventSpec:
         """Show a value for this state var on the frontend right away.
 
-        Keeps the app snappy for distant users, like by showing a spinner as
-        soon as a button is clicked: the value is shown before any event
-        reaches the backend, until the backend sends a value for the var.
-
         Args:
             value: The value to show.
 

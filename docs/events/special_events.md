@@ -29,8 +29,9 @@ def special_events_example():
 ## Speculative Updates
 
 A round trip to the backend takes a while for distant users. To keep the app
-feeling snappy, `dispatch_value` shows a value for a state var on the frontend
-right away, like a spinner as soon as a button is clicked. The value stays
+feeling snappy, `dispatch_value` can be used to set a value
+for a state var on the frontend immediately, for example, to show a spinner as
+soon as a button is clicked. The value stays
 until the backend sends a value for the var, which replaces it.
 
 ```python demo exec
