@@ -190,7 +190,9 @@ async def insert_runs(
             row: dict[str, Any] = {
                 "due_at": at,
                 "status": "new",
-                "next_step": "work",
+                # Taken from the step itself: rows seeded with a name no step
+                # answers to are claimed and then cannot be run.
+                "next_step": Measured.work.name,
                 "wake_at": at,
                 "attempts": 0,
                 "wf_version": 0,
