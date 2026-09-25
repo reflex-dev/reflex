@@ -988,7 +988,11 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         cls._check_overridden_computed_vars()
 
         new_backend_vars = {
-            name: value if not isinstance(value, Field) else value.default_value()
+            name: (
+                cls._get_var_default(name, mixin_cls._get_type_hints().get(name, Any))
+                if isinstance(value, Field)
+                else value
+            )
             for mixin_cls in (*cls._mixins(), cls)
             for name, value in list(mixin_cls.__dict__.items())
             if types.is_backend_base_variable(name, mixin_cls)

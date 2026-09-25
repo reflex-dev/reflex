@@ -20,6 +20,7 @@ from reflex_base.vars.base import (
     BaseStateMeta,
     CachedVarOperation,
     EvenMoreBasicBaseState,
+    Field,
     LiteralVar,
     Var,
     VarData,
@@ -120,6 +121,50 @@ def test_custom_attr_is_carried_by_reference():
 
     rebuilt = MyState.get_fields()["name"]
     assert rebuilt._check is check  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_dataclasses_field_default_factory_is_unpacked():
+    """A dataclasses.field(default_factory=...) default acts like rx.field(...).
+
+    Keeping the Field object itself as the default crashed state init with
+    ``TypeError: cannot pickle 'mappingproxy' object``: deep-copying it fails
+    on its metadata mappingproxy.
+    """
+
+    @dataclasses.dataclass
+    class Item:
+        tag: str = "a"
+
+    class MyState(EvenMoreBasicBaseState):
+        item: Item = dataclasses.field(default_factory=Item)  # pyright: ignore[reportAssignmentType]
+
+    first = MyState()
+    second = MyState()
+    assert first.item == Item()
+    assert second.item == Item()
+    assert first.item is not second.item
+    rebuilt = MyState.get_fields()["item"]
+    assert rebuilt.annotated_type is Item
+    assert isinstance(MyState.__dict__["item"], Field)
+
+
+def test_dataclasses_field_default_is_unpacked():
+    """A dataclasses.field(default=...) default supplies its value."""
+
+    class MyState(EvenMoreBasicBaseState):
+        n: int = dataclasses.field(default=5)  # pyright: ignore[reportAssignmentType]
+
+    assert MyState().n == 5
+    assert MyState.get_fields()["n"].default == 5
+
+
+def test_dataclasses_field_without_default_uses_type_default():
+    """A bare dataclasses.field() falls back to the annotation's default."""
+
+    class MyState(EvenMoreBasicBaseState):
+        n: int = dataclasses.field()  # pyright: ignore[reportAssignmentType]
+
+    assert MyState().n == 0
 
 
 def _type_alias_types() -> list[type]:

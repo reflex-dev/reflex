@@ -4206,6 +4206,25 @@ class BaseStateMeta(ABCMeta):
             for key, value in namespace.items()
             if key not in resolved_annotations
         ]:
+            if isinstance(value, dataclasses.Field):
+                # Unannotated dataclass fields follow the same conversion as
+                # annotated ones instead of deep-copying their mappingproxy.
+                factory = (
+                    None if value.default_factory is MISSING else value.default_factory
+                )
+                value = Field(
+                    default=value.default,
+                    default_factory=factory,
+                    annotated_type=(
+                        figure_out_type(value.default)
+                        if value.default is not MISSING
+                        else factory
+                        if factory in (list, dict, set, tuple)
+                        else Any
+                    ),
+                )
+                namespace[key] = value
+
             if isinstance(value, Field):
                 if value.annotated_type is not Any:
                     new_value = value
@@ -4220,7 +4239,7 @@ class BaseStateMeta(ABCMeta):
                     new_value = Field(
                         default_factory=value.default_factory,
                         is_var=value.is_var,
-                        annotated_type=Any,
+                        annotated_type=value.annotated_type,
                         source_field=value,
                     )
             elif (
@@ -4257,6 +4276,21 @@ class BaseStateMeta(ABCMeta):
                 # A (hybrid) property under an annotated name stays a descriptor,
                 # here or on a base; a field would shadow it with a stored value.
                 continue
+
+            if isinstance(value, dataclasses.Field):
+                # A dataclasses.field(...) default keeps the default on the
+                # Field object; unpack it like rx.field(...) so the Field
+                # itself is never kept as the default (deep-copying it fails
+                # on its metadata mappingproxy).
+                value = field(
+                    default=value.default,
+                    default_factory=(
+                        None
+                        if value.default_factory is MISSING
+                        else value.default_factory
+                    ),
+                )
+                namespace[key] = value
 
             if value is MISSING:
                 value = Field(

@@ -5293,6 +5293,48 @@ def test_backend_var_inherits_field_default_and_surfaces_factory_errors():
             _n: int
 
 
+def test_state_var_dataclasses_field_default():
+    """A state var default of dataclasses.field(...) compiles and resets (#7017)."""
+
+    class DataclassesFieldState(BaseState):
+        model: ModelDC = dataclasses.field(default_factory=ModelDC)
+        _tags: list[str] = dataclasses.field(default_factory=list)
+
+    state = DataclassesFieldState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert state.model == ModelDC()
+    assert state._tags == []
+    assert DataclassesFieldState.backend_vars["_tags"] == []
+
+    state._tags.append("x")
+    state.reset()
+    assert state.model == ModelDC()
+    assert state._tags == []
+
+
+def test_state_dataclasses_field_without_backend_default():
+    """An annotated backend field uses its type default when bare."""
+
+    class BareBackendState(BaseState):
+        _n: int = dataclasses.field()
+
+    state = BareBackendState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert state._n == 0
+    assert BareBackendState.backend_vars["_n"] == 0
+
+
+def test_state_unannotated_dataclasses_factory():
+    """An unannotated dataclass field factory produces a serializable state var."""
+
+    class UnannotatedFieldState(BaseState):
+        items = dataclasses.field(default_factory=list)
+
+    state = UnannotatedFieldState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert state.items == []
+    state.items.append("x")
+    state.reset()
+    assert state.items == []
+
+
 def test_assignment_through_property_setter():
     """A property's setter runs instead of the undeclared-var guard."""
 
