@@ -3833,7 +3833,8 @@ class Field(Generic[FIELD_TYPE]):
 
     # The MutableProxy type, installed by reflex.istate.proxy: mutable values
     # are wrapped in it when read, so in-place changes mark the field dirty.
-    _proxy: ClassVar[type]
+    # Until then no value is a proxy: isinstance against () is always false.
+    _proxy: ClassVar[Any] = ()
 
     # The class and attribute the field is bound to, set by __set_name__.
     _owner: type | None = None
@@ -4009,9 +4010,8 @@ class Field(Generic[FIELD_TYPE]):
         )
         if self._tracked:
             _check_writable(state)
-            # Only a tracked owner, like a state, hands out proxies to unwrap.
-            if isinstance(value, self._proxy):
-                value = value.__wrapped__  # pyright: ignore[reportAttributeAccessIssue]
+        if isinstance(value, self._proxy):
+            value = value.__wrapped__  # pyright: ignore[reportAttributeAccessIssue]
         if (
             # Only values sent to the client are type checked.
             not self._backend

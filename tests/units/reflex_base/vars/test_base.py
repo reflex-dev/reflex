@@ -1080,6 +1080,20 @@ assert "reflex" not in sys.modules
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
+def test_plain_model_unwraps_state_proxies():
+    """A plain model stores the value of a state's mutable var, not its proxy."""
+
+    class Items(State):
+        items: list[int] = [1]
+
+    class Model(EvenMoreBasicBaseState):
+        items: list[int] = []
+
+    model = Model()
+    model.items = Items().items
+    assert type(vars(model)["items"]) is list
+
+
 def test_slot_names_are_reserved():
     """A state cannot declare a name a base keeps in a slot."""
 
