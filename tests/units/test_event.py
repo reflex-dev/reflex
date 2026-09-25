@@ -1,4 +1,6 @@
 import json
+import shutil
+import subprocess
 from collections.abc import Callable
 from typing import Any, cast
 
@@ -620,6 +622,49 @@ def test_remove_local_storage():
         format.format_event(spec)
         == 'ReflexEvent("_remove_local_storage", {key:"testkey"})'
     )
+
+
+def _download_var_data_url() -> Var:
+    """Build the data: URL an ``rx.download`` of a list-typed Var produces.
+
+    Returns:
+        The ``url`` argument of the download event.
+    """
+    data = Var(_js_expr="data", _var_type=list[dict[str, str]]).guess_type()
+    return rx.download(data=data, filename="data.json").args[0][1]
+
+
+def test_download_var_data_is_percent_encoded():
+    """A Var passed as download data is percent-encoded into its data: URL."""
+    assert str(_download_var_data_url()) == (
+        '(pyAnd(((typeof(data))?.valueOf?.() === "string"?.valueOf?.()), '
+        '() => (data.startsWith("data:"))) ? data : '
+        '("data:text/plain,"+(encodeURIComponent((JSON.stringify(data))))))'
+    )
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
+def test_download_var_data_url_keeps_hash_and_percent():
+    """The downloaded bytes are exactly the JSON, even with ``#`` or ``%`` in it.
+
+    Unencoded, a ``#`` ends the data: URL there (the rest of the file is lost)
+    and ``%XX`` sequences are percent-decoded.
+    """
+    rows = [{"address": "12 Main St #4", "note": "100%25 sure"}]
+    script = (
+        "const pyAnd = (a, b) => (a ? b() : a);\n"
+        f"const data = {json.dumps(rows)};\n"
+        f"fetch({_download_var_data_url()!s})"
+        ".then((r) => r.text()).then((t) => process.stdout.write(t));\n"
+    )
+    result = subprocess.run(
+        ["node", "-e", script],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=30,
+    )
+    assert json.loads(result.stdout) == rows
 
 
 def test_event_actions():
