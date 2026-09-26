@@ -4,7 +4,9 @@ from pathlib import Path
 from typing import cast
 
 import pytest
+from reflex_site_shared.components import docs_shell
 from reflex_site_shared.components.docs_shell import (
+    DocsFeedbackState,
     _docs_external_page_footer_memo,
     docs_feedback_button,
     docs_feedback_button_toc,
@@ -20,6 +22,7 @@ from reflex_site_shared.docs.models import DocsLayoutConfig, DocsPage, Navigatio
 from reflex_site_shared.templates.docs import docs_layout
 
 import reflex as rx
+from reflex.istate.data import ReflexURL, RouterData
 
 
 def test_sidebar_active_marker_aligns_with_section_guide() -> None:
@@ -273,3 +276,83 @@ def test_docs_layout_supports_a_sidebar_aware_breadcrumb() -> None:
     assert received[0][0] == Path("guide/index.md")
     assert "Documentation navigation" in str(received[0][1])
     assert "Mobile page drawer" in rendered
+
+
+def _mock_slack(monkeypatch, delivered: bool) -> list[tuple[str, str]]:
+    """Replace the Slack post with a stub that reports a fixed outcome.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        delivered: Whether the stub reports the post as delivered.
+
+    Returns:
+        The posted ``(text, channel)`` pairs, in send order.
+    """
+    posts: list[tuple[str, str]] = []
+
+    async def post_to_slack(text: str, channel: str) -> bool:  # noqa: RUF029
+        posts.append((text, channel))
+        return delivered
+
+    monkeypatch.setattr(docs_shell, "post_to_slack", post_to_slack)
+    monkeypatch.setattr(docs_shell, "SLACK_DOCS_FEEDBACK_CHANNEL", "docs-feedback")
+    return posts
+
+
+def _feedback_state(score: int) -> DocsFeedbackState:
+    """Create a feedback state on a docs page with a selected score.
+
+    Args:
+        score: The selected feedback score.
+
+    Returns:
+        The feedback state.
+    """
+    root = rx.State(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    root.router = RouterData(url=ReflexURL("https://reflex.dev/docs/guide/"))
+    state = cast(DocsFeedbackState, root.get_substate([DocsFeedbackState.get_name()]))
+    state.score = score
+    return state
+
+
+async def test_feedback_submission_is_posted_to_slack(monkeypatch) -> None:
+    """Post the page, score, contact and escaped comment to the feedback channel."""
+    posts = _mock_slack(monkeypatch, delivered=True)
+    toast = await DocsFeedbackState.handle_submit.fn(
+        _feedback_state(0),
+        {"feedback": "Outdated <!channel> example.", "email": "dev@example.com"},
+    )
+
+    assert len(posts) == 1
+    text, channel = posts[0]
+    assert channel == "docs-feedback"
+    assert "Page: https://reflex.dev/docs/guide/" in text
+    assert "Score: 👎" in text
+    assert "Contact: dev@example.com" in text
+    assert "Feedback: Outdated &lt;!channel&gt; example." in text
+    assert "Thank you for your feedback!" in str(toast)
+
+
+async def test_feedback_submission_reports_undelivered_posts(monkeypatch) -> None:
+    """Tell the reader when their feedback could not be delivered."""
+    _mock_slack(monkeypatch, delivered=False)
+
+    toast = await DocsFeedbackState.handle_submit.fn(
+        _feedback_state(1), {"feedback": "Great page, thanks!"}
+    )
+
+    assert "An error occurred while submitting your feedback" in str(toast)
+
+
+@pytest.mark.parametrize("feedback", ["too short", "x" * 501])
+async def test_feedback_submission_rejects_invalid_length(
+    monkeypatch, feedback: str
+) -> None:
+    """Warn about comments outside the accepted length without sending them."""
+    posts = _mock_slack(monkeypatch, delivered=True)
+    toast = await DocsFeedbackState.handle_submit.fn(
+        _feedback_state(1), {"feedback": feedback}
+    )
+
+    assert posts == []
+    assert "Between 10 and 500 characters" in str(toast)
