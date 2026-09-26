@@ -70,6 +70,7 @@ async def test_post_to_slack_sends_an_authenticated_post_message(
     "response",
     [
         httpx.Response(200, json={"ok": False, "error": "channel_not_found"}),
+        httpx.Response(200, text="<html>upstream error</html>"),
         httpx.Response(429),
         httpx.ConnectError("unreachable"),
     ],
@@ -77,7 +78,8 @@ async def test_post_to_slack_sends_an_authenticated_post_message(
 async def test_post_to_slack_reports_undelivered_posts(
     monkeypatch, response: httpx.Response | Exception
 ) -> None:
-    """Report rejections, HTTP errors and transport failures as undelivered."""
-    _mock_slack_api(monkeypatch, response)
+    """Report rejections, invalid bodies and HTTP or transport errors as undelivered."""
+    requests = _mock_slack_api(monkeypatch, response)
 
     assert not await post_to_slack("hello", "docs-feedback")
+    assert len(requests) == 1

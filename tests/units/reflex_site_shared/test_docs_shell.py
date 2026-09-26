@@ -335,12 +335,13 @@ async def test_feedback_submission_is_posted_to_slack(monkeypatch) -> None:
 
 async def test_feedback_submission_reports_undelivered_posts(monkeypatch) -> None:
     """Tell the reader when their feedback could not be delivered."""
-    _mock_slack(monkeypatch, delivered=False)
+    posts = _mock_slack(monkeypatch, delivered=False)
 
     toast = await DocsFeedbackState.handle_submit.fn(
         _feedback_state(1), {"feedback": "Great page, thanks!"}
     )
 
+    assert len(posts) == 1
     assert "An error occurred while submitting your feedback" in str(toast)
 
 

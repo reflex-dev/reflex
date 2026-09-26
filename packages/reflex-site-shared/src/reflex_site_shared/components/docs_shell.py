@@ -41,9 +41,11 @@ class DocsFeedbackState(rx.State):
         """
         self.score = score
 
-    @rx.event
+    @rx.event(background=True)
     async def handle_submit(self, form_data: dict[str, Any]) -> rx.event.EventSpec:
         """Post a documentation feedback comment to the docs feedback Slack channel.
+
+        Runs as a background task so the Slack request does not hold the state lock.
 
         Args:
             form_data: Submitted feedback fields.
@@ -58,10 +60,12 @@ class DocsFeedbackState(rx.State):
                 close_button=True,
             )
 
-        score = {1: "👍", 0: "👎"}.get(self.score, "none")
+        async with self:
+            score = {1: "👍", 0: "👎"}.get(self.score, "none")
+            page = self.router.url
         message = (
             f"Contact: {escape_slack_text(form_data.get('email', ''))}\n"
-            f"Page: {escape_slack_text(self.router.url)}\n"
+            f"Page: {escape_slack_text(page)}\n"
             f"Score: {score}\n"
             f"Feedback: {escape_slack_text(feedback)}"
         )

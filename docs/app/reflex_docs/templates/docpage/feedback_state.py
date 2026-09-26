@@ -8,9 +8,11 @@ from reflex_site_shared.constants import SLACK_INTEGRATION_REQUEST_CHANNEL
 class FeedbackState(rx.State):
     """The state for the integration request form."""
 
-    @rx.event
+    @rx.event(background=True)
     async def handle_integration_request(self, form_data: dict):
         """Post an integration request to the integration request Slack channel.
+
+        Runs as a background task so the Slack request does not hold the state lock.
 
         Args:
             form_data: Submitted request fields.
