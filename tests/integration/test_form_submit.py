@@ -102,6 +102,7 @@ def FormSubmitName(form_component):
             eval(form_component)(
                 rx.vstack(
                     rx.input(name="name_input"),
+                    rx.input(name="empty_input"),
                     rx.checkbox(name="bool_input"),
                     rx.switch(name="bool_input2"),
                     rx.checkbox(name="bool_input3"),
