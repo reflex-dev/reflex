@@ -1602,6 +1602,36 @@ def test_client_state_setter_in_call_function_event_imports_refs() -> None:
     )
 
 
+def test_client_state_setter_only_sibling_memo_initializes_state() -> None:
+    """A memoized sibling that only sets a global ``ClientStateVar`` owns its hooks.
+
+    Regression: the setter did not carry the ``useState``/``refs`` hooks, so a
+    button memo calling ``refs['_client_state_set<name>']`` relied on a sibling
+    rendering ``.value`` to define it. If that sibling was not mounted, clicking
+    raised ``TypeError: refs._client_state_set<name> is not a function``.
+    """
+    from reflex.experimental.client_state import ClientStateVar
+
+    shared = ClientStateVar.create("sibling", default="a")
+
+    def page() -> Component:
+        return rx.box(
+            rx.text(shared.value),
+            rx.el.button("set", on_click=shared.set_value("b")),
+        )
+
+    ctx, _page_ctx = _compile_single_page(page)
+    memo_code = _compile_memo_module_text(ctx)
+    button_memo = next(
+        chunk
+        for chunk in memo_code.split("export const ")
+        if chunk.startswith("Button_")
+    )
+    assert "refs['_client_state_setSibling'](\"b\")" in button_memo
+    assert 'const [sibling, setSibling] = useState("a")' in button_memo
+    assert "refs['_client_state_setSibling'] = " in button_memo
+
+
 def test_debounce_input_memo_renders_react_debounce_wrapper() -> None:
     """``rx.input(value=..., on_change=..., debounce_timeout=N)`` memoizes via DebounceInput.
 

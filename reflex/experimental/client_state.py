@@ -184,7 +184,7 @@ class ClientStateVar(Var):
             _global_ref=global_ref,
             _var_type=default_var._var_type,
             _var_data=VarData.merge(
-                default_var._var_data,
+                default_var._get_all_var_data(),
                 VarData(
                     hooks=hooks,
                     imports=imports,
@@ -223,11 +223,17 @@ class ClientStateVar(Var):
         Returns:
             A special EventChain Var which will set the value when triggered.
         """
+        # Carry the useState/refs hooks so a component that only sets the value
+        # (e.g. a sibling of the one rendering it) still initializes the state.
         setter = (
-            _client_state_ref(self._setter_name)
-            if self._global_ref
-            else Var(self._setter_name)
-        ).to(FunctionVar)
+            (
+                _client_state_ref(self._setter_name)
+                if self._global_ref
+                else Var(self._setter_name)
+            )
+            ._replace(merge_var_data=self._var_data)
+            .to(FunctionVar)
+        )
 
         if value is not NoValue:
             # This is a hack to make it work like an EventSpec taking an arg
