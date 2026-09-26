@@ -9,7 +9,7 @@ from sqlalchemy import func, or_, select, text, update
 from sqlalchemy import true as sqlalchemy_true
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from reflex_workflow.engine import notify, rows
+from reflex_workflow.engine import execute, notify, rows
 from reflex_workflow.engine.runtime import current
 from reflex_workflow.model import (
     EVENT_KEY_HISTORY,
@@ -312,3 +312,72 @@ class RunHandle(Generic[W]):
         if accepted:
             runtime.wake.set()
         return accepted
+
+    async def cancel(self) -> int:
+        """Stop every matching run where it stands.
+
+        A run that has not started its next step will not, one already running
+        will not commit, a wait is abandoned along with any event held for it,
+        and nothing is scheduled in their place. What the runs have already done
+        stays; this ends them rather than undoing them.
+
+        A cancelled run counts as finished to the run that fanned it out, as one
+        that gave up does, so a parent waiting on it carries on rather than
+        waiting for a child that will never report.
+
+        Returns:
+            How many runs were cancelled.
+        """
+        runtime = current()
+        cls = self.cls
+        async with runtime.session_factory() as session, session.begin():
+            stopping = (
+                await session.execute(
+                    select(*rows.mapper(cls).primary_key, cls.parent).where(
+                        *self.where,
+                        or_(cls.next_step.is_not(None), cls.waiting_for.is_not(None)),
+                    )
+                )
+            ).all()
+            if not stopping:
+                return 0
+            cancelled = len(
+                (
+                    await session.execute(
+                        update(cls)
+                        .where(
+                            *self.where,
+                            or_(
+                                cls.next_step.is_not(None),
+                                cls.waiting_for.is_not(None),
+                            ),
+                        )
+                        .values(
+                            next_step=None,
+                            next_args=None,
+                            wake_at=None,
+                            waiting_for=None,
+                            pending_event=None,
+                            children_left=None,
+                            claimed_until=None,
+                            # The parent stops being named, so a child cancelled
+                            # here cannot also be counted when its step lands.
+                            parent=execute.unjoin(cls),
+                            wf_version=cls.wf_version + 1,
+                        )
+                        .returning(cls.wf_version)
+                        .execution_options(synchronize_session=False)
+                    )
+                ).all()
+            )
+            woken = set()
+            for *_pk, parent in stopping:
+                if parent is None or parent.get("fan_out") is None:
+                    continue
+                await execute.finish_child(session, parent)
+                woken.add(parent["table"])
+            for table in sorted(woken):
+                await notify.announce(session, table)
+        if cancelled:
+            runtime.wake.set()
+        return cancelled

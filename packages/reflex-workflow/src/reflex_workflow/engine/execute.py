@@ -10,17 +10,7 @@ import logging
 import time
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import (
-    Interval,
-    String,
-    case,
-    func,
-    insert,
-    literal,
-    null,
-    select,
-    update,
-)
+from sqlalchemy import String, case, func, insert, literal, null, select, update
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import undefer
@@ -158,8 +148,13 @@ def repeats(cls: type[Workflow], interval: datetime.timedelta) -> ColumnElement[
         The next time to run.
     """
     anchor = func.coalesce(cls.wake_at, func.now())
-    elapsed = func.extract("epoch", func.now() - anchor) / interval.total_seconds()
-    return anchor + literal(interval, Interval) * func.greatest(1, func.ceil(elapsed))
+    seconds = interval.total_seconds()
+    elapsed = func.extract("epoch", func.now() - anchor) / seconds
+    # Built from seconds rather than multiplying an interval by a number, which
+    # SQLAlchemy 2.1 deprecates and a later release refuses outright.
+    return anchor + func.make_interval(
+        0, 0, 0, 0, 0, 0, seconds * func.greatest(1, func.ceil(elapsed))
+    )
 
 
 def schedule(cls: type[Workflow], scheduled: Scheduled) -> dict[str, Any]:

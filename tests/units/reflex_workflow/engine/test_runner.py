@@ -48,6 +48,7 @@ from reflex_workflow import (  # noqa: E402
     wake_in,
 )
 from reflex_workflow.engine import claim, execute, notify, runner, runtime  # noqa: E402
+from reflex_workflow.model import REGISTRY  # noqa: E402
 
 LEASE = datetime.timedelta(seconds=2)
 
@@ -822,6 +823,29 @@ class Lingering(Base, Workflow):
         self.status = "done"
 
 
+class Resting(Base, Workflow):
+    """A run no worker takes, for asking when work is next due."""
+
+    __tablename__ = "wf_test_resting"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    key: Mapped[str] = mapped_column(String, unique=True)
+
+    @step
+    async def rest(self, hours: int = 0):
+        """Sleep for a while, or stop.
+
+        Args:
+            hours: How long to wait before running again.
+
+        Returns:
+            The wait, when there is one.
+        """
+        return (
+            wake_in(Resting.rest(), datetime.timedelta(hours=hours)) if hours else None
+        )
+
+
 class Crowded(Base, Workflow):
     """A workflow one customer may run only one of, to see what a pass considers."""
 
@@ -951,6 +975,9 @@ async def session_factory() -> AsyncIterator[async_sessionmaker[AsyncSession]]:
         factory,
         workflows=WORKFLOWS,
         poll_interval=datetime.timedelta(milliseconds=100),
+        # A row written straight into the table announces nothing, so this is
+        # how long the tests that write one wait to be noticed.
+        max_idle_interval=datetime.timedelta(milliseconds=200),
         lease=LEASE,
     ):
         yield factory
@@ -3185,3 +3212,129 @@ async def test_a_row_the_database_refuses_does_not_strand_the_others(
     # Every row was tried, and the two that could be given back were.
     assert len(refused) == 3
     assert sum(row.claimed_until is None for row in rows_back) == 2
+
+
+async def test_cancel_stops_a_run_where_it_stands(session_factory):
+    key = uuid.uuid4().hex
+    await RaceReview(key=key).start(RaceReview.submit())
+    held = RaceReview.by(RaceReview.key == key)
+    # Delivered before the wait arms, so the run is holding it when it arms.
+    assert await held.deliver(RaceReview.decide("approve"), key="late") == 1
+    await arm_wait(key)
+    parked = await held.get()
+    assert parked is not None
+    assert parked.pending_event is not None
+
+    assert await held.cancel() == 1
+
+    row = await held.get()
+    assert row is not None
+    # Nothing scheduled, nothing waited for, and the event it was holding gone.
+    assert (row.next_step, row.waiting_for, row.pending_event) == (None, None, None)
+    assert row.claimed_until is None
+    # Already cancelled, so there is nothing left to cancel.
+    assert await held.cancel() == 0
+
+
+async def test_a_cancelled_child_lets_its_parent_carry_on(session_factory):
+    key = uuid.uuid4().hex
+    await Joined(key=key).start(Joined.split)
+    parent_pk = await pk_of(Joined, key)
+    assert await step_row(Joined, parent_pk) == "ok"
+
+    # One leaf is cancelled outright; the other two finish normally.
+    assert await Leaf.by(Leaf.key == f"{key}-0").cancel() == 1
+    for index in (1, 2):
+        assert await step_row(Leaf, await pk_of(Leaf, f"{key}-{index}")) == "ok"
+
+    parent = await Joined.by(Joined.key == key).get()
+    assert parent is not None
+    # Counted as finished, as one that gave up is, so the join is not stranded.
+    assert parent.children_left == 0
+    assert await step_row(Joined, parent_pk) == "ok"
+    assert EVENTS.count(f"joined-report:{key}") == 1
+
+
+async def test_an_idle_worker_waits_for_the_run_that_is_due_soonest(session_factory):
+    rt = runtime.current()
+    only: dict[type[Workflow], list[str] | None] = {Resting: None}
+    # Nothing scheduled at all: there is no time to wait for.
+    assert await claim.next_due(rt, [Resting], only) is None
+
+    later, now_key = uuid.uuid4().hex, uuid.uuid4().hex
+    async with session_factory() as session, session.begin():
+        await session.execute(
+            insert(Resting).values(
+                key=later,
+                next_step="rest",
+                wake_at=func.now() + datetime.timedelta(hours=3),
+                attempts=0,
+                wf_version=0,
+            )
+        )
+    away = await claim.next_due(rt, [Resting], only)
+    assert away is not None
+    # Waiting for it, rather than asking again every poll interval.
+    assert datetime.timedelta(hours=2) < away < datetime.timedelta(hours=4)
+
+    await Resting(key=now_key).start(Resting.rest())
+    due = await claim.next_due(rt, [Resting], only)
+    assert due is not None
+    # Something is due already, so an idle worker does not wait at all.
+    assert due <= datetime.timedelta()
+
+    await Resting.by(Resting.key.in_([later, now_key])).cancel()
+    assert await claim.next_due(rt, [Resting], only) is None
+
+
+async def test_a_run_waiting_on_an_event_is_not_something_to_wait_for(
+    session_factory,
+):
+    rt = runtime.current()
+    only: dict[type[Workflow], list[str] | None] = {Resting: None}
+    await Resting.by().cancel()
+    assert await claim.next_due(rt, [Resting], only) is None
+
+    async with session_factory() as session, session.begin():
+        # Parked on a wait with no deadline, as a run that deferred its answer
+        # is: only an event moves it, and an event announces itself.
+        await session.execute(
+            insert(Resting).values(
+                key=uuid.uuid4().hex,
+                waiting_for="rest",
+                next_step=None,
+                wake_at=None,
+                attempts=0,
+                wf_version=0,
+            )
+        )
+
+    # No time here for an idle worker to sit waiting for.
+    assert await claim.next_due(rt, [Resting], only) is None
+
+
+async def test_a_table_that_cannot_be_asked_does_not_decide_the_wait(session_factory):
+    class Absent(Base, Workflow):
+        """A workflow whose table was never created."""
+
+        __tablename__ = "wf_test_absent"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+
+        @step
+        async def work(self):
+            """Never runs; the table is not there."""
+
+    rt = runtime.current()
+    asked: dict[type[Workflow], list[str] | None] = {Absent: None, Resting: None}
+    key = uuid.uuid4().hex
+    await Resting(key=key).start(Resting.rest())
+    try:
+        # The table that answers still decides the wait, rather than the one
+        # that cannot be read leaving the worker to sit out its whole cap.
+        due = await claim.next_due(rt, [Absent, Resting], asked)
+        assert due is not None
+        assert due <= datetime.timedelta()
+    finally:
+        await Resting.by(Resting.key == key).cancel()
+        REGISTRY.pop(Absent.__tablename__, None)

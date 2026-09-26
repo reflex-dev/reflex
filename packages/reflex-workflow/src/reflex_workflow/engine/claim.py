@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import datetime
+import logging
 from collections.abc import Collection
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-from sqlalchemy import and_, func, or_, select, update
+from sqlalchemy import and_, case, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
@@ -22,6 +23,8 @@ if TYPE_CHECKING:
 # How many groups one pass considers, as a multiple of the rows it wants. Groups
 # are taken longest-waiting first, so one passed over this time is nearer the
 # front of the next pass.
+logger = logging.getLogger(__name__)
+
 GROUPS_PER_PASS = 4
 
 
@@ -388,3 +391,75 @@ async def claim(
             break
         taken += await claim_group(runtime, cls, spec, group, value, free, steps)
     return taken
+
+
+def soonest(cls: type[Workflow], steps: Collection[str] | None):
+    """Select how long until this table's next run comes due.
+
+    Args:
+        cls: The workflow class.
+        steps: The steps this worker may run, or None for all of them.
+
+    Returns:
+        A select of one interval, null when the table has nothing scheduled.
+    """
+    # A leased row comes due when the lease runs out, whatever its wake_at says:
+    # the worker holding it may be gone, and this is when to find out.
+    #
+    # No time at all is not the same as now. A run parked on a wait with no
+    # deadline, or a parent waiting on its children, comes due when something
+    # happens rather than when a clock says so, and what happens announces
+    # itself. Those rows say nothing here -- min() passes over them -- so a
+    # worker with only such rows sleeps instead of asking after them forever.
+    when = case(
+        (cls.claimed_until > func.now(), cls.claimed_until),
+        else_=cls.wake_at,
+    )
+    runnable = or_(
+        and_(cls.next_step.is_not(None), cls.next_step.in_(steps))
+        if steps is not None
+        else cls.next_step.is_not(None),
+        and_(cls.waiting_for.is_not(None), cls.waiting_for.in_(steps))
+        if steps is not None
+        else cls.waiting_for.is_not(None),
+    )
+    return select(func.min(when) - func.now()).where(runnable)
+
+
+async def next_due(
+    runtime: Runtime,
+    workflows: Collection[type[Workflow]],
+    runnable: dict[type[Workflow], list[str] | None],
+) -> datetime.timedelta | None:
+    """Return how long until the soonest run this worker could take comes due.
+
+    Args:
+        runtime: The running engine.
+        workflows: The tables this worker runs.
+        runnable: What it may run of each, by class.
+
+    Returns:
+        The wait, negative or zero when something is due already, or None when
+        this worker has nothing scheduled anywhere.
+    """
+    known: list[datetime.timedelta] = []
+    async with runtime.session_factory() as session:
+        for cls in workflows:
+            try:
+                wait = (
+                    await session.execute(soonest(cls, runnable[cls]))
+                ).scalar_one_or_none()
+            except Exception:
+                # One table that cannot be asked -- not migrated yet, say --
+                # must not decide the wait for all the others, which is what
+                # taking none of their answers would do. Its own rows wait for
+                # the next pass, as they do when the claim cannot read it either.
+                await session.rollback()
+                logger.exception(
+                    "reflex_workflow could not ask when %s is next due",
+                    cls.__qualname__,
+                )
+                continue
+            if wait is not None:
+                known.append(wait)
+    return min(known) if known else None

@@ -52,6 +52,10 @@ type error, and so is passing one workflow's step to another.
   row that hits a unique constraint is not inserted, so a key never starts two runs. It
   returns whether a run was started, and a row the database keyed itself is given that
   key, so `row.id` addresses the run that was just started.
+- **Stop a run**: `await Onboarding.by(Onboarding.user_id == u).cancel()` ends every
+  matching run where it stands — nothing scheduled, no wait, no held event — and what
+  the run has already done stays. A cancelled run counts as finished to the run that
+  fanned it out, as one that gave up does, so a parent is never left waiting on it.
 - **Advance a run from outside** (a webhook, a button):
   `await Onboarding.by(Onboarding.user_id == u).run(Onboarding.activated("pro"))` runs the
   step now on every matching row, replacing whatever was scheduled. A step already running
@@ -355,17 +359,41 @@ async def workflows():
         yield
 ```
 
-A worker polls for due rows every `poll_interval` (1 second by default), and is woken
-before that by anything that leaves work ready: a start, a `run`, a delivered event, a
-step that asked for the next one, or the last child of a fan-out. The news travels
-through Postgres itself — `NOTIFY` in the same transaction as the write, so a
-transaction that rolls back announces nothing — which means a run started by the web
-process is picked up by a worker in another process straight away rather than at its
-next poll. A worker ignores news about tables it does not run.
+A worker with nothing to do asks the database when its next run comes due and sleeps
+until then, so an idle deployment stops querying rather than polling on a timer. It
+waits at most `max_idle_interval` (30 seconds by default), which is also how long it
+waits when nothing is scheduled at all. Set that above the point a managed database
+suspends itself — Neon's five minutes, say — and idle workers will not hold it open.
+`poll_interval` is the floor instead: how soon it looks again when something is due but
+could not be taken, because a limit or this worker's own concurrency held it back.
+
+A worker is woken before any of that by anything that leaves work ready: a start, a
+`run`, a delivered event, a step that asked for the next one, or the last child of a
+fan-out. The news travels through Postgres itself — `NOTIFY` in the same transaction as
+the write, so a transaction that rolls back announces nothing — which means a run
+started by the web process is picked up by a worker in another process straight away
+rather than at its next poll. A worker ignores news about tables it does not run.
+
+A row written straight into the table announces nothing, so it waits for the next
+wake-up: up to `max_idle_interval`. Use `start` and the workers hear about it at once.
+
+Connection poolers in transaction mode — Neon's pooled endpoint, PgBouncer — cannot
+hold a `LISTEN`, so pass `listen_engine` pointing at the direct endpoint and leave the
+pooled one to the steps:
+
+```python
+async with run_workflows(
+    Session,
+    listen_engine=create_async_engine(os.environ["REFLEX_DB_DIRECT_URL"]),
+    max_idle_interval=timedelta(minutes=10),
+):
+    yield
+```
 
 Polling stays the floor: a driver that cannot listen, or a listening connection that
-breaks, costs latency and nothing else. On shutdown a worker stops claiming and gives
-running steps `shutdown_timeout` to finish.
+breaks, costs latency and nothing else. On shutdown a worker stops claiming, gives
+running steps `shutdown_timeout` to finish, and hands back the rows of any it had to
+cancel so the next worker can take them straight away.
 
 A process that starts runs and takes approvals but should not run anything — a web
 process, usually — enters `connect_workflows` instead:
@@ -378,7 +406,8 @@ async def workflows():
         yield
 ```
 
-Everything that addresses runs works there: `start`, `deliver`, `run`, `get`, `all`.
+Everything that addresses runs works there: `start`, `deliver`, `run`, `cancel`,
+`get`, `all`.
 Nothing runs steps here, and what it writes wakes the workers that do — or waits on the
 row for them, if every worker is down at the time.
 

@@ -9,9 +9,9 @@ import logging
 from collections.abc import AsyncIterator, Collection, Iterable, Sequence
 from typing import Any
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
-from reflex_workflow.engine.claim import claim
+from reflex_workflow.engine.claim import claim, next_due
 from reflex_workflow.engine.execute import Lease, execute, release
 from reflex_workflow.engine.notify import wake_on_notify
 from reflex_workflow.engine.runtime import Runtime, replace_current
@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 # How long a cancelled step's row is given to be handed back on the way out.
 GIVE_BACK = datetime.timedelta(seconds=5)
+
+# The longest a worker waits when the database says nothing is due at all.
+DEFAULT_MAX_IDLE = datetime.timedelta(seconds=30)
 
 
 class Runner:
@@ -33,6 +36,7 @@ class Runner:
         max_concurrency: int,
         poll_interval: datetime.timedelta,
         lanes: Collection[str] = (DEFAULT_LANE,),
+        max_idle_interval: datetime.timedelta = DEFAULT_MAX_IDLE,
     ) -> None:
         """Set up a runner; ``loop`` starts it.
 
@@ -43,6 +47,7 @@ class Runner:
             poll_interval: How often to look for due rows when nothing wakes it.
             lanes: The lanes this worker serves; steps in other lanes are left
                 for the workers that do.
+            max_idle_interval: The longest it waits when nothing is due.
         """
         self.runtime = runtime
         self.lanes = frozenset(lanes)
@@ -59,6 +64,7 @@ class Runner:
         self.workflows = [cls for cls in workflows if cls in self.runnable]
         self.max_concurrency = max_concurrency
         self.poll_interval = poll_interval
+        self.max_idle_interval = max_idle_interval
         self.inflight: set[asyncio.Task[str]] = set()
         # The row and lease behind each running step, so one this worker
         # cancels on the way out can be given back rather than left held.
@@ -143,7 +149,35 @@ class Runner:
                 continue
             # asyncio's own TimeoutError, which is only the builtin from 3.11 on.
             with contextlib.suppress(asyncio.TimeoutError):
-                await asyncio.wait_for(wake.wait(), self.poll_interval.total_seconds())
+                await asyncio.wait_for(wake.wait(), await self.until_something_is_due())
+
+    async def until_something_is_due(self) -> float:
+        """Return how long to wait before looking again, when nothing was taken.
+
+        The database is asked when its next run comes due, so a worker with
+        nothing to do sleeps until then instead of asking again every interval.
+        That is what lets a database that bills for being awake, or suspends
+        itself when it is not, go quiet between runs.
+
+        Bounded both ways: never below ``poll_interval``, since a run that is
+        due but could not be claimed -- one held back by a limit, or by this
+        worker being full -- would otherwise be asked for in a tight loop; and
+        never above ``max_idle_interval``, which is also how long a worker waits
+        when nothing at all is scheduled.
+
+        Returns:
+            Seconds to wait.
+        """
+        floor, cap = self.poll_interval, self.max_idle_interval
+        try:
+            due = await next_due(self.runtime, self.workflows, self.runnable)
+        except Exception:
+            # A table that cannot be asked is not a reason to spin on it.
+            logger.exception("reflex_workflow could not ask when work is next due")
+            return cap.total_seconds()
+        if due is None:
+            return cap.total_seconds()
+        return min(max(due, floor), cap).total_seconds()
 
     def stop(self) -> None:
         """Tell the loop to finish the pass it is in and claim nothing more."""
@@ -227,6 +261,8 @@ async def run_workflows(
     lease: datetime.timedelta = datetime.timedelta(minutes=5),
     shutdown_timeout: datetime.timedelta = datetime.timedelta(seconds=30),
     lanes: Collection[str] = (DEFAULT_LANE,),
+    max_idle_interval: datetime.timedelta = DEFAULT_MAX_IDLE,
+    listen_engine: AsyncEngine | None = None,
 ) -> AsyncIterator[None]:
     """Run workflow steps in this process for the lifetime of the block.
 
@@ -237,7 +273,8 @@ async def run_workflows(
         session_factory: Session factory for the database holding the workflow tables.
         workflows: Workflow classes this process runs; defaults to every defined one.
         max_concurrency: Steps this process runs at once.
-        poll_interval: How often to look for due rows when nothing wakes the worker.
+        poll_interval: How soon it looks again when something is due but could
+            not be taken -- held back by a limit, or by this worker being full.
             Starts and runs from this process wake it immediately.
         lease: How long a claim lasts without renewal; a crashed worker's steps run
             again after it expires. Renewed while a step runs.
@@ -246,21 +283,39 @@ async def run_workflows(
         lanes: The lanes this process serves. A step declared in another lane is
             left alone, so a worker with a GPU can be the only one that renders
             and an ordinary one carries on with the rest.
+        max_idle_interval: The longest to wait when nothing is scheduled at all.
+            Between runs a worker sleeps until the database says the next one is
+            due, so this is what it costs an idle database: set it above the
+            point a database suspends itself and the workers will not hold it
+            open. Work written by another process is waited for at most this
+            long, unless NOTIFY reaches this worker first.
+        listen_engine: Where to listen for those notifications, when that cannot
+            be where the steps run. A pooler in transaction mode -- Neon's
+            pooled endpoint, PgBouncer -- cannot hold a LISTEN, so point this at
+            the direct endpoint and leave the pooled one to the steps.
 
     Yields:
         Nothing; steps run while the block is active.
 
     Raises:
-        ValueError: If ``max_concurrency`` is below one, or ``lease`` or
-            ``poll_interval`` is not positive.
+        ValueError: If ``max_concurrency`` is below one, ``lease`` or
+            ``poll_interval`` is not positive, or ``max_idle_interval`` is
+            shorter than ``poll_interval``.
     """
     # A lease of nothing expires as it is taken, letting two workers run one
     # step at once; the others would leave a worker that never runs anything.
     if max_concurrency < 1:
         msg = f"max_concurrency must be at least 1; got {max_concurrency}."
         raise ValueError(msg)
-    if lease <= datetime.timedelta() or poll_interval <= datetime.timedelta():
-        msg = "lease and poll_interval must be positive."
+    if (
+        lease <= datetime.timedelta()
+        or poll_interval <= datetime.timedelta()
+        or max_idle_interval < poll_interval
+    ):
+        msg = (
+            "lease and poll_interval must be positive, and max_idle_interval "
+            "cannot be shorter than poll_interval."
+        )
         raise ValueError(msg)
     runtime = Runtime(session_factory, asyncio.Event(), lease)
     previous = replace_current(runtime)
@@ -270,10 +325,15 @@ async def run_workflows(
         max_concurrency,
         poll_interval,
         lanes,
+        max_idle_interval,
     )
     loop = asyncio.create_task(runner.loop())
     ear = asyncio.create_task(
-        wake_on_notify(runtime, [cls.__tablename__ for cls in runner.workflows])
+        wake_on_notify(
+            runtime,
+            [cls.__tablename__ for cls in runner.workflows],
+            listen_engine,
+        )
     )
     try:
         yield
