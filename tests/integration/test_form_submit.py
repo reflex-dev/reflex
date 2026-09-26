@@ -42,6 +42,7 @@ def FormSubmit(form_component):
             eval(form_component)(
                 rx.vstack(
                     rx.input(id="name_input"),
+                    rx.input(id="empty_input"),
                     rx.checkbox(id="bool_input"),
                     rx.switch(id="bool_input2"),
                     rx.checkbox(id="bool_input3"),
@@ -239,6 +240,7 @@ async def test_submit(driver, form_submit: AppHarness):
     print(form_data)
 
     assert form_data["name_input"] == "foo"
+    assert form_data["empty_input"] == ""
     assert form_data["bool_input"]
     assert form_data["bool_input2"]
     assert not form_data.get("bool_input3", False)
