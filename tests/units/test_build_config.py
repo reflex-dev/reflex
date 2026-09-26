@@ -1,11 +1,15 @@
 """Tests for the file selection of the workspace's hatch build configs."""
 
+import importlib.util
+import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from hatchling.builders.plugin.interface import BuilderInterface
 from hatchling.builders.sdist import SdistBuilder
 from hatchling.builders.wheel import WheelBuilder
+from hatchling.metadata.core import ProjectMetadata
 
 REPO_ROOT = Path(__file__).parents[2]
 
@@ -110,3 +114,110 @@ def test_package_ships_only_its_own_stubs(
     # Anything a package keeps beside `src` — fixtures, docs, a vendored
     # checkout — is not part of what it distributes.
     assert not config.include_path("tests/golden.pyi")
+
+
+def build_hook(root: Path, directory: Path):
+    """Load the stub-generating build hook and instantiate it against a root.
+
+    Args:
+        root: The project root the hook runs against.
+        directory: The build output directory.
+
+    Returns:
+        The hook's module and an instance bound to `root`.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    spec = importlib.util.spec_from_file_location("hatch_build", REPO_ROOT / BUILD_HOOK)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    hook = module.CustomBuilder(
+        str(root),
+        {},
+        WheelBuilder(str(root)).config,
+        ProjectMetadata(
+            str(root), None, {"project": {"name": "reflex", "version": "0.0.0"}}
+        ),
+        str(directory),
+        "wheel",
+    )
+    return module, hook
+
+
+EXPECTED_STUBS = ["reflex/__init__.pyi", "reflex/experimental/memo.pyi"]
+
+
+@pytest.mark.parametrize(
+    ("build_version", "present", "regenerates"),
+    [
+        # An editable install builds against the checkout, so it must not
+        # rewrite stubs that are already there from whatever the installing
+        # environment resolved to.
+        ("editable", EXPECTED_STUBS, False),
+        # A fresh clone has no stubs — they are gitignored — so the editable
+        # install that `uv sync` performs is what creates them.
+        ("editable", [], True),
+        # The generator logs and skips a module it cannot import, so a failed
+        # run leaves a partial set that must not suppress the next one.
+        ("editable", EXPECTED_STUBS[:1], True),
+        ("standard", EXPECTED_STUBS, True),
+    ],
+    ids=["complete", "fresh-checkout", "partial", "standard"],
+)
+def test_build_hook_regenerates_stubs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    build_version: str,
+    present: list[str],
+    regenerates: bool,
+):
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "pyi_hashes.json").write_text(
+        json.dumps(dict.fromkeys([*EXPECTED_STUBS, "packages/other/mod.pyi"], ""))
+    )
+    written = [tmp_path / name for name in present]
+    for stub in written:
+        stub.parent.mkdir(parents=True, exist_ok=True)
+        stub.write_text("# generated")
+
+    runs = []
+    module, hook = build_hook(tmp_path, tmp_path / "dist")
+    monkeypatch.setattr(
+        module, "subprocess", SimpleNamespace(run=lambda *a, **kw: runs.append(a))
+    )
+
+    hook.initialize(build_version, {})
+
+    assert bool(runs) is regenerates
+    # The generator is stubbed out, so a run that proceeded leaves the stubs it
+    # would have rewritten unlinked; one that was skipped leaves them as found.
+    if regenerates:
+        assert not any(stub.exists() for stub in written)
+    else:
+        assert all(stub.exists() for stub in written)
+
+
+@pytest.mark.parametrize(
+    "manifest", ["", '{"reflex/__init__.pyi"', "[]"], ids=["empty", "truncated", "list"]
+)
+def test_build_hook_regenerates_on_an_unreadable_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, manifest: str
+):
+    """A manifest left half-written by an interrupted run must not fail the build."""
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "pyi_hashes.json").write_text(manifest)
+    for name in EXPECTED_STUBS:
+        stub = tmp_path / name
+        stub.parent.mkdir(parents=True, exist_ok=True)
+        stub.write_text("# generated")
+
+    runs = []
+    module, hook = build_hook(tmp_path, tmp_path / "dist")
+    monkeypatch.setattr(
+        module, "subprocess", SimpleNamespace(run=lambda *a, **kw: runs.append(a))
+    )
+
+    hook.initialize("editable", {})
+
+    assert runs
