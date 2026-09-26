@@ -64,6 +64,7 @@ PACKAGE_LOGGER_NAMES = (
     "reflex_components_react_player",
     "reflex_otel",
     "reflex_build_sdk",
+    "reflex_workflow",
 )
 
 # The single logger the reflex sinks attach to; parent of every package logger.

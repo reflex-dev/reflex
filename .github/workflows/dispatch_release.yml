@@ -150,6 +150,10 @@ on:
         description: "reflex-release"
         type: boolean
         default: false
+      reflex_workflow:
+        description: "reflex-workflow"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -201,6 +205,7 @@ jobs:
             ${{ inputs.reflex_hosting_cli && 'reflex-hosting-cli' || '' }}
             ${{ inputs.reflex_otel && 'reflex-otel' || '' }}
             ${{ inputs.reflex_release && 'reflex-release' || '' }}
+            ${{ inputs.reflex_workflow && 'reflex-workflow' || '' }}
         shell: bash
         run: uv run --frozen --package reflex-release reflex-release plan
       - name: Materialize changelogs

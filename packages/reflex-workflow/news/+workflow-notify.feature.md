@@ -1,0 +1,1 @@
+Workers hear about new work through Postgres `LISTEN`/`NOTIFY` rather than waiting for their next poll, so a run started or an event delivered by another process is picked up straight away. Polling remains the fallback.

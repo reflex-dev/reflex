@@ -69,6 +69,7 @@ members = [
     "reflex-otel",
     "reflex-release",
     "reflex-site-shared",
+    "reflex-workflow",
 ]
 
 [[package]]
@@ -999,6 +1000,26 @@ wheels = [
 [package.optional-dependencies]
 toml = [
     { name = "tomli", marker = "python_full_version <= '3.11'" },
+]
+
+[[package]]
+name = "croniter"
+version = "6.2.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "python-dateutil" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/37/57/2e2a65aee2a70483cb28e2b7e15a072d00a523207593b44400d4717bb100/croniter-6.2.4.tar.gz", hash = "sha256:fc124f751b1b04805c2a04b061898b436b45ab2320b045e1e052ea895de65189", size = 166267, upload-time = "2026-07-10T09:52:59.955Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cd/ba/d678e5bd329646ca51d3c92addbc77804e86d21f4b6b6a027218e6abb010/croniter-6.2.4-py3-none-any.whl", hash = "sha256:8ef3d544107a5c05a150a2d78f8bf5a8eb9c5c4d93405a736b824109574e3f4d", size = 46677, upload-time = "2026-07-10T09:52:58.425Z" },
+]
+
+[[package]]
+name = "cronsim"
+version = "2.7"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fb/1a/02f105147f7f2e06ed4f734ff5a6439590bb275a53dd91fc73df6312298a/cronsim-2.7-py3-none-any.whl", hash = "sha256:1e1431fa08c51dc7f72e67e571c7c7a09af26420169b607badd4ca9677ffad1e", size = 14213, upload-time = "2025-10-21T16:38:20.431Z" },
 ]
 
 [[package]]
@@ -4135,6 +4156,8 @@ dev = [
     { name = "alembic" },
     { name = "asynctest" },
     { name = "codespell" },
+    { name = "croniter" },
+    { name = "cronsim" },
     { name = "darglint" },
     { name = "dill" },
     { name = "fastapi" },
@@ -4171,6 +4194,7 @@ dev = [
     { name = "reflex-otel" },
     { name = "reflex-release" },
     { name = "reflex-site-shared" },
+    { name = "reflex-workflow" },
     { name = "ruff" },
     { name = "selenium" },
     { name = "sqlalchemy" },
@@ -4227,6 +4251,8 @@ dev = [
     { name = "alembic" },
     { name = "asynctest" },
     { name = "codespell" },
+    { name = "croniter" },
+    { name = "cronsim" },
     { name = "darglint" },
     { name = "dill" },
     { name = "fastapi" },
@@ -4260,6 +4286,7 @@ dev = [
     { name = "reflex-otel", editable = "packages/reflex-otel" },
     { name = "reflex-release", editable = "packages/reflex-release" },
     { name = "reflex-site-shared", editable = "packages/reflex-site-shared" },
+    { name = "reflex-workflow", editable = "packages/reflex-workflow" },
     { name = "ruff" },
     { name = "selenium" },
     { name = "sqlalchemy" },
@@ -4727,6 +4754,20 @@ requires-dist = [
 ]
 
 [[package]]
+name = "reflex-workflow"
+source = { editable = "packages/reflex-workflow" }
+dependencies = [
+    { name = "sqlalchemy", extra = ["asyncio"] },
+    { name = "tzdata", marker = "sys_platform == 'win32'" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.20,<3.0" },
+    { name = "tzdata", marker = "sys_platform == 'win32'", specifier = ">=2024.1" },
+]
+
+[[package]]
 name = "requests"
 version = "2.34.2"
 source = { registry = "https://pypi.org/simple" }
@@ -5126,6 +5167,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/96/d7/8ac6ffa1e36169e762ef65bd835046abb2251b1bc17f8f6708e14ed8d31f/sqlalchemy-2.0.52-cp314-cp314-win_amd64.whl", hash = "sha256:a593db51b3bae75db17a5738ad5f992244b3a03863f83c28117ee482c6a3f76d", size = 2156718, upload-time = "2026-08-11T21:14:58.667Z" },
     { url = "https://files.pythonhosted.org/packages/dc/4b/e01a737eef378e734cc6394a82248a6ce13b167dfa36c731075ce9fc9c64/sqlalchemy-2.0.52-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:c1e61d08bdf4ee2f41024569e3400de7d6734ba498144766b11260936ccfa582", size = 2190344, upload-time = "2026-08-11T19:53:21.393Z" },
     { url = "https://files.pythonhosted.org/packages/b3/3f/3582293d1e185e71d19d7c731c3e2ee20ba21981c4a1115c0806c1f62120/sqlalchemy-2.0.52-py3-none-any.whl", hash = "sha256:3b81b8363a919ce53453591cdb93702e6bd54ade6c4fa2f468fc053baee5ed89", size = 1950700, upload-time = "2026-08-11T20:47:21.603Z" },
+]
+
+[package.optional-dependencies]
+asyncio = [
+    { name = "greenlet" },
 ]
 
 [[package]]

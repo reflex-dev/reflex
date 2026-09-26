@@ -153,8 +153,8 @@ post-release-workflow = "docs_publish.yml"
 
 # How the Dispatch release form asks which packages to release: one checkbox
 # per package ("checkboxes"), a comma-separated field ("text"), or "auto" —
-# checkboxes while they fit under GitHub's twenty-input workflow_dispatch limit,
-# free text beyond it. Default: "auto".
+# checkboxes while they fit under GitHub's twenty-five-input workflow_dispatch
+# limit, free text beyond it. Default: "auto".
 dispatch-package-inputs = "auto"
 ```
 
@@ -603,10 +603,10 @@ Selecting nothing auto-selects: packages with pending news fragments, or — for
 
 Because the checkboxes are generated, **adding or removing a package changes
 `dispatch_release.yml`** — run `reflex-release sync` and commit it with the new
-package. The pull-request drift check catches it if you forget. Past twenty
-packages (GitHub's `workflow_dispatch` input limit, one of which the release
-action takes) the form falls back to a comma-separated text field; see
-`dispatch-package-inputs`.
+package. The pull-request drift check catches it if you forget. Past
+twenty-four packages or lockstep groups (GitHub's `workflow_dispatch` takes
+twenty-five inputs, one of which the release action uses) the form falls back
+to a comma-separated text field; see `dispatch-package-inputs`.
 
 | Action | Result |
 | --- | --- |
