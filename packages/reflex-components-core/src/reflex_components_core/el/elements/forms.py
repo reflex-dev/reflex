@@ -69,13 +69,8 @@ def _handle_submit_js_template(
         const {form_data} = {{
             ...Object.fromEntries(new FormData($form).entries()),
             ...Object.fromEntries(Object.entries({field_ref_mapping}).filter(([key]) => {{
-                const elementIdentifier = ({field_ref_id_mapping})[key]
-                const element = elementIdentifier
-                    ? document.getElementById(elementIdentifier)
-                    || Array.from($form.querySelectorAll("[name]")).find(
-                        (candidate) => candidate.getAttribute("name") === elementIdentifier
-                    )
-                    : null
+                const elementId = ({field_ref_id_mapping})[key]
+                const element = elementId ? document.getElementById(elementId) : null
                 const isNativeControl = element && (
                     ["SELECT", "TEXTAREA"].includes(element.tagName)
                     || (
@@ -408,10 +403,10 @@ class Form(BaseHTML):
         return form_refs
 
     def _get_form_ref_ids(self) -> dict[str, str]:
-        """Map form field keys to their static DOM ids or names.
+        """Map form field keys to their static DOM ids.
 
         Returns:
-            A mapping from normalized form-data keys to static DOM identifiers.
+            A mapping from normalized form-data keys to static DOM ids.
         """
         form_ref_ids = {}
         for component in _iter_form_components(self):
@@ -423,15 +418,11 @@ class Form(BaseHTML):
                 continue
             ref = component.get_ref()
             element_id = _get_static_string_prop(component, "id")
-            element_name = _get_static_string_prop(component, "name")
-            element_identifier = (
-                element_id if isinstance(element_id, str) else element_name
-            )
-            if ref is None or not isinstance(element_identifier, str):
+            if ref is None or not isinstance(element_id, str):
                 continue
             if ref.startswith("refs_"):
                 continue
-            form_ref_ids[ref[4:]] = element_identifier
+            form_ref_ids[ref[4:]] = element_id
         return form_ref_ids
 
     def _get_static_form_field_keys(self) -> tuple[set[str], bool]:

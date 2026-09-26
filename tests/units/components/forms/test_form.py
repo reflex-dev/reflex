@@ -60,7 +60,7 @@ def test_form_submit_filters_null_ref_values():
 
     submit_hook = form.add_hooks()[0]
     assert form._get_form_ref_ids() == {"email": "email"}  # pyright: ignore[reportAttributeAccessIssue]
-    assert "document.getElementById(elementIdentifier)" in submit_hook
+    assert "document.getElementById(elementId)" in submit_hook
     assert "ref_email_label" in submit_hook
     assert "ref_submit_button" in submit_hook
 
@@ -81,14 +81,12 @@ def test_form_ref_ids_preserve_dom_ids_and_exclude_containers():
     form = HTMLForm.create(
         rx.box(rx.checkbox("Check", id="check"), id="wrapper"),
         Input.create(id="first-name"),
-        Input.create(name="named-field"), 
         Input.create(id="submit", type="submit"),
     )
 
     assert form._get_form_ref_ids() == {  # pyright: ignore[reportAttributeAccessIssue]
         "check": "check",
         "first_name": "first-name",
-        "named_field": "named-field",
         "submit": "submit",
     }
 
