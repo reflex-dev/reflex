@@ -75,11 +75,15 @@ async def listen_once(
         logger.exception("reflex_workflow lost its listening connection")
     finally:
         # Deaf again until the next connection is up, and a worker that cannot
-        # hear has to keep asking. Woken as well as told: it chose how long to
-        # sleep while this was still listening, and would otherwise lie there
-        # for that whole wait with nothing left to interrupt it.
-        runtime.listening.clear()
-        runtime.wake.set()
+        # hear has to keep asking. Woken as well as told, but only where this
+        # attempt is what lost the ear: it chose how long to sleep while the
+        # listener was up and would otherwise lie there for that whole wait.
+        # Every retry after that finds the worker already polling, and waking
+        # it again each second would be the traffic a long poll interval is
+        # there to avoid.
+        if runtime.listening.is_set():
+            runtime.listening.clear()
+            runtime.wake.set()
     return True
 
 

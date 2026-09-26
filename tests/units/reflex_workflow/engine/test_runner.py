@@ -3519,3 +3519,27 @@ async def test_a_listener_that_drops_wakes_the_worker_it_was_listening_for():
     # Woken too: a worker that went to sleep while the listener was up has to
     # be told, or it lies there for the whole wait it chose on that basis.
     assert rt.wake.is_set()
+
+
+async def test_a_listener_that_keeps_failing_wakes_the_worker_once():
+    nowhere = create_async_engine(
+        "postgresql+psycopg://postgres@127.0.0.1:1/nothing_here"
+    )
+    sessions = async_sessionmaker(nowhere, expire_on_commit=False)
+    rt = runtime.Runtime(sessions, asyncio.Event(), LEASE)
+    try:
+        # It was never listening, so nothing was decided on the strength of it.
+        assert await notify.listen_once(rt, frozenset(), sessions) is True
+        assert not rt.wake.is_set()
+
+        rt.listening.set()
+        assert await notify.listen_once(rt, frozenset(), sessions) is True
+        assert rt.wake.is_set()
+
+        # Retrying while still deaf: the worker is already polling, and waking
+        # it every second is the traffic a long poll interval exists to avoid.
+        rt.wake.clear()
+        assert await notify.listen_once(rt, frozenset(), sessions) is True
+        assert not rt.wake.is_set()
+    finally:
+        await nowhere.dispose()
