@@ -215,6 +215,15 @@ class Plotly(NoSSRComponent):
         codes = [
             "const removeUndefined = (obj) => {Object.keys(obj).forEach(key => obj[key] === undefined && delete obj[key]); return obj}",
             """
+const _rxNormalizePlotlyLayout = (layout) => {
+    if (!layout || typeof layout !== "object" || typeof layout.title !== "string") {
+        return layout;
+    }
+
+    return {...layout, title: {text: layout.title}};
+}
+""",
+            """
 const extractPoints = (points) => {
     if (!points) return [];
     return points.map(point => {
@@ -323,10 +332,9 @@ const _rxGetPlotlyLocaleConfig = (config, locale, plotlyLocales) => {
         figure = self.data.to(dict) if self.data is not None else Var.create({})
         merge_dicts = []  # Data will be merged and spread from these dict Vars
         if self.layout is not None:
-            # Why is this not a literal dict? Great question... it didn't work
-            # reliably because of how _var_name_unwrapped strips the outer curly
-            # brackets if any of the contained Vars depend on state.
-            layout_dict = LiteralVar.create({"layout": self.layout})
+            layout_dict = Var(
+                _js_expr=f"{{layout: _rxNormalizePlotlyLayout({self.layout})}}"
+            )
             merge_dicts.append(layout_dict)
         if self.template is not None:
             template_dict = LiteralVar.create({"layout": {"template": self.template}})
@@ -337,8 +345,10 @@ const _rxGetPlotlyLocaleConfig = (config, locale, plotlyLocales) => {
                     *tag.special_props,
                     # Merge all dictionaries and spread the result over props.
                     Var(
-                        _js_expr=f"{{...mergician({figure!s},"
-                        f"{','.join(str(md) for md in merge_dicts)})}}",
+                        _js_expr=(
+                            f"{{ ...mergician({figure!s}, "
+                            f"...{Var.create(merge_dicts)!s}) }}"
+                        ),
                     ),
                 ]
             )
