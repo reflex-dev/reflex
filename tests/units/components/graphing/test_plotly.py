@@ -128,7 +128,7 @@ def test_plotly_layout_var_data_is_preserved(plotly_fig: go.Figure):
     class PlotlyState(rx.State):
         layout: dict = {"title": "layout title"}
 
-    layout = PlotlyState.layout
+    layout = rx.Var.create(PlotlyState.layout)
     rendered = rx.plotly(data=plotly_fig, layout=layout)._render()
     var_data = layout._get_all_var_data()
 
