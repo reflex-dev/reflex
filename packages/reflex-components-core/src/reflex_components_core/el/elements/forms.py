@@ -55,6 +55,7 @@ def _handle_submit_js_template(
         handle_submit_unique_name: Unique name for the handle submit function.
         form_data: Name of the form data variable.
         field_ref_mapping: JSON string of field reference mappings.
+        field_ref_id_mapping: JSON string mapping normalized keys to DOM ids.
         on_submit_event_chain: Event chain for the submit handler.
         reset_on_submit: Boolean string indicating if form should reset after submit.
 

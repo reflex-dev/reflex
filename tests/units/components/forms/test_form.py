@@ -59,7 +59,7 @@ def test_form_submit_filters_null_ref_values():
     )
 
     submit_hook = form.add_hooks()[0]
-    assert getattr(form, "_get_form_ref_ids")() == {"email": "email"}
+    assert form._get_form_ref_ids() == {"email": "email"}  # pyright: ignore[reportAttributeAccessIssue]
     assert "document.getElementById(elementId)" in submit_hook
     assert "ref_email_label" in submit_hook
     assert "ref_submit_button" in submit_hook
@@ -84,7 +84,7 @@ def test_form_ref_ids_preserve_dom_ids_and_exclude_containers():
         Input.create(id="submit", type="submit"),
     )
 
-    assert getattr(form, "_get_form_ref_ids")() == {
+    assert form._get_form_ref_ids() == {  # pyright: ignore[reportAttributeAccessIssue]
         "check": "check",
         "first_name": "first-name",
         "submit": "submit",
