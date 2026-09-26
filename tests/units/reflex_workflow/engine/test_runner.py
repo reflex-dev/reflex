@@ -3311,8 +3311,11 @@ async def test_a_run_waiting_on_an_event_is_not_something_to_wait_for(
             )
         )
 
-    # No time here for an idle worker to sit waiting for.
-    assert await claim.next_due(rt, [Resting], only) is None
+    try:
+        # No time here for an idle worker to sit waiting for.
+        assert await claim.next_due(rt, [Resting], only) is None
+    finally:
+        await Resting.by().cancel()
 
 
 async def test_a_table_that_cannot_be_asked_does_not_decide_the_wait(session_factory):
@@ -3394,9 +3397,13 @@ async def test_a_run_holding_its_answer_is_due_now(session_factory):
             )
         )
 
-    due = await claim.next_due(rt, [Resting], only)
-    assert due is not None
-    assert due <= datetime.timedelta()
+    try:
+        due = await claim.next_due(rt, [Resting], only)
+        assert due is not None
+        assert due <= datetime.timedelta()
+    finally:
+        # Left behind, this row is due for every later test that asks.
+        await Resting.by().cancel()
 
 
 async def test_a_long_poll_interval_is_still_allowed(session_factory):
@@ -3493,3 +3500,22 @@ async def test_a_worker_that_cannot_listen_keeps_asking(session_factory):
         assert await worker.until_something_is_due() == pytest.approx(0.02)
     finally:
         rt.listening.set() if was else rt.listening.clear()
+
+
+async def test_a_listener_that_drops_wakes_the_worker_it_was_listening_for():
+    nowhere = create_async_engine(
+        "postgresql+psycopg://postgres@127.0.0.1:1/nothing_here"
+    )
+    sessions = async_sessionmaker(nowhere, expire_on_commit=False)
+    rt = runtime.Runtime(sessions, asyncio.Event(), LEASE)
+    rt.listening.set()
+    try:
+        # It cannot connect, so it is deaf from the start.
+        assert await notify.listen_once(rt, frozenset(), sessions) is True
+    finally:
+        await nowhere.dispose()
+
+    assert not rt.listening.is_set()
+    # Woken too: a worker that went to sleep while the listener was up has to
+    # be told, or it lies there for the whole wait it chose on that basis.
+    assert rt.wake.is_set()
