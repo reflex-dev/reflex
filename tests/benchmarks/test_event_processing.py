@@ -23,7 +23,6 @@ from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.utils.format import format_event_handler, json_dumps
 
 from reflex.istate.manager.memory import StateManagerMemory
-from reflex.istate.manager.token import BaseStateToken
 from reflex.state import StateUpdate
 
 from .fixtures import BenchmarkState, TableState
@@ -106,9 +105,7 @@ def event_processing_harness():
                 tokens: Client tokens whose state and lock bookkeeping should be removed.
             """
             for token in tokens:
-                state_manager._purge_token(  # pyright: ignore [reportPrivateUsage]
-                    BaseStateToken(ident=token, cls=BenchmarkState)
-                )
+                state_manager._purge_ident(token)  # pyright: ignore [reportPrivateUsage]
 
         yield run_events, purge_tokens, state_manager.close
 

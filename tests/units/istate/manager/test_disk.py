@@ -52,10 +52,10 @@ async def test_debounced_set_state_flushes_latest_value(tmp_path, monkeypatch):
     token = StateToken(ident="client", cls=int)
 
     await state_manager.set_state(token, 1)
-    first_item = state_manager._write_queue[token]
+    first_item = state_manager._write_queue[str(token)]
     await state_manager.set_state(token, 2)
 
-    assert state_manager._write_queue[token] is first_item
+    assert state_manager._write_queue[str(token)] is first_item
     assert first_item.state == 2
 
     await state_manager.close()
@@ -88,10 +88,10 @@ async def test_set_state_updates_cache_for_arbitrary_instance(
 
     await state_manager.set_state(token, state)
 
-    assert state_manager.states[token.cache_key] is state
-    assert token.cache_key in state_manager._token_last_touched
+    assert state_manager.states[str(token)] is state
+    assert token.ident in state_manager._token_last_touched
     if write_debounce_seconds > 0:
-        assert state_manager._write_queue[token].state is state
+        assert state_manager._write_queue[str(token)].state is state
 
     await state_manager.close()
 

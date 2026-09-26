@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import dataclasses
 import functools
 import uuid
-from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, Any, Protocol
+from collections.abc import AsyncIterator, Callable, Mapping
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar
+
+from typing_extensions import Unpack
 
 from reflex_base import otel
 from reflex_base.context.base import BaseContext
@@ -15,8 +19,11 @@ from reflex_base.utils.format import to_snake_case
 if TYPE_CHECKING:
     from opentelemetry.context import Context
 
-    from reflex.istate.manager import StateManager
+    from reflex.istate.manager import StateManager, StateModificationContext
+    from reflex.istate.manager.token import StateToken
     from reflex_base.event import Event
+
+T = TypeVar("T")
 
 
 @functools.lru_cache
@@ -74,6 +81,26 @@ class EmitDeltaProtocol(Protocol):
         ...
 
 
+@dataclasses.dataclass(slots=True, eq=False)
+class _HeldStateLock:
+    """A state manager lock held by an EventContext for one ident."""
+
+    # The task holding the lock, which may re-enter it.
+    owner: asyncio.Task | None
+    # The modification context passed when the lock was acquired.
+    context: StateModificationContext
+    # How many times the owner entered the lock.
+    depth: int = 1
+    # The lease returned by the state manager once the lock is acquired.
+    lease: Any = None
+    # Releases the state manager lock.
+    exit_stack: contextlib.AsyncExitStack = dataclasses.field(
+        default_factory=contextlib.AsyncExitStack
+    )
+    # Set once this lock is released, for other tasks of the context waiting on it.
+    released: asyncio.Event = dataclasses.field(default_factory=asyncio.Event)
+
+
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True, eq=False)
 class EventContext(BaseContext):
     """The context for an event."""
@@ -98,7 +125,29 @@ class EventContext(BaseContext):
     emit_event_impl: EmitEventProtocol | None = dataclasses.field(
         default=None, repr=False
     )
-    cached_states: dict[type, Any] = dataclasses.field(
+    # The states checked out by this context, by the str of their token: one
+    # instance per state class and ident, which trees are linked from.
+    cached_states: dict[str, Any] = dataclasses.field(
+        default_factory=dict, init=False, repr=False
+    )
+    # The tokens of the checked out states, by ident then by the token's str.
+    _state_tokens: dict[str, dict[str, StateToken]] = dataclasses.field(
+        default_factory=dict, init=False, repr=False
+    )
+    # The token of each checked out state, by the id of the state.
+    _state_tokens_by_id: dict[int, StateToken] = dataclasses.field(
+        default_factory=dict, init=False, repr=False
+    )
+    # The str of the tokens whose required states are all checked out.
+    _complete_states: set[str] = dataclasses.field(
+        default_factory=set, init=False, repr=False
+    )
+    # The state manager locks held by this context, by ident.
+    _held_state_locks: dict[str, _HeldStateLock] = dataclasses.field(
+        default_factory=dict, init=False, repr=False
+    )
+    # Counts the acquisitions of each ident's lock, to detect a load racing one.
+    _state_lock_generations: dict[str, int] = dataclasses.field(
         default_factory=dict, init=False, repr=False
     )
     # OpenTelemetry context active when this event was enqueued (None when tracing is off).
@@ -155,3 +204,174 @@ class EventContext(BaseContext):
             event: The event to enqueue.
         """
         await self.enqueue_impl(self.token, *event)
+
+    def state_token(self, state: Any) -> StateToken | None:
+        """Get the token a state was checked out with in this context.
+
+        Args:
+            state: The state instance.
+
+        Returns:
+            The token, or None if the state was not checked out in this context.
+        """
+        return self._state_tokens_by_id.get(id(state))
+
+    def _cache_state(self, token: StateToken, state: Any) -> None:
+        """Check out a state in this context and link it to the ones it relates to.
+
+        Args:
+            token: The token of the state.
+            state: The state instance.
+        """
+        key = str(token)
+        self.cached_states[key] = state
+        self._state_tokens.setdefault(token.ident, {})[key] = token
+        self._state_tokens_by_id[id(state)] = token
+        token.link(state, self.cached_states)
+
+    async def get_state(self, token: StateToken[T]) -> T:
+        """Get the state for a token, loading it into this context if needed.
+
+        The states the token requires are loaded along with it and linked
+        together, so every lookup in this context sees the same instances.
+
+        Args:
+            token: The token of the state.
+
+        Returns:
+            The state checked out for the token.
+        """
+        key = str(token)
+        if key in self._complete_states:
+            return self.cached_states[key]
+        ident = token.ident
+        while missing := [
+            required
+            for required in token.required_tokens()
+            if str(required) not in self.cached_states
+        ]:
+            generation = self._state_lock_generations.get(ident)
+            states = await self.state_manager.load_states(missing)
+            if self._state_lock_generations.get(ident) != generation:
+                # The lock was acquired while loading: load again under it.
+                continue
+            for required, state in zip(missing, states, strict=True):
+                # Another task of this context may have checked it out meanwhile.
+                if str(required) not in self.cached_states:
+                    self._cache_state(required, state)
+        self._complete_states.add(key)
+        return self.cached_states[key]
+
+    async def _refresh_states(self, ident: str) -> None:
+        """Bring the states checked out for an ident up to date with the stored ones.
+
+        Args:
+            ident: The ident whose lock was just acquired.
+        """
+        if not (tokens := self._state_tokens.get(ident)):
+            return
+        stored_states = await self.state_manager.load_states(
+            list(tokens.values()), create=False
+        )
+        for (key, token), stored in zip(tokens.items(), stored_states, strict=True):
+            state = self.cached_states[key]
+            if stored is None or stored is state:
+                continue
+            if (refreshed := token.refresh(state, stored)) is not state:
+                self.cached_states[key] = refreshed
+                del self._state_tokens_by_id[id(state)]
+                self._state_tokens_by_id[id(refreshed)] = token
+
+    async def _acquire_state_lock(
+        self, token: StateToken, context: StateModificationContext
+    ) -> _HeldStateLock:
+        """Acquire the state manager lock for a token's ident.
+
+        The task holding the lock may enter it again, other tasks wait for it.
+
+        Args:
+            token: The token to lock.
+            context: The state modification context.
+
+        Returns:
+            The held lock.
+        """
+        ident = token.ident
+        task = asyncio.current_task()
+        while (held := self._held_state_locks.get(ident)) is not None:
+            if held.owner is task:
+                held.depth += 1
+                return held
+            await held.released.wait()
+        held = self._held_state_locks[ident] = _HeldStateLock(
+            owner=task, context=context
+        )
+        try:
+            held.lease = await held.exit_stack.enter_async_context(
+                self.state_manager.lock(token, **context)
+            )
+            self._state_lock_generations[ident] = (
+                self._state_lock_generations.get(ident, 0) + 1
+            )
+            await self._refresh_states(ident)
+        except BaseException:
+            del self._held_state_locks[ident]
+            try:
+                await held.exit_stack.aclose()
+            finally:
+                held.released.set()
+            raise
+        return held
+
+    async def _release_state_lock(
+        self, ident: str, held: _HeldStateLock, store: bool
+    ) -> None:
+        """Leave the state manager lock for an ident, releasing it when leaving the outermost.
+
+        Args:
+            ident: The locked ident.
+            held: The held lock.
+            store: Whether to store the ident's states before releasing the lock.
+        """
+        held.depth -= 1
+        if held.depth:
+            return
+        del self._held_state_locks[ident]
+        try:
+            async with held.exit_stack:
+                if store and (tokens := self._state_tokens.get(ident)):
+                    await self.state_manager.store_states(
+                        [
+                            (token, self.cached_states[key])
+                            for key, token in tokens.items()
+                        ],
+                        held.lease,
+                        **held.context,
+                    )
+        finally:
+            held.released.set()
+
+    @contextlib.asynccontextmanager
+    async def modify_state(
+        self, token: StateToken[T], **context: Unpack[StateModificationContext]
+    ) -> AsyncIterator[T]:
+        """Get the state for a token while holding the lock on its ident.
+
+        Acquiring the lock refreshes the states of the ident checked out in
+        this context, and releasing it stores them. The task holding the lock
+        may enter it again.
+
+        Args:
+            token: The token of the state.
+            context: The state modification context.
+
+        Yields:
+            The state checked out for the token.
+        """
+        held = await self._acquire_state_lock(token, context)
+        store = False
+        try:
+            yield await self.get_state(token)
+            store = True
+        finally:
+            await self._release_state_lock(token.ident, held, store)

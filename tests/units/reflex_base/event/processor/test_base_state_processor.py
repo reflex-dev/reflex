@@ -868,16 +868,14 @@ async def test_failed_context_enter_does_not_mark_the_proxy_entered(
         msg = "state manager unavailable"
         raise RuntimeError(msg)
 
-    original = root_ctx.state_manager.modify_state_with_links
-    object.__setattr__(
-        root_ctx.state_manager, "modify_state_with_links", raise_on_modify
-    )
+    original = root_ctx.state_manager.lock
+    object.__setattr__(root_ctx.state_manager, "lock", raise_on_modify)
     try:
         with pytest.raises(RuntimeError, match="state manager unavailable"):
             async with proxy:
                 pass
     finally:
-        object.__setattr__(root_ctx.state_manager, "modify_state_with_links", original)
+        object.__setattr__(root_ctx.state_manager, "lock", original)
 
     assert proxy._self_entered_context is False
 
@@ -1078,7 +1076,7 @@ async def test_rehydrate_after_expiry_does_not_reload_the_previous_route(
         # concern, and what it leaves the processor with -- a fresh tree for a
         # known token -- is what the other managers are exercised on above.
         assert isinstance(state_manager, StateManagerMemory)
-        state_manager.states.pop(token)
+        state_manager._purge_ident(token)
         # The client, now on /page-b, sends the next event.
         await _send(
             processor, token, _client_event(ExpiredLoadState.ping(), _view("/page-b"))

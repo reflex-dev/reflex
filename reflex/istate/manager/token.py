@@ -46,6 +46,42 @@ class StateToken(Generic[TOKEN_TYPE]):
         """
         return str(self)
 
+    def required_tokens(self) -> list[Self]:
+        """Get the tokens of the states to load together with this one.
+
+        Returns:
+            The tokens, each after the ones it links to.
+        """
+        return [self]
+
+    def new_instance(self) -> TOKEN_TYPE:
+        """Create the state for this token when none is stored.
+
+        Returns:
+            A new instance of the token's class.
+        """
+        return self.cls()
+
+    def link(self, instance: TOKEN_TYPE, states: dict[str, TOKEN_TYPE]) -> None:
+        """Link a state into the states loaded together with it.
+
+        Args:
+            instance: The state for this token.
+            states: The states already linked, by their token's ``str``.
+        """
+
+    def refresh(self, instance: TOKEN_TYPE, stored: TOKEN_TYPE) -> TOKEN_TYPE:
+        """Bring a checked out state up to date with the stored one.
+
+        Args:
+            instance: The state checked out for this token.
+            stored: The state currently stored for this token.
+
+        Returns:
+            The up to date state, the stored one unless refreshed in place.
+        """
+        return stored
+
     @property
     def lock_key(self) -> str:
         """The key used for locking and session-level bookkeeping.
@@ -159,6 +195,61 @@ class BaseStateToken(StateToken["BaseState"]):
         # urlencode the redis token to escape the slash delimiter.
         return f"{self.ident}_{self.cls.get_full_name()}"
 
+    def required_tokens(self) -> list[Self]:
+        """Get the tokens of the states in the tree to load for this state.
+
+        These are the state's substates, the states whose computed vars may
+        depend on them, and the parents of all of those.
+
+        Returns:
+            The tokens, each parent before its substates.
+        """
+        return [
+            self.with_cls(cls)
+            for cls in sorted(
+                _required_state_classes(self.cls), key=lambda cls: cls.get_full_name()
+            )
+        ]
+
+    def new_instance(self) -> BaseState:
+        """Create the state for this token when none is stored.
+
+        Returns:
+            A new instance of the state, without substates: those are loaded
+            and linked on their own.
+        """
+        return self.cls(init_substates=False, _reflex_internal_init=True)
+
+    def link(self, instance: BaseState, states: dict[str, BaseState]) -> None:
+        """Link a state to its parent in the tree loaded together with it.
+
+        Args:
+            instance: The state for this token.
+            states: The states already linked, by their token's ``str``.
+        """
+        if (parent_cls := self.cls.get_parent_state()) is None:
+            return
+        parent = states[str(self.with_cls(parent_cls))]
+        parent.substates[self.cls.get_name()] = instance
+        instance.parent_state = parent
+
+    def refresh(self, instance: BaseState, stored: BaseState) -> BaseState:
+        """Copy the stored state's values into the checked out instance.
+
+        The instance stays linked in its tree, and its bookkeeping is kept.
+
+        Args:
+            instance: The state checked out for this token.
+            stored: The state currently stored for this token.
+
+        Returns:
+            The instance, refreshed in place.
+        """
+        fields = vars(instance)
+        fields.clear()
+        fields.update(vars(stored))
+        return instance
+
     @classmethod
     def serialize(cls, state: BaseState) -> bytes:
         """Serialize the BaseState for redis/disk storage.
@@ -242,3 +333,44 @@ class BaseStateToken(StateToken["BaseState"]):
         client_token, state_path = _split_substate_key(legacy_token)
         state_cls = root_state.get_class_substate(tuple(state_path.split(".")))  # type: ignore[union-attr]
         return cls(ident=client_token, cls=state_cls)
+
+
+def _required_state_classes(
+    target_state_cls: type[BaseState],
+    subclasses: bool = True,
+    required_state_classes: set[type[BaseState]] | None = None,
+) -> set[type[BaseState]]:
+    """Recursively determine which states are required to load the target state.
+
+    This always includes the potentially dirty states that depend on vars in
+    the target state, and the parents of every required state.
+
+    Args:
+        target_state_cls: The target state class being loaded.
+        subclasses: Whether to include the substates of the target state.
+        required_state_classes: The state classes already found, when recursing.
+
+    Returns:
+        The set of state classes required to load the target state.
+    """
+    if required_state_classes is None:
+        required_state_classes = set()
+    if subclasses:
+        for substate in target_state_cls.get_substates():
+            _required_state_classes(
+                substate, subclasses=True, required_state_classes=required_state_classes
+            )
+    if target_state_cls in required_state_classes:
+        return required_state_classes
+    required_state_classes.add(target_state_cls)
+    for pd_substate in target_state_cls._get_potentially_dirty_states():
+        _required_state_classes(
+            pd_substate, subclasses=False, required_state_classes=required_state_classes
+        )
+    if parent_state := target_state_cls.get_parent_state():
+        _required_state_classes(
+            parent_state,
+            subclasses=False,
+            required_state_classes=required_state_classes,
+        )
+    return required_state_classes

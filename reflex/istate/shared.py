@@ -5,10 +5,11 @@ import contextlib
 import logging
 from collections.abc import AsyncIterator
 from dataclasses import MISSING
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, cast
 
 from reflex_base.constants import ROUTER_DATA, ROUTER_VARS
 from reflex_base.event import Event, get_hydrate_event
+from reflex_base.event.context import EventContext
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_base.vars.base import _owner_state
@@ -269,8 +270,6 @@ class SharedStateBaseInternal(State):
         Returns:
             The events to rehydrate the state after unlinking (these should be returned/yielded).
         """
-        from reflex.istate.manager import get_state_manager
-
         if not isinstance(self, SharedState):
             msg = "Can only unlink SharedState instances."
             raise ReflexRuntimeError(msg)
@@ -288,13 +287,12 @@ class SharedStateBaseInternal(State):
         self._linked_from.discard(self.rx_router_session.client_token)
 
         # Patch in the original state, apply updates, then rehydrate.
-        private_root_state = await get_state_manager().get_state(
+        private_state = await EventContext.get().get_state(
             BaseStateToken(
                 ident=self.rx_router_session.client_token,
                 cls=type(self),
             )
         )
-        private_state = await private_root_state.get_state(type(self))
         async with _patch_state(
             original_state=self,
             linked_state=private_state,
@@ -326,24 +324,23 @@ class SharedStateBaseInternal(State):
         Returns:
             The state that was linked into the tree.
         """
-        from reflex.istate.manager import get_state_manager
-
         holder = self._linked_locks_holder()
         if holder._exit_stack is None or holder._held_locks is None:
             msg = "Cannot link shared state outside of _modify_linked_states context."
             raise ReflexRuntimeError(msg)
 
-        linked_root_state = None
+        ctx = EventContext.get()
+        linked_token = BaseStateToken(ident=token, cls=type(self))
 
         # Get the newly linked state and update pointers/delta for subsequent events.
         if token not in holder._held_locks:
             async with holder._held_locks_lock:
                 if token not in holder._held_locks:
-                    linked_root_state = await holder._exit_stack.enter_async_context(
-                        get_state_manager().modify_state(
-                            BaseStateToken(ident=token, cls=type(self))
+                    linked_root_state = (
+                        await holder._exit_stack.enter_async_context(
+                            ctx.modify_state(linked_token)
                         )
-                    )
+                    )._get_root_state()
                     holder._held_locks.setdefault(token, {})
                     # Set client_token on the linked root so that subsequent get_state
                     # calls when directly modifying a linked token will load the
@@ -356,11 +353,7 @@ class SharedStateBaseInternal(State):
                         linked_root_state.rx_router_session = dc.replace(
                             session, client_token=token
                         )
-        if linked_root_state is None:
-            linked_root_state = await get_state_manager().get_state(
-                BaseStateToken(ident=token, cls=type(self))
-            )
-        linked_state = await linked_root_state.get_state(type(self))
+        linked_state = cast("Self", await ctx.get_state(linked_token))
         if not isinstance(linked_state, SharedState):
             msg = f"Linked state for token {token} is not a SharedState."
             raise ReflexRuntimeError(msg)

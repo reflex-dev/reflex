@@ -13,6 +13,7 @@ from importlib.util import find_spec
 from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
+from reflex.istate.manager import modify_state_with_links
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import types
@@ -415,13 +416,15 @@ class BaseStateEventProcessor(EventProcessor):
         router_data = ctx.router_data
         acquire_start = perf_counter() if otel.enabled else 0.0
         # Get the state for the session exclusively.
-        async with ctx.state_manager.modify_state_with_links(
+        async with modify_state_with_links(
+            ctx,
             BaseStateToken(
                 ident=ctx.token,
                 cls=registered_handler.states[0],
             ),
             event=entry.event,
-        ) as state:
+        ) as handler_state:
+            state = handler_state._get_root_state()
             if otel.enabled:
                 otel.record_state_acquired(acquire_start, event)
             # Compatibility hack rehydrate the state before processing this event.
@@ -503,7 +506,8 @@ class BaseStateEventProcessor(EventProcessor):
                 # also when the handler raises, so the client gets the same
                 # refresh regardless of how the task ended.
                 try:
-                    async with ctx.state_manager.modify_state_with_links(
+                    async with modify_state_with_links(
+                        ctx,
                         BaseStateToken(
                             ident=ctx.token,
                             cls=registered_handler.states[0],

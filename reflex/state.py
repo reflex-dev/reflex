@@ -38,6 +38,7 @@ from reflex_base.event import (
     EventSpec,
     call_script,
 )
+from reflex_base.event.context import EventContext
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
     DynamicComponentInvalidSignatureError,
@@ -1627,43 +1628,38 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         return parent_state
 
     async def _get_state_from_redis(self, state_cls: type[T_STATE]) -> T_STATE:
-        """Get a state instance from redis.
+        """Load a state into this state's tree, through the current EventContext.
 
         Args:
             state_cls: The class of the state.
 
         Returns:
-            The instance of state_cls associated with this state's client_token.
+            The instance of state_cls associated with this state's tree.
 
         Raises:
-            RuntimeError: If redis is not used in this backend process.
             StateMismatchError: If the state instance is not of the expected type.
         """
-        from reflex.istate.manager import get_state_manager
-        from reflex.istate.manager.redis import StateManagerRedis
         from reflex.istate.manager.token import BaseStateToken
 
-        # Then get the target state and all its substates.
-        state_manager = get_state_manager()
-        if not isinstance(state_manager, StateManagerRedis):
-            msg = (
-                f"Requested state {state_cls.get_full_name()} is not cached and cannot be accessed without redis. "
-                "(All states should already be available -- this is likely a bug)."
+        ctx = EventContext.get()
+        root_state = self._get_root_state()
+        if (root_token := ctx.state_token(root_state)) is None:
+            # The tree was not checked out in this context: check it out in a
+            # new one, so the loaded state is linked into it.
+            root_token = BaseStateToken(
+                ident=root_state.rx_router_session.client_token, cls=type(root_state)
             )
-            raise RuntimeError(msg)
-        state_in_redis = await state_manager.get_state(
-            token=BaseStateToken(
-                ident=self.rx_router_session.client_token, cls=state_cls
-            ),
-            top_level=False,
-            for_state_instance=self,
-        )
-
-        if not isinstance(state_in_redis, state_cls):
-            msg = f"Searched for state {state_cls.get_full_name()} but found {state_in_redis}."
+            ctx = ctx.fork(token=root_token.ident)
+            pending = [root_state]
+            while pending:
+                state = pending.pop()
+                ctx._cache_state(root_token.with_cls(type(state)), state)
+                pending.extend(state.substates.values())
+        state = await ctx.get_state(root_token.with_cls(state_cls))
+        if not isinstance(state, state_cls):
+            msg = f"Searched for state {state_cls.get_full_name()} but found {state}."
             raise StateMismatchError(msg)
-
-        return state_in_redis
+        return state
 
     def _get_state_from_cache(self, state_cls: type[T_STATE]) -> T_STATE:
         """Get a state instance from the cache.

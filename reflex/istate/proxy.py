@@ -29,6 +29,7 @@ from reflex_base.utils.types import (
 from reflex_base.vars.base import Field
 from typing_extensions import Self
 
+from reflex.istate.manager import modify_state_with_links
 from reflex.istate.manager.token import BaseStateToken
 
 if TYPE_CHECKING:
@@ -235,15 +236,13 @@ class StateProxy(wrapt.ObjectProxy):
         await self._self_actx_lock.acquire()
         try:
             self._self_actx_lock_holder = current_task
-            self._self_actx = ctx.state_manager.modify_state_with_links(
-                token=self._self_substate_token, event=self._self_event
+            self._self_actx = modify_state_with_links(
+                ctx, self._self_substate_token, event=self._self_event
             )
             mutable_state = await self._self_actx.__aenter__()
             self._self_mutable = True
             self._self_entered_context = True
-            super().__setattr__(
-                "__wrapped__", mutable_state.get_substate(self._self_substate_path)
-            )
+            super().__setattr__("__wrapped__", mutable_state)
         except (Exception, asyncio.CancelledError):
             # Restore the proxy to a consistent state since __aexit__ will not be called when __aenter__ raises.
             await self.__aexit__(*sys.exc_info())

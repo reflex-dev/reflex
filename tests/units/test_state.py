@@ -2653,7 +2653,8 @@ async def test_state_manager_lock_warning_threshold_contend(
         # When Oplock is enabled, we don't warn when lock is held too long.
         assert not lock_warnings
     else:
-        assert len(lock_warnings) == 7
+        # One warning when the tree is stored.
+        assert len(lock_warnings) == 1
 
 
 class CopyingAsyncMock(AsyncMock):
@@ -2794,21 +2795,12 @@ async def test_state_proxy(
     })
     grandchild_state.router = router_data
     state_manager = attached_mock_event_context.state_manager
-    if isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
-        state_manager.states[parent_state.router.session.client_token] = parent_state
-    elif isinstance(state_manager, StateManagerRedis):
-        pickle_state = parent_state._serialize()
-        if pickle_state:
-            await state_manager.redis.set(
-                str(
-                    BaseStateToken(
-                        ident=parent_state.router.session.client_token,
-                        cls=type(parent_state),
-                    )
-                ),
-                pickle_state,
-                ex=state_manager.token_expiration,
-            )
+    await state_manager.set_state(
+        BaseStateToken(
+            ident=parent_state.router.session.client_token, cls=type(parent_state)
+        ),
+        parent_state,
+    )
 
     sp = StateProxy(grandchild_state)
     assert sp.__wrapped__ == grandchild_state
@@ -3998,19 +3990,11 @@ async def test_get_state(token: str, attached_mock_event_context: EventContext):
         BaseStateToken(ident=token, cls=ChildState2)
     )
     assert isinstance(test_state, TestState)
-    if isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
-        # All substates are available
-        assert tuple(sorted(test_state.substates)) == (
-            ChildState.get_name(),
-            ChildState2.get_name(),
-            ChildState3.get_name(),
-        )
-    else:
-        # Sibling states are only populated if they have computed vars
-        assert tuple(sorted(test_state.substates)) == (
-            ChildState2.get_name(),
-            ChildState3.get_name(),
-        )
+    # Sibling states are only populated if they have computed vars
+    assert tuple(sorted(test_state.substates)) == (
+        ChildState2.get_name(),
+        ChildState3.get_name(),
+    )
 
     # Because ChildState3 has a computed var, it is always dirty, and always populated.
     grandchild_state3 = test_state.substates[ChildState3.get_name()].substates[
@@ -4057,10 +4041,17 @@ async def test_get_state(token: str, attached_mock_event_context: EventContext):
         },
     }
 
-    # Get a fresh instance
-    new_test_state = await state_manager.get_state(
-        BaseStateToken(ident=token, cls=ChildState2)
+    # The same context checks out the same instance.
+    assert (
+        await state_manager.get_state(BaseStateToken(ident=token, cls=ChildState2))
+        is test_state
     )
+
+    # Get the state in a new context
+    with attached_mock_event_context.fork():
+        new_test_state = await state_manager.get_state(
+            BaseStateToken(ident=token, cls=ChildState2)
+        )
     assert isinstance(new_test_state, TestState)
     if isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
         # In memory, it's the same instance
