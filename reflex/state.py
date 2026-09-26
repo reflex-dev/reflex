@@ -1021,6 +1021,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         # Reset cached schema value
         cls._to_schema.cache_clear()
+        RegistrationContext.state_tree_changed()
 
     @classmethod
     def _iter_functions(cls) -> Iterator[tuple[str, FunctionType]]:

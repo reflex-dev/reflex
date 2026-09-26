@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import dataclasses
 import pickle
+import weakref
 from typing import TYPE_CHECKING, BinaryIO, Generic, TypeVar
 
+from reflex_base.registry import RegistrationContext
 from typing_extensions import Self
 
 from reflex.utils import console
@@ -35,7 +37,7 @@ class StateToken(Generic[TOKEN_TYPE]):
         Returns:
             A new StateToken instance with the updated cls field.
         """
-        return dataclasses.replace(self, cls=cls)
+        return type(self)(ident=self.ident, cls=cls)
 
     @property
     def cache_key(self) -> str:
@@ -204,12 +206,7 @@ class BaseStateToken(StateToken["BaseState"]):
         Returns:
             The tokens, each parent before its substates.
         """
-        return [
-            self.with_cls(cls)
-            for cls in sorted(
-                _required_state_classes(self.cls), key=lambda cls: cls.get_full_name()
-            )
-        ]
+        return [self.with_cls(cls) for cls in _sorted_required_state_classes(self.cls)]
 
     def new_instance(self) -> BaseState:
         """Create the state for this token when none is stored.
@@ -333,6 +330,38 @@ class BaseStateToken(StateToken["BaseState"]):
         client_token, state_path = _split_substate_key(legacy_token)
         state_cls = root_state.get_class_substate(tuple(state_path.split(".")))  # type: ignore[union-attr]
         return cls(ident=client_token, cls=state_cls)
+
+
+# The sorted required state classes of each state class, with the registry and
+# state tree version they were computed for.
+_REQUIRED_STATE_CLASSES: weakref.WeakKeyDictionary[
+    type[BaseState],
+    tuple[RegistrationContext, int, tuple[type[BaseState], ...]],
+] = weakref.WeakKeyDictionary()
+
+
+def _sorted_required_state_classes(
+    state_cls: type[BaseState],
+) -> tuple[type[BaseState], ...]:
+    """Get the state classes required to load a state, each parent before its substates.
+
+    Args:
+        state_cls: The state class being loaded.
+
+    Returns:
+        The required state classes, sorted by full name.
+    """
+    registry = RegistrationContext.get()
+    version = RegistrationContext.state_tree_version
+    if (cached := _REQUIRED_STATE_CLASSES.get(state_cls)) is not None and cached[
+        :2
+    ] == (registry, version):
+        return cached[2]
+    classes = tuple(
+        sorted(_required_state_classes(state_cls), key=lambda cls: cls.get_full_name())
+    )
+    _REQUIRED_STATE_CLASSES[state_cls] = (registry, version, classes)
+    return classes
 
 
 def _required_state_classes(

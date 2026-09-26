@@ -2984,6 +2984,9 @@ class ComputedVar(Var[RETURN_TYPE]):
                 )
                 registered = True
             if registered:
+                from reflex_base.registry import RegistrationContext
+
+                RegistrationContext.state_tree_changed()
                 return
         msg = (
             "ComputedVar dependencies must be Var instances with a state and "

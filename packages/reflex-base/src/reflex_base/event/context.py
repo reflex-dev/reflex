@@ -216,14 +216,18 @@ class EventContext(BaseContext):
         """
         return self._state_tokens_by_id.get(id(state))
 
-    def _cache_state(self, token: StateToken, state: Any) -> None:
+    def _cache_state(
+        self, token: StateToken, state: Any, key: str | None = None
+    ) -> None:
         """Check out a state in this context and link it to the ones it relates to.
 
         Args:
             token: The token of the state.
             state: The state instance.
+            key: The str of the token, if already computed.
         """
-        key = str(token)
+        if key is None:
+            key = str(token)
         self.cached_states[key] = state
         self._state_tokens.setdefault(token.ident, {})[key] = token
         self._state_tokens_by_id[id(state)] = token
@@ -245,20 +249,25 @@ class EventContext(BaseContext):
         if key in self._complete_states:
             return self.cached_states[key]
         ident = token.ident
-        while missing := [
-            required
-            for required in token.required_tokens()
-            if str(required) not in self.cached_states
-        ]:
+        required_tokens = token.required_tokens()
+        cached_states = self.cached_states
+        while missing := {
+            required_key: required
+            for required in required_tokens
+            if (required_key := str(required)) not in cached_states
+        }:
             generation = self._state_lock_generations.get(ident)
-            states = await self.state_manager.load_states(missing)
+            states = await self.state_manager.load_states(list(missing.values()))
             if self._state_lock_generations.get(ident) != generation:
                 # The lock was acquired while loading: load again under it.
                 continue
-            for required, state in zip(missing, states, strict=True):
+            for (required_key, required), state in zip(
+                missing.items(), states, strict=True
+            ):
                 # Another task of this context may have checked it out meanwhile.
-                if str(required) not in self.cached_states:
-                    self._cache_state(required, state)
+                if required_key not in cached_states:
+                    self._cache_state(required, state, required_key)
+            break
         self._complete_states.add(key)
         return self.cached_states[key]
 
