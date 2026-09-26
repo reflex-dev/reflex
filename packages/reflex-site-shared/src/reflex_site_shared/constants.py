@@ -36,8 +36,10 @@ TWITTER_CREATOR = "@getreflex"
 
 API_BASE_URL_LOOPS: str = "https://app.loops.so/api/v1"
 REFLEX_DEV_WEB_NEWSLETTER_FORM_WEBHOOK_URL: str = "https://hkdk.events/t0qopjbznnp2fr"
-REFLEX_DEV_WEB_GENERAL_FORM_FEEDBACK_WEBHOOK_URL: str = os.environ.get(
-    "REFLEX_DEV_WEB_GENERAL_FORM_FEEDBACK_WEBHOOK_URL", ""
+SLACK_BOT_TOKEN: str = os.environ.get("SLACK_BOT_TOKEN", "")
+SLACK_DOCS_FEEDBACK_CHANNEL: str = os.environ.get("SLACK_DOCS_FEEDBACK_CHANNEL", "")
+SLACK_INTEGRATION_REQUEST_CHANNEL: str = os.environ.get(
+    "SLACK_INTEGRATION_REQUEST_CHANNEL", ""
 )
 RECENT_BLOGS_API_URL: str = os.environ.get(
     "RECENT_BLOGS_API_URL", "https://reflex.dev/blog-api/api/v1/recent-blogs"

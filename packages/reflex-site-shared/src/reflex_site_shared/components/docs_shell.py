@@ -10,6 +10,7 @@ import reflex_components_internal as ui
 from reflex_components_internal.blocks.demo_form import demo_form_dialog
 
 import reflex as rx
+from reflex_site_shared.backend.slack import escape_slack_text, post_to_slack
 from reflex_site_shared.backend.status import StatusState
 from reflex_site_shared.components.icons import get_icon
 from reflex_site_shared.components.marketing_button import button
@@ -19,6 +20,7 @@ from reflex_site_shared.constants import (
     FORUM_URL,
     GITHUB_URL,
     LINKEDIN_URL,
+    SLACK_DOCS_FEEDBACK_CHANNEL,
     TWITTER_URL,
 )
 from reflex_site_shared.views.footer import dark_mode_toggle
@@ -40,13 +42,54 @@ class DocsFeedbackState(rx.State):
         self.score = score
 
     @rx.event
-    def handle_submit(self, form_data: dict[str, Any]) -> None:
-        """Accept an optional documentation feedback comment.
+    def handle_submit(self, form_data: dict[str, Any]) -> rx.event.EventSpec:
+        """Capture the selected score and page, then post the feedback.
+
+        Runs in order with the reader's score selection, and hands the Slack
+        request to a background task so it does not hold the state lock.
 
         Args:
             form_data: Submitted feedback fields.
+
+        Returns:
+            The background event that posts the feedback.
         """
-        del form_data
+        return DocsFeedbackState.post_feedback(form_data, self.score, self.router.url)
+
+    @rx.event(background=True)
+    async def post_feedback(
+        self, form_data: dict[str, Any], score: int, page: str
+    ) -> rx.event.EventSpec:
+        """Post a documentation feedback comment to the docs feedback Slack channel.
+
+        Args:
+            form_data: Submitted feedback fields.
+            score: The selected feedback score.
+            page: The URL of the page the feedback is about.
+
+        Returns:
+            A toast telling the reader whether the feedback was sent.
+        """
+        feedback = form_data.get("feedback", "")
+        if not 10 <= len(feedback) <= 500:
+            return rx.toast.warning(
+                "Please enter your feedback. Between 10 and 500 characters.",
+                close_button=True,
+            )
+
+        message = (
+            f"Contact: {escape_slack_text(form_data.get('email', ''))}\n"
+            f"Page: {escape_slack_text(page)}\n"
+            f"Score: {({1: '👍', 0: '👎'}).get(score, 'none')}\n"
+            f"Feedback: {escape_slack_text(feedback)}"
+        )
+        if not await post_to_slack(message, SLACK_DOCS_FEEDBACK_CHANNEL):
+            return rx.toast.error(
+                "An error occurred while submitting your feedback. If the issue "
+                "persists, please file a GitHub issue or stop by our Discord.",
+                close_button=True,
+            )
+        return rx.toast.success("Thank you for your feedback!", close_button=True)
 
 
 def docs_navbar_frame(
