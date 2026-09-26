@@ -128,12 +128,10 @@ def test_plotly_layout_var_data_is_preserved(plotly_fig: go.Figure):
     class PlotlyState(rx.State):
         layout: dict = {"title": "layout title"}
 
-    plotly = rx.plotly(data=plotly_fig, layout=PlotlyState.layout)
-    rendered = plotly._render()
-    layout = getattr(plotly, "layout")
-    assert isinstance(layout, rx.Var)
+    layout = PlotlyState.layout
+    rendered = rx.plotly(data=plotly_fig, layout=layout)._render()
     var_data = layout._get_all_var_data()
 
     assert var_data is not None
     assert "layout" in var_data.field_name
-    assert str(PlotlyState.layout) in str(rendered.special_props[-1])
+    assert str(layout) in str(rendered.special_props[-1])
