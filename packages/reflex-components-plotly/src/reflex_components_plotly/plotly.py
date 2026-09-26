@@ -344,8 +344,10 @@ const _rxGetPlotlyLocaleConfig = (config, locale, plotlyLocales) => {
                     *tag.special_props,
                     # Merge all dictionaries and spread the result over props.
                     Var(
-                        _js_expr=f"{{...mergician({figure!s},"
-                        f"{','.join(f'{md}' for md in merge_dicts)})}}",
+                        _js_expr=(
+                            f"{{ ...mergician({figure!s}, "
+                            f"...{Var.create(merge_dicts)!s}) }}"
+                        ),
                     ),
                 ]
             )
