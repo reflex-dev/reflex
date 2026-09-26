@@ -299,28 +299,41 @@ def _mock_slack(monkeypatch, delivered: bool) -> list[tuple[str, str]]:
     return posts
 
 
-def _feedback_state(score: int) -> DocsFeedbackState:
-    """Create a feedback state on a docs page with a selected score.
-
-    Args:
-        score: The selected feedback score.
+def _feedback_state() -> DocsFeedbackState:
+    """Create a feedback state.
 
     Returns:
         The feedback state.
     """
     root = rx.State(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
-    root.router = RouterData(url=ReflexURL("https://reflex.dev/docs/guide/"))
-    state = cast(DocsFeedbackState, root.get_substate([DocsFeedbackState.get_name()]))
-    state.score = score
-    return state
+    return cast(DocsFeedbackState, root.get_substate([DocsFeedbackState.get_name()]))
 
 
-async def test_feedback_submission_is_posted_to_slack(monkeypatch) -> None:
+def test_feedback_submission_captures_score_and_page() -> None:
+    """Forward the selected score and page to the background post in event order."""
+    state = _feedback_state()
+    state.router = RouterData(url=ReflexURL("https://reflex.dev/docs/guide/"))
+    state.score = 0
+    form_data = {"feedback": "The example is outdated."}
+
+    event = DocsFeedbackState.handle_submit.fn(state, form_data)
+
+    assert event.handler.fn is DocsFeedbackState.post_feedback.fn
+    assert [arg[1]._var_value for arg in event.args] == [  # pyright: ignore[reportAttributeAccessIssue]
+        form_data,
+        0,
+        "https://reflex.dev/docs/guide/",
+    ]
+
+
+async def test_feedback_is_posted_to_slack(monkeypatch) -> None:
     """Post the page, score, contact and escaped comment to the feedback channel."""
     posts = _mock_slack(monkeypatch, delivered=True)
-    toast = await DocsFeedbackState.handle_submit.fn(
-        _feedback_state(0),
+    toast = await DocsFeedbackState.post_feedback.fn(
+        _feedback_state(),
         {"feedback": "Outdated <!channel> example.", "email": "dev@example.com"},
+        0,
+        "https://reflex.dev/docs/guide/",
     )
 
     assert len(posts) == 1
@@ -333,12 +346,12 @@ async def test_feedback_submission_is_posted_to_slack(monkeypatch) -> None:
     assert "Thank you for your feedback!" in str(toast)
 
 
-async def test_feedback_submission_reports_undelivered_posts(monkeypatch) -> None:
+async def test_feedback_post_reports_undelivered_posts(monkeypatch) -> None:
     """Tell the reader when their feedback could not be delivered."""
     posts = _mock_slack(monkeypatch, delivered=False)
 
-    toast = await DocsFeedbackState.handle_submit.fn(
-        _feedback_state(1), {"feedback": "Great page, thanks!"}
+    toast = await DocsFeedbackState.post_feedback.fn(
+        _feedback_state(), {"feedback": "Great page, thanks!"}, 1, "/docs/"
     )
 
     assert len(posts) == 1
@@ -346,13 +359,11 @@ async def test_feedback_submission_reports_undelivered_posts(monkeypatch) -> Non
 
 
 @pytest.mark.parametrize("feedback", ["too short", "x" * 501])
-async def test_feedback_submission_rejects_invalid_length(
-    monkeypatch, feedback: str
-) -> None:
+async def test_feedback_post_rejects_invalid_length(monkeypatch, feedback: str) -> None:
     """Warn about comments outside the accepted length without sending them."""
     posts = _mock_slack(monkeypatch, delivered=True)
-    toast = await DocsFeedbackState.handle_submit.fn(
-        _feedback_state(1), {"feedback": feedback}
+    toast = await DocsFeedbackState.post_feedback.fn(
+        _feedback_state(), {"feedback": feedback}, 1, "/docs/"
     )
 
     assert posts == []

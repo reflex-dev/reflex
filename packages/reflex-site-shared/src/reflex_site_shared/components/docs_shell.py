@@ -41,14 +41,31 @@ class DocsFeedbackState(rx.State):
         """
         self.score = score
 
-    @rx.event(background=True)
-    async def handle_submit(self, form_data: dict[str, Any]) -> rx.event.EventSpec:
-        """Post a documentation feedback comment to the docs feedback Slack channel.
+    @rx.event
+    def handle_submit(self, form_data: dict[str, Any]) -> rx.event.EventSpec:
+        """Capture the selected score and page, then post the feedback.
 
-        Runs as a background task so the Slack request does not hold the state lock.
+        Runs in order with the reader's score selection, and hands the Slack
+        request to a background task so it does not hold the state lock.
 
         Args:
             form_data: Submitted feedback fields.
+
+        Returns:
+            The background event that posts the feedback.
+        """
+        return DocsFeedbackState.post_feedback(form_data, self.score, self.router.url)
+
+    @rx.event(background=True)
+    async def post_feedback(
+        self, form_data: dict[str, Any], score: int, page: str
+    ) -> rx.event.EventSpec:
+        """Post a documentation feedback comment to the docs feedback Slack channel.
+
+        Args:
+            form_data: Submitted feedback fields.
+            score: The selected feedback score.
+            page: The URL of the page the feedback is about.
 
         Returns:
             A toast telling the reader whether the feedback was sent.
@@ -60,13 +77,10 @@ class DocsFeedbackState(rx.State):
                 close_button=True,
             )
 
-        async with self:
-            score = {1: "👍", 0: "👎"}.get(self.score, "none")
-            page = self.router.url
         message = (
             f"Contact: {escape_slack_text(form_data.get('email', ''))}\n"
             f"Page: {escape_slack_text(page)}\n"
-            f"Score: {score}\n"
+            f"Score: {({1: '👍', 0: '👎'}).get(score, 'none')}\n"
             f"Feedback: {escape_slack_text(feedback)}"
         )
         if not await post_to_slack(message, SLACK_DOCS_FEEDBACK_CHANNEL):
