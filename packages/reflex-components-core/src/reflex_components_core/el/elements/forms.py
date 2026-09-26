@@ -69,13 +69,12 @@ def _handle_submit_js_template(
         const {form_data} = {{
             ...Object.fromEntries(new FormData($form).entries()),
             ...Object.fromEntries(Object.entries({field_ref_mapping}).filter(([key]) => {{
-                const elementIdentifier = ({field_ref_id_mapping})[key]
-                const element = elementIdentifier
-                    ? document.getElementById(elementIdentifier)
+                const mappedIdentifier = ({field_ref_id_mapping})[key]
+                const elementIdentifier = mappedIdentifier ?? key
+                const element = document.getElementById(elementIdentifier)
                     || Array.from($form.querySelectorAll("[name]")).find(
                         (candidate) => candidate.getAttribute("name") === elementIdentifier
                     )
-                    : null
                 const isNativeControl = element && (
                     ["SELECT", "TEXTAREA"].includes(element.tagName)
                     || (
@@ -87,8 +86,11 @@ def _handle_submit_js_template(
                 return element && $form.contains(element) && (
                     isNativeControl
                     || ["checkbox", "radio", "slider", "switch"].includes(role)
-                    || element.querySelector(
-                        "[role='checkbox'], [role='radio'], [role='slider'], [role='switch']"
+                    || (
+                        mappedIdentifier !== undefined
+                        && element.querySelector(
+                            "[role='checkbox'], [role='radio'], [role='slider'], [role='switch']"
+                        )
                     )
                 )
             }}))
