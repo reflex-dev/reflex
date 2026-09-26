@@ -431,9 +431,10 @@ class Form(BaseHTML):
             )
             if ref is None or not isinstance(element_identifier, str):
                 continue
-            if ref.startswith("refs_"):
-                continue
-            form_ref_ids[ref[4:]] = element_identifier
+            field_key = (
+                ref[len("refs_") : -3] if ref.startswith("refs_") else ref[4:]
+            )
+            form_ref_ids[field_key] = element_identifier
         return form_ref_ids
 
     def _get_static_form_field_keys(self) -> tuple[set[str], bool]:
