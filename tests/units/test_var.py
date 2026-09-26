@@ -533,6 +533,16 @@ def test_dict_contains(var, expected):
     assert str(var.contains(other_var)) == f"{expected}.hasOwnProperty(other)"
 
 
+def test_var_replace_var_data():
+    original_var_data = VarData(imports={"react": [ImportVar(tag="useRef")]})
+    replacement_var_data = VarData(hooks={"const value = 1": None})
+    var = Var(_js_expr="value", _var_data=original_var_data)
+
+    replaced = var._replace(_var_data=replacement_var_data)
+
+    assert replaced._var_data == replacement_var_data
+
+
 @pytest.mark.parametrize(
     "var",
     [
