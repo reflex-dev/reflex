@@ -170,6 +170,10 @@ export const evalReactComponent = async (component) => {
   if (!window.React && window.__reflex) {
     window.React = window.__reflex.react;
   }
+  const libraryMetadata = component.match(/^\/\/__reflex_evaluate:(.*)$/m)?.[1];
+  if (libraryMetadata) {
+    await window.__reflex_load?.(JSON.parse(libraryMetadata));
+  }
   const encodedJs = encodeURIComponent(component);
   const dataUri = "data:text/javascript;charset=utf-8," + encodedJs;
   const module = await eval(`import(dataUri)`);
