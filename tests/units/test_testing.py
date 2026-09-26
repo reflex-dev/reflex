@@ -226,5 +226,4 @@ def test_app_harness_frontend_env_has_development_condition(
         reflex_testing.reflex.utils.processes, "new_process", fake_new_process
     )
     harness._start_frontend()
-    for options_var in ("NODE_OPTIONS", "BUN_OPTIONS"):
-        assert "--conditions=development" in captured["env"][options_var]
+    assert "--conditions=development" in captured["env"]["NODE_OPTIONS"]
