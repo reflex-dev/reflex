@@ -75,24 +75,30 @@ def _handle_submit_js_template(
                     || Array.from($form.querySelectorAll("[name]")).find(
                         (candidate) => candidate.getAttribute("name") === elementIdentifier
                     )
+                const isMappedControl = mappedIdentifier !== undefined
+                const nativeControlTags = ["SELECT", "TEXTAREA"]
+                const excludedInputTypes = ["button", "image", "reset", "submit"]
+                const compositeControlRoles = ["checkbox", "radio", "slider", "switch"]
                 const isNativeControl = element && (
-                    ["SELECT", "TEXTAREA"].includes(element.tagName)
+                    nativeControlTags.includes(element.tagName)
                     || (
                         element.tagName === "INPUT"
-                        && !["button", "image", "reset", "submit"].includes(element.type)
+                        && !excludedInputTypes.includes(element.type)
                     )
                 )
                 const role = element?.getAttribute("role")
-                return element && $form.contains(element) && (
-                    isNativeControl
-                    || ["checkbox", "radio", "slider", "switch"].includes(role)
-                    || (
-                        mappedIdentifier !== undefined
-                        && element.querySelector(
+                const isCompositeControl = isMappedControl
+                    && (
+                        compositeControlRoles.includes(role)
+                        || element?.querySelector(
                             "[role='checkbox'], [role='radio'], [role='slider'], [role='switch']"
                         )
                     )
+                const isFormControl = element && $form.contains(element) && (
+                    isNativeControl || isCompositeControl
                 )
+                // Mapped controls may expose their value through a ref without a DOM id.
+                return isMappedControl ? (!element || isFormControl) : isFormControl
             }}))
         }};
 
