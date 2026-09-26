@@ -288,6 +288,7 @@ async def wait_for_done(
                 )
             if done and done >= count:
                 return time.monotonic() - started
+            # Twenty milliseconds, which is short against the run it measures.
             await asyncio.sleep(0.02)
         msg = f"only {done} of {count} finished in {timeout}s"
         raise TimeoutError(msg)

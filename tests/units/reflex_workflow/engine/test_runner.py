@@ -19,6 +19,7 @@ import psycopg
 import pytest
 import pytest_asyncio
 from sqlalchemy import DateTime, String, func, insert, literal, select, update
+from sqlalchemy import event as sa_event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -51,6 +52,7 @@ from reflex_workflow.engine import claim, execute, notify, runner, runtime  # no
 from reflex_workflow.model import REGISTRY  # noqa: E402
 
 LEASE = datetime.timedelta(seconds=2)
+MINUTE = datetime.timedelta(minutes=1)
 
 EVENTS: list[str] = []
 
@@ -1588,7 +1590,7 @@ async def insert_repeating(key: str, mode: str, due: datetime.timedelta) -> list
 
 async def test_an_interval_keeps_its_grid_and_skips_what_was_missed(session_factory):
     key = uuid.uuid4().hex
-    minute = datetime.timedelta(minutes=1)
+    minute = MINUTE
     # Due nine and a half minutes ago: ten intervals on from there is still ahead.
     pk = await insert_repeating(key, "interval", datetime.timedelta(seconds=570))
     before = await Repeating.by(Repeating.key == key).get()
@@ -3338,3 +3340,156 @@ async def test_a_table_that_cannot_be_asked_does_not_decide_the_wait(session_fac
     finally:
         await Resting.by(Resting.key == key).cancel()
         REGISTRY.pop(Absent.__tablename__, None)
+
+
+async def test_cancel_leaves_a_step_already_running_its_lease(session_factory):
+    key = uuid.uuid4().hex
+    await RaceReview(key=key).start(RaceReview.submit())
+    pk = await pk_of(RaceReview, key)
+    await claim_row(RaceReview, pk)
+
+    assert await RaceReview.by(RaceReview.key == key).cancel() == 1
+
+    row = await RaceReview.by(RaceReview.key == key).get()
+    assert row is not None
+    # A run started again straight afterwards waits for the cancelled step to
+    # be done rather than acting beside it.
+    assert row.claimed_until is not None
+
+
+async def test_a_child_that_finishes_as_it_is_cancelled_counts_once(session_factory):
+    key = uuid.uuid4().hex
+    await Joined(key=key).start(Joined.split)
+    parent_pk = await pk_of(Joined, key)
+    assert await step_row(Joined, parent_pk) == "ok"
+
+    # The child finishes under the cancel, which is the race the lock closes:
+    # counted by its own commit, it must not be counted by the cancel as well.
+    assert await step_row(Leaf, await pk_of(Leaf, f"{key}-0")) == "ok"
+    assert await Leaf.by(Leaf.key == f"{key}-0").cancel() == 0
+
+    parent = await Joined.by(Joined.key == key).get()
+    assert parent is not None
+    assert parent.children_left == 2
+    assert EVENTS.count(f"joined-report:{key}") == 0
+
+
+async def test_a_run_holding_its_answer_is_due_now(session_factory):
+    rt = runtime.current()
+    only: dict[type[Workflow], list[str] | None] = {Resting: None}
+    await Resting.by().cancel()
+
+    async with session_factory() as session, session.begin():
+        # Parked on a wait, holding the answer, with no time of its own: the
+        # claim takes it, so the wait must not be sat out either.
+        await session.execute(
+            insert(Resting).values(
+                key=uuid.uuid4().hex,
+                waiting_for="rest",
+                pending_event={"step": "rest", "args": {}},
+                next_step=None,
+                wake_at=None,
+                attempts=0,
+                wf_version=0,
+            )
+        )
+
+    due = await claim.next_due(rt, [Resting], only)
+    assert due is not None
+    assert due <= datetime.timedelta()
+
+
+async def test_a_long_poll_interval_is_still_allowed(session_factory):
+    minute = MINUTE
+    # Longer than the default idle cap, which was allowed before there was one
+    # and has to stay allowed; a worker never waits less than it was told to.
+    worker = runner.Runner(runtime.current(), [Resting], 4, minute)
+    assert worker.max_idle_interval >= minute
+
+    engine = create_async_engine(ASYNC_URL)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    try:
+        async with run_workflows(factory, workflows=[Resting], poll_interval=minute):
+            pass
+        with pytest.raises(ValueError, match="cannot be shorter"):
+            async with run_workflows(
+                factory,
+                workflows=[Resting],
+                poll_interval=minute,
+                max_idle_interval=datetime.timedelta(seconds=1),
+            ):
+                pass
+    finally:
+        await engine.dispose()
+
+
+async def test_cancel_reads_its_rows_under_a_lock(session_factory):
+    key = uuid.uuid4().hex
+    await Joined(key=key).start(Joined.split)
+    assert await step_row(Joined, await pk_of(Joined, key)) == "ok"
+
+    statements: list[str] = []
+    bind = runtime.current().session_factory.kw["bind"]
+
+    def record(conn, cursor, statement, *args):
+        """Keep every statement the cancel sends.
+
+        Args:
+            conn: The connection.
+            cursor: Its cursor.
+            statement: The SQL.
+            *args: The rest of the event's arguments.
+        """
+        statements.append(statement)
+
+    sa_event.listen(bind.sync_engine, "before_cursor_execute", record)
+    try:
+        assert await Leaf.by(Leaf.key == f"{key}-0").cancel() == 1
+    finally:
+        sa_event.remove(bind.sync_engine, "before_cursor_execute", record)
+
+    # Read under a lock, so a child that finishes between being read and being
+    # cancelled cannot be counted by its own commit and by this one as well.
+    reads = [sql for sql in statements if sql.lstrip().upper().startswith("SELECT")]
+    assert reads
+    assert any("FOR UPDATE" in sql.upper() for sql in reads)
+
+
+async def test_a_child_that_finishes_before_the_cancel_is_counted_once(
+    session_factory,
+):
+    key = uuid.uuid4().hex
+    await Joined(key=key).start(Joined.split)
+    assert await step_row(Joined, await pk_of(Joined, key)) == "ok"
+    assert await step_row(Leaf, await pk_of(Leaf, f"{key}-0")) == "ok"
+
+    # Already finished and already counted, so there is nothing left to cancel
+    # and nothing for the cancel to count again.
+    assert await Leaf.by(Leaf.key == f"{key}-0").cancel() == 0
+
+    parent = await Joined.by(Joined.key == key).get()
+    assert parent is not None
+    assert parent.children_left == 2
+    assert EVENTS.count(f"joined-report:{key}") == 0
+
+
+async def test_a_worker_that_cannot_listen_keeps_asking(session_factory):
+    rt = runtime.current()
+    worker = runner.Runner(
+        rt, [Resting], 4, datetime.timedelta(milliseconds=20), max_idle_interval=MINUTE
+    )
+    await Resting.by().cancel()
+    was = rt.listening.is_set()
+    try:
+        # Nothing is scheduled, so there is no time to wait for either way.
+        rt.listening.set()
+        assert await worker.until_something_is_due() == pytest.approx(
+            MINUTE.total_seconds()
+        )
+
+        rt.listening.clear()
+        # Deaf: work another process writes would only ever be found by asking,
+        # so the wait stays what the worker was told to poll.
+        assert await worker.until_something_is_due() == pytest.approx(0.02)
+    finally:
+        rt.listening.set() if was else rt.listening.clear()

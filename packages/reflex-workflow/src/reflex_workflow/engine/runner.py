@@ -36,7 +36,7 @@ class Runner:
         max_concurrency: int,
         poll_interval: datetime.timedelta,
         lanes: Collection[str] = (DEFAULT_LANE,),
-        max_idle_interval: datetime.timedelta = DEFAULT_MAX_IDLE,
+        max_idle_interval: datetime.timedelta | None = None,
     ) -> None:
         """Set up a runner; ``loop`` starts it.
 
@@ -47,7 +47,9 @@ class Runner:
             poll_interval: How often to look for due rows when nothing wakes it.
             lanes: The lanes this worker serves; steps in other lanes are left
                 for the workers that do.
-            max_idle_interval: The longest it waits when nothing is due.
+            max_idle_interval: The longest it waits when nothing is due;
+                thirty seconds by default, or ``poll_interval`` when that is
+                longer, since a worker never waits less than it was told to.
         """
         self.runtime = runtime
         self.lanes = frozenset(lanes)
@@ -64,7 +66,9 @@ class Runner:
         self.workflows = [cls for cls in workflows if cls in self.runnable]
         self.max_concurrency = max_concurrency
         self.poll_interval = poll_interval
-        self.max_idle_interval = max_idle_interval
+        self.max_idle_interval = max_idle_interval or max(
+            DEFAULT_MAX_IDLE, poll_interval
+        )
         self.inflight: set[asyncio.Task[str]] = set()
         # The row and lease behind each running step, so one this worker
         # cancels on the way out can be given back rather than left held.
@@ -163,12 +167,18 @@ class Runner:
         due but could not be claimed -- one held back by a limit, or by this
         worker being full -- would otherwise be asked for in a tight loop; and
         never above ``max_idle_interval``, which is also how long a worker waits
-        when nothing at all is scheduled.
+        when nothing at all is scheduled. A worker that is not listening holds
+        to ``poll_interval`` throughout, since nothing else would tell it that
+        another process had written work for it.
 
         Returns:
             Seconds to wait.
         """
-        floor, cap = self.poll_interval, self.max_idle_interval
+        floor = self.poll_interval
+        # Sleeping past the poll interval is only safe while something is
+        # listening: work another process writes announces itself, and a worker
+        # that cannot hear the announcement has nothing but asking again.
+        cap = self.max_idle_interval if self.runtime.listening.is_set() else floor
         try:
             due = await next_due(self.runtime, self.workflows, self.runnable)
         except Exception:
@@ -261,7 +271,7 @@ async def run_workflows(
     lease: datetime.timedelta = datetime.timedelta(minutes=5),
     shutdown_timeout: datetime.timedelta = datetime.timedelta(seconds=30),
     lanes: Collection[str] = (DEFAULT_LANE,),
-    max_idle_interval: datetime.timedelta = DEFAULT_MAX_IDLE,
+    max_idle_interval: datetime.timedelta | None = None,
     listen_engine: AsyncEngine | None = None,
 ) -> AsyncIterator[None]:
     """Run workflow steps in this process for the lifetime of the block.
@@ -283,7 +293,8 @@ async def run_workflows(
         lanes: The lanes this process serves. A step declared in another lane is
             left alone, so a worker with a GPU can be the only one that renders
             and an ordinary one carries on with the rest.
-        max_idle_interval: The longest to wait when nothing is scheduled at all.
+        max_idle_interval: The longest to wait when nothing is scheduled at all;
+            thirty seconds by default, or ``poll_interval`` when that is longer.
             Between runs a worker sleeps until the database says the next one is
             due, so this is what it costs an idle database: set it above the
             point a database suspends itself and the workers will not hold it
@@ -299,23 +310,21 @@ async def run_workflows(
 
     Raises:
         ValueError: If ``max_concurrency`` is below one, ``lease`` or
-            ``poll_interval`` is not positive, or ``max_idle_interval`` is
-            shorter than ``poll_interval``.
+            ``poll_interval`` is not positive, or a ``max_idle_interval`` was
+            given that is shorter than ``poll_interval``.
     """
     # A lease of nothing expires as it is taken, letting two workers run one
     # step at once; the others would leave a worker that never runs anything.
     if max_concurrency < 1:
         msg = f"max_concurrency must be at least 1; got {max_concurrency}."
         raise ValueError(msg)
-    if (
-        lease <= datetime.timedelta()
-        or poll_interval <= datetime.timedelta()
-        or max_idle_interval < poll_interval
-    ):
-        msg = (
-            "lease and poll_interval must be positive, and max_idle_interval "
-            "cannot be shorter than poll_interval."
-        )
+    if lease <= datetime.timedelta() or poll_interval <= datetime.timedelta():
+        msg = "lease and poll_interval must be positive."
+        raise ValueError(msg)
+    # Unasked, the runner never waits less than it was told to poll: a worker
+    # told to look every minute was allowed to before this existed, and still is.
+    if max_idle_interval is not None and max_idle_interval < poll_interval:
+        msg = "max_idle_interval cannot be shorter than poll_interval."
         raise ValueError(msg)
     runtime = Runtime(session_factory, asyncio.Event(), lease)
     previous = replace_current(runtime)

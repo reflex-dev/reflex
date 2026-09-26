@@ -17,11 +17,16 @@ class Runtime:
         session_factory: Session factory for the database with the workflow tables.
         wake: Set to make the worker look for due rows now.
         lease: How long a claim lasts without renewal.
+        listening: Set while this worker is hearing what other processes write.
+            Only then can it afford to sleep past its poll interval: with
+            nothing listening, polling is the only way work written elsewhere
+            is ever noticed.
     """
 
     session_factory: async_sessionmaker[AsyncSession]
     wake: asyncio.Event
     lease: datetime.timedelta
+    listening: asyncio.Event = dataclasses.field(default_factory=asyncio.Event)
 
 
 _current: Runtime | None = None

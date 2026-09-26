@@ -321,6 +321,10 @@ class RunHandle(Generic[W]):
         and nothing is scheduled in their place. What the runs have already done
         stays; this ends them rather than undoing them.
 
+        A step already running keeps its lease, as it does through ``run``, so a
+        run started again straight afterwards waits for the cancelled step to be
+        done rather than acting beside it.
+
         A cancelled run counts as finished to the run that fanned it out, as one
         that gave up does, so a parent waiting on it carries on rather than
         waiting for a child that will never report.
@@ -331,12 +335,20 @@ class RunHandle(Generic[W]):
         runtime = current()
         cls = self.cls
         async with runtime.session_factory() as session, session.begin():
+            # Locked, so nothing finishes between being read here and being
+            # cancelled below: a child that did would be counted by its own
+            # commit and again by this one, and its parent would join early.
             stopping = (
                 await session.execute(
-                    select(*rows.mapper(cls).primary_key, cls.parent).where(
+                    select(*rows.mapper(cls).primary_key, cls.parent)
+                    .where(
                         *self.where,
-                        or_(cls.next_step.is_not(None), cls.waiting_for.is_not(None)),
+                        or_(
+                            cls.next_step.is_not(None),
+                            cls.waiting_for.is_not(None),
+                        ),
                     )
+                    .with_for_update()
                 )
             ).all()
             if not stopping:
@@ -359,7 +371,6 @@ class RunHandle(Generic[W]):
                             waiting_for=None,
                             pending_event=None,
                             children_left=None,
-                            claimed_until=None,
                             # The parent stops being named, so a child cancelled
                             # here cannot also be counted when its step lands.
                             parent=execute.unjoin(cls),

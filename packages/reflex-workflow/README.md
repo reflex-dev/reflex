@@ -390,8 +390,12 @@ async with run_workflows(
     yield
 ```
 
-Polling stays the floor: a driver that cannot listen, or a listening connection that
-breaks, costs latency and nothing else. On shutdown a worker stops claiming, gives
+Polling stays the floor: a worker that is not listening — a driver that cannot, a
+connection that broke — holds to `poll_interval` throughout rather than sleeping past
+it, since asking is then the only way it would ever find work another process wrote. So
+losing the listener costs latency and nothing else. The one case that cannot be detected
+is a pooler that accepts a `LISTEN` and never delivers on it, which is what
+`listen_engine` is for. On shutdown a worker stops claiming, gives
 running steps `shutdown_timeout` to finish, and hands back the rows of any it had to
 cancel so the next worker can take them straight away.
 

@@ -65,6 +65,7 @@ async def listen_once(
                     type(driver).__name__,
                 )
                 return False
+            runtime.listening.set()
             async for notice in notifies():
                 if not tables or notice.payload in tables:
                     runtime.wake.set()
@@ -72,6 +73,10 @@ async def listen_once(
         raise
     except Exception:
         logger.exception("reflex_workflow lost its listening connection")
+    finally:
+        # Deaf again until the next connection is up, and a worker that cannot
+        # hear has to keep asking.
+        runtime.listening.clear()
     return True
 
 

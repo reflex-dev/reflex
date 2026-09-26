@@ -413,6 +413,10 @@ def soonest(cls: type[Workflow], steps: Collection[str] | None):
     # worker with only such rows sleeps instead of asking after them forever.
     when = case(
         (cls.claimed_until > func.now(), cls.claimed_until),
+        # Holding the answer it was waiting for, which is claimable now however
+        # its wake_at reads: what this says has to agree with what claimable()
+        # takes, or a worker sleeps on a run it could already be running.
+        (cls.pending_event["step"].astext == cls.waiting_for, func.now()),
         else_=cls.wake_at,
     )
     runnable = or_(
