@@ -7,11 +7,12 @@ readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 requires-python = ">=3.10"
-dependencies = [
-  "aiohttp >=3.10.0,<4.0",
-  "httpx >=0.25.1,<1.0",
-  "platformdirs >=3.10.0,<5.0",
-]
+dependencies = []
+
+[project.optional-dependencies]
+aiohttp = ["aiohttp >=3.10.0,<4.0"]
+httpx = ["httpx >=0.25.1,<1.0"]
+httpx2 = ["httpx2 >=2.0.0,<3.0"]
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"

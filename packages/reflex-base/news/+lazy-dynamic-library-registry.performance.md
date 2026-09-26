@@ -1,1 +1,0 @@
-Add the opt-in `frontend_lazy_bundled_libraries` config setting to load optional dynamic-component libraries on first use, reducing JavaScript loaded by ordinary pages. React and the shared runtime remain immediately available.

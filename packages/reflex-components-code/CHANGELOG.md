@@ -1,3 +1,10 @@
+## v0.9.6 (2026-09-21)
+
+### Bug Fixes
+
+- Give default code-copy buttons an accessible name and prevent them from submitting an enclosing form. ([#7078](https://github.com/reflex-dev/reflex/issues/7078))
+
+
 ## v0.9.5 (2026-09-11)
 
 ### Miscellaneous

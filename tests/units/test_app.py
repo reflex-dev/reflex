@@ -66,6 +66,7 @@ from reflex.app import (
     ComponentCallable,
     EventNamespace,
     _ContextMiddleware,
+    _decode_asgi_headers,
     _sio_dumps,
     _sio_loads,
     default_overlay_component,
@@ -247,6 +248,28 @@ def test_custom_auth_admin() -> type[AuthProvider]:
             """Logout."""
 
     return TestAuthProvider
+
+
+def test_app_warns_about_a_deprecated_duration_name_at_startup(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """The auto-reload cooldown is only consulted on a frontend error.
+
+    Reading it while the app is set up surfaces the deprecation when the app
+    starts, where a developer will actually see it.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_AUTO_RELOAD_COOLDOWN", raising=False)
+    monkeypatch.setenv("REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS", "5000")
+    monkeypatch.setattr("reflex_base.environment._WARNED_SUPERSEDED", set())
+
+    with unittest.mock.patch("reflex_base.utils.console.deprecate") as deprecate:
+        App(_state=EmptyState)
+
+    feature_names = [call.kwargs["feature_name"] for call in deprecate.call_args_list]
+    assert "REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS" in feature_names
 
 
 def test_default_app(app: App):
@@ -3032,6 +3055,34 @@ def test_minimal_static_app_wrap_omits_state_providers(
     assert "jsx(EventLoopProvider" not in root_contents
 
 
+def test_sticky_badge_wrap_keeps_lower_priority_wrap_renderable(
+    mocker: MockerFixture,
+) -> None:
+    """The badge and the lower-priority portal must be Fragment siblings.
+
+    ``_app_root`` nests each lower-priority wrap inside the previous one, and
+    the badge compiles to a memo that never reads ``props.children``. A wrap
+    below it -- ``rx.data_editor`` registers its ``<div id="portal">`` at
+    priority -1 -- would therefore be emitted into the app root but never
+    reach the DOM, so the badge wrap has to keep it as a sibling.
+    """
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app = App(theme=None, enable_state=False)
+    app._setup_sticky_badge()
+    app.extra_app_wraps[-1, "DataEditorPortal"] = lambda _: rx.el.div(id="portal")
+
+    root_contents = compile_app_root_from_page_wraps(app, {})
+    chain = root_contents[root_contents.index("function AppWrap({children})") :]
+    badge_symbol = _find_mirrored_memo_symbol(chain, "MemoizedBadge")
+
+    # Neither the badge nor the portal may become the other's parent.
+    assert (
+        f"jsx(Fragment,{{}},jsx({badge_symbol},{{}},),"
+        'jsx("div",{id:"portal",ref:ref_portal},))'
+    ) in chain
+
+
 def test_event_triggers_collect_state_providers_via_var_app_wrap() -> None:
     """A component with event triggers collects ``StateProvider`` and
     ``EventLoopProvider`` into the page-level app_wrap registry through the
@@ -4375,6 +4426,25 @@ def test_call_marks_later_dev_backend_worker_as_hot_reload(
 
     compile_mock.assert_called_once()
     assert compile_mock.call_args.kwargs["trigger"] == "hot_reload"
+
+
+def test_decode_asgi_headers():
+    """_decode_asgi_headers decodes raw ASGI header pairs into a str dict."""
+    assert _decode_asgi_headers([]) == {}
+    assert _decode_asgi_headers([
+        (b"host", b"example.com"),
+        (b"x-forwarded-for", b"10.0.0.1, 10.0.0.2"),
+    ]) == {
+        "host": "example.com",
+        "x-forwarded-for": "10.0.0.1, 10.0.0.2",
+    }
+    # Later duplicates win, matching dict comprehension semantics.
+    assert _decode_asgi_headers([
+        (b"cookie", b"a=1"),
+        (b"cookie", b"b=2"),
+    ]) == {"cookie": "b=2"}
+    # Names and values are decoded as UTF-8.
+    assert _decode_asgi_headers([(b"x-name", "café".encode())]) == {"x-name": "café"}
 
 
 def test_call_ignores_stale_marker_without_dev_backend_reload(

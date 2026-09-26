@@ -89,7 +89,7 @@ if find_spec("sqlalchemy"):
             "pool_size": environment.SQLALCHEMY_POOL_SIZE.get(),
             "max_overflow": environment.SQLALCHEMY_MAX_OVERFLOW.get(),
             "pool_recycle": environment.SQLALCHEMY_POOL_RECYCLE.get(),
-            "pool_timeout": environment.SQLALCHEMY_POOL_TIMEOUT.get(),
+            "pool_timeout": environment.SQLALCHEMY_POOL_TIMEOUT.get().total_seconds(),
         }
         conf = get_config()
         url = url or conf.db_url

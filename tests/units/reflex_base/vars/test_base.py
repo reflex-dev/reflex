@@ -3,21 +3,27 @@
 import dataclasses
 import gc
 import pickle
+import subprocess
+import sys
 import threading
 import traceback
 import typing
 import weakref
-from typing import Any, Literal, TypeVar
+from typing import Any, ClassVar, Literal, TypeVar
 
 import pytest
+from reflex_base.constants import RouteArgType
 from reflex_base.utils import serializers
-from reflex_base.utils.exceptions import ReflexRuntimeError
+from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
 from reflex_base.vars.base import (
+    FIELD_TYPE,
     GLOBAL_CACHE,
+    BaseStateMeta,
     CachedVarOperation,
     EvenMoreBasicBaseState,
+    Field,
     LiteralVar,
     Var,
     VarData,
@@ -25,6 +31,7 @@ from reflex_base.vars.base import (
     _linearize_bases,
     cached_property,
     cached_property_no_lock,
+    computed_var,
     field,
     var_operation,
     var_operation_return,
@@ -32,9 +39,9 @@ from reflex_base.vars.base import (
 from reflex_base.vars.number import NumberVar
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
-from typing_extensions import TypeAliasType, TypeVarTuple, Unpack
+from typing_extensions import Self, TypeAliasType, TypeVarTuple, Unpack
 
-from reflex.state import State
+from reflex.state import BaseState, State, _override_base_method
 
 _MARKER_ATTR = "_marker"
 
@@ -671,3 +678,492 @@ def test_var_operation_str_interpolation_matches_tagged_form() -> None:
     untagged = Var(_js_expr=f"wrap({operand!s})").to(int)
 
     assert str(tagged) == str(untagged) == "wrap(operandValue)"
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "_init_bookkeeping",
+        "_get_root_state",
+        "_was_touched",
+        "dirty_vars",
+        "get_fields",
+        "get_full_name",
+        "computed_vars",
+        "__fields__",
+        "setvar",
+    ],
+)
+@pytest.mark.parametrize("annotated", [False, True])
+def test_reserved_state_var(name: str, annotated: bool, clean_registration_context):
+    """Reject framework names before state initialization can call them.
+
+    Args:
+        name: The reserved member to shadow.
+        annotated: Whether to explicitly annotate the variable.
+        clean_registration_context: An isolated state registry.
+    """
+    namespace = {"__module__": __name__, "__qualname__": "ShadowState", name: 7}
+    if annotated:
+        namespace["__annotations__"] = {name: int}
+    with pytest.raises(StateValueError, match=name):
+        type("ShadowState", (BaseState,), namespace)
+
+
+def test_reserved_annotation_only(clean_registration_context):
+    """Reject a reserved var even when no default is declared.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+    with pytest.raises(StateValueError, match="_init_bookkeeping"):
+
+        class ShadowState(BaseState):
+            _init_bookkeeping: int
+
+
+@pytest.mark.parametrize("state_mixin", [False, True])
+def test_reserved_mixin_var(state_mixin: bool, clean_registration_context):
+    """Reject collisions from both ordinary Python mixins and state mixins.
+
+    Args:
+        state_mixin: Whether the mixin subclasses BaseState.
+        clean_registration_context: An isolated state registry.
+    """
+    with pytest.raises(StateValueError, match="_get_root_state"):
+        mixin = type(
+            "Mixin",
+            (BaseState,) if state_mixin else (),
+            {"__module__": __name__, "_get_root_state": 7},
+            **({"mixin": True} if state_mixin else {}),
+        )
+        type("MixedState", (mixin, BaseState), {"__module__": __name__})
+
+
+@pytest.mark.parametrize("slots", [("cache",), "cache"])
+@pytest.mark.parametrize("state_base", [False, True])
+def test_reserved_slot_of_base(
+    state_base: bool, slots: tuple[str, ...] | str, clean_registration_context
+):
+    """Reject a declaration using a slot name of a non-root base, and only those.
+
+    Args:
+        state_base: Whether the slotted base is a state or a Python mixin.
+        slots: The base's ``__slots__``; a single string declares one slot.
+        clean_registration_context: An isolated state registry.
+    """
+    slotted = type(
+        "Slotted",
+        (BaseState,) if state_base else (),
+        {"__module__": __name__, "__slots__": slots},
+    )
+    bases = (slotted,) if state_base else (slotted, BaseState)
+    with pytest.raises(StateValueError, match=r"\['cache'\] are reserved by Slotted"):
+        type(
+            "SlotShadowState",
+            bases,
+            {"__module__": __name__, "__annotations__": {"cache": int}, "cache": 0},
+        )
+    if state_base:
+        # A name that is only a substring of the slot name is not reserved; a
+        # slotted Python mixin cannot be combined with a state at all.
+        state = type(
+            "SubstringState",
+            bases,
+            {"__module__": __name__, "__annotations__": {"c": int}, "c": 0},
+        )
+        assert "c" in state.get_fields()
+
+
+@pytest.mark.parametrize("name", ["_init_bookkeeping", "get_fields"])
+def test_reserved_computed_var(name: str, clean_registration_context):
+    """Reject computed vars that replace framework methods.
+
+    Args:
+        name: The reserved method to replace.
+        clean_registration_context: An isolated state registry.
+    """
+
+    def value(self) -> int:
+        """Return a constant computed value."""
+        return 7
+
+    value.__name__ = name
+    with pytest.raises(StateValueError, match=name):
+        type(
+            "ComputedState",
+            (BaseState,),
+            {"__module__": __name__, name: computed_var(value)},
+        )
+
+
+@pytest.mark.parametrize("registration", ["var", "route", "event", "field"])
+def test_dynamic_reserved_name(registration: str, clean_registration_context):
+    """Reject dynamic collisions before any field or event map is changed.
+
+    Args:
+        registration: The dynamic registration path to exercise.
+        clean_registration_context: An isolated state registry.
+    """
+
+    class DynamicState(BaseState):
+        """State receiving a dynamic declaration."""
+
+    fields = dict(DynamicState.get_fields())
+    with pytest.raises(StateValueError, match="get_state"):
+        if registration == "var":
+            DynamicState.add_var("get_state", int, 7)
+        elif registration == "route":
+            DynamicState.setup_dynamic_args({"get_state": RouteArgType.SINGLE})
+        elif registration == "event":
+            DynamicState._add_event_handler("get_state", lambda self: None)
+        else:
+            DynamicState.add_field("get_state", LiteralVar.create(7), 7)
+    assert DynamicState.get_fields() == fields
+    assert "get_state" not in DynamicState.vars
+    assert "get_state" not in DynamicState.event_handlers
+    assert "get_state" not in DynamicState.__dict__
+
+
+def test_user_vars_and_marked_override(clean_registration_context):
+    """Keep normal vars, inherited vars, and explicitly marked method overrides.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class Parent(BaseState):
+        value: int = 1
+        _backend: int = 2
+
+    class Child(Parent):
+        @_override_base_method
+        def get_value(self, key: str):
+            """Return a value through a supported framework override."""
+            return f"override:{key}"
+
+    parent = Parent()
+    child = parent.substates[Child.get_name()]
+    assert isinstance(child, Child)
+    assert child.value == 1
+    assert child._backend == 2
+    assert child.get_value("value") == "override:value"
+
+
+def test_non_state_models_keep_their_namespace():
+    """Do not reserve Reflex state names on unrelated base models."""
+
+    class Model(EvenMoreBasicBaseState):
+        get_state: int = 7
+
+    assert Model().get_state == 7
+
+
+@pytest.mark.parametrize("name", ["get_fields", "_init_bookkeeping"])
+@pytest.mark.parametrize("state_first", [False, True])
+def test_reserved_model_mixin(name: str, state_first: bool, clean_registration_context):
+    """Reject inherited model fields before the field collector sees them.
+
+    Args:
+        name: The framework name declared as a model field.
+        state_first: Whether BaseState precedes the model in the MRO.
+        clean_registration_context: An isolated state registry.
+    """
+    model = type("Model", (EvenMoreBasicBaseState,), {"__module__": __name__, name: 7})
+    bases = (BaseState, model) if state_first else (model, BaseState)
+    with pytest.raises(StateValueError, match=name):
+        type("MixedState", bases, {"__module__": __name__})
+
+
+def test_reserved_descriptor(clean_registration_context):
+    """Reject a descriptor without executing its class access behavior.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class Descriptor:
+        def __get__(self, instance, owner):
+            """Fail if validation invokes this descriptor."""
+            pytest.fail("Reserved descriptor was evaluated")
+
+    with pytest.raises(StateValueError, match="get_fields"):
+        type(
+            "DescriptorState",
+            (BaseState,),
+            {"__module__": __name__, "get_fields": Descriptor()},
+        )
+
+
+class _CookieMeta(BaseStateMeta):
+    """A downstream-style metaclass that injects fields into the declaration."""
+
+    def __new__(
+        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwargs
+    ):
+        """Add an annotated backend var before the state is constructed.
+
+        Args:
+            name: The class name.
+            bases: The parent classes.
+            namespace: The class namespace.
+            **kwargs: Class creation keywords, e.g. `mixin`.
+
+        Returns:
+            The new state class.
+        """
+        namespace.setdefault("__annotations__", {})["_injected"] = str
+        namespace["_injected"] = "by the metaclass"
+        return super().__new__(cls, name, bases, namespace, **kwargs)
+
+
+def test_state_metaclass_is_base_state_meta():
+    """Keep the exported `BaseStateMeta` as the metaclass of every state."""
+    assert type(BaseState) is BaseStateMeta
+    assert type(State) is BaseStateMeta
+    assert BaseState._reflex_state_root is BaseState
+    assert State._reflex_state_root is BaseState
+
+
+@pytest.mark.parametrize("mixin", [False, True])
+def test_custom_state_metaclass(mixin: bool, clean_registration_context):
+    """Allow a `BaseStateMeta` subclass as the metaclass of a state.
+
+    Args:
+        mixin: Whether the state is declared as a state mixin.
+        clean_registration_context: An isolated state registry.
+    """
+
+    class CustomState(State, mixin=mixin, metaclass=_CookieMeta):
+        value: int = 1
+
+    assert type(CustomState) is _CookieMeta
+    assert CustomState._mixin is mixin
+    assert CustomState.__fields__["_injected"].default == "by the metaclass"
+    assert CustomState.__fields__["value"].default == 1
+
+
+def test_custom_state_metaclass_validates_reserved_names(clean_registration_context):
+    """Keep rejecting reserved names declared through a custom metaclass.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+    with pytest.raises(StateValueError, match="get_fields"):
+
+        class ShadowState(BaseState, metaclass=_CookieMeta):
+            get_fields: int = 7
+
+
+def test_state_root_reserves_its_own_namespace():
+    """Reserve the members of a `state_root=True` class for its whole hierarchy."""
+
+    class Root(EvenMoreBasicBaseState, state_root=True):
+        def bookkeeping(self) -> int:
+            """Return a framework-style member subclasses may not shadow."""
+            return 1
+
+    class Child(Root):
+        value: int = 5
+
+    assert Child._reflex_state_root is Root
+    assert Child().value == 5
+    with pytest.raises(StateValueError, match="bookkeeping"):
+
+        class ShadowMethod(Root):
+            bookkeeping: int = 7
+
+    with pytest.raises(StateValueError, match="_reflex_state_root"):
+        type("ShadowMarker", (Root,), {"__module__": __name__, "_reflex_state_root": 7})
+
+
+def test_state_roots_do_not_share_reserved_names():
+    """Keep one root's reserved namespace out of another root's hierarchy."""
+
+    class RootA(EvenMoreBasicBaseState, state_root=True):
+        def alpha(self) -> int:
+            """Return a member reserved for RootA's subclasses only."""
+            return 1
+
+    class RootB(EvenMoreBasicBaseState, state_root=True):
+        def beta(self) -> int:
+            """Return a member reserved for RootB's subclasses only."""
+            return 2
+
+    class A(RootA):
+        beta: int = 1
+
+    class B(RootB):
+        alpha: int = 2
+
+    assert (A().beta, B().alpha) == (1, 2)
+    assert A._reflex_state_root is RootA
+    assert B._reflex_state_root is RootB
+    with pytest.raises(StateValueError, match="alpha"):
+
+        class ShadowA(RootA):
+            alpha: int = 3
+
+
+def test_inherited_field_on_plain_model():
+    """An inherited field of a model without a state tree reads from the model itself."""
+
+    class Model(EvenMoreBasicBaseState):
+        x: int = 1
+
+    class SubModel(Model):
+        pass
+
+    model = SubModel()
+    assert model.x == 1
+    model.x = 2
+    assert model.x == 2
+
+
+def test_new_default_for_inherited_field_declares_a_field():
+    """Assigning a default to an inherited field redeclares it with that default."""
+
+    class Parent(State):
+        count: int = 0
+
+    class Child(Parent):
+        count = 5
+
+    child_field = Child.get_fields()["count"]
+    assert child_field is not Parent.get_fields()["count"]
+    assert child_field.default == 5
+    assert child_field.outer_type_ is int
+    assert "count" in Child.base_vars
+
+
+class TaggedField(Field[FIELD_TYPE]):
+    """A field subclass with an attribute of its own."""
+
+    def __init__(self, *args: Any, tag: str = "", **kwargs: Any):
+        """Initialize the field.
+
+        Args:
+            *args: The arguments of Field.
+            tag: The tag of the field.
+            **kwargs: The keyword arguments of Field.
+        """
+        super().__init__(*args, **kwargs)
+        self.tag = tag
+
+    def _replace(self, **kwargs: Any) -> Self:
+        """Derive a field, keeping the tag.
+
+        Args:
+            **kwargs: The arguments to replace.
+
+        Returns:
+            The new field.
+        """
+        return super()._replace(**{"tag": self.tag, **kwargs})
+
+
+def test_field_subclass_is_kept():
+    """A field declared with a Field subclass stays one wherever it is copied."""
+
+    class Parent(State):
+        annotated: int = TaggedField(default=1, tag="a")  # pyright: ignore[reportAssignmentType]
+        generic: TaggedField[int] = TaggedField(default=2, tag="g")
+        unannotated = TaggedField(default="x", tag="u")
+
+    class Child(Parent):
+        annotated = 3
+
+    class AnnotatedChild(Parent):
+        annotated: int = 5
+
+    class Mixin(State, mixin=True):
+        mixed: int = TaggedField(default=4, tag="m")  # pyright: ignore[reportAssignmentType]
+
+    class UsesMixin(Mixin, State):
+        pass
+
+    for cls, name, tag, default in (
+        (Parent, "annotated", "a", 1),
+        (Parent, "generic", "g", 2),
+        (Parent, "unannotated", "u", "x"),
+        (Child, "annotated", "a", 3),
+        (AnnotatedChild, "annotated", "a", 5),
+        (UsesMixin, "mixed", "m", 4),
+    ):
+        declared = cls.get_fields()[name]
+        assert type(declared) is TaggedField, (cls, name)
+        assert declared.tag == tag
+        assert declared.default_value() == default
+    assert Parent.get_fields()["generic"].outer_type_ is int
+    assert UsesMixin.get_fields()["mixed"] is not Mixin.get_fields()["mixed"]
+
+
+def test_plain_model_without_reflex():
+    """A plain model's fields work in a process that never imports reflex."""
+    code = """
+import sys
+from reflex_base.vars import EvenMoreBasicBaseState
+
+class Model(EvenMoreBasicBaseState):
+    count: int = 0
+
+model = Model(count=3)
+model.count = 4
+assert model.count == 4
+assert "reflex" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_plain_model_unwraps_state_proxies():
+    """A plain model stores the value of a state's mutable var, not its proxy."""
+
+    class Items(State):
+        items: list[int] = [1]
+
+    class Model(EvenMoreBasicBaseState):
+        items: list[int] = []
+
+    model = Model()
+    model.items = Items().items
+    assert type(vars(model)["items"]) is list
+
+
+def test_slot_names_are_reserved():
+    """A state cannot declare a name a base keeps in a slot."""
+
+    class Root(EvenMoreBasicBaseState, state_root=True):
+        pass
+
+    class Base(Root):
+        __slots__ = ("_bookkeeping",)
+
+    with pytest.raises(StateValueError, match="_bookkeeping"):
+
+        class Shadow(Base):
+            _bookkeeping: int = 0
+
+
+def test_backend_field_is_not_type_checked():
+    """Setting a backend var skips the type check, like a generic one it cannot run."""
+    T = TypeVar("T")
+
+    class Model(EvenMoreBasicBaseState):
+        _value: T  # pyright: ignore[reportGeneralTypeIssues]
+
+    model = Model()  # pyright: ignore[reportCallIssue]
+    model._value = 1
+    assert model._value == 1
+
+
+def test_classvar_over_inherited_field_is_not_a_field():
+    """A ClassVar redeclaring an inherited field stays a class attribute."""
+
+    class Parent(State):
+        count: int = 0
+
+    class Child(Parent):
+        count: ClassVar[int] = 5  # pyright: ignore[reportIncompatibleVariableOverride]
+
+    assert Child.get_fields()["count"] is Parent.get_fields()["count"]
+    assert "count" not in Child.base_vars

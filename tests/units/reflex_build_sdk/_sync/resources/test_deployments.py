@@ -14,6 +14,7 @@ from reflex_build_sdk import (
     DeploymentTimeoutError,
     PermissionDeniedError,
     ReflexBuild,
+    UnprocessableEntityError,
 )
 from reflex_build_sdk.transports import Request, Response, TransportError
 from reflex_build_sdk.types import DeploymentReport, MachineSize, Region
@@ -449,6 +450,16 @@ def test_wait_timeout(client: ReflexBuild, mock_api: MockAPI):
     _statuses(mock_api, "Building backend application...")
     with pytest.raises(DeploymentTimeoutError, match="Building backend application"):
         client.deployments.wait(FIRST_ID, timeout=0, poll_interval=0)
+
+
+def test_wait_passes_a_malformed_id_to_the_api(client: ReflexBuild, mock_api: MockAPI):
+    mock_api.add(
+        "GET",
+        "/api/v1/deployments/not-a-uuid/status",
+        reply(422, json={"detail": "Input should be a valid UUID"}),
+    )
+    with pytest.raises(UnprocessableEntityError):
+        client.deployments.wait("not-a-uuid", poll_interval=0)
 
 
 def test_set_description(client: ReflexBuild, mock_api: MockAPI):

@@ -39,8 +39,9 @@ from reflex_components_core.el.elements.metadata import Head, Link, Meta, Title
 from reflex_components_core.el.elements.other import Html
 from reflex_components_core.el.elements.sectioning import Body
 
+from reflex.istate.delta import _resolve_delta
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
-from reflex.state import BaseState, _resolve_delta
+from reflex.state import BaseState
 from reflex.utils import path_ops
 from reflex.utils.prerequisites import get_web_dir
 
@@ -346,7 +347,7 @@ def _compile_client_storage_recursive(
     session_storage: dict[str, dict[str, Any]] = {}
     state_name = state.get_full_name()
     for name, field in state.__fields__.items():
-        if name in state.inherited_vars:
+        if field._owner is not state:
             # only include vars defined in this state
             continue
         state_key = f"{state_name}.{name}" + FIELD_MARKER

@@ -6,15 +6,19 @@ import pickle
 import subprocess
 import sys
 from asyncio import CancelledError
+from collections.abc import Mapping
 from contextlib import asynccontextmanager
+from operator import attrgetter
 from typing import Any, ClassVar
 
 import pytest
+from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event.context import EventContext
 from reflex_base.utils.exceptions import ImmutableStateError
 
 import reflex as rx
-from reflex.istate.data import RouterData
+from reflex.istate.data import HeaderData, PageData, RouterData
+from reflex.istate.manager import StateManager
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import (
     ImmutableMutableProxy,
@@ -208,6 +212,286 @@ class DataclassMutableProxyState(BaseState):
     """A test state with a dataclass field holding a mutable attribute."""
 
     dc: TaggedModel = TaggedModel(ls=[{"tag": 1}])
+
+
+class RouterProxyState(BaseState):
+    """A root state for testing the composed router through state proxies."""
+
+
+class RouterProxySubState(RouterProxyState):
+    """A substate inheriting its router fields from the root state."""
+
+
+@pytest.mark.parametrize("state_cls", [RouterProxyState, RouterProxySubState])
+@pytest.mark.parametrize("proxy_cls", [StateProxy, ReadOnlyStateProxy])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "rx_router_page.params",
+        "router._page.params",
+        "router.page.params",
+        "rx_router_headers.raw_headers",
+        "router.headers.raw_headers",
+    ],
+)
+def test_router_proxy_rejects_mutation(
+    attached_mock_event_context: EventContext,
+    state_cls: type[BaseState],
+    proxy_cls: type[StateProxy],
+    path: str,
+) -> None:
+    """Router containers preserve the calling proxy's mutation guard.
+
+    Args:
+        attached_mock_event_context: The attached event context.
+        state_cls: The root or substate to proxy.
+        proxy_cls: The background or read-only proxy type.
+        path: The access path to a router container.
+    """
+    root = RouterProxyState()
+    root.router = RouterData(
+        _page=PageData(params={"x": "before", "parts": ["before"]}),
+        headers=HeaderData(raw_headers={"x": "before"}),
+    )
+    root._clean()
+    proxy = proxy_cls(root.get_substate(state_cls.get_full_name().split(".")))
+    container = attrgetter(path)(proxy)
+
+    with pytest.raises(ImmutableStateError):
+        container["x"] = "after"
+    with pytest.raises(ImmutableStateError):
+        container.update(x="after")
+    with pytest.raises(ImmutableStateError):
+        del container["x"]
+    if path.endswith("params"):
+        with pytest.raises(ImmutableStateError):
+            container["parts"].append("after")
+
+    assert root.router._page.params == {"x": "before", "parts": ["before"]}
+    assert root.router.headers.raw_headers == {"x": "before"}
+    assert not root.dirty_vars
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("state_cls", [RouterProxyState, RouterProxySubState])
+async def test_router_proxy_mutable_context(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    state_cls: type[BaseState],
+) -> None:
+    """Router writes require the owning proxy's lock and dirty the backing field.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+        emitted_deltas: The captured state updates.
+        state_cls: The root or substate to proxy.
+    """
+    state_token = BaseStateToken(ident=token, cls=state_cls)
+    async with state_manager.modify_state(state_token) as root:
+        root.router = RouterData(_page=PageData(params={"x": "before"}))
+        root._clean()
+        proxy = StateProxy(root.get_substate(state_cls.get_full_name().split(".")))
+
+    async with proxy:
+        router = proxy.router
+        router._page.params["x"] = "after"
+        assert proxy.__wrapped__._get_root_state().dirty_vars == {"rx_router_page"}
+        read_only = ReadOnlyStateProxy(proxy.__wrapped__)
+        with pytest.raises(ImmutableStateError):
+            read_only.router._page.params["x"] = "read-only write"
+
+    with pytest.raises(ImmutableStateError):
+        router._page.params["x"] = "unlocked write"
+
+    assert emitted_deltas == [
+        (
+            token,
+            {
+                RouterProxyState.get_full_name(): {
+                    "rx_router_page" + FIELD_MARKER: PageData(params={"x": "after"}),
+                },
+            },
+        ),
+    ]
+    async with state_manager.modify_state(state_token) as root:
+        assert root.router._page.params == {"x": "after"}
+
+
+class InheritedListState(BaseState):
+    """A root state storing a list var its substate inherits."""
+
+    items: list[int] = []
+
+    @rx.event
+    def add_item(self, value: int):
+        """Append to the list.
+
+        Args:
+            value: The value to append.
+        """
+        self.items.append(value)
+
+
+class InheritedListSubState(InheritedListState):
+    """A substate changing the inherited list from a background task."""
+
+
+class RedeclaringState(BaseState):
+    """A root state whose handler writes a var its substate redeclares."""
+
+    count: int = 0
+
+    @rx.event
+    def bump(self):
+        """Increment the count."""
+        self.count += 1
+
+
+class RedeclaringSubState(RedeclaringState):
+    """A substate with a count of its own."""
+
+    count: int = 10
+
+
+@pytest.mark.asyncio
+async def test_inherited_mutable_var_marks_its_owner(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+) -> None:
+    """An in-place change to an inherited var through a StateProxy dirties the state storing it.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+        emitted_deltas: The captured state updates.
+    """
+    state_token = BaseStateToken(ident=token, cls=InheritedListSubState)
+    async with state_manager.modify_state(state_token) as root:
+        proxy = StateProxy(
+            root.get_substate(InheritedListSubState.get_full_name().split("."))
+        )
+
+    with pytest.raises(ImmutableStateError):
+        proxy.items.append(0)
+    async with proxy:
+        proxy.items.append(1)
+
+    assert emitted_deltas == [
+        (token, {InheritedListState.get_full_name(): {"items" + FIELD_MARKER: [1]}}),
+    ]
+    async with state_manager.modify_state(state_token) as root:
+        assert root.items == [1]  # pyright: ignore [reportAttributeAccessIssue]
+
+
+@pytest.mark.asyncio
+async def test_inherited_handler_is_guarded_by_the_proxy(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+) -> None:
+    """An inherited event handler called through a StateProxy runs on the proxy.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+    """
+    state_token = BaseStateToken(ident=token, cls=InheritedListSubState)
+    async with state_manager.modify_state(state_token) as root:
+        proxy = StateProxy(
+            root.get_substate(InheritedListSubState.get_full_name().split("."))
+        )
+
+    with pytest.raises(ImmutableStateError):
+        proxy.add_item(0)
+    async with proxy:
+        proxy.add_item(1)
+    async with state_manager.modify_state(state_token) as root:
+        assert root.items == [1]  # pyright: ignore [reportAttributeAccessIssue]
+
+
+@pytest.mark.asyncio
+async def test_inherited_handler_runs_on_its_state(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+) -> None:
+    """An inherited event handler called through a StateProxy writes its own state's vars.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+    """
+    state_token = BaseStateToken(ident=token, cls=RedeclaringSubState)
+    async with state_manager.modify_state(state_token) as root:
+        proxy = StateProxy(
+            root.get_substate(RedeclaringSubState.get_full_name().split("."))
+        )
+
+    async with proxy:
+        proxy.bump()
+    # A handler taken before entering runs on the state reloaded by entering.
+    bump = proxy.bump
+    async with proxy:
+        bump()
+    async with state_manager.modify_state(state_token) as root:
+        assert root.count == 2  # pyright: ignore [reportAttributeAccessIssue]
+        substate = root.get_substate(RedeclaringSubState.get_full_name().split("."))
+        assert substate.count == 10  # pyright: ignore [reportAttributeAccessIssue]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("proxy_cls", [StateProxy, ReadOnlyStateProxy])
+@pytest.mark.parametrize("state_cls", [RouterProxyState, RouterProxySubState])
+async def test_router_proxy_nested_context(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+    proxy_cls: type[StateProxy],
+    state_cls: type[BaseState],
+) -> None:
+    """Nested router contexts refresh the backing field and respect read-only access.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+        proxy_cls: The background or read-only proxy type.
+        state_cls: The root or substate to proxy.
+    """
+    state_token = BaseStateToken(ident=token, cls=state_cls)
+    async with state_manager.modify_state(state_token) as root:
+        root.router = RouterData(_page=PageData(params={"x": "before"}))
+        proxy = proxy_cls(root.get_substate(state_cls.get_full_name().split(".")))
+        params = proxy.router._page.params
+
+    async with state_manager.modify_state(state_token) as root:
+        root.router = RouterData(_page=PageData(params={"x": "refreshed"}))
+
+    if proxy_cls is ReadOnlyStateProxy:
+        with pytest.raises(ImmutableStateError, match="read-only"):
+            async with params:
+                pass
+    else:
+        async with params:
+            assert params["x"] == "refreshed"
+            params["x"] = "after"
+
+    with pytest.raises(ImmutableStateError):
+        params["x"] = "unlocked write"
+
+    async with state_manager.modify_state(state_token) as root:
+        assert root.router._page.params["x"] == (
+            "refreshed" if proxy_cls is ReadOnlyStateProxy else "after"
+        )
 
 
 @pytest.mark.asyncio
@@ -1003,12 +1287,10 @@ def test_interval_computed_vars_resolve_through_state_proxy(
     assert IntervalState._interval_computed_var_names == frozenset({"timed"})
 
 
-def test_fast_path_skips_names_a_subclass_defines():
-    """A subclass defining a fast-pathed framework name keeps the full lookup for it.
+def test_subclass_overrides_a_framework_method():
+    """A marked override of a BaseState method is what the state instance uses.
 
-    The fast path bypasses var resolution, so it must not apply to a name the
-    state itself defines (here a marked override of a BaseState method). The
-    class is a detached root (not a substate of ``State``) so the shadowed
+    The class is a detached root (not a substate of ``State``) so the shadowed
     method never reaches the framework paths that other tests exercise on the
     shared state tree.
     """
@@ -1028,8 +1310,5 @@ def test_fast_path_skips_names_a_subclass_defines():
             "get_value": get_value,
         },
     )
-    assert "get_value" in BaseState._fast_attr_names
-    assert "get_value" not in ShadowState._fast_attr_names
-    assert "dirty_vars" in ShadowState._fast_attr_names
     state = ShadowState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     assert state.get_value("k") == "shadow:k"

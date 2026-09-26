@@ -120,7 +120,7 @@ dev = [
   "reflex-docgen",
   "reflex-otel",
   "reflex-release",
-  "reflex-build-sdk",
+  "reflex-build-sdk[aiohttp,httpx,httpx2]",
   "reflex-site-shared",
   "ruff",
   "selenium",
@@ -298,6 +298,9 @@ preview = true
 filterwarnings = "ignore:fields may not start with an underscore:RuntimeWarning"
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
+markers = [
+  "performance: scheduled wall-time, service, memory, lifecycle, or browser benchmark",
+]
 
 [tool.codespell]
 skip = "*.html, examples, *.pyi, */nba.csv, */olympic-winners.json, packages/reflex-build-sdk/openapi.json, uv.lock, */bun.lock, node_modules"
@@ -493,7 +496,12 @@ frontend_pinned = [
 ]
 
 [tool.uv]
-required-version = ">=0.9.17"
+# 0.11.8 is the first release that resolves a URL dependency reached through a
+# URL build requirement. reflex's build hook sets require-runtime-dependencies,
+# so every workspace package it depends on is a file:// build requirement, and
+# reflex-hosting-cli reaches reflex-build-sdk the same way. Older uv refuses the
+# second hop and `uv sync` cannot build reflex at all.
+required-version = ">=0.11.8"
 exclude-newer = "7 days"
 
 # Internal Reflex packages release in lockstep and are routinely pinned (>=) at a version
@@ -505,6 +513,7 @@ exclude-newer = "7 days"
 hatch-reflex-pyi = false
 reflex = false
 reflex-base = false
+reflex-build-sdk = false
 reflex-components-code = false
 reflex-components-core = false
 reflex-components-dataeditor = false
