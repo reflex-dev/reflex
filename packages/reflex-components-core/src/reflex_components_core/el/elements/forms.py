@@ -45,6 +45,7 @@ def _handle_submit_js_template(
     handle_submit_unique_name: str,
     form_data: str,
     field_ref_mapping: str,
+    field_ref_id_mapping: str,
     on_submit_event_chain: str,
     reset_on_submit: str,
 ) -> str:
@@ -67,11 +68,22 @@ def _handle_submit_js_template(
         const {form_data} = {{
             ...Object.fromEntries(new FormData($form).entries()),
             ...Object.fromEntries(Object.entries({field_ref_mapping}).filter(([key]) => {{
-                const element = document.getElementById(key)
+                const elementId = ({field_ref_id_mapping})[key]
+                const element = elementId ? document.getElementById(elementId) : null
+                const isNativeControl = element && (
+                    ["SELECT", "TEXTAREA"].includes(element.tagName)
+                    || (
+                        element.tagName === "INPUT"
+                        && !["button", "image", "reset", "submit"].includes(element.type)
+                    )
+                )
+                const role = element?.getAttribute("role")
                 return element && $form.contains(element) && (
-                    ["INPUT", "SELECT", "TEXTAREA"].includes(element.tagName)
-                    || ["checkbox", "radio", "slider", "switch"].includes(element.getAttribute("role"))
-                    || element.querySelector("[role='checkbox'], [role='radio'], [role='slider'], [role='switch']")
+                    isNativeControl
+                    || ["checkbox", "radio", "slider", "switch"].includes(role)
+                    || element.querySelector(
+                        "[role='checkbox'], [role='radio'], [role='slider'], [role='switch']"
+                    )
                 )
             }}))
         }};
@@ -350,6 +362,7 @@ class Form(BaseHTML):
                 handle_submit_unique_name=str(self.handle_submit_unique_name),
                 form_data=str(FORM_DATA),
                 field_ref_mapping=str(LiteralVar.create(self._get_form_refs())),
+                field_ref_id_mapping=str(LiteralVar.create(self._get_form_ref_ids())),
                 on_submit_event_chain=str(
                     LiteralVar.create(self.event_triggers[EventTriggers.ON_SUBMIT])
                 ),
@@ -387,6 +400,29 @@ class Form(BaseHTML):
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
         return form_refs
+
+    def _get_form_ref_ids(self) -> dict[str, str]:
+        """Map form field keys to their original DOM ids.
+
+        Returns:
+            A mapping from the normalized form-data key to the original DOM id.
+        """
+        form_ref_ids = {}
+        for component in _iter_form_components(self):
+            if (
+                component is self
+                or not isinstance(component, Component)
+                or not getattr(component, "_is_form_control", False)
+            ):
+                continue
+            ref = component.get_ref()
+            element_id = _get_static_string_prop(component, "id")
+            if ref is None or not isinstance(element_id, str):
+                continue
+            if ref.startswith("refs_"):
+                continue
+            form_ref_ids[ref[4:]] = element_id
+        return form_ref_ids
 
     def _get_static_form_field_keys(self) -> tuple[set[str], bool]:
         """Collect statically known form-data keys and whether any are dynamic.
