@@ -1478,9 +1478,8 @@ export const getRefValue = (ref) => {
   } else {
     //querySelector(":checked") is needed to get value from radio_group
     return (
-      ref.current.value ||
+      ref.current.value ??
       (ref.current.querySelector &&
-        ref.current.querySelector(":checked") &&
         ref.current.querySelector(":checked")?.value)
     );
   }

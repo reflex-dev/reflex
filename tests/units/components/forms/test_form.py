@@ -4,6 +4,7 @@ import pytest
 from reflex_base.event import EventChain, prevent_default
 from reflex_base.utils.exceptions import EventHandlerValueError
 from reflex_base.vars.base import Var
+from reflex_components_core.core.debounce import DebounceInput
 from reflex_components_core.el.elements.forms import (
     AUTO_HEIGHT_JS,
     ENTER_KEY_SUBMIT_JS,
@@ -35,6 +36,41 @@ def test_render_no_on_submit():
     assert isinstance(f.event_triggers["on_submit"], EventChain)
     assert len(f.event_triggers["on_submit"].events) == 1
     assert f.event_triggers["on_submit"].events[0] == prevent_default
+
+
+def test_form_submit_filters_null_ref_values():
+    """Only refs with resolved values should be merged into form data."""
+
+    class FormState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: dict):
+            pass
+
+    form = HTMLForm.create(
+        rx.box(
+            Input.create(id="email"),
+            rx.text("Email", id="email_label"),
+            rx.button("Submit", id="submit_button"),
+        ),
+        on_submit=FormState.on_submit,
+    )
+
+    submit_hook = form.add_hooks()[0]
+    assert "filter(([, value]) => value != null)" in submit_hook
+    assert "ref_email" in submit_hook
+    assert "ref_email_label" in submit_hook
+    assert "ref_submit_button" in submit_hook
+
+
+def test_form_refs_include_debounced_controls():
+    """ID-only debounced inputs remain available to submit handlers."""
+    form = HTMLForm.create(
+        DebounceInput.create(
+            Input.create(id="debounced_input", on_change=rx.console_log)
+        )
+    )
+
+    assert "ref_debounced_input" in form.add_hooks()[0]
 
 
 @pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
