@@ -169,7 +169,7 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
     assert.equal(calls, 0);
     assert.equal(window.__reflex.react, react);
     assert.equal(window.__reflex["quality-lazy-fixture"], undefined);
-    const source = 'await window.__reflex_load?.(["quality-lazy-fixture"]); const {value} = window.__reflex["quality-lazy-fixture"]; export default function Quality(){ return value; }';
+    const source = '//__reflex_evaluate:["quality-lazy-fixture"]\nconst {value} = window.__reflex["quality-lazy-fixture"]; export default function Quality(){ return value; }';
     const components = await Promise.all([evaluate(source), evaluate(source)]);
     assert.equal(calls, 1);
     assert.deepEqual(components.map(component => component()), [42, 42]);
@@ -183,8 +183,9 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
       if (++attempts === 1) throw new Error("Temporary download failure");
       return {value: 43};
     });
-    await assert.rejects(evaluate(source), /Temporary download failure/);
-    const recovered = await evaluate(source + "\n// retry fixture");
+    const retrySource = source + "\n// retry fixture";
+    await assert.rejects(evaluate(retrySource), /Temporary download failure/);
+    const recovered = await evaluate(retrySource);
     assert.equal(attempts, 2);
     assert.equal(recovered(), 43);
 
