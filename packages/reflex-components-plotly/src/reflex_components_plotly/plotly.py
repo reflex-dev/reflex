@@ -219,6 +219,7 @@ const _rxNormalizePlotlyLayout = (layout) => {
     if (!layout || typeof layout !== "object" || typeof layout.title !== "string") {
         return layout;
     }
+
     return {...layout, title: {text: layout.title}};
 }
 """,
