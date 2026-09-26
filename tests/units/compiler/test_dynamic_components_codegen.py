@@ -64,10 +64,11 @@ def test_lazy_dynamic_component_loads_only_its_bundled_libraries(mocker) -> None
         code = serializers.serialize(rx.icon("apple"))
         _, app_root_code = compiler.compile_app_root(rx.el.div())
     assert isinstance(code, str)
-    assert (
-        'await window.__reflex_load?.(["$/utils/state", "@emotion/react", '
-        '"lucide-react/dist/esm/icons/apple.mjs", "react"]);' in code
+    assert code.startswith(
+        '//__reflex_evaluate:["$/utils/state", "@emotion/react", '
+        '"lucide-react/dist/esm/icons/apple.mjs", "react"]'
     )
+    assert "await window.__reflex_load" not in code
     assert "unused-library" not in code
     assert "window.__reflex_load = (libraries = Object.keys(loaders))" in app_root_code
     assert "Promise.all(Object.entries(loaders)" not in app_root_code
