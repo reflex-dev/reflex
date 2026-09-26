@@ -45,7 +45,6 @@ def _handle_submit_js_template(
     handle_submit_unique_name: str,
     form_data: str,
     field_ref_mapping: str,
-    field_ref_id_mapping: str,
     on_submit_event_chain: str,
     reset_on_submit: str,
 ) -> str:
@@ -55,7 +54,6 @@ def _handle_submit_js_template(
         handle_submit_unique_name: Unique name for the handle submit function.
         form_data: Name of the form data variable.
         field_ref_mapping: JSON string of field reference mappings.
-        field_ref_id_mapping: JSON string mapping normalized keys to static DOM identifiers.
         on_submit_event_chain: Event chain for the submit handler.
         reset_on_submit: Boolean string indicating if form should reset after submit.
 
@@ -68,38 +66,9 @@ def _handle_submit_js_template(
         ev.preventDefault()
         const {form_data} = {{
             ...Object.fromEntries(new FormData($form).entries()),
-            ...Object.fromEntries(Object.entries({field_ref_mapping}).filter(([key]) => {{
-                const mappedIdentifier = ({field_ref_id_mapping})[key]
-                const elementIdentifier = mappedIdentifier ?? key
-                const element = document.getElementById(elementIdentifier)
-                    || Array.from($form.querySelectorAll("[name]")).find(
-                        (candidate) => candidate.getAttribute("name") === elementIdentifier
-                    )
-                const isMappedControl = mappedIdentifier !== undefined
-                const nativeControlTags = ["SELECT", "TEXTAREA"]
-                const excludedInputTypes = ["button", "image", "reset", "submit"]
-                const compositeControlRoles = ["checkbox", "radio", "slider", "switch"]
-                const isNativeControl = element && (
-                    nativeControlTags.includes(element.tagName)
-                    || (
-                        element.tagName === "INPUT"
-                        && !excludedInputTypes.includes(element.type)
-                    )
-                )
-                const role = element?.getAttribute("role")
-                const isCompositeControl = isMappedControl
-                    && (
-                        compositeControlRoles.includes(role)
-                        || element?.querySelector(
-                            "[role='checkbox'], [role='radio'], [role='slider'], [role='switch']"
-                        )
-                    )
-                const isFormControl = element && $form.contains(element) && (
-                    isNativeControl || isCompositeControl
-                )
-                // Mapped controls may expose their value through a ref without a DOM id.
-                return isMappedControl ? (!element || isFormControl) : isFormControl
-            }}))
+            ...Object.fromEntries(
+                Object.entries({field_ref_mapping}).filter(([, value]) => value != null)
+            )
         }};
 
         ({on_submit_event_chain}(ev));
@@ -376,7 +345,6 @@ class Form(BaseHTML):
                 handle_submit_unique_name=str(self.handle_submit_unique_name),
                 form_data=str(FORM_DATA),
                 field_ref_mapping=str(LiteralVar.create(self._get_form_refs())),
-                field_ref_id_mapping=str(LiteralVar.create(self._get_form_ref_ids())),
                 on_submit_event_chain=str(
                     LiteralVar.create(self.event_triggers[EventTriggers.ON_SUBMIT])
                 ),
@@ -414,32 +382,6 @@ class Form(BaseHTML):
                     _var_data=VarData.merge(ref_var._get_all_var_data()),
                 )
         return form_refs
-
-    def _get_form_ref_ids(self) -> dict[str, str]:
-        """Map form field keys to their static DOM identifiers.
-
-        Returns:
-            A mapping from normalized form-data keys to static DOM identifiers.
-        """
-        form_ref_ids = {}
-        for component in _iter_form_components(self):
-            if (
-                component is self
-                or not isinstance(component, Component)
-                or not getattr(component, "_is_form_control", False)
-            ):
-                continue
-            ref = component.get_ref()
-            element_id = _get_static_string_prop(component, "id")
-            element_name = _get_static_string_prop(component, "name")
-            element_identifier = (
-                element_id if isinstance(element_id, str) else element_name
-            )
-            if ref is None or not isinstance(element_identifier, str):
-                continue
-            field_key = ref[len("refs_") : -3] if ref.startswith("refs_") else ref[4:]
-            form_ref_ids[field_key] = element_identifier
-        return form_ref_ids
 
     def _get_static_form_field_keys(self) -> tuple[set[str], bool]:
         """Collect statically known form-data keys and whether any are dynamic.

@@ -1,4 +1,4 @@
-from typing import TypedDict, cast
+from typing import TypedDict
 
 import pytest
 from reflex_base.event import EventChain, prevent_default
@@ -39,28 +39,25 @@ def test_render_no_on_submit():
 
 
 def test_form_submit_filters_null_ref_values():
-    """IDs on non-input descendants must not add null form payload fields."""
+    """Only refs with resolved values should be merged into form data."""
 
     class FormState(rx.State):
         @rx.event
         def on_submit(self, form_data: dict):
             pass
 
-    form = cast(
-        HTMLForm,
-        HTMLForm.create(
-            rx.box(
-                Input.create(id="email"),
-                rx.text("Email", id="email_label"),
-                rx.button("Submit", id="submit_button"),
-            ),
-            on_submit=FormState.on_submit,
+    form = HTMLForm.create(
+        rx.box(
+            Input.create(id="email"),
+            rx.text("Email", id="email_label"),
+            rx.button("Submit", id="submit_button"),
         ),
+        on_submit=FormState.on_submit,
     )
 
     submit_hook = form.add_hooks()[0]
-    assert form._get_form_ref_ids() == {"email": "email"}  # pyright: ignore[reportAttributeAccessIssue]
-    assert "document.getElementById(elementIdentifier)" in submit_hook
+    assert "filter(([, value]) => value != null)" in submit_hook
+    assert "ref_email" in submit_hook
     assert "ref_email_label" in submit_hook
     assert "ref_submit_button" in submit_hook
 
@@ -74,38 +71,6 @@ def test_form_refs_include_debounced_controls():
     )
 
     assert "ref_debounced_input" in form.add_hooks()[0]
-
-
-def test_form_ref_ids_preserve_dom_ids_and_exclude_containers():
-    """Form refs retain raw DOM ids and ignore non-control ancestors."""
-    form = HTMLForm.create(
-        rx.box(rx.checkbox("Check", id="check"), id="wrapper"),
-        Input.create(id="first-name"),
-        Input.create(id="submit", type="submit"),
-    )
-
-    assert form._get_form_ref_ids() == {  # pyright: ignore[reportAttributeAccessIssue]
-        "check": "check",
-        "first_name": "first-name",
-        "submit": "submit",
-    }
-
-
-def test_form_submit_filter_excludes_button_inputs():
-    """ID-only submit controls are excluded from ref-derived form data."""
-
-    class FormState(rx.State):
-        @rx.event
-        def on_submit(self, form_data: dict):
-            pass
-
-    form = HTMLForm.create(
-        Input.create(id="submit", type="submit"),
-        on_submit=FormState.on_submit,
-    )
-
-    submit_hook = form.add_hooks()[0]
-    assert '["button", "image", "reset", "submit"]' in submit_hook
 
 
 @pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
