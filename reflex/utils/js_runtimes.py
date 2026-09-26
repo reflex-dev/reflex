@@ -619,7 +619,7 @@ def _frontend_packages_cache_payload(
 
     Args:
         packages: Custom packages requested by the caller.
-        development_dependencies: Development packages requested by plugins.
+        development_dependencies: Development packages requested by plugins and config.
         frozen_lockfile: Whether bun should enforce the existing lockfile.
         install_package_managers: The package manager paths in priority order.
 
@@ -667,7 +667,7 @@ def _install_frontend_packages(
     Args:
         packages: Custom packages requested by the caller (from
             ``Config.frontend_packages`` and inferred component imports).
-        development_dependencies: Development packages requested by plugins.
+        development_dependencies: Development packages requested by plugins and config.
         frozen_lockfile: Whether bun should enforce the existing lockfile.
         install_package_managers: The package manager paths in priority
             order (primary plus fallbacks).
@@ -816,6 +816,12 @@ def install_frontend_packages(packages: set[str], config: Config):
     _require_supported_node_for_npm(_is_npm(install_package_managers[0]))
     packages = set(packages)
     development_dependencies: set[str] = set()
+    if config.react_compiler:
+        development_dependencies.update(
+            _pinned_args_from_constants(
+                constants.PackageJson.REACT_COMPILER_DEV_DEPENDENCIES
+            )
+        )
     for plugin in config.plugins:
         development_dependencies.update(plugin.get_frontend_development_dependencies())
         packages.update(plugin.get_frontend_dependencies())

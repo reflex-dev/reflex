@@ -623,6 +623,7 @@ def _compile_vite_config(config: Config):
         experimental_hmr=environment.VITE_EXPERIMENTAL_HMR.get(),
         prod_react=environment.REFLEX_DEV_PROD_REACT.get(),
         warmup_routes=environment.REFLEX_VITE_WARMUP_ROUTES.get(),
+        react_compiler=config.react_compiler,
         sourcemap=environment.VITE_SOURCEMAP.get(),
         minify=environment.VITE_MINIFY.get(),
         allowed_hosts=config.vite_allowed_hosts,

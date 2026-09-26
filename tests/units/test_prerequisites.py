@@ -541,6 +541,29 @@ def test_initialise_vite_config(config, expected_output):
     assert expected_output in output
 
 
+def test_react_compiler_vite_config():
+    """Only opt-in apps load React Compiler before the router's transforms."""
+    default_output = _compile_vite_config(Config(app_name="test"))
+    disabled_output = _compile_vite_config(
+        Config(app_name="test", react_compiler=False)
+    )
+    enabled_output = _compile_vite_config(Config(app_name="test", react_compiler=True))
+    compiler_import = 'import reactCompiler from "./vite-plugin-react-compiler.js";\n'
+    compiler_call = "    reactCompiler(),\n"
+
+    assert default_output == disabled_output
+    assert "reactCompiler" not in disabled_output
+    assert "vite-plugin-react-compiler" not in disabled_output
+    assert compiler_import in enabled_output
+    assert enabled_output.index(compiler_call) < enabled_output.index(
+        "    reactRouter(),"
+    )
+    assert (
+        enabled_output.replace(compiler_import, "").replace(compiler_call, "")
+        == disabled_output
+    )
+
+
 @pytest.mark.usefixtures("_stub_skeleton_initializers")
 def test_initialize_web_directory_restores_root_bun_lock(tmp_path, monkeypatch):
     template_dir = tmp_path / "template"
@@ -866,6 +889,69 @@ def _record_calls(env: InstallPackagesEnv) -> list[list[str]]:
 
     env.patch_pm(["bun"], run_package_manager)
     return calls
+
+
+def test_react_compiler_dependencies_toggle(install_packages_env: InstallPackagesEnv):
+    """Toggle compiler packages without stale installs or repeated cache misses.
+
+    Args:
+        install_packages_env: The isolated install environment.
+    """
+    env = install_packages_env
+    calls = _record_calls(env)
+    env.install()
+    assert calls == []
+
+    env.config.react_compiler = True
+    env.install()
+    assert len(calls) == 1
+    assert "add" in calls[0]
+    assert "-d" in calls[0]
+    assert "@babel/core@7.29.7" in calls[0]
+    assert "babel-plugin-react-compiler@1.0.0" in calls[0]
+
+    env.install()
+    assert len(calls) == 1
+
+    # Model the package.json written by the package manager after enabling.
+    env.web_package_json.write_text(
+        json.dumps({
+            "devDependencies": constants.PackageJson.REACT_COMPILER_DEV_DEPENDENCIES
+        })
+    )
+    frontend_skeleton.sync_web_lockfiles_to_root()
+    env.config.react_compiler = False
+    env.install()
+    assert len(calls) == 2
+    assert "remove" in calls[1]
+    assert "@babel/core" in calls[1]
+    assert "babel-plugin-react-compiler" in calls[1]
+
+    env.install()
+    assert len(calls) == 2
+
+
+def test_react_compiler_dependency_versions_invalidate_cache(
+    install_packages_env: InstallPackagesEnv, monkeypatch: pytest.MonkeyPatch
+):
+    """Changing an optional compiler pin invalidates the existing install cache.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    calls = _record_calls(env)
+    env.config.react_compiler = True
+    env.install()
+    monkeypatch.setattr(
+        constants.PackageJson,
+        "REACT_COMPILER_DEV_DEPENDENCIES",
+        {"@babel/core": "7.29.7", "babel-plugin-react-compiler": "1.0.1"},
+    )
+    env.install()
+    assert len(calls) == 2
+    assert "babel-plugin-react-compiler@1.0.1" in calls[1]
 
 
 def test_install_frontend_packages_pinned_packages_single_call(

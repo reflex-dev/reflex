@@ -175,6 +175,7 @@ class BaseConfig:
         cors_allowed_origins: Comma separated list of origins that are allowed to connect to the backend API.
         vite_allowed_hosts: Allowed hosts for the Vite dev server. Set to True to allow all hosts, or provide a list of hostnames (e.g. ["myservice.local"]) to allow specific ones. Prevents 403 errors in Docker, Codespaces, reverse proxies, etc.
         react_strict_mode: Whether to use React strict mode.
+        react_compiler: Enable experimental React Compiler memoization for generated components in development and production. Defaults to False.
         frontend_compression_formats: Pre-compressed frontend asset formats to generate for production builds. Supported values are "gzip", "brotli", and "zstd". Use an empty list to disable build-time pre-compression.
         frontend_packages: Additional frontend packages to install.
         frontend_lazy_bundled_libraries: Load optional dynamic-component libraries when a dynamic component is first evaluated, rather than importing their full namespaces on every page. Defaults to False for compatibility with scripts that read window.__reflex directly.
@@ -236,6 +237,8 @@ class BaseConfig:
     vite_allowed_hosts: bool | list[str] = False
 
     react_strict_mode: bool = True
+
+    react_compiler: bool = False
 
     frontend_compression_formats: Annotated[
         list[str],
