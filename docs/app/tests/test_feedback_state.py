@@ -1,5 +1,6 @@
 """Coverage for posting integration requests to Slack."""
 
+import asyncio
 from typing import cast
 
 import pytest
@@ -49,14 +50,16 @@ def _state() -> FeedbackState:
         (False, "An error occurred while submitting your request"),
     ],
 )
-async def test_integration_request_is_posted_to_slack(
+def test_integration_request_is_posted_to_slack(
     monkeypatch, delivered: bool, toast_text: str
 ) -> None:
     """Post the escaped request to its channel and report the outcome."""
     posts = _mock_slack(monkeypatch, delivered)
 
-    toast = await FeedbackState.handle_integration_request.fn(
-        _state(), {"request": "Please add <!here> Supabase"}
+    toast = asyncio.run(
+        FeedbackState.handle_integration_request.fn(
+            _state(), {"request": "Please add <!here> Supabase"}
+        )
     )
 
     assert posts == [
@@ -69,14 +72,14 @@ async def test_integration_request_is_posted_to_slack(
 
 
 @pytest.mark.parametrize("request_text", ["too short", "x" * 2001])
-async def test_integration_request_rejects_invalid_length(
+def test_integration_request_rejects_invalid_length(
     monkeypatch, request_text: str
 ) -> None:
     """Warn about requests outside the accepted length without sending them."""
     posts = _mock_slack(monkeypatch, delivered=True)
 
-    toast = await FeedbackState.handle_integration_request.fn(
-        _state(), {"request": request_text}
+    toast = asyncio.run(
+        FeedbackState.handle_integration_request.fn(_state(), {"request": request_text})
     )
 
     assert posts == []
