@@ -261,13 +261,10 @@ def load_dynamic_serializer():
             if line_stripped.startswith("{") and line_stripped.endswith("}"):
                 module_code_lines[ix] = line_stripped[1:-1]
 
-        if bundled_library_paths:
-            module_code_lines.insert(
-                0,
-                "await window.__reflex_load?.("
-                f"{json.dumps(sorted(bundled_library_paths))});",
-            )
         module_code_lines.insert(0, "const React = window.__reflex.react;")
+        evaluation_marker = "//__reflex_evaluate"
+        if bundled_library_paths:
+            evaluation_marker += f":{json.dumps(sorted(bundled_library_paths))}"
 
         function_line = next(
             index
@@ -287,7 +284,7 @@ def load_dynamic_serializer():
         ]
 
         return "\n".join([
-            "//__reflex_evaluate",
+            evaluation_marker,
             *module_code_lines,
         ])
 
