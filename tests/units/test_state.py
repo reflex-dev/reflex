@@ -27,7 +27,7 @@ from pytest_mock import MockerFixture
 from reflex_base import constants
 from reflex_base.constants import CompileVars, RouteVar
 from reflex_base.constants.state import FIELD_MARKER
-from reflex_base.event import Event, EventHandler
+from reflex_base.event import Event, EventHandler, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.registry import RegistrationContext
@@ -4868,6 +4868,15 @@ config = rx.Config(
         assert "setvar" in TestState.event_handlers
 
 
+def shared_explicit_callback() -> EventSpec:
+    """A module-level callback that a state also exposes as an attribute.
+
+    Returns:
+        The event to run.
+    """
+    return rx.console_log("shared")
+
+
 def test_explicit_event_handlers(tmp_path, forked_registration_context):
     """With state_explicit_event_handlers, undecorated methods stay plain methods."""
     proj_root = tmp_path / "project1"
@@ -4895,8 +4904,16 @@ config = rx.Config(
             def mixin_helper(self) -> int:
                 return 1
 
+        # Named like the attribute it is exposed as, like a class-body method.
+        def made_callback() -> EventSpec:
+            return rx.console_log("made")
+
+        made = made_callback
+
         class ExplicitState(ExplicitMixin, State):
             num: int = 0
+            shared_explicit_callback = shared_explicit_callback
+            made_callback = made
 
             @rx.event
             def handler(self):
@@ -4935,6 +4952,10 @@ config = rx.Config(
                 match=r"@rx\.event.*state_explicit_event_handlers",
             ):
                 rx.button(on_click=trigger)
+
+        # A callback the state merely exposes stays usable as a trigger elsewhere.
+        rx.button(on_click=shared_explicit_callback)
+        rx.button(on_click=made_callback)
 
         # Built-in states are unaffected.
         assert "on_load_internal" in OnLoadInternalState.event_handlers

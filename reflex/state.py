@@ -833,7 +833,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             name: The name of the item.
             value: The value of the item.
             explicit: Only accept functions decorated with `@rx.event`; an
-                undecorated one is marked so wiring it to a trigger fails clearly.
+                undecorated method of the class body is marked so wiring it to a
+                trigger fails clearly.
 
         Returns:
             Whether the item is an event handler.
@@ -847,7 +848,10 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         ):
             return False
         if explicit and not getattr(value, EVENT_MARKER, False):
-            setattr(value, UNDECORATED_STATE_METHOD_MARKER, True)
+            # A callback defined elsewhere may be shared, so leave it unmarked.
+            owner, _, fn_name = value.__qualname__.rpartition(".")
+            if fn_name == name and owner and not owner.endswith("<locals>"):
+                setattr(value, UNDECORATED_STATE_METHOD_MARKER, True)
             return False
         return True
 
