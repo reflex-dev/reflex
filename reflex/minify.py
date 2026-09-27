@@ -106,15 +106,34 @@ def _ambiguous_state_id_message(state_path: str, state_id: str) -> str:
     )
 
 
-def _load_minify_config_uncached(
-    *, allow_ambiguous_state_ids: bool = False
-) -> MinifyConfig | None:
+def _duplicate_event_ids_message(
+    state_path: str, duplicates: dict[str, list[str]]
+) -> str:
+    """Explain which handlers of a state share an id and how to fix it.
+
+    Args:
+        state_path: The state's config path.
+        duplicates: The shared ids and the handlers holding each.
+
+    Returns:
+        The message.
+    """
+    shared = "; ".join(
+        f"{mid!r} by {', '.join(sorted(names))}" for mid, names in duplicates.items()
+    )
+    return (
+        f"handlers of '{state_path}' share event ids ({shared}), which leaves all "
+        "but one of them unreachable. Run 'reflex minify sync' to reassign them."
+    )
+
+
+def _load_minify_config_uncached(*, for_repair: bool = False) -> MinifyConfig | None:
     """Load and validate ``minify.json`` from disk.
 
     Args:
-        allow_ambiguous_state_ids: Accept state ids :func:`_is_state_id`
-            rejects, which files written before that rule may hold, so the
-            ``reflex minify`` commands can report and reassign them.
+        for_repair: Accept the problems ``reflex minify sync`` repairs -- state
+            ids :func:`_is_state_id` rejects and an id two handlers of a state
+            share -- so the ``reflex minify`` commands can report and fix them.
 
     Returns:
         The parsed config, or ``None`` if the file is absent.
@@ -165,7 +184,7 @@ def _load_minify_config_uncached(
             msg = f"Invalid {MINIFY_JSON}: state '{key}' must be an object with a string 'id' and a 'parent': {value}"
             raise ValueError(msg)
         _validate_minified_id(f"state '{key}'", value["id"])
-        if not allow_ambiguous_state_ids and not _is_state_id(value["id"]):
+        if not for_repair and not _is_state_id(value["id"]):
             msg = f"Invalid {MINIFY_JSON}: {_ambiguous_state_id_message(key, value['id'])}"
             raise ValueError(msg)
         parent = value.get("parent")
@@ -185,6 +204,9 @@ def _load_minify_config_uncached(
                 msg = f"Invalid {MINIFY_JSON}: event '{state_path}.{handler_name}' has non-string id: {event_id}"
                 raise ValueError(msg)
             _validate_minified_id(f"event '{state_path}.{handler_name}'", event_id)
+        if not for_repair and (duplicates := _find_duplicate_ids(handlers.items())):
+            msg = f"Invalid {MINIFY_JSON}: {_duplicate_event_ids_message(state_path, duplicates)}"
+            raise ValueError(msg)
 
     return MinifyConfig(
         version=data["version"],
@@ -759,6 +781,28 @@ def _assign_next_ids(
     return out
 
 
+def _reassign_duplicate_ids(ids: dict[str, str], reassign_deleted: bool) -> None:
+    """Give a new id to every name but the first, by sort order, sharing one.
+
+    Args:
+        ids: The ``{name: id}`` map of one state, modified in place.
+        reassign_deleted: Whether a replacement id may fill a gap.
+    """
+    kept: set[str] = set()
+    duplicates: list[str] = []
+    for name in sorted(ids):
+        if ids[name] in kept:
+            duplicates.append(name)
+        else:
+            kept.add(ids[name])
+    if duplicates:
+        ids.update(
+            _assign_next_ids(
+                duplicates, {minified_name_to_int(i) for i in kept}, reassign_deleted
+            )
+        )
+
+
 def _rehome_ambiguous_ids(
     states: dict[str, StateEntry], reassign_deleted: bool
 ) -> None:
@@ -911,10 +955,8 @@ def validate_minify_config(
         )
 
     for state_path, state_events in config["events"].items():
-        errors.extend(
-            f"Duplicate event_id='{mid}' in '{state_path}': {handlers}"
-            for mid, handlers in _find_duplicate_ids(state_events.items()).items()
-        )
+        if duplicates := _find_duplicate_ids(state_events.items()):
+            errors.append(_duplicate_event_ids_message(state_path, duplicates))
 
     code_event_keys = collect_handler_names(all_states)
     code_state_paths = set(code_event_keys)
@@ -1041,6 +1083,9 @@ def sync_minify_config(
 
     _rehome_ambiguous_ids(new_states, reassign_deleted)
     _rehome_conflicting_ids(new_states, all_states, reassign_deleted, reparented)
+
+    for state_events in new_events.values():
+        _reassign_duplicate_ids(state_events, reassign_deleted)
 
     # Assign new event IDs (unique within each state).
     for state_cls in all_states:

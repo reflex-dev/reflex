@@ -46,6 +46,7 @@ from reflex_base.vars.base import Field, Var, computed_var, field
 from typing_extensions import TypeAliasType
 
 import reflex as rx
+import reflex.istate.dynamic
 from reflex.app import App
 from reflex.environment import environment
 from reflex.istate.data import (
@@ -7085,3 +7086,57 @@ def test_state_count_keys_on_names_minification_cannot_share(
     assert CountedState.get_full_name() == "a.b"
     assert CountedState._get_default_full_name() in all_base_state_classes
     assert "a.b" not in all_base_state_classes
+
+
+def test_reload_retires_component_states_of_the_reloaded_module(
+    temp_minify_json, monkeypatch
+):
+    """Re-running a reloaded module's ``create()`` calls builds fresh states.
+
+    Their states live in ``reflex.istate.dynamic``, not the module, so the
+    reload has to recognize them by the component class they come from, or
+    the re-run collides with them: a keyed one by its key, an unkeyed one by
+    its restarted counter.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    from reflex.state import reload_state_module
+
+    # A reload rebuilds the dependency tracking of the states it prunes.
+    monkeypatch.setattr(State, "_var_dependencies", dict(State._var_dependencies))
+    monkeypatch.setattr(
+        State, "_potentially_dirty_states", set(State._potentially_dirty_states)
+    )
+    module = "reloaded_component_module"
+
+    def get_component(cls: Any) -> rx.Component:
+        return rx.text(cls.value)
+
+    def define_and_create() -> tuple[type[State], type[State]]:
+        counter = type(
+            "ReloadCounter",
+            (rx.ComponentState,),
+            {
+                "__module__": module,
+                "__annotations__": {"value": int},
+                "value": 0,
+                "get_component": classmethod(get_component),
+            },
+        )
+        keyed = counter.create(_state_key="cart").State
+        unkeyed = counter.create().State
+        assert keyed is not None
+        assert unkeyed is not None
+        return keyed, unkeyed
+
+    old_keyed, old_unkeyed = define_and_create()
+    reload_state_module(module=module)
+    assert old_keyed not in State.get_substates()
+    assert old_unkeyed not in State.get_substates()
+
+    new_keyed, new_unkeyed = define_and_create()
+    assert new_keyed.get_name() == old_keyed.get_name()
+    assert new_unkeyed.get_name() == old_unkeyed.get_name()
+    assert getattr(reflex.istate.dynamic, new_keyed.__name__) is new_keyed

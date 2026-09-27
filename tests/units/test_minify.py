@@ -1456,7 +1456,7 @@ def test_ambiguous_state_ids_are_reported_and_reassigned(temp_minify_json):
     # The app refuses it; the CLI loads it to report and repair it.
     with pytest.raises(ValueError, match="reflex minify sync"):
         get_minify_config()
-    loaded = _load_minify_config_uncached(allow_ambiguous_state_ids=True)
+    loaded = _load_minify_config_uncached(for_repair=True)
     assert loaded is not None
 
     errors, _warnings, _missing = validate_minify_config(loaded, parent)
@@ -1467,6 +1467,40 @@ def test_ambiguous_state_ids_are_reported_and_reassigned(temp_minify_json):
     assert "_" not in ids.values()
     assert "a_" not in ids.values()
     assert len(ids) == len(config["states"])
+    save_minify_config(synced)
+    get_minify_config.cache_clear()
+    assert get_minify_config() is not None
+
+
+def test_duplicate_event_ids_are_rejected_and_reassigned(temp_minify_json):
+    """Two handlers of a state on one id would leave one unreachable.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+    """
+
+    class DuplicateEventState(State):
+        def first(self):
+            pass
+
+        def second(self):
+            pass
+
+    path = get_state_full_path(DuplicateEventState)
+    config = generate_minify_config(DuplicateEventState)
+    config["events"][path] = {"first": "a", "second": "a", "setvar": "c"}
+    config["events"]["gone.module.State"] = {"x": "b", "y": "b"}
+    (temp_minify_json / MINIFY_JSON).write_text(json.dumps(config))
+
+    with pytest.raises(ValueError, match="reflex minify sync"):
+        get_minify_config()
+    loaded = _load_minify_config_uncached(for_repair=True)
+    assert loaded is not None
+
+    synced = sync_minify_config(loaded, DuplicateEventState)
+    assert synced["events"][path]["first"] == "a"
+    assert synced["events"][path]["second"] not in ("a", "c")
+    assert len(set(synced["events"]["gone.module.State"].values())) == 2
     save_minify_config(synced)
     get_minify_config.cache_clear()
     assert get_minify_config() is not None

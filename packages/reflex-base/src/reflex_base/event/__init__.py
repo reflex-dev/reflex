@@ -531,6 +531,12 @@ class EventHandler(EventActionsMixin):
         default=None, repr=False, compare=False
     )
 
+    # The wire name, cached by ``format_event_handler``. Declared so that
+    # caching it keeps the instance layout, and attribute reads, fast.
+    _formatted_name: str | None = dataclasses.field(
+        default=None, init=False, repr=False, compare=False
+    )
+
     def __post_init__(self) -> None:
         """Resolve handler annotations while the state class is stable."""
         if self.state is not None:

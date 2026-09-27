@@ -473,15 +473,13 @@ class RegistrationContext(BaseContext):
             resolver: The resolver to install. Pass :class:`DefaultNameResolver`
                 to revert to built-in names.
         """
-        from reflex_base.utils.format import _FORMATTED_NAME_CACHE_ATTR
-
         object.__setattr__(self, "name_resolver", resolver)
         for cls in self.base_states.values():
             cls.get_name.cache_clear()
             cls.get_full_name.cache_clear()
             cls.get_class_substate.cache_clear()
         for reg in self.event_handlers.values():
-            reg.handler.__dict__.pop(_FORMATTED_NAME_CACHE_ATTR, None)
+            object.__setattr__(reg.handler, "_formatted_name", None)
         self.refresh_keys()
 
     def find_unbound_states(self) -> list[tuple[type[BaseState], str]]:
