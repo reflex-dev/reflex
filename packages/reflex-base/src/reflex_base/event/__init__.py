@@ -72,6 +72,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
+    from reflex_base.registry import NameResolver
 
     BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
 
@@ -531,9 +532,9 @@ class EventHandler(EventActionsMixin):
         default=None, repr=False, compare=False
     )
 
-    # The wire name, cached by ``format_event_handler``. Declared so that
-    # caching it keeps the instance layout, and attribute reads, fast.
-    _formatted_name: str | None = dataclasses.field(
+    # ``(resolver, wire name)``, cached by ``format_event_handler``. Declared
+    # so that caching it keeps the instance layout, and attribute reads, fast.
+    _formatted_name: "tuple[NameResolver | None, str] | None" = dataclasses.field(
         default=None, init=False, repr=False, compare=False
     )
 
@@ -541,6 +542,14 @@ class EventHandler(EventActionsMixin):
         """Resolve handler annotations while the state class is stable."""
         if self.state is not None:
             self._get_type_hints()
+
+    def __getstate__(self) -> dict[str, Any]:
+        """Leave the cached wire name, and the resolver it holds, out of copies.
+
+        Returns:
+            The instance state without the cached name.
+        """
+        return {**vars(self), "_formatted_name": None}
 
     def _get_type_hints(self) -> dict[str, Any]:
         """Get and cache the type hints for the handler function.

@@ -1567,3 +1567,26 @@ async def test_raising_exception_handler_does_not_stop_the_queue(token: str):
     assert _CALL_LOG == [{"value": "after_failure"}], (
         "the event queued after the handler failure never ran"
     )
+
+
+async def test_cancelled_spawned_exception_handler_task_is_untracked(token: str):
+    """An exception handler task cancelled before it starts leaves no ``_tasks`` entry.
+
+    Args:
+        token: The client token.
+    """
+    seen: list[Exception] = []
+    processor = EventProcessor(
+        backend_exception_handler=seen.append, graceful_shutdown_timeout=2
+    )
+    processor.configure()
+    async with processor as ep:
+        assert ep._root_context is not None
+        ev_ctx = ep._root_context.fork(token=token)
+        ep._spawn_backend_exception_handler(RuntimeError("boom"), ev_ctx)
+        task = ep._tasks[ev_ctx.txid]
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+        assert ev_ctx.txid not in ep._tasks
+    assert seen == []

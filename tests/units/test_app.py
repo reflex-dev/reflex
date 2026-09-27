@@ -2124,7 +2124,9 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     prev_exp_val = ""
     for exp_index, exp_val in enumerate(exp_vals):
         on_load_internal = _event(
-            name=f"{OnLoadInternalState.get_full_name()}.on_load_internal",
+            name=format.format_event_handler(
+                OnLoadInternalState.event_handlers["on_load_internal"]
+            ),
             val=exp_val,
         )
         exp_router = RouterData.from_router_data(on_load_internal.router_data)
@@ -5255,6 +5257,26 @@ async def test_connect_disconnect_counts_connections(otel_metrics):
     (point,) = metric_points(otel_metrics, otel.METRIC_WEBSOCKET_CONNECTIONS)
     assert point.value == 1
     # Release t2 so a shared token store (redis) does not leak into other tests.
+    await ns._token_manager.disconnect_all()
+
+
+@pytest.mark.asyncio
+async def test_disconnect_during_scheme_mismatch_notice_leaves_no_sid_state():
+    """A disconnect landing while the mismatch notice is emitted leaves nothing behind."""
+    mock_app = unittest.mock.Mock()
+    mock_app._state = None
+    ns = EventNamespace(namespace="/", app=mock_app)
+
+    async def emit(*args, **kwargs):
+        # socketio's emit awaits its send tasks, letting a disconnect run here.
+        if task := ns.on_disconnect("sid1"):
+            await task
+
+    ns.emit = unittest.mock.AsyncMock(side_effect=emit)
+    await ns.on_connect("sid1", {"QUERY_STRING": "token=t1&scheme=stale"})
+    ns.emit.assert_awaited_once()
+    assert "sid1" not in ns._scheme_mismatch_sids
+    assert "sid1" not in ns._static_router_data
     await ns._token_manager.disconnect_all()
 
 

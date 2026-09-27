@@ -485,13 +485,17 @@ def test_sync_preserves_existing_ids():
     assert new_config["events"][state_path]["handler_b"] == "l"  # 10 + 1 = 11 -> 'l'
 
 
-def test_sync_no_sibling_collision_across_modules():
+def test_sync_no_sibling_collision_across_modules(temp_minify_json):
     """Test that sync assigns unique IDs to siblings of the same parent.
 
     When children of the same parent state class are defined in different
     Python modules, their get_state_full_path() produces different string
     prefixes. The sync function must group siblings by the actual parent
     class object, not by string-splitting the path, to avoid ID collisions.
+    Runs in a forked context, so the relocated class stays out of later tests.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
     """
 
     class ParentState(BaseState):

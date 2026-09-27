@@ -498,8 +498,6 @@ class RegistrationContext(BaseContext):
             cls.get_class_substate.cache_clear()
         format_state_local.cache_clear()
         format_var_key.cache_clear()
-        for reg in self.event_handlers.values():
-            object.__setattr__(reg.handler, "_formatted_name", None)
         for cls in sorted(
             self.base_states.values(),
             key=lambda state_cls: state_cls._get_default_full_name().count("."),

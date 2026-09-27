@@ -48,6 +48,9 @@ def set_minify_modes(
 ) -> None:
     """Set ``REFLEX_MINIFY_*`` env vars; ``None`` leaves the var unchanged.
 
+    The resolver reads the modes when installed, so they only take effect
+    through a following ``install_config()`` or ``clear_config_cache()``.
+
     Args:
         monkeypatch: The pytest monkeypatch fixture.
         states: Whether ``REFLEX_MINIFY_STATES`` is on.

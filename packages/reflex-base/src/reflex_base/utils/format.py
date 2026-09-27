@@ -477,15 +477,9 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
 def format_event_handler(handler: EventHandler) -> str:
     """Format an event handler.
 
-    Cached on the handler instance under ``_formatted_name`` to skip the
-    registry/resolver dispatch on every event. The cache is invalidated by
-    :meth:`reflex_base.registry.RegistrationContext.set_name_resolver`.
-
-    Like the per-class ``get_full_name`` cache this keys on nothing but the
-    handler, so a process must run a single resolver at a time. Forked
-    contexts inherit the parent's ``name_resolver`` to preserve that; giving
-    two live contexts different resolvers makes both caches serve whichever
-    one resolved the name last.
+    Cached on the handler instance under ``_formatted_name`` with the resolver
+    it was formatted under, to skip the registry/resolver dispatch on every
+    event while any copy of the handler still follows a resolver change.
 
     Args:
         handler: The event handler to format.
@@ -493,11 +487,16 @@ def format_event_handler(handler: EventHandler) -> str:
     Returns:
         The formatted function.
     """
-    if (cached := handler._formatted_name) is not None:
-        return cached
+    from reflex_base.registry import RegistrationContext
+
+    ctx = RegistrationContext.try_get()
+    resolver = None if ctx is None else ctx.name_resolver
+    cached = handler._formatted_name
+    if cached is not None and cached[0] is resolver:
+        return cached[1]
     state, name = get_event_handler_parts(handler)
     full = name if state == "" else f"{state}.{name}"
-    object.__setattr__(handler, "_formatted_name", full)
+    object.__setattr__(handler, "_formatted_name", (resolver, full))
     return full
 
 
