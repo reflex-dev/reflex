@@ -72,7 +72,6 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
-    from reflex_base.registry import NameResolver
 
     BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
 
@@ -532,9 +531,10 @@ class EventHandler(EventActionsMixin):
         default=None, repr=False, compare=False
     )
 
-    # ``(resolver, wire name)``, cached by ``format_event_handler``. Declared
-    # so that caching it keeps the instance layout, and attribute reads, fast.
-    _formatted_name: "tuple[NameResolver | None, str] | None" = dataclasses.field(
+    # ``(resolver, wire name)``, cached by ``format_event_handler``, which only
+    # compares the resolver by identity. Declared so that caching it keeps the
+    # instance layout, and attribute reads, fast.
+    _formatted_name: tuple[object, str] | None = dataclasses.field(
         default=None, init=False, repr=False, compare=False
     )
 
