@@ -199,7 +199,9 @@ def test_build_hook_regenerates_stubs(
 
 
 @pytest.mark.parametrize(
-    "manifest", ["", '{"reflex/__init__.pyi"', "[]"], ids=["empty", "truncated", "list"]
+    "manifest",
+    ["", '{"reflex/__init__.pyi"', "[]", "null", "5"],
+    ids=["empty", "truncated", "list", "null", "number"],
 )
 def test_build_hook_regenerates_on_an_unreadable_manifest(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, manifest: str
@@ -217,6 +219,30 @@ def test_build_hook_regenerates_on_an_unreadable_manifest(
     monkeypatch.setattr(
         module, "subprocess", SimpleNamespace(run=lambda *a, **kw: runs.append(a))
     )
+
+    hook.initialize("editable", {})
+
+    assert runs
+
+
+def test_build_hook_ignores_marker_for_incomplete_editable_build(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A marker left by an earlier build must not stand in for a missing stub."""
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "pyi_hashes.json").write_text(
+        json.dumps(dict.fromkeys(EXPECTED_STUBS, ""))
+    )
+    stub = tmp_path / EXPECTED_STUBS[0]
+    stub.parent.mkdir(parents=True, exist_ok=True)
+    stub.write_text("# generated")
+
+    runs = []
+    module, hook = build_hook(tmp_path, tmp_path / "dist")
+    monkeypatch.setattr(
+        module, "subprocess", SimpleNamespace(run=lambda *a, **kw: runs.append(a))
+    )
+    hook.marker().touch()
 
     hook.initialize("editable", {})
 

@@ -42,6 +42,8 @@ class CustomBuilder(BuildHookInterface):
             # Absent, unreadable, or half-written by an interrupted generator
             # run, which writes it in place. Regenerate rather than fail here.
             return False
+        if not isinstance(names, dict):
+            return False
         expected = [root / name for name in names if name.startswith("reflex/")]
         return bool(expected) and all(stub.exists() for stub in expected)
 
@@ -55,11 +57,13 @@ class CustomBuilder(BuildHookInterface):
         # An editable install builds against the working tree, so regenerating
         # would replace the developer's stubs with whatever the installing
         # environment resolves to. A fresh checkout has none — they are
-        # gitignored — and there the install is what creates them.
-        if version == "editable" and self.stubs_are_complete():
-            return
-
-        if self.marker().exists():
+        # gitignored — and there the install is what creates them. The marker
+        # only records that some earlier build ran, so it cannot vouch for the
+        # working tree's stubs.
+        if version == "editable":
+            if self.stubs_are_complete():
+                return
+        elif self.marker().exists():
             return
 
         if not (pathlib.Path(self.root) / "scripts").exists():
