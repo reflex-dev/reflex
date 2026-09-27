@@ -263,6 +263,21 @@ test("dispatch rejection does not block pending work", async (t) => {
   assert.equal(q.runtime.event_queue.length, 0);
 });
 
+for (const rejection of [0, null]) {
+  test(`falsy dispatch rejection ${rejection} is preserved`, async (t) => {
+    const q = await createQueue();
+    t.mock.method(q.socket, "emit", () => {
+      throw rejection;
+    });
+
+    await assert.rejects(q.enqueue([stateful(1), q.local(2)]), (error) =>
+      Object.is(error, rejection),
+    );
+    assert.deepEqual(q.output, [2]);
+    assert.equal(q.runtime.event_queue.length, 0);
+  });
+}
+
 test("addEvents flattens nested event lists before applying actions", async () => {
   const q = await createAddEvents();
   const actions = [];
@@ -297,7 +312,7 @@ test("addEvents flattens nested event lists before applying actions", async () =
 test("a malformed event does not strand later queued events", async () => {
   const q = await createAddEvents();
 
-  await assert.rejects(q.addEvents(["invalid", q.local(1)]), TypeError);
+  await assert.rejects(q.addEvents([{ name: 7 }, q.local(1)]), TypeError);
   assert.deepEqual(q.output, [1]);
   await q.addEvents([q.local(2)]);
 
