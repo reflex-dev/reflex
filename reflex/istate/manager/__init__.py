@@ -421,17 +421,16 @@ async def modify_state_with_links(
             from reflex.istate.shared import SharedStateBaseInternal
 
             shared_state = await root_state.get_state(SharedStateBaseInternal)
-            if shared_state._exit_stack is not None:
-                # Re-entered by the task holding the lock: the linked states
-                # are already patched in, and handled when it leaves.
-                yield state
-                return
-            async with shared_state._modify_linked_states(
-                previous_dirty_vars=previous_dirty_vars
-            ):
-                yield state
-        else:
-            yield state
+            if shared_state._exit_stack is None:
+                # Patched in while the context holds the lock, whichever of
+                # its tasks leaves last.
+                await ctx.hold_while_locked(
+                    token.ident,
+                    shared_state._modify_linked_states(
+                        previous_dirty_vars=previous_dirty_vars
+                    ),
+                )
+        yield state
 
 
 def _default_token_expiration() -> int:

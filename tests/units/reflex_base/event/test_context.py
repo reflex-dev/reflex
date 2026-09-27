@@ -288,35 +288,67 @@ async def test_modify_state_stores_touched_states(manager: PickleStateManager):
     assert set(manager.stored) == {str(_token(CtxChild))}
 
 
-async def test_modify_state_is_reentrant_for_the_holding_task(
+async def test_modify_state_lock_is_shared_by_the_context_tasks(
     manager: PickleStateManager,
 ):
-    """The task holding the lock may re-enter it, other tasks wait for it.
+    """The tasks of a context share its lock, released when the last one leaves.
 
     Args:
         manager: The state manager.
     """
     ctx = _context(manager)
-    order = []
+    other_entered = asyncio.Event()
+    other_may_leave = asyncio.Event()
 
     async def other_task():
         async with ctx.modify_state(_token(CtxChild)) as child:
-            order.append(("other", child.child_value))
+            child.child_value = 5
+            other_entered.set()
+            await other_may_leave.wait()
+        return child
 
     async with ctx.modify_state(_token(CtxChild)) as outer:
         async with ctx.modify_state(_token(CtxChild)) as inner:
             assert inner is outer
             inner.child_value = 4
-        # The states are stored when leaving the outermost block.
-        assert not manager.stored
         task = asyncio.create_task(other_task())
-        for _ in range(5):
-            await asyncio.sleep(0)
-        assert not order
-        order.append(("outer", outer.child_value))
+        # The other task joins the held lock instead of waiting for it.
+        await asyncio.wait_for(other_entered.wait(), timeout=1)
+        assert outer.child_value == 5
+    # The other task is still inside, so nothing is stored or released yet.
+    assert not manager.stored
+    assert manager.locks[TOKEN].locked()
+    other_may_leave.set()
+    assert await task is outer
     assert manager.stored
-    await task
-    assert order == [("outer", 4), ("other", 4)]
+    assert not manager.locks[TOKEN].locked()
+
+
+async def test_hold_while_locked_leaves_before_storing(
+    manager: PickleStateManager,
+):
+    """A context manager held with the lock is left before the states are stored.
+
+    Args:
+        manager: The state manager.
+    """
+    ctx = _context(manager)
+    events = []
+
+    @contextlib.asynccontextmanager
+    async def held():
+        events.append("enter")
+        yield
+        events.append(("exit", set(manager.stored)))
+
+    async with ctx.modify_state(_token(CtxChild)) as child:
+        await ctx.hold_while_locked(TOKEN, held())
+        child.child_value = 6
+        async with ctx.modify_state(_token(CtxChild)):
+            pass
+        assert events == ["enter"]
+    assert events == ["enter", ("exit", set())]
+    assert set(manager.stored) == {str(_token(CtxChild))}
 
 
 async def test_flat_token_is_cached_apart_from_the_tree(

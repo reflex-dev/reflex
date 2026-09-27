@@ -6,6 +6,7 @@ import asyncio
 import contextlib
 import dataclasses
 import functools
+import sys
 import uuid
 from collections.abc import AsyncIterator, Callable, Mapping
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar
@@ -83,22 +84,26 @@ class EmitDeltaProtocol(Protocol):
 
 @dataclasses.dataclass(slots=True, eq=False)
 class _HeldStateLock:
-    """A state manager lock held by an EventContext for one ident."""
+    """A state manager lock held by an EventContext for one ident, shared by its tasks."""
 
-    # The task holding the lock, which may re-enter it.
-    owner: asyncio.Task | None
     # The modification context passed when the lock was acquired.
     context: StateModificationContext
-    # How many times the owner entered the lock.
-    depth: int = 1
+    # How many modify_state blocks of the context are inside the lock.
+    users: int = 1
     # The lease returned by the state manager once the lock is acquired.
     lease: Any = None
+    # Set once acquiring the lock succeeded or failed.
+    ready: asyncio.Event = dataclasses.field(default_factory=asyncio.Event)
+    # Whether acquiring the lock failed.
+    failed: bool = False
     # Releases the state manager lock.
     exit_stack: contextlib.AsyncExitStack = dataclasses.field(
         default_factory=contextlib.AsyncExitStack
     )
-    # Set once this lock is released, for other tasks of the context waiting on it.
-    released: asyncio.Event = dataclasses.field(default_factory=asyncio.Event)
+    # The context managers held until the lock is released.
+    held_contexts: contextlib.AsyncExitStack = dataclasses.field(
+        default_factory=contextlib.AsyncExitStack
+    )
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True, eq=False)
@@ -294,9 +299,9 @@ class EventContext(BaseContext):
     async def _acquire_state_lock(
         self, token: StateToken, context: StateModificationContext
     ) -> _HeldStateLock:
-        """Acquire the state manager lock for a token's ident.
+        """Acquire the state manager lock for a token's ident, or join it if already held.
 
-        The task holding the lock may enter it again, other tasks wait for it.
+        Every task of the context shares the lock, as they share its states.
 
         Args:
             token: The token to lock.
@@ -306,15 +311,18 @@ class EventContext(BaseContext):
             The held lock.
         """
         ident = token.ident
-        task = asyncio.current_task()
         while (held := self._held_state_locks.get(ident)) is not None:
-            if held.owner is task:
-                held.depth += 1
+            held.users += 1
+            if not held.ready.is_set():
+                try:
+                    await held.ready.wait()
+                except BaseException:
+                    held.users -= 1
+                    raise
+            if not held.failed:
                 return held
-            await held.released.wait()
-        held = self._held_state_locks[ident] = _HeldStateLock(
-            owner=task, context=context
-        )
+            # Acquiring it failed: try again.
+        held = self._held_state_locks[ident] = _HeldStateLock(context=context)
         try:
             held.lease = await held.exit_stack.enter_async_context(
                 self.state_manager.lock(token, **context)
@@ -324,41 +332,62 @@ class EventContext(BaseContext):
             )
             await self._refresh_states(ident)
         except BaseException:
+            held.failed = True
             del self._held_state_locks[ident]
             try:
                 await held.exit_stack.aclose()
             finally:
-                held.released.set()
+                held.ready.set()
             raise
+        held.ready.set()
         return held
 
     async def _release_state_lock(
-        self, ident: str, held: _HeldStateLock, store: bool
+        self,
+        ident: str,
+        held: _HeldStateLock,
+        exc_info: tuple[type[BaseException] | None, BaseException | None, Any],
     ) -> None:
-        """Leave the state manager lock for an ident, releasing it when leaving the outermost.
+        """Leave the state manager lock for an ident, releasing it when the last user leaves.
+
+        Releasing it leaves the context managers held with it, then stores the
+        ident's states, unless the last user left with an exception.
 
         Args:
             ident: The locked ident.
             held: The held lock.
-            store: Whether to store the ident's states before releasing the lock.
+            exc_info: The exception the user left with, if any.
         """
-        held.depth -= 1
-        if held.depth:
+        held.users -= 1
+        if held.users:
             return
         del self._held_state_locks[ident]
-        try:
-            async with held.exit_stack:
-                if store and (tokens := self._state_tokens.get(ident)):
-                    await self.state_manager.store_states(
-                        [
-                            (token, self.cached_states[key])
-                            for key, token in tokens.items()
-                        ],
-                        held.lease,
-                        **held.context,
-                    )
-        finally:
-            held.released.set()
+        async with held.exit_stack:
+            await held.held_contexts.__aexit__(*exc_info)
+            if exc_info[0] is None and (tokens := self._state_tokens.get(ident)):
+                await self.state_manager.store_states(
+                    [(token, self.cached_states[key]) for key, token in tokens.items()],
+                    held.lease,
+                    **held.context,
+                )
+
+    async def hold_while_locked(
+        self, ident: str, context_manager: contextlib.AbstractAsyncContextManager[T]
+    ) -> T:
+        """Enter a context manager, leaving it when this context releases an ident's lock.
+
+        Must be called while the lock is held, from a modify_state block.
+
+        Args:
+            ident: The locked ident.
+            context_manager: The context manager to enter.
+
+        Returns:
+            The value the context manager enters with.
+        """
+        return await self._held_state_locks[ident].held_contexts.enter_async_context(
+            context_manager
+        )
 
     @contextlib.asynccontextmanager
     async def modify_state(
@@ -367,8 +396,9 @@ class EventContext(BaseContext):
         """Get the state for a token while holding the lock on its ident.
 
         Acquiring the lock refreshes the states of the ident checked out in
-        this context, and releasing it stores them. The task holding the lock
-        may enter it again.
+        this context, and releasing it stores them. The tasks of the context
+        share the lock, as they share its states: it is released when the last
+        of them leaves.
 
         Args:
             token: The token of the state.
@@ -378,9 +408,9 @@ class EventContext(BaseContext):
             The state checked out for the token.
         """
         held = await self._acquire_state_lock(token, context)
-        store = False
         try:
             yield await self.get_state(token)
-            store = True
-        finally:
-            await self._release_state_lock(token.ident, held, store)
+        except BaseException:
+            await self._release_state_lock(token.ident, held, sys.exc_info())
+            raise
+        await self._release_state_lock(token.ident, held, (None, None, None))
