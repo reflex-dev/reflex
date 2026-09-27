@@ -720,8 +720,8 @@ def test_resolver_no_config_returns_none():
     assert resolver.resolve_handler_name(State, "any") is None
 
 
-def test_state_lookup_caches():
-    """Resolved state names are memoized after the first lookup."""
+def test_state_lookup():
+    """A state with an entry resolves to its id."""
 
     # Non-framework state — see :func:`_is_framework_state`.
     class UserStateResolverCacheTest(State):
@@ -740,13 +740,10 @@ def test_state_lookup_caches():
         config=config, states_enabled=True, events_enabled=False
     )
     assert resolver.resolve_state_name(UserStateResolverCacheTest) == "rs"
-    # second call hits the cache
-    assert UserStateResolverCacheTest in resolver._state_cache
-    assert resolver.resolve_state_name(UserStateResolverCacheTest) == "rs"
 
 
-def test_event_lookup_caches():
-    """Resolved handler names are memoized per state class."""
+def test_event_lookup():
+    """Handlers with an entry resolve to their ids, others to ``None``."""
 
     class UserStateEventCacheTest(State):
         pass
@@ -764,7 +761,6 @@ def test_event_lookup_caches():
     assert resolver.resolve_handler_name(UserStateEventCacheTest, "foo") == "f"
     assert resolver.resolve_handler_name(UserStateEventCacheTest, "bar") == "b"
     assert resolver.resolve_handler_name(UserStateEventCacheTest, "missing") is None
-    assert UserStateEventCacheTest in resolver._event_cache
 
 
 def test_from_disk_handles_malformed_config(temp_minify_json):

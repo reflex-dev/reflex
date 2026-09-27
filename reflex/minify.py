@@ -250,8 +250,9 @@ class MinifyNameResolver:
 
     Returns the minified name when the matching env-var
     (``REFLEX_MINIFY_STATES`` / ``REFLEX_MINIFY_EVENTS``) is enabled and the
-    entry exists in the config; ``None`` otherwise. Per-class lookups are
-    memoized for O(1) amortized cost.
+    entry exists in the config; ``None`` otherwise. Nothing is memoized per
+    class: the name caches of the callers already ask once per state and
+    handler.
 
     Attributes:
         config: Parsed ``minify.json``, or ``None``.
@@ -262,12 +263,6 @@ class MinifyNameResolver:
     config: MinifyConfig | None
     states_enabled: bool
     events_enabled: bool
-    _state_cache: dict[type[BaseState], str] = dataclasses.field(
-        default_factory=dict, repr=False
-    )
-    _event_cache: dict[type[BaseState], dict[str, str]] = dataclasses.field(
-        default_factory=dict, repr=False
-    )
 
     _digest: str | None = dataclasses.field(default=None, repr=False)
 
@@ -341,26 +336,20 @@ class MinifyNameResolver:
     def resolve_state_name(self, state_cls: type[BaseState]) -> str | None:  # noqa: D102
         if self.config is None or not self.states_enabled:
             return None
-        cached = self._state_cache.get(state_cls)
-        if cached is not None:
-            return cached
         entry = self.config["states"].get(get_state_full_path(state_cls))
-        if entry is None:
-            return None
-        resolved = entry["id"]
-        self._state_cache[state_cls] = resolved
-        return resolved
+        return None if entry is None else entry["id"]
 
     def resolve_handler_name(  # noqa: D102
         self, state_cls: type[BaseState], handler_name: str
     ) -> str | None:
         if self.config is None or not self.events_enabled:
             return None
-        per_state = self._event_cache.get(state_cls)
-        if per_state is None:
-            per_state = self.config["events"].get(get_state_full_path(state_cls), {})
-            self._event_cache[state_cls] = per_state
-        return per_state.get(handler_name)
+        return (
+            self
+            .config["events"]
+            .get(get_state_full_path(state_cls), {})
+            .get(handler_name)
+        )
 
 
 def get_state_module(state_cls: type[BaseState]) -> str:
