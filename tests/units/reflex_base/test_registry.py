@@ -444,8 +444,10 @@ def test_resolver_installed_later_renames_existing_vars(
     with temporary_resolver(
         stub_resolver(state_name="zzz", target=LateRenamedState, var_prefix="v_")
     ):
-        prefix = format.format_state_name(LateRenamedState.get_full_name())
-        assert prefix.endswith("__zzz")
+        context = format.format_state_name(LateRenamedState.get_full_name())
+        assert context.endswith("__zzz")
+        prefix = format.format_state_local(LateRenamedState)
+        assert prefix == f"$rx_{context}"
         assert str(LateRenamedState.value) == f"{prefix}.v_value"
         for var in (
             LateRenamedState.base_vars["value"],
@@ -455,7 +457,7 @@ def test_resolver_installed_later_renames_existing_vars(
             var_data = var._get_all_var_data()
             assert var_data is not None
             assert var_data.hooks == (
-                f"const {prefix} = useContext(StateContexts.{prefix})",
+                f"const {prefix} = useContext(StateContexts.{context})",
             )
             # Dependency tracking keys on the name that never changes.
             assert var_data.state == LateRenamedState._get_default_full_name()
@@ -484,7 +486,7 @@ def test_resolver_installed_later_renames_inherited_vars(
 def test_resolver_installed_later_renames_the_router_var():
     """The cached router switchboard is rebuilt with the root's new name."""
     with temporary_resolver(stub_resolver(state_name="r")):
-        assert str(State.router.url).startswith("r.")
+        assert str(State.router.url).startswith("$rx_r.")
     assert str(State.router.url).startswith(f"{State.get_name()}.")
 
 

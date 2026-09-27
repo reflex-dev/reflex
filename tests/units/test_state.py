@@ -7064,10 +7064,10 @@ def test_minified_vars_reach_the_wire(temp_minify_json, monkeypatch):
         def doubled(self) -> int:
             return self.count * 2
 
-    assert str(WireVarState.count) == "r__w.c"
-    assert str(WireVarState.doubled) == "r__w.d"
+    assert str(WireVarState.count) == "$rx_r__w.c"
+    assert str(WireVarState.doubled) == "$rx_r__w.d"
     # A var without an id keeps its key, marker and all.
-    assert str(WireVarState.label) == f"r__w.label{FIELD_MARKER}"
+    assert str(WireVarState.label) == f"$rx_r__w.label{FIELD_MARKER}"
     assert WireVarState._var_names_by_key == {
         "c": "count",
         "d": "doubled",
@@ -7114,8 +7114,8 @@ def test_minified_names_rebuilt_for_existing_states(temp_minify_json, monkeypatc
         vars={root_path: {"count": "c"}, child_path: {"doubled": "d", "mirrored": "m"}},
     )
 
-    assert str(LateRoot.count) == "r.c"
-    assert str(LateChild.doubled) == "r__k.d"
+    assert str(LateRoot.count) == "$rx_r.c"
+    assert str(LateChild.doubled) == "$rx_r__k.d"
     assert LateChild.vars["count"] is LateRoot.base_vars["count"]
 
     root = LateRoot(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
@@ -7180,3 +7180,50 @@ async def test_update_vars_internal_resolves_wire_keys(temp_minify_json, monkeyp
     assert storage.token == "tok"
     # Only client storage vars are writable this way.
     assert storage.plain == ""
+
+
+def test_minified_state_reads_its_context_into_a_prefixed_local(
+    temp_minify_json, monkeypatch
+):
+    """A short minified name must not become a bare local JS variable.
+
+    Components read a state's context into a local named after the state, so
+    ``const a = ...`` would clash with any ``a`` a user hook declares or reads.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    set_minify_modes(monkeypatch, states=True)
+    path = f"{__name__}.State.LocalNameState"
+    install_config(states={path: "b"}, include_state_root=True)
+
+    class LocalNameState(State):
+        count: int = 0
+
+        @rx.var
+        def doubled(self) -> int:
+            return self.count * 2
+
+    for var, key in (
+        (LocalNameState.base_vars["count"], "count"),
+        (LocalNameState.doubled, "doubled"),
+    ):
+        assert str(var) == f"$rx_a__b.{key}{FIELD_MARKER}"
+        var_data = var._get_all_var_data()
+        assert var_data is not None
+        assert var_data.hooks == ("const $rx_a__b = useContext(StateContexts.a__b)",)
+
+
+def test_unminified_state_keeps_its_context_local(temp_minify_json):
+    """Built-in names cannot clash, so they are left as they are.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+    """
+
+    class PlainLocalState(State):
+        count: int = 0
+
+    local = format.format_state_name(PlainLocalState.get_full_name())
+    assert str(PlainLocalState.count) == f"{local}.count{FIELD_MARKER}"

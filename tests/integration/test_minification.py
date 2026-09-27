@@ -249,7 +249,7 @@ def test_minification(
         assert update_name.endswith(f".{int_to_minified_name(7)}")
         assert "increment" not in increment_name.lower()
         assert "update_message" not in update_name.lower()
-        assert count_key == "a__k.c"
+        assert count_key == "$rx_a__k.c"
     else:
         assert count_key.endswith(".count_rx_state_")
         assert "root_state" in root_name.lower()

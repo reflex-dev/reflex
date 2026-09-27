@@ -973,3 +973,14 @@ def test_list_reports_var_ids(temp_minify_json, cli_runner):
     text = cli_runner.invoke(cli, ["minify", "list"])
     assert "|-- Vars:" in text.output or "`-- Vars:" in text.output
     assert 'count -> "c"' in text.output
+
+
+def test_minify_help_shows_no_docstring_sections(cli_runner):
+    """The group's help is its summary, not its Google-style docstring."""
+    from reflex.reflex import cli
+
+    result = cli_runner.invoke(cli, ["minify", "--help"])
+
+    assert result.exit_code == 0, result.output
+    assert "Manage state, event and var name minification." in result.output
+    assert "Args:" not in result.output

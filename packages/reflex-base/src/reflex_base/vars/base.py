@@ -58,7 +58,7 @@ from reflex_base.utils.exceptions import (
     VarDependencyError,
     VarTypeError,
 )
-from reflex_base.utils.format import format_state_name, format_state_var, json_dumps
+from reflex_base.utils.format import format_state_local, format_state_var, json_dumps
 from reflex_base.utils.imports import (
     ImmutableImportDict,
     ImmutableParsedImportDict,
@@ -634,18 +634,16 @@ class VarData:
         from reflex_base.utils import format
 
         if isinstance(state, str):
-            state_name = context_name = state
+            state_name = state
+            local = context_name = format.format_state_name(state)
         else:
             state_name = state._get_default_full_name()
-            context_name = state.get_full_name()
+            local = format.format_state_local(state)
+            context_name = format.format_state_name(state.get_full_name())
         return VarData(
             state=state_name,
             field_name=field_name,
-            hooks={
-                "const {0} = useContext(StateContexts.{0})".format(
-                    format.format_state_name(context_name)
-                ): None
-            },
+            hooks={f"const {local} = useContext(StateContexts.{context_name})": None},
             imports={
                 f"$/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="StateContexts")],
                 "react": [ImportVar(tag="useContext")],
@@ -1351,9 +1349,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             The var with the state set.
         """
         formatted_state_name = (
-            state
-            if isinstance(state, str)
-            else format_state_name(state.get_full_name())
+            state if isinstance(state, str) else format_state_local(state)
         )
 
         return StateOperation.create(  # pyright: ignore [reportReturnType]
@@ -2973,7 +2969,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                 if not state_name or not var_names:
                     continue
                 self._static_deps.setdefault(state_name, set()).update(var_names)
-                target_state_class = registration_context.get_state_by_default_name(
+                target_state_class = registration_context._get_state_by_default_name(
                     state_name
                 )
                 for var_name in var_names:

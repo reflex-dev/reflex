@@ -172,11 +172,11 @@ environment, and deploy the same `minify.json` to both.
 ### What keeps its name
 
 Minification rewrites only what travels between the frontend and the backend.
-Where a state lives on the server — its key in Redis or on disk — and the name
-a `Cookie`, `LocalStorage` or `SessionStorage` var is stored under in the
-browser do not depend on it, so turning minification on or editing
-`minify.json` loses no session and no stored value. A storage var without an
-explicit `name` keeps the storage name it has without minification.
+Where a state lives on the server — its key in Redis or on disk — its shared
+state links, and the name a `Cookie`, `LocalStorage` or `SessionStorage` var is
+stored under in the browser do not depend on it, so turning minification on or
+editing `minify.json` loses no session and no stored value. A storage var
+without an explicit `name` keeps the storage name it has without minification.
 
 `State.setvar("count")` sends the var's Python name, which the backend looks up
 through the state's class hierarchy; only the event name itself is minified.

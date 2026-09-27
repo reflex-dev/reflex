@@ -1031,7 +1031,7 @@ def test_framework_names_reach_registered_handlers(temp_minify_json, monkeypatch
     assert get_hydrate_event(root) == names.hydrate
 
     # The Var the frontend reads names the context and key the compiler emits.
-    assert str(State.is_hydrated) == "a.h"
+    assert str(State.is_hydrated) == "$rx_a.h"
     assert root.dict()["a"]["h"] is False
 
 

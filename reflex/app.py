@@ -1684,7 +1684,7 @@ class App(MiddlewareMixin, LifespanMixin):
             deps = var._deps(objclass=state)
             for state_name, dep_set in deps.items():
                 state_cls = (
-                    self._registration_context.get_state_by_default_name(state_name)
+                    self._registration_context._get_state_by_default_name(state_name)
                     if state_name != state._get_default_full_name()
                     else state
                 )

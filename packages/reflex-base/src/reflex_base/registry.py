@@ -408,7 +408,7 @@ class RegistrationContext(BaseContext):
             base_state_cls.get_full_name(), set()
         )
 
-    def get_state_by_default_name(self, default_full_name: str) -> type[BaseState]:
+    def _get_state_by_default_name(self, default_full_name: str) -> type[BaseState]:
         """Look up a registered state by its resolver-independent full name.
 
         Args:

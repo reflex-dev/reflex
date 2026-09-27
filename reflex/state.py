@@ -1054,7 +1054,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                     dvar_set = (dvar_set - {constants.ROUTER}) | set(
                         constants.ROUTER_VARS
                     )
-                state_cls = RegistrationContext.get().get_state_by_default_name(
+                state_cls = RegistrationContext.get()._get_state_by_default_name(
                     state_name
                 )
                 for dvar in dvar_set:
@@ -1226,8 +1226,8 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         """Get the full name of the state under the built-in names.
 
         Unlike :meth:`get_full_name`, it never depends on the name resolver, so
-        it keys what must survive a resolver change: persisted state, browser
-        storage and the backend's dependency tracking.
+        it keys what must survive a resolver change: persisted state, shared
+        state links, browser storage and the backend's dependency tracking.
 
         Returns:
             The dotted path of built-in ``module___ClassName`` names.
@@ -1885,7 +1885,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         # Slow case: this var belongs to another state
         other_state = await self.get_state(
-            RegistrationContext.get().get_state_by_default_name(var_data.state)
+            RegistrationContext.get()._get_state_by_default_name(var_data.state)
         )
         value = getattr(other_state, var_data.field_name)
         if inspect.isawaitable(value):

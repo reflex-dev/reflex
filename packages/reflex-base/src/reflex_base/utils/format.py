@@ -668,6 +668,24 @@ def format_state_name(state_name: str) -> str:
     return state_name.replace(".", "__")
 
 
+def format_state_local(state_cls: type[BaseState]) -> str:
+    """Get the local JavaScript variable a component reads a state's context into.
+
+    A resolver's names (e.g. minified ``a``) are short enough to clash with
+    other identifiers in the component, so they get a prefix; the built-in
+    ``module___ClassName`` names cannot clash and are used as they are.
+
+    Args:
+        state_cls: The state.
+
+    Returns:
+        The name of the local variable.
+    """
+    full_name = state_cls.get_full_name()
+    local = format_state_name(full_name)
+    return local if full_name == state_cls._get_default_full_name() else f"$rx_{local}"
+
+
 @cache
 def format_var_key(state_cls: type[BaseState], var_name: str) -> str:
     """Get the key a state var goes by in deltas and in the compiled frontend.
@@ -699,12 +717,9 @@ def format_state_var(state_cls: type[BaseState], var_name: str) -> str:
         var_name: The var's Python name.
 
     Returns:
-        The var's key on its state's context value.
+        The var's key on the local its state's context value is read into.
     """
-    return (
-        f"{format_state_name(state_cls.get_full_name())}."
-        f"{format_var_key(state_cls, var_name)}"
-    )
+    return f"{format_state_local(state_cls)}.{format_var_key(state_cls, var_name)}"
 
 
 def format_ref(ref: str) -> str:
