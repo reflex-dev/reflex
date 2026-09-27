@@ -9,6 +9,7 @@ import threading
 import traceback
 import typing
 import weakref
+from abc import ABC, abstractmethod
 from typing import Any, ClassVar, Literal, TypeVar
 
 import pytest
@@ -738,6 +739,38 @@ def test_reserved_mixin_var(state_mixin: bool, clean_registration_context):
             **({"mixin": True} if state_mixin else {}),
         )
         type("MixedState", (mixin, BaseState), {"__module__": __name__})
+
+
+@pytest.mark.parametrize("state_mixin", [False, True])
+def test_abc_mixin(state_mixin: bool, clean_registration_context):
+    """Accept an ``ABC`` mixin, whose ``_abc_impl`` the metaclass owns, and keep it abstract.
+
+    Args:
+        state_mixin: Whether the abstract mixin subclasses BaseState.
+        clean_registration_context: An isolated state registry.
+    """
+
+    class Abstract(ABC):
+        @abstractmethod
+        def _value(self) -> int: ...
+
+    if state_mixin:
+
+        class Mixin(Abstract, BaseState, mixin=True):
+            pass
+
+        bases = (Mixin, BaseState)
+    else:
+        bases = (Abstract, BaseState)
+
+    abstract_state = type("AbstractState", bases, {"__module__": __name__})
+    with pytest.raises(TypeError, match="_value"):
+        abstract_state()
+
+    concrete_state = type(
+        "ConcreteState", bases, {"__module__": __name__, "_value": lambda self: 7}
+    )
+    assert concrete_state()._value() == 7
 
 
 @pytest.mark.parametrize("slots", [("cache",), "cache"])

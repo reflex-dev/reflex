@@ -4219,6 +4219,9 @@ def _inherited_value(lookup_order: Sequence[type], name: str) -> Any:
 
 _FIELD_MAP_NAMES = frozenset({"__fields__", "__own_fields__", "__inherited_fields__"})
 
+# ``ABCMeta`` writes this onto every class it creates, overwriting any declaration.
+_ABC_BOOKKEEPING_NAME = "_abc_impl"
+
 
 @functools.cache
 def _reserved_state_members(root: BaseStateMeta) -> dict[str, Any]:
@@ -4238,6 +4241,7 @@ def _reserved_state_members(root: BaseStateMeta) -> dict[str, Any]:
             for name in namespace.keys() | annotations_from_namespace(namespace).keys()
             if not name.startswith("__") or name in _FIELD_MAP_NAMES
         )
+    members.pop(_ABC_BOOKKEEPING_NAME, None)
     return members
 
 
