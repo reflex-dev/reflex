@@ -18,6 +18,7 @@ from reflex.minify import (
     MinifyNameResolver,
     StateEntry,
     _find_missing_entries,
+    _get_minify_json_path,
     _load_minify_config_uncached,
     clear_config_cache,
     ensure_minify_resolver_for_active_context,
@@ -41,7 +42,7 @@ from tests.units.minify_helpers import (
     run_in_fresh_interpreter,
     set_minify_modes,
 )
-from tests.units.name_resolvers import temporary_resolver
+from tests.units.name_resolvers import stub_resolver, temporary_resolver
 
 
 def test_zero():
@@ -973,6 +974,140 @@ def test_resolver_installed_when_config_appears(temp_minify_json: Path) -> None:
     assert ctx.name_resolver.config is not None
 
 
+def test_minify_json_path_defaults_to_the_working_directory(
+    temp_minify_json: Path,
+) -> None:
+    """Without ``REFLEX_MINIFY_CONFIG``, the app's own ``minify.json`` is used."""
+    assert _get_minify_json_path() == temp_minify_json / MINIFY_JSON
+
+
+@pytest.mark.parametrize("absolute", [True, False])
+def test_minify_json_path_from_env_var(
+    temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch, absolute: bool
+) -> None:
+    """``REFLEX_MINIFY_CONFIG`` names the file, relative to the working directory.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+        absolute: Whether the env var holds an absolute path.
+    """
+    target = temp_minify_json / "conf" / "names.json"
+    monkeypatch.setenv(
+        environment.REFLEX_MINIFY_CONFIG.name,
+        str(target if absolute else target.relative_to(temp_minify_json)),
+    )
+    assert _get_minify_json_path() == target
+
+
+def _install_in(directory: Path, states: dict[str, str]) -> MinifyConfig:
+    """Write a ``minify.json`` into ``directory`` without activating it.
+
+    Args:
+        directory: Where to write the file.
+        states: ``state_path -> minified_id`` map.
+
+    Returns:
+        The written config.
+    """
+    config: MinifyConfig = {
+        "version": SCHEMA_VERSION,
+        "states": {
+            path: StateEntry(id=state_id, parent=None)
+            for path, state_id in states.items()
+        },
+        "events": {},
+        "vars": {},
+    }
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / MINIFY_JSON).write_text(json.dumps(config))
+    return config
+
+
+def test_resolver_follows_the_app_directory(
+    temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Each app is loaded with the names of its own ``minify.json``, or none.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class FollowState(State):
+        pass
+
+    path = get_state_full_path(FollowState)
+    set_minify_modes(monkeypatch, states=True)
+    _install_in(temp_minify_json, {path: "f"})
+    _install_in(temp_minify_json / "other", {path: "g"})
+    (temp_minify_json / "plain").mkdir()
+    ctx = RegistrationContext.ensure_context()
+
+    ensure_minify_resolver_for_active_context()
+    assert FollowState.get_name() == "f"
+    resolver = ctx.name_resolver
+    ensure_minify_resolver_for_active_context()
+    assert ctx.name_resolver is resolver
+
+    monkeypatch.chdir(temp_minify_json / "plain")
+    ensure_minify_resolver_for_active_context()
+    assert type(ctx.name_resolver) is DefaultNameResolver
+    assert FollowState.get_name() == RegistrationContext.default_state_name(FollowState)
+
+    monkeypatch.chdir(temp_minify_json / "other")
+    ensure_minify_resolver_for_active_context()
+    assert FollowState.get_name() == "g"
+
+    monkeypatch.chdir(temp_minify_json)
+    ensure_minify_resolver_for_active_context()
+    assert FollowState.get_name() == "f"
+
+
+def test_env_var_pins_the_config_for_every_directory(
+    temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """``REFLEX_MINIFY_CONFIG`` applies whichever directory the app is in.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class PinnedState(State):
+        pass
+
+    path = get_state_full_path(PinnedState)
+    set_minify_modes(monkeypatch, states=True)
+    _install_in(temp_minify_json / "deploy", {path: "p"})
+    _install_in(temp_minify_json / "app", {path: "q"})
+    monkeypatch.setenv(
+        environment.REFLEX_MINIFY_CONFIG.name,
+        str(temp_minify_json / "deploy" / MINIFY_JSON),
+    )
+
+    for directory in (temp_minify_json, temp_minify_json / "app"):
+        monkeypatch.chdir(directory)
+        ensure_minify_resolver_for_active_context()
+        assert PinnedState.get_name() == "p"
+
+
+def test_custom_resolver_is_left_in_place(temp_minify_json: Path) -> None:
+    """A resolver the user installed is not replaced by the app's config.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+    """
+    install_config(states={"test.module.MyState": "a"})
+    custom = stub_resolver(state_name="custom")
+    with temporary_resolver(custom) as ctx:
+        ensure_minify_resolver_for_active_context()
+        assert ctx.name_resolver is custom
+        (temp_minify_json / MINIFY_JSON).unlink()
+        ensure_minify_resolver_for_active_context()
+        assert ctx.name_resolver is custom
+
+
 def test_framework_names_reach_registered_handlers(temp_minify_json, monkeypatch):
     """The names the context module emits are the keys the backend dispatches on.
 
@@ -1710,6 +1845,41 @@ def test_stale_var_keys_are_rejected_when_only_vars_minify(
 
     assert _stale_names_error(str(StaleVarState.count)) == ""
     assert f"var {path}.count" in _stale_names_error(f"{default_expr}.length")
+
+
+def test_stale_resolved_state_names_are_rejected(
+    temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Code built under another app's ``minify.json`` cannot reach its states.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class ResolvedState(State):
+        count: int = 0
+
+    set_minify_modes(monkeypatch, states=True)
+    install_config(
+        states={
+            get_state_full_path(ResolvedState): StateEntry(
+                id="z", parent="reflex.state.State"
+            )
+        }
+    )
+    minified_expr = str(ResolvedState.count)
+    assert "$rx_" in minified_expr
+    assert _stale_names_error(minified_expr) == ""
+
+    (temp_minify_json / "plain").mkdir()
+    monkeypatch.chdir(temp_minify_json / "plain")
+    ensure_minify_resolver_for_active_context()
+
+    assert _stale_names_error(str(ResolvedState.count)) == ""
+    error = _stale_names_error(f"const x = {minified_expr};")
+    assert "a state named by another resolver" in error
+    assert "page.jsx" in error
 
 
 @pytest.mark.parametrize("state_id", ["_", "_b", "a_", "a__b"])

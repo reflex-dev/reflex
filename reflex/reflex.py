@@ -1144,11 +1144,7 @@ def _open_minify_session(
         The parsed config, or ``None`` if ``require_exists`` is ``False`` and
         the file is absent.
     """
-    from reflex.minify import (
-        MINIFY_JSON,
-        _get_minify_json_path,
-        _load_minify_config_uncached,
-    )
+    from reflex.minify import _get_minify_json_path, _load_minify_config_uncached
 
     if for_json:
         log.reserve_stdout()
@@ -1157,11 +1153,10 @@ def _open_minify_session(
         if (ctx := click.get_current_context(silent=True)) is not None:
             ctx.call_on_close(lambda: log.reserve_stdout(False))
 
-    exists = _get_minify_json_path().exists()
+    path = _get_minify_json_path()
+    exists = path.exists()
     if require_exists and not exists:
-        logger.error(
-            f"{MINIFY_JSON} does not exist. Use 'reflex minify init' to create it."
-        )
+        logger.error(f"{path} does not exist. Use 'reflex minify init' to create it.")
         raise SystemExit(1)
 
     # Loading the app runs arbitrary module-level code, which may write to
@@ -1181,7 +1176,7 @@ def _open_minify_session(
         logger.error(str(e))
         raise SystemExit(1) from e
     if config is None:
-        logger.error(f"Failed to load {MINIFY_JSON}.")
+        logger.error(f"Failed to load {path}.")
         raise SystemExit(1)
     return config
 
@@ -1191,15 +1186,15 @@ def _open_minify_session(
 def minify_init():
     """Initialize minify.json with IDs for all states, events and vars."""
     from reflex.minify import (
-        MINIFY_JSON,
         _get_minify_json_path,
         generate_minify_config,
         save_minify_config,
     )
 
-    if _get_minify_json_path().exists():
+    path = _get_minify_json_path()
+    if path.exists():
         logger.error(
-            f"{MINIFY_JSON} already exists. Use 'reflex minify sync' to update "
+            f"{path} already exists. Use 'reflex minify sync' to update "
             "or delete the file to reinitialize."
         )
         raise SystemExit(1)
@@ -1209,7 +1204,7 @@ def minify_init():
     save_minify_config(config)
 
     logger.info(
-        f"Created {MINIFY_JSON} with {len(config['states'])} states, "
+        f"Created {path} with {len(config['states'])} states, "
         f"{_count_members(config, 'events')} events "
         f"and {_count_members(config, 'vars')} vars."
     )

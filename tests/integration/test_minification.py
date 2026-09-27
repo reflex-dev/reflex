@@ -16,6 +16,7 @@ from reflex.minify import (
     clear_config_cache,
     int_to_minified_name,
 )
+from reflex.state import State
 from reflex.testing import AppHarness
 
 if TYPE_CHECKING:
@@ -150,36 +151,54 @@ _MINIFY_CONFIG = {
 }
 
 
-@pytest.fixture(params=[False, True], ids=["disabled", "enabled"])
+@pytest.fixture(params=["disabled", "enabled", "foreign", "pinned"])
 def minify_app(
     request: pytest.FixtureRequest,
     app_harness_env: type[AppHarness],
     tmp_path_factory: pytest.TempPathFactory,
     monkeypatch: pytest.MonkeyPatch,
 ) -> Generator[tuple[bool, AppHarness], None, None]:
-    """Run :func:`MinificationApp` with minification on (parametrized).
+    """Run :func:`MinificationApp` in each way a ``minify.json`` can reach it.
+
+    ``foreign`` runs it from a process that already loaded another app's
+    ``minify.json``, as an embedded test app next to a minified repository;
+    ``pinned`` names its config with ``REFLEX_MINIFY_CONFIG`` instead.
 
     Yields:
-        ``(minify_enabled, harness)``.
+        ``(minified, harness)``.
     """
-    enabled: bool = request.param
-    if enabled:
+    mode: str = request.param
+    minified = mode in ("enabled", "pinned")
+    if mode != "disabled":
         monkeypatch.setenv(environment.REFLEX_MINIFY_STATES.name, "1")
         monkeypatch.setenv(environment.REFLEX_MINIFY_EVENTS.name, "1")
         monkeypatch.setenv(environment.REFLEX_MINIFY_VARS.name, "1")
+    if mode in ("foreign", "pinned"):
+        outside = tmp_path_factory.mktemp(f"{mode}_config")
+        (outside / MINIFY_JSON).write_text(json.dumps(_MINIFY_CONFIG))
+        if mode == "foreign":
+            monkeypatch.chdir(outside)
+        else:
+            monkeypatch.setenv(
+                environment.REFLEX_MINIFY_CONFIG.name, str(outside / MINIFY_JSON)
+            )
     clear_config_cache()
 
-    app_name = "minify_enabled" if enabled else "minify_disabled"
+    # The foreign config names this very app, so only the directory stops it.
+    app_name = "minify_disabled" if mode == "disabled" else "minify_enabled"
     app_root = tmp_path_factory.mktemp(app_name)
     harness = app_harness_env.create(
         root=app_root, app_name=app_name, app_source=MinificationApp
     )
-    if enabled:
+    if mode == "enabled":
         (app_root / MINIFY_JSON).write_text(json.dumps(_MINIFY_CONFIG))
 
     try:
         with harness:
-            yield enabled, harness
+            yield minified, harness
+        if mode == "foreign":
+            # The names of the process's own minify.json are back.
+            assert State.get_name() == "a"
     finally:
         # Put the default names back for the tests that share this process.
         monkeypatch.undo()
@@ -252,6 +271,7 @@ def test_minification(
         assert count_key == "$rx_a__k.c"
     else:
         assert count_key.endswith(".count_rx_state_")
+        assert increment_name.startswith("reflex___state____state.")
         assert "root_state" in root_name.lower()
         assert "sub_state" in sub_name.lower()
         assert "increment" in increment_name.lower()
@@ -272,7 +292,7 @@ def test_minification(
     cookie = driver.find_element(By.ID, "cookie_value")
     driver.find_element(By.ID, "cookie_btn").click()
     AppHarness.poll_for_or_raise_timeout(lambda: cookie.text == "tok-1")
-    app_name = "minify_enabled" if enabled else "minify_disabled"
+    app_name = harness.app_name
     stored = driver.get_cookie(
         f"reflex___state____state.{app_name}___{app_name}____root_state"
         ".token_cookie_rx_state_"

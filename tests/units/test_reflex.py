@@ -16,6 +16,7 @@ from click.testing import CliRunner
 from reflex_base.registry import RegistrationContext
 
 from reflex import reflex
+from reflex.environment import environment
 from reflex.minify import clear_config_cache, get_state_full_path
 from reflex.state import State
 from tests.units.minify_helpers import install_config
@@ -155,6 +156,7 @@ def test_backend_launcher_does_not_import_compiler_or_state() -> None:
             """
 import sys
 from reflex import reflex
+from reflex.environment import environment
 from reflex.istate.manager import reset_disk_state_manager
 from reflex.utils import build, exec, telemetry
 
@@ -201,6 +203,7 @@ import sys
 import click
 from click.testing import CliRunner
 from reflex import reflex
+from reflex.environment import environment
 
 deploy_command = reflex.cli.commands["deploy"]
 cloud_command = reflex.cli.commands["cloud"]
@@ -536,7 +539,34 @@ def test_lookup_fails_without_minify_json(temp_minify_json, cli_runner):
     result = cli_runner.invoke(cli, ["minify", "lookup", "a.b"])
 
     assert result.exit_code == 1
-    assert "minify.json does not exist" in result.output
+    assert "minify.json does not exist" in " ".join(result.output.split())
+
+
+def test_lookup_reads_the_configured_minify_json(
+    temp_minify_json: Path, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """``REFLEX_MINIFY_CONFIG`` points the minify commands at another file."""
+    from reflex.reflex import cli
+
+    class ConfiguredPathState(State):
+        pass
+
+    install_config(
+        states={get_state_full_path(ConfiguredPathState): "b"},
+        include_state_root=True,
+    )
+    target = temp_minify_json / "deploy" / "names.json"
+    target.parent.mkdir()
+    (temp_minify_json / "minify.json").rename(target)
+    monkeypatch.setenv(environment.REFLEX_MINIFY_CONFIG.name, str(target))
+    clear_config_cache()
+
+    result = cli_runner.invoke(cli, ["minify", "lookup", "--json", "b"])
+
+    assert result.exit_code == 0, result.output
+    assert [info["class"] for info in json.loads(result.output)] == [
+        ConfiguredPathState.__name__
+    ]
 
 
 def test_lookup_fails_for_malformed_config(

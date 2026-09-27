@@ -73,7 +73,8 @@ backend process.
 
 `minify.json` is read from the current working directory of the process, so
 every command — `reflex minify`, `reflex run`, `reflex export`, and the backend
-server — must be started from the app directory.
+server — must be started from the app directory, unless `REFLEX_MINIFY_CONFIG`
+names the file (see [Using a config from another path](#using-a-config-from-another-path)).
 
 ```json
 {
@@ -161,8 +162,9 @@ something else.
 | `REFLEX_MINIFY_STATES` | off |
 | `REFLEX_MINIFY_EVENTS` | off |
 | `REFLEX_MINIFY_VARS` | off |
+| `REFLEX_MINIFY_CONFIG` | `minify.json` in the app directory |
 
-They are ordinary boolean env vars, so `1`, `true` and `yes` turn them on and
+The first three are ordinary boolean env vars, so `1`, `true` and `yes` turn them on and
 `0`, `false` and `no` turn them off. They are independent: you can minify any
 combination of state names, event handler names and var names. None of them
 has any effect without a `minify.json`.
@@ -179,6 +181,21 @@ must see the same values:
 In a split deployment — a statically hosted frontend and a separately deployed
 backend — set the variables in the build environment and in the backend's
 environment, and deploy the same `minify.json` to both.
+
+### Using a config from another path
+
+`REFLEX_MINIFY_CONFIG` names the config file explicitly, as an absolute path or
+one relative to the working directory:
+
+```bash
+REFLEX_MINIFY_CONFIG=/etc/myapp/minify.json reflex run --env prod
+```
+
+It applies to every command, the `reflex minify` ones included, and to every
+app the process loads. Without it, each app is loaded with the `minify.json` in
+its own directory: an app loaded after another one in the same process — such
+as an `AppHarness` test app next to your repository's minified app — gets its
+own config's names, or the default names when its directory has none.
 
 ### What keeps its name
 
@@ -399,14 +416,16 @@ variables and rebuild; `minify.json` on its own changes nothing.
 - **Run from the app directory.** `minify.json` is looked up in the process's
   current working directory. A backend started from anywhere else does not find
   the file, resolves names the default way, and rejects every client with a
-  scheme mismatch.
+  scheme mismatch. Set `REFLEX_MINIFY_CONFIG` if it cannot be started there.
 - **Components built before `minify.json` is loaded keep the default names.**
   Reflex loads `minify.json` as soon as it can — when `reflex.state` is first
   imported from the app directory, and again before importing your app — and
   renames every state's own vars when it does. A var expression a module built
   from them earlier, such as a component created at the top of a module
   imported before the app directory was entered, still uses the default names,
-  and compiling fails with a message naming each one. Import the app from its
+  and compiling fails with a message naming each one. The same goes the other
+  way for state names: a component built while another app's `minify.json` was
+  in use cannot be compiled into an app that does not rename those states. Import the app from its
   directory, or create such components inside the page function.
 - **`rx.ComponentState` instances are numbered by creation order.** Each
   `create()` call produces its own state class, named `Counter_n1`, `Counter_n2`

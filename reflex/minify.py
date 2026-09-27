@@ -97,8 +97,18 @@ _MEMBER_KINDS = (_EVENTS, _VARS)
 
 
 def _get_minify_json_path() -> Path:
-    """Return the path to ``minify.json`` in the current working directory."""
-    return Path.cwd() / MINIFY_JSON
+    """Return the ``minify.json`` of the app being run.
+
+    ``REFLEX_MINIFY_CONFIG`` names it explicitly, relative to the working
+    directory; otherwise it is the one in the working directory, which is the
+    app's own.
+
+    Returns:
+        The absolute path, whether or not the file exists.
+    """
+    from reflex.environment import environment
+
+    return (environment.REFLEX_MINIFY_CONFIG.get() or Path(MINIFY_JSON)).absolute()
 
 
 def _validate_minified_id(label: str, value: str) -> None:
@@ -371,12 +381,14 @@ class MinifyNameResolver:
         states_enabled: Whether ``REFLEX_MINIFY_STATES`` is on.
         events_enabled: Whether ``REFLEX_MINIFY_EVENTS`` is on.
         vars_enabled: Whether ``REFLEX_MINIFY_VARS`` is on.
+        path: The ``minify.json`` the config was read from, if any.
     """
 
     config: MinifyConfig | None
     states_enabled: bool
     events_enabled: bool
     vars_enabled: bool
+    path: Path | None = None
 
     _digest: str | None = dataclasses.field(default=None, repr=False)
 
@@ -441,18 +453,18 @@ class MinifyNameResolver:
         """
         from reflex.environment import environment
 
+        path = _get_minify_json_path()
         try:
             config = _load_minify_config_uncached()
         except ValueError as e:
-            logger.warning(
-                f"{MINIFY_JSON} could not be loaded: {e}; minification disabled."
-            )
+            logger.warning(f"{path} could not be loaded: {e}; minification disabled.")
             config = None
         return cls(
             config=config,
             states_enabled=environment.REFLEX_MINIFY_STATES.get(),
             events_enabled=environment.REFLEX_MINIFY_EVENTS.get(),
             vars_enabled=environment.REFLEX_MINIFY_VARS.get(),
+            path=path,
         )
 
     def resolve_state_name(self, state_cls: type[BaseState]) -> str | None:  # noqa: D102
@@ -557,20 +569,30 @@ def force_default_names() -> Iterator[None]:
 
 
 def ensure_minify_resolver_for_active_context() -> None:
-    """Install a :class:`MinifyNameResolver` if one isn't already in place.
+    """Install the resolver for the ``minify.json`` of the app being run.
 
-    Idempotent — safe to wire into hot paths like
-    :func:`reflex.utils.prerequisites.get_app`. Apps without a ``minify.json``
-    keep the :class:`~reflex_base.registry.DefaultNameResolver` and its
-    zero-cost name lookups; the resolver is installed the moment a config
-    shows up.
+    The resolver follows that file, so an app loaded after another one in the
+    same process -- like an ``AppHarness`` test app next to the repository's
+    own -- never gets names from the other app's ``minify.json``: without a
+    file of its own it gets the built-in names, with a different one its own.
+    Idempotent and cheap when nothing changed, so it is safe to wire into hot
+    paths like :func:`reflex.utils.prerequisites.get_app`. A resolver the user
+    installed in place of the built-in ones is left alone.
     """
-    from reflex_base.registry import RegistrationContext
+    from reflex_base.registry import DefaultNameResolver, RegistrationContext
 
-    if _default_names_forced or not _get_minify_json_path().exists():
+    if _default_names_forced:
         return
-    resolver = RegistrationContext.ensure_context().name_resolver
-    if isinstance(resolver, MinifyNameResolver) and resolver.config is not None:
+    ctx = RegistrationContext.ensure_context()
+    resolver = ctx.name_resolver
+    path = _get_minify_json_path()
+    if isinstance(resolver, MinifyNameResolver):
+        if not path.exists():
+            ctx.set_name_resolver(DefaultNameResolver())
+            return
+        if resolver.config is not None and resolver.path == path:
+            return
+    elif type(resolver) is not DefaultNameResolver or not path.exists():
         return
     install_minify_resolver()
 
@@ -680,7 +702,7 @@ _DEFAULT_NAME_RUN = re.compile(r"(?<![\w$])[\w$]*___[\w$]*(?:\.[\w$]+)*")
 
 
 def _renamed_default_references() -> dict[str, str]:
-    """Map the default spelling of every renamed state, handler and var to a label.
+    """Map the unminified spelling of every renamed state, handler and var to a label.
 
     Returns:
         ``{default spelling: what it names}``; empty when nothing is renamed.
@@ -713,34 +735,52 @@ def _renamed_default_references() -> dict[str, str]:
     return references
 
 
+# The local a component reads a renamed state's context into, which only a
+# resolver's names get; see ``format_state_local``.
+_RESOLVED_STATE_LOCAL = re.compile(r"(?<![\w$])\$rx_[\w$]+")
+
+
 def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
-    """Reject compiled code that still names a renamed state, handler or var.
+    """Reject compiled code naming a state, handler or var unlike the active resolver.
 
     Installing a resolver rebuilds the Vars each state holds, but not a Var
     built from them beforehand -- e.g. by a module-level component imported
-    before ``minify.json`` was loaded. Such code would read a context the
-    frontend never provides, or send an event the backend never registered.
+    before this app's ``minify.json`` was loaded, or while another app's was.
+    Such code would read a context the frontend never provides, or send an
+    event the backend never registered. Caught both ways: a renamed name by
+    its unminified spelling, and a resolver's name the active one does not
+    give (every such state name carries the ``$rx_`` prefix).
 
     Args:
         outputs: ``(path, code)`` pairs of the compiled frontend.
 
     Raises:
-        ReflexError: If any code refers to a renamed name by its default spelling.
+        ReflexError: If any code names something unlike the active resolver.
     """
     from reflex_base.utils.exceptions import ReflexError
+    from reflex_base.utils.format import format_state_local
 
     references = _renamed_default_references()
-    if not references:
-        return
+    live_locals: set[str] | None = None
     found: dict[str, tuple[str, str]] = {}
     for path, code in outputs:
-        for match in _DEFAULT_NAME_RUN.finditer(code):
-            prefix = ""
-            for segment in match.group().split("."):
-                prefix = f"{prefix}.{segment}" if prefix else segment
-                if prefix in references:
-                    found.setdefault(prefix, (references[prefix], path))
-                    break
+        if references:
+            for match in _DEFAULT_NAME_RUN.finditer(code):
+                prefix = ""
+                for segment in match.group().split("."):
+                    prefix = f"{prefix}.{segment}" if prefix else segment
+                    if prefix in references:
+                        found.setdefault(prefix, (references[prefix], path))
+                        break
+        if "$rx_" not in code:
+            continue
+        if live_locals is None:
+            live_locals = {format_state_local(s) for s in collect_all_states()}
+        for match in _RESOLVED_STATE_LOCAL.finditer(code):
+            if match.group() not in live_locals:
+                found.setdefault(
+                    match.group(), ("a state named by another resolver", path)
+                )
     if not found:
         return
     details = "\n".join(
@@ -748,12 +788,13 @@ def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
         for spelling, (label, path) in sorted(found.items())
     )
     msg = (
-        f"The compiled frontend refers to names that {MINIFY_JSON} renames by "
-        f"their unminified spelling:\n{details}\n"
-        "They come from Vars built before the name resolver was installed, e.g. "
-        "by a component created at import time of a module loaded before the "
-        f"app directory (and its {MINIFY_JSON}) was. Import the app from its "
-        "directory, or create those components inside the page function."
+        "The compiled frontend refers to names the active name resolver does "
+        f"not use:\n{details}\n"
+        "They come from Vars built while another resolver was installed, e.g. by "
+        "a component created at import time of a module loaded before this app "
+        f"directory (and its {MINIFY_JSON}) was, or while another app's was. "
+        "Import the app from its directory, or create those components inside "
+        "the page function."
     )
     raise ReflexError(msg)
 
