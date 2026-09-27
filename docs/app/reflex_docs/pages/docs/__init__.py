@@ -74,8 +74,8 @@ def build_nested_namespace(
     return parent_namespace
 
 
-# Leading YAML frontmatter block, mirroring reflex_docgen's parser.
-_FRONTMATTER_BLOCK_RE = re.compile(r"\A---\n.*?\n---\n", re.DOTALL)
+# Share the accepted frontmatter boundary across all page metadata.
+_FRONTMATTER_BLOCK_RE = re.compile(r"\A\ufeff?\s*---\r?\n(.*?)\r?\n---\r?\n", re.DOTALL)
 
 
 @lru_cache(maxsize=None)
@@ -286,7 +286,7 @@ def extract_doc_description(
         # description only when it's already long enough; otherwise strip the
         # block and fall through to the body prose, which is usually richer than
         # a short frontmatter field.
-        frontmatter = re.match(r"﻿?\s*---\r?\n(.*?)\r?\n---\r?\n", text, flags=re.DOTALL)
+        frontmatter = _FRONTMATTER_BLOCK_RE.match(text)
         if frontmatter:
             for fm_line in frontmatter.group(1).splitlines():
                 key_value = re.match(
@@ -488,9 +488,12 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
 
     description = extract_doc_description(doc_text)
     image = get_image_from_frontmatter(actual_path)
+    frontmatter = _frontmatter_for(actual_path)
     return make_docpage(
         resolved.route,
-        resolved.display_title,
+        frontmatter.title
+        if frontmatter and frontmatter.title
+        else resolved.display_title,
         virtual_doc,
         comp,
         actual_path,

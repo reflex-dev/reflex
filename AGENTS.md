@@ -19,7 +19,7 @@ uv run pytest tests/integration                                  # integration t
 uv run ruff check .                                              # lint
 uv run ruff format .                                             # format
 uv run pyright reflex tests                                      # type check
-uv run python scripts/check_min_deps.py                          # validate each package's declared minimum dep versions (pyright in isolated min-version envs; *.dev pins resolve from the local workspace, all other deps from PyPI)
+uv run python scripts/check_min_deps.py                          # validate each package's declared minimum dep versions (pyright in isolated min-version envs; workspace siblings resolve from locally built wheels, all other deps from PyPI). CI passes --wheelhouse instead, reusing the build jobs' artifacts
 uv run python scripts/check_min_deps.py --check-dev-pins [pkg]    # fail if pkg (default: all) declares an unpublishable *.dev dependency pin (the publish workflow runs the same gate via `reflex-release check-dev-pins`)
 uv run reflex-release sync                                       # regenerate the release workflows after editing [tool.reflex-release] or the reflex-release templates
 uv run python scripts/make_pyi.py                                # regenerate .pyi stubs

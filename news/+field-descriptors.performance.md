@@ -1,0 +1,1 @@
+Reading a state var is about 4x faster, and setting one about 7x faster (15x in prod mode): vars, computed vars and event handlers are now descriptors on the state class that declares them, instead of every attribute access going through `BaseState.__getattribute__`.
