@@ -1504,3 +1504,23 @@ def test_duplicate_event_ids_are_rejected_and_reassigned(temp_minify_json):
     save_minify_config(synced)
     get_minify_config.cache_clear()
     assert get_minify_config() is not None
+
+
+def test_duplicate_repair_keeps_the_live_handler_id(temp_minify_json):
+    """A deleted handler sharing a live one's id gives way, whatever the order.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+    """
+
+    class LiveHandlerState(State):
+        def zed(self):
+            pass
+
+    path = get_state_full_path(LiveHandlerState)
+    config = generate_minify_config(LiveHandlerState)
+    config["events"][path] = {"alpha_gone": "a", "zed": "a", "setvar": "b"}
+
+    synced = sync_minify_config(config, LiveHandlerState)
+    assert synced["events"][path]["zed"] == "a"
+    assert synced["events"][path]["alpha_gone"] not in ("a", "b")

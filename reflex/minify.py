@@ -15,7 +15,7 @@ import functools
 import hashlib
 import json
 import logging
-from collections.abc import Iterable, Iterator
+from collections.abc import Collection, Iterable, Iterator
 from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict
 
@@ -781,16 +781,22 @@ def _assign_next_ids(
     return out
 
 
-def _reassign_duplicate_ids(ids: dict[str, str], reassign_deleted: bool) -> None:
-    """Give a new id to every name but the first, by sort order, sharing one.
+def _reassign_duplicate_ids(
+    ids: dict[str, str], reassign_deleted: bool, live: Collection[str]
+) -> None:
+    """Give a new id to every name but one of those sharing an id.
+
+    The one kept is a live name if any shares the id -- a served frontend may
+    be using it -- else the first by sort order.
 
     Args:
         ids: The ``{name: id}`` map of one state, modified in place.
         reassign_deleted: Whether a replacement id may fill a gap.
+        live: The names the code still has.
     """
     kept: set[str] = set()
     duplicates: list[str] = []
-    for name in sorted(ids):
+    for name in sorted(ids, key=lambda name: (name not in live, name)):
         if ids[name] in kept:
             duplicates.append(name)
         else:
@@ -1084,8 +1090,12 @@ def sync_minify_config(
     _rehome_ambiguous_ids(new_states, reassign_deleted)
     _rehome_conflicting_ids(new_states, all_states, reassign_deleted, reparented)
 
-    for state_events in new_events.values():
-        _reassign_duplicate_ids(state_events, reassign_deleted)
+    for state_path, state_events in new_events.items():
+        _reassign_duplicate_ids(
+            state_events,
+            reassign_deleted,
+            code_events_by_state.get(state_path, frozenset()),
+        )
 
     # Assign new event IDs (unique within each state).
     for state_cls in all_states:

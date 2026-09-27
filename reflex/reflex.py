@@ -1490,15 +1490,15 @@ def minify_lookup(output_json: bool, minified_path: str):
         )
         # An event name copied from the frontend ends in a handler id (or the
         # handler's own name) of the state resolved so far, not a substate id.
-        handler = None
+        handlers: list[str] = []
         current_path = get_state_full_path(current)
         current_events = config["events"].get(current_path, {})
         if index == last_index:
-            handler = next(
-                (name for name, event_id in current_events.items() if event_id == part),
-                part if part in current.event_handlers else None,
-            )
-        if found is None and handler is None:
+            # A config ``validate`` rejects can give several handlers the id.
+            handlers = sorted(
+                name for name, event_id in current_events.items() if event_id == part
+            ) or ([part] if part in current.event_handlers else [])
+        if found is None and not handlers:
             kind = "state or event handler" if index == last_index else "state"
             logger.error(
                 f"No {kind} found for minified segment '{part}' in path '{minified_path}'"
@@ -1516,14 +1516,20 @@ def minify_lookup(output_json: bool, minified_path: str):
                 "class": found.__name__,
                 "full_path": get_state_full_path(found),
             })
-        if handler is not None:
-            # JSON readers see the ambiguity as two entries for one segment.
-            if found is not None and not output_json:
-                logger.warning(
-                    f"Segment '{part}' is both a state id and an event handler id "
-                    f"of {get_state_module(current)}.{current.__name__}; showing both."
-                )
-            result_parts.append({
+        # JSON readers see the ambiguity as several entries for one segment.
+        if handlers and found is not None and not output_json:
+            logger.warning(
+                f"Segment '{part}' is both a state id and an event handler id "
+                f"of {get_state_module(current)}.{current.__name__}; showing both."
+            )
+        if len(handlers) > 1 and not output_json:
+            logger.warning(
+                f"Handlers {', '.join(handlers)} of {get_state_module(current)}."
+                f"{current.__name__} share the id '{part}', so all but one are "
+                "unreachable. Run 'reflex minify sync' to reassign them."
+            )
+        result_parts.extend(
+            {
                 "kind": "event",
                 "minified": part,
                 "event_id": current_events.get(handler),
@@ -1531,7 +1537,9 @@ def minify_lookup(output_json: bool, minified_path: str):
                 "class": current.__name__,
                 "handler": handler,
                 "full_path": f"{current_path}.{handler}",
-            })
+            }
+            for handler in handlers
+        )
         if found is not None:
             current = found
 

@@ -2691,7 +2691,8 @@ def _source_module(state_cls: type[BaseState]) -> str:
     Returns:
         The name of the defining module.
     """
-    if (original_module := getattr(state_cls, "__original_module__", None)) is not None:
+    # Its own attribute: a subclass would inherit a locally defined parent's.
+    if (original_module := state_cls.__dict__.get("__original_module__")) is not None:
         return original_module
     if state_cls.__module__ == reflex.istate.dynamic.__name__ and issubclass(
         state_cls, ComponentState

@@ -7132,11 +7132,37 @@ def test_reload_retires_component_states_of_the_reloaded_module(
         return keyed, unkeyed
 
     old_keyed, old_unkeyed = define_and_create()
-    reload_state_module(module=module)
-    assert old_keyed not in State.get_substates()
-    assert old_unkeyed not in State.get_substates()
+    try:
+        reload_state_module(module=module)
+        assert old_keyed not in State.get_substates()
+        assert old_unkeyed not in State.get_substates()
 
-    new_keyed, new_unkeyed = define_and_create()
-    assert new_keyed.get_name() == old_keyed.get_name()
-    assert new_unkeyed.get_name() == old_unkeyed.get_name()
-    assert getattr(reflex.istate.dynamic, new_keyed.__name__) is new_keyed
+        new_keyed, new_unkeyed = define_and_create()
+        assert new_keyed.get_name() == old_keyed.get_name()
+        assert new_unkeyed.get_name() == old_unkeyed.get_name()
+        assert getattr(reflex.istate.dynamic, new_keyed.__name__) is new_keyed
+    finally:
+        # Frees the generated classes' names in reflex.istate.dynamic.
+        reload_state_module(module=module)
+    assert not hasattr(reflex.istate.dynamic, old_keyed.__name__)
+
+
+def test_reload_attributes_a_state_to_its_own_module(temp_minify_json, monkeypatch):
+    """A state is not claimed by the module of a locally defined parent.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    from reflex.state import _source_module
+
+    def make_local_parent() -> type[State]:
+        class LocalReloadParent(State):
+            pass
+
+        return LocalReloadParent
+
+    parent = make_local_parent()
+    child = type("ModuleReloadChild", (parent,), {"__module__": "reload_module_b"})
+    assert _source_module(parent) == __name__
+    assert _source_module(child) == "reload_module_b"
