@@ -807,8 +807,10 @@ def test_linked_state_propagates_with_minified_state_names(
     shared_state = minified_linked_state.app_module.SharedState
     assert shared_state.get_name() == "s"
     assert shared_state.get_full_name() != shared_state._get_default_full_name()
-    tabs = [minified_linked_state.frontend() for _ in range(2)]
+    tabs: list[WebDriver] = []
     try:
+        for _ in range(2):
+            tabs.append(minified_linked_state.frontend())
         for tab in tabs:
             ss = utils.SessionStorage(tab)
             assert AppHarness._poll_for(lambda ss=ss: ss.get("token") is not None)

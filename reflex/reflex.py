@@ -1175,7 +1175,7 @@ def _open_minify_session(
         return None
 
     try:
-        config = _load_minify_config_uncached()
+        config = _load_minify_config_uncached(allow_ambiguous_state_ids=True)
     except ValueError as e:
         logger.error(str(e))
         raise SystemExit(1) from e

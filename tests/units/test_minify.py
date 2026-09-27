@@ -16,6 +16,7 @@ from reflex.minify import (
     MinifyNameResolver,
     StateEntry,
     _find_missing_entries,
+    _load_minify_config_uncached,
     clear_config_cache,
     ensure_minify_resolver_for_active_context,
     generate_minify_config,
@@ -26,6 +27,7 @@ from reflex.minify import (
     is_minify_enabled,
     is_mode_enabled,
     minified_name_to_int,
+    save_minify_config,
     sync_minify_config,
     validate_minify_config,
     warn_if_config_stale,
@@ -1423,3 +1425,52 @@ def test_state_entry_without_parent_is_rejected(temp_minify_json):
     )
     with pytest.raises(ValueError, match="parent"):
         get_minify_config()
+
+
+def _config_with_ambiguous_ids(parent: type[BaseState]) -> MinifyConfig:
+    """A config as generated before ambiguous state ids were skipped.
+
+    Args:
+        parent: A state with at least one substate.
+
+    Returns:
+        The config, with the first substate on ``_`` and an orphan on ``a_``.
+    """
+    config = generate_minify_config(parent)
+    parent_path = get_state_full_path(parent)
+    child_path = next(
+        path for path, entry in config["states"].items() if entry["parent"]
+    )
+    config["states"][child_path]["id"] = "_"
+    config["states"][f"{parent_path}.Gone"] = StateEntry(id="a_", parent=parent_path)
+    return config
+
+
+def test_ambiguous_state_ids_are_reported_and_reassigned(temp_minify_json):
+    """A config written before the rule loads for the CLI, which repairs it.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+    """
+    parent = type("AmbiguousParent", (State,), {"__module__": __name__})
+    type("AmbiguousChild", (parent,), {"__module__": __name__})
+    config = _config_with_ambiguous_ids(parent)
+    (temp_minify_json / MINIFY_JSON).write_text(json.dumps(config))
+
+    # The app refuses it; the CLI loads it to report and repair it.
+    with pytest.raises(ValueError, match="reflex minify sync"):
+        get_minify_config()
+    loaded = _load_minify_config_uncached(allow_ambiguous_state_ids=True)
+    assert loaded is not None
+
+    errors, _warnings, _missing = validate_minify_config(loaded, parent)
+    assert sum("reflex minify sync" in error for error in errors) == 2
+
+    synced = sync_minify_config(loaded, parent)
+    ids = {path: entry["id"] for path, entry in synced["states"].items()}
+    assert "_" not in ids.values()
+    assert "a_" not in ids.values()
+    assert len(ids) == len(config["states"])
+    save_minify_config(synced)
+    get_minify_config.cache_clear()
+    assert get_minify_config() is not None

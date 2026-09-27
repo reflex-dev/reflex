@@ -105,7 +105,8 @@ A state id must be unique **among its siblings**, and must differ from its
 parent's id — otherwise a relative path like `a.a` would be ambiguous. Two
 states under different parents may both be `"b"`. A state id also may not start
 or end with `_` or contain `__`: the compiled frontend joins a state's path with
-`__`, and `a` + `_b` would read the same as `a_` + `b`. An event id must be
+`__`, and `a` + `_b` would read the same as `a_` + `b`; `reflex minify sync`
+replaces such an id in a file written before this rule. An event id must be
 unique **within its state**.
 
 The file is written sorted and with a stable layout, so regenerating it produces

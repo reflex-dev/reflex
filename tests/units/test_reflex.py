@@ -916,3 +916,32 @@ def test_minify_help_shows_no_docstring_sections(cli_runner):
     assert result.exit_code == 0, result.output
     assert "Manage state and event name minification." in result.output
     assert "Args:" not in result.output
+
+
+def test_minify_sync_repairs_ambiguous_state_ids(temp_minify_json, cli_runner):
+    """``validate`` flags an id the loader now rejects; ``sync`` reassigns it."""
+    from reflex.minify import StateEntry, get_minify_config
+    from reflex.reflex import cli
+
+    class RepairedState(State):
+        pass
+
+    install_config(
+        states={
+            get_state_full_path(RepairedState): StateEntry(
+                id="_", parent="reflex.state.State"
+            )
+        },
+        include_state_root=True,
+    )
+
+    validated = cli_runner.invoke(cli, ["minify", "validate"])
+    assert validated.exit_code == 1
+    assert "reflex minify sync" in validated.output
+
+    synced = cli_runner.invoke(cli, ["minify", "sync"])
+    assert synced.exit_code == 0, synced.output
+    get_minify_config.cache_clear()
+    config = get_minify_config()
+    assert config is not None
+    assert config["states"][get_state_full_path(RepairedState)]["id"] != "_"
