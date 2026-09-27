@@ -5,7 +5,7 @@ import contextlib
 import logging
 from collections.abc import AsyncIterator
 from dataclasses import MISSING
-from typing import Any, TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from reflex_base.constants import ROUTER_DATA, ROUTER_VARS
 from reflex_base.event import Event, get_hydrate_event
