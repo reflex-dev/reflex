@@ -125,16 +125,23 @@ Ids use the alphabet `a-z`, `A-Z`, `$` and `_` (the characters that are legal in
 a JavaScript identifier), counting `a`, `b`, … `z`, `A`, … `_`, `ba`, `bb`, ….
 A state id must be unique **among its siblings**, and must differ from its
 parent's id — otherwise a relative path like `a.a` would be ambiguous. Two
-states under different parents may both be `"b"`. An event id and a var id
+states under different parents may both be `"b"`. A state id also may not start
+or end with `_` or contain `__`: the compiled frontend joins a state's path with
+`__`, and `a` + `_b` would read the same as `a_` + `b`. An event id and a var id
 must each be unique **within their state**. A var id is a key of its state's
 object in the frontend, so it cannot be a name every JavaScript object already
 has (`constructor`, `toString`, `__proto__`, …) or end in `_rx_state_`, the
 suffix of an unminified var key.
 
 The file is written sorted and with a stable layout, so regenerating it produces
-no spurious diffs. It is hand-editable — every field is validated on load and a
-malformed file is rejected with an explicit error — but in practice let the CLI
-maintain it.
+no spurious diffs. It is hand-editable, but in practice let the CLI maintain it.
+Loading it checks the schema version, that `states`, `events` and (when
+present) `vars` are objects, that every state entry has a string `id` and a
+`parent` that is a string or `null`, and that every id follows the rules above;
+keys it does not know are ignored. On a file that fails these checks the `reflex minify` commands stop
+with an error naming the problem, while compiling or serving the app logs a
+warning and runs without minification. Uniqueness is checked by
+`reflex minify validate`.
 
 ### `parent` and reserved ids
 

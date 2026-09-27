@@ -6713,8 +6713,7 @@ def test_resolved_name_survives_cache_pressure(temp_minify_json, monkeypatch):
 
     assert PressureState.get_name() == "b"
 
-    # More distinct classes than a default lru_cache would hold. They register
-    # into process-global structures, so drop them again before returning.
+    # More distinct classes than a default lru_cache would hold.
     fillers = [
         type(f"Filler{index}", (BaseState,), {"__module__": __name__})
         for index in range(150)
@@ -6734,8 +6733,6 @@ def test_resolved_name_survives_cache_pressure(temp_minify_json, monkeypatch):
         assert resolved == ["b"], "name was re-resolved without a registration context"
         assert PressureState.get_name() == "b"
     finally:
-        for filler in fillers:
-            all_base_state_classes.pop(filler.get_full_name(), None)
         State.get_name.cache_clear()
         State.get_full_name.cache_clear()
 
@@ -7227,3 +7224,27 @@ def test_unminified_state_keeps_its_context_local(temp_minify_json):
 
     local = format.format_state_name(PlainLocalState.get_full_name())
     assert str(PlainLocalState.count) == f"{local}.count{FIELD_MARKER}"
+
+
+def test_state_count_keys_on_names_minification_cannot_share(
+    temp_minify_json, monkeypatch
+):
+    """Stateful page detection counts states by a name no resolver shortens.
+
+    Minified full names like ``a.b`` repeat across states that never meet in one
+    tree, so a new state keyed by one would not grow the count.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    set_minify_modes(monkeypatch, states=True)
+    path = f"{__name__}.State.CountedState"
+    install_config(states={path: "b"}, include_state_root=True)
+
+    class CountedState(State):
+        pass
+
+    assert CountedState.get_full_name() == "a.b"
+    assert CountedState._get_default_full_name() in all_base_state_classes
+    assert "a.b" not in all_base_state_classes

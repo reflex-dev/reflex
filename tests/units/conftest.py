@@ -534,8 +534,11 @@ def temp_minify_json(
         The temporary directory path.
     """
     from reflex.minify import clear_config_cache
+    from reflex.state import all_base_state_classes
 
     monkeypatch.chdir(tmp_path)
+    # Forking isolates the registry but not this module-level map.
+    registered_states = dict(all_base_state_classes)
     try:
         with RegistrationContext.get().fork():
             clear_config_cache()
@@ -543,6 +546,8 @@ def temp_minify_json(
     finally:
         monkeypatch.undo()
         clear_config_cache()
+        all_base_state_classes.clear()
+        all_base_state_classes.update(registered_states)
 
 
 @pytest.fixture

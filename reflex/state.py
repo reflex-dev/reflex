@@ -751,7 +751,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
 
-        all_base_state_classes[cls.get_full_name()] = None
+        all_base_state_classes[cls._get_default_full_name()] = None
         cls._is_registered = True
 
     @classmethod
@@ -2755,7 +2755,7 @@ def reload_state_module(
     for subclass in tuple(substates):
         reload_state_module(module=module, state=subclass)
         if subclass.__module__ == module and module is not None:
-            all_base_state_classes.pop(subclass.get_full_name(), None)
+            all_base_state_classes.pop(subclass._get_default_full_name(), None)
             subclass._is_registered = False
             substates.remove(subclass)
             state._always_dirty_substates.discard(subclass)
