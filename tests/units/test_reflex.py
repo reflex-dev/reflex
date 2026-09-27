@@ -13,6 +13,7 @@ import click
 import click.testing
 import pytest
 from click.testing import CliRunner
+from pytest_mock import MockerFixture
 from reflex_base.registry import RegistrationContext
 
 from reflex import reflex
@@ -129,6 +130,7 @@ import json
 import sys
 
 from click.testing import CliRunner
+from pytest_mock import MockerFixture
 from reflex.reflex import cli
 
 result = CliRunner().invoke(cli, {argv!r})
@@ -202,6 +204,7 @@ import sys
 
 import click
 from click.testing import CliRunner
+from pytest_mock import MockerFixture
 from reflex import reflex
 from reflex.environment import environment
 
@@ -457,6 +460,31 @@ def test_init_records_version_check_after_frontend_setup(
     reflex._init("demo")
 
     assert events == ["frontend", "version"]
+
+
+def test_minify_sync_and_validate_name_the_configured_file(
+    temp_minify_json: Path,
+    cli_runner: CliRunner,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+) -> None:
+    """With ``REFLEX_MINIFY_CONFIG`` set, the commands name the file they use."""
+    from reflex.reflex import cli
+
+    target = temp_minify_json / "deploy" / "names.json"
+    target.parent.mkdir()
+    monkeypatch.setenv(environment.REFLEX_MINIFY_CONFIG.name, str(target))
+    install_config(include_state_root=True)
+    info = mocker.spy(reflex.logger, "info")
+
+    synced = cli_runner.invoke(cli, ["minify", "sync"])
+    assert synced.exit_code == 0, synced.output
+    validated = cli_runner.invoke(cli, ["minify", "validate"])
+    assert validated.exit_code == 0, validated.output
+
+    messages = [call.args[0] for call in info.call_args_list]
+    assert f"Updated {target}:" in messages
+    assert f"{target} is valid and up-to-date." in messages
 
 
 def test_lookup_resolves_minified_path(temp_minify_json, cli_runner):

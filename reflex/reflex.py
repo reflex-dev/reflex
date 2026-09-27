@@ -1230,7 +1230,11 @@ def minify_sync(reassign_deleted: bool, prune: bool):
 
     Adds new states, events and vars, optionally removes orphaned entries.
     """
-    from reflex.minify import MINIFY_JSON, save_minify_config, sync_minify_config
+    from reflex.minify import (
+        _get_minify_json_path,
+        save_minify_config,
+        sync_minify_config,
+    )
 
     existing_config = _open_minify_session()
     new_config = sync_minify_config(
@@ -1238,7 +1242,7 @@ def minify_sync(reassign_deleted: bool, prune: bool):
     )
     save_minify_config(new_config)
 
-    logger.info(f"Updated {MINIFY_JSON}:")
+    logger.info(f"Updated {_get_minify_json_path()}:")
     logger.info(
         f"  States: {len(existing_config['states'])} -> {len(new_config['states'])}"
     )
@@ -1257,7 +1261,7 @@ def minify_validate():
 
     Checks for duplicate IDs, missing entries, and orphaned entries.
     """
-    from reflex.minify import MINIFY_JSON, validate_minify_config
+    from reflex.minify import _get_minify_json_path, validate_minify_config
 
     config = _open_minify_session()
     errors, warnings, missing = validate_minify_config(config)
@@ -1279,7 +1283,7 @@ def minify_validate():
 
     if errors or missing:
         raise SystemExit(1)
-    logger.info(f"{MINIFY_JSON} is valid and up-to-date.")
+    logger.info(f"{_get_minify_json_path()} is valid and up-to-date.")
 
 
 @minify.command(name="list")
