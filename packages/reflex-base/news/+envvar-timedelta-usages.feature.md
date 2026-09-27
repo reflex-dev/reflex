@@ -1,0 +1,1 @@
+`SQLALCHEMY_POOL_TIMEOUT`, `REFLEX_BACKEND_COLD_START_TIMEOUT`, `REFLEX_SOCKET_INTERVAL` and `REFLEX_SOCKET_TIMEOUT` are `timedelta` settings, so they accept a unit suffix such as `REFLEX_SOCKET_TIMEOUT=2m`. A bare number is still read as seconds, so existing values keep their meaning.

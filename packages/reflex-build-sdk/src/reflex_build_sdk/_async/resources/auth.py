@@ -18,7 +18,14 @@ from reflex_build_sdk._errors import (
     NotFoundError,
     PermissionDeniedError,
 )
-from reflex_build_sdk.types import AccessScope, LoginRequest, Me, Token
+from reflex_build_sdk.types import (
+    AccessScope,
+    CreatedToken,
+    LoginRequest,
+    Me,
+    RotatedToken,
+    Token,
+)
 
 if TYPE_CHECKING:
     from reflex_build_sdk._async._client import AsyncReflexBuild
@@ -33,8 +40,9 @@ _LOGIN_TIMEOUT = 600.0
 class AsyncTokens:
     """Manage the caller's access tokens.
 
-    Needs a token with full access: tokens from ``reflex login`` and service
-    account tokens are refused with ``PermissionDeniedError``.
+    Every method but ``revoke_self`` needs a token with full access: tokens from
+    ``reflex login`` and service account tokens are refused with
+    ``PermissionDeniedError``.
     """
 
     def __init__(self, client: AsyncReflexBuild) -> None:
@@ -51,7 +59,7 @@ class AsyncTokens:
         *,
         expires_in_days: int | None = None,
         access: AccessScope | None = None,
-    ) -> str:
+    ) -> CreatedToken:
         """Create an access token in the organization of the calling token.
 
         Args:
@@ -61,12 +69,15 @@ class AsyncTokens:
             access: Restricts what the token can do. Defaults to full access.
 
         Returns:
-            The new token. It is only returned once, so store it securely.
+            The new token, with its value. The value is only returned once, so store
+            it securely.
         """
         body: dict[str, Any] = {"name": name, "expiration": expires_in_days}
         if access is not None:
             body["access"] = dataclasses.asdict(access)
-        return await self._client._request("POST", "user/token", str, json=body)
+        return await self._client._request(
+            "POST", "user/token/create", CreatedToken, json=body
+        )
 
     async def list(self) -> builtins.list[Token]:
         """List the caller's live and expired access tokens, without their values.
@@ -96,7 +107,16 @@ class AsyncTokens:
             "POST", "user/token/revoke", None, json={"token_id": token}
         )
 
-    async def refresh(self, token: str) -> str:
+    async def revoke_self(self) -> None:
+        """Revoke the client's own access token, e.g. to log out.
+
+        Unlike the other token methods, any token can revoke itself, including
+        tokens from ``reflex login``. The client cannot make authenticated requests
+        afterwards.
+        """
+        await self._client._request("POST", "user/token/revoke-self", None)
+
+    async def refresh(self, token: str) -> RotatedToken:
         """Replace an access token, live or expired, with a new one.
 
         The new token has the same name, access and lifetime, from now; the old one
@@ -107,10 +127,12 @@ class AsyncTokens:
             token: The token, one of the caller's.
 
         Returns:
-            The new token. It is only returned once, so store it securely.
+            The new token, with its value. The value is only returned once, so store
+            it securely. If its ``previous_revoked`` is False, the old token is still
+            live and must be revoked with ``revoke``.
         """
         return await self._client._request(
-            "POST", "user/token/refresh", str, json={"token_id": token}
+            "POST", "user/token/rotate", RotatedToken, json={"token_id": token}
         )
 
     async def assign_to_service_account(
@@ -204,8 +226,7 @@ class AsyncAuth:
     ) -> str:
         """Wait for the user to approve a browser login, then collect its token.
 
-        The token can be collected once. Save it with ``credentials.save_token`` for
-        clients created later to use.
+        The token can be collected once, so keep it for clients created later.
 
         Args:
             login: The login from ``begin_login``.

@@ -5,6 +5,7 @@ on:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.id || github.sha }}
@@ -13,15 +14,25 @@ concurrency:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
+  # Single-source both matrices: the packages to build, and the subset of them
+  # check_min_deps.py can validate. Both stay in sync as packages are added.
   discover:
     runs-on: ubuntu-latest
     outputs:
       builds: ${{ steps.discover.outputs.builds }}
+      checkable: ${{ steps.checkable.outputs.packages }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: "3.14"
       - id: discover
         run: |
           set -euo pipefail
@@ -32,6 +43,8 @@ jobs:
           done
           JOINED=$(IFS=,; echo "${ENTRIES[*]}")
           echo "builds=[$JOINED]" >> "$GITHUB_OUTPUT"
+      - id: checkable
+        run: echo "packages=$(uv run --with packaging --no-project python scripts/check_min_deps.py --list)" >> "$GITHUB_OUTPUT"
 
   build:
     needs: discover
@@ -51,6 +64,50 @@ jobs:
           python-version: "3.14"
           run-uv-sync: false
       - name: Build ${{ matrix.name }}
-        run: uv build --directory "${{ matrix.dir }}"
+        run: uv build --directory "${{ matrix.dir }}" --out-dir "${{ github.workspace }}/dist"
         env:
           PYI_GENERATOR_RAISE_FAILED_IMPORTS: "1"
+      # The wheel is what check-min-deps resolves its workspace siblings from, so it is
+      # built once here rather than in each of the jobs below.
+      - name: Upload the ${{ matrix.name }} wheel
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: wheel-${{ matrix.name }}
+          path: dist/*.whl
+          if-no-files-found: error
+          retention-days: 1
+
+  # Validates that each package's declared minimum dependency versions are workable. It
+  # lives here, rather than in a workflow of its own, so it can take the wheels the build
+  # jobs above already produced: building them per check job instead would repeat the same
+  # work in every job, and the pyi build hook rewrites the stubs inside a package's own
+  # source tree, which a concurrent job is then type-checking.
+  check-min-deps:
+    needs: [discover, build]
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.discover.outputs.checkable) }}
+        python-version: ["3.10", "3.14"]
+    steps:
+      # fetch-tags/fetch-depth are required: the package is installed editable via
+      # uv-dynamic-versioning, which derives the version from git tags/history.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup_build_env
+        with:
+          python-version: ${{ matrix.python-version }}
+          run-uv-sync: true
+      - name: Collect the built wheels
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: wheel-*
+          path: wheelhouse
+          merge-multiple: true
+      - name: Check minimum declared dependency versions
+        run: uv run --no-sync python scripts/check_min_deps.py --python "${{ matrix.python-version }}" --wheelhouse wheelhouse "${{ matrix.package }}"
