@@ -1536,29 +1536,31 @@ def minify_lookup(output_json: bool, minified_path: str):
                 ("vars", current._frontend_var_names),
             )
             for key, names in member_kinds:
-                ids = config[key].get(current_path, {})
                 # Only live members: ``sync`` keeps a deleted one's id reserved,
                 # and a config ``validate`` rejects can give several the same id.
-                matches = (
-                    sorted(
-                        name
-                        for name, member_id in ids.items()
-                        if member_id == part and name in names
-                    )
-                    or [
-                        name
-                        for name in dict.fromkeys((
-                            part,
-                            part.removesuffix(FIELD_MARKER),
-                        ))
-                        if name in names
-                    ][:1]
+                holders = sorted(
+                    name
+                    for name, member_id in config[key].get(current_path, {}).items()
+                    if member_id == part
                 )
+                matches = [name for name in holders if name in names] or [
+                    name
+                    for name in dict.fromkeys((part, part.removesuffix(FIELD_MARKER)))
+                    if name in names
+                ][:1]
+                owner = f"{get_state_module(current)}.{current.__name__}"
                 if len(matches) > 1 and not output_json:
                     logger.warning(
-                        f"{', '.join(matches)} of {get_state_module(current)}."
-                        f"{current.__name__} share the id '{part}', so all but one "
-                        "are unreachable. Run 'reflex minify sync' to reassign them."
+                        f"{', '.join(matches)} of {owner} share the id '{part}', so "
+                        "all but one are unreachable. Run 'reflex minify sync' to "
+                        "reassign them."
+                    )
+                deleted = [name for name in holders if name not in matches]
+                if deleted and not output_json:
+                    logger.warning(
+                        f"'{part}' is also the id minify.json keeps reserved for "
+                        f"deleted {', '.join(deleted)} of {owner}, which an older "
+                        "frontend may still send."
                     )
                 members.extend((key, name) for name in matches)
         if found is None and not members:

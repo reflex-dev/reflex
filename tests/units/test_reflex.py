@@ -1058,3 +1058,27 @@ def test_lookup_ignores_deleted_handlers_holding_an_id(temp_minify_json, cli_run
     assert handlers == ["live"]
 
     assert cli_runner.invoke(cli, ["minify", "lookup", "b.y"]).exit_code == 1
+
+
+def test_lookup_warns_about_an_id_reserved_for_a_deleted_handler(
+    temp_minify_json, cli_runner
+):
+    """A segment matching a live handler by name notes the deleted id holder."""
+    from reflex.reflex import cli
+
+    class ReservedIdState(State):
+        def a(self):
+            pass
+
+    state_path = get_state_full_path(ReservedIdState)
+    install_config(
+        states={state_path: "b"},
+        events={state_path: {"old": "a", "a": "c"}},
+        include_state_root=True,
+    )
+
+    result = cli_runner.invoke(cli, ["minify", "lookup", "b.a"])
+    assert result.exit_code == 0, result.output
+    assert f"{__name__}.ReservedIdState.a" in result.output
+    assert "old" in result.output
+    assert "deleted" in result.output
