@@ -1064,6 +1064,53 @@ def test_resolver_follows_the_app_directory(
     assert FollowState.get_name() == "f"
 
 
+def test_resolver_reloads_an_edited_config(
+    temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An edit to ``minify.json`` or a toggled mode applies on the next app load.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class EditedState(State):
+        pass
+
+    path = get_state_full_path(EditedState)
+    set_minify_modes(monkeypatch, states=True)
+    _install_in(temp_minify_json, {path: "e"})
+    ensure_minify_resolver_for_active_context()
+    assert EditedState.get_name() == "e"
+
+    _install_in(temp_minify_json, {path: "edited"})
+    ensure_minify_resolver_for_active_context()
+    assert EditedState.get_name() == "edited"
+
+    set_minify_modes(monkeypatch, states=False)
+    ensure_minify_resolver_for_active_context()
+    assert EditedState.get_name() == RegistrationContext.default_state_name(EditedState)
+
+
+def test_malformed_config_warns_once_until_edited(
+    temp_minify_json: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A broken ``minify.json`` is not re-read on every app load.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        caplog: The pytest log capture fixture.
+    """
+    (temp_minify_json / MINIFY_JSON).write_text("{not json")
+    ensure_minify_resolver_for_active_context()
+    ensure_minify_resolver_for_active_context()
+    assert caplog.text.count("could not be loaded") == 1
+
+    (temp_minify_json / MINIFY_JSON).write_text("{still not json")
+    ensure_minify_resolver_for_active_context()
+    assert caplog.text.count("could not be loaded") == 2
+
+
 def test_env_var_pins_the_config_for_every_directory(
     temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1878,8 +1925,75 @@ def test_stale_resolved_state_names_are_rejected(
 
     assert _stale_names_error(str(ResolvedState.count)) == ""
     error = _stale_names_error(f"const x = {minified_expr};")
-    assert "a state named by another resolver" in error
+    assert f"state {get_state_full_path(ResolvedState)}" in error
     assert "page.jsx" in error
+
+
+@pytest.mark.parametrize("new_vars", [{"count": "d"}, {}], ids=["other", "none"])
+def test_stale_var_keys_of_a_state_keeping_its_name_are_rejected(
+    temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch, new_vars: dict[str, str]
+) -> None:
+    """A var key from another ``minify.json`` is caught though its state's id matches.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+        new_vars: The var ids of the config the code is compiled under.
+    """
+
+    class KeptNameState(State):
+        count: int = 0
+
+    path = get_state_full_path(KeptNameState)
+    entry = StateEntry(id="z", parent="reflex.state.State")
+    set_minify_modes(monkeypatch, states=True, vars=True)
+    install_config(states={path: entry}, vars={path: {"count": "c"}})
+    old_expr = str(KeptNameState.count)
+
+    install_config(states={path: entry}, vars={path: new_vars})
+
+    assert _stale_names_error(str(KeptNameState.count)) == ""
+    error = _stale_names_error(f"{old_expr}.length")
+    assert f"var {path}.count, as '{old_expr}'" in error
+
+
+def test_stale_minified_var_keys_are_rejected_after_unminifying(
+    temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A minified var key is caught once its state's vars are unminified.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class UnminifiedVarState(State):
+        count: int = 0
+
+    path = get_state_full_path(UnminifiedVarState)
+    set_minify_modes(monkeypatch, states=False, vars=True)
+    install_config(vars={path: {"count": "c"}})
+    old_expr = str(UnminifiedVarState.count)
+
+    set_minify_modes(monkeypatch, vars=False)
+    install_config(vars={path: {"count": "c"}})
+
+    assert _stale_names_error(str(UnminifiedVarState.count)) == ""
+    assert f"var {path}.count" in _stale_names_error(old_expr)
+
+
+def test_text_resembling_state_reads_is_not_rejected() -> None:
+    """Only locals and var keys once handed out count, not look-alike page text."""
+    root = State.get_full_name()
+    substate = next(iter(State.get_substates())).get_name()
+    for code in (
+        '"Total: $rx_total"',
+        "$rx_never__issued.c",
+        f'"{root}.hydrate"',
+        f'"{root}.{substate}.anything"',
+        f"{root}.not_a_var",
+    ):
+        assert _stale_names_error(code) == "", code
 
 
 @pytest.mark.parametrize("state_id", ["_", "_b", "a_", "a__b"])

@@ -28,7 +28,7 @@ a.b.b
 ```
 
 ```json
-{"a.b": {"c": []}}
+{"a.b": {"a": []}}
 ```
 
 It is **opt-in and off by default**. Turning it on requires a `minify.json` in

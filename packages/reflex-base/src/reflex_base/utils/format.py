@@ -6,7 +6,8 @@ import inspect
 import json
 import os
 import re
-from collections.abc import Callable
+import weakref
+from collections.abc import Callable, Mapping
 from functools import cache, lru_cache
 from typing import TYPE_CHECKING, Any
 
@@ -664,12 +665,48 @@ def format_state_name(state_name: str) -> str:
     return state_name.replace(".", "__")
 
 
+# Every state local and var key handed out under any resolver installed so
+# far, so code built under an earlier one can be told from look-alike text.
+_issued_state_locals: weakref.WeakValueDictionary[str, type[BaseState]] = (
+    weakref.WeakValueDictionary()
+)
+_issued_var_keys: weakref.WeakKeyDictionary[type[BaseState], dict[str, str]] = (
+    weakref.WeakKeyDictionary()
+)
+
+
+def issued_state(local: str) -> type[BaseState] | None:
+    """Get the state a local was last handed out for, under any resolver.
+
+    Args:
+        local: The local, as :func:`format_state_local` returns it.
+
+    Returns:
+        The state, or ``None`` if the local was never handed out.
+    """
+    return _issued_state_locals.get(local)
+
+
+def issued_var_keys(state_cls: type[BaseState]) -> Mapping[str, str]:
+    """Get every key a state's vars were handed out under, by any resolver.
+
+    Args:
+        state_cls: The state.
+
+    Returns:
+        ``{key: var name}``, the name the key was last handed out for.
+    """
+    return _issued_var_keys.get(state_cls, {})
+
+
+@cache
 def format_state_local(state_cls: type[BaseState]) -> str:
     """Get the local JavaScript variable a component reads a state's context into.
 
     A resolver's names (e.g. minified ``a``) are short enough to clash with
     other identifiers in the component, so they get a prefix; the built-in
     ``module___ClassName`` names cannot clash and are used as they are.
+    Cleared by :meth:`reflex_base.registry.RegistrationContext.set_name_resolver`.
 
     Args:
         state_cls: The state.
@@ -679,7 +716,10 @@ def format_state_local(state_cls: type[BaseState]) -> str:
     """
     full_name = state_cls.get_full_name()
     local = format_state_name(full_name)
-    return local if full_name == state_cls._get_default_full_name() else f"$rx_{local}"
+    if full_name != state_cls._get_default_full_name():
+        local = f"$rx_{local}"
+    _issued_state_locals[local] = state_cls
+    return local
 
 
 @cache
@@ -702,7 +742,9 @@ def format_var_key(state_cls: type[BaseState], var_name: str) -> str:
     resolved = (
         None if ctx is None else ctx.name_resolver.resolve_var_name(state_cls, var_name)
     )
-    return var_name + FIELD_MARKER if resolved is None else resolved
+    key = var_name + FIELD_MARKER if resolved is None else resolved
+    _issued_var_keys.setdefault(state_cls, {})[key] = var_name
+    return key
 
 
 def format_state_var(state_cls: type[BaseState], var_name: str) -> str:

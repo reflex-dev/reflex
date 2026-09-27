@@ -111,6 +111,22 @@ def _get_minify_json_path() -> Path:
     return (environment.REFLEX_MINIFY_CONFIG.get() or Path(MINIFY_JSON)).absolute()
 
 
+def _stat_minify_json(path: Path) -> tuple[int, int] | None:
+    """Stamp a ``minify.json`` so an edit to it can be told apart.
+
+    Args:
+        path: The file.
+
+    Returns:
+        Its ``(mtime_ns, size)``, or ``None`` if it does not exist.
+    """
+    try:
+        stat = path.stat()
+    except FileNotFoundError:
+        return None
+    return stat.st_mtime_ns, stat.st_size
+
+
 def _validate_minified_id(label: str, value: str) -> None:
     """Reject ids that can't be emitted as a JS identifier segment.
 
@@ -382,6 +398,7 @@ class MinifyNameResolver:
         events_enabled: Whether ``REFLEX_MINIFY_EVENTS`` is on.
         vars_enabled: Whether ``REFLEX_MINIFY_VARS`` is on.
         path: The ``minify.json`` the config was read from, if any.
+        stamp: That file's ``(mtime_ns, size)`` when it was read.
     """
 
     config: MinifyConfig | None
@@ -389,6 +406,7 @@ class MinifyNameResolver:
     events_enabled: bool
     vars_enabled: bool
     path: Path | None = None
+    stamp: tuple[int, int] | None = None
 
     _digest: str | None = dataclasses.field(default=None, repr=False)
 
@@ -454,6 +472,7 @@ class MinifyNameResolver:
         from reflex.environment import environment
 
         path = _get_minify_json_path()
+        stamp = _stat_minify_json(path)
         try:
             config = _load_minify_config_uncached()
         except ValueError as e:
@@ -465,6 +484,7 @@ class MinifyNameResolver:
             events_enabled=environment.REFLEX_MINIFY_EVENTS.get(),
             vars_enabled=environment.REFLEX_MINIFY_VARS.get(),
             path=path,
+            stamp=stamp,
         )
 
     def resolve_state_name(self, state_cls: type[BaseState]) -> str | None:  # noqa: D102
@@ -575,24 +595,34 @@ def ensure_minify_resolver_for_active_context() -> None:
     same process -- like an ``AppHarness`` test app next to the repository's
     own -- never gets names from the other app's ``minify.json``: without a
     file of its own it gets the built-in names, with a different one its own.
-    Idempotent and cheap when nothing changed, so it is safe to wire into hot
-    paths like :func:`reflex.utils.prerequisites.get_app`. A resolver the user
-    installed in place of the built-in ones is left alone.
+    An edit to the file or a toggled mode is picked up on the next call, e.g.
+    by a hot reload. Cheap when nothing changed, so it is safe to wire into
+    hot paths like :func:`reflex.utils.prerequisites.get_app`. A resolver the
+    user installed in place of the built-in ones is left alone.
     """
     from reflex_base.registry import DefaultNameResolver, RegistrationContext
+
+    from reflex.environment import environment
 
     if _default_names_forced:
         return
     ctx = RegistrationContext.ensure_context()
     resolver = ctx.name_resolver
     path = _get_minify_json_path()
+    stamp = _stat_minify_json(path)
     if isinstance(resolver, MinifyNameResolver):
-        if not path.exists():
+        if stamp is None:
             ctx.set_name_resolver(DefaultNameResolver())
             return
-        if resolver.config is not None and resolver.path == path:
+        if (
+            resolver.path == path
+            and resolver.stamp == stamp
+            and resolver.states_enabled == environment.REFLEX_MINIFY_STATES.get()
+            and resolver.events_enabled == environment.REFLEX_MINIFY_EVENTS.get()
+            and resolver.vars_enabled == environment.REFLEX_MINIFY_VARS.get()
+        ):
             return
-    elif type(resolver) is not DefaultNameResolver or not path.exists():
+    elif type(resolver) is not DefaultNameResolver or stamp is None:
         return
     install_minify_resolver()
 
@@ -702,13 +732,13 @@ _DEFAULT_NAME_RUN = re.compile(r"(?<![\w$])[\w$]*___[\w$]*(?:\.[\w$]+)*")
 
 
 def _renamed_default_references() -> dict[str, str]:
-    """Map the unminified spelling of every renamed state, handler and var to a label.
+    """Map the unminified spelling of every renamed state and handler to a label.
 
     Returns:
         ``{default spelling: what it names}``; empty when nothing is renamed.
     """
     from reflex_base.registry import RegistrationContext, scheme_digest
-    from reflex_base.utils.format import format_state_name, format_var_key
+    from reflex_base.utils.format import format_state_name
 
     if not scheme_digest():
         return {}
@@ -719,7 +749,8 @@ def _renamed_default_references() -> dict[str, str]:
         label = get_state_full_path(state_cls)
         if default_name != state_cls.get_full_name():
             # Every default spelling of its handlers and vars starts with one
-            # of these, so they need no entries of their own.
+            # of these, so they need no entries of their own; the vars of a
+            # state keeping its name are checked by their state's local.
             references[default_name] = references[format_state_name(default_name)] = (
                 f"state {label}"
             )
@@ -727,17 +758,11 @@ def _renamed_default_references() -> dict[str, str]:
         for name in state_cls.event_handlers:
             if ctx.get_handler_name(state_cls, name) != name:
                 references[f"{default_name}.{name}"] = f"event handler {label}.{name}"
-        for name in state_cls._frontend_var_names:
-            if format_var_key(state_cls, name) != name + FIELD_MARKER:
-                references[
-                    f"{format_state_name(default_name)}.{name}{FIELD_MARKER}"
-                ] = f"var {label}.{name}"
     return references
 
 
-# The local a component reads a renamed state's context into, which only a
-# resolver's names get; see ``format_state_local``.
-_RESOLVED_STATE_LOCAL = re.compile(r"(?<![\w$])\$rx_[\w$]+")
+# A state's local (see ``format_state_local``) and the member read off it.
+_STATE_MEMBER = re.compile(r"(?<![\w$.])(\$rx_[\w$]+|[\w$]*___[\w$]*)(?:\.([\w$]+))?")
 
 
 def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
@@ -747,9 +772,10 @@ def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
     built from them beforehand -- e.g. by a module-level component imported
     before this app's ``minify.json`` was loaded, or while another app's was.
     Such code would read a context the frontend never provides, or send an
-    event the backend never registered. Caught both ways: a renamed name by
-    its unminified spelling, and a resolver's name the active one does not
-    give (every such state name carries the ``$rx_`` prefix).
+    event the backend never registered, or read a var key it never sends.
+    Caught by the unminified spelling of a renamed state or handler, and by
+    each state local or var key once handed out that no state or var goes by
+    now -- which text merely looking like one never was.
 
     Args:
         outputs: ``(path, code)`` pairs of the compiled frontend.
@@ -758,10 +784,15 @@ def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
         ReflexError: If any code names something unlike the active resolver.
     """
     from reflex_base.utils.exceptions import ReflexError
-    from reflex_base.utils.format import format_state_local
+    from reflex_base.utils.format import (
+        format_state_local,
+        format_var_key,
+        issued_state,
+        issued_var_keys,
+    )
 
     references = _renamed_default_references()
-    live_locals: set[str] | None = None
+    live_keys: dict[type[BaseState], set[str]] = {}
     found: dict[str, tuple[str, str]] = {}
     for path, code in outputs:
         if references:
@@ -772,14 +803,29 @@ def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
                     if prefix in references:
                         found.setdefault(prefix, (references[prefix], path))
                         break
-        if "$rx_" not in code:
-            continue
-        if live_locals is None:
-            live_locals = {format_state_local(s) for s in collect_all_states()}
-        for match in _RESOLVED_STATE_LOCAL.finditer(code):
-            if match.group() not in live_locals:
+        for match in _STATE_MEMBER.finditer(code):
+            local, member = match.groups()
+            if (state_cls := issued_state(local)) is None:
+                continue
+            if format_state_local(state_cls) != local:
                 found.setdefault(
-                    match.group(), ("a state named by another resolver", path)
+                    local, (f"state {get_state_full_path(state_cls)}", path)
+                )
+                continue
+            if (
+                member is None
+                or (name := issued_var_keys(state_cls).get(member)) is None
+            ):
+                continue
+            if state_cls not in live_keys:
+                live_keys[state_cls] = {
+                    format_var_key(state_cls, n)
+                    for n in set(issued_var_keys(state_cls).values())
+                }
+            if member not in live_keys[state_cls]:
+                found.setdefault(
+                    f"{local}.{member}",
+                    (f"var {get_state_full_path(state_cls)}.{name}", path),
                 )
     if not found:
         return

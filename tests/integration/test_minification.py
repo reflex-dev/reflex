@@ -7,6 +7,7 @@ from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 import pytest
+from reflex_base.registry import RegistrationContext
 from selenium.webdriver.common.by import By
 
 from reflex.environment import environment
@@ -197,8 +198,12 @@ def minify_app(
         with harness:
             yield minified, harness
         if mode == "foreign":
-            # The names of the process's own minify.json are back.
-            assert State.get_name() == "a"
+            # The embedded app's names do not outlive it.
+            resolver = RegistrationContext.get().name_resolver
+            assert State.get_name() == (
+                resolver.resolve_state_name(State)
+                or RegistrationContext.default_state_name(State)
+            )
     finally:
         # Put the default names back for the tests that share this process.
         monkeypatch.undo()

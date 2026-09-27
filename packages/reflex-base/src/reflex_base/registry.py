@@ -257,6 +257,10 @@ class RegistrationContext(BaseContext):
         already-registered classes. The next call to `get_config()` on the fork
         will reload `rxconfig.py` from disk.
 
+        The state classes are shared, and their names are cached on them: a
+        fork installing another resolver renames them for every context until
+        the original one is installed again (see ``AppHarness.stop``).
+
         Returns:
             A new RegistrationContext with the same registrations but no app or config.
         """
@@ -485,13 +489,14 @@ class RegistrationContext(BaseContext):
             resolver: The resolver to install. Pass :class:`DefaultNameResolver`
                 to revert to built-in names.
         """
-        from reflex_base.utils.format import format_var_key
+        from reflex_base.utils.format import format_state_local, format_var_key
 
         object.__setattr__(self, "name_resolver", resolver)
         for cls in self.base_states.values():
             cls.get_name.cache_clear()
             cls.get_full_name.cache_clear()
             cls.get_class_substate.cache_clear()
+        format_state_local.cache_clear()
         format_var_key.cache_clear()
         for reg in self.event_handlers.values():
             object.__setattr__(reg.handler, "_formatted_name", None)

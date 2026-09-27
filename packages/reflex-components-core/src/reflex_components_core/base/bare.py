@@ -10,9 +10,9 @@ from typing import Any
 from reflex_base.components.component import BaseComponent, Component, ComponentStyle
 from reflex_base.components.tags import CommonTag
 from reflex_base.components.tags.tagless import Tagless
-from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import PerformanceMode, environment
 from reflex_base.utils.decorator import once
+from reflex_base.utils.format import issued_state, issued_var_keys
 from reflex_base.utils.imports import ParsedImportDict
 from reflex_base.vars import BooleanVar, ObjectVar, Var
 from reflex_base.vars.base import GLOBAL_CACHE, VarData
@@ -21,11 +21,9 @@ from reflex_base.vars.sequence import LiteralStringVar
 logger = logging.getLogger(__name__)
 
 
-# A stringified state Var opens with its dotted path, e.g.
-# ``<state>.<field>_rx_state_``. The state segment is resolver-dependent
-# (minify.json rewrites it), the marker is not, so anchor on the marker ending
-# a dotted field rather than on a built-in state name prefix.
-_STATE_VAR_STR = re.compile(rf"[\w$]+(?:\.[\w$]+)+{re.escape(FIELD_MARKER)}(?![\w$])")
+# A stringified state Var opens with its state's local and the var's key, both
+# of which minify.json may rewrite, so they are told by having been handed out.
+_STATE_VAR_STR = re.compile(r"([\w$]+)\.([\w$]+)")
 
 
 @once
@@ -48,11 +46,11 @@ def validate_str(value: str):
         ValueError: If the value is a Var and the performance mode is set to raise.
     """
     perf_mode = get_performance_mode()
-    # The substring test is a cheap gate; only then pay for the match.
     if (
         perf_mode != PerformanceMode.OFF
-        and FIELD_MARKER in value
-        and _STATE_VAR_STR.match(value)
+        and (match := _STATE_VAR_STR.match(value)) is not None
+        and (state_cls := issued_state(match[1])) is not None
+        and match[2] in issued_var_keys(state_cls)
     ):
         if perf_mode == PerformanceMode.WARN:
             logger.warning(
