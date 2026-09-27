@@ -7,7 +7,7 @@ import json
 import os
 import re
 import weakref
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Collection, Mapping
 from functools import cache, lru_cache
 from typing import TYPE_CHECKING, Any
 
@@ -666,24 +666,22 @@ def format_state_name(state_name: str) -> str:
 
 # Every state local and var key handed out under any resolver installed so
 # far, so code built under an earlier one can be told from look-alike text.
-_issued_state_locals: weakref.WeakValueDictionary[str, type[BaseState]] = (
-    weakref.WeakValueDictionary()
-)
+_issued_state_locals: dict[str, weakref.WeakSet[type[BaseState]]] = {}
 _issued_var_keys: weakref.WeakKeyDictionary[type[BaseState], dict[str, str]] = (
     weakref.WeakKeyDictionary()
 )
 
 
-def issued_state(local: str) -> type[BaseState] | None:
-    """Get the state a local was last handed out for, under any resolver.
+def issued_states(local: str) -> Collection[type[BaseState]]:
+    """Get every state a local was handed out for, under any resolver.
 
     Args:
         local: The local, as :func:`format_state_local` returns it.
 
     Returns:
-        The state, or ``None`` if the local was never handed out.
+        The states, none if the local was never handed out.
     """
-    return _issued_state_locals.get(local)
+    return _issued_state_locals.get(local, ())
 
 
 def issued_var_keys(state_cls: type[BaseState]) -> Mapping[str, str]:
@@ -717,7 +715,7 @@ def format_state_local(state_cls: type[BaseState]) -> str:
     local = format_state_name(full_name)
     if full_name != state_cls._get_default_full_name():
         local = f"$rx_{local}"
-    _issued_state_locals[local] = state_cls
+    _issued_state_locals.setdefault(local, weakref.WeakSet()).add(state_cls)
     return local
 
 

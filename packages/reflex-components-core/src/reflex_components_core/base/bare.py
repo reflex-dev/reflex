@@ -12,7 +12,7 @@ from reflex_base.components.tags import CommonTag
 from reflex_base.components.tags.tagless import Tagless
 from reflex_base.environment import PerformanceMode, environment
 from reflex_base.utils.decorator import once
-from reflex_base.utils.format import issued_state, issued_var_keys
+from reflex_base.utils.format import issued_states, issued_var_keys
 from reflex_base.utils.imports import ParsedImportDict
 from reflex_base.vars import BooleanVar, ObjectVar, Var
 from reflex_base.vars.base import GLOBAL_CACHE, VarData
@@ -49,8 +49,7 @@ def validate_str(value: str):
     if (
         perf_mode != PerformanceMode.OFF
         and (match := _STATE_VAR_STR.match(value)) is not None
-        and (state_cls := issued_state(match[1])) is not None
-        and match[2] in issued_var_keys(state_cls)
+        and any(match[2] in issued_var_keys(s) for s in issued_states(match[1]))
     ):
         if perf_mode == PerformanceMode.WARN:
             logger.warning(

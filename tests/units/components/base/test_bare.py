@@ -92,4 +92,5 @@ def test_stringified_var_flagged_when_var_is_minified(
 
     with pytest.raises(ValueError, match="displayed as a string"):
         rx.vstack(str(MinVarProbe.field))
-    rx.vstack("Total: $rx_total.c")
+    # The issued state local followed by a key it never handed out.
+    rx.vstack(f"{str(MinVarProbe.field).split('.')[0]}.not_a_key")

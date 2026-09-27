@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -1087,9 +1088,14 @@ def test_resolver_reloads_an_edited_config(
     ensure_minify_resolver_for_active_context()
     assert EditedState.get_name() == "e"
 
-    _install_in(temp_minify_json, {path: "edited"})
+    # Same size, modification time put back: only the content tells.
+    config_file = temp_minify_json / MINIFY_JSON
+    stat = config_file.stat()
+    _install_in(temp_minify_json, {path: "f"})
+    os.utime(config_file, ns=(stat.st_atime_ns, stat.st_mtime_ns))
+    assert config_file.stat().st_size == stat.st_size
     ensure_minify_resolver_for_active_context()
-    assert EditedState.get_name() == "edited"
+    assert EditedState.get_name() == "f"
 
     set_minify_modes(monkeypatch, states=False)
     ensure_minify_resolver_for_active_context()
@@ -1961,6 +1967,50 @@ def test_stale_var_keys_of_a_state_keeping_its_name_are_rejected(
     assert f"var {path}.count, as '{old_expr}'" in error
 
 
+def test_stale_var_read_is_rejected_when_another_state_takes_its_local(
+    temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A var read off a local now handed to another state is caught by its key.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class FormerOwnerState(State):
+        count: int = 0
+
+    class NewOwnerState(State):
+        total: int = 0
+
+    former, new = (
+        get_state_full_path(FormerOwnerState),
+        get_state_full_path(NewOwnerState),
+    )
+    set_minify_modes(monkeypatch, states=True, vars=True)
+    root = "reflex.state.State"
+    install_config(
+        states={
+            former: StateEntry(id="k", parent=root),
+            new: StateEntry(id="m", parent=root),
+        },
+        vars={former: {"count": "c"}, new: {"total": "t"}},
+    )
+    old_expr = str(FormerOwnerState.count)
+
+    install_config(
+        states={
+            former: StateEntry(id="m", parent=root),
+            new: StateEntry(id="k", parent=root),
+        },
+        vars={former: {"count": "c"}, new: {"total": "t"}},
+    )
+
+    assert str(NewOwnerState.total).split(".")[0] == old_expr.split(".")[0]
+    assert _stale_names_error(str(NewOwnerState.total)) == ""
+    assert f"var {former}.count" in _stale_names_error(old_expr)
+
+
 def test_stale_minified_var_keys_are_rejected_after_unminifying(
     temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1986,15 +2036,22 @@ def test_stale_minified_var_keys_are_rejected_after_unminifying(
     assert f"var {path}.count" in _stale_names_error(old_expr)
 
 
-def test_text_resembling_state_reads_is_not_rejected() -> None:
-    """Only locals and var keys once handed out count, not look-alike page text."""
+def test_text_resembling_state_reads_is_not_rejected(temp_minify_json: Path) -> None:
+    """Only locals and var keys once handed out count, not look-alike page text.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+    """
+
+    class LookAlikeState(State):
+        pass
+
     root = State.get_full_name()
-    substate = next(iter(State.get_substates())).get_name()
     for code in (
         '"Total: $rx_total"',
         "$rx_never__issued.c",
         f'"{root}.hydrate"',
-        f'"{root}.{substate}.anything"',
+        f'"{root}.{LookAlikeState.get_name()}.anything"',
         f"{root}.not_a_var",
     ):
         assert _stale_names_error(code) == "", code

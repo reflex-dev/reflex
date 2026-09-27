@@ -111,20 +111,19 @@ def _get_minify_json_path() -> Path:
     return (environment.REFLEX_MINIFY_CONFIG.get() or Path(MINIFY_JSON)).absolute()
 
 
-def _stat_minify_json(path: Path) -> tuple[int, int] | None:
-    """Stamp a ``minify.json`` so an edit to it can be told apart.
+def _digest_minify_json(path: Path) -> str | None:
+    """Digest a ``minify.json``'s content so any edit to it can be told apart.
 
     Args:
         path: The file.
 
     Returns:
-        Its ``(mtime_ns, size)``, or ``None`` if it does not exist.
+        The digest, or ``None`` if the file does not exist.
     """
     try:
-        stat = path.stat()
+        return hashlib.blake2b(path.read_bytes(), digest_size=16).hexdigest()
     except FileNotFoundError:
         return None
-    return stat.st_mtime_ns, stat.st_size
 
 
 def _validate_minified_id(label: str, value: str) -> None:
@@ -398,7 +397,7 @@ class MinifyNameResolver:
         events_enabled: Whether ``REFLEX_MINIFY_EVENTS`` is on.
         vars_enabled: Whether ``REFLEX_MINIFY_VARS`` is on.
         path: The ``minify.json`` the config was read from, if any.
-        stamp: That file's ``(mtime_ns, size)`` when it was read.
+        file_digest: That file's content digest when it was read.
     """
 
     config: MinifyConfig | None
@@ -406,7 +405,7 @@ class MinifyNameResolver:
     events_enabled: bool
     vars_enabled: bool
     path: Path | None = None
-    stamp: tuple[int, int] | None = None
+    file_digest: str | None = None
 
     _digest: str | None = dataclasses.field(default=None, repr=False)
 
@@ -472,7 +471,7 @@ class MinifyNameResolver:
         from reflex.environment import environment
 
         path = _get_minify_json_path()
-        stamp = _stat_minify_json(path)
+        file_digest = _digest_minify_json(path)
         try:
             config = _load_minify_config_uncached()
         except ValueError as e:
@@ -484,7 +483,7 @@ class MinifyNameResolver:
             events_enabled=environment.REFLEX_MINIFY_EVENTS.get(),
             vars_enabled=environment.REFLEX_MINIFY_VARS.get(),
             path=path,
-            stamp=stamp,
+            file_digest=file_digest,
         )
 
     def resolve_state_name(self, state_cls: type[BaseState]) -> str | None:  # noqa: D102
@@ -609,20 +608,20 @@ def ensure_minify_resolver_for_active_context() -> None:
     ctx = RegistrationContext.ensure_context()
     resolver = ctx.name_resolver
     path = _get_minify_json_path()
-    stamp = _stat_minify_json(path)
+    file_digest = _digest_minify_json(path)
     if isinstance(resolver, MinifyNameResolver):
-        if stamp is None:
+        if file_digest is None:
             ctx.set_name_resolver(DefaultNameResolver())
             return
         if (
             resolver.path == path
-            and resolver.stamp == stamp
+            and resolver.file_digest == file_digest
             and resolver.states_enabled == environment.REFLEX_MINIFY_STATES.get()
             and resolver.events_enabled == environment.REFLEX_MINIFY_EVENTS.get()
             and resolver.vars_enabled == environment.REFLEX_MINIFY_VARS.get()
         ):
             return
-    elif type(resolver) is not DefaultNameResolver or stamp is None:
+    elif type(resolver) is not DefaultNameResolver or file_digest is None:
         return
     install_minify_resolver()
 
@@ -783,15 +782,17 @@ def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
     Raises:
         ReflexError: If any code names something unlike the active resolver.
     """
+    from reflex_base.registry import RegistrationContext
     from reflex_base.utils.exceptions import ReflexError
     from reflex_base.utils.format import (
         format_state_local,
         format_var_key,
-        issued_state,
+        issued_states,
         issued_var_keys,
     )
 
     references = _renamed_default_references()
+    registered: set[type[BaseState]] | None = None
     live_keys: dict[type[BaseState], set[str]] = {}
     found: dict[str, tuple[str, str]] = {}
     for path, code in outputs:
@@ -805,28 +806,38 @@ def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
                         break
         for match in _STATE_MEMBER.finditer(code):
             local, member = match.groups()
-            if (state_cls := issued_state(local)) is None:
+            if not (owners := issued_states(local)):
                 continue
-            if format_state_local(state_cls) != local:
-                found.setdefault(
-                    local, (f"state {get_state_full_path(state_cls)}", path)
-                )
+            if registered is None:
+                registered = set(RegistrationContext.get().base_states.values())
+            # An unregistered owner, e.g. one replaced by a hot reload, keeps
+            # its cached name, so only settle for one if nothing else fits.
+            matching = [c for c in owners if format_state_local(c) == local]
+            state_cls = next(
+                (c for c in matching if c in registered),
+                matching[0] if matching else None,
+            )
+            if state_cls is None:
+                labels = sorted(f"state {get_state_full_path(c)}" for c in owners)
+                found.setdefault(local, (" or ".join(labels), path))
                 continue
-            if (
-                member is None
-                or (name := issued_var_keys(state_cls).get(member)) is None
-            ):
+            if member is None:
                 continue
             if state_cls not in live_keys:
                 live_keys[state_cls] = {
                     format_var_key(state_cls, n)
                     for n in set(issued_var_keys(state_cls).values())
                 }
-            if member not in live_keys[state_cls]:
-                found.setdefault(
-                    f"{local}.{member}",
-                    (f"var {get_state_full_path(state_cls)}.{name}", path),
-                )
+            if member in live_keys[state_cls]:
+                continue
+            # A key of this state, or of one that had its local before.
+            for owner in (state_cls, *owners):
+                if (name := issued_var_keys(owner).get(member)) is not None:
+                    found.setdefault(
+                        f"{local}.{member}",
+                        (f"var {get_state_full_path(owner)}.{name}", path),
+                    )
+                    break
     if not found:
         return
     details = "\n".join(
