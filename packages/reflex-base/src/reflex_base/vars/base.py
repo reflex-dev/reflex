@@ -282,6 +282,23 @@ def insert_app_wraps(
         target[key] = wrapper
 
 
+def _registered_state(state: type[BaseState] | str) -> type[BaseState] | str:
+    """Resolve a registered state's full name, resolved or default, to its class.
+
+    The two names differ once a resolver renames the state, and only the class
+    knows both, so a name taken as given would break on one of them.
+
+    Args:
+        state: A state, or the full name of one.
+
+    Returns:
+        The registered state, else ``state`` unchanged.
+    """
+    if isinstance(state, str) and (ctx := RegistrationContext.try_get()) is not None:
+        return ctx._get_state_by_name(state) or state
+    return state
+
+
 def _normalize_field_dependencies(
     field_dependencies: Mapping[str, Iterable[str]] | None,
     state: str,
@@ -623,7 +640,7 @@ class VarData:
         the way the frontend does.
 
         Args:
-            state: The state to set or the full name of the state.
+            state: The state, or the full name of one.
             field_name: The name of the field in the state. Optional.
 
         Returns:
@@ -633,6 +650,7 @@ class VarData:
         from reflex_base.components.state_context import get_event_app_wraps
         from reflex_base.utils import format
 
+        state = _registered_state(state)
         if isinstance(state, str):
             state_name = state
             local = context_name = format.format_state_name(state)
@@ -1343,11 +1361,12 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         """Set the state of the var.
 
         Args:
-            state: The state to set.
+            state: The state, or the full name of one.
 
         Returns:
             The var with the state set.
         """
+        state = _registered_state(state)
         formatted_state_name = (
             state if isinstance(state, str) else format_state_local(state)
         )

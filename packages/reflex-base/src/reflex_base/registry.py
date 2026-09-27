@@ -430,6 +430,17 @@ class RegistrationContext(BaseContext):
             msg = f"No state is registered as {default_full_name!r}."
             raise ValueError(msg) from None
 
+    def _get_state_by_name(self, name: str) -> type[BaseState] | None:
+        """Look up a registered state by either of its full names.
+
+        Args:
+            name: The state's ``get_full_name()`` or ``_get_default_full_name()``.
+
+        Returns:
+            The state class, or ``None`` if no registered state has that name.
+        """
+        return self._states_by_default_name.get(name) or self.base_states.get(name)
+
     @staticmethod
     def default_state_name(state_cls: type[BaseState]) -> str:
         """Compute the built-in snake-cased ``module___ClassName`` for a state.
