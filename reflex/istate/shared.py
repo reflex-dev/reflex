@@ -257,7 +257,7 @@ class SharedStateBaseInternal(State):
             raise ReflexRuntimeError(msg)
 
         # Associate substate with the given link token.
-        state_name = self.get_full_name()
+        state_name = self._get_default_full_name()
         if self._reflex_internal_links is None:
             self._reflex_internal_links = {}
         self._reflex_internal_links[state_name] = token
@@ -275,12 +275,12 @@ class SharedStateBaseInternal(State):
             msg = "Can only unlink SharedState instances."
             raise ReflexRuntimeError(msg)
 
-        state_name = self.get_full_name()
+        state_name = self._get_default_full_name()
         if (
             not self._reflex_internal_links
             or state_name not in self._reflex_internal_links
         ):
-            msg = f"State {state_name} is not linked and cannot be unlinked."
+            msg = f"State {self.get_full_name()} is not linked and cannot be unlinked."
             raise ReflexRuntimeError(msg)
 
         # Break the linkage for future events.
@@ -427,7 +427,7 @@ class SharedStateBaseInternal(State):
             # Go through all linked states and patch them in if they are present in the tree
             for linked_state_name, linked_token in self._reflex_internal_links.items():
                 linked_state_cls: type[SharedState] = (
-                    self.get_root_state().get_class_substate(  # pyright: ignore[reportAssignmentType]
+                    RegistrationContext.get()._get_state_by_default_name(  # pyright: ignore[reportAssignmentType]
                         linked_state_name
                     )
                 )

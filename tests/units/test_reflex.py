@@ -912,3 +912,14 @@ def test_json_output_does_not_leak_the_stdout_reservation(
 
     assert cli_runner.invoke(cli, args).exit_code == 0
     assert log.is_stdout_reserved() is False
+
+
+def test_minify_help_shows_no_docstring_sections(cli_runner):
+    """The group's help is its summary, not its Google-style docstring."""
+    from reflex.reflex import cli
+
+    result = cli_runner.invoke(cli, ["minify", "--help"])
+
+    assert result.exit_code == 0, result.output
+    assert "Manage state and event name minification." in result.output
+    assert "Args:" not in result.output

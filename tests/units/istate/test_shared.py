@@ -149,3 +149,56 @@ async def test_patch_state_recomputes_readers_after_restoring():
     async with _patch_state(original_state=original, linked_state=linked):
         assert await reader.greeting == "linked"  # pyright: ignore[reportAttributeAccessIssue]
     assert await reader.greeting == "private"  # pyright: ignore[reportAttributeAccessIssue]
+
+
+async def test_links_survive_renaming_the_linked_state(
+    temp_minify_json, monkeypatch: pytest.MonkeyPatch
+):
+    """A link recorded before a state is renamed still resolves afterwards.
+
+    Links are stored with the root state, which outlives a deploy that turns
+    minification on or edits minify.json.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    from reflex.istate.shared import SharedStateBaseInternal
+    from reflex.minify import StateEntry, get_state_full_path
+    from tests.units.minify_helpers import install_config, set_minify_modes
+
+    # Defining a shared state changes the root state for good; undo it after.
+    links = State.get_fields()["_reflex_internal_links"]
+    monkeypatch.setattr(links, "default", links.default)
+    monkeypatch.setattr(links, "default_factory", links.default_factory)
+    monkeypatch.setattr(
+        State, "_always_dirty_substates", set(State._always_dirty_substates)
+    )
+
+    class RenamedLinkState(rx.SharedState):
+        count: int = 0
+
+    async def _patched(self, token, full_delta=False):  # noqa: RUF029
+        return self
+
+    monkeypatch.setattr(RenamedLinkState, "_internal_patch_linked_state", _patched)
+    resolved = AsyncMock(return_value=None)
+    monkeypatch.setattr(SharedStateBaseInternal, "_resolve_linked_state", resolved)
+
+    root = State(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    linked = root.get_substate(RenamedLinkState.get_full_name().split("."))
+    assert isinstance(linked, RenamedLinkState)
+    await linked._link_to("shared-token")
+
+    set_minify_modes(monkeypatch, states=True)
+    install_config(
+        states={
+            get_state_full_path(RenamedLinkState): StateEntry(
+                id="z", parent="reflex.state.State"
+            )
+        }
+    )
+    assert RenamedLinkState.get_name() == "z"
+
+    await root._get_state_from_redis(RenamedLinkState)
+    resolved.assert_awaited_once_with(RenamedLinkState, "shared-token")

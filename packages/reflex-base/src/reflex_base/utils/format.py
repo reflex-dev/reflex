@@ -16,6 +16,7 @@ from reflex_base import constants
 from reflex_base.utils import exceptions
 
 if TYPE_CHECKING:
+    from reflex.state import BaseState
     from reflex_base.components.component import ComponentStyle
     from reflex_base.event import EventChain, EventHandler, EventSpec, EventType
     from reflex_base.utils.types import ArgsSpec
@@ -664,6 +665,24 @@ def format_state_name(state_name: str) -> str:
         The formatted state name.
     """
     return state_name.replace(".", "__")
+
+
+def format_state_local(state_cls: type[BaseState]) -> str:
+    """Get the local JavaScript variable a component reads a state's context into.
+
+    A resolver's names (e.g. minified ``a``) are short enough to clash with
+    other identifiers in the component, so they get a prefix; the built-in
+    ``module___ClassName`` names cannot clash and are used as they are.
+
+    Args:
+        state_cls: The state.
+
+    Returns:
+        The name of the local variable.
+    """
+    full_name = state_cls.get_full_name()
+    local = format_state_name(full_name)
+    return local if full_name == state_cls._get_default_full_name() else f"$rx_{local}"
 
 
 def format_ref(ref: str) -> str:

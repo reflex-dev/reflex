@@ -299,12 +299,8 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
     Returns:
         The Var instance.
     """
-    field_name = (
-        format.format_state_name(cls.get_full_name()) + "." + name + FIELD_MARKER
-    )
-
     return dispatch(
-        field_name=field_name,
+        field_name=f"{format.format_state_local(cls)}.{name}{FIELD_MARKER}",
         var_data=VarData.from_state(cls, name),
         result_var_type=f.outer_type_,
     )
@@ -1182,6 +1178,24 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         return name
 
     @classmethod
+    @functools.cache
+    def _get_default_full_name(cls) -> str:
+        """Get the full name of the state under the built-in names.
+
+        Unlike :meth:`get_full_name`, it never depends on the name resolver, so
+        it keys what must survive a resolver change: persisted state, shared
+        state links and browser storage.
+
+        Returns:
+            The dotted path of built-in ``module___ClassName`` names.
+        """
+        name = RegistrationContext.default_state_name(cls)
+        parent_state = cls.get_parent_state()
+        if parent_state is not None:
+            name = parent_state._get_default_full_name() + "." + name
+        return name
+
+    @classmethod
     @functools.lru_cache
     def get_class_substate(
         cls, path: Sequence[str] | str, _skip_self: bool = True
@@ -1307,10 +1321,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         # create the variable based on name and type
         var = Var(
-            _js_expr=format.format_state_name(cls.get_full_name())
-            + "."
-            + name
-            + FIELD_MARKER,
+            _js_expr=f"{format.format_state_local(cls)}.{name}{FIELD_MARKER}",
             _var_type=type_,
             _var_data=VarData.from_state(cls, name),
         ).guess_type()
@@ -2258,7 +2269,7 @@ class State(BaseState):
             self._reflex_internal_links
             and (
                 linked_token := self._reflex_internal_links.get(
-                    state_cls.get_full_name()
+                    state_cls._get_default_full_name()
                 )
             )
             is not None

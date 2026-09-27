@@ -6696,10 +6696,15 @@ def test_first_substate_is_not_mistaken_for_its_parent(temp_minify_json, monkeyp
         def always_dirty(self) -> int:
             return 1
 
-    assert DirtyParent.get_name() == "b"
-    assert DirtyChild.get_name() == "c"
-    assert DirtyParent.get_class_substate(DirtyChild.get_name()) is DirtyChild
-    assert DirtyChild in DirtyParent._get_potentially_dirty_states()
+    try:
+        assert DirtyParent.get_name() == "b"
+        assert DirtyChild.get_name() == "c"
+        assert DirtyParent.get_class_substate(DirtyChild.get_name()) is DirtyChild
+        assert DirtyChild in DirtyParent._get_potentially_dirty_states()
+    finally:
+        # The forked registry forgets these states; State's class-level set
+        # outlives the test and would send later deltas looking for them.
+        State._always_dirty_substates.discard(DirtyParent.get_name())
 
 
 def test_resolved_name_survives_cache_pressure(temp_minify_json, monkeypatch):
@@ -7012,3 +7017,50 @@ def test_previous_release_pickle_keys_are_reserved():
 
         class ClashingState(BaseState):
             _backend_vars: dict = {}  # pyright: ignore[reportIncompatibleVariableOverride]
+
+
+def test_minified_state_reads_its_context_into_a_prefixed_local(
+    temp_minify_json, monkeypatch
+):
+    """A short minified name must not become a bare local JS variable.
+
+    Components read a state's context into a local named after the state, so
+    ``const a = ...`` would clash with any ``a`` a user hook declares or reads.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    set_minify_modes(monkeypatch, states=True)
+    path = f"{__name__}.State.LocalNameState"
+    install_config(states={path: "b"}, include_state_root=True)
+
+    class LocalNameState(State):
+        count: int = 0
+
+        @rx.var
+        def doubled(self) -> int:
+            return self.count * 2
+
+    for var, key in (
+        (LocalNameState.base_vars["count"], "count"),
+        (LocalNameState.doubled, "doubled"),
+    ):
+        assert str(var) == f"$rx_a__b.{key}{FIELD_MARKER}"
+        var_data = var._get_all_var_data()
+        assert var_data is not None
+        assert var_data.hooks == ("const $rx_a__b = useContext(StateContexts.a__b)",)
+
+
+def test_unminified_state_keeps_its_context_local(temp_minify_json):
+    """Built-in names cannot clash, so they are left as they are.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+    """
+
+    class PlainLocalState(State):
+        count: int = 0
+
+    local = format.format_state_name(PlainLocalState.get_full_name())
+    assert str(PlainLocalState.count) == f"{local}.count{FIELD_MARKER}"

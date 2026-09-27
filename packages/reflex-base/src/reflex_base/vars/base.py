@@ -57,7 +57,7 @@ from reflex_base.utils.exceptions import (
     VarDependencyError,
     VarTypeError,
 )
-from reflex_base.utils.format import format_state_name, json_dumps
+from reflex_base.utils.format import format_state_local, json_dumps
 from reflex_base.utils.imports import (
     ImmutableImportDict,
     ImmutableParsedImportDict,
@@ -628,15 +628,17 @@ class VarData:
         from reflex_base.components.state_context import get_event_app_wraps
         from reflex_base.utils import format
 
-        state_name = state if isinstance(state, str) else state.get_full_name()
+        if isinstance(state, str):
+            state_name = state
+            local = context_name = format.format_state_name(state)
+        else:
+            state_name = state.get_full_name()
+            local = format.format_state_local(state)
+            context_name = format.format_state_name(state_name)
         return VarData(
             state=state_name,
             field_name=field_name,
-            hooks={
-                "const {0} = useContext(StateContexts.{0})".format(
-                    format.format_state_name(state_name)
-                ): None
-            },
+            hooks={f"const {local} = useContext(StateContexts.{context_name})": None},
             imports={
                 f"$/{constants.Dirs.CONTEXTS_PATH}": [ImportVar(tag="StateContexts")],
                 "react": [ImportVar(tag="useContext")],
@@ -1342,9 +1344,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
             The var with the state set.
         """
         formatted_state_name = (
-            state
-            if isinstance(state, str)
-            else format_state_name(state.get_full_name())
+            state if isinstance(state, str) else format_state_local(state)
         )
 
         return StateOperation.create(  # pyright: ignore [reportReturnType]
@@ -2825,14 +2825,8 @@ class ComputedVar(Var[RETURN_TYPE]):
         if instance is None:
             state_where_defined = self._owner or owner
 
-            field_name = (
-                format_state_name(state_where_defined.get_full_name())
-                + "."
-                + self._js_expr
-            )
-
             return dispatch(
-                field_name,
+                f"{format_state_local(state_where_defined)}.{self._js_expr}",
                 var_data=VarData.from_state(state_where_defined, self._name),
                 result_var_type=self._var_type,
                 existing_var=self,

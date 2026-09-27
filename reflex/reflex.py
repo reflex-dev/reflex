@@ -1079,7 +1079,7 @@ def rename(new_name: str):
 
 
 # Minify command group
-@cli.group()
+@cli.group(help="Manage state and event name minification.")
 @click.pass_context
 def minify(ctx: click.Context):
     """Manage state and event name minification.

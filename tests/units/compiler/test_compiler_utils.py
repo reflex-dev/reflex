@@ -194,3 +194,59 @@ def test_document_root_controls_preserve_no_id_and_page_refs():
 
     assert not document_root._get_all_hooks()
     assert page_script._get_all_hooks()
+
+
+def test_client_storage_names_survive_minified_state_names(
+    temp_minify_json, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Browser storage keeps the name a var has without minification.
+
+    The key must match the var's delta key, which minification rewrites, but
+    the name a value is stored under in the browser must not move, or enabling
+    minification or editing minify.json would orphan every stored value.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    import reflex as rx
+    from reflex.minify import StateEntry, get_state_full_path
+    from reflex.state import BaseState
+    from tests.units.minify_helpers import install_config, set_minify_modes
+
+    class StorageRoot(BaseState):
+        token: str = rx.Cookie("")
+        theme: str = rx.Cookie("light", name="theme")
+        note: str = rx.LocalStorage("")
+
+    default_prefix = StorageRoot.get_full_name()
+    unminified = utils.compile_client_storage(StorageRoot)
+    assert unminified["cookies"] == {
+        f"{default_prefix}.token{FIELD_MARKER}": {"path": "/", "sameSite": "lax"},
+        f"{default_prefix}.theme{FIELD_MARKER}": {
+            "name": "theme",
+            "path": "/",
+            "sameSite": "lax",
+        },
+    }
+
+    set_minify_modes(monkeypatch, states=True)
+    install_config(
+        states={get_state_full_path(StorageRoot): StateEntry(id="s", parent=None)}
+    )
+    minified = utils.compile_client_storage(StorageRoot)
+    assert minified["cookies"] == {
+        f"s.token{FIELD_MARKER}": {
+            "path": "/",
+            "sameSite": "lax",
+            "name": f"{default_prefix}.token{FIELD_MARKER}",
+        },
+        # An explicit name is the user's to keep.
+        f"s.theme{FIELD_MARKER}": {"name": "theme", "path": "/", "sameSite": "lax"},
+    }
+    assert minified["local_storage"] == {
+        f"s.note{FIELD_MARKER}": {
+            "sync": False,
+            "name": f"{default_prefix}.note{FIELD_MARKER}",
+        }
+    }

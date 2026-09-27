@@ -155,6 +155,11 @@ class RegistrationContext(BaseContext):
         default_factory=dict,
         repr=False,
     )
+    # Keyed by the resolver-independent default full name, so never re-keyed.
+    _states_by_default_name: dict[str, type[BaseState]] = dataclasses.field(
+        default_factory=dict,
+        repr=False,
+    )
     name_resolver: NameResolver = dataclasses.field(
         default_factory=DefaultNameResolver,
         repr=False,
@@ -250,6 +255,7 @@ class RegistrationContext(BaseContext):
             base_state_substates={
                 k: set(v) for k, v in self.base_state_substates.items()
             },
+            _states_by_default_name=dict(self._states_by_default_name),
             decorated_pages=list(self.decorated_pages),
             bundled_libraries=list(self.bundled_libraries),
             name_resolver=self.name_resolver,
@@ -317,6 +323,7 @@ class RegistrationContext(BaseContext):
             The registered base state class.
         """
         self.base_states[state_cls.get_full_name()] = state_cls
+        self._states_by_default_name[state_cls._get_default_full_name()] = state_cls
         for event_handler in state_cls.event_handlers.values():
             self._register_event_handler(event_handler, states=(state_cls,))
         if (parent_state := state_cls.get_parent_state()) is not None:
@@ -389,6 +396,24 @@ class RegistrationContext(BaseContext):
         return self.base_state_substates.setdefault(
             base_state_cls.get_full_name(), set()
         )
+
+    def _get_state_by_default_name(self, default_full_name: str) -> type[BaseState]:
+        """Look up a registered state by its resolver-independent full name.
+
+        Args:
+            default_full_name: The state's ``_get_default_full_name()``.
+
+        Returns:
+            The state class.
+
+        Raises:
+            ValueError: If no registered state has that name.
+        """
+        try:
+            return self._states_by_default_name[default_full_name]
+        except KeyError:
+            msg = f"No state is registered as {default_full_name!r}."
+            raise ValueError(msg) from None
 
     @staticmethod
     def default_state_name(state_cls: type[BaseState]) -> str:
