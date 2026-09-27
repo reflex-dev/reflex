@@ -33,6 +33,7 @@ from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import (
     BaseVarShadowsInheritedVarError,
+    EventHandlerValueError,
     InvalidLockWarningThresholdError,
     LockExpiredError,
     ReflexRuntimeError,
@@ -4934,6 +4935,20 @@ config = rx.Config(
         assert isinstance(ExplicitState.helper, FunctionType)
         assert isinstance(ExplicitState.mixin_helper, FunctionType)
         assert ExplicitState(_reflex_internal_init=True).helper() == 1  # pyright: ignore [reportCallIssue]
+
+        # Wiring an undecorated method to a trigger names the missing decorator
+        # instead of calling it with the component as `self`.
+        for trigger in (
+            ExplicitState.helper,
+            ExplicitState.mixin_helper,
+            lambda: ExplicitState.helper,
+            lambda: ExplicitState.mixin_helper,
+        ):
+            with pytest.raises(
+                EventHandlerValueError,
+                match=r"@rx\.event.*state_explicit_event_handlers",
+            ):
+                rx.button(on_click=trigger)
 
         # Built-in states are unaffected.
         assert "on_load_internal" in OnLoadInternalState.event_handlers

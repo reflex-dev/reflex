@@ -39,6 +39,7 @@ from reflex_base.environment import PerformanceMode, environment
 from reflex_base.event import (
     EVENT_ACTIONS_MARKER,
     EVENT_MARKER,
+    UNDECORATED_STATE_METHOD_MARKER,
     Event,
     EventHandler,
     EventSpec,
@@ -1163,19 +1164,24 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Args:
             name: The name of the item.
             value: The value of the item.
-            explicit: Only accept functions decorated with `@rx.event`.
+            explicit: Only accept functions decorated with `@rx.event`; an
+                undecorated one is marked so wiring it to a trigger fails clearly.
 
         Returns:
             Whether the item is an event handler.
         """
-        return (
-            not name.startswith("_")
-            and isinstance(value, Callable)
-            and not isinstance(value, EventHandler)
-            and not getattr(value, "__override_base_method__", False)
-            and hasattr(value, "__code__")
-            and (not explicit or getattr(value, EVENT_MARKER, False))
-        )
+        if (
+            name.startswith("_")
+            or not isinstance(value, Callable)
+            or isinstance(value, EventHandler)
+            or getattr(value, "__override_base_method__", False)
+            or not hasattr(value, "__code__")
+        ):
+            return False
+        if explicit and not getattr(value, EVENT_MARKER, False):
+            setattr(value, UNDECORATED_STATE_METHOD_MARKER, True)
+            return False
+        return True
 
     @classmethod
     def _evaluate(cls, f: Callable[[Self], Any], of_type: type | None = None) -> Var:

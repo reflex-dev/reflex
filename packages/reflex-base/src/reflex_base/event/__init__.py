@@ -296,6 +296,7 @@ BACKGROUND_TASK_MARKER = "_reflex_background_task"
 SUPERSEDES_MARKER = "_reflex_supersedes"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
 EVENT_MARKER = "_rx_event"
+UNDECORATED_STATE_METHOD_MARKER = "_rx_undecorated_state_method"
 UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
 # Payload key listing the names of the extra bound handler args in an upload
@@ -2295,6 +2296,28 @@ def check_fn_match_arg_spec(
         raise EventFnArgMismatchError(msg)
 
 
+def _check_not_undecorated_state_method(value: Any, key: str | None) -> None:
+    """Reject a state method that explicit event handler mode left undecorated.
+
+    Args:
+        value: The value wired to the event trigger.
+        key: The name of the event trigger.
+
+    Raises:
+        EventHandlerValueError: If value is an undecorated state method.
+    """
+    if getattr(value, UNDECORATED_STATE_METHOD_MARKER, False):
+        from reflex_base.utils.exceptions import EventHandlerValueError
+
+        msg = (
+            f"{value.__qualname__} is wired to {key or 'an event trigger'} but is not an "
+            "event handler. Decorate it with `@rx.event`: with "
+            "`state_explicit_event_handlers` enabled, undecorated methods stay plain "
+            "methods."
+        )
+        raise EventHandlerValueError(msg)
+
+
 def call_event_fn(
     fn: Callable,
     arg_spec: ArgsSpec | Sequence[ArgsSpec],
@@ -2314,11 +2337,14 @@ def call_event_fn(
         The event-like values from calling the function.
 
     Raises:
-        EventHandlerValueError: If the lambda returns an unusable value.
+        EventHandlerValueError: If fn is an undecorated state method or returns
+            an unusable value.
     """
     # Import here to avoid circular imports.
     from reflex_base.event import EventHandler, EventSpec
     from reflex_base.utils.exceptions import EventHandlerValueError
+
+    _check_not_undecorated_state_method(fn, key)
 
     parsed_args, _ = parse_args_spec(arg_spec)
 
@@ -2410,6 +2436,7 @@ def call_event_fn(
 
         # Make sure the event spec is valid.
         if not isinstance(e, (EventSpec, FunctionVar, EventVar)):
+            _check_not_undecorated_state_method(e, key)
             hint = ""
             if isinstance(e, VarOperationCall):
                 hint = " Hint: use `fn.partial(...)` instead of calling the FunctionVar directly."
@@ -2961,6 +2988,7 @@ class EventNamespace:
     SUPERSEDES_MARKER = SUPERSEDES_MARKER
     EVENT_ACTIONS_MARKER = EVENT_ACTIONS_MARKER
     EVENT_MARKER = EVENT_MARKER
+    UNDECORATED_STATE_METHOD_MARKER = UNDECORATED_STATE_METHOD_MARKER
     _EVENT_FIELDS = _EVENT_FIELDS
     FORM_DATA = FORM_DATA
     FORM_SUBMIT_MAPPING = FORM_SUBMIT_MAPPING
