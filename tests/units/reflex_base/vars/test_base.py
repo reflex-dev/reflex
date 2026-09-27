@@ -773,6 +773,28 @@ def test_abc_mixin(state_mixin: bool, clean_registration_context):
     assert concrete_state()._value() == 7
 
 
+@pytest.mark.parametrize("registration", ["declared", "var"])
+def test_reserved_abc_bookkeeping(registration: str, clean_registration_context):
+    """Keep rejecting a state's own ``_abc_impl``, which would clash with ABCMeta's.
+
+    Args:
+        registration: Whether the name is declared in the class body or added later.
+        clean_registration_context: An isolated state registry.
+    """
+    with pytest.raises(StateValueError, match="_abc_impl"):
+        if registration == "declared":
+
+            class ShadowState(ABC, BaseState):
+                _abc_impl: int = 7
+
+        else:
+
+            class DynamicState(ABC, BaseState):
+                """State receiving a dynamic declaration."""
+
+            DynamicState.add_var("_abc_impl", int, 7)
+
+
 @pytest.mark.parametrize("slots", [("cache",), "cache"])
 @pytest.mark.parametrize("state_base", [False, True])
 def test_reserved_slot_of_base(
