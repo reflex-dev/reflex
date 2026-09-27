@@ -19,6 +19,7 @@ from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
 from reflex_base.vars.base import (
+    _ABC_BOOKKEEPING_NAME,
     FIELD_TYPE,
     GLOBAL_CACHE,
     BaseStateMeta,
@@ -781,7 +782,7 @@ def test_reserved_abc_bookkeeping(registration: str, clean_registration_context)
         registration: Whether the name is declared in the class body or added later.
         clean_registration_context: An isolated state registry.
     """
-    with pytest.raises(StateValueError, match="_abc_impl"):
+    with pytest.raises(StateValueError, match=_ABC_BOOKKEEPING_NAME):
         if registration == "declared":
 
             class ShadowState(ABC, BaseState):
@@ -792,7 +793,7 @@ def test_reserved_abc_bookkeeping(registration: str, clean_registration_context)
             class DynamicState(ABC, BaseState):
                 """State receiving a dynamic declaration."""
 
-            DynamicState.add_var("_abc_impl", int, 7)
+            DynamicState.add_var(_ABC_BOOKKEEPING_NAME, int, 7)
 
 
 @pytest.mark.parametrize("slots", [("cache",), "cache"])
