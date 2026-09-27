@@ -485,7 +485,7 @@ class RegistrationContext(BaseContext):
             resolver: The resolver to install. Pass :class:`DefaultNameResolver`
                 to revert to built-in names.
         """
-        from reflex_base.utils.format import _FORMATTED_NAME_CACHE_ATTR, format_var_key
+        from reflex_base.utils.format import format_var_key
 
         object.__setattr__(self, "name_resolver", resolver)
         for cls in self.base_states.values():
@@ -494,7 +494,7 @@ class RegistrationContext(BaseContext):
             cls.get_class_substate.cache_clear()
         format_var_key.cache_clear()
         for reg in self.event_handlers.values():
-            reg.handler.__dict__.pop(_FORMATTED_NAME_CACHE_ATTR, None)
+            object.__setattr__(reg.handler, "_formatted_name", None)
         for cls in sorted(
             self.base_states.values(),
             key=lambda state_cls: state_cls._get_default_full_name().count("."),

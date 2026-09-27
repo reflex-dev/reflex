@@ -473,9 +473,6 @@ def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
     return (state_full_name, ctx.get_handler_name(handler.state, func_name))
 
 
-_FORMATTED_NAME_CACHE_ATTR = "_formatted_name"
-
-
 def format_event_handler(handler: EventHandler) -> str:
     """Format an event handler.
 
@@ -495,12 +492,11 @@ def format_event_handler(handler: EventHandler) -> str:
     Returns:
         The formatted function.
     """
-    cached = handler.__dict__.get(_FORMATTED_NAME_CACHE_ATTR)
-    if cached is not None:
+    if (cached := handler._formatted_name) is not None:
         return cached
     state, name = get_event_handler_parts(handler)
     full = name if state == "" else f"{state}.{name}"
-    object.__setattr__(handler, _FORMATTED_NAME_CACHE_ATTR, full)
+    object.__setattr__(handler, "_formatted_name", full)
     return full
 
 

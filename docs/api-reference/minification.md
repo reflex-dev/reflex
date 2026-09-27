@@ -138,10 +138,13 @@ The file is written sorted and with a stable layout, so regenerating it produces
 no spurious diffs. It is hand-editable, but in practice let the CLI maintain it.
 Loading it checks the schema version, that `states`, `events` and (when
 present) `vars` are objects, that every state entry has a string `id` and a
-`parent` that is a string or `null`, and that every id follows the rules above;
-keys it does not know are ignored. On a file that fails these checks the `reflex minify` commands stop
-with an error naming the problem, while compiling or serving the app logs a
-warning and runs without minification. Uniqueness is checked by
+`parent` that is a string or `null`, that every id uses the alphabet above and
+no var id is reserved, that no state id has an underscore at an end or doubled,
+and that no two handlers or vars of a state share an id; keys it does not know
+are ignored. On a file that fails these checks, compiling or serving the app
+logs a warning and runs without minification. The `reflex minify` commands stop
+with an error naming the problem, except for the last two, which `validate`
+reports and `sync` repairs. Sibling states sharing an id are reported by
 `reflex minify validate`.
 
 ### `parent` and reserved ids

@@ -2732,6 +2732,28 @@ def code_uses_state_contexts(javascript_code: str) -> bool:
     return bool("useContext(StateContexts" in javascript_code)
 
 
+def _source_module(state_cls: type[BaseState]) -> str:
+    """Get the module whose code defines a state, wherever its class was put.
+
+    States defined inside a function and the ones ``ComponentState.create()``
+    builds live in ``reflex.istate.dynamic``, for pickling.
+
+    Args:
+        state_cls: The state class.
+
+    Returns:
+        The name of the defining module.
+    """
+    if (original_module := getattr(state_cls, "__original_module__", None)) is not None:
+        return original_module
+    if state_cls.__module__ == reflex.istate.dynamic.__name__ and issubclass(
+        state_cls, ComponentState
+    ):
+        # Built from the component class, its first base.
+        return state_cls.__bases__[0].__module__
+    return state_cls.__module__
+
+
 def reload_state_module(
     module: str,
     state: type[BaseState] = State,
@@ -2748,16 +2770,19 @@ def reload_state_module(
         state._potentially_dirty_states = {
             pd_state
             for pd_state in state._potentially_dirty_states
-            if pd_state.__module__ != module
+            if _source_module(pd_state) != module
         }
     reg_ctx = RegistrationContext.get()
     substates = reg_ctx.get_substates(state)
     for subclass in tuple(substates):
         reload_state_module(module=module, state=subclass)
-        if subclass.__module__ == module and module is not None:
+        if _source_module(subclass) == module and module is not None:
             all_base_state_classes.pop(subclass._get_default_full_name(), None)
             subclass._is_registered = False
             substates.remove(subclass)
+            # Free its name there, or the reloaded module cannot build it again.
+            if vars(reflex.istate.dynamic).get(subclass.__name__) is subclass:
+                delattr(reflex.istate.dynamic, subclass.__name__)
             state._always_dirty_substates.discard(subclass)
             state._var_dependencies = {}
             state._init_var_dependency_dicts()
