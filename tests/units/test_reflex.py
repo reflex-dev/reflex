@@ -576,7 +576,7 @@ def test_lookup_fails_for_invalid_path(temp_minify_json, cli_runner):
     result = cli_runner.invoke(cli, ["minify", "lookup", "b.xyz"])
 
     assert result.exit_code == 1
-    assert "No state or event handler found" in result.output
+    assert "No state, event handler or var found" in result.output
 
 
 def test_lookup_resolves_event_handler(temp_minify_json, cli_runner):
@@ -663,7 +663,7 @@ def test_lookup_reports_ambiguous_final_segment(temp_minify_json, cli_runner):
     text_result = cli_runner.invoke(cli, ["minify", "lookup", "b.a"])
 
     assert text_result.exit_code == 0, text_result.output
-    assert "is both a state id and an event handler id" in text_result.output
+    assert "is the id of a state and of an event handler" in text_result.output
     assert "AmbiguousParentState.increment" in text_result.output
 
 
@@ -912,3 +912,64 @@ def test_json_output_does_not_leak_the_stdout_reservation(
 
     assert cli_runner.invoke(cli, args).exit_code == 0
     assert log.is_stdout_reserved() is False
+
+
+def test_lookup_resolves_var_key(temp_minify_json, cli_runner):
+    """A delta key appended to its state's name resolves to the var.
+
+    The key may be copied minified, unminified with its field marker, or be
+    the var's own name.
+    """
+    from reflex.reflex import cli
+
+    class VarLookupState(State):
+        count: int = 0
+
+    state_path = get_state_full_path(VarLookupState)
+    install_config(
+        states={state_path: "b"},
+        vars={state_path: {"count": "cN"}},
+        include_state_root=True,
+    )
+
+    for segment in ("cN", "count_rx_state_", "count"):
+        result = cli_runner.invoke(cli, ["minify", "lookup", "--json", f"b.{segment}"])
+        assert result.exit_code == 0, result.output
+        output_data = json.loads(result.output)
+        assert [entry["kind"] for entry in output_data] == ["state", "var"]
+        assert output_data[1]["class"] == "VarLookupState"
+        assert output_data[1]["var"] == "count"
+        assert output_data[1]["var_id"] == "cN"
+        assert output_data[1]["full_path"] == f"{state_path}.count"
+
+    text = cli_runner.invoke(cli, ["minify", "lookup", "b.cN"])
+    assert f"{__name__}.VarLookupState.count" in text.output
+
+
+def test_list_reports_var_ids(temp_minify_json, cli_runner):
+    """The state tree shows each var with the id it is minified to."""
+    from reflex.reflex import cli
+
+    class VarListState(State):
+        count: int = 0
+        label: str = ""
+
+    state_path = get_state_full_path(VarListState)
+    install_config(
+        states={state_path: "b"},
+        vars={state_path: {"count": "c"}},
+        include_state_root=True,
+    )
+
+    result = cli_runner.invoke(cli, ["minify", "list", "--json"])
+    assert result.exit_code == 0, result.output
+    tree = json.loads(result.output)
+    node = next(s for s in tree["substates"] if s["full_path"] == state_path)
+    assert node["vars"] == [
+        {"name": "count", "var_id": "c"},
+        {"name": "label", "var_id": None},
+    ]
+
+    text = cli_runner.invoke(cli, ["minify", "list"])
+    assert "|-- Vars:" in text.output or "`-- Vars:" in text.output
+    assert 'count -> "c"' in text.output

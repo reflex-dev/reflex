@@ -227,9 +227,9 @@ class DependencyTracker:
                 type(self)(func=cast(FunctionType, ref_obj), state_cls=target_state)
             )
         elif is_dependency(target_state, instruction.argval):
-            self.dependencies.setdefault(target_state.get_full_name(), set()).add(
-                instruction.argval
-            )
+            self.dependencies.setdefault(
+                target_state._get_default_full_name(), set()
+            ).add(instruction.argval)
 
     def _get_globals(self) -> dict[str, Any]:
         """Get the globals of the function.

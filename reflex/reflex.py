@@ -5,7 +5,7 @@ from __future__ import annotations
 import contextlib
 import logging
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
@@ -1079,10 +1079,10 @@ def rename(new_name: str):
 
 
 # Minify command group
-@cli.group()
+@cli.group(help="Manage state, event and var name minification.")
 @click.pass_context
 def minify(ctx: click.Context):
-    """Manage state and event name minification.
+    """Manage state, event and var name minification.
 
     Args:
         ctx: The click context, used to scope the forced default names.
@@ -1091,7 +1091,7 @@ def minify(ctx: click.Context):
 
     # These commands read minify.json rather than apply it; with the configured
     # names live, a duplicate id aborts the app import before they can report
-    # it. Must happen here, before a subcommand body imports reflex.state.
+    # it. Must happen here, before a subcommand body imports the app.
     ctx.with_resource(force_default_names())
 
 
@@ -1102,16 +1102,17 @@ def _load_app_for_minify() -> None:
     prerequisites.get_compiled_app(dry_run=True)
 
 
-def _count_events(config: MinifyConfig) -> int:
-    """Sum event handlers across every state in a minify config.
+def _count_members(config: MinifyConfig, key: Literal["events", "vars"]) -> int:
+    """Sum the event handlers or vars across every state in a minify config.
 
     Args:
         config: The minify configuration.
+        key: The section to count.
 
     Returns:
-        Total handler count.
+        Total member count.
     """
-    return sum(len(handlers) for handlers in config["events"].values())
+    return sum(len(ids) for ids in config[key].values())
 
 
 @overload
@@ -1188,7 +1189,7 @@ def _open_minify_session(
 @minify.command(name="init")
 @loglevel_option
 def minify_init():
-    """Initialize minify.json with IDs for all states and events."""
+    """Initialize minify.json with IDs for all states, events and vars."""
     from reflex.minify import (
         MINIFY_JSON,
         _get_minify_json_path,
@@ -1208,8 +1209,9 @@ def minify_init():
     save_minify_config(config)
 
     logger.info(
-        f"Created {MINIFY_JSON} with {len(config['states'])} states "
-        f"and {_count_events(config)} events."
+        f"Created {MINIFY_JSON} with {len(config['states'])} states, "
+        f"{_count_members(config, 'events')} events "
+        f"and {_count_members(config, 'vars')} vars."
     )
 
 
@@ -1231,7 +1233,7 @@ def minify_init():
 def minify_sync(reassign_deleted: bool, prune: bool):
     """Synchronize minify.json with the current codebase.
 
-    Adds new states and events, optionally removes orphaned entries.
+    Adds new states, events and vars, optionally removes orphaned entries.
     """
     from reflex.minify import MINIFY_JSON, save_minify_config, sync_minify_config
 
@@ -1245,9 +1247,12 @@ def minify_sync(reassign_deleted: bool, prune: bool):
     logger.info(
         f"  States: {len(existing_config['states'])} -> {len(new_config['states'])}"
     )
-    logger.info(
-        f"  Events: {_count_events(existing_config)} -> {_count_events(new_config)}"
-    )
+    keys: tuple[Literal["events", "vars"], ...] = ("events", "vars")
+    for key in keys:
+        logger.info(
+            f"  {key.capitalize()}: {_count_members(existing_config, key)} "
+            f"-> {_count_members(new_config, key)}"
+        )
 
 
 @minify.command(name="validate")
@@ -1303,6 +1308,12 @@ def minify_list(output_json: bool):
         name: str
         event_id: str | None  # The minified name (e.g., "a", "ba") or None
 
+    class StateVarData(TypedDict):
+        """Type for var data in state tree."""
+
+        name: str
+        var_id: str | None  # The minified name (e.g., "a", "ba") or None
+
     class StateTreeData(TypedDict):
         """Type for state tree data."""
 
@@ -1310,12 +1321,28 @@ def minify_list(output_json: bool):
         full_path: str
         state_id: str | None  # The minified name (e.g., "a", "ba") or None
         event_handlers: list[EventHandlerData]
+        vars: list[StateVarData]
         substates: list[StateTreeData]
 
     # CLI inspection shows config contents regardless of env var settings.
     config = _open_minify_session(require_exists=False, for_json=output_json)
     states_map = config["states"] if config else {}
-    events_map = config["events"] if config else {}
+
+    def member_ids(
+        key: Literal["events", "vars"], state_path: str, names: Iterable[str]
+    ) -> list[tuple[str, str | None]]:
+        """List a state's members of one kind with their ids.
+
+        Args:
+            key: The config section numbering the members.
+            state_path: The state's config path.
+            names: The members' Python names.
+
+        Returns:
+            ``(name, id)`` pairs sorted by name.
+        """
+        ids = config[key].get(state_path, {}) if config else {}
+        return [(name, ids.get(name)) for name in sorted(names)]
 
     def build_state_tree(state_cls: type[BaseState]) -> StateTreeData:
         """Recursively build state tree data.
@@ -1328,27 +1355,42 @@ def minify_list(output_json: bool):
         """
         state_path = get_state_full_path(state_cls)
         state_entry = states_map.get(state_path)
-        state_id = state_entry["id"] if state_entry is not None else None
-
-        handler_ids = events_map.get(state_path, {})
-        handlers: list[EventHandlerData] = [
-            {"name": handler_name, "event_id": handler_ids.get(handler_name)}
-            for handler_name in sorted(state_cls.event_handlers.keys())
-        ]
-
-        # Build substates recursively
-        substates = [
-            build_state_tree(substate)
-            for substate in sorted(state_cls.get_substates(), key=lambda s: s.__name__)
-        ]
 
         return {
             "name": state_cls.__name__,
             "full_path": state_path,
-            "state_id": state_id,
-            "event_handlers": handlers,
-            "substates": substates,
+            "state_id": state_entry["id"] if state_entry is not None else None,
+            "event_handlers": [
+                {"name": name, "event_id": event_id}
+                for name, event_id in member_ids(
+                    "events", state_path, state_cls.event_handlers
+                )
+            ],
+            "vars": [
+                {"name": name, "var_id": var_id}
+                for name, var_id in member_ids(
+                    "vars", state_path, state_cls._frontend_var_names
+                )
+            ],
+            "substates": [
+                build_state_tree(substate)
+                for substate in sorted(
+                    state_cls.get_substates(), key=lambda s: s.__name__
+                )
+            ],
         }
+
+    def labeled(name: str, member_id: str | None) -> str:
+        """Show a name with the id it is minified to, if any.
+
+        Args:
+            name: The Python name.
+            member_id: The minified id, or ``None``.
+
+        Returns:
+            The label to print.
+        """
+        return name if member_id is None else f'{name} -> "{member_id}"'
 
     def print_state_tree(
         state_data: StateTreeData, prefix: str = "", is_last: bool = True
@@ -1360,45 +1402,36 @@ def minify_list(output_json: bool):
             prefix: The prefix for indentation.
             is_last: Whether this is the last item in the current level.
         """
-        # state_id is now the minified name directly (e.g., "a", "ba")
-        state_id = state_data["state_id"]
-
-        # Print the state node
         connector = "`-- " if is_last else "|-- "
-        if state_id is not None:
-            click.echo(f'{prefix}{connector}{state_data["name"]} -> "{state_id}"')
-        else:
-            click.echo(f"{prefix}{connector}{state_data['name']}")
+        click.echo(
+            f"{prefix}{connector}{labeled(state_data['name'], state_data['state_id'])}"
+        )
 
         # Calculate new prefix for children
         child_prefix = prefix + ("    " if is_last else "|   ")
-
-        # Print event handlers
-        handlers = state_data["event_handlers"]
-        substates = state_data["substates"]
-        has_substates = len(substates) > 0
-
-        if handlers:
-            click.echo(
-                f"{child_prefix}{'|' if has_substates else '`'}-- Event Handlers:"
+        groups = [
+            (title, group)
+            for title, group in (
+                (
+                    "Event Handlers",
+                    [(h["name"], h["event_id"]) for h in state_data["event_handlers"]],
+                ),
+                ("Vars", [(v["name"], v["var_id"]) for v in state_data["vars"]]),
             )
-            handler_prefix = child_prefix + ("|   " if has_substates else "    ")
-            for i, handler in enumerate(handlers):
-                is_last_handler = i == len(handlers) - 1
-                h_connector = "`-- " if is_last_handler else "|-- "
-                # event_id is now the minified name directly
-                event_id = handler["event_id"]
-                if event_id is not None:
-                    click.echo(
-                        f'{handler_prefix}{h_connector}{handler["name"]} -> "{event_id}"'
-                    )
-                else:
-                    click.echo(f"{handler_prefix}{h_connector}{handler['name']}")
+            if group
+        ]
+        substates = state_data["substates"]
+        for group_index, (title, group) in enumerate(groups):
+            has_more = bool(substates) or group_index < len(groups) - 1
+            click.echo(f"{child_prefix}{'|' if has_more else '`'}-- {title}:")
+            member_prefix = child_prefix + ("|   " if has_more else "    ")
+            for i, (name, member_id) in enumerate(group):
+                m_connector = "`-- " if i == len(group) - 1 else "|-- "
+                click.echo(f"{member_prefix}{m_connector}{labeled(name, member_id)}")
 
         # Print substates recursively
         for i, substate in enumerate(substates):
-            is_last_substate = i == len(substates) - 1
-            print_state_tree(substate, child_prefix, is_last_substate)
+            print_state_tree(substate, child_prefix, i == len(substates) - 1)
 
     tree_data = build_state_tree(State)
 
@@ -1424,16 +1457,18 @@ def minify_list(output_json: bool):
 )
 @click.argument("minified_path")
 def minify_lookup(output_json: bool, minified_path: str):
-    """Lookup a state or event handler by its minified path (e.g., 'a.bU').
+    """Lookup a state, event handler or var by its minified path (e.g., 'a.bU').
 
     Walks the state tree from the root to resolve each segment. The final
-    segment may also be an event handler id of the state resolved so far, so
-    an event name copied from the frontend resolves to its handler. States and
-    events minify independently, so every segment also matches its unminified
-    name. The root state's own name is optional and may be given either way,
+    segment may also be an event handler or var id of the state resolved so
+    far, so an event name copied from the frontend resolves to its handler,
+    and a delta key appended to its state's name to its var. States, events
+    and vars minify independently, so every segment also matches its
+    unminified name. The root state's own name is optional and may be given either way,
     so 'a.bU', 'a.a.bU' and 'reflex___state____state.a.bU' all resolve the
     same way; given alone it resolves to the root state itself.
     """
+    from reflex_base.constants.state import FIELD_MARKER
     from reflex_base.registry import RegistrationContext
 
     from reflex.minify import collect_all_states, get_state_full_path, get_state_module
@@ -1489,17 +1524,34 @@ def minify_lookup(output_json: bool, minified_path: str):
             )
         )
         # An event name copied from the frontend ends in a handler id (or the
-        # handler's own name) of the state resolved so far, not a substate id.
-        handler = None
+        # handler's own name) of the state resolved so far, not a substate id;
+        # likewise a var key copied from a delta, appended to its state's name.
         current_path = get_state_full_path(current)
-        current_events = config["events"].get(current_path, {})
+        members: list[tuple[Literal["events", "vars"], str]] = []
         if index == last_index:
-            handler = next(
-                (name for name, event_id in current_events.items() if event_id == part),
-                part if part in current.event_handlers else None,
+            member_kinds: tuple[
+                tuple[Literal["events", "vars"], Iterable[str]], ...
+            ] = (
+                ("events", current.event_handlers),
+                ("vars", current._frontend_var_names),
             )
-        if found is None and handler is None:
-            kind = "state or event handler" if index == last_index else "state"
+            for key, names in member_kinds:
+                ids = config[key].get(current_path, {})
+                member = next(
+                    (name for name, member_id in ids.items() if member_id == part),
+                    next(
+                        (
+                            name
+                            for name in (part, part.removesuffix(FIELD_MARKER))
+                            if name in names
+                        ),
+                        None,
+                    ),
+                )
+                if member is not None:
+                    members.append((key, member))
+        if found is None and not members:
+            kind = "state, event handler or var" if index == last_index else "state"
             logger.error(
                 f"No {kind} found for minified segment '{part}' in path '{minified_path}'"
             )
@@ -1516,21 +1568,25 @@ def minify_lookup(output_json: bool, minified_path: str):
                 "class": found.__name__,
                 "full_path": get_state_full_path(found),
             })
-        if handler is not None:
-            # JSON readers see the ambiguity as two entries for one segment.
-            if found is not None and not output_json:
-                logger.warning(
-                    f"Segment '{part}' is both a state id and an event handler id "
-                    f"of {get_state_module(current)}.{current.__name__}; showing both."
-                )
+        # JSON readers see the ambiguity as several entries for one segment.
+        readings = (["a state"] if found is not None else []) + [
+            "an event handler" if key == "events" else "a var" for key, _ in members
+        ]
+        if len(readings) > 1 and not output_json:
+            logger.warning(
+                f"Segment '{part}' is the id of {' and of '.join(readings)} of "
+                f"{get_state_module(current)}.{current.__name__}; showing each."
+            )
+        for key, member in members:
+            kind, name_key = ("event", "handler") if key == "events" else ("var", "var")
             result_parts.append({
-                "kind": "event",
+                "kind": kind,
                 "minified": part,
-                "event_id": current_events.get(handler),
+                f"{kind}_id": config[key].get(current_path, {}).get(member),
                 "module": get_state_module(current),
                 "class": current.__name__,
-                "handler": handler,
-                "full_path": f"{current_path}.{handler}",
+                name_key: member,
+                "full_path": f"{current_path}.{member}",
             })
         if found is not None:
             current = found
@@ -1540,11 +1596,13 @@ def minify_lookup(output_json: bool, minified_path: str):
 
         click.echo(json.dumps(result_parts, indent=2))
     else:
-        # Simple output: module.ClassName, plus .handler for an event handler.
+        # Simple output: module.ClassName, plus .handler or .var for a member.
         for info in result_parts:
             line = f"{info['module']}.{info['class']}"
             if info["kind"] == "event":
                 line += f".{info['handler']}"
+            elif info["kind"] == "var":
+                line += f".{info['var']}"
             click.echo(line)
 
 

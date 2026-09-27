@@ -63,7 +63,7 @@ from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import MutableProxy, StateProxy
-from reflex.minify import get_state_full_path
+from reflex.minify import StateEntry, get_state_full_path
 from reflex.state import (
     BaseState,
     Delta,
@@ -1344,9 +1344,7 @@ def test_conditional_computed_vars():
             return self.t2
 
     for name in ("flag", "t1", "t2"):
-        assert MainState._var_dependencies[name] == {
-            (MainState.get_full_name(), "rendered_var")
-        }
+        assert MainState._var_dependencies[name] == {(MainState, "rendered_var")}
     assert MainState.computed_vars["rendered_var"]._deps(objclass=MainState) == {
         MainState.get_full_name(): {"flag", "t1", "t2"}
     }
@@ -2038,10 +2036,7 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
         assert isinstance(HandlerState.handler, EventHandler)
 
     s = HandlerState()
-    assert (
-        HandlerState.get_full_name(),
-        "cached_x_side_effect",
-    ) in s._var_dependencies["x"]
+    assert (HandlerState, "cached_x_side_effect") in s._var_dependencies["x"]
     assert s.cached_x_side_effect == 1
     assert s.x == 43
     s.handler()
@@ -2132,14 +2127,14 @@ def test_computed_var_dependencies():
 
     cs = ComputedState()
     assert cs._var_dependencies["v"] == {
-        (ComputedState.get_full_name(), "comp_v"),
-        (ComputedState.get_full_name(), "comp_v_backend"),
-        (ComputedState.get_full_name(), "comp_v_via_property"),
+        (ComputedState, "comp_v"),
+        (ComputedState, "comp_v_backend"),
+        (ComputedState, "comp_v_via_property"),
     }
-    assert cs._var_dependencies["w"] == {(ComputedState.get_full_name(), "comp_w")}
-    assert cs._var_dependencies["x"] == {(ComputedState.get_full_name(), "comp_x")}
-    assert cs._var_dependencies["y"] == {(ComputedState.get_full_name(), "comp_y")}
-    assert cs._var_dependencies["_z"] == {(ComputedState.get_full_name(), "comp_z")}
+    assert cs._var_dependencies["w"] == {(ComputedState, "comp_w")}
+    assert cs._var_dependencies["x"] == {(ComputedState, "comp_x")}
+    assert cs._var_dependencies["y"] == {(ComputedState, "comp_y")}
+    assert cs._var_dependencies["_z"] == {(ComputedState, "comp_z")}
 
 
 def test_backend_method():
@@ -4250,9 +4245,7 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
         RouterVarDepState.get_full_name(): set(constants.ROUTER_VARS)
     }
     for router_var in constants.ROUTER_VARS:
-        assert (RouterVarDepState.get_full_name(), "foo") in State._var_dependencies[
-            router_var
-        ]
+        assert (RouterVarDepState, "foo") in State._var_dependencies[router_var]
 
     # Get state from state manager.
     rx_state = await state_manager.get_state(BaseStateToken(ident=token, cls=State))
@@ -4275,9 +4268,9 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
     # entry and raises on the missing substate. Drop them.
     for dep_set in State._var_dependencies.values():
         dep_set.difference_update({
-            (RouterVarDepState.get_full_name(), "foo"),
+            (RouterVarDepState, "foo"),
         })
-    State._potentially_dirty_states.discard(RouterVarDepState.get_full_name())
+    State._potentially_dirty_states.discard(RouterVarDepState)
 
 
 @pytest.mark.parametrize("name", constants.ROUTER_VARS)
@@ -4310,17 +4303,14 @@ def test_router_var_dep_legacy_string() -> None:
             return self.router.url.path
 
     for router_var in constants.ROUTER_VARS:
-        assert (
-            LegacyRouterDepState.get_full_name(),
-            "foo",
-        ) in State._var_dependencies[router_var]
+        assert (LegacyRouterDepState, "foo") in State._var_dependencies[router_var]
     assert "router" not in State._var_dependencies
 
     # Drop the class-level registrations this locally-defined state made; see
     # the note in test_router_var_dep.
     for dep_set in State._var_dependencies.values():
-        dep_set.discard((LegacyRouterDepState.get_full_name(), "foo"))
-    State._potentially_dirty_states.discard(LegacyRouterDepState.get_full_name())
+        dep_set.discard((LegacyRouterDepState, "foo"))
+    State._potentially_dirty_states.discard(LegacyRouterDepState)
 
 
 def test_router_var_dep_legacy_string_still_compiles() -> None:
@@ -4343,8 +4333,8 @@ def test_router_var_dep_legacy_string_still_compiles() -> None:
     App()._validate_var_dependencies()
 
     for dep_set in State._var_dependencies.values():
-        dep_set.discard((LegacyRouterCompileState.get_full_name(), "foo"))
-    State._potentially_dirty_states.discard(LegacyRouterCompileState.get_full_name())
+        dep_set.discard((LegacyRouterCompileState, "foo"))
+    State._potentially_dirty_states.discard(LegacyRouterCompileState)
 
 
 @pytest.mark.asyncio
@@ -4410,10 +4400,10 @@ def test_router_var_dep_does_not_warn_for_the_var_form(
     assert "StringFormRouterDepState.from_string" in deprecations[0]
 
     for dep_set in State._var_dependencies.values():
-        dep_set.discard((VarFormRouterDepState.get_full_name(), "from_var"))
-        dep_set.discard((StringFormRouterDepState.get_full_name(), "from_string"))
-    State._potentially_dirty_states.discard(VarFormRouterDepState.get_full_name())
-    State._potentially_dirty_states.discard(StringFormRouterDepState.get_full_name())
+        dep_set.discard((VarFormRouterDepState, "from_var"))
+        dep_set.discard((StringFormRouterDepState, "from_string"))
+    State._potentially_dirty_states.discard(VarFormRouterDepState)
+    State._potentially_dirty_states.discard(StringFormRouterDepState)
 
 
 def test_router_var_dep_whole_router() -> None:
@@ -4439,21 +4429,17 @@ def test_router_var_dep_whole_router() -> None:
         State.get_full_name(): {constants.ROUTER, *constants.ROUTER_VARS}
     }
     for router_var in constants.ROUTER_VARS:
-        assert (
-            WholeRouterDepState.get_full_name(),
-            "summary",
-        ) in State._var_dependencies[router_var]
+        assert (WholeRouterDepState, "summary") in State._var_dependencies[router_var]
     # `router` has no backing field, so nothing may be registered against it --
     # it would never be dirtied and the dependent var would go stale.
-    assert (
-        WholeRouterDepState.get_full_name(),
-        "summary",
-    ) not in State._var_dependencies.get(constants.ROUTER, set())
+    assert (WholeRouterDepState, "summary") not in State._var_dependencies.get(
+        constants.ROUTER, set()
+    )
 
     # Drop the class-level registrations; see the note in test_router_var_dep.
     for dep_set in State._var_dependencies.values():
-        dep_set.discard((WholeRouterDepState.get_full_name(), "summary"))
-    State._potentially_dirty_states.discard(WholeRouterDepState.get_full_name())
+        dep_set.discard((WholeRouterDepState, "summary"))
+    State._potentially_dirty_states.discard(WholeRouterDepState)
 
 
 def test_router_is_listed_as_a_var_and_inherited_by_substates() -> None:
@@ -6051,7 +6037,7 @@ def test_descriptor_attribute_is_not_a_field():
 
     # A computed var depending on the descriptor must register the dependency.
     deps = DescriptorState._var_dependencies.get("_desc_value", set())
-    assert (DescriptorState.get_full_name(), "doubled") in deps
+    assert (DescriptorState, "doubled") in deps
 
 
 def test_descriptor_overrides_inherited_descriptor():
@@ -6092,8 +6078,8 @@ def test_descriptor_overrides_inherited_descriptor():
     # Child's computed var depends on child's _shared, parent's stays at parent.
     child_deps = ChildDescState._var_dependencies.get("_shared", set())
     parent_deps = ParentDescState._var_dependencies.get("_shared", set())
-    assert (ChildDescState.get_full_name(), "child_view") in child_deps
-    assert (ParentDescState.get_full_name(), "parent_view") in parent_deps
+    assert (ChildDescState, "child_view") in child_deps
+    assert (ParentDescState, "parent_view") in parent_deps
 
 
 class OnLoadCancelState(State):
@@ -6675,8 +6661,8 @@ def test_get_substate_with_parent_child_name_collision(temp_minify_json, monkeyp
 def test_first_substate_is_not_mistaken_for_its_parent(temp_minify_json, monkeypatch):
     """A minified substate resolves to itself, not to the state it hangs off.
 
-    ``_always_dirty_substates`` records the child's resolved name when the
-    class is created, so the config has to be installed first.
+    The parent resolves the always-dirty child by class, so its minified name
+    never has to match one recorded when the child was created.
 
     Args:
         temp_minify_json: Temporary ``minify.json`` location.
@@ -6696,10 +6682,15 @@ def test_first_substate_is_not_mistaken_for_its_parent(temp_minify_json, monkeyp
         def always_dirty(self) -> int:
             return 1
 
-    assert DirtyParent.get_name() == "b"
-    assert DirtyChild.get_name() == "c"
-    assert DirtyParent.get_class_substate(DirtyChild.get_name()) is DirtyChild
-    assert DirtyChild in DirtyParent._get_potentially_dirty_states()
+    try:
+        assert DirtyParent.get_name() == "b"
+        assert DirtyChild.get_name() == "c"
+        assert DirtyParent.get_class_substate(DirtyChild.get_name()) is DirtyChild
+        assert DirtyChild in DirtyParent._get_potentially_dirty_states()
+    finally:
+        # The forked registry forgets these states; State's class-level set
+        # outlives the test and would send later deltas looking for them.
+        State._always_dirty_substates.discard(DirtyParent)
 
 
 def test_resolved_name_survives_cache_pressure(temp_minify_json, monkeypatch):
@@ -6876,11 +6867,10 @@ def test_composite_var_dep_tracks_fields_in_every_state():
     # dependency maps, which outlive this test. Left behind, a later test that
     # dirties a_field or b_field resolves the stale entry and raises on the
     # missing substate. Drop them.
-    consumer_name = _CompositeDepConsumer.get_full_name()
     for state_cls in (_CompositeDepStateA, _CompositeDepStateB):
         for dep_set in state_cls._var_dependencies.values():
-            dep_set.difference_update({(consumer_name, "combined")})
-        state_cls._potentially_dirty_states.discard(consumer_name)
+            dep_set.difference_update({(_CompositeDepConsumer, "combined")})
+        state_cls._potentially_dirty_states.discard(_CompositeDepConsumer)
 
 
 def test_setstate_migrates_older_pickles():
@@ -7012,3 +7002,181 @@ def test_previous_release_pickle_keys_are_reserved():
 
         class ClashingState(BaseState):
             _backend_vars: dict = {}  # pyright: ignore[reportIncompatibleVariableOverride]
+
+
+def test_default_full_name_ignores_the_resolver(temp_minify_json, monkeypatch):
+    """The name persisted keys use stays put when the state is renamed.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class DefaultNamedRoot(BaseState):
+        pass
+
+    class DefaultNamedChild(DefaultNamedRoot):
+        pass
+
+    default_name = DefaultNamedChild._get_default_full_name()
+    assert default_name == DefaultNamedChild.get_full_name()
+
+    root_path = get_state_full_path(DefaultNamedRoot)
+    set_minify_modes(monkeypatch, states=True)
+    install_config(
+        states={
+            root_path: StateEntry(id="r", parent=None),
+            get_state_full_path(DefaultNamedChild): StateEntry(
+                id="c", parent=root_path
+            ),
+        }
+    )
+    assert DefaultNamedChild.get_full_name() == "r.c"
+    assert DefaultNamedChild._get_default_full_name() == default_name
+
+
+def test_minified_vars_reach_the_wire(temp_minify_json, monkeypatch):
+    """Vars with an id go by it in Var expressions, deltas and full state dicts.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    set_minify_modes(monkeypatch, states=True, vars=True)
+    root_path = f"{__name__}.WireVarRoot"
+    path = f"{root_path}.WireVarState"
+    install_config(
+        states={
+            root_path: StateEntry(id="r", parent=None),
+            path: StateEntry(id="w", parent=root_path),
+        },
+        vars={path: {"count": "c", "doubled": "d"}},
+    )
+
+    class WireVarRoot(BaseState):
+        pass
+
+    class WireVarState(WireVarRoot):
+        count: int = 0
+        label: str = ""
+
+        @rx.var
+        def doubled(self) -> int:
+            return self.count * 2
+
+    assert str(WireVarState.count) == "r__w.c"
+    assert str(WireVarState.doubled) == "r__w.d"
+    # A var without an id keeps its key, marker and all.
+    assert str(WireVarState.label) == f"r__w.label{FIELD_MARKER}"
+    assert WireVarState._var_names_by_key == {
+        "c": "count",
+        "d": "doubled",
+        f"label{FIELD_MARKER}": "label",
+    }
+
+    state = WireVarState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert state.dict() == {"r.w": {"c": 0, "d": 0, f"label{FIELD_MARKER}": ""}}
+    state.count = 2
+    assert state.get_delta() == {"r.w": {"c": 2, "d": 4}}
+
+
+def test_minified_names_rebuilt_for_existing_states(temp_minify_json, monkeypatch):
+    """Installing a config after the states exist renames what they send.
+
+    Dependency tracking and always-dirty substates are keyed by class, so they
+    keep working under the new names.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class LateRoot(BaseState):
+        count: int = 0
+
+    class LateChild(LateRoot):
+        @rx.var
+        def doubled(self) -> int:
+            return self.count * 2
+
+        @rx.var(cache=False)
+        def mirrored(self) -> int:
+            return self.count
+
+    root_path = get_state_full_path(LateRoot)
+    child_path = get_state_full_path(LateChild)
+    set_minify_modes(monkeypatch, states=True, vars=True)
+    install_config(
+        states={
+            root_path: StateEntry(id="r", parent=None),
+            child_path: StateEntry(id="k", parent=root_path),
+        },
+        vars={root_path: {"count": "c"}, child_path: {"doubled": "d", "mirrored": "m"}},
+    )
+
+    assert str(LateRoot.count) == "r.c"
+    assert str(LateChild.doubled) == "r__k.d"
+    assert LateChild.vars["count"] is LateRoot.base_vars["count"]
+
+    root = LateRoot(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    root.count = 3
+    assert root.get_delta() == {"r": {"c": 3}, "r.k": {"d": 6, "m": 3}}
+
+
+def test_inherited_var_goes_by_its_owners_key(temp_minify_json, monkeypatch):
+    """A var is keyed where it is declared, however it is reached.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class KeyOwner(BaseState):
+        count: int = 0
+
+    class KeyHeir(KeyOwner):
+        pass
+
+    set_minify_modes(monkeypatch, vars=True)
+    install_config(vars={get_state_full_path(KeyOwner): {"count": "c"}})
+
+    assert str(KeyHeir.count) == str(KeyOwner.count)
+    assert str(KeyOwner.count).endswith(".c")
+    assert "c" not in KeyHeir._var_names_by_key
+
+
+@pytest.mark.asyncio
+async def test_update_vars_internal_resolves_wire_keys(temp_minify_json, monkeypatch):
+    """Client storage values sent under minified keys land on their vars.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    from reflex.state import UpdateVarsInternalState
+
+    set_minify_modes(monkeypatch, states=True, vars=True)
+    path = f"{__name__}.State.StorageKeyState"
+    install_config(
+        states={path: StateEntry(id="s", parent="reflex.state.State")},
+        vars={path: {"token": "t", "plain": "p"}},
+        include_state_root=True,
+    )
+
+    class StorageKeyState(State):
+        token: str = rx.Cookie("")
+        plain: str = ""
+
+    storage = StorageKeyState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+
+    class _Caller:
+        async def get_state(self, state_cls: type[BaseState]) -> BaseState:
+            assert state_cls is StorageKeyState
+            return storage
+
+    await UpdateVarsInternalState.update_vars_internal.fn(
+        _Caller(), {"a.s.t": "tok", "a.s.p": "not storage", "a.s.gone": "x"}
+    )
+    assert storage.token == "tok"
+    # Only client storage vars are writable this way.
+    assert storage.plain == ""

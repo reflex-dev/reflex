@@ -307,14 +307,15 @@ def theme_template(theme: str):
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
-class InternalEventNames:
-    """Wire names the generated context module uses to reach framework handlers.
+class InternalNames:
+    """Wire names the generated context module uses to reach framework state.
 
     Resolved by the compiler under the active name resolver so the frontend
     keeps working when names are rewritten (e.g. minified).
 
     Attributes:
         main_state_name: Name of the framework root ``State``.
+        is_hydrated_key: Delta key of the root ``State.is_hydrated`` var.
         hydrate: Full event name of ``hydrate``.
         on_load_internal: Full event name of ``on_load_internal``.
         update_vars_internal: Full event name of ``update_vars_internal``.
@@ -322,6 +323,7 @@ class InternalEventNames:
     """
 
     main_state_name: str
+    is_hydrated_key: str
     hydrate: str
     on_load_internal: str
     update_vars_internal: str
@@ -334,7 +336,7 @@ def context_template(
     default_color_mode: str,
     initial_state: dict[str, Any] | None = None,
     initial_state_json: str | None = None,
-    internal_events: InternalEventNames | None = None,
+    internal_names: InternalNames | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
     disable_react_owner_stacks: bool = False,
     scheme_digest: str = "",
@@ -344,7 +346,7 @@ def context_template(
     Args:
         initial_state: The initial state for the context.
         initial_state_json: Initial state JSON already serialized by the compiler.
-        internal_events: Resolved framework event names; given for a stateful app.
+        internal_names: Resolved framework wire names; given for a stateful app.
         client_storage: The client storage for the context.
         is_dev_mode: Whether the app is in development mode.
         default_color_mode: The default color mode for the context.
@@ -369,11 +371,13 @@ def context_template(
 
     state_str = (
         rf"""
-export const main_state_name = "{internal_events.main_state_name}"
+export const main_state_name = "{internal_names.main_state_name}"
 
-export const update_vars_internal = "{internal_events.update_vars_internal}"
+export const is_hydrated_key = "{internal_names.is_hydrated_key}"
 
-export const handle_frontend_exception = "{internal_events.handle_frontend_exception}"
+export const update_vars_internal = "{internal_names.update_vars_internal}"
+
+export const handle_frontend_exception = "{internal_names.handle_frontend_exception}"
 
 // These events are triggered on initial load and each page navigation.
 export const onLoadInternalEvent = () => {{
@@ -385,7 +389,7 @@ export const onLoadInternalEvent = () => {{
     if (client_storage_vars && Object.keys(client_storage_vars).length !== 0) {{
         internal_events.push(
             ReflexEvent(
-                '{internal_events.update_vars_internal}',
+                '{internal_names.update_vars_internal}',
                 {{vars: client_storage_vars}},
             ),
         );
@@ -393,20 +397,22 @@ export const onLoadInternalEvent = () => {{
 
     // `on_load_internal` triggers the correct on_load event(s) for the current page.
     // If the page does not define any on_load event, this will just set `is_hydrated = true`.
-    internal_events.push(ReflexEvent('{internal_events.on_load_internal}'));
+    internal_events.push(ReflexEvent('{internal_names.on_load_internal}'));
 
     return internal_events;
 }}
 
 // The following events are sent when the websocket connects or reconnects.
 export const initialEvents = () => [
-    ReflexEvent('{internal_events.hydrate}'),
+    ReflexEvent('{internal_names.hydrate}'),
     ...onLoadInternalEvent()
 ]
     """
-        if internal_events
+        if internal_names
         else """
 export const main_state_name = undefined
+
+export const is_hydrated_key = undefined
 
 export const update_vars_internal = undefined
 
@@ -477,6 +483,7 @@ registerApp({{
   initialState,
   clientStorage,
   main_state_name,
+  is_hydrated_key,
   update_vars_internal,
   handle_frontend_exception,
   onLoadInternalEvent,

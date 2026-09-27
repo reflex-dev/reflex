@@ -259,8 +259,8 @@ def get_app(reload: bool = False) -> ModuleType:
 
         module = config.module
         sys.path.insert(0, getcwd())  # noqa: PTH109
-        # Resolver must be active before the user module imports — see
-        # ``ensure_minify_resolver_for_active_context`` for why.
+        # Before the user module imports, so the Vars its module-level code
+        # builds from state Vars use the configured names.
         ensure_minify_resolver_for_active_context()
         app = (
             __import__(module, fromlist=(constants.CompileVars.APP,))

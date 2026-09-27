@@ -44,6 +44,7 @@ def set_minify_modes(
     *,
     states: bool | None = None,
     events: bool | None = None,
+    vars: bool | None = None,
 ) -> None:
     """Set ``REFLEX_MINIFY_*`` env vars; ``None`` leaves the var unchanged.
 
@@ -51,16 +52,21 @@ def set_minify_modes(
         monkeypatch: The pytest monkeypatch fixture.
         states: Whether ``REFLEX_MINIFY_STATES`` is on.
         events: Whether ``REFLEX_MINIFY_EVENTS`` is on.
+        vars: Whether ``REFLEX_MINIFY_VARS`` is on.
     """
-    if states is not None:
-        monkeypatch.setenv(environment.REFLEX_MINIFY_STATES.name, str(int(states)))
-    if events is not None:
-        monkeypatch.setenv(environment.REFLEX_MINIFY_EVENTS.name, str(int(events)))
+    for env_var, enabled in (
+        (environment.REFLEX_MINIFY_STATES, states),
+        (environment.REFLEX_MINIFY_EVENTS, events),
+        (environment.REFLEX_MINIFY_VARS, vars),
+    ):
+        if enabled is not None:
+            monkeypatch.setenv(env_var.name, str(int(enabled)))
 
 
 def install_config(
     states: dict[str, str | StateEntry] | None = None,
     events: dict[str, dict[str, str]] | None = None,
+    vars: dict[str, dict[str, str]] | None = None,
     *,
     include_state_root: bool = False,
 ) -> MinifyConfig:
@@ -74,6 +80,7 @@ def install_config(
         states: ``state_path -> minified_id`` map. Plain string values are
             wrapped into :class:`StateEntry` with ``parent=None``.
         events: ``state_path -> {handler -> minified_id}`` map.
+        vars: ``state_path -> {var -> minified_id}`` map.
         include_state_root: Add ``"reflex.state.State": "a"`` so subclasses
             of ``State`` resolve through the root entry.
 
@@ -90,6 +97,7 @@ def install_config(
         "version": SCHEMA_VERSION,
         "states": states_map,
         "events": events or {},
+        "vars": vars or {},
     }
     save_minify_config(config)
     clear_config_cache()

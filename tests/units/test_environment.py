@@ -800,6 +800,7 @@ def test_timedelta_env_var_round_trips_through_set(
     [
         EnvironmentVariables.REFLEX_MINIFY_STATES,
         EnvironmentVariables.REFLEX_MINIFY_EVENTS,
+        EnvironmentVariables.REFLEX_MINIFY_VARS,
     ],
 )
 @pytest.mark.parametrize(
@@ -834,10 +835,15 @@ def test_minify_env_vars_default_to_off(monkeypatch):
     Args:
         monkeypatch: The pytest monkeypatch fixture.
     """
-    monkeypatch.delenv(EnvironmentVariables.REFLEX_MINIFY_STATES.name, raising=False)
-    monkeypatch.delenv(EnvironmentVariables.REFLEX_MINIFY_EVENTS.name, raising=False)
-    assert EnvironmentVariables.REFLEX_MINIFY_STATES.get() is False
-    assert EnvironmentVariables.REFLEX_MINIFY_EVENTS.get() is False
+    toggles = (
+        EnvironmentVariables.REFLEX_MINIFY_STATES,
+        EnvironmentVariables.REFLEX_MINIFY_EVENTS,
+        EnvironmentVariables.REFLEX_MINIFY_VARS,
+    )
+    for toggle in toggles:
+        monkeypatch.delenv(toggle.name, raising=False)
+    for toggle in toggles:
+        assert toggle.get() is False
 
 
 @pytest.fixture(autouse=True)

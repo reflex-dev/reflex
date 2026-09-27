@@ -29,10 +29,19 @@ def MinificationApp():
 
     class RootState(rx.State):
         count: int = 0
+        token_cookie: str = rx.Cookie("")
+
+        @rx.var
+        def doubled(self) -> int:
+            return self.count * 2
 
         @rx.event
         def increment(self):
             self.count += 1
+
+        @rx.event
+        def save_cookie(self):
+            self.token_cookie = f"tok-{self.count}"
 
     class SubState(RootState):
         message: str = "hello"
@@ -65,9 +74,13 @@ def MinificationApp():
                 id="increment_handler_name",
             ),
             rx.text(f"Update handler: {update_handler_name}", id="update_handler_name"),
+            rx.text(f"Count key: {RootState.count!s}", id="count_key"),
             rx.text(RootState.count, id="count_value"),
+            rx.text(RootState.doubled, id="doubled_value"),
+            rx.text(RootState.token_cookie, id="cookie_value"),
             rx.text(SubState.message, id="message_value"),
             rx.button("Increment", on_click=RootState.increment, id="increment_btn"),
+            rx.button("Save Cookie", on_click=RootState.save_cookie, id="cookie_btn"),
             rx.button(
                 "Update Message", on_click=SubState.update_message, id="update_msg_btn"
             ),
@@ -77,13 +90,30 @@ def MinificationApp():
     app.add_page(index)
 
 
-# Framework state classes (e.g. ``reflex.state.State``) bake their names when
-# ``reflex.state`` is first imported, which under AppHarness is pytest start-up,
-# before this config exists — so they are left out here and covered by the
-# subprocess tests in ``tests/units/test_minify.py``.
+# The framework states already exist when AppHarness loads this config, well
+# after pytest imported ``reflex.state``: installing it renames their Vars too.
+_FRAMEWORK_STATES = {
+    "reflex.state.State": {"id": "a", "parent": None},
+    **{
+        f"reflex.state.State.{name}": {
+            "id": minified_id,
+            "parent": "reflex.state.State",
+        }
+        for name, minified_id in (
+            ("FrontendEventExceptionState", "b"),
+            ("OnLoadInternalState", "c"),
+            ("UpdateVarsInternalState", "d"),
+        )
+    },
+    "reflex.istate.shared.State.SharedStateBaseInternal": {
+        "id": "e",
+        "parent": "reflex.state.State",
+    },
+}
 _MINIFY_CONFIG = {
     "version": SCHEMA_VERSION,
     "states": {
+        **_FRAMEWORK_STATES,
         "minify_enabled.minify_enabled.State.RootState": {
             "id": "k",  # 10
             "parent": "reflex.state.State",
@@ -94,10 +124,28 @@ _MINIFY_CONFIG = {
         },
     },
     "events": {
-        "minify_enabled.minify_enabled.State.RootState": {"increment": "f"},  # 5
+        "reflex.state.State": {"hydrate": "a", "set_is_hydrated": "b"},
+        "reflex.state.State.OnLoadInternalState": {"on_load_internal": "a"},
+        "reflex.state.State.UpdateVarsInternalState": {"update_vars_internal": "a"},
+        "reflex.state.State.FrontendEventExceptionState": {
+            "handle_frontend_exception": "a"
+        },
+        "minify_enabled.minify_enabled.State.RootState": {
+            "increment": "f",  # 5
+            "save_cookie": "g",  # 6
+        },
         "minify_enabled.minify_enabled.State.RootState.SubState": {
             "update_message": "h"  # 7
         },
+    },
+    "vars": {
+        "reflex.state.State": {"is_hydrated": "h", "rx_router_session": "s"},
+        "minify_enabled.minify_enabled.State.RootState": {
+            "count": "c",
+            "doubled": "d",
+            "token_cookie": "t",
+        },
+        "minify_enabled.minify_enabled.State.RootState.SubState": {"message": "m"},
     },
 }
 
@@ -118,6 +166,7 @@ def minify_app(
     if enabled:
         monkeypatch.setenv(environment.REFLEX_MINIFY_STATES.name, "1")
         monkeypatch.setenv(environment.REFLEX_MINIFY_EVENTS.name, "1")
+        monkeypatch.setenv(environment.REFLEX_MINIFY_VARS.name, "1")
     clear_config_cache()
 
     app_name = "minify_enabled" if enabled else "minify_disabled"
@@ -128,8 +177,13 @@ def minify_app(
     if enabled:
         (app_root / MINIFY_JSON).write_text(json.dumps(_MINIFY_CONFIG))
 
-    with harness:
-        yield enabled, harness
+    try:
+        with harness:
+            yield enabled, harness
+    finally:
+        # Put the default names back for the tests that share this process.
+        monkeypatch.undo()
+        clear_config_cache()
 
 
 @pytest.fixture
@@ -184,14 +238,20 @@ def test_minification(
         driver.find_element(By.ID, "update_handler_name").text
     )
 
+    count_key = _text_after_colon(driver.find_element(By.ID, "count_key").text)
+
     if enabled:
-        assert int_to_minified_name(10) in root_name
-        assert int_to_minified_name(11) in sub_name
-        assert increment_name.endswith(f".{int_to_minified_name(5)}")
+        assert root_name.endswith(int_to_minified_name(10))
+        assert sub_name.endswith(int_to_minified_name(11))
+        assert (
+            increment_name == f"a.{int_to_minified_name(10)}.{int_to_minified_name(5)}"
+        )
         assert update_name.endswith(f".{int_to_minified_name(7)}")
         assert "increment" not in increment_name.lower()
         assert "update_message" not in update_name.lower()
+        assert count_key == "a__k.c"
     else:
+        assert count_key.endswith(".count_rx_state_")
         assert "root_state" in root_name.lower()
         assert "sub_state" in sub_name.lower()
         assert "increment" in increment_name.lower()
@@ -201,9 +261,24 @@ def test_minification(
 
     # Event dispatch sanity check (must work regardless of minification).
     count = driver.find_element(By.ID, "count_value")
+    doubled = driver.find_element(By.ID, "doubled_value")
     assert count.text == "0"
     driver.find_element(By.ID, "increment_btn").click()
     AppHarness.poll_for_or_raise_timeout(lambda: count.text == "1")
+    AppHarness.poll_for_or_raise_timeout(lambda: doubled.text == "2")
+
+    # The cookie is stored under the name it has without minification, so
+    # turning minification on or off keeps what browsers already hold.
+    cookie = driver.find_element(By.ID, "cookie_value")
+    driver.find_element(By.ID, "cookie_btn").click()
+    AppHarness.poll_for_or_raise_timeout(lambda: cookie.text == "tok-1")
+    app_name = "minify_enabled" if enabled else "minify_disabled"
+    stored = driver.get_cookie(
+        f"reflex___state____state.{app_name}___{app_name}____root_state"
+        ".token_cookie_rx_state_"
+    )
+    assert stored is not None
+    assert stored["value"] == "tok-1"
 
     if enabled:
         # Substate handler dispatch through minified names.

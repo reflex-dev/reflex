@@ -41,7 +41,7 @@ from reflex_base.registry import (
 )
 from reflex_base.utils import log, memo_paths
 from reflex_base.utils.exceptions import ReflexError
-from reflex_base.utils.format import format_event_handler, to_title_case
+from reflex_base.utils.format import format_event_handler, format_var_key, to_title_case
 from reflex_base.utils.imports import (
     ABSOLUTE_IMPORT_PREFIXES,
     ImportVar,
@@ -57,7 +57,7 @@ from rich.progress import Progress
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
-from reflex.minify import warn_if_config_stale
+from reflex.minify import raise_for_stale_names, warn_if_config_stale
 from reflex.state import (
     BaseState,
     FrontendEventExceptionState,
@@ -267,14 +267,15 @@ def _event_name(state_cls: type[BaseState], handler_name: str) -> str:
     return format_event_handler(state_cls.event_handlers[handler_name])
 
 
-def _internal_event_names() -> templates.InternalEventNames:
-    """Resolve the framework event names the context module dispatches.
+def _internal_names() -> templates.InternalNames:
+    """Resolve the framework names the context module reads and dispatches.
 
     Returns:
         The names under the active name resolver.
     """
-    return templates.InternalEventNames(
+    return templates.InternalNames(
         main_state_name=State.get_name(),
+        is_hydrated_key=format_var_key(State, constants.CompileVars.IS_HYDRATED),
         hydrate=get_hydrate_event_name(),
         on_load_internal=_event_name(OnLoadInternalState, "on_load_internal"),
         update_vars_internal=_event_name(
@@ -316,7 +317,7 @@ def _compile_contexts(
         templates.context_template(
             initial_state=initial_state,
             initial_state_json=initial_state_json,
-            internal_events=_internal_event_names(),
+            internal_names=_internal_names(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
@@ -806,32 +807,6 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
     return output_path, code
 
 
-def _assert_state_names_are_bound() -> None:
-    """Check that no state was renamed after its Vars captured the old name.
-
-    Raises:
-        ReflexError: If a name resolver was installed after a state class was
-            created, leaving its Vars pointing at a context nothing provides.
-    """
-    unbound = RegistrationContext.ensure_context().find_unbound_states()
-    if not unbound:
-        return
-    details = "\n".join(
-        f"  {cls.__module__}.{cls.__qualname__}: Vars use {baked!r}, "
-        f"compiler emits {cls.get_full_name()!r}"
-        for cls, baked in unbound
-    )
-    msg = (
-        "These states were renamed after their Vars were created, so the compiled "
-        f"frontend would read contexts it never provides:\n{details}\n"
-        "A name resolver (e.g. minify.json) must be installed before the state "
-        "classes are imported, which Reflex does when the app directory is the "
-        "working directory at import time. In-process test harnesses that import "
-        "Reflex first must run with REFLEX_MINIFY_STATES=0."
-    )
-    raise ReflexError(msg)
-
-
 def compile_contexts(
     state: type[BaseState] | None,
     theme: Component | None,
@@ -848,7 +823,6 @@ def compile_contexts(
     Returns:
         The path and code of the compiled context.
     """
-    _assert_state_names_are_bound()
     warn_if_config_stale()
 
     # Get the path for the output file.
@@ -1566,18 +1540,22 @@ def compile_app(
             compile_results.append(result)
         progress.advance(task)
 
-    compile_results.extend([
-        compile_contexts(
-            app._state,
-            radix_themes_plugin.get_theme(),
-            component_imports=all_imports,
-        ),
-        utils._compile_bundled_libraries(),
-    ])
+    context_output = compile_contexts(
+        app._state,
+        radix_themes_plugin.get_theme(),
+        component_imports=all_imports,
+    )
+    compile_results.extend([context_output, utils._compile_bundled_libraries()])
     progress.advance(task)
 
     compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
     progress.advance(task)
+
+    # The context module is rendered from the live names and names browser
+    # storage by the default ones on purpose, so it is the one output exempt.
+    raise_for_stale_names(
+        output for output in compile_results if output is not context_output
+    )
 
     progress.stop()
 

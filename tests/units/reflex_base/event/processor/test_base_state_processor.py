@@ -457,7 +457,7 @@ async def test_background_event_does_not_discard_concurrent_foreground_write(
         # The uncached computed var registered BgRaceState as an always-dirty
         # substate on the shared State class; later tests' state trees don't
         # contain it and would KeyError in get_delta (see reload_state_module).
-        State._always_dirty_substates.discard(BgRaceState.get_name())
+        State._always_dirty_substates.discard(BgRaceState)
 
     state_name = BgRaceState.get_full_name()
     victim_key = "victim" + FIELD_MARKER
@@ -594,7 +594,7 @@ async def test_background_event_without_context_still_flushes_a_delta(
             )
             await processor.join(5)
     finally:
-        State._always_dirty_substates.discard(NoContextBgState.get_name())
+        State._always_dirty_substates.discard(NoContextBgState)
 
     state_name = NoContextBgState.get_full_name()
     beat_key = "beat" + FIELD_MARKER
@@ -652,7 +652,7 @@ async def test_background_event_raising_without_context_still_flushes_a_delta(
             )
             await processor.join(5)
     finally:
-        State._always_dirty_substates.discard(RaisingBgState.get_name())
+        State._always_dirty_substates.discard(RaisingBgState)
 
     state_name = RaisingBgState.get_full_name()
     beat_key = "beat" + FIELD_MARKER
@@ -721,7 +721,7 @@ async def test_background_flush_failure_does_not_mask_handler_exception(
             ):
                 await processor.join(5)
     finally:
-        State._always_dirty_substates.discard(MaskingBgState.get_name())
+        State._always_dirty_substates.discard(MaskingBgState)
 
     assert [type(ex) for ex in handled] == [RuntimeError], (
         f"the flush failure masked the handler's exception: {handled}"

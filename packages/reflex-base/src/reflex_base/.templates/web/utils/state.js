@@ -792,7 +792,7 @@ export const connect = async (
           // handle events waiting for `is_hydrated`
           if (
             substate === app.main_state_name &&
-            update.delta[substate]?.is_hydrated_rx_state_
+            update.delta[substate]?.[app.is_hydrated_key]
           ) {
             // Deliberately not awaited: the rest of the delta and the client
             // storage below must be applied before this handler yields, or a
@@ -963,8 +963,8 @@ const applyClientStorageDelta = (client_storage, delta) => {
   if (unqualified_states.length === 1) {
     const main_state = delta[unqualified_states[0]];
     if (
-      main_state.is_hydrated_rx_state_ !== undefined &&
-      !main_state.is_hydrated_rx_state_
+      main_state[app.is_hydrated_key] !== undefined &&
+      !main_state[app.is_hydrated_key]
     ) {
       // skip if the state is not hydrated yet, since all client storage
       // values are sent in the hydrate event
@@ -1232,7 +1232,7 @@ export const useEventLoop = (
     // Equivalent to routeChangeStart - runs when navigation begins
     const main_state_dispatch = dispatch[app.main_state_name];
     if (main_state_dispatch !== undefined) {
-      main_state_dispatch({ is_hydrated_rx_state_: false });
+      main_state_dispatch({ [app.is_hydrated_key]: false });
     }
 
     // Equivalent to routeChangeComplete - runs after navigation completes

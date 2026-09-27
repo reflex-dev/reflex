@@ -44,6 +44,7 @@ from typing_extensions import LiteralString, dataclass_transform, override
 from reflex_base import constants
 from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import exceptions, imports, serializers, types
 from reflex_base.utils.compat import MISSING_TYPE, annotations_from_namespace
 from reflex_base.utils.decorator import once
@@ -57,7 +58,7 @@ from reflex_base.utils.exceptions import (
     VarDependencyError,
     VarTypeError,
 )
-from reflex_base.utils.format import format_state_name, json_dumps
+from reflex_base.utils.format import format_state_name, format_state_var, json_dumps
 from reflex_base.utils.imports import (
     ImmutableImportDict,
     ImmutableParsedImportDict,
@@ -617,6 +618,10 @@ class VarData:
     def from_state(cls, state: type[BaseState] | str, field_name: str = "") -> VarData:
         """Set the state of the var.
 
+        The recorded state name is the resolver-independent default full name,
+        which the backend tracks dependencies by; only the hook names the state
+        the way the frontend does.
+
         Args:
             state: The state to set or the full name of the state.
             field_name: The name of the field in the state. Optional.
@@ -628,13 +633,17 @@ class VarData:
         from reflex_base.components.state_context import get_event_app_wraps
         from reflex_base.utils import format
 
-        state_name = state if isinstance(state, str) else state.get_full_name()
+        if isinstance(state, str):
+            state_name = context_name = state
+        else:
+            state_name = state._get_default_full_name()
+            context_name = state.get_full_name()
         return VarData(
             state=state_name,
             field_name=field_name,
             hooks={
                 "const {0} = useContext(StateContexts.{0})".format(
-                    format.format_state_name(state_name)
+                    format.format_state_name(context_name)
                 ): None
             },
             imports={
@@ -2825,14 +2834,8 @@ class ComputedVar(Var[RETURN_TYPE]):
         if instance is None:
             state_where_defined = self._owner or owner
 
-            field_name = (
-                format_state_name(state_where_defined.get_full_name())
-                + "."
-                + self._js_expr
-            )
-
             return dispatch(
-                field_name,
+                format_state_var(state_where_defined, self._name),
                 var_data=VarData.from_state(state_where_defined, self._name),
                 result_var_type=self._var_type,
                 existing_var=self,
@@ -2913,7 +2916,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             d.update(self._static_deps)
             # None is a placeholder for the current state class.
             if None in d:
-                d[objclass.get_full_name()] = d.pop(None)
+                d[objclass._get_default_full_name()] = d.pop(None)
 
         if not self._auto_deps:
             return d
@@ -2964,24 +2967,19 @@ class ComputedVar(Var[RETURN_TYPE]):
             # A composite Var names every state field it is built from, and may
             # span several states; register against each of them.
             registered = False
+            registration_context = RegistrationContext.get()
             for state_name, field_names in all_var_data.field_dependencies.items():
                 var_names = tuple(filter(None, field_names))
                 if not state_name or not var_names:
                     continue
                 self._static_deps.setdefault(state_name, set()).update(var_names)
-                target_state_class = objclass.get_root_state().get_class_substate(
+                target_state_class = registration_context.get_state_by_default_name(
                     state_name
                 )
                 for var_name in var_names:
-                    target_state_class._var_dependencies.setdefault(
-                        var_name, set()
-                    ).add((
-                        objclass.get_full_name(),
-                        self._name,
-                    ))
-                target_state_class._potentially_dirty_states.add(
-                    objclass.get_full_name()
-                )
+                    objclass._register_var_dependency(
+                        target_state_class, var_name, self._name
+                    )
                 registered = True
             if registered:
                 return

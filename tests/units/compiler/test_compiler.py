@@ -1721,16 +1721,17 @@ def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
     assert "captureOwnerStack" in rendered
 
 
-def test_context_template_renders_internal_event_names():
-    """The generated module carries the resolved framework event names."""
-    from reflex_base.compiler.templates import InternalEventNames, context_template
+def test_context_template_renders_internal_names():
+    """The generated module carries the resolved framework names."""
+    from reflex_base.compiler.templates import InternalNames, context_template
 
     rendered = context_template(
         is_dev_mode=True,
         default_color_mode='"light"',
         initial_state={"reflex___state____state": {}},
-        internal_events=InternalEventNames(
+        internal_names=InternalNames(
             main_state_name="reflex___state____state",
+            is_hydrated_key="h",
             hydrate="reflex___state____state.g",
             on_load_internal="reflex___state____state.a.b",
             update_vars_internal="reflex___state____state.c.d",
@@ -1741,10 +1742,12 @@ def test_context_template_renders_internal_event_names():
     assert "ReflexEvent('reflex___state____state.a.b')" in rendered
     assert "'reflex___state____state.c.d'" in rendered
     assert 'handle_frontend_exception = "reflex___state____state.e.f"' in rendered
+    assert 'is_hydrated_key = "h"' in rendered
     # The static runtime reads the names through the registry.
     registered = rendered[rendered.index("registerApp({") :]
     for name in (
         "main_state_name",
+        "is_hydrated_key",
         "update_vars_internal",
         "handle_frontend_exception",
     ):

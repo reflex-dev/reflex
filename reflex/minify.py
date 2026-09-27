@@ -1,4 +1,4 @@
-"""State and event name minification driven by ``minify.json``.
+"""State, event and var name minification driven by ``minify.json``.
 
 The minification entry point is :class:`MinifyNameResolver`, a
 :class:`reflex_base.registry.NameResolver` implementation. Install it via
@@ -15,9 +15,12 @@ import functools
 import hashlib
 import json
 import logging
-from collections.abc import Iterable, Iterator
+import re
+from collections.abc import Callable, Iterable, Iterator
 from pathlib import Path
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
+
+from reflex_base.constants.state import FIELD_MARKER
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -32,6 +35,23 @@ SCHEMA_VERSION = 1
 
 # Names listed in the stale-config warning before it summarizes the rest.
 _STALE_WARNING_LIMIT = 5
+
+# A var id is a key of its state's object in the frontend, so it must not read
+# an inherited Object.prototype member while the var is absent.
+_RESERVED_VAR_IDS = frozenset({
+    "__defineGetter__",
+    "__defineSetter__",
+    "__lookupGetter__",
+    "__lookupSetter__",
+    "__proto__",
+    "constructor",
+    "hasOwnProperty",
+    "isPrototypeOf",
+    "propertyIsEnumerable",
+    "toLocaleString",
+    "toString",
+    "valueOf",
+})
 
 
 class StateEntry(TypedDict):
@@ -51,6 +71,29 @@ class MinifyConfig(TypedDict):
     version: int
     states: dict[str, StateEntry]  # state_path -> {id, parent}
     events: dict[str, dict[str, str]]  # state_path -> {handler_name -> minified_name}
+    vars: dict[str, dict[str, str]]  # state_path -> {var_name -> minified_name}
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class _MemberKind:
+    """A kind of state member that ``minify.json`` numbers within each state."""
+
+    # The config section holding the ids, keyed by state path.
+    key: Literal["events", "vars"]
+    # How a member of this kind is named in labels, e.g. ``event:<path>.<name>``.
+    label: str
+    # The members of this kind a state class has.
+    names: Callable[[type[BaseState]], Iterable[str]]
+
+
+_EVENTS = _MemberKind(
+    key="events", label="event", names=lambda state_cls: state_cls.event_handlers
+)
+# Only vars sent to the frontend have a wire name to shorten.
+_VARS = _MemberKind(
+    key="vars", label="var", names=lambda state_cls: state_cls._frontend_var_names
+)
+_MEMBER_KINDS = (_EVENTS, _VARS)
 
 
 def _get_minify_json_path() -> Path:
@@ -71,6 +114,48 @@ def _validate_minified_id(label: str, value: str) -> None:
     if not value or not _MINIFY_CHARS_SET.issuperset(value):
         msg = f"Invalid {MINIFY_JSON}: {label} has invalid id: {value!r}"
         raise ValueError(msg)
+
+
+def _validate_var_id(label: str, value: str) -> None:
+    """Reject var ids that the frontend could confuse with another key.
+
+    Args:
+        label: Human-readable location for the error message.
+        value: The candidate minified id.
+
+    Raises:
+        ValueError: If the id is reserved or looks like an unminified var key.
+    """
+    if value in _RESERVED_VAR_IDS or value.endswith(FIELD_MARKER):
+        msg = f"Invalid {MINIFY_JSON}: {label} has reserved id: {value!r}"
+        raise ValueError(msg)
+
+
+def _validate_member_ids(kind: _MemberKind, members: Any) -> None:
+    """Validate one ``{state_path: {name: id}}`` section of ``minify.json``.
+
+    Args:
+        kind: The kind of member the section numbers.
+        members: The loaded section.
+
+    Raises:
+        ValueError: If the section is malformed.
+    """
+    if not isinstance(members, dict):
+        msg = f"Invalid {MINIFY_JSON}: '{kind.key}' must be a dictionary."
+        raise ValueError(msg)
+    for state_path, ids in members.items():
+        if not isinstance(ids, dict):
+            msg = f"Invalid {MINIFY_JSON}: {kind.key} for '{state_path}' must be a dictionary."
+            raise ValueError(msg)
+        for name, member_id in ids.items():
+            label = f"{kind.label} '{state_path}.{name}'"
+            if not isinstance(member_id, str):
+                msg = f"Invalid {MINIFY_JSON}: {label} has non-string id: {member_id}"
+                raise ValueError(msg)
+            _validate_minified_id(label, member_id)
+            if kind is _VARS:
+                _validate_var_id(label, member_id)
 
 
 def _load_minify_config_uncached() -> MinifyConfig | None:
@@ -111,7 +196,7 @@ def _load_minify_config_uncached() -> MinifyConfig | None:
     if "states" not in data or not isinstance(data["states"], dict):
         msg = f"Invalid {MINIFY_JSON}: 'states' must be a dictionary."
         raise ValueError(msg)
-    if "events" not in data or not isinstance(data["events"], dict):
+    if "events" not in data:
         msg = f"Invalid {MINIFY_JSON}: 'events' must be a dictionary."
         raise ValueError(msg)
 
@@ -128,21 +213,16 @@ def _load_minify_config_uncached() -> MinifyConfig | None:
             )
             raise ValueError(msg)
 
-    # Validate events: must be dict of dicts with string values
-    for state_path, handlers in data["events"].items():
-        if not isinstance(handlers, dict):
-            msg = f"Invalid {MINIFY_JSON}: events for '{state_path}' must be a dictionary."
-            raise ValueError(msg)
-        for handler_name, event_id in handlers.items():
-            if not isinstance(event_id, str):
-                msg = f"Invalid {MINIFY_JSON}: event '{state_path}.{handler_name}' has non-string id: {event_id}"
-                raise ValueError(msg)
-            _validate_minified_id(f"event '{state_path}.{handler_name}'", event_id)
+    # Files written before vars were minified have no 'vars' section.
+    data.setdefault(_VARS.key, {})
+    for kind in _MEMBER_KINDS:
+        _validate_member_ids(kind, data[kind.key])
 
     return MinifyConfig(
         version=data["version"],
         states=data["states"],
         events=data["events"],
+        vars=data["vars"],
     )
 
 
@@ -174,14 +254,19 @@ def is_mode_enabled(env_var_name: str) -> bool:
 
 
 def is_minify_enabled() -> bool:
-    """Whether either state or event minification is enabled.
+    """Whether state, event or var minification is enabled.
 
     Returns:
-        ``True`` when ``REFLEX_MINIFY_STATES`` or ``REFLEX_MINIFY_EVENTS`` is
-        on and ``minify.json`` exists.
+        ``True`` when ``REFLEX_MINIFY_STATES``, ``REFLEX_MINIFY_EVENTS`` or
+        ``REFLEX_MINIFY_VARS`` is on and ``minify.json`` exists.
     """
-    return is_mode_enabled("REFLEX_MINIFY_STATES") or is_mode_enabled(
-        "REFLEX_MINIFY_EVENTS"
+    return any(
+        is_mode_enabled(mode)
+        for mode in (
+            "REFLEX_MINIFY_STATES",
+            "REFLEX_MINIFY_EVENTS",
+            "REFLEX_MINIFY_VARS",
+        )
     )
 
 
@@ -202,24 +287,26 @@ class MinifyNameResolver:
     """:class:`~reflex_base.registry.NameResolver` driven by ``minify.json``.
 
     Returns the minified name when the matching env-var
-    (``REFLEX_MINIFY_STATES`` / ``REFLEX_MINIFY_EVENTS``) is enabled and the
-    entry exists in the config; ``None`` otherwise. Per-class lookups are
-    memoized for O(1) amortized cost.
+    (``REFLEX_MINIFY_STATES`` / ``REFLEX_MINIFY_EVENTS`` / ``REFLEX_MINIFY_VARS``)
+    is enabled and the entry exists in the config; ``None`` otherwise.
+    Per-class lookups are memoized for O(1) amortized cost.
 
     Attributes:
         config: Parsed ``minify.json``, or ``None``.
         states_enabled: Whether ``REFLEX_MINIFY_STATES`` is on.
         events_enabled: Whether ``REFLEX_MINIFY_EVENTS`` is on.
+        vars_enabled: Whether ``REFLEX_MINIFY_VARS`` is on.
     """
 
     config: MinifyConfig | None
     states_enabled: bool
     events_enabled: bool
+    vars_enabled: bool
     _state_cache: dict[type[BaseState], str] = dataclasses.field(
         default_factory=dict, repr=False
     )
-    _event_cache: dict[type[BaseState], dict[str, str]] = dataclasses.field(
-        default_factory=dict, repr=False
+    _member_cache: dict[tuple[str, type[BaseState]], dict[str, str]] = (
+        dataclasses.field(default_factory=dict, repr=False)
     )
 
     _digest: str | None = dataclasses.field(default=None, repr=False)
@@ -227,7 +314,7 @@ class MinifyNameResolver:
     def digest(self) -> str:
         """Digest the wire names this resolver rewrites.
 
-        The config and both modes are fixed for the life of an instance, so the
+        The config and the modes are fixed for the life of an instance, so the
         result is memoized here. Installing another resolver -- which is what
         editing ``minify.json`` or toggling a mode at runtime does -- yields a
         fresh instance and therefore a fresh digest, with no invalidation to
@@ -252,20 +339,27 @@ class MinifyNameResolver:
         """
         if self.config is None:
             return ""
-        states = (
-            {path: entry["id"] for path, entry in self.config["states"].items()}
-            if self.states_enabled
-            else {}
-        )
-        events = self.config["events"] if self.events_enabled else {}
-        if not states and not events:
+        payload: dict[str, Any] = {
+            key: section
+            for key, enabled, section in (
+                (
+                    "states",
+                    self.states_enabled,
+                    {
+                        path: entry["id"]
+                        for path, entry in self.config["states"].items()
+                    },
+                ),
+                ("events", self.events_enabled, self.config["events"]),
+                ("vars", self.vars_enabled, self.config["vars"]),
+            )
+            if enabled and section
+        }
+        if not payload:
             return ""
-        payload = json.dumps(
-            {"states": states, "events": events},
-            sort_keys=True,
-            separators=(",", ":"),
-        )
-        return hashlib.sha256(payload.encode()).hexdigest()[:16]
+        return hashlib.sha256(
+            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()[:16]
 
     @classmethod
     def from_disk(cls) -> MinifyNameResolver:
@@ -289,6 +383,7 @@ class MinifyNameResolver:
             config=config,
             states_enabled=environment.REFLEX_MINIFY_STATES.get(),
             events_enabled=environment.REFLEX_MINIFY_EVENTS.get(),
+            vars_enabled=environment.REFLEX_MINIFY_VARS.get(),
         )
 
     def resolve_state_name(self, state_cls: type[BaseState]) -> str | None:  # noqa: D102
@@ -307,13 +402,38 @@ class MinifyNameResolver:
     def resolve_handler_name(  # noqa: D102
         self, state_cls: type[BaseState], handler_name: str
     ) -> str | None:
-        if self.config is None or not self.events_enabled:
+        if not self.events_enabled:
             return None
-        per_state = self._event_cache.get(state_cls)
-        if per_state is None:
-            per_state = self.config["events"].get(get_state_full_path(state_cls), {})
-            self._event_cache[state_cls] = per_state
-        return per_state.get(handler_name)
+        return self._resolve_member(_EVENTS, state_cls, handler_name)
+
+    def resolve_var_name(  # noqa: D102
+        self, state_cls: type[BaseState], var_name: str
+    ) -> str | None:
+        if not self.vars_enabled:
+            return None
+        return self._resolve_member(_VARS, state_cls, var_name)
+
+    def _resolve_member(
+        self, kind: _MemberKind, state_cls: type[BaseState], name: str
+    ) -> str | None:
+        """Look up the id ``minify.json`` gives a member of a state.
+
+        Args:
+            kind: The kind of member.
+            state_cls: The state the member belongs to.
+            name: The member's Python name.
+
+        Returns:
+            The minified id, or ``None`` when the member has no entry.
+        """
+        if self.config is None:
+            return None
+        cache_key = (kind.key, state_cls)
+        ids = self._member_cache.get(cache_key)
+        if ids is None:
+            ids = self.config[kind.key].get(get_state_full_path(state_cls), {})
+            self._member_cache[cache_key] = ids
+        return ids.get(name)
 
 
 def get_state_module(state_cls: type[BaseState]) -> str:
@@ -338,9 +458,9 @@ def get_state_module(state_cls: type[BaseState]) -> str:
 def install_minify_resolver() -> None:
     """Install a fresh :class:`MinifyNameResolver` into the active context.
 
-    Must run before any state class registers — :func:`VarData.from_state`
-    captures the state's full name at Var-creation time, so a later install
-    leaves dangling references in the generated frontend.
+    Registered states get their Vars rebuilt under the new names; a Var built
+    from them before the install keeps the old ones, which the compiler
+    rejects (see :func:`raise_for_stale_names`).
     """
     from reflex_base.registry import RegistrationContext
 
@@ -359,8 +479,7 @@ def force_default_names() -> Iterator[None]:
     The ``reflex minify`` commands read the config rather than apply it: with
     the configured names live, a duplicate id aborts the app import from
     ``BaseState.__init_subclass__`` before the command can report it. Must be
-    entered before ``reflex.state`` is imported, since a state's name is
-    captured into its Vars at class-creation time.
+    entered before the app is imported.
 
     Yields:
         ``None``, with the default resolver installed.
@@ -404,7 +523,7 @@ def _collect_missing_entries(
     config: MinifyConfig,
     *,
     include_states: bool = True,
-    include_events: bool = True,
+    kinds: Iterable[_MemberKind] = _MEMBER_KINDS,
 ) -> list[str]:
     """Label the registered names ``config`` has no entry for.
 
@@ -412,24 +531,25 @@ def _collect_missing_entries(
         states: The state classes to inventory.
         config: The configuration to check against.
         include_states: Whether to report states with no entry.
-        include_events: Whether to report handlers with no entry.
+        kinds: The kinds of member to report when they have no entry.
 
     Returns:
-        Sorted ``state:<path>`` / ``event:<path>.<handler>`` labels.
+        Sorted ``state:<path>`` / ``event:<path>.<handler>`` / ``var:<path>.<var>``
+        labels.
     """
+    kinds = tuple(kinds)
     config_states = config["states"]
-    config_events = config["events"]
     missing: list[str] = []
     for state_cls in states:
         state_path = get_state_full_path(state_cls)
         if include_states and state_path not in config_states:
             missing.append(f"state:{state_path}")
-        if include_events:
-            state_events = config_events.get(state_path, {})
+        for kind in kinds:
+            ids = config[kind.key].get(state_path, {})
             missing.extend(
-                f"event:{state_path}.{handler_name}"
-                for handler_name in state_cls.event_handlers
-                if handler_name not in state_events
+                f"{kind.label}:{state_path}.{name}"
+                for name in kind.names(state_cls)
+                if name not in ids
             )
     missing.sort()
     return missing
@@ -442,8 +562,9 @@ def _find_missing_entries() -> list[str]:
     since a disabled mode emits full names by design.
 
     Returns:
-        Sorted ``state:<path>`` / ``event:<path>.<handler>`` labels; empty when
-        no :class:`MinifyNameResolver` with a config is installed.
+        Sorted ``state:<path>`` / ``event:<path>.<handler>`` / ``var:<path>.<var>``
+        labels; empty when no :class:`MinifyNameResolver` with a config is
+        installed.
     """
     from reflex_base.registry import RegistrationContext
 
@@ -459,12 +580,19 @@ def _find_missing_entries() -> list[str]:
         collect_all_states(),
         resolver.config,
         include_states=resolver.states_enabled,
-        include_events=resolver.events_enabled,
+        kinds=[
+            kind
+            for kind, enabled in (
+                (_EVENTS, resolver.events_enabled),
+                (_VARS, resolver.vars_enabled),
+            )
+            if enabled
+        ],
     )
 
 
 def warn_if_config_stale() -> None:
-    """Warn when code has states or handlers ``minify.json`` doesn't cover.
+    """Warn when code has states, handlers or vars ``minify.json`` doesn't cover.
 
     Those names compile unminified, mixing minified and raw names on the wire.
     No-op unless a resolver with a config is installed and a mode is enabled.
@@ -483,17 +611,94 @@ def warn_if_config_stale() -> None:
 
 
 def clear_config_cache() -> None:
-    """Reload ``minify.json`` and reinstall the resolver.
-
-    Handler names re-propagate, but state names do not: ``VarData`` captured
-    ``get_full_name()`` when each state class was created, so renaming a state
-    that already exists leaves its Vars dangling and the next
-    :func:`~reflex.compiler.compiler.compile_contexts` raises. Only safe before
-    the states it renames are imported -- fresh processes and tests.
-    """
+    """Reload ``minify.json`` and reinstall the resolver."""
     get_minify_config.cache_clear()
     is_mode_enabled.cache_clear()
     install_minify_resolver()
+
+
+# A dotted run of identifiers starting at one that holds a default state name,
+# which always contains the ``___`` module separator.
+_DEFAULT_NAME_RUN = re.compile(r"(?<![\w$])[\w$]*___[\w$]*(?:\.[\w$]+)*")
+
+
+def _renamed_default_references() -> dict[str, str]:
+    """Map the default spelling of every renamed state, handler and var to a label.
+
+    Returns:
+        ``{default spelling: what it names}``; empty when nothing is renamed.
+    """
+    from reflex_base.registry import RegistrationContext, scheme_digest
+    from reflex_base.utils.format import format_state_name, format_var_key
+
+    if not scheme_digest():
+        return {}
+    ctx = RegistrationContext.get()
+    references: dict[str, str] = {}
+    for state_cls in collect_all_states():
+        default_name = state_cls._get_default_full_name()
+        label = get_state_full_path(state_cls)
+        if default_name != state_cls.get_full_name():
+            # Every default spelling of its handlers and vars starts with one
+            # of these, so they need no entries of their own.
+            references[default_name] = references[format_state_name(default_name)] = (
+                f"state {label}"
+            )
+            continue
+        for name in state_cls.event_handlers:
+            if ctx.get_handler_name(state_cls, name) != name:
+                references[f"{default_name}.{name}"] = f"event handler {label}.{name}"
+        for name in state_cls._frontend_var_names:
+            if format_var_key(state_cls, name) != name + FIELD_MARKER:
+                references[
+                    f"{format_state_name(default_name)}.{name}{FIELD_MARKER}"
+                ] = f"var {label}.{name}"
+    return references
+
+
+def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
+    """Reject compiled code that still names a renamed state, handler or var.
+
+    Installing a resolver rebuilds the Vars each state holds, but not a Var
+    built from them beforehand -- e.g. by a module-level component imported
+    before ``minify.json`` was loaded. Such code would read a context the
+    frontend never provides, or send an event the backend never registered.
+
+    Args:
+        outputs: ``(path, code)`` pairs of the compiled frontend.
+
+    Raises:
+        ReflexError: If any code refers to a renamed name by its default spelling.
+    """
+    from reflex_base.utils.exceptions import ReflexError
+
+    references = _renamed_default_references()
+    if not references:
+        return
+    found: dict[str, tuple[str, str]] = {}
+    for path, code in outputs:
+        for match in _DEFAULT_NAME_RUN.finditer(code):
+            prefix = ""
+            for segment in match.group().split("."):
+                prefix = f"{prefix}.{segment}" if prefix else segment
+                if prefix in references:
+                    found.setdefault(prefix, (references[prefix], path))
+                    break
+    if not found:
+        return
+    details = "\n".join(
+        f"  {label}, as {spelling!r} in {path}"
+        for spelling, (label, path) in sorted(found.items())
+    )
+    msg = (
+        f"The compiled frontend refers to names that {MINIFY_JSON} renames by "
+        f"their unminified spelling:\n{details}\n"
+        "They come from Vars built before the name resolver was installed, e.g. "
+        "by a component created at import time of a module loaded before the "
+        f"app directory (and its {MINIFY_JSON}) was. Import the app from its "
+        "directory, or create those components inside the page function."
+    )
+    raise ReflexError(msg)
 
 
 # Base-54 encoding for minified names
@@ -635,7 +840,9 @@ def generate_minify_config(
         A complete :class:`MinifyConfig`.
     """
     states: dict[str, StateEntry] = {}
-    events: dict[str, dict[str, str]] = {}
+    members: dict[str, dict[str, dict[str, str]]] = {
+        kind.key: {} for kind in _MEMBER_KINDS
+    }
     sibling_counter: dict[type[BaseState] | None, int] = {}
     own_ids: dict[type[BaseState], int] = {}
 
@@ -656,17 +863,18 @@ def generate_minify_config(
             id=int_to_minified_name(state_id), parent=get_parent_key(state_cls)
         )
 
-        handler_names = sorted(state_cls.event_handlers.keys())
-        if handler_names:
-            events[state_path] = {
-                handler_name: int_to_minified_name(event_id)
-                for event_id, handler_name in enumerate(handler_names)
-            }
+        for kind in _MEMBER_KINDS:
+            if names := sorted(kind.names(state_cls)):
+                members[kind.key][state_path] = {
+                    name: int_to_minified_name(member_id)
+                    for member_id, name in enumerate(names)
+                }
 
     return MinifyConfig(
         version=SCHEMA_VERSION,
         states=states,
-        events=events,
+        events=members["events"],
+        vars=members["vars"],
     )
 
 
@@ -832,14 +1040,7 @@ def validate_minify_config(
             for mid, paths in _find_duplicate_ids(pairs).items()
         )
 
-    for state_path, state_events in config["events"].items():
-        errors.extend(
-            f"Duplicate event_id='{mid}' in '{state_path}': {handlers}"
-            for mid, handlers in _find_duplicate_ids(state_events.items()).items()
-        )
-
-    code_event_keys = collect_handler_names(all_states)
-    code_state_paths = set(code_event_keys)
+    code_state_paths = {get_state_full_path(state_cls) for state_cls in all_states}
 
     missing = _collect_missing_entries(all_states, config)
 
@@ -850,34 +1051,89 @@ def validate_minify_config(
         if state_path not in code_state_paths
     )
 
-    for state_path, state_events in config["events"].items():
-        if state_path not in code_event_keys:
-            warnings.append(f"Orphaned events for state: {state_path}")
-        else:
-            warnings.extend(
-                f"Orphaned event in config: {state_path}.{handler_name}"
-                for handler_name in state_events
-                if handler_name not in code_event_keys[state_path]
+    for kind in _MEMBER_KINDS:
+        code_names = collect_member_names(all_states, kind)
+        for state_path, ids in config[kind.key].items():
+            errors.extend(
+                f"Duplicate {kind.label}_id='{mid}' in '{state_path}': {names}"
+                for mid, names in _find_duplicate_ids(ids.items()).items()
             )
+            if state_path not in code_names:
+                warnings.append(f"Orphaned {kind.key} for state: {state_path}")
+            else:
+                warnings.extend(
+                    f"Orphaned {kind.label} in config: {state_path}.{name}"
+                    for name in ids
+                    if name not in code_names[state_path]
+                )
 
     return errors, warnings, missing
 
 
-def collect_handler_names(
-    states: Iterable[type[BaseState]],
+def collect_member_names(
+    states: Iterable[type[BaseState]], kind: _MemberKind
 ) -> dict[str, set[str]]:
-    """Map each state's config path to the handler names defined on it.
+    """Map each state's config path to its members of one kind.
 
     Args:
         states: The state classes to inventory.
+        kind: The kind of member to collect.
 
     Returns:
-        ``state_path -> {handler_name}`` for every given state.
+        ``state_path -> {name}`` for every given state.
     """
     return {
-        get_state_full_path(state_cls): set(state_cls.event_handlers)
+        get_state_full_path(state_cls): set(kind.names(state_cls))
         for state_cls in states
     }
+
+
+def _sync_member_ids(
+    kind: _MemberKind,
+    existing: dict[str, dict[str, str]],
+    all_states: Iterable[type[BaseState]],
+    reassign_deleted: bool,
+    prune: bool,
+) -> dict[str, dict[str, str]]:
+    """Bring one ``{state_path: {name: id}}`` section in line with the code.
+
+    Args:
+        kind: The kind of member the section numbers.
+        existing: The section as configured.
+        all_states: The state classes in the code.
+        reassign_deleted: Whether a new id may fill a gap.
+        prune: Whether to drop the members and states no longer in the code.
+
+    Returns:
+        The updated section; ids a member already has are kept.
+    """
+    code_names = collect_member_names(all_states, kind)
+    section = {state_path: dict(ids) for state_path, ids in existing.items()}
+    if prune:
+        section = {
+            state_path: kept
+            for state_path, ids in section.items()
+            if (
+                kept := {
+                    name: member_id
+                    for name, member_id in ids.items()
+                    if name in code_names.get(state_path, ())
+                }
+            )
+        }
+    # Ids are unique within each state.
+    for state_path, names in code_names.items():
+        ids = section.get(state_path, {})
+        if new_names := [name for name in names if name not in ids]:
+            ids.update(
+                _assign_next_ids(
+                    new_names,
+                    {minified_name_to_int(member_id) for member_id in ids.values()},
+                    reassign_deleted,
+                )
+            )
+            section[state_path] = ids
+    return section
 
 
 def sync_minify_config(
@@ -894,39 +1150,23 @@ def sync_minify_config(
             in the active context.
         reassign_deleted: If True, fill id gaps left by removed entries.
             Retained orphan ids stay reserved unless pruned.
-        prune: If True, remove entries for states/events that no longer exist.
+        prune: If True, remove entries for states, events and vars that no
+            longer exist.
 
     Returns:
         The updated configuration.
     """
     all_states = collect_all_states(root_state)
-    code_events_by_state = collect_handler_names(all_states)
-    code_state_paths = set(code_events_by_state)
+    path_to_parent_key = {get_state_full_path(s): get_parent_key(s) for s in all_states}
 
     new_states: dict[str, StateEntry] = {
         k: StateEntry(id=v["id"], parent=v["parent"])
         for k, v in existing_config["states"].items()
     }
-    new_events: dict[str, dict[str, str]] = {
-        k: dict(v) for k, v in existing_config["events"].items()
-    }
 
     # Prune orphaned entries if requested
     if prune:
-        new_states = {k: v for k, v in new_states.items() if k in code_state_paths}
-        new_events = {
-            state_path: {
-                h: eid
-                for h, eid in handlers.items()
-                if h in code_events_by_state.get(state_path, set())
-            }
-            for state_path, handlers in new_events.items()
-            if state_path in code_state_paths
-        }
-        # Remove empty event dicts
-        new_events = {k: v for k, v in new_events.items() if v}
-
-    path_to_parent_key = {get_state_full_path(s): get_parent_key(s) for s in all_states}
+        new_states = {k: v for k, v in new_states.items() if k in path_to_parent_key}
 
     # Reserve every configured id within its sibling group — orphans under
     # their recorded parent, so their ids are never reused. Live entries get
@@ -961,20 +1201,15 @@ def sync_minify_config(
 
     _rehome_conflicting_ids(new_states, all_states, reassign_deleted, reparented)
 
-    # Assign new event IDs (unique within each state).
-    for state_cls in all_states:
-        state_path = get_state_full_path(state_cls)
-        state_events = new_events.get(state_path, {})
-        new_handlers = [h for h in state_cls.event_handlers if h not in state_events]
-        if new_handlers:
-            existing_ids = {minified_name_to_int(eid) for eid in state_events.values()}
-            state_events.update(
-                _assign_next_ids(new_handlers, existing_ids, reassign_deleted)
-            )
-            new_events[state_path] = state_events
-
+    members = {
+        kind.key: _sync_member_ids(
+            kind, existing_config[kind.key], all_states, reassign_deleted, prune
+        )
+        for kind in _MEMBER_KINDS
+    }
     return MinifyConfig(
         version=SCHEMA_VERSION,
         states=new_states,
-        events=new_events,
+        events=members["events"],
+        vars=members["vars"],
     )

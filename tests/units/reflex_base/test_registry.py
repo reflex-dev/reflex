@@ -11,6 +11,7 @@ from reflex_base.registry import (
     RegisteredEventHandler,
     RegistrationContext,
 )
+from reflex_base.utils import format
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 
 from reflex.minify import MinifyNameResolver
@@ -426,55 +427,65 @@ def test_bundled_libraries_isolated_between_contexts():
         assert "some-extra-lib" not in ctx_b.bundled_libraries
 
 
-def test_find_unbound_states_is_empty_when_names_never_changed(
+def test_resolver_installed_later_renames_existing_vars(
     clean_registration_context: RegistrationContext,
 ):
-    """States created under the active resolver are bound to their own names."""
-    import reflex as rx
-
-    class BoundState(rx.State):
-        value: str = ""
-
-    assert clean_registration_context.find_unbound_states() == []
-    assert BoundState.get_full_name()  # keeps the class referenced
-
-
-def test_find_unbound_states_reports_states_renamed_after_creation(
-    clean_registration_context: RegistrationContext,
-):
-    """A resolver installed after a state is created leaves its Vars behind."""
+    """A resolver installed after a state exists rebuilds the Vars it holds."""
     import reflex as rx
 
     class LateRenamedState(rx.State):
         value: str = ""
 
-    baked_name = LateRenamedState.get_full_name()
+        @rx.var
+        def doubled(self) -> str:
+            return self.value * 2
 
-    with temporary_resolver(stub_resolver(state_name="zzz", target=LateRenamedState)):
-        assert LateRenamedState.get_full_name() != baked_name
-        assert (
-            LateRenamedState,
-            baked_name,
-        ) in clean_registration_context.find_unbound_states()
+    default_expr = str(LateRenamedState.value)
+    with temporary_resolver(
+        stub_resolver(state_name="zzz", target=LateRenamedState, var_prefix="v_")
+    ):
+        prefix = format.format_state_name(LateRenamedState.get_full_name())
+        assert prefix.endswith("__zzz")
+        assert str(LateRenamedState.value) == f"{prefix}.v_value"
+        for var in (
+            LateRenamedState.base_vars["value"],
+            LateRenamedState.vars["value"],
+        ):
+            assert str(var) == f"{prefix}.v_value"
+            var_data = var._get_all_var_data()
+            assert var_data is not None
+            assert var_data.hooks == (
+                f"const {prefix} = useContext(StateContexts.{prefix})",
+            )
+            # Dependency tracking keys on the name that never changes.
+            assert var_data.state == LateRenamedState._get_default_full_name()
+        assert str(LateRenamedState.doubled) == f"{prefix}.v_doubled"
+        assert LateRenamedState._var_names_by_key["v_value"] == "value"
+    assert str(LateRenamedState.value) == default_expr
 
 
-def test_find_unbound_states_skips_states_without_own_vars(
+def test_resolver_installed_later_renames_inherited_vars(
     clean_registration_context: RegistrationContext,
 ):
-    """A state with no base vars bakes no name, so renaming it is harmless."""
+    """A substate's map of inherited vars follows its parent's rebuilt Vars."""
     import reflex as rx
 
-    class NoVarsState(rx.State):
-        @rx.event
-        def do_thing(self):
-            pass
+    class RenamedParent(rx.State):
+        value: int = 0
 
-    assert not NoVarsState.base_vars
+    class KeptChild(RenamedParent):
+        pass
 
-    with temporary_resolver(stub_resolver(state_name="zzz", target=NoVarsState)):
-        unbound = clean_registration_context.find_unbound_states()
+    with temporary_resolver(stub_resolver(state_name="p", target=RenamedParent)):
+        assert KeptChild.vars["value"] is RenamedParent.base_vars["value"]
+        assert str(KeptChild.vars["value"]).endswith("__p.value_rx_state_")
 
-    assert all(cls is not NoVarsState for cls, _ in unbound)
+
+def test_resolver_installed_later_renames_the_router_var():
+    """The cached router switchboard is rebuilt with the root's new name."""
+    with temporary_resolver(stub_resolver(state_name="r")):
+        assert str(State.router.url).startswith("r.")
+    assert str(State.router.url).startswith(f"{State.get_name()}.")
 
 
 def test_default_resolver_returns_none():
@@ -482,6 +493,7 @@ def test_default_resolver_returns_none():
     resolver = DefaultNameResolver()
     assert resolver.resolve_state_name(State) is None
     assert resolver.resolve_handler_name(State, "any_handler") is None
+    assert resolver.resolve_var_name(State, "any_var") is None
 
 
 def test_default_resolver_satisfies_protocol():
@@ -492,7 +504,7 @@ def test_default_resolver_satisfies_protocol():
 def test_minify_resolver_satisfies_protocol():
     """``MinifyNameResolver`` is a structural :class:`NameResolver`."""
     resolver = MinifyNameResolver(
-        config=None, states_enabled=False, events_enabled=False
+        config=None, states_enabled=False, events_enabled=False, vars_enabled=False
     )
     assert isinstance(resolver, NameResolver)
 
@@ -556,6 +568,13 @@ def test_chain_of_resolvers():
         def resolve_handler_name(self, state_cls, handler_name):
             for r in self.resolvers:
                 v = r.resolve_handler_name(state_cls, handler_name)
+                if v is not None:
+                    return v
+            return None
+
+        def resolve_var_name(self, state_cls, var_name):
+            for r in self.resolvers:
+                v = r.resolve_var_name(state_cls, var_name)
                 if v is not None:
                     return v
             return None

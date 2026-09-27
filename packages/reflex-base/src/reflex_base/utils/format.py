@@ -7,15 +7,17 @@ import json
 import os
 import re
 from collections.abc import Callable
-from functools import lru_cache
+from functools import cache, lru_cache
 from typing import TYPE_CHECKING, Any
 
 from rich.markup import escape as escape_markup
 
 from reflex_base import constants
+from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils import exceptions
 
 if TYPE_CHECKING:
+    from reflex.state import BaseState
     from reflex_base.components.component import ComponentStyle
     from reflex_base.event import EventChain, EventHandler, EventSpec, EventType
     from reflex_base.utils.types import ArgsSpec
@@ -664,6 +666,45 @@ def format_state_name(state_name: str) -> str:
         The formatted state name.
     """
     return state_name.replace(".", "__")
+
+
+@cache
+def format_var_key(state_cls: type[BaseState], var_name: str) -> str:
+    """Get the key a state var goes by in deltas and in the compiled frontend.
+
+    The one place a var's wire key is built. Cleared by
+    :meth:`reflex_base.registry.RegistrationContext.set_name_resolver`.
+
+    Args:
+        state_cls: The state the var belongs to.
+        var_name: The var's Python name.
+
+    Returns:
+        The var's resolved name, else ``var_name`` with the field marker.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    ctx = RegistrationContext.try_get()
+    resolved = (
+        None if ctx is None else ctx.name_resolver.resolve_var_name(state_cls, var_name)
+    )
+    return var_name + FIELD_MARKER if resolved is None else resolved
+
+
+def format_state_var(state_cls: type[BaseState], var_name: str) -> str:
+    """Get the JavaScript expression reading a state var in the compiled frontend.
+
+    Args:
+        state_cls: The state the var belongs to.
+        var_name: The var's Python name.
+
+    Returns:
+        The var's key on its state's context value.
+    """
+    return (
+        f"{format_state_name(state_cls.get_full_name())}."
+        f"{format_var_key(state_cls, var_name)}"
+    )
 
 
 def format_ref(ref: str) -> str:

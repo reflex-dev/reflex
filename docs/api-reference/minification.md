@@ -1,28 +1,39 @@
-# State and Event Name Minification
+# State, Event and Var Name Minification
 
-Reflex identifies every state and every event handler on the wire by its full
-dotted name. A click on a button bound to `CartState.clear` in an app called
+Reflex identifies every state, event handler and state var on the wire by its
+full name. A click on a button bound to `CartState.clear` in an app called
 `demo` sends:
 
 ```text
 reflex___state____state.demo___demo____cart_state.clear
 ```
 
+and the delta updating `CartState.items` looks like:
+
+```json
+{"reflex___state____state.demo___demo____cart_state": {"items_rx_state_": []}}
+```
+
 Those names are also baked into the compiled frontend — as React context names,
-as the keys of every state delta, and as the event name in every handler
-closure. In an app with many substates they add up in the bundle, in every
-websocket frame, and in the initial state document.
+as the keys of every state delta, as the expression reading every var, and as
+the event name in every handler closure. In an app with many substates and vars
+they add up in the bundle, in every websocket frame, and in the initial state
+document.
 
 Minification replaces them with short ids drawn from a checked-in
-`minify.json`, so the same event becomes:
+`minify.json`, so the same event and delta become:
 
 ```text
 a.b.b
 ```
 
+```json
+{"a.b": {"c": []}}
+```
+
 It is **opt-in and off by default**. Turning it on requires a `minify.json` in
-the app directory and two environment variables, and the frontend build and the
-backend process must agree on both.
+the app directory and one environment variable per kind of name, and the
+frontend build and the backend process must agree on both.
 
 ```md alert warning
 # Minified names are not a security boundary.
@@ -49,14 +60,14 @@ git add minify.json
 git commit -m "add minify.json"
 ```
 
-Then build and run with both modes enabled:
+Then build and run with the modes enabled:
 
 ```bash
-REFLEX_MINIFY_STATES=1 REFLEX_MINIFY_EVENTS=1 reflex run --env prod
+REFLEX_MINIFY_STATES=1 REFLEX_MINIFY_EVENTS=1 REFLEX_MINIFY_VARS=1 reflex run --env prod
 ```
 
-The same two variables must be set for whatever compiles the frontend *and* for
-the backend process.
+The same variables must be set for whatever compiles the frontend *and* for the
+backend process.
 
 ## The `minify.json` file
 
@@ -83,6 +94,12 @@ server — must be started from the app directory.
       "parent": null
     }
   },
+  "vars": {
+    "demo.demo.State.CartState": {
+      "items": "a",
+      "total": "b"
+    }
+  },
   "version": 1
 }
 ```
@@ -95,6 +112,11 @@ server — must be started from the app directory.
   and a `parent` (the full path of the parent state, or `null` for a root
   state).
 - `events` — maps a state's full path to `{handler name: minified name}`.
+- `vars` — maps a state's full path to `{var name: minified name}`, covering
+  the vars the state sends to the frontend: its own base vars and computed vars
+  (backend vars never leave the server, so they have no entry). A var inherited
+  from a parent state belongs to the parent's entry. Files written before vars
+  were minified have no `vars` section and load as if it were empty.
 
 Framework states are included too: `reflex.state.State` and its internal
 substates carry entries just like your own states.
@@ -103,8 +125,11 @@ Ids use the alphabet `a-z`, `A-Z`, `$` and `_` (the characters that are legal in
 a JavaScript identifier), counting `a`, `b`, … `z`, `A`, … `_`, `ba`, `bb`, ….
 A state id must be unique **among its siblings**, and must differ from its
 parent's id — otherwise a relative path like `a.a` would be ambiguous. Two
-states under different parents may both be `"b"`. An event id must be unique
-**within its state**.
+states under different parents may both be `"b"`. An event id and a var id
+must each be unique **within their state**. A var id is a key of its state's
+object in the frontend, so it cannot be a name every JavaScript object already
+has (`constructor`, `toString`, `__proto__`, …) or end in `_rx_state_`, the
+suffix of an unminified var key.
 
 The file is written sorted and with a stable layout, so regenerating it produces
 no spurious diffs. It is hand-editable — every field is validated on load and a
@@ -124,13 +149,14 @@ something else.
 |---|---|
 | `REFLEX_MINIFY_STATES` | off |
 | `REFLEX_MINIFY_EVENTS` | off |
+| `REFLEX_MINIFY_VARS` | off |
 
-Both are ordinary boolean env vars, so `1`, `true` and `yes` turn them on and
-`0`, `false` and `no` turn them off. The two are independent: you can minify
-state names, event handler names, or both. Neither has any effect without a
-`minify.json`.
+They are ordinary boolean env vars, so `1`, `true` and `yes` turn them on and
+`0`, `false` and `no` turn them off. They are independent: you can minify any
+combination of state names, event handler names and var names. None of them
+has any effect without a `minify.json`.
 
-Both variables are read at **compile time** and at **run time**, and both places
+The variables are read at **compile time** and at **run time**, and both places
 must see the same values:
 
 - The process that compiles the frontend (`reflex run`, `reflex compile`,
@@ -140,8 +166,20 @@ must see the same values:
   configuration.
 
 In a split deployment — a statically hosted frontend and a separately deployed
-backend — set both variables in the build environment and in the backend's
+backend — set the variables in the build environment and in the backend's
 environment, and deploy the same `minify.json` to both.
+
+### What keeps its name
+
+Minification rewrites only what travels between the frontend and the backend.
+Where a state lives on the server — its key in Redis or on disk — and the name
+a `Cookie`, `LocalStorage` or `SessionStorage` var is stored under in the
+browser do not depend on it, so turning minification on or editing
+`minify.json` loses no session and no stored value. A storage var without an
+explicit `name` keeps the storage name it has without minification.
+
+`State.setvar("count")` sends the var's Python name, which the backend looks up
+through the state's class hierarchy; only the event name itself is minified.
 
 ## CLI reference
 
@@ -149,12 +187,12 @@ environment, and deploy the same `minify.json` to both.
 $ reflex minify --help
 Usage: reflex minify [OPTIONS] COMMAND [ARGS]...
 
-  Manage state and event name minification.
+  Manage state, event and var name minification.
 
 Commands:
-  init      Initialize minify.json with IDs for all states and events.
+  init      Initialize minify.json with IDs for all states, events and vars.
   list      Print the state tree with IDs and minified names.
-  lookup    Lookup a state or event handler by its minified path.
+  lookup    Lookup a state, event handler or var by its minified path...
   sync      Synchronize minify.json with the current codebase.
   validate  Validate minify.json against the current codebase.
 ```
@@ -172,25 +210,26 @@ or delete the file to start over.
 
 ```bash
 $ reflex minify init
-Info: Created minify.json with 7 states and 15 events.
+Info: Created minify.json with 7 states, 15 events and 12 vars.
 ```
 
 ### `reflex minify sync`
 
-Adds entries for states and event handlers that are in your code but not yet in
-the file, leaving existing ids untouched.
+Adds entries for states, event handlers and vars that are in your code but not
+yet in the file, leaving existing ids untouched.
 
 ```bash
 $ reflex minify sync
 Info: Updated minify.json:
 Info:   States: 7 -> 8
 Info:   Events: 15 -> 17
+Info:   Vars: 12 -> 13
 ```
 
 Two flags change ids that clients may already be using:
 
-- `--prune` removes entries for states and handlers that no longer exist in the
-  code, freeing their ids for reuse.
+- `--prune` removes entries for states, handlers and vars that no longer exist
+  in the code, freeing their ids for reuse.
 - `--reassign-deleted` fills the gaps left by removed entries instead of
   continuing past the highest id in use.
 
@@ -218,16 +257,16 @@ Warning:   - event:demo.demo.State.SecondNewState.setvar
 It reports:
 
 - **errors** — duplicate state ids within a sibling group, a state that reuses
-  its parent's id, or duplicate event ids within a state (exit code 1);
-- **missing entries** — states or handlers in the code with no entry, which
-  silently keep their long names (exit code 1);
-- **warnings** — entries for states or handlers that no longer exist, and
+  its parent's id, or duplicate event or var ids within a state (exit code 1);
+- **missing entries** — states, handlers or vars in the code with no entry,
+  which silently keep their long names (exit code 1);
+- **warnings** — entries for states, handlers or vars that no longer exist, and
   entries whose recorded `parent` no longer matches the code (exit code 0).
 
 ### `reflex minify list`
 
-Prints the whole state tree with the id assigned to each state and handler. It
-works without a `minify.json`, in which case it just prints the tree.
+Prints the whole state tree with the id assigned to each state, handler and
+var. It works without a `minify.json`, in which case it just prints the tree.
 
 ```bash
 $ reflex minify list
@@ -237,11 +276,17 @@ State Tree (minify.json loaded)
     |   |-- hydrate -> "a"
     |   |-- set_is_hydrated -> "b"
     |   `-- setvar -> "c"
+    |-- Vars:
+    |   |-- is_hydrated -> "a"
+    |   `-- ...
     |-- CartState -> "b"
-    |   `-- Event Handlers:
-    |       |-- add_item -> "a"
-    |       |-- clear -> "b"
-    |       `-- setvar -> "c"
+    |   |-- Event Handlers:
+    |   |   |-- add_item -> "a"
+    |   |   |-- clear -> "b"
+    |   |   `-- setvar -> "c"
+    |   `-- Vars:
+    |       |-- items -> "a"
+    |       `-- total -> "b"
     `-- SettingsState -> "c"
 ```
 
@@ -252,7 +297,9 @@ another tool.
 ### `reflex minify lookup`
 
 Turns a minified name — copied from a browser devtools network frame, or from a
-backend log line — back into the module, class and handler it refers to.
+backend log line — back into the module, class and handler or var it refers to.
+For a var, append the key from a delta to its state's name, e.g. `a.b.a` for
+key `"a"` of state `"a.b"`.
 
 ```bash
 $ reflex minify lookup a.b.b
@@ -264,20 +311,20 @@ The path is resolved segment by segment from the root state, and the leading
 root state segment is optional and may be given either minified (`a`) or in full
 (`reflex___state____state`) — so a name copied verbatim from the frontend
 resolves as-is. On its own that segment looks the root state itself up. Because
-states and event handlers are numbered independently,
-the last segment is matched against the handlers of the state resolved so far as
-well as against its substates; when a segment is ambiguous, both readings are
-printed. Unminified segments are accepted too, so a partially minified name
-still resolves.
+states, event handlers and vars are numbered independently, the last segment is
+matched against the handlers and vars of the state resolved so far as well as
+against its substates; when a segment is ambiguous, every reading is printed.
+Unminified segments are accepted too, so a partially minified name still
+resolves.
 
-`--json` prints the full resolution — `kind`, `module`, `class`, `handler` and
-`full_path` for each segment — on stdout, again with logs on stderr.
+`--json` prints the full resolution — `kind`, `module`, `class`, `handler` or
+`var`, and `full_path` for each segment — on stdout, again with logs on stderr.
 
 ## Frontend and backend must agree
 
 A compiled frontend and the backend it talks to must resolve names the same way.
 The frontend therefore carries a short digest of the scheme it was built with —
-computed from the contents of `minify.json` together with the two mode
+computed from the contents of `minify.json` together with the mode
 variables — and sends it when it opens its websocket. Uploads carry the same
 digest in a `Reflex-Scheme` header, since they travel over HTTP rather than the
 socket.
@@ -295,14 +342,14 @@ This happens whenever the two sides diverge:
 
 - the backend was deployed with a `minify.json` the frontend was not built
   against (or the other way round);
-- one side has `REFLEX_MINIFY_STATES` or `REFLEX_MINIFY_EVENTS` set differently
-  from the other;
+- one side has `REFLEX_MINIFY_STATES`, `REFLEX_MINIFY_EVENTS` or
+  `REFLEX_MINIFY_VARS` set differently from the other;
 - a browser is still running a bundle from before a deploy that changed
   `minify.json`.
 
-The digest covers the state ids and the event map, so any edit that changes an
-id invalidates every previously served bundle — including one that only adds
-entries. Edits that change nothing a client can observe do not: a `parent` field
+The digest covers the state ids and the event and var maps, so any edit that
+changes an id invalidates every previously served bundle — including one that
+only adds entries. Edits that change nothing a client can observe do not: a `parent` field
 is not hashed, and a map whose `REFLEX_MINIFY_*` mode is off contributes nothing.
 Plan deploys accordingly: ship the frontend and the backend together, and expect
 open tabs to need a reload after an id changes.
@@ -311,7 +358,7 @@ open tabs to need a reload after an id changes.
 
 A typical loop when the state tree changes:
 
-1. Add or rename states and event handlers as usual.
+1. Add or rename states, event handlers and vars as usual.
 2. Run `reflex minify sync` and commit the updated `minify.json` alongside the
    code change.
 3. Optionally run `reflex minify validate` in CI so a forgotten `sync` fails the
@@ -319,8 +366,8 @@ A typical loop when the state tree changes:
 4. Build the frontend and run the backend with the same `REFLEX_MINIFY_*`
    values and the same `minify.json`.
 
-States and handlers with no entry in the file keep their full names; this is not
-an error, it just means those names are not shortened. Compiling with
+States, handlers and vars with no entry in the file keep their full names; this
+is not an error, it just means those names are not shortened. Compiling with
 minification enabled warns about them and points at `reflex minify sync`.
 
 ## Debugging a minified app
@@ -333,19 +380,23 @@ back:
 reflex minify lookup a.b.b
 ```
 
-If you want readable names while reproducing a problem, unset the two
-environment variables and rebuild; `minify.json` on its own changes nothing.
+If you want readable names while reproducing a problem, unset the environment
+variables and rebuild; `minify.json` on its own changes nothing.
 
 ## Limitations
 
 - **Run from the app directory.** `minify.json` is looked up in the process's
-  current working directory, and the name scheme has to be installed before your
-  state classes are imported. A backend started from anywhere else does not find
+  current working directory. A backend started from anywhere else does not find
   the file, resolves names the default way, and rejects every client with a
   scheme mismatch.
-- **In-process test harnesses.** A test process that imports Reflex before the
-  app directory exists (for example `AppHarness` running in-process) must run
-  with `REFLEX_MINIFY_STATES=0`.
+- **Components built before `minify.json` is loaded keep the default names.**
+  Reflex loads `minify.json` as soon as it can — when `reflex.state` is first
+  imported from the app directory, and again before importing your app — and
+  renames every state's own vars when it does. A var expression a module built
+  from them earlier, such as a component created at the top of a module
+  imported before the app directory was entered, still uses the default names,
+  and compiling fails with a message naming each one. Import the app from its
+  directory, or create such components inside the page function.
 - **`rx.ComponentState` instances are numbered by creation order.** Each
   `create()` call produces its own state class, named `Counter_n1`, `Counter_n2`
   and so on, and each gets its own `minify.json` entry. Inserting or reordering

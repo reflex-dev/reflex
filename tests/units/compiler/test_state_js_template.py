@@ -62,6 +62,17 @@ def test_state_js_avoids_unpolyfilled_runtime_apis() -> None:
     )
 
 
+def test_state_js_reads_the_hydrated_flag_by_its_wire_key() -> None:
+    """The hydrated flag's key comes from the compiled context, not a literal.
+
+    Minification renames the var, so a hardcoded key would never match a delta.
+    """
+    content = STATE_JS_TEMPLATE.read_text()
+
+    assert "_rx_state_" not in content, "state.js hardcodes a state var key."
+    assert content.count("app.is_hydrated_key") == 4
+
+
 def test_state_js_disconnects_on_fatal_mismatch() -> None:
     """A fatal frontend/backend mismatch must close the socket.
 

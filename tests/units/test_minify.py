@@ -7,7 +7,9 @@ from pathlib import Path
 
 import pytest
 from reflex_base.registry import DefaultNameResolver, RegistrationContext, scheme_digest
+from reflex_base.utils.exceptions import ReflexError
 
+import reflex as rx
 from reflex.environment import environment
 from reflex.minify import (
     MINIFY_JSON,
@@ -26,6 +28,7 @@ from reflex.minify import (
     is_minify_enabled,
     is_mode_enabled,
     minified_name_to_int,
+    raise_for_stale_names,
     sync_minify_config,
     validate_minify_config,
     warn_if_config_stale,
@@ -173,6 +176,7 @@ def test_flat_string_states_raise(temp_minify_json, monkeypatch):
         "version": SCHEMA_VERSION,
         "states": {"test.module.MyState": "a"},
         "events": {},
+        "vars": {},
     }
     path = temp_minify_json / MINIFY_JSON
     with path.open("w") as f:
@@ -208,6 +212,7 @@ def test_invalid_state_id_raises(
         "version": SCHEMA_VERSION,
         "states": {"test.module.MyState": {"id": bad_id, "parent": None}},
         "events": {},
+        "vars": {},
     }
     (temp_minify_json / MINIFY_JSON).write_text(json.dumps(config), encoding="utf-8")
 
@@ -227,6 +232,7 @@ def test_invalid_event_id_raises(
         "version": SCHEMA_VERSION,
         "states": {},
         "events": {"test.module.MyState": {"handler": bad_id}},
+        "vars": {},
     }
     (temp_minify_json / MINIFY_JSON).write_text(json.dumps(config), encoding="utf-8")
 
@@ -299,6 +305,7 @@ def test_duplicate_state_ids_detected():
             ),
         },
         "events": {},
+        "vars": {},
     }
 
     # Create a mock state tree
@@ -331,6 +338,7 @@ def test_validate_detects_orphan_sibling_collision():
             orphan_path: StateEntry(id="b", parent=parent_path),  # collision!
         },
         "events": {},
+        "vars": {},
     }
 
     errors, _warnings, _missing = validate_minify_config(config, OrphanCollisionParent)
@@ -355,6 +363,7 @@ def test_validate_no_cross_group_orphan_false_positive():
             "gone.module.Gone.Child": StateEntry(id="a", parent="gone.module.Gone"),
         },
         "events": {},
+        "vars": {},
     }
 
     errors, warnings, _missing = validate_minify_config(
@@ -378,6 +387,7 @@ def test_validate_reports_missing_framework_states():
         "version": SCHEMA_VERSION,
         "states": {user_path: StateEntry(id="a", parent="reflex.state.State")},
         "events": {user_path: {"do_thing": "a"}},
+        "vars": {},
     }
 
     _errors, _warnings, missing = validate_minify_config(config, State)
@@ -406,6 +416,7 @@ def test_validate_warns_stale_parent():
             child_path: StateEntry(id="b", parent="wrong.Path"),
         },
         "events": {},
+        "vars": {},
     }
 
     errors, warnings, _missing = validate_minify_config(config, StaleParentParent)
@@ -426,6 +437,7 @@ def test_sync_adds_new_states():
         "version": SCHEMA_VERSION,
         "states": {},
         "events": {},
+        "vars": {},
     }
 
     new_config = sync_minify_config(existing_config, TestState)
@@ -457,6 +469,7 @@ def test_sync_preserves_existing_ids():
             state_path: StateEntry(id="bU", parent=None)  # codespell:ignore
         },
         "events": {state_path: {"handler_a": "k"}},  # Another arbitrary name
+        "vars": {},
     }
 
     new_config = sync_minify_config(existing_config, TestState)
@@ -506,6 +519,7 @@ def test_sync_no_sibling_collision_across_modules():
             child_a_path: StateEntry(id="a", parent=parent_path),
         },
         "events": {},
+        "vars": {},
     }
 
     # Sync should assign ChildB a DIFFERENT ID than ChildA
@@ -547,6 +561,7 @@ def test_validate_detects_sibling_collision():
             child_b_path: StateEntry(id="a", parent=parent_path),  # collision!
         },
         "events": {},
+        "vars": {},
     }
 
     errors, _warnings, _missing = validate_minify_config(bad_config, ParentState)
@@ -574,6 +589,7 @@ def test_sync_reserves_orphan_ids():
             orphan_path: StateEntry(id="a", parent=parent_path),
         },
         "events": {},
+        "vars": {},
     }
 
     new_config = sync_minify_config(existing_config, OrphanReserveParent)
@@ -602,6 +618,7 @@ def test_sync_reassign_deleted_keeps_orphan_ids_reserved():
             orphan_path: StateEntry(id="a", parent=parent_path),
         },
         "events": {},
+        "vars": {},
     }
 
     new_config = sync_minify_config(
@@ -631,6 +648,7 @@ def test_sync_prune_frees_orphan_ids():
             orphan_path: StateEntry(id="b", parent=parent_path),
         },
         "events": {},
+        "vars": {},
     }
 
     new_config = sync_minify_config(
@@ -661,6 +679,7 @@ def test_sync_heals_stale_parent():
             child_path: StateEntry(id="b", parent="wrong.Path"),
         },
         "events": {},
+        "vars": {},
     }
 
     new_config = sync_minify_config(existing_config, HealParentParent)
@@ -703,9 +722,10 @@ def test_is_minify_enabled_false_when_both_disabled(temp_minify_json):
 def test_disabled_returns_none(temp_minify_json):
     """When neither flag is enabled, the resolver returns None for all."""
     resolver = MinifyNameResolver(
-        config={"version": SCHEMA_VERSION, "states": {}, "events": {}},
+        config={"version": SCHEMA_VERSION, "states": {}, "events": {}, "vars": {}},
         states_enabled=False,
         events_enabled=False,
+        vars_enabled=False,
     )
     assert resolver.resolve_state_name(State) is None
     assert resolver.resolve_handler_name(State, "any") is None
@@ -713,7 +733,9 @@ def test_disabled_returns_none(temp_minify_json):
 
 def test_resolver_no_config_returns_none():
     """No config means no overrides even when flags are enabled."""
-    resolver = MinifyNameResolver(config=None, states_enabled=True, events_enabled=True)
+    resolver = MinifyNameResolver(
+        config=None, states_enabled=True, events_enabled=True, vars_enabled=False
+    )
     assert resolver.resolve_state_name(State) is None
     assert resolver.resolve_handler_name(State, "any") is None
 
@@ -733,9 +755,10 @@ def test_state_lookup_caches():
             )
         },
         "events": {},
+        "vars": {},
     }
     resolver = MinifyNameResolver(
-        config=config, states_enabled=True, events_enabled=False
+        config=config, states_enabled=True, events_enabled=False, vars_enabled=False
     )
     assert resolver.resolve_state_name(UserStateResolverCacheTest) == "rs"
     # second call hits the cache
@@ -755,14 +778,15 @@ def test_event_lookup_caches():
         "events": {
             get_state_full_path(UserStateEventCacheTest): {"foo": "f", "bar": "b"}
         },
+        "vars": {},
     }
     resolver = MinifyNameResolver(
-        config=config, states_enabled=False, events_enabled=True
+        config=config, states_enabled=False, events_enabled=True, vars_enabled=False
     )
     assert resolver.resolve_handler_name(UserStateEventCacheTest, "foo") == "f"
     assert resolver.resolve_handler_name(UserStateEventCacheTest, "bar") == "b"
     assert resolver.resolve_handler_name(UserStateEventCacheTest, "missing") is None
-    assert UserStateEventCacheTest in resolver._event_cache
+    assert ("events", UserStateEventCacheTest) in resolver._member_cache
 
 
 def test_from_disk_handles_malformed_config(temp_minify_json):
@@ -848,6 +872,7 @@ def test_same_scheme_digests_identically_across_processes(tmp_path):
         "version": SCHEMA_VERSION,
         "states": {"reflex.state.State": StateEntry(id="a", parent=None)},
         "events": {"reflex.state.State": {"hydrate": "q"}},
+        "vars": {},
     }
     run_in_fresh_interpreter(
         tmp_path,
@@ -913,6 +938,7 @@ def test_resolver_active_before_any_state_registers(tmp_path):
                 "check.State.Foo": StateEntry(id="f", parent="reflex.state.State")
             },
             "events": {},
+            "vars": {},
         },
         """
             from reflex_base.registry import RegistrationContext
@@ -949,11 +975,19 @@ def test_resolver_installed_when_config_appears(temp_minify_json: Path) -> None:
     assert ctx.name_resolver.config is not None
 
 
-def test_framework_event_names_reach_registered_handlers(tmp_path):
-    """The names the context module emits are the keys the backend dispatches on."""
-    config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+def test_framework_names_reach_registered_handlers(temp_minify_json, monkeypatch):
+    """The names the context module emits are the keys the backend dispatches on.
+
+    The config is installed after the framework states were created, so this
+    also covers renaming states whose Vars already exist.
+    """
+    from reflex_base.event import get_hydrate_event
+
+    from reflex.compiler.compiler import _internal_names
+
+    set_minify_modes(monkeypatch, states=True, events=True, vars=True)
+    install_config(
+        states={
             "reflex.state.State": StateEntry(id="a", parent=None),
             "reflex.state.State.FrontendEventExceptionState": StateEntry(
                 id="b", parent="reflex.state.State"
@@ -965,7 +999,7 @@ def test_framework_event_names_reach_registered_handlers(tmp_path):
                 id="d", parent="reflex.state.State"
             ),
         },
-        "events": {
+        events={
             "reflex.state.State": {"hydrate": "a"},
             "reflex.state.State.FrontendEventExceptionState": {
                 "handle_frontend_exception": "a"
@@ -973,43 +1007,32 @@ def test_framework_event_names_reach_registered_handlers(tmp_path):
             "reflex.state.State.OnLoadInternalState": {"on_load_internal": "a"},
             "reflex.state.State.UpdateVarsInternalState": {"update_vars_internal": "a"},
         },
-    }
-    run_in_fresh_interpreter(
-        tmp_path,
-        config,
-        """
-            from reflex_base.event import get_hydrate_event
-            from reflex_base.registry import RegistrationContext
-
-            from reflex.compiler.compiler import _internal_event_names
-            from reflex.state import State
-
-            assert State.get_name() == "a", State.get_name()
-
-            names = _internal_event_names()
-            assert names.main_state_name == "a", names
-            assert names.hydrate == "a.a", names
-
-            handlers = RegistrationContext.ensure_context().event_handlers
-            for wire_name in (
-                names.hydrate,
-                names.on_load_internal,
-                names.update_vars_internal,
-                names.handle_frontend_exception,
-            ):
-                assert wire_name in handlers, (wire_name, sorted(handlers))
-
-            # The middleware compares against this; it must agree with the
-            # name the compiler just told the frontend to send.
-            root = State(_reflex_internal_init=True)
-            assert get_hydrate_event(root) == names.hydrate
-
-            # Nothing was renamed after its Vars captured the old name.
-            assert RegistrationContext.ensure_context().find_unbound_states() == []
-        """,
-        REFLEX_MINIFY_STATES="1",
-        REFLEX_MINIFY_EVENTS="1",
+        vars={"reflex.state.State": {"is_hydrated": "h"}},
     )
+
+    assert State.get_name() == "a"
+    names = _internal_names()
+    assert names.main_state_name == "a"
+    assert names.is_hydrated_key == "h"
+    assert names.hydrate == "a.a"
+
+    handlers = RegistrationContext.get().event_handlers
+    for wire_name in (
+        names.hydrate,
+        names.on_load_internal,
+        names.update_vars_internal,
+        names.handle_frontend_exception,
+    ):
+        assert wire_name in handlers, (wire_name, sorted(handlers))
+
+    # The middleware compares against this; it must agree with the name the
+    # compiler just told the frontend to send.
+    root = State(_reflex_internal_init=True, init_substates=False)  # pyright: ignore [reportCallIssue]
+    assert get_hydrate_event(root) == names.hydrate
+
+    # The Var the frontend reads names the context and key the compiler emits.
+    assert str(State.is_hydrated) == "a.h"
+    assert root.dict()["a"]["h"] is False
 
 
 def _parent_id_collisions(config: MinifyConfig) -> list[str]:
@@ -1054,6 +1077,7 @@ def test_sync_reserves_the_parent_id():
         "version": SCHEMA_VERSION,
         "states": {parent_path: StateEntry(id="a", parent=None)},
         "events": {},
+        "vars": {},
     }
 
     new_config = sync_minify_config(existing, SyncReserveParent)
@@ -1082,6 +1106,7 @@ def test_validate_detects_a_child_reusing_its_parent_id():
             ),
         },
         "events": {},
+        "vars": {},
     }
 
     errors, _warnings, _missing = validate_minify_config(config, ValidateReuseParent)
@@ -1109,6 +1134,7 @@ def test_sync_reserves_the_parent_id_through_a_new_subtree():
         "version": SCHEMA_VERSION,
         "states": {get_state_full_path(DeepSyncRoot): StateEntry(id="a", parent=None)},
         "events": {},
+        "vars": {},
     }
 
     new_config = sync_minify_config(existing, DeepSyncRoot)
@@ -1139,6 +1165,7 @@ def test_sync_moves_a_reparented_id_off_its_new_parent():
             ),
         },
         "events": {},
+        "vars": {},
     }
 
     new_config = sync_minify_config(existing, MoveParent)
@@ -1172,6 +1199,7 @@ def test_sync_moves_a_preserved_id_off_a_newly_inserted_parent():
             get_state_full_path(OldLeaf): StateEntry(id="b", parent=root_path),
         },
         "events": {},
+        "vars": {},
     }
 
     new_config = sync_minify_config(existing, MidRoot)
@@ -1215,6 +1243,7 @@ def test_sync_moves_a_reparented_id_off_an_occupied_sibling_id():
             incumbent_path: StateEntry(id="c", parent=parent_path),
         },
         "events": {},
+        "vars": {},
     }
 
     new_config = sync_minify_config(existing, SiblingRoot)
@@ -1245,6 +1274,7 @@ def test_validate_exempts_an_orphan_holding_its_parent_id():
             orphan_path: StateEntry(id="a", parent=parent_path),
         },
         "events": {},
+        "vars": {},
     }
 
     new_config = sync_minify_config(existing, OrphanHolder)
@@ -1276,6 +1306,7 @@ def test_validate_checks_the_actual_parent_not_the_recorded_one():
             ),
         },
         "events": {},
+        "vars": {},
     }
 
     errors, _warnings, _missing = validate_minify_config(config, ActualParentState)
@@ -1293,7 +1324,7 @@ def test_find_missing_entries_flags_a_state_added_after_the_config():
             """A handler the config cannot know about."""
 
     resolver = MinifyNameResolver(
-        config=config, states_enabled=True, events_enabled=True
+        config=config, states_enabled=True, events_enabled=True, vars_enabled=False
     )
     with temporary_resolver(resolver):
         missing = _find_missing_entries()
@@ -1310,11 +1341,18 @@ def test_find_missing_entries_respects_disabled_modes():
 
     path = get_state_full_path(ModeGatedState)
     with temporary_resolver(
-        MinifyNameResolver(config=config, states_enabled=False, events_enabled=True)
+        MinifyNameResolver(
+            config=config, states_enabled=False, events_enabled=True, vars_enabled=False
+        )
     ):
         assert f"state:{path}" not in _find_missing_entries()
     with temporary_resolver(
-        MinifyNameResolver(config=config, states_enabled=False, events_enabled=False)
+        MinifyNameResolver(
+            config=config,
+            states_enabled=False,
+            events_enabled=False,
+            vars_enabled=False,
+        )
     ):
         assert _find_missing_entries() == []
 
@@ -1337,7 +1375,7 @@ def test_warn_if_config_stale_points_at_sync(caplog):
         pass
 
     resolver = MinifyNameResolver(
-        config=config, states_enabled=True, events_enabled=True
+        config=config, states_enabled=True, events_enabled=True, vars_enabled=False
     )
     with temporary_resolver(resolver), caplog.at_level("WARNING"):
         warn_if_config_stale()
@@ -1353,9 +1391,321 @@ def test_warn_if_config_stale_is_silent_when_current(caplog):
         caplog: The pytest log capture fixture.
     """
     resolver = MinifyNameResolver(
-        config=generate_minify_config(), states_enabled=True, events_enabled=True
+        config=generate_minify_config(),
+        states_enabled=True,
+        events_enabled=True,
+        vars_enabled=False,
     )
     with temporary_resolver(resolver), caplog.at_level("WARNING"):
         warn_if_config_stale()
 
     assert caplog.text == ""
+
+
+def _write_config(path: Path, **sections) -> None:
+    """Write a ``minify.json`` holding the given sections.
+
+    Args:
+        path: The directory to write it to.
+        **sections: The sections, by name.
+    """
+    config = {"version": SCHEMA_VERSION, "states": {}, "events": {}, **sections}
+    (path / MINIFY_JSON).write_text(json.dumps(config))
+
+
+def test_config_without_vars_loads_with_empty_vars(temp_minify_json):
+    """Files written before vars were minified still load."""
+    _write_config(temp_minify_json)
+    loaded = get_minify_config()
+    assert loaded is not None
+    assert loaded["vars"] == {}
+
+
+@pytest.mark.parametrize(
+    ("vars_section", "match"),
+    [
+        ([], "'vars' must be a dictionary"),
+        ({"test.module.MyState": []}, "must be a dictionary"),
+        ({"test.module.MyState": {"count": 1}}, "non-string id"),
+        ({"test.module.MyState": {"count": "a-b"}}, "invalid id"),
+        ({"test.module.MyState": {"count": "constructor"}}, "reserved id"),
+        ({"test.module.MyState": {"count": "__proto__"}}, "reserved id"),
+        ({"test.module.MyState": {"count": "a_rx_state_"}}, "reserved id"),
+    ],
+)
+def test_config_rejects_malformed_vars(temp_minify_json, vars_section, match):
+    """A var id is a key of its state's frontend object, so only safe ones load.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        vars_section: The malformed ``vars`` section.
+        match: Part of the expected error.
+    """
+    _write_config(temp_minify_json, vars=vars_section)
+    with pytest.raises(ValueError, match=match):
+        get_minify_config()
+
+
+def test_reserved_ids_are_fine_for_events(temp_minify_json):
+    """Only var ids name object keys; an event id may be any identifier."""
+    _write_config(
+        temp_minify_json, events={"test.module.MyState": {"handler": "constructor"}}
+    )
+    loaded = get_minify_config()
+    assert loaded is not None
+    assert loaded["events"]["test.module.MyState"]["handler"] == "constructor"
+
+
+def test_resolve_var_name_follows_its_mode(temp_minify_json):
+    """Var ids apply only while ``REFLEX_MINIFY_VARS`` is on.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+    """
+
+    class VarModeState(State):
+        count: int = 0
+
+    config: MinifyConfig = {
+        "version": SCHEMA_VERSION,
+        "states": {},
+        "events": {},
+        "vars": {get_state_full_path(VarModeState): {"count": "c"}},
+    }
+    on = MinifyNameResolver(
+        config=config, states_enabled=False, events_enabled=False, vars_enabled=True
+    )
+    off = MinifyNameResolver(
+        config=config, states_enabled=True, events_enabled=True, vars_enabled=False
+    )
+    assert on.resolve_var_name(VarModeState, "count") == "c"
+    assert on.resolve_var_name(VarModeState, "missing") is None
+    assert off.resolve_var_name(VarModeState, "count") is None
+
+
+def test_is_minify_enabled_by_vars_alone(temp_minify_json, monkeypatch):
+    """Minifying only vars still counts as minification.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    set_minify_modes(monkeypatch, states=False, events=False, vars=True)
+    install_config()
+    assert is_minify_enabled() is True
+
+
+def test_digest_covers_vars_only_when_minified(temp_minify_json, monkeypatch):
+    """A var id reaches the wire only with ``REFLEX_MINIFY_VARS`` on.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    config_vars = {"reflex.state.State": {"is_hydrated": "h"}}
+
+    set_minify_modes(monkeypatch, states=False, events=False, vars=False)
+    install_config(vars=config_vars)
+    assert scheme_digest() == ""
+
+    set_minify_modes(monkeypatch, vars=True)
+    install_config(vars=config_vars)
+    first = scheme_digest()
+    assert first
+
+    install_config(vars={"reflex.state.State": {"is_hydrated": "i"}})
+    assert scheme_digest() not in ("", first)
+
+
+def test_generate_numbers_the_frontend_vars_of_each_state(temp_minify_json):
+    """Each state numbers the vars it sends to the client, not inherited ones.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+    """
+
+    class GenVarParent(State):
+        count: int = 0
+        _secret: str = ""
+
+        @rx.var
+        def doubled(self) -> int:
+            return self.count * 2
+
+        @rx.var(backend=True)
+        def hidden(self) -> int:
+            return 0
+
+    class GenVarChild(GenVarParent):
+        label: str = ""
+
+    config = generate_minify_config(GenVarParent)
+    assert config["vars"] == {
+        get_state_full_path(GenVarParent): {"count": "a", "doubled": "b"},
+        get_state_full_path(GenVarChild): {"label": "a"},
+    }
+
+
+def test_validate_reports_var_problems(temp_minify_json):
+    """Duplicate var ids fail validation; missing and orphaned vars are reported.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+    """
+
+    class ValidateVarState(State):
+        first: int = 0
+        second: int = 0
+
+    path = get_state_full_path(ValidateVarState)
+    config = generate_minify_config(ValidateVarState)
+    config["vars"][path] = {"first": "a", "second": "a", "gone": "b"}
+
+    errors, warnings, missing = validate_minify_config(config, ValidateVarState)
+    assert any("Duplicate var_id='a'" in error for error in errors)
+    assert f"Orphaned var in config: {path}.gone" in warnings
+    assert missing == []
+
+    del config["vars"][path]
+    _errors, _warnings, missing = validate_minify_config(config, ValidateVarState)
+    assert missing == [f"var:{path}.first", f"var:{path}.second"]
+
+
+def test_sync_assigns_new_var_ids_and_prunes_old_ones(temp_minify_json):
+    """New vars get fresh ids; existing ones keep theirs until pruned.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+    """
+
+    class SyncVarState(State):
+        kept: int = 0
+        added: int = 0
+
+    path = get_state_full_path(SyncVarState)
+    existing = generate_minify_config(SyncVarState)
+    existing["vars"][path] = {"kept": "b", "removed": "a"}
+
+    synced = sync_minify_config(existing, SyncVarState)
+    assert synced["vars"][path] == {"kept": "b", "removed": "a", "added": "c"}
+
+    pruned = sync_minify_config(existing, SyncVarState, prune=True)
+    assert pruned["vars"][path] == {"kept": "b", "added": "c"}
+
+
+def test_missing_vars_reported_only_when_minified(temp_minify_json, monkeypatch):
+    """The stale-config warning covers vars once their mode is on.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class MissingVarState(State):
+        count: int = 0
+
+    label = f"var:{get_state_full_path(MissingVarState)}.count"
+
+    set_minify_modes(monkeypatch, states=False, events=False, vars=False)
+    install_config()
+    assert label not in _find_missing_entries()
+
+    set_minify_modes(monkeypatch, vars=True)
+    install_config()
+    assert label in _find_missing_entries()
+
+
+def _stale_names_error(code: str) -> str:
+    """Scan compiled code for stale names and return the error raised, if any.
+
+    Args:
+        code: The compiled code.
+
+    Returns:
+        The error message, or an empty string when the code is clean.
+    """
+    try:
+        raise_for_stale_names([("page.jsx", code)])
+    except ReflexError as e:
+        return str(e)
+    return ""
+
+
+def test_stale_names_ignored_without_minification():
+    """Nothing is renamed, so the default spellings are the right ones."""
+    assert _stale_names_error(f"{State.get_full_name()}.hydrate") == ""
+
+
+def test_stale_state_names_are_rejected(temp_minify_json, monkeypatch):
+    """Code still spelling a renamed state the default way cannot reach it.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class StaleNameState(State):
+        count: int = 0
+
+    default_expr = str(StaleNameState.count)
+    default_event = f"{StaleNameState.get_full_name()}.setvar"
+    path = get_state_full_path(StaleNameState)
+
+    set_minify_modes(monkeypatch, states=True)
+    install_config(states={path: StateEntry(id="z", parent="reflex.state.State")})
+
+    fresh = str(StaleNameState.count)
+    assert fresh != default_expr
+    assert _stale_names_error(f"const x = {fresh};") == ""
+    for stale in (default_expr, f'addEvents([ReflexEvent("{default_event}")])'):
+        error = _stale_names_error(stale)
+        assert f"state {path}" in error
+        assert "page.jsx" in error
+
+
+def test_stale_event_names_are_rejected_when_only_events_minify(
+    temp_minify_json, monkeypatch
+):
+    """With states unminified, only the handler part of a name goes stale.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class StaleEventState(State):
+        @rx.event
+        def ping(self):
+            pass
+
+    path = get_state_full_path(StaleEventState)
+    full_name = StaleEventState.get_full_name()
+
+    set_minify_modes(monkeypatch, states=False, events=True)
+    install_config(events={path: {"ping": "p"}})
+
+    assert _stale_names_error(f'"{full_name}.p"') == ""
+    assert f"event handler {path}.ping" in _stale_names_error(f'"{full_name}.ping"')
+
+
+def test_stale_var_keys_are_rejected_when_only_vars_minify(
+    temp_minify_json, monkeypatch
+):
+    """With states unminified, only the var part of an expression goes stale.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class StaleVarState(State):
+        count: int = 0
+
+    path = get_state_full_path(StaleVarState)
+    default_expr = str(StaleVarState.count)
+
+    set_minify_modes(monkeypatch, states=False, vars=True)
+    install_config(vars={path: {"count": "c"}})
+
+    assert _stale_names_error(str(StaleVarState.count)) == ""
+    assert f"var {path}.count" in _stale_names_error(f"{default_expr}.length")

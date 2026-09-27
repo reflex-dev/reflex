@@ -62,7 +62,7 @@ def _rekey(
 
 @runtime_checkable
 class NameResolver(Protocol):
-    """Resolves user-visible names for state classes and event handlers.
+    """Resolves user-visible names for state classes, event handlers and vars.
 
     Return ``None`` to defer to the framework default. See
     :class:`DefaultNameResolver` (no-op) and ``reflex.minify.MinifyNameResolver``.
@@ -76,6 +76,10 @@ class NameResolver(Protocol):
         self, state_cls: type[BaseState], handler_name: str
     ) -> str | None:
         """Return the resolved name for the handler, or ``None`` for default."""
+        ...
+
+    def resolve_var_name(self, state_cls: type[BaseState], var_name: str) -> str | None:
+        """Return the wire key for a var of ``state_cls``, or ``None`` for default."""
         ...
 
     def digest(self) -> str:
@@ -94,6 +98,13 @@ class DefaultNameResolver:
         self,
         state_cls: type[BaseState],
         handler_name: str,
+    ) -> str | None:
+        return None
+
+    def resolve_var_name(  # noqa: D102
+        self,
+        state_cls: type[BaseState],
+        var_name: str,
     ) -> str | None:
         return None
 
@@ -152,6 +163,11 @@ class RegistrationContext(BaseContext):
         repr=False,
     )
     base_state_substates: dict[str, set[type[BaseState]]] = dataclasses.field(
+        default_factory=dict,
+        repr=False,
+    )
+    # Keyed by the resolver-independent default full name, so never re-keyed.
+    _states_by_default_name: dict[str, type[BaseState]] = dataclasses.field(
         default_factory=dict,
         repr=False,
     )
@@ -250,6 +266,7 @@ class RegistrationContext(BaseContext):
             base_state_substates={
                 k: set(v) for k, v in self.base_state_substates.items()
             },
+            _states_by_default_name=dict(self._states_by_default_name),
             decorated_pages=list(self.decorated_pages),
             bundled_libraries=list(self.bundled_libraries),
             name_resolver=self.name_resolver,
@@ -317,6 +334,7 @@ class RegistrationContext(BaseContext):
             The registered base state class.
         """
         self.base_states[state_cls.get_full_name()] = state_cls
+        self._states_by_default_name[state_cls._get_default_full_name()] = state_cls
         for event_handler in state_cls.event_handlers.values():
             self._register_event_handler(event_handler, states=(state_cls,))
         if (parent_state := state_cls.get_parent_state()) is not None:
@@ -390,6 +408,24 @@ class RegistrationContext(BaseContext):
             base_state_cls.get_full_name(), set()
         )
 
+    def get_state_by_default_name(self, default_full_name: str) -> type[BaseState]:
+        """Look up a registered state by its resolver-independent full name.
+
+        Args:
+            default_full_name: The state's ``_get_default_full_name()``.
+
+        Returns:
+            The state class.
+
+        Raises:
+            ValueError: If no registered state has that name.
+        """
+        try:
+            return self._states_by_default_name[default_full_name]
+        except KeyError:
+            msg = f"No state is registered as {default_full_name!r}."
+            raise ValueError(msg) from None
+
     @staticmethod
     def default_state_name(state_cls: type[BaseState]) -> str:
         """Compute the built-in snake-cased ``module___ClassName`` for a state.
@@ -437,48 +473,34 @@ class RegistrationContext(BaseContext):
     def set_name_resolver(self, resolver: NameResolver) -> None:
         """Install ``resolver`` and rebuild the registry under the new names.
 
-        Clears the per-class ``get_name`` / ``get_full_name`` /
-        ``get_class_substate`` lru_caches and calls :meth:`refresh_keys`.
-        Uses ``object.__setattr__`` to mutate the frozen ``name_resolver``
-        slot. Install the resolver before user state classes register:
-        ``VarData`` and dependency metadata capture names at class-creation
-        time and are not rebuilt here.
+        Clears the per-class name caches, rebuilds the Vars every registered
+        state holds (parents first) and calls :meth:`refresh_keys`. Uses
+        ``object.__setattr__`` to mutate the frozen ``name_resolver`` slot.
+
+        A Var built from a state's Vars before the install -- say by a
+        module-level component -- keeps the names it was built with; the
+        compiler rejects a frontend that still refers to a renamed state.
 
         Args:
             resolver: The resolver to install. Pass :class:`DefaultNameResolver`
                 to revert to built-in names.
         """
-        from reflex_base.utils.format import _FORMATTED_NAME_CACHE_ATTR
+        from reflex_base.utils.format import _FORMATTED_NAME_CACHE_ATTR, format_var_key
 
         object.__setattr__(self, "name_resolver", resolver)
         for cls in self.base_states.values():
             cls.get_name.cache_clear()
             cls.get_full_name.cache_clear()
             cls.get_class_substate.cache_clear()
+        format_var_key.cache_clear()
         for reg in self.event_handlers.values():
             reg.handler.__dict__.pop(_FORMATTED_NAME_CACHE_ATTR, None)
+        for cls in sorted(
+            self.base_states.values(),
+            key=lambda state_cls: state_cls._get_default_full_name().count("."),
+        ):
+            cls._rebuild_vars()
         self.refresh_keys()
-
-    def find_unbound_states(self) -> list[tuple[type[BaseState], str]]:
-        """Registered states whose Vars name a state the resolver has since renamed.
-
-        ``VarData.from_state`` captures ``get_full_name()`` when a state class is
-        created, so a resolver installed afterwards renames the class without
-        rebuilding its Vars. Only ``base_vars`` are inspected: their ``VarData``
-        names exactly one state, while a computed Var may merge several.
-
-        Returns:
-            ``(state_cls, name_its_vars_use)`` pairs; empty when all names agree.
-        """
-        unbound: list[tuple[type[BaseState], str]] = []
-        for cls in self.base_states.values():
-            full_name = cls.get_full_name()
-            for var in cls.base_vars.values():
-                var_data = var._get_all_var_data()
-                if var_data is not None and var_data.state not in ("", full_name):
-                    unbound.append((cls, var_data.state))
-                    break
-        return unbound
 
     def refresh_keys(self) -> None:
         """Re-key the name-keyed dicts using current ``get_full_name`` values.

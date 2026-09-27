@@ -863,6 +863,9 @@ class EnvironmentVariables:
     # Whether to enable event ID minification (requires minify.json).
     REFLEX_MINIFY_EVENTS: EnvVar[bool] = env_var(False)
 
+    # Whether to enable state var ID minification (requires minify.json).
+    REFLEX_MINIFY_VARS: EnvVar[bool] = env_var(False)
+
     # Extra plugins to append to the config's plugins list.
     REFLEX_EXTRA_PLUGINS: EnvVar[list[type[Plugin]]] = env_var([])
 
