@@ -2160,7 +2160,11 @@ class EventNamespace(AsyncNamespace):
             self._token_manager.ensure_lost_and_found_task(self.emit_update)
         query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
         # Per-SID state goes in before the first await: a disconnect landing
-        # during one would otherwise clean up first and leave it behind.
+        # during one would otherwise clean up first and leave it behind. A
+        # connect that raises keeps its socket, so on_disconnect still runs.
+        if otel.enabled:
+            # on_disconnect decrements unconditionally.
+            otel.record_connection(1)
         # Headers, client IP, and session id cannot change for the lifetime of
         # the connection; compute them once instead of on every event.
         self._static_router_data[sid] = self._build_static_router_data(sid, environ)
@@ -2184,11 +2188,6 @@ class EventNamespace(AsyncNamespace):
             logger.warning(
                 f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
-
-        if otel.enabled:
-            # Counted before the scheme check: the socket is up either way, and
-            # on_disconnect decrements unconditionally.
-            otel.record_connection(1)
 
         # Unlike the version check above, a scheme mismatch is fatal: every name
         # the client sends would resolve to the wrong handler, or to none.
