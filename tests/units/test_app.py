@@ -5280,6 +5280,37 @@ async def test_disconnect_during_scheme_mismatch_notice_leaves_no_sid_state():
     await ns._token_manager.disconnect_all()
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("fail_at", ["link", "notice"])
+async def test_failed_connect_is_undone_by_disconnect(otel_metrics, fail_at):
+    """A connect that raises is undone by the disconnect socketio still sends.
+
+    Args:
+        otel_metrics: The in-memory OpenTelemetry metric reader.
+        fail_at: The await that raises.
+    """
+    mock_app = unittest.mock.Mock()
+    mock_app._state = None
+    ns = EventNamespace(namespace="/", app=mock_app)
+    ns.emit = unittest.mock.AsyncMock(
+        side_effect=RuntimeError("boom") if fail_at == "notice" else None
+    )
+    if fail_at == "link":
+        ns.link_token_to_sid = unittest.mock.AsyncMock(side_effect=RuntimeError("boom"))
+
+    with pytest.raises(RuntimeError, match="boom"):
+        await ns.on_connect("sid1", {"QUERY_STRING": "token=t1&scheme=stale"})
+    # The sid stays connected in socketio's manager until its socket closes.
+    if task := ns.on_disconnect("sid1"):
+        await task
+
+    assert "sid1" not in ns._scheme_mismatch_sids
+    assert "sid1" not in ns._static_router_data
+    for point in metric_points(otel_metrics, otel.METRIC_WEBSOCKET_CONNECTIONS):
+        assert point.value == 0
+    await ns._token_manager.disconnect_all()
+
+
 def test_compile_installs_browser_plugin(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
