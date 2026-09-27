@@ -1,7 +1,7 @@
 import copy
 import json
 from collections.abc import Callable
-from typing import Any, cast
+from typing import Any, cast, get_type_hints
 
 import pytest
 from reflex_base.constants import LogLevel
@@ -1544,3 +1544,8 @@ def test_copied_handler_leaves_the_cached_resolver_behind():
         copied = clone(handler)
         assert copied._formatted_name is None
         assert copied == handler
+
+
+def test_event_handler_type_hints_resolve():
+    """Every ``EventHandler`` field annotation resolves at runtime, as docgen needs."""
+    assert "_formatted_name" in get_type_hints(EventHandler, include_extras=True)
