@@ -174,8 +174,32 @@ def _is_state_id(value: str) -> bool:
     return not (value.startswith("_") or value.endswith("_") or "__" in value)
 
 
-def _load_minify_config_uncached() -> MinifyConfig | None:
+def _ambiguous_state_id_message(state_path: str, state_id: str) -> str:
+    """Explain why a state id is rejected and how to replace it.
+
+    Args:
+        state_path: The state's config path.
+        state_id: Its id, which :func:`_is_state_id` rejects.
+
+    Returns:
+        The message.
+    """
+    return (
+        f"state '{state_path}' has id {state_id!r}; a state id may not start or "
+        "end with '_' or contain '__', which would make two state paths read the "
+        "same once dots become '__'. Run 'reflex minify sync' to reassign it."
+    )
+
+
+def _load_minify_config_uncached(
+    *, allow_ambiguous_state_ids: bool = False
+) -> MinifyConfig | None:
     """Load and validate ``minify.json`` from disk.
+
+    Args:
+        allow_ambiguous_state_ids: Accept state ids :func:`_is_state_id`
+            rejects, which files written before that rule may hold, so the
+            ``reflex minify`` commands can report and reassign them.
 
     Returns:
         The parsed config, or ``None`` if the file is absent.
@@ -226,12 +250,8 @@ def _load_minify_config_uncached() -> MinifyConfig | None:
             msg = f"Invalid {MINIFY_JSON}: state '{key}' must be an object with a string 'id' and a 'parent': {value}"
             raise ValueError(msg)
         _validate_minified_id(f"state '{key}'", value["id"])
-        if not _is_state_id(value["id"]):
-            msg = (
-                f"Invalid {MINIFY_JSON}: state '{key}' has id {value['id']!r}; a "
-                "state id may not start or end with '_' or contain '__', which "
-                "would make two state paths read the same once dots become '__'."
-            )
+        if not allow_ambiguous_state_ids and not _is_state_id(value["id"]):
+            msg = f"Invalid {MINIFY_JSON}: {_ambiguous_state_id_message(key, value['id'])}"
             raise ValueError(msg)
         parent = value.get("parent")
         if parent is not None and not isinstance(parent, str):
@@ -958,6 +978,35 @@ def _assign_next_ids(
     return out
 
 
+def _rehome_ambiguous_ids(
+    states: dict[str, StateEntry], reassign_deleted: bool
+) -> None:
+    """Replace the state ids :func:`_is_state_id` rejects, in place.
+
+    Files written before that rule may hold them, orphaned entries included,
+    and the app refuses to load such a file. Parents come first, so a child is
+    checked against its parent's final id.
+
+    Args:
+        states: The state entries to fix up, modified in place.
+        reassign_deleted: Whether a replacement id may fill a gap.
+    """
+    for state_path in sorted(states):
+        entry = states[state_path]
+        if _is_state_id(entry["id"]):
+            continue
+        taken = {
+            minified_name_to_int(sibling["id"])
+            for path, sibling in states.items()
+            if sibling["parent"] == entry["parent"] and path != state_path
+        }
+        if (parent_entry := states.get(entry["parent"] or "")) is not None:
+            taken.add(minified_name_to_int(parent_entry["id"]))
+        entry["id"] = _assign_next_ids(
+            [state_path], taken, reassign_deleted, for_states=True
+        )[state_path]
+
+
 def _rehome_conflicting_ids(
     states: dict[str, StateEntry],
     all_states: Iterable[type[BaseState]],
@@ -1066,6 +1115,12 @@ def validate_minify_config(
                 f"'{parent_key}'. Delete {MINIFY_JSON} and re-run "
                 "'reflex minify init'."
             )
+
+    errors.extend(
+        _ambiguous_state_id_message(state_path, entry["id"])
+        for state_path, entry in config["states"].items()
+        if not _is_state_id(entry["id"])
+    )
 
     for parent_key, pairs in parent_to_pairs.items():
         parent_name = parent_key if parent_key is not None else "root"
@@ -1235,6 +1290,7 @@ def sync_minify_config(
         for state_path, minified_name in assigned.items():
             new_states[state_path] = StateEntry(id=minified_name, parent=parent_key)
 
+    _rehome_ambiguous_ids(new_states, reassign_deleted)
     _rehome_conflicting_ids(new_states, all_states, reassign_deleted, reparented)
 
     members = {
