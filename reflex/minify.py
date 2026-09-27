@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
-import functools
 import hashlib
 import json
 import logging
@@ -322,50 +321,6 @@ def _load_minify_config_uncached(*, for_repair: bool = False) -> MinifyConfig | 
         states=data["states"],
         events=data["events"],
         vars=data["vars"],
-    )
-
-
-@functools.cache
-def get_minify_config() -> MinifyConfig | None:
-    """Read ``minify.json`` once per process.
-
-    Returns:
-        The parsed config, or ``None`` if the file is absent.
-    """
-    return _load_minify_config_uncached()
-
-
-@functools.cache
-def is_mode_enabled(env_var_name: str) -> bool:
-    """Whether the given ``REFLEX_MINIFY_*`` env var is on and a config exists.
-
-    Args:
-        env_var_name: The env-var attribute name on
-            :class:`~reflex.environment.EnvironmentVariables`.
-
-    Returns:
-        ``True`` if the env var is set and ``minify.json`` exists.
-    """
-    from reflex.environment import environment
-
-    env_var = getattr(environment, env_var_name)
-    return bool(env_var.get()) and get_minify_config() is not None
-
-
-def is_minify_enabled() -> bool:
-    """Whether state, event or var minification is enabled.
-
-    Returns:
-        ``True`` when ``REFLEX_MINIFY_STATES``, ``REFLEX_MINIFY_EVENTS`` or
-        ``REFLEX_MINIFY_VARS`` is on and ``minify.json`` exists.
-    """
-    return any(
-        is_mode_enabled(mode)
-        for mode in (
-            "REFLEX_MINIFY_STATES",
-            "REFLEX_MINIFY_EVENTS",
-            "REFLEX_MINIFY_VARS",
-        )
     )
 
 
@@ -720,8 +675,6 @@ def warn_if_config_stale() -> None:
 
 def clear_config_cache() -> None:
     """Reload ``minify.json`` and reinstall the resolver."""
-    get_minify_config.cache_clear()
-    is_mode_enabled.cache_clear()
     install_minify_resolver()
 
 

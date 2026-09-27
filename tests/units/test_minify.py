@@ -24,12 +24,9 @@ from reflex.minify import (
     clear_config_cache,
     ensure_minify_resolver_for_active_context,
     generate_minify_config,
-    get_minify_config,
     get_parent_key,
     get_state_full_path,
     int_to_minified_name,
-    is_minify_enabled,
-    is_mode_enabled,
     minified_name_to_int,
     raise_for_stale_names,
     save_minify_config,
@@ -40,6 +37,7 @@ from reflex.minify import (
 from reflex.state import BaseState, State
 from tests.units.minify_helpers import (
     install_config,
+    resolved_event_id,
     run_in_fresh_interpreter,
     set_minify_modes,
 )
@@ -126,8 +124,8 @@ def test_substate_path():
 
 def test_no_config_returns_none(temp_minify_json):
     """Test that missing minify.json returns None."""
-    assert is_minify_enabled() is False
-    assert get_minify_config() is None
+    assert _load_minify_config_uncached() is None
+    assert scheme_digest() == ""
 
 
 def test_save_and_load_config(temp_minify_json, monkeypatch):
@@ -138,44 +136,37 @@ def test_save_and_load_config(temp_minify_json, monkeypatch):
         events={"test.module.MyState": {"handler": "a"}},
     )
 
-    assert is_minify_enabled() is True
-    loaded = get_minify_config()
+    assert scheme_digest()
+    loaded = _load_minify_config_uncached()
     assert loaded is not None
     assert loaded["states"]["test.module.MyState"] == {"id": "a", "parent": None}
     assert loaded["events"]["test.module.MyState"]["handler"] == "a"
 
 
-def test_invalid_version_raises(temp_minify_json, monkeypatch):
+def test_invalid_version_raises(temp_minify_json):
     """Test that invalid version raises ValueError."""
-    set_minify_modes(monkeypatch, states=True)
     config = {"version": 999, "states": {}, "events": {}}
     path = temp_minify_json / MINIFY_JSON
     with path.open("w") as f:
         json.dump(config, f)
 
-    clear_config_cache()
-
     with pytest.raises(ValueError, match=r"Unsupported.*version"):
-        is_mode_enabled("REFLEX_MINIFY_STATES")
+        _load_minify_config_uncached()
 
 
-def test_missing_states_raises(temp_minify_json, monkeypatch):
+def test_missing_states_raises(temp_minify_json):
     """Test that missing 'states' key raises ValueError."""
-    set_minify_modes(monkeypatch, states=True)
     config = {"version": SCHEMA_VERSION, "events": {}}
     path = temp_minify_json / MINIFY_JSON
     with path.open("w") as f:
         json.dump(config, f)
 
-    clear_config_cache()
-
     with pytest.raises(ValueError, match="'states' must be"):
-        is_mode_enabled("REFLEX_MINIFY_STATES")
+        _load_minify_config_uncached()
 
 
-def test_flat_string_states_raise(temp_minify_json, monkeypatch):
+def test_flat_string_states_raise(temp_minify_json):
     """Test that legacy flat string state values are rejected."""
-    set_minify_modes(monkeypatch, states=True)
     config = {
         "version": SCHEMA_VERSION,
         "states": {"test.module.MyState": "a"},
@@ -186,32 +177,22 @@ def test_flat_string_states_raise(temp_minify_json, monkeypatch):
     with path.open("w") as f:
         json.dump(config, f)
 
-    clear_config_cache()
-
     with pytest.raises(ValueError, match="must be an object with a string 'id'"):
-        is_mode_enabled("REFLEX_MINIFY_STATES")
+        _load_minify_config_uncached()
 
 
 @pytest.mark.parametrize("payload", ["[1, 2, 3]", '"a string"', "42", "null"])
-def test_non_object_json_raises(
-    temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch, payload: str
-) -> None:
+def test_non_object_json_raises(temp_minify_json: Path, payload: str) -> None:
     """Valid JSON that isn't an object is rejected as a ValueError."""
-    set_minify_modes(monkeypatch, states=True)
     (temp_minify_json / MINIFY_JSON).write_text(payload, encoding="utf-8")
 
-    clear_config_cache()
-
     with pytest.raises(ValueError, match="must be a JSON object"):
-        is_mode_enabled("REFLEX_MINIFY_STATES")
+        _load_minify_config_uncached()
 
 
 @pytest.mark.parametrize("bad_id", ["", "1bad", "a-b", "a.b", "a b"])
-def test_invalid_state_id_raises(
-    temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch, bad_id: str
-) -> None:
+def test_invalid_state_id_raises(temp_minify_json: Path, bad_id: str) -> None:
     """State ids must be non-empty and built only from the minify alphabet."""
-    set_minify_modes(monkeypatch, states=True)
     config = {
         "version": SCHEMA_VERSION,
         "states": {"test.module.MyState": {"id": bad_id, "parent": None}},
@@ -220,18 +201,13 @@ def test_invalid_state_id_raises(
     }
     (temp_minify_json / MINIFY_JSON).write_text(json.dumps(config), encoding="utf-8")
 
-    clear_config_cache()
-
     with pytest.raises(ValueError, match="invalid id"):
-        is_mode_enabled("REFLEX_MINIFY_STATES")
+        _load_minify_config_uncached()
 
 
 @pytest.mark.parametrize("bad_id", ["", "1bad", "a-b"])
-def test_invalid_event_id_raises(
-    temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch, bad_id: str
-) -> None:
+def test_invalid_event_id_raises(temp_minify_json: Path, bad_id: str) -> None:
     """Event ids go through the same alphabet check as state ids."""
-    set_minify_modes(monkeypatch, events=True)
     config = {
         "version": SCHEMA_VERSION,
         "states": {},
@@ -240,10 +216,8 @@ def test_invalid_event_id_raises(
     }
     (temp_minify_json / MINIFY_JSON).write_text(json.dumps(config), encoding="utf-8")
 
-    clear_config_cache()
-
     with pytest.raises(ValueError, match="invalid id"):
-        is_mode_enabled("REFLEX_MINIFY_EVENTS")
+        _load_minify_config_uncached()
 
 
 def test_generate_for_root_state():
@@ -695,36 +669,37 @@ def test_sync_heals_stale_parent():
     assert new_config["states"][child_path] == StateEntry(id="b", parent=parent_path)
 
 
-@pytest.mark.parametrize("var", ["REFLEX_MINIFY_STATES", "REFLEX_MINIFY_EVENTS"])
-def test_disabled_by_default(temp_minify_json, var):
+def test_disabled_by_default(temp_minify_json):
     """Both modes default to disabled even with a config present."""
     install_config(states={"x": "a"}, events={"x": {"h": "a"}})
-    assert is_mode_enabled(var) is False
+    assert scheme_digest() == ""
 
 
 @pytest.mark.parametrize("var", ["REFLEX_MINIFY_STATES", "REFLEX_MINIFY_EVENTS"])
 def test_enabled_requires_env_and_config(temp_minify_json, monkeypatch, var):
-    """Each mode flips True only when its env var is on AND a config exists."""
+    """Each mode renames only when its env var is on AND a config exists."""
     monkeypatch.setenv(getattr(environment, var).name, "1")
     clear_config_cache()
-    assert is_mode_enabled(var) is False  # env on, no config
+    assert scheme_digest() == ""  # env on, no config
     install_config(states={"x": "a"}, events={"x": {"h": "a"}})
-    assert is_mode_enabled(var) is True
+    assert scheme_digest()
 
 
 def test_modes_toggle_independently(temp_minify_json, monkeypatch):
     """States can be on while events stay off (or vice versa)."""
+
+    class ToggledState(State):
+        def handle(self):
+            pass
+
+    path = get_state_full_path(ToggledState)
     set_minify_modes(monkeypatch, states=True, events=False)
-    install_config(states={"x": "a"}, events={"x": {"h": "a"}})
-    assert is_mode_enabled("REFLEX_MINIFY_STATES") is True
-    assert is_mode_enabled("REFLEX_MINIFY_EVENTS") is False
-    assert is_minify_enabled() is True
-
-
-def test_is_minify_enabled_false_when_both_disabled(temp_minify_json):
-    """Default (no env) → ``is_minify_enabled`` is False even with config."""
-    install_config(states={"x": "a"}, events={"x": {"h": "a"}})
-    assert is_minify_enabled() is False
+    install_config(
+        states={path: StateEntry(id="z", parent="reflex.state.State")},
+        events={path: {"handle": "a"}},
+    )
+    assert ToggledState.get_name() == "z"
+    assert resolved_event_id(ToggledState, "handle") is None
 
 
 def test_disabled_returns_none(temp_minify_json):
@@ -1606,7 +1581,7 @@ def _write_config(path: Path, **sections) -> None:
 def test_config_without_vars_loads_with_empty_vars(temp_minify_json):
     """Files written before vars were minified still load."""
     _write_config(temp_minify_json)
-    loaded = get_minify_config()
+    loaded = _load_minify_config_uncached()
     assert loaded is not None
     assert loaded["vars"] == {}
 
@@ -1633,7 +1608,7 @@ def test_config_rejects_malformed_vars(temp_minify_json, vars_section, match):
     """
     _write_config(temp_minify_json, vars=vars_section)
     with pytest.raises(ValueError, match=match):
-        get_minify_config()
+        _load_minify_config_uncached()
 
 
 def test_reserved_ids_are_fine_for_events(temp_minify_json):
@@ -1641,7 +1616,7 @@ def test_reserved_ids_are_fine_for_events(temp_minify_json):
     _write_config(
         temp_minify_json, events={"test.module.MyState": {"handler": "constructor"}}
     )
-    loaded = get_minify_config()
+    loaded = _load_minify_config_uncached()
     assert loaded is not None
     assert loaded["events"]["test.module.MyState"]["handler"] == "constructor"
 
@@ -1671,18 +1646,6 @@ def test_resolve_var_name_follows_its_mode(temp_minify_json):
     assert on.resolve_var_name(VarModeState, "count") == "c"
     assert on.resolve_var_name(VarModeState, "missing") is None
     assert off.resolve_var_name(VarModeState, "count") is None
-
-
-def test_is_minify_enabled_by_vars_alone(temp_minify_json, monkeypatch):
-    """Minifying only vars still counts as minification.
-
-    Args:
-        temp_minify_json: Temporary ``minify.json`` location.
-        monkeypatch: The pytest monkeypatch fixture.
-    """
-    set_minify_modes(monkeypatch, states=False, events=False, vars=True)
-    install_config()
-    assert is_minify_enabled() is True
 
 
 def test_digest_covers_vars_only_when_minified(temp_minify_json, monkeypatch):
@@ -2076,7 +2039,7 @@ def test_state_ids_that_blur_path_segments_are_rejected(temp_minify_json, state_
         })
     )
     with pytest.raises(ValueError, match="__"):
-        get_minify_config()
+        _load_minify_config_uncached()
 
 
 def test_generated_state_ids_keep_paths_distinct(temp_minify_json):
@@ -2118,7 +2081,7 @@ def test_state_entry_without_parent_is_rejected(temp_minify_json):
         })
     )
     with pytest.raises(ValueError, match="parent"):
-        get_minify_config()
+        _load_minify_config_uncached()
 
 
 def _config_with_ambiguous_ids(parent: type[BaseState]) -> MinifyConfig:
@@ -2153,7 +2116,7 @@ def test_ambiguous_state_ids_are_reported_and_reassigned(temp_minify_json):
 
     # The app refuses it; the CLI loads it to report and repair it.
     with pytest.raises(ValueError, match="reflex minify sync"):
-        get_minify_config()
+        _load_minify_config_uncached()
     loaded = _load_minify_config_uncached(for_repair=True)
     assert loaded is not None
 
@@ -2166,8 +2129,7 @@ def test_ambiguous_state_ids_are_reported_and_reassigned(temp_minify_json):
     assert "a_" not in ids.values()
     assert len(ids) == len(config["states"])
     save_minify_config(synced)
-    get_minify_config.cache_clear()
-    assert get_minify_config() is not None
+    assert _load_minify_config_uncached() is not None
 
 
 def test_duplicate_event_ids_are_rejected_and_reassigned(temp_minify_json):
@@ -2191,7 +2153,7 @@ def test_duplicate_event_ids_are_rejected_and_reassigned(temp_minify_json):
     (temp_minify_json / MINIFY_JSON).write_text(json.dumps(config))
 
     with pytest.raises(ValueError, match="reflex minify sync"):
-        get_minify_config()
+        _load_minify_config_uncached()
     loaded = _load_minify_config_uncached(for_repair=True)
     assert loaded is not None
 
@@ -2200,8 +2162,7 @@ def test_duplicate_event_ids_are_rejected_and_reassigned(temp_minify_json):
     assert synced["events"][path]["second"] not in ("a", "c")
     assert len(set(synced["events"]["gone.module.State"].values())) == 2
     save_minify_config(synced)
-    get_minify_config.cache_clear()
-    assert get_minify_config() is not None
+    assert _load_minify_config_uncached() is not None
 
 
 def test_duplicate_var_ids_are_rejected_and_reassigned(temp_minify_json):
@@ -2221,7 +2182,7 @@ def test_duplicate_var_ids_are_rejected_and_reassigned(temp_minify_json):
     (temp_minify_json / MINIFY_JSON).write_text(json.dumps(config))
 
     with pytest.raises(ValueError, match="reflex minify sync"):
-        get_minify_config()
+        _load_minify_config_uncached()
     loaded = _load_minify_config_uncached(for_repair=True)
     assert loaded is not None
 
@@ -2229,8 +2190,7 @@ def test_duplicate_var_ids_are_rejected_and_reassigned(temp_minify_json):
     assert synced["vars"][path]["first"] == "a"
     assert synced["vars"][path]["second"] != "a"
     save_minify_config(synced)
-    get_minify_config.cache_clear()
-    assert get_minify_config() is not None
+    assert _load_minify_config_uncached() is not None
 
 
 def test_duplicate_repair_keeps_the_live_handler_id(temp_minify_json):
