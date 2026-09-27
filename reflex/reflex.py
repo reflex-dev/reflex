@@ -5,7 +5,7 @@ from __future__ import annotations
 import contextlib
 import logging
 import sys
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Collection, Iterable
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
@@ -1530,16 +1530,21 @@ def minify_lookup(output_json: bool, minified_path: str):
         members: list[tuple[Literal["events", "vars"], str]] = []
         if index == last_index:
             member_kinds: tuple[
-                tuple[Literal["events", "vars"], Iterable[str]], ...
+                tuple[Literal["events", "vars"], Collection[str]], ...
             ] = (
                 ("events", current.event_handlers),
                 ("vars", current._frontend_var_names),
             )
             for key, names in member_kinds:
                 ids = config[key].get(current_path, {})
-                # A config ``validate`` rejects can give several members the id.
+                # Only live members: ``sync`` keeps a deleted one's id reserved,
+                # and a config ``validate`` rejects can give several the same id.
                 matches = (
-                    sorted(name for name, member_id in ids.items() if member_id == part)
+                    sorted(
+                        name
+                        for name, member_id in ids.items()
+                        if member_id == part and name in names
+                    )
                     or [
                         name
                         for name in dict.fromkeys((

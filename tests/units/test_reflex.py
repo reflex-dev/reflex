@@ -1035,3 +1035,26 @@ def test_lookup_shows_every_handler_sharing_an_id(temp_minify_json, cli_runner):
     assert "first" in text.output
     assert "second" in text.output
     assert "reflex minify sync" in text.output
+
+
+def test_lookup_ignores_deleted_handlers_holding_an_id(temp_minify_json, cli_runner):
+    """``sync`` keeps a deleted handler's id reserved; lookup must not report it."""
+    from reflex.reflex import cli
+
+    class DeletedIdState(State):
+        def live(self):
+            pass
+
+    state_path = get_state_full_path(DeletedIdState)
+    install_config(
+        states={state_path: "b"},
+        events={state_path: {"live": "x", "gone": "x", "also_gone": "y"}},
+        include_state_root=True,
+    )
+
+    result = cli_runner.invoke(cli, ["minify", "lookup", "--json", "b.x"])
+    assert result.exit_code == 0, result.output
+    handlers = [e["handler"] for e in json.loads(result.output) if e["kind"] == "event"]
+    assert handlers == ["live"]
+
+    assert cli_runner.invoke(cli, ["minify", "lookup", "b.y"]).exit_code == 1
