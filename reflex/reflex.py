@@ -1496,11 +1496,19 @@ def minify_lookup(output_json: bool, minified_path: str):
         if index == last_index:
             # Only live handlers: ``sync`` keeps a deleted one's id reserved,
             # and a config ``validate`` rejects can give several the same id.
-            handlers = sorted(
-                name
-                for name, event_id in current_events.items()
-                if event_id == part and name in current.event_handlers
-            ) or ([part] if part in current.event_handlers else [])
+            holders = sorted(
+                name for name, event_id in current_events.items() if event_id == part
+            )
+            handlers = [name for name in holders if name in current.event_handlers] or (
+                [part] if part in current.event_handlers else []
+            )
+            deleted = [name for name in holders if name not in handlers]
+            if deleted and not output_json:
+                logger.warning(
+                    f"'{part}' is also the id minify.json keeps reserved for deleted "
+                    f"handler(s) {', '.join(deleted)} of {get_state_module(current)}."
+                    f"{current.__name__}, which an older frontend may still send."
+                )
         if found is None and not handlers:
             kind = "state or event handler" if index == last_index else "state"
             logger.error(
