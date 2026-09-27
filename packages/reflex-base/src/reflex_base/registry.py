@@ -478,8 +478,6 @@ class RegistrationContext(BaseContext):
             cls.get_name.cache_clear()
             cls.get_full_name.cache_clear()
             cls.get_class_substate.cache_clear()
-        for reg in self.event_handlers.values():
-            object.__setattr__(reg.handler, "_formatted_name", None)
         self.refresh_keys()
 
     def find_unbound_states(self) -> list[tuple[type[BaseState], str]]:

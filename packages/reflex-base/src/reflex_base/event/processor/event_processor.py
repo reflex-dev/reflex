@@ -865,7 +865,11 @@ class EventProcessor:
         """
         if self.backend_exception_handler is None:
             return
-        task = self._tasks[ev_ctx.txid] = asyncio.create_task(
+        # Seeded with ev_ctx so _finish_task finds it even if cancelled unstarted.
+        task_context = copy_context()
+        task_context.run(EventContext.set, ev_ctx)
+        task = self._tasks[ev_ctx.txid] = task_context.run(
+            asyncio.create_task,
             self._handle_backend_exception(ex, ev_ctx=ev_ctx),
             name=f"reflex_backend_exception_handler|queue={ev_ctx.txid}|{time.time()}",
         )

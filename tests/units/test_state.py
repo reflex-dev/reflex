@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import copy
 import dataclasses
 import datetime
@@ -6713,7 +6714,7 @@ def test_resolved_name_survives_cache_pressure(temp_minify_json, monkeypatch):
 
     The name caches are keyed only by the class but the resolver lives in a
     ContextVar, so a bounded cache would evict a name and let any later caller
-    -- a bare thread has no context -- pin the default name process-wide.
+    without a registration context pin the default name process-wide.
 
     Args:
         temp_minify_json: Temporary ``minify.json`` location.
@@ -6737,15 +6738,12 @@ def test_resolved_name_survives_cache_pressure(temp_minify_json, monkeypatch):
         for filler in fillers:
             filler.get_name()
 
-        resolved: list[str] = []
-        thread = threading.Thread(
-            target=lambda: resolved.append(PressureState.get_name())
-        )
-        thread.start()
-        thread.join()
+        def resolve_without_context() -> tuple[RegistrationContext | None, str]:
+            return RegistrationContext.try_get(), PressureState.get_name()
 
-        assert RegistrationContext.try_get() is not None
-        assert resolved == ["b"], "name was re-resolved without a registration context"
+        ctx, name = contextvars.Context().run(resolve_without_context)
+        assert ctx is None
+        assert name == "b", "name was re-resolved without a registration context"
         assert PressureState.get_name() == "b"
     finally:
         State.get_name.cache_clear()

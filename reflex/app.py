@@ -2159,6 +2159,20 @@ class EventNamespace(AsyncNamespace):
             # Make sure this instance is watching for updates from other instances.
             self._token_manager.ensure_lost_and_found_task(self.emit_update)
         query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
+        # Per-SID state goes in before the first await: a disconnect landing
+        # during one would otherwise clean up first and leave it behind.
+        # Headers, client IP, and session id cannot change for the lifetime of
+        # the connection; compute them once instead of on every event.
+        self._static_router_data[sid] = self._build_static_router_data(sid, environ)
+        client_scheme = next(iter(query_params.get("scheme", [])), "")
+        server_scheme = scheme_digest()
+        if scheme_mismatch := client_scheme != server_scheme:
+            # The client queues its initial events as soon as it sees CONNECT,
+            # and only learns of the mismatch a tick later, so drop whatever it
+            # sends meanwhile: a name from the other scheme could resolve to a
+            # real -- but wrong -- handler here.
+            self._scheme_mismatch_sids.add(sid)
+
         token_list = query_params.get("token", [])
         if token_list:
             await self.link_token_to_sid(sid, token_list[0])
@@ -2178,9 +2192,7 @@ class EventNamespace(AsyncNamespace):
 
         # Unlike the version check above, a scheme mismatch is fatal: every name
         # the client sends would resolve to the wrong handler, or to none.
-        client_scheme = next(iter(query_params.get("scheme", [])), "")
-        server_scheme = scheme_digest()
-        if client_scheme != server_scheme:
+        if scheme_mismatch:
             logger.warning(
                 f"Frontend minification scheme {client_scheme!r} for session {sid} "
                 f"does not match the backend scheme {server_scheme!r}."
@@ -2190,15 +2202,6 @@ class EventNamespace(AsyncNamespace):
                 {"frontend": client_scheme, "backend": server_scheme},
                 to=sid,
             )
-            # The client queues its initial events as soon as it sees CONNECT,
-            # and only learns of the mismatch a tick later, so drop whatever it
-            # sends meanwhile: a name from the other scheme could resolve to a
-            # real -- but wrong -- handler here.
-            self._scheme_mismatch_sids.add(sid)
-
-        # Headers, client IP, and session id cannot change for the lifetime of
-        # the connection; compute them once instead of on every event.
-        self._static_router_data[sid] = self._build_static_router_data(sid, environ)
 
     def _build_static_router_data(self, sid: str, environ: dict) -> dict[str, Any]:
         """Build the connection-scoped router_data entries for a socket.
