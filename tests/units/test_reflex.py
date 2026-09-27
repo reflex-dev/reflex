@@ -468,7 +468,14 @@ def test_minify_sync_and_validate_name_the_configured_file(
     monkeypatch: pytest.MonkeyPatch,
     mocker: MockerFixture,
 ) -> None:
-    """With ``REFLEX_MINIFY_CONFIG`` set, the commands name the file they use."""
+    """With ``REFLEX_MINIFY_CONFIG`` set, the commands name the file they use.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        cli_runner: The click CLI runner.
+        monkeypatch: The pytest monkeypatch fixture.
+        mocker: The pytest-mock fixture.
+    """
     from reflex.reflex import cli
 
     target = temp_minify_json / "deploy" / "names.json"

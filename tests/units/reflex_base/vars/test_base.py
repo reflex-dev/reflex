@@ -1212,6 +1212,38 @@ def test_state_named_by_string_reads_like_the_class(
     assert by_name_var._get_all_var_data() == by_class_var._get_all_var_data()
 
 
+def test_dependency_on_a_var_read_off_a_resolved_state_name(
+    temp_minify_json, monkeypatch
+):
+    """A computed var can depend on a var whose state is named by its wire name.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class WireNamedState(State):
+        data: int = 0
+
+    class DependentState(State):
+        @computed_var
+        def total(self) -> int:
+            return 0
+
+    set_minify_modes(monkeypatch, states=True)
+    install_config(
+        states={
+            get_state_full_path(WireNamedState): StateEntry(
+                id="z", parent="reflex.state.State"
+            )
+        },
+        include_state_root=True,
+    )
+    dep = Var(_js_expr="data")._var_set_state(WireNamedState.get_full_name())
+    DependentState.computed_vars["total"].add_dependency(DependentState, dep)
+    assert (DependentState, "total") in WireNamedState._var_dependencies["data"]
+
+
 def test_unregistered_state_name_is_taken_as_given():
     """A string naming no registered state keeps meaning what it says."""
     var_data = VarData.from_state("not_a_state", "field")
