@@ -4910,10 +4910,16 @@ config = rx.Config(
 
         made = made_callback
 
+        class ExplicitCallbacks:
+            @staticmethod
+            def refresh() -> EventSpec:
+                return rx.console_log("refresh")
+
         class ExplicitState(ExplicitMixin, State):
             num: int = 0
             shared_explicit_callback = shared_explicit_callback
             made_callback = made
+            refresh = ExplicitCallbacks.refresh
 
             @rx.event
             def handler(self):
@@ -4956,6 +4962,8 @@ config = rx.Config(
         # A callback the state merely exposes stays usable as a trigger elsewhere.
         rx.button(on_click=shared_explicit_callback)
         rx.button(on_click=made_callback)
+        rx.button(on_click=ExplicitCallbacks.refresh)
+        rx.button(on_click=ExplicitState.refresh)
 
         # Built-in states are unaffected.
         assert "on_load_internal" in OnLoadInternalState.event_handlers

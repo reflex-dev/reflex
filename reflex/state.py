@@ -717,7 +717,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         # Set up the event handlers.
         for name, fn in list(cls.__dict__.items()):
-            if cls._item_is_event_handler(name, fn, explicit):
+            if cls._item_is_event_handler(name, fn, cls if explicit else None):
                 handler = cls._create_event_handler(fn)
                 cls.event_handlers[name] = handler
                 setattr(cls, name, handler)
@@ -781,7 +781,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                             _var_data=VarData.from_state(cls),
                         ),
                     )
-                elif cls._item_is_event_handler(name, value, explicit):
+                elif cls._item_is_event_handler(
+                    name, value, mixin_cls if explicit else None
+                ):
                     fn = cls._copy_fn(value)
                     fn.__qualname__ = f"{cls.__name__}.{name}"
                     setattr(cls, name, fn)
@@ -826,15 +828,17 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         return newfn
 
     @staticmethod
-    def _item_is_event_handler(name: str, value: Any, explicit: bool = False) -> bool:
+    def _item_is_event_handler(
+        name: str, value: Any, explicit_owner: type | None = None
+    ) -> bool:
         """Check if the item is an event handler.
 
         Args:
             name: The name of the item.
             value: The value of the item.
-            explicit: Only accept functions decorated with `@rx.event`; an
-                undecorated method of the class body is marked so wiring it to a
-                trigger fails clearly.
+            explicit_owner: The class holding the item when only functions
+                decorated with `@rx.event` count; an undecorated method defined
+                in its body is marked so wiring it to a trigger fails clearly.
 
         Returns:
             Whether the item is an event handler.
@@ -847,10 +851,12 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             or not hasattr(value, "__code__")
         ):
             return False
-        if explicit and not getattr(value, EVENT_MARKER, False):
+        if explicit_owner is not None and not getattr(value, EVENT_MARKER, False):
             # A callback defined elsewhere may be shared, so leave it unmarked.
-            owner, _, fn_name = value.__qualname__.rpartition(".")
-            if fn_name == name and owner and not owner.endswith("<locals>"):
+            owner_qualname = explicit_owner.__dict__.get(
+                "__original_qualname__", explicit_owner.__qualname__
+            )
+            if value.__qualname__ == f"{owner_qualname}.{name}":
                 setattr(value, UNDECORATED_STATE_METHOD_MARKER, True)
             return False
         return True
@@ -936,6 +942,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             proposed_name = f"{cls.__name__}_{ix}"
         setattr(reflex.istate.dynamic, proposed_name, cls)
         cls.__original_name__ = cls.__name__
+        cls.__original_qualname__ = cls.__qualname__
         cls.__original_module__ = cls.__module__
         cls.__name__ = cls.__qualname__ = proposed_name
         cls.__module__ = reflex.istate.dynamic.__name__
