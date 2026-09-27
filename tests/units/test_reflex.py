@@ -920,7 +920,7 @@ def test_minify_help_shows_no_docstring_sections(cli_runner):
 
 def test_minify_sync_repairs_ambiguous_state_ids(temp_minify_json, cli_runner):
     """``validate`` flags an id the loader now rejects; ``sync`` reassigns it."""
-    from reflex.minify import StateEntry, get_minify_config
+    from reflex.minify import StateEntry, _load_minify_config_uncached
     from reflex.reflex import cli
 
     class RepairedState(State):
@@ -941,8 +941,7 @@ def test_minify_sync_repairs_ambiguous_state_ids(temp_minify_json, cli_runner):
 
     synced = cli_runner.invoke(cli, ["minify", "sync"])
     assert synced.exit_code == 0, synced.output
-    get_minify_config.cache_clear()
-    config = get_minify_config()
+    config = _load_minify_config_uncached()
     assert config is not None
     assert config["states"][get_state_full_path(RepairedState)]["id"] != "_"
 
