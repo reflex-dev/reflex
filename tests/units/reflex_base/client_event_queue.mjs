@@ -109,8 +109,8 @@ test("prepend preserves order, queue identity, and input without extra shifts", 
   const existing = [stateful(3), q.local(4)];
   await q.enqueue(existing);
   const incoming = Object.freeze([
-    [stateful(1), null],
-    [q.local(2), [undefined]],
+    Object.freeze([stateful(1), null]),
+    Object.freeze([q.local(2), Object.freeze([undefined])]),
   ]);
   await q.enqueue(incoming, true);
   await q.enqueue([[], [null, [undefined]]], true);
