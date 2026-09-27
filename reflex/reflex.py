@@ -1537,19 +1537,25 @@ def minify_lookup(output_json: bool, minified_path: str):
             )
             for key, names in member_kinds:
                 ids = config[key].get(current_path, {})
-                member = next(
-                    (name for name, member_id in ids.items() if member_id == part),
-                    next(
-                        (
-                            name
-                            for name in (part, part.removesuffix(FIELD_MARKER))
-                            if name in names
-                        ),
-                        None,
-                    ),
+                # A config ``validate`` rejects can give several members the id.
+                matches = (
+                    sorted(name for name, member_id in ids.items() if member_id == part)
+                    or [
+                        name
+                        for name in dict.fromkeys((
+                            part,
+                            part.removesuffix(FIELD_MARKER),
+                        ))
+                        if name in names
+                    ][:1]
                 )
-                if member is not None:
-                    members.append((key, member))
+                if len(matches) > 1 and not output_json:
+                    logger.warning(
+                        f"{', '.join(matches)} of {get_state_module(current)}."
+                        f"{current.__name__} share the id '{part}', so all but one "
+                        "are unreachable. Run 'reflex minify sync' to reassign them."
+                    )
+                members.extend((key, name) for name in matches)
         if found is None and not members:
             kind = "state, event handler or var" if index == last_index else "state"
             logger.error(

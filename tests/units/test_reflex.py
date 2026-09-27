@@ -1006,3 +1006,32 @@ def test_minify_sync_repairs_ambiguous_state_ids(temp_minify_json, cli_runner):
     config = get_minify_config()
     assert config is not None
     assert config["states"][get_state_full_path(RepairedState)]["id"] != "_"
+
+
+def test_lookup_shows_every_handler_sharing_an_id(temp_minify_json, cli_runner):
+    """An id two handlers share resolves to both, with a warning, not the first."""
+    from reflex.reflex import cli
+
+    class SharedIdState(State):
+        def first(self):
+            pass
+
+        def second(self):
+            pass
+
+    state_path = get_state_full_path(SharedIdState)
+    install_config(
+        states={state_path: "b"},
+        events={state_path: {"first": "x", "second": "x"}},
+        include_state_root=True,
+    )
+
+    result = cli_runner.invoke(cli, ["minify", "lookup", "--json", "b.x"])
+    assert result.exit_code == 0, result.output
+    handlers = [e["handler"] for e in json.loads(result.output) if e["kind"] == "event"]
+    assert handlers == ["first", "second"]
+
+    text = cli_runner.invoke(cli, ["minify", "lookup", "b.x"])
+    assert "first" in text.output
+    assert "second" in text.output
+    assert "reflex minify sync" in text.output
