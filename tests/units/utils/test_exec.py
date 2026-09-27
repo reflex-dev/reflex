@@ -460,8 +460,8 @@ def test_run_granian_backend_json_logs_in_json_mode(
         def on_reload(self, _callback):
             pass
 
-        def serve(self):
-            pass
+        def serve(self, **kwargs):
+            assert kwargs["target_loader"] is exec_utils._load_granian_target
 
     mocker.patch.object(granian_server, "Server", FakeGranian)
 
@@ -500,8 +500,8 @@ def test_run_granian_backend_prod_json_logs_in_json_mode(
         def __init__(self, *_args, **kwargs):
             options.update(kwargs)
 
-        def serve(self):
-            pass
+        def serve(self, **kwargs):
+            assert kwargs["target_loader"] is exec_utils._load_granian_target
 
     mocker.patch.object(granian_server, "Server", FakeGranian)
 
@@ -603,8 +603,8 @@ def _dev_granian_supervisor(mocker: MockerFixture, tmp_path: Path, port: int):
         def on_reload(self, _callback):
             pass
 
-        def serve(self):
-            pass
+        def serve(self, **kwargs):
+            assert kwargs["target_loader"] is exec_utils._load_granian_target
 
         def shutdown(self, exit_code=0):
             # Granian detaches the socket object while unlinking the pid file.

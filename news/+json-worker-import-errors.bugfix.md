@@ -1,2 +1,1 @@
-Format Granian backend worker import failures as structured JSON records when running the CLI
-with `--json`, including the application traceback.
+Format Granian backend worker import failures as JSON records, including the traceback, when using `reflex run --json`.
