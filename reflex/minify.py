@@ -335,8 +335,9 @@ class MinifyNameResolver:
 
     Returns the minified name when the matching env-var
     (``REFLEX_MINIFY_STATES`` / ``REFLEX_MINIFY_EVENTS`` / ``REFLEX_MINIFY_VARS``)
-    is enabled and the entry exists in the config; ``None`` otherwise.
-    Per-class lookups are memoized for O(1) amortized cost.
+    is enabled and the entry exists in the config; ``None`` otherwise. Nothing
+    is memoized per class: the name caches of the callers already ask once per
+    state, handler and var.
 
     Attributes:
         config: Parsed ``minify.json``, or ``None``.
@@ -349,12 +350,6 @@ class MinifyNameResolver:
     states_enabled: bool
     events_enabled: bool
     vars_enabled: bool
-    _state_cache: dict[type[BaseState], str] = dataclasses.field(
-        default_factory=dict, repr=False
-    )
-    _member_cache: dict[tuple[str, type[BaseState]], dict[str, str]] = (
-        dataclasses.field(default_factory=dict, repr=False)
-    )
 
     _digest: str | None = dataclasses.field(default=None, repr=False)
 
@@ -436,15 +431,8 @@ class MinifyNameResolver:
     def resolve_state_name(self, state_cls: type[BaseState]) -> str | None:  # noqa: D102
         if self.config is None or not self.states_enabled:
             return None
-        cached = self._state_cache.get(state_cls)
-        if cached is not None:
-            return cached
         entry = self.config["states"].get(get_state_full_path(state_cls))
-        if entry is None:
-            return None
-        resolved = entry["id"]
-        self._state_cache[state_cls] = resolved
-        return resolved
+        return None if entry is None else entry["id"]
 
     def resolve_handler_name(  # noqa: D102
         self, state_cls: type[BaseState], handler_name: str
@@ -475,12 +463,7 @@ class MinifyNameResolver:
         """
         if self.config is None:
             return None
-        cache_key = (kind.key, state_cls)
-        ids = self._member_cache.get(cache_key)
-        if ids is None:
-            ids = self.config[kind.key].get(get_state_full_path(state_cls), {})
-            self._member_cache[cache_key] = ids
-        return ids.get(name)
+        return self.config[kind.key].get(get_state_full_path(state_cls), {}).get(name)
 
 
 def get_state_module(state_cls: type[BaseState]) -> str:
