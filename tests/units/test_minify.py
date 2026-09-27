@@ -1359,3 +1359,67 @@ def test_warn_if_config_stale_is_silent_when_current(caplog):
         warn_if_config_stale()
 
     assert caplog.text == ""
+
+
+@pytest.mark.parametrize("state_id", ["_", "_b", "a_", "a__b"])
+def test_state_ids_that_blur_path_segments_are_rejected(temp_minify_json, state_id):
+    """A state id must survive its path's dots becoming ``__`` unambiguously.
+
+    ``a`` + ``_b`` and ``a_`` + ``b`` would both read ``a___b``, colliding two
+    states' context keys and locals in the compiled frontend.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        state_id: A state id with an underscore at an edge or doubled.
+    """
+    (temp_minify_json / MINIFY_JSON).write_text(
+        json.dumps({
+            "version": SCHEMA_VERSION,
+            "states": {"test.module.MyState": {"id": state_id, "parent": None}},
+            "events": {},
+        })
+    )
+    with pytest.raises(ValueError, match="__"):
+        get_minify_config()
+
+
+def test_generated_state_ids_keep_paths_distinct(temp_minify_json):
+    """Numbering past ``$`` skips the ids an underscore would blur.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+    """
+    parent = type("ManySiblingsParent", (State,), {"__module__": __name__})
+    siblings = [
+        type(f"ManySiblings{index:03d}", (parent,), {"__module__": __name__})
+        for index in range(120)
+    ]
+    config = generate_minify_config(parent)
+    ids = [config["states"][get_state_full_path(s)]["id"] for s in siblings]
+    assert len(set(ids)) == len(ids)
+    assert not [i for i in ids if i.startswith("_") or i.endswith("_") or "__" in i]
+
+    # Sync assigns the ids a later sibling needs the same way.
+    del config["states"][get_state_full_path(siblings[-1])]
+    synced = sync_minify_config(config, parent)
+    new_id = synced["states"][get_state_full_path(siblings[-1])]["id"]
+    assert not (new_id.startswith("_"))
+    assert not (new_id.endswith("_"))
+    assert "__" not in new_id
+
+
+def test_state_entry_without_parent_is_rejected(temp_minify_json):
+    """``validate`` and ``sync`` read every entry's parent, so it is required.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+    """
+    (temp_minify_json / MINIFY_JSON).write_text(
+        json.dumps({
+            "version": SCHEMA_VERSION,
+            "states": {"test.module.MyState": {"id": "a"}},
+            "events": {},
+        })
+    )
+    with pytest.raises(ValueError, match="parent"):
+        get_minify_config()

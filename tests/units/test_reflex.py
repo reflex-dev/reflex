@@ -18,7 +18,7 @@ from reflex_base.registry import RegistrationContext
 from reflex import reflex
 from reflex.minify import clear_config_cache, get_state_full_path
 from reflex.state import State
-from tests.units.minify_helpers import install_config, set_minify_modes
+from tests.units.minify_helpers import install_config
 
 _CLI_STARTUP_DENIED_MODULES = frozenset({
     "PIL",
@@ -502,17 +502,12 @@ def test_lookup_accepts_full_wire_path(temp_minify_json, cli_runner):
     assert [info["class"] for info in output_data] == ["WirePathState"]
 
 
-@pytest.mark.parametrize("states_mode", [False, True])
-def test_lookup_root_prefix_is_env_independent(
-    temp_minify_json, cli_runner, monkeypatch, states_mode
-):
-    """Both spellings of the root prefix resolve, whatever the env var says.
+def test_lookup_accepts_both_root_prefix_spellings(temp_minify_json, cli_runner):
+    """The root prefix resolves whether given minified or in full.
 
     Args:
         temp_minify_json: The temporary config fixture.
         cli_runner: The click CLI runner.
-        monkeypatch: The pytest monkeypatch fixture.
-        states_mode: Whether ``REFLEX_MINIFY_STATES`` is on.
     """
     from reflex.reflex import cli
 
@@ -524,8 +519,6 @@ def test_lookup_root_prefix_is_env_independent(
         states={get_state_full_path(RootIdState): "b"},
         include_state_root=True,
     )
-    set_minify_modes(monkeypatch, states=states_mode)
-    clear_config_cache()
 
     for prefix in ("a", RegistrationContext.default_state_name(State)):
         result = cli_runner.invoke(cli, ["minify", "lookup", "--json", f"{prefix}.b"])

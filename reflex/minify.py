@@ -73,6 +73,22 @@ def _validate_minified_id(label: str, value: str) -> None:
         raise ValueError(msg)
 
 
+def _is_state_id(value: str) -> bool:
+    """Whether a minified id keeps its state's path unambiguous once formatted.
+
+    The compiled frontend joins path segments with ``__``, so ``a`` + ``_b``
+    and ``a_`` + ``b`` would both read ``a___b``. An id with no underscore at
+    either end and none doubled can only ever split one way.
+
+    Args:
+        value: The candidate state id.
+
+    Returns:
+        Whether the id may name a state.
+    """
+    return not (value.startswith("_") or value.endswith("_") or "__" in value)
+
+
 def _load_minify_config_uncached() -> MinifyConfig | None:
     """Load and validate ``minify.json`` from disk.
 
@@ -117,10 +133,21 @@ def _load_minify_config_uncached() -> MinifyConfig | None:
 
     # Validate states: all values must be {id: str, parent: str | None} entries
     for key, value in data["states"].items():
-        if not isinstance(value, dict) or not isinstance(value.get("id"), str):
-            msg = f"Invalid {MINIFY_JSON}: state '{key}' must be an object with a string 'id': {value}"
+        if (
+            not isinstance(value, dict)
+            or not isinstance(value.get("id"), str)
+            or "parent" not in value
+        ):
+            msg = f"Invalid {MINIFY_JSON}: state '{key}' must be an object with a string 'id' and a 'parent': {value}"
             raise ValueError(msg)
         _validate_minified_id(f"state '{key}'", value["id"])
+        if not _is_state_id(value["id"]):
+            msg = (
+                f"Invalid {MINIFY_JSON}: state '{key}' has id {value['id']!r}; a "
+                "state id may not start or end with '_' or contain '__', which "
+                "would make two state paths read the same once dots become '__'."
+            )
+            raise ValueError(msg)
         parent = value.get("parent")
         if parent is not None and not isinstance(parent, str):
             msg = (
@@ -646,7 +673,9 @@ def generate_minify_config(
         # relative path can only ever mean the parent itself. Roots have no
         # parent to collide with. ``collect_all_states`` is depth-first, so a
         # parent's own id is always recorded before its children are assigned.
-        if parent is not None and state_id == own_ids.get(parent):
+        while (
+            parent is not None and state_id == own_ids.get(parent)
+        ) or not _is_state_id(int_to_minified_name(state_id)):
             state_id += 1
         sibling_counter[parent] = state_id + 1
         own_ids[state_cls] = state_id
@@ -689,6 +718,7 @@ def _assign_next_ids(
     new_keys: Iterable[str],
     existing_ids: set[int],
     reassign_deleted: bool,
+    for_states: bool = False,
 ) -> dict[str, str]:
     """Assign minified ids to ``new_keys`` while skipping ``existing_ids``.
 
@@ -700,6 +730,8 @@ def _assign_next_ids(
         existing_ids: Already-used integer ids in the same scope.
         reassign_deleted: When ``True``, scan from 0 (filling gaps);
             otherwise start past the current max.
+        for_states: Whether the ids name states, which skip the ids
+            :func:`_is_state_id` rejects.
 
     Returns:
         Mapping from key to its newly-assigned minified id.
@@ -708,7 +740,9 @@ def _assign_next_ids(
     next_id = 0 if reassign_deleted else max(pool, default=-1) + 1
     out: dict[str, str] = {}
     for key in sorted(new_keys):
-        while next_id in pool:
+        while next_id in pool or (
+            for_states and not _is_state_id(int_to_minified_name(next_id))
+        ):
             next_id += 1
         out[key] = int_to_minified_name(next_id)
         pool.add(next_id)
@@ -759,9 +793,9 @@ def _rehome_conflicting_ids(
             continue
         if state_path not in reparented and not shares_parent_id:
             continue
-        entry["id"] = _assign_next_ids([state_path], taken, reassign_deleted)[
-            state_path
-        ]
+        entry["id"] = _assign_next_ids(
+            [state_path], taken, reassign_deleted, for_states=True
+        )[state_path]
 
 
 def validate_minify_config(
@@ -955,7 +989,9 @@ def sync_minify_config(
         parent_entry = new_states.get(parent_key) if parent_key is not None else None
         if parent_entry is not None:
             existing_ids = existing_ids | {minified_name_to_int(parent_entry["id"])}
-        assigned = _assign_next_ids(children, existing_ids, reassign_deleted)
+        assigned = _assign_next_ids(
+            children, existing_ids, reassign_deleted, for_states=True
+        )
         for state_path, minified_name in assigned.items():
             new_states[state_path] = StateEntry(id=minified_name, parent=parent_key)
 
