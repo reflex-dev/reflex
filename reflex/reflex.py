@@ -1494,9 +1494,12 @@ def minify_lookup(output_json: bool, minified_path: str):
         current_path = get_state_full_path(current)
         current_events = config["events"].get(current_path, {})
         if index == last_index:
-            # A config ``validate`` rejects can give several handlers the id.
+            # Only live handlers: ``sync`` keeps a deleted one's id reserved,
+            # and a config ``validate`` rejects can give several the same id.
             handlers = sorted(
-                name for name, event_id in current_events.items() if event_id == part
+                name
+                for name, event_id in current_events.items()
+                if event_id == part and name in current.event_handlers
             ) or ([part] if part in current.event_handlers else [])
         if found is None and not handlers:
             kind = "state or event handler" if index == last_index else "state"
