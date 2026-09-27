@@ -310,13 +310,16 @@ test("addEvents flattens nested event lists before applying actions", async () =
 });
 
 test("a malformed event does not strand later queued events", async () => {
-  const q = await createAddEvents();
+  const q = await createQueue();
+  q.socket.emit = (_, event) => {
+    if (event.payload?.id !== undefined) q.output.push(event.payload.id);
+  };
 
-  await assert.rejects(q.addEvents([{ name: 7 }, q.local(1)]), TypeError);
+  q.runtime.event_queue.push({ name: 7 }, q.local(1));
+  await q.drain();
+
   assert.deepEqual(q.output, [1]);
-  await q.addEvents([q.local(2)]);
-
-  assert.deepEqual(q.output, [1, 2]);
+  assert.equal(q.runtime.event_queue.length, 0);
 });
 
 test("stateful arrival during an offline local await pauses the later drain", async () => {
