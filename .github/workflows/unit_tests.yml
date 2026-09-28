@@ -11,8 +11,6 @@ on:
       - "**/*.md"
   pull_request:
     branches: ["main"]
-    paths-ignore:
-      - "**/*.md"
 
 permissions:
   contents: read
@@ -22,7 +20,30 @@ defaults:
     shell: bash
 
 jobs:
+  # This filter cannot live on the pull_request trigger: a workflow that a path
+  # filter skips never reports its checks at all, so a branch rule requiring
+  # them blocks the merge forever. Filtered out here, the jobs below skip
+  # instead, and a skipped job reports as a pass.
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      run: ${{ steps.filter.outputs.changed }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/changed_paths
+        id: filter
+        with:
+          paths-ignore: |
+            **/*.md
+
   unit-tests:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -111,3 +132,18 @@ jobs:
         run: |
           export PYTHONUNBUFFERED=1
           uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
+
+  # The one status check the branch rules require from this workflow. Naming the
+  # jobs above directly does not survive: check names follow the matrix and the
+  # display names, and a job that a filter skips must not block the merge.
+  unit-tests-gate:
+    needs: [changes, unit-tests, unit-tests-macos]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/ci_gate
+        with:
+          needs: ${{ toJSON(needs) }}
