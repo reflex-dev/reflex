@@ -4219,6 +4219,9 @@ def _inherited_value(lookup_order: Sequence[type], name: str) -> Any:
 
 _FIELD_MAP_NAMES = frozenset({"__fields__", "__own_fields__", "__inherited_fields__"})
 
+# ``ABCMeta`` writes this onto every class it creates, so an ``ABC`` mixin carries its own.
+_ABC_BOOKKEEPING_NAME = "_abc_impl"
+
 
 @functools.cache
 def _reserved_state_members(root: BaseStateMeta) -> dict[str, Any]:
@@ -4284,8 +4287,10 @@ def _validate_inherited_members(
             _validate_state_name(root, member)
         seen.update(base.__own_fields__)
     for member, value in vars(base).items():
-        if member not in seen and not (
-            is_model and (member in _FIELD_MAP_NAMES or member == "_mixin")
+        if (
+            member not in seen
+            and member != _ABC_BOOKKEEPING_NAME
+            and not (is_model and (member in _FIELD_MAP_NAMES or member == "_mixin"))
         ):
             _validate_state_name(root, member, value)
 
