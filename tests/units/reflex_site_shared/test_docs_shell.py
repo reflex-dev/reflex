@@ -75,6 +75,18 @@ def test_feedback_popovers_open_one_at_a_time() -> None:
     assert state.open_popover == ""
 
 
+def test_feedback_popovers_stay_put_while_sending() -> None:
+    """Keep the submitting popover open until its post finishes."""
+    state = _feedback_state()
+    state.open_popover = "toc"
+    state.sending = True
+
+    state.set_popover_open("toc", False)
+    state.set_popover_open("footer", True)
+
+    assert state.open_popover == "toc"
+
+
 def test_docs_layout_rejects_conflicting_footer_factories() -> None:
     """Require one unambiguous footer API per documentation site."""
     with pytest.raises(ValueError, match="page_footer and footer"):
@@ -328,30 +340,58 @@ def _feedback_state() -> DocsFeedbackState:
 
 
 def test_feedback_submission_captures_score_and_page() -> None:
-    """Forward the selected score and page to the background post in event order."""
+    """Forward the trimmed comment, score and page to the background post in order."""
     state = _feedback_state()
     state.router = RouterData(url=ReflexURL("https://reflex.dev/docs/guide/"))
     state.score = 0
-    form_data = {"feedback": "The example is outdated."}
 
-    event = DocsFeedbackState.handle_submit.fn(state, form_data)
+    event = DocsFeedbackState.handle_submit.fn(
+        state, {"feedback": "  The example is outdated.\n", "email": "dev@example.com"}
+    )
 
+    assert event is not None
     assert event.handler.fn is DocsFeedbackState.post_feedback.fn
     assert [arg[1]._var_value for arg in event.args] == [  # pyright: ignore[reportAttributeAccessIssue]
-        form_data,
+        "The example is outdated.",
+        "dev@example.com",
         0,
         "https://reflex.dev/docs/guide/",
     ]
+    assert state.sending
+
+
+def test_feedback_submission_is_ignored_while_sending() -> None:
+    """Drop a second submission while the first is still being posted."""
+    state = _feedback_state()
+    state.sending = True
+
+    assert (
+        DocsFeedbackState.handle_submit.fn(state, {"feedback": "Great page, thanks!"})
+        is None
+    )
+
+
+@pytest.mark.parametrize("feedback", ["too short", " " * 10, "x" * 501])
+def test_feedback_submission_rejects_invalid_length(feedback: str) -> None:
+    """Warn about comments outside the accepted length without posting them."""
+    state = _feedback_state()
+
+    toast = DocsFeedbackState.handle_submit.fn(state, {"feedback": feedback})
+
+    assert "Between 10 and 500 characters" in str(toast)
+    assert not state.sending
 
 
 async def test_feedback_is_posted_to_slack(monkeypatch) -> None:
-    """Post the page, score, contact and escaped comment to the feedback channel."""
+    """Post the page, score, contact and escaped comment, then close the form."""
     posts = _mock_slack(monkeypatch, delivered=True)
     state = _feedback_state()
     state.open_popover = "toc"
+    state.sending = True
     toast = await DocsFeedbackState.post_feedback.fn(
         state,
-        {"feedback": "Outdated <!channel> example.", "email": "dev@example.com"},
+        "Outdated <!channel> example.",
+        "dev@example.com",
         0,
         "https://reflex.dev/docs/guide/",
     )
@@ -364,6 +404,7 @@ async def test_feedback_is_posted_to_slack(monkeypatch) -> None:
     assert "Contact: dev@example.com" in text
     assert "Feedback: Outdated &lt;!channel&gt; example." in text
     assert "Thank you for your feedback!" in str(toast)
+    assert not state.sending
     assert state.open_popover == ""
     assert state.form_version == 1
 
@@ -373,29 +414,15 @@ async def test_feedback_post_reports_undelivered_posts(monkeypatch) -> None:
     posts = _mock_slack(monkeypatch, delivered=False)
     state = _feedback_state()
     state.open_popover = "toc"
+    state.sending = True
 
     toast = await DocsFeedbackState.post_feedback.fn(
-        state, {"feedback": "Great page, thanks!"}, 1, "/docs/"
+        state, "Great page, thanks!", "", 1, "/docs/"
     )
 
     assert len(posts) == 1
     assert "An error occurred while submitting your feedback" in str(toast)
     # The popover stays open with the draft so the reader can retry.
+    assert not state.sending
     assert state.open_popover == "toc"
-    assert state.form_version == 0
-
-
-@pytest.mark.parametrize("feedback", ["too short", " " * 10, "x" * 501])
-async def test_feedback_post_rejects_invalid_length(monkeypatch, feedback: str) -> None:
-    """Warn about comments outside the accepted length without sending them."""
-    posts = _mock_slack(monkeypatch, delivered=True)
-    state = _feedback_state()
-    state.open_popover = "footer"
-    toast = await DocsFeedbackState.post_feedback.fn(
-        state, {"feedback": feedback}, 1, "/docs/"
-    )
-
-    assert posts == []
-    assert "Between 10 and 500 characters" in str(toast)
-    assert state.open_popover == "footer"
     assert state.form_version == 0
