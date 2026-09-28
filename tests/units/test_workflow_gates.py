@@ -150,17 +150,22 @@ def test_directly_required_checks_are_posted():
 @pytest.mark.parametrize("name", GATED_WORKFLOWS)
 def test_gate_job_runs_the_ci_gate_action(name):
     steps = WORKFLOWS[name]["jobs"][gate_id(name)].get("steps", [])
-    given = [
-        step.get("with", {}).get("needs")
-        for step in steps
-        if step.get("uses") == "./.github/actions/ci_gate"
+    gate_steps = [
+        step for step in steps if step.get("uses") == "./.github/actions/ci_gate"
     ]
     # Any other step reports the required check green whatever the jobs it needs did.
-    assert given, f"{name}: the gate never runs ./.github/actions/ci_gate"
+    assert gate_steps, f"{name}: the gate never runs ./.github/actions/ci_gate"
     expected = "${{ toJSON(needs) }}"
+    given = [step.get("with", {}).get("needs") for step in gate_steps]
     assert set(given) == {expected}, (
         f"{name}: the gate must hand ci_gate {expected}, not {given}"
     )
+    # A condition can skip the step and continue-on-error can swallow its failure;
+    # either way the job, and with it the required check, still passes.
+    lenient = [
+        key for step in gate_steps for key in ("if", "continue-on-error") if key in step
+    ]
+    assert not lenient, f"{name}: the ci_gate step must not set {lenient}"
 
 
 @pytest.mark.parametrize(
