@@ -552,9 +552,6 @@ export const processEvent = async (socket, navigate, params) => {
   // Apply the next event in the queue.
   const event = event_queue.shift();
 
-  // Drain later events even when one malformed event fails to dispatch.
-  let processing_error;
-  let has_processing_error = false;
   try {
     // Process events with handlers via REST and all others via websockets.
     if (event.handler) {
@@ -562,24 +559,11 @@ export const processEvent = async (socket, navigate, params) => {
     } else {
       await applyEvent(event, socket, navigate, params);
     }
-  } catch (error) {
-    processing_error = error;
-    has_processing_error = true;
-  }
-
-  // Process any remaining events.
-  if (event_queue.length > 0) {
-    try {
+  } finally {
+    // Continue draining queued events even if this dispatch fails.
+    if (event_queue.length > 0) {
       await processEvent(socket, navigate, params);
-    } catch (error) {
-      if (!has_processing_error) {
-        processing_error = error;
-        has_processing_error = true;
-      }
     }
-  }
-  if (has_processing_error) {
-    throw processing_error;
   }
 };
 

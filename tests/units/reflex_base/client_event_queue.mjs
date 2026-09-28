@@ -310,7 +310,7 @@ test("addEvents flattens nested event lists before applying actions", async () =
 });
 
 test("a malformed event does not strand later queued events", async () => {
-  const q = await createQueue();
+  const q = await createQueue(false);
   q.socket.emit = (_, event) => {
     if (event.payload?.id !== undefined) q.output.push(event.payload.id);
   };
