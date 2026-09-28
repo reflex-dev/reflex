@@ -46,6 +46,9 @@ W = TypeVar("W", bound="Workflow", contravariant=True)
 C = TypeVar("C", bound="Workflow")
 P = ParamSpec("P")
 
+# How long a step waits before its first retry, doubling from there. Long
+# enough that a service that just refused a call is not called again at once,
+# short enough that a run recovering from one is not noticeably held up.
 DEFAULT_BACKOFF = datetime.timedelta(seconds=30)
 
 # How long a retry may be put off, however many have failed. Doubling without a
