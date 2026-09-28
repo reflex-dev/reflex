@@ -1436,7 +1436,7 @@ def minify_lookup(output_json: bool, minified_path: str):
     """
     from reflex_base.registry import RegistrationContext
 
-    from reflex.minify import collect_all_states, get_state_full_path, get_state_module
+    from reflex.minify import collect_all_states, get_state_full_path
     from reflex.state import State
 
     config = _open_minify_session(for_json=output_json)
@@ -1506,7 +1506,7 @@ def minify_lookup(output_json: bool, minified_path: str):
             if deleted and not output_json:
                 logger.warning(
                     f"'{part}' is also the id minify.json keeps reserved for deleted "
-                    f"handler(s) {', '.join(deleted)} of {get_state_module(current)}."
+                    f"handler(s) {', '.join(deleted)} of {current._get_source_module()}."
                     f"{current.__name__}, which an older frontend may still send."
                 )
         if found is None and not handlers:
@@ -1523,7 +1523,7 @@ def minify_lookup(output_json: bool, minified_path: str):
                 # ``part`` may be the unminified name, so report the id from
                 # the config; ``None`` when the state has no entry.
                 "state_id": path_to_id.get(get_state_full_path(found)),
-                "module": get_state_module(found),
+                "module": found._get_source_module(),
                 "class": found.__name__,
                 "full_path": get_state_full_path(found),
             })
@@ -1531,11 +1531,11 @@ def minify_lookup(output_json: bool, minified_path: str):
         if handlers and found is not None and not output_json:
             logger.warning(
                 f"Segment '{part}' is both a state id and an event handler id "
-                f"of {get_state_module(current)}.{current.__name__}; showing both."
+                f"of {current._get_source_module()}.{current.__name__}; showing both."
             )
         if len(handlers) > 1 and not output_json:
             logger.warning(
-                f"Handlers {', '.join(handlers)} of {get_state_module(current)}."
+                f"Handlers {', '.join(handlers)} of {current._get_source_module()}."
                 f"{current.__name__} share the id '{part}', so all but one are "
                 "unreachable. Run 'reflex minify sync' to reassign them."
             )
@@ -1544,7 +1544,7 @@ def minify_lookup(output_json: bool, minified_path: str):
                 "kind": "event",
                 "minified": part,
                 "event_id": current_events.get(handler),
-                "module": get_state_module(current),
+                "module": current._get_source_module(),
                 "class": current.__name__,
                 "handler": handler,
                 "full_path": f"{current_path}.{handler}",

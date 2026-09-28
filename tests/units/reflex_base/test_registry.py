@@ -13,9 +13,9 @@ from reflex_base.registry import (
 )
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 
-from reflex.minify import MinifyNameResolver
 from reflex.state import BaseState, State
 from reflex.testing import chdir
+from tests.units.minify_helpers import minify_resolver
 from tests.units.name_resolvers import stub_resolver, temporary_resolver
 
 
@@ -491,9 +491,7 @@ def test_default_resolver_satisfies_protocol():
 
 def test_minify_resolver_satisfies_protocol():
     """``MinifyNameResolver`` is a structural :class:`NameResolver`."""
-    resolver = MinifyNameResolver(
-        config=None, states_enabled=False, events_enabled=False
-    )
+    resolver = minify_resolver()
     assert isinstance(resolver, NameResolver)
 
 

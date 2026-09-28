@@ -1196,6 +1196,26 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         return name
 
     @classmethod
+    def _get_source_module(cls) -> str:
+        """Get the module whose code defines the state, wherever its class was put.
+
+        States defined inside a function and the ones ``ComponentState.create()``
+        builds live in ``reflex.istate.dynamic``, for pickling.
+
+        Returns:
+            The name of the defining module.
+        """
+        # Its own attribute: a subclass would inherit a locally defined parent's.
+        if (original_module := cls.__dict__.get("__original_module__")) is not None:
+            return original_module
+        if cls.__module__ == reflex.istate.dynamic.__name__ and issubclass(
+            cls, ComponentState
+        ):
+            # Built from the component class, its first base.
+            return cls.__bases__[0].__module__
+        return cls.__module__
+
+    @classmethod
     @functools.lru_cache
     def get_class_substate(
         cls, path: Sequence[str] | str, _skip_self: bool = True
@@ -2679,29 +2699,6 @@ def code_uses_state_contexts(javascript_code: str) -> bool:
     return bool("useContext(StateContexts" in javascript_code)
 
 
-def _source_module(state_cls: type[BaseState]) -> str:
-    """Get the module whose code defines a state, wherever its class was put.
-
-    States defined inside a function and the ones ``ComponentState.create()``
-    builds live in ``reflex.istate.dynamic``, for pickling.
-
-    Args:
-        state_cls: The state class.
-
-    Returns:
-        The name of the defining module.
-    """
-    # Its own attribute: a subclass would inherit a locally defined parent's.
-    if (original_module := state_cls.__dict__.get("__original_module__")) is not None:
-        return original_module
-    if state_cls.__module__ == reflex.istate.dynamic.__name__ and issubclass(
-        state_cls, ComponentState
-    ):
-        # Built from the component class, its first base.
-        return state_cls.__bases__[0].__module__
-    return state_cls.__module__
-
-
 def reload_state_module(
     module: str,
     state: type[BaseState] = State,
@@ -2717,7 +2714,7 @@ def reload_state_module(
     for pd_state in tuple(state._potentially_dirty_states):
         with contextlib.suppress(ValueError):
             if (
-                _source_module(state.get_root_state().get_class_substate(pd_state))
+                state.get_root_state().get_class_substate(pd_state)._get_source_module()
                 == module
                 and module is not None
             ):
@@ -2726,7 +2723,7 @@ def reload_state_module(
     substates = reg_ctx.get_substates(state)
     for subclass in tuple(substates):
         reload_state_module(module=module, state=subclass)
-        if _source_module(subclass) == module and module is not None:
+        if subclass._get_source_module() == module and module is not None:
             all_base_state_classes.pop(subclass._get_default_full_name(), None)
             subclass._is_registered = False
             substates.remove(subclass)

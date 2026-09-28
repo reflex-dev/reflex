@@ -1583,7 +1583,7 @@ async def test_cancelled_spawned_exception_handler_task_is_untracked(token: str)
     async with processor as ep:
         assert ep._root_context is not None
         ev_ctx = ep._root_context.fork(token=token)
-        ep._spawn_backend_exception_handler(RuntimeError("boom"), ev_ctx)
+        ep._spawn_backend_exception_handler(RuntimeError("boom"), ev_ctx, "test")
         task = ep._tasks[ev_ctx.txid]
         task.cancel()
         with contextlib.suppress(asyncio.CancelledError):

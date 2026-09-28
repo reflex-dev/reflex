@@ -7,7 +7,9 @@ import os
 import subprocess
 import sys
 import textwrap
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 import pytest
 from reflex_base.registry import RegistrationContext
@@ -17,6 +19,7 @@ from reflex.minify import (
     MINIFY_JSON,
     SCHEMA_VERSION,
     MinifyConfig,
+    MinifyNameResolver,
     StateEntry,
     clear_config_cache,
     save_minify_config,
@@ -61,8 +64,45 @@ def set_minify_modes(
         monkeypatch.setenv(environment.REFLEX_MINIFY_EVENTS.name, str(int(events)))
 
 
+def make_config(
+    states: Mapping[str, str | StateEntry] | None = None,
+    events: dict[str, dict[str, str]] | None = None,
+    *,
+    include_state_root: bool = False,
+) -> MinifyConfig:
+    """Build a ``minify.json`` config.
+
+    Args:
+        states: ``state_path -> minified_id`` map. Plain string values are
+            wrapped into :class:`StateEntry` with ``parent=None``.
+        events: ``state_path -> {handler -> minified_id}`` map.
+        include_state_root: Add ``"reflex.state.State": "a"`` so subclasses
+            of ``State`` resolve through the root entry.
+
+    Returns:
+        The config.
+    """
+    states_map: dict[str, StateEntry] = {
+        path: value if isinstance(value, dict) else StateEntry(id=value, parent=None)
+        for path, value in (states or {}).items()
+    }
+    if include_state_root:
+        states_map.setdefault("reflex.state.State", StateEntry(id="a", parent=None))
+    return MinifyConfig(version=SCHEMA_VERSION, states=states_map, events=events or {})
+
+
+def write_config(directory: Path, config: Mapping[str, Any]) -> None:
+    """Write ``config`` as the ``minify.json`` of ``directory``, as it is.
+
+    Args:
+        directory: The directory to write it to.
+        config: The contents, which may be malformed on purpose.
+    """
+    (directory / MINIFY_JSON).write_text(json.dumps(config))
+
+
 def install_config(
-    states: dict[str, str | StateEntry] | None = None,
+    states: Mapping[str, str | StateEntry] | None = None,
     events: dict[str, dict[str, str]] | None = None,
     *,
     include_state_root: bool = False,
@@ -74,29 +114,35 @@ def install_config(
     ``State.get_name.cache_clear()`` etc. by hand.
 
     Args:
-        states: ``state_path -> minified_id`` map. Plain string values are
-            wrapped into :class:`StateEntry` with ``parent=None``.
-        events: ``state_path -> {handler -> minified_id}`` map.
-        include_state_root: Add ``"reflex.state.State": "a"`` so subclasses
-            of ``State`` resolve through the root entry.
+        states: See :func:`make_config`.
+        events: See :func:`make_config`.
+        include_state_root: See :func:`make_config`.
 
     Returns:
         The saved config.
     """
-    states_map: dict[str, StateEntry] = {
-        path: value if isinstance(value, dict) else StateEntry(id=value, parent=None)
-        for path, value in (states or {}).items()
-    }
-    if include_state_root:
-        states_map.setdefault("reflex.state.State", StateEntry(id="a", parent=None))
-    config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": states_map,
-        "events": events or {},
-    }
+    config = make_config(states, events, include_state_root=include_state_root)
     save_minify_config(config)
     clear_config_cache()
     return config
+
+
+def minify_resolver(
+    config: MinifyConfig | None = None, *, states: bool = False, events: bool = False
+) -> MinifyNameResolver:
+    """Build a resolver over ``config`` with the given modes on.
+
+    Args:
+        config: The config, if any.
+        states: Whether state names are minified.
+        events: Whether event names are minified.
+
+    Returns:
+        The resolver.
+    """
+    return MinifyNameResolver(
+        config=config, states_enabled=states, events_enabled=events
+    )
 
 
 def run_in_fresh_interpreter(
@@ -114,7 +160,7 @@ def run_in_fresh_interpreter(
         script: Python source to execute; a non-zero exit fails the test.
         env: Extra environment variables for the child process.
     """
-    (tmp_path / MINIFY_JSON).write_text(json.dumps(config))
+    write_config(tmp_path, config)
     (tmp_path / "check.py").write_text(textwrap.dedent(script))
 
     result = subprocess.run(
