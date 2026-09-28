@@ -6,6 +6,7 @@ from typing import cast
 import pytest
 from reflex_site_shared.components.docs_shell import (
     _docs_external_page_footer_memo,
+    _feedback_content,
     docs_feedback_button,
     docs_feedback_button_toc,
     docs_left_sidebar,
@@ -51,7 +52,24 @@ def test_shared_feedback_preserves_the_official_form_structure() -> None:
     assert "w-full gap-4 flex flex-col" in rendered
     assert "flex flex-col gap-4 w-full" in rendered
     assert '"aria-label":"Clear input"' in rendered
-    assert 'jsx(Popover.Close,{"data-slot":"popover-close",render:' in rendered
+    assert 'jsx(Popover.Close,{"data-slot":"popover-close",render:' not in rendered
+
+
+def test_feedback_form_preserves_comments_on_submission() -> None:
+    """Keep the comment available when delivery or validation fails."""
+    form = cast(rx.Component, _feedback_content().children[0].children[0])
+    assert str(form.reset_on_submit) == "false"  # pyright: ignore[reportAttributeAccessIssue]
+    assert "form_version" in str(form.key)
+    submit = form.children[0].children[-1]
+    assert "sending" in str(submit.disabled)  # pyright: ignore[reportAttributeAccessIssue]
+
+
+@pytest.mark.parametrize("factory", [docs_feedback_button, docs_feedback_button_toc])
+def test_feedback_popover_open_state_is_controlled(factory) -> None:
+    """Both feedback controls follow the state closed by a successful submission."""
+    rendered = str(factory())
+    assert "open_popover" in rendered
+    assert "set_popover_open" in rendered
 
 
 def test_docs_layout_rejects_conflicting_footer_factories() -> None:

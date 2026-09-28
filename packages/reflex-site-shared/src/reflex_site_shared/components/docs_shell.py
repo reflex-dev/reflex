@@ -6,10 +6,13 @@ from collections.abc import Callable, Sequence
 from datetime import datetime
 from typing import Any
 
+import httpx
 import reflex_components_internal as ui
+from reflex_base.event import EventSpec
 from reflex_components_internal.blocks.demo_form import demo_form_dialog
 
 import reflex as rx
+from reflex_site_shared import constants
 from reflex_site_shared.backend.status import StatusState
 from reflex_site_shared.components.icons import get_icon
 from reflex_site_shared.components.marketing_button import button
@@ -29,6 +32,23 @@ class DocsFeedbackState(rx.State):
     """Store the feedback selection shared by documentation shells."""
 
     score: int = -1
+    sending: bool = False
+    open_popover: str = ""
+    form_version: int = 0
+
+    @rx.event
+    def set_popover_open(self, location: str, open_: bool) -> None:
+        """Open or close a feedback form when no submission is pending.
+
+        Args:
+            location: The feedback control requesting the change.
+            open_: Whether that control should be open.
+        """
+        if not self.sending:
+            if open_:
+                self.open_popover = location
+            elif self.open_popover == location:
+                self.open_popover = ""
 
     @rx.event
     def set_score(self, score: int) -> None:
@@ -39,14 +59,56 @@ class DocsFeedbackState(rx.State):
         """
         self.score = score
 
-    @rx.event
-    def handle_submit(self, form_data: dict[str, Any]) -> None:
-        """Accept an optional documentation feedback comment.
+    @rx.event(background=True)
+    async def handle_submit(self, form_data: dict[str, Any]) -> EventSpec | None:
+        """Send documentation feedback to the configured webhook.
 
         Args:
             form_data: Submitted feedback fields.
+
+        Returns:
+            A status toast, or None if another submission is pending.
         """
-        del form_data
+        feedback = form_data.get("feedback", "").strip()
+        if not 10 <= len(feedback) <= 500:
+            return rx.toast.warning(
+                "Please enter feedback between 10 and 500 characters.",
+                close_button=True,
+            )
+
+        webhook_url = constants.REFLEX_DEV_WEB_GENERAL_FORM_FEEDBACK_WEBHOOK_URL
+        if not webhook_url:
+            return rx.toast.error(
+                "Feedback is currently unavailable.", close_button=True
+            )
+
+        async with self:
+            if self.sending:
+                return None
+            self.sending = True
+            message = (
+                f"Contact: {form_data.get('email', '')}\n"
+                f"Page: {self.router.url.path}\n"
+                f"Score: {'👍' if self.score == 1 else '👎'}\n"
+                f"Feedback: {feedback}"
+            )
+        delivered = False
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(webhook_url, json={"text": message})
+                response.raise_for_status()
+            delivered = True
+        except httpx.HTTPError:
+            return rx.toast.error(
+                "Unable to send feedback. Please try again later.", close_button=True
+            )
+        finally:
+            async with self:
+                self.sending = False
+                if delivered:
+                    self.open_popover = ""
+                    self.form_version += 1
+        return rx.toast.success("Thank you for your feedback!", close_button=True)
 
 
 def docs_navbar_frame(
@@ -354,6 +416,7 @@ def _feedback_thumb_card(score: int, icon: str, label: str) -> rx.Component:
         label,
         type="button",
         on_click=DocsFeedbackState.set_score(score),
+        disabled=DocsFeedbackState.sending,
         class_name=rx.cond(
             DocsFeedbackState.score == score,
             "flex h-9 items-center justify-center gap-2 rounded-full shadow-small border border-border bg-accent px-3 text-sm font-medium text-foreground transition-colors",
@@ -380,6 +443,7 @@ def _feedback_content() -> rx.Component:
                         enter_key_submit=True,
                         resize="vertical",
                         required=True,
+                        disabled=DocsFeedbackState.sending,
                     ),
                     rx.hstack(
                         _feedback_thumb_card(1, "ThumbsUpIcon", "Helpful"),
@@ -392,18 +456,19 @@ def _feedback_content() -> rx.Component:
                         type="email",
                         placeholder="Contact email (optional)",
                         max_length=100,
+                        disabled=DocsFeedbackState.sending,
                     ),
-                    ui.popover.close(
-                        render_=ui.button(
-                            "Send feedback",
-                            type="submit",
-                            class_name="w-full !rounded-full",
-                        )
+                    ui.button(
+                        rx.cond(DocsFeedbackState.sending, "Sending…", "Send feedback"),
+                        type="submit",
+                        disabled=DocsFeedbackState.sending,
+                        class_name="w-full !rounded-full",
                     ),
                     class_name="w-full gap-4 flex flex-col",
                 ),
                 class_name="w-full",
-                reset_on_submit=True,
+                key=DocsFeedbackState.form_version,
+                reset_on_submit=False,
                 on_submit=DocsFeedbackState.handle_submit,
             ),
             class_name="flex flex-col gap-4 w-full",
@@ -440,6 +505,10 @@ def docs_feedback_button() -> rx.Component:
             class_name="flex w-full flex-row items-center gap-1.5 lg:w-auto",
         ),
         ui.popover.portal(ui.popover.positioner(ui.popover.popup(_feedback_content()))),
+        open=DocsFeedbackState.open_popover == "footer",
+        on_open_change=lambda open_, details: DocsFeedbackState.set_popover_open(
+            "footer", open_
+        ),
     )
 
 
@@ -460,6 +529,10 @@ def docs_feedback_button_toc() -> rx.Component:
             class_name="justify-start pl-0 text-muted-foreground hover:!bg-transparent hover:!text-foreground",
         ),
         content=_feedback_content(),
+        open=DocsFeedbackState.open_popover == "toc",
+        on_open_change=lambda open_, details: DocsFeedbackState.set_popover_open(
+            "toc", open_
+        ),
     )
 
 
