@@ -452,6 +452,7 @@ def frontend(*args):
     exec_mod.frontend_process = p
     with open(PIDS, "w") as handshake:
         handshake.write(str(p.pid))
+    sys.stderr.write("x" * 131072)
     raise SystemExit(3)
 
 exec_mod.run_frontend = frontend
@@ -476,10 +477,12 @@ rx._run_dev(constants.RunningMode.FULLSTACK, 3000, 8000, "127.0.0.1")
     )
     child = None
     try:
-        launcher.wait(timeout=DEFAULT_TIMEOUT)
-        assert ready.exists(), "frontend did not start"
+        _, stderr = launcher.communicate(timeout=DEFAULT_TIMEOUT)
+        assert ready.exists(), (
+            "frontend did not start: " + stderr.decode(errors="replace")[-1000:]
+        )
         child = int(ready.read_text())
-        assert launcher.returncode == 3
+        assert launcher.returncode == 3, stderr.decode(errors="replace")[-1000:]
         with contextlib.suppress(psutil.NoSuchProcess):
             assert psutil.Process(child).status() in (
                 psutil.STATUS_ZOMBIE,
@@ -488,7 +491,7 @@ rx._run_dev(constants.RunningMode.FULLSTACK, 3000, 8000, "127.0.0.1")
     finally:
         if launcher.poll() is None:
             os.killpg(launcher.pid, signal.SIGKILL)
-            launcher.wait(timeout=DEFAULT_TIMEOUT)
+            launcher.communicate(timeout=DEFAULT_TIMEOUT)
         if child is not None:
             with contextlib.suppress(ProcessLookupError):
                 os.kill(child, signal.SIGKILL)
