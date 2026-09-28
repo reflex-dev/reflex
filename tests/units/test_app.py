@@ -5306,8 +5306,8 @@ async def test_failed_connect_is_undone_by_disconnect(otel_metrics, fail_at):
 
     assert "sid1" not in ns._scheme_mismatch_sids
     assert "sid1" not in ns._static_router_data
-    for point in metric_points(otel_metrics, otel.METRIC_WEBSOCKET_CONNECTIONS):
-        assert point.value == 0
+    (point,) = metric_points(otel_metrics, otel.METRIC_WEBSOCKET_CONNECTIONS)
+    assert point.value == 0
     await ns._token_manager.disconnect_all()
 
 
