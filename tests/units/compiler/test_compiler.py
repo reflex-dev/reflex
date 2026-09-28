@@ -1891,9 +1891,10 @@ def test_compile_app_drops_event_caches_from_earlier_compiles(
         (constants.CompileContext.DEPLOY, "pro", None, False),
         (constants.CompileContext.DEPLOY, "enterprise", False, False),
         (constants.CompileContext.DEPLOY, "team", True, True),
-        # A tier that cannot be resolved counts as unpaid.
+        # An unresolved tier (e.g. `reflex deploy --token`) keeps the app's own
+        # setting; the hosting CLI enforces the badge from the tier it verified.
         (constants.CompileContext.DEPLOY, "anonymous", None, True),
-        (constants.CompileContext.DEPLOY, "anonymous", False, True),
+        (constants.CompileContext.DEPLOY, "anonymous", False, False),
         # Outside of deploys the badge shows unless the app opts out.
         (constants.CompileContext.EXPORT, "free", None, True),
         (constants.CompileContext.EXPORT, "free", False, False),
@@ -1909,12 +1910,12 @@ def test_compile_app_resolves_show_built_with_reflex(
     configured: bool | None,
     expected: bool,
 ):
-    """The badge setting a compile resolves to depends on the deploy's tier.
+    """A production compile installs the badge according to the deploy's tier.
 
     Args:
         tmp_path: Directory for compiler output.
         monkeypatch: Fixture for changing the app directory and compile context.
-        mocker: Fixture for configuring the test app and the user's tier.
+        mocker: Fixture for configuring the test app, the user's tier and prod mode.
         compile_context: The context the app is compiled in.
         tier: The tier of the deploying user.
         configured: The app's own show_built_with_reflex setting.
@@ -1925,6 +1926,7 @@ def test_compile_app_resolves_show_built_with_reflex(
     get_user_tier = mocker.patch(
         "reflex.utils.prerequisites.get_user_tier", return_value=tier
     )
+    mocker.patch("reflex.compiler.compiler.is_prod_mode", return_value=True)
     with RegistrationContext():
         config = rx.Config(
             app_name="badge_test", plugins=[], show_built_with_reflex=configured
@@ -1936,4 +1938,8 @@ def test_compile_app_resolves_show_built_with_reflex(
         compiler.compile_app(app, dry_run=True, use_rich=False)
 
         assert config.show_built_with_reflex is expected
-    assert get_user_tier.called is (compile_context == constants.CompileContext.DEPLOY)
+        assert ((0, "StickyBadge") in app.app_wraps) is expected
+    # An app that opts in shows the badge on any tier, so it needs no lookup.
+    assert get_user_tier.called is (
+        compile_context == constants.CompileContext.DEPLOY and configured is not True
+    )
