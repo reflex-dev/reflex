@@ -672,6 +672,17 @@ _issued_var_keys: weakref.WeakKeyDictionary[type[BaseState], dict[str, str]] = (
 )
 
 
+# The prefix of a renamed state's local; see ``format_state_local``.
+_RENAMED_STATE_LOCAL_PREFIX = "$rx_"
+
+# A state's local, in either shape ``format_state_local`` gives it, and the
+# member read off it; a built-in ``module___ClassName`` name has the ``___``.
+STATE_MEMBER_READ = re.compile(
+    rf"(?<![\w$.])({re.escape(_RENAMED_STATE_LOCAL_PREFIX)}[\w$]+|[\w$]*___[\w$]*)"
+    r"(?:\.([\w$]+))?"
+)
+
+
 def issued_states(local: str) -> Collection[type[BaseState]]:
     """Get every state a local was handed out for, under any resolver.
 
@@ -714,7 +725,7 @@ def format_state_local(state_cls: type[BaseState]) -> str:
     full_name = state_cls.get_full_name()
     local = format_state_name(full_name)
     if full_name != state_cls._get_default_full_name():
-        local = f"$rx_{local}"
+        local = f"{_RENAMED_STATE_LOCAL_PREFIX}{local}"
     _issued_state_locals.setdefault(local, weakref.WeakSet()).add(state_cls)
     return local
 

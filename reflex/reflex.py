@@ -5,7 +5,7 @@ from __future__ import annotations
 import contextlib
 import logging
 import sys
-from collections.abc import Callable, Collection, Iterable
+from collections.abc import Callable
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from click.shell_completion import CompletionItem
     from reflex_base.constants.base import LITERAL_ENV
 
-    from reflex.minify import MinifyConfig
+    from reflex.minify import MinifyConfig, _MemberKind
 
 
 @click.group
@@ -1102,17 +1102,17 @@ def _load_app_for_minify() -> None:
     prerequisites.get_compiled_app(dry_run=True)
 
 
-def _count_members(config: MinifyConfig, key: Literal["events", "vars"]) -> int:
-    """Sum the event handlers or vars across every state in a minify config.
+def _count_members(config: MinifyConfig, kind: _MemberKind) -> int:
+    """Sum the members of one kind across every state in a minify config.
 
     Args:
         config: The minify configuration.
-        key: The section to count.
+        kind: The kind of member to count.
 
     Returns:
         Total member count.
     """
-    return sum(len(ids) for ids in config[key].values())
+    return sum(len(ids) for ids in config[kind.key].values())
 
 
 @overload
@@ -1186,6 +1186,8 @@ def _open_minify_session(
 def minify_init():
     """Initialize minify.json with IDs for all states, events and vars."""
     from reflex.minify import (
+        _EVENTS,
+        _VARS,
         _get_minify_json_path,
         generate_minify_config,
         save_minify_config,
@@ -1205,8 +1207,8 @@ def minify_init():
 
     logger.info(
         f"Created {path} with {len(config['states'])} states, "
-        f"{_count_members(config, 'events')} events "
-        f"and {_count_members(config, 'vars')} vars."
+        f"{_count_members(config, _EVENTS)} events "
+        f"and {_count_members(config, _VARS)} vars."
     )
 
 
@@ -1231,6 +1233,7 @@ def minify_sync(reassign_deleted: bool, prune: bool):
     Adds new states, events and vars, optionally removes orphaned entries.
     """
     from reflex.minify import (
+        _MEMBER_KINDS,
         _get_minify_json_path,
         save_minify_config,
         sync_minify_config,
@@ -1246,11 +1249,10 @@ def minify_sync(reassign_deleted: bool, prune: bool):
     logger.info(
         f"  States: {len(existing_config['states'])} -> {len(new_config['states'])}"
     )
-    keys: tuple[Literal["events", "vars"], ...] = ("events", "vars")
-    for key in keys:
+    for kind in _MEMBER_KINDS:
         logger.info(
-            f"  {key.capitalize()}: {_count_members(existing_config, key)} "
-            f"-> {_count_members(new_config, key)}"
+            f"  {kind.key.capitalize()}: {_count_members(existing_config, kind)} "
+            f"-> {_count_members(new_config, kind)}"
         )
 
 
@@ -1298,7 +1300,7 @@ def minify_list(output_json: bool):
     """Print the state tree with IDs and minified names."""
     from typing import TypedDict
 
-    from reflex.minify import get_state_full_path
+    from reflex.minify import _EVENTS, _VARS, get_state_full_path
     from reflex.state import BaseState, State
 
     class EventHandlerData(TypedDict):
@@ -1328,20 +1330,20 @@ def minify_list(output_json: bool):
     states_map = config["states"] if config else {}
 
     def member_ids(
-        key: Literal["events", "vars"], state_path: str, names: Iterable[str]
+        kind: _MemberKind, state_cls: type[BaseState], state_path: str
     ) -> list[tuple[str, str | None]]:
         """List a state's members of one kind with their ids.
 
         Args:
-            key: The config section numbering the members.
+            kind: The kind of member.
+            state_cls: The state.
             state_path: The state's config path.
-            names: The members' Python names.
 
         Returns:
             ``(name, id)`` pairs sorted by name.
         """
-        ids = config[key].get(state_path, {}) if config else {}
-        return [(name, ids.get(name)) for name in sorted(names)]
+        ids = config[kind.key].get(state_path, {}) if config else {}
+        return [(name, ids.get(name)) for name in sorted(kind.names(state_cls))]
 
     def build_state_tree(state_cls: type[BaseState]) -> StateTreeData:
         """Recursively build state tree data.
@@ -1361,15 +1363,11 @@ def minify_list(output_json: bool):
             "state_id": state_entry["id"] if state_entry is not None else None,
             "event_handlers": [
                 {"name": name, "event_id": event_id}
-                for name, event_id in member_ids(
-                    "events", state_path, state_cls.event_handlers
-                )
+                for name, event_id in member_ids(_EVENTS, state_cls, state_path)
             ],
             "vars": [
                 {"name": name, "var_id": var_id}
-                for name, var_id in member_ids(
-                    "vars", state_path, state_cls._frontend_var_names
-                )
+                for name, var_id in member_ids(_VARS, state_cls, state_path)
             ],
             "substates": [
                 build_state_tree(substate)
@@ -1470,9 +1468,20 @@ def minify_lookup(output_json: bool, minified_path: str):
     from reflex_base.constants.state import FIELD_MARKER
     from reflex_base.registry import RegistrationContext
 
-    from reflex.minify import collect_all_states, get_state_full_path
+    from reflex.minify import (
+        _EVENTS,
+        _MEMBER_KINDS,
+        _VARS,
+        collect_all_states,
+        get_state_full_path,
+    )
     from reflex.state import State
 
+    # How a member of each kind shows: its name's JSON key, and how to read it.
+    presentation = {
+        _EVENTS: ("handler", "an event handler"),
+        _VARS: ("var", "a var"),
+    }
     config = _open_minify_session(for_json=output_json)
 
     # Build lookup: full_path -> minified_id (None if no entry).
@@ -1526,28 +1535,22 @@ def minify_lookup(output_json: bool, minified_path: str):
         # handler's own name) of the state resolved so far, not a substate id;
         # likewise a var key copied from a delta, appended to its state's name.
         current_path = get_state_full_path(current)
-        members: list[tuple[Literal["events", "vars"], str]] = []
+        owner = f"{current._get_source_module()}.{current.__name__}"
+        members: list[tuple[_MemberKind, str, str | None]] = []
         if index == last_index:
-            member_kinds: tuple[
-                tuple[Literal["events", "vars"], Collection[str]], ...
-            ] = (
-                ("events", current.event_handlers),
-                ("vars", current._frontend_var_names),
-            )
-            for key, names in member_kinds:
+            for kind in _MEMBER_KINDS:
+                names = kind.names(current)
+                ids = config[kind.key].get(current_path, {})
                 # Only live members: ``sync`` keeps a deleted one's id reserved,
                 # and a config ``validate`` rejects can give several the same id.
                 holders = sorted(
-                    name
-                    for name, member_id in config[key].get(current_path, {}).items()
-                    if member_id == part
+                    name for name, member_id in ids.items() if member_id == part
                 )
                 matches = [name for name in holders if name in names] or [
                     name
                     for name in dict.fromkeys((part, part.removesuffix(FIELD_MARKER)))
                     if name in names
                 ][:1]
-                owner = f"{current._get_source_module()}.{current.__name__}"
                 if len(matches) > 1 and not output_json:
                     logger.warning(
                         f"{', '.join(matches)} of {owner} share the id '{part}', so "
@@ -1561,11 +1564,11 @@ def minify_lookup(output_json: bool, minified_path: str):
                         f"deleted {', '.join(deleted)} of {owner}, which an older "
                         "frontend may still send."
                     )
-                members.extend((key, name) for name in matches)
+                members.extend((kind, name, ids.get(name)) for name in matches)
         if found is None and not members:
-            kind = "state, event handler or var" if index == last_index else "state"
+            wanted = "state, event handler or var" if index == last_index else "state"
             logger.error(
-                f"No {kind} found for minified segment '{part}' in path '{minified_path}'"
+                f"No {wanted} found for minified segment '{part}' in path '{minified_path}'"
             )
             raise SystemExit(1)
 
@@ -1582,19 +1585,19 @@ def minify_lookup(output_json: bool, minified_path: str):
             })
         # JSON readers see the ambiguity as several entries for one segment.
         readings = (["a state"] if found is not None else []) + [
-            "an event handler" if key == "events" else "a var" for key, _ in members
+            presentation[kind][1] for kind, _, _ in members
         ]
         if len(readings) > 1 and not output_json:
             logger.warning(
                 f"Segment '{part}' is the id of {' and of '.join(readings)} of "
-                f"{current._get_source_module()}.{current.__name__}; showing each."
+                f"{owner}; showing each."
             )
-        for key, member in members:
-            kind, name_key = ("event", "handler") if key == "events" else ("var", "var")
+        for kind, member, member_id in members:
+            name_key = presentation[kind][0]
             result_parts.append({
-                "kind": kind,
+                "kind": kind.label,
                 "minified": part,
-                f"{kind}_id": config[key].get(current_path, {}).get(member),
+                f"{kind.label}_id": member_id,
                 "module": current._get_source_module(),
                 "class": current.__name__,
                 name_key: member,

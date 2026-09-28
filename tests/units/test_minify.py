@@ -702,13 +702,15 @@ def test_sync_heals_stale_parent():
     assert new_config["states"][child_path] == StateEntry(id="b", parent=parent_path)
 
 
-@pytest.mark.parametrize("var", ["REFLEX_MINIFY_STATES", "REFLEX_MINIFY_EVENTS"])
+@pytest.mark.parametrize(
+    "var", ["REFLEX_MINIFY_STATES", "REFLEX_MINIFY_EVENTS", "REFLEX_MINIFY_VARS"]
+)
 def test_enabled_requires_env_and_config(temp_minify_json, monkeypatch, var):
     """Each mode renames only when its env var is on AND a config exists."""
     monkeypatch.setenv(getattr(environment, var).name, "1")
     clear_config_cache()
     assert scheme_digest() == ""  # env on, no config
-    install_config(states={"x": "a"}, events={"x": {"h": "a"}})
+    install_config(states={"x": "a"}, events={"x": {"h": "a"}}, vars={"x": {"v": "a"}})
     assert scheme_digest()
 
 
@@ -890,22 +892,47 @@ def test_independent_of_which_states_have_registered(temp_minify_json, monkeypat
     assert scheme_digest() == before
 
 
-def test_differs_when_an_id_changes(temp_minify_json, monkeypatch):
-    """Editing minify.json renames states, so the schemes must not match.
+@pytest.mark.parametrize(
+    ("section", "before", "after"),
+    [
+        ("states", {"reflex.state.State": "a"}, {"reflex.state.State": "b"}),
+        (
+            "events",
+            {"reflex.state.State": {"hydrate": "a"}},
+            {"reflex.state.State": {"hydrate": "b"}},
+        ),
+        (
+            "vars",
+            {"reflex.state.State": {"is_hydrated": "h"}},
+            {"reflex.state.State": {"is_hydrated": "i"}},
+        ),
+    ],
+)
+def test_differs_when_an_id_changes(
+    temp_minify_json, monkeypatch, section, before, after
+):
+    """Editing minify.json renames names on the wire, so the schemes must differ.
 
-    ``_install_config`` reinstalls the resolver, which is the only thing
-    that invalidates the digest: a value cached anywhere that outlives the
-    resolver would fail here rather than reject every later connection.
+    ``install_config`` reinstalls the resolver, which is the only thing that
+    invalidates the digest: a value cached anywhere that outlives the resolver
+    would fail here rather than reject every later connection.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+        section: The config section, named like its mode, whose id changes.
+        before: The section before the edit.
+        after: The section after the edit.
     """
-    set_minify_modes(monkeypatch, states=True)
+    set_minify_modes(monkeypatch, **{section: True})
 
-    install_config(states={"reflex.state.State": "a"})
-    before = scheme_digest()
+    install_config(**{section: before})
+    first = scheme_digest()
 
-    install_config(states={"reflex.state.State": "b"})
-    after = scheme_digest()
+    install_config(**{section: after})
 
-    assert before != after
+    assert first
+    assert scheme_digest() not in ("", first)
 
 
 def test_resolver_active_before_any_state_registers(tmp_path):
@@ -1556,28 +1583,6 @@ def test_resolve_var_name_follows_its_mode(temp_minify_json):
     assert off.resolve_var_name(VarModeState, "count") is None
 
 
-def test_digest_covers_vars_only_when_minified(temp_minify_json, monkeypatch):
-    """A var id reaches the wire only with ``REFLEX_MINIFY_VARS`` on.
-
-    Args:
-        temp_minify_json: Temporary ``minify.json`` location.
-        monkeypatch: The pytest monkeypatch fixture.
-    """
-    config_vars = {"reflex.state.State": {"is_hydrated": "h"}}
-
-    set_minify_modes(monkeypatch, states=False, events=False, vars=False)
-    install_config(vars=config_vars)
-    assert scheme_digest() == ""
-
-    set_minify_modes(monkeypatch, vars=True)
-    install_config(vars=config_vars)
-    first = scheme_digest()
-    assert first
-
-    install_config(vars={"reflex.state.State": {"is_hydrated": "i"}})
-    assert scheme_digest() not in ("", first)
-
-
 def test_generate_numbers_the_frontend_vars_of_each_state(temp_minify_json):
     """Each state numbers the vars it sends to the client, not inherited ones.
 
@@ -1972,6 +1977,34 @@ def _config_with_ambiguous_ids(parent: type[BaseState]) -> MinifyConfig:
     return config
 
 
+def _load_for_repair(directory: Path, config: MinifyConfig) -> MinifyConfig:
+    """Write a config the app refuses, and load it the way the CLI repairs it.
+
+    Args:
+        directory: Where to write it.
+        config: The config needing ``reflex minify sync``.
+
+    Returns:
+        The config as loaded for repair.
+    """
+    write_config(directory, config)
+    with pytest.raises(ValueError, match="reflex minify sync"):
+        _load_minify_config_uncached()
+    loaded = _load_minify_config_uncached(for_repair=True)
+    assert loaded is not None
+    return loaded
+
+
+def _assert_repaired(config: MinifyConfig) -> None:
+    """Save a repaired config and check the app loads it again.
+
+    Args:
+        config: The repaired config.
+    """
+    save_minify_config(config)
+    assert _load_minify_config_uncached() is not None
+
+
 def test_ambiguous_state_ids_are_reported_and_reassigned(temp_minify_json):
     """A config written before the rule loads for the CLI, which repairs it.
 
@@ -1981,13 +2014,7 @@ def test_ambiguous_state_ids_are_reported_and_reassigned(temp_minify_json):
     parent = type("AmbiguousParent", (State,), {"__module__": __name__})
     type("AmbiguousChild", (parent,), {"__module__": __name__})
     config = _config_with_ambiguous_ids(parent)
-    write_config(temp_minify_json, config)
-
-    # The app refuses it; the CLI loads it to report and repair it.
-    with pytest.raises(ValueError, match="reflex minify sync"):
-        _load_minify_config_uncached()
-    loaded = _load_minify_config_uncached(for_repair=True)
-    assert loaded is not None
+    loaded = _load_for_repair(temp_minify_json, config)
 
     errors, _warnings, _missing = validate_minify_config(loaded, parent)
     assert sum("reflex minify sync" in error for error in errors) == 2
@@ -1997,8 +2024,7 @@ def test_ambiguous_state_ids_are_reported_and_reassigned(temp_minify_json):
     assert "_" not in ids.values()
     assert "a_" not in ids.values()
     assert len(ids) == len(config["states"])
-    save_minify_config(synced)
-    assert _load_minify_config_uncached() is not None
+    _assert_repaired(synced)
 
 
 def test_duplicate_event_ids_are_rejected_and_reassigned(temp_minify_json):
@@ -2019,19 +2045,13 @@ def test_duplicate_event_ids_are_rejected_and_reassigned(temp_minify_json):
     config = generate_minify_config(DuplicateEventState)
     config["events"][path] = {"first": "a", "second": "a", "setvar": "c"}
     config["events"]["gone.module.State"] = {"x": "b", "y": "b"}
-    write_config(temp_minify_json, config)
-
-    with pytest.raises(ValueError, match="reflex minify sync"):
-        _load_minify_config_uncached()
-    loaded = _load_minify_config_uncached(for_repair=True)
-    assert loaded is not None
+    loaded = _load_for_repair(temp_minify_json, config)
 
     synced = sync_minify_config(loaded, DuplicateEventState)
     assert synced["events"][path]["first"] == "a"
     assert synced["events"][path]["second"] not in ("a", "c")
     assert len(set(synced["events"]["gone.module.State"].values())) == 2
-    save_minify_config(synced)
-    assert _load_minify_config_uncached() is not None
+    _assert_repaired(synced)
 
 
 def test_duplicate_var_ids_are_rejected_and_reassigned(temp_minify_json):
@@ -2048,18 +2068,12 @@ def test_duplicate_var_ids_are_rejected_and_reassigned(temp_minify_json):
     path = get_state_full_path(DuplicateVarState)
     config = generate_minify_config(DuplicateVarState)
     config["vars"][path] = {"first": "a", "second": "a"}
-    write_config(temp_minify_json, config)
-
-    with pytest.raises(ValueError, match="reflex minify sync"):
-        _load_minify_config_uncached()
-    loaded = _load_minify_config_uncached(for_repair=True)
-    assert loaded is not None
+    loaded = _load_for_repair(temp_minify_json, config)
 
     synced = sync_minify_config(loaded, DuplicateVarState)
     assert synced["vars"][path]["first"] == "a"
     assert synced["vars"][path]["second"] != "a"
-    save_minify_config(synced)
-    assert _load_minify_config_uncached() is not None
+    _assert_repaired(synced)
 
 
 def test_duplicate_repair_keeps_the_live_handler_id(temp_minify_json):

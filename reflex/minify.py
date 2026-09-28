@@ -17,7 +17,7 @@ import logging
 import re
 from collections.abc import Callable, Collection, Iterable, Iterator
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypedDict
 
 from reflex_base.constants.state import FIELD_MARKER
 
@@ -110,19 +110,50 @@ def _get_minify_json_path() -> Path:
     return (environment.REFLEX_MINIFY_CONFIG.get() or Path(MINIFY_JSON)).absolute()
 
 
-def _digest_minify_json(path: Path) -> str | None:
-    """Digest a ``minify.json``'s content so any edit to it can be told apart.
+def _read_minify_json(path: Path) -> bytes | None:
+    """Read a ``minify.json``.
 
     Args:
         path: The file.
 
     Returns:
-        The digest, or ``None`` if the file does not exist.
+        Its content, or ``None`` if it does not exist.
     """
     try:
-        return hashlib.blake2b(path.read_bytes(), digest_size=16).hexdigest()
+        return path.read_bytes()
     except FileNotFoundError:
         return None
+
+
+class _ConfigSource(NamedTuple):
+    """What a :class:`MinifyNameResolver` is built from, read in one go."""
+
+    # The ``minify.json`` of the app being run.
+    path: Path
+    # Its content, ``None`` if it does not exist.
+    content: bytes | None
+    # Whether ``REFLEX_MINIFY_STATES``, ``_EVENTS`` and ``_VARS`` are on.
+    modes: tuple[bool, bool, bool]
+
+    @classmethod
+    def read(cls) -> _ConfigSource:
+        """Read the file and the modes as they are now.
+
+        Returns:
+            The source.
+        """
+        from reflex.environment import environment
+
+        path = _get_minify_json_path()
+        return cls(
+            path,
+            _read_minify_json(path),
+            (
+                environment.REFLEX_MINIFY_STATES.get(),
+                environment.REFLEX_MINIFY_EVENTS.get(),
+                environment.REFLEX_MINIFY_VARS.get(),
+            ),
+        )
 
 
 def _validate_minified_id(label: str, value: str) -> None:
@@ -248,6 +279,23 @@ def _load_minify_config_uncached(*, for_repair: bool = False) -> MinifyConfig | 
     """Load and validate ``minify.json`` from disk.
 
     Args:
+        for_repair: See :func:`_parse_minify_config`.
+
+    Returns:
+        The parsed config, or ``None`` if the file is absent.
+    """
+    return _parse_minify_config(
+        _read_minify_json(_get_minify_json_path()), for_repair=for_repair
+    )
+
+
+def _parse_minify_config(
+    content: bytes | None, *, for_repair: bool = False
+) -> MinifyConfig | None:
+    """Parse and validate the content of a ``minify.json``.
+
+    Args:
+        content: The content, ``None`` if the file is absent.
         for_repair: Accept the problems ``reflex minify sync`` repairs -- state
             ids :func:`_is_state_id` rejects and an id two handlers of a state
             share -- so the ``reflex minify`` commands can report and fix them.
@@ -256,15 +304,13 @@ def _load_minify_config_uncached(*, for_repair: bool = False) -> MinifyConfig | 
         The parsed config, or ``None`` if the file is absent.
 
     Raises:
-        ValueError: If the file exists but is malformed.
+        ValueError: If the content is malformed.
     """
-    path = _get_minify_json_path()
-    if not path.exists():
+    if content is None:
         return None
 
     try:
-        with path.open(encoding="utf-8") as f:
-            data = json.load(f)
+        data = json.loads(content)
     except json.JSONDecodeError as e:
         msg = f"Invalid JSON in {MINIFY_JSON}: {e}"
         raise ValueError(msg) from e
@@ -351,16 +397,14 @@ class MinifyNameResolver:
         states_enabled: Whether ``REFLEX_MINIFY_STATES`` is on.
         events_enabled: Whether ``REFLEX_MINIFY_EVENTS`` is on.
         vars_enabled: Whether ``REFLEX_MINIFY_VARS`` is on.
-        path: The ``minify.json`` the config was read from, if any.
-        file_digest: That file's content digest when it was read.
+        source: What the resolver was built from, if read from disk.
     """
 
     config: MinifyConfig | None
     states_enabled: bool
     events_enabled: bool
     vars_enabled: bool
-    path: Path | None = None
-    file_digest: str | None = None
+    source: _ConfigSource | None = None
 
     _digest: str | None = dataclasses.field(default=None, repr=False)
 
@@ -415,30 +459,33 @@ class MinifyNameResolver:
         ).hexdigest()[:16]
 
     @classmethod
-    def from_disk(cls) -> MinifyNameResolver:
+    def from_disk(cls, source: _ConfigSource | None = None) -> MinifyNameResolver:
         """Build a resolver from ``minify.json`` (uncached) and env vars.
 
         Malformed configs degrade gracefully to ``config=None`` with a warning.
 
+        Args:
+            source: The file and modes to build from; read now if omitted.
+
         Returns:
             A configured resolver.
         """
-        from reflex.environment import environment
-
-        path = _get_minify_json_path()
-        file_digest = _digest_minify_json(path)
+        if source is None:
+            source = _ConfigSource.read()
         try:
-            config = _load_minify_config_uncached()
+            config = _parse_minify_config(source.content)
         except ValueError as e:
-            logger.warning(f"{path} could not be loaded: {e}; minification disabled.")
+            logger.warning(
+                f"{source.path} could not be loaded: {e}; minification disabled."
+            )
             config = None
+        states, events, vars_ = source.modes
         return cls(
             config=config,
-            states_enabled=environment.REFLEX_MINIFY_STATES.get(),
-            events_enabled=environment.REFLEX_MINIFY_EVENTS.get(),
-            vars_enabled=environment.REFLEX_MINIFY_VARS.get(),
-            path=path,
-            file_digest=file_digest,
+            states_enabled=states,
+            events_enabled=events,
+            vars_enabled=vars_,
+            source=source,
         )
 
     def resolve_state_name(self, state_cls: type[BaseState]) -> str | None:  # noqa: D102
@@ -537,29 +584,20 @@ def ensure_minify_resolver_for_active_context() -> None:
     """
     from reflex_base.registry import DefaultNameResolver, RegistrationContext
 
-    from reflex.environment import environment
-
     if _default_names_forced:
         return
     ctx = RegistrationContext.ensure_context()
     resolver = ctx.name_resolver
-    path = _get_minify_json_path()
-    file_digest = _digest_minify_json(path)
+    source = _ConfigSource.read()
     if isinstance(resolver, MinifyNameResolver):
-        if file_digest is None:
+        if source.content is None:
             ctx.set_name_resolver(DefaultNameResolver())
             return
-        if (
-            resolver.path == path
-            and resolver.file_digest == file_digest
-            and resolver.states_enabled == environment.REFLEX_MINIFY_STATES.get()
-            and resolver.events_enabled == environment.REFLEX_MINIFY_EVENTS.get()
-            and resolver.vars_enabled == environment.REFLEX_MINIFY_VARS.get()
-        ):
+        if resolver.source == source:
             return
-    elif type(resolver) is not DefaultNameResolver or file_digest is None:
+    elif type(resolver) is not DefaultNameResolver or source.content is None:
         return
-    install_minify_resolver()
+    ctx.set_name_resolver(MinifyNameResolver.from_disk(source))
 
 
 def _collect_missing_entries(
@@ -694,10 +732,6 @@ def _renamed_default_references() -> dict[str, str]:
     return references
 
 
-# A state's local (see ``format_state_local``) and the member read off it.
-_STATE_MEMBER = re.compile(r"(?<![\w$.])(\$rx_[\w$]+|[\w$]*___[\w$]*)(?:\.([\w$]+))?")
-
-
 def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
     """Reject compiled code naming a state, handler or var unlike the active resolver.
 
@@ -719,6 +753,7 @@ def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
     from reflex_base.registry import RegistrationContext
     from reflex_base.utils.exceptions import ReflexError
     from reflex_base.utils.format import (
+        STATE_MEMBER_READ,
         format_state_local,
         format_var_key,
         issued_states,
@@ -738,7 +773,7 @@ def raise_for_stale_names(outputs: Iterable[tuple[str, str]]) -> None:
                     if prefix in references:
                         found.setdefault(prefix, (references[prefix], path))
                         break
-        for match in _STATE_MEMBER.finditer(code):
+        for match in STATE_MEMBER_READ.finditer(code):
             local, member = match.groups()
             if not (owners := issued_states(local)):
                 continue

@@ -29,61 +29,33 @@ def test_fstrings(contents, expected):
     assert comp["contents"] == expected
 
 
-def test_stringified_var_still_flagged_when_root_is_minified(
-    temp_minify_json, monkeypatch, mocker
+@pytest.mark.parametrize(
+    ("minify_states", "minify_vars"),
+    [(True, False), (True, True), (False, True)],
+    ids=["states", "states-and-vars", "vars"],
+)
+def test_stringified_var_flagged_when_minified(
+    temp_minify_json, monkeypatch, mocker, minify_states, minify_vars
 ):
-    """The perf-mode check flags state Vars whose root state is renamed."""
+    """The perf-mode check flags state Vars whatever minification renames."""
     from reflex_base.environment import PerformanceMode
 
     import reflex as rx
 
-    set_minify_modes(monkeypatch, states=True)
+    set_minify_modes(monkeypatch, states=minify_states, vars=minify_vars)
 
     class StrVarProbe(State):
         field: int = 1
 
+    path = get_state_full_path(StrVarProbe)
     install_config(
-        states={
-            "reflex.state.State": StateEntry(id="a", parent=None),
-            get_state_full_path(StrVarProbe): StateEntry(
-                id="b", parent="reflex.state.State"
-            ),
-        }
-    )
-    assert State.get_name() == "a"
-
-    mocker.patch(
-        "reflex_components_core.base.bare.get_performance_mode",
-        return_value=PerformanceMode.RAISE,
-    )
-
-    with pytest.raises(ValueError, match="displayed as a string"):
-        rx.vstack(str(StrVarProbe.field))
-
-
-@pytest.mark.parametrize("minify_states", [True, False])
-def test_stringified_var_flagged_when_var_is_minified(
-    temp_minify_json, monkeypatch, mocker, minify_states
-):
-    """The perf-mode check flags state Vars whose minified key has no field marker."""
-    from reflex_base.environment import PerformanceMode
-
-    import reflex as rx
-
-    set_minify_modes(monkeypatch, states=minify_states, vars=True)
-
-    class MinVarProbe(State):
-        field: int = 1
-
-    path = get_state_full_path(MinVarProbe)
-    install_config(
-        states={
-            "reflex.state.State": StateEntry(id="a", parent=None),
-            path: StateEntry(id="b", parent="reflex.state.State"),
-        },
+        states={path: StateEntry(id="b", parent="reflex.state.State")},
         vars={path: {"field": "c"}},
+        include_state_root=True,
     )
-    assert str(MinVarProbe.field).endswith(".c")
+    stringified = str(StrVarProbe.field)
+    assert (State.get_name() == "a") is minify_states
+    assert stringified.endswith(".c") is minify_vars
 
     mocker.patch(
         "reflex_components_core.base.bare.get_performance_mode",
@@ -91,6 +63,6 @@ def test_stringified_var_flagged_when_var_is_minified(
     )
 
     with pytest.raises(ValueError, match="displayed as a string"):
-        rx.vstack(str(MinVarProbe.field))
+        rx.vstack(stringified)
     # The issued state local followed by a key it never handed out.
-    rx.vstack(f"{str(MinVarProbe.field).split('.')[0]}.not_a_key")
+    rx.vstack(f"{stringified.split('.')[0]}.not_a_key")

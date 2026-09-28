@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import re
 from collections.abc import Iterator, Sequence
 from typing import Any
 
@@ -12,18 +11,13 @@ from reflex_base.components.tags import CommonTag
 from reflex_base.components.tags.tagless import Tagless
 from reflex_base.environment import PerformanceMode, environment
 from reflex_base.utils.decorator import once
-from reflex_base.utils.format import issued_states, issued_var_keys
+from reflex_base.utils.format import STATE_MEMBER_READ, issued_states, issued_var_keys
 from reflex_base.utils.imports import ParsedImportDict
 from reflex_base.vars import BooleanVar, ObjectVar, Var
 from reflex_base.vars.base import GLOBAL_CACHE, VarData
 from reflex_base.vars.sequence import LiteralStringVar
 
 logger = logging.getLogger(__name__)
-
-
-# A stringified state Var opens with its state's local and the var's key, both
-# of which minify.json may rewrite, so they are told by having been handed out.
-_STATE_VAR_STR = re.compile(r"([\w$]+)\.([\w$]+)")
 
 
 @once
@@ -48,7 +42,11 @@ def validate_str(value: str):
     perf_mode = get_performance_mode()
     if (
         perf_mode != PerformanceMode.OFF
-        and (match := _STATE_VAR_STR.match(value)) is not None
+        # A stringified state Var opens with its state's local and the var's
+        # key, both of which minify.json may rewrite, so they are told by
+        # having been handed out.
+        and (match := STATE_MEMBER_READ.match(value)) is not None
+        and match[2] is not None
         and any(match[2] in issued_var_keys(s) for s in issued_states(match[1]))
     ):
         if perf_mode == PerformanceMode.WARN:
