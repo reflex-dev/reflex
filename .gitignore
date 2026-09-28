@@ -7,6 +7,11 @@
 .mypy_cache/
 assets/external/*
 dist/*
+# Only the tracked examples; private apps under examples/ stay ignored.
+examples/*
+!examples/README.md
+!examples/ruff.toml
+!examples/playground/
 .web
 .states
 .idea

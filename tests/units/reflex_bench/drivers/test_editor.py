@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import shutil
 from pathlib import Path
 
 import pytest
@@ -17,9 +16,11 @@ def app(tmp_path: Path) -> Path:
     """Copy the real playground, whose pragma lines the benchmarks rewrite.
 
     Returns:
-        The copy.
+        The copy, without the build output a local run leaves behind.
     """
-    return Path(shutil.copytree(fixtures.playground_dir(), tmp_path / "app"))
+    app = tmp_path / "app"
+    fixtures.materialize_playground(app)
+    return app
 
 
 @pytest.mark.parametrize(

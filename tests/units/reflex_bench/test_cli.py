@@ -567,6 +567,29 @@ def test_version_and_help(home: Path):
     assert "--fail-on-inconclusive" in help_result.output
 
 
+@pytest.mark.parametrize(
+    "command",
+    [
+        ("list",),
+        ("run",),
+        ("ab",),
+        ("show",),
+        ("compare",),
+        ("doctor",),
+        ("export",),
+        ("subjects", "list"),
+        ("subjects", "prune"),
+        ("budgets", "check"),
+    ],
+)
+def test_help_omits_docstring_sections(home: Path, command: tuple[str, ...]):
+    # click prints the whole docstring; the Args/Returns/Raises sections are
+    # for readers of the source, not of --help.
+    result = invoke(*command, "--help")
+    assert result.exit_code == 0, result.output
+    assert not {"Args:", "Returns:", "Raises:"} & set(result.output.split())
+
+
 def test_budgets_check_is_registered(home: Path):
     assert "budgets" in invoke("--help").output
     result = invoke("budgets", "check", "--help")

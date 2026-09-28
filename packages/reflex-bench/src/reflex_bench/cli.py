@@ -77,6 +77,8 @@ EXIT_INTERRUPTED = 130
 # Subject venvs default to the harness's Python, which the workspace runs on.
 DEFAULT_PYTHON = f"{sys.version_info.major}.{sys.version_info.minor}"
 _ARGV = "reflex_bench.argv"
+# The first Google docstring section: --help stops there.
+_DOCSTRING_SECTION = re.compile(r"\n\s*(?:Args|Returns|Yields|Raises):\n")
 _CHECK_ICONS = {"ok": "\N{CHECK MARK}", "warn": WARN, "info": DOT}
 _AGE = re.compile(r"(\d+)([dhm])")
 _AGE_UNITS = {"d": "days", "h": "hours", "m": "minutes"}
@@ -92,7 +94,23 @@ def in_ci() -> bool:
 
 
 class _Group(click.Group):
-    """The command group: records the raw arguments and owns the exit codes."""
+    """The command group: trims help texts, records the raw arguments and owns the exit codes."""
+
+    # Subgroups declared here trim their own commands; groups built elsewhere
+    # (budgets) arrive complete, so add_command also walks their commands.
+    group_class = type
+
+    def add_command(self, cmd: click.Command, name: str | None = None) -> None:
+        """Register a command, cutting the docstring sections out of its help text.
+
+        Args:
+            cmd: The command, or a group of commands.
+            name: The command name, defaulting to the command's own.
+        """
+        for command in (cmd, *getattr(cmd, "commands", {}).values()):
+            if command.help and (match := _DOCSTRING_SECTION.search(command.help)):
+                command.help = command.help[: match.start()]
+        super().add_command(cmd, name)
 
     def parse_args(self, ctx: click.Context, args: list[str]) -> list[str]:
         """Remember the arguments for the result document.
