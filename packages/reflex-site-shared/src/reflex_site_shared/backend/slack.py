@@ -27,7 +27,7 @@ async def post_to_slack(text: str, channel: str) -> bool:
 
     Slack answers a rejected post (an uninvited bot, an unknown channel, a
     missing token) with HTTP 200, so delivery is read from the ``ok`` field;
-    a body that is not JSON counts as undelivered.
+    a body that is not a JSON object counts as undelivered.
 
     Args:
         text: The message, already escaped where it embeds untrusted text.
@@ -49,6 +49,7 @@ async def post_to_slack(text: str, channel: str) -> bool:
                 },
             )
             response.raise_for_status()
-            return response.json().get("ok", False)
+            payload = response.json()
     except (httpx.HTTPError, ValueError):
         return False
+    return isinstance(payload, dict) and payload.get("ok") is True

@@ -71,6 +71,7 @@ async def test_post_to_slack_sends_an_authenticated_post_message(
     [
         httpx.Response(200, json={"ok": False, "error": "channel_not_found"}),
         httpx.Response(200, text="<html>upstream error</html>"),
+        httpx.Response(200, json=["ok"]),
         httpx.Response(429),
         httpx.ConnectError("unreachable"),
     ],

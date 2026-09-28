@@ -41,6 +41,9 @@ class DocsFeedbackState(rx.State):
     form_version: int = 0
     # Whether a submission is being posted; blocks resubmitting and switching popovers.
     sending: bool = False
+    # The validated message handle_submit queued for post_feedback. Backend-only,
+    # so a client cannot supply the text post_feedback sends.
+    _pending_message: str = ""
 
     @rx.event
     def set_popover_open(self, location: str, open_: bool) -> None:
@@ -89,39 +92,37 @@ class DocsFeedbackState(rx.State):
                 close_button=True,
             )
         self.sending = True
-        return DocsFeedbackState.post_feedback(
-            feedback, form_data.get("email", ""), self.score, self.router.url
-        )
-
-    @rx.event(background=True)
-    async def post_feedback(
-        self, feedback: str, email: str, score: int, page: str
-    ) -> rx.event.EventSpec:
-        """Post a documentation feedback comment to the docs feedback Slack channel.
-
-        Args:
-            feedback: The reader's comment.
-            email: The reader's optional contact email.
-            score: The selected feedback score.
-            page: The URL of the page the feedback is about.
-
-        Returns:
-            A toast telling the reader whether the feedback was sent.
-        """
-        message = (
-            f"Contact: {escape_slack_text(email)}\n"
-            f"Page: {escape_slack_text(page)}\n"
-            f"Score: {({1: '👍', 0: '👎'}).get(score, 'none')}\n"
+        self._pending_message = (
+            f"Contact: {escape_slack_text(form_data.get('email', ''))}\n"
+            f"Page: {escape_slack_text(self.router.url)}\n"
+            f"Score: {({1: '👍', 0: '👎'}).get(self.score, 'none')}\n"
             f"Feedback: {escape_slack_text(feedback)}"
         )
-        delivered = await post_to_slack(message, SLACK_DOCS_FEEDBACK_CHANNEL)
+        return DocsFeedbackState.post_feedback()
+
+    @rx.event(background=True)
+    async def post_feedback(self) -> rx.event.EventSpec | None:
+        """Post the message handle_submit queued to the docs feedback Slack channel.
+
+        Returns:
+            A toast telling the reader whether the feedback was sent, or None
+            when no message is queued.
+        """
         async with self:
-            self.sending = False
-            # Popovers cannot switch while sending, so the open one is the one
-            # that submitted.
-            if delivered:
-                self.open_popover = ""
-                self.form_version += 1
+            message, self._pending_message = self._pending_message, ""
+        if not message:
+            return None
+        delivered = False
+        try:
+            delivered = await post_to_slack(message, SLACK_DOCS_FEEDBACK_CHANNEL)
+        finally:
+            async with self:
+                self.sending = False
+                # Popovers cannot switch while sending, so the open one is the
+                # one that submitted.
+                if delivered:
+                    self.open_popover = ""
+                    self.form_version += 1
         if not delivered:
             return rx.toast.error(
                 "An error occurred while submitting your feedback. If the issue "
