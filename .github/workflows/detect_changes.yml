@@ -30,7 +30,7 @@ jobs:
         run: |
           code=true
           if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
-            files=$(git diff --name-only HEAD^1 HEAD)
+            files=$(git diff --name-only --no-renames HEAD^1 HEAD)
             grep -qv '\.md$' <<< "$files" || code=false
           fi
           echo "code=$code" >> "$GITHUB_OUTPUT"
