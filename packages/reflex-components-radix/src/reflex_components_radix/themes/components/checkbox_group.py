@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from typing import Literal
 
 from reflex_base.components.component import field
+from reflex_base.event import EventHandler, passthrough_event_spec
 from reflex_base.vars.base import Var
 from reflex_components_core.core.breakpoints import Responsive
 
@@ -16,6 +17,10 @@ class CheckboxGroupRoot(RadixThemesComponent):
 
     tag = "CheckboxGroup.Root"
     _is_form_control = True
+
+    as_child: Var[bool] = field(
+        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
+    )
 
     size: Var[Responsive[Literal["1", "2", "3"]]] = field(
         doc="Use the size prop to control the checkbox size."
@@ -35,8 +40,32 @@ class CheckboxGroupRoot(RadixThemesComponent):
         doc="determines which checkboxes, if any, are checked by default."
     )
 
+    value: Var[Sequence[str]] = field(
+        doc="The controlled value of the checked checkboxes. Should be used in conjunction with on_value_change."
+    )
+
     name: Var[str] = field(
         doc="used to assign a name to the entire group of checkboxes"
+    )
+
+    disabled: Var[bool] = field(doc="Whether the checkbox group is disabled")
+
+    required: Var[bool] = field(doc="Whether the checkbox group is required")
+
+    orientation: Var[Literal["horizontal", "vertical", "undefined"]] = field(
+        doc="The orientation of the component."
+    )
+
+    dir: Var[Literal["ltr", "rtl"]] = field(
+        doc="The reading direction of the checkbox group. If omitted, inherits globally from DirectionProvider or assumes LTR (left-to-right) reading mode."
+    )
+
+    loop: Var[bool] = field(
+        doc="When true, keyboard navigation will loop from last item to first, and vice versa."
+    )
+
+    on_value_change: EventHandler[passthrough_event_spec(list[str])] = field(
+        doc="Fired when the set of checked checkboxes changes."
     )
 
 
@@ -51,6 +80,10 @@ class CheckboxGroupItem(RadixThemesComponent):
 
     disabled: Var[bool] = field(
         doc="Use the native disabled attribute to create a disabled checkbox."
+    )
+
+    required: Var[bool] = field(
+        doc="When true, indicates that the user must check the checkbox item before the owning form can be submitted."
     )
 
 
