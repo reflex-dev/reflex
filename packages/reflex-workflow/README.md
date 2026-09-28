@@ -74,7 +74,38 @@ type error, and so is passing one workflow's step to another.
 The mixin adds twelve columns: `next_step`, `next_args`, `wake_at`, `attempts`,
 `last_error`, `claimed_until`, `waiting_for`, `pending_event`, `recent_event_keys`,
 `parent`, `children_left`, `wf_version`. They're ordinary mapped columns, so Alembic picks them up with the rest of
-the table.
+the table. `attempts` and `wf_version` carry a server default, so a workflow can be
+mixed into a table that already has rows.
+
+## Models that are dataclasses
+
+An application whose base is a `MappedAsDataclass` takes the same mixins from
+`reflex_workflow.dataclass` instead. SQLAlchemy will not mix a class that is not a
+dataclass into one that is — it warns in 2.0 and refuses in 2.1 — so the import you
+want is decided by your base, not by preference:
+
+```python
+from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
+from reflex_workflow.dataclass import Workflow
+
+
+class Base(MappedAsDataclass, DeclarativeBase, kw_only=True):
+    pass
+
+
+class Onboarding(Base, Workflow):
+    __tablename__ = "onboarding"
+
+    id: Mapped[int] = mapped_column(primary_key=True, init=False)
+    email: Mapped[str]
+    nudges: Mapped[int] = mapped_column(default=0)
+```
+
+Everything else is the same: the same columns, steps and engine, and both kinds of
+table can run in one deployment. The engine's own columns are `init=False`, so
+`Onboarding(email=...)` reads as it did before the mixin was added rather than asking
+for twelve more arguments. `AttemptLog` and `RateBucket` have dataclass spellings too,
+and take no constructor arguments at all — the engine writes those rows itself.
 
 ## Waiting for an event
 

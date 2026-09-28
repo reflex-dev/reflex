@@ -131,4 +131,10 @@ async def test_the_next_occurrence_is_the_following_monday(running):
     assert row.next_step == "collect"
     assert row.wake_at is not None
     following = row.wake_at.astimezone(PACIFIC)
-    assert (following.date(), following.hour) == (datetime.date(2026, 9, 28), 8)
+    # The next occurrence is worked out against the clock, so this says which
+    # Monday it is rather than naming one: a date here would be right until it
+    # arrived and wrong every week after.
+    now = datetime.datetime.now(PACIFIC)
+    assert now < following < now + datetime.timedelta(days=7)
+    assert following.weekday() == 0
+    assert (following.hour, following.minute) == (8, 0)

@@ -56,6 +56,12 @@ DEFAULT_MAX_BACKOFF = datetime.timedelta(hours=1)
 # unless it is told otherwise.
 DEFAULT_LANE = "default"
 
+# What the counting columns start at, in the database as well as in Python: a
+# NOT NULL column with no server default cannot be added to a table that has
+# rows, so without this a workflow could not be mixed into an existing table.
+# A plain string rather than text(): it renders into a migration as a literal.
+ZERO = "0"
+
 # How many delivered event keys a row remembers, to refuse repeats of them.
 EVENT_KEY_HISTORY = 16
 
@@ -518,7 +524,7 @@ class RateBucket:
     """
 
     key: Mapped[str] = mapped_column(String(256), primary_key=True)
-    tokens: Mapped[float] = mapped_column(Float, default=0.0)
+    tokens: Mapped[float] = mapped_column(Float, default=0.0, server_default=ZERO)
     updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True))
 
     def __init_subclass__(cls, **kwargs: Any):
@@ -649,7 +655,7 @@ class Workflow:
     wake_at: Mapped[datetime.datetime | None] = mapped_column(
         DateTime(timezone=True), default=None, index=True
     )
-    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, server_default=ZERO)
     last_error: Mapped[str | None] = mapped_column(Text, default=None)
     claimed_until: Mapped[datetime.datetime | None] = mapped_column(
         DateTime(timezone=True), default=None
@@ -669,7 +675,7 @@ class Workflow:
     recent_event_keys: Mapped[list[str] | None] = mapped_column(
         JSONB(none_as_null=True), default=None
     )
-    wf_version: Mapped[int] = mapped_column(Integer, default=0)
+    wf_version: Mapped[int] = mapped_column(Integer, default=0, server_default=ZERO)
 
     # Declared for the type checker: every workflow is a mapped class, so it has
     # one, and children record it to name the run they belong to.
