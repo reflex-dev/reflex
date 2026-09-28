@@ -34,6 +34,8 @@ logger = logging.getLogger(__name__)
 
 # For uvicorn windows bug fix (#2335)
 frontend_process = None
+_frontend_process_lock = threading.Lock()
+_frontend_shutting_down = False
 
 DEV_BACKEND_RELOAD_MARKER = ".reflex_dev_backend_started"
 
@@ -298,7 +300,10 @@ def run_process_and_launch_url(
                 **kwargs,
             )
             global frontend_process
-            frontend_process = process
+            with _frontend_process_lock:
+                frontend_process = process
+                if _frontend_shutting_down and process.poll() is None:
+                    process.terminate()
         if process.stdout:
             for line in processes.stream_logs("Starting frontend", process):
                 new_content, new_hash = get_package_json_and_hash(json_file_path)
