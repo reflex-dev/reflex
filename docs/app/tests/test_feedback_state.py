@@ -71,7 +71,7 @@ def test_integration_request_is_posted_to_slack(
     assert toast_text in str(toast)
 
 
-@pytest.mark.parametrize("request_text", ["too short", "x" * 2001])
+@pytest.mark.parametrize("request_text", ["too short", " " * 10, "x" * 2001])
 def test_integration_request_rejects_invalid_length(
     monkeypatch, request_text: str
 ) -> None:

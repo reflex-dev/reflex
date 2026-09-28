@@ -20,7 +20,7 @@ class FeedbackState(rx.State):
         Returns:
             A toast telling the reader whether the request was sent.
         """
-        request = form_data.get("request", "")
+        request = form_data.get("request", "").strip()
         if not 10 <= len(request) <= 2000:
             return rx.toast.warning(
                 "Please describe your integration request. Between 10 and 2000 characters.",

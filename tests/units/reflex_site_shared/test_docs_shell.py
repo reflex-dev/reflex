@@ -54,7 +54,25 @@ def test_shared_feedback_preserves_the_official_form_structure() -> None:
     assert "w-full gap-4 flex flex-col" in rendered
     assert "flex flex-col gap-4 w-full" in rendered
     assert '"aria-label":"Clear input"' in rendered
-    assert 'jsx(Popover.Close,{"data-slot":"popover-close",render:' in rendered
+    assert "Popover.Close" not in rendered
+    assert "docs_feedback_state.form_version" in rendered
+    assert (
+        'docs_feedback_state.open_popover_rx_state_?.valueOf?.() === "toc"' in rendered
+    )
+
+
+def test_feedback_popovers_open_one_at_a_time() -> None:
+    """Track which feedback popover is open, ignoring closes from the other one."""
+    state = _feedback_state()
+
+    state.set_popover_open("footer", True)
+    assert state.open_popover == "footer"
+    state.set_popover_open("toc", True)
+    assert state.open_popover == "toc"
+    state.set_popover_open("footer", False)
+    assert state.open_popover == "toc"
+    state.set_popover_open("toc", False)
+    assert state.open_popover == ""
 
 
 def test_docs_layout_rejects_conflicting_footer_factories() -> None:
@@ -329,8 +347,10 @@ def test_feedback_submission_captures_score_and_page() -> None:
 async def test_feedback_is_posted_to_slack(monkeypatch) -> None:
     """Post the page, score, contact and escaped comment to the feedback channel."""
     posts = _mock_slack(monkeypatch, delivered=True)
+    state = _feedback_state()
+    state.open_popover = "toc"
     toast = await DocsFeedbackState.post_feedback.fn(
-        _feedback_state(),
+        state,
         {"feedback": "Outdated <!channel> example.", "email": "dev@example.com"},
         0,
         "https://reflex.dev/docs/guide/",
@@ -344,27 +364,38 @@ async def test_feedback_is_posted_to_slack(monkeypatch) -> None:
     assert "Contact: dev@example.com" in text
     assert "Feedback: Outdated &lt;!channel&gt; example." in text
     assert "Thank you for your feedback!" in str(toast)
+    assert state.open_popover == ""
+    assert state.form_version == 1
 
 
 async def test_feedback_post_reports_undelivered_posts(monkeypatch) -> None:
     """Tell the reader when their feedback could not be delivered."""
     posts = _mock_slack(monkeypatch, delivered=False)
+    state = _feedback_state()
+    state.open_popover = "toc"
 
     toast = await DocsFeedbackState.post_feedback.fn(
-        _feedback_state(), {"feedback": "Great page, thanks!"}, 1, "/docs/"
+        state, {"feedback": "Great page, thanks!"}, 1, "/docs/"
     )
 
     assert len(posts) == 1
     assert "An error occurred while submitting your feedback" in str(toast)
+    # The popover stays open with the draft so the reader can retry.
+    assert state.open_popover == "toc"
+    assert state.form_version == 0
 
 
-@pytest.mark.parametrize("feedback", ["too short", "x" * 501])
+@pytest.mark.parametrize("feedback", ["too short", " " * 10, "x" * 501])
 async def test_feedback_post_rejects_invalid_length(monkeypatch, feedback: str) -> None:
     """Warn about comments outside the accepted length without sending them."""
     posts = _mock_slack(monkeypatch, delivered=True)
+    state = _feedback_state()
+    state.open_popover = "footer"
     toast = await DocsFeedbackState.post_feedback.fn(
-        _feedback_state(), {"feedback": feedback}, 1, "/docs/"
+        state, {"feedback": feedback}, 1, "/docs/"
     )
 
     assert posts == []
     assert "Between 10 and 500 characters" in str(toast)
+    assert state.open_popover == "footer"
+    assert state.form_version == 0

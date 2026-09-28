@@ -31,6 +31,23 @@ class DocsFeedbackState(rx.State):
     """Store the feedback selection shared by documentation shells."""
 
     score: int = -1
+    # Which feedback popover is open: "footer", "toc", or "" for neither.
+    open_popover: str = ""
+    # Bumped after a delivered post to remount, and so clear, the feedback form.
+    form_version: int = 0
+
+    @rx.event
+    def set_popover_open(self, location: str, open_: bool) -> None:
+        """Open or close one of the feedback popovers.
+
+        Args:
+            location: The feedback control requesting the change.
+            open_: Whether that control should be open.
+        """
+        if open_:
+            self.open_popover = location
+        elif self.open_popover == location:
+            self.open_popover = ""
 
     @rx.event
     def set_score(self, score: int) -> None:
@@ -70,7 +87,7 @@ class DocsFeedbackState(rx.State):
         Returns:
             A toast telling the reader whether the feedback was sent.
         """
-        feedback = form_data.get("feedback", "")
+        feedback = form_data.get("feedback", "").strip()
         if not 10 <= len(feedback) <= 500:
             return rx.toast.warning(
                 "Please enter your feedback. Between 10 and 500 characters.",
@@ -89,6 +106,9 @@ class DocsFeedbackState(rx.State):
                 "persists, please file a GitHub issue or stop by our Discord.",
                 close_button=True,
             )
+        async with self:
+            self.open_popover = ""
+            self.form_version += 1
         return rx.toast.success("Thank you for your feedback!", close_button=True)
 
 
@@ -436,17 +456,15 @@ def _feedback_content() -> rx.Component:
                         placeholder="Contact email (optional)",
                         max_length=100,
                     ),
-                    ui.popover.close(
-                        render_=ui.button(
-                            "Send feedback",
-                            type="submit",
-                            class_name="w-full !rounded-full",
-                        )
+                    ui.button(
+                        "Send feedback",
+                        type="submit",
+                        class_name="w-full !rounded-full",
                     ),
                     class_name="w-full gap-4 flex flex-col",
                 ),
                 class_name="w-full",
-                reset_on_submit=True,
+                key=DocsFeedbackState.form_version,
                 on_submit=DocsFeedbackState.handle_submit,
             ),
             class_name="flex flex-col gap-4 w-full",
@@ -483,6 +501,10 @@ def docs_feedback_button() -> rx.Component:
             class_name="flex w-full flex-row items-center gap-1.5 lg:w-auto",
         ),
         ui.popover.portal(ui.popover.positioner(ui.popover.popup(_feedback_content()))),
+        open=DocsFeedbackState.open_popover == "footer",
+        on_open_change=lambda open_, details: DocsFeedbackState.set_popover_open(
+            "footer", open_
+        ),
     )
 
 
@@ -503,6 +525,10 @@ def docs_feedback_button_toc() -> rx.Component:
             class_name="justify-start pl-0 text-muted-foreground hover:!bg-transparent hover:!text-foreground",
         ),
         content=_feedback_content(),
+        open=DocsFeedbackState.open_popover == "toc",
+        on_open_change=lambda open_, details: DocsFeedbackState.set_popover_open(
+            "toc", open_
+        ),
     )
 
 
