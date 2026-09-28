@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 from pathlib import Path
 
@@ -37,9 +36,12 @@ from reflex.minify import (
 from reflex.state import BaseState, State
 from tests.units.minify_helpers import (
     install_config,
+    make_config,
+    minify_resolver,
     resolved_event_id,
     run_in_fresh_interpreter,
     set_minify_modes,
+    write_config,
 )
 from tests.units.name_resolvers import stub_resolver, temporary_resolver
 
@@ -122,6 +124,48 @@ def test_substate_path():
     assert path.startswith(f"{__name__}.")
 
 
+def test_path_names_the_module_that_defines_a_state(temp_minify_json):
+    """A module-level subclass of a local state is keyed under its own module.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+    """
+
+    def make_local_parent() -> type[State]:
+        class LocalPathParent(State):
+            pass
+
+        return LocalPathParent
+
+    parent = make_local_parent()
+    child = type("ModulePathChild", (parent,), {"__module__": "path_module_b"})
+    parent_path = get_state_full_path(parent)
+    assert parent_path.startswith(f"{__name__}.")
+    assert get_state_full_path(child) == (
+        f"path_module_b{parent_path.removeprefix(__name__)}.ModulePathChild"
+    )
+
+
+def test_component_state_is_keyed_under_its_component_module(temp_minify_json):
+    """A state ``ComponentState.create()`` builds keeps its component's module.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+    """
+    import reflex as rx
+
+    class PathCounter(rx.ComponentState):
+        count: int = 0
+
+        @classmethod
+        def get_component(cls, *children, **props) -> rx.Component:
+            return rx.text(cls.count)
+
+    state = PathCounter.create(_state_key="path_counter").State
+    assert state is not None
+    assert get_state_full_path(state).startswith(f"{__name__}.State.")
+
+
 def test_no_config_returns_none(temp_minify_json):
     """Test that missing minify.json returns None."""
     assert _load_minify_config_uncached() is None
@@ -143,41 +187,99 @@ def test_save_and_load_config(temp_minify_json, monkeypatch):
     assert loaded["events"]["test.module.MyState"]["handler"] == "a"
 
 
-def test_invalid_version_raises(temp_minify_json):
-    """Test that invalid version raises ValueError."""
-    config = {"version": 999, "states": {}, "events": {}}
-    path = temp_minify_json / MINIFY_JSON
-    with path.open("w") as f:
-        json.dump(config, f)
-
-    with pytest.raises(ValueError, match=r"Unsupported.*version"):
-        _load_minify_config_uncached()
+_WELL_FORMED = make_config()
 
 
-def test_missing_states_raises(temp_minify_json):
-    """Test that missing 'states' key raises ValueError."""
-    config = {"version": SCHEMA_VERSION, "events": {}}
-    path = temp_minify_json / MINIFY_JSON
-    with path.open("w") as f:
-        json.dump(config, f)
+@pytest.mark.parametrize(
+    ("config", "match"),
+    [
+        pytest.param(
+            {**_WELL_FORMED, "version": 999}, r"Unsupported.*version", id="version"
+        ),
+        pytest.param(
+            {"version": SCHEMA_VERSION, "events": {}},
+            "'states' must be",
+            id="no-states",
+        ),
+        pytest.param(
+            {**_WELL_FORMED, "states": {"test.module.MyState": "a"}},
+            "must be an object with a string 'id'",
+            id="flat-state",
+        ),
+        pytest.param(
+            {**_WELL_FORMED, "states": {"test.module.MyState": {"id": "a"}}},
+            "parent",
+            id="no-parent",
+        ),
+        *(
+            pytest.param(
+                {
+                    **_WELL_FORMED,
+                    "states": {"test.module.MyState": {"id": bad_id, "parent": None}},
+                },
+                "invalid id",
+                id=f"state-id-{bad_id!r}",
+            )
+            for bad_id in ("", "1bad", "a-b", "a.b", "a b")
+        ),
+        *(
+            pytest.param(
+                {
+                    **_WELL_FORMED,
+                    "events": {"test.module.MyState": {"handler": bad_id}},
+                },
+                "invalid id",
+                id=f"event-id-{bad_id!r}",
+            )
+            for bad_id in ("", "1bad", "a-b")
+        ),
+        # ``a`` + ``_b`` and ``a_`` + ``b`` would both read ``a___b`` once a
+        # path's dots become ``__``, colliding two states' context keys.
+        *(
+            pytest.param(
+                {
+                    **_WELL_FORMED,
+                    "states": {"test.module.MyState": {"id": state_id, "parent": None}},
+                },
+                "__",
+                id=f"blurring-state-id-{state_id!r}",
+            )
+            for state_id in ("_", "_b", "a_", "a__b")
+        ),
+        *(
+            pytest.param({**_WELL_FORMED, "vars": section}, match, id=f"vars-{name}")
+            for name, section, match in (
+                ("not-a-dict", [], "'vars' must be a dictionary"),
+                (
+                    "state-not-a-dict",
+                    {"test.module.MyState": []},
+                    "must be a dictionary",
+                ),
+                ("non-string", {"test.module.MyState": {"count": 1}}, "non-string id"),
+                ("invalid", {"test.module.MyState": {"count": "a-b"}}, "invalid id"),
+                # A var id is a key of its state's frontend object.
+                *(
+                    (
+                        f"reserved-{reserved}",
+                        {"test.module.MyState": {"count": reserved}},
+                        "reserved id",
+                    )
+                    for reserved in ("constructor", "__proto__", "a_rx_state_")
+                ),
+            )
+        ),
+    ],
+)
+def test_config_rejects_malformed(temp_minify_json, config, match):
+    """A malformed ``minify.json`` is refused, naming what is wrong.
 
-    with pytest.raises(ValueError, match="'states' must be"):
-        _load_minify_config_uncached()
-
-
-def test_flat_string_states_raise(temp_minify_json):
-    """Test that legacy flat string state values are rejected."""
-    config = {
-        "version": SCHEMA_VERSION,
-        "states": {"test.module.MyState": "a"},
-        "events": {},
-        "vars": {},
-    }
-    path = temp_minify_json / MINIFY_JSON
-    with path.open("w") as f:
-        json.dump(config, f)
-
-    with pytest.raises(ValueError, match="must be an object with a string 'id'"):
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        config: The malformed contents.
+        match: Part of the expected error.
+    """
+    write_config(temp_minify_json, config)
+    with pytest.raises(ValueError, match=match):
         _load_minify_config_uncached()
 
 
@@ -187,36 +289,6 @@ def test_non_object_json_raises(temp_minify_json: Path, payload: str) -> None:
     (temp_minify_json / MINIFY_JSON).write_text(payload, encoding="utf-8")
 
     with pytest.raises(ValueError, match="must be a JSON object"):
-        _load_minify_config_uncached()
-
-
-@pytest.mark.parametrize("bad_id", ["", "1bad", "a-b", "a.b", "a b"])
-def test_invalid_state_id_raises(temp_minify_json: Path, bad_id: str) -> None:
-    """State ids must be non-empty and built only from the minify alphabet."""
-    config = {
-        "version": SCHEMA_VERSION,
-        "states": {"test.module.MyState": {"id": bad_id, "parent": None}},
-        "events": {},
-        "vars": {},
-    }
-    (temp_minify_json / MINIFY_JSON).write_text(json.dumps(config), encoding="utf-8")
-
-    with pytest.raises(ValueError, match="invalid id"):
-        _load_minify_config_uncached()
-
-
-@pytest.mark.parametrize("bad_id", ["", "1bad", "a-b"])
-def test_invalid_event_id_raises(temp_minify_json: Path, bad_id: str) -> None:
-    """Event ids go through the same alphabet check as state ids."""
-    config = {
-        "version": SCHEMA_VERSION,
-        "states": {},
-        "events": {"test.module.MyState": {"handler": bad_id}},
-        "vars": {},
-    }
-    (temp_minify_json / MINIFY_JSON).write_text(json.dumps(config), encoding="utf-8")
-
-    with pytest.raises(ValueError, match="invalid id"):
         _load_minify_config_uncached()
 
 
@@ -273,18 +345,15 @@ def test_valid_config_no_errors():
 
 def test_duplicate_state_ids_detected():
     """Test that duplicate state IDs are detected."""
-    config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+    config = make_config(
+        states={
             "test.Parent": StateEntry(id="a", parent=None),
             "test.Parent.ChildA": StateEntry(id="b", parent="test.Parent"),
             "test.Parent.ChildB": StateEntry(  # Duplicate!
                 id="b", parent="test.Parent"
             ),
-        },
-        "events": {},
-        "vars": {},
-    }
+        }
+    )
 
     # Create a mock state tree
     class Parent(BaseState):
@@ -308,16 +377,13 @@ def test_validate_detects_orphan_sibling_collision():
     live_path = get_state_full_path(OrphanCollisionLiveChild)
     orphan_path = f"{parent_path}.DeadChild"
 
-    config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+    config = make_config(
+        states={
             parent_path: StateEntry(id="a", parent=None),
             live_path: StateEntry(id="b", parent=parent_path),
             orphan_path: StateEntry(id="b", parent=parent_path),  # collision!
-        },
-        "events": {},
-        "vars": {},
-    }
+        }
+    )
 
     errors, _warnings, _missing = validate_minify_config(config, OrphanCollisionParent)
 
@@ -333,16 +399,13 @@ def test_validate_no_cross_group_orphan_false_positive():
         pass
 
     root_path = get_state_full_path(OrphanNoFalsePositiveRoot)
-    config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+    config = make_config(
+        states={
             root_path: StateEntry(id="a", parent=None),
             # Orphan from an unrelated (deleted) parent, same id "a".
             "gone.module.Gone.Child": StateEntry(id="a", parent="gone.module.Gone"),
-        },
-        "events": {},
-        "vars": {},
-    }
+        }
+    )
 
     errors, warnings, _missing = validate_minify_config(
         config, OrphanNoFalsePositiveRoot
@@ -361,12 +424,10 @@ def test_validate_reports_missing_framework_states():
 
     user_path = get_state_full_path(UserOnlyState)
     # Config omits the framework reflex.state.State entries.
-    config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {user_path: StateEntry(id="a", parent="reflex.state.State")},
-        "events": {user_path: {"do_thing": "a"}},
-        "vars": {},
-    }
+    config = make_config(
+        states={user_path: StateEntry(id="a", parent="reflex.state.State")},
+        events={user_path: {"do_thing": "a"}},
+    )
 
     _errors, _warnings, missing = validate_minify_config(config, State)
 
@@ -387,15 +448,12 @@ def test_validate_warns_stale_parent():
 
     parent_path = get_state_full_path(StaleParentParent)
     child_path = get_state_full_path(StaleParentChild)
-    config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+    config = make_config(
+        states={
             parent_path: StateEntry(id="a", parent=None),
             child_path: StateEntry(id="b", parent="wrong.Path"),
-        },
-        "events": {},
-        "vars": {},
-    }
+        }
+    )
 
     errors, warnings, _missing = validate_minify_config(config, StaleParentParent)
 
@@ -411,12 +469,7 @@ def test_sync_adds_new_states():
             pass
 
     # Start with empty config
-    existing_config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {},
-        "events": {},
-        "vars": {},
-    }
+    existing_config = make_config()
 
     new_config = sync_minify_config(existing_config, TestState)
 
@@ -441,14 +494,12 @@ def test_sync_preserves_existing_ids():
     state_path = get_state_full_path(TestState)
 
     # Start with partial config
-    existing_config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+    existing_config = make_config(
+        states={
             state_path: StateEntry(id="bU", parent=None)  # codespell:ignore
         },
-        "events": {state_path: {"handler_a": "k"}},  # Another arbitrary name
-        "vars": {},
-    }
+        events={state_path: {"handler_a": "k"}},
+    )
 
     new_config = sync_minify_config(existing_config, TestState)
 
@@ -494,15 +545,12 @@ def test_sync_no_sibling_collision_across_modules(temp_minify_json):
     assert not get_state_full_path(ChildB).startswith(parent_path)
 
     # Config already has ParentState and ChildA assigned
-    existing_config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+    existing_config = make_config(
+        states={
             parent_path: StateEntry(id="a", parent=None),
             child_a_path: StateEntry(id="a", parent=parent_path),
-        },
-        "events": {},
-        "vars": {},
-    }
+        }
+    )
 
     # Sync should assign ChildB a DIFFERENT ID than ChildA
     new_config = sync_minify_config(existing_config, ParentState)
@@ -535,16 +583,13 @@ def test_validate_detects_sibling_collision():
     child_b_path = get_state_full_path(ChildB)
 
     # Manually create a config with colliding sibling IDs
-    bad_config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+    bad_config = make_config(
+        states={
             parent_path: StateEntry(id="a", parent=None),
             child_a_path: StateEntry(id="a", parent=parent_path),
             child_b_path: StateEntry(id="a", parent=parent_path),  # collision!
-        },
-        "events": {},
-        "vars": {},
-    }
+        }
+    )
 
     errors, _warnings, _missing = validate_minify_config(bad_config, ParentState)
     assert any("Duplicate" in e and "'a'" in e for e in errors), (
@@ -564,15 +609,12 @@ def test_sync_reserves_orphan_ids():
     parent_path = get_state_full_path(OrphanReserveParent)
     orphan_path = f"{parent_path}.OldChild"
 
-    existing_config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+    existing_config = make_config(
+        states={
             parent_path: StateEntry(id="a", parent=None),
             orphan_path: StateEntry(id="a", parent=parent_path),
-        },
-        "events": {},
-        "vars": {},
-    }
+        }
+    )
 
     new_config = sync_minify_config(existing_config, OrphanReserveParent)
 
@@ -593,15 +635,12 @@ def test_sync_reassign_deleted_keeps_orphan_ids_reserved():
     parent_path = get_state_full_path(OrphanReassignParent)
     orphan_path = f"{parent_path}.OldChild"
 
-    existing_config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+    existing_config = make_config(
+        states={
             parent_path: StateEntry(id="a", parent=None),
             orphan_path: StateEntry(id="a", parent=parent_path),
-        },
-        "events": {},
-        "vars": {},
-    }
+        }
+    )
 
     new_config = sync_minify_config(
         existing_config, OrphanReassignParent, reassign_deleted=True
@@ -623,15 +662,12 @@ def test_sync_prune_frees_orphan_ids():
     parent_path = get_state_full_path(OrphanPruneParent)
     orphan_path = f"{parent_path}.OldChild"
 
-    existing_config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+    existing_config = make_config(
+        states={
             parent_path: StateEntry(id="a", parent=None),
             orphan_path: StateEntry(id="b", parent=parent_path),
-        },
-        "events": {},
-        "vars": {},
-    }
+        }
+    )
 
     new_config = sync_minify_config(
         existing_config, OrphanPruneParent, reassign_deleted=True, prune=True
@@ -654,25 +690,16 @@ def test_sync_heals_stale_parent():
     parent_path = get_state_full_path(HealParentParent)
     child_path = get_state_full_path(HealParentChild)
 
-    existing_config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+    existing_config = make_config(
+        states={
             parent_path: StateEntry(id="a", parent=None),
             child_path: StateEntry(id="b", parent="wrong.Path"),
-        },
-        "events": {},
-        "vars": {},
-    }
+        }
+    )
 
     new_config = sync_minify_config(existing_config, HealParentParent)
 
     assert new_config["states"][child_path] == StateEntry(id="b", parent=parent_path)
-
-
-def test_disabled_by_default(temp_minify_json):
-    """Both modes default to disabled even with a config present."""
-    install_config(states={"x": "a"}, events={"x": {"h": "a"}})
-    assert scheme_digest() == ""
 
 
 @pytest.mark.parametrize("var", ["REFLEX_MINIFY_STATES", "REFLEX_MINIFY_EVENTS"])
@@ -704,21 +731,14 @@ def test_modes_toggle_independently(temp_minify_json, monkeypatch):
 
 def test_disabled_returns_none(temp_minify_json):
     """When neither flag is enabled, the resolver returns None for all."""
-    resolver = MinifyNameResolver(
-        config={"version": SCHEMA_VERSION, "states": {}, "events": {}, "vars": {}},
-        states_enabled=False,
-        events_enabled=False,
-        vars_enabled=False,
-    )
+    resolver = minify_resolver(make_config())
     assert resolver.resolve_state_name(State) is None
     assert resolver.resolve_handler_name(State, "any") is None
 
 
 def test_resolver_no_config_returns_none():
     """No config means no overrides even when flags are enabled."""
-    resolver = MinifyNameResolver(
-        config=None, states_enabled=True, events_enabled=True, vars_enabled=False
-    )
+    resolver = minify_resolver(states=True, events=True)
     assert resolver.resolve_state_name(State) is None
     assert resolver.resolve_handler_name(State, "any") is None
 
@@ -730,19 +750,14 @@ def test_state_lookup():
     class UserStateResolverCacheTest(State):
         pass
 
-    config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+    config = make_config(
+        states={
             get_state_full_path(UserStateResolverCacheTest): StateEntry(
                 id="rs", parent=None
             )
-        },
-        "events": {},
-        "vars": {},
-    }
-    resolver = MinifyNameResolver(
-        config=config, states_enabled=True, events_enabled=False, vars_enabled=False
+        }
     )
+    resolver = minify_resolver(config, states=True)
     assert resolver.resolve_state_name(UserStateResolverCacheTest) == "rs"
 
 
@@ -752,17 +767,10 @@ def test_event_lookup():
     class UserStateEventCacheTest(State):
         pass
 
-    config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {},
-        "events": {
-            get_state_full_path(UserStateEventCacheTest): {"foo": "f", "bar": "b"}
-        },
-        "vars": {},
-    }
-    resolver = MinifyNameResolver(
-        config=config, states_enabled=False, events_enabled=True, vars_enabled=False
+    config = make_config(
+        events={get_state_full_path(UserStateEventCacheTest): {"foo": "f", "bar": "b"}}
     )
+    resolver = minify_resolver(config, events=True)
     assert resolver.resolve_handler_name(UserStateEventCacheTest, "foo") == "f"
     assert resolver.resolve_handler_name(UserStateEventCacheTest, "bar") == "b"
     assert resolver.resolve_handler_name(UserStateEventCacheTest, "missing") is None
@@ -810,11 +818,6 @@ def test_hydrate_event_name_resolves_its_handler(temp_minify_json, monkeypatch):
     assert "a.q" in RegistrationContext.get().event_handlers
 
 
-def test_empty_without_minification(temp_minify_json):
-    """No config in force means no name is rewritten, so nothing to agree on."""
-    assert scheme_digest() == ""
-
-
 def test_empty_when_config_present_but_modes_off(temp_minify_json, monkeypatch):
     """A config nobody applies leaves the wire names untouched."""
     set_minify_modes(monkeypatch, states=False, events=False)
@@ -847,12 +850,10 @@ def test_same_scheme_digests_identically_across_processes(tmp_path):
     Same-process stability is not enough: the frontend digest is baked at
     compile time and the backend recomputes it in another interpreter.
     """
-    config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {"reflex.state.State": StateEntry(id="a", parent=None)},
-        "events": {"reflex.state.State": {"hydrate": "q"}},
-        "vars": {},
-    }
+    config = make_config(
+        states={"reflex.state.State": StateEntry(id="a", parent=None)},
+        events={"reflex.state.State": {"hydrate": "q"}},
+    )
     run_in_fresh_interpreter(
         tmp_path,
         config,
@@ -911,14 +912,9 @@ def test_resolver_active_before_any_state_registers(tmp_path):
     """A fresh interpreter registers user states under their minified name."""
     run_in_fresh_interpreter(
         tmp_path,
-        {
-            "version": SCHEMA_VERSION,
-            "states": {
-                "check.State.Foo": StateEntry(id="f", parent="reflex.state.State")
-            },
-            "events": {},
-            "vars": {},
-        },
+        make_config(
+            states={"check.State.Foo": StateEntry(id="f", parent="reflex.state.State")}
+        ),
         """
             from reflex_base.registry import RegistrationContext
             import reflex.state
@@ -980,30 +976,6 @@ def test_minify_json_path_from_env_var(
     assert _get_minify_json_path() == target
 
 
-def _install_in(directory: Path, states: dict[str, str]) -> MinifyConfig:
-    """Write a ``minify.json`` into ``directory`` without activating it.
-
-    Args:
-        directory: Where to write the file.
-        states: ``state_path -> minified_id`` map.
-
-    Returns:
-        The written config.
-    """
-    config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
-            path: StateEntry(id=state_id, parent=None)
-            for path, state_id in states.items()
-        },
-        "events": {},
-        "vars": {},
-    }
-    directory.mkdir(parents=True, exist_ok=True)
-    (directory / MINIFY_JSON).write_text(json.dumps(config))
-    return config
-
-
 def test_resolver_follows_the_app_directory(
     temp_minify_json: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1019,8 +991,8 @@ def test_resolver_follows_the_app_directory(
 
     path = get_state_full_path(FollowState)
     set_minify_modes(monkeypatch, states=True)
-    _install_in(temp_minify_json, {path: "f"})
-    _install_in(temp_minify_json / "other", {path: "g"})
+    write_config(temp_minify_json, make_config(states={path: "f"}))
+    write_config(temp_minify_json / "other", make_config(states={path: "g"}))
     (temp_minify_json / "plain").mkdir()
     ctx = RegistrationContext.ensure_context()
 
@@ -1059,14 +1031,14 @@ def test_resolver_reloads_an_edited_config(
 
     path = get_state_full_path(EditedState)
     set_minify_modes(monkeypatch, states=True)
-    _install_in(temp_minify_json, {path: "e"})
+    write_config(temp_minify_json, make_config(states={path: "e"}))
     ensure_minify_resolver_for_active_context()
     assert EditedState.get_name() == "e"
 
     # Same size, modification time put back: only the content tells.
     config_file = temp_minify_json / MINIFY_JSON
     stat = config_file.stat()
-    _install_in(temp_minify_json, {path: "f"})
+    write_config(temp_minify_json, make_config(states={path: "f"}))
     os.utime(config_file, ns=(stat.st_atime_ns, stat.st_mtime_ns))
     assert config_file.stat().st_size == stat.st_size
     ensure_minify_resolver_for_active_context()
@@ -1111,8 +1083,8 @@ def test_env_var_pins_the_config_for_every_directory(
 
     path = get_state_full_path(PinnedState)
     set_minify_modes(monkeypatch, states=True)
-    _install_in(temp_minify_json / "deploy", {path: "p"})
-    _install_in(temp_minify_json / "app", {path: "q"})
+    write_config(temp_minify_json / "deploy", make_config(states={path: "p"}))
+    write_config(temp_minify_json / "app", make_config(states={path: "q"}))
     monkeypatch.setenv(
         environment.REFLEX_MINIFY_CONFIG.name,
         str(temp_minify_json / "deploy" / MINIFY_JSON),
@@ -1238,18 +1210,37 @@ def test_sync_reserves_the_parent_id():
         pass
 
     parent_path = get_state_full_path(SyncReserveParent)
-    existing: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {parent_path: StateEntry(id="a", parent=None)},
-        "events": {},
-        "vars": {},
-    }
+    existing = make_config(states={parent_path: StateEntry(id="a", parent=None)})
 
     new_config = sync_minify_config(existing, SyncReserveParent)
 
     child = new_config["states"][get_state_full_path(SyncReserveChild)]
     assert child["id"] != "a"
     assert _parent_id_collisions(new_config) == []
+
+
+def test_sync_numbers_new_children_like_init():
+    """The parent's id is skipped but does not move where numbering starts."""
+
+    class NumberedParent(BaseState):
+        pass
+
+    class NumberedFirst(NumberedParent):
+        pass
+
+    class NumberedSecond(NumberedParent):
+        pass
+
+    existing = make_config(
+        states={get_state_full_path(NumberedParent): StateEntry(id="k", parent=None)}
+    )
+
+    new_config = sync_minify_config(existing, NumberedParent)
+
+    assert [
+        new_config["states"][get_state_full_path(child)]["id"]
+        for child in (NumberedFirst, NumberedSecond)
+    ] == ["a", "b"]
 
 
 def test_validate_detects_a_child_reusing_its_parent_id():
@@ -1262,17 +1253,14 @@ def test_validate_detects_a_child_reusing_its_parent_id():
         pass
 
     parent_path = get_state_full_path(ValidateReuseParent)
-    config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+    config = make_config(
+        states={
             parent_path: StateEntry(id="a", parent=None),
             get_state_full_path(ValidateReuseChild): StateEntry(
                 id="a", parent=parent_path
             ),
-        },
-        "events": {},
-        "vars": {},
-    }
+        }
+    )
 
     errors, _warnings, _missing = validate_minify_config(config, ValidateReuseParent)
 
@@ -1295,12 +1283,9 @@ def test_sync_reserves_the_parent_id_through_a_new_subtree():
     class DeepSyncB(DeepSyncA):
         pass
 
-    existing: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {get_state_full_path(DeepSyncRoot): StateEntry(id="a", parent=None)},
-        "events": {},
-        "vars": {},
-    }
+    existing = make_config(
+        states={get_state_full_path(DeepSyncRoot): StateEntry(id="a", parent=None)}
+    )
 
     new_config = sync_minify_config(existing, DeepSyncRoot)
 
@@ -1321,17 +1306,14 @@ def test_sync_moves_a_reparented_id_off_its_new_parent():
         pass
 
     parent_path = get_state_full_path(MoveParent)
-    existing: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+    existing = make_config(
+        states={
             parent_path: StateEntry(id="a", parent=None),
             get_state_full_path(MovedChild): StateEntry(
                 id="a", parent="some.old.Parent"
             ),
-        },
-        "events": {},
-        "vars": {},
-    }
+        }
+    )
 
     new_config = sync_minify_config(existing, MoveParent)
 
@@ -1357,15 +1339,12 @@ def test_sync_moves_a_preserved_id_off_a_newly_inserted_parent():
         pass
 
     root_path = get_state_full_path(MidRoot)
-    existing: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+    existing = make_config(
+        states={
             root_path: StateEntry(id="a", parent=None),
             get_state_full_path(OldLeaf): StateEntry(id="b", parent=root_path),
-        },
-        "events": {},
-        "vars": {},
-    }
+        }
+    )
 
     new_config = sync_minify_config(existing, MidRoot)
 
@@ -1398,18 +1377,15 @@ def test_sync_moves_a_reparented_id_off_an_occupied_sibling_id():
     parent_path = get_state_full_path(SiblingParent)
     moved_path = get_state_full_path(SiblingMoved)
     incumbent_path = get_state_full_path(SiblingIncumbent)
-    existing: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+    existing = make_config(
+        states={
             root_path: StateEntry(id="a", parent=None),
             parent_path: StateEntry(id="b", parent=root_path),
             # Recorded under the root, but the code says SiblingParent.
             moved_path: StateEntry(id="c", parent=root_path),
             incumbent_path: StateEntry(id="c", parent=parent_path),
-        },
-        "events": {},
-        "vars": {},
-    }
+        }
+    )
 
     new_config = sync_minify_config(existing, SiblingRoot)
 
@@ -1432,15 +1408,12 @@ def test_validate_exempts_an_orphan_holding_its_parent_id():
 
     parent_path = get_state_full_path(OrphanHolder)
     orphan_path = f"{parent_path}.DeletedChild"
-    existing: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+    existing = make_config(
+        states={
             parent_path: StateEntry(id="a", parent=None),
             orphan_path: StateEntry(id="a", parent=parent_path),
-        },
-        "events": {},
-        "vars": {},
-    }
+        }
+    )
 
     new_config = sync_minify_config(existing, OrphanHolder)
 
@@ -1462,17 +1435,14 @@ def test_validate_checks_the_actual_parent_not_the_recorded_one():
     class ActualChildState(ActualParentState):
         pass
 
-    config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {
+    config = make_config(
+        states={
             get_state_full_path(ActualParentState): StateEntry(id="a", parent=None),
             get_state_full_path(ActualChildState): StateEntry(
                 id="a", parent="some.stale.Path"
             ),
-        },
-        "events": {},
-        "vars": {},
-    }
+        }
+    )
 
     errors, _warnings, _missing = validate_minify_config(config, ActualParentState)
 
@@ -1488,9 +1458,7 @@ def test_find_missing_entries_flags_a_state_added_after_the_config():
         def ping():
             """A handler the config cannot know about."""
 
-    resolver = MinifyNameResolver(
-        config=config, states_enabled=True, events_enabled=True, vars_enabled=False
-    )
+    resolver = minify_resolver(config, states=True, events=True)
     with temporary_resolver(resolver):
         missing = _find_missing_entries()
 
@@ -1505,20 +1473,9 @@ def test_find_missing_entries_respects_disabled_modes():
         pass
 
     path = get_state_full_path(ModeGatedState)
-    with temporary_resolver(
-        MinifyNameResolver(
-            config=config, states_enabled=False, events_enabled=True, vars_enabled=False
-        )
-    ):
+    with temporary_resolver(minify_resolver(config, events=True)):
         assert f"state:{path}" not in _find_missing_entries()
-    with temporary_resolver(
-        MinifyNameResolver(
-            config=config,
-            states_enabled=False,
-            events_enabled=False,
-            vars_enabled=False,
-        )
-    ):
+    with temporary_resolver(minify_resolver(config)):
         assert _find_missing_entries() == []
 
 
@@ -1539,9 +1496,7 @@ def test_warn_if_config_stale_points_at_sync(caplog):
     class StaleWarningState(State):
         pass
 
-    resolver = MinifyNameResolver(
-        config=config, states_enabled=True, events_enabled=True, vars_enabled=False
-    )
+    resolver = minify_resolver(config, states=True, events=True)
     with temporary_resolver(resolver), caplog.at_level("WARNING"):
         warn_if_config_stale()
 
@@ -1555,66 +1510,28 @@ def test_warn_if_config_stale_is_silent_when_current(caplog):
     Args:
         caplog: The pytest log capture fixture.
     """
-    resolver = MinifyNameResolver(
-        config=generate_minify_config(),
-        states_enabled=True,
-        events_enabled=True,
-        vars_enabled=False,
-    )
+    resolver = minify_resolver(generate_minify_config(), states=True, events=True)
     with temporary_resolver(resolver), caplog.at_level("WARNING"):
         warn_if_config_stale()
 
     assert caplog.text == ""
 
 
-def _write_config(path: Path, **sections) -> None:
-    """Write a ``minify.json`` holding the given sections.
-
-    Args:
-        path: The directory to write it to.
-        **sections: The sections, by name.
-    """
-    config = {"version": SCHEMA_VERSION, "states": {}, "events": {}, **sections}
-    (path / MINIFY_JSON).write_text(json.dumps(config))
-
-
 def test_config_without_vars_loads_with_empty_vars(temp_minify_json):
     """Files written before vars were minified still load."""
-    _write_config(temp_minify_json)
+    write_config(
+        temp_minify_json, {"version": SCHEMA_VERSION, "states": {}, "events": {}}
+    )
     loaded = _load_minify_config_uncached()
     assert loaded is not None
     assert loaded["vars"] == {}
 
 
-@pytest.mark.parametrize(
-    ("vars_section", "match"),
-    [
-        ([], "'vars' must be a dictionary"),
-        ({"test.module.MyState": []}, "must be a dictionary"),
-        ({"test.module.MyState": {"count": 1}}, "non-string id"),
-        ({"test.module.MyState": {"count": "a-b"}}, "invalid id"),
-        ({"test.module.MyState": {"count": "constructor"}}, "reserved id"),
-        ({"test.module.MyState": {"count": "__proto__"}}, "reserved id"),
-        ({"test.module.MyState": {"count": "a_rx_state_"}}, "reserved id"),
-    ],
-)
-def test_config_rejects_malformed_vars(temp_minify_json, vars_section, match):
-    """A var id is a key of its state's frontend object, so only safe ones load.
-
-    Args:
-        temp_minify_json: Temporary ``minify.json`` location.
-        vars_section: The malformed ``vars`` section.
-        match: Part of the expected error.
-    """
-    _write_config(temp_minify_json, vars=vars_section)
-    with pytest.raises(ValueError, match=match):
-        _load_minify_config_uncached()
-
-
 def test_reserved_ids_are_fine_for_events(temp_minify_json):
     """Only var ids name object keys; an event id may be any identifier."""
-    _write_config(
-        temp_minify_json, events={"test.module.MyState": {"handler": "constructor"}}
+    write_config(
+        temp_minify_json,
+        make_config(events={"test.module.MyState": {"handler": "constructor"}}),
     )
     loaded = _load_minify_config_uncached()
     assert loaded is not None
@@ -1631,18 +1548,9 @@ def test_resolve_var_name_follows_its_mode(temp_minify_json):
     class VarModeState(State):
         count: int = 0
 
-    config: MinifyConfig = {
-        "version": SCHEMA_VERSION,
-        "states": {},
-        "events": {},
-        "vars": {get_state_full_path(VarModeState): {"count": "c"}},
-    }
-    on = MinifyNameResolver(
-        config=config, states_enabled=False, events_enabled=False, vars_enabled=True
-    )
-    off = MinifyNameResolver(
-        config=config, states_enabled=True, events_enabled=True, vars_enabled=False
-    )
+    config = make_config(vars={get_state_full_path(VarModeState): {"count": "c"}})
+    on = minify_resolver(config, vars=True)
+    off = minify_resolver(config, states=True, events=True)
     assert on.resolve_var_name(VarModeState, "count") == "c"
     assert on.resolve_var_name(VarModeState, "missing") is None
     assert off.resolve_var_name(VarModeState, "count") is None
@@ -2020,28 +1928,6 @@ def test_text_resembling_state_reads_is_not_rejected(temp_minify_json: Path) -> 
         assert _stale_names_error(code) == "", code
 
 
-@pytest.mark.parametrize("state_id", ["_", "_b", "a_", "a__b"])
-def test_state_ids_that_blur_path_segments_are_rejected(temp_minify_json, state_id):
-    """A state id must survive its path's dots becoming ``__`` unambiguously.
-
-    ``a`` + ``_b`` and ``a_`` + ``b`` would both read ``a___b``, colliding two
-    states' context keys and locals in the compiled frontend.
-
-    Args:
-        temp_minify_json: Temporary ``minify.json`` location.
-        state_id: A state id with an underscore at an edge or doubled.
-    """
-    (temp_minify_json / MINIFY_JSON).write_text(
-        json.dumps({
-            "version": SCHEMA_VERSION,
-            "states": {"test.module.MyState": {"id": state_id, "parent": None}},
-            "events": {},
-        })
-    )
-    with pytest.raises(ValueError, match="__"):
-        _load_minify_config_uncached()
-
-
 def test_generated_state_ids_keep_paths_distinct(temp_minify_json):
     """Numbering past ``$`` skips the ids an underscore would blur.
 
@@ -2065,23 +1951,6 @@ def test_generated_state_ids_keep_paths_distinct(temp_minify_json):
     assert not (new_id.startswith("_"))
     assert not (new_id.endswith("_"))
     assert "__" not in new_id
-
-
-def test_state_entry_without_parent_is_rejected(temp_minify_json):
-    """``validate`` and ``sync`` read every entry's parent, so it is required.
-
-    Args:
-        temp_minify_json: Temporary ``minify.json`` location.
-    """
-    (temp_minify_json / MINIFY_JSON).write_text(
-        json.dumps({
-            "version": SCHEMA_VERSION,
-            "states": {"test.module.MyState": {"id": "a"}},
-            "events": {},
-        })
-    )
-    with pytest.raises(ValueError, match="parent"):
-        _load_minify_config_uncached()
 
 
 def _config_with_ambiguous_ids(parent: type[BaseState]) -> MinifyConfig:
@@ -2112,7 +1981,7 @@ def test_ambiguous_state_ids_are_reported_and_reassigned(temp_minify_json):
     parent = type("AmbiguousParent", (State,), {"__module__": __name__})
     type("AmbiguousChild", (parent,), {"__module__": __name__})
     config = _config_with_ambiguous_ids(parent)
-    (temp_minify_json / MINIFY_JSON).write_text(json.dumps(config))
+    write_config(temp_minify_json, config)
 
     # The app refuses it; the CLI loads it to report and repair it.
     with pytest.raises(ValueError, match="reflex minify sync"):
@@ -2150,7 +2019,7 @@ def test_duplicate_event_ids_are_rejected_and_reassigned(temp_minify_json):
     config = generate_minify_config(DuplicateEventState)
     config["events"][path] = {"first": "a", "second": "a", "setvar": "c"}
     config["events"]["gone.module.State"] = {"x": "b", "y": "b"}
-    (temp_minify_json / MINIFY_JSON).write_text(json.dumps(config))
+    write_config(temp_minify_json, config)
 
     with pytest.raises(ValueError, match="reflex minify sync"):
         _load_minify_config_uncached()
@@ -2179,7 +2048,7 @@ def test_duplicate_var_ids_are_rejected_and_reassigned(temp_minify_json):
     path = get_state_full_path(DuplicateVarState)
     config = generate_minify_config(DuplicateVarState)
     config["vars"][path] = {"first": "a", "second": "a"}
-    (temp_minify_json / MINIFY_JSON).write_text(json.dumps(config))
+    write_config(temp_minify_json, config)
 
     with pytest.raises(ValueError, match="reflex minify sync"):
         _load_minify_config_uncached()

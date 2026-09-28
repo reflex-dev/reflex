@@ -479,25 +479,6 @@ class MinifyNameResolver:
         return self.config[kind.key].get(get_state_full_path(state_cls), {}).get(name)
 
 
-def get_state_module(state_cls: type[BaseState]) -> str:
-    """The module a state class was defined in.
-
-    Prefers ``__original_module__``, which ``_handle_local_def`` sets on states
-    declared inside a function, so they report their import-site module rather
-    than ``reflex.istate.dynamic``. Classes built by ``ComponentState.create()``
-    have no such attribute and report ``reflex.istate.dynamic``; their name
-    carries a per-instance counter, so their config key tracks the order the
-    components are created in.
-
-    Args:
-        state_cls: The state class.
-
-    Returns:
-        The dotted module name.
-    """
-    return getattr(state_cls, "__original_module__", None) or state_cls.__module__
-
-
 def install_minify_resolver() -> None:
     """Install a fresh :class:`MinifyNameResolver` into the active context.
 
@@ -866,8 +847,8 @@ def minified_name_to_int(name: str) -> int:
 def get_state_full_path(state_cls: type[BaseState]) -> str:
     """Build the unique ``module.Class.SubClass`` path for a state class.
 
-    Uses :func:`get_state_module` so dynamically-relocated states (e.g.
-    ``ComponentState.create()``) keep their import-site path.
+    Starts with the module whose code defines the state, so states relocated
+    for pickling (e.g. by ``ComponentState.create()``) keep their source path.
 
     Args:
         state_cls: The state class.
@@ -875,7 +856,7 @@ def get_state_full_path(state_cls: type[BaseState]) -> str:
     Returns:
         e.g. ``"myapp.state.AppState.UserState"``.
     """
-    module = get_state_module(state_cls)
+    module = state_cls._get_source_module()
     class_hierarchy: list[str] = []
     current: type[BaseState] | None = state_cls
     while current is not None:
@@ -937,9 +918,8 @@ def generate_minify_config(
 ) -> MinifyConfig:
     """Generate a complete minify configuration.
 
-    Walks the state tree (see :func:`collect_all_states`) and assigns ids
-    starting from ``"a"`` per sibling group, skipping the parent's own id.
-    Output is byte-stable.
+    A sync of an empty config, filling every gap: ids start from ``"a"`` in
+    each sibling group, skipping the parent's own id. Output is byte-stable.
 
     Args:
         root_state: Optional subtree root.
@@ -947,44 +927,10 @@ def generate_minify_config(
     Returns:
         A complete :class:`MinifyConfig`.
     """
-    states: dict[str, StateEntry] = {}
-    members: dict[str, dict[str, dict[str, str]]] = {
-        kind.key: {} for kind in _MEMBER_KINDS
-    }
-    sibling_counter: dict[type[BaseState] | None, int] = {}
-    own_ids: dict[type[BaseState], int] = {}
-
-    for state_cls in collect_all_states(root_state):
-        parent = state_cls.get_parent_state()
-        state_id = sibling_counter.get(parent, 0)
-        # A state never reuses its parent's id, so the leading segment of a
-        # relative path can only ever mean the parent itself. Roots have no
-        # parent to collide with. ``collect_all_states`` is depth-first, so a
-        # parent's own id is always recorded before its children are assigned.
-        while (
-            parent is not None and state_id == own_ids.get(parent)
-        ) or not _is_state_id(int_to_minified_name(state_id)):
-            state_id += 1
-        sibling_counter[parent] = state_id + 1
-        own_ids[state_cls] = state_id
-
-        state_path = get_state_full_path(state_cls)
-        states[state_path] = StateEntry(
-            id=int_to_minified_name(state_id), parent=get_parent_key(state_cls)
-        )
-
-        for kind in _MEMBER_KINDS:
-            if names := sorted(kind.names(state_cls)):
-                members[kind.key][state_path] = {
-                    name: int_to_minified_name(member_id)
-                    for member_id, name in enumerate(names)
-                }
-
-    return MinifyConfig(
-        version=SCHEMA_VERSION,
-        states=states,
-        events=members["events"],
-        vars=members["vars"],
+    return sync_minify_config(
+        MinifyConfig(version=SCHEMA_VERSION, states={}, events={}, vars={}),
+        root_state,
+        reassign_deleted=True,
     )
 
 
@@ -1005,28 +951,29 @@ def _find_duplicate_ids(items: Iterable[tuple[str, str]]) -> dict[str, list[str]
 
 def _assign_next_ids(
     new_keys: Iterable[str],
-    existing_ids: set[int],
+    existing_ids: Collection[int],
     reassign_deleted: bool,
     for_states: bool = False,
+    skip: Collection[int] = (),
 ) -> dict[str, str]:
     """Assign minified ids to ``new_keys`` while skipping ``existing_ids``.
 
-    Keys are sorted for deterministic output. ``existing_ids`` is read-only —
-    a working copy is taken internally.
+    Keys are sorted for deterministic output.
 
     Args:
         new_keys: Keys needing new ids.
         existing_ids: Already-used integer ids in the same scope.
         reassign_deleted: When ``True``, scan from 0 (filling gaps);
-            otherwise start past the current max.
+            otherwise start past the max of ``existing_ids``.
         for_states: Whether the ids name states, which skip the ids
             :func:`_is_state_id` rejects.
+        skip: Ids to avoid that are not in the scope, so do not move its max.
 
     Returns:
         Mapping from key to its newly-assigned minified id.
     """
-    pool = set(existing_ids)
-    next_id = 0 if reassign_deleted else max(pool, default=-1) + 1
+    pool = {*existing_ids, *skip}
+    next_id = 0 if reassign_deleted else max(existing_ids, default=-1) + 1
     out: dict[str, str] = {}
     for key in sorted(new_keys):
         while next_id in pool or (
@@ -1037,6 +984,55 @@ def _assign_next_ids(
         pool.add(next_id)
         next_id += 1
     return out
+
+
+def _state_id_scope(
+    states: dict[str, StateEntry], parent_key: str | None, exclude: Collection[str]
+) -> tuple[set[int], set[int]]:
+    """Get the ids a state under ``parent_key`` may not take.
+
+    Args:
+        states: The state entries.
+        parent_key: The config path of the parent, ``None`` for a root.
+        exclude: The paths whose own ids do not count.
+
+    Returns:
+        ``(sibling ids, parent ids)``; the parent's id is avoided so the
+        leading segment of a relative path can only ever mean the parent.
+    """
+    siblings = {
+        minified_name_to_int(entry["id"])
+        for path, entry in states.items()
+        if entry["parent"] == parent_key and path not in exclude
+    }
+    parent_entry = states.get(parent_key) if parent_key is not None else None
+    parent = (
+        set() if parent_entry is None else {minified_name_to_int(parent_entry["id"])}
+    )
+    return siblings, parent
+
+
+def _assign_state_ids(
+    states: dict[str, StateEntry],
+    state_paths: Collection[str],
+    parent_key: str | None,
+    reassign_deleted: bool,
+) -> dict[str, str]:
+    """Assign ids to states under ``parent_key``, avoiding their scope's ids.
+
+    Args:
+        states: The state entries.
+        state_paths: The paths needing ids.
+        parent_key: The config path of their parent, ``None`` for roots.
+        reassign_deleted: Whether an id may fill a gap.
+
+    Returns:
+        Mapping from path to its newly-assigned id.
+    """
+    siblings, parent = _state_id_scope(states, parent_key, set(state_paths))
+    return _assign_next_ids(
+        state_paths, siblings, reassign_deleted, for_states=True, skip=parent
+    )
 
 
 def _reassign_duplicate_ids(
@@ -1084,15 +1080,8 @@ def _rehome_ambiguous_ids(
         entry = states[state_path]
         if _is_state_id(entry["id"]):
             continue
-        taken = {
-            minified_name_to_int(sibling["id"])
-            for path, sibling in states.items()
-            if sibling["parent"] == entry["parent"] and path != state_path
-        }
-        if (parent_entry := states.get(entry["parent"] or "")) is not None:
-            taken.add(minified_name_to_int(parent_entry["id"]))
-        entry["id"] = _assign_next_ids(
-            [state_path], taken, reassign_deleted, for_states=True
+        entry["id"] = _assign_state_ids(
+            states, (state_path,), entry["parent"], reassign_deleted
         )[state_path]
 
 
@@ -1124,23 +1113,15 @@ def _rehome_conflicting_ids(
         entry = states.get(state_path)
         if entry is None or entry["parent"] is None:
             continue
-        parent_entry = states.get(entry["parent"])
-        taken = {
-            minified_name_to_int(sibling["id"])
-            for path, sibling in states.items()
-            if sibling["parent"] == entry["parent"] and path != state_path
-        }
-        shares_parent_id = (
-            parent_entry is not None and parent_entry["id"] == entry["id"]
-        )
-        if parent_entry is not None:
-            taken.add(minified_name_to_int(parent_entry["id"]))
-        if minified_name_to_int(entry["id"]) not in taken:
+        siblings, parent = _state_id_scope(states, entry["parent"], (state_path,))
+        state_id = minified_name_to_int(entry["id"])
+        shares_parent_id = state_id in parent
+        if state_id not in siblings and not shares_parent_id:
             continue
         if state_path not in reparented and not shares_parent_id:
             continue
-        entry["id"] = _assign_next_ids(
-            [state_path], taken, reassign_deleted, for_states=True
+        entry["id"] = _assign_state_ids(
+            states, (state_path,), entry["parent"], reassign_deleted
         )[state_path]
 
 
@@ -1350,19 +1331,15 @@ def sync_minify_config(
     if prune:
         new_states = {k: v for k, v in new_states.items() if k in path_to_parent_key}
 
-    # Reserve every configured id within its sibling group — orphans under
-    # their recorded parent, so their ids are never reused. Live entries get
-    # their stored parent healed to the actual value.
-    parent_key_to_existing_ids: dict[str | None, set[int]] = {}
+    # Every configured id stays reserved within its sibling group -- orphans
+    # under their recorded parent, so their ids are never reused. Live entries
+    # get their stored parent healed to the actual value.
     reparented: set[str] = set()
     for state_path, entry in new_states.items():
         parent_key = path_to_parent_key.get(state_path, entry["parent"])
         if parent_key != entry["parent"]:
             reparented.add(state_path)
         entry["parent"] = parent_key
-        parent_key_to_existing_ids.setdefault(parent_key, set()).add(
-            minified_name_to_int(entry["id"])
-        )
 
     # Find states that need IDs assigned, grouped by parent key.
     parent_key_to_new_children: dict[str | None, list[str]] = {}
@@ -1370,16 +1347,9 @@ def sync_minify_config(
         if state_path not in new_states:
             parent_key_to_new_children.setdefault(parent_key, []).append(state_path)
 
-    # Assign new state IDs (unique among siblings of the same parent, and
-    # never the parent's own id; see generate_minify_config).
+    # Depth-first order assigns a parent before its children look at its id.
     for parent_key, children in parent_key_to_new_children.items():
-        existing_ids = parent_key_to_existing_ids.get(parent_key, set())
-        parent_entry = new_states.get(parent_key) if parent_key is not None else None
-        if parent_entry is not None:
-            existing_ids = existing_ids | {minified_name_to_int(parent_entry["id"])}
-        assigned = _assign_next_ids(
-            children, existing_ids, reassign_deleted, for_states=True
-        )
+        assigned = _assign_state_ids(new_states, children, parent_key, reassign_deleted)
         for state_path, minified_name in assigned.items():
             new_states[state_path] = StateEntry(id=minified_name, parent=parent_key)
 

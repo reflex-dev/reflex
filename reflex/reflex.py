@@ -1470,7 +1470,7 @@ def minify_lookup(output_json: bool, minified_path: str):
     from reflex_base.constants.state import FIELD_MARKER
     from reflex_base.registry import RegistrationContext
 
-    from reflex.minify import collect_all_states, get_state_full_path, get_state_module
+    from reflex.minify import collect_all_states, get_state_full_path
     from reflex.state import State
 
     config = _open_minify_session(for_json=output_json)
@@ -1547,7 +1547,7 @@ def minify_lookup(output_json: bool, minified_path: str):
                     for name in dict.fromkeys((part, part.removesuffix(FIELD_MARKER)))
                     if name in names
                 ][:1]
-                owner = f"{get_state_module(current)}.{current.__name__}"
+                owner = f"{current._get_source_module()}.{current.__name__}"
                 if len(matches) > 1 and not output_json:
                     logger.warning(
                         f"{', '.join(matches)} of {owner} share the id '{part}', so "
@@ -1576,7 +1576,7 @@ def minify_lookup(output_json: bool, minified_path: str):
                 # ``part`` may be the unminified name, so report the id from
                 # the config; ``None`` when the state has no entry.
                 "state_id": path_to_id.get(get_state_full_path(found)),
-                "module": get_state_module(found),
+                "module": found._get_source_module(),
                 "class": found.__name__,
                 "full_path": get_state_full_path(found),
             })
@@ -1587,7 +1587,7 @@ def minify_lookup(output_json: bool, minified_path: str):
         if len(readings) > 1 and not output_json:
             logger.warning(
                 f"Segment '{part}' is the id of {' and of '.join(readings)} of "
-                f"{get_state_module(current)}.{current.__name__}; showing each."
+                f"{current._get_source_module()}.{current.__name__}; showing each."
             )
         for key, member in members:
             kind, name_key = ("event", "handler") if key == "events" else ("var", "var")
@@ -1595,7 +1595,7 @@ def minify_lookup(output_json: bool, minified_path: str):
                 "kind": kind,
                 "minified": part,
                 f"{kind}_id": config[key].get(current_path, {}).get(member),
-                "module": get_state_module(current),
+                "module": current._get_source_module(),
                 "class": current.__name__,
                 name_key: member,
                 "full_path": f"{current_path}.{member}",

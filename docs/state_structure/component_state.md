@@ -266,10 +266,11 @@ than calling `create()` again with the same key.
 
 A stable name matters when something outside the app refers to it — most
 directly [state and event name minification](/docs/api-reference/minification/),
-where each instance gets its own `minify.json` entry keyed by that name:
+where each instance gets its own `minify.json` entry keyed by that name, under
+the module that defines the component:
 
 ```json
-"reflex.istate.dynamic.State.ReusableCounter__cart": {
+"my_app.counter.State.ReusableCounter__cart": {
   "id": "b",
   "parent": "reflex.state.State"
 }

@@ -6362,66 +6362,28 @@ def test_state_name_resolution(temp_minify_json, monkeypatch, mode, expect_minif
         assert "test_state" in name.lower()
 
 
-def test_event_uses_full_name_without_config(temp_minify_json):
-    """No minify.json → handlers keep their Python names."""
+@pytest.mark.parametrize(
+    ("mode", "expected"),
+    [(None, "my_handler"), (True, "d"), (False, "my_handler")],
+)
+def test_event_name_resolution(temp_minify_json, monkeypatch, mode, expected):
+    """Minified handler name only when env is ENABLED and config has the entry."""
     import reflex as rx
     from reflex.utils.format import get_event_handler_parts
 
-    class TestState(BaseState):
+    class EventNameState(State):
         @rx.event
         def my_handler(self):
             pass
 
-    _, event_name = get_event_handler_parts(TestState.event_handlers["my_handler"])
-    assert event_name == "my_handler"
+    if mode is not None:
+        set_minify_modes(monkeypatch, events=mode)
+        install_config(
+            events={get_state_full_path(EventNameState): {"my_handler": "d"}}
+        )
 
-
-def test_event_uses_minified_name_with_config(temp_minify_json, monkeypatch):
-    """Handler name follows the config when ``REFLEX_MINIFY_EVENTS`` is on."""
-    import reflex as rx
-    from reflex.utils.format import get_event_handler_parts
-
-    set_minify_modes(monkeypatch, events=True)
-    state_path = f"{__name__}.State.TestStateMinifiedEvent"
-    install_config(
-        states={state_path: "b"},
-        events={state_path: {"my_handler": "d"}},
-        include_state_root=True,
-    )
-
-    class TestStateMinifiedEvent(State):
-        @rx.event
-        def my_handler(self):
-            pass
-
-    _, name = get_event_handler_parts(
-        TestStateMinifiedEvent.event_handlers["my_handler"]
-    )
-    assert name == "d"
-
-
-def test_event_uses_full_name_when_env_disabled(temp_minify_json, monkeypatch):
-    """``REFLEX_MINIFY_EVENTS=0`` keeps full handler names."""
-    import reflex as rx
-    from reflex.utils.format import get_event_handler_parts
-
-    set_minify_modes(monkeypatch, events=False)
-    state_path = f"{__name__}.State.TestStateMinifiedEventOff"
-    install_config(
-        states={state_path: "b"},
-        events={state_path: {"my_handler": "d"}},
-        include_state_root=True,
-    )
-
-    class TestStateMinifiedEventOff(State):
-        @rx.event
-        def my_handler(self):
-            pass
-
-    _, name = get_event_handler_parts(
-        TestStateMinifiedEventOff.event_handlers["my_handler"]
-    )
-    assert name == "my_handler"
+    _, name = get_event_handler_parts(EventNameState.event_handlers["my_handler"])
+    assert name == expected
 
 
 def test_setvar_registered_with_config(temp_minify_json, monkeypatch):
@@ -6503,14 +6465,11 @@ def test_component_state_picks_up_minified_name(temp_minify_json, monkeypatch):
     import reflex as rx
 
     set_minify_modes(monkeypatch, states=True, events=True)
-    # ComponentState.create() builds a new class via ``type(...)`` with
-    # ``__module__ = "reflex.istate.dynamic"`` and a ``_n<count>`` suffix,
-    # so the path under which the resolver will look it up is fully
-    # determined ahead of time.
+    # ComponentState.create() names the class it builds with a ``_n<count>``
+    # suffix and keys it under the component's module, so the path under
+    # which the resolver will look it up is fully determined ahead of time.
     instance_count = rx.ComponentState._per_component_state_instance_count + 1
-    instance_path = (
-        f"reflex.istate.dynamic.State.ComponentStateMinifyExample_n{instance_count}"
-    )
+    instance_path = f"{__name__}.State.ComponentStateMinifyExample_n{instance_count}"
     install_config(
         states={instance_path: "z"},
         events={instance_path: {"increment": "i", "setvar": "s"}},
@@ -7315,7 +7274,6 @@ def test_reload_attributes_a_state_to_its_own_module(temp_minify_json, monkeypat
         temp_minify_json: Temporary ``minify.json`` location.
         monkeypatch: The pytest monkeypatch fixture.
     """
-    from reflex.state import _source_module
 
     def make_local_parent() -> type[State]:
         class LocalReloadParent(State):
@@ -7325,5 +7283,5 @@ def test_reload_attributes_a_state_to_its_own_module(temp_minify_json, monkeypat
 
     parent = make_local_parent()
     child = type("ModuleReloadChild", (parent,), {"__module__": "reload_module_b"})
-    assert _source_module(parent) == __name__
-    assert _source_module(child) == "reload_module_b"
+    assert parent._get_source_module() == __name__
+    assert child._get_source_module() == "reload_module_b"
