@@ -76,6 +76,13 @@ class DocsFeedbackState(rx.State):
                 close_button=True,
             )
 
+        email = form_data.get("email", "")
+        if len(email) > 100:
+            return rx.toast.warning(
+                "Please enter an email address of at most 100 characters.",
+                close_button=True,
+            )
+
         webhook_url = constants.REFLEX_DEV_WEB_GENERAL_FORM_FEEDBACK_WEBHOOK_URL
         if not webhook_url:
             return rx.toast.error(
@@ -87,7 +94,7 @@ class DocsFeedbackState(rx.State):
                 return None
             self.sending = True
             message = (
-                f"Contact: {form_data.get('email', '')}\n"
+                f"Contact: {email}\n"
                 f"Page: {self.router.url.path}\n"
                 f"Score: {'👍' if self.score == 1 else '👎'}\n"
                 f"Feedback: {feedback}"
@@ -439,11 +446,16 @@ def _feedback_content() -> rx.Component:
                         name="feedback",
                         placeholder="Write a comment…",
                         type="text",
+                        min_length=10,
                         max_length=500,
                         enter_key_submit=True,
                         resize="vertical",
                         required=True,
                         disabled=DocsFeedbackState.sending,
+                    ),
+                    rx.text(
+                        "10 to 500 characters.",
+                        class_name="text-sm text-muted-foreground",
                     ),
                     rx.hstack(
                         _feedback_thumb_card(1, "ThumbsUpIcon", "Helpful"),

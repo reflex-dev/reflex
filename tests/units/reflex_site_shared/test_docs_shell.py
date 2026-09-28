@@ -64,6 +64,13 @@ def test_feedback_form_preserves_comments_on_submission() -> None:
     assert "sending" in str(submit.disabled)  # pyright: ignore[reportAttributeAccessIssue]
 
 
+def test_feedback_form_explains_comment_length() -> None:
+    """Show the comment length requirement and enforce its browser minimum."""
+    rendered = str(_feedback_content())
+    assert "10 to 500 characters" in rendered
+    assert "minLength:10" in rendered
+
+
 @pytest.mark.parametrize("factory", [docs_feedback_button, docs_feedback_button_toc])
 def test_feedback_popover_open_state_is_controlled(factory) -> None:
     """Both feedback controls follow the state closed by a successful submission."""

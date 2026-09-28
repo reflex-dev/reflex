@@ -129,6 +129,37 @@ def test_feedback_submission_runs_in_background() -> None:
     assert cast(EventHandler, DocsFeedbackState.handle_submit).is_background
 
 
+@pytest.mark.parametrize("length", [100, 101])
+async def test_feedback_email_length_limit(
+    monkeypatch: pytest.MonkeyPatch, length: int
+) -> None:
+    """Accept the email length boundary and reject oversized submissions."""
+    monkeypatch.setattr(
+        constants,
+        "REFLEX_DEV_WEB_GENERAL_FORM_FEEDBACK_WEBHOOK_URL",
+        "https://example.com/feedback",
+    )
+    client = MagicMock()
+    post = AsyncMock(return_value=MagicMock())
+    client.return_value.__aenter__.return_value.post = post
+    monkeypatch.setattr(httpx, "AsyncClient", client)
+    state = DocsFeedbackState(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    state.open_popover = "toc"
+    email = "a" * (length - len("@example.com")) + "@example.com"
+    result = await DocsFeedbackState.handle_submit.fn(
+        state, {"feedback": "Please add an example", "email": email}
+    )
+    if length == 100:
+        post.assert_awaited_once()
+        assert f"Contact: {email}\n" in post.call_args.kwargs["json"]["text"]
+    else:
+        client.assert_not_called()
+        assert "100 characters" in str(result)
+        assert state.open_popover == "toc"
+        assert state.form_version == 0
+    assert not state.sending
+
+
 async def test_feedback_rejects_concurrent_submission(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
