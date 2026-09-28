@@ -439,6 +439,62 @@ def test_init_records_version_check_after_frontend_setup(
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
+def test_frontend_preflight_failure_cleans_process(tmp_path):
+    """An exception during concurrent context entry still stops the frontend."""
+    ready = tmp_path / "frontend.pid"
+    driver = tmp_path / "driver.py"
+    driver.write_text(
+        """import subprocess, sys, types
+from reflex.utils import build, exec as exec_mod, telemetry
+
+def frontend(*args):
+    p = subprocess.Popen([sys.executable, "-c", "import time;time.sleep(60)"])
+    exec_mod.frontend_process = p
+    with open(PIDS, "w") as handshake:
+        handshake.write(str(p.pid))
+    raise SystemExit(3)
+
+exec_mod.run_frontend = frontend
+exec_mod.run_backend = lambda *args: None
+telemetry.send = lambda *args, **kwargs: None
+build.setup_frontend = lambda *args, **kwargs: None
+import reflex.reflex as rx
+rx._compile_app = lambda: None
+rx.get_config = lambda: types.SimpleNamespace(
+    _set_persistent=lambda **kwargs: None,
+    loglevel=types.SimpleNamespace(subprocess_level=lambda: None),
+)
+from reflex_base import constants
+rx._run_dev(constants.RunningMode.FULLSTACK, 3000, 8000, "127.0.0.1")
+""".replace("PIDS", repr(str(ready)))
+    )
+    launcher = subprocess.Popen(
+        [sys.executable, str(driver)],
+        cwd=tmp_path,
+        start_new_session=True,
+        stderr=subprocess.PIPE,
+    )
+    child = None
+    try:
+        launcher.wait(timeout=DEFAULT_TIMEOUT)
+        assert ready.exists(), "frontend did not start"
+        child = int(ready.read_text())
+        assert launcher.returncode == 3
+        with contextlib.suppress(psutil.NoSuchProcess):
+            assert psutil.Process(child).status() in (
+                psutil.STATUS_ZOMBIE,
+                psutil.STATUS_DEAD,
+            )
+    finally:
+        if launcher.poll() is None:
+            os.killpg(launcher.pid, signal.SIGKILL)
+            launcher.wait(timeout=DEFAULT_TIMEOUT)
+        if child is not None:
+            with contextlib.suppress(ProcessLookupError):
+                os.kill(child, signal.SIGKILL)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
 def test_late_frontend_start_stops_after_backend_returns(tmp_path):
     """A frontend started after backend teardown must exit without hanging."""
     pids = tmp_path / "frontend.pid"
