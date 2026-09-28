@@ -7,6 +7,7 @@ from reflex_base.vars.base import Var
 from reflex_components_core.el.elements.forms import (
     AUTO_HEIGHT_JS,
     ENTER_KEY_SUBMIT_JS,
+    FORM_DATA_TO_OBJECT_JS,
     Input,
     Textarea,
 )
@@ -271,6 +272,25 @@ def test_on_submit_typed_dict_skips_dynamic_field_identifiers():
             Input.create(name="wrong_field"),
             on_submit=SignupState.on_submit,
         )
+
+
+def test_on_submit_emits_form_data_to_object_helper():
+    """A form with on_submit must inject the formDataToObject helper into the page."""
+    f = HTMLForm.create(on_submit=prevent_default)
+    assert FORM_DATA_TO_OBJECT_JS in _root_only_custom_code(f)
+
+
+def test_handle_submit_uses_form_data_to_object_not_fromentries():
+    """The submit hook must call formDataToObject, not Object.fromEntries(...entries()).
+
+    Object.fromEntries silently collapses repeated FormData keys (e.g. a checkbox
+    group) down to their last value, so any fix must route through the
+    array-preserving formDataToObject helper instead.
+    """
+    f = HTMLForm.create(on_submit=prevent_default)
+    hooks = "\n".join(f.add_hooks())
+    assert "formDataToObject(new FormData($form))" in hooks
+    assert "Object.fromEntries" not in hooks
 
 
 def test_textarea_enter_key_submit_emits_helper():

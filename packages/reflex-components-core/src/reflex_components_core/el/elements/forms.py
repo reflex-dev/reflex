@@ -41,6 +41,25 @@ from .base import BaseHTML, RawTextBaseHTML, VoidBaseHTML
 _DYNAMIC_FORM_FIELD = object()
 
 
+FORM_DATA_TO_OBJECT_JS = """
+const formDataToObject = (formData) => {
+    const obj = {};
+    for (const [key, value] of formData.entries()) {
+        if (key in obj) {
+            if (Array.isArray(obj[key])) {
+                obj[key].push(value);
+            } else {
+                obj[key] = [obj[key], value];
+            }
+        } else {
+            obj[key] = value;
+        }
+    }
+    return obj;
+}
+"""
+
+
 def _handle_submit_js_template(
     handle_submit_unique_name: str,
     form_data: str,
@@ -64,7 +83,7 @@ def _handle_submit_js_template(
     const handleSubmit_{handle_submit_unique_name} = useCallback((ev) => {{
         const $form = ev.target
         ev.preventDefault()
-        const {form_data} = {{...Object.fromEntries(new FormData($form).entries()), ...{field_ref_mapping}}};
+        const {form_data} = {{...formDataToObject(new FormData($form)), ...{field_ref_mapping}}};
 
         ({on_submit_event_chain}(ev));
 
@@ -346,6 +365,16 @@ class Form(BaseHTML):
                 reset_on_submit=str(self.reset_on_submit).lower(),
             )
         ]
+
+    def add_custom_code(self) -> list[str]:
+        """Add custom code for the form.
+
+        Returns:
+            The custom code for the form.
+        """
+        if EventTriggers.ON_SUBMIT not in self.event_triggers:
+            return []
+        return [FORM_DATA_TO_OBJECT_JS]
 
     def _render(self) -> CommonTag:
         render_tag = super()._render()
