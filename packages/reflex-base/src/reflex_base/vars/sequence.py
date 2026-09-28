@@ -1633,18 +1633,19 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
         normalized_end = (
             LiteralVar.create(end) if end is not None else Var(_js_expr="undefined")
         )
+        forward = f"{self._array!s}.slice({normalized_start!s}, {normalized_end!s})"
         if step is None:
-            return f"{self._array!s}.slice({normalized_start!s}, {normalized_end!s})"
+            return forward
         if not isinstance(step, Var):
             if step == 0:
                 msg = "slice step cannot be zero"
                 raise ValueError(msg)
+            if step == 1:
+                return forward
             if step > 0:
-                return f"{self._array!s}.slice({normalized_start!s}, {normalized_end!s}).filter((_, i) => i % {step!s} === 0)"
+                return f"{forward}.filter((_, i) => i % {step} === 0)"
 
-        # A negative step walks back from `start` (inclusive) to `end` (exclusive),
-        # which is the reversed forward slice `[end + 1:start + 1]`. Index -1 is
-        # the last element, so the bound after it is the length, not 0.
+        # A negative step is the reversed forward slice [end + 1:start + 1], where -1 + 1 is the length.
         length = self._array.length()
 
         def index_after(index: NumberVar | int) -> NumberVar | int:
@@ -1652,15 +1653,19 @@ class ArraySliceOperation(CachedVarOperation, ArrayVar):
                 return length if index == -1 else index + 1
             return ternary_operation(index == -1, length, index + 1).to(int)
 
-        actual_start_reverse = 0 if end is None else index_after(end)
-        actual_end_reverse = length if start is None else index_after(start)
+        reverse_start = "undefined" if end is None else index_after(end)
+        reverse_end = "undefined" if start is None else index_after(start)
+        # slice() already copies, so the in-place reverse() does not mutate the source.
+        backward = (
+            f"{self._array!s}.slice({reverse_start!s}, {reverse_end!s}).reverse()"
+        )
 
         if not isinstance(step, Var):
-            return str(
-                self._array[actual_start_reverse:actual_end_reverse].reverse()[::-step]
-            )
+            if step == -1:
+                return backward
+            return f"{backward}.filter((_, i) => i % {-step} === 0)"
 
-        return f"({step!s} > 0 ? {self._array!s}.slice({normalized_start!s}, {normalized_end!s}).filter((_, i) => i % {step!s} === 0) : {self._array!s}.slice({actual_start_reverse!s}, {actual_end_reverse!s}).reverse().filter((_, i) => i % {-step!s} === 0))"
+        return f"({step!s} > 0 ? {forward}.filter((_, i) => i % {step!s} === 0) : {backward}.filter((_, i) => i % {-step!s} === 0))"
 
     @classmethod
     def create(

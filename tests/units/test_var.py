@@ -1130,9 +1130,13 @@ def test_index_operation():
         == "[1, 2, 3, 4, 5].slice(1, 4).filter((_, i) => i % 2 === 0)"
     )
     assert (
-        str(array_var[::-1])
-        == "[1, 2, 3, 4, 5].slice(0, [1, 2, 3, 4, 5].length).slice().reverse().slice(undefined, undefined).filter((_, i) => i % 1 === 0)"
+        str(array_var[::-1]) == "[1, 2, 3, 4, 5].slice(undefined, undefined).reverse()"
     )
+    assert (
+        str(array_var[3::-2])
+        == "[1, 2, 3, 4, 5].slice(undefined, 4).reverse().filter((_, i) => i % 2 === 0)"
+    )
+    assert str(array_var[1:4:1]) == "[1, 2, 3, 4, 5].slice(1, 4)"
     assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].slice().reverse()"
     assert str(array_var[0].to(NumberVar) + 9) == "([1, 2, 3, 4, 5]?.at?.(0) + 9)"
 

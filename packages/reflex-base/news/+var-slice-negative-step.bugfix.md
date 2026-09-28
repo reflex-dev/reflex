@@ -1,1 +1,1 @@
-Slicing an array or string Var with a negative step now matches Python when the start or stop is `-1`, including when that bound is a Var (e.g. `State.items[-1::-1]` no longer renders an empty list), and a Var step (e.g. `State.items[::State.step]`) no longer raises `RecursionError`.
+Negative-step slices of array and string Vars now match Python at a `-1` bound (e.g. `State.items[-1::-1]` no longer renders an empty list), and a Var step (e.g. `State.items[::State.step]`) no longer raises `RecursionError`.
