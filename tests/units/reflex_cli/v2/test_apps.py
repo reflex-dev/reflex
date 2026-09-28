@@ -181,17 +181,33 @@ def test_app_history_success(mocker: MockFixture):
     mock_console_print_table.assert_called_once()
 
 
-def test_inspect_app_table_summarizes_latest_deployment(mocker: MockFixture):
+@pytest.mark.parametrize(
+    ("latest_deployment", "expected_summary"),
+    [
+        (
+            {
+                "id": str(_DEPLOYMENT_ID),
+                "status": "success",
+                "url": "https://example.com",
+                "vm_type_name": "small",
+            },
+            "success (https://example.com)",
+        ),
+        ({"status": "success", "url": None}, "success"),
+        ({"status": None, "url": "https://example.com"}, "https://example.com"),
+        ({"id": str(_DEPLOYMENT_ID), "vm_type_name": "small"}, "-"),
+    ],
+)
+def test_inspect_app_table_summarizes_latest_deployment(
+    mocker: MockFixture,
+    latest_deployment: dict[str, str | None],
+    expected_summary: str,
+):
     """The text table summarizes a deployment instead of printing its full object."""
     client = _authed(mocker)
     client.api.apps.get.return_value = {
         "id": str(_APP_ID),
-        "latest_deployment": {
-            "id": str(_DEPLOYMENT_ID),
-            "status": "success",
-            "url": "https://example.com",
-            "vm_type_name": "small",
-        },
+        "latest_deployment": latest_deployment,
     }
     mock_console_print_table = mocker.patch("reflex_cli.utils.console.print_table")
 
@@ -200,7 +216,7 @@ def test_inspect_app_table_summarizes_latest_deployment(mocker: MockFixture):
     assert result.exit_code == 0, result.output
     client.api.apps.get.assert_called_once_with(str(_APP_ID))
     mock_console_print_table.assert_called_once_with(
-        [[str(_APP_ID), "success (https://example.com)"]],
+        [[str(_APP_ID), expected_summary]],
         headers=["id", "latest_deployment"],
     )
 
