@@ -105,7 +105,10 @@ no wildcards — so two rules follow:
   may a workflow that blocks no merge — absent from the ruleset and listed in
   that test's `ADVISORY` — where the filter costs a run rather than a merge.
 - **Every merge-blocking workflow ends in a gate job** named `<workflow>-gate`,
-  which collapses it into one check name that matrix expansion cannot move:
+  which collapses it into one check name that matrix expansion cannot move. The
+  exception is a workflow with one job whose name cannot drift — `pre-commit`,
+  `changelog` — which the ruleset requires by that name (`DIRECTLY_REQUIRED` in
+  the test). A gate looks like:
 
 ```yaml
   unit-tests-gate:
@@ -123,10 +126,11 @@ no wildcards — so two rules follow:
 
 Adding a job means adding it to the gate's `needs`; adding a workflow means
 adding its gate to the ruleset. `tests/units/test_workflow_gates.py` fails when
-either drifts. A pre-release Python leg takes
-`continue-on-error: ${{ matrix.python-version == '3.15' }}` (or whichever version
-is in pre-release): a failed `continue-on-error` leg counts as a success in the
-gate's `needs`, so it reports without blocking the merge.
+either drifts. Every matrix leg blocks through its gate, pre-release Python
+versions included, so leave `continue-on-error` off a gated job. A workflow
+disabled in the repository's Actions settings never reports, which no test can
+see: disabling one means moving it to `ADVISORY` and out of the ruleset, or every
+merge waits on it.
 
 ## Changelog fragments
 

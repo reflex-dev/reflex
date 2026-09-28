@@ -26,6 +26,9 @@ outputs:
 runs:
   using: composite
   steps:
+    - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+      with:
+        enable-cache: false
     - id: evaluate
       shell: bash
       env:
@@ -50,7 +53,7 @@ runs:
         changed=$(
           gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" \
             --jq '.[] | {filename, previous_filename} | tojson' |
-            python3 "$GITHUB_WORKSPACE/scripts/changed_paths.py"
+            uv run --no-project python "$GITHUB_WORKSPACE/scripts/changed_paths.py"
         )
         echo "changed=$changed"
         echo "changed=$changed" >> "$GITHUB_OUTPUT"

@@ -32,10 +32,6 @@
             "integration_id": 1082092
           },
           {
-            "context": "dependency-review",
-            "integration_id": 15368
-          },
-          {
             "context": "docs-tests-gate",
             "integration_id": 15368
           },
@@ -45,10 +41,6 @@
           },
           {
             "context": "integration-app-harness-gate",
-            "integration_id": 15368
-          },
-          {
-            "context": "integration-node-latest-gate",
             "integration_id": 15368
           },
           {

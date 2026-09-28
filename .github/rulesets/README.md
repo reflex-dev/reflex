@@ -25,9 +25,8 @@ no conditionals. That rules out naming CI jobs directly:
 So each required workflow ends in a `*-gate` job that always runs, depends on
 every other job in the workflow, and fails unless each of them ended in `success`
 or `skipped` (`.github/actions/ci_gate`). The gate name is fixed, and it is the
-only name from that workflow in the list. The three workflows with a single job
-whose name cannot drift — `pre-commit`, `dependency-review`, `changelog` — are
-required directly.
+only name from that workflow in the list. The two workflows with a single job
+whose name cannot drift — `pre-commit` and `changelog` — are required directly.
 
 The path filters those workflows used to carry on their `pull_request` trigger
 now sit on a `changes` job instead (`.github/actions/changed_paths`), which
@@ -70,19 +69,22 @@ here. See the CI section of `CLAUDE.md` for the job to copy.
 
 ## Deliberate omissions
 
-- **Python 3.15 legs** run under `continue-on-error`. It is a pre-release and its
-  legs were never required; a failed `continue-on-error` leg counts as a success
-  in the gate's `needs`, so they report without blocking. Drop the
-  `continue-on-error` once 3.15 is final.
 - **`docs whitelist check` is advisory.** It keeps its trigger-level `paths`
   filter and blocks no merge, which is the trade the filter ban exists to force:
   a workflow either reports on every pull request and can be required, or filters
   its trigger and cannot. Requiring it would mean spending a `changes` job and a
   gate job on every pull request in the repo to guard one assertion.
+- **`integration-node-latest` and `Dependency Review` are disabled** in the
+  repository's Actions settings, so they never run, and a required check on
+  either would block every pull request. Re-enabling one means adding it here —
+  `dependency-review` by name, `integration-node-latest` behind a gate — and
+  disabling a required workflow means the reverse. Nothing in the repository can
+  see that setting, so it is on whoever flips it.
 - **The ruleset targets `~DEFAULT_BRANCH` only.** Most of these workflows trigger
   on `pull_request: branches: ["main"]`, so requiring them on `r/pre-**` or
   `r/hotfix/**` would reintroduce exactly the never-reports deadlock this
-  replaces. Only `changelog` runs on the release branches.
+  replaces. Only `changelog` and `performance-tests` run on pull requests to the
+  release branches as well.
 - **`CodSpeed Performance Analysis`** is posted by the CodSpeed app
   (`integration_id: 257293`), not by Actions, and is advisory. Add it as its own
   context if it should start blocking merges.

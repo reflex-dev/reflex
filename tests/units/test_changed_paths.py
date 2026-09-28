@@ -7,8 +7,8 @@ import pytest
 
 from scripts import changed_paths
 
-# The filters these tests pin are the ones lifted off the workflow triggers in
-# .github/workflows; they have to keep selecting exactly what the triggers did.
+# Fixtures modeled on the filters the workflows' `changes` jobs carry. They pin the
+# matching semantics; test_workflow_gates.py checks that the live filters compile.
 MARKDOWN_IGNORE = ["**/*.md"]
 DOCS_PATHS = [
     "docs/**",
@@ -79,6 +79,11 @@ def test_docs_paths(changed, expected):
         ("**/*.md", "README.md", True),
         ("a/**/b.py", "a/b.py", True),
         ("a/**/b.py", "a/x/y/b.py", True),
+        # Only a `**/` that starts a segment spans whole directories; embedded,
+        # it is `**` followed by a literal slash.
+        ("foo**/bar", "foobar", False),
+        ("foo**/bar", "foo/bar", True),
+        ("foo**/bar", "foox/y/bar", True),
         # Escapes and ranges.
         (r"reflex/\*.py", "reflex/*.py", True),
         (r"reflex/\*.py", "reflex/app.py", False),

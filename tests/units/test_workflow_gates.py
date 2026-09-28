@@ -17,6 +17,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from scripts import changed_paths
+
 REPO_ROOT = Path(__file__).parents[2]
 WORKFLOW_DIR = REPO_ROOT / ".github" / "workflows"
 ACTION_DIR = REPO_ROOT / ".github" / "actions"
@@ -25,15 +27,17 @@ GATE_SUFFIX = "-gate"
 ACTIONS_APP_ID = 15368
 # Workflows with a single job whose check name cannot drift are required by that
 # name instead of through a gate.
-DIRECTLY_REQUIRED = {"pre-commit", "dependency-review", "changelog"}
+DIRECTLY_REQUIRED = {"pre-commit", "changelog"}
 # Required checks that apps other than GitHub Actions post, carried over from the
 # branch protection this ruleset replaces. No gate can cover another app's check,
 # so each is required by name and pinned to the app that posts it.
 THIRD_PARTY = {"Greptile Review": 867647, "cubic · AI code reviewer": 1082092}
-# Workflows that deliberately block no merge. They stay out of the ruleset, and
-# in exchange they keep the trigger-level path filter that would otherwise
-# deadlock a required check.
-ADVISORY = {"docs_whitelist.yml"}
+# Workflows that deliberately block no merge, so they stay out of the ruleset. One
+# keeps the trigger-level path filter that would deadlock a required check; the
+# other two are disabled in the repository's Actions settings, where they never
+# run at all -- which no test here can see, so disabling a workflow means moving
+# it here by hand.
+ADVISORY = {"docs_whitelist.yml", "check_node_latest.yml", "dependency-review.yml"}
 
 
 def workflow_triggers(doc: dict) -> dict:
@@ -58,6 +62,13 @@ GATED_WORKFLOWS = [
     name
     for name, doc in WORKFLOWS.items()
     if any(job.endswith(GATE_SUFFIX) for job in doc.get("jobs", {}))
+]
+CHANGES_STEPS = [
+    (name, step)
+    for name, doc in WORKFLOWS.items()
+    for job in doc.get("jobs", {}).values()
+    for step in job.get("steps", [])
+    if step.get("uses") == "./.github/actions/changed_paths"
 ]
 
 
@@ -119,6 +130,64 @@ def test_gate_job_needs_every_other_job(name):
     assert set(needs) == set(jobs) - {gate}, (
         f"{name}: {gate} must list every other job in `needs`, otherwise a failure "
         "in the job it omits never reaches the required check."
+    )
+
+
+def test_directly_required_checks_are_posted():
+    posted = {
+        job.get("name", job_id)
+        for name in REQUIRED_PR_WORKFLOWS
+        for job_id, job in WORKFLOWS[name].get("jobs", {}).items()
+    }
+    missing = DIRECTLY_REQUIRED - posted
+    assert not missing, (
+        f"the ruleset requires {sorted(missing)} by name, but no workflow that runs "
+        "on pull requests has a job posting that check, so every merge would wait "
+        "on it forever."
+    )
+
+
+@pytest.mark.parametrize("name", GATED_WORKFLOWS)
+def test_gate_job_runs_the_ci_gate_action(name):
+    steps = WORKFLOWS[name]["jobs"][gate_id(name)].get("steps", [])
+    given = [
+        step.get("with", {}).get("needs")
+        for step in steps
+        if step.get("uses") == "./.github/actions/ci_gate"
+    ]
+    # Any other step reports the required check green whatever the jobs it needs did.
+    assert given, f"{name}: the gate never runs ./.github/actions/ci_gate"
+    expected = "${{ toJSON(needs) }}"
+    assert set(given) == {expected}, (
+        f"{name}: the gate must hand ci_gate {expected}, not {given}"
+    )
+
+
+@pytest.mark.parametrize(
+    ("name", "step"), CHANGES_STEPS, ids=[name for name, _ in CHANGES_STEPS]
+)
+def test_changes_filter_compiles(name, step):
+    inputs = step.get("with", {})
+    given = [key for key in ("paths", "paths-ignore") if inputs.get(key, "").strip()]
+    assert len(given) == 1, (
+        f"{name}: the changes step takes exactly one of paths or paths-ignore, "
+        f"got {given}"
+    )
+    # A pattern the evaluator rejects fails the `changes` job at run time, and with
+    # it the gate on every pull request; catch it here instead.
+    changed_paths.compile_filters(changed_paths.lines(inputs[given[0]]))
+
+
+@pytest.mark.parametrize("name", GATED_WORKFLOWS)
+def test_gated_jobs_do_not_continue_on_error(name):
+    lenient = [
+        job_id
+        for job_id, job in WORKFLOWS[name]["jobs"].items()
+        if job.get("continue-on-error")
+    ]
+    assert not lenient, (
+        f"{name}: {lenient} set continue-on-error, and a job that fails under it "
+        "reports success in the gate's `needs`, so the gate passes over it."
     )
 
 

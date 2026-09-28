@@ -43,9 +43,12 @@ def translate(pattern: str) -> re.Pattern[str]:
     index = 0
     while index < len(pattern):
         char = pattern[index]
-        # `**/` spans zero or more leading directories, which is what makes
-        # `**/*.md` cover a top-level README.md as well as docs/guide.md.
-        if pattern.startswith("**/", index):
+        # A `**/` that starts a segment spans zero or more whole directories,
+        # which is what makes `**/*.md` cover a top-level README.md as well as
+        # docs/guide.md. Embedded, as in `foo**/bar`, it is `**` then a slash.
+        if pattern.startswith("**/", index) and (
+            index == 0 or pattern[index - 1] == "/"
+        ):
             out.append("(?:.*/)?")
             index += 3
             continue
