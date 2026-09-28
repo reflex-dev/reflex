@@ -43,7 +43,7 @@ _DYNAMIC_FORM_FIELD = object()
 
 FORM_DATA_TO_OBJECT_JS = """
 const formDataToObject = (formData) => {
-    const obj = {};
+    const obj = Object.create(null);
     for (const [key, value] of formData.entries()) {
         if (key in obj) {
             if (Array.isArray(obj[key])) {

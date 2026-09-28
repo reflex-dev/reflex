@@ -1,3 +1,6 @@
+import json
+import shutil
+import subprocess
 from typing import TypedDict
 
 import pytest
@@ -291,6 +294,62 @@ def test_handle_submit_uses_form_data_to_object_not_fromentries():
     hooks = "\n".join(f.add_hooks())
     assert "formDataToObject(new FormData($form))" in hooks
     assert "Object.fromEntries" not in hooks
+
+
+# Runs FORM_DATA_TO_OBJECT_JS itself through node, so a regression in the actual
+# grouping/prototype-safety logic is caught even if the surrounding hooks still
+# reference the helper correctly. Mirrors the pattern in
+# tests/units/reflex_base/templates/test_json_helper.py.
+_FORM_DATA_TO_OBJECT_DRIVER = """
+import { readFileSync } from "node:fs";
+const helperSrc = readFileSync(process.argv[2], "utf8");
+const formDataToObject = new Function(`${helperSrc}; return formDataToObject;`)();
+const cases = JSON.parse(readFileSync(process.argv[3], "utf8"));
+const results = cases.map((entries) => {
+  const fd = new FormData();
+  for (const [key, value] of entries) fd.append(key, value);
+  return formDataToObject(fd);
+});
+process.stdout.write(JSON.stringify(results));
+"""
+
+requires_node = pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
+
+
+@requires_node
+def test_form_data_to_object_groups_repeated_keys_preserves_scalars(tmp_path):
+    """The helper must group repeated keys into arrays and keep single
+    keys as scalars, and must not corrupt keys that collide with
+    Object.prototype members like "constructor" or "toString".
+
+    Args:
+        tmp_path: Pytest temporary directory.
+    """
+    helper_file = tmp_path / "helper.js"
+    helper_file.write_text(FORM_DATA_TO_OBJECT_JS, encoding="utf-8")
+    driver_file = tmp_path / "driver.mjs"
+    driver_file.write_text(_FORM_DATA_TO_OBJECT_DRIVER, encoding="utf-8")
+    cases_file = tmp_path / "cases.json"
+    cases = [
+        [["colors", "red"], ["colors", "green"], ["colors", "blue"], ["name", "bob"]],
+        [["name", "bob"]],
+        [["constructor", "a"], ["constructor", "b"], ["toString", "x"]],
+    ]
+    cases_file.write_text(json.dumps(cases), encoding="utf-8")
+
+    result = subprocess.run(
+        ["node", str(driver_file), str(helper_file), str(cases_file)],
+        check=True,
+        capture_output=True,
+        encoding="utf-8",
+    )
+    results = json.loads(result.stdout)
+
+    assert results == [
+        {"colors": ["red", "green", "blue"], "name": "bob"},
+        {"name": "bob"},
+        {"constructor": ["a", "b"], "toString": "x"},
+    ]
 
 
 def test_textarea_enter_key_submit_emits_helper():
