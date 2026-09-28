@@ -44,6 +44,9 @@ jobs:
     needs: changes
     if: needs.changes.outputs.run == 'true'
     timeout-minutes: 30
+    # Python 3.15 is a pre-release, so its legs report without blocking a merge:
+    # a failed continue-on-error leg counts as a success in the gate's `needs`.
+    continue-on-error: ${{ matrix.python-version == '3.15' }}
     strategy:
       matrix:
         state_manager: ["redis", "memory"]
@@ -87,6 +90,9 @@ jobs:
     needs: changes
     if: needs.changes.outputs.run == 'true'
     timeout-minutes: 30
+    # Python 3.15 is a pre-release, so its legs report without blocking a merge:
+    # a failed continue-on-error leg counts as a success in the gate's `needs`.
+    continue-on-error: ${{ matrix.python-version == '3.15' }}
     strategy:
       matrix:
         state_manager: ["redis", "memory"]

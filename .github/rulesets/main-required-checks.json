@@ -30,12 +30,20 @@
             "integration_id": 15368
           },
           {
+            "context": "cubic · AI code reviewer",
+            "integration_id": 1082092
+          },
+          {
             "context": "dependency-review",
             "integration_id": 15368
           },
           {
             "context": "docs-tests-gate",
             "integration_id": 15368
+          },
+          {
+            "context": "Greptile Review",
+            "integration_id": 867647
           },
           {
             "context": "integration-app-harness-gate",

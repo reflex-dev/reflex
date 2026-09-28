@@ -7,14 +7,16 @@ reports those checks as skipped, which counts as a pass. This script evaluates
 the filter that used to sit on the trigger, so the jobs skip on exactly the pull
 requests the trigger used to drop.
 
-Reads the changed paths from stdin, one per line, and writes ``true`` or
-``false`` to stdout. The filter comes from whichever of ``FILTER_PATHS`` or
-``FILTER_PATHS_IGNORE`` is set, as a newline-separated pattern list using
-GitHub's filter pattern syntax.
+Reads the pull request's changed files from stdin, one JSON object per line
+carrying the ``filename`` and ``previous_filename`` fields of the pulls files
+API, and writes ``true`` or ``false`` to stdout. The filter comes from whichever
+of ``FILTER_PATHS`` or ``FILTER_PATHS_IGNORE`` is set, as a newline-separated
+pattern list using GitHub's filter pattern syntax.
 """
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import sys
@@ -107,6 +109,29 @@ def selects(filters: Sequence[tuple[bool, re.Pattern[str]]], path: str) -> bool:
     return selected
 
 
+def changed_files(entries: Iterable[str]) -> list[str]:
+    """Collect every path a pull request's changed files touch.
+
+    A rename touches two paths, but the API names only the new one in
+    ``filename``. Without ``previous_filename`` a code file renamed to ``*.md``
+    would pass for a Markdown-only change and skip every job it should run.
+
+    Args:
+        entries: One JSON object per changed file, as the pulls files API
+            returns it.
+
+    Returns:
+        The changed paths, with both names of a renamed file.
+    """
+    paths: list[str] = []
+    for line in entries:
+        entry = json.loads(line)
+        paths.append(entry["filename"])
+        if previous := entry.get("previous_filename"):
+            paths.append(previous)
+    return paths
+
+
 def triggers(
     changed: Sequence[str],
     paths: Sequence[str] = (),
@@ -147,7 +172,7 @@ def lines(text: str) -> list[str]:
 
 
 def main() -> int:
-    """Evaluate the configured filter against the paths on stdin.
+    """Evaluate the configured filter against the changed files on stdin.
 
     Returns:
         The process exit code.
@@ -160,7 +185,8 @@ def main() -> int:
             file=sys.stderr,
         )
         return 2
-    print("true" if triggers(lines(sys.stdin.read()), paths, paths_ignore) else "false")
+    changed = changed_files(lines(sys.stdin.read()))
+    print("true" if triggers(changed, paths, paths_ignore) else "false")
     return 0
 
 

@@ -1,5 +1,8 @@
 """Unit tests for scripts/changed_paths.py (the workflow path filter evaluator)."""
 
+import io
+import json
+
 import pytest
 
 from scripts import changed_paths
@@ -113,6 +116,45 @@ def test_empty_change_set_runs_the_jobs():
     assert changed_paths.triggers([], paths=DOCS_PATHS) is True
 
 
+def entry(filename, previous_filename=None):
+    """Return one changed file as the action feeds it to the script."""
+    return json.dumps({"filename": filename, "previous_filename": previous_filename})
+
+
+def test_changed_files_counts_both_names_of_a_rename():
+    assert changed_paths.changed_files([
+        entry("docs/example.md", "scripts/example.py"),
+        entry("README.md"),
+    ]) == ["docs/example.md", "scripts/example.py", "README.md"]
+
+
+@pytest.mark.parametrize(
+    ("renamed", "filter_kwargs", "expected"),
+    [
+        # A code file renamed to Markdown still removes code: the jobs must run.
+        (
+            ("docs/example.md", "scripts/example.py"),
+            {"paths_ignore": MARKDOWN_IGNORE},
+            True,
+        ),
+        # Moving a file out of docs/ changes docs/ as much as editing it does.
+        (("reflex/example.py", "docs/example.py"), {"paths": DOCS_PATHS}, True),
+        # A rename that stays within ignored paths is still ignored.
+        (("docs/new.md", "docs/old.md"), {"paths_ignore": MARKDOWN_IGNORE}, False),
+    ],
+)
+def test_renames_are_filtered_on_both_names(renamed, filter_kwargs, expected):
+    changed = changed_paths.changed_files([entry(*renamed)])
+    assert changed_paths.triggers(changed, **filter_kwargs) is expected
+
+
+def test_changed_files_rejects_malformed_input():
+    # A malformed entry fails the `changes` job, and so the gate, rather than
+    # quietly skipping everything.
+    with pytest.raises(json.JSONDecodeError):
+        changed_paths.changed_files(["docs/example.md"])
+
+
 def test_lines_drops_blanks_and_strips():
     assert changed_paths.lines(" a.py \n\n\tb.py\n \n") == ["a.py", "b.py"]
     assert changed_paths.lines("") == []
@@ -129,18 +171,29 @@ def test_main_requires_exactly_one_filter(monkeypatch, capsys):
 
 
 @pytest.mark.parametrize(
-    ("env", "value", "stdin", "expected"),
+    ("env", "value", "files", "expected"),
     [
-        ("FILTER_PATHS_IGNORE", "**/*.md", "README.md\n", "false\n"),
-        ("FILTER_PATHS_IGNORE", "**/*.md", "README.md\nreflex/app.py\n", "true\n"),
-        ("FILTER_PATHS", "docs/**", "reflex/app.py\n", "false\n"),
-        ("FILTER_PATHS", "docs/**\n\n", "docs/app/main.py\n", "true\n"),
+        ("FILTER_PATHS_IGNORE", "**/*.md", [entry("README.md")], "false\n"),
+        (
+            "FILTER_PATHS_IGNORE",
+            "**/*.md",
+            [entry("README.md"), entry("reflex/app.py")],
+            "true\n",
+        ),
+        (
+            "FILTER_PATHS_IGNORE",
+            "**/*.md",
+            [entry("docs/example.md", "scripts/example.py")],
+            "true\n",
+        ),
+        ("FILTER_PATHS", "docs/**", [entry("reflex/app.py")], "false\n"),
+        ("FILTER_PATHS", "docs/**\n\n", [entry("docs/app/main.py")], "true\n"),
     ],
 )
-def test_main_writes_the_verdict(monkeypatch, capsys, env, value, stdin, expected):
+def test_main_writes_the_verdict(monkeypatch, capsys, env, value, files, expected):
     monkeypatch.delenv("FILTER_PATHS", raising=False)
     monkeypatch.delenv("FILTER_PATHS_IGNORE", raising=False)
     monkeypatch.setenv(env, value)
-    monkeypatch.setattr("sys.stdin", __import__("io").StringIO(stdin))
+    monkeypatch.setattr("sys.stdin", io.StringIO("".join(f"{f}\n" for f in files)))
     assert changed_paths.main() == 0
     assert capsys.readouterr().out == expected

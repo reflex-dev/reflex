@@ -45,8 +45,11 @@ runs:
         fi
         # The whole pull request diff, which is what the trigger filtered on --
         # not the last push, which would skip jobs a later commit still needs.
+        # Only the two name fields travel: each entry's `patch` can be the
+        # file's entire diff.
         changed=$(
-          gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" --jq '.[].filename' |
+          gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" \
+            --jq '.[] | {filename, previous_filename} | tojson' |
             python3 "$GITHUB_WORKSPACE/scripts/changed_paths.py"
         )
         echo "changed=$changed"

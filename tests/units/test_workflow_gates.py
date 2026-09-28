@@ -25,6 +25,10 @@ ACTIONS_APP_ID = 15368
 # Workflows with a single job whose check name cannot drift are required by that
 # name instead of through a gate.
 DIRECTLY_REQUIRED = {"pre-commit", "dependency-review", "changelog"}
+# Required checks that apps other than GitHub Actions post, carried over from the
+# branch protection this ruleset replaces. No gate can cover another app's check,
+# so each is required by name and pinned to the app that posts it.
+THIRD_PARTY = {"Greptile Review": 867647, "cubic · AI code reviewer": 1082092}
 # Workflows that deliberately block no merge. They stay out of the ruleset, and
 # in exchange they keep the trigger-level path filter that would otherwise
 # deadlock a required check.
@@ -128,21 +132,26 @@ def test_gate_job_always_runs(name):
 
 def test_ruleset_requires_exactly_the_gates():
     contexts = {check["context"] for check in required_checks()}
-    gates = {gate_id(name) for name in GATED_WORKFLOWS}
-    assert contexts == gates | DIRECTLY_REQUIRED, (
+    expected = (
+        {gate_id(name) for name in GATED_WORKFLOWS}
+        | DIRECTLY_REQUIRED
+        | set(THIRD_PARTY)
+    )
+    assert contexts == expected, (
         "the ruleset and the workflows disagree about what blocks a merge; "
-        f"only in the ruleset: {sorted(contexts - gates - DIRECTLY_REQUIRED)}, "
-        f"only in the workflows: {sorted((gates | DIRECTLY_REQUIRED) - contexts)}"
+        f"only in the ruleset: {sorted(contexts - expected)}, "
+        f"only in the workflows: {sorted(expected - contexts)}"
     )
 
 
-def test_ruleset_pins_every_check_to_the_actions_app():
-    unpinned = [
+def test_ruleset_pins_every_check_to_its_app():
+    misattributed = [
         check["context"]
         for check in required_checks()
-        if check.get("integration_id") != ACTIONS_APP_ID
+        if check.get("integration_id")
+        != THIRD_PARTY.get(check["context"], ACTIONS_APP_ID)
     ]
-    assert not unpinned, (
-        f"{unpinned} are not pinned to the GitHub Actions app, so another "
+    assert not misattributed, (
+        f"{misattributed} are not pinned to the app that posts them, so another "
         "integration could satisfy them by posting a same-named check."
     )

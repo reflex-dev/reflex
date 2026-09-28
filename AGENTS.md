@@ -123,7 +123,10 @@ no wildcards — so two rules follow:
 
 Adding a job means adding it to the gate's `needs`; adding a workflow means
 adding its gate to the ruleset. `tests/units/test_workflow_gates.py` fails when
-either drifts.
+either drifts. A pre-release Python leg takes
+`continue-on-error: ${{ matrix.python-version == '3.15' }}` (or whichever version
+is in pre-release): a failed `continue-on-error` leg counts as a success in the
+gate's `needs`, so it reports without blocking the merge.
 
 ## Changelog fragments
 
