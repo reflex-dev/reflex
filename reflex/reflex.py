@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 import signal
 import sys
-import threading
 from collections.abc import Callable
+from contextlib import contextmanager
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
@@ -400,6 +400,23 @@ def _compile_app_worker(
         otel.flush()
 
 
+@contextmanager
+def _frontend_sigterm_handler(enabled: bool):
+    """Exit cleanly on SIGTERM for a frontend-only run."""
+    if not enabled:
+        yield
+        return
+
+    def stop_frontend(signum: int, frame: FrameType | None) -> None:
+        raise SystemExit(0)
+
+    previous = signal.signal(signal.SIGTERM, stop_frontend)
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGTERM, previous)
+
+
 def _run_dev(
     running_mode: constants.RunningMode,
     frontend_port: int | None,
@@ -441,42 +458,29 @@ def _run_dev(
         ))
 
     frontend_only = running_mode.has_frontend() and not running_mode.has_backend()
-    install_handlers = (
-        frontend_only
-        and sys.platform != "win32"
-        and threading.current_thread() is threading.main_thread()
-    )
-    old_handlers = {}
-    if install_handlers:
-
-        def stop_frontend(signum: int, frame: FrameType | None) -> None:
-            raise SystemExit(0)
-
-        old_handlers = {
-            sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGINT)
-        }
-        for sig in old_handlers:
-            signal.signal(sig, stop_frontend)
-    try:
-        with processes.run_concurrently_context(
-            *commands, interrupt_on_failure=not frontend_only
-        ) as tasks:
-            if frontend_only and tasks:
-                tasks[0].result()
-            elif running_mode.has_backend() and backend_port:
-                exec.run_backend(
-                    backend_host,
-                    int(backend_port),
-                    config.loglevel.subprocess_level(),
-                    running_mode.has_frontend(),
-                )
-                # The windows uvicorn bug workaround
-                # https://github.com/reflex-dev/reflex/issues/2335
-                if constants.IS_WINDOWS and exec.frontend_process:
-                    exec.kill(exec.frontend_process.pid)
-    finally:
-        for sig, handler in old_handlers.items():
-            signal.signal(sig, handler)
+    with _frontend_sigterm_handler(frontend_only and sys.platform != "win32"):
+        try:
+            with processes.run_concurrently_context(
+                *commands, interrupt_on_failure=not frontend_only
+            ) as tasks:
+                if frontend_only and tasks:
+                    tasks[0].result()
+                elif running_mode.has_backend() and backend_port:
+                    exec.run_backend(
+                        backend_host,
+                        int(backend_port),
+                        config.loglevel.subprocess_level(),
+                        running_mode.has_frontend(),
+                    )
+                    # The windows uvicorn bug workaround
+                    # https://github.com/reflex-dev/reflex/issues/2335
+                    if constants.IS_WINDOWS and exec.frontend_process:
+                        exec.kill(exec.frontend_process.pid)
+        finally:
+            if (process := exec.frontend_process) is not None:
+                if process.poll() is None:
+                    process.terminate()
+                exec.frontend_process = None
 
 
 def _run_preview(running_mode: constants.RunningMode, port: int, host: str):
