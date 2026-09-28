@@ -833,13 +833,15 @@ def test_empty_when_config_present_but_modes_off(temp_minify_json, monkeypatch, 
         for env_var in (
             environment.REFLEX_MINIFY_STATES,
             environment.REFLEX_MINIFY_EVENTS,
+            environment.REFLEX_MINIFY_VARS,
         ):
             monkeypatch.delenv(env_var.name, raising=False)
     else:
-        set_minify_modes(monkeypatch, states=False, events=False)
+        set_minify_modes(monkeypatch, states=False, events=False, vars=False)
     install_config(
         states={"reflex.state.State": "a"},
         events={"reflex.state.State": {"hydrate": "a"}},
+        vars={"reflex.state.State": {"is_hydrated": "h"}},
     )
 
     assert scheme_digest() == ""
