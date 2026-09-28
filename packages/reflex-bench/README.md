@@ -334,25 +334,31 @@ event websocket over `websockets` (no python-socketio). Sessions are browser
 tabs: each connects with its own token, hydrates like a page load, then sends
 `BenchState.set_seq*` events whose delta echoes a sequence number.
 
+The grid holds the common points, about 30 minutes with the default policy.
+Reflex's default state manager is disk, or redis with a `redis_url`, so every
+benchmark runs on `disk` (and on `redis` when `REFLEX_REDIS_URL` is set) at 10
+sessions. Only `simple` also runs on `memory`, the framework's cost without
+state I/O, and at 50 sessions. Other sizes run by name with `--param`, e.g.
+`reflex-bench run 'events.complex.capacity' --param sessions=200`.
+
 CI minutes are scarce, so `smoke` runs two points, about 2 minutes per reflex
-with the default policy: `events.simple.capacity[manager=memory,sessions=10]`
-and `events.simple.latency[manager=memory,sessions=10,rate=500]`. `daily` adds
+with the default policy: `events.simple.capacity[manager=disk,sessions=10]`
+and `events.simple.latency[manager=disk,sessions=10,rate=500]`. `daily` adds
 the shared state at the same point,
-`events.shared_contention.capacity[manager=memory,sessions=10]` and
-`events.shared_contention.latency[manager=memory,sessions=10,rate=auto]`, and
-`events.shared_fanout.broadcast[manager=memory,linked=5|25]`. The other shapes,
-managers and session counts, the knee and `at_1hz` run with `--suite all` or by
-name.
+`events.shared_contention.capacity[manager=disk,sessions=10]` and
+`events.shared_contention.latency[manager=disk,sessions=10,rate=auto]`, and
+`events.shared_fanout.broadcast[manager=disk,linked=25]`. The other shapes,
+the knee and `at_1hz` run with `--suite all` or by name.
 
 | Benchmark | Suites | Parameters | Load | Metrics |
 | --- | --- | --- | --- | --- |
-| `events.<shape>.capacity` | `smoke`, `daily` (simple, `manager=memory`, `sessions=10`) | `manager`, `sessions` 1, 10, 50, 200 | closed loop, 3 s after 1 s | `throughput`, `service_p50`, `cpu_per_event` |
-| `events.<shape>.latency` | `smoke`, `daily` (simple, `manager=memory`, `sessions=10`, `rate=500`) | `manager`, `sessions`, `rate` | open loop, 5 s after 1 s | `response_p50`, `p90`, `p99`, `max`, `throughput`, `unanswered`, `cpu_per_event` |
-| `events.shared_contention.capacity` | `daily` (`manager=memory`, `sessions=10`) | `manager`, `sessions` 1, 10, 50, 200 | the same as `capacity`, every session linked to one `rx.SharedState` board | the same as `capacity` |
-| `events.shared_contention.latency` | `daily` (`manager=memory`, `sessions=10`, `rate=auto`) | `manager`, `sessions`, `rate` | the same as `latency`, every session linked to one board | the same as `latency` |
-| `events.shared_fanout.broadcast` | `daily` (`manager=memory`, `linked` 5, 25) | `manager`, `linked` 1, 5, 25, 100 | one linked session sends, closed loop, 3 s after 1 s; answered once every linked session has the delta | `throughput`, `broadcast_p50`, `broadcast_p99`, `fanout_spread_p50`, `cpu_per_event` |
-| `events.simple.knee` | (`all`) | `manager`, `sessions` | open loop at 10 % to 110 % of the capacity, 4 s after 1 s each | `knee_rate`, `low_load_p99` |
-| `events.sessions.at_1hz` | (`all`) | `manager`, `sessions` 50, 200, 1000 | open loop, 1 ev/s per session, 10 s after 3 s | `response_p50`, `response_p99`, `unanswered`, `cpu_per_event` |
+| `events.<shape>.capacity` | `smoke`, `daily` (simple, `manager=disk`, `sessions=10`) | `manager`, `sessions` 10 (simple: 10, 50) | closed loop, 3 s after 1 s | `throughput`, `service_p50`, `cpu_per_event` |
+| `events.<shape>.latency` | `smoke`, `daily` (simple, `manager=disk`, `sessions=10`, `rate=500`) | `manager`, `sessions`, `rate` | open loop, 5 s after 1 s | `response_p50`, `p90`, `p99`, `max`, `throughput`, `unanswered`, `cpu_per_event` |
+| `events.shared_contention.capacity` | `daily` (`manager=disk`, `sessions=10`) | `manager`, `sessions` 10 | the same as `capacity`, every session linked to one `rx.SharedState` board | the same as `capacity` |
+| `events.shared_contention.latency` | `daily` (`manager=disk`, `sessions=10`, `rate=auto`) | `manager`, `sessions`, `rate` | the same as `latency`, every session linked to one board | the same as `latency` |
+| `events.shared_fanout.broadcast` | `daily` (`manager=disk`, `linked=25`) | `manager`, `linked` 25 | one linked session sends, closed loop, 3 s after 1 s; answered once every linked session has the delta | `throughput`, `broadcast_p50`, `broadcast_p99`, `fanout_spread_p50`, `cpu_per_event` |
+| `events.simple.knee` | (`all`) | `manager`, `sessions` 10 | open loop at 10 % to 110 % of the capacity, 4 s after 1 s each | `knee_rate`, `low_load_p99` |
+| `events.sessions.at_1hz` | (`all`) | `manager`, `sessions` 200 | open loop, 1 ev/s per session, 10 s after 3 s | `response_p50`, `response_p99`, `unanswered`, `cpu_per_event` |
 | `selftest.events.calibrate` | `selftest` | | the generator against an echo server: closed loop, then open loop at 3000 ev/s | `closed_ceiling`, `open_lag_p99` |
 
 - **Shapes**: `simple` (`set_seq`), `complex` (three vars behind a chain of

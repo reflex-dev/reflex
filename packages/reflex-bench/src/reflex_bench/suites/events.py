@@ -76,16 +76,18 @@ STATES_SCRIPT = (
 STATES_TIMEOUT_S = 60.0
 SEQ_VAR = "last_seq_rx_state_"
 CLIENT_VAR = "last_client_rx_state_"
-SESSIONS = (1, 10, 50, 200)
-AT_1HZ_SESSIONS = (50, 200, 1000)
+# The grid holds the common points; other sizes run with --param.
+SESSIONS = (10,)
+SIMPLE_SESSIONS = (10, 50)
+AT_1HZ_SESSIONS = (200,)
 # Sessions linked to one board in the fan-out, the sender included.
-LINKED = (1, 5, 25, 100)
+LINKED = (25,)
 # The one point of the grid smoke and daily run, and its latency's offered rate.
-CHEAP = {"manager": ("memory",), "sessions": (10,)}
+CHEAP = {"manager": ("disk",), "sessions": (10,)}
 CHEAP_LATENCY = {**CHEAP, "rate": (500,)}
 # Daily's shared state points: the contention's rate follows its own capacity.
 CHEAP_CONTENTION_LATENCY = {**CHEAP, "rate": ("auto",)}
-CHEAP_FANOUT = {"manager": ("memory",), "linked": (5, 25)}
+CHEAP_FANOUT = {"manager": ("disk",), "linked": LINKED}
 KNEE_SHARES = (0.10, 0.50, 0.70, 0.80, 0.90, 0.95, 1.00, 1.10)
 # A step keeps up when it answers 99 % of the offered rate, leaves nothing
 # unanswered and keeps its p99 within 3x the p99 of the 10 % step.
@@ -95,7 +97,7 @@ LATENCY_SHARE = 0.5
 UNDERPOWERED_P99 = 10_000
 CALIBRATION_SESSIONS = 10
 # The calibration offers a multiple of the highest fixed rate the suite uses:
-# at_1hz with 1000 sessions, or the latency point of smoke and daily. The rates
+# at_1hz at its grid size, or the latency point of smoke and daily. The rates
 # relative to a probed capacity (the knee, rate=auto) are covered by the
 # self-check of each load.
 CALIBRATION_FACTOR = 3
@@ -268,6 +270,9 @@ def managers(environ: Mapping[str, str]) -> tuple[str, ...]:
 
 
 MANAGERS = managers(os.environ)
+# Reflex's own defaults: disk, or redis with a redis_url. Only simple also
+# measures memory, the framework's cost without state I/O.
+APP_MANAGERS = tuple(manager for manager in MANAGERS if manager != "memory")
 
 THROUGHPUT = Metric(
     unit="ev/s", direction="higher", description="answered events per second"
@@ -903,16 +908,19 @@ def _register(name: str, *, shared: bool = False) -> None:
     """
     if name == "simple":
         cheap, latency_params = ("smoke", "daily"), CHEAP_LATENCY
+        grid = {"manager": MANAGERS, "sessions": SIMPLE_SESSIONS}
     elif shared:
         cheap, latency_params = ("daily",), CHEAP_CONTENTION_LATENCY
+        grid = {"manager": APP_MANAGERS, "sessions": SESSIONS}
     else:
         cheap, latency_params = (), CHEAP_LATENCY
+        grid = {"manager": APP_MANAGERS, "sessions": SESSIONS}
 
     @benchmark(
         id=f"events.{name}.capacity",
         suites=cheap,
         kind="rate",
-        params={"manager": MANAGERS, "sessions": SESSIONS},
+        params=grid,
         suite_params=dict.fromkeys(cheap, CHEAP),
         metrics={
             "throughput": THROUGHPUT,
@@ -958,7 +966,7 @@ def _register(name: str, *, shared: bool = False) -> None:
         id=f"events.{name}.latency",
         suites=cheap,
         kind="latency",
-        params={"manager": MANAGERS, "sessions": SESSIONS, "rate": ("auto",)},
+        params={**grid, "rate": ("auto",)},
         suite_params=dict.fromkeys(cheap, latency_params),
         metrics={
             "response_p50": _latency("p50"),
@@ -1026,7 +1034,7 @@ _register("shared_contention", shared=True)
     id="events.shared_fanout.broadcast",
     suites=("daily",),
     kind="latency",
-    params={"manager": MANAGERS, "linked": LINKED},
+    params={"manager": APP_MANAGERS, "linked": LINKED},
     suite_params={"daily": CHEAP_FANOUT},
     metrics={
         "throughput": Metric(
@@ -1093,7 +1101,7 @@ class Fanout(_OnPlayground):
 @benchmark(
     id="events.simple.knee",
     kind="rate",
-    params={"manager": MANAGERS, "sessions": SESSIONS},
+    params={"manager": APP_MANAGERS, "sessions": SESSIONS},
     metrics={
         "knee_rate": Metric(
             unit="ev/s",
@@ -1157,7 +1165,7 @@ class Knee(_OnPlayground):
 @benchmark(
     id="events.sessions.at_1hz",
     kind="latency",
-    params={"manager": MANAGERS, "sessions": AT_1HZ_SESSIONS},
+    params={"manager": APP_MANAGERS, "sessions": AT_1HZ_SESSIONS},
     metrics={
         "response_p50": _latency("p50"),
         "response_p99": _latency("p99"),

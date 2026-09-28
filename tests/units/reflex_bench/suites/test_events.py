@@ -33,16 +33,15 @@ STATES = suite.PlaygroundStates(
     board=f"{SharedStateBaseInternal.get_full_name()}.playground___state____board_state",
 )
 CHEAP = [
-    "events.simple.capacity[manager=memory,sessions=10]",
-    "events.simple.latency[manager=memory,sessions=10,rate=500]",
+    "events.simple.capacity[manager=disk,sessions=10]",
+    "events.simple.latency[manager=disk,sessions=10,rate=500]",
 ]
 # The shared state points daily adds: contention at the cheap point, and the
-# fan-out at two of its sizes.
+# fan-out.
 DAILY_SHARED = [
-    "events.shared_contention.capacity[manager=memory,sessions=10]",
-    "events.shared_contention.latency[manager=memory,sessions=10,rate=auto]",
-    "events.shared_fanout.broadcast[manager=memory,linked=5]",
-    "events.shared_fanout.broadcast[manager=memory,linked=25]",
+    "events.shared_contention.capacity[manager=disk,sessions=10]",
+    "events.shared_contention.latency[manager=disk,sessions=10,rate=auto]",
+    "events.shared_fanout.broadcast[manager=disk,linked=25]",
 ]
 
 
@@ -58,25 +57,33 @@ def names(suite_name: str | None, *filters: str) -> list[str]:
 def test_instance_ids_and_params():
     everything = names(None, "events.*")
     assert suite.MANAGERS[:2] == ("memory", "disk")
-    # Capacity and latency per shape (contention included), one knee (simple),
-    # the 1 Hz sessions and the fan-out sizes.
-    assert len(everything) == len(suite.MANAGERS) * (5 * (4 + 4) + 4 + 3 + 4)
-    assert "events.simple.capacity[manager=memory,sessions=1]" in everything
-    assert "events.simple.capacity[manager=disk,sessions=200]" in everything
-    assert "events.cross.latency[manager=memory,sessions=10,rate=auto]" in everything
-    assert "events.simple.knee[manager=disk,sessions=50]" in everything
-    assert "events.sessions.at_1hz[manager=memory,sessions=1000]" in everything
-    assert "events.shared_contention.capacity[manager=disk,sessions=200]" in everything
-    assert (
-        "events.shared_contention.latency[manager=memory,sessions=50,rate=auto]"
-        in everything
-    )
-    for linked in (1, 5, 25, 100):
-        assert f"events.shared_fanout.broadcast[manager=memory,linked={linked}]" in (
-            everything
-        )
+    assert suite.APP_MANAGERS[0] == "disk"
+    # Simple's capacity and latency on every manager at two sizes; the other
+    # shapes, contention, the knee, the 1 Hz sessions and the fan-out once per
+    # app manager.
+    assert len(everything) == len(suite.MANAGERS) * 4 + len(suite.APP_MANAGERS) * 11
+    assert "events.simple.capacity[manager=memory,sessions=10]" in everything
+    assert "events.simple.latency[manager=disk,sessions=50,rate=auto]" in everything
+    assert "events.cross.latency[manager=disk,sessions=10,rate=auto]" in everything
+    assert "events.simple.knee[manager=disk,sessions=10]" in everything
+    assert "events.sessions.at_1hz[manager=disk,sessions=200]" in everything
+    assert "events.shared_contention.capacity[manager=disk,sessions=10]" in everything
+    assert "events.shared_fanout.broadcast[manager=disk,linked=25]" in everything
+    assert not [
+        name
+        for name in everything
+        if "manager=memory" in name and ".simple." not in name
+    ]
     assert not [name for name in everything if name.startswith("events.cross.knee")]
     assert not [name for name in everything if "shared_fanout.capacity" in name]
+
+
+def test_params_reach_sizes_outside_the_grid():
+    (planned,) = plan(
+        [registry.discover()["events.complex.capacity"]],
+        {"manager": "memory", "sessions": "200"},
+    )
+    assert planned.name == "events.complex.capacity[manager=memory,sessions=200]"
 
 
 def test_smoke_runs_two_cheap_points_and_daily_adds_the_shared_state():
@@ -108,9 +115,9 @@ def test_suites():
     assert found["events.shared_fanout.broadcast"].suites == ("daily",)
     assert not names("pr", "events.*")
     assert found["selftest.events.calibrate"].suites == ("selftest",)
-    assert "events.sessions.at_1hz[manager=memory,sessions=50]" in names("all")
-    assert "events.simple.knee[manager=memory,sessions=10]" in names("all")
-    assert "events.complex.capacity[manager=disk,sessions=200]" in names("all")
+    assert "events.sessions.at_1hz[manager=disk,sessions=200]" in names("all")
+    assert "events.simple.knee[manager=disk,sessions=10]" in names("all")
+    assert "events.complex.capacity[manager=disk,sessions=10]" in names("all")
 
 
 def test_redis_is_measured_only_with_a_redis_url():
@@ -675,9 +682,9 @@ def test_a_failed_probe_stops_the_backend(
 def test_calibration_offers_three_times_the_highest_suite_rate(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    # at_1hz with 1000 sessions offers 1000 ev/s, the highest fixed rate.
-    assert pytest.approx(3000.0) == suite.CALIBRATION_RATE
-    step = make_load_result(offered_rate=3000.0, achieved_send_rate=2999.0)
+    # The latency point of smoke and daily offers 500 ev/s, the highest fixed rate.
+    assert pytest.approx(1500.0) == suite.CALIBRATION_RATE
+    step = make_load_result(offered_rate=1500.0, achieved_send_rate=1499.0)
     entry, calls = run_instance(
         tmp_path,
         monkeypatch,
@@ -687,13 +694,13 @@ def test_calibration_offers_three_times_the_highest_suite_rate(
     )
     assert entry["status"] == "ok", entry["error"]
     closed = ("run", "closed", None, suite.CALIBRATION_CLOSED_WINDOW)
-    opened = ("run", "open", 3000.0, suite.CALIBRATION_STEP_WINDOW)
+    opened = ("run", "open", 1500.0, suite.CALIBRATION_STEP_WINDOW)
     assert calls == [("echo",), closed, opened, ("stop_load",), ("stop",)]
     metrics = entry["metrics"]
     assert metrics["closed_ceiling"]["samples"]["A"] == [1200.0]
     assert metrics["open_lag_p99"]["samples"]["A"] == [0.00021]
     (extra,) = entry["sample_extra"]
-    assert extra["open"]["offered_rate"] == pytest.approx(3000.0)
+    assert extra["open"]["offered_rate"] == pytest.approx(1500.0)
     assert "steps" not in extra
 
 
