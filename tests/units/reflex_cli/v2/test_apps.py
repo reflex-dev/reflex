@@ -181,6 +181,53 @@ def test_app_history_success(mocker: MockFixture):
     mock_console_print_table.assert_called_once()
 
 
+def test_inspect_app_table_summarizes_latest_deployment(mocker: MockFixture):
+    """The text table summarizes a deployment instead of printing its full object."""
+    client = _authed(mocker)
+    client.api.apps.get.return_value = {
+        "id": str(_APP_ID),
+        "latest_deployment": {
+            "id": str(_DEPLOYMENT_ID),
+            "status": "success",
+            "url": "https://example.com",
+            "vm_type_name": "small",
+        },
+    }
+    mock_console_print_table = mocker.patch("reflex_cli.utils.console.print_table")
+
+    result = runner.invoke(hosting_cli, ["apps", "inspect", str(_APP_ID)])
+
+    assert result.exit_code == 0, result.output
+    client.api.apps.get.assert_called_once_with(str(_APP_ID))
+    mock_console_print_table.assert_called_once_with(
+        [[str(_APP_ID), "success (https://example.com)"]],
+        headers=["id", "latest_deployment"],
+    )
+
+
+def test_inspect_app_json_preserves_latest_deployment(mocker: MockFixture):
+    """JSON output retains all latest deployment fields."""
+    client = _authed(mocker)
+    latest_deployment = {
+        "id": str(_DEPLOYMENT_ID),
+        "status": "success",
+        "url": "https://example.com",
+        "vm_type_name": "small",
+    }
+    client.api.apps.get.return_value = {
+        "id": str(_APP_ID),
+        "latest_deployment": latest_deployment,
+    }
+
+    result = runner.invoke(hosting_cli, ["apps", "inspect", str(_APP_ID), "--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "id": str(_APP_ID),
+        "latest_deployment": latest_deployment,
+    }
+
+
 def test_app_history_as_json(mocker: MockFixture):
     """Test retrieving deployment history with JSON output."""
     client = _authed(mocker)

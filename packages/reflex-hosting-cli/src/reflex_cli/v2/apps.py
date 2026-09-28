@@ -977,7 +977,21 @@ def inspect_app(
             print_json(app_info)
             return
 
+        table_info = app_info.copy()
+        latest_deployment = table_info.get("latest_deployment")
+        if isinstance(latest_deployment, dict):
+            deployment_summary = []
+            status = latest_deployment.get("status")
+            url = latest_deployment.get("url")
+            if status is not None:
+                deployment_summary.append(str(status))
+            if url is not None:
+                deployment_summary.append(
+                    f"({url})" if status is not None else str(url)
+                )
+            table_info["latest_deployment"] = " ".join(deployment_summary)
+
         console.print_table(
-            [[str(value) for value in app_info.values()]],
-            headers=list(app_info.keys()),
+            [[str(value) for value in table_info.values()]],
+            headers=list(table_info.keys()),
         )

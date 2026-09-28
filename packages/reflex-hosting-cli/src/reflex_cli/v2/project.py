@@ -336,7 +336,14 @@ def get_projects(
         )
         projects = authenticated_client.api.projects.list()
 
-    _print_rows([hosting.as_json_document(project) for project in projects], as_json)
+    rows = [hosting.as_json_document(project) for project in projects]
+    if not as_json:
+        for project in rows:
+            tier = project.get("tier")
+            if isinstance(tier, dict) and tier.get("name") is not None:
+                project["tier"] = tier["name"]
+
+    _print_rows(rows, as_json)
 
 
 @project_cli.command(name="roles")
