@@ -494,8 +494,10 @@ rx._run_dev(MODE,3000,PORT,"127.0.0.1")
             if launcher.poll() is not None:
                 pytest.fail(f"launcher exited early: {launcher.returncode}")
             if pids.exists():
-                child, grandchild = map(int, pids.read_text().split())
-                break
+                parts = pids.read_text().split()
+                if len(parts) == 2:
+                    child, grandchild = map(int, parts)
+                    break
             time.sleep(0.01)
         assert child is not None
         os.killpg(launcher.pid, signal.SIGKILL)
