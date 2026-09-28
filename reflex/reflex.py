@@ -457,30 +457,39 @@ def _run_dev(
             running_mode.has_backend(),
         ))
 
+    with exec._frontend_process_lock:
+        exec._frontend_shutting_down = False
+        exec.frontend_process = None
+
     frontend_only = running_mode.has_frontend() and not running_mode.has_backend()
-    with _frontend_sigterm_handler(frontend_only and sys.platform != "win32"):
+
+    with (
+        _frontend_sigterm_handler(frontend_only and sys.platform != "win32"),
+        processes.run_concurrently_context(
+            *commands, interrupt_on_failure=not frontend_only
+        ) as tasks,
+    ):
         try:
-            with processes.run_concurrently_context(
-                *commands, interrupt_on_failure=not frontend_only
-            ) as tasks:
-                if frontend_only and tasks:
-                    tasks[0].result()
-                elif running_mode.has_backend() and backend_port:
-                    exec.run_backend(
-                        backend_host,
-                        int(backend_port),
-                        config.loglevel.subprocess_level(),
-                        running_mode.has_frontend(),
-                    )
-                    # The windows uvicorn bug workaround
-                    # https://github.com/reflex-dev/reflex/issues/2335
-                    if constants.IS_WINDOWS and exec.frontend_process:
-                        exec.kill(exec.frontend_process.pid)
+            if frontend_only and tasks:
+                tasks[0].result()
+            elif running_mode.has_backend() and backend_port:
+                exec.run_backend(
+                    backend_host,
+                    int(backend_port),
+                    config.loglevel.subprocess_level(),
+                    running_mode.has_frontend(),
+                )
+                # The windows uvicorn bug workaround
+                # https://github.com/reflex-dev/reflex/issues/2335
+                if constants.IS_WINDOWS and exec.frontend_process:
+                    exec.kill(exec.frontend_process.pid)
         finally:
-            if (process := exec.frontend_process) is not None:
-                if process.poll() is None:
-                    process.terminate()
-                exec.frontend_process = None
+            with exec._frontend_process_lock:
+                exec._frontend_shutting_down = True
+                if (process := exec.frontend_process) is not None:
+                    if process.poll() is None:
+                        process.terminate()
+                    exec.frontend_process = None
 
 
 def _run_preview(running_mode: constants.RunningMode, port: int, host: str):
