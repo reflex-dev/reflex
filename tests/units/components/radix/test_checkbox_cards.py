@@ -43,11 +43,35 @@ def test_checkbox_cards_root_renders_native_form_props():
 
     assert "asChild:false" in props
     assert 'name:"colors"' in props
+    assert 'defaultValue:["red"]' in props
     assert "disabled:false" in props
     assert "required:true" in props
     assert 'dir:"ltr"' in props
     assert 'orientation:"vertical"' in props
     assert "loop:true" in props
+
+
+def test_checkbox_cards_root_renders_controlled_value_and_on_value_change():
+    """checkbox_cards.root previously could not be used as a controlled
+    component at all -- value/on_value_change did not exist as props.
+    """
+
+    class ColorState(rx.State):
+        colors: list[str] = ["red"]
+
+        @rx.event
+        def on_colors_change(self, value: list[str]):
+            self.colors = value
+
+    root = checkbox_cards.root(
+        checkbox_cards.item("Red", value="red"),
+        value=ColorState.colors,
+        on_value_change=ColorState.on_colors_change,
+    )
+    props = root.render()["props"]
+
+    assert any(p.startswith("value:") for p in props)
+    assert any(p.startswith("onValueChange:") for p in props)
 
 
 def test_checkbox_cards_root_is_form_control():

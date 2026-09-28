@@ -60,7 +60,7 @@ class CheckboxCardsRoot(RadixThemesComponent):
 
     required: Var[bool] = field(doc="Whether the checkbox cards group is required")
 
-    orientation: Var[Literal["horizontal", "vertical", "undefined"]] = field(
+    orientation: Var[Literal["horizontal", "vertical"]] = field(
         doc="The orientation of the component."
     )
 
