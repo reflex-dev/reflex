@@ -6,7 +6,7 @@ description: >-
 
 inputs:
   needs:
-    description: The gate job's `needs` context, passed as `${{ toJSON(needs) }}`.
+    description: The gate job's `needs` context, serialized with toJSON.
     required: true
 
 runs:

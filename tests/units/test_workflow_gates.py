@@ -19,6 +19,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).parents[2]
 WORKFLOW_DIR = REPO_ROOT / ".github" / "workflows"
+ACTION_DIR = REPO_ROOT / ".github" / "actions"
 RULESET = REPO_ROOT / ".github" / "rulesets" / "main-required-checks.json"
 GATE_SUFFIX = "-gate"
 ACTIONS_APP_ID = 15368
@@ -46,7 +47,7 @@ def workflow_triggers(doc: dict) -> dict:
 
 
 WORKFLOWS = {
-    path.name: yaml.safe_load(path.read_text())
+    path.name: yaml.safe_load(path.read_text(encoding="utf-8"))
     for path in sorted(WORKFLOW_DIR.glob("*.yml"))
 }
 PR_WORKFLOWS = [
@@ -69,7 +70,7 @@ def gate_id(name: str) -> str:
 
 def required_checks() -> list[dict]:
     """Return the required status checks the ruleset declares."""
-    ruleset = json.loads(RULESET.read_text())
+    ruleset = json.loads(RULESET.read_text(encoding="utf-8"))
     rule = next(
         rule for rule in ruleset["rules"] if rule["type"] == "required_status_checks"
     )
@@ -154,4 +155,22 @@ def test_ruleset_pins_every_check_to_its_app():
     assert not misattributed, (
         f"{misattributed} are not pinned to the app that posts them, so another "
         "integration could satisfy them by posting a same-named check."
+    )
+
+
+@pytest.mark.parametrize(
+    "path", sorted(ACTION_DIR.glob("*/action.yml")), ids=lambda path: path.parent.name
+)
+def test_action_descriptions_carry_no_expressions(path):
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    descriptions = [doc.get("description", "")] + [
+        field.get("description", "")
+        for section in ("inputs", "outputs")
+        for field in (doc.get(section) or {}).values()
+    ]
+    offending = [text for text in descriptions if "${{" in text]
+    assert not offending, (
+        f"{path.parent.name}: the runner evaluates expressions even in action "
+        "descriptions, and one naming a context the manifest cannot see, such "
+        f"as `needs`, stops the action from loading at all: {offending}"
     )
