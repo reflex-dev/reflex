@@ -91,6 +91,38 @@ Playwright tests use the `page` fixture and navigate to `harness.frontend_url`. 
 
 When adding/modifying components: `uv run python scripts/make_pyi.py`. Commit `pyi_hashes.json` (not `.pyi` files). If the diff removes many modules, run `uv sync`, delete `.pyi_generator_last_run`, and regenerate.
 
+## CI workflows
+
+Branch rules require one check per workflow, listed in
+`.github/rulesets/main-required-checks.json`. Check names are matched literally —
+no wildcards — so two rules follow:
+
+- **Never put `paths`/`paths-ignore` on a `pull_request` trigger.** A workflow a
+  path filter skips never reports its checks, so a required check on it blocks
+  the merge forever. Filter in a `changes` job instead and gate the real jobs on
+  `if: needs.changes.outputs.run == 'true'` — a job skipped by `if:` reports as a
+  pass. `push` triggers may keep their filters; nothing gates a merge there.
+- **Every merge-blocking workflow ends in a gate job** named `<workflow>-gate`,
+  which collapses it into one check name that matrix expansion cannot move:
+
+```yaml
+  unit-tests-gate:
+    needs: [changes, unit-tests, unit-tests-macos]  # every other job
+    if: always()  # not !cancelled(): a cancelled run would report a pass
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@... # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/ci_gate
+        with:
+          needs: ${{ toJSON(needs) }}
+```
+
+Adding a job means adding it to the gate's `needs`; adding a workflow means
+adding its gate to the ruleset. `tests/units/test_workflow_gates.py` fails when
+either drifts.
+
 ## Changelog fragments
 
 User-facing changes need a news fragment in the `news/` directory of each

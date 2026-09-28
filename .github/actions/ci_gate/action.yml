@@ -1,0 +1,39 @@
+name: CI gate
+description: >-
+  Collapse a workflow's jobs into one status check with a fixed name, so the
+  branch rules can require the workflow without naming every matrix job and
+  without blocking pull requests whose jobs legitimately skipped.
+
+inputs:
+  needs:
+    description: The gate job's `needs` context, passed as `${{ toJSON(needs) }}`.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        NEEDS: ${{ inputs.needs }}
+      run: |
+        set -euo pipefail
+        results=$(jq -r 'to_entries | map("\(.key)=\(.value.result)") | join(" ")' <<<"$NEEDS")
+        if [ -z "$results" ]; then
+          echo '::error::The gate job lists no needs, so it would pass unconditionally.'
+          exit 1
+        fi
+        echo "$results"
+        # An allowlist, not a 'failure'/'cancelled' denylist: a result state that
+        # GitHub adds later has to block the merge, not slip through as a pass.
+        blocking=$(
+          jq -r '
+            to_entries
+            | map(select(.value.result != "success" and .value.result != "skipped"))
+            | map("\(.key)=\(.value.result)")
+            | join(" ")
+          ' <<<"$NEEDS"
+        )
+        if [ -n "$blocking" ]; then
+          echo "::error::Blocking job results: $blocking"
+          exit 1
+        fi
