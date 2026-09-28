@@ -791,10 +791,27 @@ def test_hydrate_event_name_resolves_its_handler(temp_minify_json, monkeypatch):
     assert "a.q" in RegistrationContext.get().event_handlers
 
 
-def test_empty_when_config_present_but_modes_off(temp_minify_json, monkeypatch):
-    """A config nobody applies leaves the wire names untouched."""
-    set_minify_modes(monkeypatch, states=False, events=False)
-    install_config(states={"reflex.state.State": "a"})
+@pytest.mark.parametrize("modes", ["unset", "off"])
+def test_empty_when_config_present_but_modes_off(temp_minify_json, monkeypatch, modes):
+    """A config nobody applies, by default or explicitly, leaves the wire names.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+        modes: Whether the mode env vars are left unset or set off.
+    """
+    if modes == "unset":
+        for env_var in (
+            environment.REFLEX_MINIFY_STATES,
+            environment.REFLEX_MINIFY_EVENTS,
+        ):
+            monkeypatch.delenv(env_var.name, raising=False)
+    else:
+        set_minify_modes(monkeypatch, states=False, events=False)
+    install_config(
+        states={"reflex.state.State": "a"},
+        events={"reflex.state.State": {"hydrate": "a"}},
+    )
 
     assert scheme_digest() == ""
 
