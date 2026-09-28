@@ -11,8 +11,6 @@ on:
       - "**/*.md"
   pull_request:
     branches: ["main"]
-    paths-ignore:
-      - "**/*.md"
 
 permissions:
   contents: read
@@ -22,8 +20,15 @@ defaults:
     shell: bash
 
 jobs:
+  changes:
+    uses: ./.github/workflows/detect_changes.yml
+
   unit-tests:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     timeout-minutes: 30
+    # Python 3.15 is a pre-release, so its failures do not block merges.
+    continue-on-error: ${{ matrix.python-version == '3.15' }}
     strategy:
       fail-fast: false
       matrix:
@@ -81,6 +86,16 @@ jobs:
           uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
       - name: Generate coverage report
         run: uv run coverage html
+
+  # Branch protection requires this one check, not each job or matrix leg: a
+  # job that its `if` skips does not report its per-leg check names.
+  unit-tests-result:
+    if: always()
+    needs: [changes, unit-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
 
   unit-tests-macos:
     timeout-minutes: 30

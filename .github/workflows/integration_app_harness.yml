@@ -11,8 +11,6 @@ on:
       - "**/*.md"
   pull_request:
     branches: ["main"]
-    paths-ignore:
-      - "**/*.md"
 env:
   APP_HARNESS_HEADLESS: 1
   PYTHONUNBUFFERED: 1
@@ -21,8 +19,15 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    uses: ./.github/workflows/detect_changes.yml
+
   integration-app-harness:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     timeout-minutes: 30
+    # Python 3.15 is a pre-release, so its failures do not block merges.
+    continue-on-error: ${{ matrix.python-version == '3.15' }}
     strategy:
       matrix:
         state_manager: ["redis", "memory"]
@@ -63,7 +68,10 @@ jobs:
   # keeps an asyncio event loop running on the main thread for the entire
   # session, which is incompatible with pytest-asyncio tests.
   integration-app-harness-playwright:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     timeout-minutes: 30
+    continue-on-error: ${{ matrix.python-version == '3.15' }}
     strategy:
       matrix:
         state_manager: ["redis", "memory"]
@@ -98,3 +106,13 @@ jobs:
         env:
           REFLEX_REDIS_URL: ${{ matrix.state_manager == 'redis' && 'redis://localhost:6379' || '' }}
         run: uv run pytest tests/integration/tests_playwright --reruns 3 -v --maxfail=5
+
+  # Branch protection requires this one check, not each job or matrix leg: a
+  # job that its `if` skips does not report its per-leg check names.
+  integration-app-harness-result:
+    if: always()
+    needs: [changes, integration-app-harness, integration-app-harness-playwright]
+    runs-on: ubuntu-latest
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

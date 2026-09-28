@@ -13,13 +13,16 @@ on:
       - "**/*.md"
   pull_request:
     branches: ["main"]
-    paths-ignore:
-      - "**/*.md"
 
 jobs:
+  changes:
+    uses: ./.github/workflows/detect_changes.yml
+
   # TODO we can extend to various starting points (e.g. Ubuntu with node, without node, with unzip, without unzip, etc.)
   # Currently starting point is: Ubuntu + unzip, xz-utils, Python suite.  No node.
   reflex-install-and-init:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
@@ -36,3 +39,13 @@ jobs:
           # cwd is repo root
           docker build -f tests/integration/init-test/Dockerfile -t reflex-init-test tests/integration/init-test
           docker run --rm -v "$(pwd):/reflex-repo" reflex-init-test /reflex-repo/tests/integration/init-test/in_docker_test_script.sh
+
+  # Branch protection requires this one check, not each job or matrix leg: a
+  # job that its `if` skips does not report its per-leg check names.
+  reflex-init-in-docker-test-result:
+    if: always()
+    needs: [changes, reflex-install-and-init]
+    runs-on: ubuntu-latest
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

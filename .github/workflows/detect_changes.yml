@@ -1,0 +1,36 @@
+name: detect-changes
+
+# Called by the test workflows so a pull request that changes only Markdown
+# files skips the test jobs instead of skipping the whole workflow. A skipped
+# workflow reports no status, which leaves required checks waiting forever.
+on:
+  workflow_call:
+    outputs:
+      code:
+        description: "'false' when a pull request changes only Markdown files, else 'true'."
+        value: ${{ jobs.detect.outputs.code }}
+
+permissions:
+  contents: read
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      # The pull_request checkout is the merge commit, so HEAD^1 is the base.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        if: github.event_name == 'pull_request'
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - id: diff
+        shell: bash
+        run: |
+          code=true
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            files=$(git diff --name-only HEAD^1 HEAD)
+            grep -qv '\.md$' <<< "$files" || code=false
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"

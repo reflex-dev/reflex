@@ -7,8 +7,6 @@ on:
       - "**/*.md"
   pull_request:
     branches: ["main"]
-    paths-ignore:
-      - "**/*.md"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.id || github.sha }}
@@ -32,7 +30,12 @@ env:
   NODE_OPTIONS: "--max_old_space_size=8192"
 
 jobs:
+  changes:
+    uses: ./.github/workflows/detect_changes.yml
+
   example-counter-and-nba-proxy:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     env:
       OUTPUT_FILE: import_benchmark.json
     timeout-minutes: 30
@@ -105,6 +108,8 @@ jobs:
           uv run bash scripts/integration.sh ./reflex-examples/nba-proxy dev
 
   reflex-docs:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -181,6 +186,8 @@ jobs:
           if-no-files-found: warn
 
   rx-shout-from-template:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     strategy:
       fail-fast: false
     runs-on: ubuntu-latest
@@ -252,3 +259,13 @@ jobs:
           # Check that npm is home
           npm -v
           uv run --active --no-sync bash scripts/integration.sh ./docs/app prod
+
+  # Branch protection requires this one check, not each job or matrix leg: a
+  # job that its `if` skips does not report its per-leg check names.
+  integration-tests-result:
+    if: always()
+    needs: [changes, example-counter-and-nba-proxy, reflex-docs, rx-shout-from-template]
+    runs-on: ubuntu-latest
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
