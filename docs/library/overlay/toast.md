@@ -44,7 +44,7 @@ def render():
 
 If you want to interact with a toast, a few props are available to customize the behavior.
 
-By passing a dict with `label` and `on_click` keys to the `action` or `cancel` prop, you can trigger an action when the toast is clicked or when it is dismissed.
+By passing a dict with `label` and `on_click` keys to the `action` or `cancel` prop, you can trigger an action when that button is clicked. To react when the toast is closed or swiped away, use `on_dismiss`.
 
 ```python demo
 rx.button(
