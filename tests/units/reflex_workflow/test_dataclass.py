@@ -17,7 +17,7 @@ from alembic.autogenerate import produce_migrations, render_python_code
 from alembic.migration import MigrationContext
 from reflex_workflow import dataclass as dc
 from reflex_workflow import model, step
-from sqlalchemy import Column, String, create_engine
+from sqlalchemy import MetaData, String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 
 URL = os.environ.get("REFLEX_TEST_POSTGRES", "").replace(
@@ -58,22 +58,43 @@ class Ordinary(Plain, model.Workflow):
     nudges: Mapped[int] = mapped_column(default=0)
 
 
-def shape(column: Column[Any]) -> tuple[Any, ...]:
-    """Describe a column in the ways a migration would care about.
+def shapes(metadata: MetaData, table: str) -> dict[str, tuple[Any, ...]]:
+    """Describe a table's columns in the ways a migration would care about.
 
     Args:
-        column: The column.
+        metadata: The metadata the table was declared on.
+        table: Its name.
 
     Returns:
-        Its type, nullability, indexing and defaults.
+        Each column's type, nullability, indexing and defaults, by name.
     """
-    return (
-        str(column.type),
-        column.nullable,
-        bool(column.index),
-        column.primary_key,
-        getattr(column.server_default, "arg", None),
-    )
+    return {
+        column.name: (
+            str(column.type),
+            column.nullable,
+            bool(column.index),
+            column.primary_key,
+            getattr(column.server_default, "arg", None),
+        )
+        for column in metadata.tables[table].columns
+    }
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _forget_the_tables_declared_here():
+    """Leave the registry without this module's tables in it.
+
+    A worker told no workflows runs every workflow in the registry, so a table
+    left behind here is one another module's worker would try to claim against
+    a database that never had it.
+
+    Yields:
+        Nothing; the registry is cleaned up afterwards.
+    """
+    yield
+    for name, cls in list(model.REGISTRY.items()):
+        if cls.__module__ == __name__:
+            del model.REGISTRY[name]
 
 
 def test_a_dataclass_model_keeps_the_constructor_it_would_have_had():
@@ -115,8 +136,8 @@ def test_the_engines_own_tables_take_no_constructor_arguments(monkeypatch):
 
 
 def test_the_two_mixins_declare_the_same_columns():
-    theirs = {c.name: shape(c) for c in Onboarding.__table__.columns}
-    plain = {c.name: shape(c) for c in Ordinary.__table__.columns}
+    theirs = shapes(Base.metadata, Onboarding.__tablename__)
+    plain = shapes(Plain.metadata, Ordinary.__tablename__)
     # Two spellings of one mixin: a column that gained a default, an index or a
     # type in one of them and not the other would be a difference between
     # applications that should not differ.
@@ -166,12 +187,11 @@ def test_a_migration_renders_the_defaults_as_literals():
             context = MigrationContext.configure(
                 connection, opts={"target_metadata": Fresh.metadata}
             )
-            script = render_python_code(
-                produce_migrations(context, Fresh.metadata).upgrade_ops
-            )
+            upgrade = produce_migrations(context, Fresh.metadata).upgrade_ops
+            assert upgrade is not None
+            script = render_python_code(upgrade)
     finally:
         engine.dispose()
-        model.REGISTRY.pop(Job.__tablename__, None)
 
     # Literal text, which is what a migration reviewer reads and what a rule
     # that only accepts literals can check -- not a repr of a Python object.
