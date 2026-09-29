@@ -5,6 +5,7 @@ import contextlib
 import dataclasses
 import logging
 import sys
+from collections.abc import AsyncIterator
 from typing import Any
 from unittest.mock import Mock
 
@@ -149,6 +150,18 @@ async def _gated_logging_handler(value: str = "default"):
     if gate is not None:
         await gate.wait()
     _CALL_LOG.append({"value": value})
+
+
+async def _gated_delta_handler(value: str = "default"):
+    """Emit a delta, wait for the gate named ``value``, then emit another.
+
+    Args:
+        value: The key of the emitted deltas; also names the gate to wait for.
+    """
+    ctx = EventContext.get()
+    await ctx.emit_delta({"state": {value: "started"}})
+    await _GATES[value].wait()
+    await ctx.emit_delta({"state": {value: "finished"}})
 
 
 async def _cancellable_load_handler(value: str = "default"):
@@ -342,6 +355,7 @@ background_slow_logging_event = EventHandler(fn=_background_slow_logging_handler
 background_then_normal_event = EventHandler(fn=_background_then_normal_handler)
 error_then_logging_event = EventHandler(fn=_error_then_logging_handler)
 gated_logging_event = EventHandler(fn=_gated_logging_handler)
+gated_delta_event = EventHandler(fn=_gated_delta_handler)
 cancellable_load_event = EventHandler(fn=_cancellable_load_handler)
 resurrecting_load_event = EventHandler(fn=_resurrecting_load_handler)
 superseding_root_event = EventHandler(fn=_superseding_root_handler)
@@ -378,6 +392,7 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         background_then_normal_event,
         error_then_logging_event,
         gated_logging_event,
+        gated_delta_event,
         cancellable_load_event,
         resurrecting_load_event,
         superseding_root_event,
@@ -903,6 +918,89 @@ async def test_stream_delta_not_configured_raises():
     with pytest.raises(RuntimeError, match="not configured"):
         async for _ in ep.enqueue_stream_delta("tok", Event(name="x", payload={})):
             pass
+
+
+async def test_stream_delta_does_not_adopt_top_level_events(
+    processor: EventProcessor,
+):
+    """Top-level events enqueued while a stream runs stay out of its chain.
+
+    Every top-level event names the root context's txid as its parent, so a
+    stream registered under that txid adopted them all: they were chained to
+    it and cancelled with it when its consumer left early, e.g. an upload
+    whose client disconnected.
+
+    Args:
+        processor: The event processor fixture.
+    """
+    _GATES["upload"] = asyncio.Event()
+    _GATES["other"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        stream = ep.enqueue_stream_delta(
+            "token_a", Event.from_event_type(gated_delta_event("upload"))[0]
+        )
+        assert await anext(stream) == {"state": {"upload": "started"}}
+        other = await ep.enqueue(
+            "token_b", Event.from_event_type(gated_logging_event("other"))[0]
+        )
+        assert other.parent is None
+        await ep.join(timeout=1)
+
+        await stream.aclose()
+        assert not other.cancelled()
+        _GATES["other"].set()
+        await asyncio.wait_for(other, timeout=1)
+
+    assert _CALL_LOG == [{"value": "other"}]
+
+
+async def _drain(stream: AsyncIterator[Any]) -> list[Any]:
+    """Collect the remaining items of an async iterator.
+
+    Args:
+        stream: The iterator to drain.
+
+    Returns:
+        The remaining items, in order.
+    """
+    return [item async for item in stream]
+
+
+async def test_concurrent_stream_deltas_are_tracked_independently(
+    processor: EventProcessor,
+):
+    """Concurrent streams each keep their own future and handler task.
+
+    Streams sharing the root context's txid overwrote each other's tracking,
+    so here the first handler to finish resolved the second stream's future,
+    ending that stream early, and its own stream never ended.
+
+    Args:
+        processor: The event processor fixture.
+    """
+    _GATES["a"] = asyncio.Event()
+    _GATES["b"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        stream_a = ep.enqueue_stream_delta(
+            "token_a", Event.from_event_type(gated_delta_event("a"))[0]
+        )
+        stream_b = ep.enqueue_stream_delta(
+            "token_b", Event.from_event_type(gated_delta_event("b"))[0]
+        )
+        assert await anext(stream_a) == {"state": {"a": "started"}}
+        assert await anext(stream_b) == {"state": {"b": "started"}}
+        assert len(ep._futures) == len(ep._tasks) == 2
+
+        _GATES["a"].set()
+        assert await asyncio.wait_for(_drain(stream_a), timeout=1) == [
+            {"state": {"a": "finished"}}
+        ]
+        _GATES["b"].set()
+        assert await asyncio.wait_for(_drain(stream_b), timeout=1) == [
+            {"state": {"b": "finished"}}
+        ]
 
 
 async def test_sequential_chained_events_run_in_order(token: str):
@@ -1485,6 +1583,9 @@ async def test_stream_delta_span_nests_under_caller(token: str, otel_exporter):
     assert handler.parent is not None
     assert handler.parent.span_id == http_span.get_span_context().span_id
     assert handler.kind == SpanKind.INTERNAL
+    # A top-level event: no parent event, even though its span has a parent.
+    assert handler.attributes is not None
+    assert otel.ATTR_EVENT_PARENT_TXID not in handler.attributes
 
 
 async def test_event_spans_chain_parent_child(token: str, otel_exporter):

@@ -515,13 +515,17 @@ class EventProcessor:
         task_future = await self.enqueue(
             token,
             event,
+            # Fork for a txid of its own: every top-level event names the root
+            # context's txid as its parent, so tracking this event under it
+            # would chain them all to this stream. Forking also nests the
+            # handler span under the caller's span (the upload request, a
+            # custom route).
             ev_ctx=dataclasses.replace(
-                self._root_context,
-                token=token,
+                self._root_context.fork(token=token),
+                # A top-level event: its span (nested under the caller's) must
+                # not name the root context as its parent event.
+                parent_txid=None,
                 emit_delta_impl=_emit_delta_impl,
-                # Like fork(): the handler span nests under the caller's span
-                # (the upload request, a custom route).
-                otel_context=otel.capture_context(),
             ),
         )
 
