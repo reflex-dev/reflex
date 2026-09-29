@@ -440,7 +440,6 @@ def test_init_records_version_check_after_frontend_setup(
 
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals")
 def test_frontend_preflight_failure_cleans_process(tmp_path):
-    """An exception during concurrent context entry still stops the frontend."""
     ready = tmp_path / "frontend.pid"
     driver = tmp_path / "driver.py"
     driver.write_text(

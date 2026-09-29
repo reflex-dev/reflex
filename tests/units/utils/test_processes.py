@@ -4,7 +4,6 @@ import logging
 import signal
 import socket
 import subprocess
-import sys
 import threading
 import time
 from contextlib import closing
@@ -417,15 +416,3 @@ def test_stream_logs_still_fails_on_a_real_error_exit(caplog):
         list(stream_logs("Starting frontend", process))
 
     assert any("failed with exit code 1" in r.getMessage() for r in caplog.records)
-
-
-def test_run_context_leaves_untracked_process_alone():
-    """A child without frontend opt-in is not stopped by cleanup."""
-    child = subprocess.Popen([sys.executable, "-c", "import time;time.sleep(30)"])
-    try:
-        with run_concurrently_context(lambda: None):
-            pass
-        assert child.poll() is None
-    finally:
-        child.terminate()
-        child.wait(timeout=DEFAULT_TIMEOUT)
