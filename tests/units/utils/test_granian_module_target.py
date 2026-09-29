@@ -49,6 +49,7 @@ def test_granian_target_rejects_missing_module(
 ):
     """The module target still provides the existing missing-module error."""
     monkeypatch.chdir(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
     monkeypatch.setattr(exec_utils, "get_app_module", lambda: "missing.app")
     with pytest.raises(ImportError, match=r"Module missing\.app not found"):
         exec_utils.get_app_instance_from_file()
