@@ -779,7 +779,7 @@ def _make_app_layout(
         ("pkg.sub", ["pkg"], "pkg/sub/__init__.py", "pkg/sub"),
     ],
 )
-def test_get_app_file_rejects_missing_package_init(
+def test_get_app_file_creates_missing_package_init(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     module: str,
@@ -787,14 +787,58 @@ def test_get_app_file_rejects_missing_package_init(
     module_file: str,
     missing: str,
 ):
-    """A package without ``__init__.py`` makes Granian import the app under another name."""
-    _make_app_layout(tmp_path, monkeypatch, module, init_dirs, module_file)
-    if module_file.endswith("__init__.py"):
-        (tmp_path / module_file).unlink()
+    """A missing package marker is created before Granian resolves the module."""
+    from granian._internal import prepare_import
 
-    with pytest.raises(ImportError, match=r"has no `__init__\.py`") as exc_info:
+    _make_app_layout(tmp_path, monkeypatch, module, init_dirs, module_file)
+    missing_init = tmp_path / missing / "__init__.py"
+    if module_file.endswith("__init__.py"):
+        missing_init.unlink()
+
+    app_file = exec_utils.get_app_file()
+
+    assert missing_init.is_file()
+    assert missing_init.read_bytes() == b""
+    assert app_file == tmp_path / module_file
+    assert prepare_import(str(app_file)) == module
+
+
+def test_get_app_file_unknown_module_does_not_create_package(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Missing app modules still fail without writing a package marker."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "path", [str(tmp_path), *sys.path])
+    monkeypatch.setattr(exec_utils, "get_app_module", lambda: "missing.app")
+
+    with pytest.raises(ImportError, match=r"Module missing\.app not found"):
         exec_utils.get_app_file()
-    assert str(tmp_path / missing / "__init__.py") in str(exc_info.value)
+    assert not (tmp_path / "missing").exists()
+
+
+def test_get_app_file_preserves_existing_package_init(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Do not overwrite a package marker supplied by the app author."""
+    _make_app_layout(tmp_path, monkeypatch, "pkg.app", ["pkg"], "pkg/app.py")
+    init_file = tmp_path / "pkg" / "__init__.py"
+    init_file.write_text("SENTINEL = 1\n")
+
+    assert exec_utils.get_app_file() == tmp_path / "pkg" / "app.py"
+    assert init_file.read_text() == "SENTINEL = 1\n"
+
+
+def test_get_app_file_does_not_replace_package_init_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """An invalid marker must not be silently overwritten."""
+    _make_app_layout(tmp_path, monkeypatch, "pkg.app", [], "pkg/app.py")
+    init_path = tmp_path / "pkg" / "__init__.py"
+    init_path.mkdir()
+
+    with pytest.raises(OSError):
+        exec_utils.get_app_file()
+    assert init_path.is_dir()
 
 
 @pytest.mark.parametrize(
