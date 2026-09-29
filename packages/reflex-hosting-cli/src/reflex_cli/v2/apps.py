@@ -157,7 +157,7 @@ def app_history(
             table = [
                 [str(value) for value in deployment.values()] for deployment in history
             ]
-            console.print_table(table, headers=headers)
+            console.print_table(table, headers=headers, overflow="fold")
         else:
             console.print(str(history))
 
@@ -816,7 +816,7 @@ def list_apps(
         table = [
             [str(value) for value in deployment.values()] for deployment in deployments
         ]
-        console.print_table(table, headers=headers)
+        console.print_table(table, headers=headers, overflow="fold")
     else:
         console.print(str(deployments))
 
@@ -980,4 +980,5 @@ def inspect_app(
         console.print_table(
             [[str(value) for value in app_info.values()]],
             headers=list(app_info.keys()),
+            overflow="fold",
         )

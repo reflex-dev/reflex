@@ -178,7 +178,23 @@ def test_app_history_success(mocker: MockFixture):
 
     assert result.exit_code == 0, result.output
     client.api.apps.history.assert_called_once_with("test_app_id")
-    mock_console_print_table.assert_called_once()
+    assert mock_console_print_table.call_args.kwargs["overflow"] == "fold"
+
+
+def test_app_inspect_uses_fold_overflow(mocker: MockFixture):
+    """Keep long values in the human-readable app details table.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
+    client = _authed(mocker)
+    client.api.apps.get.return_value = app()
+    mock_print_table = mocker.patch("reflex_cli.utils.console.print_table")
+
+    result = runner.invoke(hosting_cli, ["apps", "inspect", str(_APP_ID)])
+
+    assert result.exit_code == 0, result.output
+    assert mock_print_table.call_args.kwargs["overflow"] == "fold"
 
 
 def test_app_history_as_json(mocker: MockFixture):
@@ -845,6 +861,7 @@ def test_list_apps_no_project(mocker: MockFixture):
             "provider",
             "disable_secrets",
         ],
+        overflow="fold",
     )
 
 
@@ -868,6 +885,7 @@ def test_list_apps_with_project(mocker: MockFixture):
             "provider",
             "disable_secrets",
         ],
+        overflow="fold",
     )
 
 
