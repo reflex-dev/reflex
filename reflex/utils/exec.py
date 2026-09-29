@@ -482,54 +482,6 @@ def get_app_file() -> Path:
     if module_path is None:
         msg = f"Module {app_module} not found. Make sure the module is installed."
         raise ImportError(msg)
-    # Granian derives the module name by walking up through package markers.
-    # Create missing markers so the backend uses the name the compiler used.
-    package_depth = app_module.count(".") + (module_path.name == "__init__.py")
-    package_dirs = tuple(reversed(module_path.parents[:package_depth]))
-    app_root = module_path.parents[package_depth]
-    # Check every marker before writing any. Turning one portion of a namespace
-    # package into a regular package hides its other sys.path portions.
-    for package_dir in package_dirs:
-        init_file = package_dir / "__init__.py"
-        if init_file.is_dir():
-            msg = f"Cannot create package marker {init_file}: path is a directory."
-            raise IsADirectoryError(msg)
-        if init_file.exists():
-            continue
-        # A regular ancestor confines imports to the app root; other roots
-        # cannot contribute to this nested package.
-        if any(
-            (parent / "__init__.py").is_file()
-            for parent in package_dir.parents
-            if parent != app_root and app_root in parent.parents
-        ):
-            continue
-        relative_dir = package_dir.relative_to(app_root)
-        for search_root in sys.path:
-            other_dir = Path(search_root or ".").resolve() / relative_dir
-            if (
-                other_dir != package_dir.resolve()
-                and other_dir.is_dir()
-                and not (other_dir / "__init__.py").exists()
-            ):
-                msg = (
-                    f"Cannot create package marker {init_file}: {other_dir} is "
-                    "another portion of this namespace package. Add the marker "
-                    "only after consolidating the package."
-                )
-                raise ImportError(msg)
-    for package_dir in package_dirs:
-        init_file = package_dir / "__init__.py"
-        if not init_file.exists():
-            try:
-                init_file.touch()
-            except OSError as exc:
-                msg = (
-                    f"Cannot create package marker {init_file}: {exc}. "
-                    "Make the app directory writable or add an empty "
-                    "__init__.py before starting the backend."
-                )
-                raise OSError(msg) from exc
     return module_path
 
 
@@ -539,7 +491,7 @@ def get_app_instance_from_file() -> str:
     Returns:
         The app module for the backend.
     """
-    return f"{get_app_file()}:{constants.CompileVars.APP}"
+    return get_app_instance()
 
 
 def run_backend(
