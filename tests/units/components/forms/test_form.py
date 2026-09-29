@@ -296,10 +296,6 @@ def test_handle_submit_uses_form_data_to_object_not_fromentries():
     assert "Object.fromEntries" not in hooks
 
 
-# Runs FORM_DATA_TO_OBJECT_JS itself through node, so a regression in the actual
-# grouping/prototype-safety logic is caught even if the surrounding hooks still
-# reference the helper correctly. Mirrors the pattern in
-# tests/units/reflex_base/templates/test_json_helper.py.
 _FORM_DATA_TO_OBJECT_DRIVER = """
 import { readFileSync } from "node:fs";
 const helperSrc = readFileSync(process.argv[2], "utf8");
