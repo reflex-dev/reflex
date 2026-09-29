@@ -17,6 +17,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 import pytest
 import pytest_asyncio
 from reflex_workflow import DEFAULT_LANE, run_workflows
+from reflex_workflow.model import REGISTRY
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 # The examples live beside the package rather than inside it, so they are not
@@ -58,6 +59,15 @@ def worker(factory: async_sessionmaker[AsyncSession]):
     """
     return run_workflows(
         factory,
+        # Named rather than left to the registry, which every test module in
+        # the suite has already added its own tables to: pytest imports them
+        # all while it collects, so by the time this runs the registry holds
+        # tables that only exist in some other module's database. A worker told
+        # to run those asks after them on every pass and is refused, which is
+        # both noise and passes slow enough to lose races these tests measure.
+        workflows=[
+            cls for cls in REGISTRY.values() if cls.__module__.startswith("examples.")
+        ],
         poll_interval=datetime.timedelta(milliseconds=100),
         lease=datetime.timedelta(seconds=5),
         # One worker here serves every lane the examples declare.

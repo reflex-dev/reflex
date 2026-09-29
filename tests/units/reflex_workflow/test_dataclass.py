@@ -80,23 +80,6 @@ def shapes(metadata: MetaData, table: str) -> dict[str, tuple[Any, ...]]:
     }
 
 
-@pytest.fixture(scope="module", autouse=True)
-def _forget_the_tables_declared_here():
-    """Leave the registry without this module's tables in it.
-
-    A worker told no workflows runs every workflow in the registry, so a table
-    left behind here is one another module's worker would try to claim against
-    a database that never had it.
-
-    Yields:
-        Nothing; the registry is cleaned up afterwards.
-    """
-    yield
-    for name, cls in list(model.REGISTRY.items()):
-        if cls.__module__ == __name__:
-            del model.REGISTRY[name]
-
-
 def test_a_dataclass_model_keeps_the_constructor_it_would_have_had():
     # The engine's columns are the engine's to set, so they stay out of the
     # constructor and the model reads as it did before the mixin was added.
