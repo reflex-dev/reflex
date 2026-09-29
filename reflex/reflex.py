@@ -726,6 +726,10 @@ def run(
     """Run the app in the current directory."""
     from reflex.utils import prerequisites
 
+    if log.is_json_mode():
+        # Before any child process starts, so they all inherit the capture.
+        log.capture_output()
+
     if frontend_only and backend_only:
         logger.error("Cannot use both --frontend-only and --backend-only options.")
         raise SystemExit(1)

@@ -891,3 +891,85 @@ def test_reset_releases_the_reservation():
     log.reserve_stdout()
     log._reset()
     assert log.is_stdout_reserved() is False
+
+
+_CAPTURE_SCRIPT = """
+import logging
+import multiprocessing
+import os
+import subprocess
+import sys
+import warnings
+
+from reflex_base.utils import log
+
+
+def crash():
+    raise RuntimeError("boom")
+
+
+if __name__ == "__main__":
+    log.enable_managed_logging()
+    log.capture_output()
+    print("from print")
+    os.write(1, b"from os.write\\n")
+    sys.stderr.write("from stderr\\n")
+    subprocess.run([sys.executable, "-c", "print('from child')"], check=True)
+    subprocess.run(
+        [sys.executable, "-c", "import json; print(json.dumps({'passed': 1}))"],
+        check=True,
+    )
+    logging.getLogger("reflex").info("from logger")
+    worker = multiprocessing.get_context("spawn").Process(target=crash)
+    worker.start()
+    worker.join()
+    warnings.simplefilter("ignore", DeprecationWarning)  # fork with threads
+    if os.fork() == 0:
+        sys.exit(0)  # a normal exit runs the atexit hooks inherited by fork
+    os.wait()
+    print("after fork")
+    print("partial line", end="")
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="fd capture is POSIX-only")
+def test_capture_output_turns_every_line_into_json(tmp_path):
+    """Output written below the logging pipeline still reaches the streams as JSON."""
+    script = tmp_path / "capture.py"
+    script.write_text(_CAPTURE_SCRIPT)
+    env = {
+        **os.environ,
+        "REFLEX_LOG_JSON": "true",
+    }
+    result = subprocess.run(
+        [sys.executable, str(script)],
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=tmp_path,
+        timeout=60,
+    )
+    assert result.returncode == 0, result.stderr
+    out = [json.loads(line) for line in result.stdout.splitlines()]
+    err = [json.loads(line) for line in result.stderr.splitlines()]
+
+    # Python buffers print() when stdout is a pipe, so only the set is stable.
+    assert sorted(r["message"] for r in out if r.get("logger") == "stdout") == [
+        "after fork",
+        "from child",
+        "from os.write",
+        "from print",
+        "partial line",
+    ]
+    assert {"passed": 1} in out
+    assert [r["message"] for r in out if r.get("logger") == "reflex"] == ["from logger"]
+    assert {
+        "logger": "stderr",
+        "level": "warning",
+        "message": "from stderr",
+    }.items() <= (err[0].items())
+    [crash] = [r for r in err if "exception" in r]
+    assert crash["level"] == "error"
+    assert crash["message"] == "RuntimeError: boom"
+    assert crash["exception"].startswith("Traceback (most recent call last):")
+    assert 'raise RuntimeError("boom")' in crash["exception"]

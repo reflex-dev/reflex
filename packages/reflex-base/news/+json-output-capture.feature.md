@@ -1,0 +1,1 @@
+Add `reflex_base.utils.log.capture_output()`, which routes everything written to fd 1 and fd 2 of the process and its children through JSON records; lines that already are JSON records pass through unchanged.

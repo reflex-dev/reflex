@@ -20,6 +20,7 @@ application's own logging configuration (or ``logging.lastResort``) applies.
 
 from __future__ import annotations
 
+import atexit
 import contextlib
 import datetime
 import functools
@@ -28,6 +29,7 @@ import logging
 import os
 import shutil
 import sys
+import threading
 import time
 from collections.abc import Generator
 from pathlib import Path
@@ -83,6 +85,13 @@ _quiet_console = Console(quiet=True)
 
 # Whether stdout carries a machine-readable document rather than human output.
 _stdout_reserved = False
+
+# The real stdout/stderr while capture_output() owns fd 1 and fd 2.
+_real_out: TextIO | None = None
+_real_err: TextIO | None = None
+
+# Keeps JSON lines whole when the capture readers and the pipeline share a stream.
+_write_lock = threading.Lock()
 
 # The current log level.
 _log_level = LogLevel.INFO
@@ -254,9 +263,159 @@ def _write_json(payload: dict, *, stderr: bool):
         payload: The record fields.
         stderr: Whether the record targets stderr.
     """
-    stream = sys.stderr if stderr or _stdout_reserved else sys.stdout
-    stream.write(json.dumps(payload, default=str) + "\n")
-    stream.flush()
+    if stderr or _stdout_reserved:
+        stream = _real_err or sys.stderr
+    else:
+        stream = _real_out or sys.stdout
+    _write_line(stream, json.dumps(payload, default=str) + "\n")
+
+
+def _write_line(stream: TextIO, line: str):
+    """Write one whole line to a stream shared with other threads.
+
+    Args:
+        stream: The output stream.
+        line: The line, including its newline.
+    """
+    with _write_lock:
+        stream.write(line)
+        stream.flush()
+
+
+def _is_json_object(line: str) -> bool:
+    """Check whether a line already is a JSON record.
+
+    Args:
+        line: The line to check.
+
+    Returns:
+        True if the line parses as a JSON object.
+    """
+    if not line.startswith("{"):
+        return False
+    try:
+        return isinstance(json.loads(line), dict)
+    except ValueError:
+        return False
+
+
+# Written by _restore_output to stop a reader while children still hold the pipe.
+_CAPTURE_END = "\0reflex-capture-end\n"
+
+
+def _pump(read_fd: int, real: TextIO, level: str, name: str):
+    """Forward the lines written to a captured fd as JSON records.
+
+    Lines that already are JSON records pass through unchanged. A Python
+    traceback is collected into one record with the traceback text in its
+    ``exception`` field.
+
+    Args:
+        read_fd: The read end of the pipe behind the captured fd.
+        real: The stream the captured fd pointed to before capture.
+        level: The record level for plain lines.
+        name: The logger name for the records.
+    """
+    traceback: list[str] = []
+
+    def emit(message: str, level: str = level, exception: str | None = None):
+        payload = {
+            "timestamp": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+            "level": level,
+            "logger": name,
+            "message": message,
+        }
+        if exception is not None:
+            payload["exception"] = exception
+        _write_line(real, json.dumps(payload) + "\n")
+
+    def forward(line: str):
+        if traceback:
+            traceback.append(line)
+            # Frames are indented; the exception line is not.
+            if line.strip() and not line[0].isspace():
+                emit(line.strip(), "error", "".join(traceback))
+                traceback.clear()
+        elif line.startswith("Traceback (most recent call last):"):
+            traceback.append(line)
+        elif _is_json_object(line):
+            _write_line(real, line if line.endswith("\n") else line + "\n")
+        else:
+            emit(line.rstrip("\n"))
+
+    with os.fdopen(read_fd, encoding="utf-8", errors="replace") as pipe:
+        for line in pipe:
+            end = line.endswith(_CAPTURE_END)
+            if end:
+                line = line.removesuffix(_CAPTURE_END)
+            # An exception must not stop the reader: writers block once the
+            # pipe fills up.
+            try:
+                if line:
+                    forward(line)
+            except Exception:
+                pass
+            if end:
+                break
+        if traceback:
+            emit(traceback[-1].strip(), "error", "".join(traceback))
+
+
+def capture_output():
+    """Turn every line written to fd 1 and fd 2 into a JSON record.
+
+    Points fd 1 and fd 2 of this process at pipes. Child processes inherit
+    them, so ``print()`` in app code, C extensions, subprocesses and worker
+    tracebacks all reach the reader threads, which write JSON lines to the
+    original streams. Records from the logging pipeline skip the pipes.
+
+    No-op on Windows, where child processes inherit the Win32 standard handles
+    rather than fd 1 and fd 2.
+    """
+    global _real_out, _real_err
+    if _real_out is not None or sys.platform == "win32":
+        return
+    sys.stdout.flush()
+    sys.stderr.flush()
+    captured = []
+    for fd, level, name in ((1, "info", "stdout"), (2, "warning", "stderr")):
+        real = os.fdopen(os.dup(fd), "w", encoding="utf-8", errors="replace")
+        read_fd, write_fd = os.pipe()
+        # write_fd stays open, non-inheritable, to send the end marker.
+        os.dup2(write_fd, fd)
+        reader = threading.Thread(
+            target=_pump,
+            args=(read_fd, real, level, name),
+            name=f"reflex-capture-{name}",
+            daemon=True,
+        )
+        reader.start()
+        captured.append((fd, write_fd, real, reader))
+    _real_out, _real_err = captured[0][2], captured[1][2]
+    atexit.register(_restore_output, os.getpid(), captured)
+
+
+def _restore_output(
+    owner_pid: int, captured: list[tuple[int, int, TextIO, threading.Thread]]
+):
+    """Point fd 1 and fd 2 back at the original streams and drain the pipes.
+
+    Args:
+        owner_pid: The process that owns the reader threads. Forked children
+            inherit this atexit hook and must not stop the owner's readers.
+        captured: The captured fd, the pipe write end, the original stream and
+            the reader thread.
+    """
+    if os.getpid() != owner_pid:
+        return
+    sys.stdout.flush()
+    sys.stderr.flush()
+    for fd, write_fd, real, _ in captured:
+        os.dup2(real.fileno(), fd)
+        os.write(write_fd, _CAPTURE_END.encode())
+        os.close(write_fd)
+    for *_, reader in captured:
+        reader.join(timeout=1)
 
 
 class JsonHandler(logging.Handler):

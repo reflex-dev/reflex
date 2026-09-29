@@ -10,6 +10,7 @@ import sys
 import click
 import click.testing
 import pytest
+from pytest_mock import MockerFixture
 
 from reflex import reflex
 
@@ -431,3 +432,34 @@ def test_init_records_version_check_after_frontend_setup(
     reflex._init("demo")
 
     assert events == ["frontend", "version"]
+
+
+@pytest.mark.parametrize(("argv", "captured"), [(["--json"], True), ([], False)])
+def test_run_captures_output_only_in_json_mode(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch, argv, captured
+):
+    """``reflex run --json`` routes all process output through JSON records.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        argv: Extra ``reflex run`` arguments.
+        captured: Whether output capture is expected.
+    """
+    from reflex_base.environment import environment
+    from reflex_base.utils import log
+
+    # Registered so teardown restores the variables the CLI callbacks set.
+    monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
+    monkeypatch.setenv(environment.REFLEX_LOG_JSON.name, "false")
+    capture = mocker.patch.object(log, "capture_output")
+    mocker.patch.object(reflex, "_run")
+    mocker.patch("reflex.utils.prerequisites.check_running_mode")
+
+    try:
+        result = click.testing.CliRunner().invoke(reflex.cli, ["run", *argv])
+    finally:
+        log._reset()
+
+    assert result.exit_code == 0, result.output
+    assert capture.called is captured
