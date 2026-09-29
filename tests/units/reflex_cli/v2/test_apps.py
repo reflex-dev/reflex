@@ -5,10 +5,12 @@ import json
 import logging
 import uuid
 from collections.abc import Iterator
+from io import StringIO
 
 import pytest
 from click.testing import CliRunner
 from pytest_mock import MockerFixture, MockFixture
+from rich.console import Console
 from reflex_base.utils.log import SUCCESS
 from reflex_build_sdk.types import App, AppSummary, DeploymentRecord, LogRecord
 from reflex_cli.core.config import Config
@@ -178,6 +180,7 @@ def test_app_history_success(mocker: MockFixture):
 
     assert result.exit_code == 0, result.output
     client.api.apps.history.assert_called_once_with("test_app_id")
+    mock_console_print_table.assert_called_once()
     assert mock_console_print_table.call_args.kwargs["overflow"] == "fold"
 
 
@@ -195,6 +198,37 @@ def test_app_inspect_uses_fold_overflow(mocker: MockFixture):
 
     assert result.exit_code == 0, result.output
     assert mock_print_table.call_args.kwargs["overflow"] == "fold"
+
+
+def test_app_inspect_renders_full_app_id_at_narrow_width(mocker: MockFixture):
+    """Preserve a long app ID in the rendered inspect table.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
+    client = _authed(mocker)
+    app_id = uuid.UUID("7fb2de10-2e8d-48bd-9c79-a98b3f52e10f")
+    client.api.apps.get.return_value = app(id=app_id)
+    output = StringIO()
+    narrow_console = Console(file=output, width=40)
+    for console_module in ("reflex_base.utils.console", "reflex_cli.utils.console"):
+        mocker.patch(f"{console_module}._console", narrow_console, create=True)
+        mocker.patch(f"{console_module}._console_stderr", narrow_console, create=True)
+    for log_module in ("reflex_base.utils.log", "reflex_cli.utils.log"):
+        mocker.patch(f"{log_module}.is_json_mode", return_value=False, create=True)
+        mocker.patch(
+            f"{log_module}.is_stdout_reserved", return_value=False, create=True
+        )
+
+    result = runner.invoke(hosting_cli, ["apps", "inspect", str(app_id)])
+
+    assert result.exit_code == 0, result.output
+    rendered_hex = "".join(
+        character
+        for character in output.getvalue().lower()
+        if character in "0123456789abcdef"
+    )
+    assert app_id.hex in rendered_hex
 
 
 def test_app_history_as_json(mocker: MockFixture):

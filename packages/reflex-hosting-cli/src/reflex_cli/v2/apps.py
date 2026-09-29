@@ -975,7 +975,7 @@ def inspect_app(
             return
 
         console.print_table(
-            [[str(value) for value in app_info.values()]],
-            headers=list(app_info.keys()),
+            [[str(key), str(value)] for key, value in app_info.items()],
+            headers=["field", "value"],
             overflow="fold",
         )
