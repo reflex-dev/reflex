@@ -12,6 +12,8 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from reflex_workflow.engine import execute, notify, rows
 from reflex_workflow.engine.runtime import current
 from reflex_workflow.model import (
+    PARENT_FAN_OUT,
+    PARENT_TABLE,
     WORKFLOW_COLUMNS,
     Call,
     StepRef,
@@ -346,8 +348,10 @@ class RunHandle(Generic[W]):
         # wait for a child that could no longer report. Joined rather than
         # listed back as keys: a backlog of more than about sixty-five thousand
         # rows is more parameters than a statement can carry.
+        # Labelled once and read back by that label, so the two cannot drift.
+        was = cls.parent.label("parent_was")
         stopping = (
-            select(*pk_cols, cls.parent.label("was"))
+            select(*pk_cols, was)
             .where(
                 *self.where,
                 or_(cls.next_step.is_not(None), cls.waiting_for.is_not(None)),
@@ -383,16 +387,16 @@ class RunHandle(Generic[W]):
                     )
                     # The pointer as it was before this cleared it, which is who
                     # to tell; what the row holds now no longer names anyone.
-                    .returning(stopping.c.was)
+                    .returning(stopping.c[was.name])
                     .execution_options(synchronize_session=False)
                 )
             ).all()
             woken = set()
             for (parent,) in stopped:
-                if parent is None or parent.get("fan_out") is None:
+                if parent is None or parent.get(PARENT_FAN_OUT) is None:
                     continue
                 await execute.finish_child(session, parent)
-                woken.add(parent["table"])
+                woken.add(parent[PARENT_TABLE])
             for table in sorted(woken):
                 await notify.announce(session, table)
         if stopped:

@@ -72,6 +72,14 @@ ZERO = "0"
 # group, or a digest of the group where it would not fit.
 BUCKET_KEY_LENGTH = 256
 
+# The keys of the pointer a fanned-out child keeps to its parent, stored as
+# jsonb: the table and primary key that name the row, and the version its
+# fan-out committed at, which is what the child counts against and what it
+# stops naming once it has.
+PARENT_TABLE = "table"
+PARENT_KEY = "pk"
+PARENT_FAN_OUT = "fan_out"
+
 # How many delivered event keys a row remembers, to refuse repeats of them.
 EVENT_KEY_HISTORY = 16
 
@@ -834,8 +842,8 @@ class Workflow:
         from reflex_workflow.engine import rows
 
         return {
-            "table": type(self).__tablename__,
-            "pk": rows.json_pk(rows.pk_of(self)),
+            PARENT_TABLE: type(self).__tablename__,
+            PARENT_KEY: rows.json_pk(rows.pk_of(self)),
         }
 
     async def history(self, limit: int = 50) -> list[AttemptLog]:
@@ -887,7 +895,7 @@ class Workflow:
             raise TypeError(msg)
         # Children point at the fan-out they belong to as well; any of this
         # run's fan-outs will do here.
-        pointer = cls.parent.op("-", return_type=JSONB)(literal("fan_out", String))
+        pointer = cls.parent.op("-", return_type=JSONB)(literal(PARENT_FAN_OUT, String))
         return RunHandle(cls, (pointer == self.as_parent(),))
 
     @classmethod

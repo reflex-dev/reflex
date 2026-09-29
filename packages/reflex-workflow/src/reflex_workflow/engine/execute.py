@@ -20,6 +20,9 @@ from reflex_workflow import model
 from reflex_workflow.engine import handles, notify, rows
 from reflex_workflow.engine.runtime import Runtime
 from reflex_workflow.model import (
+    PARENT_FAN_OUT,
+    PARENT_KEY,
+    PARENT_TABLE,
     REGISTRY,
     Call,
     Child,
@@ -330,7 +333,7 @@ async def start_children(
     Returns:
         How many were started by this call.
     """
-    parent = {**row.as_parent(), "fan_out": fan_out}
+    parent = {**row.as_parent(), PARENT_FAN_OUT: fan_out}
     started = 0
     tables: set[str] = set()
     for entry in children:
@@ -356,7 +359,7 @@ async def finish_child(session: AsyncSession, parent: dict[str, Any]) -> None:
     Raises:
         LookupError: If the parent's table is no longer a workflow.
     """
-    cls = REGISTRY.get(parent["table"])
+    cls = REGISTRY.get(parent[PARENT_TABLE])
     if cls is None:
         msg = f"{parent['table']!r} is not a workflow table."
         raise LookupError(msg)
@@ -364,7 +367,7 @@ async def finish_child(session: AsyncSession, parent: dict[str, Any]) -> None:
     await session.execute(
         update(cls)
         .where(
-            *rows.pk_filter(cls, parent["pk"]),
+            *rows.pk_filter(cls, parent[PARENT_KEY]),
             # Still joining the fan-out this child belongs to, and still owed a
             # child: a child run again after it finished, or one whose parent was
             # moved on and may have fanned out again, counts for nothing. The
@@ -373,7 +376,7 @@ async def finish_child(session: AsyncSession, parent: dict[str, Any]) -> None:
             # A pointer without the fan-out's version predates children naming
             # it, and no longer knows which join it counts toward: it counts
             # toward none, rather than possibly toward the wrong one.
-            cls.wf_version == parent.get("fan_out"),
+            cls.wf_version == parent.get(PARENT_FAN_OUT),
             cls.children_left > 0,
         )
         .values(
@@ -505,7 +508,7 @@ def unjoin(cls: type[Workflow]) -> ColumnElement[Any]:
     Returns:
         The new value for ``parent``.
     """
-    return cls.parent.op("-", return_type=JSONB)(literal("fan_out", String))
+    return cls.parent.op("-", return_type=JSONB)(literal(PARENT_FAN_OUT, String))
 
 
 async def wake_on_schedule(
@@ -582,7 +585,7 @@ async def commit_attempt(
     # is as done as one that finished.
     if releasing is not None:
         await finish_child(session, releasing)
-        await notify.announce(session, releasing["table"])
+        await notify.announce(session, releasing[PARENT_TABLE])
     return True
 
 
@@ -633,7 +636,7 @@ async def abandon(
     values, outcome = after_failure(spec, current, stored, attempts)
     values |= {"attempts": attempts, "last_error": error}
     settle_event(cls, values, event)
-    joining = parent is not None and parent.get("fan_out") is not None
+    joining = parent is not None and parent.get(PARENT_FAN_OUT) is not None
     done = is_finished(values)
     if joining and done:
         values["parent"] = unjoin(cls)
@@ -761,7 +764,7 @@ async def execute(
 
     settle_event(cls, values, event, repeating=repeat is not None)
     parent = row.parent
-    joining = parent is not None and parent.get("fan_out") is not None
+    joining = parent is not None and parent.get(PARENT_FAN_OUT) is not None
     try:
         async with factory() as session:
             try:
