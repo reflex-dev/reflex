@@ -3517,13 +3517,46 @@ async def test_a_broken_on_idle_does_not_stop_the_worker(session_factory):
             await loop
 
 
+@contextlib.asynccontextmanager
+async def only_worker(
+    session_factory: async_sessionmaker[AsyncSession],
+    on_idle: runner.OnIdle | None = None,
+) -> AsyncIterator[runner.Runner]:
+    """Run a worker over Resting alone, as the only engine in this process.
+
+    Its own runtime, because the counter ``wake`` waits on belongs to the
+    runtime rather than the worker: the module's own worker shares the one this
+    would otherwise use, and its idle passes would settle a wait meant for this
+    one.
+
+    Args:
+        session_factory: The database to work against.
+        on_idle: Told what the worker is waiting for, if anything wants to know.
+
+    Yields:
+        The running worker.
+    """
+    mine = runtime.Runtime(session_factory, asyncio.Event(), LEASE)
+    previous = runtime.replace_current(mine)
+    worker = runner.Runner(mine, [Resting], 4, MINUTE, on_idle=on_idle)
+    loop = asyncio.create_task(worker.loop())
+    try:
+        yield worker
+    finally:
+        worker.stop()
+        loop.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await loop
+        runtime.replace_current(previous)
+
+
 async def test_wake_settles_once_the_worker_has_nothing_left_to_take(
     session_factory,
 ):
     await Resting.by().cancel()
     key = uuid.uuid4().hex
-    # Written straight into the table, so nothing announces it: only the wake
-    # gets the worker to look before its next poll.
+    # Written straight into the table, so nothing announces it, and the poll is
+    # a minute away: only the wake gets the worker to look.
     async with session_factory() as session, session.begin():
         await session.execute(
             insert(Resting).values(
@@ -3535,9 +3568,7 @@ async def test_wake_settles_once_the_worker_has_nothing_left_to_take(
             )
         )
 
-    worker = runner.Runner(runtime.current(), [Resting], 4, MINUTE)
-    loop = asyncio.create_task(worker.loop())
-    try:
+    async with only_worker(session_factory):
         assert await runner.wake(datetime.timedelta(seconds=30))
         async with session_factory() as session:
             left = (
@@ -3545,14 +3576,9 @@ async def test_wake_settles_once_the_worker_has_nothing_left_to_take(
                     select(Resting.next_step).where(Resting.key == key)
                 )
             ).scalar_one()
-        # Settled means the worker made a pass that took nothing, which it can
-        # only do once it has run what was due.
-        assert left is None
-    finally:
-        worker.stop()
-        loop.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await loop
+    # Settled means a pass that took nothing, which this worker could only make
+    # once it had run what was due.
+    assert left is None
 
 
 async def test_waiting_for_a_pass_gives_up_rather_than_hanging():
@@ -3581,32 +3607,26 @@ async def test_wake_tells_the_callers_past_the_cap_to_get_on_with_it(
         """
         await held.wait()
 
-    worker = runner.Runner(runtime.current(), [Resting], 4, MINUTE, on_idle=blocked)
-    loop = asyncio.create_task(worker.loop())
     waiting: list[asyncio.Task[bool]] = []
     try:
-        # The first pass settles, then the worker is stuck reporting it.
-        await asyncio.sleep(0.2)
-        waiting += [
-            asyncio.create_task(runner.wake(datetime.timedelta(seconds=10)))
-            for _ in range(runner.WAITERS + 4)
-        ]
-        done = [task for task in waiting if task.done()]
-        await asyncio.sleep(0.2)
-        # Past the cap a caller is told the worker is awake rather than being
-        # queued behind callers asking for the same thing.
-        settled = [task for task in waiting if task.done()]
-        assert len(settled) >= 4
-        assert all(task.result() for task in settled)
-        assert not done or all(task.result() for task in done)
+        async with only_worker(session_factory, on_idle=blocked):
+            # The first pass settles, then the worker is stuck reporting it.
+            await asyncio.sleep(0.2)
+            waiting += [
+                asyncio.create_task(runner.wake(datetime.timedelta(seconds=10)))
+                for _ in range(runner.WAITERS + 4)
+            ]
+            await asyncio.sleep(0.2)
+            # Past the cap a caller is told the worker is awake rather than
+            # queued behind callers asking for the same thing.
+            settled = [task for task in waiting if task.done()]
+            assert len(settled) == 4
+            assert all(task.result() for task in settled)
+            held.set()
     finally:
         held.set()
         for task in waiting:
             task.cancel()
-        worker.stop()
-        loop.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await loop
 
 
 async def test_a_table_that_cannot_be_asked_does_not_decide_the_wait(session_factory):

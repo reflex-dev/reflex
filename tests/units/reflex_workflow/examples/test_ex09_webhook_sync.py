@@ -13,11 +13,12 @@ import time
 import uuid
 
 import pytest
-from examples import ex09_webhook_sync
 from examples.ex09_webhook_sync import DESTINATIONS, Entity, callback, receive
 from examples.services import world
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from examples import ex09_webhook_sync
 
 from .conftest import eventually, worker
 

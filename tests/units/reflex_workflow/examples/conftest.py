@@ -24,8 +24,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 # installed; the tests import them from the repository.
 sys.path.insert(0, str(pathlib.Path(__file__).parents[4] / "packages/reflex-workflow"))
 
-from examples import Base, world
 from examples.ex12_media_pipeline import MEDIA
+
+from examples import Base, world
 
 URL = os.environ.get("REFLEX_TEST_POSTGRES", "")
 ASYNC_URL = URL.replace("postgresql://", "postgresql+psycopg://", 1)

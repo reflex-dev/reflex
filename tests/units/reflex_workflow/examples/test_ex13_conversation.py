@@ -17,7 +17,6 @@ import datetime
 import uuid
 
 import pytest
-from examples import ex13_conversation
 from examples.ex13_conversation import (
     Conversation,
     Message,
@@ -32,6 +31,8 @@ from examples.services import world
 from reflex_workflow import connect_workflows
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from examples import ex13_conversation
 
 from .conftest import eventually, worker
 

@@ -11,11 +11,12 @@ import datetime
 import uuid
 
 import pytest
-from examples import ex08_sweep
 from examples.ex08_sweep import BATCH, Collection, Sweep, Watch, schedule_sweep
 from examples.services import world
 from reflex_workflow import connect_workflows
 from sqlalchemy import insert, select, update
+
+from examples import ex08_sweep
 
 from .conftest import eventually, worker
 
