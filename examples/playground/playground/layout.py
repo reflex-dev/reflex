@@ -31,13 +31,11 @@ def navbar() -> rx.Component:
     """Render the navigation bar.
 
     Returns:
-        The logo, a link to each page and the appearance toggle.
+        The logo and a link to each page.
     """
     return rx.hstack(
         rx.image(src="/favicon.ico", alt="Reflex logo", width="2em", height="2em"),
         *[rx.link(label, href=href) for label, href in NAV_LINKS],
-        rx.spacer(),
-        rx.color_mode.button(id="nav-color-mode"),
         align="center",
         spacing="4",
         wrap="wrap",

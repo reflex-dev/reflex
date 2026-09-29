@@ -33,7 +33,6 @@ def task_row(task: rx.vars.ObjectVar[Task]) -> rx.Component:
         rx.checkbox(
             checked=task.done,
             on_change=lambda _: TasksState.toggle(task.id),
-            id=f"tasks-toggle-{task.id}",
         ),
         rx.text(
             task.title,

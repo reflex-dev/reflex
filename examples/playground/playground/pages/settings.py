@@ -110,8 +110,15 @@ def settings() -> rx.Component:
                                 id="settings-compact",
                             ),
                         ),
+                        # Not in the shared layout: on reflex 0.8.23 the color
+                        # mode button stops the hot updates of the page it is on.
                         setting(
-                            "Color mode", rx.color_mode.switch(id="settings-color-mode")
+                            "Color mode",
+                            rx.hstack(
+                                rx.color_mode.switch(id="settings-color-mode"),
+                                rx.color_mode.button(id="settings-color-mode-button"),
+                                align="center",
+                            ),
                         ),
                         rx.callout(
                             "The accent previews here; the app theme stays violet.",

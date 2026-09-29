@@ -33,8 +33,10 @@ group has the packages below).
 
 ## Pages
 
-Every page shares `layout.py`: the navigation bar (with the appearance toggle
-`#nav-color-mode`), the content and the benchmark hooks. The data pages add a
+Every page shares `layout.py`: the navigation bar, the content and the benchmark
+hooks. The appearance toggles live on `/settings`, not in the navigation bar: on
+reflex 0.8.23, a page rendering `rx.color_mode.button` stops applying its hot
+updates. The data pages add a
 sidebar inside it (`data_layout`, a nested layout).
 
 | Route | Shows |
@@ -83,16 +85,19 @@ with `GRANIAN_WORKERS=1` there; reflex 0.9 reaches every worker.
 
 ## Element ids
 
-Interactive elements carry kebab-case ids prefixed by their page.
+Interactive elements carry kebab-case ids prefixed by their page. Elements
+rendered by `rx.foreach` carry none: an id built from a var gets a ref whose
+name changes on every compile, which makes the build differ between two
+compiles of the same app.
 
 | Page | Ids |
 | --- | --- |
-| every page | `nav-color-mode`, and the benchmark hooks below |
+| every page | the benchmark hooks below |
 | `/counter` | `count`, `increment`, `decrement` |
 | `/board` | `board-join`, `board-token`, `board-join-token`, `board-count`, `board-increment`, `board-seq` |
 | `/item/[item_id]` | `item-id` |
 | `/events` | `events-total`, `events-log-size`, `events-sync`, `events-args`, `events-async`, `events-generator`, `events-background`, `events-chain`, `events-repeat`, `events-toast`, `events-script`, `events-download`, `events-sibling`, `events-redirect`, `events-clear`, `events-progress`, `events-running`, `events-script-result`, `events-sibling-summary`, `events-log` |
-| `/tasks` | `tasks-draft`, `tasks-add`, `tasks-filter`, `tasks-list`, `tasks-toggle-<task id>`, `tasks-progress`, `tasks-clear-done`, `tasks-reset`, `tasks-note-urgent`, `tasks-note-later`, `tasks-note-review` |
+| `/tasks` | `tasks-draft`, `tasks-add`, `tasks-filter`, `tasks-list` (a row per task, its checkbox first), `tasks-progress`, `tasks-clear-done`, `tasks-reset`, `tasks-note-urgent`, `tasks-note-later`, `tasks-note-review` |
 | `/data` | `data-sidebar`, `data-filter`, `data-category`, `data-reset`, `data-table`, `data-sort-<column>` (`id`, `name`, `category`, `price-cents`, `stock`, `rating`), `data-previous`, `data-page`, `data-next` |
 | `/data/product/[product_id]`, `/data/new` | `data-sidebar`, `product-heading`, `product-form`, `product-name`, `product-category`, `product-price-cents`, `product-stock`, `product-rating`, `product-save`, `product-delete`, `product-delete-confirm` |
 | `/data/analytics` | `data-sidebar`, `analytics-count`, `analytics-rating`, `analytics-leaderboard` |
@@ -104,7 +109,7 @@ Interactive elements carry kebab-case ids prefixed by their page.
 | `/content` | `content-markdown`, `content-code`, `content-icons`, `content-dates`, `content-audio`, `content-video` |
 | `/widgets` | `widgets-stats`, `widgets-layout`, `widgets-add-row`, `widgets-reset`, `widgets-matrix`, `widgets-stepper-a-decrement`, `widgets-stepper-a-value`, `widgets-stepper-a-increment` (and `-b-`), `widgets-dynamic-shape`, `widgets-next-shape`, `widgets-clock` |
 | `/room/[room_id]` | `room-name`, `room-me`, `room-leave`, `room-presence-count`, `room-presence`, `room-count`, `room-increment`, `room-burst`, `room-broadcast`, `room-last` |
-| `/settings` | `settings-tab-profile`, `settings-tab-notifications`, `settings-tab-appearance`, `settings-name`, `settings-volume`, `settings-switch-emails`, `settings-switch-sounds`, `settings-switch-beta`, `settings-on`, `settings-accent`, `settings-compact`, `settings-color-mode`, `settings-preview` |
+| `/settings` | `settings-tab-profile`, `settings-tab-notifications`, `settings-tab-appearance`, `settings-name`, `settings-volume`, `settings-switch-emails`, `settings-switch-sounds`, `settings-switch-beta`, `settings-on`, `settings-accent`, `settings-compact`, `settings-color-mode`, `settings-color-mode-button`, `settings-preview` |
 | `/about` | `about-features` |
 | `404` | `not-found`, `not-found-home` |
 
