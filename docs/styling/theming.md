@@ -258,7 +258,7 @@ Additionally you can modify the theme of your app through using the `Theme Panel
 
 ### Color Scheme
 
-On a high-level, component `color_scheme` inherits from the color specified in the theme. This means that if you change the theme, the color of the component will also change. Available colors can be found [here](https://www.radix-ui.com/colors).
+On a high-level, component `color_scheme` inherits from the color specified in the theme. This means that if you change the theme, the color of the component will also change. Explore the [available Radix color palettes](https://www.radix-ui.com/colors).
 
 You can also specify the `color_scheme` prop.
 
@@ -280,7 +280,7 @@ rx.flex(
 
 Sometime you may want to use a specific shade of a color from the theme. This is recommended vs using a hex color directly as it will automatically change when the theme changes appearance change from light/dark.
 
-To access a specific shade of color from the theme, you can use the `rx.color`. When switching to light and dark themes, the color will automatically change. Shades can be accessed by using the color name and the shade number. The shade number ranges from 1 to 12. Additionally, they can have their alpha value set by using the `True` parameter it defaults to `False`. A full list of colors can be found [here](https://www.radix-ui.com/colors).
+To access a specific shade of color from the theme, you can use the `rx.color`. When switching to light and dark themes, the color will automatically change. Shades can be accessed by using the color name and the shade number. The shade number ranges from 1 to 12. Additionally, they can have their alpha value set by using the `True` parameter it defaults to `False`. See the full list of [Radix color palettes](https://www.radix-ui.com/colors).
 
 ```python demo
 rx.flex(

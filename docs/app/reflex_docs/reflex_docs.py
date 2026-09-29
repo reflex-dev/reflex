@@ -3,10 +3,13 @@
 import json
 import os
 import sys
-from functools import partial
+from collections.abc import Callable
+from copy import deepcopy
+from functools import cache, partial, wraps
 
 import reflex as rx
 import reflex_enterprise as rxe
+from reflex_components_internal.blocks.telemetry import get_google_analytics_trackers
 from reflex_site_shared import styles
 from reflex_site_shared.backend.status import monitor_checkly_status
 from reflex_site_shared.constants import OG_IMAGE_URL, REFLEX_DOMAIN_URL
@@ -26,6 +29,31 @@ from reflex_docs.whitelist import _check_whitelisted_path
 # higher and the prod build fails with EMFILE error.
 WINDOWS_MAX_ROUTES = int(os.environ.get("REFLEX_WEB_WINDOWS_MAX_ROUTES", "100"))
 LLMS_TXT_PATH = "/llms.txt"
+
+
+def _stable_page_factory(
+    component: Callable[[], rx.Component],
+) -> Callable[[], rx.Component]:
+    """Keep demo state identities stable while isolating compiler mutations.
+
+    Args:
+        component: The page factory whose demos must be instantiated only once.
+
+    Returns:
+        A factory yielding independent copies of the pristine component tree.
+    """
+    build_once = cache(component)
+
+    @wraps(component)
+    def page() -> rx.Component:
+        """Copy the pristine tree before handing it to a compiler or plugin.
+
+        Returns:
+            A fresh component tree retaining the original state classes.
+        """
+        return deepcopy(build_once())
+
+    return page
 
 
 def _llms_txt_directive() -> rx.Component:
@@ -53,7 +81,10 @@ app = rxe.App(
         radius="large",
         accent_color="violet",
     ),
-    head_components=favicons_links(),
+    head_components=[
+        *get_google_analytics_trackers(tracking_id="G-4T7C8ZD9TR"),
+        *favicons_links(),
+    ],
 )
 
 app.register_lifespan_task(monitor_checkly_status)
@@ -172,7 +203,11 @@ for route in routes:
         ]
 
         page_args = {
-            "component": route.component,
+            # XY registers chart plans by evaluating pages again at worker startup.
+            # Instantiate demos once, but give each compiler its own mutable tree.
+            "component": _stable_page_factory(route.component)
+            if callable(route.component)
+            else route.component,
             "route": route.path,
             "title": head_title,
             "image": image_url,
