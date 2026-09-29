@@ -1,21 +1,22 @@
 # production-compose
 
 This example production deployment uses automatic TLS with Caddy serving static
-files for the frontend and proxying requests to both the frontend and backend.
+files for the frontend and proxying requests to the backend.
 It is intended for use with a standalone VPS that is only hosting a single
 Reflex app.
 
 The production app container (`Dockerfile`), builds and exports the frontend
 statically (to be served by Caddy). The resulting image only runs the backend
-service.
+service and contains no bun, `node_modules`, or build tooling.
 
 The `webserver` service, based on `Caddy.Dockerfile`, copies the static frontend
-and `Caddyfile` into the container to configure the reverse proxy routes that will
-forward requests to the backend service. Caddy will automatically provision TLS
-for localhost or the domain specified in the environment variable `DOMAIN`.
+out of the app image and `Caddyfile` into the container to configure the
+reverse proxy routes that will forward requests to the backend service. Caddy
+will automatically provision TLS for localhost or the domain specified in the
+environment variable `DOMAIN`.
 
 This type of deployment should use less memory and be more performant since
-nodejs is not required at runtime.
+neither bun nor nodejs is required at runtime.
 
 ## Customize `Caddyfile` (optional)
 
@@ -33,8 +34,9 @@ be hosted! (Do not include http or https, it will always use https).
 DOMAIN=example.com docker compose build
 ```
 
-This will build both the `app` service from the `prod.Dockerfile` and the `webserver`
-service via `Caddy.Dockerfile`.
+This will build both the `app` service from the `Dockerfile` and the `webserver`
+service via `Caddy.Dockerfile`. The `webserver` build copies the exported
+frontend out of the `app` image, so compose always builds `app` first.
 
 ## Run Reflex Production Service
 
@@ -49,7 +51,8 @@ provisioning will occur automatically and may take a few minutes.
 
 Named docker volumes are used to persist the app database (`db-data`),
 uploaded_files (`upload-data`), and caddy TLS keys and certificates
-(`caddy-data`).
+(`caddy-data`). Keep `caddy-data` across container recreations so certificates
+are not re-issued each time, which can hit Let's Encrypt rate limits.
 
 ## More Robust Deployment
 
@@ -60,6 +63,14 @@ the backend to run with multiple workers and service more requests.
 ```bash
 DOMAIN=example.com docker compose -f compose.yaml -f compose.prod.yaml up -d
 ```
+
+Add `psycopg[binary]` to `requirements.txt` so the backend can connect to
+postgres; the binary wheel bundles libpq, so no extra system packages are
+needed in the image.
+
+With redis available, the backend runs `2 * cpu_count + 1` worker processes.
+Set `GRANIAN_WORKERS` in the `app` environment to cap this on memory
+constrained hosts.
 
 Postgres uses its own named docker volume for data persistence.
 

@@ -9,7 +9,7 @@ import enum
 import importlib
 import inspect
 import sys
-from types import CellType, CodeType, FunctionType, ModuleType
+from types import CellType, CodeType, FunctionType, MemberDescriptorType, ModuleType
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from reflex_base.utils.exceptions import VarValueError
@@ -51,6 +51,25 @@ class ScanStatus(enum.Enum):
 
 class UntrackedLocalVarError(VarValueError):
     """Raised when a local variable is referenced, but it is not tracked in the current scope."""
+
+
+def is_dependency(state_cls: type[BaseState], name: str) -> bool:
+    """Whether a computed var can depend on an attribute of a state.
+
+    Args:
+        state_cls: The state class.
+        name: The attribute name.
+
+    Returns:
+        True for vars, and for other data descriptors (like a user-defined one
+        that marks itself dirty) except properties and slots.
+    """
+    if name in state_cls.vars:
+        return True
+    attr = inspect.getattr_static(state_cls, name, None)
+    return hasattr(type(attr), "__set__") and not isinstance(
+        attr, (property, MemberDescriptorType)
+    )
 
 
 def assert_base_state(
@@ -185,25 +204,29 @@ class DependencyTracker:
         except VarValueError:
             # If the target state is not a BaseState, we cannot track dependencies on it.
             return
+        # Look up the raw descriptor first via inspect.getattr_static so we can detect
+        # property-like descriptors (e.g. HybridProperty) that override __get__ to return
+        # something other than themselves when accessed via the class.
         try:
-            ref_obj = getattr(target_state, instruction.argval)
+            static_obj = inspect.getattr_static(target_state, instruction.argval)
         except AttributeError:
-            # Not found on this state class, maybe it is a dynamic attribute that will be picked up later.
-            ref_obj = None
+            static_obj = None
 
-        if isinstance(ref_obj, property) and not isinstance(ref_obj, ComputedVar):
+        if isinstance(static_obj, property) and not isinstance(static_obj, ComputedVar):
             # recurse into property fget functions
-            ref_obj = ref_obj.fget
+            ref_obj = static_obj.fget
+        else:
+            try:
+                ref_obj = getattr(target_state, instruction.argval)
+            except AttributeError:
+                # Not found on this state class, maybe it is a dynamic attribute that will be picked up later.
+                ref_obj = None
         if callable(ref_obj):
             # recurse into callable attributes
             self._merge_deps(
                 type(self)(func=cast(FunctionType, ref_obj), state_cls=target_state)
             )
-        elif (
-            instruction.argval in target_state.backend_vars
-            or instruction.argval in target_state.vars
-        ):
-            # var access
+        elif is_dependency(target_state, instruction.argval):
             self.dependencies.setdefault(target_state.get_full_name(), set()).add(
                 instruction.argval
             )
@@ -380,9 +403,8 @@ class DependencyTracker:
             if the_var_data is None:
                 msg = f"Cannot determine the source code for the var in {self.func!r}."
                 raise VarValueError(msg)
-            self.dependencies.setdefault(the_var_data.state, set()).add(
-                the_var_data.field_name
-            )
+            for state_name, field_names in the_var._dependency_fields().items():
+                self.dependencies.setdefault(state_name, set()).update(field_names)
             self.scan_status = ScanStatus.SCANNING
 
     def _populate_dependencies(self) -> None:
@@ -446,7 +468,9 @@ class DependencyTracker:
                         tracked_locals=self.tracked_locals,
                     )
                 )
-            elif instruction.opname == "IMPORT_NAME" and instruction.argval is not None:
+            elif instruction.opname == "IMPORT_NAME":
+                if instruction.argval is None:
+                    continue
                 self.scan_status = ScanStatus.GETTING_IMPORT
                 self._last_import_name = instruction.argval
                 importlib.import_module(instruction.argval)

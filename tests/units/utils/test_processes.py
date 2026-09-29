@@ -1,14 +1,32 @@
 """Test process utilities."""
 
+import logging
+import signal
 import socket
+import subprocess
 import threading
+import time
 from contextlib import closing
 from unittest import mock
 
 import pytest
 
 from reflex.testing import DEFAULT_TIMEOUT, AppHarness
-from reflex.utils.processes import is_process_on_port
+from reflex.utils import processes
+from reflex.utils.processes import (
+    _can_bind_at_any_port,
+    is_process_on_port,
+    run_concurrently,
+    run_concurrently_context,
+    stream_logs,
+)
+
+# `socket.has_ipv6` only reflects build-time support; without a runtime IPv6
+# stack every port looks occupied to `is_process_on_port`'s default families.
+requires_ipv6 = pytest.mark.skipif(
+    not _can_bind_at_any_port(socket.AF_INET6),
+    reason="IPv6 is not available on this system",
+)
 
 
 def test_is_process_on_port_free_port():
@@ -19,7 +37,7 @@ def test_is_process_on_port_free_port():
         free_port = sock.getsockname()[1]
 
     # Port should be free after socket is closed
-    assert not is_process_on_port(free_port)
+    assert not is_process_on_port(free_port, (socket.AF_INET,))
 
 
 def test_is_process_on_port_occupied_port():
@@ -33,29 +51,25 @@ def test_is_process_on_port_occupied_port():
 
     try:
         # Port should be occupied
-        assert is_process_on_port(occupied_port)
+        assert is_process_on_port(occupied_port, (socket.AF_INET,))
     finally:
         server_socket.close()
 
 
+@requires_ipv6
 def test_is_process_on_port_ipv6():
     """Test is_process_on_port works with IPv6."""
-    # Test with IPv6 socket
+    server_socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+    server_socket.bind(("", 0))
+    server_socket.listen(1)
+
+    occupied_port = server_socket.getsockname()[1]
+
     try:
-        server_socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-        server_socket.bind(("", 0))
-        server_socket.listen(1)
-
-        occupied_port = server_socket.getsockname()[1]
-
-        try:
-            # Port should be occupied on IPv6
-            assert is_process_on_port(occupied_port)
-        finally:
-            server_socket.close()
-    except OSError:
-        # IPv6 might not be available on some systems
-        pytest.skip("IPv6 not available on this system")
+        # Port should be occupied on IPv6
+        assert is_process_on_port(occupied_port)
+    finally:
+        server_socket.close()
 
 
 def test_is_process_on_port_both_protocols():
@@ -69,7 +83,7 @@ def test_is_process_on_port_both_protocols():
 
     try:
         # Should detect IPv4 occupation
-        assert is_process_on_port(port)
+        assert is_process_on_port(port, (socket.AF_INET,))
     finally:
         ipv4_socket.close()
 
@@ -143,7 +157,7 @@ def test_is_process_on_port_concurrent_access():
 
         # Port should be occupied while server is running (both bound-only and listening)
         assert AppHarness._poll_for(
-            lambda: shared is not None and is_process_on_port(shared)
+            lambda: shared is not None and is_process_on_port(shared, (socket.AF_INET,))
         )
     finally:
         do_close.set()
@@ -151,5 +165,254 @@ def test_is_process_on_port_concurrent_access():
 
     # Give it a moment for the socket to be fully released
     assert AppHarness._poll_for(
-        lambda: shared is not None and not is_process_on_port(shared)
+        lambda: shared is not None and not is_process_on_port(shared, (socket.AF_INET,))
     )
+
+
+def _raise_system_exit():
+    """Simulate a fatal preflight error in a worker task.
+
+    Raises:
+        SystemExit: Always, mimicking a fatal CLI error path.
+    """
+    raise SystemExit(1)
+
+
+def test_run_concurrently_context_unblocks_main_thread_on_task_failure():
+    """A task raising SystemExit interrupts a blocked with-body and propagates.
+
+    Regression test for `reflex run` hanging forever when a fatal error (e.g.
+    the node version check) exits a frontend worker thread while the backend
+    blocks the main thread.
+    """
+    block = threading.Event()
+    start = time.monotonic()
+
+    with pytest.raises(SystemExit), run_concurrently_context(_raise_system_exit):
+        # Simulate the backend blocking the main thread (e.g. granian serve()).
+        block.wait(timeout=10)
+
+    # The failed task must interrupt the main thread well before the body's
+    # own 10s wait expires; 5 seconds leaves headroom on slow CI runners.
+    assert time.monotonic() - start < 5, (
+        "task failure did not interrupt the blocked main thread"
+    )
+
+
+def test_run_concurrently_context_reraises_real_keyboard_interrupt():
+    """A KeyboardInterrupt in the with-body propagates when no task failed."""
+    with pytest.raises(KeyboardInterrupt), run_concurrently_context(lambda: None):
+        raise KeyboardInterrupt
+
+
+def test_run_concurrently_propagates_task_exception():
+    """An exception raised by a task propagates out of run_concurrently."""
+
+    def _fail():
+        msg = "boom"
+        raise RuntimeError(msg)
+
+    with pytest.raises(RuntimeError, match="boom"):
+        run_concurrently(_fail)
+
+
+def test_run_concurrently_context_no_interrupt_after_body_exception():
+    """A task failing after the body raised must not interrupt the caller.
+
+    The executor is shut down without waiting, so a task can fail after the
+    context has unwound; the caller's own exception must propagate untouched
+    instead of a stray KeyboardInterrupt landing in unrelated code.
+    """
+    task_may_fail = threading.Event()
+    interrupt_callback_ran = threading.Event()
+
+    def _fail_on_release():
+        # Hold the failure until the context has fully unwound below.
+        task_may_fail.wait(timeout=DEFAULT_TIMEOUT)
+        raise SystemExit(1)
+
+    with (
+        pytest.raises(ValueError, match="body failed"),
+        run_concurrently_context(_fail_on_release) as tasks,
+    ):
+        # Done callbacks run in registration order, so this fires strictly
+        # after the context's own interrupt callback has run for the task.
+        tasks[0].add_done_callback(lambda _t: interrupt_callback_ran.set())
+        msg = "body failed"
+        raise ValueError(msg)
+
+    # The context has unwound (in_body cleared); only now may the task fail.
+    task_may_fail.set()
+    assert interrupt_callback_ran.wait(timeout=DEFAULT_TIMEOUT), (
+        "worker task did not finish"
+    )
+    # A stale interrupt would already have been sent by the callback above;
+    # give signal delivery a moment so it would surface as KeyboardInterrupt
+    # here (delivery latency is microseconds; 0.1s is generous headroom).
+    time.sleep(0.1)
+
+
+def test_run_concurrently_context_no_interrupt_after_pre_body_failure():
+    """A failure racing context entry must not leave the interrupt armed.
+
+    With one task already failed and another still running, the pre-body
+    failure check can raise before the body is ever entered; the surviving
+    task's later failure must not interrupt the caller after the context has
+    unwound. When the fast failure instead loses the race to context entry,
+    the body path exercises the same invariant, so both orderings assert
+    identically.
+    """
+    task_may_fail = threading.Event()
+    late_finished = threading.Event()
+
+    def _fail_fast():
+        raise SystemExit(2)
+
+    def _fail_on_release():
+        try:
+            task_may_fail.wait(timeout=DEFAULT_TIMEOUT)
+            raise SystemExit(3)
+        finally:
+            late_finished.set()
+
+    with (
+        pytest.raises(SystemExit),
+        run_concurrently_context(_fail_fast, _fail_on_release),
+    ):
+        # Reached only when the fast failure loses the race to context entry;
+        # its interrupt then surfaces here and converts to the task's error.
+        task_may_fail.wait(timeout=DEFAULT_TIMEOUT)
+
+    # The context has unwound; only now may the surviving task fail.
+    task_may_fail.set()
+    assert late_finished.wait(timeout=DEFAULT_TIMEOUT), "task did not finish"
+    # The interrupt callback runs within microseconds of the task finishing;
+    # a stale interrupt would surface as KeyboardInterrupt in this window.
+    time.sleep(0.1)
+
+
+def _finished_process(returncode: int, output: str = "ready\n") -> mock.MagicMock:
+    """Build a Popen stand-in that has already exited with the given code.
+
+    Args:
+        returncode: The exit status the process reports.
+        output: The stdout the process produced before exiting.
+
+    Returns:
+        A mock that satisfies what stream_logs reads from a Popen.
+    """
+    process = mock.MagicMock(spec=subprocess.Popen)
+    process.__enter__.return_value = process
+    process.__exit__.return_value = False
+    process.stdout = iter([output])
+    process.poll.return_value = returncode
+    process.returncode = returncode
+    return process
+
+
+@pytest.mark.parametrize(
+    "returncode",
+    [
+        pytest.param(-signal.SIGINT, id="sigint-direct"),
+        pytest.param(128 + signal.SIGINT, id="sigint-via-shell"),
+        pytest.param(-signal.SIGTERM, id="sigterm-direct"),
+        pytest.param(128 + signal.SIGTERM, id="sigterm-via-shell"),
+    ],
+)
+def test_stream_logs_treats_user_interrupt_as_clean_exit_on_posix(
+    returncode: int, caplog, monkeypatch
+):
+    """On POSIX a child torn down by SIGINT or SIGTERM is an orderly stop.
+
+    Each signal is reported two ways, negative by Popen and 128+N by a shell
+    wrapper. SIGINT was accepted in both forms; SIGTERM in neither, so a plain
+    `kill -TERM` of `reflex run` logged "Starting frontend failed" and raised
+    SystemExit (#6981).
+
+    Args:
+        returncode: The signal-derived exit status to check.
+        caplog: Pytest log capture.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(processes.constants, "IS_WINDOWS", False)
+    process = _finished_process(returncode)
+
+    with caplog.at_level(logging.ERROR):
+        lines = list(stream_logs("Starting frontend", process))
+
+    assert lines == ["ready\n"]
+    assert caplog.records == []
+
+
+@pytest.mark.parametrize(
+    "returncode",
+    [
+        pytest.param(-signal.SIGINT, id="sigint-direct"),
+        pytest.param(128 + signal.SIGINT, id="sigint-via-shell"),
+        pytest.param(15, id="sigterm-terminateprocess"),
+    ],
+)
+def test_stream_logs_treats_user_interrupt_as_clean_exit_on_windows(
+    returncode: int, caplog, monkeypatch
+):
+    """On Windows the accepted set is unchanged: os.kill(pid, SIGTERM) calls
+    TerminateProcess with the signal number, so SIGTERM surfaces as a bare 15.
+
+    Args:
+        returncode: The exit status to check.
+        caplog: Pytest log capture.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(processes.constants, "IS_WINDOWS", True)
+    process = _finished_process(returncode)
+
+    with caplog.at_level(logging.ERROR):
+        lines = list(stream_logs("Starting frontend", process))
+
+    assert lines == ["ready\n"]
+    assert caplog.records == []
+
+
+@pytest.mark.parametrize(
+    "returncode",
+    [
+        pytest.param(-signal.SIGTERM, id="minus-15"),
+        pytest.param(128 + signal.SIGTERM, id="143"),
+    ],
+)
+def test_stream_logs_keeps_posix_sigterm_codes_as_failures_on_windows(
+    returncode: int, caplog, monkeypatch
+):
+    """On Windows -15 and 143 are ordinary application exit codes, not signals.
+
+    Accepting them there would let a genuine frontend failure skip the error
+    log and the SystemExit.
+
+    Args:
+        returncode: The exit status to check.
+        caplog: Pytest log capture.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(processes.constants, "IS_WINDOWS", True)
+    process = _finished_process(returncode)
+
+    with caplog.at_level(logging.ERROR), pytest.raises(SystemExit):
+        list(stream_logs("Starting frontend", process))
+
+    assert any(
+        f"failed with exit code {returncode}" in r.getMessage() for r in caplog.records
+    )
+
+
+def test_stream_logs_still_fails_on_a_real_error_exit(caplog):
+    """The relaxed set must not swallow an actual non-zero exit.
+
+    Args:
+        caplog: Pytest log capture.
+    """
+    process = _finished_process(1)
+
+    with caplog.at_level(logging.ERROR), pytest.raises(SystemExit):
+        list(stream_logs("Starting frontend", process))
+
+    assert any("failed with exit code 1" in r.getMessage() for r in caplog.records)

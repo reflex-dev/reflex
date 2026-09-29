@@ -8,13 +8,14 @@ The login form is a common component in web applications. It allows users to aut
 
 ## Default
 
-```python demo exec toggle
+```python demo exec
 def login_default() -> rx.Component:
     return rx.card(
         rx.vstack(
             rx.center(
                 rx.image(
                     src="https://web.reflex-assets.dev/other/logo.jpg",
+                    alt="Reflex logo",
                     width="2.5em",
                     height="auto",
                     border_radius="25%",
@@ -80,13 +81,14 @@ def login_default() -> rx.Component:
 
 ## Icons
 
-```python demo exec toggle
+```python demo exec
 def login_default_icons() -> rx.Component:
     return rx.card(
         rx.vstack(
             rx.center(
                 rx.image(
                     src="https://web.reflex-assets.dev/other/logo.jpg",
+                    alt="Reflex logo",
                     width="2.5em",
                     height="auto",
                     border_radius="25%",
@@ -157,13 +159,14 @@ def login_default_icons() -> rx.Component:
 
 ## Third-party auth
 
-```python demo exec toggle
+```python demo exec
 def login_single_thirdparty() -> rx.Component:
     return rx.card(
         rx.vstack(
             rx.flex(
                 rx.image(
                     src="https://web.reflex-assets.dev/other/logo.jpg",
+                    alt="Reflex logo",
                     width="2.5em",
                     height="auto",
                     border_radius="25%",
@@ -249,13 +252,14 @@ def login_single_thirdparty() -> rx.Component:
 
 ## Multiple third-party auth
 
-```python demo exec toggle
+```python demo exec
 def login_multiple_thirdparty() -> rx.Component:
     return rx.card(
         rx.vstack(
             rx.flex(
                 rx.image(
                     src="https://web.reflex-assets.dev/other/logo.jpg",
+                    alt="Reflex logo",
                     width="2.5em",
                     height="auto",
                     border_radius="25%",

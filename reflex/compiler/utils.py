@@ -5,19 +5,30 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import copy
+import json
 import operator
+import os
+import tempfile
 import traceback
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 from typing import Any, TypedDict
 from urllib.parse import urlparse
 
 from reflex_base import constants
-from reflex_base.components.component import Component, ComponentStyle, CustomComponent
-from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER, FIELD_MARKER
+from reflex_base.components.component import BaseComponent, Component, ComponentStyle
+from reflex_base.components.dynamic import _bundle_imports
+from reflex_base.components.memo import (
+    DEFAULT_MEMO_WRAPPER,
+    MemoComponentDefinition,
+    MemoFunctionDefinition,
+    MemoParamKind,
+)
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
-from reflex_base.utils import format, imports
+from reflex_base.utils import format, imports, memo_paths, serializers
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Field, Var, VarData
 from reflex_base.vars.function import DestructuredArg
@@ -28,17 +39,15 @@ from reflex_components_core.el.elements.metadata import Head, Link, Meta, Title
 from reflex_components_core.el.elements.other import Html
 from reflex_components_core.el.elements.sectioning import Body
 
-from reflex.experimental.memo import (
-    ExperimentalMemoComponentDefinition,
-    ExperimentalMemoFunctionDefinition,
-)
+from reflex.istate.delta import _resolve_delta
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
-from reflex.state import BaseState, _resolve_delta
+from reflex.state import BaseState
 from reflex.utils import path_ops
 from reflex.utils.prerequisites import get_web_dir
 
 # To re-export this function.
 merge_imports = imports.merge_imports
+write_file = path_ops.write_file
 
 
 def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
@@ -229,6 +238,69 @@ def compile_state(state: type[BaseState]) -> dict:
     return _sorted_keys(asyncio.run(_resolve_delta(initial_state)))
 
 
+def _compile_initial_state(
+    state: type[BaseState], *, component_imports: ParsedImportDict | None = None
+) -> tuple[dict, str]:
+    """Serialize initial state while discovering its dynamic component imports.
+
+    Args:
+        state: The app state class.
+        component_imports: Optional accumulator for frontend package installation.
+
+    Returns:
+        The initial state dictionary and its serialized JSON.
+    """
+
+    def serialize_initial_value(value: Any) -> Any:
+        """Register a component's imports before serializing its initial value.
+
+        Args:
+            value: An initial state value requiring a custom serializer.
+
+        Returns:
+            The serialized value.
+        """
+        if isinstance(value, Component):
+            value_imports = value._get_all_imports()
+            _bundle_imports(value_imports)
+            if component_imports is not None:
+                for library, fields in value_imports.items():
+                    component_imports.setdefault(library, []).extend(fields)
+        return serializers.serialize(value)
+
+    initial_state = compile_state(state)
+    return initial_state, format.json_dumps(
+        initial_state, default=serialize_initial_value
+    )
+
+
+def _compile_bundled_libraries() -> tuple[str, str]:
+    """Return the bundled-library registry as a frontend build artifact.
+
+    Returns:
+        The output path and serialized registry.
+    """
+    bundled_libraries = RegistrationContext.ensure_context().bundled_libraries
+    return constants.Dirs.BUNDLED_LIBRARIES, format.json_dumps(bundled_libraries)
+
+
+def _restore_bundled_libraries() -> None:
+    """Restore the registry emitted by the most recent frontend compile."""
+    path = get_web_dir() / constants.Dirs.BUNDLED_LIBRARIES
+    try:
+        bundled_libraries = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return
+    if not isinstance(bundled_libraries, list) or not all(
+        isinstance(library, str) for library in bundled_libraries
+    ):
+        return
+    context = RegistrationContext.ensure_context()
+    context.bundled_libraries[:] = list(
+        dict.fromkeys([*bundled_libraries, *context.bundled_libraries])
+    )
+
+
 def _compile_client_storage_field(
     field: Field,
 ) -> (
@@ -275,7 +347,7 @@ def _compile_client_storage_recursive(
     session_storage: dict[str, dict[str, Any]] = {}
     state_name = state.get_full_name()
     for name, field in state.__fields__.items():
-        if name in state.inherited_vars:
+        if field._owner is not state:
             # only include vars defined in this state
             continue
         state_key = f"{state_name}.{name}" + FIELD_MARKER
@@ -319,53 +391,6 @@ def compile_client_storage(
         constants.LOCAL_STORAGE: local_storage,
         constants.SESSION_STORAGE: session_storage,
     }
-
-
-def compile_custom_component(
-    component: CustomComponent,
-) -> tuple[dict, ParsedImportDict]:
-    """Compile a custom component.
-
-    Args:
-        component: The custom component to compile.
-
-    Returns:
-        A tuple of the compiled component and the imports required by the component.
-    """
-    # Render the component.
-    render = component.get_component()
-
-    # Get the imports.
-    imports: ParsedImportDict = {}
-    for lib, fields in render._get_all_imports().items():
-        if lib != component.library:
-            imports[lib] = fields
-            continue
-
-        filtered_fields = [field for field in fields if field.tag != component.tag]
-        if filtered_fields:
-            imports[lib] = filtered_fields
-
-    imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
-
-    # Concatenate the props.
-    props = list(component.props)
-
-    # Compile the component.
-    return (
-        {
-            "name": component.tag,
-            "props": props,
-            "signature": DestructuredArg(
-                fields=tuple(f"{prop}:{prop}{CAMEL_CASE_MEMO_MARKER}" for prop in props)
-            ).to_javascript(),
-            "render": render.render(),
-            "hooks": render._get_all_hooks(),
-            "custom_code": render._get_all_custom_code(),
-            "dynamic_imports": render._get_all_dynamic_imports(),
-        },
-        imports,
-    )
 
 
 def _apply_component_style_for_compile(component: Component) -> Component:
@@ -412,18 +437,56 @@ def _app_style() -> ComponentStyle | Style:
     Returns:
         The app-level style map.
     """
-    try:
-        from reflex.utils.prerequisites import get_and_validate_app
+    app = RegistrationContext.ensure_context()._app
+    return app.style if app is not None else {}
 
-        return get_and_validate_app().app.style
-    except Exception:
-        return {}
+
+def _splice_transparent_root_props(
+    rest_name: str | None,
+    rendered: dict,
+    imports: ParsedImportDict,
+    ref_prop: str | None = None,
+) -> str:
+    """Make a memo wrapper transparent to props its parent injects at runtime.
+
+    The wrapper's rest param collects everything the parent passes but the
+    signature does not name, including ``ref`` under React 19 ref-as-prop. The
+    root renders ``mergeSlotProps(rest, {...own})``, which applies Radix
+    ``Slot`` semantics (own props win, ``on*`` handlers and refs compose,
+    ``className`` concatenates, object-valued props deep-merge), so a Slot
+    parent cloning the wrapper behaves as if it had cloned the root element.
+
+    Args:
+        rest_name: The rest param the definition declares, or ``None`` to
+            synthesize one.
+        rendered: The root's rendered tag, whose ``props`` are replaced in place.
+        imports: The memo module's imports, extended with the helper import.
+        ref_prop: The JS prop carrying the root's DOM ref when the root does
+            not accept ``ref`` directly (e.g. DebounceInput's ``inputRef``);
+            ``mergeSlotProps`` routes an injected ref there.
+
+    Returns:
+        The rest param name the wrapper signature must declare.
+    """
+    if rest_name is None:
+        rest_name = "rest"
+    ref_prop_arg = f', "{ref_prop}"' if ref_prop is not None else ""
+    own_props = ", ".join(rendered["props"])
+    rendered["props"] = [
+        f"...mergeSlotProps({rest_name}, ({{ {own_props} }}){ref_prop_arg})"
+    ]
+    # The call is spliced into the rendered props rather than carried by any
+    # Var, so its import is merged explicitly.
+    imports.setdefault(f"$/{constants.Dirs.STATE_PATH}", []).append(
+        ImportVar(tag="mergeSlotProps")
+    )
+    return rest_name
 
 
 def compile_experimental_component_memo(
-    definition: ExperimentalMemoComponentDefinition,
+    definition: MemoComponentDefinition,
 ) -> tuple[dict, ParsedImportDict]:
-    """Compile an experimental memo component.
+    """Compile a memo component.
 
     Args:
         definition: The component memo definition.
@@ -460,43 +523,62 @@ def compile_experimental_component_memo(
         rendered = render.render()
     else:
         render = _apply_component_style_for_compile(copy.deepcopy(definition.component))
-        rendered = render.render()
         hooks = render._get_all_hooks()
+        rendered = render.render()
         custom_code = render._get_all_custom_code()
         dynamic_imports = render._get_all_dynamic_imports()
         all_imports = render._get_all_imports()
 
-    # Each experimental memo now lives in ``web/utils/components/<name>.jsx``,
-    # so importing the ``$/utils/components`` index from this file is only
-    # circular when ``<name>`` itself appears in that index — i.e. a legacy
-    # ``@rx.memo`` wrapper file. For auto-memo wrappers around legacy custom
-    # components, the index import is legitimate and must be preserved.
-    self_module = f"$/{constants.Dirs.COMPONENTS_PATH}/{definition.export_name}"
+    # Each un-mirrored memo lives in ``web/utils/components/<name>.jsx`` and is
+    # imported from ``$/utils/components/<name>``. Strip a self-import so a memo
+    # body that references its own specifier doesn't recurse.
+    self_module = memo_paths.unmirrored_library_specifier(definition.export_name)
     imports: ParsedImportDict = {
         lib: fields for lib, fields in all_imports.items() if lib != self_module
     }
 
     imports.setdefault("@emotion/react", []).append(ImportVar("jsx"))
 
+    # The wrapper import (``memo`` from React by default) rides on the wrapper
+    # var itself, so a custom wrapper brings its own imports and ``None``
+    # pulls in nothing.
+    wrapper = definition.wrapper
+    if wrapper is not None and (wrapper_var_data := wrapper._get_all_var_data()):
+        for lib, fields in wrapper_var_data.imports:
+            imports.setdefault(lib, []).extend(fields)
+
+    rest_param = next(
+        (p for p in definition.params if p.kind is MemoParamKind.REST), None
+    )
+    rest_name = rest_param.placeholder_name if rest_param is not None else None
+    if definition.forward_root_props:
+        rest_name = _splice_transparent_root_props(
+            rest_name, rendered, imports, definition.root_ref_prop
+        )
+
     signature_fields = [
-        f"{param.js_prop_name}:{param.placeholder_name}"
+        field
         for param in definition.params
-        if not param.is_children and not param.is_rest
+        if (field := param.signature_field()) is not None
     ]
 
-    if any(param.is_children for param in definition.params):
+    if any(p.kind is MemoParamKind.CHILDREN for p in definition.params):
         signature_fields.insert(0, "children")
-
-    rest_param = next((param for param in definition.params if param.is_rest), None)
 
     return (
         {
             "kind": "component",
-            "name": definition.export_name,
+            "name": memo_paths.library_and_symbol(
+                definition.source_module, definition.export_name
+            )[1],
+            "display_name": definition.display_name or definition.export_name,
             "signature": DestructuredArg(
                 fields=tuple(signature_fields),
-                rest=rest_param.placeholder_name if rest_param is not None else None,
+                rest=rest_name,
             ).to_javascript(),
+            "wrapper": str(wrapper) if wrapper is not None else None,
+            "pure_wrapper": wrapper is not None
+            and wrapper.equals(DEFAULT_MEMO_WRAPPER),
             "render": rendered,
             "hooks": hooks,
             "custom_code": custom_code,
@@ -561,9 +643,9 @@ def _root_only_dynamic_imports(component: Component) -> set[str]:
 
 
 def compile_experimental_function_memo(
-    definition: ExperimentalMemoFunctionDefinition,
+    definition: MemoFunctionDefinition,
 ) -> tuple[dict, ParsedImportDict]:
-    """Compile an experimental memo function.
+    """Compile a memo function.
 
     Args:
         definition: The function memo definition.
@@ -572,10 +654,12 @@ def compile_experimental_function_memo(
         A tuple of the compiled function definition and its imports.
     """
     imports: ParsedImportDict = {}
-    if var_data := definition.function._get_all_var_data():
-        # Per-file memo modules live at ``$/utils/components/<name>``; strip
-        # only a self-import to this function memo's own module.
-        self_module = f"$/{constants.Dirs.COMPONENTS_PATH}/{definition.python_name}"
+    # Reading ``.function`` evaluates a deferred function-memo body on first use.
+    function = definition.function
+    if var_data := function._get_all_var_data():
+        # Un-mirrored per-file memo modules live at ``$/utils/components/<name>``;
+        # strip only a self-import to this function memo's own module.
+        self_module = memo_paths.unmirrored_library_specifier(definition.python_name)
         imports = {
             lib: list(fields)
             for lib, fields in dict(var_data.imports).items()
@@ -585,17 +669,56 @@ def compile_experimental_function_memo(
     return (
         {
             "kind": "function",
-            "name": definition.python_name,
-            "function": str(definition.function),
+            "name": memo_paths.library_and_symbol(
+                definition.source_module, definition.python_name
+            )[1],
+            "function": str(function),
         },
         imports,
     )
+
+
+def _literalize_static_ids(component: BaseComponent) -> None:
+    """Replace static component IDs with literal variables, recursively.
+
+    Args:
+        component: The component or nested component to update in place.
+    """
+    if not isinstance(component, Component):
+        return
+    if component.id is not None and not isinstance(component.id, Var):
+        component.id = Var.create(component.id)
+    for child in component.children:
+        _literalize_static_ids(child)
+    for child in component._get_components_in_props():
+        _literalize_static_ids(child)
+
+
+def _without_static_id_refs(component: Component) -> Component:
+    """Copy a head component so its static IDs do not generate refs.
+
+    Document roots cannot contain hooks, but a static component ID normally
+    creates a ``useRef`` hook. Preserve the ID as an HTML attribute while making
+    it a literal variable so it does not create a ref in the document root.
+
+    Args:
+        component: The head component to copy.
+
+    Returns:
+        A copied component with static IDs represented as literal variables.
+    """
+    if not component._get_all_refs():
+        return component
+    component = copy.deepcopy(component)
+    _literalize_static_ids(component)
+    return component
 
 
 def create_document_root(
     head_components: Sequence[Component] | None = None,
     html_lang: str | None = None,
     html_custom_attrs: dict[str, Var | Any] | None = None,
+    default_color_mode: str = "system",
 ) -> Component:
     """Create the document root.
 
@@ -603,6 +726,8 @@ def create_document_root(
         head_components: The components to add to the head.
         html_lang: The language of the document, will be added to the html root element.
         html_custom_attrs: custom attributes added to the html root element.
+        default_color_mode: The color mode applied before hydration when no theme
+            is saved in the browser.
 
     Returns:
         The document root.
@@ -621,22 +746,26 @@ def create_document_root(
             ):
                 existing_meta_types.add("viewport")
 
+    global_styles_href = Var(
+        "reflexGlobalStyles",
+        _var_data=VarData(
+            imports={
+                "$/styles/__reflex_global_styles.css?url": [
+                    ImportVar(tag="reflexGlobalStyles", is_default=True)
+                ]
+            }
+        ),
+    )
     # Always include the framework meta and link tags.
     always_head_components = [
         ReactMeta.create(),
         Link.create(
+            rel="preload", custom_attrs={"as": "style"}, href=global_styles_href
+        ),
+        Link.create(
             rel="stylesheet",
             type="text/css",
-            href=Var(
-                "reflexGlobalStyles",
-                _var_data=VarData(
-                    imports={
-                        "$/styles/__reflex_global_styles.css?url": [
-                            ImportVar(tag="reflexGlobalStyles", is_default=True)
-                        ]
-                    }
-                ),
-            ),
+            href=global_styles_href,
         ),
         Links.create(),
     ]
@@ -650,11 +779,11 @@ def create_document_root(
         )
 
     # Add theme preload script as the very first component to prevent FOUC
-    theme_preload_components = [preload_color_theme()]
+    theme_preload_components = [preload_color_theme(default_color_mode)]
 
     head_components = [
         *theme_preload_components,
-        *(head_components or []),
+        *(_without_static_id_refs(component) for component in head_components or []),
         *maybe_head_components,
         *always_head_components,
     ]
@@ -738,6 +867,20 @@ def get_page_path(path: str) -> str:
     )
 
 
+def get_page_import_specifier(path: str) -> str:
+    """Get the ``$``-aliased module specifier for the given page.
+
+    Args:
+        path: The path of the page.
+
+    Returns:
+        The import specifier (e.g. ``"$/pages/routes/users.$id._index"``).
+    """
+    return (
+        f"$/{constants.Dirs.PAGES}/{constants.Dirs.ROUTES}/{_path_to_file_stem(path)}"
+    )
+
+
 def get_theme_path() -> str:
     """Get the path of the base theme style.
 
@@ -767,43 +910,44 @@ def get_root_stylesheet_path() -> str:
 def get_context_path() -> str:
     """Get the path of the context / initial state file.
 
+    The module is emitted as ``.jsx`` so the React fast-refresh transform
+    registers its provider components; a ``.js`` file without JSX is skipped.
+
     Returns:
         The path of the context module.
     """
-    return str(get_web_dir() / (constants.Dirs.CONTEXTS_PATH + constants.Ext.JS))
-
-
-def get_components_path() -> str:
-    """Get the path of the compiled components.
-
-    Returns:
-        The path of the compiled components.
-    """
-    return str(
-        get_web_dir()
-        / constants.Dirs.UTILS
-        / (constants.PageNames.COMPONENTS + constants.Ext.JSX),
-    )
+    return str(get_web_dir() / (constants.Dirs.CONTEXTS_PATH + constants.Ext.JSX))
 
 
 def get_memo_components_dir() -> str:
-    """Get the directory that holds per-memo module files.
+    """Get the directory that holds un-mirrored per-memo module files.
 
     Returns:
-        The directory used for per-memo ``.jsx`` modules re-exported by the
-        top-level components index.
+        The directory used for memos that can't be mirrored to a source module.
+        Pages import each wrapper directly from ``$/utils/components/<name>``.
     """
-    return str(
-        get_web_dir() / constants.Dirs.UTILS / constants.PageNames.COMPONENTS,
-    )
+    return str(get_web_dir() / constants.Dirs.COMPONENTS_PATH)
+
+
+def get_memo_module_path(segments: tuple[str, ...]) -> str:
+    """Get the on-disk path for a memo module mirrored from a Python module.
+
+    Args:
+        segments: Mirrored path segments produced by
+            :func:`reflex_base.utils.memo_paths.module_to_mirrored_segments`.
+
+    Returns:
+        The absolute path the compiler should write the combined memo file to.
+    """
+    return str(memo_paths.mirrored_jsx_path(get_web_dir(), segments))
 
 
 def add_meta(
     page: Component,
-    title: str,
+    title: str | Var,
     image: str,
     meta: Sequence[Mapping[str, Any] | Component],
-    description: str | None = None,
+    description: str | Var | None = None,
 ) -> Component:
     """Add metadata to a page.
 
@@ -817,12 +961,14 @@ def add_meta(
     Returns:
         The component with the metadata added.
     """
+    from reflex.utils.misc import is_page_meta_set
+
     meta_tags = [
         item if isinstance(item, Component) else Meta.create(**item) for item in meta
     ]
 
     children: list[Any] = [Title.create(title)]
-    if description:
+    if is_page_meta_set(description):
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))
 
@@ -848,18 +994,94 @@ def resolve_path_of_web_dir(path: str | Path) -> Path:
     return (web_dir / path).absolute()
 
 
-def write_file(path: str | Path, code: str):
-    """Write the given code to the given path.
+_MEMO_MANIFEST_FILENAME = ".memo-manifest.json"
+
+
+def _read_memo_manifest(web_dir: Path) -> set[str]:
+    """Read the previous compile's memo file manifest.
 
     Args:
-        path: The path to write the code to.
-        code: The code to write.
+        web_dir: The project's ``.web`` directory.
+
+    Returns:
+        The set of paths (relative to ``.web``) recorded by the previous
+        compile, or an empty set if the manifest is absent or invalid.
     """
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists() and path.read_text(encoding="utf-8") == code:
-        return
-    path.write_text(code, encoding="utf-8")
+    manifest_path = web_dir / _MEMO_MANIFEST_FILENAME
+    if not manifest_path.exists():
+        return set()
+    try:
+        data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return set()
+    if not isinstance(data, list):
+        return set()
+    return {entry for entry in data if isinstance(entry, str)}
+
+
+def _write_memo_manifest(web_dir: Path, relative_paths: set[str]) -> None:
+    """Atomically write the new memo file manifest.
+
+    Args:
+        web_dir: The project's ``.web`` directory.
+        relative_paths: Paths emitted this run, relative to ``.web``.
+    """
+    manifest_path = web_dir / _MEMO_MANIFEST_FILENAME
+    web_dir.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(
+        prefix=".memo-manifest.", suffix=".json.tmp", dir=str(web_dir)
+    )
+    # Close the raw fd immediately and reopen the file by path. Wrapping the
+    # fd via os.fdopen() would leak it if the wrap itself raised.
+    os.close(fd)
+    tmp_path = Path(tmp_name)
+    try:
+        with tmp_path.open("w", encoding="utf-8") as fh:
+            json.dump(sorted(relative_paths), fh)
+        tmp_path.replace(manifest_path)
+    except Exception:
+        # Best-effort cleanup; manifest write is recoverable on the next run.
+        tmp_path.unlink(missing_ok=True)
+        raise
+
+
+def prune_stale_memo_files(emitted_paths: Iterable[str | Path]) -> None:
+    """Delete memo files written previously that this compile no longer emits.
+
+    Only paths that appear in the previous manifest are considered for
+    deletion — never a fresh filesystem walk — so files this code did not
+    emit are never touched. Empty parent directories created by mirrored
+    output are removed up to (but not including) the ``.web`` root.
+
+    Args:
+        emitted_paths: Paths the current compile produced for the memo
+            pipeline, as built by joining :func:`get_web_dir` (so they share
+            its prefix — relative by default, absolute when overridden).
+    """
+    web_dir = get_web_dir()
+
+    # Emitted paths are built by joining ``web_dir`` (see Args), so each is
+    # always under it — no need to guard ``relative_to``.
+    emitted_relative = {
+        str(Path(path).relative_to(web_dir)).replace(os.sep, "/")
+        for path in emitted_paths
+    }
+
+    previous = _read_memo_manifest(web_dir)
+    for relative in previous - emitted_relative:
+        target = web_dir / relative
+        if target.is_file():
+            target.unlink()
+            parent = target.parent
+            while parent != web_dir and parent.is_relative_to(web_dir):
+                try:
+                    parent.rmdir()
+                except OSError:
+                    break
+                parent = parent.parent
+
+    if emitted_relative != previous:
+        _write_memo_manifest(web_dir, emitted_relative)
 
 
 def empty_dir(path: str | Path, keep_files: list[str] | None = None):

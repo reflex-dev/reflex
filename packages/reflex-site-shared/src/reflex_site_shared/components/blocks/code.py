@@ -8,10 +8,13 @@ from reflex_site_shared import styles
 
 EXPAND_THRESHOLD_LINES = 20
 COLLAPSED_MAX_HEIGHT = "400px"
+DOCS_CODE_THEME = rx.color_mode_cond(
+    light="github-light-high-contrast", dark="github-dark-high-contrast"
+)
 
 
 @rx.memo
-def _plain_code_block(code: str, language: str):
+def _plain_code_block(code: rx.Var[str], language: rx.Var[str]) -> rx.Component:
     """Shared plain code block implementation.
 
     Returns:
@@ -21,6 +24,7 @@ def _plain_code_block(code: str, language: str):
         shiki_code_block(
             code,
             language=language,
+            theme=DOCS_CODE_THEME,
             class_name="code-block",
             can_copy=True,
         ),
@@ -63,9 +67,9 @@ def code_block(code: str, language: str):
                     ),
                     class_name=(
                         "list-none cursor-pointer text-center text-sm font-medium "
-                        "text-[var(--c-slate-11)] hover:text-[var(--c-slate-12)] "
+                        "text-[var(--muted-foreground)] hover:text-[var(--foreground)] "
                         "pt-12 pb-3 rounded-b-xl "
-                        "bg-gradient-to-t from-[var(--c-slate-2)] from-55% to-transparent "
+                        "bg-gradient-to-t from-[var(--muted)] from-55% to-transparent "
                         "group-open/details:pt-3 group-open/details:bg-none "
                         "[&::-webkit-details-marker]:hidden [&::marker]:hidden"
                     ),
@@ -74,7 +78,7 @@ def code_block(code: str, language: str):
             ),
             class_name=(
                 "relative max-h-[400px] overflow-hidden mt-4 mb-4 rounded-xl "
-                "border border-[var(--c-slate-4)] bg-[var(--c-slate-2)] "
+                "border border-[var(--border-subtle)] bg-[var(--muted)] "
                 "[&_.code-block]:!border-0 "
                 "has-[details[open]]:max-h-none"
             ),
@@ -83,7 +87,7 @@ def code_block(code: str, language: str):
 
 
 @rx.memo
-def code_block_dark(code: str, language: str):
+def code_block_dark(code: rx.Var[str], language: rx.Var[str]) -> rx.Component:
     """Code block dark.
 
     Returns:
@@ -93,6 +97,7 @@ def code_block_dark(code: str, language: str):
         shiki_code_block(
             code,
             language=language,
+            theme=DOCS_CODE_THEME,
             class_name="code-block",
             can_copy=True,
         ),
@@ -139,7 +144,7 @@ def doccmdoutput(
             can_copy=True,
             border_radius=styles.DOC_BORDER_RADIUS,
             background="transparent",
-            theme="ayu-dark",
+            theme=DOCS_CODE_THEME,
             language="bash",
             code_tag_props={
                 "style": {
@@ -147,7 +152,7 @@ def doccmdoutput(
                 }
             },
             style=fonts.code,
-            font_family="JetBrains Mono",
+            font_family="var(--font-jetbrains)",
             width="100%",
         ),
         shiki_code_block(
@@ -155,7 +160,7 @@ def doccmdoutput(
             can_copy=False,
             border_radius="12px",
             background="transparent",
-            theme="ayu-dark",
+            theme=DOCS_CODE_THEME,
             language="log",
             code_tag_props={
                 "style": {
@@ -163,7 +168,7 @@ def doccmdoutput(
                 }
             },
             style=fonts.code,
-            font_family="JetBrains Mono",
+            font_family="var(--font-jetbrains)",
             width="100%",
         ),
         padding_y="1em",

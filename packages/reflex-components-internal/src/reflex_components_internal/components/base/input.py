@@ -47,7 +47,7 @@ class InputBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the input component."""
+        """The import variable for the input component."""
         return ImportVar(tag="Input", package_path="", install=False)
 
 
@@ -177,6 +177,7 @@ class HighLevelInput(InputBaseComponent):
         """
         return Button.create(
             hi("CancelCircleIcon"),
+            aria_label="Clear input",
             type="button",
             on_click=[
                 set_value(id, ""),

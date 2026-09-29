@@ -33,7 +33,7 @@ def increment(state: MyState, amount: int):
 
 def decentralized_event_example():
     return rx.vstack(
-        rx.heading(f"Count: {MyState.count}"),
+        rx.heading(f"Count: {MyState.count}", as_="h2"),
         rx.hstack(
             rx.button("Increment by 1", on_click=increment(1)),
             rx.button("Increment by 5", on_click=increment(5)),

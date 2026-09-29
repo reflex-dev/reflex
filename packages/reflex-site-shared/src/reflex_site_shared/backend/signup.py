@@ -6,6 +6,9 @@ from typing import Any
 
 import httpx
 from email_validator import EmailNotValidError, ValidatedEmail, validate_email
+from reflex_components_internal.blocks.telemetry.posthog import (
+    track_newsletter_posthog_submission,
+)
 
 import reflex as rx
 from reflex_site_shared.constants import (
@@ -104,6 +107,7 @@ class IndexState(rx.State):
                 return
         yield IndexState.send_contact_to_webhook(email)
         yield IndexState.add_contact_to_loops(email)
+        yield track_newsletter_posthog_submission({"email": email})
         async with self:
             self.signed_up = True
             yield

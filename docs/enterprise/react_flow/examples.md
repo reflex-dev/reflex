@@ -179,7 +179,7 @@ class ConnectionLimitState(rx.State):
 @rx.memo
 def custom_handle(
     type: rx.Var[HandleType], position: rx.Var[Position], connection_count: rx.Var[int]
-):
+) -> rxe.components.flow.Handle:
     connections = rxe.flow.api.get_node_connections()
     return rxe.flow.handle(
         type=type,
@@ -190,7 +190,7 @@ def custom_handle(
 
 
 @rx.memo
-def custom_node():
+def custom_node() -> rx.el.Div:
     return rx.el.div(
         custom_handle(type="target", position="left", connection_count=1),
         rx.el.div("← Only one edge allowed"),

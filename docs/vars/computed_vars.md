@@ -28,7 +28,7 @@ class UppercaseState(rx.State):
 
 def uppercase_example():
     return rx.vstack(
-        rx.heading(UppercaseState.upper_text),
+        rx.heading(UppercaseState.upper_text, as_="h2"),
         rx.input(on_blur=UppercaseState.set_text, placeholder="Type here..."),
     )
 ```
@@ -45,6 +45,10 @@ expensive computations, but in some cases it may not update when you expect it t
 
 To create a computed var that recomputes on every state update regardless of
 dependencies, use `@rx.var(cache=False)`.
+
+An uncached var is recomputed for every state update, but the recomputed value is
+only sent to the frontend when it differs from the value that was last sent, so a
+recomputation that yields the same value does not trigger a re-render.
 
 Previous versions of Reflex had a `@rx.cached_var` decorator, which is now replaced
 by the `cache` argument of `@rx.var` (which defaults to `True`).
@@ -124,7 +128,7 @@ class AsyncVarState(rx.State):
 
 def async_var_example():
     return rx.vstack(
-        rx.heading("Async Computed Var Example"),
+        rx.heading("Async Computed Var Example", as_="h2"),
         rx.text(f"Count: {AsyncVarState.count}"),
         rx.text(f"Delayed count (x2): {AsyncVarState.delayed_count}"),
         rx.button("Increment", on_click=AsyncVarState.increment),
@@ -172,7 +176,7 @@ class AsyncCachedVarState(rx.State):
 
 def async_cached_var_example():
     return rx.vstack(
-        rx.heading("Cached Async Computed Var Example"),
+        rx.heading("Cached Async Computed Var Example", as_="h2"),
         rx.text(f"User ID: {AsyncCachedVarState.user_id}"),
         rx.text(f"User Name: {AsyncCachedVarState.user_data['name']}"),
         rx.text(f"User Email: {AsyncCachedVarState.user_data['email']}"),

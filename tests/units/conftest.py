@@ -4,20 +4,25 @@ import platform
 import traceback
 import uuid
 from collections.abc import AsyncGenerator, Generator, Mapping
-from copy import deepcopy
 from typing import Any
 from unittest import mock
 
 import pytest
 import pytest_asyncio
-from reflex_base.components.component import CUSTOM_COMPONENTS
+from opentelemetry import trace
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import InMemoryMetricReader
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from reflex_base import otel
+from reflex_base.components.memo import MEMOS
 from reflex_base.event import Event, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
 
 from reflex.app import App
-from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -28,6 +33,23 @@ from reflex.utils import prerequisites
 from tests.units.mock_redis import mock_redis
 
 from .states.upload import SubUploadState, UploadState
+
+
+@pytest.fixture(autouse=True)
+def _isolate_app_in_context() -> Generator[None, None, None]:
+    """Reset the App slot on the active RegistrationContext between tests.
+
+    A RegistrationContext can only host one App instance, but unit tests
+    repeatedly instantiate `rx.App`, so we clear `_app` around each test
+    while keeping other registrations shared (matching prior behavior).
+
+    Yields:
+        None.
+    """
+    ctx = RegistrationContext.ensure_context()
+    object.__setattr__(ctx, "_app", None)
+    yield
+    object.__setattr__(ctx, "_app", None)
 
 
 @pytest.fixture
@@ -225,9 +247,7 @@ def model_registry() -> Generator[type[ModelRegistry], None, None]:
     ModelRegistry._metadata = None
 
 
-@pytest_asyncio.fixture(
-    loop_scope="function", scope="function", params=["in_process", "disk", "redis"]
-)
+@pytest_asyncio.fixture(loop_scope="function", params=["in_process", "disk", "redis"])
 async def state_manager(
     request: pytest.FixtureRequest, mock_root_event_context: EventContext
 ) -> AsyncGenerator[StateManager, None]:
@@ -240,8 +260,13 @@ async def state_manager(
     Yields:
         A state manager instance
     """
-    state_manager = StateManager.create()
     if request.param == "redis":
+        # Only construct the configured manager for the redis param. When
+        # REFLEX_REDIS_URL is set, `StateManager.create()` returns a live
+        # StateManagerRedis that starts a `_lock_task`, so building one for the
+        # other params would orphan that task: it is replaced below and never
+        # closed, and then blocks event-loop teardown.
+        state_manager = StateManager.create()
         if not isinstance(state_manager, StateManagerRedis):
             state_manager = StateManagerRedis(redis=mock_redis())
     elif request.param == "disk":
@@ -471,7 +496,7 @@ def forked_registration_context() -> Generator[RegistrationContext, None, None]:
     Yields:
         The forked RegistrationContext.
     """
-    with deepcopy(RegistrationContext.get()) as ctx:
+    with RegistrationContext.get().fork() as ctx:
         yield ctx
 
 
@@ -491,17 +516,94 @@ def clean_registration_context() -> Generator[RegistrationContext, None, None]:
 
 @pytest.fixture
 def preserve_memo_registries():
-    """Save and restore global memo registries around a test.
+    """Save and restore the global memo registry around a test.
 
     Yields:
         None
     """
-    custom_components = dict(CUSTOM_COMPONENTS)
-    experimental_memos = dict(EXPERIMENTAL_MEMOS)
+    memos = dict(MEMOS)
     try:
         yield
     finally:
-        CUSTOM_COMPONENTS.clear()
-        CUSTOM_COMPONENTS.update(custom_components)
-        EXPERIMENTAL_MEMOS.clear()
-        EXPERIMENTAL_MEMOS.update(experimental_memos)
+        MEMOS.clear()
+        MEMOS.update(memos)
+
+
+@pytest.fixture
+def otel_sdk() -> Generator[
+    tuple[InMemorySpanExporter, InMemoryMetricReader], None, None
+]:
+    """Enable the reflex_base.otel trace points and metrics against in-memory sinks.
+
+    Yields:
+        The span exporter and the metric reader.
+    """
+    exporter = InMemorySpanExporter()
+    tracer_provider = TracerProvider()
+    tracer_provider.add_span_processor(SimpleSpanProcessor(exporter))
+    reader = InMemoryMetricReader()
+    otel.enable(
+        tracer_provider=tracer_provider,
+        meter_provider=MeterProvider(metric_readers=[reader]),
+    )
+    try:
+        yield exporter, reader
+    finally:
+        otel.disable()
+
+
+@pytest.fixture
+def otel_exporter(otel_sdk) -> InMemorySpanExporter:
+    """The in-memory span exporter of the enabled otel_sdk.
+
+    Args:
+        otel_sdk: The enabled sinks.
+
+    Returns:
+        The span exporter.
+    """
+    return otel_sdk[0]
+
+
+@pytest.fixture
+def otel_metrics(otel_sdk) -> InMemoryMetricReader:
+    """The in-memory metric reader of the enabled otel_sdk.
+
+    Args:
+        otel_sdk: The enabled sinks.
+
+    Returns:
+        The metric reader.
+    """
+    return otel_sdk[1]
+
+
+def active_tracer() -> trace.Tracer:
+    """The tracer bound by the enabled otel_sdk fixture.
+
+    Returns:
+        The tracer.
+    """
+    return otel._tracer
+
+
+def metric_points(reader: InMemoryMetricReader, name: str) -> list:
+    """Collect the data points recorded for one metric.
+
+    Args:
+        reader: The in-memory reader to collect from.
+        name: The metric name.
+
+    Returns:
+        The data points, in recording order.
+    """
+    data = reader.get_metrics_data()
+    assert data is not None
+    return [
+        point
+        for rm in data.resource_metrics
+        for sm in rm.scope_metrics
+        for metric in sm.metrics
+        if metric.name == name
+        for point in metric.data.data_points
+    ]

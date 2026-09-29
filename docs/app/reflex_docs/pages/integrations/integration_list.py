@@ -49,7 +49,7 @@ def get_integration_path() -> list:
 
             result.append({
                 key: {
-                    "path": f"{web_path_prefix}/{slug}",
+                    "path": f"{web_path_prefix}/{slug}/",
                     "tags": tag,
                     "description": description,
                     "name": key,

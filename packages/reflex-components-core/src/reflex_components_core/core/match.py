@@ -5,7 +5,7 @@ from typing import Any, cast
 
 from reflex_base.components.component import BaseComponent, Component, field
 from reflex_base.components.memoize_helpers import passthrough_children_var
-from reflex_base.components.tags import Tag
+from reflex_base.components.tags import CommonTag
 from reflex_base.components.tags.match_tag import MatchTag
 from reflex_base.style import Style
 from reflex_base.utils import format
@@ -266,7 +266,7 @@ class Match(Component):
             ),
         )
 
-    def _render(self) -> Tag:
+    def _render(self) -> CommonTag:
         # Reconstruct match_cases and default from self.children, which may have
         # been updated by the compiler walker to include memoized wrappers.
         # self.children contains: [case_1_return, case_2_return, ..., default]

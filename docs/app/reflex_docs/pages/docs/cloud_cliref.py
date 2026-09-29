@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 import dataclasses
+import inspect
 from collections.abc import Callable, Sequence
 from importlib.util import find_spec
-from typing import Any, TypedDict
+from typing import Any, TypedDict, cast
 
 import click
 import reflex as rx
 from reflex.reflex import cli
 
 from reflex_docs.docgen_pipeline import render_markdown
-from reflex_docs.templates.docpage import docpage
+from reflex_docs.templates.docpage import docpage, h1_comp
 
 
 @dataclasses.dataclass(frozen=True)
@@ -284,6 +285,7 @@ def prefix(
 categories = {
     "login": prefix(REFLEX_PREFIX, ["login", "logout"]),
     "deploy": prefix(REFLEX_PREFIX, ["deploy"]),
+    "scan": prefix(REFLEX_CLOUD_PREFIX, ["scan"]),
     "apps": prefix(
         REFLEX_CLOUD_PREFIX + " apps",
         [
@@ -296,7 +298,13 @@ categories = {
             "history",
             "build-logs",
             "list",
+            "rollback",
+            "describe",
         ],
+    ),
+    "providers": prefix(
+        REFLEX_CLOUD_PREFIX + " providers",
+        ["status", "list"],
     ),
     "projects": prefix(
         REFLEX_CLOUD_PREFIX + " project",
@@ -333,16 +341,55 @@ for category, commands in categories.items():
     modules[category] = "\n\n".join(docs_list)
 
 
-def generate_docs(source: str):
+def generate_docs(source: str, title: str):
+    # Emit a single page-level <h1> (mirrors the API-reference generator) so the
+    # per-command sections stay <h2> and the page has exactly one <h1> for SEO.
     return rx.box(
+        h1_comp(text=title),
         render_markdown(text=source),
+    )
+
+
+def command_source_path(name: str) -> str | None:
+    """Locate the callback supplying a documented command's help text.
+
+    Args:
+        name: Full command name, including the leading ``reflex``.
+
+    Returns:
+        Callback source path, or None for commands without a callback.
+    """
+    command = cli
+    for part in name.split()[1:]:
+        # Creating a parsing-only context resolves lazy commands without
+        # invoking their callbacks or authenticating with the hosting service.
+        with command.make_context(command.name, [], resilient_parsing=True) as ctx:
+            command = cast(click.Group, ctx.command).get_command(ctx, part)
+        if command is None:
+            return None
+    return (
+        inspect.getsourcefile(inspect.unwrap(command.callback))
+        if command.callback is not None
+        else None
     )
 
 
 pages = []
 for module_name, module_value in modules.items():
-    docs = generate_docs(module_value)
     title = module_name.replace("_", " ").title()
-    page_data = docpage(f"/hosting/cli/{module_name}/", title)(docs)
-    page_data.title = page_data.title.split("·")[0].strip()
+    docs = generate_docs(module_value, title)
+    sources = {
+        source
+        for name in categories[module_name]
+        if name in cli_to_doc and (source := command_source_path(name)) is not None
+    }
+    # A category spanning several modules is maintained in this aggregation file.
+    source_path = next(iter(sources)) if len(sources) == 1 else __file__
+    page_data = docpage(f"/hosting/cli/{module_name}/", title, source_path=source_path)(
+        docs
+    )
+    # Keep the short sidebar/nav label (e.g. "Deploy"), but emit a descriptive
+    # HTML <title> for SEO.
+    page_data.title = title
+    page_data.seo_title = f"{title} · Reflex Cloud CLI Reference · Reflex Docs"
     pages.append(page_data)

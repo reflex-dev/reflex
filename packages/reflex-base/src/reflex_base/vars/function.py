@@ -552,6 +552,6 @@ ARRAY_ISARRAY = FunctionStringVar.create(
     "Array.isArray", _var_type=ReflexCallable[[Any], bool]
 )
 PROTOTYPE_TO_STRING = FunctionStringVar.create(
-    "((__to_string) => __to_string.toString())",
+    "((__to_string) => __to_string ? __to_string.toString() : '')",
     _var_type=ReflexCallable[[Any], str],
 )

@@ -1,10 +1,14 @@
 """Reflex utilities."""
 
+import logging
+
 import click
 
 from reflex_cli.constants.hosting import ReflexHostingCli
 
 from . import console
+
+logger = logging.getLogger(__name__)
 
 
 def disabled_v1_hosting(*args, **kwargs):
@@ -18,7 +22,7 @@ def disabled_v1_hosting(*args, **kwargs):
         Exit: Always.
 
     """
-    console.error(
+    logger.error(
         "The alpha hosting service has been decommissioned as of Dec 5, 2024. "
         f"Please upgrade to reflex>={ReflexHostingCli.MINIMUM_REFLEX_VERSION} to use Reflex Cloud hosting."
     )

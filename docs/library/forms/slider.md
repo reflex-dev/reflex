@@ -29,7 +29,7 @@ class SliderState(rx.State):
 
 def slider_intro():
     return rx.vstack(
-        rx.heading(SliderState.value),
+        rx.heading(SliderState.value, as_="h2"),
         rx.slider(on_value_commit=SliderState.set_end),
         width="100%",
     )
@@ -53,8 +53,8 @@ class RangeSliderState(rx.State):
 def range_slider_intro():
     return rx.vstack(
         rx.hstack(
-            rx.heading(RangeSliderState.value_start),
-            rx.heading(RangeSliderState.value_end),
+            rx.heading(RangeSliderState.value_start, as_="h2"),
+            rx.heading(RangeSliderState.value_end, as_="h2"),
         ),
         rx.slider(
             default_value=[25, 75],
@@ -84,7 +84,7 @@ class LiveSliderState(rx.State):
 
 def live_slider_intro():
     return rx.vstack(
-        rx.heading(LiveSliderState.value),
+        rx.heading(LiveSliderState.value, as_="h2"),
         rx.slider(
             default_value=50,
             min_=0,
@@ -112,7 +112,7 @@ class FormSliderState(rx.State):
 def slider_form_example():
     return rx.card(
         rx.vstack(
-            rx.heading("Example Form"),
+            rx.heading("Example Form", as_="h2"),
             rx.form.root(
                 rx.hstack(
                     rx.slider(default_value=40, name="slider"),
@@ -124,7 +124,7 @@ def slider_form_example():
             ),
             rx.divider(),
             rx.hstack(
-                rx.heading("Results:"),
+                rx.heading("Results:", as_="h2"),
                 rx.badge(FormSliderState.form_data.to_string()),
             ),
             align_items="left",

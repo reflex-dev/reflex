@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import platform
 from enum import Enum
 from importlib import metadata
@@ -32,7 +33,8 @@ class Dirs(SimpleNamespace):
     UTILS = "utils"
     # The name of the state file.
     STATE_PATH = UTILS + "/state"
-    # The name of the components file.
+    # The name of the components file, where memos that can't be mirrored to a
+    # user module (``__main__``, unsafe names) get one file per memo.
     COMPONENTS_PATH = UTILS + "/components"
     # The name of the contexts file.
     CONTEXTS_PATH = UTILS + "/context"
@@ -48,16 +50,22 @@ class Dirs(SimpleNamespace):
     PAGES = "app"
     # The name of the routes directory.
     ROUTES = "routes"
+    # Subdirectory holding memo modules mirrored from their defining Python
+    # module, kept separate from other ``.web`` output so a mirrored module
+    # path can't collide with framework files (e.g. ``app/``, ``utils/``).
+    APP_COMPONENTS = "app_components"
+    # Where compilation artifacts for the backend are stored.
+    BACKEND = "backend"
     # The name of the env json file.
     ENV_JSON = "env.json"
+    # The compiled bundled-library registry consumed by backend-only workers.
+    BUNDLED_LIBRARIES = BACKEND + "/bundled_libraries.json"
     # The name of the reflex json file.
     REFLEX_JSON = "reflex.json"
     # The name of the postcss config file.
     POSTCSS_JS = "postcss.config.js"
     # The name of the states directory.
     STATES = ".states"
-    # Where compilation artifacts for the backend are stored.
-    BACKEND = "backend"
     # JSON-encoded list of page routes that need to be evaluated on the backend.
     STATEFUL_PAGES = "stateful_pages.json"
     # Marker file indicating that upload component was used in the frontend.
@@ -101,8 +109,6 @@ class Reflex(SimpleNamespace):
     # The root directory of the reflex library.
     ROOT_DIR = Path(__file__).parents[1]
 
-    RELEASES_URL = "https://api.github.com/repos/reflex-dev/templates/releases"
-
     # The reflex stylesheet language supported
     STYLESHEETS_SUPPORTED = ["css", "sass", "scss"]
 
@@ -122,14 +128,6 @@ class Templates(SimpleNamespace):
 
     # The AI template
     AI = "ai"
-
-    # The option for the user to choose a remote template.
-    CHOOSE_TEMPLATES = "choose-templates"
-
-    # The URL to find reflex templates.
-    REFLEX_TEMPLATES_URL = (
-        "https://reflex.dev/docs/getting-started/open-source-templates/"
-    )
 
     # The reflex.build frontend host
     REFLEX_BUILD_FRONTEND = "https://build.reflex.dev"
@@ -181,6 +179,12 @@ class ReactRouter(Javascript):
 
 
 # Color mode variables
+SYSTEM_COLOR_MODE: str = "system"
+LIGHT_COLOR_MODE: str = "light"
+DARK_COLOR_MODE: str = "dark"
+LiteralColorMode = Literal["system", "light", "dark"]
+
+
 class ColorMode(SimpleNamespace):
     """Constants related to ColorMode."""
 
@@ -191,7 +195,7 @@ class ColorMode(SimpleNamespace):
     SET = "setColorMode"
 
 
-LITERAL_ENV = Literal["dev", "prod"]
+LITERAL_ENV = Literal["dev", "preview", "prod"]
 
 
 # Env modes
@@ -199,6 +203,7 @@ class Env(str, Enum):
     """The environment modes."""
 
     DEV = "dev"
+    PREVIEW = "preview"
     PROD = "prod"
 
 
@@ -246,6 +251,19 @@ class LogLevel(str, Enum):
         except KeyError:
             return None
 
+    # The str mixin supplies alphabetical comparisons, so all four operators
+    # must be overridden to compare by verbosity rank instead.
+    def __lt__(self, other: LogLevel) -> bool:
+        """Compare log levels.
+
+        Args:
+            other: The other log level.
+
+        Returns:
+            True if the log level is less verbose than the other log level.
+        """
+        return _LOG_LEVEL_RANK[self] < _LOG_LEVEL_RANK[other]
+
     def __le__(self, other: LogLevel) -> bool:
         """Compare log levels.
 
@@ -255,8 +273,39 @@ class LogLevel(str, Enum):
         Returns:
             True if the log level is less than or equal to the other log level.
         """
-        levels = list(LogLevel)
-        return levels.index(self) <= levels.index(other)
+        return _LOG_LEVEL_RANK[self] <= _LOG_LEVEL_RANK[other]
+
+    def __gt__(self, other: LogLevel) -> bool:
+        """Compare log levels.
+
+        Args:
+            other: The other log level.
+
+        Returns:
+            True if the log level is more verbose-restrictive than the other.
+        """
+        return _LOG_LEVEL_RANK[self] > _LOG_LEVEL_RANK[other]
+
+    def __ge__(self, other: LogLevel) -> bool:
+        """Compare log levels.
+
+        Args:
+            other: The other log level.
+
+        Returns:
+            True if the log level is greater than or equal to the other.
+        """
+        return _LOG_LEVEL_RANK[self] >= _LOG_LEVEL_RANK[other]
+
+    def to_logging_level(self) -> int:
+        """Map this level to a stdlib logging level number.
+
+        DEFAULT acts as a threshold equivalent to INFO.
+
+        Returns:
+            The stdlib logging level.
+        """
+        return _LOGGING_LEVELS[self]
 
     def subprocess_level(self):
         """Return the log level for the subprocess.
@@ -265,6 +314,17 @@ class LogLevel(str, Enum):
             The log level for the subprocess
         """
         return self if self != LogLevel.DEFAULT else LogLevel.WARNING
+
+
+_LOG_LEVEL_RANK = {level: rank for rank, level in enumerate(LogLevel)}
+_LOGGING_LEVELS = {
+    LogLevel.DEBUG: logging.DEBUG,
+    LogLevel.DEFAULT: logging.INFO,
+    LogLevel.INFO: logging.INFO,
+    LogLevel.WARNING: logging.WARNING,
+    LogLevel.ERROR: logging.ERROR,
+    LogLevel.CRITICAL: logging.CRITICAL,
+}
 
 
 # Server socket configuration variables

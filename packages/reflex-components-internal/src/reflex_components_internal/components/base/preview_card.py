@@ -33,7 +33,7 @@ class PreviewCardBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the preview card component."""
+        """The import variable for the preview card component."""
         return ImportVar(tag="PreviewCard", package_path="", install=False)
 
 

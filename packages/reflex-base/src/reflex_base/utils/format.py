@@ -6,20 +6,19 @@ import inspect
 import json
 import os
 import re
+from collections.abc import Callable
+from functools import lru_cache
 from typing import TYPE_CHECKING, Any
+
+from rich.markup import escape as escape_markup
 
 from reflex_base import constants
 from reflex_base.utils import exceptions
 
 if TYPE_CHECKING:
     from reflex_base.components.component import ComponentStyle
-    from reflex_base.event import (
-        ArgsSpec,
-        EventChain,
-        EventHandler,
-        EventSpec,
-        EventType,
-    )
+    from reflex_base.event import EventChain, EventHandler, EventSpec, EventType
+    from reflex_base.utils.types import ArgsSpec
 
 WRAP_MAP = {
     "{": "}",
@@ -174,6 +173,7 @@ def to_snake_case(text: str) -> str:
     return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower().replace("-", "_")
 
 
+@lru_cache(maxsize=4096)
 def to_camel_case(text: str, treat_hyphens_as_underscores: bool = True) -> str:
     """Convert a string to camel case.
 
@@ -513,7 +513,10 @@ def format_event(event_spec: EventSpec) -> str:
     event_args.append(wrap(args, "{"))
 
     if event_spec.client_handler_name:
-        event_args.append(wrap(event_spec.client_handler_name, '"'))
+        event_args.extend((
+            json.dumps(event_spec.event_actions),
+            wrap(event_spec.client_handler_name, '"'),
+        ))
     return f"ReflexEvent({', '.join(event_args)})"
 
 
@@ -528,10 +531,9 @@ def format_queue_events(
     """Format a list of event handler / event spec as a javascript callback.
 
     The resulting code can be passed to interfaces that expect a callback
-    function and when triggered it will directly call queueEvents.
-
-    It is intended to be executed in the rx.call_script context, where some
-    existing API needs a callback to trigger a backend event handler.
+    function and when triggered it dispatches the events through `addEvents`.
+    The name resolves via the attached imports in compiled modules and via a
+    local alias in the `applyEvent` eval context.
 
     Args:
         events: The events to queue.
@@ -550,7 +552,7 @@ def format_queue_events(
         call_event_fn,
         call_event_handler,
     )
-    from reflex_base.vars import FunctionVar, Var
+    from reflex_base.vars import FunctionVar, Var, VarData
 
     if not events:
         return Var("(() => null)").to(FunctionVar, EventChain)
@@ -583,11 +585,9 @@ def format_queue_events(
                 raise ValueError(msg)
         payloads.extend(format_event(s) for s in specs)
 
-    # Return the final code snippet, expecting queueEvents, processEvent, and socket to be in scope.
-    # Typically this snippet will _only_ run from within an rx.call_script eval context.
     return Var(
-        f"{arg_def} => {{queueEvents([{','.join(payloads)}], {constants.CompileVars.SOCKET}, false, navigate, params);"
-        f"processEvent({constants.CompileVars.SOCKET}, navigate, params);}}",
+        f"{arg_def} => {{{constants.CompileVars.ADD_EVENTS}([{','.join(payloads)}])}}",
+        _var_data=VarData(imports=constants.Imports.EVENTS),
     ).to(FunctionVar, EventChain)
 
 
@@ -602,6 +602,35 @@ def format_query_params(router_data: dict[str, Any]) -> dict[str, str]:
     """
     params = router_data.get(constants.RouteVar.QUERY, {})
     return {k.replace("-", "_"): v for k, v in params.items()}
+
+
+def sanitize_client_log_value(value: Any, max_length: int = 500) -> str:
+    """Make a client-supplied value safe to write to backend logs.
+
+    Args:
+        value: The client-supplied value.
+        max_length: Maximum length of the returned string.
+
+    Returns:
+        The value as a printable, length-bounded string with control characters
+        (newlines, ANSI escapes) replaced by spaces and rich markup escaped, so
+        a client cannot forge log lines, style backend output, or raise
+        ``MarkupError`` when the value is printed through the console helpers.
+    """
+    text = value if isinstance(value, str) else str(value)
+    # Slice before the per-character walk: clients can send arbitrarily long
+    # values, and everything past max_length is discarded anyway.
+    truncated = len(text) > max_length
+    text = escape_markup(
+        "".join(char if char.isprintable() else " " for char in text[:max_length])
+    )
+    if len(text) > max_length:
+        # Escaping markup can push a value that just fit over the limit.
+        truncated = True
+    if truncated:
+        suffix = "... (truncated)"
+        text = text[: max_length - len(suffix)] + suffix
+    return text
 
 
 def format_state_name(state_name: str) -> str:
@@ -668,6 +697,27 @@ def format_library_name(library_fullname: str | dict[str, Any]) -> str:
     return lib
 
 
+_serialize: Callable[[Any], Any] | None = None
+
+
+def _get_serialize() -> Callable[[Any], Any]:
+    """Get ``serializers.serialize``, importing it on first use.
+
+    The import cannot live at module scope (``serializers`` imports this
+    module), and repeating it per call is measurable on the compile path,
+    so the resolved function is cached.
+
+    Returns:
+        The ``serializers.serialize`` callable.
+    """
+    global _serialize
+    if _serialize is None:
+        from reflex_base.utils import serializers
+
+        _serialize = serializers.serialize
+    return _serialize
+
+
 def json_dumps(obj: Any, **kwargs) -> str:
     """Takes an object and returns a jsonified string.
 
@@ -678,10 +728,8 @@ def json_dumps(obj: Any, **kwargs) -> str:
     Returns:
         A string
     """
-    from reflex_base.utils import serializers
-
     kwargs.setdefault("ensure_ascii", False)
-    kwargs.setdefault("default", serializers.serialize)
+    kwargs.setdefault("default", _get_serialize())
 
     return json.dumps(obj, **kwargs)
 

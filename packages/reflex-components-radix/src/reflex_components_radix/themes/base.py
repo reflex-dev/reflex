@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, ClassVar, Literal
 
 from reflex_base.components.component import Component, field
-from reflex_base.components.tags import Tag
+from reflex_base.components.tags import CommonTag
 from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.vars.base import Var
 from reflex_components_core.core.breakpoints import Responsive
@@ -238,7 +238,7 @@ class Theme(RadixThemesComponent):
             "$/utils/theme": [ImportVar(tag="theme", is_default=True)],
         }
 
-    def _render(self, props: dict[str, Any] | None = None) -> Tag:
+    def _render(self, props: dict[str, Any] | None = None) -> CommonTag:
         tag = super()._render(props)
         return tag.add_props(
             css=Var(

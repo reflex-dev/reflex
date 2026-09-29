@@ -9,7 +9,9 @@ One of Reflex's most powerful features is the ability to wrap React components a
 
 If you want a specific component for your app but Reflex doesn't provide it, there's a good chance it's available as a React component. Search for it on [npm](https://www.npmjs.com/), and if it's there, you can use it in your Reflex app. You can also create your own local React components and wrap them in Reflex.
 
-Once you wrap your component, you [publish it](/docs/custom-components/overview) to the Reflex library so that others can use it.
+Once you wrap your component, you [publish it](/docs/custom-components/overview/) to the Reflex library so that others can use it.
+
+For a complete example with typed props, Python state, and an event handler, follow [Wrapping React Step by Step](/docs/wrapping-react/step-by-step/).
 
 ## Simple Example
 
@@ -25,7 +27,7 @@ class Spline(rx.Component):
     """Spline component."""
 
     # The name of the npm package.
-    library = "@splinetool/react-spline"
+    library = "@splinetool/react-spline@4.1.0"
 
     # Any additional libraries needed to use the component.
     lib_dependencies: list[str] = ["@splinetool/runtime@1.5.5"]
@@ -63,7 +65,7 @@ from reflex.components.component import NoSSRComponent
 
 
 class ColorPicker(NoSSRComponent):
-    library = "react-colorful"
+    library = "react-colorful@5.7.0"
     tag = "HexColorPicker"
     color: rx.Var[str]
     on_change: rx.EventHandler[lambda color: [color]]
@@ -78,7 +80,7 @@ ColorPickerState = ClientStateVar.create(default="#db114b", var_name="color")
 rx.box(
     ColorPickerState,
     rx.vstack(
-        rx.heading(ColorPickerState.value, color="white"),
+        rx.heading(ColorPickerState.value, as_="h2", color="white"),
         color_picker(on_change=ColorPickerState.set_value),
     ),
     background_color=ColorPickerState.value,
@@ -93,7 +95,7 @@ from reflex.components.component import NoSSRComponent
 
 
 class ColorPicker(NoSSRComponent):
-    library = "react-colorful"
+    library = "react-colorful@5.7.0"
     tag = "HexColorPicker"
     color: rx.Var[str]
     on_change: rx.EventHandler[lambda color: [color]]
@@ -105,11 +107,15 @@ color_picker = ColorPicker.create
 class ColorPickerState(rx.State):
     color: str = "#db114b"
 
+    @rx.event
+    def set_color(self, value: str):
+        self.color = value
+
 
 def index():
     return rx.box(
         rx.vstack(
-            rx.heading(ColorPickerState.color, color="white"),
+            rx.heading(ColorPickerState.color, as_="h2", color="white"),
             color_picker(on_change=ColorPickerState.set_color),
         ),
         background_color=ColorPickerState.color,

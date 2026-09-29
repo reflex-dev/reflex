@@ -19,4 +19,5 @@ def get_clearbit_trackers(public_key: str) -> rx.Component:
     return rx.el.script(
         src=CLEARBIT_SCRIPT_URL_TEMPLATE.format(public_key=public_key),
         referrer_policy="strict-origin-when-cross-origin",
+        async_=True,
     )

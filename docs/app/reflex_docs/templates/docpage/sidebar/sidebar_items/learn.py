@@ -4,7 +4,7 @@ from .item import create_item
 
 
 def get_sidebar_items_learn():
-    from reflex_docs.pages.docs import advanced_onboarding, getting_started
+    from reflex_docs.pages.docs import advanced_onboarding, getting_started, guides
 
     items = [
         create_item(
@@ -12,9 +12,9 @@ def get_sidebar_items_learn():
             children=[
                 getting_started.installation,
                 getting_started.introduction,
+                getting_started.what_you_can_build,
                 getting_started.basics,
                 getting_started.project_structure,
-                getting_started.open_source_templates,
             ],
         ),
         create_item(
@@ -22,12 +22,24 @@ def get_sidebar_items_learn():
             children=[
                 getting_started.dashboard_tutorial,
                 getting_started.chatapp_tutorial,
+                getting_started.python_function_to_app,
+                getting_started.pandas_data_app,
+                getting_started.linked_charts_tutorial,
+            ],
+        ),
+        create_item(
+            "Application Guides",
+            children=[
+                guides.dashboards_and_internal_tools,
+                guides.ai_applications,
+                guides.model_and_media_interfaces,
             ],
         ),
         create_item(
             "Advanced Onboarding",
             children=[
                 advanced_onboarding.how_reflex_works,
+                advanced_onboarding.performance_and_execution,
                 advanced_onboarding.configuration,
                 advanced_onboarding.code_structure,
             ],
@@ -120,16 +132,16 @@ def get_sidebar_items_frontend():
 def get_sidebar_items_backend():
     from reflex_docs.pages.docs import (
         api_routes,
-        authentication,
         client_storage,
         database,
+        enterprise,
         events,
         state,
         state_structure,
         utility_methods,
         vars,
     )
-    from reflex_docs.templates.docpage.sidebar.state import SideBarSection
+    from reflex_docs.templates.docpage.sidebar.state import SideBarItem, SideBarSection
 
     items = [
         SideBarSection(
@@ -140,6 +152,7 @@ def get_sidebar_items_backend():
             children=[
                 vars.base_vars,
                 vars.computed_vars,
+                vars.hybrid_properties,
                 vars.var_operations,
                 vars.custom_vars,
             ],
@@ -149,7 +162,6 @@ def get_sidebar_items_backend():
             children=[
                 events.events_overview,
                 events.event_arguments,
-                events.setters,
                 events.yield_events,
                 events.chaining_events,
                 events.special_events,
@@ -189,10 +201,16 @@ def get_sidebar_items_backend():
                 database.relationships,
             ],
         ),
-        create_item(
-            "Authentication",
+        SideBarItem(
+            names="Authentication",
             children=[
-                authentication.authentication_overview,
+                # Cross-reference to the enterprise docs, excluded from the
+                # prev/next chain so that page keeps its enterprise-flow footer.
+                SideBarItem(
+                    names="Overview",
+                    link=enterprise.auth.overview.path,
+                    exclude_from_prev_next=True,
+                ),
             ],
         ),
         create_item(
@@ -220,7 +238,8 @@ def get_sidebar_items_hosting():
         create_item(
             "Project",
             children=[
-                hosting.adding_members,
+                hosting.project_members,
+                hosting.project_settings,
             ],
         ),
         create_item(
@@ -234,6 +253,7 @@ def get_sidebar_items_hosting():
                 hosting.custom_domains,
                 hosting.config_file,
                 hosting.tokens,
+                hosting.security_scan,
                 hosting.deploy_with_github_actions,
             ],
         ),
@@ -250,6 +270,9 @@ def get_sidebar_items_hosting():
             children=[
                 hosting.self_hosting,
                 hosting.databricks,
+                hosting.cloud_providers,
+                hosting.bring_your_own_cloud,
+                hosting.deploy_to_gcp,
             ],
         ),
     ]

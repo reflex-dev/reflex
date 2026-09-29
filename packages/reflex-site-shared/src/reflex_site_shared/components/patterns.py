@@ -50,7 +50,7 @@ def default_patterns() -> list[rx.Component]:
         ),
         # Glowing
         rx.box(
-            class_name="top-[715px] z-[-1] absolute bg-violet-3 opacity-[0.36] blur-[80px] rounded-[768px] w-[768px] h-[768px] overflow-hidden pointer-events-none shrink-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+            class_name="top-[715px] z-[-1] absolute bg-accent opacity-[0.36] blur-[80px] rounded-[768px] w-[768px] h-[768px] overflow-hidden pointer-events-none shrink-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
         ),
     ]
 

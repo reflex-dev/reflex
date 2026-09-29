@@ -38,7 +38,7 @@ class MyState(CounterMixin, rx.State):
 
 def counter_example():
     return rx.vstack(
-        rx.heading(MyState.name),
+        rx.heading(MyState.name, as_="h2"),
         rx.text(MyState.count_display),
         rx.button("Increment", on_click=MyState.increment),
         spacing="4",
@@ -83,7 +83,7 @@ class CombinedState(CounterMixin, TimestampMixin, LoggingMixin, rx.State):
 
 def multi_mixin_example():
     return rx.vstack(
-        rx.heading(CombinedState.app_name),
+        rx.heading(CombinedState.app_name, as_="h2"),
         rx.text(CombinedState.count_display),
         rx.text(f"Last updated: {CombinedState.last_updated}"),
         rx.button("Increment & Log", on_click=CombinedState.increment_with_log),
@@ -120,7 +120,7 @@ class AppState(DatabaseMixin, rx.State):
 
 def database_example():
     return rx.vstack(
-        rx.heading(AppState.app_title),
+        rx.heading(AppState.app_title, as_="h2"),
         rx.text(f"User count: {AppState.user_count}"),
         rx.button("Fetch Users", on_click=AppState.fetch_user_count),
         spacing="4",
@@ -160,7 +160,7 @@ class PriceState(FormattingMixin, rx.State):
 
 def formatting_example():
     return rx.vstack(
-        rx.heading(f"Product: {PriceState.product_name}"),
+        rx.heading(f"Product: {PriceState.product_name}", as_="h2"),
         rx.text(f"Price: {PriceState.formatted_value}"),
         rx.text(f"Positive: {PriceState.is_positive}"),
         rx.input(
@@ -240,6 +240,9 @@ State mixins are particularly useful for:
 - **Data Formatting**: Consistent data presentation across components
 
 ```python demo exec
+import asyncio
+
+
 class ValidationMixin(rx.State, mixin=True):
     errors: dict[str, str] = {}
     is_loading: bool = False
@@ -280,7 +283,7 @@ class ContactFormState(ValidationMixin, rx.State):
         self.message = value
 
     @rx.event
-    def submit_form(self):
+    async def submit_form(self):
         self.clear_errors()
         valid_name = self.validate_required("name", self.name)
         valid_email = self.validate_email(self.email)
@@ -288,7 +291,8 @@ class ContactFormState(ValidationMixin, rx.State):
 
         if valid_name and valid_email and valid_message:
             self.is_loading = True
-            yield rx.sleep(1)
+            yield
+            await asyncio.sleep(1)
             self.is_loading = False
             self.name = ""
             self.email = ""
@@ -297,7 +301,7 @@ class ContactFormState(ValidationMixin, rx.State):
 
 def validation_example():
     return rx.vstack(
-        rx.heading("Contact Form"),
+        rx.heading("Contact Form", as_="h2"),
         rx.input(
             placeholder="Name",
             value=ContactFormState.name,

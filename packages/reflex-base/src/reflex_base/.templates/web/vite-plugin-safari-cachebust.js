@@ -13,6 +13,8 @@
  * output already contains the file hash in the name.
  */
 
+import { StringDecoder } from "node:string_decoder";
+
 /**
  * @typedef {import('vite').Plugin} Plugin
  * @typedef {import('vite').ViteDevServer} ViteDevServer
@@ -22,6 +24,10 @@
  */
 
 const pluginName = "vite-plugin-safari-cachebust";
+const tsParam = "__reflex_ts";
+const linkTagRe = /<link\s+rel="modulepreload"\s+href="([^"]+)"[^>]*>/g;
+const tsUrlRe = new RegExp(`(\\?|&)${tsParam}=\\d+`);
+const regExpSpecialsRe = /[.*+?^${}()|[\]\\]/g;
 
 /**
  * Creates a Vite plugin that adds cache-busting for Safari browsers
@@ -50,52 +56,108 @@ function isSafari(ua) {
 }
 
 /**
+ * Creates a streaming rewriter for one HTML response.
+ *
+ * Hrefs are discovered from modulepreload <link> tags and every later
+ * occurrence (e.g. the ESM imports in the trailing inline script) is rewritten
+ * as well. Text is emitted as soon as it arrives; only a possibly-partial
+ * <link> tag or href at the end of a chunk is held back, unrewritten, until
+ * the next chunk.
+ * @param {number} timestamp - The cache-bust value for this response
+ * @returns {{push(text: string, flush: boolean): string, count: number}} The rewriter
+ */
+function createRewriter(timestamp) {
+  /** @type {Map<string, string>} href -> href with the cache-bust param */
+  const replacements = new Map();
+  /** @type {RegExp | null} Alternation of every known href, longest first */
+  let hrefRe = null;
+  let pending = "";
+
+  /**
+   * Registers the hrefs of every complete modulepreload tag in the text
+   * @param {string} text - The text to scan
+   */
+  function discover(text) {
+    let changed = false;
+    for (const [, href] of text.matchAll(linkTagRe)) {
+      if (replacements.has(href) || /^(https?:)?\/\//.test(href)) continue;
+      replacements.set(
+        href,
+        `${href}${href.includes("?") ? "&" : "?"}${tsParam}=${timestamp}`,
+      );
+      changed = true;
+    }
+    if (!changed) return;
+    // Longest first, so an href that prefixes or contains another ("/a.js" in
+    // "/a.jsx", "/a.js?v=1" or "/b/a.js") is matched whole and every
+    // occurrence is rewritten exactly once in a single pass.
+    hrefRe = new RegExp(
+      [...replacements.keys()]
+        .sort((a, b) => b.length - a.length)
+        .map((href) => href.replace(regExpSpecialsRe, "\\$&"))
+        .join("|"),
+      "g",
+    );
+  }
+
+  /**
+   * Finds how much of the end of the text must wait for the next chunk
+   * @param {string} text - The raw text
+   * @returns {number} The index at which the held-back tail starts
+   */
+  function cutIndex(text) {
+    let cut = text.length;
+    // An unclosed tag that may turn out to be a modulepreload link.
+    const lt = text.lastIndexOf("<");
+    if (lt !== -1 && text.indexOf(">", lt) === -1) {
+      const tail = text.slice(lt, lt + 5);
+      if (tail.length < 5 ? "<link".startsWith(tail) : tail === "<link") {
+        cut = lt;
+      }
+    }
+    // A proper prefix of a known href, which may continue in the next chunk.
+    let keep = 0;
+    for (const href of replacements.keys()) {
+      for (let k = Math.min(href.length - 1, cut); k > keep; k--) {
+        if (text.startsWith(href.slice(0, k), cut - k)) {
+          keep = k;
+          break;
+        }
+      }
+    }
+    return cut - keep;
+  }
+
+  return {
+    /**
+     * Feeds text through the rewriter
+     * @param {string} text - The newly decoded text
+     * @param {boolean} flush - Whether this is the end of the response
+     * @returns {string} The text that may be sent now
+     */
+    push(text, flush) {
+      text = pending + text;
+      discover(text);
+      const cut = flush ? text.length : cutIndex(text);
+      pending = text.slice(cut);
+      text = text.slice(0, cut);
+      return hrefRe
+        ? text.replace(hrefRe, (match) => replacements.get(match))
+        : text;
+    },
+    get count() {
+      return replacements.size;
+    },
+  };
+}
+
+/**
  * Creates a middleware that adds cache-busting for Safari browsers
  * @returns {NextHandleFunction} The middleware function
  */
 function createSafariMiddleware() {
   // Set when a log message for rewriting n links has been emitted.
   let _have_logged_n = -1;
-
-  /**
-   * Rewrites module import links in HTML content with cache-busting parameters
-   * @param {string} html - The HTML content to process
-   * @returns {string} The processed HTML content
-   */
-  function rewriteModuleImports(html) {
-    const currentTimestamp = new Date().getTime();
-    const parts = html.split(/(<link\s+rel="modulepreload"[^>]*>)/g);
-    /** @type {[string, string][]} */
-    const replacements = parts
-      .map((chunk) => {
-        const match = chunk.match(
-          /<link\s+rel="modulepreload"\s+href="([^"]+)"(.*?)\/?>/,
-        );
-        if (!match) return;
-
-        const [fullMatch, href, rest] = match;
-        if (/^(https?:)?\/\//.test(href)) return;
-
-        try {
-          const newHref = href.includes("?")
-            ? `${href}&__reflex_ts=${currentTimestamp}`
-            : `${href}?__reflex_ts=${currentTimestamp}`;
-          return [href, newHref];
-        } catch {
-          // no worries;
-        }
-      })
-      .filter(Boolean);
-    if (replacements.length && _have_logged_n !== replacements.length) {
-      _have_logged_n = replacements.length;
-      console.debug(
-        `[${pluginName}] Rewrote ${replacements.length} modulepreload links with __reflex_ts param.`,
-      );
-    }
-    return replacements.reduce((accumulator, [target, replacement]) => {
-      return accumulator.split(target).join(replacement);
-    }, html);
-  }
 
   /**
    * Middleware function to handle Safari cache busting
@@ -109,9 +171,9 @@ function createSafariMiddleware() {
     // Remove our special cache bust query param to avoid affecting lower middleware layers.
     if (
       req.url &&
-      (req.url.includes("?__reflex_ts=") || req.url.includes("&__reflex_ts="))
+      (req.url.includes(`?${tsParam}=`) || req.url.includes(`&${tsParam}=`))
     ) {
-      req.url = req.url.replace(/(\?|&)__reflex_ts=\d+/, "");
+      req.url = req.url.replace(tsUrlRe, "");
       return next();
     }
 
@@ -127,33 +189,68 @@ function createSafariMiddleware() {
       return next();
     }
 
-    let buffer = "";
+    const rewriter = createRewriter(Date.now());
+    // Chunks may be Buffer or plain Uint8Array and may split a multibyte character.
+    const decoder = new StringDecoder("utf-8");
+    const _write = res.write.bind(res);
     const _end = res.end.bind(res);
 
-    res.setHeader("x-modified-by", "vite-plugin-safari-cachebust");
     /**
-     * Overridden write method to collect chunks
+     * Decodes a written chunk to text
+     * @param {any} chunk - The chunk passed to write/end, if any
+     * @returns {string} The decoded text
+     */
+    const decode = (chunk) =>
+      typeof chunk === "string"
+        ? decoder.end() + chunk
+        : chunk
+          ? decoder.write(chunk)
+          : "";
+
+    /**
+     * Extracts the optional completion callback from write/end arguments
+     * @param {any[]} args - The arguments following the chunk
+     * @returns {((err?: Error) => void) | undefined} The callback, if given
+     */
+    const callback = (args) => args.find((arg) => typeof arg === "function");
+
+    res.setHeader("x-modified-by", pluginName);
+    /**
+     * Overridden write method to rewrite chunks as they stream through
      * @param {any} chunk - The chunk to write
      * @param {...any} args - Additional arguments
      * @returns {boolean} Result of the write operation
      */
     res.write = function (chunk, ...args) {
-      buffer += chunk instanceof Buffer ? chunk.toString("utf-8") : chunk;
+      const out = rewriter.push(decode(chunk), false);
+      const cb = callback(args);
+      if (out) return cb ? _write(out, cb) : _write(out);
+      // Everything was held back for the next chunk; nothing is queued. Node
+      // never invokes a write callback synchronously, so defer it likewise.
+      if (cb) process.nextTick(cb);
       return true;
     };
 
     /**
-     * Overridden end method to process and send the final response
+     * Overridden end method to flush held-back text and finish the response
      * @param {any} chunk - The final chunk to write
      * @param {...any} args - Additional arguments
      * @returns {ServerResponse<IncomingMessage>} The server response
      */
     res.end = function (chunk, ...args) {
-      if (chunk) {
-        buffer += chunk instanceof Buffer ? chunk.toString("utf-8") : chunk;
+      if (typeof chunk === "function") {
+        args.unshift(chunk);
+        chunk = undefined;
       }
-      buffer = rewriteModuleImports(buffer);
-      return _end(buffer, ...args);
+      const out = rewriter.push(decode(chunk) + decoder.end(), true);
+      if (rewriter.count && _have_logged_n !== rewriter.count) {
+        _have_logged_n = rewriter.count;
+        console.debug(
+          `[${pluginName}] Rewrote ${rewriter.count} modulepreload links with ${tsParam} param.`,
+        );
+      }
+      const cb = callback(args);
+      return cb ? _end(out, cb) : _end(out);
     };
     return next();
   };
