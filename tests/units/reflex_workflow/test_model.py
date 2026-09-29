@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import datetime
 import hashlib
-from typing import Literal, cast
+from typing import Any, Literal, cast
 
 import pytest
 from reflex_workflow import (
@@ -40,6 +40,7 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -485,6 +486,23 @@ def test_a_workflow_that_retypes_one_of_the_engines_columns_is_refused():
 
             id: Mapped[int] = mapped_column(primary_key=True)
             wf_version: Mapped[str] = mapped_column(String(8))  # pyright: ignore[reportIncompatibleVariableOverride]
+
+
+def test_a_workflow_that_redeclares_an_event_column_alike_is_refused():
+    # Same class of type, different behaviour: the engine declares this
+    # JSONB(none_as_null=True), and a plain JSONB stores None as a json null
+    # where every read of the column tests for SQL NULL -- so a cancelled run
+    # would look like one still holding an event, and refuse every delivery
+    # after it. A check on the type's class alone lets this through.
+    with pytest.raises(TypeError, match="declares pending_event, which"):
+
+        class Loose(Base, Workflow):
+            """A workflow whose event column is alike but not the same."""
+
+            __tablename__ = "wf_model_loose"
+
+            id: Mapped[int] = mapped_column(primary_key=True)
+            pending_event: Mapped[dict[str, Any]] = mapped_column(JSONB)  # pyright: ignore[reportIncompatibleVariableOverride]
 
 
 def test_a_workflow_that_leaves_the_engines_columns_alone_is_not():

@@ -642,18 +642,33 @@ class AttemptLog:
         ATTEMPTS = cls
 
 
-def declared_by_mixin(name: str, column: Column[Any]) -> bool:
-    """Tell whether a workflow's column is still the one the mixin declares.
+def declared_by_mixin(cls: type, name: str, column: Column[Any]) -> bool:
+    """Tell whether a workflow's column is still the one a mixin here declares.
+
+    Declarative copies a mixin's column onto each class that inherits it, but
+    the copy shares the type object it was declared with. Identity is what is
+    compared, then: a type that merely looks alike is not the same thing, and
+    ``pending_event`` is the reason why -- the engine declares it
+    ``JSONB(none_as_null=True)``, and a plain ``JSONB`` of the same class
+    stores None as a json null where every read of it tests for SQL NULL.
 
     Args:
+        cls: The mapped class.
         name: The column's name.
         column: The column the table ended up with.
 
     Returns:
         Whether it holds what the engine writes to it.
     """
-    declared = getattr(Workflow.__dict__.get(name), "column", None)
-    return declared is not None and isinstance(column.type, type(declared.type))
+    for klass in cls.__mro__:
+        # The mixins this package ships, rather than the mapped class's own
+        # copies of them or a base of the application's in between.
+        if not klass.__module__.startswith(f"{__package__}."):
+            continue
+        declared = getattr(klass.__dict__.get(name), "column", None)
+        if declared is not None:
+            return column.type is declared.type
+    return False
 
 
 @event.listens_for(Mapper, "instrument_class")
@@ -680,13 +695,13 @@ def check_engine_columns(mapper: Mapper[Any], cls: type) -> None:
         return
     # Against the table rather than the mapper, which is not configured yet at
     # this point. A relationship leaves no column of that name at all; a column
-    # of the user's own leaves one the engine cannot use, so the type it holds
-    # is compared with the one the mixin declares. Read off the mixin rather
-    # than written out again here, so the two cannot drift.
+    # of the user's own leaves one the engine cannot use, so the column is
+    # checked against the mixin's own declaration rather than against a list
+    # written out again here, which could only drift from it.
     taken = sorted(
         name
         for name in WORKFLOW_COLUMNS
-        if name not in table.c or not declared_by_mixin(name, table.c[name])
+        if name not in table.c or not declared_by_mixin(cls, name, table.c[name])
     )
     if taken:
         msg = (
