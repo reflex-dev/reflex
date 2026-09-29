@@ -434,7 +434,7 @@ def _restore_output(
         os.write(write_fd, _CAPTURE_END.encode())
         os.close(write_fd)
     for *_, reader in captured:
-        reader.join(timeout=1)
+        reader.join()
 
 
 class JsonHandler(logging.Handler):

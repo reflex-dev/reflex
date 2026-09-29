@@ -6,6 +6,7 @@ import logging
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 from unittest import mock
 
@@ -900,6 +901,7 @@ import multiprocessing
 import os
 import subprocess
 import sys
+import time
 import warnings
 
 from reflex_base.utils import log
@@ -993,6 +995,7 @@ _FORK_LOCK_SCRIPT = """
 import logging
 import os
 import sys
+import time
 import warnings
 
 from reflex_base.utils import log
@@ -1047,3 +1050,34 @@ def test_pump_survives_a_broken_output_stream():
     os.write(write_fd, b"plain\nTraceback (most recent call last):\n  File 'x'\n")
     os.close(write_fd)
     log._pump(read_fd, Broken(), "info", "stdout")
+
+
+_BURST_SCRIPT = """
+from reflex_base.utils import log
+
+log.enable_managed_logging()
+log.capture_output()
+for i in range(200):
+    print(f"line {i:03d} " + "x" * 1000)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="fd capture is POSIX-only")
+def test_capture_output_drains_everything_for_a_slow_consumer(tmp_path):
+    """Output buffered at exit reaches a consumer that reads late."""
+    script = tmp_path / "burst.py"
+    script.write_text(_BURST_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+    ) as proc:
+        assert proc.stdout is not None
+        lines = []
+        # A consumer slower than the writer keeps both pipes full at exit.
+        for line in proc.stdout:
+            lines.append(line)
+            time.sleep(0.015)
+        proc.wait(timeout=30)
+    assert len(lines) == 200
+    assert json.loads(lines[-1])["message"].startswith("line 199 ")
