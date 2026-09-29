@@ -8,6 +8,7 @@ import dataclasses
 import datetime
 import logging
 import time
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import String, case, func, insert, literal, null, select, update
@@ -31,6 +32,7 @@ from reflex_workflow.model import (
     Workflow,
     as_call,
     check_call,
+    remember,
 )
 
 if TYPE_CHECKING:
@@ -253,7 +255,12 @@ def after_failure(
     return stop(), "failed"
 
 
-def settle_event(cls: type[Workflow], values: dict[str, Any], took: bool) -> None:
+def settle_event(
+    cls: type[Workflow],
+    values: dict[str, Any],
+    event: dict[str, Any] | None,
+    repeating: bool = False,
+) -> None:
     """Decide what becomes of an event held for a wait, as the commit finds it.
 
     An unconsumed event stays only while the row can still take it: it is for the
@@ -261,13 +268,26 @@ def settle_event(cls: type[Workflow], values: dict[str, Any], took: bool) -> Non
     against the column rather than what was read, since a delivery may have
     landed while the step ran.
 
+    A run going round a schedule is not stepping toward a wait, and an event left
+    held on one is held for good: it never runs, and it refuses every event after
+    it. Such a run keeps no event, so a caller told the delivery was refused can
+    send it again.
+
+    An event this attempt took is remembered by key, which is where a key given
+    to ``deliver`` is remembered at all: an event discarded here was never taken,
+    and a resend of it has to be allowed.
+
     Args:
         cls: The workflow class.
         values: The columns being written, which this adds ``pending_event`` to.
-        took: Whether this attempt ran the held event itself.
+        event: The held event this attempt ran, if it ran one.
+        repeating: Whether the step asked to run again on a schedule.
     """
     waiting = values["waiting_for"]
-    if took or (waiting is None and values["next_step"] is None):
+    took = event is not None
+    if took and (key := event.get("key")) is not None:
+        values["recent_event_keys"] = remember(cls, key)
+    if took or (waiting is None and (values["next_step"] is None or repeating)):
         values["pending_event"] = null()
     elif waiting is not None:
         values["pending_event"] = case(
@@ -488,6 +508,84 @@ def unjoin(cls: type[Workflow]) -> ColumnElement[Any]:
     return cls.parent.op("-", return_type=JSONB)(literal("fan_out", String))
 
 
+async def wake_on_schedule(
+    session: AsyncSession,
+    repeat: Callable[[datetime.datetime], datetime.datetime],
+    values: dict[str, Any],
+) -> str | None:
+    """Fill in a wake time only Python can work out, against the database clock.
+
+    A schedule the database cannot express -- a cron, or anything else that
+    answers with the next time to run -- is asked here, so every time the engine
+    writes still comes from the database's clock rather than the worker's.
+
+    Args:
+        session: The open transaction, which the clock is read through.
+        repeat: The schedule to ask.
+        values: The columns being written, which this fills ``wake_at`` in; a
+            schedule that raises stops the run instead.
+
+    Returns:
+        What the schedule raised, or None if it answered.
+    """
+    now = (await session.execute(select(func.now()))).scalar_one()
+    try:
+        values["wake_at"] = repeat(now)
+    except Exception as err:
+        error = f"{type(err).__name__}: {err}"[:2000]
+        values |= stop() | {"last_error": error, "pending_event": null()}
+        return error
+    return None
+
+
+async def commit_attempt(
+    session: AsyncSession,
+    cls: type[Workflow],
+    pk: list[Any],
+    version: int,
+    values: dict[str, Any],
+    attempt: dict[str, Any],
+    releasing: dict[str, Any] | None,
+) -> bool:
+    """Write a finished attempt: the row, its history, and the parent it releases.
+
+    Fenced on the version the attempt claimed, so a row another worker has taken
+    over is left as that worker left it. The lease goes back with the same write.
+
+    Args:
+        session: The open transaction; all of this lands together or not at all.
+        cls: The workflow class.
+        pk: The row's primary key values.
+        version: The version the attempt claimed.
+        values: The columns the attempt leaves behind.
+        attempt: The history row to record for it.
+        releasing: The parent to count this run against, when it is over and was
+            fanned out by one.
+
+    Returns:
+        Whether the commit landed, or was fenced by another worker's claim.
+    """
+    committed = (
+        await session.execute(
+            update(cls)
+            .where(*rows.pk_filter(cls, pk), cls.wf_version == version)
+            .values(**values, claimed_until=None, wf_version=version + 1)
+            .returning(cls.wf_version)
+            .execution_options(synchronize_session=False)
+        )
+    ).first()
+    if committed is None:
+        return False
+    await record_attempt(session, cls, pk, attempt)
+    # Being over is what a parent counts, so it is part of the same commit: a
+    # child cannot be done without its parent hearing of it. A run that gave up
+    # is as done as one that finished.
+    if releasing is not None:
+        await finish_child(session, releasing)
+        await notify.announce(session, releasing["table"])
+    return True
+
+
 async def abandon(
     runtime: Runtime,
     cls: type[Workflow],
@@ -498,7 +596,7 @@ async def abandon(
     stored: dict[str, Any] | None,
     attempts: int,
     parent: dict[str, Any] | None,
-    took_event: bool,
+    event: dict[str, Any] | None,
     began: float,
     err: Exception,
 ) -> str:
@@ -523,7 +621,7 @@ async def abandon(
         stored: The arguments it was called with.
         attempts: How many attempts had failed before this one.
         parent: The run this one was fanned out by, when it was.
-        took_event: Whether this attempt ran an event held for a wait.
+        event: The held event this attempt ran, if it ran one.
         began: When the attempt started, on the monotonic clock.
         err: What stopped the commit.
 
@@ -534,27 +632,18 @@ async def abandon(
     error = f"{type(err).__name__}: {err}"[:2000]
     values, outcome = after_failure(spec, current, stored, attempts)
     values |= {"attempts": attempts, "last_error": error}
-    settle_event(cls, values, took=took_event)
+    settle_event(cls, values, event)
     joining = parent is not None and parent.get("fan_out") is not None
     done = is_finished(values)
     if joining and done:
         values["parent"] = unjoin(cls)
     async with runtime.session_factory() as session, session.begin():
-        committed = (
-            await session.execute(
-                update(cls)
-                .where(*rows.pk_filter(cls, pk), cls.wf_version == version)
-                .values(**values, claimed_until=None, wf_version=version + 1)
-                .returning(cls.wf_version)
-                .execution_options(synchronize_session=False)
-            )
-        ).first()
-        if committed is None:
-            return "fenced"
-        await record_attempt(
+        landed = await commit_attempt(
             session,
             cls,
             pk,
+            version,
+            values,
             {
                 "step": current,
                 "attempt": attempts,
@@ -562,12 +651,10 @@ async def abandon(
                 "error": error,
                 "took_ms": int((time.monotonic() - began) * 1000),
             },
+            parent if joining and done else None,
         )
-        # A run that gave up is as done as one that finished, so the parent it
-        # was fanned out by hears of it either way.
-        if joining and done and parent is not None:
-            await finish_child(session, parent)
-            await notify.announce(session, parent["table"])
+        if not landed:
+            return "fenced"
     runtime.wake.set()
     return outcome
 
@@ -672,7 +759,7 @@ async def execute(
         with contextlib.suppress(asyncio.CancelledError):
             await lease
 
-    settle_event(cls, values, took=event is not None)
+    settle_event(cls, values, event, repeating=repeat is not None)
     parent = row.parent
     joining = parent is not None and parent.get("fan_out") is not None
     try:
@@ -682,17 +769,9 @@ async def execute(
                 # against the database clock, so every time the engine writes
                 # comes from one.
                 if callable(repeat):
-                    now = (await session.execute(select(func.now()))).scalar_one()
-                    try:
-                        values["wake_at"] = repeat(now)
-                    except Exception as err:
-                        error = f"{type(err).__name__}: {err}"[:2000]
-                        values |= stop() | {
-                            "last_error": error,
-                            "pending_event": null(),
-                        }
-                        outcome = "failed"
-                        recorded = error
+                    refused = await wake_on_schedule(session, repeat, values)
+                    if refused is not None:
+                        outcome, recorded = "failed", refused
                 # The children go in first so the row can record how many of them
                 # it is waiting for; a fenced parent rolls all of it back together.
                 if scheduled is not None and scheduled.children is not None:
@@ -708,22 +787,12 @@ async def execute(
                     # commit lands, so a child that is run again cannot release
                     # its parent a second time while its siblings are still going.
                     values["parent"] = unjoin(cls)
-                stmt = (
-                    update(cls)
-                    .where(*rows.pk_filter(cls, pk), cls.wf_version == version)
-                    .values(**values, claimed_until=None, wf_version=version + 1)
-                    .returning(cls.wf_version)
-                    .execution_options(synchronize_session=False)
-                )
-                committed = (await session.execute(stmt)).first()
-                if committed is None:
-                    await session.rollback()
-                    await release(runtime, cls, pk, held)
-                    return "fenced"
-                await record_attempt(
+                landed = await commit_attempt(
                     session,
                     cls,
                     pk,
+                    version,
+                    values,
                     {
                         "step": current,
                         "attempt": attempt,
@@ -731,12 +800,12 @@ async def execute(
                         "error": recorded,
                         "took_ms": int((time.monotonic() - began) * 1000),
                     },
+                    parent if joining and done else None,
                 )
-                # Finishing is what a parent counts, so it is part of the same
-                # commit: a child cannot be done without its parent hearing of it.
-                if joining and done and parent is not None:
-                    await finish_child(session, parent)
-                    await notify.announce(session, parent["table"])
+                if not landed:
+                    await session.rollback()
+                    await release(runtime, cls, pk, held)
+                    return "fenced"
                 # A step that asked for the next one now leaves work another
                 # worker could take; one scheduled for later waits for a timer.
                 if scheduled is not None and scheduled.delay == NO_DELAY:
@@ -759,7 +828,7 @@ async def execute(
             stored,
             claimed,
             parent,
-            took_event=event is not None,
+            event=event,
             began=began,
             err=err,
         )

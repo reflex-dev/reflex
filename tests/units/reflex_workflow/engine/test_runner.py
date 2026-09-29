@@ -49,7 +49,14 @@ from reflex_workflow import (  # noqa: E402
     wait_for,
     wake_in,
 )
-from reflex_workflow.engine import claim, execute, notify, runner, runtime  # noqa: E402
+from reflex_workflow.engine import (  # noqa: E402
+    claim,
+    execute,
+    notify,
+    rows,
+    runner,
+    runtime,
+)
 from reflex_workflow.model import REGISTRY  # noqa: E402
 
 LEASE = datetime.timedelta(seconds=2)
@@ -353,6 +360,20 @@ def unschedulable(now: datetime.datetime) -> datetime.datetime:
     """
     msg = "no idea when"
     raise RuntimeError(msg)
+
+
+class Noted(Base, Workflow):
+    """A workflow whose own column has a default a caller may want to override."""
+
+    __tablename__ = "wf_test_noted"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    key: Mapped[str] = mapped_column(String, unique=True)
+    note: Mapped[str | None] = mapped_column(String, default="pending")
+
+    @step
+    async def go(self):
+        """Never run: this table is started and read, not worked."""
 
 
 class Repeating(Base, Workflow):
@@ -3455,6 +3476,115 @@ async def test_a_run_that_starts_matching_under_a_cancel_is_left_alone(
     # Still scheduled, and still pointing at its parent, so when it runs it
     # counts itself: the cancel neither ran it nor made it uncountable.
     assert left == ("work", pointer)
+
+
+async def test_a_key_is_taken_when_the_run_runs_the_event_not_when_it_is_held(
+    session_factory,
+):
+    key = uuid.uuid4().hex
+    await RaceReview(key=key).start(RaceReview.submit(pause_s=0))
+    handle = RaceReview.by(RaceReview.key == key)
+
+    # Held while the first step is still to run, for the wait it will arm.
+    assert await handle.deliver(RaceReview.decide("approve"), key="evt-1") == 1
+    async with session_factory() as session:
+        held, remembered = (
+            await session.execute(
+                select(RaceReview.pending_event, RaceReview.recent_event_keys).where(
+                    RaceReview.key == key
+                )
+            )
+        ).one()
+    # The key travels with the event rather than being remembered now: an event
+    # discarded unrun would otherwise refuse the resend that is the only way back.
+    assert held["key"] == "evt-1"
+    assert remembered is None
+    # A resend while it is still held is still a repeat, and refused as one.
+    assert await handle.deliver(RaceReview.decide("reject"), key="evt-1") == 0
+
+    # The run arms a wait for something else, so the held event is discarded --
+    # and with it the claim on that key.
+    pk = await pk_of(RaceReview, key)
+    async with session_factory() as session, session.begin():
+        await session.execute(
+            update(RaceReview)
+            .where(*rows.pk_filter(RaceReview, pk))
+            .values(waiting_for="decide", pending_event=None, next_step=None)
+            .execution_options(synchronize_session=False)
+        )
+
+    assert await handle.deliver(RaceReview.decide("approve"), key="evt-1") == 1
+    assert await step_row(RaceReview, pk) == "ok"
+    assert await status_is(RaceReview, key, "decided:approve:manager")()
+    # Now it has been run, so it is remembered and a resend changes nothing.
+    assert (
+        await handle.deliver(RaceReview.decide("reject"), key="evt-1", restart=True)
+        == 0
+    )
+
+
+async def test_a_run_going_round_a_schedule_keeps_no_event(session_factory):
+    key = uuid.uuid4().hex
+    await Repeating(key=key).start(Repeating.tick("interval"))
+    pk = await pk_of(Repeating, key)
+    handle = Repeating.by(Repeating.key == key)
+
+    # A run on every() always has a next step and never arms a wait, so an event
+    # held on one used to stay for good: never run, and refusing every event
+    # after it.
+    assert await handle.deliver(Repeating.tick("cron")) == 1
+    assert await step_row(Repeating, pk) == "ok"
+    async with session_factory() as session:
+        held = (
+            await session.execute(
+                select(Repeating.pending_event).where(Repeating.key == key)
+            )
+        ).scalar_one()
+    assert held is None
+    # Which is what lets the next one in.
+    assert await handle.deliver(Repeating.tick("cron")) == 1
+
+
+async def test_a_restart_leaves_a_cancelled_step_its_lease(session_factory):
+    key = uuid.uuid4().hex
+    await RaceReview(key=key).start(RaceReview.submit())
+    pk = await pk_of(RaceReview, key)
+    claimed = await claim_row(RaceReview, pk)
+    await RaceReview.by(RaceReview.key == key).cancel()
+
+    assert (
+        await RaceReview.by(RaceReview.key == key).deliver(
+            RaceReview.decide("approve"), restart=True
+        )
+        == 1
+    )
+    async with session_factory() as session:
+        lease = (
+            await session.execute(
+                select(RaceReview.claimed_until).where(RaceReview.key == key)
+            )
+        ).scalar_one()
+    # As ``run`` leaves it: the cancelled step is still running, and the step
+    # started here waits for it rather than running beside it.
+    assert lease == claimed.until
+
+
+@pytest.mark.parametrize(
+    ("given", "stored"),
+    [({}, "pending"), ({"note": None}, None), ({"note": "written"}, "written")],
+)
+async def test_start_stores_what_the_caller_set_including_none(
+    session_factory, given, stored
+):
+    key = uuid.uuid4().hex
+    # An explicit None used to read the same as never setting the column, so the
+    # column default was stored over it -- unlike adding the row to a session.
+    await Noted(key=key, **given).start(Noted.go)
+    async with session_factory() as session:
+        note = (
+            await session.execute(select(Noted.note).where(Noted.key == key))
+        ).scalar_one()
+    assert note == stored
 
 
 async def test_a_run_holding_its_answer_is_due_now(session_factory):

@@ -28,7 +28,9 @@ from sqlalchemy import (
     Table,
     Text,
     event,
+    func,
     literal,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, Mapper, declared_attr, mapped_column
@@ -64,6 +66,10 @@ DEFAULT_LANE = "default"
 # rows, so without this a workflow could not be mixed into an existing table.
 # A plain string rather than text(): it renders into a migration as a literal.
 ZERO = "0"
+
+# How much a rate bucket's key column holds: the table name, a separator and the
+# group, or a digest of the group where it would not fit.
+BUCKET_KEY_LENGTH = 256
 
 # How many delivered event keys a row remembers, to refuse repeats of them.
 EVENT_KEY_HISTORY = 16
@@ -297,6 +303,25 @@ def as_call(ref: StepRef[W]) -> Call[W]:
     return Call(ref, (), {})
 
 
+def remember(cls: type[Workflow], key: str) -> ColumnElement[Any]:
+    """Add an event key to a row's recent keys, dropping the oldest.
+
+    Args:
+        cls: The workflow class.
+        key: The key to remember.
+
+    Returns:
+        The new value for ``recent_event_keys``, newest first.
+    """
+    keys = func.jsonb_build_array(key).op("||")(
+        func.coalesce(cls.recent_event_keys, func.jsonb_build_array())
+    )
+    # The cap is a constant, so the jsonpath holds no user input.
+    return func.jsonb_path_query_array(
+        keys, text(f"'$[0 to {EVENT_KEY_HISTORY - 1}]'::jsonpath")
+    )
+
+
 def same_class(a: type, b: type) -> bool:
     """Tell whether two classes are one definition, perhaps defined again.
 
@@ -526,7 +551,7 @@ class RateBucket:
     it, and it is safe to truncate: the limits simply start full again.
     """
 
-    key: Mapped[str] = mapped_column(String(256), primary_key=True)
+    key: Mapped[str] = mapped_column(String(BUCKET_KEY_LENGTH), primary_key=True)
     tokens: Mapped[float] = mapped_column(Float, default=0.0, server_default=ZERO)
     updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True))
 
@@ -606,6 +631,41 @@ class AttemptLog:
             msg = f"Attempt history is already mapped by {ATTEMPTS.__qualname__}."
             raise ValueError(msg)
         ATTEMPTS = cls
+
+
+@event.listens_for(Mapper, "instrument_class")
+def check_engine_columns(mapper: Mapper[Any], cls: type) -> None:
+    """Refuse a workflow whose own attributes have taken the engine's columns.
+
+    The mixin's columns are ordinary declarative attributes, so an attribute of
+    the same name on the class replaces them, and SQLAlchemy says nothing: a
+    ``parent`` relationship, which tree-shaped models usually have, leaves the
+    table with no ``parent`` column and the first ``start()`` failing on
+    syntax. Said here instead, while the class is being defined and there is
+    still a line of code to point at.
+
+    Args:
+        mapper: The mapper being set up.
+        cls: The class it maps.
+
+    Raises:
+        TypeError: If a column the engine owns is not on the table, or is not
+            the column it should be.
+    """
+    table = mapper.local_table
+    if not issubclass(cls, Workflow) or not isinstance(table, Table):
+        return
+    # Against the table rather than the mapper, which is not configured yet at
+    # this point: an attribute that replaced one of these leaves no column of
+    # that name behind, which is the shape the failure takes.
+    taken = sorted(name for name in WORKFLOW_COLUMNS if name not in table.c)
+    if taken:
+        msg = (
+            f"{cls.__qualname__} declares {', '.join(taken)}, which "
+            f"reflex_workflow's Workflow mixin needs for itself. Rename "
+            f"{'them' if len(taken) > 1 else 'it'} on the model."
+        )
+        raise TypeError(msg)
 
 
 @event.listens_for(Mapper, "instrument_class")

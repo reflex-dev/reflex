@@ -9,6 +9,7 @@ unnecessary ignores reported, pyright fails if one of them stops being an error.
 from __future__ import annotations
 
 import datetime
+import hashlib
 from typing import Literal, cast
 
 import pytest
@@ -27,10 +28,25 @@ from reflex_workflow import (
     wake_in,
 )
 from reflex_workflow.engine import claim
-from reflex_workflow.model import check_call
-from sqlalchemy import Column, Index, Integer, String, Table, UniqueConstraint
+from reflex_workflow.engine.claim import bucket_key
+from reflex_workflow.model import BUCKET_KEY_LENGTH, WORKFLOW_COLUMNS, check_call
+from sqlalchemy import (
+    Column,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Table,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.orm import DeclarativeBase, Mapped, declarative_base, mapped_column
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    declarative_base,
+    mapped_column,
+    relationship,
+)
 from typing_extensions import assert_type
 
 
@@ -413,3 +429,57 @@ def test_a_workflow_on_the_older_declarative_base_is_indexed_too():
     # attached from __init_subclass__ would quietly not be there at all.
     assert engine_index(Ageing, "held_event") is not None
     assert engine_index(Ageing, "lease") is not None
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("a.com", "wf_model_metered:a.com"),
+        # Too long to name in the key column, so named by a digest of itself.
+        ("x" * 300, f"wf_model_metered:{hashlib.sha256(b'x' * 300).hexdigest()}"),
+        # Reads as a digest, so hashed too rather than naming a bucket a long
+        # value could also land on.
+        (
+            "a" * 64,
+            f"wf_model_metered:{hashlib.sha256(b'a' * 64).hexdigest()}",
+        ),
+    ],
+)
+def test_a_group_of_any_length_names_a_bucket_the_column_holds(value, expected):
+    key = bucket_key(Metered, value)
+    assert key == expected
+    assert len(key) <= BUCKET_KEY_LENGTH
+
+
+def test_a_workflow_that_takes_one_of_the_engines_columns_is_refused():
+    # Tree-shaped models usually have one of these, and it replaces the mixin's
+    # column with no column of that name left on the table: SQLAlchemy says
+    # nothing, and the first start() fails on syntax instead.
+    with pytest.raises(TypeError, match="declares parent, which reflex_workflow"):
+
+        class Comment(Base, Workflow):
+            """A workflow whose own relationship takes the engine's column."""
+
+            __tablename__ = "wf_model_comment"
+
+            id: Mapped[int] = mapped_column(primary_key=True)
+            parent_id: Mapped[int | None] = mapped_column(
+                ForeignKey("wf_model_comment.id")
+            )
+            # Deliberately the collision: pyright sees it too, which is the
+            # other half of the guard, for anyone who runs one.
+            parent: Mapped[Comment | None] = relationship(  # pyright: ignore[reportIncompatibleVariableOverride]
+                remote_side=[id]
+            )
+
+
+def test_a_workflow_that_leaves_the_engines_columns_alone_is_not():
+    class Kept(Base, Workflow):
+        """A workflow that names its own columns something else."""
+
+        __tablename__ = "wf_model_kept"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+        parent_comment_id: Mapped[int | None] = mapped_column(Integer)
+
+    assert set(cast(Table, Kept.__table__).c.keys()) >= WORKFLOW_COLUMNS

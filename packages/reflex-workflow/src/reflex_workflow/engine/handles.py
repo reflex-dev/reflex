@@ -5,20 +5,20 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
-from sqlalchemy import func, or_, select, text, update
+from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy import true as sqlalchemy_true
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from reflex_workflow.engine import execute, notify, rows
 from reflex_workflow.engine.runtime import current
 from reflex_workflow.model import (
-    EVENT_KEY_HISTORY,
     WORKFLOW_COLUMNS,
     Call,
     StepRef,
     Workflow,
     as_call,
     check_call,
+    remember,
 )
 
 if TYPE_CHECKING:
@@ -41,11 +41,15 @@ def insertion(row: Workflow, first: Call[Any], parent: dict[str, Any] | None = N
     cls = type(row)
     check_call(cls, first)
     mapper = rows.mapper(cls)
+    # What the caller set, rather than what reads as None: an attribute never
+    # assigned is left out so its column default applies, and one assigned None
+    # is written as None, which is what the caller asked for and what adding the
+    # row to a session would have stored.
+    assigned = row.__dict__
     values: dict[str, Any] = {
-        attr.columns[0].key: value
+        attr.columns[0].key: assigned[attr.key]
         for attr in mapper.column_attrs
-        if attr.key not in WORKFLOW_COLUMNS
-        and (value := getattr(row, attr.key)) is not None
+        if attr.key not in WORKFLOW_COLUMNS and attr.key in assigned
     }
     values.update(
         next_step=first.step.name,
@@ -90,25 +94,6 @@ async def start(row: W, first: Call[W]) -> bool:
         setattr(row, key, value)
     runtime.wake.set()
     return True
-
-
-def remember(cls: type[Workflow], key: str) -> ColumnElement[Any]:
-    """Add an event key to a row's recent keys, dropping the oldest.
-
-    Args:
-        cls: The workflow class.
-        key: The key to remember.
-
-    Returns:
-        The new value for ``recent_event_keys``, newest first.
-    """
-    keys = func.jsonb_build_array(key).op("||")(
-        func.coalesce(cls.recent_event_keys, func.jsonb_build_array())
-    )
-    # The cap is a constant, so the jsonpath holds no user input.
-    return func.jsonb_path_query_array(
-        keys, text(f"'$[0 to {EVENT_KEY_HISTORY - 1}]'::jsonpath")
-    )
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -219,9 +204,18 @@ class RunHandle(Generic[W]):
         cls = self.cls
         check_call(cls, call)
         fresh = (
-            or_(
-                cls.recent_event_keys.is_(None),
-                ~cls.recent_event_keys.contains([key]),
+            and_(
+                or_(
+                    cls.recent_event_keys.is_(None),
+                    ~cls.recent_event_keys.contains([key]),
+                ),
+                # A key held in the buffer counts as taken while it is there,
+                # so a resend does not queue behind itself. It is remembered
+                # for good only once the run actually takes it.
+                or_(
+                    cls.pending_event.is_(None),
+                    cls.pending_event["key"].astext.is_distinct_from(key),
+                ),
             )
             if key is not None
             else sqlalchemy_true()
@@ -229,6 +223,12 @@ class RunHandle(Generic[W]):
         remembered = (
             {"recent_event_keys": remember(cls, key)} if key is not None else {}
         )
+        # Carried with the buffered event rather than remembered now: an event
+        # held for a wait the run never arms is discarded, and remembering its
+        # key here would refuse the resend that is the caller's only way back.
+        buffering = {"step": call.step.name, "args": call.encode()}
+        if key is not None:
+            buffering["key"] = key
         # Buffering must not bump the version: the step that is about to arm the
         # wait is still running, and its commit has to land. It runs first, so a
         # run the event is applied to below is not buffered as well.
@@ -241,10 +241,7 @@ class RunHandle(Generic[W]):
                 cls.next_step.is_not(None),
                 fresh,
             )
-            .values(
-                pending_event={"step": call.step.name, "args": call.encode()},
-                **remembered,
-            )
+            .values(pending_event=buffering)
             .returning(cls.wf_version)
             .execution_options(synchronize_session=False)
         )
@@ -299,7 +296,10 @@ class RunHandle(Generic[W]):
                         children_left=None,
                         attempts=0,
                         last_error=None,
-                        claimed_until=None,
+                        # The lease is left alone, as ``run`` leaves it: a run
+                        # finished here has none, and one whose step was
+                        # cancelled mid-flight still holds the lease that keeps
+                        # the step started here from running beside it.
                         wf_version=cls.wf_version + 1,
                         **remembered,
                     )
