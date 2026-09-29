@@ -2,6 +2,7 @@
 
 import dataclasses
 import gc
+import logging
 import pickle
 import subprocess
 import sys
@@ -1223,3 +1224,113 @@ def test_classvar_over_inherited_field_is_not_a_field():
 
     assert Child.get_fields()["count"] is Parent.get_fields()["count"]
     assert "count" not in Child.base_vars
+
+
+def test_cached_computed_var_checks_return_type_on_recompute_only(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A cached computed var validates its return type only when it recomputes."""
+
+    class CheckedState(BaseState):
+        items: list[int] = [1, 2, 3]
+
+        @computed_var
+        def doubled(self) -> list[int]:
+            return [i * 2 for i in self.items]
+
+    checked = []
+    original = CheckedState.computed_vars["doubled"]._check_deprecated_return_type
+    monkeypatch.setattr(
+        type(CheckedState.computed_vars["doubled"]),
+        "_check_deprecated_return_type",
+        lambda self, instance, value: (
+            checked.append(value) or original(instance, value)
+        ),
+    )
+    state = CheckedState()
+
+    assert state.doubled == [2, 4, 6]
+    assert state.doubled == [2, 4, 6]
+    assert checked == [[2, 4, 6]]
+
+    state.items = [5]
+    assert state.doubled == [10]
+    assert checked == [[2, 4, 6], [10]]
+
+
+@pytest.mark.parametrize(
+    ("env_mode", "element_error_logged"), [("dev", True), ("prod", False)]
+)
+def test_state_var_type_check_depth_follows_env_mode(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    env_mode: str,
+    element_error_logged: bool,
+):
+    """Prod mode checks only the outer type of assigned and computed values.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+        caplog: Pytest log capture fixture.
+        env_mode: The REFLEX_ENV_MODE value.
+        element_error_logged: Whether a wrong element type is reported.
+    """
+
+    class DepthState(BaseState):
+        items: list[int] = []
+        wrong_elements: list[str] = []
+
+        @computed_var
+        def as_ints(self) -> list[int]:
+            return self.wrong_elements  # pyright: ignore[reportReturnType]
+
+    monkeypatch.setenv("REFLEX_ENV_MODE", env_mode)
+    state = DepthState()
+
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        state.items = ["a"]  # pyright: ignore[reportAttributeAccessIssue]
+        state.wrong_elements = ["b"]
+        _ = state.as_ints
+    name = type(state).__name__
+    messages = [r.getMessage() for r in caplog.records]
+    assert any(f"{name}.items" in m for m in messages) is element_error_logged
+    assert any(f"{name}.as_ints" in m for m in messages) is element_error_logged
+
+    caplog.clear()
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        state.items = "not a list"  # pyright: ignore[reportAttributeAccessIssue]
+    assert any(f"{name}.items" in r.getMessage() for r in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_cached_async_computed_var_checks_return_type_on_recompute_only(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A cached async computed var validates its return type only when it recomputes.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+
+    class AsyncCheckedState(BaseState):
+        items: list[int] = [1, 2, 3]
+
+        @computed_var
+        async def doubled(self) -> list[int]:
+            return [i * 2 for i in self.items]
+
+    cvar = AsyncCheckedState.computed_vars["doubled"]
+    checked = []
+    original = cvar._check_deprecated_return_type
+    monkeypatch.setattr(
+        type(cvar),
+        "_check_deprecated_return_type",
+        lambda self, instance, value: (
+            checked.append(value) or original(instance, value)
+        ),
+    )
+    state = AsyncCheckedState()
+
+    assert await state.doubled == [2, 4, 6]
+    assert await state.doubled == [2, 4, 6]
+    assert checked == [[2, 4, 6]]
