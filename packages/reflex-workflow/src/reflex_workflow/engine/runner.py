@@ -104,6 +104,9 @@ class Runner:
         # not reported as news. Unset until the first pass, which is not the
         # same as knowing there is nothing scheduled.
         self.reported: datetime.datetime | UnsetType | None = UNSET
+        # Passes in a row where nothing could be asked at all, which is what the
+        # wait between them grows on.
+        self.unanswered = 0
         self.stopping = False
         # Where the next pass starts, so a busy table cannot always go first.
         self.turn = 0
@@ -214,6 +217,10 @@ class Runner:
         That is what lets a database that bills for being awake, or suspends
         itself when it is not, go quiet between runs.
 
+        A pass that could not ask at all -- every table refusing, which is a
+        database that is not answering -- waits the floor, and twice that again
+        each time it keeps happening, up to the cap.
+
         Bounded both ways: never below ``poll_interval``, since a run that is
         due but could not be claimed -- one held back by a limit, or by this
         worker being full -- would otherwise be asked for in a tight loop; and
@@ -236,12 +243,17 @@ class Runner:
         try:
             due = await next_due(self.runtime, self.workflows, self.runnable)
         except Exception:
-            # Asking failed, which is not the same answer as nothing being due:
-            # the floor rather than the cap, so a database coming back is
-            # noticed when it does rather than at the end of an idle wait it
-            # was never asked about.
+            # Asking failed, which is not the same answer as nothing being due,
+            # so the first of these looks again at once: a database coming back
+            # from a moment's trouble should not wait out an idle interval it
+            # was never asked about. Doubling from there, because the other
+            # thing this looks like is a table that was never migrated, which
+            # would otherwise be asked after every second for as long as the
+            # process lives, and logged each time.
+            self.unanswered += 1
             logger.exception("reflex_workflow could not ask when work is next due")
-            return floor.total_seconds()
+            return min(floor * 2 ** (self.unanswered - 1), cap).total_seconds()
+        self.unanswered = 0
         await self.report(due.at if due is not None else None)
         if due is None:
             return cap.total_seconds()

@@ -4129,6 +4129,18 @@ async def test_a_worker_that_could_not_ask_looks_again_soon(
     # idle interval would leave a database that came back unnoticed until the
     # end of a wait it was never asked about.
     assert await worker.until_something_is_due() == pytest.approx(0.02)
+    # Doubling while it keeps happening, since the other thing this looks like
+    # is a table that was never migrated: asked after every poll interval for
+    # the life of the process, and logged each time.
+    waits = [await worker.until_something_is_due() for _ in range(12)]
+    assert waits[:5] == pytest.approx([0.04, 0.08, 0.16, 0.32, 0.64])
+    assert waits[-1] == pytest.approx(MINUTE.total_seconds())
+
+    # And one answer puts it back to looking promptly.
+    monkeypatch.undo()
+    await worker.until_something_is_due()
+    monkeypatch.setattr(runner, "next_due", refuse)
+    assert await worker.until_something_is_due() == pytest.approx(0.02)
 
 
 async def test_a_worker_that_cannot_listen_waits_as_long_as_one_that_can(
