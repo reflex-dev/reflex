@@ -155,9 +155,7 @@ def app_history(
         if history:
             for deployment in history:
                 table = [[key, str(value)] for key, value in deployment.items()]
-                console.print_table(
-                    table, headers=["field", "value"], overflow="fold"
-                )
+                console.print_table(table, headers=["field", "value"], overflow="fold")
         else:
             console.print(str(history))
 
@@ -811,9 +809,7 @@ def list_apps(
     if deployments:
         for deployment in deployments:
             table = [[key, str(value)] for key, value in deployment.items()]
-            console.print_table(
-                table, headers=["field", "value"], overflow="fold"
-            )
+            console.print_table(table, headers=["field", "value"], overflow="fold")
     else:
         console.print(str(deployments))
 
