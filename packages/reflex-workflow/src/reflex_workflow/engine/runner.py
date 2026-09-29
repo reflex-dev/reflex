@@ -104,9 +104,11 @@ class Runner:
         # not reported as news. Unset until the first pass, which is not the
         # same as knowing there is nothing scheduled.
         self.reported: datetime.datetime | UnsetType | None = UNSET
-        # Passes in a row where nothing could be asked at all, which is what the
-        # wait between them grows on.
-        self.unanswered = 0
+        # What the last pass that could ask nothing at all waited, doubled each
+        # time it happens again; None once a pass gets an answer. The wait
+        # itself rather than a count of them, so nothing has to raise two to
+        # the power of how long a database has been down.
+        self.unanswered: datetime.timedelta | None = None
         self.stopping = False
         # Where the next pass starts, so a busy table cannot always go first.
         self.turn = 0
@@ -250,10 +252,14 @@ class Runner:
             # thing this looks like is a table that was never migrated, which
             # would otherwise be asked after every second for as long as the
             # process lives, and logged each time.
-            self.unanswered += 1
             logger.exception("reflex_workflow could not ask when work is next due")
-            return min(floor * 2 ** (self.unanswered - 1), cap).total_seconds()
-        self.unanswered = 0
+            self.unanswered = (
+                min(floor, cap)
+                if self.unanswered is None
+                else min(self.unanswered * 2, cap)
+            )
+            return self.unanswered.total_seconds()
+        self.unanswered = None
         await self.report(due.at if due is not None else None)
         if due is None:
             return cap.total_seconds()

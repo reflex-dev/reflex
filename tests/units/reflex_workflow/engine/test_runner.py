@@ -4132,7 +4132,12 @@ async def test_a_worker_that_could_not_ask_looks_again_soon(
     # Doubling while it keeps happening, since the other thing this looks like
     # is a table that was never migrated: asked after every poll interval for
     # the life of the process, and logged each time.
-    waits = [await worker.until_something_is_due() for _ in range(12)]
+    # Far more refusals than it takes to reach the cap: the wait is doubled
+    # rather than recomputed from how many there have been, so nothing here
+    # raises two to the power of how long a database has been down -- which
+    # overflows a timedelta, out of a loop with nothing to catch it, and the
+    # worker would stop claiming for good on a database that later came back.
+    waits = [await worker.until_something_is_due() for _ in range(200)]
     assert waits[:5] == pytest.approx([0.04, 0.08, 0.16, 0.32, 0.64])
     assert waits[-1] == pytest.approx(MINUTE.total_seconds())
 
