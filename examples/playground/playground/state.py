@@ -115,6 +115,8 @@ class BoardState(rx.SharedState):
     count: int = 0
     last_seq: int = 0
     last_client: int = 0
+    # The names of the people in the room, in the order they came in.
+    members: rx.Field[list[str]] = rx.field(default_factory=list)
 
     @rx.event
     async def join(self, token: str):
@@ -124,6 +126,32 @@ class BoardState(rx.SharedState):
             token: The board's token.
         """
         await self._link_to(token)
+
+    @rx.event
+    async def enter_room(self, token: str, name: str):
+        """Link this session to a room's board and show its name to everyone there.
+
+        Args:
+            token: The room's token.
+            name: The name to show.
+        """
+        board = await self._link_to(token)
+        if name not in board.members:
+            board.members.append(name)
+
+    @rx.event
+    async def leave_room(self, name: str):
+        """Take the name off the room, then unlink this session from its board.
+
+        Args:
+            name: The name shown in the room.
+
+        Returns:
+            The events that rehydrate this session's own board.
+        """
+        if name in self.members:
+            self.members.remove(name)
+        return await self._unlink()
 
     @rx.event
     def increment(self):

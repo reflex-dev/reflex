@@ -11,6 +11,19 @@ NAV_LINKS = [
     ("Counter", "/counter"),
     ("Board", "/board"),
     ("Item 42", "/item/42"),
+    ("Events", "/events"),
+    ("Tasks", "/tasks"),
+    ("Data", "/data"),
+    ("Forms", "/forms"),
+    ("Upload", "/upload"),
+    ("Storage", "/storage"),
+    ("Charts", "/charts"),
+    ("Grids", "/grids"),
+    ("Content", "/content"),
+    ("Widgets", "/widgets"),
+    ("Room", "/room/lobby"),
+    ("Settings", "/settings"),
+    ("About", "/about"),
 ]
 
 
@@ -18,13 +31,16 @@ def navbar() -> rx.Component:
     """Render the navigation bar.
 
     Returns:
-        The logo and a link to each page.
+        The logo, a link to each page and the appearance toggle.
     """
     return rx.hstack(
         rx.image(src="/favicon.ico", alt="Reflex logo", width="2em", height="2em"),
         *[rx.link(label, href=href) for label, href in NAV_LINKS],
+        rx.spacer(),
+        rx.color_mode.button(id="nav-color-mode"),
         align="center",
         spacing="4",
+        wrap="wrap",
         class_name="playground-nav",
     )
 
