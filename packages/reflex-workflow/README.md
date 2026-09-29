@@ -536,12 +536,19 @@ async def wake_workflows() -> Response:
     return Response(status_code=200 if caught_up else 503)
 ```
 
-It returns True once the worker has made a pass that claimed nothing, which is
-the worker saying there is nothing it can take — either nothing is due, or what
-is due is held back by a limit and waiting longer would not help. Calling it is
-safe from anywhere and as often as anyone likes: it asks the worker to look,
-which it would do anyway. Past eight callers at once the rest are told the
-worker is awake rather than queued behind callers asking the same thing.
+It returns True once the worker has made a pass that claimed nothing and the
+instant behind that pass has been reported. Both halves matter: the first is the
+worker saying there is nothing it can take — either nothing is due, or what is
+due is held back by a limit and waiting longer would not help — and the second
+is the promise that whatever wakes this deployment has been told when to do it
+next. A caller that lets the machine stop when this returns needs both, so it
+returns True for nothing less.
+
+Calling it is safe from anywhere and as often as anyone likes: it asks the
+worker to look, which it would do anyway. Past eight callers at once the rest
+are not queued behind callers asking for the same thing; they ask the worker to
+look and return False, having watched nothing, so the caller tries again rather
+than acting on a success it was not shown.
 
 A worker also re-derives what is left of its wait from the wall clock, so a
 machine that suspends mid-wait does not serve the run late by however long it

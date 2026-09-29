@@ -3581,6 +3581,86 @@ async def test_wake_settles_once_the_worker_has_nothing_left_to_take(
     assert left is None
 
 
+async def test_wake_waits_for_the_next_wake_up_to_have_been_registered(
+    session_factory,
+):
+    await Resting.by().cancel()
+    started = 0
+    finished = 0
+    first = asyncio.Event()
+
+    async def slow_register(_at):
+        """Take a while over it, the way a call to a platform would.
+
+        Args:
+            _at: The instant the worker is waiting for.
+        """
+        nonlocal started, finished
+        started += 1
+        first.set()
+        await asyncio.sleep(0.3)
+        finished += 1
+
+    async with only_worker(session_factory, on_idle=slow_register):
+        # Let it settle on having nothing, so the registration below is the one
+        # this wake is waiting for rather than one already done.
+        await asyncio.wait_for(first.wait(), 10)
+        await wait_until(lambda: finished == 1)
+
+        async with session_factory() as session, session.begin():
+            await session.execute(
+                insert(Resting).values(
+                    key=uuid.uuid4().hex,
+                    next_step="rest",
+                    wake_at=func.now() + datetime.timedelta(hours=3),
+                    attempts=0,
+                    wf_version=0,
+                )
+            )
+        try:
+            assert await runner.wake(datetime.timedelta(seconds=30))
+            # The caller lets the machine stop when this returns, so it must not
+            # return while the registration for that new instant is still in
+            # flight: the platform would be holding the old answer, or none.
+            assert (started, finished) == (2, 2)
+        finally:
+            await Resting.by().cancel()
+
+
+async def test_a_wake_up_that_could_not_be_registered_is_tried_again(
+    session_factory,
+):
+    await Resting.by().cancel()
+    attempts: list[datetime.datetime | None] = []
+    refusing = True
+
+    async def flaky(at):
+        """Refuse once, the way a platform having a moment would.
+
+        Args:
+            at: The instant the worker is waiting for.
+
+        Raises:
+            RuntimeError: While the platform is refusing.
+        """
+        attempts.append(at)
+        await asyncio.sleep(0)
+        if refusing:
+            msg = "the platform said no"
+            raise RuntimeError(msg)
+
+    async with only_worker(session_factory, on_idle=flaky):
+        await wait_until(lambda: len(attempts) >= 1)
+        first = attempts[0]
+        refusing = False
+        # Round again; its next pass is otherwise a poll interval away.
+        runtime.current().wake.set()
+        # The same answer, but it was never taken: a worker that remembered
+        # having said it would leave the platform with nothing registered.
+        await wait_until(lambda: len(attempts) >= 2)
+        assert attempts[1] == first
+
+
 async def test_waiting_for_a_pass_gives_up_rather_than_hanging():
     # What wake() reports false on: a worker that is gone, or too busy to make
     # a pass inside the caller's timeout. The caller is holding a request open
@@ -3617,11 +3697,13 @@ async def test_wake_tells_the_callers_past_the_cap_to_get_on_with_it(
                 for _ in range(runner.WAITERS + 4)
             ]
             await asyncio.sleep(0.2)
-            # Past the cap a caller is told the worker is awake rather than
-            # queued behind callers asking for the same thing.
-            settled = [task for task in waiting if task.done()]
-            assert len(settled) == 4
-            assert all(task.result() for task in settled)
+            # Past the cap a caller is not queued behind callers asking for the
+            # same thing. It says so rather than claiming a pass it never saw:
+            # the caller holding a request open on this would otherwise let the
+            # machine stop on the strength of having waited for nothing.
+            done = [task for task in waiting if task.done()]
+            assert len(done) == 4
+            assert not any(task.result() for task in done)
             held.set()
     finally:
         held.set()

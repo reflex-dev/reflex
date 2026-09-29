@@ -180,8 +180,12 @@ class Runner:
                     started += await self._claim_from(cls, free)
             if started:
                 continue
-            await self.runtime.settled.record()
+            # Asked, and reported, before the pass is counted: a caller holding
+            # a request open on that count lets the machine suspend when it
+            # returns, and it must not do that until whatever wakes the machine
+            # again has been told when to.
             seconds = await self.until_something_is_due()
+            await self.runtime.settled.record()
             # Against the wall clock rather than one timeout of that length: a
             # machine that suspends leaves asyncio's monotonic clock where it
             # found it, so a timer set before the suspend has as long left after
@@ -250,13 +254,16 @@ class Runner:
         """
         if self.on_idle is None or at == self.reported:
             return
-        self.reported = at
         try:
             await self.on_idle(at)
         except Exception:
             # Whatever it does is the application's business, and a worker that
-            # stopped claiming because of it would be a far worse failure.
+            # stopped claiming because of it would be a far worse failure. Not
+            # remembered either, so the next pass tries again rather than
+            # treating an answer that never arrived as one already given.
             logger.exception("reflex_workflow on_idle failed")
+        else:
+            self.reported = at
 
     def stop(self) -> None:
         """Tell the loop to finish the pass it is in and claim nothing more."""
@@ -445,9 +452,9 @@ async def run_workflows(
             replace_current(previous)
 
 
-# How many callers may wait on one worker at once. A second caller learns
-# nothing by waiting that the first has not already asked for, so past this the
-# rest are told the worker is awake and left to get on with it.
+# How many callers may wait on one worker at once. A second caller asks for
+# nothing the first has not already asked for, so past this the rest are left
+# to ask again rather than held open alongside them.
 WAITERS = 8
 
 _waiting = 0
@@ -467,7 +474,10 @@ async def wake(timeout: datetime.timedelta) -> bool:
     back by a limit and waiting longer would not help.
 
     Safe to call from anywhere, as often as anyone likes: it asks the worker to
-    look, which it would do anyway.
+    look, which it would do anyway. Past ``WAITERS`` callers at once the rest
+    are not queued behind callers asking for the same thing: they still ask the
+    worker to look, and report that they did not see it catch up, since they
+    did not.
 
     Args:
         timeout: The longest to wait for that pass.
@@ -479,8 +489,11 @@ async def wake(timeout: datetime.timedelta) -> bool:
     runtime = current()
     settled = runtime.settled
     if _waiting >= WAITERS:
+        # Told to look, but not told it caught up: this caller has watched
+        # nothing, and saying otherwise would have a host suspend on the word
+        # of a request that waited for no answer at all.
         runtime.wake.set()
-        return True
+        return False
     async with settled.changed:
         seen = settled.passes
     _waiting += 1
