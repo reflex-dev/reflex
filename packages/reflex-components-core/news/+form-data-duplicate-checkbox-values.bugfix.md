@@ -1,1 +1,1 @@
-Fixed `rx.form`/`Form` submit handlers silently dropping all but the last value for a checkbox group or any other field that submits multiple values under one `name` -- `form_data` now reports every value as a list instead of just one.
+Fixed `rx.form`/`Form` submit handlers silently dropping all but the last value for a checkbox group or any other field that submits multiple values under one `name` -- `form_data` now preserves all repeated values in a list while leaving single-value fields unchanged.

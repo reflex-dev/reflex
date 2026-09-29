@@ -339,3 +339,40 @@ def dynamic_form():
         rx.text(DynamicFormState.form_data.to_string()),
     )
 ```
+
+## Multi-value Fields
+
+A control that submits more than one value under the same `name` -- most commonly
+`rx.checkbox_group` -- reports all of its checked values as a list in `form_data`, instead of
+overwriting each other. A field that only ever submits one value (like `rx.input`) still comes
+through as a plain scalar.
+
+```python demo exec
+class MultiValueFormState(rx.State):
+    form_data: dict = {}
+
+    @rx.event
+    def handle_submit(self, form_data: dict):
+        self.form_data = form_data
+
+
+def multi_value_form_example():
+    return rx.vstack(
+        rx.form(
+            rx.vstack(
+                rx.checkbox_group.root(
+                    rx.checkbox_group.item("Email", value="email"),
+                    rx.checkbox_group.item("SMS", value="sms"),
+                    rx.checkbox_group.item("Push", value="push"),
+                    name="channels",
+                ),
+                rx.button("Submit", type="submit"),
+            ),
+            on_submit=MultiValueFormState.handle_submit,
+            reset_on_submit=True,
+        ),
+        rx.divider(),
+        rx.heading("Results", as_="h2"),
+        rx.text(MultiValueFormState.form_data.to_string()),
+    )
+```
