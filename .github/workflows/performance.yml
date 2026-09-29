@@ -59,7 +59,11 @@ jobs:
 
       - name: Show native benchmark diagnostics
         if: failure()
-        run: cat /tmp/profile.*.out/valgrind.*.log
+        run: |
+          shopt -s nullglob
+          for log in /tmp/profile.*.out/valgrind.*.log; do
+            cat "$log"
+          done
 
       - name: Run event-loop and wire-size smoke
         run: >-
