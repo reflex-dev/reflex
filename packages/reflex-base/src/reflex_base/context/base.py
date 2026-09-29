@@ -13,20 +13,15 @@ class BaseContext:
     """Base context class that acts as a sync/async context manager for a per-subclass ContextVar.
 
     Each subclass gets its own :class:`ContextVar` and a class-level mapping from
-    attached instances to their reset tokens, so any number of subclasses can be
-    entered concurrently without interfering with each other.
-
-    Instances use identity equality (and identity-based hashing) so that two
-    distinct contexts with the same field values are still considered different.
+    the ``id`` of each attached instance to its reset token, so any number of
+    subclasses can be entered concurrently without interfering with each other,
+    and instances with equal fields are attached independently.
     """
 
     __slots__ = ()
 
     _context_var: ClassVar[ContextVar[Self]]
-    _attached_context_token: ClassVar[dict[Self, Token[Self]]]
-
-    __eq__ = object.__eq__
-    __hash__ = object.__hash__
+    _attached_context_token: ClassVar[dict[int, Token[Self]]]
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -81,10 +76,10 @@ class BaseContext:
         Raises:
             RuntimeError: If this instance is already attached.
         """
-        if self._attached_context_token.get(self) is not None:
+        if id(self) in self._attached_context_token:
             msg = "Context is already attached, cannot enter context manager."
             raise RuntimeError(msg)
-        self._attached_context_token[self] = self._context_var.set(self)
+        self._attached_context_token[id(self)] = self._context_var.set(self)
         return self
 
     def __exit__(
@@ -95,7 +90,7 @@ class BaseContext:
     ) -> None:
         """Detach this context from the current task."""
         del exc_type, exc_val, exc_tb
-        if (token := self._attached_context_token.pop(self, None)) is not None:
+        if (token := self._attached_context_token.pop(id(self), None)) is not None:
             self._context_var.reset(token)
 
     async def __aenter__(self) -> Self:
@@ -116,11 +111,14 @@ class BaseContext:
         self.__exit__(exc_type, exc_val, exc_tb)
 
     def ensure_context_attached(self) -> None:
-        """Ensure that the context is attached to the current context variable.
+        """Ensure that this instance is the active context in the current context.
 
         Raises:
-            RuntimeError: If the context is not attached.
+            RuntimeError: If this instance is not the active context.
         """
-        if self._attached_context_token.get(self) is None:
-            msg = f"{type(self).__name__} must be entered before calling this method."
+        if self._context_var.get(None) is not self:
+            msg = (
+                f"{type(self).__name__} must be entered and active before calling "
+                "this method."
+            )
             raise RuntimeError(msg)

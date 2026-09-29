@@ -578,7 +578,7 @@ class CompilerHooks:
         return replacement, children
 
 
-@dataclasses.dataclass(slots=True, kw_only=True, eq=False)
+@dataclasses.dataclass(slots=True, kw_only=True)
 class PageContext(BaseContext):
     """Mutable compilation state for a single page."""
 
@@ -657,7 +657,7 @@ class PageContext(BaseContext):
         return dict(self.module_code)
 
 
-@dataclasses.dataclass(slots=True, kw_only=True, eq=False)
+@dataclasses.dataclass(slots=True, kw_only=True)
 class CompileContext(BaseContext):
     """Mutable compilation state for an entire compile run."""
 

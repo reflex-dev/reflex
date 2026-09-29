@@ -1,12 +1,13 @@
 """Tests for BaseContext."""
 
+import contextvars
 import dataclasses
 
 import pytest
 from reflex_base.context.base import BaseContext
 
 
-@dataclasses.dataclass(frozen=True, kw_only=True, slots=True, eq=False)
+@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
 class _TestContext(BaseContext):
     """Minimal BaseContext subclass for unit testing."""
 
@@ -83,7 +84,7 @@ def test_ensure_context_attached():
 def test_subclasses_have_independent_context_vars():
     """Two BaseContext subclasses do not share their ContextVar."""
 
-    @dataclasses.dataclass(frozen=True, kw_only=True, slots=True, eq=False)
+    @dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
     class _OtherContext(BaseContext):
         value: int = 0
 
@@ -94,24 +95,37 @@ def test_subclasses_have_independent_context_vars():
         assert _OtherContext.get().value == 42
 
 
-def test_identity_equality_for_subclasses_with_eq_false():
-    """Two BaseContext subclass instances with the same fields are not equal."""
-    ctx_a = _TestContext(label="same")
-    ctx_b = _TestContext(label="same")
-    assert ctx_a is not ctx_b
-    assert ctx_a != ctx_b
-    assert hash(ctx_a) != hash(ctx_b)
+def test_ensure_context_attached_rejects_inactive_instance():
+    """ensure_context_attached raises when another instance is the active one."""
+    outer = _TestContext(label="outer")
+    inner = _TestContext(label="inner")
+    with outer, inner, pytest.raises(RuntimeError, match="must be entered"):
+        outer.ensure_context_attached()
 
 
-def test_identity_equality_isolates_entered_state():
-    """Two equal-by-field instances can be entered independently."""
-    ctx_a = _TestContext(label="same")
-    ctx_b = _TestContext(label="same")
-    with ctx_a:
-        # Entering ctx_b must not see ctx_a's attachment as its own.
-        with ctx_b:
-            assert _TestContext.get() is ctx_b
-        assert _TestContext.get() is ctx_a
+def test_ensure_context_attached_rejects_other_context():
+    """ensure_context_attached raises outside the context the instance was entered in."""
+    ctx = _TestContext(label="ensure")
+    with ctx, pytest.raises(RuntimeError, match="must be entered"):
+        contextvars.Context().run(ctx.ensure_context_attached)
+
+
+@pytest.mark.parametrize("frozen", [True, False])
+def test_field_equal_instances_enter_independently(frozen: bool):
+    """Instances with equal fields nest independently, whatever the subclass eq setting."""
+
+    @dataclasses.dataclass(frozen=frozen, kw_only=True)
+    class _EqContext(BaseContext):
+        label: str = "same"
+
+    outer = _EqContext()
+    inner = _EqContext()
+    with outer:
+        with inner:
+            assert _EqContext.get() is inner
+            inner.ensure_context_attached()
+        assert _EqContext.get() is outer
+        outer.ensure_context_attached()
 
 
 async def test_async_context_manager():
