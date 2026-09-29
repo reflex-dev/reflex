@@ -10,6 +10,7 @@ import reflex_components_internal as ui
 from reflex_components_internal.blocks.demo_form import demo_form_dialog
 
 import reflex as rx
+from reflex_site_shared.backend.slack import escape_slack_text, post_to_slack
 from reflex_site_shared.backend.status import StatusState
 from reflex_site_shared.components.icons import get_icon
 from reflex_site_shared.components.marketing_button import button
@@ -19,16 +20,45 @@ from reflex_site_shared.constants import (
     FORUM_URL,
     GITHUB_URL,
     LINKEDIN_URL,
+    SLACK_DOCS_FEEDBACK_CHANNEL,
     TWITTER_URL,
 )
 from reflex_site_shared.views.footer import dark_mode_toggle
 from reflex_site_shared.views.hosting_banner import hosting_banner
+
+# Identifiers of the two feedback popovers, stored in DocsFeedbackState.open_popover.
+_FOOTER_FEEDBACK_POPOVER = "footer"
+_TOC_FEEDBACK_POPOVER = "toc"
 
 
 class DocsFeedbackState(rx.State):
     """Store the feedback selection shared by documentation shells."""
 
     score: int = -1
+    # Which feedback popover is open, or "" for neither.
+    open_popover: str = ""
+    # Bumped after a delivered post to remount, and so clear, the feedback form.
+    form_version: int = 0
+    # Whether a submission is being posted; blocks resubmitting and switching popovers.
+    sending: bool = False
+    # The validated message handle_submit queued for post_feedback. Backend-only,
+    # so a client cannot supply the text post_feedback sends.
+    _pending_message: str = ""
+
+    @rx.event
+    def set_popover_open(self, location: str, open_: bool) -> None:
+        """Open or close one of the feedback popovers, unless a post is pending.
+
+        Args:
+            location: The feedback control requesting the change.
+            open_: Whether that control should be open.
+        """
+        if self.sending:
+            return
+        if open_:
+            self.open_popover = location
+        elif self.open_popover == location:
+            self.open_popover = ""
 
     @rx.event
     def set_score(self, score: int) -> None:
@@ -40,13 +70,66 @@ class DocsFeedbackState(rx.State):
         self.score = score
 
     @rx.event
-    def handle_submit(self, form_data: dict[str, Any]) -> None:
-        """Accept an optional documentation feedback comment.
+    def handle_submit(self, form_data: dict[str, Any]) -> rx.event.EventSpec | None:
+        """Validate the feedback, then post it with the selected score and page.
+
+        Runs in order with the reader's score selection, and hands the Slack
+        request to a background task so it does not hold the state lock.
 
         Args:
             form_data: Submitted feedback fields.
+
+        Returns:
+            A validation warning, the background event that posts the feedback,
+            or None while an earlier submission is still being posted.
         """
-        del form_data
+        if self.sending:
+            return None
+        feedback = form_data.get("feedback", "").strip()
+        if not 10 <= len(feedback) <= 500:
+            return rx.toast.warning(
+                "Please enter your feedback. Between 10 and 500 characters.",
+                close_button=True,
+            )
+        self.sending = True
+        self._pending_message = (
+            f"Contact: {escape_slack_text(form_data.get('email', ''))}\n"
+            f"Page: {escape_slack_text(self.router.url)}\n"
+            f"Score: {({1: '👍', 0: '👎'}).get(self.score, 'none')}\n"
+            f"Feedback: {escape_slack_text(feedback)}"
+        )
+        return DocsFeedbackState.post_feedback()
+
+    @rx.event(background=True)
+    async def post_feedback(self) -> rx.event.EventSpec | None:
+        """Post the message handle_submit queued to the docs feedback Slack channel.
+
+        Returns:
+            A toast telling the reader whether the feedback was sent, or None
+            when no message is queued.
+        """
+        async with self:
+            message, self._pending_message = self._pending_message, ""
+        if not message:
+            return None
+        delivered = False
+        try:
+            delivered = await post_to_slack(message, SLACK_DOCS_FEEDBACK_CHANNEL)
+        finally:
+            async with self:
+                self.sending = False
+                # Popovers cannot switch while sending, so the open one is the
+                # one that submitted.
+                if delivered:
+                    self.open_popover = ""
+                    self.form_version += 1
+        if not delivered:
+            return rx.toast.error(
+                "An error occurred while submitting your feedback. If the issue "
+                "persists, please file a GitHub issue or stop by our Discord.",
+                close_button=True,
+            )
+        return rx.toast.success("Thank you for your feedback!", close_button=True)
 
 
 def docs_navbar_frame(
@@ -393,17 +476,16 @@ def _feedback_content() -> rx.Component:
                         placeholder="Contact email (optional)",
                         max_length=100,
                     ),
-                    ui.popover.close(
-                        render_=ui.button(
-                            "Send feedback",
-                            type="submit",
-                            class_name="w-full !rounded-full",
-                        )
+                    ui.button(
+                        rx.cond(DocsFeedbackState.sending, "Sending…", "Send feedback"),
+                        type="submit",
+                        disabled=DocsFeedbackState.sending,
+                        class_name="w-full !rounded-full",
                     ),
                     class_name="w-full gap-4 flex flex-col",
                 ),
                 class_name="w-full",
-                reset_on_submit=True,
+                key=DocsFeedbackState.form_version,
                 on_submit=DocsFeedbackState.handle_submit,
             ),
             class_name="flex flex-col gap-4 w-full",
@@ -440,6 +522,10 @@ def docs_feedback_button() -> rx.Component:
             class_name="flex w-full flex-row items-center gap-1.5 lg:w-auto",
         ),
         ui.popover.portal(ui.popover.positioner(ui.popover.popup(_feedback_content()))),
+        open=DocsFeedbackState.open_popover == _FOOTER_FEEDBACK_POPOVER,
+        on_open_change=lambda open_, details: DocsFeedbackState.set_popover_open(
+            _FOOTER_FEEDBACK_POPOVER, open_
+        ),
     )
 
 
@@ -460,6 +546,10 @@ def docs_feedback_button_toc() -> rx.Component:
             class_name="justify-start pl-0 text-muted-foreground hover:!bg-transparent hover:!text-foreground",
         ),
         content=_feedback_content(),
+        open=DocsFeedbackState.open_popover == _TOC_FEEDBACK_POPOVER,
+        on_open_change=lambda open_, details: DocsFeedbackState.set_popover_open(
+            _TOC_FEEDBACK_POPOVER, open_
+        ),
     )
 
 
