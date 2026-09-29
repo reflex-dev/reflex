@@ -7,9 +7,13 @@
 .mypy_cache/
 assets/external/*
 dist/*
-examples/
-!packages/reflex-workflow/examples/
-!tests/units/reflex_workflow/examples/
+# Only the tracked examples; private apps under examples/ stay ignored. The
+# pattern has a separator in the middle, so it is anchored to this directory
+# and leaves the examples that live inside packages and tests alone.
+examples/*
+!examples/README.md
+!examples/ruff.toml
+!examples/playground/
 .web
 .states
 .idea
@@ -23,6 +27,7 @@ requirements.txt
 .pyi_generator_diff
 reflex.db
 .codspeed
+.reflex-bench/
 .env
 .env.*
 node_modules
