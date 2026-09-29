@@ -910,19 +910,23 @@ def _register(name: str, *, shared: bool = False) -> None:
     if name == "simple":
         cheap, latency_params = ("smoke", "daily"), CHEAP_LATENCY
         grid = {"manager": MANAGERS, "sessions": SIMPLE_SESSIONS}
+        # The macro runner's minute budget takes the capacity point only.
+        capacity_suites = (*cheap, "macro")
     elif shared:
         cheap, latency_params = ("daily",), CHEAP_CONTENTION_LATENCY
         grid = {"manager": APP_MANAGERS, "sessions": SESSIONS}
+        capacity_suites = cheap
     else:
         cheap, latency_params = (), CHEAP_LATENCY
         grid = {"manager": APP_MANAGERS, "sessions": SESSIONS}
+        capacity_suites = cheap
 
     @benchmark(
         id=f"events.{name}.capacity",
-        suites=cheap,
+        suites=capacity_suites,
         kind="rate",
         params=grid,
-        suite_params=dict.fromkeys(cheap, CHEAP),
+        suite_params=dict.fromkeys(capacity_suites, CHEAP),
         metrics={
             "throughput": THROUGHPUT,
             "service_p50": Metric(

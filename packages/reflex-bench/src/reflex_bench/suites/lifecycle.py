@@ -609,12 +609,14 @@ class _Compile(_Primed):
             self.restore[0].write_bytes(self.restore[1])
 
 
-@_playground(id="lifecycle.compile.warm", suites=("pr", "daily"), estimate=1.3)
+@_playground(id="lifecycle.compile.warm", suites=("pr", "daily", "macro"), estimate=1.3)
 class CompileWarm(_Compile):
     """`reflex compile` of the primed playground, unchanged since the last compile."""
 
 
-@_playground(id="lifecycle.compile.incremental", suites=("pr", "daily"), estimate=1.3)
+@_playground(
+    id="lifecycle.compile.incremental", suites=("pr", "daily", "macro"), estimate=1.3
+)
 class CompileIncremental(_Compile):
     """`reflex compile` of the primed playground after an edit of the leaf component."""
 

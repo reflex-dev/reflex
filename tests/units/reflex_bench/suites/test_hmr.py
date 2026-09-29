@@ -70,7 +70,7 @@ LEAF = "playground/components/marker.py"
 def test_registrations():
     found = registry.discover()
     dev = {
-        "hmr.render.leaf": ("pr", "daily"),
+        "hmr.render.leaf": ("pr", "daily", "macro"),
         "hmr.render.root": ("pr", "daily"),
         "hmr.handler": ("pr", "daily"),
         "hmr.css": ("daily",),

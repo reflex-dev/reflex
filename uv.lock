@@ -4190,6 +4190,9 @@ testing = [
 ]
 
 [package.dev-dependencies]
+bench = [
+    { name = "reflex-bench" },
+]
 dev = [
     { name = "alembic" },
     { name = "asynctest" },
@@ -4283,6 +4286,7 @@ requires-dist = [
 provides-extras = ["db", "pydantic", "testing"]
 
 [package.metadata.requires-dev]
+bench = [{ name = "reflex-bench", editable = "packages/reflex-bench" }]
 dev = [
     { name = "alembic" },
     { name = "asynctest" },

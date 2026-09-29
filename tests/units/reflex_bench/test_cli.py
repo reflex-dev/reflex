@@ -22,7 +22,7 @@ from reflex_bench.registry import Benchmark, Metric
 from reflex_bench.schema import dump, load, validate
 from reflex_bench.suites.selftest import noise_value
 
-from .factories import WALL, make_doc, make_entry
+from .factories import WALL, make_doc, make_entry, make_run
 
 HARNESS_PYTHON = f"{sys.version_info.major}.{sys.version_info.minor}"
 QUICK_SELF_TESTS = (
@@ -876,3 +876,69 @@ def test_ab_warns_when_the_arms_run_different_pythons(
     )  # fmt: skip
     assert result.exit_code == 0, result.output
     assert "arm A runs Python 3.12 and arm B Python 3.14" in result.output
+
+
+NOISE_WARM = "lifecycle.compile.warm[app=playground]"
+
+
+def test_list_macro_suite(home: Path):
+    result = invoke("list", "--suite", "macro")
+    assert result.exit_code == 0, result.output
+    names = [line.split()[0] for line in result.output.splitlines()[1:-1]]
+    assert names
+    assert "lifecycle.compile.warm[app=playground]" in names
+    assert "events.simple.capacity[manager=disk,sessions=10]" in names
+    assert not any(name.startswith(("wire.", "size.", "memory.")) for name in names)
+
+
+@pytest.fixture
+def history(home: Path, tmp_path: Path) -> Path:
+    runs = tmp_path / "runs" / "test-profile"
+    runs.mkdir(parents=True)
+    for day, median in enumerate([1.0, 1.02, 0.98], start=1):
+        dump(make_run(median, day=day), runs / f"2026-09-{day:02d}T03-17_daily.json")
+    (runs / "notes.txt").write_text("not a result", encoding="utf-8")
+    return runs
+
+
+def test_noise_reads_a_directory_as_json(history: Path):
+    result = invoke("noise", str(history), "--format", "json", "--min-runs", "3")
+    assert result.exit_code == 0, result.output
+    doc = json.loads(result.output)
+    assert doc["schema"] == "reflex-bench-noise/1"
+    assert len(doc["generated_from"]) == 3
+    wall = next(item for item in doc["series"] if item["metric"] == "wall")
+    assert wall["name"] == NOISE_WARM
+    assert wall["runs"] == 3
+    assert wall["class"] == "gate-candidate"
+    assert wall["profile_id"] == "test-profile"
+    assert wall["params"] == {"app": "playground"}
+
+
+def test_noise_markdown_and_terminal_tables(history: Path):
+    markdown = invoke("noise", str(history), "--format", "md")
+    assert markdown.exit_code == 0, markdown.output
+    assert markdown.output.startswith("| Benchmark | Metric | Runs |")
+    assert f"| `{NOISE_WARM}` | wall | 3 | 1.000 s |" in markdown.output
+    assert "noisy" in markdown.output
+    term = invoke("noise", str(history))
+    assert term.exit_code == 0, term.output
+    assert term.output.splitlines()[0].split()[:3] == ["benchmark", "metric", "runs"]
+    assert NOISE_WARM in term.output
+
+
+def test_noise_exits_1_when_no_result_matches(history: Path, tmp_path: Path):
+    other_kind = invoke("noise", str(history), "--kind", "pr")
+    assert other_kind.exit_code == 1
+    assert "no pr results" in other_kind.output
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    assert invoke("noise", str(empty)).exit_code == 1
+
+
+def test_noise_rejects_invalid_results(home: Path, tmp_path: Path):
+    bad = tmp_path / "bad.json"
+    bad.write_text("{}", encoding="utf-8")
+    result = invoke("noise", str(bad))
+    assert result.exit_code == 1
+    assert "bad.json" in result.output

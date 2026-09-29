@@ -1,0 +1,61 @@
+name: macro-watchdog
+permissions:
+  actions: write
+
+# Once the month's macro runner minutes are spent, a job for the runner stays
+# queued (it never fails or skips) until GitHub drops it after 24 hours, and
+# holds the codspeed-macro concurrency group all that time. This workflow, on a
+# standard runner, cancels every run of a macro workflow whose job has waited
+# for a runner longer than QUEUED_LIMIT_MINUTES, and says so in its summary.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: macro-watchdog
+  cancel-in-progress: true
+
+env:
+  QUEUED_LIMIT_MINUTES: 30
+  # Every workflow with a job in the codspeed-macro concurrency group.
+  MACRO_WORKFLOWS: macro_benchmarks.yml
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  watchdog:
+    name: watchdog
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel macro runs no runner picked up
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          limit=$((QUEUED_LIMIT_MINUTES * 60))
+          now=$(date -u +%s)
+          cancelled=0
+          for workflow in $MACRO_WORKFLOWS; do
+            for status in queued in_progress; do
+              runs=$(gh api "repos/$GH_REPO/actions/workflows/$workflow/runs?status=$status&per_page=100" --jq '.workflow_runs[] | "\(.id) \(.html_url)"')
+              while read -r run url; do
+                [ -n "$run" ] || continue
+                # A job waiting for a runner: queued and not assigned to one.
+                waiting_since=$(gh api "repos/$GH_REPO/actions/runs/$run/jobs" --jq '[.jobs[] | select(.status == "queued" and ((.runner_name // "") == "")) | .created_at] | min // empty')
+                [ -n "$waiting_since" ] || continue
+                waited=$((now - $(date -u -d "$waiting_since" +%s)))
+                if [ "$waited" -gt "$limit" ]; then
+                  gh run cancel "$run"
+                  echo "- cancelled [$workflow run $run]($url): its job waited $((waited / 60)) min for a macro runner (limit $QUEUED_LIMIT_MINUTES min); the month's macro minutes are probably spent." | tee -a "$GITHUB_STEP_SUMMARY"
+                  cancelled=$((cancelled + 1))
+                fi
+              done <<< "$runs"
+            done
+          done
+          echo "$cancelled run(s) cancelled" | tee -a "$GITHUB_STEP_SUMMARY"
