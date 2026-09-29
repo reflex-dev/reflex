@@ -121,7 +121,10 @@ jobs:
         run: |
           export PYTHONUNBUFFERED=1
           export REFLEX_TEST_POSTGRES=postgresql://postgres:postgres@localhost:5432/reflex_workflow
-          uv run pytest tests/units/reflex_workflow --cov --no-cov-on-fail --cov-report=
+          # Appended: this runs one package, and every step above replaces the
+          # coverage data rather than adding to it, so the report that follows
+          # would otherwise be of this package alone.
+          uv run pytest tests/units/reflex_workflow --cov --cov-append --no-cov-on-fail --cov-report=
       - name: Generate coverage report
         run: uv run coverage html
 
