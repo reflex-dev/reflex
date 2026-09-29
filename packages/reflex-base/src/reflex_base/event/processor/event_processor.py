@@ -502,16 +502,17 @@ class EventProcessor:
         # Cleared once the chain finishes or the consumer leaves: a later delta
         # would land behind the end of the stream, where nothing reads it.
         streaming = True
+        stream_token = token
 
         async def _emit_delta_impl(
-            delta_token: str, delta: Mapping[str, Mapping[str, Any]]
+            token: str, delta: Mapping[str, Mapping[str, Any]]
         ) -> None:
-            if streaming and delta_token == token:
+            if streaming and token == stream_token:
                 await deltas.put(delta)
             elif root.emit_delta_impl is not None:
                 # Other tokens' deltas, and any emitted after the stream ended,
                 # go to the client the usual way.
-                await root.emit_delta_impl(delta_token, delta)
+                await root.emit_delta_impl(token, delta)
 
         task_future = await self.enqueue(
             token,
