@@ -552,6 +552,79 @@ def test_deploy_non_interactive_with_invalid_project(
     assert errors[-1] == "project does not exist"
 
 
+def test_deploy_missing_project_name_does_not_fall_back_to_selected_project(
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+):
+    client = _common_deploy_mocks(mocker, selected_project="selected-project-id")
+    client.api.projects.search.return_value = []
+    export_fn = MagicMock()
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_id=str(_APP_ID),
+            export_fn=export_fn,
+            project_name="missing-project",
+            interactive=False,
+        )
+
+    client.api.apps.get.assert_not_called()
+    export_fn.assert_not_called()
+    assert "No project found with the name 'missing-project'." in _log_messages(
+        caplog, logging.ERROR
+    )
+
+
+@pytest.mark.parametrize("project_selector", ["project_name", "project_id"])
+def test_deploy_rejects_app_id_from_another_requested_project(
+    mocker: MockerFixture,
+    project_selector: str,
+):
+    client = _common_deploy_mocks(mocker)
+    other_project_id = uuid.UUID(int=71)
+    if project_selector == "project_name":
+        client.api.projects.search.return_value = [
+            ProjectRef(id=other_project_id, name="other-project")
+        ]
+        kwargs = {"project_name": "other-project"}
+    else:
+        kwargs = {"project": str(other_project_id)}
+    client.api.apps.get.return_value = app()
+    export_fn = MagicMock()
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_id=str(_APP_ID),
+            export_fn=export_fn,
+            interactive=False,
+            **kwargs,
+        )
+
+    client.api.deployments.check.assert_not_called()
+    client.api.apps.reserve_hostname.assert_not_called()
+    export_fn.assert_not_called()
+
+
+def test_deploy_rejects_project_name_that_disagrees_with_project_id(
+    mocker: MockerFixture,
+):
+    client = _common_deploy_mocks(mocker)
+    client.api.projects.search.return_value = [
+        ProjectRef(id=uuid.UUID(int=71), name="named-project")
+    ]
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_id=str(_APP_ID),
+            export_fn=MagicMock(),
+            project=str(_PROJECT_ID),
+            project_name="named-project",
+            interactive=False,
+        )
+
+    client.api.apps.get.assert_not_called()
+
+
 def test_deploy_create_deployment_multiple_apps_non_interactive(
     mocker: MockerFixture,
     mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
