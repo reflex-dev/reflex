@@ -163,6 +163,22 @@ def test_dataclasses_field_default_is_unpacked():
     assert MyState.get_fields()["n"].default == 5
 
 
+def test_dataclasses_field_custom_factory_allowed_on_plain_model():
+    """A plain model is not serialized, so a custom factory needs no annotation."""
+
+    def make_items() -> list:
+        return []
+
+    class MyModel(EvenMoreBasicBaseState):
+        items = dataclasses.field(default_factory=make_items)
+
+    first = MyModel()
+    second = MyModel()
+    assert first.items == []
+    assert first.items is not second.items
+    assert MyModel.get_fields()["items"].annotated_type is Any
+
+
 def test_dataclasses_field_without_default_uses_type_default():
     """A bare dataclasses.field() falls back to the annotation's default."""
 

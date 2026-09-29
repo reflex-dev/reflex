@@ -4328,14 +4328,21 @@ def _validate_state_declaration(
         seen.update(vars(base))
 
 
-def _unannotated_fields(namespace: Mapping[str, Any]) -> dict[str, Field]:
+def _unannotated_fields(
+    namespace: Mapping[str, Any], require_serializable: bool = False
+) -> dict[str, Field]:
     """Get the fields a class namespace declares by value alone.
 
     Args:
         namespace: The class namespace.
+        require_serializable: Whether the fields must have serializable types.
 
     Returns:
         The fields by name.
+
+    Raises:
+        StateValueError: If a dataclasses.field default cannot be typed and the
+            class requires serializable fields.
     """
     annotations = annotations_from_namespace(namespace)
     slots = _slot_names(namespace)
@@ -4353,12 +4360,15 @@ def _unannotated_fields(namespace: Mapping[str, Any]) -> dict[str, Field]:
                 annotated = figure_out_type(value.default)
             elif factory in (list, dict, set, tuple):
                 annotated = factory
-            else:
+            elif require_serializable:
                 msg = (
                     f"Cannot infer the type of state var {key!r} from an "
                     "unannotated dataclasses.field(...); add a type annotation."
                 )
                 raise StateValueError(msg)
+            else:
+                # A plain model is not serialized; Any matches rx.field here.
+                annotated = Any
             fields[key] = Field(
                 default=value.default,
                 default_factory=factory,
@@ -4567,9 +4577,13 @@ class BaseStateMeta(ABCMeta):
                     ).items()
                     if key.startswith("_") and not key.startswith(f"_{base.__name__}__")
                 )
-        own_fields = _unannotated_fields(namespace) | _annotated_fields(
-            namespace, lookup_order
-        )
+        own_fields = _unannotated_fields(
+            namespace,
+            require_serializable=state_root
+            or any(
+                getattr(base, "_reflex_state_root", None) is not None for base in bases
+            ),
+        ) | _annotated_fields(namespace, lookup_order)
         annotations = annotations_from_namespace(namespace)
         for key, value in namespace.items():
             if (
