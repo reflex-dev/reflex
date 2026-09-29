@@ -63,9 +63,11 @@ def FormSubmit(form_component):
                         on_change=rx.console_log,
                     ),
                     rx.button("Submit", type_="submit"),
+                    id="form_content_wrapper",
                 ),
                 on_submit=FormState.form_submit,
                 custom_attrs={"action": "/invalid"},
+                id="form_id",
             ),
             rx.text(FormState.form_data.to_string(), id="form-data"),
             rx.spacer(),
@@ -122,9 +124,11 @@ def FormSubmitName(form_component):
                     ),
                     rx.button("Submit", type_="submit"),
                     rx.icon_button(rx.icon(tag="plus")),
+                    id="form_content_wrapper",
                 ),
                 on_submit=FormState.form_submit,
                 custom_attrs={"action": "/invalid"},
+                id="form_id",
             ),
             rx.text(FormState.form_data.to_string(), id="form-data"),
             rx.spacer(),
@@ -240,6 +244,8 @@ async def test_submit(driver, form_submit: AppHarness):
 
     print(form_data)
 
+    assert "form_id" not in form_data
+    assert "form_content_wrapper" not in form_data
     assert form_data["name_input"] == "foo"
     assert form_data["empty_input"] == ""
     assert form_data["bool_input"]

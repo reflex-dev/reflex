@@ -1,3 +1,4 @@
+from copy import copy
 from typing import TypedDict
 
 import pytest
@@ -17,6 +18,12 @@ from typing_extensions import NotRequired
 
 import reflex as rx
 from reflex.compiler.utils import _root_only_custom_code
+
+EMAIL_FIELD_ID = "email"
+EMAIL_LABEL_ID = "email_label"
+SUBMIT_BUTTON_ID = "submit_button"
+INPUT_WRAPPER_ID = "input_wrapper"
+FORM_ID = "form_id"
 
 
 def test_render_on_submit():
@@ -39,7 +46,7 @@ def test_render_no_on_submit():
 
 
 def test_form_submit_filters_null_ref_values():
-    """Only refs with resolved values should be merged into form data."""
+    """Only form-control refs with resolved values should be submitted."""
 
     class FormState(rx.State):
         @rx.event
@@ -48,18 +55,21 @@ def test_form_submit_filters_null_ref_values():
 
     form = HTMLForm.create(
         rx.box(
-            Input.create(id="email"),
-            rx.text("Email", id="email_label"),
-            rx.button("Submit", id="submit_button"),
+            Input.create(id=EMAIL_FIELD_ID),
+            rx.text("Email", id=EMAIL_LABEL_ID),
+            rx.button("Submit", id=SUBMIT_BUTTON_ID),
+            id=INPUT_WRAPPER_ID,
         ),
         on_submit=FormState.on_submit,
+        id=FORM_ID,
     )
-
     submit_hook = form.add_hooks()[0]
     assert "filter(([, value]) => value != null)" in submit_hook
-    assert "ref_email" in submit_hook
-    assert "ref_email_label" in submit_hook
-    assert "ref_submit_button" in submit_hook
+    assert f"ref_{EMAIL_FIELD_ID}" in submit_hook
+    assert f"ref_{EMAIL_LABEL_ID}" not in submit_hook
+    assert f"ref_{SUBMIT_BUTTON_ID}" not in submit_hook
+    assert f"ref_{INPUT_WRAPPER_ID}" not in submit_hook
+    assert f"ref_{FORM_ID}" not in submit_hook
 
 
 def test_form_refs_include_debounced_controls():
@@ -71,6 +81,40 @@ def test_form_refs_include_debounced_controls():
     )
 
     assert "ref_debounced_input" in form.add_hooks()[0]
+
+
+def test_form_refs_include_memoized_controls(monkeypatch):
+    """Memo wrappers retain the form-control marker of their wrapped component."""
+
+    class MemoizedInput(Input):
+        _is_form_control = False
+
+    monkeypatch.setattr(MemoizedInput, "_wrapped_component_type", Input, raising=False)
+    form = HTMLForm.create(MemoizedInput.create(id="memoized_input"))
+
+    assert "ref_memoized_input" in form.add_hooks()[0]
+
+
+def test_form_refs_delegate_across_memoized_subtree():
+    """A form memo wrapper can collect IDs from the original form subtree."""
+
+    class SignupState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: dict):
+            pass
+
+    form = HTMLForm.create(
+        Input.create(id="memoized_input"), on_submit=SignupState.on_submit
+    )
+    form._get_form_control_refs()
+    memoized_form = copy(form)
+    object.__setattr__(memoized_form, "_get_all_refs", form._get_all_refs)
+    object.__setattr__(
+        memoized_form, "_get_form_control_refs", form._get_form_control_refs
+    )
+    memoized_form.children = []
+
+    assert "ref_memoized_input" in memoized_form.add_hooks()[0]
 
 
 @pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])

@@ -140,6 +140,38 @@ def _get_static_string_prop(
     return None
 
 
+def _is_form_control_component(component: BaseComponent) -> bool:
+    """Return whether a component or its memoized type is a form control.
+
+    Args:
+        component: The component to inspect.
+
+    Returns:
+        Whether the component contributes a form field.
+    """
+    if getattr(component, "_is_form_control", False):
+        return True
+    wrapped_component_type = getattr(component, "_wrapped_component_type", None)
+    return getattr(wrapped_component_type, "_is_form_control", False)
+
+
+def _get_form_control_refs(component: BaseComponent) -> set[str]:
+    """Collect refs belonging to form controls in a component subtree.
+
+    Args:
+        component: The component tree to inspect.
+
+    Returns:
+        The refs owned by form controls.
+    """
+    return {
+        ref
+        for child in _iter_form_components(component)
+        if isinstance(child, Component) and _is_form_control_component(child)
+        if (ref := child.get_ref()) is not None
+    }
+
+
 def _get_required_typed_dict_fields(typed_dict_type: type[Any]) -> frozenset[str]:
     """Resolve required TypedDict keys across Python versions.
 
@@ -321,6 +353,18 @@ class Form(BaseHTML):
         ).hexdigest()
         return form
 
+    def _get_form_control_refs(self) -> set[str]:
+        """Get refs for form controls in this form's component subtree.
+
+        Returns:
+            The refs owned by form controls.
+        """
+        refs = getattr(self, "_form_control_refs", None)
+        if refs is None:
+            refs = _get_form_control_refs(self)
+            object.__setattr__(self, "_form_control_refs", refs)
+        return refs
+
     def add_imports(self) -> ImportDict:
         """Add imports needed by the form component.
 
@@ -364,9 +408,11 @@ class Form(BaseHTML):
         return render_tag
 
     def _get_form_refs(self) -> dict[str, Any]:
-        # Send all the input refs to the handler.
+        form_control_refs = self._get_form_control_refs()
         form_refs = {}
         for ref in dict.fromkeys(self._get_all_refs()):
+            if ref not in form_control_refs:
+                continue
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):
@@ -393,7 +439,7 @@ class Form(BaseHTML):
         has_dynamic_identifiers = False
 
         for component in _iter_form_components(self):
-            if component is self or not getattr(component, "_is_form_control", False):
+            if component is self or not _is_form_control_component(component):
                 continue
 
             name = _get_static_string_prop(component, "name")
