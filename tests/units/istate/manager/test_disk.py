@@ -14,6 +14,8 @@ from reflex.utils import prerequisites
 
 CLIENT_ID = "client"
 NONEXISTENT_CLIENT_ID = "nonexistent_client"
+WHITESPACE_CLIENT_ID = "private  session\ttoken"
+OVERSIZED_MODULE_NAME = "oversized_module_name_" * 100
 
 
 class DiskPersistState(BaseState):
@@ -184,7 +186,7 @@ async def test_load_state_logs_sanitized_exception_details(
     """
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
     state_manager = StateManagerDisk(_write_debounce_seconds=0)
-    token = StateToken(ident=CLIENT_ID, cls=dict)
+    token = StateToken(ident=WHITESPACE_CLIENT_ID, cls=dict)
     token_path = state_manager.token_path(token)
     token_path.parent.mkdir(parents=True, exist_ok=True)
     token_path.write_bytes(b"existing state")
@@ -192,7 +194,7 @@ async def test_load_state_logs_sanitized_exception_details(
     def fail_to_deserialize(cls, data=None, fp=None):
         """Raise a representative missing-module error during state loading."""
         module_name = "missing_state_module"
-        error_message = f"No module named '{module_name}' while loading {CLIENT_ID}"
+        error_message = f"No module named '{module_name}' while loading {token.ident}"
         raise ModuleNotFoundError(error_message)
 
     monkeypatch.setattr(StateToken, "deserialize", classmethod(fail_to_deserialize))
@@ -210,8 +212,53 @@ async def test_load_state_logs_sanitized_exception_details(
     assert "missing_state_module" in error_logs[0].message
     assert token.ident not in error_logs[0].message
     assert str(token) not in error_logs[0].message
+    assert " ".join(token.ident.split()) not in error_logs[0].message
     assert token_path.name in error_logs[0].message
     assert "Falling back to a default state for this load" in error_logs[0].message
+
+    await state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_load_state_caps_exception_details(tmp_path, monkeypatch, caplog):
+    """Test that exception details are capped before they are logged.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest caplog fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = StateToken(ident=CLIENT_ID, cls=dict)
+    token_path = state_manager.token_path(token)
+    token_path.parent.mkdir(parents=True, exist_ok=True)
+    token_path.write_bytes(b"existing state")
+    module_name = OVERSIZED_MODULE_NAME
+
+    def fail_to_deserialize(cls, data=None, fp=None):
+        """Raise a representative error with an oversized module name."""
+        error_message = f"No module named '{module_name}'"
+        raise ModuleNotFoundError(error_message)
+
+    monkeypatch.setattr(StateToken, "deserialize", classmethod(fail_to_deserialize))
+
+    assert await state_manager.load_state(token) is None
+
+    error_logs = [
+        record
+        for record in caplog.records
+        if record.name == "reflex.istate.manager.disk"
+        and record.levelno >= logging.ERROR
+    ]
+    assert len(error_logs) == 1
+    prefix = f"Failed to load state file {token_path.name}: ModuleNotFoundError: "
+    suffix = ". Falling back to a default state for this load."
+    assert error_logs[0].message.startswith(prefix)
+    assert error_logs[0].message.endswith(suffix)
+    exception_detail = error_logs[0].message[len(prefix) : -len(suffix)]
+    assert len(exception_detail) <= 512
+    assert "oversized_module_name_" in exception_detail
 
     await state_manager.close()
 

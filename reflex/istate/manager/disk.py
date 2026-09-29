@@ -158,12 +158,13 @@ class StateManagerDisk(StateManager):
                 with token_path.open(mode="rb") as file:
                     return token.deserialize(fp=file)
             except Exception as e:
-                exception_detail = " ".join(str(e).split())
+                exception_detail = str(e)
                 for secret in (str(token), token.ident):
                     if secret:
                         exception_detail = exception_detail.replace(
                             secret, "[redacted]"
                         )
+                exception_detail = " ".join(exception_detail.split())[:512]
                 logger.error(
                     "Failed to load state file %s: %s: %s. "
                     "Falling back to a default state for this load.",
