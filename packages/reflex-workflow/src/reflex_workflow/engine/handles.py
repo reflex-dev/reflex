@@ -190,7 +190,9 @@ class RunHandle(Generic[W]):
         wait arms; if it ends up waiting for something else, or stops, the event is
         discarded. A wait given a deadline stops accepting events once that
         deadline has passed, even where no worker has run the timeout step yet: a
-        deadline is a promise about the clock rather than a race with the workers. A repeat of a ``key`` the run has already taken changes nothing,
+        deadline is a promise about the clock rather than a race with the
+        workers. Judged as this reaches the row rather than as it commits, so a
+        delivery held up on a lock across the deadline is taken. A repeat of a ``key`` the run has already taken changes nothing,
         so a resent reply records one decision.
 
         Args:
@@ -263,7 +265,14 @@ class RunHandle(Generic[W]):
                 # the deadline would belong to whichever of the two was quicker,
                 # and a caller delivering faster than the workers pass could put
                 # one off for as long as it kept delivering.
-                or_(cls.wake_at.is_(None), cls.wake_at > func.now()),
+                #
+                # The one place the engine reads the wall clock rather than
+                # now(), which Postgres freezes at the transaction's start: this
+                # statement can wait on a row lock, and the deadline it is
+                # deciding may pass while it waits. Every other comparison here
+                # wants the one time for the whole transaction; this one wants
+                # the time it actually ran.
+                or_(cls.wake_at.is_(None), cls.wake_at > func.clock_timestamp()),
                 fresh,
             )
             .values(

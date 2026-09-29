@@ -597,4 +597,6 @@ was away.
 - A wait ends once, and its deadline decides when. Past the deadline an event is
   refused and `deliver` returns 0 for it, whether or not a worker has reached the
   timeout step yet — so a caller delivering faster than the workers pass cannot keep a
-  deadline from being kept. Before it, the event wins and the timeout does not run.
+  deadline from being kept. Before it, the event wins and the timeout does not run. The
+  deadline is judged as the delivery reaches the row, so one held up on a lock across
+  the deadline is taken.

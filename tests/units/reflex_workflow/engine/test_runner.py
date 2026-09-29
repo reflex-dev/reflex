@@ -1395,6 +1395,38 @@ async def test_a_deadline_that_has_passed_beats_an_event(session_factory):
     assert (row.next_step, row.waiting_for, row.pending_event) == (None, None, None)
 
 
+async def test_the_deadline_is_judged_as_the_delivery_reaches_the_row(
+    session_factory,
+):
+    key = uuid.uuid4().hex
+    await RaceReview(key=key).start(RaceReview.submit(timeout_s=3))
+    pk = await arm_wait(key)
+    handle = RaceReview.by(RaceReview.key == key)
+
+    # Another transaction holds the row, so this delivery reaches it inside the
+    # deadline and commits outside it.
+    holder = create_async_engine(ASYNC_URL)
+    async with holder.connect() as held:
+        await held.execute(
+            select(RaceReview.id)
+            .where(*rows.pk_filter(RaceReview, pk))
+            .with_for_update()
+        )
+        delivering = asyncio.create_task(handle.deliver(RaceReview.decide("approve")))
+        await asyncio.sleep(4)
+        assert not delivering.done()
+        await held.rollback()
+    await holder.dispose()
+
+    # Taken, which is where the deadline is drawn: Postgres evaluates a volatile
+    # function once as the statement starts, and the re-check it makes after
+    # waiting on a lock reuses that value, so no one statement can judge the
+    # deadline as it commits. Closing this needs the lock taken in a statement
+    # of its own and the deadline read in the next one, which costs a round trip
+    # on every delivery. Written down so a change here is a decision.
+    assert await delivering == 1
+
+
 async def test_an_event_inside_the_deadline_still_beats_the_timeout(session_factory):
     key = uuid.uuid4().hex
     await RaceReview(key=key).start(RaceReview.submit(timeout_s=60))
