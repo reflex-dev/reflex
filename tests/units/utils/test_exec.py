@@ -866,3 +866,64 @@ def test_get_app_file_matches_granian_module_name(
 
     assert app_file == tmp_path / module_file
     assert prepare_import(str(app_file)) == module
+
+
+def test_get_app_file_preserves_distributed_namespace_package(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Creating a marker in one portion must not hide another portion."""
+    import importlib
+
+    first = tmp_path / "first"
+    second = tmp_path / "second"
+    _make_app_layout(first, monkeypatch, "shared.app", [], "shared/app.py")
+    (second / "shared").mkdir(parents=True)
+    (second / "shared" / "sibling.py").write_text("VALUE = 42\n")
+    monkeypatch.syspath_prepend(str(second))
+    monkeypatch.syspath_prepend(str(first))
+    importlib.invalidate_caches()
+    assert importlib.import_module("shared.sibling").VALUE == 42
+
+    with pytest.raises(ImportError, match="another portion of this namespace package"):
+        exec_utils.get_app_file()
+    assert not (first / "shared" / "__init__.py").exists()
+    assert importlib.import_module("shared.sibling").VALUE == 42
+
+
+def test_get_app_file_read_only_marker_has_actionable_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A failed marker write must identify the file and the repair step."""
+    _make_app_layout(tmp_path, monkeypatch, "pkg.app", [], "pkg/app.py")
+    init_file = tmp_path / "pkg" / "__init__.py"
+    original_touch = Path.touch
+
+    def touch_or_deny(path: Path, *args, **kwargs):
+        if path == init_file:
+            raise PermissionError(13, "Permission denied", str(path))
+        return original_touch(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "touch", touch_or_deny)
+    with pytest.raises(OSError, match="Make the app directory writable") as exc_info:
+        exec_utils.get_app_file()
+    assert str(init_file) in str(exc_info.value)
+    assert isinstance(exc_info.value.__cause__, PermissionError)
+    assert not init_file.exists()
+
+
+def test_get_app_file_other_regular_package_does_not_block_marker(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """An unrelated regular package in sys.path is not a namespace portion."""
+    first = tmp_path / "first"
+    second = tmp_path / "second"
+    _make_app_layout(
+        first, monkeypatch, "regularpkg_7304.app", [], "regularpkg_7304/app.py"
+    )
+    (second / "regularpkg_7304").mkdir(parents=True)
+    (second / "regularpkg_7304" / "__init__.py").touch()
+    monkeypatch.syspath_prepend(str(second))
+    monkeypatch.syspath_prepend(str(first))
+
+    assert exec_utils.get_app_file() == first / "regularpkg_7304" / "app.py"
+    assert (first / "regularpkg_7304" / "__init__.py").is_file()
