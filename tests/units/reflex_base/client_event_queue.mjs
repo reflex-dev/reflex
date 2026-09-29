@@ -43,6 +43,25 @@ async function createQueue(connected = true) {
   };
 }
 
+/** Create the real addEvents callback with lightweight React hook stubs. */
+async function createAddEvents() {
+  const output = [];
+  const actionKeys = [];
+  const runtime = await createQueueRuntime(source, {
+    throttle: (key) => {
+      actionKeys.push(key);
+      return true;
+    },
+  });
+  const [addEvents] = runtime.useEventLoop({});
+  return {
+    actionKeys,
+    addEvents,
+    output,
+    local: (id) => call(() => output.push(id)),
+  };
+}
+
 for (const ref of [false, true]) {
   test(
     "FIFO filtering with " + (ref ? "reference" : "raw") + " sockets",
@@ -89,12 +108,14 @@ test("prepend preserves order, queue identity, and input without extra shifts", 
   const shift = (pending.shift = t.mock.fn(pending.shift));
   const existing = [stateful(3), q.local(4)];
   await q.enqueue(existing);
-  const incoming = Object.freeze([stateful(1), null, q.local(2), undefined]);
+  const incoming = Object.freeze([
+    Object.freeze([stateful(1), null]),
+    Object.freeze([q.local(2), Object.freeze([undefined])]),
+  ]);
   await q.enqueue(incoming, true);
-  await q.enqueue([], true);
-  await q.enqueue([null, undefined], true);
+  await q.enqueue([[], [null, [undefined]]], true);
   assert.equal(q.runtime.event_queue, pending);
-  assert.deepEqual([...pending], [incoming[0], incoming[2], ...existing]);
+  assert.deepEqual([...pending], [incoming[0][0], incoming[1][0], ...existing]);
   assert.equal(shift.mock.callCount(), 0);
   q.socket.connected = true;
   await q.drain();
@@ -225,7 +246,7 @@ test("redirect and REST events retain ordering", async () => {
   assert.equal(q.runtime.event_queue.length, 0);
 });
 
-test("dispatch rejection leaves pending work for retry", async (t) => {
+test("dispatch rejection does not block pending work", async (t) => {
   const q = await createQueue();
   const emit = t.mock.method(q.socket, "emit", () => {
     throw new Error("socket write failed");
@@ -234,10 +255,70 @@ test("dispatch rejection leaves pending work for retry", async (t) => {
     q.enqueue([stateful(1), q.local(2)]),
     /socket write failed/,
   );
-  assert.equal(q.runtime.event_queue.length, 1);
+  assert.deepEqual(q.output, [2]);
+  assert.equal(q.runtime.event_queue.length, 0);
   emit.mock.restore();
   await q.enqueue([stateful(3)]);
   assert.deepEqual(q.output, [2, 3]);
+  assert.equal(q.runtime.event_queue.length, 0);
+});
+
+for (const rejection of [0, null]) {
+  test(`falsy dispatch rejection ${rejection} is preserved`, async (t) => {
+    const q = await createQueue();
+    t.mock.method(q.socket, "emit", () => {
+      throw rejection;
+    });
+
+    await assert.rejects(q.enqueue([stateful(1), q.local(2)]), (error) =>
+      Object.is(error, rejection),
+    );
+    assert.deepEqual(q.output, [2]);
+    assert.equal(q.runtime.event_queue.length, 0);
+  });
+}
+
+test("addEvents flattens nested event lists before applying actions", async () => {
+  const q = await createAddEvents();
+  const actions = [];
+  const browserEvent = {
+    preventDefault: () => actions.push("preventDefault"),
+    stopPropagation: () => actions.push("stopPropagation"),
+  };
+  const first = {
+    ...q.local(1),
+    event_actions: { preventDefault: true },
+  };
+  const second = {
+    ...q.local(2),
+    event_actions: { stopPropagation: true, throttle: 1 },
+  };
+
+  const generatedHandler = (event) =>
+    q.addEvents(
+      [[], [first, [null, second, [undefined]]], q.local(3)],
+      [event],
+      {},
+    );
+  await generatedHandler(browserEvent);
+
+  assert.deepEqual(actions, ["preventDefault", "stopPropagation"]);
+  assert.deepEqual(q.actionKeys, [
+    "_call_function+++_call_function+++_call_function",
+  ]);
+  assert.deepEqual(q.output, [1, 2, 3]);
+});
+
+test("a malformed event does not strand later queued events", async () => {
+  const q = await createQueue(false);
+  q.socket.emit = (_, event) => {
+    if (event.payload?.id !== undefined) q.output.push(event.payload.id);
+  };
+
+  q.runtime.event_queue.push({ name: 7 }, q.local(1));
+  await q.drain();
+
+  assert.deepEqual(q.output, [1]);
   assert.equal(q.runtime.event_queue.length, 0);
 });
 

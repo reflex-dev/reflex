@@ -13,7 +13,7 @@ from reflex_build_sdk._async.resources.projects import (
     _TeamGrantResult,
     _TeamRevokeResult,
 )
-from reflex_build_sdk._decode import json_name
+from reflex_build_sdk._decode import json_key, json_name
 from reflex_build_sdk._deploy import UploadReservation, UploadTarget
 
 from tests.units.reflex_build_sdk.schema_check import load_components, model_problems
@@ -24,6 +24,7 @@ SCHEMA_MODELS: dict[type, tuple[str, ...]] = {
     types.AccessScope: ("AccessJson",),
     types.CreatedToken: ("CreateTokenResponse",),
     types.RotatedToken: ("RefreshTokenResponse",),
+    types.AppSummary: ("AppSummaryResponse",),
     types.User: (
         "GetAppHistoryResponseDeploymentUser",
         "GetAppInfoLatestDeploymentResponseUser",
@@ -50,6 +51,7 @@ SCHEMA_MODELS: dict[type, tuple[str, ...]] = {
     types.AuditLogEntry: ("GetProjectAuditLogResponse",),
     types.UsageBalance: ("UsageBalanceResult",),
     types.UsageEntry: ("UsageHistoryEntry",),
+    types.LogRecord: ("LogRecord",),
     _EffectivePermissions: ("EffectivePermissionsResponse",),
     _TeamGrantResult: ("TeamGrantResult",),
     _TeamRevokeResult: ("TeamRevokeResult",),
@@ -65,13 +67,32 @@ SCHEMA_MODELS: dict[type, tuple[str, ...]] = {
     types.SecurityReviewJob: ("SecurityReviewJobResult",),
 }
 
+# The response properties a model deliberately has no field for, and why. Every
+# other property must be mapped, so a field the API adds is not silently dropped.
+UNMAPPED_PROPERTIES: dict[type, dict[str, str]] = {
+    types.AppDeployment: {"hostname": "The same as `url`, without the scheme."},
+    types.DeploymentRecord: {"hostname": "The same as `url`, without the scheme."},
+    types.ProjectAppDeployment: {"hostname": "The same as `url`, without the scheme."},
+    types.Project: {
+        "total_cpu_usage": "Deprecated alias of `org_cpu_usage`.",
+        "total_ram_usage": "Deprecated alias of `org_ram_usage`.",
+        "total_running_deployments": "Deprecated alias of `org_running_deployments`.",
+    },
+    UploadReservation: {
+        # The upload retries when storage refuses an expired URL rather than
+        # reading the deadlines, and submits right after uploading.
+        "expires_at": "Not read by the upload.",
+        "expires_in": "Not read by the upload.",
+        "submit_by": "Not read by the upload.",
+    },
+}
+
 # Models of responses the schema leaves untyped; their shapes come from the
 # backend source.
 UNTYPED_MODELS = {
     types.Me,
     types.TokenAccess,
     types.Token,
-    types.AppSummary,
     types.RunningDeployment,
     types.AppMove,
     types.ServiceNameChange,
@@ -92,7 +113,6 @@ UNTYPED_MODELS = {
     types.Audience,
     types.AudienceChange,
     types.InviteRemoval,
-    types.LogRecord,
     types.HostnameReservation,
     types.Region,
     types.MachineSize,
@@ -138,7 +158,27 @@ def test_every_model_is_checked_or_listed_as_untyped():
     ids=lambda value: value.__name__ if isinstance(value, type) else value,
 )
 def test_model_matches_schema(model: type, component: str):
-    assert model_problems(model, load_components()[component], SCHEMA_MODELS) == []
+    assert (
+        model_problems(
+            model,
+            load_components()[component],
+            SCHEMA_MODELS,
+            UNMAPPED_PROPERTIES.get(model, {}),
+        )
+        == []
+    )
+
+
+@pytest.mark.parametrize("model", UNMAPPED_PROPERTIES, ids=lambda model: model.__name__)
+def test_unmapped_properties_are_in_the_schema_and_unmapped(model: type):
+    components = load_components()
+    properties = {
+        key
+        for component in SCHEMA_MODELS[model]
+        for key in components[component].get("properties", {})
+    }
+    mapped = {json_key(field) for field in dataclasses.fields(model)}
+    assert set(UNMAPPED_PROPERTIES[model]) <= properties - mapped
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -243,7 +283,10 @@ def test_checker_uses_response_keys():
     assert model_problems(_RenamedModel, component, {}) == []
     assert model_problems(
         _RenamedModel, {"properties": {"owner_id": {"type": "string"}}}, {}
-    ) == ["_RenamedModel.owner_id: not in the schema"]
+    ) == [
+        "_RenamedModel: no field for 'owner_id'",
+        "_RenamedModel.owner_id: not in the schema",
+    ]
 
 
 def test_checker_reports_missing_and_optional_fields():
@@ -259,3 +302,21 @@ def test_checker_reports_missing_and_optional_fields():
         "_Model.count: optional in the schema but required by the SDK",
         "_Model.tags: not in the schema",
     ]
+
+
+def test_checker_reports_unmapped_properties():
+    component = {
+        **_COMPONENT,
+        "properties": {
+            **_COMPONENT["properties"],
+            "added": {"type": "string"},
+            "skipped": {"type": "string"},
+        },
+    }
+    assert model_problems(_Model, component, {_Nested: ("Nested",)}) == [
+        "_Model: no field for 'added'",
+        "_Model: no field for 'skipped'",
+    ]
+    assert model_problems(
+        _Model, component, {_Nested: ("Nested",)}, unmapped={"skipped"}
+    ) == ["_Model: no field for 'added'"]
