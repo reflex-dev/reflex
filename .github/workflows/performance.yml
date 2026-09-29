@@ -54,7 +54,7 @@ jobs:
 
       - name: Show native benchmark diagnostics
         if: failure()
-        run: tail -n 100 /tmp/profile.*.out/valgrind.*.log
+        run: cat /tmp/profile.*.out/valgrind.*.log
 
       - name: Run event-loop and wire-size smoke
         run: >-
