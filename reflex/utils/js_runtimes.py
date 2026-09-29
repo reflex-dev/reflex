@@ -356,6 +356,35 @@ def validate_bun(bun_path: Path | None = None):
             )
 
 
+def _is_npm(package_manager: str) -> bool:
+    """Whether a package manager executable is npm.
+
+    Args:
+        package_manager: The package manager executable path.
+
+    Returns:
+        Whether the executable is npm.
+    """
+    return Path(package_manager).stem.lower() == "npm"
+
+
+def _require_supported_node_for_npm(uses_npm: bool) -> None:
+    """Exit when npm will run but the installed node version is unsupported.
+
+    Args:
+        uses_npm: Whether npm is the package manager that will run.
+
+    Raises:
+        SystemExit: If npm will run and the node version is unsupported.
+    """
+    if not uses_npm or check_node_version():
+        return
+    logger.error(
+        f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {get_node_version()}",
+    )
+    raise SystemExit(1)
+
+
 def validate_frontend_dependencies(init: bool = True):
     """Validate frontend dependencies to ensure they meet requirements.
 
@@ -365,19 +394,16 @@ def validate_frontend_dependencies(init: bool = True):
     Raises:
         SystemExit: If the package manager is invalid.
     """
-    if not init:
-        try:
-            get_js_package_executor(raise_on_none=True)
-        except FileNotFoundError as e:
-            logger.error(f"Failed to find a valid package manager due to {e}.")
-            raise SystemExit(1) from None
-
-    if prefer_npm_over_bun() and not check_node_version():
-        node_version = get_node_version()
-        logger.error(
-            f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
-        )
-        raise SystemExit(1)
+    if init:
+        # Bun may not be installed yet, so only an explicit npm preference is final.
+        _require_supported_node_for_npm(prefer_npm_over_bun())
+        return
+    try:
+        executor = get_js_package_executor(raise_on_none=True)
+    except FileNotFoundError as e:
+        logger.error(f"Failed to find a valid package manager due to {e}.")
+        raise SystemExit(1) from None
+    _require_supported_node_for_npm(_is_npm(executor[0][0]))
 
 
 def remove_existing_bun_installation():
@@ -786,6 +812,8 @@ def install_frontend_packages(packages: set[str], config: Config):
     install_package_managers = tuple(
         get_nodejs_compatible_package_managers(raise_on_none=True)
     )
+    # Check before any lockfile sync: a rejected npm install must not persist npm lockfiles.
+    _require_supported_node_for_npm(_is_npm(install_package_managers[0]))
     packages = set(packages)
     development_dependencies: set[str] = set()
     for plugin in config.plugins:

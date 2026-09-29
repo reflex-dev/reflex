@@ -68,19 +68,19 @@ def test_resolve_breadcrumb_href_returns_none_for_missing_route():
     "deploy_url,frontend_path,base",
     [
         ("https://reflex.dev", "/docs", "https://reflex.dev/docs"),
-        ("http://localhost:3000", "/docs", "http://localhost:3000/docs"),
+        ("http://localhost:3000", "/docs", "https://reflex.dev/docs"),
         (
             "https://staging.example.com/",
             "/preview/docs/",
-            "https://staging.example.com/preview/docs",
+            "https://reflex.dev/docs",
         ),
-        ("https://docs.example.com/", "", "https://docs.example.com"),
+        ("https://docs.example.com/", "", "https://reflex.dev/docs"),
     ],
 )
 def test_structured_breadcrumbs_use_real_canonical_routes(
     monkeypatch, deploy_url, frontend_path, base
 ):
-    """Structured navigation names existing pages and includes the docs root."""
+    """Structured navigation matches public canonicals, independent of deployment."""
     docpage_module = importlib.import_module("reflex_docs.templates.docpage.docpage")
     monkeypatch.setattr(
         "reflex_site_shared.utils.url.get_config",
