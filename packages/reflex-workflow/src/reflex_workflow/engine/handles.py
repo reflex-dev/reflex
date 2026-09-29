@@ -360,7 +360,15 @@ class RunHandle(Generic[W]):
             stopped = (
                 await session.execute(
                     update(cls)
-                    .where(*(column == stopping.c[column.key] for column in pk_cols))
+                    .where(
+                        *(
+                            column == picked
+                            # Paired by position: the CTE selects the key
+                            # columns first, in this order, and the pointer
+                            # after them.
+                            for column, picked in zip(pk_cols, stopping.c, strict=False)
+                        )
+                    )
                     .values(
                         next_step=None,
                         next_args=None,
