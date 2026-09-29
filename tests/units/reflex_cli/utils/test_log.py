@@ -310,6 +310,19 @@ def test_fallback_print_table_no_wrap(monkeypatch, capsys):
     assert "│" not in out
 
 
+def test_print_table_too_narrow_prints_rows_as_blocks(monkeypatch, capsys):
+    """A table that would cut a no_wrap value prints each row as a block."""
+    long_id = "7fb2de10-2e8d-48bd-9c79-a98b3f52e10f"
+    monkeypatch.setenv("COLUMNS", "30")
+    console.print_table(
+        [[long_id, "docs"]], headers=["id", "name"], overflow="fold", no_wrap=["id"]
+    )
+
+    lines = capsys.readouterr().out.splitlines()
+    assert f"id    {long_id}" in lines
+    assert "name  docs" in lines
+
+
 def test_print_table_no_wrap_with_older_reflex_base(monkeypatch, capsys):
     """A reflex-base that predates no_wrap renders the CLI's tables anyway.
 

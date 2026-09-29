@@ -32,7 +32,7 @@ _HISTORY_COLUMNS = ("id", "status", "timestamp", "can rollback", "description")
 
 
 def _print_records(records: list[dict[str, Any]], columns: Sequence[str]) -> None:
-    """Print records as a table whose ids stay whole on one line.
+    """Print records as a table whose ids and names stay whole on one line.
 
     Args:
         records: The records to print, one row each.
@@ -42,7 +42,7 @@ def _print_records(records: list[dict[str, Any]], columns: Sequence[str]) -> Non
         [[str(record[column]) for column in columns] for record in records],
         headers=columns,
         overflow="fold",
-        no_wrap=("id",),
+        no_wrap=("id", "name"),
     )
 
 

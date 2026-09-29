@@ -188,12 +188,12 @@ _OTHER_LONG_ID = uuid.UUID("5d0f0e2c-9a3b-4e21-b1d4-6f0c7a9e8b33")
 _LONG_DESCRIPTION = "Internal analytics dashboard for the sales team"
 
 
-def _assert_on_one_line(output: str, *values: uuid.UUID):
+def _assert_on_one_line(output: str, *values: uuid.UUID | str):
     """Assert each value is rendered whole on a single line, ready to copy.
 
     Args:
         output: The rendered command output.
-        values: The ids to find.
+        values: The ids or names to find.
     """
     lines = output.splitlines()
     for value in values:
@@ -215,8 +215,8 @@ def test_app_history_keeps_ids_on_one_line(mocker: MockFixture):
     _assert_on_one_line(result.output, _LONG_ID)
 
 
-def test_list_apps_keeps_ids_on_one_line(mocker: MockFixture):
-    """App ids stay copyable in a narrow terminal."""
+def test_list_apps_keeps_ids_and_names_on_one_line(mocker: MockFixture):
+    """App ids and names, which commands take as input, stay copyable."""
     client = _authed(mocker)
     client.api.apps.list.return_value = [
         app_summary(
@@ -233,7 +233,34 @@ def test_list_apps_keeps_ids_on_one_line(mocker: MockFixture):
     )
 
     assert result.exit_code == 0, result.output
-    _assert_on_one_line(result.output, _LONG_ID, _OTHER_LONG_ID)
+    _assert_on_one_line(result.output, _LONG_ID, _OTHER_LONG_ID, "customer-dashboard")
+
+
+def test_list_apps_too_narrow_for_a_table_cuts_nothing(mocker: MockFixture):
+    """Below the table's width, each app is printed as a block, whole."""
+    client = _authed(mocker)
+    client.api.apps.list.return_value = [
+        app_summary(
+            "customer-dashboard",
+            id=_LONG_ID,
+            provider="gcp-europe-west",
+            description=_LONG_DESCRIPTION,
+        ),
+    ]
+
+    result = runner.invoke(
+        hosting_cli, ["apps", "list", "--project", "project123"], env={"COLUMNS": "60"}
+    )
+
+    assert result.exit_code == 0, result.output
+    _assert_on_one_line(
+        result.output,
+        _LONG_ID,
+        "customer-dashboard",
+        "gcp-europe-west",
+        _LONG_DESCRIPTION,
+    )
+    assert "…" not in result.output
 
 
 def test_app_inspect_keeps_every_field_readable(mocker: MockFixture):
@@ -901,7 +928,7 @@ def test_list_apps_no_project(mocker: MockFixture):
         ],
         headers=("id", "name", "provider", "description"),
         overflow="fold",
-        no_wrap=("id",),
+        no_wrap=("id", "name"),
     )
 
 
@@ -919,7 +946,7 @@ def test_list_apps_with_project(mocker: MockFixture):
         [[str(_APP_ID), "App1", "fly", ""]],
         headers=("id", "name", "provider", "description"),
         overflow="fold",
-        no_wrap=("id",),
+        no_wrap=("id", "name"),
     )
 
 

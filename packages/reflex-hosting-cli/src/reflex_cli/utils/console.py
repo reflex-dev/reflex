@@ -11,12 +11,16 @@ from collections.abc import Collection, Sequence
 from typing import overload
 
 from rich import box
+from rich.cells import cell_len
 from rich.console import Console, OverflowMethod
 from rich.table import Table
 
 from reflex_cli.constants.base import LogLevel
 from reflex_cli.utils.log import HAS_REFLEX_BASE, is_json_mode, is_stdout_reserved
 from reflex_cli.utils.log import set_log_level as _set_log_level
+
+# The narrowest a folding table column gets before rows print as blocks.
+_MIN_FOLD_WIDTH = 8
 
 _console = Console(highlight=False)
 _console_stderr = Console(stderr=True, highlight=False)
@@ -47,7 +51,9 @@ def print_table(
             cuts it short; pass "fold" for values a user has to read in full,
             such as an email or an identifier.
         no_wrap: Headers of the columns whose values stay on one line, so a
-            user can copy them. The other columns give up the width.
+            user can copy them. The other columns give up the width. When the
+            terminal is too narrow for that, each row prints as a block of
+            header and value lines instead, so no value is cut or squeezed.
     """
     if is_json_mode():
         # Only reflex-base has a JSON mode. Pass just the arguments every
@@ -56,15 +62,36 @@ def print_table(
 
         base_print_table(tabular_data, headers=headers)
         return
+    console = _human_console()
+    # A no_wrap column needs its widest value; a folding column that much up to
+    # _MIN_FOLD_WIDTH, so it stays readable.
+    min_widths = []
+    for index, column in enumerate(headers):
+        widest = max(cell_len(column), *(cell_len(row[index]) for row in tabular_data))
+        min_widths.append(widest if column in no_wrap else min(widest, _MIN_FOLD_WIDTH))
+    # Each column also takes 3 cells of padding and gap, plus 1 for the edge.
+    if sum(min_widths) + 3 * len(headers) + 1 > console.width:
+        label_width = max(map(cell_len, headers), default=0)
+        for row in tabular_data:
+            for column, value in zip(headers, row, strict=True):
+                console.print(
+                    f"{column.ljust(label_width)}  {value}",
+                    markup=False,
+                    soft_wrap=True,
+                )
+            console.print()
+        return
     table = Table(box=box.SIMPLE_HEAD)
 
-    for column in headers:
-        table.add_column(column, overflow=overflow, no_wrap=column in no_wrap)
+    for column, min_width in zip(headers, min_widths, strict=True):
+        table.add_column(
+            column, overflow=overflow, no_wrap=column in no_wrap, min_width=min_width
+        )
 
     for row in tabular_data:
         table.add_row(*row)
 
-    _human_console().print(table)
+    console.print(table)
 
 
 if HAS_REFLEX_BASE:
