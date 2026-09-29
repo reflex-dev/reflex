@@ -66,6 +66,22 @@ jobs:
         ports:
           # Maps port 6379 on service container to the host
           - 6379:6379
+      # reflex-workflow is built on Postgres and most of its suite needs a real
+      # one; without this those tests skip, and the examples are not even
+      # collected. Sixteen because that is the oldest the engine is reviewed
+      # against, so a newer server's leniency cannot hide anything.
+      postgres:
+        image: ${{ matrix.os == 'ubuntu-latest' && 'postgres:16' || '' }}
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: reflex_workflow
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -100,6 +116,12 @@ jobs:
           export REFLEX_REDIS_URL=redis://localhost:6379
           export REFLEX_OPLOCK_ENABLED=true
           uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
+      - name: Run workflow unit tests w/ postgres
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          export PYTHONUNBUFFERED=1
+          export REFLEX_TEST_POSTGRES=postgresql://postgres:postgres@localhost:5432/reflex_workflow
+          uv run pytest tests/units/reflex_workflow --cov --no-cov-on-fail --cov-report=
       - name: Generate coverage report
         run: uv run coverage html
 
