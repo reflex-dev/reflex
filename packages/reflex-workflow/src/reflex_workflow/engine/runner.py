@@ -236,9 +236,12 @@ class Runner:
         try:
             due = await next_due(self.runtime, self.workflows, self.runnable)
         except Exception:
-            # A table that cannot be asked is not a reason to spin on it.
+            # Asking failed, which is not the same answer as nothing being due:
+            # the floor rather than the cap, so a database coming back is
+            # noticed when it does rather than at the end of an idle wait it
+            # was never asked about.
             logger.exception("reflex_workflow could not ask when work is next due")
-            return cap.total_seconds()
+            return floor.total_seconds()
         await self.report(due.at if due is not None else None)
         if due is None:
             return cap.total_seconds()

@@ -6,6 +6,7 @@ import asyncio
 import datetime
 import logging
 from collections.abc import Collection
+from typing import NamedTuple
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
@@ -37,11 +38,26 @@ async def announce(session: AsyncSession, table: str) -> None:
     await session.execute(select(func.pg_notify(CHANNEL, table)))
 
 
+class Attempt(NamedTuple):
+    """How one attempt at listening ended.
+
+    Attributes:
+        again: Whether listening is worth trying again at all.
+        heard: Whether this attempt had the connection up before it ended. A
+            connection that worked and then broke says nothing about the next
+            one; a connection that never opened says the database is not
+            answering.
+    """
+
+    again: bool
+    heard: bool
+
+
 async def listen_once(
     runtime: Runtime,
     tables: frozenset[str],
     sessions: async_sessionmaker[AsyncSession],
-) -> bool:
+) -> Attempt:
     """Listen on one connection until it breaks, waking the worker as it goes.
 
     Args:
@@ -50,8 +66,9 @@ async def listen_once(
         sessions: Where the listening connection comes from.
 
     Returns:
-        Whether listening is worth trying again.
+        How the attempt ended.
     """
+    heard = False
     try:
         async with sessions() as session:
             connection = await session.connection(
@@ -66,7 +83,8 @@ async def listen_once(
                     "reflex_workflow cannot listen with %s; workers will poll",
                     type(driver).__name__,
                 )
-                return False
+                return Attempt(False, heard)
+            heard = True
             runtime.listening.set()
             async for notice in notifies():
                 if not tables or notice.payload in tables:
@@ -86,7 +104,7 @@ async def listen_once(
         if runtime.listening.is_set():
             runtime.listening.clear()
             runtime.wake.set()
-    return True
+    return Attempt(True, heard)
 
 
 def can_spare_a_connection(runtime: Runtime) -> bool:
@@ -151,7 +169,12 @@ async def wake_on_notify(
     # back would wake it again -- every time, for as long as the app is idle.
     # Losing the ear costs latency, so backing off costs latency too, and that
     # is the cheaper of the two.
-    wait = RECONNECT
-    while await listen_once(runtime, wanted, sessions):
+    first = min(RECONNECT, backoff_cap)
+    wait = first
+    while (attempt := await listen_once(runtime, wanted, sessions)).again:
         await asyncio.sleep(wait.total_seconds())
-        wait = min(wait * 2, backoff_cap)
+        # A connection that was up and then broke starts from the short wait
+        # again: what it says about the next attempt is nothing. The long wait
+        # is for a database that will not answer at all, which is what an idle
+        # one that has suspended itself looks like.
+        wait = first if attempt.heard else min(wait * 2, backoff_cap)

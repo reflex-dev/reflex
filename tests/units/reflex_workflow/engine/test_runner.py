@@ -4054,6 +4054,34 @@ async def test_a_child_that_finishes_before_the_cancel_is_counted_once(
     assert EVENTS.count(f"joined-report:{key}") == 0
 
 
+async def test_a_worker_that_could_not_ask_looks_again_soon(
+    session_factory, monkeypatch
+):
+    worker = runner.Runner(
+        runtime.current(),
+        [Resting],
+        4,
+        datetime.timedelta(milliseconds=20),
+        max_idle_interval=MINUTE,
+    )
+
+    async def refuse(*_args, **_kwargs):
+        """Fail the way a database that is down would.
+
+        Raises:
+            RuntimeError: Always.
+        """
+        await asyncio.sleep(0)
+        msg = "the database is not answering"
+        raise RuntimeError(msg)
+
+    monkeypatch.setattr(runner, "next_due", refuse)
+    # Not knowing is not the same as knowing there is nothing: waiting out the
+    # idle interval would leave a database that came back unnoticed until the
+    # end of a wait it was never asked about.
+    assert await worker.until_something_is_due() == pytest.approx(0.02)
+
+
 async def test_a_worker_that_cannot_listen_waits_as_long_as_one_that_can(
     session_factory,
 ):
@@ -4092,7 +4120,7 @@ async def test_a_listener_that_drops_wakes_the_worker_it_was_listening_for():
     rt.listening.set()
     try:
         # It cannot connect, so it is deaf from the start.
-        assert await notify.listen_once(rt, frozenset(), sessions) is True
+        assert (await notify.listen_once(rt, frozenset(), sessions)).again
     finally:
         await nowhere.dispose()
 
@@ -4144,6 +4172,100 @@ async def test_a_listener_that_keeps_failing_waits_longer_each_time(monkeypatch)
     assert waits[-1] == cap.total_seconds()
 
 
+async def test_a_listener_that_was_up_starts_from_the_short_wait_again(
+    monkeypatch,
+):
+    waits: list[float] = []
+    real_sleep = asyncio.sleep
+    # Up, up, then never again: the first two broke a connection that worked.
+    heard = iter([True, True, False, False, False])
+
+    async def attempt(_runtime, _tables, _sessions):
+        """Stand in for an attempt that ended a particular way.
+
+        Args:
+            _runtime: The running engine.
+            _tables: The tables to wake for.
+            _sessions: Where the connection comes from.
+
+        Returns:
+            How the attempt ended.
+        """
+        await real_sleep(0)
+        return notify.Attempt(True, next(heard))
+
+    async def record(seconds):
+        """Note the wait instead of taking it.
+
+        Args:
+            seconds: How long the listener wanted to wait.
+
+        Raises:
+            RuntimeError: Once enough attempts have been seen, to end the loop.
+        """
+        waits.append(seconds)
+        await real_sleep(0)
+        if len(waits) >= 5:
+            msg = "enough"
+            raise RuntimeError(msg)
+
+    monkeypatch.setattr(notify, "listen_once", attempt)
+    monkeypatch.setattr(notify.asyncio, "sleep", record)
+    rt = runtime.Runtime(
+        async_sessionmaker(create_async_engine(ASYNC_URL), expire_on_commit=False),
+        asyncio.Event(),
+        LEASE,
+    )
+    with contextlib.suppress(RuntimeError):
+        await notify.wake_on_notify(
+            rt, ["wf_test_resting"], None, datetime.timedelta(seconds=8)
+        )
+
+    # A connection that worked and then broke says nothing about the next one,
+    # so it is tried again at once; only a database that will not answer at all
+    # is worth backing off from.
+    assert waits == [1, 1, 1, 2, 4]
+
+
+async def test_a_listener_never_waits_longer_than_it_was_capped_at(monkeypatch):
+    waits: list[float] = []
+    real_sleep = asyncio.sleep
+
+    async def record(seconds):
+        """Note the wait instead of taking it.
+
+        Args:
+            seconds: How long the listener wanted to wait.
+
+        Raises:
+            RuntimeError: Once enough attempts have been seen, to end the loop.
+        """
+        waits.append(seconds)
+        await real_sleep(0)
+        if len(waits) >= 3:
+            msg = "enough"
+            raise RuntimeError(msg)
+
+    monkeypatch.setattr(notify.asyncio, "sleep", record)
+    nowhere = create_async_engine(
+        "postgresql+psycopg://postgres@127.0.0.1:1/nothing_here"
+    )
+    rt = runtime.Runtime(
+        async_sessionmaker(nowhere, expire_on_commit=False), asyncio.Event(), LEASE
+    )
+    try:
+        with contextlib.suppress(RuntimeError):
+            # Capped below the first wait, which a worker told to poll fast
+            # would be.
+            await notify.wake_on_notify(
+                rt, ["wf_test_resting"], nowhere, datetime.timedelta(milliseconds=200)
+            )
+    finally:
+        await nowhere.dispose()
+
+    assert waits == [0.2, 0.2, 0.2]
+
+
 async def test_a_listener_that_keeps_failing_wakes_the_worker_once():
     nowhere = create_async_engine(
         "postgresql+psycopg://postgres@127.0.0.1:1/nothing_here"
@@ -4152,17 +4274,17 @@ async def test_a_listener_that_keeps_failing_wakes_the_worker_once():
     rt = runtime.Runtime(sessions, asyncio.Event(), LEASE)
     try:
         # It was never listening, so nothing was decided on the strength of it.
-        assert await notify.listen_once(rt, frozenset(), sessions) is True
+        assert (await notify.listen_once(rt, frozenset(), sessions)).again
         assert not rt.wake.is_set()
 
         rt.listening.set()
-        assert await notify.listen_once(rt, frozenset(), sessions) is True
+        assert (await notify.listen_once(rt, frozenset(), sessions)).again
         assert rt.wake.is_set()
 
         # Retrying while still deaf: the worker is already polling, and waking
         # it every second is the traffic a long poll interval exists to avoid.
         rt.wake.clear()
-        assert await notify.listen_once(rt, frozenset(), sessions) is True
+        assert (await notify.listen_once(rt, frozenset(), sessions)).again
         assert not rt.wake.is_set()
     finally:
         await nowhere.dispose()
