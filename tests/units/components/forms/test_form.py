@@ -23,6 +23,8 @@ EMAIL_LABEL_ID = "email_label"
 SUBMIT_BUTTON_ID = "submit_button"
 INPUT_WRAPPER_ID = "input_wrapper"
 FORM_ID = "form_id"
+DEBOUNCED_INPUT_ID = "debounced_input"
+MEMOIZED_INPUT_ID = "memoized_input"
 
 
 def test_render_on_submit():
@@ -75,11 +77,11 @@ def test_form_refs_include_debounced_controls():
     """ID-only debounced inputs remain available to submit handlers."""
     form = HTMLForm.create(
         DebounceInput.create(
-            Input.create(id="debounced_input", on_change=rx.console_log)
+            Input.create(id=DEBOUNCED_INPUT_ID, on_change=rx.console_log)
         )
     )
 
-    assert "ref_debounced_input" in form.add_hooks()[0]
+    assert f"ref_{DEBOUNCED_INPUT_ID}" in form.add_hooks()[0]
 
 
 def test_form_refs_include_memoized_controls(monkeypatch):
@@ -89,9 +91,9 @@ def test_form_refs_include_memoized_controls(monkeypatch):
         _is_form_control = False
 
     monkeypatch.setattr(MemoizedInput, "_wrapped_component_type", Input, raising=False)
-    form = HTMLForm.create(MemoizedInput.create(id="memoized_input"))
+    form = HTMLForm.create(MemoizedInput.create(id=MEMOIZED_INPUT_ID))
 
-    assert "ref_memoized_input" in form.add_hooks()[0]
+    assert f"ref_{MEMOIZED_INPUT_ID}" in form.add_hooks()[0]
 
 
 @pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])

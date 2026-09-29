@@ -12,6 +12,9 @@ from selenium.webdriver.common.keys import Keys
 
 from reflex.testing import AppHarness
 
+FORM_CONTENT_WRAPPER_ID = "form_content_wrapper"
+FORM_ID = "form_id"
+
 
 def FormSubmit(form_component):
     """App with a form using on_submit.
@@ -63,11 +66,11 @@ def FormSubmit(form_component):
                         on_change=rx.console_log,
                     ),
                     rx.button("Submit", type_="submit"),
-                    id="form_content_wrapper",
+                    id=FORM_CONTENT_WRAPPER_ID,
                 ),
                 on_submit=FormState.form_submit,
                 custom_attrs={"action": "/invalid"},
-                id="form_id",
+                id=FORM_ID,
             ),
             rx.text(FormState.form_data.to_string(), id="form-data"),
             rx.spacer(),
@@ -124,11 +127,11 @@ def FormSubmitName(form_component):
                     ),
                     rx.button("Submit", type_="submit"),
                     rx.icon_button(rx.icon(tag="plus")),
-                    id="form_content_wrapper",
+                    id=FORM_CONTENT_WRAPPER_ID,
                 ),
                 on_submit=FormState.form_submit,
                 custom_attrs={"action": "/invalid"},
-                id="form_id",
+                id=FORM_ID,
             ),
             rx.text(FormState.form_data.to_string(), id="form-data"),
             rx.spacer(),
