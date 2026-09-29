@@ -145,6 +145,17 @@ async def _error_then_logging_handler():
     await ctx.enqueue(Event.from_event_type(logging_event("after_chain_error"))[0])
 
 
+async def _chain_then_error_handler(value: str = "default"):
+    """Chain a gated logging event, then raise.
+
+    Args:
+        value: Label forwarded to the chained event; also names its gate.
+    """
+    ctx = EventContext.get()
+    await ctx.enqueue(Event.from_event_type(gated_logging_event(value))[0])
+    raise RuntimeError("boom")  # noqa: EM101
+
+
 async def _background_slow_logging_handler(value: str = "default"):
     """A background version of the slow logging handler.
 
@@ -200,6 +211,26 @@ async def _cancellable_load_handler(value: str = "default"):
             _CALL_LOG.append({"value": f"{value}_cancelled"})
             raise
     _CALL_LOG.append({"value": value})
+
+
+async def _background_cancellable_handler(value: str = "default"):
+    """Run the cancellable load handler as a background event.
+
+    Args:
+        value: The value to log; also names the gate to signal.
+    """
+    await _cancellable_load_handler(value)
+
+
+_background_cancellable_handler._reflex_background_task = True  # type: ignore[attr-defined]
+
+
+async def _delta_then_background_chain_handler():
+    """Emit a delta, then chain two background events that block until cancelled."""
+    ctx = EventContext.get()
+    await ctx.emit_delta({"state": {"x": 0}})
+    for value in ("first", "second"):
+        await ctx.enqueue(Event.from_event_type(background_cancellable_event(value))[0])
 
 
 async def _resurrecting_load_handler(value: str = "default"):
@@ -378,9 +409,14 @@ multi_chaining_event = EventHandler(fn=_multi_chaining_handler)
 background_slow_logging_event = EventHandler(fn=_background_slow_logging_handler)
 background_then_normal_event = EventHandler(fn=_background_then_normal_handler)
 error_then_logging_event = EventHandler(fn=_error_then_logging_handler)
+chain_then_error_event = EventHandler(fn=_chain_then_error_handler)
 gated_logging_event = EventHandler(fn=_gated_logging_handler)
 gated_delta_event = EventHandler(fn=_gated_delta_handler)
 cancellable_load_event = EventHandler(fn=_cancellable_load_handler)
+background_cancellable_event = EventHandler(fn=_background_cancellable_handler)
+delta_then_background_chain_event = EventHandler(
+    fn=_delta_then_background_chain_handler
+)
 resurrecting_load_event = EventHandler(fn=_resurrecting_load_handler)
 superseding_root_event = EventHandler(fn=_superseding_root_handler)
 shared_refresh_event = EventHandler(fn=_shared_refresh_handler)
@@ -418,9 +454,12 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         background_slow_logging_event,
         background_then_normal_event,
         error_then_logging_event,
+        chain_then_error_event,
         gated_logging_event,
         gated_delta_event,
         cancellable_load_event,
+        background_cancellable_event,
+        delta_then_background_chain_event,
         resurrecting_load_event,
         superseding_root_event,
         shared_refresh_event,
@@ -1111,6 +1150,70 @@ async def test_stream_delta_emits_deltas_after_it_ends_normally(token: str):
     # Stopping the processor drained the recovery event.
     assert _CALL_LOG == [{"value": "recovered"}]
     assert emitted == [(token, {"state": {"recovered": True}})]
+
+
+async def test_stream_delta_early_exit_cancels_every_chained_event(
+    processor: EventProcessor,
+    token: str,
+):
+    """A consumer that stops early cancels every event still running in the chain.
+
+    Once the streamed handler had returned, stopping early cancelled nothing
+    directly: only the chained event the end-of-stream watcher was waiting on
+    was cancelled with it, so the rest of the chain kept running in the
+    background, e.g. after the client of a buffered upload disconnected.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    _GATES["first"] = asyncio.Event()
+    _GATES["second"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        stream = ep.enqueue_stream_delta(
+            token, Event.from_event_type(delta_then_background_chain_event())[0]
+        )
+        assert await anext(stream) == {"state": {"x": 0}}
+        await asyncio.wait_for(_GATES["first"].wait(), timeout=1)
+        await asyncio.wait_for(_GATES["second"].wait(), timeout=1)
+        # The streamed handler returned; only the events it chained still run.
+        chained_tasks = list(ep._tasks.values())
+        assert len(chained_tasks) == 2
+
+        await stream.aclose()
+        await asyncio.wait(chained_tasks, timeout=1)
+        assert {entry["value"] for entry in _CALL_LOG} == {
+            "first_cancelled",
+            "second_cancelled",
+        }
+
+
+async def test_stream_delta_end_leaves_events_of_failed_handler_running(
+    processor: EventProcessor,
+    token: str,
+):
+    """A stream that ends does not cancel the events its failed handler chained.
+
+    Only a consumer that stops early cancels the chain. A stream ends once its
+    handler fails, before the events the handler chained have finished, and
+    those keep running like the events of any failed handler.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    _GATES["chained"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        with pytest.raises(RuntimeError, match="boom"):
+            async for _ in ep.enqueue_stream_delta(
+                token, Event.from_event_type(chain_then_error_event("chained"))[0]
+            ):
+                pass
+        _GATES["chained"].set()
+    # Stopping the processor drained the chained event.
+    assert _CALL_LOG == [{"value": "chained"}]
 
 
 async def test_sequential_chained_events_run_in_order(token: str):

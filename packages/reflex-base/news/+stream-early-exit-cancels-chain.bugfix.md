@@ -1,0 +1,1 @@
+When a buffered upload's client disconnects or cancels it (e.g. with `rx.cancel_upload`), every event the upload handler chained is now cancelled, even once the handler itself has returned, instead of continuing to run in the background. The same holds for any `EventProcessor.enqueue_stream_delta` stream whose consumer stops early.

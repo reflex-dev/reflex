@@ -483,9 +483,9 @@ class EventProcessor:
         stream ended (e.g. by events the backend exception handler chains after
         a failure) are sent the usual way.
 
-        If the consumer stops iterating early, the in-flight event future is
-        cancelled so the handler chain does not continue running in the
-        background.
+        If the consumer stops iterating early, the event and the events it
+        chains are cancelled, even once its own handler has finished, so the
+        chain does not keep running in the background.
 
         Args:
             token: The client token associated with the event.
@@ -540,15 +540,21 @@ class EventProcessor:
             finally:
                 streaming = False
 
+        # Only a consumer that stops early cancels the chain: a stream that
+        # ends leaves alone the events wait_all() skips, those a failed event
+        # chained.
+        exhausted = False
         try:
             async for delta in _stream_queue_until_done(
                 queue=deltas, done_when=_wait_for_chain()
             ):
                 yield delta
+            exhausted = True
         finally:
             streaming = False
-            # Cancel the event chain if the streaming consumer exits early.
-            if not task_future.done():
+            if not exhausted:
+                # Cancelling a done future still cancels its descendants, so
+                # this stops the chain even once the handler has returned.
                 task_future.cancel()
         # Raise any exceptions for the caller, waiting for all chained events.
         await task_future.wait_all()
