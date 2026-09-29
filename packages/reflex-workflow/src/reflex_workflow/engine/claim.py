@@ -439,6 +439,10 @@ async def claim(
     return taken
 
 
+class UnansweredError(Exception):
+    """Raised when no workflow table could say when its next run comes due."""
+
+
 class Due(NamedTuple):
     """When a worker's next run comes due, by both clocks that matter.
 
@@ -531,10 +535,16 @@ async def next_due(
     Returns:
         The soonest across the tables, or None when this worker has nothing
         scheduled anywhere.
+
+    Raises:
+        UnansweredError: If no table could be asked at all, which is not the same
+            answer as nothing being due.
     """
     known: list[Due] = []
+    asked = refused = 0
     async with runtime.session_factory() as session:
         for cls in workflows:
+            asked += 1
             try:
                 found = (
                     await session.execute(soonest(cls, runnable[cls]))
@@ -545,6 +555,7 @@ async def next_due(
                 # taking none of their answers would do. Its own rows wait for
                 # the next pass, as they do when the claim cannot read it either.
                 await session.rollback()
+                refused += 1
                 logger.exception(
                     "reflex_workflow could not ask when %s is next due",
                     cls.__qualname__,
@@ -552,6 +563,13 @@ async def next_due(
                 continue
             if found is not None and found[0] is not None:
                 known.append(Due(*found))
+    if refused and refused == asked:
+        # Every table refused, which is a database that is not answering rather
+        # than a table that is not there. Told apart because the caller waits
+        # very differently: it looks again at once for one, and sleeps out the
+        # idle interval for the other.
+        msg = f"no table of {refused} could say when work is next due"
+        raise UnansweredError(msg)
     # By the instant rather than the wait: each table was asked in its own
     # statement, so each has its own now() to have measured from.
     return min(known, key=lambda due: due.at) if known else None

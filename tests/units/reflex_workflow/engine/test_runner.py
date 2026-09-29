@@ -3743,6 +3743,55 @@ async def test_a_table_that_cannot_be_asked_does_not_decide_the_wait(session_fac
         REGISTRY.pop(Absent.__tablename__, None)
 
 
+async def test_a_database_that_answers_nothing_is_not_nothing_being_due(
+    session_factory,
+):
+    class Missing(Base, Workflow):
+        """A workflow whose table was never created."""
+
+        __tablename__ = "wf_test_missing"
+
+        id: Mapped[int] = mapped_column(primary_key=True)
+
+        @step
+        async def work(self):
+            """Never runs; the table is not there."""
+
+    rt = runtime.current()
+    try:
+        # Every table refused, which the per-table handling would otherwise
+        # report as "nothing is scheduled" -- and the worker would sleep out an
+        # idle interval it was never told about.
+        with pytest.raises(claim.UnansweredError):
+            await claim.next_due(rt, [Missing], {Missing: None})
+
+        # Told apart from one table of several being unreadable, which the
+        # worker carries on past.
+        key = uuid.uuid4().hex
+        await Resting(key=key).start(Resting.rest())
+        try:
+            due = await claim.next_due(
+                rt, [Missing, Resting], {Missing: None, Resting: None}
+            )
+            assert due is not None
+            assert due.away <= datetime.timedelta()
+        finally:
+            await Resting.by(Resting.key == key).cancel()
+
+        # And a worker with nothing readable looks again at once rather than
+        # sleeping out its idle interval.
+        worker = runner.Runner(
+            rt,
+            [Missing],
+            4,
+            datetime.timedelta(milliseconds=20),
+            max_idle_interval=MINUTE,
+        )
+        assert await worker.until_something_is_due() == pytest.approx(0.02)
+    finally:
+        REGISTRY.pop(Missing.__tablename__, None)
+
+
 async def test_cancel_leaves_a_step_already_running_its_lease(session_factory):
     key = uuid.uuid4().hex
     await RaceReview(key=key).start(RaceReview.submit())
