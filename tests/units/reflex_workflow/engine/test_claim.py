@@ -28,6 +28,7 @@ pytestmark = [
 ]
 
 from reflex_workflow import Limit, Workflow, step  # noqa: E402
+from reflex_workflow.engine import claim as claim_module  # noqa: E402
 from reflex_workflow.engine.claim import claim  # noqa: E402
 from reflex_workflow.engine.runtime import Runtime  # noqa: E402
 
@@ -172,3 +173,80 @@ async def test_a_group_claim_takes_no_more_than_the_group_allows(runtime):
     assert collections.Counter(taken.values()) == {
         f"customer-{index}": 2 for index in range(4)
     }
+
+
+class Fetched(Base, Workflow):
+    """A workflow limited by a column the application fills with anything."""
+
+    __tablename__ = "wf_claim_fetched"
+    __workflow_limit__ = Limit(by="domain", at_most=4)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    domain: Mapped[str] = mapped_column(String, index=True)
+
+    @step
+    async def work(self):
+        """Never run: these tests claim rows and stop there."""
+
+
+async def test_a_group_that_cannot_be_claimed_does_not_stop_the_table(
+    runtime, monkeypatch
+):
+    bad, good = "x" * 300 + ".com", "a.com"
+    due = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=1)
+    async with runtime.session_factory() as session, session.begin():
+        await session.execute(
+            insert(Fetched),
+            [
+                {
+                    "domain": domain,
+                    "next_step": "work",
+                    "wake_at": due,
+                    "attempts": 0,
+                    "wf_version": 0,
+                }
+                for domain in (bad, good)
+            ],
+        )
+
+    real = claim_module.claim_group
+
+    async def refuse_one(runtime, cls, spec, group, value, free, steps):
+        """Fail for one group the way a bucket its key does not fit would.
+
+        Args:
+            runtime: The running engine.
+            cls: The workflow class.
+            spec: The workflow's limit.
+            group: The column the limit groups by.
+            value: The group being claimed.
+            free: How many rows the pass still wants.
+            steps: The steps this worker may run.
+
+        Returns:
+            What was claimed for a group that can be claimed.
+
+        Raises:
+            RuntimeError: For the group that cannot.
+        """
+        if value == bad:
+            msg = "value too long for type character varying(256)"
+            raise RuntimeError(msg)
+        return await real(runtime, cls, spec, group, value, free, steps)
+
+    monkeypatch.setattr(claim_module, "claim_group", refuse_one)
+    claimed = await claim(runtime, Fetched, 8)
+
+    async with runtime.session_factory() as session:
+        domains = set(
+            (
+                await session.execute(
+                    select(Fetched.domain).where(
+                        Fetched.id.in_([taken.pk[0] for taken in claimed])
+                    )
+                )
+            ).scalars()
+        )
+    # One group that cannot be claimed used to come out of claim() for the whole
+    # table, so the groups behind it never ran either.
+    assert domains == {good}

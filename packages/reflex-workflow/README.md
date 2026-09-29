@@ -146,11 +146,14 @@ await Expense.by(Expense.id == expense_id).deliver(
 
 `deliver` returns how many runs accepted the event. An event that arrives before the run
 gets to its wait is held and applied as soon as the wait arms, so a fast reply is never
-lost; a run that goes on to wait for something else, or stops, discards it. A wait takes
-one event: while a run is holding an answer for the wait it is on, a second delivery is
-refused and `deliver` returns 0 for it, rather than replacing an answer already given.
+lost; a run that goes on to wait for something else, stops, or goes back round a
+schedule, discards it. A run holds one event at a time, whichever wait it is for, so
+while one is held a second delivery is refused and `deliver` returns 0 for it, rather
+than replacing an answer already given — and a discarded event means its sender is the
+one who has to send it again.
 Passing a `key` makes delivery idempotent: a run refuses a key it has already taken,
-remembering the last sixteen. Arguments are checked against the step they address, so a
+remembering the last sixteen. A key is taken when the run runs the event, not when it is
+held, so a resend of an event that was discarded is accepted. Arguments are checked against the step they address, so a
 payload that does not fit it is refused rather than failing once it runs. `timeout` and
 `on_timeout` go together and are optional; without them the run waits indefinitely.
 
@@ -366,6 +369,56 @@ whose commit was refused leaves nothing behind, because it changed nothing.
 
 Nothing in the engine reads this table. Prune it on whatever schedule suits, and skip
 mapping it entirely if you do not want it: a deployment without one pays nothing.
+
+## In a Reflex app
+
+`rx.Model` is a SQLModel, and a step on one is an unannotated attribute that pydantic
+refuses, so workflows are declared on a `DeclarativeBase` of their own. Register it so
+`reflex db makemigrations` sees the tables, and build the session factory on Reflex's
+own async engine so the app has one pool:
+
+```python
+import reflex as rx
+from reflex.model import get_async_engine
+from reflex_workflow import Workflow, run_workflows, step
+from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+rx.ModelRegistry.register(Base)
+
+
+class Expense(Base, Workflow):
+    __tablename__ = "expense"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    amount: Mapped[int]
+
+    @step
+    async def submit(self): ...
+
+
+Session = async_sessionmaker(get_async_engine(None), expire_on_commit=False)
+```
+
+`expire_on_commit=False` matters: the engine reads a row's columns after committing it.
+Do not reuse the factory behind `rx.asession()` — its sessions are SQLModel's, which
+warn on every `execute()` the engine makes.
+
+`reflex db makemigrations` then writes the workflow columns and the engine's indexes
+along with the rest of the schema. Start runs from an event handler as from anywhere
+else:
+
+```python
+class State(rx.State):
+    @rx.event
+    async def file_expense(self, amount: int):
+        await Expense(amount=amount).start(Expense.submit)
+```
 
 ## Running
 

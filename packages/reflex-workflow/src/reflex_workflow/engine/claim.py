@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime
+import hashlib
 import logging
 from collections.abc import Collection
 from typing import TYPE_CHECKING, Any, NamedTuple
@@ -15,7 +16,7 @@ from sqlalchemy.orm import aliased
 from reflex_workflow import model
 from reflex_workflow.engine import rows
 from reflex_workflow.engine.runtime import Runtime
-from reflex_workflow.model import Limit, Workflow
+from reflex_workflow.model import BUCKET_KEY_LENGTH, Limit, Workflow
 
 if TYPE_CHECKING:
     from sqlalchemy import ColumnElement
@@ -26,6 +27,13 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 GROUPS_PER_PASS = 4
+
+# What is left of the key column for the group once the table name and its
+# separator are in, and the length and alphabet of the digest a group too long
+# for that is named by instead.
+BUCKET_KEY_ROOM = BUCKET_KEY_LENGTH - 1
+DIGEST_LENGTH = 64
+HEX_DIGITS = frozenset("0123456789abcdef")
 
 
 class Claimed(NamedTuple):
@@ -191,6 +199,12 @@ async def waiting_groups(
 def bucket_key(cls: type[Workflow], value: Any) -> str:
     """Name the rate bucket of one group of one workflow.
 
+    The group is spelled out, so a bucket says which group it is for, unless it
+    is too long for the column that holds it -- a group value is the
+    application's, and can be any length -- in which case it is a digest of
+    itself. A value that could be read as a digest is hashed too, so the two
+    forms never name the same bucket.
+
     Args:
         cls: The workflow class.
         value: The group.
@@ -198,7 +212,22 @@ def bucket_key(cls: type[Workflow], value: Any) -> str:
     Returns:
         The bucket's key.
     """
-    return f"{cls.__tablename__}:{value}"
+    named = str(value)
+    if len(named) > BUCKET_KEY_ROOM - len(cls.__tablename__) or looks_hashed(named):
+        named = hashlib.sha256(named.encode()).hexdigest()
+    return f"{cls.__tablename__}:{named}"
+
+
+def looks_hashed(named: str) -> bool:
+    """Report whether a group reads as one of the digests this hashes to.
+
+    Args:
+        named: The group, as it would be spelled out.
+
+    Returns:
+        Whether it has a digest's exact length and alphabet.
+    """
+    return len(named) == DIGEST_LENGTH and all(c in HEX_DIGITS for c in named)
 
 
 async def take_tokens(
@@ -396,7 +425,17 @@ async def claim(
         free = limit - len(taken)
         if free <= 0:
             break
-        taken += await claim_group(runtime, cls, spec, group, value, free, steps)
+        try:
+            taken += await claim_group(runtime, cls, spec, group, value, free, steps)
+        except Exception:
+            # One group that cannot be claimed -- whatever is wrong is about its
+            # own rows or its own bucket -- must not decide the pass for the
+            # rest of the table, which is what letting this out would do.
+            logger.exception(
+                "reflex_workflow could not claim group %r of %s",
+                value,
+                cls.__qualname__,
+            )
     return taken
 
 
