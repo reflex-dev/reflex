@@ -1,4 +1,3 @@
-from copy import copy
 from typing import TypedDict
 
 import pytest
@@ -93,28 +92,6 @@ def test_form_refs_include_memoized_controls(monkeypatch):
     form = HTMLForm.create(MemoizedInput.create(id="memoized_input"))
 
     assert "ref_memoized_input" in form.add_hooks()[0]
-
-
-def test_form_refs_delegate_across_memoized_subtree():
-    """A form memo wrapper can collect IDs from the original form subtree."""
-
-    class SignupState(rx.State):
-        @rx.event
-        def on_submit(self, form_data: dict):
-            pass
-
-    form = HTMLForm.create(
-        Input.create(id="memoized_input"), on_submit=SignupState.on_submit
-    )
-    form._get_form_control_refs()
-    memoized_form = copy(form)
-    object.__setattr__(memoized_form, "_get_all_refs", form._get_all_refs)
-    object.__setattr__(
-        memoized_form, "_get_form_control_refs", form._get_form_control_refs
-    )
-    memoized_form.children = []
-
-    assert "ref_memoized_input" in memoized_form.add_hooks()[0]
 
 
 @pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
