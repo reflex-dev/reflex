@@ -494,7 +494,7 @@ class EventProcessor:
         Yields:
             Deltas for the token emitted by the event handler and the events it chains.
         """
-        if self._root_context is None:
+        if (root := self._root_context) is None:
             msg = "Event processor is not configured, call .configure(...) first."
             raise RuntimeError(msg)
 
@@ -508,28 +508,27 @@ class EventProcessor:
         ) -> None:
             if streaming and delta_token == token:
                 await deltas.put(delta)
-            elif (
-                self._root_context is not None
-                and self._root_context.emit_delta_impl is not None
-            ):
+            elif root.emit_delta_impl is not None:
                 # Other tokens' deltas, and any emitted after the stream ended,
                 # go to the client the usual way.
-                await self._root_context.emit_delta_impl(delta_token, delta)
+                await root.emit_delta_impl(delta_token, delta)
 
         task_future = await self.enqueue(
             token,
             event,
-            # Fork for a txid of its own: every top-level event names the root
-            # context's txid as its parent, so tracking this event under it
-            # would chain them all to this stream. Forking also nests the
-            # handler span under the caller's span (the upload request, a
-            # custom route).
-            ev_ctx=dataclasses.replace(
-                self._root_context.fork(token=token),
-                # A top-level event: its span (nested under the caller's) must
-                # not name the root context as its parent event.
-                parent_txid=None,
+            # A fresh context rather than a copy of the root: every top-level
+            # event names the root context's txid as its parent, so tracking
+            # this event under that txid would chain them all to this stream.
+            # Its txid is new and, as a top-level event, it has no parent.
+            ev_ctx=type(root)(
+                token=token,
+                state_manager=root.state_manager,
+                enqueue_impl=root.enqueue_impl,
                 emit_delta_impl=_emit_delta_impl,
+                emit_event_impl=root.emit_event_impl,
+                # Like fork(): the handler span nests under the caller's span
+                # (the upload request, a custom route).
+                otel_context=otel.capture_context(),
             ),
         )
 
