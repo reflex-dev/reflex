@@ -3428,54 +3428,87 @@ async def test_a_child_that_finishes_as_it_is_cancelled_counts_once(session_fact
     assert EVENTS.count(f"joined-report:{key}") == 0
 
 
-async def test_a_run_that_starts_matching_under_a_cancel_is_left_alone(
-    session_factory, monkeypatch
-):
-    # Cancel reads the rows it will stop, locks them, and stops them. The update
-    # used to apply the predicate a second time, under a snapshot of its own, so
-    # a run that started matching in between was cancelled without ever being
-    # read: its parent was never told it was over, and waited for a child that
-    # would never report.
-    key = uuid.uuid4().hex
-    await Joined(key=key).start(Joined.split)
-    assert await step_row(Joined, await pk_of(Joined, key)) == "ok"
+async def test_no_run_is_cancelled_without_its_parent_being_told(session_factory):
+    # Cancel reads the rows it will stop and stops them. Read and written as two
+    # statements, the write took a snapshot of its own, so a run that started
+    # matching in between was cancelled without having been read: nothing
+    # counted it against its parent, and that parent waited for a child that
+    # could no longer report.
+    watched, late = uuid.uuid4().hex, uuid.uuid4().hex
+    for key in (watched, late):
+        await Joined(key=key).start(Joined.split)
+        assert await step_row(Joined, await pk_of(Joined, key)) == "ok"
     async with session_factory() as session:
         pointer = (
-            await session.execute(select(Leaf.parent).where(Leaf.key == f"{key}-0"))
+            await session.execute(select(Leaf.parent).where(Leaf.key == f"{late}-0"))
         ).scalar_one()
 
-    late = f"{key}-late"
-    # Hooked on the unjoin the cancel builds its update with, which it reaches
-    # after the rows are read and locked and before the update runs, whatever
-    # the update ends up matching on.
-    real = execute.unjoin
+    arriving = f"{watched}-late"
+    sent = []
+    bind = runtime.current().session_factory.kw["bind"]
 
-    def arriving(cls):
-        # On a connection of its own, so it commits while the cancel is still
-        # open: this is the row the cancel never read and must not touch.
-        monkeypatch.setattr(execute, "unjoin", real)
-        with psycopg.connect(URL, autocommit=True) as conn:
-            conn.execute(
+    def arrive(conn, cursor, statement, *args):
+        """Commit a matching run on another connection as the cancel runs.
+
+        Args:
+            conn: The connection.
+            cursor: Its cursor.
+            statement: The SQL about to be sent.
+            *args: The rest of the event's arguments.
+        """
+        if not statement.lstrip().upper().startswith(("UPDATE", "WITH")) or sent:
+            return
+        sent.append(statement)
+        with psycopg.connect(URL, autocommit=True) as other:
+            other.execute(
                 "insert into wf_test_leaf"
                 " (key, status, next_step, wake_at, attempts, wf_version, parent)"
                 " values (%s, 'new', 'work', now(), 0, 0, %s)",
-                (late, json.dumps(pointer)),
+                (arriving, json.dumps(pointer)),
             )
-        return real(cls)
 
-    monkeypatch.setattr(execute, "unjoin", arriving)
-    # Three children were read and locked; the fourth arrives under the cancel.
-    assert await Leaf.by(Leaf.key.like(f"{key}-%")).cancel() == 3
+    sa_event.listen(bind.sync_engine, "before_cursor_execute", arrive)
+    try:
+        cancelled = await Leaf.by(Leaf.key.like(f"{watched}-%")).cancel()
+    finally:
+        sa_event.remove(bind.sync_engine, "before_cursor_execute", arrive)
+    assert sent, "the cancel sent no statement to hook"
 
     async with session_factory() as session:
         left = (
+            await session.execute(select(Leaf.next_step).where(Leaf.key == arriving))
+        ).scalar_one()
+        counted = (
             await session.execute(
-                select(Leaf.next_step, Leaf.parent).where(Leaf.key == late)
+                select(Joined.children_left).where(Joined.key == late)
             )
-        ).one()
-    # Still scheduled, and still pointing at its parent, so when it runs it
-    # counts itself: the cancel neither ran it nor made it uncountable.
-    assert left == ("work", pointer)
+        ).scalar_one()
+    # Whether the late run was inside the cancel or outside it, the two agree:
+    # a run it stopped was counted against its parent, and one it left alone is
+    # still scheduled to run and count itself.
+    if left is None:
+        assert cancelled == 4
+        assert counted == 2
+    else:
+        assert (cancelled, left, counted) == (3, "work", 3)
+
+
+@pytest.mark.parametrize(
+    ("given", "stored"),
+    [({}, "pending"), ({"note": None}, None), ({"note": "written"}, "written")],
+)
+async def test_start_stores_what_the_caller_set_including_none(
+    session_factory, given, stored
+):
+    key = uuid.uuid4().hex
+    # An explicit None used to read the same as never setting the column, so the
+    # column default was stored over it -- unlike adding the row to a session.
+    await Noted(key=key, **given).start(Noted.go)
+    async with session_factory() as session:
+        note = (
+            await session.execute(select(Noted.note).where(Noted.key == key))
+        ).scalar_one()
+    assert note == stored
 
 
 async def test_a_key_is_taken_when_the_run_runs_the_event_not_when_it_is_held(
@@ -3569,24 +3602,6 @@ async def test_a_restart_leaves_a_cancelled_step_its_lease(session_factory):
     assert lease == claimed.until
 
 
-@pytest.mark.parametrize(
-    ("given", "stored"),
-    [({}, "pending"), ({"note": None}, None), ({"note": "written"}, "written")],
-)
-async def test_start_stores_what_the_caller_set_including_none(
-    session_factory, given, stored
-):
-    key = uuid.uuid4().hex
-    # An explicit None used to read the same as never setting the column, so the
-    # column default was stored over it -- unlike adding the row to a session.
-    await Noted(key=key, **given).start(Noted.go)
-    async with session_factory() as session:
-        note = (
-            await session.execute(select(Noted.note).where(Noted.key == key))
-        ).scalar_one()
-    assert note == stored
-
-
 async def test_a_run_holding_its_answer_is_due_now(session_factory):
     rt = runtime.current()
     only: dict[type[Workflow], list[str] | None] = {Resting: None}
@@ -3665,11 +3680,13 @@ async def test_cancel_reads_its_rows_under_a_lock(session_factory):
     finally:
         sa_event.remove(bind.sync_engine, "before_cursor_execute", record)
 
-    # Read under a lock, so a child that finishes between being read and being
-    # cancelled cannot be counted by its own commit and by this one as well.
-    reads = [sql for sql in statements if sql.lstrip().upper().startswith("SELECT")]
-    assert reads
-    assert any("FOR UPDATE" in sql.upper() for sql in reads)
+    # Picked under a lock, so a child that finishes between being read and
+    # being cancelled cannot be counted by its own commit and by this one as
+    # well. In the same statement as the write, so there is no moment between
+    # them for a row to arrive in either.
+    writes = [sql for sql in statements if "UPDATE WF_TEST_LEAF" in sql.upper()]
+    assert len(writes) == 1, statements
+    assert "FOR UPDATE" in writes[0].upper()
 
 
 async def test_a_child_that_finishes_before_the_cancel_is_counted_once(

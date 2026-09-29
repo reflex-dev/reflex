@@ -334,53 +334,59 @@ class RunHandle(Generic[W]):
         """
         runtime = current()
         cls = self.cls
+        pk_cols = rows.mapper(cls).primary_key
+        # Locked as they are picked, so nothing finishes between being read and
+        # being cancelled: a child that did would be counted by its own commit
+        # and again by this one, and its parent would join early.
+        #
+        # Materialized, so the update writes the rows this locked rather than
+        # whatever matches the predicate by the time it runs under a snapshot of
+        # its own -- a run that started matching in between would be cancelled
+        # without being read here, its parent never told, and that parent would
+        # wait for a child that could no longer report. Joined rather than
+        # listed back as keys: a backlog of more than about sixty-five thousand
+        # rows is more parameters than a statement can carry.
+        stopping = (
+            select(*pk_cols, cls.parent.label("was"))
+            .where(
+                *self.where,
+                or_(cls.next_step.is_not(None), cls.waiting_for.is_not(None)),
+            )
+            .with_for_update()
+            .cte("stopping")
+            .prefix_with("MATERIALIZED")
+        )
         async with runtime.session_factory() as session, session.begin():
-            # Locked, so nothing finishes between being read here and being
-            # cancelled below: a child that did would be counted by its own
-            # commit and again by this one, and its parent would join early.
-            stopping = (
+            stopped = (
                 await session.execute(
-                    select(*rows.mapper(cls).primary_key, cls.parent)
-                    .where(
-                        *self.where,
-                        or_(
-                            cls.next_step.is_not(None),
-                            cls.waiting_for.is_not(None),
-                        ),
+                    update(cls)
+                    .where(*(column == stopping.c[column.key] for column in pk_cols))
+                    .values(
+                        next_step=None,
+                        next_args=None,
+                        wake_at=None,
+                        waiting_for=None,
+                        pending_event=None,
+                        children_left=None,
+                        # The parent stops being named, so a child cancelled
+                        # here cannot also be counted when its step lands.
+                        parent=execute.unjoin(cls),
+                        wf_version=cls.wf_version + 1,
                     )
-                    .with_for_update()
+                    # The pointer as it was before this cleared it, which is who
+                    # to tell; what the row holds now no longer names anyone.
+                    .returning(stopping.c.was)
+                    .execution_options(synchronize_session=False)
                 )
             ).all()
-            if not stopping:
-                return 0
-            # By the keys just read and locked, not by the predicate again: the
-            # update takes its own snapshot, so a run that started matching in
-            # between would be cancelled here without its parent being told
-            # below, and that parent would wait for it forever.
-            await session.execute(
-                update(cls)
-                .where(rows.pk_among(cls, [pk for *pk, _ in stopping]))
-                .values(
-                    next_step=None,
-                    next_args=None,
-                    wake_at=None,
-                    waiting_for=None,
-                    pending_event=None,
-                    children_left=None,
-                    # The parent stops being named, so a child cancelled
-                    # here cannot also be counted when its step lands.
-                    parent=execute.unjoin(cls),
-                    wf_version=cls.wf_version + 1,
-                )
-                .execution_options(synchronize_session=False)
-            )
             woken = set()
-            for *_pk, parent in stopping:
+            for (parent,) in stopped:
                 if parent is None or parent.get("fan_out") is None:
                     continue
                 await execute.finish_child(session, parent)
                 woken.add(parent["table"])
             for table in sorted(woken):
                 await notify.announce(session, table)
-        runtime.wake.set()
-        return len(stopping)
+        if stopped:
+            runtime.wake.set()
+        return len(stopped)
