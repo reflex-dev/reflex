@@ -7,8 +7,13 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from reflex.istate.shared import SharedStateBaseInternal, _do_update_other_tokens
-from reflex.state import State
+import reflex as rx
+from reflex.istate.shared import (
+    SharedStateBaseInternal,
+    _do_update_other_tokens,
+    _patch_state,
+)
+from reflex.state import BaseState, State
 from reflex.utils.token_manager import (
     LocalTokenManager,
     RedisTokenManager,
@@ -129,3 +134,42 @@ async def test_no_fan_out_without_linked_clients():
             pass
 
     do_update.assert_not_called()
+
+
+class PatchRoot(BaseState):
+    """The root of a tree a state is patched into."""
+
+
+class PatchSource(PatchRoot):
+    """A state swapped for another instance while patched."""
+
+    who: str = "private"
+
+
+class PatchReader(PatchRoot):
+    """A state with a computed var reading the patched state."""
+
+    @rx.var
+    async def greeting(self) -> str:
+        """Read the patched state.
+
+        Returns:
+            Its value.
+        """
+        return (await self.get_state(PatchSource)).who
+
+
+@pytest.mark.asyncio
+async def test_patch_state_recomputes_readers_after_restoring():
+    """Computed vars read from a patched state are recomputed once it is swapped back."""
+    root = PatchRoot(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    original = root.get_substate([PatchSource.get_name()])
+    reader = root.get_substate([PatchReader.get_name()])
+    # The state of another client, in a tree of its own.
+    linked_root = PatchRoot(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    linked = linked_root.get_substate([PatchSource.get_name()])
+    linked.who = "linked"  # pyright: ignore[reportAttributeAccessIssue]
+
+    async with _patch_state(original_state=original, linked_state=linked):
+        assert await reader.greeting == "linked"  # pyright: ignore[reportAttributeAccessIssue]
+    assert await reader.greeting == "private"  # pyright: ignore[reportAttributeAccessIssue]

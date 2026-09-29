@@ -26,7 +26,7 @@ from reflex_base.vars.sequence import StringVar
 class _FrozenDictStrStr(Mapping[str, str]):
     _data: MappingProxyType[str, str]
 
-    def __init__(self, **kwargs):
+    def __init__(self, /, **kwargs):
         object.__setattr__(
             self, "_data", MappingProxyType(dict(sorted(kwargs.items())))
         )

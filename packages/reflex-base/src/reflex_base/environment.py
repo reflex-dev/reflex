@@ -697,7 +697,7 @@ class EnvironmentVariables:
     SQLALCHEMY_POOL_RECYCLE: EnvVar[int] = env_var(-1)
 
     # The timeout for acquiring a connection from the pool.
-    SQLALCHEMY_POOL_TIMEOUT: EnvVar[int] = env_var(30)
+    SQLALCHEMY_POOL_TIMEOUT: EnvVar[timedelta] = env_var(timedelta(seconds=30))
 
     # Whether to ignore the redis config error. Some redis servers only allow out-of-band configuration.
     REFLEX_IGNORE_REDIS_CONFIG_ERROR: EnvVar[bool] = env_var(False)
@@ -763,8 +763,10 @@ class EnvironmentVariables:
     # Enables different behavior for when the backend would do a cold start if it was inactive.
     REFLEX_DOES_BACKEND_COLD_START: EnvVar[bool] = env_var(False)
 
-    # The timeout for the backend to do a cold start in seconds.
-    REFLEX_BACKEND_COLD_START_TIMEOUT: EnvVar[int] = env_var(10)
+    # The timeout for the backend to do a cold start.
+    REFLEX_BACKEND_COLD_START_TIMEOUT: EnvVar[timedelta] = env_var(
+        timedelta(seconds=10)
+    )
 
     # Used by flexgen to enumerate the pages.
     REFLEX_ADD_ALL_ROUTES_ENDPOINT: EnvVar[bool] = env_var(False)
@@ -777,11 +779,15 @@ class EnvironmentVariables:
         constants.POLLING_MAX_HTTP_BUFFER_SIZE
     )
 
-    # The interval to send a ping to the websocket server in seconds.
-    REFLEX_SOCKET_INTERVAL: EnvVar[int] = env_var(constants.Ping.INTERVAL)
+    # The interval to send a ping to the websocket server.
+    REFLEX_SOCKET_INTERVAL: EnvVar[timedelta] = env_var(
+        timedelta(seconds=constants.Ping.INTERVAL)
+    )
 
-    # The timeout to wait for a pong from the websocket server in seconds.
-    REFLEX_SOCKET_TIMEOUT: EnvVar[int] = env_var(constants.Ping.TIMEOUT)
+    # The timeout to wait for a pong from the websocket server.
+    REFLEX_SOCKET_TIMEOUT: EnvVar[timedelta] = env_var(
+        timedelta(seconds=constants.Ping.TIMEOUT)
+    )
 
     # Whether to run Granian in a spawn process. This enables Reflex to pick up on environment variable changes between hot reloads.
     REFLEX_STRICT_HOT_RELOAD: EnvVar[bool] = env_var(False)
@@ -826,9 +832,17 @@ class EnvironmentVariables:
     REFLEX_MOUNT_FRONTEND_COMPILED_APP: EnvVar[bool] = env_var(False, internal=True)
 
     # How long to delay writing updated states to disk. (Higher values mean less writes, but more chance of lost data.)
+    REFLEX_STATE_MANAGER_DISK_DEBOUNCE: EnvVar[timedelta] = env_var(
+        timedelta(seconds=2)
+    )
+
+    # Deprecated in favour of REFLEX_STATE_MANAGER_DISK_DEBOUNCE.
     REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS: EnvVar[float] = env_var(2.0)
 
     # How long to wait between automatic reload on frontend error to avoid reload loops.
+    REFLEX_AUTO_RELOAD_COOLDOWN: EnvVar[timedelta] = env_var(timedelta(seconds=10))
+
+    # Deprecated in favour of REFLEX_AUTO_RELOAD_COOLDOWN.
     REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS: EnvVar[int] = env_var(10_000)
 
     # Whether to enable debug logging for the redis state manager.
@@ -837,7 +851,10 @@ class EnvironmentVariables:
     # Whether to opportunistically hold the redis lock to allow fast in-memory access while uncontended.
     REFLEX_OPLOCK_ENABLED: EnvVar[bool] = env_var(False)
 
-    # How long to opportunistically hold the redis lock in milliseconds (must be less than the token expiration).
+    # How long to opportunistically hold the redis lock (must be less than the token expiration).
+    REFLEX_OPLOCK_HOLD_TIME: EnvVar[timedelta] = env_var(timedelta(0))
+
+    # Deprecated in favour of REFLEX_OPLOCK_HOLD_TIME.
     REFLEX_OPLOCK_HOLD_TIME_MS: EnvVar[int] = env_var(0)
 
     # Extra plugins to append to the config's plugins list.
@@ -849,6 +866,96 @@ class EnvironmentVariables:
 
 
 environment = EnvironmentVariables()
+
+# Superseded settings already warned about. A setting has no call site, so the
+# per-location dedupe in `console.deprecate` would repeat the warning from every
+# code path that reads it.
+_WARNED_SUPERSEDED: set[str] = set()
+
+
+def _duration_setting(
+    setting: EnvVar[timedelta],
+    superseded: EnvVar[int] | EnvVar[float],
+    unit: str,
+) -> timedelta:
+    """Read a duration setting, honouring the unit-suffixed name it replaced.
+
+    *superseded* carried its unit in its name and its value as a bare number, so it
+    cannot become a duration in place: ``10000`` would read as seconds rather than
+    the milliseconds it means. It is read in *unit* instead, and only while it is
+    still set.
+
+    Args:
+        setting: The duration setting to read.
+        superseded: The setting it replaced, whose value is a count of *unit*.
+        unit: The suffix of the unit *superseded* counts in, as
+            :func:`interpret_timedelta_env` accepts it.
+
+    Returns:
+        The configured duration.
+    """
+    if not superseded.is_set():
+        return setting.get()
+
+    if superseded.name not in _WARNED_SUPERSEDED:
+        _WARNED_SUPERSEDED.add(superseded.name)
+        from reflex_base.utils import console
+
+        # Spell out the exact replacement: renaming the variable without adding
+        # the unit would silently read its value as seconds. The number comes
+        # from the parsed value rather than the raw text, because the forms a
+        # bare int or float accepts are wider than the duration parser's: `.5`,
+        # `1_000` and `1e3` would all suggest a value that fails to parse.
+        replacement = f"{superseded.get()}{unit}"
+        console.deprecate(
+            feature_name=superseded.name,
+            reason=f"Set {setting.name}={replacement} instead.",
+            deprecation_version="0.9.12",
+            removal_version="1.0",
+        )
+    if setting.is_set():
+        return setting.get()
+    return superseded.get() * timedelta(**{_TIMEDELTA_UNITS[unit]: 1})
+
+
+def auto_reload_cooldown() -> timedelta:
+    """How long to wait between automatic reloads on a frontend error.
+
+    Returns:
+        The configured duration.
+    """
+    return _duration_setting(
+        environment.REFLEX_AUTO_RELOAD_COOLDOWN,
+        environment.REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS,
+        "ms",
+    )
+
+
+def oplock_hold_time() -> timedelta:
+    """How long to opportunistically hold the redis lock.
+
+    Returns:
+        The configured duration.
+    """
+    return _duration_setting(
+        environment.REFLEX_OPLOCK_HOLD_TIME,
+        environment.REFLEX_OPLOCK_HOLD_TIME_MS,
+        "ms",
+    )
+
+
+def state_manager_disk_debounce() -> timedelta:
+    """How long to delay writing updated states to disk.
+
+    Returns:
+        The configured duration.
+    """
+    return _duration_setting(
+        environment.REFLEX_STATE_MANAGER_DISK_DEBOUNCE,
+        environment.REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS,
+        "s",
+    )
+
 
 try:
     from dotenv import load_dotenv

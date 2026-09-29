@@ -1,1 +1,1 @@
-"""Regression tests for benchmark infrastructure."""
+"""Benchmark support tests."""
