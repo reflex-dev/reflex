@@ -330,16 +330,17 @@ def test_arguments_a_step_cannot_take_are_rejected_where_the_call_is_made():
     check_call(Expense, Expense.decide("approve"))
 
 
-def held_event_index(cls: type[Workflow]) -> Index | None:
-    """Find the index that covers the runs holding an event, if the class has it.
+def engine_index(cls: type[Workflow], suffix: str) -> Index | None:
+    """Find one of the indexes the engine adds to a workflow, if it is there.
 
     Args:
         cls: The workflow class.
+        suffix: Which one, as it appears at the end of the index's name.
 
     Returns:
         The index, or None.
     """
-    name = f"ix_{cls.__tablename__}_held_event"
+    name = f"ix_{cls.__tablename__}_{suffix}"
     table = cls.__table__  # pyright: ignore[reportAttributeAccessIssue]
     return next((index for index in table.indexes if index.name == name), None)
 
@@ -357,7 +358,7 @@ def rendered_predicate(index: Index) -> str:
     return str(where.compile(dialect=postgresql.dialect()))
 
 
-def test_a_workflow_is_indexed_by_the_events_it_holds():
+def test_a_workflow_is_indexed_by_the_events_it_holds_and_the_leases_on_it():
     class Parked(Base, Workflow):
         """A workflow that takes the table arguments the mixin gives it."""
 
@@ -365,12 +366,19 @@ def test_a_workflow_is_indexed_by_the_events_it_holds():
 
         id: Mapped[int] = mapped_column(primary_key=True)
 
-    index = held_event_index(Parked)
-    assert index is not None
+    held = engine_index(Parked, "held_event")
+    assert held is not None
     # Only the parked runs that hold an answer, which is a handful of them:
     # over all of them it would be the scan it is there to replace.
-    assert [column.name for column in index.columns] == ["waiting_for"]
-    assert rendered_predicate(index) == "wf_model_parked.pending_event IS NOT NULL"
+    assert [column.name for column in held.columns] == ["waiting_for"]
+    assert rendered_predicate(held) == "wf_model_parked.pending_event IS NOT NULL"
+
+    # The idle path asks when the soonest lease runs out, and a lease is held
+    # by a handful of rows in a table that is mostly runs already over.
+    lease = engine_index(Parked, "lease")
+    assert lease is not None
+    assert [column.name for column in lease.columns] == ["claimed_until"]
+    assert rendered_predicate(lease) == "wf_model_parked.claimed_until IS NOT NULL"
 
 
 def test_a_workflow_that_declares_its_own_table_arguments_keeps_that_index():
@@ -385,7 +393,8 @@ def test_a_workflow_that_declares_its_own_table_arguments_keeps_that_index():
 
     # Through __table_args__ the mixin's index would have been replaced by this
     # class's own, and nothing would have said so.
-    assert held_event_index(Constrained) is not None
+    assert engine_index(Constrained, "held_event") is not None
+    assert engine_index(Constrained, "lease") is not None
     table = cast(Table, Constrained.__table__)
     assert "uq_wf_model_reference" in {c.name for c in table.constraints}
 
@@ -402,4 +411,5 @@ def test_a_workflow_on_the_older_declarative_base_is_indexed_too():
 
     # That style has no table yet while the class body is being run, so an index
     # attached from __init_subclass__ would quietly not be there at all.
-    assert held_event_index(Ageing) is not None
+    assert engine_index(Ageing, "held_event") is not None
+    assert engine_index(Ageing, "lease") is not None

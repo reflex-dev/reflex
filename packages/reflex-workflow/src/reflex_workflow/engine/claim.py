@@ -7,7 +7,7 @@ import logging
 from collections.abc import Collection
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-from sqlalchemy import and_, case, func, or_, select, update
+from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
@@ -156,27 +156,34 @@ async def waiting_groups(
     Returns:
         The group values to try this pass.
     """
-    stmt = (
-        select(group)
+    waiting = (
+        select(group.label("grp"), func.min(cls.wake_at).label("soonest"))
         .where(*claimable(cls, steps))
         .group_by(group)
-        .order_by(func.min(cls.wake_at).nullsfirst())
-        .limit(most)
+        .subquery()
     )
+    stmt = select(waiting.c.grp).order_by(waiting.c.soonest.nullsfirst()).limit(most)
     if spec.at_most is not None:
         running = aliased(cls)
-        stmt = stmt.having(
-            select(func.count())
-            .select_from(running)
-            .where(
-                # Not ``==``: a nullable column groups its NULLs together,
-                # and equality matches none of them.
-                getattr(running, spec.by).is_not_distinct_from(group),
-                running.claimed_until > func.now(),
+        # Counted once for the whole table and then joined, not asked again for
+        # every group: a correlated count here is one scan of the table per
+        # group, and it is paid before the limit can leave most of them out.
+        # Only leased rows are counted, which is a small set beside the table.
+        leased = (
+            select(
+                getattr(running, spec.by).label("grp"),
+                func.count().label("held"),
             )
-            .scalar_subquery()
-            < spec.at_most
+            .where(running.claimed_until > func.now())
+            .group_by(getattr(running, spec.by))
+            .subquery()
         )
+        stmt = stmt.select_from(
+            # Not ``==``: a nullable column groups its NULLs together, and
+            # equality matches none of them. Here it joins one row per group
+            # rather than reading the table, so it costs nothing.
+            waiting.outerjoin(leased, waiting.c.grp.is_not_distinct_from(leased.c.grp))
+        ).where(func.coalesce(leased.c.held, 0) < spec.at_most)
     async with runtime.session_factory() as session:
         return list((await session.execute(stmt)).scalars().all())
 
@@ -403,22 +410,6 @@ def soonest(cls: type[Workflow], steps: Collection[str] | None):
     Returns:
         A select of one interval, null when the table has nothing scheduled.
     """
-    # A leased row comes due when the lease runs out, whatever its wake_at says:
-    # the worker holding it may be gone, and this is when to find out.
-    #
-    # No time at all is not the same as now. A run parked on a wait with no
-    # deadline, or a parent waiting on its children, comes due when something
-    # happens rather than when a clock says so, and what happens announces
-    # itself. Those rows say nothing here -- min() passes over them -- so a
-    # worker with only such rows sleeps instead of asking after them forever.
-    when = case(
-        (cls.claimed_until > func.now(), cls.claimed_until),
-        # Holding the answer it was waiting for, which is claimable now however
-        # its wake_at reads: what this says has to agree with what claimable()
-        # takes, or a worker sleeps on a run it could already be running.
-        (cls.pending_event["step"].astext == cls.waiting_for, func.now()),
-        else_=cls.wake_at,
-    )
     runnable = or_(
         and_(cls.next_step.is_not(None), cls.next_step.in_(steps))
         if steps is not None
@@ -427,7 +418,44 @@ def soonest(cls: type[Workflow], steps: Collection[str] | None):
         if steps is not None
         else cls.waiting_for.is_not(None),
     )
-    return select(func.min(when) - func.now()).where(runnable)
+    held = or_(cls.claimed_until.is_(None), cls.claimed_until <= func.now())
+    # Asked as three narrow questions rather than one min() over a case: each
+    # of these reads an index and stops, where the case has to look at every
+    # parked run to find the few that say anything. This is the idle path, paid
+    # every time a pass finds nothing, so it is the one that must stay cheap.
+    #
+    # No time at all is not the same as now. A run parked on a wait with no
+    # deadline, or a parent waiting on its children, comes due when something
+    # happens rather than when a clock says so, and what happens announces
+    # itself. Those rows say nothing here -- least() passes over the nulls --
+    # so a worker with only such rows sleeps instead of asking after them
+    # forever.
+    scheduled = (
+        select(func.min(cls.wake_at))
+        .where(runnable, cls.wake_at.is_not(None), held)
+        .scalar_subquery()
+    )
+    # A leased row comes due when the lease runs out, whatever its wake_at says:
+    # the worker holding it may be gone, and this is when to find out.
+    expiring = (
+        select(func.min(cls.claimed_until))
+        .where(cls.claimed_until > func.now(), runnable)
+        .scalar_subquery()
+    )
+    # Holding the answer it was waiting for, which is claimable now however its
+    # wake_at reads: what this says has to agree with what claimable() takes,
+    # or a worker sleeps on a run it could already be running.
+    answered = (
+        select(func.now())
+        .where(
+            runnable,
+            held,
+            cls.pending_event["step"].astext == cls.waiting_for,
+        )
+        .limit(1)
+        .scalar_subquery()
+    )
+    return select(func.least(scheduled, expiring, answered) - func.now())
 
 
 async def next_due(

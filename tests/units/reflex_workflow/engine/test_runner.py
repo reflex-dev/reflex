@@ -3319,6 +3319,35 @@ async def test_a_run_waiting_on_an_event_is_not_something_to_wait_for(
         await Resting.by().cancel()
 
 
+async def test_a_lease_running_out_is_what_an_idle_worker_waits_for(session_factory):
+    rt = runtime.current()
+    only: dict[type[Workflow], list[str] | None] = {Resting: None}
+    await Resting.by().cancel()
+    assert await claim.next_due(rt, [Resting], only) is None
+
+    async with session_factory() as session, session.begin():
+        # Claimed by a worker that may be gone, and long overdue by its own
+        # wake_at: the lease is when to find out, not the wake_at underneath it.
+        await session.execute(
+            insert(Resting).values(
+                key=uuid.uuid4().hex,
+                next_step="rest",
+                wake_at=func.now() - datetime.timedelta(hours=1),
+                claimed_until=func.now() + datetime.timedelta(hours=3),
+                attempts=0,
+                wf_version=0,
+            )
+        )
+
+    try:
+        away = await claim.next_due(rt, [Resting], only)
+        assert away is not None
+        # Waiting for the lease rather than asking after a row it cannot take.
+        assert datetime.timedelta(hours=2) < away < datetime.timedelta(hours=4)
+    finally:
+        await Resting.by().cancel()
+
+
 async def test_a_table_that_cannot_be_asked_does_not_decide_the_wait(session_factory):
     class Absent(Base, Workflow):
         """A workflow whose table was never created."""

@@ -609,13 +609,16 @@ class AttemptLog:
 
 
 @event.listens_for(Mapper, "instrument_class")
-def index_held_events(mapper: Mapper[Any], cls: type) -> None:
-    """Index the runs holding an event for the wait they are parked on.
+def index_engine_columns(mapper: Mapper[Any], cls: type) -> None:
+    """Add the partial indexes the engine reads its own columns through.
 
-    A claim asks for the rows whose held event is for the wait they are on, and
-    only a handful of parked runs ever hold one. Without this, finding them
-    means reading every parked run, on every poll of every worker, however idle
-    the table is.
+    Both cover a handful of rows in a table that is mostly finished runs, and
+    both are on the paths a worker takes whether or not it has work: the runs
+    holding an event for the wait they are parked on, which a claim asks for,
+    and the runs a worker is holding a lease on, which is how the idle path
+    knows when a lease it did not take runs out. Without them either question
+    reads every parked run, on every pass of every worker, however idle the
+    table is.
 
     Attached as the class is mapped rather than through ``__table_args__``,
     which a workflow declaring table arguments of its own would replace: an
@@ -632,14 +635,22 @@ def index_held_events(mapper: Mapper[Any], cls: type) -> None:
     table = mapper.local_table
     if not issubclass(cls, Workflow) or not isinstance(table, Table):
         return
-    name = f"ix_{table.name}_held_event"
-    if any(index.name == name for index in table.indexes):
-        return
-    Index(
-        name,
-        table.c.waiting_for,
-        postgresql_where=table.c.pending_event.is_not(None),
+    wanted = (
+        (
+            f"ix_{table.name}_held_event",
+            table.c.waiting_for,
+            table.c.pending_event.is_not(None),
+        ),
+        (
+            f"ix_{table.name}_lease",
+            table.c.claimed_until,
+            table.c.claimed_until.is_not(None),
+        ),
     )
+    have = {index.name for index in table.indexes}
+    for name, column, only in wanted:
+        if name not in have:
+            Index(name, column, postgresql_where=only)
 
 
 class Workflow:
