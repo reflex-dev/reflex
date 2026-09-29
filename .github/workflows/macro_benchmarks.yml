@@ -109,10 +109,15 @@ jobs:
             if [ -n "$base" ]; then
               git show "FETCH_HEAD:$base" > base.json
               echo "Compared with \`$base\` of the benchmark-data branch." >> "$GITHUB_STEP_SUMMARY"
-              uv run --no-sync reflex-bench compare base.json macro.json --format md --fail-on never >> "$GITHUB_STEP_SUMMARY"
-              exit 0
+              # compare exits 1 when no metric is comparable (another benchmark
+              # version, fixture or profile); the table then lists the reasons.
+              if uv run --no-sync reflex-bench compare base.json macro.json --format md --fail-on never >> "$GITHUB_STEP_SUMMARY"; then
+                exit 0
+              fi
+              echo "Nothing in this run is comparable with the daily result; this run's own values:" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "No daily result of profile \`$profile\` on the benchmark-data branch yet: nothing to compare with." >> "$GITHUB_STEP_SUMMARY"
             fi
-            echo "No daily result of profile \`$profile\` on the benchmark-data branch yet: nothing to compare with." >> "$GITHUB_STEP_SUMMARY"
           fi
           uv run --no-sync reflex-bench export macro.json --to md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload the result
