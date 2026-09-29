@@ -336,9 +336,10 @@ tabs: each connects with its own token, hydrates like a page load, then sends
 
 The grid holds the common points, about 30 minutes with the default policy.
 Reflex's default state manager is disk, or redis with a `redis_url`, so every
-benchmark runs on `disk` (and on `redis` when `REFLEX_REDIS_URL` is set) at 10
-sessions. Only `simple` also runs on `memory`, the framework's cost without
-state I/O, and at 50 sessions. Other sizes run by name with `--param`, e.g.
+benchmark runs on `disk` (and on `redis` when `REFLEX_REDIS_URL` is set), at 10
+sessions except `at_1hz` (200 sessions) and the fan-out (25 linked sessions).
+Only `simple` also runs on `memory`, the framework's cost without state I/O,
+and at 50 sessions. Other sizes run by name with `--param`, e.g.
 `reflex-bench run 'events.complex.capacity' --param sessions=200`.
 
 CI minutes are scarce, so `smoke` runs two points, about 2 minutes per reflex
@@ -359,7 +360,7 @@ the knee and `at_1hz` run with `--suite all` or by name.
 | `events.shared_fanout.broadcast` | `daily` (`manager=disk`, `linked=25`) | `manager`, `linked` 25 | one linked session sends, closed loop, 3 s after 1 s; answered once every linked session has the delta | `throughput`, `broadcast_p50`, `broadcast_p99`, `fanout_spread_p50`, `cpu_per_event` |
 | `events.simple.knee` | (`all`) | `manager`, `sessions` 10 | open loop at 10 % to 110 % of the capacity, 4 s after 1 s each | `knee_rate`, `low_load_p99` |
 | `events.sessions.at_1hz` | (`all`) | `manager`, `sessions` 200 | open loop, 1 ev/s per session, 10 s after 3 s | `response_p50`, `response_p99`, `unanswered`, `cpu_per_event` |
-| `selftest.events.calibrate` | `selftest` | | the generator against an echo server: closed loop, then open loop at 3000 ev/s | `closed_ceiling`, `open_lag_p99` |
+| `selftest.events.calibrate` | `selftest` | | the generator against an echo server: closed loop, then open loop at 1500 ev/s | `closed_ceiling`, `open_lag_p99` |
 
 - **Shapes**: `simple` (`set_seq`), `complex` (three vars behind a chain of
   three computed vars), `cross` (`get_state` of another state), `background` (a
@@ -412,7 +413,7 @@ the knee and `at_1hz` run with `--suite all` or by name.
   the generator alone: a lag tail inflates the response tail by as much,
   whatever caused it, so the sample fails with `generator saturated` at once
   and is never taken again. `selftest.events.calibrate` fails the same way
-  when the generator cannot offer 3000 ev/s, three times the highest fixed rate
+  when the generator cannot offer 1500 ev/s, three times the highest fixed rate
   of the suite, against an echo server.
 
 Not parameters yet: injected redis latency, uvicorn instead of granian, and

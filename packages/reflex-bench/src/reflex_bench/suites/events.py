@@ -19,9 +19,10 @@ generator of :mod:`reflex_bench.drivers.events`:
   event is answered once every linked session received its delta.
 
 CI minutes are scarce, so ``smoke`` runs two points only: the simple shape
-with the memory manager and 10 sessions, its latency at 500 events per second.
-``daily`` adds the shared state at the same point and two fan-out sizes.
-Everything else runs with ``--suite all`` or by name.
+with the disk manager and 10 sessions, its latency at 500 events per second.
+``daily`` adds the shared state at the same point and the fan-out at 25 linked
+sessions. Everything else runs with ``--suite all`` or by name, and sizes
+outside the grid with ``--param``.
 
 The shapes are the playground's ``BenchState.set_seq*`` handlers, and
 ``BoardState.set_seq_shared`` for the shared state. The state manager is a

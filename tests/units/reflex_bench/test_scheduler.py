@@ -10,7 +10,7 @@ import threading
 import time
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from reflex_bench import scheduler, store
@@ -468,6 +468,32 @@ def test_an_interrupted_job_that_has_not_started_never_runs(
     monkeypatch.setattr(scheduler.concurrent.futures, "wait", interrupted_wait)
     with pytest.raises(KeyboardInterrupt):
         worker.run(ran.set, timeout=30)
+    worker.close()
+    busy.set()
+    assert not worker.join(5)
+    assert not ran.is_set()
+
+
+def test_a_job_interrupted_as_it_is_queued_never_runs():
+    busy, ran = threading.Event(), threading.Event()
+    worker = scheduler._Worker("t.worker")
+    worker._jobs.put((lambda: busy.wait(30), scheduler.concurrent.futures.Future()))
+    jobs = worker._jobs
+
+    class InterruptedQueue:
+        """Queues the job, then receives Ctrl-C before the wait begins."""
+
+        get = staticmethod(jobs.get)
+
+        @staticmethod
+        def put(item: Any) -> None:
+            jobs.put(item)
+            raise KeyboardInterrupt
+
+    worker._jobs = cast("Any", InterruptedQueue())
+    with pytest.raises(KeyboardInterrupt):
+        worker.run(ran.set, timeout=30)
+    worker._jobs = jobs
     worker.close()
     busy.set()
     assert not worker.join(5)

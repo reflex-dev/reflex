@@ -315,8 +315,8 @@ class _Worker:
             _StuckError: When the job is still running after ``timeout`` seconds.
         """
         future: Future[_T] = Future()
-        self._jobs.put((fn, future))
         try:
+            self._jobs.put((fn, future))
             done, _ = concurrent.futures.wait((future,), timeout=timeout)
         except BaseException:
             # Interrupted: a job still queued must not start after the caller moves on.
