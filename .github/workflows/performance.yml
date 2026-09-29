@@ -50,7 +50,7 @@ jobs:
         with:
           mode: simulation
           simulation-track-subprocess: true
-          run: uv run pytest -v tests/benchmarks --codspeed
+          run: uv run pytest -v -s tests/benchmarks --codspeed
 
       - name: Run event-loop and wire-size smoke
         run: >-
