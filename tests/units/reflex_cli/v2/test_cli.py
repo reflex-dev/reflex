@@ -582,13 +582,15 @@ def test_deploy_rejects_app_id_from_another_requested_project(
 ):
     client = _common_deploy_mocks(mocker)
     other_project_id = uuid.UUID(int=71)
+    selected_project_name: str | None = None
+    selected_project_id: str | None = None
     if project_selector == "project_name":
         client.api.projects.search.return_value = [
             ProjectRef(id=other_project_id, name="other-project")
         ]
-        kwargs = {"project_name": "other-project"}
+        selected_project_name = "other-project"
     else:
-        kwargs = {"project": str(other_project_id)}
+        selected_project_id = str(other_project_id)
     client.api.apps.get.return_value = app()
     export_fn = MagicMock()
 
@@ -597,7 +599,8 @@ def test_deploy_rejects_app_id_from_another_requested_project(
             app_id=str(_APP_ID),
             export_fn=export_fn,
             interactive=False,
-            **kwargs,
+            project=selected_project_id,
+            project_name=selected_project_name,
         )
 
     client.api.deployments.check.assert_not_called()
