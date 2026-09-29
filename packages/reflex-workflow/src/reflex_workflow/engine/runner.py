@@ -5,19 +5,41 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import datetime
+import enum
 import logging
-from collections.abc import AsyncIterator, Collection, Iterable, Sequence
-from typing import Any
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Collection,
+    Iterable,
+    Sequence,
+)
+from typing import Any, TypeAlias
 
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from reflex_workflow.engine.claim import claim, next_due
 from reflex_workflow.engine.execute import Lease, execute, release
 from reflex_workflow.engine.notify import wake_on_notify
-from reflex_workflow.engine.runtime import Runtime, replace_current
+from reflex_workflow.engine.runtime import Runtime, current, replace_current
 from reflex_workflow.model import DEFAULT_LANE, REGISTRY, Workflow, steps_in
 
 logger = logging.getLogger(__name__)
+
+# Told the instant a worker is next waiting for, or None when it is waiting for
+# nothing. Awaited on the worker's own loop, so it should return promptly.
+OnIdle: TypeAlias = "Callable[[datetime.datetime | None], Awaitable[None]]"
+
+
+class UnsetType(enum.Enum):
+    """The type of ``UNSET``, so it narrows where it is compared against."""
+
+    UNSET = enum.auto()
+
+
+# Not None, which is a real answer here: nothing is scheduled.
+UNSET = UnsetType.UNSET
 
 # How long a cancelled step's row is given to be handed back on the way out.
 GIVE_BACK = datetime.timedelta(seconds=5)
@@ -37,6 +59,7 @@ class Runner:
         poll_interval: datetime.timedelta,
         lanes: Collection[str] = (DEFAULT_LANE,),
         max_idle_interval: datetime.timedelta | None = None,
+        on_idle: OnIdle | None = None,
     ) -> None:
         """Set up a runner; ``loop`` starts it.
 
@@ -50,6 +73,7 @@ class Runner:
             max_idle_interval: The longest it waits when nothing is due;
                 thirty seconds by default, or ``poll_interval`` when that is
                 longer, since a worker never waits less than it was told to.
+            on_idle: Told when the instant this worker is waiting for changes.
         """
         self.runtime = runtime
         self.lanes = frozenset(lanes)
@@ -75,6 +99,11 @@ class Runner:
         self.holding: dict[
             asyncio.Task[str], tuple[type[Workflow], list[Any], Lease]
         ] = {}
+        self.on_idle = on_idle
+        # The last instant handed to on_idle, so the same answer asked again is
+        # not reported as news. Unset until the first pass, which is not the
+        # same as knowing there is nothing scheduled.
+        self.reported: datetime.datetime | UnsetType | None = UNSET
         self.stopping = False
         # Where the next pass starts, so a busy table cannot always go first.
         self.turn = 0
@@ -151,9 +180,27 @@ class Runner:
                     started += await self._claim_from(cls, free)
             if started:
                 continue
-            # asyncio's own TimeoutError, which is only the builtin from 3.11 on.
-            with contextlib.suppress(asyncio.TimeoutError):
-                await asyncio.wait_for(wake.wait(), await self.until_something_is_due())
+            await self.runtime.settled.record()
+            seconds = await self.until_something_is_due()
+            # Against the wall clock rather than one timeout of that length: a
+            # machine that suspends leaves asyncio's monotonic clock where it
+            # found it, so a timer set before the suspend has as long left after
+            # it, and the wait would be served late by however long the machine
+            # was away.
+            until = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
+                seconds=seconds
+            )
+            while not wake.is_set() and not self.stopping:
+                left = (
+                    until - datetime.datetime.now(datetime.timezone.utc)
+                ).total_seconds()
+                if left <= 0:
+                    break
+                # asyncio's own TimeoutError, only the builtin from 3.11 on.
+                with contextlib.suppress(asyncio.TimeoutError):
+                    await asyncio.wait_for(
+                        wake.wait(), min(left, self.max_idle_interval.total_seconds())
+                    )
 
     async def until_something_is_due(self) -> float:
         """Return how long to wait before looking again, when nothing was taken.
@@ -185,9 +232,31 @@ class Runner:
             # A table that cannot be asked is not a reason to spin on it.
             logger.exception("reflex_workflow could not ask when work is next due")
             return cap.total_seconds()
+        await self.report(due.at if due is not None else None)
         if due is None:
             return cap.total_seconds()
-        return min(max(due, floor), cap).total_seconds()
+        return min(max(due.away, floor), cap).total_seconds()
+
+    async def report(self, at: datetime.datetime | None) -> None:
+        """Tell ``on_idle`` when the instant this worker waits for has changed.
+
+        Only on a change, so a caller registering it somewhere else -- a
+        platform that wakes a suspended deployment, say -- writes once per
+        answer rather than once per pass. The instant comes from the database's
+        clock, so it is the same value until the work behind it moves.
+
+        Args:
+            at: When the next run comes due, or None when nothing is scheduled.
+        """
+        if self.on_idle is None or at == self.reported:
+            return
+        self.reported = at
+        try:
+            await self.on_idle(at)
+        except Exception:
+            # Whatever it does is the application's business, and a worker that
+            # stopped claiming because of it would be a far worse failure.
+            logger.exception("reflex_workflow on_idle failed")
 
     def stop(self) -> None:
         """Tell the loop to finish the pass it is in and claim nothing more."""
@@ -273,6 +342,7 @@ async def run_workflows(
     lanes: Collection[str] = (DEFAULT_LANE,),
     max_idle_interval: datetime.timedelta | None = None,
     listen_engine: AsyncEngine | None = None,
+    on_idle: OnIdle | None = None,
 ) -> AsyncIterator[None]:
     """Run workflow steps in this process for the lifetime of the block.
 
@@ -304,6 +374,13 @@ async def run_workflows(
             be where the steps run. A pooler in transaction mode -- Neon's
             pooled endpoint, PgBouncer -- cannot hold a LISTEN, so point this at
             the direct endpoint and leave the pooled one to the steps.
+        on_idle: Told the instant this worker is next waiting for, and None when
+            it is waiting for nothing, each time that answer changes. The
+            instant is the database's, so it is the same value until the work
+            behind it moves. For a deployment that suspends when idle: register
+            it with whatever can wake this process, and pair it with a route
+            that calls wake. Awaited on the worker's loop, so it should
+            return promptly, and an exception from it is logged and passed over.
 
     Yields:
         Nothing; steps run while the block is active.
@@ -335,6 +412,7 @@ async def run_workflows(
         poll_interval,
         lanes,
         max_idle_interval,
+        on_idle,
     )
     loop = asyncio.create_task(runner.loop())
     ear = asyncio.create_task(
@@ -365,6 +443,52 @@ async def run_workflows(
             with contextlib.suppress(asyncio.CancelledError):
                 await ear
             replace_current(previous)
+
+
+# How many callers may wait on one worker at once. A second caller learns
+# nothing by waiting that the first has not already asked for, so past this the
+# rest are told the worker is awake and left to get on with it.
+WAITERS = 8
+
+_waiting = 0
+
+
+async def wake(timeout: datetime.timedelta) -> bool:
+    """Make the worker in this process look now, and wait for it to catch up.
+
+    For a deployment that suspends when it is idle: something outside it -- a
+    platform that knows when this app's next run is due -- reaches a route that
+    calls this, and the request is held open until the work has been taken or
+    there is nothing to take. Holding it open is the point on hosts that only
+    give an instance CPU while it is answering a request.
+
+    Caught up means a pass that claimed nothing, which is the worker saying
+    there is nothing it can take: either nothing is due, or what is due is held
+    back by a limit and waiting longer would not help.
+
+    Safe to call from anywhere, as often as anyone likes: it asks the worker to
+    look, which it would do anyway.
+
+    Args:
+        timeout: The longest to wait for that pass.
+
+    Returns:
+        Whether the worker caught up in time.
+    """
+    global _waiting
+    runtime = current()
+    settled = runtime.settled
+    if _waiting >= WAITERS:
+        runtime.wake.set()
+        return True
+    async with settled.changed:
+        seen = settled.passes
+    _waiting += 1
+    try:
+        runtime.wake.set()
+        return await settled.after(seen, timeout)
+    finally:
+        _waiting -= 1
 
 
 @contextlib.asynccontextmanager

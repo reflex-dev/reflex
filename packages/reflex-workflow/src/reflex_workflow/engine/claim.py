@@ -439,15 +439,31 @@ async def claim(
     return taken
 
 
+class Due(NamedTuple):
+    """When a worker's next run comes due, by both clocks that matter.
+
+    Attributes:
+        at: The instant itself, on the database's clock. Stable between polls,
+            which is what lets a caller registering it elsewhere tell a new
+            answer from the same one asked again.
+        away: How long until then, which is what a worker sleeps for. Negative
+            or zero when something is due already.
+    """
+
+    at: datetime.datetime
+    away: datetime.timedelta
+
+
 def soonest(cls: type[Workflow], steps: Collection[str] | None):
-    """Select how long until this table's next run comes due.
+    """Select when this table's next run comes due, and how long until then.
 
     Args:
         cls: The workflow class.
         steps: The steps this worker may run, or None for all of them.
 
     Returns:
-        A select of one interval, null when the table has nothing scheduled.
+        A select of the instant and the wait, both null when the table has
+        nothing scheduled.
     """
     runnable = or_(
         and_(cls.next_step.is_not(None), cls.next_step.in_(steps))
@@ -494,15 +510,18 @@ def soonest(cls: type[Workflow], steps: Collection[str] | None):
         .limit(1)
         .scalar_subquery()
     )
-    return select(func.least(scheduled, expiring, answered) - func.now())
+    # Both from one query, so the instant and the wait cannot disagree about
+    # what "now" was.
+    due = func.least(scheduled, expiring, answered)
+    return select(due, due - func.now())
 
 
 async def next_due(
     runtime: Runtime,
     workflows: Collection[type[Workflow]],
     runnable: dict[type[Workflow], list[str] | None],
-) -> datetime.timedelta | None:
-    """Return how long until the soonest run this worker could take comes due.
+) -> Due | None:
+    """Return when the soonest run this worker could take comes due.
 
     Args:
         runtime: The running engine.
@@ -510,16 +529,16 @@ async def next_due(
         runnable: What it may run of each, by class.
 
     Returns:
-        The wait, negative or zero when something is due already, or None when
-        this worker has nothing scheduled anywhere.
+        The soonest across the tables, or None when this worker has nothing
+        scheduled anywhere.
     """
-    known: list[datetime.timedelta] = []
+    known: list[Due] = []
     async with runtime.session_factory() as session:
         for cls in workflows:
             try:
-                wait = (
+                found = (
                     await session.execute(soonest(cls, runnable[cls]))
-                ).scalar_one_or_none()
+                ).one_or_none()
             except Exception:
                 # One table that cannot be asked -- not migrated yet, say --
                 # must not decide the wait for all the others, which is what
@@ -531,6 +550,8 @@ async def next_due(
                     cls.__qualname__,
                 )
                 continue
-            if wait is not None:
-                known.append(wait)
-    return min(known) if known else None
+            if found is not None and found[0] is not None:
+                known.append(Due(*found))
+    # By the instant rather than the wait: each table was asked in its own
+    # statement, so each has its own now() to have measured from.
+    return min(known, key=lambda due: due.at) if known else None

@@ -1,7 +1,13 @@
 """Durable workflows as SQLAlchemy tables on Postgres."""
 
 from reflex_workflow.cron import Cron
-from reflex_workflow.engine import RunHandle, connect_workflows, run_workflows
+from reflex_workflow.engine import (
+    OnIdle,
+    RunHandle,
+    connect_workflows,
+    run_workflows,
+    wake,
+)
 from reflex_workflow.model import (
     DEFAULT_LANE,
     AttemptLog,
@@ -33,6 +39,7 @@ __all__ = [
     "Every",
     "FanOut",
     "Limit",
+    "OnIdle",
     "RateBucket",
     "RunHandle",
     "Schedule",
@@ -47,5 +54,6 @@ __all__ = [
     "run_workflows",
     "step",
     "wait_for",
+    "wake",
     "wake_in",
 ]

@@ -9,6 +9,46 @@ import datetime
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 
+class Settled:
+    """Counts the passes a worker made without claiming anything.
+
+    A pass that claims nothing is the worker saying there is nothing it can
+    take: either nothing is due, or what is due is held back by a limit. Both
+    are answers, so both end a wait for the worker to catch up.
+    """
+
+    def __init__(self) -> None:
+        """Start with no passes counted and nobody waiting."""
+        self.passes = 0
+        self.changed = asyncio.Condition()
+
+    async def record(self) -> None:
+        """Count a pass that claimed nothing, and tell whoever is waiting."""
+        async with self.changed:
+            self.passes += 1
+            self.changed.notify_all()
+
+    async def after(self, seen: int, timeout: datetime.timedelta) -> bool:
+        """Wait for a pass that claimed nothing, later than the one given.
+
+        Args:
+            seen: The count read before the worker was told to look.
+            timeout: How long to wait for it.
+
+        Returns:
+            Whether such a pass happened in time.
+        """
+        try:
+            async with self.changed:
+                await asyncio.wait_for(
+                    self.changed.wait_for(lambda: self.passes > seen),
+                    timeout.total_seconds(),
+                )
+        except (TimeoutError, asyncio.TimeoutError):
+            return False
+        return True
+
+
 @dataclasses.dataclass(frozen=True, slots=True)
 class Runtime:
     """What a worker needs to run steps.
@@ -21,12 +61,15 @@ class Runtime:
             Only then can it afford to sleep past its poll interval: with
             nothing listening, polling is the only way work written elsewhere
             is ever noticed.
+        settled: Counts the passes that found nothing to claim, so a caller can
+            wait for the worker to have caught up rather than guess at it.
     """
 
     session_factory: async_sessionmaker[AsyncSession]
     wake: asyncio.Event
     lease: datetime.timedelta
     listening: asyncio.Event = dataclasses.field(default_factory=asyncio.Event)
+    settled: Settled = dataclasses.field(default_factory=Settled)
 
 
 _current: Runtime | None = None

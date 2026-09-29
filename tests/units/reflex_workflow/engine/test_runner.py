@@ -3299,13 +3299,13 @@ async def test_an_idle_worker_waits_for_the_run_that_is_due_soonest(session_fact
     away = await claim.next_due(rt, [Resting], only)
     assert away is not None
     # Waiting for it, rather than asking again every poll interval.
-    assert datetime.timedelta(hours=2) < away < datetime.timedelta(hours=4)
+    assert datetime.timedelta(hours=2) < away.away < datetime.timedelta(hours=4)
 
     await Resting(key=now_key).start(Resting.rest())
     due = await claim.next_due(rt, [Resting], only)
     assert due is not None
     # Something is due already, so an idle worker does not wait at all.
-    assert due <= datetime.timedelta()
+    assert due.away <= datetime.timedelta()
 
     await Resting.by(Resting.key.in_([later, now_key])).cancel()
     assert await claim.next_due(rt, [Resting], only) is None
@@ -3364,9 +3364,249 @@ async def test_a_lease_running_out_is_what_an_idle_worker_waits_for(session_fact
         away = await claim.next_due(rt, [Resting], only)
         assert away is not None
         # Waiting for the lease rather than asking after a row it cannot take.
-        assert datetime.timedelta(hours=2) < away < datetime.timedelta(hours=4)
+        assert datetime.timedelta(hours=2) < away.away < datetime.timedelta(hours=4)
     finally:
         await Resting.by().cancel()
+
+
+async def test_the_instant_a_worker_waits_for_is_the_databases_own(session_factory):
+    rt = runtime.current()
+    only: dict[type[Workflow], list[str] | None] = {Resting: None}
+    await Resting.by().cancel()
+    assert await claim.next_due(rt, [Resting], only) is None
+
+    key = uuid.uuid4().hex
+    async with session_factory() as session, session.begin():
+        await session.execute(
+            insert(Resting).values(
+                key=key,
+                next_step="rest",
+                wake_at=func.now() + datetime.timedelta(hours=3),
+                attempts=0,
+                wf_version=0,
+            )
+        )
+    try:
+        first = await claim.next_due(rt, [Resting], only)
+        second = await claim.next_due(rt, [Resting], only)
+        assert first is not None
+        assert second is not None
+        # The same answer asked twice is the same instant, which is what lets a
+        # caller registering it elsewhere write once rather than once a pass.
+        assert first.at == second.at
+        async with session_factory() as session:
+            stored = (
+                await session.execute(select(Resting.wake_at).where(Resting.key == key))
+            ).scalar_one()
+        assert first.at == stored
+        # And the wait still agrees with it.
+        assert datetime.timedelta(hours=2) < first.away < datetime.timedelta(hours=4)
+    finally:
+        await Resting.by().cancel()
+
+
+async def test_a_worker_reports_the_instant_it_waits_for_when_it_changes(
+    session_factory,
+):
+    reported: list[datetime.datetime | None] = []
+
+    async def note(at):
+        """Record what the worker says it is waiting for.
+
+        Args:
+            at: The instant, or None.
+        """
+        reported.append(at)
+        await asyncio.sleep(0)
+
+    await Resting.by().cancel()
+    # Idling as fast as it polls, so the window below holds several passes: a
+    # worker that reported every pass rather than every change would show up.
+    worker = runner.Runner(
+        runtime.current(),
+        [Resting],
+        4,
+        datetime.timedelta(milliseconds=50),
+        max_idle_interval=datetime.timedelta(milliseconds=50),
+        on_idle=note,
+    )
+    loop = asyncio.create_task(worker.loop())
+    try:
+        await wait_until(lambda: len(reported) >= 1)
+        # Nothing scheduled is an answer, and asking again is not a new one.
+        assert reported == [None]
+        await asyncio.sleep(0.3)
+        assert reported == [None]
+
+        key = uuid.uuid4().hex
+        async with session_factory() as session, session.begin():
+            await session.execute(
+                insert(Resting).values(
+                    key=key,
+                    next_step="rest",
+                    wake_at=func.now() + datetime.timedelta(hours=3),
+                    attempts=0,
+                    wf_version=0,
+                )
+            )
+        await wait_until(lambda: len(reported) >= 2)
+        assert reported[1] is not None
+        async with session_factory() as session:
+            stored = (
+                await session.execute(select(Resting.wake_at).where(Resting.key == key))
+            ).scalar_one()
+        assert reported[1] == stored
+        # Still the same answer, so still nothing to say.
+        await asyncio.sleep(0.3)
+        assert len(reported) == 2
+    finally:
+        worker.stop()
+        loop.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await loop
+        await Resting.by().cancel()
+
+
+async def test_a_broken_on_idle_does_not_stop_the_worker(session_factory):
+    calls = []
+
+    async def broken(at):
+        """Fail the way an application's own registration might.
+
+        Args:
+            at: The instant, or None.
+
+        Raises:
+            RuntimeError: Always.
+        """
+        calls.append(at)
+        await asyncio.sleep(0)
+        msg = "the platform said no"
+        raise RuntimeError(msg)
+
+    await Resting.by().cancel()
+    worker = runner.Runner(
+        runtime.current(),
+        [Resting],
+        4,
+        datetime.timedelta(milliseconds=50),
+        on_idle=broken,
+    )
+    loop = asyncio.create_task(worker.loop())
+    try:
+        await wait_until(lambda: len(calls) >= 1)
+        # Whatever the application does there is its own business; a worker
+        # that stopped claiming over it would be the worse failure.
+        key = uuid.uuid4().hex
+        await Resting(key=key).start(Resting.rest())
+
+        async def ran() -> bool:
+            async with session_factory() as session:
+                return (
+                    await session.execute(
+                        select(Resting.next_step).where(Resting.key == key)
+                    )
+                ).scalar_one() is None
+
+        await wait_until(ran)
+        assert len(calls) >= 1
+    finally:
+        worker.stop()
+        loop.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await loop
+
+
+async def test_wake_settles_once_the_worker_has_nothing_left_to_take(
+    session_factory,
+):
+    await Resting.by().cancel()
+    key = uuid.uuid4().hex
+    # Written straight into the table, so nothing announces it: only the wake
+    # gets the worker to look before its next poll.
+    async with session_factory() as session, session.begin():
+        await session.execute(
+            insert(Resting).values(
+                key=key,
+                next_step="rest",
+                wake_at=func.now(),
+                attempts=0,
+                wf_version=0,
+            )
+        )
+
+    worker = runner.Runner(runtime.current(), [Resting], 4, MINUTE)
+    loop = asyncio.create_task(worker.loop())
+    try:
+        assert await runner.wake(datetime.timedelta(seconds=30))
+        async with session_factory() as session:
+            left = (
+                await session.execute(
+                    select(Resting.next_step).where(Resting.key == key)
+                )
+            ).scalar_one()
+        # Settled means the worker made a pass that took nothing, which it can
+        # only do once it has run what was due.
+        assert left is None
+    finally:
+        worker.stop()
+        loop.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await loop
+
+
+async def test_waiting_for_a_pass_gives_up_rather_than_hanging():
+    # What wake() reports false on: a worker that is gone, or too busy to make
+    # a pass inside the caller's timeout. The caller is holding a request open
+    # on the answer, so it has to come back either way.
+    settled = runtime.Settled()
+    assert not await settled.after(settled.passes, datetime.timedelta(milliseconds=100))
+
+    await settled.record()
+    # And a pass that did happen is not missed.
+    assert await settled.after(settled.passes - 1, datetime.timedelta(seconds=5))
+
+
+async def test_wake_tells_the_callers_past_the_cap_to_get_on_with_it(
+    session_factory,
+):
+    await Resting.by().cancel()
+    held = asyncio.Event()
+
+    async def blocked(_at):
+        """Keep the worker out of its next pass while the callers pile up.
+
+        Args:
+            _at: The instant it is waiting for.
+        """
+        await held.wait()
+
+    worker = runner.Runner(runtime.current(), [Resting], 4, MINUTE, on_idle=blocked)
+    loop = asyncio.create_task(worker.loop())
+    waiting: list[asyncio.Task[bool]] = []
+    try:
+        # The first pass settles, then the worker is stuck reporting it.
+        await asyncio.sleep(0.2)
+        waiting += [
+            asyncio.create_task(runner.wake(datetime.timedelta(seconds=10)))
+            for _ in range(runner.WAITERS + 4)
+        ]
+        done = [task for task in waiting if task.done()]
+        await asyncio.sleep(0.2)
+        # Past the cap a caller is told the worker is awake rather than being
+        # queued behind callers asking for the same thing.
+        settled = [task for task in waiting if task.done()]
+        assert len(settled) >= 4
+        assert all(task.result() for task in settled)
+        assert not done or all(task.result() for task in done)
+    finally:
+        held.set()
+        for task in waiting:
+            task.cancel()
+        worker.stop()
+        loop.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await loop
 
 
 async def test_a_table_that_cannot_be_asked_does_not_decide_the_wait(session_factory):
@@ -3390,7 +3630,7 @@ async def test_a_table_that_cannot_be_asked_does_not_decide_the_wait(session_fac
         # that cannot be read leaving the worker to sit out its whole cap.
         due = await claim.next_due(rt, [Absent, Resting], asked)
         assert due is not None
-        assert due <= datetime.timedelta()
+        assert due.away <= datetime.timedelta()
     finally:
         await Resting.by(Resting.key == key).cancel()
         REGISTRY.pop(Absent.__tablename__, None)
@@ -3625,7 +3865,7 @@ async def test_a_run_holding_its_answer_is_due_now(session_factory):
     try:
         due = await claim.next_due(rt, [Resting], only)
         assert due is not None
-        assert due <= datetime.timedelta()
+        assert due.away <= datetime.timedelta()
     finally:
         # Left behind, this row is due for every later test that asks.
         await Resting.by().cancel()

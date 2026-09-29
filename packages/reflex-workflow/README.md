@@ -499,6 +499,54 @@ Everything that addresses runs works there: `start`, `deliver`, `run`, `cancel`,
 Nothing runs steps here, and what it writes wakes the workers that do — or waits on the
 row for them, if every worker is down at the time.
 
+## Deployments that suspend when idle
+
+A deployment that suspends when nothing is talking to it has no process to run a
+timer with. Between runs a worker is asleep, and a host that stops giving it CPU
+stops it reaching the run that comes due. The engine gives a platform the two
+halves it needs to fix that.
+
+`on_idle` is told the instant this worker is next waiting for, and `None` when it
+is waiting for nothing, each time that answer changes. The instant is the
+database's own, so it stays the same value until the work behind it moves, and a
+caller registering it somewhere else writes once per answer rather than once per
+pass:
+
+```python
+async def register(at: datetime | None) -> None:
+    if at is None:
+        await platform.delete("wakeups/my-app")
+    else:
+        await platform.put("wakeups/my-app", wake_at=at, path="/wake")
+
+
+async with run_workflows(Session, on_idle=register):
+    yield
+```
+
+`wake` is the other half: whatever the platform reaches when that instant
+arrives calls it, and the request is held open until the worker has taken the
+work or has nothing left to take. Holding it open is the point on hosts that
+only give an instance CPU while it is answering a request.
+
+```python
+@app.api.get("/wake")
+async def wake_workflows() -> Response:
+    caught_up = await reflex_workflow.wake(timedelta(seconds=50))
+    return Response(status_code=200 if caught_up else 503)
+```
+
+It returns True once the worker has made a pass that claimed nothing, which is
+the worker saying there is nothing it can take — either nothing is due, or what
+is due is held back by a limit and waiting longer would not help. Calling it is
+safe from anywhere and as often as anyone likes: it asks the worker to look,
+which it would do anyway. Past eight callers at once the rest are told the
+worker is awake rather than queued behind callers asking the same thing.
+
+A worker also re-derives what is left of its wait from the wall clock, so a
+machine that suspends mid-wait does not serve the run late by however long it
+was away.
+
 ## Guarantees
 
 - A step runs at least once. A worker claims a row with a lease that it renews while
