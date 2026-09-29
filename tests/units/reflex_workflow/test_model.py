@@ -473,6 +473,20 @@ def test_a_workflow_that_takes_one_of_the_engines_columns_is_refused():
             )
 
 
+def test_a_workflow_that_retypes_one_of_the_engines_columns_is_refused():
+    # A replacement that keeps the name leaves a column of that name on the
+    # table, so it gets as far as the claim's update and fails there instead.
+    with pytest.raises(TypeError, match="declares wf_version, which reflex_workflow"):
+
+        class Versioned(Base, Workflow):
+            """A workflow whose own column takes the engine's name and type."""
+
+            __tablename__ = "wf_model_versioned"
+
+            id: Mapped[int] = mapped_column(primary_key=True)
+            wf_version: Mapped[str] = mapped_column(String(8))  # pyright: ignore[reportIncompatibleVariableOverride]
+
+
 def test_a_workflow_that_leaves_the_engines_columns_alone_is_not():
     class Kept(Base, Workflow):
         """A workflow that names its own columns something else."""

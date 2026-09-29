@@ -20,6 +20,7 @@ from typing import (
 )
 
 from sqlalchemy import (
+    Column,
     DateTime,
     Float,
     Index,
@@ -633,6 +634,20 @@ class AttemptLog:
         ATTEMPTS = cls
 
 
+def declared_by_mixin(name: str, column: Column[Any]) -> bool:
+    """Tell whether a workflow's column is still the one the mixin declares.
+
+    Args:
+        name: The column's name.
+        column: The column the table ended up with.
+
+    Returns:
+        Whether it holds what the engine writes to it.
+    """
+    declared = getattr(Workflow.__dict__.get(name), "column", None)
+    return declared is not None and isinstance(column.type, type(declared.type))
+
+
 @event.listens_for(Mapper, "instrument_class")
 def check_engine_columns(mapper: Mapper[Any], cls: type) -> None:
     """Refuse a workflow whose own attributes have taken the engine's columns.
@@ -656,9 +671,15 @@ def check_engine_columns(mapper: Mapper[Any], cls: type) -> None:
     if not issubclass(cls, Workflow) or not isinstance(table, Table):
         return
     # Against the table rather than the mapper, which is not configured yet at
-    # this point: an attribute that replaced one of these leaves no column of
-    # that name behind, which is the shape the failure takes.
-    taken = sorted(name for name in WORKFLOW_COLUMNS if name not in table.c)
+    # this point. A relationship leaves no column of that name at all; a column
+    # of the user's own leaves one the engine cannot use, so the type it holds
+    # is compared with the one the mixin declares. Read off the mixin rather
+    # than written out again here, so the two cannot drift.
+    taken = sorted(
+        name
+        for name in WORKFLOW_COLUMNS
+        if name not in table.c or not declared_by_mixin(name, table.c[name])
+    )
     if taken:
         msg = (
             f"{cls.__qualname__} declares {', '.join(taken)}, which "
