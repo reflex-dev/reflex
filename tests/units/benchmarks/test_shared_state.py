@@ -39,6 +39,7 @@ def test_shared_benchmarks_preserve_other_states():
                 handlers = context.event_handlers.copy()
                 substates = {key: value.copy() for key, value in context.base_state_substates.items() if value}
                 dirty_substates = State._always_dirty_substates.copy()
+                links_field = State.get_fields()['_reflex_internal_links']
 
                 def assert_isolated():
                     '''Check that shared scenarios preserve the ordinary event path.'''
@@ -47,7 +48,7 @@ def test_shared_benchmarks_preserve_other_states():
                     assert context.base_states == states
                     assert context.event_handlers == handlers
                     assert {key: value for key, value in context.base_state_substates.items() if value} == substates
-                    assert State.backend_vars['_reflex_internal_links'] is None
+                    assert links_field.default is None
                     assert State._always_dirty_substates == dirty_substates
 
                 from tests.benchmarks import test_shared_state as shared

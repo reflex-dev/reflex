@@ -25,6 +25,7 @@ import contextlib
 import dataclasses
 import traceback
 from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
+from dataclasses import MISSING
 from typing import Any
 from unittest import mock
 
@@ -63,11 +64,17 @@ FANOUT_CLIENTS = 8
 MODIFY_ITERATIONS = 10
 
 
-# Importing SharedState registers its internal base, and subclassing it mutates
-# State's shared-state flags. Keep both changes out of other benchmark modules.
+# Subclassing SharedState gives the State root a links dict by default and
+# marks the internal base always-dirty, which is what routes every event in the
+# process through ``modify_state_with_links``. Patching both to their current
+# values records them, so the subclass below mutates copies that are restored
+# on the way out and other benchmark modules keep their own event path.
+LINKS_FIELD = rx.State.get_fields()["_reflex_internal_links"]
+
 with (
     RegistrationContext.ensure_context().fork() as SHARED_STATE_REGISTRATION,
-    mock.patch.dict(rx.State.backend_vars),
+    mock.patch.object(LINKS_FIELD, "default", LINKS_FIELD.default),
+    mock.patch.object(LINKS_FIELD, "default_factory", LINKS_FIELD.default_factory),
     mock.patch.object(
         rx.State, "_always_dirty_substates", rx.State._always_dirty_substates.copy()
     ),
@@ -112,6 +119,26 @@ COUNTER_FULL_NAME = SharedCounterState.get_full_name()
 COUNTER_FIELD = "counter" + FIELD_MARKER
 
 
+def _event_name(handler: str) -> str:
+    """Resolve one of the counter's handlers to the name an event carries.
+
+    Args:
+        handler: The handler's attribute name on ``SharedCounterState``.
+
+    Returns:
+        The formatted event name.
+    """
+    return format_event_handler(SharedCounterState.event_handlers[handler])
+
+
+# Resolved once, so renaming a handler fails at import rather than enqueueing an
+# event no handler answers.
+INCREMENT_EVENT = _event_name("increment")
+DECREMENT_EVENT = _event_name("decrement")
+LINK_EVENT = _event_name("link")
+UNLINK_EVENT = _event_name("unlink")
+
+
 @dataclasses.dataclass(frozen=True)
 class Scenario:
     """How many clients a benchmark scenario has, and whether they are linked."""
@@ -153,7 +180,7 @@ def _event(name: str, token: str, payload: dict[str, Any] | None = None) -> Even
     """Build one event for a handler on ``SharedCounterState``.
 
     Args:
-        name: The handler name on ``SharedCounterState``.
+        name: The event name, one of the ``*_EVENT`` constants.
         token: The client token the event arrives on.
         payload: The handler's arguments, if any.
 
@@ -161,7 +188,7 @@ def _event(name: str, token: str, payload: dict[str, Any] | None = None) -> Even
         The event to enqueue.
     """
     return Event(
-        name=format_event_handler(SharedCounterState.event_handlers[name]),
+        name=name,
         router_data={RouteVar.CLIENT_TOKEN: token, "query": {}, "pathname": "/"},
         payload=payload or {},
     )
@@ -176,8 +203,8 @@ def _counter_events(token: str) -> list[Event]:
     Returns:
         The counter event batch.
     """
-    return [_event("increment", token) for _ in range(2)] + [
-        _event("decrement", token) for _ in range(2)
+    return [_event(INCREMENT_EVENT, token) for _ in range(2)] + [
+        _event(DECREMENT_EVENT, token) for _ in range(2)
     ]
 
 
@@ -191,8 +218,8 @@ def _link_events(token: str) -> list[Event]:
         The link/unlink event batch.
     """
     return [
-        _event("link", token, {"token": SHARED_TOKEN}),
-        _event("unlink", token),
+        _event(LINK_EVENT, token, {"token": SHARED_TOKEN}),
+        _event(UNLINK_EVENT, token),
     ]
 
 
@@ -305,7 +332,8 @@ async def _shared_state_app(
 
     with (
         SHARED_STATE_REGISTRATION.fork(),
-        mock.patch.dict(rx.State.backend_vars, {"_reflex_internal_links": {}}),
+        mock.patch.object(LINKS_FIELD, "default", MISSING),
+        mock.patch.object(LINKS_FIELD, "default_factory", dict),
         mock.patch.object(
             rx.State,
             "_always_dirty_substates",
@@ -360,7 +388,7 @@ async def _shared_state_app(
                 if scenario.linked:
                     for client_token in client_tokens:
                         await harness.run_events(
-                            [_event("link", client_token, {"token": SHARED_TOKEN})],
+                            [_event(LINK_EVENT, client_token, {"token": SHARED_TOKEN})],
                             client_token,
                         )
                 else:
