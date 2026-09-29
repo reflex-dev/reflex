@@ -491,6 +491,7 @@ def get_app_instance_from_file() -> str:
     Returns:
         The app module for the backend.
     """
+    get_app_file()
     return get_app_instance()
 
 
