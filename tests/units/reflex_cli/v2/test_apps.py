@@ -6,6 +6,7 @@ import logging
 import uuid
 from collections.abc import Iterator
 from io import StringIO
+from unittest.mock import call
 
 import pytest
 from click.testing import CliRunner
@@ -891,7 +892,7 @@ def test_list_apps_no_project(mocker: MockFixture):
     mock_get_selected_project.assert_called_once()
     client.api.apps.list.assert_called_once_with(project_id="default_project")
     mock_print_table.assert_has_calls([
-        mocker.call(
+        call(
             [
                 ["id", str(_APP_ID)],
                 ["name", "App1"],
@@ -903,7 +904,7 @@ def test_list_apps_no_project(mocker: MockFixture):
             headers=["field", "value"],
             overflow="fold",
         ),
-        mocker.call(
+        call(
             [
                 ["id", str(uuid.UUID(int=23))],
                 ["name", "App2"],
