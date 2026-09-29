@@ -9,6 +9,7 @@ import threading
 import traceback
 import typing
 import weakref
+from abc import ABC, abstractmethod
 from typing import Any, ClassVar, Literal, TypeVar
 
 import pytest
@@ -18,6 +19,7 @@ from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
 from reflex_base.vars.base import (
+    _ABC_BOOKKEEPING_NAME,
     FIELD_TYPE,
     GLOBAL_CACHE,
     BaseStateMeta,
@@ -738,6 +740,60 @@ def test_reserved_mixin_var(state_mixin: bool, clean_registration_context):
             **({"mixin": True} if state_mixin else {}),
         )
         type("MixedState", (mixin, BaseState), {"__module__": __name__})
+
+
+@pytest.mark.parametrize("state_mixin", [False, True])
+def test_abc_mixin(state_mixin: bool, clean_registration_context):
+    """Accept an ``ABC`` mixin, whose ``_abc_impl`` the metaclass owns, and keep it abstract.
+
+    Args:
+        state_mixin: Whether the abstract mixin subclasses BaseState.
+        clean_registration_context: An isolated state registry.
+    """
+
+    class Abstract(ABC):
+        @abstractmethod
+        def _value(self) -> int: ...
+
+    if state_mixin:
+
+        class Mixin(Abstract, BaseState, mixin=True):
+            pass
+
+        bases = (Mixin, BaseState)
+    else:
+        bases = (Abstract, BaseState)
+
+    abstract_state = type("AbstractState", bases, {"__module__": __name__})
+    with pytest.raises(TypeError, match="_value"):
+        abstract_state()
+
+    concrete_state = type(
+        "ConcreteState", bases, {"__module__": __name__, "_value": lambda self: 7}
+    )
+    assert concrete_state()._value() == 7
+
+
+@pytest.mark.parametrize("registration", ["declared", "var"])
+def test_reserved_abc_bookkeeping(registration: str, clean_registration_context):
+    """Keep rejecting a state's own ``_abc_impl``, which would clash with ABCMeta's.
+
+    Args:
+        registration: Whether the name is declared in the class body or added later.
+        clean_registration_context: An isolated state registry.
+    """
+    with pytest.raises(StateValueError, match=_ABC_BOOKKEEPING_NAME):
+        if registration == "declared":
+
+            class ShadowState(ABC, BaseState):
+                _abc_impl: int = 7
+
+        else:
+
+            class DynamicState(ABC, BaseState):
+                """State receiving a dynamic declaration."""
+
+            DynamicState.add_var(_ABC_BOOKKEEPING_NAME, int, 7)
 
 
 @pytest.mark.parametrize("slots", [("cache",), "cache"])
