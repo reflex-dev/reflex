@@ -10,13 +10,13 @@ from io import StringIO
 import pytest
 from click.testing import CliRunner
 from pytest_mock import MockerFixture, MockFixture
-from rich.console import Console
 from reflex_base.utils.log import SUCCESS
 from reflex_build_sdk.types import App, AppSummary, DeploymentRecord, LogRecord
 from reflex_cli.core.config import Config
 from reflex_cli.utils import hosting
 from reflex_cli.v2.apps import _resolve_app_id, apps_cli
 from reflex_cli.v2.deployments import hosting_cli
+from rich.console import Console
 
 from .utils import api_error, as_click_command, fake_client
 
