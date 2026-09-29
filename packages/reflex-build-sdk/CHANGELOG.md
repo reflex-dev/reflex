@@ -2,6 +2,31 @@
 
 <!-- towncrier release notes start -->
 
+## v0.0.5 (2026-09-24)
+
+### Features
+
+- Response models carry the fields the API returns that they previously dropped: `App` gains `backend_url`, `disable_secrets`, `weekly_report_enabled`, `source_thread_id`, `unreleased_provider` and the `any_environment_*` flags; `AppDeployment` gains `strategy`, `persistent` and `screenshot_uri`; `DeploymentRecord` gains `updated_by` and `promoted_from_id`; `ProjectAppDeployment` gains `updated_at`, `updated_by` and the `vm_type_*` fields; `Project` gains the `org_*` usage fields; `ProjectApp` gains `from_builder`; `ProjectMember` gains `role_permissions`; `AppSummary` gains `disable_secrets`; and `LogRecord` gains `event_id`, `stream_id` and `revision_id`. ([#7311](https://github.com/reflex-dev/reflex/issues/7311))
+
+
+## v0.0.4 (2026-09-23)
+
+### Breaking Changes
+
+- The HTTP libraries are optional extras, so installing `reflex-build-sdk` alone no longer pulls in aiohttp or httpx. Install the one the client should use:
+
+  ```bash
+  pip install "reflex-build-sdk[httpx2]"  # or [aiohttp], [httpx]
+  ```
+
+  Or pass the client a transport of your own. ([#7290](https://github.com/reflex-dev/reflex/issues/7290))
+- The clients no longer read the token saved by `reflex login`, and the `reflex_build_sdk.credentials` module is removed. Pass `token=` or set `REFLEX_ACCESS_TOKEN`. ([#7290](https://github.com/reflex-dev/reflex/issues/7290))
+
+### Features
+
+- Add `Httpx2Transport` and `AsyncHttpx2Transport`, sending requests with [httpx2](https://github.com/pydantic/httpx2). Both clients use httpx2 by default over httpx, and `AsyncReflexBuild` still prefers aiohttp. ([#7290](https://github.com/reflex-dev/reflex/issues/7290))
+
+
 ## v0.0.3 (2026-09-23)
 
 ### Breaking Changes
