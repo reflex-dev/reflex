@@ -887,8 +887,10 @@ def test_list_macro_suite(home: Path):
     names = [line.split()[0] for line in result.output.splitlines()[1:-1]]
     assert names
     assert "lifecycle.compile.warm[app=playground]" in names
-    assert "events.simple.capacity[manager=disk,sessions=10]" in names
-    assert not any(name.startswith(("wire.", "size.", "memory.")) for name in names)
+    assert "lifecycle.run.prod.ready[app=playground]" in names
+    assert not any(
+        name.startswith(("wire.", "size.", "memory.", "events.")) for name in names
+    )
 
 
 @pytest.fixture

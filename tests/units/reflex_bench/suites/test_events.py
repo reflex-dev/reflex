@@ -101,11 +101,8 @@ def test_daily_events_fit_the_ci_budget():
 
 def test_suites():
     found = registry.discover()
-    assert found["events.simple.capacity"].suites == ("smoke", "daily", "macro")
+    assert found["events.simple.capacity"].suites == ("smoke", "daily")
     assert found["events.simple.latency"].suites == ("smoke", "daily")
-    assert names("macro", "events.*") == [
-        "events.simple.capacity[manager=disk,sessions=10]"
-    ]
     # Everything else only runs with --suite all or by name.
     for shape in set(SHAPES) - {"simple"}:
         assert found[f"events.{shape}.capacity"].suites == ()

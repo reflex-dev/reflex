@@ -356,7 +356,7 @@ the knee and `at_1hz` run with `--suite all` or by name.
 
 | Benchmark | Suites | Parameters | Load | Metrics |
 | --- | --- | --- | --- | --- |
-| `events.<shape>.capacity` | `smoke`, `daily`, `macro` (simple, `manager=disk`, `sessions=10`) | `manager`, `sessions` 10 (simple: 10, 50) | closed loop, 3 s after 1 s | `throughput`, `service_p50`, `cpu_per_event` |
+| `events.<shape>.capacity` | `smoke`, `daily` (simple, `manager=disk`, `sessions=10`) | `manager`, `sessions` 10 (simple: 10, 50) | closed loop, 3 s after 1 s | `throughput`, `service_p50`, `cpu_per_event` |
 | `events.<shape>.latency` | `smoke`, `daily` (simple, `manager=disk`, `sessions=10`, `rate=500`) | `manager`, `sessions`, `rate` | open loop, 5 s after 1 s | `response_p50`, `p90`, `p99`, `max`, `throughput`, `unanswered`, `cpu_per_event` |
 | `events.shared_contention.capacity` | `daily` (`manager=disk`, `sessions=10`) | `manager`, `sessions` 10 | the same as `capacity`, every session linked to one `rx.SharedState` board | the same as `capacity` |
 | `events.shared_contention.latency` | `daily` (`manager=disk`, `sessions=10`, `rate=auto`) | `manager`, `sessions`, `rate` | the same as `latency`, every session linked to one board | the same as `latency` |
@@ -944,10 +944,12 @@ duration of one call.
 | `benchmarks_daily.yml` | `ubuntu-24.04-arm` | daily at 04:43 UTC and manually | `--suite daily` in six shards (`lifecycle`, `memory`, `events`, `hmr`, `browser`, and `wire` with `size`): trends of everything else, exact and memory metrics included |
 | `macro_watchdog.yml` | `ubuntu-latest` | every 15 minutes | cancels macro runs whose job waited more than 30 minutes for a runner |
 
-The `macro` suite is `lifecycle.compile.warm` and `.incremental`,
-`browser.dev.ready`, `hmr.render.leaf` (each on the playground) and
-`events.simple.capacity[manager=disk,sessions=10]`, with at least 6 timed runs
-per instance (`--min-runs 6 --max-runs 10 --min-time 10`). Exact metrics
+The `macro` suite is `lifecycle.compile.warm`, `.incremental` and
+`lifecycle.run.prod.ready`, `browser.dev.ready`, `hmr.render.leaf` and
+`hmr.handler` (each on the playground) and `lifecycle.import`, with at least 6
+timed runs per instance (`--min-runs 6 --max-runs 10 --min-time 10`). The event
+benchmarks are not in it: on the macro runner their setup probe got no answer
+within its 2 s window, so they run on the standard runner only. Exact metrics
 (`wire.*`, `size.*`) and memory never run there: they are as good on a standard
 runner. Both jobs install the harness with `uv sync --no-dev --group bench
 --extra db` on Python 3.12 (the `dev` group builds libsass from source on

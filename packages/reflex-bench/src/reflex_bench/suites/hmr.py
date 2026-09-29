@@ -658,7 +658,7 @@ class RenderRootPreview(RenderRoot):
     mode = "preview"
 
 
-@_hmr("hmr.handler", suites=("pr", "daily"))
+@_hmr("hmr.handler", suites=("pr", "daily", "macro"))
 class Handler(_HotReload):
     """Rewrite what an event handler sets, clicking its button until the page shows it."""
 

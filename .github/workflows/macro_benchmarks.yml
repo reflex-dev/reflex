@@ -13,12 +13,12 @@ permissions:
 #   which leaves >= 100 min (20 %) for re-runs, release backfills and gate checks.
 # If a warm job takes longer than 10 min, shrink the `macro` suite first, then
 # move the schedule to every second day ("17 3 */2 * *").
-# Measured 2026-09-29, locally on a 4-core Xeon VM (not the macro runner): the
-# suite's `reflex-bench run` took 143 s at 6 timed runs per instance
-# (lifecycle.compile.warm + .incremental 31 s, browser.dev.ready 36 s,
-# hmr.render.leaf 44 s, events.simple.capacity 32 s). The Cortex-A72 runner is
-# slower; its cold and warm job times replace these numbers after the first
-# label runs.
+# Measured 2026-09-29 on the macro runner (Cortex-A72, 16 cores, profile
+# linux-arm64-cortex-a72-py3.12), cold run (no Playwright or uv cache): 5:35
+# billed after 1:18 in the queue (not billed): setup 2:27 (checkout 0:10,
+# uv + Python + Node 0:14, uv sync 0:26, chromium with apt deps 1:28), the
+# suite 2:49, summary + upload + cache saves 0:19. That run still had
+# events.simple.capacity, which failed on this runner and left the suite.
 #
 # Policy: --min-runs 6 --max-runs 10 --min-time 10: at least 6 timed runs per
 # instance (the fewest with a median CI), up to 10 for samples under 1 s.

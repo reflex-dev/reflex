@@ -239,6 +239,8 @@ def test_the_suites():
     assert {bench.id for bench in select(benchmarks, ["lifecycle.*"], "macro")} == {
         "lifecycle.compile.warm",
         "lifecycle.compile.incremental",
+        "lifecycle.run.prod.ready",
+        "lifecycle.import",
     }
     daily = {bench.id for bench in select(benchmarks, ["lifecycle.*"], "daily")}
     assert daily == lifecycle_ids - {
