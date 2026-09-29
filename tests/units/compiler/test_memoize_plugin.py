@@ -1087,22 +1087,18 @@ def test_match_stateful_condition_memoizes_whole_match_and_stateful_branch() -> 
     assert any("withprop" in tag.lower() for tag in wrapper_tags)
 
 
-def test_match_literal_subject_stateful_condition_is_memoized() -> None:
-    """Match with a literal subject and a state Var in a case condition is memoized.
+def test_match_stateful_case_condition_memoizes_match_and_branch() -> None:
+    """A state Var in a case condition memoizes Match and its stateful branch.
 
-    The case-condition Vars (not just the subject) must count toward Match's
-    statefulness. Otherwise the compiled ``switch`` references the substate
-    context variable without a ``useContext`` binding, raising
-    ``ReferenceError: Can't find variable`` at render. Regression test.
+    The case-condition Vars count toward Match's statefulness, so the memo
+    wrapper binds the state they read even when the subject is a literal.
+    Branches are still memoized independently.
     """
 
     def page() -> Component:
         comp = rx.match(
             True,
-            (
-                SpecialFormMemoState.value == "a",
-                WithProp.create(label=LiteralVar.create("A")),
-            ),
+            (SpecialFormMemoState.value == "a", WithProp.create(label=STATE_VAR)),
             (
                 SpecialFormMemoState.value == "b",
                 WithProp.create(label=LiteralVar.create("B")),
@@ -1113,12 +1109,13 @@ def test_match_literal_subject_stateful_condition_is_memoized() -> None:
         return comp
 
     ctx, _page_ctx = _compile_single_page(page)
-    wrapper_tags = tuple(ctx.memoize_wrappers)
-    assert any("match" in tag.lower() for tag in wrapper_tags), (
-        "Match with a state Var in a case condition (and a literal subject) "
-        "must be memoized so the condition's useContext binding is emitted; "
-        f"got wrappers: {list(wrapper_tags)}"
+    assert len(ctx.memoize_wrappers) == 2, (
+        "Expected both Match and its stateful branch component to be memoized, "
+        f"got wrappers: {list(ctx.memoize_wrappers)}"
     )
+    wrapper_tags = tuple(ctx.memoize_wrappers)
+    assert any("match" in tag.lower() for tag in wrapper_tags)
+    assert any("withprop" in tag.lower() for tag in wrapper_tags)
 
 
 def test_cond_stateful_branch_component_renders_via_memoized_wrapper() -> None:
