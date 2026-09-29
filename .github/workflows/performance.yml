@@ -52,6 +52,10 @@ jobs:
           simulation-track-subprocess: true
           run: uv run pytest -v -s tests/benchmarks --codspeed
 
+      - name: Show native benchmark diagnostics
+        if: failure()
+        run: tail -n 100 /tmp/profile.*.out/valgrind.*.log
+
       - name: Run event-loop and wire-size smoke
         run: >-
           uv run pytest tests/performance/test_event_loop.py tests/performance/test_wire_size.py
