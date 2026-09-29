@@ -1,0 +1,1 @@
+`reflex cloud apps list`, `apps history` and `apps inspect` keep app and deployment IDs whole on one line, so you can copy them from a normal-width terminal. `apps list` and `apps history` show fewer columns; `--json` still returns every field. `apps inspect` shows one field per row. Tables no longer draw cell borders.

@@ -12,9 +12,10 @@ from __future__ import annotations
 import contextlib
 import datetime
 import time
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from typing import TYPE_CHECKING, overload
 
+from rich import box
 from rich.console import Console, OverflowMethod
 from rich.progress import MofNCompleteColumn, Progress, TaskID, TimeElapsedColumn
 from rich.prompt import Prompt
@@ -389,6 +390,7 @@ def print_table(
     tabular_data: list[list[str]],
     headers: Sequence[str] = (),
     overflow: OverflowMethod = "ellipsis",
+    no_wrap: Collection[str] = (),
 ) -> None:
     """Print a table to the console.
 
@@ -398,6 +400,8 @@ def print_table(
         overflow: What to do with a cell too wide for its column. The default
             cuts it short; pass "fold" for values a user has to read in full,
             such as an email or an identifier.
+        no_wrap: Headers of the columns whose values stay on one line, so a
+            user can copy them. The other columns give up the width.
     """
     if _log.is_json_mode():
         # A table is requested output, not decoration: keep the rows in the
@@ -407,10 +411,10 @@ def print_table(
             table={"headers": list(headers), "rows": tabular_data},
         )
         return
-    table = Table()
+    table = Table(box=box.SIMPLE_HEAD)
 
     for column in headers:
-        table.add_column(column, overflow=overflow)
+        table.add_column(column, overflow=overflow, no_wrap=column in no_wrap)
 
     for row in tabular_data:
         table.add_row(*row)

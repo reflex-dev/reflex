@@ -293,6 +293,23 @@ def test_fallback_console_helpers(capsys):
     assert "a rule" in out
 
 
+def test_fallback_print_table_no_wrap(monkeypatch, capsys):
+    """The forked table keeps a no_wrap column's value on one line."""
+    long_id = "7fb2de10-2e8d-48bd-9c79-a98b3f52e10f"
+    monkeypatch.setenv("COLUMNS", "60")
+    with _without_reflex_base() as (_, _log, fallback_console):
+        fallback_console.print_table(
+            [[long_id, "a description long enough that it has to fold"]],
+            headers=["id", "description"],
+            overflow="fold",
+            no_wrap=["id"],
+        )
+
+    out = capsys.readouterr().out
+    assert any(long_id in line for line in out.splitlines()), out
+    assert "│" not in out
+
+
 def test_fallback_progress_bars(capsys):
     """Both progress bars build without reflex-base and render their tasks.
 
