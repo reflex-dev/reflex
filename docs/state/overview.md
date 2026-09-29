@@ -53,7 +53,7 @@ A state class is made up of two parts: vars and event handlers.
 **Event handlers** are functions that modify these vars in response to events.
 
 State declarations cannot reuse framework method or bookkeeping names, such as
-`get_state`, `_get_was_touched`, or `dirty_vars`. Reflex checks these names when
+`get_state`, `get_delta`, or `dirty_vars`. Reflex checks these names when
 creating a state class and when adding vars, event handlers, or route arguments
 dynamically. Rename a conflicting declaration and update its references. Ordinary
 backend names such as `_count` remain supported.
