@@ -723,18 +723,28 @@ def deploy(
     project_id = hosting.normalize_project_id(project_id)
 
     if project_name:
-        result = hosting.search_project(
-            project_name, client=authenticated_client, interactive=interactive
-        )
+        if project_id:
+            result = next(
+                (
+                    match
+                    for match in authenticated_client.api.projects.search(project_name)
+                    if str(match.id) == project_id
+                ),
+                None,
+            )
+        else:
+            result = hosting.search_project(
+                project_name, client=authenticated_client, interactive=interactive
+            )
         if not result:
-            logger.error(f"No project found with the name {project_name!r}.")
+            if project_id:
+                logger.error(
+                    f"Project name {project_name!r} does not match project ID {project_id!r}."
+                )
+            else:
+                logger.error(f"No project found with the name {project_name!r}.")
             raise click.exceptions.Exit(1)
         named_project_id = hosting.normalize_project_id(str(result.id))
-        if project_id and project_id != named_project_id:
-            logger.error(
-                f"Project name {project_name!r} does not match project ID {project_id!r}."
-            )
-            raise click.exceptions.Exit(1)
         project_id = named_project_id
 
     project_was_requested = project_id is not None or project_name is not None
@@ -767,7 +777,7 @@ def deploy(
     try:
         if app_name and not app_id:
             search_project_id = project_id
-            if interactive and not project:
+            if interactive and not project and not project_name:
                 search_project_id = None
 
             app = hosting.search_app(

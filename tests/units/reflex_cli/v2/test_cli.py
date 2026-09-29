@@ -625,6 +625,61 @@ def test_deploy_rejects_project_name_that_disagrees_with_project_id(
     client.api.apps.get.assert_not_called()
 
 
+def test_deploy_project_id_disambiguates_duplicate_project_names(
+    mocker: MockerFixture,
+):
+    client = _common_deploy_mocks(mocker)
+    client.api.projects.search.return_value = [
+        ProjectRef(id=uuid.UUID(int=71), name="shared-project"),
+        ProjectRef(id=_PROJECT_ID, name="shared-project"),
+    ]
+    client.api.projects.get.return_value = project("shared-project")
+    client.api.apps.get.return_value = app()
+
+    cli.deploy(
+        app_id=str(_APP_ID),
+        export_fn=MagicMock(),
+        project=str(_PROJECT_ID),
+        project_name="shared-project",
+        interactive=False,
+    )
+
+    client.api.projects.search.assert_called_once_with("shared-project")
+    client.api.projects.get.assert_called_once_with(str(_PROJECT_ID))
+    client.api.deployments.create.assert_called_once()
+
+
+def test_deploy_project_name_ignores_apps_in_other_projects(
+    mocker: MockerFixture,
+):
+    client = _common_deploy_mocks(mocker)
+    client.api.projects.search.return_value = [
+        ProjectRef(id=_PROJECT_ID, name="chosen-project")
+    ]
+    client.api.projects.get.return_value = project("chosen-project")
+    client.api.apps.search.side_effect = lambda _name, *, project_id: (
+        []
+        if project_id == str(_PROJECT_ID)
+        else [app_summary("fake-app", project_id=uuid.UUID(int=71))]
+    )
+    client.api.apps.create.return_value = app()
+    mocker.patch("reflex_cli.utils.console.ask", return_value="y")
+
+    cli.deploy(
+        app_name="fake-app",
+        export_fn=MagicMock(),
+        project_name="chosen-project",
+        interactive=True,
+        description="",
+    )
+
+    client.api.apps.search.assert_called_once_with(
+        "fake-app", project_id=str(_PROJECT_ID)
+    )
+    client.api.apps.create.assert_called_once()
+    client.api.deployments.create.assert_called_once()
+
+
 def test_deploy_create_deployment_multiple_apps_non_interactive(
     mocker: MockerFixture,
     mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
