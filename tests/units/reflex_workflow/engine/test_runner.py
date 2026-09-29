@@ -1367,7 +1367,7 @@ async def test_a_wait_that_times_out_runs_its_timeout_step(session_factory):
     assert (row.next_step, row.waiting_for, row.pending_event) == (None, None, None)
 
 
-async def test_an_event_beats_a_timeout_that_is_already_running(session_factory):
+async def test_a_deadline_that_has_passed_beats_an_event(session_factory):
     key = uuid.uuid4().hex
     rt = runtime.current()
     await RaceReview(key=key).start(RaceReview.submit(timeout_s=1, expire_pause_s=2))
@@ -1383,15 +1383,29 @@ async def test_an_event_beats_a_timeout_that_is_already_running(session_factory)
     )
     await wait_until(lambda: f"expire-start:{key}" in EVENTS)
     handle = RaceReview.by(RaceReview.key == key)
-    assert await handle.deliver(RaceReview.decide("approve")) == 1
-    assert await expiring == "fenced"
+    # The deadline decides when the wait ends, not whichever of the two is
+    # quicker: a caller delivering faster than the workers pass would otherwise
+    # put a deadline off for as long as it kept delivering.
+    assert await handle.deliver(RaceReview.decide("approve")) == 0
+    assert await expiring == "ok"
 
-    # The expiry ran, but nothing it did to the row was kept: the decision wins.
-    assert await step_row(RaceReview, pk) == "ok"
-    assert await status_is(RaceReview, key, "decided:approve:manager")()
+    assert await status_is(RaceReview, key, "expired")()
     row = await handle.get()
     assert row is not None
     assert (row.next_step, row.waiting_for, row.pending_event) == (None, None, None)
+
+
+async def test_an_event_inside_the_deadline_still_beats_the_timeout(session_factory):
+    key = uuid.uuid4().hex
+    await RaceReview(key=key).start(RaceReview.submit(timeout_s=60))
+    pk = await arm_wait(key)
+    handle = RaceReview.by(RaceReview.key == key)
+
+    # Before the deadline the answer is the answer, and the timeout never runs.
+    assert await handle.deliver(RaceReview.decide("approve")) == 1
+    assert await step_row(RaceReview, pk) == "ok"
+    assert await status_is(RaceReview, key, "decided:approve:manager")()
+    assert f"expire:{key}" not in EVENTS
 
 
 async def test_an_event_for_a_finished_run_is_refused(session_factory):
@@ -2537,7 +2551,7 @@ async def test_run_abandons_a_wait_and_the_event_held_for_it(session_factory):
     assert (row.status, row.waiting_for, row.pending_event) == ("expired", None, None)
 
 
-async def test_an_event_for_a_run_whose_timeout_is_running_runs_once_it_ends(
+async def test_a_step_asked_for_while_a_timeout_runs_waits_for_it_to_end(
     session_factory,
 ):
     key = uuid.uuid4().hex
@@ -2547,7 +2561,9 @@ async def test_an_event_for_a_run_whose_timeout_is_running_runs_once_it_ends(
     await wait_until(lambda: f"expire-start:{key}" in EVENTS, timeout=10)
 
     handle = RaceReview.by(RaceReview.key == key)
-    assert await handle.deliver(RaceReview.decide("approve")) == 1
+    # Asked for rather than delivered: past its deadline this wait refuses
+    # events, so ``run`` is what preempts a timeout that is already going.
+    assert await handle.run(RaceReview.decide("approve")) == 1
     row = await handle.get()
     assert row is not None
     # The expiry still holds the row, so the decision cannot run beside it.
@@ -3938,7 +3954,14 @@ async def test_a_key_is_taken_when_the_run_runs_the_event_not_when_it_is_held(
         await session.execute(
             update(RaceReview)
             .where(*rows.pk_filter(RaceReview, pk))
-            .values(waiting_for="decide", pending_event=None, next_step=None)
+            .values(
+                waiting_for="decide",
+                pending_event=None,
+                next_step=None,
+                # A wait with no deadline, which is what this is about: one whose
+                # deadline had passed would refuse the event for that reason.
+                wake_at=None,
+            )
             .execution_options(synchronize_session=False)
         )
 

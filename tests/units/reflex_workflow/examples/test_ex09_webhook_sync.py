@@ -290,10 +290,9 @@ async def test_callbacks_about_other_jobs_do_not_put_the_deadline_off(
     started = time.monotonic()
     stale = 0
     while await reaches(entity, "awaiting-callback")():
-        # A deadline that was put off would never be reached at all, since the
-        # callbacks keep coming, so the bound only has to be finite: it matches
-        # the other waits here rather than the 1s deadline, which a loaded
-        # machine can take several worker passes to get to.
+        # The deadline is kept whatever the workers are doing, so this only has
+        # to allow for the pass that picks the timeout up rather than for a race
+        # the callbacks could win.
         assert time.monotonic() - started < 30, "the deadline kept being put off"
         stale += 1
         await callback(entity, f"someone-elses-job-{stale}")

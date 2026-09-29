@@ -188,7 +188,9 @@ class RunHandle(Generic[W]):
         A run waiting for this step runs it now with the delivered arguments. A run
         that has not reached its wait yet keeps the event and applies it when the
         wait arms; if it ends up waiting for something else, or stops, the event is
-        discarded. A repeat of a ``key`` the run has already taken changes nothing,
+        discarded. A wait given a deadline stops accepting events once that
+        deadline has passed, even where no worker has run the timeout step yet: a
+        deadline is a promise about the clock rather than a race with the workers. A repeat of a ``key`` the run has already taken changes nothing,
         so a resent reply records one decision.
 
         Args:
@@ -256,6 +258,12 @@ class RunHandle(Generic[W]):
                 # way to being run, so a second is neither applied over it nor
                 # buffered behind it: the wait has its answer.
                 cls.pending_event.is_(None),
+                # And a deadline that has passed has ended it, whether or not a
+                # worker has reached the timeout step yet. Taken here instead,
+                # the deadline would belong to whichever of the two was quicker,
+                # and a caller delivering faster than the workers pass could put
+                # one off for as long as it kept delivering.
+                or_(cls.wake_at.is_(None), cls.wake_at > func.now()),
                 fresh,
             )
             .values(

@@ -153,9 +153,16 @@ than replacing an answer already given — and a discarded event means its sende
 one who has to send it again.
 Passing a `key` makes delivery idempotent: a run refuses a key it has already taken,
 remembering the last sixteen. A key is taken when the run runs the event, not when it is
-held, so a resend of an event that was discarded is accepted. Arguments are checked against the step they address, so a
-payload that does not fit it is refused rather than failing once it runs. `timeout` and
-`on_timeout` go together and are optional; without them the run waits indefinitely.
+held, so a resend of an event that was discarded is accepted. Arguments are checked
+against the step they address, so a payload that does not fit it is refused rather than
+failing once it runs. `timeout` and `on_timeout` go together and are optional; without
+them the run waits indefinitely.
+
+A deadline decides when a wait ends. Once it has passed the wait stops accepting
+events — `deliver` returns 0 — even where no worker has run the timeout step yet, so a
+caller delivering faster than the workers pass cannot put a deadline off by keeping at
+it. The cost is that an answer arriving just after the deadline is refused rather than
+taken late, which is what a deadline means.
 
 A run that has finished refuses events. For one that lives as long as its events keep
 coming, such as a conversation that closes when it goes quiet, `restart=True` has a
@@ -587,5 +594,7 @@ was away.
   was taken over, or which was preempted by `.run(...)`, discards its changes rather than
   overwriting newer state.
 - Timers survive restarts: `wake_at` is a column, compared against the database clock.
-- A wait ends once. An event that lands while the timeout is already running wins, and
-  the timeout's changes are discarded — never both.
+- A wait ends once, and its deadline decides when. Past the deadline an event is
+  refused and `deliver` returns 0 for it, whether or not a worker has reached the
+  timeout step yet — so a caller delivering faster than the workers pass cannot keep a
+  deadline from being kept. Before it, the event wins and the timeout does not run.
