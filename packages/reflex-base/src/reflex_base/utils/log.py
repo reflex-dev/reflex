@@ -282,21 +282,22 @@ def _write_line(stream: TextIO, line: str):
         stream.flush()
 
 
-def _is_json_object(line: str) -> bool:
-    """Check whether a line already is a JSON record.
+def _is_json_record(line: str) -> bool:
+    """Check whether a line already is a JSON log record.
 
     Args:
         line: The line to check.
 
     Returns:
-        True if the line parses as a JSON object.
+        True if the line is a JSON object with a level and a message.
     """
     if not line.startswith("{"):
         return False
     try:
-        return isinstance(json.loads(line), dict)
+        record = json.loads(line)
     except ValueError:
         return False
+    return isinstance(record, dict) and "level" in record and "message" in record
 
 
 # Written by _restore_output to stop a reader while children still hold the pipe.
@@ -330,7 +331,10 @@ def _pump(read_fd: int, real: TextIO, level: str, name: str):
         _write_line(real, json.dumps(payload) + "\n")
 
     def forward(line: str):
-        if traceback:
+        # Records from other processes can arrive between traceback lines.
+        if _is_json_record(line):
+            _write_line(real, line if line.endswith("\n") else line + "\n")
+        elif traceback:
             traceback.append(line)
             # Frames are indented; the exception line is not.
             if line.strip() and not line[0].isspace():
@@ -338,8 +342,6 @@ def _pump(read_fd: int, real: TextIO, level: str, name: str):
                 traceback.clear()
         elif line.startswith("Traceback (most recent call last):"):
             traceback.append(line)
-        elif _is_json_object(line):
-            _write_line(real, line if line.endswith("\n") else line + "\n")
         else:
             emit(line.rstrip("\n"))
 
@@ -350,15 +352,14 @@ def _pump(read_fd: int, real: TextIO, level: str, name: str):
                 line = line.removesuffix(_CAPTURE_END)
             # An exception must not stop the reader: writers block once the
             # pipe fills up.
-            try:
+            with contextlib.suppress(Exception):
                 if line:
                     forward(line)
-            except Exception:
-                pass
             if end:
                 break
         if traceback:
-            emit(traceback[-1].strip(), "error", "".join(traceback))
+            with contextlib.suppress(Exception):
+                emit(traceback[-1].strip(), "error", "".join(traceback))
 
 
 def capture_output():
@@ -373,7 +374,13 @@ def capture_output():
     rather than fd 1 and fd 2.
     """
     global _real_out, _real_err
-    if _real_out is not None or sys.platform == "win32":
+    if (
+        _real_out is not None
+        or sys.platform == "win32"
+        # Started with fd 1 or fd 2 closed: there is nothing to capture into.
+        or sys.stdout is None
+        or sys.stderr is None
+    ):
         return
     sys.stdout.flush()
     sys.stderr.flush()
@@ -392,7 +399,19 @@ def capture_output():
         reader.start()
         captured.append((fd, write_fd, real, reader))
     _real_out, _real_err = captured[0][2], captured[1][2]
+    os.register_at_fork(after_in_child=_detach_forked_child)
     atexit.register(_restore_output, os.getpid(), captured)
+
+
+def _detach_forked_child():
+    """Send a forked child's records through the inherited pipes.
+
+    The reader threads do not exist in the child, and one of them may have
+    held the write lock at the moment of the fork.
+    """
+    global _real_out, _real_err, _write_lock
+    _real_out = _real_err = None
+    _write_lock = threading.Lock()
 
 
 def _restore_output(
