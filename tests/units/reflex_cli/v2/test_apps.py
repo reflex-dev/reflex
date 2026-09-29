@@ -607,30 +607,25 @@ def test_delete_app_non_interactive_skips_confirmation(
     assert successes == ["app deleted"]
 
 
-def test_delete_app_get_app_fails_fallback_to_unknown(
-    mocker: MockFixture, caplog: pytest.LogCaptureFixture
-):
-    """Test deletion shows 'Unknown' when get_app fails.
+def test_delete_app_unknown_id(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
+    """Deleting an app ID that does not exist fails with a non-zero exit.
 
     Args:
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
     client = _authed(mocker)
-    client.api.apps.get.side_effect = [
-        api_error(404, "Failed to fetch app"),
-        {"id": "app123", "name": "Unknown"},
-    ]
+    client.api.apps.get.side_effect = api_error(404, "Failed to fetch app")
     mock_ask = mocker.patch("reflex_cli.utils.console.ask", return_value="y")
 
     result = runner.invoke(hosting_cli, ["apps", "delete", "app123", "--interactive"])
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == 1, result.output
     assert client.api.apps.get.call_count == 1
     mock_ask.assert_not_called()
     client.api.apps.delete.assert_not_called()
-    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
-    assert warnings == ["No application found with ID 'app123'"]
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["No application found with ID 'app123'"]
 
 
 def test_delete_app_with_app_name_confirmation(
@@ -1838,13 +1833,15 @@ def test_app_logs_json_output_names_the_servers_reason(mocker: MockFixture):
 
 
 def test_delete_app_json_output_when_app_is_gone(mocker: MockFixture):
-    """The one exit here that is zero still says the app was not deleted."""
+    """An unknown app ID exits non-zero but still prints the JSON result."""
     client = _authed(mocker)
     client.api.apps.get.side_effect = api_error(404, "no such app")
 
-    result = runner.invoke(hosting_cli, ["apps", "delete", "app123", "--json"])
+    result = runner.invoke(
+        hosting_cli, ["apps", "delete", "app123", "--json", "--no-interactive"]
+    )
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == 1
     assert json.loads(result.stdout) == {
         "app_id": "app123",
         "deleted": False,
