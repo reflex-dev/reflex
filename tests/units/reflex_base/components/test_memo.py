@@ -1,5 +1,6 @@
 """Tests for compiler-generated memo definitions."""
 
+import dataclasses
 from unittest.mock import patch
 
 import pytest
@@ -56,10 +57,14 @@ def test_auto_memo_snapshot_renders_lifted_rest_props():
     assert component.children
 
 
-def test_memo_emission_reuses_unchanged_body_analysis():
+@pytest.mark.parametrize("forward_root_props", [False, True])
+def test_memo_emission_reuses_unchanged_body_analysis(forward_root_props: bool):
     """Hashing and emission share a render when root styling changes nothing."""
     with RegistrationContext.ensure_context().fork() as context:
         _, definition = memo.create_passthrough_component_memo(Div.create("child"))
+        definition = dataclasses.replace(
+            definition, forward_root_props=forward_root_props
+        )
         analysis = context._memo_body_analyses[
             definition.component.__dict__["_memo_analysis_key"]
         ]
@@ -68,7 +73,10 @@ def test_memo_emission_reuses_unchanged_body_analysis():
         ) as render:
             compiled, _ = utils.compile_experimental_component_memo(definition)
             render.assert_not_called()
-        assert compiled["render"] is analysis.rendered
+        if forward_root_props:
+            assert compiled["render"]["children"] is analysis.rendered["children"]
+        else:
+            assert compiled["render"] is analysis.rendered
 
 
 def test_memo_analysis_is_reset_with_registration_context():
@@ -166,4 +174,4 @@ def test_memo_analysis_does_not_bypass_custom_copy():
     with RegistrationContext.ensure_context().fork():
         _, definition = memo.create_passthrough_component_memo(CopyDiv.create("child"))
         compiled, _ = utils.compile_experimental_component_memo(definition)
-        assert '"data-copy":2' in compiled["render"]["props"]
+        assert any('"data-copy":2' in prop for prop in compiled["render"]["props"])

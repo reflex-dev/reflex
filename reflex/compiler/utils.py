@@ -39,8 +39,9 @@ from reflex_components_core.el.elements.metadata import Head, Link, Meta, Title
 from reflex_components_core.el.elements.other import Html
 from reflex_components_core.el.elements.sectioning import Body
 
+from reflex.istate.delta import _resolve_delta
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
-from reflex.state import BaseState, _resolve_delta
+from reflex.state import BaseState
 from reflex.utils import path_ops
 from reflex.utils.prerequisites import get_web_dir
 
@@ -349,7 +350,7 @@ def _compile_client_storage_recursive(
     session_storage: dict[str, dict[str, Any]] = {}
     state_name = state.get_full_name()
     for name, field in state.__fields__.items():
-        if name in state.inherited_vars:
+        if field._owner is not state:
             # only include vars defined in this state
             continue
         state_key = f"{state_name}.{name}" + FIELD_MARKER
@@ -443,6 +444,48 @@ def _app_style() -> ComponentStyle | Style:
     return app.style if app is not None else {}
 
 
+def _splice_transparent_root_props(
+    rest_name: str | None,
+    rendered: dict,
+    imports: ParsedImportDict,
+    ref_prop: str | None = None,
+) -> str:
+    """Make a memo wrapper transparent to props its parent injects at runtime.
+
+    The wrapper's rest param collects everything the parent passes but the
+    signature does not name, including ``ref`` under React 19 ref-as-prop. The
+    root renders ``mergeSlotProps(rest, {...own})``, which applies Radix
+    ``Slot`` semantics (own props win, ``on*`` handlers and refs compose,
+    ``className`` concatenates, object-valued props deep-merge), so a Slot
+    parent cloning the wrapper behaves as if it had cloned the root element.
+
+    Args:
+        rest_name: The rest param the definition declares, or ``None`` to
+            synthesize one.
+        rendered: The root's rendered tag, whose ``props`` are replaced in place.
+        imports: The memo module's imports, extended with the helper import.
+        ref_prop: The JS prop carrying the root's DOM ref when the root does
+            not accept ``ref`` directly (e.g. DebounceInput's ``inputRef``);
+            ``mergeSlotProps`` routes an injected ref there.
+
+    Returns:
+        The rest param name the wrapper signature must declare.
+    """
+    if rest_name is None:
+        rest_name = "rest"
+    ref_prop_arg = f', "{ref_prop}"' if ref_prop is not None else ""
+    own_props = ", ".join(rendered["props"])
+    rendered["props"] = [
+        f"...mergeSlotProps({rest_name}, ({{ {own_props} }}){ref_prop_arg})"
+    ]
+    # The call is spliced into the rendered props rather than carried by any
+    # Var, so its import is merged explicitly.
+    imports.setdefault(f"$/{constants.Dirs.STATE_PATH}", []).append(
+        ImportVar(tag="mergeSlotProps")
+    )
+    return rest_name
+
+
 def compile_experimental_component_memo(
     definition: MemoComponentDefinition,
 ) -> tuple[dict, ParsedImportDict]:
@@ -491,7 +534,13 @@ def compile_experimental_component_memo(
         # Swap children for JSX render: the memo body template emits a
         # ``{children}`` hole in place of the real descendants.
         render.children = [hole_child]
-        rendered = render.render() if analysis is None else analysis.rendered
+        if analysis is None:
+            rendered = render.render()
+        else:
+            rendered = analysis.rendered
+            if definition.forward_root_props:
+                # Prop forwarding replaces the root props during emission.
+                rendered = rendered.copy()
     else:
         render = _apply_component_style_for_compile(copy.deepcopy(definition.component))
         hooks = render._get_all_hooks()
@@ -518,6 +567,15 @@ def compile_experimental_component_memo(
         for lib, fields in wrapper_var_data.imports:
             imports.setdefault(lib, []).extend(fields)
 
+    rest_param = next(
+        (p for p in definition.params if p.kind is MemoParamKind.REST), None
+    )
+    rest_name = rest_param.placeholder_name if rest_param is not None else None
+    if definition.forward_root_props:
+        rest_name = _splice_transparent_root_props(
+            rest_name, rendered, imports, definition.root_ref_prop
+        )
+
     signature_fields = [
         field
         for param in definition.params
@@ -526,10 +584,6 @@ def compile_experimental_component_memo(
 
     if any(p.kind is MemoParamKind.CHILDREN for p in definition.params):
         signature_fields.insert(0, "children")
-
-    rest_param = next(
-        (p for p in definition.params if p.kind is MemoParamKind.REST), None
-    )
 
     return (
         {
@@ -540,7 +594,7 @@ def compile_experimental_component_memo(
             "display_name": definition.display_name or definition.export_name,
             "signature": DestructuredArg(
                 fields=tuple(signature_fields),
-                rest=rest_param.placeholder_name if rest_param is not None else None,
+                rest=rest_name,
             ).to_javascript(),
             "wrapper": str(wrapper) if wrapper is not None else None,
             "pure_wrapper": wrapper is not None

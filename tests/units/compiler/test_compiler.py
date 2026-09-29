@@ -1721,6 +1721,39 @@ def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
     assert "captureOwnerStack" in rendered
 
 
+def test_context_template_one_provider_per_substate():
+    """Each substate gets its own provider so one delta re-renders one context.
+
+    A single provider owning every reducer means any delta recreates every
+    ``StateContexts`` element; nesting one ``SubstateProvider`` per substate
+    keeps the untouched providers memoized.
+    """
+    from reflex_base.compiler.templates import context_template
+
+    rendered = context_template(
+        is_dev_mode=True,
+        default_color_mode='"light"',
+        initial_state={
+            "reflex___state____state": {},
+            "reflex___state____state__sub": {},
+        },
+        state_name="reflex___state____state",
+    )
+
+    assert (
+        "createElement(SubstateProvider, {substateName: 'reflex___state____state', "
+        "contextName: 'reflex___state____state'}," in rendered
+    )
+    assert (
+        "createElement(SubstateProvider, {substateName: 'reflex___state____state__sub', "
+        "contextName: 'reflex___state____state__sub'}," in rendered
+    )
+    # The reducers moved into SubstateProvider; StateProvider only composes.
+    provider_body = rendered[rendered.index("export function StateProvider") :]
+    assert "useReducer" not in provider_body
+    assert "createElement(DispatchProvider, {}," in provider_body
+
+
 def test_context_template_client_side_component_is_named():
     """``ClientSide`` returns a named component, not an anonymous arrow."""
     from reflex_base.compiler.templates import context_template

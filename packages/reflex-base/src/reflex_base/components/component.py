@@ -791,6 +791,13 @@ class Component(BaseComponent, ABC):
     # props to change the name of
     _rename_props: ClassVar[dict[str, str]] = {}
 
+    # The prop that carries a ref to the rendered DOM element for components
+    # whose root does not accept ``ref`` directly (e.g. ``DebounceInput``, a
+    # class component that exposes the real ``<input>`` through ``input_ref``).
+    # Auto-memo wrappers route a runtime-injected ref to this prop so it
+    # reaches the element instead of a class-component instance.
+    _dom_ref_prop: ClassVar[str | None] = None
+
     # Whether this component contributes a named field to form submission data.
     _is_form_control: ClassVar[bool] = False
 

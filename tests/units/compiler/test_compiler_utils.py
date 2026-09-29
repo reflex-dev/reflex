@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import asyncio
+from copy import deepcopy
 
 import pytest
+from reflex_base.components.memo import create_passthrough_component_memo
 from reflex_base.registry import RegistrationContext
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.base.script import Script
 from reflex_components_core.el.elements.metadata import Link
+from reflex_components_core.el.elements.typography import Div
 
 from reflex.compiler import utils
 from reflex.compiler.utils import compile_state, create_document_root
@@ -15,6 +18,25 @@ from reflex.constants.state import FIELD_MARKER
 from reflex.state import State
 from reflex.utils.path_ops import write_file
 from reflex.vars.base import computed_var
+
+
+def test_memo_root_prop_forwarding_preserves_cached_analysis() -> None:
+    """Repeated emission of shared memo bodies must not accumulate prop merges."""
+    with RegistrationContext.ensure_context().fork() as context:
+        _, first = create_passthrough_component_memo(Div.create("first", id="root"))
+        _, second = create_passthrough_component_memo(Div.create("second", id="root"))
+        assert first.export_name == second.export_name
+        analysis = context._memo_body_analyses[
+            first.component.__dict__["_memo_analysis_key"]
+        ]
+        original_render = deepcopy(analysis.rendered)
+
+        for definition in (first, first, second):
+            compiled, _ = utils.compile_experimental_component_memo(definition)
+            props = ", ".join(compiled["render"]["props"])
+            assert props.count("mergeSlotProps(") == 1
+            assert "ref:ref_root" in props
+            assert analysis.rendered == original_render
 
 
 def test_write_file_reexport() -> None:

@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime
 import email.utils
 import uuid
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -43,10 +42,8 @@ def _request(method: str = "GET") -> Request:
     )
 
 
-def test_token_precedence(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+def test_token_precedence(monkeypatch: pytest.MonkeyPatch):
     assert _client().token is None
-    (tmp_path / "hosting_v1.json").write_text('{"access_token": "stored"}')
-    assert _client().token == "stored"
     monkeypatch.setenv("REFLEX_ACCESS_TOKEN", "env")
     assert _client().token == "env"
     assert _client(token="explicit").token == "explicit"

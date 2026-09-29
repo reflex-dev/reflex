@@ -13,8 +13,12 @@ from reflex_build_sdk import (
     NotFoundError,
     RateLimitError,
 )
-from reflex_build_sdk.transports import Request, Response, TransportError
-from reflex_build_sdk.transports._defaults import AsyncDefaultTransport
+from reflex_build_sdk.transports import (
+    AiohttpTransport,
+    Request,
+    Response,
+    TransportError,
+)
 
 from tests.units.reflex_build_sdk.conftest import AsyncMockTransport, MockAPI, reply
 
@@ -219,13 +223,13 @@ async def test_client_leaves_passed_transport_open(mock_api: MockAPI):
 
 async def test_client_closes_its_own_transport(monkeypatch: pytest.MonkeyPatch):
     closed = []
-    original_aclose = AsyncDefaultTransport.aclose
+    original_aclose = AiohttpTransport.aclose
 
-    async def aclose(self: AsyncDefaultTransport) -> None:
+    async def aclose(self: AiohttpTransport) -> None:
         closed.append(self)
         await original_aclose(self)
 
-    monkeypatch.setattr(AsyncDefaultTransport, "aclose", aclose)
+    monkeypatch.setattr(AiohttpTransport, "aclose", aclose)
     async with AsyncReflexBuild() as client:
-        assert type(client._transport) is AsyncDefaultTransport
+        assert type(client._transport) is AiohttpTransport
     assert closed == [client._transport]
