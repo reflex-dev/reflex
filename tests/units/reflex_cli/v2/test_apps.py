@@ -180,8 +180,21 @@ def test_app_history_success(mocker: MockFixture):
 
     assert result.exit_code == 0, result.output
     client.api.apps.history.assert_called_once_with("test_app_id")
-    mock_console_print_table.assert_called_once()
-    assert mock_console_print_table.call_args.kwargs["overflow"] == "fold"
+    mock_console_print_table.assert_called_once_with(
+        [
+            ["id", str(_DEPLOYMENT_ID)],
+            ["status", "success"],
+            ["url", "https://example.com"],
+            ["python version", "3.10"],
+            ["reflex version", "1.2.3"],
+            ["vm type", "None"],
+            ["timestamp", "2024-11-29T12:00:00+00:00"],
+            ["description", ""],
+            ["can rollback", "True"],
+        ],
+        headers=["field", "value"],
+        overflow="fold",
+    )
 
 
 def test_app_inspect_uses_fold_overflow(mocker: MockFixture):
@@ -877,20 +890,33 @@ def test_list_apps_no_project(mocker: MockFixture):
     assert result.exit_code == 0, result.output
     mock_get_selected_project.assert_called_once()
     client.api.apps.list.assert_called_once_with(project_id="default_project")
-    mock_print_table.assert_called_once_with(
+    mock_print_table.assert_has_calls(
         [
-            [str(_APP_ID), "App1", "", str(_PROJECT_ID), "fly", "False"],
-            [str(uuid.UUID(int=23)), "App2", "", str(_PROJECT_ID), "fly", "False"],
-        ],
-        headers=[
-            "id",
-            "name",
-            "description",
-            "project_id",
-            "provider",
-            "disable_secrets",
-        ],
-        overflow="fold",
+            mocker.call(
+                [
+                    ["id", str(_APP_ID)],
+                    ["name", "App1"],
+                    ["description", ""],
+                    ["project_id", str(_PROJECT_ID)],
+                    ["provider", "fly"],
+                    ["disable_secrets", "False"],
+                ],
+                headers=["field", "value"],
+                overflow="fold",
+            ),
+            mocker.call(
+                [
+                    ["id", str(uuid.UUID(int=23))],
+                    ["name", "App2"],
+                    ["description", ""],
+                    ["project_id", str(_PROJECT_ID)],
+                    ["provider", "fly"],
+                    ["disable_secrets", "False"],
+                ],
+                headers=["field", "value"],
+                overflow="fold",
+            ),
+        ]
     )
 
 
@@ -905,17 +931,43 @@ def test_list_apps_with_project(mocker: MockFixture):
     assert result.exit_code == 0, result.output
     client.api.apps.list.assert_called_once_with(project_id="project123")
     mock_print_table.assert_called_once_with(
-        [[str(_APP_ID), "App1", "", str(_PROJECT_ID), "fly", "False"]],
-        headers=[
-            "id",
-            "name",
-            "description",
-            "project_id",
-            "provider",
-            "disable_secrets",
+        [
+            ["id", str(_APP_ID)],
+            ["name", "App1"],
+            ["description", ""],
+            ["project_id", str(_PROJECT_ID)],
+            ["provider", "fly"],
+            ["disable_secrets", "False"],
         ],
+        headers=["field", "value"],
         overflow="fold",
     )
+
+
+def test_list_apps_renders_full_app_id_on_one_line(mocker: MockFixture):
+    """Keep app IDs copyable in the human-readable list output.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
+    client = _authed(mocker)
+    app_id = uuid.UUID("7fb2de10-2e8d-48bd-9c79-a98b3f52e10f")
+    client.api.apps.list.return_value = [app_summary("App1", id=app_id)]
+    output = StringIO()
+    narrow_console = Console(file=output, width=80)
+    for console_module in ("reflex_base.utils.console", "reflex_cli.utils.console"):
+        mocker.patch(f"{console_module}._console", narrow_console, create=True)
+        mocker.patch(f"{console_module}._console_stderr", narrow_console, create=True)
+    for log_module in ("reflex_base.utils.log", "reflex_cli.utils.log"):
+        mocker.patch(f"{log_module}.is_json_mode", return_value=False, create=True)
+        mocker.patch(
+            f"{log_module}.is_stdout_reserved", return_value=False, create=True
+        )
+
+    result = runner.invoke(hosting_cli, ["apps", "list", "--project", "project123"])
+
+    assert result.exit_code == 0, result.output
+    assert any(str(app_id) in line for line in output.getvalue().splitlines())
 
 
 def test_list_apps_json_output(mocker: MockFixture):

@@ -153,11 +153,11 @@ def app_history(
             print_json(history)
             return
         if history:
-            headers = list(history[0].keys())
-            table = [
-                [str(value) for value in deployment.values()] for deployment in history
-            ]
-            console.print_table(table, headers=headers, overflow="fold")
+            for deployment in history:
+                table = [[key, str(value)] for key, value in deployment.items()]
+                console.print_table(
+                    table, headers=["field", "value"], overflow="fold"
+                )
         else:
             console.print(str(history))
 
@@ -809,11 +809,11 @@ def list_apps(
         print_json(deployments)
         return
     if deployments:
-        headers = list(deployments[0].keys())
-        table = [
-            [str(value) for value in deployment.values()] for deployment in deployments
-        ]
-        console.print_table(table, headers=headers, overflow="fold")
+        for deployment in deployments:
+            table = [[key, str(value)] for key, value in deployment.items()]
+            console.print_table(
+                table, headers=["field", "value"], overflow="fold"
+            )
     else:
         console.print(str(deployments))
 
