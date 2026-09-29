@@ -5,7 +5,7 @@ import contextlib
 import dataclasses
 import logging
 import sys
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Mapping
 from typing import Any
 from unittest.mock import Mock
 
@@ -45,6 +45,12 @@ async def _slow_handler(delay: float = 0.5):
 async def _error_handler():  # noqa: RUF029
     """A handler that always raises."""
     raise RuntimeError("boom")  # noqa: EM101
+
+
+async def _recovery_handler():
+    """Log recovery and emit a delta, as an event chained after a failure."""
+    _CALL_LOG.append({"value": "recovered"})
+    await EventContext.get().emit_delta({"state": {"recovered": True}})
 
 
 async def _logging_handler(value: str = "default"):  # noqa: RUF029
@@ -89,6 +95,21 @@ async def _rapid_multi_delta_handler():
     ctx = EventContext.get()
     for i in range(2):
         await ctx.emit_delta({"state": {"i": i}})
+
+
+async def _delta_then_chain_handler():
+    """A handler that emits a delta, then chains an event that emits another."""
+    ctx = EventContext.get()
+    await ctx.emit_delta({"state": {"x": 0}})
+    await ctx.enqueue(Event.from_event_type(delta_event())[0])
+
+
+async def _other_token_delta_handler():
+    """A handler that emits a delta for another token, then one for its own."""
+    ctx = EventContext.get()
+    other_ctx = dataclasses.replace(ctx, token="other_token")
+    await other_ctx.emit_delta({"state": {"other": 1}})
+    await ctx.emit_delta({"state": {"own": 1}})
 
 
 async def _slow_logging_handler(value: str = "default"):
@@ -344,11 +365,14 @@ _counting_superseding_handler._reflex_supersedes = True  # type: ignore[attr-def
 noop_event = EventHandler(fn=_noop_handler)
 slow_event = EventHandler(fn=_slow_handler)
 error_event = EventHandler(fn=_error_handler)
+recovery_event = EventHandler(fn=_recovery_handler)
 logging_event = EventHandler(fn=_logging_handler)
 chaining_event = EventHandler(fn=_chaining_handler)
 delta_event = EventHandler(fn=_delta_handler)
 multi_delta_event = EventHandler(fn=_multi_delta_handler)
 rapid_multi_delta_event = EventHandler(fn=_rapid_multi_delta_handler)
+delta_then_chain_event = EventHandler(fn=_delta_then_chain_handler)
+other_token_delta_event = EventHandler(fn=_other_token_delta_handler)
 slow_logging_event = EventHandler(fn=_slow_logging_handler)
 multi_chaining_event = EventHandler(fn=_multi_chaining_handler)
 background_slow_logging_event = EventHandler(fn=_background_slow_logging_handler)
@@ -381,11 +405,14 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         noop_event,
         slow_event,
         error_event,
+        recovery_event,
         logging_event,
         chaining_event,
         delta_event,
         multi_delta_event,
         rapid_multi_delta_event,
+        delta_then_chain_event,
+        other_token_delta_event,
         slow_logging_event,
         multi_chaining_event,
         background_slow_logging_event,
@@ -415,6 +442,43 @@ def processor() -> EventProcessor:
         A fresh EventProcessor instance.
     """
     return EventProcessor(graceful_shutdown_timeout=2)
+
+
+class _RecoveringProcessor(EventProcessor):
+    """A processor whose backend exception handler chains a recovery event."""
+
+    async def _handle_backend_exception(
+        self, ex: Exception, ev_ctx: EventContext | None = None
+    ) -> None:
+        """Chain the recovery event from the failed event's context.
+
+        Args:
+            ex: The exception that was raised.
+            ev_ctx: The failed event's context.
+        """
+        if ev_ctx is not None:
+            EventContext.set(ev_ctx)
+        await EventContext.get().enqueue(Event.from_event_type(recovery_event())[0])
+
+
+def _record_root_deltas(ep: EventProcessor) -> list[tuple[str, Mapping[str, Any]]]:
+    """Configure ``ep`` so the deltas its root context emits are recorded.
+
+    Args:
+        ep: The unconfigured event processor.
+
+    Returns:
+        The ``(token, delta)`` pairs emitted the usual way, in order.
+    """
+    emitted: list[tuple[str, Mapping[str, Any]]] = []
+
+    async def _emit(token: str, delta: Mapping[str, Any]) -> None:  # noqa: RUF029
+        emitted.append((token, delta))
+
+    ep.configure()
+    assert ep._root_context is not None
+    ep._root_context = dataclasses.replace(ep._root_context, emit_delta_impl=_emit)
+    return emitted
 
 
 def test_configure_once(processor: EventProcessor):
@@ -733,17 +797,6 @@ async def test_exception_handler_can_chain_recovery_events(token: str):
     Args:
         token: The client token.
     """
-
-    class _RecoveringProcessor(EventProcessor):
-        async def _handle_backend_exception(
-            self, ex: Exception, ev_ctx: EventContext | None = None
-        ) -> None:
-            if ev_ctx is not None:
-                EventContext.set(ev_ctx)
-            await EventContext.get().enqueue(
-                Event.from_event_type(logging_event("recovered"))[0]
-            )
-
     ep = _RecoveringProcessor(
         backend_exception_handler=lambda ex: None, graceful_shutdown_timeout=2
     )
@@ -1001,6 +1054,63 @@ async def test_concurrent_stream_deltas_are_tracked_independently(
         assert await asyncio.wait_for(_drain(stream_b), timeout=1) == [
             {"state": {"b": "finished"}}
         ]
+
+
+async def test_stream_delta_yields_chained_event_deltas(token: str):
+    """Deltas from events the handler chains are streamed too, in order.
+
+    The whole chain's updates reach the caller over one channel, so a chained
+    event's delta cannot overtake the handler's own on the way to the client.
+
+    Args:
+        token: The client token.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    emitted = _record_root_deltas(ep)
+    async with ep:
+        event = Event.from_event_type(delta_then_chain_event())[0]
+        collected = [d async for d in ep.enqueue_stream_delta(token, event)]
+    assert collected == [{"state": {"x": 0}}, {"state": {"x": 1}}]
+    assert emitted == []
+
+
+async def test_stream_delta_sends_other_tokens_deltas_normally(token: str):
+    """A delta for another token goes out the usual way, never to the stream.
+
+    Args:
+        token: The client token.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    emitted = _record_root_deltas(ep)
+    async with ep:
+        event = Event.from_event_type(other_token_delta_event())[0]
+        collected = [d async for d in ep.enqueue_stream_delta(token, event)]
+    assert collected == [{"state": {"own": 1}}]
+    assert emitted == [("other_token", {"state": {"other": 1}})]
+
+
+async def test_stream_delta_emits_deltas_after_it_ends_normally(token: str):
+    """Deltas emitted after the stream ended reach the client the usual way.
+
+    A recovery event the backend exception handler chains after the streamed
+    handler failed runs in a fork of the stream's context, so it inherited the
+    stream's emitter and its deltas went to a queue nobody read anymore.
+
+    Args:
+        token: The client token.
+    """
+    ep = _RecoveringProcessor(
+        backend_exception_handler=lambda ex: None, graceful_shutdown_timeout=2
+    )
+    emitted = _record_root_deltas(ep)
+    async with ep:
+        event = Event.from_event_type(error_event())[0]
+        with pytest.raises(RuntimeError, match="boom"):
+            async for _ in ep.enqueue_stream_delta(token, event):
+                pass
+    # Stopping the processor drained the recovery event.
+    assert _CALL_LOG == [{"value": "recovered"}]
+    assert emitted == [(token, {"state": {"recovered": True}})]
 
 
 async def test_sequential_chained_events_run_in_order(token: str):
