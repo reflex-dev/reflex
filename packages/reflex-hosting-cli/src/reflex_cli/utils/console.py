@@ -10,35 +10,72 @@ from __future__ import annotations
 from collections.abc import Collection, Sequence
 from typing import overload
 
+from rich import box
+from rich.console import Console, OverflowMethod
+from rich.table import Table
+
 from reflex_cli.constants.base import LogLevel
 from reflex_cli.utils.log import HAS_REFLEX_BASE, is_json_mode, is_stdout_reserved
 from reflex_cli.utils.log import set_log_level as _set_log_level
 
+_console = Console(highlight=False)
+_console_stderr = Console(stderr=True, highlight=False)
+
+
+def _human_console() -> Console:
+    """Resolve the console human-readable output belongs on.
+
+    Returns:
+        The stderr console while stdout is carrying a machine-readable
+        document, and the stdout console otherwise.
+    """
+    return _console_stderr if is_stdout_reserved() else _console
+
+
+def print_table(
+    tabular_data: list[list[str]],
+    headers: Sequence[str] = (),
+    overflow: OverflowMethod = "ellipsis",
+    no_wrap: Collection[str] = (),
+) -> None:
+    """Print a table to the console.
+
+    Args:
+        tabular_data: The data to print in tabular format.
+        headers: The headers for the table.
+        overflow: What to do with a cell too wide for its column. The default
+            cuts it short; pass "fold" for values a user has to read in full,
+            such as an email or an identifier.
+        no_wrap: Headers of the columns whose values stay on one line, so a
+            user can copy them. The other columns give up the width.
+    """
+    if is_json_mode():
+        # Only reflex-base has a JSON mode. Pass just the arguments every
+        # reflex-base release accepts.
+        from reflex_base.utils.console import print_table as base_print_table
+
+        base_print_table(tabular_data, headers=headers)
+        return
+    table = Table(box=box.SIMPLE_HEAD)
+
+    for column in headers:
+        table.add_column(column, overflow=overflow, no_wrap=column in no_wrap)
+
+    for row in tabular_data:
+        table.add_row(*row)
+
+    _human_console().print(table)
+
+
 if HAS_REFLEX_BASE:
     from reflex_base.utils.console import ask as ask
     from reflex_base.utils.console import print as print
-    from reflex_base.utils.console import print_table as print_table
     from reflex_base.utils.console import progress as progress
     from reflex_base.utils.console import rule as rule
     from reflex_base.utils.console import status as status
 else:
-    from rich import box
-    from rich.console import Console, OverflowMethod
     from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
     from rich.prompt import Prompt
-    from rich.table import Table
-
-    _console = Console(highlight=False)
-    _console_stderr = Console(stderr=True, highlight=False)
-
-    def _human_console() -> Console:
-        """Resolve the console human-readable output belongs on.
-
-        Returns:
-            The stderr console while stdout is carrying a machine-readable
-            document, and the stdout console otherwise.
-        """
-        return _console_stderr if is_stdout_reserved() else _console
 
     def print(msg: str, **kwargs):
         """Print a message.
@@ -48,33 +85,6 @@ else:
             kwargs: Keyword arguments to pass to the print function.
         """
         _human_console().print(msg, **kwargs)
-
-    def print_table(
-        tabular_data: list[list[str]],
-        headers: Sequence[str] = (),
-        overflow: OverflowMethod = "ellipsis",
-        no_wrap: Collection[str] = (),
-    ) -> None:
-        """Print a table to the console.
-
-        Args:
-            tabular_data: The data to print in tabular format.
-            headers: The headers for the table.
-            overflow: What to do with a cell too wide for its column. The
-                default cuts it short; pass "fold" for values a user has to
-                read in full, such as an email or an identifier.
-            no_wrap: Headers of the columns whose values stay on one line, so a
-                user can copy them. The other columns give up the width.
-        """
-        table = Table(box=box.SIMPLE_HEAD)
-
-        for column in headers:
-            table.add_column(column, overflow=overflow, no_wrap=column in no_wrap)
-
-        for row in tabular_data:
-            table.add_row(*row)
-
-        _human_console().print(table)
 
     def rule(title: str, **kwargs):
         """Print a horizontal rule with a title.

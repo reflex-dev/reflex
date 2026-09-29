@@ -310,6 +310,38 @@ def test_fallback_print_table_no_wrap(monkeypatch, capsys):
     assert "│" not in out
 
 
+def test_print_table_no_wrap_with_older_reflex_base(monkeypatch, capsys):
+    """A reflex-base that predates no_wrap renders the CLI's tables anyway.
+
+    The CLI owns its table rendering and only hands reflex-base the rows in JSON
+    mode, through the signature every reflex-base release accepts.
+    """
+    from reflex_base.utils import console as base_console
+
+    long_id = "7fb2de10-2e8d-48bd-9c79-a98b3f52e10f"
+    rows = [[long_id, "a description long enough that it has to fold"]]
+    headers = ["id", "description"]
+    calls = []
+
+    def old_print_table(tabular_data, headers=()):
+        calls.append((tabular_data, list(headers)))
+
+    monkeypatch.setattr(base_console, "print_table", old_print_table)
+    monkeypatch.setenv("COLUMNS", "60")
+    try:
+        importlib.reload(console)
+        console.print_table(rows, headers=headers, overflow="fold", no_wrap=["id"])
+        out = capsys.readouterr().out
+        assert any(long_id in line for line in out.splitlines()), out
+
+        monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+        console.print_table(rows, headers=headers, overflow="fold", no_wrap=["id"])
+        assert calls == [(rows, headers)]
+    finally:
+        monkeypatch.undo()
+        importlib.reload(console)
+
+
 def test_fallback_progress_bars(capsys):
     """Both progress bars build without reflex-base and render their tasks.
 
