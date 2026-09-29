@@ -227,8 +227,7 @@ class Auth:
     ) -> str:
         """Wait for the user to approve a browser login, then collect its token.
 
-        The token can be collected once. Save it with ``credentials.save_token`` for
-        clients created later to use.
+        The token can be collected once, so keep it for clients created later.
 
         Args:
             login: The login from ``begin_login``.

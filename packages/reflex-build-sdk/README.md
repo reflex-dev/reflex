@@ -2,6 +2,16 @@
 
 Python client for the [Reflex Build](https://build.reflex.dev) API, with synchronous and asynchronous interfaces.
 
+Install it with the HTTP library the client should send requests with:
+
+```bash
+pip install "reflex-build-sdk[httpx2]"   # ReflexBuild and AsyncReflexBuild
+pip install "reflex-build-sdk[aiohttp]"  # AsyncReflexBuild only
+pip install "reflex-build-sdk[httpx]"    # ReflexBuild and AsyncReflexBuild
+```
+
+Without any of them, pass the client a [transport](#transports) of your own.
+
 ```python
 from reflex_build_sdk import ReflexBuild
 
@@ -139,27 +149,26 @@ with ReflexBuild() as client:
 
 ## Authentication
 
-The client uses the first access token it finds:
+The client uses the `token` argument, or the `REFLEX_ACCESS_TOKEN` environment variable when none is passed.
 
-1. The `token` argument.
-2. The `REFLEX_ACCESS_TOKEN` environment variable.
-3. The token saved on this machine, shared with `reflex login`.
-
-To log in through the browser and save the token for later clients:
+To log in through the browser:
 
 ```python
 import webbrowser
 
-from reflex_build_sdk import ReflexBuild, credentials
+from reflex_build_sdk import ReflexBuild
 
 with ReflexBuild() as client:
     login = client.auth.begin_login()
     print(f"Approve the login at {login.url}")
     webbrowser.open(login.url)
-    credentials.save_token(client.auth.finish_login(login, timeout=600))
+    token = client.auth.finish_login(login, timeout=600)
+
+with ReflexBuild(token=token) as client:
+    print(client.auth.me().email)
 ```
 
-`credentials.delete_token()` removes the saved token, and `client.auth.tokens.revoke_self()` revokes the client's own token, which any token may do. Create a token for CI with `client.auth.tokens.create("ci", expires_in_days=30)`, whose `.token` holds the value, and rotate or revoke one with `client.auth.tokens.refresh(token)`, whose `.token` holds the new value, and `client.auth.tokens.revoke(token)`. If a refresh answers `previous_revoked=False`, the old token is still live and needs revoking. Managing other tokens needs a token with full access, which `reflex login` tokens are not.
+`client.auth.tokens.revoke_self()` revokes the client's own token, which any token may do. Create a token for CI with `client.auth.tokens.create("ci", expires_in_days=30)`, whose `.token` holds the value, and rotate or revoke one with `client.auth.tokens.refresh(token)`, whose `.token` holds the new value, and `client.auth.tokens.revoke(token)`. If a refresh answers `previous_revoked=False`, the old token is still live and needs revoking. Managing other tokens needs a token with full access, which `reflex login` tokens are not.
 
 `client.usage.balance()` reports how much of the organization's plan allowance is used, and `client.usage.history()` iterates over its charges and credits.
 
@@ -211,16 +220,16 @@ Every exception derives from `reflex_build_sdk.ReflexBuildError`. Error response
 
 ## Transports
 
-`AsyncReflexBuild` sends requests with [aiohttp](https://docs.aiohttp.org) and `ReflexBuild` with [httpx](https://www.python-httpx.org). Pass a transport from `reflex_build_sdk.transports` to configure the HTTP client, e.g. for proxies, or to use httpx asynchronously:
+`AsyncReflexBuild` sends requests with the first installed of [aiohttp](https://docs.aiohttp.org), [httpx2](https://github.com/pydantic/httpx2) and [httpx](https://www.python-httpx.org), and `ReflexBuild` with httpx2, or httpx if httpx2 is not installed. Pass a transport from `reflex_build_sdk.transports` to configure the HTTP client, e.g. for proxies, or to pick the HTTP library:
 
 ```python
 import aiohttp
-import httpx
+import httpx2
 from reflex_build_sdk import AsyncReflexBuild, ReflexBuild
 from reflex_build_sdk.transports import (
     AiohttpTransport,
-    AsyncHttpxTransport,
-    HttpxTransport,
+    AsyncHttpx2Transport,
+    Httpx2Transport,
 )
 
 # Reads HTTP_PROXY, HTTPS_PROXY and NO_PROXY from the environment.
@@ -228,8 +237,10 @@ async with aiohttp.ClientSession(trust_env=True) as session:
     async with AsyncReflexBuild(transport=AiohttpTransport(session)) as client:
         ...
 
-client = AsyncReflexBuild(transport=AsyncHttpxTransport())
-client = ReflexBuild(transport=HttpxTransport(httpx.Client(proxy="http://proxy:8080")))
+client = AsyncReflexBuild(transport=AsyncHttpx2Transport())
+client = ReflexBuild(
+    transport=Httpx2Transport(httpx2.Client(proxy="http://proxy:8080"))
+)
 ```
 
 To use another HTTP library, implement the `Transport` or `AsyncTransport` protocol.
