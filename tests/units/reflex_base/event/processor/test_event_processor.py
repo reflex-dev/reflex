@@ -965,6 +965,27 @@ async def test_stream_delta_noop_handler_yields_nothing(token: str):
     assert collected == []
 
 
+async def test_stream_delta_waits_for_chained_events(token: str):
+    """The stream ends once the events its handler chains are done.
+
+    The root context has no txid, so only a stream context with a txid of its
+    own lets the chained events find the stream's future as their parent.
+
+    Args:
+        token: The client token.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        event = Event.from_event_type(multi_chaining_event())[0]
+        assert [d async for d in ep.enqueue_stream_delta(token, event)] == []
+        assert _CALL_LOG == [
+            {"value": "first"},
+            {"value": "second"},
+            {"value": "third"},
+        ]
+
+
 async def test_stream_delta_not_configured_raises():
     """enqueue_stream_delta raises RuntimeError if processor is not configured."""
     ep = EventProcessor()
@@ -978,7 +999,7 @@ async def test_stream_delta_does_not_adopt_top_level_events(
 ):
     """Top-level events enqueued while a stream runs stay out of its chain.
 
-    Every top-level event names the root context's txid as its parent, so a
+    Every top-level event named the root context's txid as its parent, so a
     stream registered under that txid adopted them all: they were chained to
     it and cancelled with it when its consumer left early, e.g. an upload
     whose client disconnected.
@@ -1723,3 +1744,43 @@ async def test_event_spans_chain_parent_child(token: str, otel_exporter):
         == parent.attributes[otel.ATTR_EVENT_TXID]
     )
     assert child.attributes[otel.ATTR_SESSION_ID] == otel._session_id(token)
+
+
+async def test_top_level_event_under_local_span_names_no_parent_event(
+    token: str, otel_exporter
+):
+    """A top-level event enqueued under a local span has no parent event.
+
+    An event a request enqueues (a custom API route, a chunked upload) is an
+    INTERNAL child of the request's span, but it is forked from the
+    processor's root context, which belongs to no event. The events it chains
+    still name it as their parent event.
+
+    Args:
+        token: The client token.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        with active_tracer().start_as_current_span("POST /api") as http_span:
+            future = await ep.enqueue(token, Event.from_event_type(chaining_event())[0])
+        await asyncio.wait_for(future.wait_all(), timeout=1)
+    assert _CALL_LOG == [{"value": "chained"}]
+    assert future.parent is None
+    (chained_future,) = future.children
+    assert chained_future.parent is future
+    spans = {s.name.rsplit(".", 1)[-1]: s for s in otel_exporter.get_finished_spans()}
+    top = spans["_chaining_handler"]
+    chained = spans["_logging_handler"]
+    assert top.parent is not None
+    assert top.parent.span_id == http_span.get_span_context().span_id
+    assert top.kind == SpanKind.INTERNAL
+    assert top.attributes is not None
+    assert otel.ATTR_EVENT_PARENT_TXID not in top.attributes
+    assert chained.attributes is not None
+    assert (
+        chained.attributes[otel.ATTR_EVENT_PARENT_TXID]
+        == top.attributes[otel.ATTR_EVENT_TXID]
+        == future.txid
+    )
