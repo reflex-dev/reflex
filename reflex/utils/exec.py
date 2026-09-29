@@ -496,6 +496,14 @@ def get_app_file() -> Path:
             raise IsADirectoryError(msg)
         if init_file.exists():
             continue
+        # A regular ancestor confines imports to the app root; other roots
+        # cannot contribute to this nested package.
+        if any(
+            (parent / "__init__.py").is_file()
+            for parent in package_dir.parents
+            if parent != app_root and app_root in parent.parents
+        ):
+            continue
         relative_dir = package_dir.relative_to(app_root)
         for search_root in sys.path:
             other_dir = Path(search_root or ".").resolve() / relative_dir

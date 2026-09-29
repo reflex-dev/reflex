@@ -876,18 +876,21 @@ def test_get_app_file_preserves_distributed_namespace_package(
 
     first = tmp_path / "first"
     second = tmp_path / "second"
-    _make_app_layout(first, monkeypatch, "shared.app", [], "shared/app.py")
-    (second / "shared").mkdir(parents=True)
-    (second / "shared" / "sibling.py").write_text("VALUE = 42\n")
+    _make_app_layout(first, monkeypatch, "ns7304.app", [], "ns7304/app.py")
+    (second / "ns7304").mkdir(parents=True)
+    (second / "ns7304" / "sibling.py").write_text("VALUE = 42\n")
     monkeypatch.syspath_prepend(str(second))
     monkeypatch.syspath_prepend(str(first))
     importlib.invalidate_caches()
-    assert importlib.import_module("shared.sibling").VALUE == 42
+    assert importlib.import_module("ns7304.sibling").VALUE == 42
 
     with pytest.raises(ImportError, match="another portion of this namespace package"):
         exec_utils.get_app_file()
-    assert not (first / "shared" / "__init__.py").exists()
-    assert importlib.import_module("shared.sibling").VALUE == 42
+    assert not (first / "ns7304" / "__init__.py").exists()
+    monkeypatch.delitem(sys.modules, "ns7304.sibling")
+    monkeypatch.delitem(sys.modules, "ns7304")
+    importlib.invalidate_caches()
+    assert importlib.import_module("ns7304.sibling").VALUE == 42
 
 
 def test_get_app_file_read_only_marker_has_actionable_error(
@@ -927,3 +930,24 @@ def test_get_app_file_other_regular_package_does_not_block_marker(
 
     assert exec_utils.get_app_file() == first / "regularpkg_7304" / "app.py"
     assert (first / "regularpkg_7304" / "__init__.py").is_file()
+
+
+def test_get_app_file_nested_regular_parent_ignores_other_sys_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A regular ancestor package makes same-named roots unreachable."""
+    first = tmp_path / "first"
+    second = tmp_path / "second"
+    _make_app_layout(
+        first,
+        monkeypatch,
+        "pkg7304.sub.app",
+        ["pkg7304"],
+        "pkg7304/sub/app.py",
+    )
+    (second / "pkg7304" / "sub").mkdir(parents=True)
+    monkeypatch.syspath_prepend(str(second))
+    monkeypatch.syspath_prepend(str(first))
+
+    assert exec_utils.get_app_file() == first / "pkg7304" / "sub" / "app.py"
+    assert (first / "pkg7304" / "sub" / "__init__.py").is_file()
