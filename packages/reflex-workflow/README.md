@@ -474,12 +474,16 @@ async with run_workflows(
     yield
 ```
 
-Polling stays the floor: a worker that is not listening — a driver that cannot, a
-connection that broke — holds to `poll_interval` throughout rather than sleeping past
-it, since asking is then the only way it would ever find work another process wrote. So
-losing the listener costs latency and nothing else. The one case that cannot be detected
-is a pooler that accepts a `LISTEN` and never delivers on it, which is what
-`listen_engine` is for. On shutdown a worker stops claiming, gives
+A worker that is not listening — a driver that cannot, a connection that broke — waits
+the same as one that is. What it asked the database already covers every timer, retry,
+schedule and lease the table knows about, so the ear only shortens the wait for work
+another process writes meanwhile: losing it costs that latency, up to
+`max_idle_interval`, and nothing else. A listener that cannot reconnect backs off to
+the same bound rather than retrying on a short timer, since a database that suspends
+itself closes that connection on the way down and a listener coming straight back would
+wake it again. The one case that cannot be detected is a pooler that accepts a `LISTEN`
+and never delivers on it, which is what `listen_engine` is for. On shutdown a worker
+stops claiming, gives
 running steps `shutdown_timeout` to finish, and hands back the rows of any it had to
 cancel so the next worker can take them straight away.
 

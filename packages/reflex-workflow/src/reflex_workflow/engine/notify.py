@@ -18,8 +18,10 @@ logger = logging.getLogger(__name__)
 # The one channel every worker listens on; the payload names the table.
 CHANNEL = "reflex_workflow"
 
-# How long to wait before listening again after the connection breaks.
+# How long to wait before listening again after the connection breaks, and the
+# longest that wait grows to while it keeps breaking.
 RECONNECT = datetime.timedelta(seconds=1)
+MAX_RECONNECT = datetime.timedelta(seconds=30)
 
 
 async def announce(session: AsyncSession, table: str) -> None:
@@ -76,11 +78,11 @@ async def listen_once(
     finally:
         # Deaf again until the next connection is up, and a worker that cannot
         # hear has to keep asking. Woken as well as told, but only where this
-        # attempt is what lost the ear: it chose how long to sleep while the
-        # listener was up and would otherwise lie there for that whole wait.
-        # Every retry after that finds the worker already polling, and waking
-        # it again each second would be the traffic a long poll interval is
-        # there to avoid.
+        # attempt is what lost the ear: whatever was announced while it was
+        # gone went unheard, and the sleep the worker planned was planned
+        # without it. Every retry after that finds a worker that already knows,
+        # and waking it each time would be the traffic the backoff is there to
+        # avoid.
         if runtime.listening.is_set():
             runtime.listening.clear()
             runtime.wake.set()
@@ -112,6 +114,7 @@ async def wake_on_notify(
     runtime: Runtime,
     tables: Collection[str],
     listen_engine: AsyncEngine | None = None,
+    backoff_cap: datetime.timedelta = MAX_RECONNECT,
 ) -> None:
     """Wake this worker whenever another process says one of its tables is ready.
 
@@ -128,6 +131,8 @@ async def wake_on_notify(
             hands a different connection back with every statement, so it never
             delivers what a ``LISTEN`` on it would have heard; point this at the
             direct endpoint and the steps keep the pool.
+        backoff_cap: The longest to wait between attempts once they keep
+            failing.
     """
     sessions = runtime.session_factory
     if listen_engine is not None:
@@ -140,5 +145,13 @@ async def wake_on_notify(
     wanted = frozenset(tables)
     # Backing off before reconnecting, rather than waiting on a condition: what
     # this waits for is a database that is not answering.
-    while await listen_once(runtime, wanted, sessions):  # noqa: ASYNC110
-        await asyncio.sleep(RECONNECT.total_seconds())
+    #
+    # Doubling, because a database that suspends itself when nothing is asking
+    # closes this connection on the way down, and a listener that came straight
+    # back would wake it again -- every time, for as long as the app is idle.
+    # Losing the ear costs latency, so backing off costs latency too, and that
+    # is the cheaper of the two.
+    wait = RECONNECT
+    while await listen_once(runtime, wanted, sessions):
+        await asyncio.sleep(wait.total_seconds())
+        wait = min(wait * 2, backoff_cap)

@@ -218,18 +218,21 @@ class Runner:
         due but could not be claimed -- one held back by a limit, or by this
         worker being full -- would otherwise be asked for in a tight loop; and
         never above ``max_idle_interval``, which is also how long a worker waits
-        when nothing at all is scheduled. A worker that is not listening holds
-        to ``poll_interval`` throughout, since nothing else would tell it that
-        another process had written work for it.
+        when nothing at all is scheduled.
+
+        The same bounds whether or not this worker is listening. What the
+        database was asked already covers everything the table knows about --
+        every timer, every retry, every schedule, and the lease of a worker
+        that may have died -- so losing the ear delays only work another
+        process writes while this one sleeps, by at most the cap. Polling
+        through that at a tight interval would trade a bounded delay for a
+        database that is never allowed to be idle.
 
         Returns:
             Seconds to wait.
         """
         floor = self.poll_interval
-        # Sleeping past the poll interval is only safe while something is
-        # listening: work another process writes announces itself, and a worker
-        # that cannot hear the announcement has nothing but asking again.
-        cap = self.max_idle_interval if self.runtime.listening.is_set() else floor
+        cap = self.max_idle_interval
         try:
             due = await next_due(self.runtime, self.workflows, self.runnable)
         except Exception:
@@ -427,6 +430,8 @@ async def run_workflows(
             runtime,
             [cls.__tablename__ for cls in runner.workflows],
             listen_engine,
+            # No point trying more often than the worker would look anyway.
+            runner.max_idle_interval,
         )
     )
     try:

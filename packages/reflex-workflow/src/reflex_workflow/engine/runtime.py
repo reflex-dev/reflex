@@ -58,9 +58,9 @@ class Runtime:
         wake: Set to make the worker look for due rows now.
         lease: How long a claim lasts without renewal.
         listening: Set while this worker is hearing what other processes write.
-            Only then can it afford to sleep past its poll interval: with
-            nothing listening, polling is the only way work written elsewhere
-            is ever noticed.
+            Losing it is what makes the worker look again at once: anything
+            announced while the ear was gone was not heard, and the sleep it
+            had planned was planned without that.
         settled: Counts the passes that found nothing to claim, so a caller can
             wait for the worker to have caught up rather than guess at it.
     """

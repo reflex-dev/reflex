@@ -2059,6 +2059,11 @@ def lane_worker(lanes, workflows=(Rendered,), concurrency=4):
         list(workflows),
         max_concurrency=concurrency,
         poll_interval=datetime.timedelta(milliseconds=20),
+        # Nothing listens for these, and a deaf worker now waits like any
+        # other; in production that ear is what the wait is long for. These
+        # stand in for workers that have one, so they look as often as they
+        # poll.
+        max_idle_interval=datetime.timedelta(milliseconds=20),
         lanes=lanes,
     )
     return worker, engine
@@ -4049,7 +4054,9 @@ async def test_a_child_that_finishes_before_the_cancel_is_counted_once(
     assert EVENTS.count(f"joined-report:{key}") == 0
 
 
-async def test_a_worker_that_cannot_listen_keeps_asking(session_factory):
+async def test_a_worker_that_cannot_listen_waits_as_long_as_one_that_can(
+    session_factory,
+):
     rt = runtime.current()
     worker = runner.Runner(
         rt, [Resting], 4, datetime.timedelta(milliseconds=20), max_idle_interval=MINUTE
@@ -4057,16 +4064,21 @@ async def test_a_worker_that_cannot_listen_keeps_asking(session_factory):
     await Resting.by().cancel()
     was = rt.listening.is_set()
     try:
-        # Nothing is scheduled, so there is no time to wait for either way.
+        # Nothing is scheduled, so there is nothing to wait for either way.
         rt.listening.set()
         assert await worker.until_something_is_due() == pytest.approx(
             MINUTE.total_seconds()
         )
 
         rt.listening.clear()
-        # Deaf: work another process writes would only ever be found by asking,
-        # so the wait stays what the worker was told to poll.
-        assert await worker.until_something_is_due() == pytest.approx(0.02)
+        # The same deaf. What the database was asked already covers every timer,
+        # retry, schedule and lease it knows about, so losing the ear delays
+        # only what another process writes meanwhile -- and asking every poll
+        # interval through an idle night, to find that out sooner, is what
+        # stops a database that bills for being awake from ever sleeping.
+        assert await worker.until_something_is_due() == pytest.approx(
+            MINUTE.total_seconds()
+        )
     finally:
         rt.listening.set() if was else rt.listening.clear()
 
@@ -4088,6 +4100,48 @@ async def test_a_listener_that_drops_wakes_the_worker_it_was_listening_for():
     # Woken too: a worker that went to sleep while the listener was up has to
     # be told, or it lies there for the whole wait it chose on that basis.
     assert rt.wake.is_set()
+
+
+async def test_a_listener_that_keeps_failing_waits_longer_each_time(monkeypatch):
+    waits: list[float] = []
+    # Captured before the patch: the stand-in still has to yield, and calling
+    # the patched name would be calling itself.
+    real_sleep = asyncio.sleep
+
+    async def record(seconds):
+        """Note the wait instead of taking it.
+
+        Args:
+            seconds: How long the listener wanted to wait.
+
+        Raises:
+            RuntimeError: Once enough attempts have been seen, to end the loop.
+        """
+        waits.append(seconds)
+        await real_sleep(0)
+        if len(waits) >= 6:
+            msg = "enough"
+            raise RuntimeError(msg)
+
+    monkeypatch.setattr(notify.asyncio, "sleep", record)
+    nowhere = create_async_engine(
+        "postgresql+psycopg://postgres@127.0.0.1:1/nothing_here"
+    )
+    rt = runtime.Runtime(
+        async_sessionmaker(nowhere, expire_on_commit=False), asyncio.Event(), LEASE
+    )
+    cap = datetime.timedelta(seconds=8)
+    try:
+        with contextlib.suppress(RuntimeError):
+            await notify.wake_on_notify(rt, ["wf_test_resting"], nowhere, cap)
+    finally:
+        await nowhere.dispose()
+
+    # A database that suspends when nothing asks closes this connection on the
+    # way down, so a listener that came straight back would wake it again every
+    # time -- for as long as the app is idle.
+    assert waits == [1, 2, 4, 8, 8, 8]
+    assert waits[-1] == cap.total_seconds()
 
 
 async def test_a_listener_that_keeps_failing_wakes_the_worker_once():
