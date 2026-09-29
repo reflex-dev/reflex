@@ -44,8 +44,12 @@ UNSET = UnsetType.UNSET
 # How long a cancelled step's row is given to be handed back on the way out.
 GIVE_BACK = datetime.timedelta(seconds=5)
 
-# The longest a worker waits when the database says nothing is due at all.
+# The longest a worker waits when the database says nothing is due at all, and
+# the same for a database that suspends itself: long against the few minutes
+# such a database waits before going down, so most of an idle hour is spent with
+# it down rather than woken again by the worker looking.
 DEFAULT_MAX_IDLE = datetime.timedelta(seconds=30)
+SUSPENDING_MAX_IDLE = datetime.timedelta(hours=1)
 
 
 class Runner:
@@ -374,6 +378,7 @@ async def run_workflows(
     max_idle_interval: datetime.timedelta | None = None,
     listen_engine: AsyncEngine | None = None,
     on_idle: OnIdle | None = None,
+    suspends_when_idle: bool = False,
 ) -> AsyncIterator[None]:
     """Run workflow steps in this process for the lifetime of the block.
 
@@ -395,16 +400,25 @@ async def run_workflows(
             left alone, so a worker with a GPU can be the only one that renders
             and an ordinary one carries on with the rest.
         max_idle_interval: The longest to wait when nothing is scheduled at all;
-            thirty seconds by default, or ``poll_interval`` when that is longer.
-            Between runs a worker sleeps until the database says the next one is
-            due, so this is what it costs an idle database: set it above the
-            point a database suspends itself and the workers will not hold it
-            open. Work written by another process is waited for at most this
-            long, unless NOTIFY reaches this worker first.
+            thirty seconds by default, an hour under ``suspends_when_idle``, or
+            ``poll_interval`` when that is longer. Between runs a worker sleeps
+            until the database says the next one is due, so this is what it
+            costs an idle database. Work written by another process is waited
+            for at most this long, unless NOTIFY reaches this worker first.
         listen_engine: Where to listen for those notifications, when that cannot
             be where the steps run. A pooler in transaction mode -- Neon's
             pooled endpoint, PgBouncer -- cannot hold a LISTEN, so point this at
-            the direct endpoint and leave the pooled one to the steps.
+            the direct endpoint and leave the pooled one to the steps. Not for a
+            database that suspends itself: holding the connection is what keeps
+            it awake.
+        suspends_when_idle: Whether this database stops itself when nothing is
+            querying it, and charges for being up -- a managed Postgres like
+            Neon. Such a worker listens for nothing, since a held LISTEN is a
+            connection the database counts as work, and waits an hour rather
+            than thirty seconds, so the time it is asleep is most of the time.
+            The cost is that work another process writes waits for the next
+            look; everything the table already knows about still comes due when
+            it said it would.
         on_idle: Told the instant this worker is next waiting for, and None when
             it is waiting for nothing, each time that answer changes. The
             instant is the database's, so it is the same value until the work
@@ -418,8 +432,9 @@ async def run_workflows(
 
     Raises:
         ValueError: If ``max_concurrency`` is below one, ``lease`` or
-            ``poll_interval`` is not positive, or a ``max_idle_interval`` was
-            given that is shorter than ``poll_interval``.
+            ``poll_interval`` is not positive, a ``max_idle_interval`` was given
+            that is shorter than ``poll_interval``, or a ``listen_engine`` was
+            given for a database that suspends itself.
     """
     # A lease of nothing expires as it is taken, letting two workers run one
     # step at once; the others would leave a worker that never runs anything.
@@ -434,6 +449,16 @@ async def run_workflows(
     if max_idle_interval is not None and max_idle_interval < poll_interval:
         msg = "max_idle_interval cannot be shorter than poll_interval."
         raise ValueError(msg)
+    # Refused rather than ignored: the two together read as "listen, cheaply",
+    # and what they would do is hold the database open while asking it to sleep.
+    if suspends_when_idle and listen_engine is not None:
+        msg = (
+            "listen_engine cannot be used with suspends_when_idle: holding a "
+            "LISTEN is what keeps a database from suspending."
+        )
+        raise ValueError(msg)
+    if suspends_when_idle and max_idle_interval is None:
+        max_idle_interval = max(SUSPENDING_MAX_IDLE, poll_interval)
     runtime = Runtime(session_factory, asyncio.Event(), lease)
     previous = replace_current(runtime)
     runner = Runner(
@@ -446,13 +471,20 @@ async def run_workflows(
         on_idle,
     )
     loop = asyncio.create_task(runner.loop())
-    ear = asyncio.create_task(
-        wake_on_notify(
-            runtime,
-            [cls.__tablename__ for cls in runner.workflows],
-            listen_engine,
-            # No point trying more often than the worker would look anyway.
-            runner.max_idle_interval,
+    # No ear at all where the database suspends itself: the connection one is
+    # held on is work as far as that database is concerned, so a worker with
+    # nothing to do would keep it up for having asked to be told about nothing.
+    ear = (
+        None
+        if suspends_when_idle
+        else asyncio.create_task(
+            wake_on_notify(
+                runtime,
+                [cls.__tablename__ for cls in runner.workflows],
+                listen_engine,
+                # No point trying more often than the worker would look anyway.
+                runner.max_idle_interval,
+            )
         )
     )
     try:
@@ -472,9 +504,10 @@ async def run_workflows(
         finally:
             left = max(0.0, deadline - asyncio.get_running_loop().time())
             await runner.drain(datetime.timedelta(seconds=left))
-            ear.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await ear
+            if ear is not None:
+                ear.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await ear
             replace_current(previous)
 
 

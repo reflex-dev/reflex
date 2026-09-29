@@ -445,9 +445,8 @@ async def workflows():
 
 A worker with nothing to do asks the database when its next run comes due and sleeps
 until then, so an idle deployment stops querying rather than polling on a timer. It
-waits at most `max_idle_interval` (30 seconds by default), which is also how long it
-waits when nothing is scheduled at all. Set that above the point a managed database
-suspends itself — Neon's five minutes, say — and idle workers will not hold it open.
+waits at most `max_idle_interval` (30 seconds by default, an hour under
+`suspends_when_idle`), which is also how long it waits when nothing is scheduled at all.
 `poll_interval` is the floor instead: how soon it looks again when something is due but
 could not be taken, because a limit or this worker's own concurrency held it back.
 
@@ -462,17 +461,35 @@ A row written straight into the table announces nothing, so it waits for the nex
 wake-up: up to `max_idle_interval`. Use `start` and the workers hear about it at once.
 
 Connection poolers in transaction mode — Neon's pooled endpoint, PgBouncer — cannot
-hold a `LISTEN`, so pass `listen_engine` pointing at the direct endpoint and leave the
-pooled one to the steps:
+hold a `LISTEN`. Where notifications are worth a second connection, pass
+`listen_engine` pointing at the direct endpoint and leave the pooled one to the steps:
 
 ```python
 async with run_workflows(
     Session,
     listen_engine=create_async_engine(os.environ["REFLEX_DB_DIRECT_URL"]),
-    max_idle_interval=timedelta(minutes=10),
 ):
     yield
 ```
+
+Not on a database that suspends itself, though. The connection a `LISTEN` is held on
+is work as far as that database is concerned, so a worker with nothing to do keeps it
+awake for having asked to be told about nothing — measured on Neon, whose compute
+suspends after five idle minutes: with a listener held on the direct endpoint it never
+suspended at all, and without one it went down five minutes after the last query. Say
+so instead, and the worker listens for nothing and waits an hour rather than thirty
+seconds:
+
+```python
+async with run_workflows(Session, suspends_when_idle=True):
+    yield
+```
+
+The cost is that work another process writes — the database's own console, another
+replica — waits for the next look rather than arriving at once. Everything the table
+already knows about still comes due when it said it would, since that is what the
+worker asked about before going to sleep. Passing both `suspends_when_idle` and a
+`listen_engine` is refused rather than quietly resolved one way.
 
 A worker that is not listening — a driver that cannot, a connection that broke — waits
 the same as one that is. What it asked the database already covers every timer, retry,

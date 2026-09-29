@@ -4148,6 +4148,87 @@ async def test_a_worker_that_could_not_ask_looks_again_soon(
     assert await worker.until_something_is_due() == pytest.approx(0.02)
 
 
+async def test_a_worker_on_a_suspending_database_listens_for_nothing(
+    session_factory,
+):
+    engine = create_async_engine(ASYNC_URL)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    listened = []
+
+    try:
+        async with run_workflows(factory, workflows=[Resting], suspends_when_idle=True):
+            rt = runtime.current()
+            # A held LISTEN is a connection a database that suspends itself
+            # counts as work, so it keeps the compute up for having asked to be
+            # told about nothing. Measured on Neon: with one, it never
+            # suspended; without, five minutes after the last query.
+            await asyncio.sleep(0.4)
+            listened.append(rt.listening.is_set())
+    finally:
+        await engine.dispose()
+    assert listened == [False]
+
+
+async def test_a_suspending_database_waits_an_hour_unless_told_otherwise(
+    session_factory, monkeypatch
+):
+    built = []
+    real = runner.Runner
+
+    def remember(*args, **kwargs):
+        """Keep the worker that was built, to see what it was told to wait.
+
+        Args:
+            *args: As Runner takes them.
+            **kwargs: As Runner takes them.
+
+        Returns:
+            The worker.
+        """
+        worker = real(*args, **kwargs)
+        built.append(worker)
+        return worker
+
+    monkeypatch.setattr(runner, "Runner", remember)
+    engine = create_async_engine(ASYNC_URL)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    try:
+        async with run_workflows(factory, workflows=[Resting]):
+            pass
+        # Long against the few minutes such a database waits before going down,
+        # so most of an idle hour is spent with it down rather than woken by a
+        # worker looking.
+        async with run_workflows(factory, workflows=[Resting], suspends_when_idle=True):
+            pass
+        # Still the caller's to set, where they know better than the default.
+        async with run_workflows(
+            factory,
+            workflows=[Resting],
+            suspends_when_idle=True,
+            max_idle_interval=datetime.timedelta(minutes=5),
+        ):
+            pass
+
+        assert [worker.max_idle_interval for worker in built] == [
+            datetime.timedelta(seconds=30),
+            datetime.timedelta(hours=1),
+            datetime.timedelta(minutes=5),
+        ]
+
+        # And asking to listen cheaply on a database that charges for being up
+        # is refused rather than resolved one way without saying so.
+        with pytest.raises(ValueError, match="listen_engine cannot be used"):
+            async with run_workflows(
+                factory,
+                workflows=[Resting],
+                suspends_when_idle=True,
+                listen_engine=engine,
+            ):
+                pass
+    finally:
+        await engine.dispose()
+
+
 async def test_a_worker_that_cannot_listen_waits_as_long_as_one_that_can(
     session_factory,
 ):
