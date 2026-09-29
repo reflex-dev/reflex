@@ -353,33 +353,26 @@ class RunHandle(Generic[W]):
             ).all()
             if not stopping:
                 return 0
-            cancelled = len(
-                (
-                    await session.execute(
-                        update(cls)
-                        .where(
-                            *self.where,
-                            or_(
-                                cls.next_step.is_not(None),
-                                cls.waiting_for.is_not(None),
-                            ),
-                        )
-                        .values(
-                            next_step=None,
-                            next_args=None,
-                            wake_at=None,
-                            waiting_for=None,
-                            pending_event=None,
-                            children_left=None,
-                            # The parent stops being named, so a child cancelled
-                            # here cannot also be counted when its step lands.
-                            parent=execute.unjoin(cls),
-                            wf_version=cls.wf_version + 1,
-                        )
-                        .returning(cls.wf_version)
-                        .execution_options(synchronize_session=False)
-                    )
-                ).all()
+            # By the keys just read and locked, not by the predicate again: the
+            # update takes its own snapshot, so a run that started matching in
+            # between would be cancelled here without its parent being told
+            # below, and that parent would wait for it forever.
+            await session.execute(
+                update(cls)
+                .where(rows.pk_among(cls, [pk for *pk, _ in stopping]))
+                .values(
+                    next_step=None,
+                    next_args=None,
+                    wake_at=None,
+                    waiting_for=None,
+                    pending_event=None,
+                    children_left=None,
+                    # The parent stops being named, so a child cancelled
+                    # here cannot also be counted when its step lands.
+                    parent=execute.unjoin(cls),
+                    wf_version=cls.wf_version + 1,
+                )
+                .execution_options(synchronize_session=False)
             )
             woken = set()
             for *_pk, parent in stopping:
@@ -389,6 +382,5 @@ class RunHandle(Generic[W]):
                 woken.add(parent["table"])
             for table in sorted(woken):
                 await notify.announce(session, table)
-        if cancelled:
-            runtime.wake.set()
-        return cancelled
+        runtime.wake.set()
+        return len(stopping)

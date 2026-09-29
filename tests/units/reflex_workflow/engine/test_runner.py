@@ -10,6 +10,7 @@ import collections
 import contextlib
 import datetime
 import inspect
+import json
 import os
 import time
 import uuid
@@ -3375,6 +3376,56 @@ async def test_a_child_that_finishes_as_it_is_cancelled_counts_once(session_fact
     assert parent is not None
     assert parent.children_left == 2
     assert EVENTS.count(f"joined-report:{key}") == 0
+
+
+async def test_a_run_that_starts_matching_under_a_cancel_is_left_alone(
+    session_factory, monkeypatch
+):
+    # Cancel reads the rows it will stop, locks them, and stops them. The update
+    # used to apply the predicate a second time, under a snapshot of its own, so
+    # a run that started matching in between was cancelled without ever being
+    # read: its parent was never told it was over, and waited for a child that
+    # would never report.
+    key = uuid.uuid4().hex
+    await Joined(key=key).start(Joined.split)
+    assert await step_row(Joined, await pk_of(Joined, key)) == "ok"
+    async with session_factory() as session:
+        pointer = (
+            await session.execute(select(Leaf.parent).where(Leaf.key == f"{key}-0"))
+        ).scalar_one()
+
+    late = f"{key}-late"
+    # Hooked on the unjoin the cancel builds its update with, which it reaches
+    # after the rows are read and locked and before the update runs, whatever
+    # the update ends up matching on.
+    real = execute.unjoin
+
+    def arriving(cls):
+        # On a connection of its own, so it commits while the cancel is still
+        # open: this is the row the cancel never read and must not touch.
+        monkeypatch.setattr(execute, "unjoin", real)
+        with psycopg.connect(URL, autocommit=True) as conn:
+            conn.execute(
+                "insert into wf_test_leaf"
+                " (key, status, next_step, wake_at, attempts, wf_version, parent)"
+                " values (%s, 'new', 'work', now(), 0, 0, %s)",
+                (late, json.dumps(pointer)),
+            )
+        return real(cls)
+
+    monkeypatch.setattr(execute, "unjoin", arriving)
+    # Three children were read and locked; the fourth arrives under the cancel.
+    assert await Leaf.by(Leaf.key.like(f"{key}-%")).cancel() == 3
+
+    async with session_factory() as session:
+        left = (
+            await session.execute(
+                select(Leaf.next_step, Leaf.parent).where(Leaf.key == late)
+            )
+        ).one()
+    # Still scheduled, and still pointing at its parent, so when it runs it
+    # counts itself: the cancel neither ran it nor made it uncountable.
+    assert left == ("work", pointer)
 
 
 async def test_a_run_holding_its_answer_is_due_now(session_factory):

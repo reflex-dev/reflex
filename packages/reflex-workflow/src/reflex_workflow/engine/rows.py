@@ -10,6 +10,7 @@ import uuid
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, NamedTuple
 
+from sqlalchemy import tuple_
 from sqlalchemy.orm import Mapper, class_mapper
 
 from reflex_workflow.model import WORKFLOW_COLUMNS, Workflow
@@ -163,6 +164,26 @@ def pk_filter(cls: type[Workflow], pk: Sequence[Any]) -> list[ColumnElement[bool
         == loaded_key(column, value)
         for column, value in zip(cls_mapper.primary_key, pk, strict=True)
     ]
+
+
+def pk_among(cls: type[Workflow], keys: Sequence[Sequence[Any]]) -> ColumnElement[bool]:
+    """Build the condition that selects exactly the rows with these primary keys.
+
+    For a statement that has to act on the rows another statement read, rather
+    than on whatever matches a predicate by the time it runs.
+
+    Args:
+        cls: The workflow class.
+        keys: Each row's primary key values, in key order, as the database
+            returned them.
+
+    Returns:
+        One condition matching those rows and no others.
+    """
+    columns = mapper(cls).primary_key
+    if len(columns) == 1:
+        return columns[0].in_([key[0] for key in keys])
+    return tuple_(*columns).in_([tuple(key) for key in keys])
 
 
 def user_columns(cls: type[Workflow]) -> list[str]:
