@@ -16,11 +16,17 @@ FORM_CONTENT_WRAPPER_ID = "form_content_wrapper"
 FORM_ID = "form_id"
 
 
-def FormSubmit(form_component):
+def FormSubmit(
+    form_component,
+    form_id=FORM_ID,
+    form_content_wrapper_id=FORM_CONTENT_WRAPPER_ID,
+):
     """App with a form using on_submit.
 
     Args:
         form_component: The str name of the form component to use.
+        form_id: The form element ID.
+        form_content_wrapper_id: The non-control wrapper ID.
     """
     import reflex as rx
 
@@ -66,11 +72,11 @@ def FormSubmit(form_component):
                         on_change=rx.console_log,
                     ),
                     rx.button("Submit", type_="submit"),
-                    id=FORM_CONTENT_WRAPPER_ID,
+                    id=form_content_wrapper_id,
                 ),
                 on_submit=FormState.form_submit,
                 custom_attrs={"action": "/invalid"},
-                id=FORM_ID,
+                id=form_id,
             ),
             rx.text(FormState.form_data.to_string(), id="form-data"),
             rx.spacer(),
@@ -78,11 +84,17 @@ def FormSubmit(form_component):
         )
 
 
-def FormSubmitName(form_component):
+def FormSubmitName(
+    form_component,
+    form_id=FORM_ID,
+    form_content_wrapper_id=FORM_CONTENT_WRAPPER_ID,
+):
     """App with a form using on_submit.
 
     Args:
         form_component: The str name of the form component to use.
+        form_id: The form element ID.
+        form_content_wrapper_id: The non-control wrapper ID.
     """
     import reflex as rx
 
@@ -127,11 +139,11 @@ def FormSubmitName(form_component):
                     ),
                     rx.button("Submit", type_="submit"),
                     rx.icon_button(rx.icon(tag="plus")),
-                    id=FORM_CONTENT_WRAPPER_ID,
+                    id=form_content_wrapper_id,
                 ),
                 on_submit=FormState.form_submit,
                 custom_attrs={"action": "/invalid"},
-                id=FORM_ID,
+                id=form_id,
             ),
             rx.text(FormState.form_data.to_string(), id="form-data"),
             rx.spacer(),
@@ -247,8 +259,8 @@ async def test_submit(driver, form_submit: AppHarness):
 
     print(form_data)
 
-    assert "form_id" not in form_data
-    assert "form_content_wrapper" not in form_data
+    assert FORM_ID not in form_data
+    assert FORM_CONTENT_WRAPPER_ID not in form_data
     assert form_data["name_input"] == "foo"
     assert form_data["empty_input"] == ""
     assert form_data["bool_input"]
