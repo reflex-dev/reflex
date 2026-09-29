@@ -1,5 +1,6 @@
 """Tests for the disk state manager."""
 
+import logging
 import math
 import os
 from pathlib import Path
@@ -10,6 +11,9 @@ from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.token import BaseStateToken, StateToken
 from reflex.state import BaseState
 from reflex.utils import prerequisites
+
+CLIENT_ID = "client"
+NONEXISTENT_CLIENT_ID = "nonexistent_client"
 
 
 class DiskPersistState(BaseState):
@@ -49,7 +53,7 @@ async def test_debounced_set_state_flushes_latest_value(tmp_path, monkeypatch):
     """
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
     state_manager = StateManagerDisk(_write_debounce_seconds=60)
-    token = StateToken(ident="client", cls=int)
+    token = StateToken(ident=CLIENT_ID, cls=int)
 
     await state_manager.set_state(token, 1)
     first_item = state_manager._write_queue[token]
@@ -80,7 +84,7 @@ async def test_set_state_updates_cache_for_arbitrary_instance(
     """
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
     state_manager = StateManagerDisk(_write_debounce_seconds=write_debounce_seconds)
-    token = StateToken(ident="client", cls=dict)
+    token = StateToken(ident=CLIENT_ID, cls=dict)
     cached_state = await state_manager.get_state(token)
     state = {"value": 2}
 
@@ -110,7 +114,7 @@ async def test_set_state_persists_untouched_base_state(
     """
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
     state_manager = StateManagerDisk(_write_debounce_seconds=write_debounce_seconds)
-    token = BaseStateToken(ident="client", cls=DiskPersistState)
+    token = BaseStateToken(ident=CLIENT_ID, cls=DiskPersistState)
     state = DiskPersistState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     object.__setattr__(state, "num", 9.5)
     state.dirty_vars.clear()
@@ -135,11 +139,9 @@ async def test_load_state_logs_error_for_corrupted_file(tmp_path, monkeypatch, c
         monkeypatch: The pytest monkeypatch fixture.
         caplog: The pytest caplog fixture.
     """
-    import logging
-
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
     state_manager = StateManagerDisk(_write_debounce_seconds=0)
-    token = StateToken(ident="client", cls=dict)
+    token = StateToken(ident=CLIENT_ID, cls=dict)
 
     # Write a corrupted pickle file directly to the states directory.
     corrupted_content = b"not a valid pickle file"
@@ -152,10 +154,19 @@ async def test_load_state_logs_error_for_corrupted_file(tmp_path, monkeypatch, c
     assert result is None
 
     # Verify that an error was logged.
-    error_logs = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    error_logs = [
+        record
+        for record in caplog.records
+        if record.name == "reflex.istate.manager.disk"
+        and record.levelno >= logging.ERROR
+    ]
     assert len(error_logs) == 1
     assert "Failed to load state" in error_logs[0].message
-    assert str(token_path) in error_logs[0].message
+    assert token_path.name in error_logs[0].message
+    assert token.ident not in error_logs[0].message
+    assert "corrupted" not in error_logs[0].message
+    assert "replaced" not in error_logs[0].message
+    assert "Falling back to a default state for this load" in error_logs[0].message
 
     await state_manager.close()
 
@@ -169,18 +180,21 @@ async def test_load_state_returns_none_for_missing_file(tmp_path, monkeypatch, c
         monkeypatch: The pytest monkeypatch fixture.
         caplog: The pytest caplog fixture.
     """
-    import logging
-
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
     state_manager = StateManagerDisk(_write_debounce_seconds=0)
-    token = StateToken(ident="nonexistent_client", cls=dict)
+    token = StateToken(ident=NONEXISTENT_CLIENT_ID, cls=dict)
 
     # load_state should return None without logging an error.
     result = await state_manager.load_state(token)
     assert result is None
 
     # Verify that no error was logged.
-    error_logs = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    error_logs = [
+        record
+        for record in caplog.records
+        if record.name == "reflex.istate.manager.disk"
+        and record.levelno >= logging.ERROR
+    ]
     assert len(error_logs) == 0
 
     await state_manager.close()

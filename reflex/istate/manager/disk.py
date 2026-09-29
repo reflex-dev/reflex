@@ -159,8 +159,10 @@ class StateManagerDisk(StateManager):
                     return token.deserialize(fp=file)
             except Exception as e:
                 logger.error(
-                    f"Failed to load state for {token!r} from {token_path}: {e!r}. "
-                    "The corrupted state file will be replaced with a default state."
+                    "Failed to load state file %s: %s. "
+                    "Falling back to a default state for this load.",
+                    token_path.name,
+                    type(e).__name__,
                 )
         return None
 
