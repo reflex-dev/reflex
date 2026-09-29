@@ -266,12 +266,17 @@ class RunHandle(Generic[W]):
                 # and a caller delivering faster than the workers pass could put
                 # one off for as long as it kept delivering.
                 #
-                # The one place the engine reads the wall clock rather than
-                # now(), which Postgres freezes at the transaction's start: this
-                # statement can wait on a row lock, and the deadline it is
-                # deciding may pass while it waits. Every other comparison here
-                # wants the one time for the whole transaction; this one wants
-                # the time it actually ran.
+                # clock_timestamp() rather than now(), which Postgres freezes at
+                # the transaction's start -- and the buffering statement above
+                # runs first, so now() here is from before this had looked at the
+                # row at all. This is the statement's own time instead, which is
+                # as close as one statement gets: Postgres evaluates a volatile
+                # function once as the statement starts, and the re-check it
+                # makes after waiting on a row lock reuses that value. So a
+                # delivery that reaches the row inside the deadline and commits
+                # outside it is taken, which is the bound the README states and
+                # a test pins. Closing that needs the lock taken in a statement
+                # of its own and the deadline read in the next.
                 or_(cls.wake_at.is_(None), cls.wake_at > func.clock_timestamp()),
                 fresh,
             )
