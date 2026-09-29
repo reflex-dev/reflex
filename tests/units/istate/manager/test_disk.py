@@ -172,6 +172,51 @@ async def test_load_state_logs_error_for_corrupted_file(tmp_path, monkeypatch, c
 
 
 @pytest.mark.asyncio
+async def test_load_state_logs_sanitized_exception_details(
+    tmp_path, monkeypatch, caplog
+):
+    """Test that load errors keep diagnostic details without logging the token.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest caplog fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = StateToken(ident=CLIENT_ID, cls=dict)
+    token_path = state_manager.token_path(token)
+    token_path.parent.mkdir(parents=True, exist_ok=True)
+    token_path.write_bytes(b"existing state")
+
+    def fail_to_deserialize(cls, data=None, fp=None):
+        """Raise a representative missing-module error during state loading."""
+        module_name = "missing_state_module"
+        error_message = f"No module named '{module_name}' while loading {CLIENT_ID}"
+        raise ModuleNotFoundError(error_message)
+
+    monkeypatch.setattr(StateToken, "deserialize", classmethod(fail_to_deserialize))
+
+    assert await state_manager.load_state(token) is None
+
+    error_logs = [
+        record
+        for record in caplog.records
+        if record.name == "reflex.istate.manager.disk"
+        and record.levelno >= logging.ERROR
+    ]
+    assert len(error_logs) == 1
+    assert "ModuleNotFoundError" in error_logs[0].message
+    assert "missing_state_module" in error_logs[0].message
+    assert token.ident not in error_logs[0].message
+    assert str(token) not in error_logs[0].message
+    assert token_path.name in error_logs[0].message
+    assert "Falling back to a default state for this load" in error_logs[0].message
+
+    await state_manager.close()
+
+
+@pytest.mark.asyncio
 async def test_load_state_returns_none_for_missing_file(tmp_path, monkeypatch, caplog):
     """Test that load_state returns None without logging an error for missing files.
 
