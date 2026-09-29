@@ -4349,16 +4349,20 @@ def _unannotated_fields(namespace: Mapping[str, Any]) -> dict[str, Field]:
             factory = (
                 None if value.default_factory is MISSING else value.default_factory
             )
+            if value.default is not MISSING:
+                annotated = figure_out_type(value.default)
+            elif factory in (list, dict, set, tuple):
+                annotated = factory
+            else:
+                msg = (
+                    f"Cannot infer the type of state var {key!r} from an "
+                    "unannotated dataclasses.field(...); add a type annotation."
+                )
+                raise StateValueError(msg)
             fields[key] = Field(
                 default=value.default,
                 default_factory=factory,
-                annotated_type=(
-                    figure_out_type(value.default)
-                    if value.default is not MISSING
-                    else factory
-                    if factory in (list, dict, set, tuple)
-                    else Any
-                ),
+                annotated_type=annotated,
             )
         elif isinstance(value, Field):
             if value.annotated_type is not Any:

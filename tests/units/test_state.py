@@ -5330,6 +5330,18 @@ def test_state_unannotated_dataclasses_factory():
     assert state.items == []
 
 
+def test_state_unannotated_dataclasses_custom_factory_requires_annotation():
+    """A custom dataclass factory without an annotation raises a clear error."""
+
+    def make_items() -> list:
+        return []
+
+    with pytest.raises(StateValueError, match="add a type annotation"):
+
+        class CustomFactoryState(BaseState):
+            items = dataclasses.field(default_factory=make_items)
+
+
 def test_assignment_through_property_setter():
     """A property's setter runs instead of the undeclared-var guard."""
 
