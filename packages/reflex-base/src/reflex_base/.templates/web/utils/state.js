@@ -149,11 +149,7 @@ export const isStateful = () => {
   if (event_queue.length === 0) {
     return false;
   }
-  return event_queue.some(
-    (event) =>
-      typeof event?.name === "string" &&
-      event.name.startsWith("reflex___state"),
-  );
+  return event_queue.some(isStatefulEvent);
 };
 
 /** Append nested events to an output array in depth-first order. */
@@ -177,6 +173,14 @@ const normalizeEvents = (events) => {
   appendEvents(events, normalized);
   return normalized;
 };
+
+/**
+ * Whether an event is handled by the backend.
+ * @param event The event.
+ * @returns True if the event is for a backend event handler.
+ */
+const isStatefulEvent = (event) =>
+  typeof event?.name === "string" && event.name.startsWith("reflex___state");
 
 /**
  * Apply a delta to the state.
@@ -360,6 +364,19 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
+  if (event.name == "_dispatch_value") {
+    // A speculative update, shown until the backend sends the var.
+    const dispatchSubstate = eventLoop.dispatch[event.payload.state];
+    if (dispatchSubstate === undefined) {
+      console.warn(
+        `No state ${event.payload.state} is mounted to dispatch a value to.`,
+      );
+    } else {
+      dispatchSubstate(event.payload.delta);
+    }
+    return;
+  }
+
   if (event.name == "_set_value") {
     const ref =
       event.payload.ref in refs ? refs[event.payload.ref] : event.payload.ref;
@@ -519,7 +536,18 @@ export const queueEvents = async (
   if (prepend) {
     event_queue.unshift(...normalized);
   } else {
-    event_queue.push(...normalized);
+    for (const event of normalized) {
+      if (
+        event.name == "_dispatch_value" &&
+        event_queue.every(isStatefulEvent)
+      ) {
+        // A speculative update is shown right away, even before the socket
+        // connects, unless frontend events queued before it must run first.
+        await applyEvent(event, socket, navigate, params);
+      } else {
+        event_queue.push(event);
+      }
+    }
   }
   await processEvent(resolveSocket(socket), navigate, params);
 };

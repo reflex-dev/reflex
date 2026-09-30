@@ -501,6 +501,7 @@ export function EventLoopProvider({{ children }}) {{
   // React-tree path (e.g. ``ErrorBoundary.onError``) can call ``addEvents``.
   eventLoop.addEvents = addEventsLocal;
   eventLoop.connectErrors = connectErrors;
+  eventLoop.dispatch = dispatch;
   return useMemo(
     () =>
       createElement(

@@ -25,6 +25,7 @@ async function createQueue(connected = true) {
   const output = [];
   const runtime = await createQueueRuntime(source, {
     uploadFiles: () => output.push("upload"),
+    dispatch: { test_state: (delta) => output.push(delta.value) },
   });
   const socket = {
     connected,
@@ -90,6 +91,40 @@ test("offline stateful events hold the whole queue until reconnect", async () =>
   assert.deepEqual(q.output, [1, 2, 3]);
   assert.equal(q.runtime.event_queue.length, 0);
 });
+
+for (const frontendFirst of [false, true]) {
+  test(
+    "nested speculative updates preserve offline ordering, frontend first=" +
+      frontendFirst,
+    async () => {
+      const q = await createQueue(false);
+      await q.enqueue([stateful("backend")]);
+      await q.enqueue([
+        [],
+        [
+          null,
+          frontendFirst ? q.local("frontend") : undefined,
+          [
+            {
+              name: "_dispatch_value",
+              payload: { state: "test_state", delta: { value: "speculative" } },
+            },
+          ],
+        ],
+      ]);
+      assert.deepEqual(q.output, frontendFirst ? [] : ["speculative"]);
+      q.socket.connected = true;
+      await q.drain();
+      assert.deepEqual(
+        q.output,
+        frontendFirst
+          ? ["backend", "frontend", "speculative"]
+          : ["speculative", "backend"],
+      );
+      assert.equal(q.runtime.event_queue.length, 0);
+    },
+  );
+}
 
 test("empty and local-only queues work with absent or disconnected sockets", async () => {
   for (const socket of [null, { current: null }, { connected: false }]) {
