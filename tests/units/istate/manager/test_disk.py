@@ -1,5 +1,6 @@
 """Tests for the disk state manager."""
 
+import asyncio
 import builtins
 import io
 import math
@@ -177,3 +178,53 @@ async def test_state_files_are_not_touched_on_the_event_loop(
     await reader.close()
 
     assert on_loop == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "state_token",
+    [
+        BaseStateToken(ident="client", cls=DiskPersistState),
+        StateToken(ident="client", cls=dict),
+    ],
+    ids=["base_state", "plain"],
+)
+async def test_get_state_keeps_state_cached_during_its_disk_read(
+    tmp_path: Path, monkeypatch, state_token: StateToken
+):
+    """A get_state that missed the cache must not replace a state cached meanwhile.
+
+    The disk read yields to the event loop, so an unlocked reader can finish
+    after a locked modify_state has cached and changed the same state.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        state_token: The token under test.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    state_manager = StateManagerDisk(_write_debounce_seconds=60)
+    load_state = state_manager.load_state
+    reader_parked = asyncio.Event()
+    release_reader = asyncio.Event()
+
+    async def gated_load_state(token: StateToken):
+        loaded = await load_state(token)
+        if asyncio.current_task() is reader:
+            # Hold the reader inside its disk read while the locked modify runs.
+            reader_parked.set()
+            await release_reader.wait()
+        return loaded
+
+    monkeypatch.setattr(state_manager, "load_state", gated_load_state)
+    reader = asyncio.create_task(state_manager.get_state(state_token))
+    await reader_parked.wait()
+
+    async with state_manager.modify_state(state_token) as state:
+        pass
+    release_reader.set()
+
+    # The reader drops its stale copy, so the modified instance stays cached.
+    assert await reader is state
+    assert state_manager.states[state_token.cache_key] is state
+    await state_manager.close()

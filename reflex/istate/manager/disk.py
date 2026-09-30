@@ -228,14 +228,14 @@ class StateManagerDisk(StateManager):
                 # Ensure all substates exist, even if they were not serialized previously.
                 root_state.substates = fresh_root_state.substates
             await self.populate_substates(token, root_state, root_state)
-            self.states[token.cache_key] = root_state
-            return cast(TOKEN_TYPE, root_state)
+            # The disk reads yield to the event loop, so a concurrent get_state or
+            # modify_state may have cached this state meanwhile; keep that one.
+            return cast(TOKEN_TYPE, self.states.setdefault(token.cache_key, root_state))
         # For non-BaseState tokens, if the deserialized state is None, we create a new instance using the token's cls.
         state = await self.load_state(token)
         if state is None:
             state = token.cls()
-        self.states[token.cache_key] = state
-        return cast(TOKEN_TYPE, state)
+        return cast(TOKEN_TYPE, self.states.setdefault(token.cache_key, state))
 
     async def set_state_for_substate(
         self, token: StateToken[TOKEN_TYPE], substate: TOKEN_TYPE
