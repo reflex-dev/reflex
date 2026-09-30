@@ -1,5 +1,7 @@
 # Reflex Docs
 
+Run the docs app with **Python 3.11+**. The XY demonstrations require it; the conditional XY dependency keeps the shared workspace resolvable for the framework's Python 3.10 tests.
+
 ## Getting Started
 
 1. Install dependencies:
@@ -19,6 +21,12 @@ uv run reflex run
 ## Editing Docs
 
 Markdown docs live in the parent `docs/` directory (one level above `app/`). Edit any `.md` file there and the dev server will pick up the changes so you can preview them live in the app.
+
+Ordinary Markdown pages may set a descriptive `title` and `meta_description` in
+YAML frontmatter. The title supplies the page's search/browser title; it does not
+change the file-derived route or the short navigation label. Add new guides to
+the appropriate sidebar and link them from related pages so readers can find them.
+For component-library pages, the frontmatter title also supplies the sidebar label.
 
 ## Page Whitelist (Faster Dev Builds)
 
@@ -59,8 +67,6 @@ The `reflex-docs` integration CI jobs run the frontend tests after building the 
 Public URLs use `deploy_url` and `frontend_path`. Keep the default localhost origin expected by the Helm sitemap rewrite; environments may override `REFLEX_DEPLOY_URL`. The `/docs` mount is configured separately.
 
 The docs app serves permanent HTTP 301 redirects for its legacy URLs when the Reflex backend serves the frontend. In development or when HTML is hosted separately, requests reach the frontend instead: the redirect pages retain client navigation and prerendered HTML includes an immediate refresh, canonical link, noindex directive, and a usable destination link. That fallback navigates readers but returns HTTP 200. For HTTP 301 semantics on a separate frontend/CDN, configure redirects at that host's edge using the `redirects` list in `reflex_docs/reflex_docs.py`; backend middleware alone cannot redirect requests it never receives.
-
-Docs pages intentionally omit the marketing site's pixels and session recording scripts. Search, examples, newsletter signup, and status information remain available.
 
 The docs config enables `frontend_lazy_bundled_libraries`. Optional libraries registered for dynamic components load on the first dynamic-component evaluation, while React and the shared runtime stay available immediately. This prevents the full Radix namespace from being imported on every page. The framework default remains `False`; custom scripts that read optional libraries from `window.__reflex` directly should retain that default or await `window.__reflex_load()` first.
 

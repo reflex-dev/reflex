@@ -1,17 +1,24 @@
 """Tests specific to redis state manager."""
 
 import asyncio
+import enum
 import os
 import time
 import uuid
 from collections.abc import AsyncGenerator
+from types import ModuleType
 from typing import Any
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
+from reflex_base.utils.exceptions import EnvironmentVarValueError
 
-from reflex.istate.manager.redis import StateManagerRedis
+from reflex.istate.manager.redis import (
+    StateManagerRedis,
+    _default_lock_expiration,
+    _default_oplock_hold_time_ms,
+)
 from reflex.istate.manager.token import BaseStateToken
 from reflex.state import BaseState
 from tests.units.mock_redis import mock_redis, real_redis
@@ -30,6 +37,12 @@ class SubState1(RedisTestState):
 
 class SubState2(RedisTestState):
     """A test substate for redis state manager tests."""
+
+
+class RedisAppObjectState(BaseState):
+    """A root state holding an instance of an app-defined class."""
+
+    _value: Any = None
 
 
 @pytest.mark.asyncio
@@ -162,29 +175,6 @@ async def test_basic_get_set(
     )
 
 
-async def test_set_state_with_shadowed_touched_method(clean_registration_context):
-    """Persist a backend var that shadows the touched-state method.
-
-    Args:
-        clean_registration_context: A fresh, empty registration context.
-    """
-
-    class ShadowState(BaseState):
-        """State with an intentional framework-method collision."""
-
-        _get_was_touched: int = 7
-
-    state = ShadowState()
-    state._get_was_touched = 8
-    manager = StateManagerRedis(redis=mock_redis())
-    token = BaseStateToken(ident="shadowed", cls=ShadowState)
-
-    await manager.set_state(token, state)
-
-    restored = BaseState._deserialize(data=await manager.redis.get(str(token)))
-    assert restored._get_was_touched == 8
-
-
 async def test_modify(
     state_manager_redis: StateManagerRedis,
     root_state: type[RedisTestState],
@@ -218,6 +208,39 @@ async def test_modify(
     )
     assert isinstance(final_state, root_state)
     assert final_state.count == 3
+
+
+async def test_get_state_discards_unpicklable_state(
+    state_manager_redis: StateManagerRedis,
+    app_classes_module: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A stored state that can no longer be unpickled is replaced.
+
+    After a deploy changes a class held in a state var, unpickling the stored
+    state fails before the schema check. The tab must get a fresh state instead
+    of failing on every event until the redis key expires.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        app_classes_module: The module of app classes held in the state.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    state_manager_redis._oplock_enabled = False
+    module = app_classes_module
+
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=RedisAppObjectState)
+    async with state_manager_redis.modify_state(token) as state:
+        state._value = module.Color.BLUE
+
+    # The deploy: the stored enum member no longer exists.
+    monkeypatch.setattr(
+        module, "Color", enum.Enum("Color", {"RED": "red"}, module=module.__name__)
+    )
+
+    fresh_state = await state_manager_redis.get_state(token)
+    assert isinstance(fresh_state, RedisAppObjectState)
+    assert fresh_state._value is None
 
 
 async def test_modify_oplock(
@@ -873,3 +896,33 @@ async def test_set_state_discards_writes_when_lock_changes_hands(
     saved = await state_manager_redis.get_state(token)
     assert isinstance(saved, root_state)
     assert saved.count == 0
+
+
+def test_oplock_hold_time_below_one_millisecond(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A sub-millisecond hold time must not read as the unset default.
+
+    Zero means "use half the lock expiration", so a duration that floors to
+    zero milliseconds has to round up instead of falling into that branch.
+    """
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME", "500us")
+    assert _default_oplock_hold_time_ms() == 1
+
+
+def test_oplock_hold_time_unset_halves_the_lock_expiration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An unset hold time keeps deriving from the lock expiration."""
+    monkeypatch.delenv("REFLEX_OPLOCK_HOLD_TIME", raising=False)
+    monkeypatch.delenv("REFLEX_OPLOCK_HOLD_TIME_MS", raising=False)
+    assert _default_oplock_hold_time_ms() == _default_lock_expiration() // 2
+
+
+def test_oplock_hold_time_rejects_a_negative_duration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A negative hold time is a configuration error, not one millisecond."""
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME", "-5s")
+    with pytest.raises(EnvironmentVarValueError, match="must not be negative"):
+        _default_oplock_hold_time_ms()

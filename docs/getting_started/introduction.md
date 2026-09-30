@@ -289,4 +289,8 @@ Create the app and register the page at the base route.
 - [Reflex Cloud](/docs/hosting/deploy-quick-start/) — one-command deploy.
 ```
 
+### Choose an application example
+
+Explore [what you can build with Reflex](/docs/getting-started/what-you-can-build/) for working dashboard, linked-chart, AI chat, and model-interface examples.
+
 Press `Cmd+K` / `Ctrl+K` to search the docs.

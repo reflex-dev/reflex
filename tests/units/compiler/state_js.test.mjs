@@ -95,6 +95,7 @@ async function setup({
   }
   const imports = {
     "socket.io-client": { default: io },
+    mergician: { mergician() {} },
     "$/env.json": {
       default: { EVENT: "ws://localhost:8000/_event", TRANSPORT: "websocket" },
     },
