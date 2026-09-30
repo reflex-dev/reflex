@@ -120,12 +120,14 @@ class RadixThemesComponent(Component):
             A new component instance.
         """
         component = super().create(*children, **props)
+        updates: dict[str, Any] = {
+            "alias": "RadixThemes" + (component.tag or type(component).__name__),
+        }
         if component.library is None:
-            component.library = RadixThemesComponent.get_fields()[
+            updates["library"] = RadixThemesComponent.get_fields()[
                 "library"
             ].default_value()
-        component.alias = "RadixThemes" + (component.tag or type(component).__name__)
-        return component
+        return component.copy_with(**updates)
 
     @staticmethod
     def _get_app_wrap_components() -> dict[tuple[int, str], Component]:

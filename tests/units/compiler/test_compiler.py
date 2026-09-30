@@ -795,7 +795,7 @@ def test_add_meta_accepts_dynamic_description():
         description: str = "Dynamic description"
 
     page = rx.box()
-    utils.add_meta(
+    page = utils.add_meta(
         page,
         title="title",
         image="",
@@ -811,7 +811,7 @@ def test_add_meta_accepts_dynamic_description():
 def test_add_meta_drops_empty_description():
     """An empty-string description keeps producing no description tag."""
     page = rx.box()
-    utils.add_meta(
+    page = utils.add_meta(
         page,
         title="title",
         image="",

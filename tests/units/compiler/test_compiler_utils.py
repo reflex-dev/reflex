@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 
 import pytest
+from reflex_base.components.component import Component
 from reflex_base.registry import RegistrationContext
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.base.script import Script
@@ -194,3 +195,21 @@ def test_document_root_controls_preserve_no_id_and_page_refs():
 
     assert not document_root._get_all_hooks()
     assert page_script._get_all_hooks()
+
+
+def test_document_root_literalizes_component_prop_ids():
+    """Head components passed through props lose refs only on the compiled copy."""
+
+    class HeadContainer(Component):
+        tag = "HeadContainer"
+        content: Component
+
+    script = Script.create(src="/probe.js", id="prop-probe")
+    head = HeadContainer.create(content=script)
+    result = utils._without_static_id_refs(head)
+
+    assert not result._get_all_hooks()
+    assert 'id:"prop-probe"' in str(result.render())
+    assert "ref_prop_probe" not in str(result.render())
+    assert script._get_all_hooks()
+    assert "ref_prop_probe" in str(head.render())

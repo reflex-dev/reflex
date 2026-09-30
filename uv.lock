@@ -4475,10 +4475,14 @@ name = "reflex-components-internal"
 source = { editable = "packages/reflex-components-internal" }
 dependencies = [
     { name = "reflex" },
+    { name = "reflex-base" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "reflex", editable = "." }]
+requires-dist = [
+    { name = "reflex", editable = "." },
+    { name = "reflex-base", editable = "packages/reflex-base" },
+]
 
 [[package]]
 name = "reflex-components-lucide"

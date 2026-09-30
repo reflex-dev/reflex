@@ -433,7 +433,7 @@ def test_memo_nonkey_base_prop_dropped_from_render_without_rest():
         return rx.box(rx.text(title))
 
     component = dropper(title="hi")
-    component.class_name = Var.create("leaks")  # set past the call-site gate
+    component = component.copy_with(class_name=Var.create("leaks"))
 
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     segments = memo_paths.module_to_mirrored_segments(__name__)
@@ -1548,7 +1548,7 @@ def test_component_returning_memo_is_transparent_for_child_validation():
     parent = ValidParent.create(wrapped_child)
 
     assert isinstance(wrapped_child, MemoComponent)
-    assert parent.children == [wrapped_child]
+    assert parent.children == (wrapped_child,)
 
 
 def test_compile_memo_components_includes_experimental_custom_code():

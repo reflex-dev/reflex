@@ -311,10 +311,11 @@ class Form(BaseHTML):
         props["handle_submit_unique_name"] = ""
         form = super().create(*children, **props)
         form._validate_on_submit_typed_dict_fields()  # pyright: ignore[reportAttributeAccessIssue]
-        form.handle_submit_unique_name = md5(  # pyright: ignore[reportAttributeAccessIssue]
-            str(form._get_all_hooks()).encode("utf-8")
-        ).hexdigest()
-        return form
+        return form.copy_with(
+            handle_submit_unique_name=md5(
+                str(form._get_all_hooks()).encode("utf-8")
+            ).hexdigest()
+        )
 
     def add_imports(self) -> ImportDict:
         """Add imports needed by the form component.

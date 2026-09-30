@@ -17,7 +17,7 @@ from typing import Any, TypedDict
 from urllib.parse import urlparse
 
 from reflex_base import constants
-from reflex_base.components.component import BaseComponent, Component, ComponentStyle
+from reflex_base.components.component import Component, ComponentStyle
 from reflex_base.components.dynamic import _bundle_imports
 from reflex_base.components.memo import (
     DEFAULT_MEMO_WRAPPER,
@@ -402,33 +402,25 @@ def _apply_component_style_for_compile(component: Component) -> Component:
     Returns:
         The styled component tree.
     """
-    component._add_style_recursive(_app_style())
-    return component
+    return component._add_style_recursive(_app_style())
 
 
-def _apply_root_style(component: Component) -> None:
+def _apply_root_style(component: Component) -> Component:
     """Merge app-level style into ``component.style`` without recursing.
 
     Used for passthrough memo bodies where descendants render (and are styled)
     in the page scope — only the root's style needs merging here.
 
     Args:
-        component: The root component to style in place.
+        component: The root component to style.
+
+    Returns:
+        A component with the root style applied; the same instance if nothing changed.
     """
-    if type(component)._add_style != Component._add_style:
-        msg = "Do not override _add_style directly. Use add_style instead."
-        raise UserWarning(msg)
-    style = _app_style()
-    new_style = component._add_style()
-    style_vars = [new_style._var_data]
-    component_style = component._get_component_style(style)
-    if component_style:
-        new_style.update(component_style)
-        style_vars.append(component_style._var_data)
-    new_style.update(component.style)
-    style_vars.append(component.style._var_data)
-    new_style._var_data = VarData.merge(*style_vars)
-    component.style = new_style
+    new_style = component._merge_app_style(_app_style())
+    if new_style is None:
+        return component
+    return component.copy_with(style=new_style)
 
 
 def _app_style() -> ComponentStyle | Style:
@@ -496,30 +488,20 @@ def compile_experimental_component_memo(
     """
     hole_child = definition.passthrough_hole_child
     if hole_child is not None:
-        # Passthrough memo: shallow-copy the root only — ``render.children``
-        # still aliases the user-authored descendants so root-level walkers
-        # (e.g. ``Form._get_form_refs``) can introspect the real subtree, but
-        # we skip the O(n) deepcopy + recursive style pass. Descendants are
-        # rendered AND styled in the page scope, not here, so only the root
-        # needs app-level style merged.
-        render = copy.copy(definition.component)
-        _apply_root_style(render)
+        # Passthrough memo: descendants render (and are styled) in the page
+        # scope, so only the root needs app-level style merged.
+        styled_root = _apply_root_style(definition.component)
 
-        hooks = _root_only_hooks(render)
-        custom_code = _root_only_custom_code(render)
-        dynamic_imports = _root_only_dynamic_imports(render)
-        # Strings returned by the root's ``add_hooks`` can reference symbols
-        # (``refs``, ``StateContexts``, etc.) that normally reach this module
-        # through descendants' ``_get_hooks_imports`` / ``_get_imports``. JS
-        # imports are side-effect-free and dedup cleanly, so pulling the
-        # whole subtree's imports here is safe even when some go unused.
-        # ``_get_all_imports`` is read-only on the descendants, so the shallow
-        # aliasing above is fine.
-        all_imports = render._get_all_imports()
+        hooks = _root_only_hooks(styled_root)
+        custom_code = _root_only_custom_code(styled_root)
+        dynamic_imports = _root_only_dynamic_imports(styled_root)
+        # Pull imports from the whole subtree: the root's ``add_hooks`` strings
+        # can reference symbols (``refs``, ``StateContexts``, …) that normally
+        # arrive via descendants' imports. JS imports dedup cleanly, so over-
+        # including is safe.
+        all_imports = styled_root._get_all_imports()
 
-        # Swap children for JSX render: the memo body template emits a
-        # ``{children}`` hole in place of the real descendants.
-        render.children = [hole_child]
+        render = styled_root.copy_with(children=(hole_child,))
         rendered = render.render()
     else:
         render = _apply_component_style_for_compile(copy.deepcopy(definition.component))
@@ -678,20 +660,30 @@ def compile_experimental_function_memo(
     )
 
 
-def _literalize_static_ids(component: BaseComponent) -> None:
+def _literalize_static_ids(component: Component) -> Component:
     """Replace static component IDs with literal variables, recursively.
 
     Args:
-        component: The component or nested component to update in place.
+        component: The component or nested component to copy.
+
+    Returns:
+        A component with static IDs replaced, sharing unchanged subtrees.
     """
-    if not isinstance(component, Component):
-        return
+    updates: dict[str, Any] = {}
     if component.id is not None and not isinstance(component.id, Var):
-        component.id = Var.create(component.id)
-    for child in component.children:
-        _literalize_static_ids(child)
-    for child in component._get_components_in_props():
-        _literalize_static_ids(child)
+        updates["id"] = Var.create(component.id)
+    children = tuple(
+        _literalize_static_ids(child) if isinstance(child, Component) else child
+        for child in component.children
+    )
+    if any(a is not b for a, b in zip(children, component.children, strict=True)):
+        updates["children"] = children
+    for prop, value in component._iter_set_props():
+        if isinstance(value, Component):
+            updated = _literalize_static_ids(value)
+            if updated is not value:
+                updates[prop] = updated
+    return component.copy_with(**updates) if updates else component
 
 
 def _without_static_id_refs(component: Component) -> Component:
@@ -709,9 +701,7 @@ def _without_static_id_refs(component: Component) -> Component:
     """
     if not component._get_all_refs():
         return component
-    component = copy.deepcopy(component)
-    _literalize_static_ids(component)
-    return component
+    return _literalize_static_ids(component)
 
 
 def create_document_root(
@@ -967,15 +957,12 @@ def add_meta(
         item if isinstance(item, Component) else Meta.create(**item) for item in meta
     ]
 
-    children: list[Any] = [Title.create(title)]
+    extras: list[Any] = [Title.create(title)]
     if is_page_meta_set(description):
-        children.append(Description.create(content=description))
-    children.append(Image.create(content=image))
+        extras.append(Description.create(content=description))
+    extras.append(Image.create(content=image))
 
-    page.children.extend(children)
-    page.children.extend(meta_tags)
-
-    return page
+    return page.copy_with(children=(*page.children, *extras, *meta_tags))
 
 
 def resolve_path_of_web_dir(path: str | Path) -> Path:

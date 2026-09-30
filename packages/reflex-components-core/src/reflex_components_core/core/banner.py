@@ -361,6 +361,7 @@ class BackendDisabled(Div):
         )
 
         info_message = el.div(
+            warning_icon,
             el.span(
                 "If you are the owner of this app, visit ",
                 el.a(
@@ -392,8 +393,6 @@ class BackendDisabled(Div):
             background_color=color("amber", 3),
             padding="0.625rem",
         )
-        # Prepend warning icon into info_message children
-        info_message.children.insert(0, warning_icon)
 
         resume_button = el.a(
             el.button(

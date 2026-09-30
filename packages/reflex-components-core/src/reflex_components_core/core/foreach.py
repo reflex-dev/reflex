@@ -112,14 +112,15 @@ class Foreach(Component):
         )
         try:
             # Keep a ref to a rendered component to determine correct imports/hooks/styles.
-            component.children = [component._render().render_component()]
+            return component.copy_with(
+                children=(component._render().render_component(),)
+            )
         except UntypedVarError as e:
             raise UntypedVarError(
                 iterable,
                 "foreach",
                 "https://reflex.dev/docs/library/dynamic-rendering/foreach/",
             ).with_traceback(e.__traceback__) from None
-        return component
 
     def _render(self) -> IterTag:
         props = {}
