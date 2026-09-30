@@ -20,6 +20,7 @@ from reflex_base.config import Config
 from reflex_base.environment import environment
 from reflex_base.utils import log
 from reflex_base.utils.decorator import cached_procedure
+from reflex_base.utils.exceptions import EnvironmentVarValueError
 
 from reflex.reflex import cli
 from reflex.testing import chdir
@@ -2480,17 +2481,18 @@ def test_get_redis_rejects_cap_without_command_headroom(
 ):
     """The two token pub/sub listeners cannot occupy every connection."""
     monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", cap)
-    with pytest.raises(ValueError, match="at least 3"):
+    with pytest.raises(EnvironmentVarValueError, match="at least 3"):
         prerequisites.get_redis()
 
 
-def test_get_redis_rejects_pool_wait_longer_than_state_lock(
-    redis_url: str, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize("timeout", ["0", "10", "20"])
+def test_get_redis_rejects_pool_wait_outside_state_lock(
+    redis_url: str, monkeypatch: pytest.MonkeyPatch, timeout: str
 ):
-    """A saturated pool cannot wait past the state-lock lifetime."""
+    """A saturated pool must wait, but not past the state-lock lifetime."""
     monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
-    monkeypatch.setenv("REFLEX_REDIS_POOL_TIMEOUT", "20")
-    with pytest.raises(ValueError, match="shorter than"):
+    monkeypatch.setenv("REFLEX_REDIS_POOL_TIMEOUT", timeout)
+    with pytest.raises(EnvironmentVarValueError, match="greater than 0"):
         prerequisites.get_redis()
 
 
