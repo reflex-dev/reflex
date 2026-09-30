@@ -24,9 +24,6 @@ logger = logging.getLogger(__name__)
 
 # How many log lines `apps logs --follow` prints before prompting for more.
 _LOGS_PAGE_SIZE = 100
-_LATEST_DEPLOYMENT_KEY = "latest_deployment"
-_STATUS_KEY = "status"
-_URL_KEY = "url"
 
 
 @click.group()
@@ -979,18 +976,10 @@ def inspect_app(
 
         # Keep JSON output complete while shortening nested data in the table.
         table_info = app_info.copy()
-        latest_deployment = table_info.get(_LATEST_DEPLOYMENT_KEY)
-        if isinstance(latest_deployment, dict):
-            deployment_summary = []
-            status = latest_deployment.get(_STATUS_KEY)
-            url = latest_deployment.get(_URL_KEY)
-            if status is not None:
-                deployment_summary.append(str(status))
-            if url is not None:
-                deployment_summary.append(
-                    f"({url})" if status is not None else str(url)
-                )
-            table_info[_LATEST_DEPLOYMENT_KEY] = " ".join(deployment_summary) or "-"
+        if deployment := table_info["latest_deployment"]:
+            table_info["latest_deployment"] = (
+                f"{deployment['status']} ({deployment['url']})"
+            )
 
         console.print_table(
             [[str(value) for value in table_info.values()]],

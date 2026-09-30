@@ -19,8 +19,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _Command = TypeVar("_Command", bound=Callable[..., Any])
-_TIER_KEY = "tier"
-_NAME_KEY = "name"
 
 _loglevel_option = click.option(
     "--loglevel",
@@ -342,9 +340,7 @@ def get_projects(
     if not as_json:
         # Keep JSON complete; show only the tier label in the text table.
         for project in rows:
-            tier = project.get(_TIER_KEY)
-            if isinstance(tier, dict) and tier.get(_NAME_KEY) is not None:
-                project[_TIER_KEY] = tier[_NAME_KEY]
+            project["tier"] = project["tier"]["name"]
 
     _print_rows(rows, as_json)
 

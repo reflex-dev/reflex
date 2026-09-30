@@ -10,7 +10,13 @@ import pytest
 from click.testing import CliRunner
 from pytest_mock import MockerFixture, MockFixture
 from reflex_base.utils.log import SUCCESS
-from reflex_build_sdk.types import App, AppSummary, DeploymentRecord, LogRecord
+from reflex_build_sdk.types import (
+    App,
+    AppDeployment,
+    AppSummary,
+    DeploymentRecord,
+    LogRecord,
+)
 from reflex_cli.core.config import Config
 from reflex_cli.utils import hosting
 from reflex_cli.v2.apps import _resolve_app_id, apps_cli
@@ -181,67 +187,68 @@ def test_app_history_success(mocker: MockFixture):
     mock_console_print_table.assert_called_once()
 
 
+def app_deployment() -> AppDeployment:
+    """Build the deployment serving an app's production environment.
+
+    Returns:
+        The deployment.
+    """
+    return AppDeployment(
+        id=_DEPLOYMENT_ID,
+        url="https://example.com",
+        status="Running",
+        pause_reason=None,
+        reflex_version="0.9.0",
+        python_version="3.12",
+        created_at=datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc),
+        regions=["sjc"],
+        vm_type_name="c1m1",
+        vm_type_cpu=1.0,
+        vm_type_ram=1.0,
+        strategy="immediate",
+        persistent=False,
+        screenshot_uri=None,
+        updated_at=None,
+        updated_by=None,
+    )
+
+
 @pytest.mark.parametrize(
     ("latest_deployment", "expected_summary"),
-    [
-        (
-            {
-                "id": str(_DEPLOYMENT_ID),
-                "status": "success",
-                "url": "https://example.com",
-                "vm_type_name": "small",
-            },
-            "success (https://example.com)",
-        ),
-        ({"status": "success", "url": None}, "success"),
-        ({"status": None, "url": "https://example.com"}, "https://example.com"),
-        ({"id": str(_DEPLOYMENT_ID), "vm_type_name": "small"}, "-"),
-    ],
+    [(app_deployment(), "Running (https://example.com)"), (None, "None")],
 )
 def test_inspect_app_table_summarizes_latest_deployment(
     mocker: MockFixture,
-    latest_deployment: dict[str, str | None],
+    latest_deployment: AppDeployment | None,
     expected_summary: str,
 ):
     """The text table summarizes a deployment instead of printing its full object."""
     client = _authed(mocker)
-    client.api.apps.get.return_value = {
-        "id": str(_APP_ID),
-        "latest_deployment": latest_deployment,
-    }
+    client.api.apps.get.return_value = app(latest_deployment=latest_deployment)
     mock_console_print_table = mocker.patch("reflex_cli.utils.console.print_table")
 
     result = runner.invoke(hosting_cli, ["apps", "inspect", str(_APP_ID)])
 
     assert result.exit_code == 0, result.output
-    client.api.apps.get.assert_called_once_with(str(_APP_ID))
-    mock_console_print_table.assert_called_once_with(
-        [[str(_APP_ID), expected_summary]],
-        headers=["id", "latest_deployment"],
+    (rows,), kwargs = mock_console_print_table.call_args
+    assert (
+        dict(zip(kwargs["headers"], rows[0], strict=True))["latest_deployment"]
+        == expected_summary
     )
 
 
 def test_inspect_app_json_preserves_latest_deployment(mocker: MockFixture):
     """JSON output retains all latest deployment fields."""
     client = _authed(mocker)
-    latest_deployment = {
-        "id": str(_DEPLOYMENT_ID),
-        "status": "success",
-        "url": "https://example.com",
-        "vm_type_name": "small",
-    }
-    client.api.apps.get.return_value = {
-        "id": str(_APP_ID),
-        "latest_deployment": latest_deployment,
-    }
+    deployment = app_deployment()
+    client.api.apps.get.return_value = app(latest_deployment=deployment)
 
     result = runner.invoke(hosting_cli, ["apps", "inspect", str(_APP_ID), "--json"])
 
     assert result.exit_code == 0, result.output
-    assert json.loads(result.stdout) == {
-        "id": str(_APP_ID),
-        "latest_deployment": latest_deployment,
-    }
+    assert json.loads(result.stdout)["latest_deployment"] == hosting.as_json_document(
+        deployment
+    )
 
 
 def test_app_history_as_json(mocker: MockFixture):
