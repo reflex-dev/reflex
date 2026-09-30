@@ -501,6 +501,7 @@ def get_redis() -> Redis | None:
         max_connections=max_connections,
         timeout=timeout,
         retry_on_error=[RedisError],
+        **_redis_driver_kwargs(),
     )
     return Redis.from_pool(pool)
 
