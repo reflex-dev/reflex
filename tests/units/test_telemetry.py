@@ -907,10 +907,20 @@ def test_shutdown_executor_keeps_the_pool_published_until_it_stops(
 
 def test_shutdown_executor_gives_up_on_a_stalled_task():
     """A send that hangs (e.g. on DNS) cannot block the fork past the timeout."""
+    running = threading.Event()
     release = threading.Event()
+
+    def stall():
+        running.set()
+        release.wait(10)
+
     executor = telemetry._get_telemetry_executor()
-    stalled = executor.submit(release.wait, 10)
+    workers = list(executor._threads)
+    executor.submit(stall)
     queued = executor.submit(lambda: None)
+    # Only a task the worker has picked up keeps it alive; a queued one would
+    # just be cancelled.
+    assert running.wait(5)
     started = time.monotonic()
     try:
         # The stalled send's thread is still alive, so forking is unsafe.
@@ -918,7 +928,8 @@ def test_shutdown_executor_gives_up_on_a_stalled_task():
         elapsed = time.monotonic() - started
     finally:
         release.set()
-        stalled.result(timeout=5)
+        for worker in workers:
+            worker.join(5)
 
     assert elapsed < 2
     assert telemetry._executor is None
