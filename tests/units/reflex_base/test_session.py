@@ -52,6 +52,11 @@ def _signed_token(header, claims, secret=SECRET):
 
 
 def test_round_trip_and_public_session(manager):
+    """Round-trip immutable sessions without exposing private identifiers or keys.
+
+    Args:
+        manager: The session codec fixture.
+    """
     session = manager.create()
     encoded = manager.encode(session)
     decoded = manager.decode(encoded)
@@ -77,6 +82,12 @@ def test_round_trip_and_public_session(manager):
     "token", ["", "x", "x.y", "x.y.z.w", "x.y.z", "!.e30.AA", "e30.é.AA", "a" * 4097]
 )
 def test_decode_malformed(manager, token):
+    """Reject malformed session credentials.
+
+    Args:
+        manager: The session codec fixture.
+        token: The malformed credential.
+    """
     assert manager.decode(token) is None
 
 
@@ -101,6 +112,13 @@ def test_decode_malformed(manager, token):
     ],
 )
 def test_decode_rejects_invalid_claims(manager, field, value):
+    """Reject signed credentials with invalid claim values.
+
+    Args:
+        manager: The session codec fixture.
+        field: The claim to replace.
+        value: The invalid claim value.
+    """
     claims = {"v": 1, "sid": "a" * 32, "iat": 1000, "exp": 1100}
     claims[field] = value
     header = {"alg": "HS256", "kid": next(iter(manager._keys))}
@@ -119,11 +137,22 @@ def test_decode_rejects_invalid_claims(manager, field, value):
     ],
 )
 def test_decode_rejects_wrong_algorithm_or_key(manager, header):
+    """Reject unsupported algorithms, unknown keys, and malformed headers.
+
+    Args:
+        manager: The session codec fixture.
+        header: The invalid JWT header.
+    """
     claims = {"v": 1, "sid": "a" * 32, "iat": 1000, "exp": 1100}
     assert manager.decode(_signed_token(header, claims)) is None
 
 
 def test_decode_rejects_bad_signature_and_nonobject_claims(manager):
+    """Reject incorrect signatures and claims that are not objects.
+
+    Args:
+        manager: The session codec fixture.
+    """
     header = {"alg": "HS256", "kid": next(iter(manager._keys))}
     claims = {"v": 1, "sid": "a" * 32, "iat": 1000, "exp": 1100}
     assert manager.decode(_signed_token(header, claims, OTHER_SECRET)) is None
@@ -131,6 +160,12 @@ def test_decode_rejects_bad_signature_and_nonobject_claims(manager):
 
 
 def test_refresh_keeps_existing_client_bindings(manager, monkeypatch):
+    """Refresh at the configured age without changing client token ownership.
+
+    Args:
+        manager: The session codec fixture.
+        monkeypatch: The clock override fixture.
+    """
     session = manager.create()
     client_token = manager.create_client_token(session)
     monkeypatch.setattr("reflex_base.session.time.time", lambda: 1049)
@@ -148,6 +183,11 @@ def test_refresh_keeps_existing_client_bindings(manager, monkeypatch):
 
 
 def test_client_token_binding_and_format(manager):
+    """Verify client token formatting, session ownership, and trusted access.
+
+    Args:
+        manager: The session codec fixture.
+    """
     session, other_session = manager.create(), manager.create()
     token = manager.create_client_token(session)
     nonce, signature = token.split(".")
@@ -164,12 +204,23 @@ def test_client_token_binding_and_format(manager):
     ["", "abc", "legacy_uuid", "a" * 32 + "." + "b" * 31, "é" * 65, "a" * 10_000],
 )
 def test_invalid_client_tokens_are_not_cached(manager, token):
+    """Keep invalid client tokens out of the authorization cache.
+
+    Args:
+        manager: The session codec fixture.
+        token: The invalid client token.
+    """
     session = manager.create()
     assert not session.authorizes(token)
     assert not session._authorized
 
 
 def test_authorization_cache_is_bounded_and_skips_hmac(manager):
+    """Bound successful authorization caching and reuse verified signatures.
+
+    Args:
+        manager: The session codec fixture.
+    """
     session = manager.create()
     token = manager.create_client_token(session)
     assert session.authorizes(token)
@@ -184,6 +235,11 @@ def test_authorization_cache_is_bounded_and_skips_hmac(manager):
 
 
 def test_key_rotation(manager):
+    """Rotate signing keys while retaining verified client token bindings.
+
+    Args:
+        manager: The session codec fixture using the original key.
+    """
     session = manager.create()
     old_cookie = manager.encode(session)
     old_client = manager.create_client_token(session)
@@ -202,6 +258,11 @@ def test_key_rotation(manager):
 
 
 def test_secrets_load_lazily_and_cookies_are_app_specific(monkeypatch):
+    """Isolate cookie names by app without eagerly reading signing secrets.
+
+    Args:
+        monkeypatch: The test environment fixture.
+    """
     with patch(
         "reflex_base.session._load_secrets",
         side_effect=AssertionError("eager secret read"),
@@ -229,6 +290,12 @@ def test_unknown_signing_key_warns_once(manager, caplog):
 
 
 def test_environment_key_ring_does_not_write_files(tmp_path, monkeypatch):
+    """Use configured signing keys without creating a persisted secret.
+
+    Args:
+        tmp_path: The isolated working directory.
+        monkeypatch: The environment override fixture.
+    """
     monkeypatch.setenv("REFLEX_SESSION_SECRET", "a" * 32 + ", " + "b" * 32)
     monkeypatch.setenv("REFLEX_WEB_WORKDIR", str(tmp_path / ".web"))
     assert _load_secrets() == (SECRET, OTHER_SECRET)
@@ -237,6 +304,12 @@ def test_environment_key_ring_does_not_write_files(tmp_path, monkeypatch):
 
 @pytest.mark.parametrize("value", ["short", "a" * 32 + ",", "," + "b" * 32])
 def test_invalid_secret_never_discloses_its_value(monkeypatch, value):
+    """Reject invalid configured secrets without including them in errors.
+
+    Args:
+        monkeypatch: The environment override fixture.
+        value: The invalid signing key configuration.
+    """
     monkeypatch.setenv("REFLEX_SESSION_SECRET", value)
     with pytest.raises(ValueError, match="at least 32 bytes") as error:
         _load_secrets()
@@ -244,6 +317,12 @@ def test_invalid_secret_never_discloses_its_value(monkeypatch, value):
 
 
 def test_persisted_secret_is_atomic_private_and_reused(tmp_path, monkeypatch):
+    """Concurrent initialization shares one secret with private file permissions.
+
+    Args:
+        tmp_path: The isolated working directory.
+        monkeypatch: The environment override fixture.
+    """
     monkeypatch.delenv("REFLEX_SESSION_SECRET", raising=False)
     monkeypatch.setenv("REFLEX_WEB_WORKDIR", str(tmp_path / ".web"))
     with ThreadPoolExecutor(max_workers=16) as executor:
@@ -259,6 +338,13 @@ def test_persisted_secret_is_atomic_private_and_reused(tmp_path, monkeypatch):
 def test_production_fallback_warning_does_not_contain_secret(
     tmp_path, monkeypatch, caplog
 ):
+    """Warn about production fallback keys without disclosing their contents.
+
+    Args:
+        tmp_path: The isolated working directory.
+        monkeypatch: The environment override fixture.
+        caplog: The captured log records.
+    """
     monkeypatch.delenv("REFLEX_SESSION_SECRET", raising=False)
     monkeypatch.setenv("REFLEX_WEB_WORKDIR", str(tmp_path / ".web"))
     monkeypatch.setenv("REFLEX_ENV_MODE", "prod")
@@ -269,6 +355,13 @@ def test_production_fallback_warning_does_not_contain_secret(
 
 @pytest.mark.parametrize("value", ["not-hex", "aa", "é"])
 def test_invalid_persisted_secret_is_not_replaced(tmp_path, monkeypatch, value):
+    """Reject an invalid persisted secret without replacing its contents.
+
+    Args:
+        tmp_path: The isolated working directory.
+        monkeypatch: The environment override fixture.
+        value: The invalid persisted key contents.
+    """
     monkeypatch.delenv("REFLEX_SESSION_SECRET", raising=False)
     monkeypatch.setenv("REFLEX_WEB_WORKDIR", str(tmp_path))
     path = tmp_path / "backend" / "session_secret"
@@ -284,11 +377,22 @@ def test_invalid_persisted_secret_is_not_replaced(tmp_path, monkeypatch, value):
     [(0, None), (-1, None), (100, 0), (100, 100), (100, -1)],
 )
 def test_invalid_lifetimes(ttl, refresh_interval):
+    """Reject session lifetimes and refresh intervals outside their valid ranges.
+
+    Args:
+        ttl: The requested session lifetime.
+        refresh_interval: The requested refresh interval.
+    """
     with pytest.raises(ValueError, match="Session TTL"):
         SessionTokenManager("app", ttl=ttl, refresh_interval=refresh_interval)
 
 
 def test_config_defaults_and_secret_is_not_config(monkeypatch):
+    """Expose session timing configuration while keeping signing secrets separate.
+
+    Args:
+        monkeypatch: The environment override fixture.
+    """
     monkeypatch.setenv("REFLEX_SESSION_SECRET", SECRET.decode())
     config = Config(app_name="test")
     assert config.session_token_ttl == 604800
@@ -303,6 +407,12 @@ def test_config_defaults_and_secret_is_not_config(monkeypatch):
 
 @pytest.mark.parametrize("mode", ["off", "warn", "enforce"])
 def test_session_rollout_mode(monkeypatch, mode):
+    """Default to warnings and accept only supported rollout modes.
+
+    Args:
+        monkeypatch: The environment override fixture.
+        mode: The supported rollout mode to select.
+    """
     monkeypatch.delenv("REFLEX_SESSION_TOKEN_MODE", raising=False)
     assert environment.REFLEX_SESSION_TOKEN_MODE.get() == "warn"
     monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", mode)
