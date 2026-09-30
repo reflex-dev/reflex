@@ -43,6 +43,7 @@ from reflex.istate.delta import _resolve_delta
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.state import BaseState
 from reflex.utils import path_ops
+from reflex.utils.exec import is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
 
 if TYPE_CHECKING:
@@ -796,11 +797,21 @@ def create_document_root(
             }
         ),
     )
-    # Always include the framework meta and link tags.
+    # Always include the framework meta and link tags. The preload hint is a
+    # production-only optimization: in dev, Vite's css-update swaps the first
+    # link matching the stylesheet path, so it must be the stylesheet link.
     always_head_components = [
         ReactMeta.create(),
-        Link.create(
-            rel="preload", custom_attrs={"as": "style"}, href=global_styles_href
+        *(
+            [
+                Link.create(
+                    rel="preload",
+                    custom_attrs={"as": "style"},
+                    href=global_styles_href,
+                )
+            ]
+            if is_prod_mode()
+            else []
         ),
         Link.create(
             rel="stylesheet",
