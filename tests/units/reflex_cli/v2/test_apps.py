@@ -923,10 +923,10 @@ def test_list_apps_no_project(mocker: MockFixture):
     client.api.apps.list.assert_called_once_with(project_id="default_project")
     mock_print_table.assert_called_once_with(
         [
-            [str(_APP_ID), "App1", "fly", ""],
-            [str(uuid.UUID(int=23)), "App2", "fly", ""],
+            [str(_APP_ID), "App1", "", "fly"],
+            [str(uuid.UUID(int=23)), "App2", "", "fly"],
         ],
-        headers=("id", "name", "provider", "description"),
+        headers=("id", "name", "description", "provider"),
         overflow="fold",
         no_wrap=("id", "name"),
     )
@@ -943,8 +943,8 @@ def test_list_apps_with_project(mocker: MockFixture):
     assert result.exit_code == 0, result.output
     client.api.apps.list.assert_called_once_with(project_id="project123")
     mock_print_table.assert_called_once_with(
-        [[str(_APP_ID), "App1", "fly", ""]],
-        headers=("id", "name", "provider", "description"),
+        [[str(_APP_ID), "App1", "", "fly"]],
+        headers=("id", "name", "description", "provider"),
         overflow="fold",
         no_wrap=("id", "name"),
     )

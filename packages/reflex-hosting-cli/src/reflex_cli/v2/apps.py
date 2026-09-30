@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 _LOGS_PAGE_SIZE = 100
 
 # The fields `apps list` and `apps history` show; --json carries all of them.
-_LIST_COLUMNS = ("id", "name", "provider", "description")
+_LIST_COLUMNS = ("id", "name", "description", "provider")
 _HISTORY_COLUMNS = ("id", "status", "timestamp", "can rollback", "description")
 
 
