@@ -438,7 +438,7 @@ def event_span(
     if parent.is_valid and not parent.is_remote:
         kind = trace.SpanKind.INTERNAL
         # Only a chained event has a parent event. A top-level event is forked
-        # from the processor's root context, whose txid carries no information.
+        # from the processor's root context, which belongs to no event.
         if ctx.parent_txid:
             attributes[ATTR_EVENT_PARENT_TXID] = ctx.parent_txid
     else:
