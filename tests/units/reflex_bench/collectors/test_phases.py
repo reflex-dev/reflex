@@ -346,10 +346,15 @@ def _tool(directory: Path, name: str, seconds: float) -> str:
 
 @posix_only
 def test_tree_phases_samples_a_real_tree(tmp_path: Path):
+    """Sample tool lifetimes and explicit CPU work in a real process tree."""
     bun = _tool(tmp_path, "bun", 0.4)
     node = _tool(tmp_path, "node", 0.4)
+    # Startup alone can round down to zero in Linux's CPU accounting. Do
+    # measurable CPU work before waiting on the tools so the sampler sees it.
     code = (
-        "import subprocess, sys\n"
+        "import subprocess, time\n"
+        "end = time.process_time() + 0.1\n"
+        "while time.process_time() < end: pass\n"
         f"subprocess.run([{bun!r}, 'add', 'react'], check=True)\n"
         f"subprocess.run([{node!r}, 'build'], check=True)\n"
     )
