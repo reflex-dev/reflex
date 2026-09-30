@@ -152,11 +152,52 @@ def test_delete_token_from_config(config_content: str, expected: dict):
     assert json.loads(constants.Hosting.HOSTING_JSON.read_text()) == expected
 
 
-def test_delete_token_from_config_without_a_config_file():
-    """Deleting when no config exists is a no-op rather than an error."""
+@pytest.mark.parametrize(
+    "stored_token, token, removed",
+    [
+        ("old_token", "old_token", True),
+        ("new_token", "old_token", False),
+        ("new_token", "", False),
+        ("", "", True),
+        (None, "old_token", False),
+    ],
+)
+def test_delete_token_from_config_only_removes_matching_token(
+    stored_token: str | None, token: str, removed: bool
+):
+    """Conditional deletion preserves a different token and unrelated settings.
+
+    Args:
+        stored_token: The token stored in the config, or None if absent.
+        token: The token expected to be removed.
+        removed: Whether the stored token should be removed.
+    """
+    config = {"project": "p1"}
+    if stored_token is not None:
+        config["access_token"] = stored_token
+    original = json.dumps(config, indent=2)
+    constants.Hosting.HOSTING_JSON.write_text(original)
+
+    delete_token_from_config(token)
+
+    if removed:
+        assert json.loads(constants.Hosting.HOSTING_JSON.read_text()) == {
+            "project": "p1"
+        }
+    else:
+        assert constants.Hosting.HOSTING_JSON.read_text() == original
+
+
+@pytest.mark.parametrize("token", [None, "old_token"])
+def test_delete_token_from_config_without_a_config_file(token: str | None):
+    """Deleting when no config exists is a no-op rather than an error.
+
+    Args:
+        token: The optional token expected to be removed.
+    """
     assert not constants.Hosting.HOSTING_JSON.exists()
 
-    delete_token_from_config()
+    delete_token_from_config(token)
 
     assert not constants.Hosting.HOSTING_JSON.exists()
 
@@ -344,7 +385,50 @@ def test_authenticated_token_found_but_invalid(mocker: MockFixture):
     delete_token = mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
 
     assert authenticated_token() == ("", {})
-    delete_token.assert_called_once()
+    delete_token.assert_called_once_with("bad_token")
+
+
+@pytest.mark.parametrize("interactive", [True, False])
+def test_validation_failure_preserves_a_replacement_token(
+    mocker: MockFixture, interactive: bool
+):
+    """A token saved during validation survives rejection of the previous token.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        interactive: Whether to use the interactive validation helper.
+    """
+    save_token_to_config("old_token")
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("old_token", TokenSource.CONFIG),
+    )
+
+    def replace_token_and_reject(access_token: str, api=None):
+        """Simulate a concurrent login before the validation response arrives.
+
+        Args:
+            access_token: The token being validated.
+            api: The optional client used for validation.
+
+        Raises:
+            TokenAccessDeniedError: When the old token is rejected.
+        """
+        assert access_token == "old_token"
+        save_token_to_config("new_token")
+        msg = "access denied"
+        raise TokenAccessDeniedError(msg, request_id="req-1")
+
+    mocker.patch(
+        "reflex_cli.utils.hosting._validate", side_effect=replace_token_and_reject
+    )
+
+    if interactive:
+        assert validate_token_with_retries("old_token") == {}
+    else:
+        with pytest.raises(click.exceptions.Exit):
+            get_authenticated_client(token=None, interactive=False)
+    assert stored_access_token() == "new_token"
 
 
 def test_authenticated_token_found_but_validation_fails(mocker: MockFixture):
@@ -370,7 +454,10 @@ def test_authenticate_without_token_in_non_interactive_mode(mocker: MockerFixtur
     Args:
         mocker: Pytest mocker fixture.
     """
-    mocker.patch("reflex_cli.utils.hosting.get_existing_access_token", return_value="")
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("", TokenSource.NONE),
+    )
     with pytest.raises(click.exceptions.Exit):
         get_authenticated_client(token=None, interactive=False)
 
@@ -382,15 +469,125 @@ def test_authenticate_with_env_token_in_non_interactive_mode(mocker: MockerFixtu
         mocker: Pytest mocker fixture.
     """
     mocker.patch(
-        "reflex_cli.utils.hosting.get_existing_access_token", return_value="env_token"
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("env_token", TokenSource.ENVIRONMENT),
     )
     client = _client()
-    get_auth_client = mocker.patch(
-        "reflex_cli.utils.hosting.get_authentication_client", return_value=client
+    new_client = mocker.patch(
+        "reflex_cli.utils.hosting.new_client", return_value=client.api
+    )
+    validate = mocker.patch(
+        "reflex_cli.utils.hosting._validate", return_value=client.me
+    )
+    browser = mocker.patch("reflex_cli.utils.hosting._authenticate_on_browser")
+
+    result = get_authenticated_client(token=None, interactive=False)
+
+    assert result.api is client.api
+    assert result.me is client.me
+    new_client.assert_called_once_with("env_token")
+    validate.assert_called_once_with("env_token", client.api)
+    browser.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("token", "source"),
+    [
+        (None, TokenSource.ENVIRONMENT),
+        ("bogus-token", TokenSource.OPTION),
+    ],
+)
+def test_rejected_token_in_non_interactive_mode_does_not_prompt(
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+    token: str | None,
+    source: TokenSource,
+):
+    """A rejected token fails straight away instead of starting a browser login.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+        token: The token passed with --token, if any.
+        source: Where the rejected token came from.
+    """
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("bogus-token", TokenSource.ENVIRONMENT),
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting._validate",
+        side_effect=TokenAccessDeniedError("access denied", request_id="req-1"),
+    )
+    browser = mocker.patch(
+        "reflex_cli.utils.hosting._authenticate_on_browser", return_value=("", None)
     )
 
-    assert get_authenticated_client(token=None, interactive=False) is client
-    get_auth_client.assert_called_once_with(None)
+    with pytest.raises(click.exceptions.Exit) as exc_info:
+        get_authenticated_client(token=token, interactive=False)
+
+    assert exc_info.value.exit_code == 1
+    browser.assert_not_called()
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == [
+        f"The access token from the {source.value} was rejected: access denied (auth request id: req-1)"
+    ]
+
+
+def test_rejected_config_token_in_non_interactive_mode_is_removed(
+    mocker: MockerFixture,
+):
+    """A saved token the control plane refuses is dropped from the config.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("stale-token", TokenSource.CONFIG),
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting._validate",
+        side_effect=TokenAccessDeniedError("access denied", request_id="req-1"),
+    )
+    delete = mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
+
+    with pytest.raises(click.exceptions.Exit):
+        get_authenticated_client(token=None, interactive=False)
+
+    delete.assert_called_once_with("stale-token")
+
+
+def test_unvalidated_token_in_non_interactive_mode_is_not_called_rejected(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """A timeout or server error fails without calling the token rejected.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_existing_access_token_with_source",
+        return_value=("saved-token", TokenSource.CONFIG),
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting._validate",
+        side_effect=TokenValidationError("server error", request_id="req-2"),
+    )
+    delete = mocker.patch("reflex_cli.utils.hosting.delete_token_from_config")
+    browser = mocker.patch("reflex_cli.utils.hosting._authenticate_on_browser")
+
+    with pytest.raises(click.exceptions.Exit) as exc_info:
+        get_authenticated_client(token=None, interactive=False)
+
+    assert exc_info.value.exit_code == 1
+    delete.assert_not_called()
+    browser.assert_not_called()
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == [
+        "Unable to validate the access token from the config file: server error (auth request id: req-2)"
+    ]
 
 
 def test_scale_arguments_are_pure_when_type_is_unspecified():
@@ -904,6 +1101,22 @@ def test_get_selected_project_normalizes_empty_to_none(
     [
         ("abc-uuid", "abc-uuid"),
         ("  abc-uuid  ", "abc-uuid"),
+        (
+            "abcdefab-1234-4567-89ab-abcdefabcdef",
+            "abcdefab-1234-4567-89ab-abcdefabcdef",
+        ),
+        (
+            "ABCDEFAB-1234-4567-89AB-ABCDEFABCDEF",
+            "abcdefab-1234-4567-89ab-abcdefabcdef",
+        ),
+        (
+            "abcdefab1234456789ababcdefabcdef",
+            "abcdefab-1234-4567-89ab-abcdefabcdef",
+        ),
+        (
+            "  ABCDEFAB1234456789ABABCDEFABCDEF  ",
+            "abcdefab-1234-4567-89ab-abcdefabcdef",
+        ),
         ("", None),
         ("   ", None),
         (None, None),
@@ -913,6 +1126,12 @@ def test_get_selected_project_normalizes_empty_to_none(
     ],
 )
 def test_normalize_project_id(value: object, expected: str | None):
+    """Canonicalize UUIDs while preserving other IDs and missing-value handling.
+
+    Args:
+        value: The raw project ID.
+        expected: The normalized project ID.
+    """
     assert normalize_project_id(value) == expected
 
 

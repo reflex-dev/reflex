@@ -346,10 +346,15 @@ def _tool(directory: Path, name: str, seconds: float) -> str:
 
 @posix_only
 def test_tree_phases_samples_a_real_tree(tmp_path: Path):
+    """Sample tool lifetimes and explicit CPU work in a real process tree."""
     bun = _tool(tmp_path, "bun", 0.4)
     node = _tool(tmp_path, "node", 0.4)
+    # Startup alone can round down to zero in Linux's CPU accounting. Do
+    # measurable CPU work before waiting on the tools so the sampler sees it.
     code = (
-        "import subprocess, sys\n"
+        "import subprocess, time\n"
+        "end = time.process_time() + 0.1\n"
+        "while time.process_time() < end: pass\n"
         f"subprocess.run([{bun!r}, 'add', 'react'], check=True)\n"
         f"subprocess.run([{node!r}, 'build'], check=True)\n"
     )
@@ -374,12 +379,15 @@ def test_tree_phases_samples_a_real_tree(tmp_path: Path):
     }
     assert tools == {"bun": "install", "node": "frontend"}
     # `sleep` children inherit the class of the tool that started them.
-    sleeps = [p for p in report.processes if Path(p.cmdline[0]).name == "sleep"]
+    sleeps = [
+        p for p in report.processes if p.cmdline and Path(p.cmdline[0]).name == "sleep"
+    ]
     assert sorted(str(p.kind) for p in sleeps) == ["frontend", "install"]
 
 
 @posix_only
 def test_tree_phases_credits_a_reaped_child_from_its_parent(tmp_path: Path):
+    """Credit a reaped child's full CPU usage, including interpreter startup."""
     # A `node` spins for 0.3 s of CPU time and is reaped by the root between
     # two samples: the root's children time credits what the samples missed of
     # it, to the frontend class.
@@ -407,13 +415,14 @@ def test_tree_phases_credits_a_reaped_child_from_its_parent(tmp_path: Path):
         # One sample while the child runs, the final one after it was reaped.
         sampler = phases.TreePhases(root.pid, interval=3600).start()
         assert root.stdout.readline() == "reaped\n"
+        times = psutil.Process(root.pid).cpu_times()
+        expected_cpu = times.children_user + times.children_system
         report = sampler.stop()
     finally:
         root.stdin.close()
         root.wait(30)
     frontend = report.classes["frontend"]
-    # The kernel counts in 10 ms ticks.
-    assert frontend.cpu_s == pytest.approx(0.3, abs=0.03)
+    assert frontend.cpu_s == pytest.approx(expected_cpu)
     (child,) = [p for p in report.processes if p.kind == "frontend"]
     assert child.cpu_s < frontend.cpu_s
     root_record = next(p for p in report.processes if p.pid == root.pid)
