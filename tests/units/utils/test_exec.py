@@ -19,7 +19,7 @@ from reflex_base.environment import environment
 from reflex_base.utils import serializers
 
 from reflex.utils import exec as exec_utils
-from reflex.utils import prerequisites
+from reflex.utils import prerequisites, processes, telemetry
 
 DEV_BACKEND_RELOAD_ENV_NAME = environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
 
@@ -781,16 +781,31 @@ def test_run_granian_backend_refuses_requests_while_the_app_is_broken(tmp_path: 
         port_queue.close()
 
 
-def _fake_granian_prod(mocker: MockerFixture, calls: list[str]):
-    """Patch granian and the prod launcher's collaborators, recording call order."""
+def _fake_granian_prod(
+    mocker: MockerFixture, calls: list[str], telemetry_drained: bool = True
+):
+    """Patch granian and the prod launcher's collaborators, recording call order.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        calls: The call log to append to.
+        telemetry_drained: Whether the telemetry queue drains before the fork.
+    """
     granian_server = pytest.importorskip("granian.server")
+
+    def stop_telemetry() -> bool:
+        calls.append("stop telemetry")
+        return telemetry_drained
 
     class FakeGranian:
         def __init__(self, *_args, **_kwargs):
             pass
 
+        def startup(self, spawn_target, target_loader):
+            calls.append("start workers")
+
         def serve(self):
-            calls.append("serve")
+            self.startup(None, None)
 
     mocker.patch.object(granian_server, "Server", FakeGranian)
     mocker.patch.object(
@@ -805,22 +820,56 @@ def _fake_granian_prod(mocker: MockerFixture, calls: list[str]):
     mocker.patch.object(
         prerequisites, "get_app", side_effect=lambda: calls.append("preload")
     )
+    mocker.patch.object(
+        serializers,
+        "_prepare_serializers_for_fork",
+        side_effect=lambda: calls.append("prepare serializers"),
+    )
+    mocker.patch.object(telemetry, "_shutdown_executor", side_effect=stop_telemetry)
     mocker.patch.object(gc, "freeze", side_effect=lambda: calls.append("freeze"))
 
 
-def test_run_granian_backend_prod_preloads_app_before_forking(
-    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
-):
-    """With fork, the app is imported and the heap frozen before workers start."""
-    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
-    calls: list[str] = []
-    _fake_granian_prod(mocker, calls)
+def _run_granian_prod(calls: list[str], app_target: str | None = None):
+    """Run the Granian prod launcher, recording when ``on_started`` fires.
 
+    Args:
+        calls: The call log to append to.
+        app_target: The ASGI app target to serve.
+    """
     exec_utils.run_granian_backend_prod(
-        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+        host="0.0.0.0",
+        port=8000,
+        loglevel=exec_utils.LogLevel.INFO,
+        app_target=app_target,
+        on_started=lambda: calls.append("started"),
     )
 
-    assert calls == ["start:fork", "preload", "freeze", "serve"]
+
+@pytest.mark.parametrize("telemetry_drained", [True, False])
+def test_run_granian_backend_prod_prepares_supervisor_before_forking(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch, telemetry_drained: bool
+):
+    """With fork, workers start from a preloaded app after telemetry is stopped.
+
+    Telemetry that cannot drain in time does not hold the workers up. The
+    started callback runs only once they exist, so a thread it starts is never
+    inherited by one of them.
+    """
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
+    calls: list[str] = []
+    _fake_granian_prod(mocker, calls, telemetry_drained=telemetry_drained)
+
+    _run_granian_prod(calls)
+
+    assert calls == [
+        "start:fork",
+        "preload",
+        "prepare serializers",
+        "stop telemetry",
+        "freeze",
+        "start workers",
+        "started",
+    ]
 
 
 def test_run_granian_backend_prod_spawn_skips_preload(
@@ -831,14 +880,12 @@ def test_run_granian_backend_prod_spawn_skips_preload(
     calls: list[str] = []
     _fake_granian_prod(mocker, calls)
 
-    exec_utils.run_granian_backend_prod(
-        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
-    )
+    _run_granian_prod(calls)
 
-    assert calls == ["start:spawn", "serve"]
+    assert calls == ["start:spawn", "start workers", "started"]
 
 
-def test_run_granian_backend_prod_custom_target_only_freezes(
+def test_run_granian_backend_prod_custom_target_skips_app_import(
     mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
 ):
     """A non-reflex target lives in an already-imported module."""
@@ -846,14 +893,64 @@ def test_run_granian_backend_prod_custom_target_only_freezes(
     calls: list[str] = []
     _fake_granian_prod(mocker, calls)
 
-    exec_utils.run_granian_backend_prod(
+    _run_granian_prod(calls, app_target="reflex.utils.exec:_frontend_prod_app")
+
+    assert calls == [
+        "start:fork",
+        "prepare serializers",
+        "stop telemetry",
+        "freeze",
+        "start workers",
+        "started",
+    ]
+
+
+def test_run_uvicorn_backend_prod_calls_on_started_before_serving(
+    mocker: MockerFixture,
+):
+    """Gunicorn forks its workers in a subprocess, so the callback runs first."""
+    calls: list[str] = []
+    mocker.patch.object(exec_utils, "_get_backend_workers", return_value=1)
+    mocker.patch.object(
+        processes, "new_process", side_effect=lambda *_a, **_k: calls.append("serve")
+    )
+
+    exec_utils.run_uvicorn_backend_prod(
         host="0.0.0.0",
         port=8000,
         loglevel=exec_utils.LogLevel.INFO,
-        app_target="reflex.utils.exec:_frontend_prod_app",
+        app_target="app:app",
+        on_started=lambda: calls.append("started"),
     )
 
-    assert calls == ["start:fork", "freeze", "serve"]
+    assert calls == ["started", "serve"]
+
+
+@pytest.mark.parametrize("use_granian", [True, False])
+@pytest.mark.parametrize("frontend_only", [True, False])
+def test_prod_launchers_pass_on_started_to_the_server(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    use_granian: bool,
+    frontend_only: bool,
+):
+    """The backend and frontend prod launchers hand the callback to the server."""
+    # Restored on teardown: the backend launcher sets it.
+    monkeypatch.setenv(environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.name, "false")
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=use_granian)
+    server = mocker.patch.object(
+        exec_utils,
+        "run_granian_backend_prod" if use_granian else "run_uvicorn_backend_prod",
+    )
+    on_started = mocker.Mock()
+
+    if frontend_only:
+        mocker.patch.object(exec_utils, "get_config")
+        exec_utils.run_frontend_prod("0.0.0.0", 8000, on_started=on_started)
+    else:
+        exec_utils.run_backend_prod("0.0.0.0", 8000, on_started=on_started)
+
+    assert server.call_args.kwargs["on_started"] is on_started
 
 
 @pytest.mark.parametrize(

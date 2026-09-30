@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import logging
 from collections.abc import Callable
 from importlib import import_module
@@ -515,9 +516,6 @@ def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
 
     _skip_compile()
 
-    # Post a telemetry event.
-    telemetry.send("run-prod")
-
     # Display custom message when there is a keyboard interrupt.
     atexit.register(processes.atexit_handler)
 
@@ -526,12 +524,21 @@ def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
         f"http://{host}:{port}",
         backend_present=running_mode.has_backend(),
     )
+
+    # Post a telemetry event once the workers are started, so none is forked
+    # while the telemetry thread is sending it.
+    post_telemetry = functools.partial(telemetry.send, "run-prod")
+
     if running_mode.has_backend():
         exec.run_backend_prod(
-            host, port, config.loglevel.subprocess_level(), running_mode.has_frontend()
+            host,
+            port,
+            config.loglevel.subprocess_level(),
+            running_mode.has_frontend(),
+            on_started=post_telemetry,
         )
     else:
-        exec.run_frontend_prod(host, port)
+        exec.run_frontend_prod(host, port, on_started=post_telemetry)
 
 
 def _run(

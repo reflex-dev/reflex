@@ -437,6 +437,10 @@ def _prepare_event(
     )
 
 
+# Seconds a telemetry request may take before it is abandoned.
+_REQUEST_TIMEOUT = 5
+
+
 def _send_event(event_data: _Event) -> bool:
     # urllib keeps httpx and its import cost out of the backend workers, which
     # only ever send from here.
@@ -446,7 +450,7 @@ def _send_event(event_data: _Event) -> bool:
         headers={"Content-Type": "application/json"},
     )
     try:
-        urllib.request.urlopen(request, timeout=5).close()
+        urllib.request.urlopen(request, timeout=_REQUEST_TIMEOUT).close()
     except Exception:
         return False
     else:
@@ -504,9 +508,14 @@ def _get_telemetry_executor() -> ThreadPoolExecutor:
 
 
 def _reset_executor_after_fork() -> None:
-    """Drop the inherited executor; its worker thread does not exist in the child."""
-    global _executor
+    """Drop the inherited executor and its creation lock in a forked child.
+
+    The pool's worker thread does not exist in the child, and a thread that was
+    creating the pool at fork time left the lock held for good.
+    """
+    global _executor, _executor_lock
     _executor = None
+    _executor_lock = threading.Lock()
 
 
 if hasattr(os, "register_at_fork"):
@@ -611,6 +620,31 @@ def _flush(timeout: float | None = None) -> bool:
         _executor.submit(lambda: None).result(timeout)
     except Exception:
         return False
+    return True
+
+
+def _shutdown_executor(timeout: float = _REQUEST_TIMEOUT) -> bool:
+    """Deliver the queued telemetry, then stop the worker thread.
+
+    Called before forking: a child forked while the thread is mid-send inherits
+    every lock the thread holds (in the resolver, ssl or an import) with nothing
+    left to release them. The next send starts a new pool.
+
+    Args:
+        timeout: Maximum number of seconds to wait for the queue to drain.
+
+    Returns:
+        ``True`` if no worker thread is left, ``False`` if the queue did not
+        drain in time and the thread is still running.
+    """
+    global _executor
+    executor = _executor
+    if executor is None:
+        return True
+    if not _flush(timeout):
+        return False
+    _executor = None
+    executor.shutdown()
     return True
 
 

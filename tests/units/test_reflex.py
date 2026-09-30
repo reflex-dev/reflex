@@ -10,6 +10,8 @@ import sys
 import click
 import click.testing
 import pytest
+from pytest_mock import MockerFixture
+from reflex_base import constants
 
 from reflex import reflex
 
@@ -431,3 +433,32 @@ def test_init_records_version_check_after_frontend_setup(
     reflex._init("demo")
 
     assert events == ["frontend", "version"]
+
+
+@pytest.mark.parametrize(
+    ("running_mode", "launcher"),
+    [
+        (constants.RunningMode.BACKEND_ONLY, "run_backend_prod"),
+        (constants.RunningMode.FULLSTACK, "run_backend_prod"),
+        (constants.RunningMode.FRONTEND_ONLY, "run_frontend_prod"),
+    ],
+)
+def test_run_prod_sends_telemetry_once_workers_started(
+    mocker: MockerFixture, running_mode: constants.RunningMode, launcher: str
+):
+    """The run event waits for the workers, so none is forked mid-send."""
+    mocker.patch.object(reflex, "get_config")
+    mocker.patch.object(reflex, "_compile_app")
+    mocker.patch.object(reflex, "_skip_compile")
+    mocker.patch("reflex.utils.build.setup_frontend_prod")
+    mocker.patch("atexit.register")
+    mocker.patch("reflex.utils.exec.notify_app_running")
+    mocker.patch("reflex.utils.exec.notify_frontend")
+    run = mocker.patch(f"reflex.utils.exec.{launcher}")
+    send = mocker.patch("reflex.utils.telemetry.send")
+
+    reflex._run_prod(running_mode, 3000, "0.0.0.0")
+
+    send.assert_not_called()
+    run.call_args.kwargs["on_started"]()
+    send.assert_called_once_with("run-prod")

@@ -1,9 +1,12 @@
 import asyncio
 import importlib.metadata
 import json
+import os
+import subprocess
 import sys
 import threading
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
 
 import pytest
@@ -840,11 +843,99 @@ def test_send_event_swallows_delivery_errors(mocker: MockerFixture):
 
 
 def test_executor_is_recreated_after_fork():
-    """A forked child drops the inherited pool, whose thread it does not own."""
+    """A forked child drops the inherited pool and creation lock it cannot use."""
     inherited = telemetry._get_telemetry_executor()
+    inherited_lock = telemetry._executor_lock
+    # A thread creating the pool at fork time leaves the child's copy locked.
+    inherited_lock.acquire()
+    getter = ThreadPoolExecutor(max_workers=1)
+    try:
+        telemetry._reset_executor_after_fork()
 
-    telemetry._reset_executor_after_fork()
+        fresh = getter.submit(telemetry._get_telemetry_executor).result(timeout=5)
+    finally:
+        # Unblock a getter stuck on the inherited lock before joining it.
+        inherited_lock.release()
+        getter.shutdown()
+        inherited.shutdown()
 
-    fresh = telemetry._get_telemetry_executor()
     assert fresh is not inherited
     assert fresh.submit(lambda: 1).result(timeout=5) == 1
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="requires fork")
+def test_forked_child_sends_while_parent_creates_executor():
+    """A child forked mid pool creation starts its own pool instead of hanging."""
+    script = """
+import os
+import select
+import signal
+import warnings
+
+from reflex.utils import telemetry
+
+telemetry._get_telemetry_executor()
+# As if another thread were inside _get_telemetry_executor at fork time.
+telemetry._executor_lock.acquire()
+read_fd, write_fd = os.pipe()
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", DeprecationWarning)
+    pid = os.fork()
+if pid == 0:
+    os.close(read_fd)
+    os.write(write_fd, telemetry._get_telemetry_executor().submit(bytes, b"OK").result(5))
+    os._exit(0)
+os.close(write_fd)
+ready, _, _ = select.select([read_fd], [], [], 10)
+if not ready:
+    os.kill(pid, signal.SIGKILL)
+os.waitpid(pid, 0)
+assert ready, "forked child hung on the inherited telemetry lock"
+assert os.read(read_fd, 2) == b"OK"
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        env={**os.environ, "REFLEX_TELEMETRY_ENABLED": "false"},
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_shutdown_executor_delivers_queued_events_then_stops_worker():
+    """Queued events are delivered and the worker thread exits before a fork."""
+    executor = telemetry._get_telemetry_executor()
+    delivered: list[str] = []
+    telemetry._submit(delivered.append, "event")
+
+    assert telemetry._shutdown_executor(timeout=5) is True
+
+    assert delivered == ["event"]
+    assert telemetry._executor is None
+    assert not any(thread.is_alive() for thread in executor._threads)
+    # The next send starts a new pool.
+    assert telemetry._get_telemetry_executor() is not executor
+
+
+def test_shutdown_executor_without_pool_starts_none(monkeypatch: pytest.MonkeyPatch):
+    """With nothing ever queued there is no thread to stop, and none is started."""
+    monkeypatch.setattr(telemetry, "_executor", None)
+
+    assert telemetry._shutdown_executor(timeout=5) is True
+    assert telemetry._executor is None
+
+
+def test_shutdown_executor_leaves_busy_worker_running():
+    """A worker still sending when the timeout expires is left to finish."""
+    release = threading.Event()
+    executor = telemetry._get_telemetry_executor()
+    # Bound the worker's wait so a failing assertion cannot wedge the executor.
+    blocker = executor.submit(release.wait, 10)
+    try:
+        assert telemetry._shutdown_executor(timeout=0.05) is False
+        assert telemetry._executor is executor
+    finally:
+        release.set()
+        blocker.result(timeout=5)
