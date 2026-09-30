@@ -2,6 +2,7 @@
 
 import json
 import logging
+import shutil
 import uuid
 from pathlib import Path
 from typing import Literal
@@ -10,6 +11,7 @@ from reflex_base import constants
 from reflex_base.config import Config, get_config
 from reflex_base.environment import environment
 from reflex_base.plugins.embed import get_embed_plugin
+from reflex_base.session import SESSION_SECRET_FILENAME
 
 from reflex.compiler import templates
 from reflex.utils import net, path_ops
@@ -457,7 +459,16 @@ def initialize_web_directory():
     project_hash = get_project_hash()
 
     logger.debug(f"Copying {constants.Templates.Dirs.WEB_TEMPLATE} to {get_web_dir()}")
-    path_ops.copy_tree(constants.Templates.Dirs.WEB_TEMPLATE, str(get_web_dir()))
+    web_dir = get_web_dir()
+    if web_dir.exists():
+        for item in web_dir.iterdir():
+            if item.name == constants.Dirs.BACKEND and item.is_dir():
+                for backend_file in item.iterdir():
+                    if backend_file.name != SESSION_SECRET_FILENAME:
+                        path_ops.rm(backend_file)
+            else:
+                path_ops.rm(item)
+    shutil.copytree(constants.Templates.Dirs.WEB_TEMPLATE, web_dir, dirs_exist_ok=True)
 
     logger.debug("Restoring lockfiles.")
     sync_root_lockfiles_to_web()

@@ -182,6 +182,8 @@ class BaseConfig:
         redis_lock_expiration: Maximum expiration lock time for redis state manager.
         redis_lock_warning_threshold: Maximum lock time before warning for redis state manager.
         redis_token_expiration: Token expiration time for redis state manager.
+        session_token_ttl: Browser session lifetime in seconds, defaulting to seven days.
+        session_token_refresh_interval: Session age in seconds before refreshing the cookie. None uses half the session TTL.
         env_file: Path to file containing key-values pairs to load into the environment; Dotenv format. Multiple files may be separated by os.pathsep. Requires the python-dotenv package.
         state_auto_setters: Whether to automatically create setters for state base vars.
         default_color_mode: The default color mode for the app: "system" (follow the OS preference), "light", or "dark". Applies to the built-in color mode switcher and `color_mode_cond` without requiring a radix theme.
@@ -253,6 +255,10 @@ class BaseConfig:
     redis_lock_warning_threshold: int = constants.Expiration.LOCK_WARNING_THRESHOLD
 
     redis_token_expiration: int = constants.Expiration.TOKEN
+
+    session_token_ttl: int = 7 * 24 * 60 * 60
+
+    session_token_refresh_interval: int | None = None
 
     # Attributes that were explicitly set by the user.
     _non_default_attributes: set[str] = dataclasses.field(
