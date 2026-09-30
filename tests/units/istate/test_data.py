@@ -1,18 +1,64 @@
 """Tests for ReflexURL parsing, serialization, and Var attribute access."""
 
+import json
+import pickle
 from collections.abc import Mapping
 from typing import cast
 from urllib.parse import parse_qsl
 
 import pytest
+from pytest_mock import MockerFixture
 from reflex_base import constants
+from reflex_base.utils.format import json_dumps
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import StringVar
 
 import reflex as rx
-from reflex.istate.data import HeaderData, ReflexURL, ReflexURLCastedVar
+from reflex.istate.data import HeaderData, ReflexURL, ReflexURLCastedVar, RouterData
 
 SAMPLE_URL = "https://example.com:3000/posts/123?tab=comments&sort=new#top"
+
+
+@pytest.mark.parametrize("cookie_header", ["cookie", "Cookie", "COOKIE"])
+def test_header_data_does_not_serialize_cookies(cookie_header: str):
+    """Cookie headers stay server-side, including in nested router payloads.
+
+    Args:
+        cookie_header: The case variant of the HTTP cookie header.
+    """
+    router = RouterData.from_router_data({
+        constants.RouteVar.HEADERS: {
+            cookie_header: "session=secret",
+            "x-custom-header": "public",
+        },
+    })
+
+    payload = json.loads(json_dumps(router))
+
+    assert "cookie" not in payload["headers"]
+    assert payload["headers"]["raw_headers"] == {"x-custom-header": "public"}
+    assert "secret" not in json_dumps(router.headers)
+    assert router.headers.cookie == "session=secret"
+    assert router.headers.raw_headers[cookie_header] == "session=secret"
+    restored = pickle.loads(pickle.dumps(router))
+    assert restored.headers == router.headers
+
+
+def test_router_cookie_var_is_deprecated(mocker: MockerFixture):
+    """Frontend cookie access warns and has an empty string fallback.
+
+    Args:
+        mocker: Mock fixture.
+    """
+    deprecate = mocker.patch("reflex.istate.data.console.deprecate")
+
+    assert str(rx.State.router.headers.cookie) == '""'
+    deprecate.assert_called_once()
+    assert "rx.Cookie" in deprecate.call_args.kwargs["reason"]
+    deprecate.reset_mock()
+
+    assert HeaderData(cookie="session=secret").cookie == "session=secret"
+    deprecate.assert_not_called()
 
 
 def test_reflex_url_parses_components():

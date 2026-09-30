@@ -61,7 +61,7 @@ from reflex.istate.data import (
     URLData,
     _FrozenDictStrStr,
 )
-from reflex.istate.delta import _suppress_delta_recording
+from reflex.istate.delta import Delta, _suppress_delta_recording
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -70,7 +70,6 @@ from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import MutableProxy, StateProxy
 from reflex.state import (
     BaseState,
-    Delta,
     ImmutableStateError,
     OnLoadInternalState,
     State,
@@ -120,7 +119,6 @@ formatted_router_vars = {
         "origin": "",
         "upgrade": "",
         "connection": "",
-        "cookie": "",
         "pragma": "",
         "cache_control": "",
         "user_agent": "",
@@ -322,6 +320,27 @@ def test_state() -> TestState:
         A test state.
     """
     return TestState()  # pyright: ignore [reportCallIssue]
+
+
+@pytest.mark.parametrize("method", ["dict", "get_delta"])
+def test_router_cookies_not_sent_to_frontend(test_state: TestState, method: str):
+    """Initial state and deltas omit cookies while preserving server access.
+
+    Args:
+        test_state: A state.
+        method: The state serialization entry point.
+    """
+    test_state.router = RouterData.from_router_data({
+        RouteVar.HEADERS: {"cookie": "session=secret", "user-agent": "browser"},
+    })
+
+    payload = json.loads(json_dumps(getattr(test_state, method)()))
+    headers = payload[test_state.get_full_name()]["rx_router_headers" + FIELD_MARKER]
+
+    assert "cookie" not in headers
+    assert headers["raw_headers"] == {"user-agent": "browser"}
+    assert "secret" not in json_dumps(payload)
+    assert test_state.router.headers.cookie == "session=secret"
 
 
 @pytest.fixture
@@ -4462,12 +4481,9 @@ def test_router_var_dep_does_not_warn_for_the_var_form(
     """
     # `console.deprecate` logs and dedupes rather than printing, so record the
     # calls instead of scraping output.
-    from reflex import state as state_module
-
     deprecations: list[str] = []
     monkeypatch.setattr(
-        state_module.console,
-        "deprecate",
+        "reflex.state.console.deprecate",
         lambda *, feature_name, **kwargs: deprecations.append(feature_name),
     )
 
