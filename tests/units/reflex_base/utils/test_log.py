@@ -1163,8 +1163,11 @@ import sys
 from reflex_base.utils import log
 
 if not log.is_output_supervised():
+    # Not os.getppid() in the child: a Windows venv python.exe is a launcher
+    # that runs the real interpreter as its own child.
+    os.environ["TEST_SUPERVISOR_PID"] = str(os.getpid())
     sys.exit(log.supervise_output([sys.executable, __file__]))
-print(os.environ["REFLEX_OUTPUT_SUPERVISED"] == str(os.getppid()))
+print(os.environ[log._SUPERVISED_ENV_VAR] == os.environ["TEST_SUPERVISOR_PID"])
 print(sys.stdout.write_through)
 print(sys.stdout.encoding, sys.stdout.errors)
 """
