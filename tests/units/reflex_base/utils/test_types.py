@@ -264,6 +264,11 @@ _RUNTIME_HINTS = [
     type[_Row],
     datetime.datetime,
     list[datetime.date],
+    Annotated[int, "meta"],
+    Annotated[list[int], "meta"],
+    Annotated[int | None, "meta"],
+    list[Annotated[int, "meta"]],
+    dict[str, Annotated[int, "meta"]],
 ]
 
 _RUNTIME_VALUES = [
