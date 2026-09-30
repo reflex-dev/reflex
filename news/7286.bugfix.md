@@ -1,0 +1,1 @@
+Fix `TypeError: refs._client_state_set... is not a function` when a component sets a global `rx._x.client_state` value before any component reading `.value` has mounted, such as when the reader sits behind an `rx.cond`.

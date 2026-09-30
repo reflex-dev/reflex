@@ -70,19 +70,6 @@ class LiteralColorVar(CachedVarOperation, LiteralVar[Color], ColorVar):
             _var_value=value,
         )
 
-    def __hash__(self) -> int:
-        """Get the hash of the var.
-
-        Returns:
-            The hash of the var.
-        """
-        return hash((
-            self.__class__.__name__,
-            self._var_value.color,
-            self._var_value.alpha,
-            self._var_value.shade,
-        ))
-
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
         """The name of the var.

@@ -2,6 +2,8 @@
 name = "reflex-docs-app"
 dynamic = ["version"]
 readme = "README.md"
+# Keep the workspace resolvable for Reflex framework tests on Python 3.10.
+# Running this docs app requires Python 3.11+ for its XY demonstrations.
 requires-python = ">=3.10"
 dependencies = [
     "email-validator",
@@ -10,7 +12,10 @@ dependencies = [
     "orjson",
     "pandas",
     "plotly-express",
-    "psycopg[binary]",
+    # TODO: revert to a single "psycopg[binary]" once a psycopg release
+    # ships cp315 wheels for psycopg-binary
+    "psycopg[binary]; python_version < '3.15'",
+    "psycopg; python_version >= '3.15'",
     "python-frontmatter",
     "reflex",
     "reflex-docgen",
@@ -25,10 +30,13 @@ dependencies = [
     "ruff-format",
     "sqlalchemy",
     "sqlmodel",
+    "xy==0.0.7; python_version >= '3.11'",
+    "griffelib>=2.0.1",
 ]
 
 [dependency-groups]
 dev = [
+    "pillow",
     "playwright",
     "pre-commit",
     "pytest-playwright",

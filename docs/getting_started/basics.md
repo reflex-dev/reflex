@@ -18,7 +18,7 @@ import reflex as rx
 - Create pages and navigate between them
 ```
 
-If you haven't yet, [install Reflex](/docs/getting-started/installation) before continuing. Every example below imports the library as `rx`:
+If you haven't yet, [install Reflex](/docs/getting-started/installation/) before continuing. Every example below imports the library as `rx`:
 
 ```python
 import reflex as rx
@@ -26,7 +26,7 @@ import reflex as rx
 
 ## Creating and nesting components
 
-[Components](/docs/ui/overview) are the building blocks for your app's user interface (UI). They are the visual elements that make up your app, like buttons, text, and images. Reflex has a wide selection of [built-in components](/docs/library) to get you started quickly.
+[Components](/docs/ui/overview/) are the building blocks for your app's user interface (UI). They are the visual elements that make up your app, like buttons, text, and images. Reflex has a wide selection of [built-in components](/docs/library/) to get you started quickly.
 
 Components are created using functions that return a component object.
 
@@ -57,11 +57,11 @@ def my_div():
     )
 ```
 
-If you need a component not provided by Reflex, you can check the [3rd party ecosystem](/docs/custom-components) or [wrap your own React component](/docs/wrapping-react/library-and-tags).
+If you need a component not provided by Reflex, you can check the [3rd party ecosystem](/docs/custom-components/) or [wrap your own React component](/docs/wrapping-react/library-and-tags/).
 
 ## Customizing and styling components
 
-Components can be customized using [props](/docs/components/props), which are passed in as keyword arguments to the component function.
+Components can be customized using [props](/docs/components/props/), which are passed in as keyword arguments to the component function.
 
 Each component has props that are specific to that component. Check the docs for the component you are using to see what props are available.
 
@@ -81,7 +81,7 @@ def round_button():
 Use the `snake_case` version of the CSS property name as the prop name.
 ```
 
-See the [styling guide](/docs/styling/overview) for more information on how to style components
+See the [styling guide](/docs/styling/overview/) for more information on how to style components
 
 In summary, components are made up of children and props.
 
@@ -99,9 +99,9 @@ In summary, components are made up of children and props.
 
 ## Displaying data that changes over time
 
-Apps need to store and display data that changes over time. Reflex handles this through [State](/docs/state/overview), which is a Python class that stores variables that can change when the app is running, as well as the functions that can change those variables.
+Apps need to store and display data that changes over time. Reflex handles this through [State](/docs/state/overview/), which is a Python class that stores variables that can change when the app is running, as well as the functions that can change those variables.
 
-To define a state class, subclass `rx.State` and define fields that store the state of your app. The state variables ([vars](/docs/vars/base-vars)) should have a type annotation, and can be initialized with a default value.
+To define a state class, subclass `rx.State` and define fields that store the state of your app. The state variables ([vars](/docs/vars/base-vars/)) should have a type annotation, and can be initialized with a default value.
 
 ```python
 class MyState(rx.State):
@@ -133,7 +133,7 @@ Vars can be referenced in multiple components, and will automatically update whe
 
 ## Responding to events and updating the screen
 
-So far, we've defined state vars but we haven't shown how to change them. All state changes are handled through functions in the state class, called [event handlers](/docs/events/events-overview).
+So far, we've defined state vars but we haven't shown how to change them. All state changes are handled through functions in the state class, called [event handlers](/docs/events/events-overview/).
 
 ```md alert
 Event handlers are the **only** way to change state in Reflex.
@@ -309,7 +309,7 @@ In the next sections, we will show how to handle these cases.
 
 ## Conditional rendering
 
-As mentioned above, you cannot use Python `if/else` statements with state vars in components. Instead, use the [rx.cond](/docs/components/conditional-rendering) function to conditionally render components.
+As mentioned above, you cannot use Python `if/else` statements with state vars in components. Instead, use the [rx.cond](/docs/components/conditional-rendering/) function to conditionally render components.
 
 ```python demo exec
 class LoginState(rx.State):
@@ -333,7 +333,7 @@ def show_login():
 
 ## Rendering lists
 
-To iterate over a var that is a list, use the [rx.foreach](/docs/components/rendering-iterables) function to render a list of components.
+To iterate over a var that is a list, use the [rx.foreach](/docs/components/rendering-iterables/) function to render a list of components.
 
 Pass the list var and a function that returns a component as arguments to `rx.foreach`.
 
@@ -358,7 +358,7 @@ The function that renders each item takes in a `Var`, since this will get compil
 
 ## Var Operations
 
-You can't use arbitrary Python operations on state vars in components, but Reflex has [var operations](/docs/vars/var-operations) that you can use to manipulate state vars.
+You can't use arbitrary Python operations on state vars in components, but Reflex has [var operations](/docs/vars/var-operations/) that you can use to manipulate state vars.
 
 For example, to check if a var is even, you can use the `%` and `==` var operations.
 
@@ -411,7 +411,7 @@ You've got the core pieces — components, state, events, compile-time vs. runti
 ```md alert info
 # Go deeper
 
-- [Vars](/docs/vars/base-vars) and [var operations](/docs/vars/var-operations) — the full API.
-- [Events](/docs/events/events-overview) and [pages](/docs/pages/overview) — routing, triggers, handlers.
+- [Vars](/docs/vars/base-vars/) and [var operations](/docs/vars/var-operations/) — the full API.
+- [Events](/docs/events/events-overview/) and [pages](/docs/pages/overview) — routing, triggers, handlers.
 - [How Reflex works](/docs/advanced-onboarding/how-reflex-works) — what runs where, and why.
 ```

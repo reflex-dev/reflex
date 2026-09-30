@@ -7,6 +7,18 @@ from pathlib import Path
 import pytest
 import reflex as rx
 
+from reflex_docs.pages.docs.metadata import docs_metadata
+
+
+@pytest.mark.parametrize(
+    ("title", "expected"),
+    [("Cli", "CLI"), ("Api Reference", "API Reference"), ("rx.html", "rx.html")],
+)
+def test_metadata_preserves_acronyms_and_code_identifiers(title, expected):
+    """Normalize standalone acronyms without rewriting component names."""
+    seo_title, _ = docs_metadata("/api-reference/cli/", title, None)
+    assert seo_title.startswith(expected + " · ")
+
 
 @pytest.fixture
 def routes_fixture():
@@ -79,7 +91,7 @@ def test_docs_route_descriptions_fit_search_snippet_length(routes_fixture):
 
 @pytest.mark.parametrize(
     ("label", "href"),
-    [("Blog", "/blog/"), ("FAQ", "/faq/")],
+    [("Blog", "https://reflex.dev/blog/"), ("FAQ", "https://reflex.dev/faq/")],
 )
 def test_docpage_footer_uses_root_site_anchors(label: str, href: str):
     """Root-site footer links should not inherit the /docs router basename."""
@@ -133,25 +145,83 @@ def test_github_edit_url_points_at_repo_source(source: str, expected: str):
 
 
 @pytest.mark.parametrize("use_venv", [False, True])
-def test_github_edit_url_falls_back_outside_repo(tmp_path, use_venv: bool):
-    """Sources outside the checkout or installed into the venv link to the docs tree."""
+def test_github_edit_url_omits_uneditable_sources(tmp_path, use_venv: bool):
+    """Installed or external sources must not offer a misleading edit action."""
     import sys
 
     from reflex_docs.templates.docpage.docpage import github_edit_url
 
     outside = (Path(sys.prefix) if use_venv else tmp_path) / "some_package" / "page.md"
 
-    assert github_edit_url(str(outside)) == (
-        "https://github.com/reflex-dev/reflex/tree/main/docs"
-    )
+    assert github_edit_url(str(outside)) == ""
 
 
 def test_github_edit_url_without_source():
-    """Pages with no known source file link to the docs tree."""
+    """Pages with no known source file cannot offer a file edit action."""
     from reflex_docs.templates.docpage.docpage import github_edit_url
 
-    assert (
-        github_edit_url(None) == "https://github.com/reflex-dev/reflex/tree/main/docs"
+    assert github_edit_url(None) == ""
+
+
+def test_github_edit_url_supports_preview_branch(monkeypatch):
+    """A preview can edit new files on its branch before they exist on main."""
+    from reflex_docs.templates.docpage.docpage import REPO_ROOT, github_edit_url
+
+    monkeypatch.setenv("DOCS_GITHUB_REF", "codex/docs-editorial-refresh")
+    assert github_edit_url(
+        str(REPO_ROOT / "docs/app/reflex_docs/pages/ai_landing.py")
+    ) == (
+        "https://github.com/reflex-dev/reflex/edit/codex%2Fdocs-editorial-refresh/"
+        "docs/app/reflex_docs/pages/ai_landing.py"
+    )
+
+
+@pytest.mark.parametrize(
+    ("name", "source"),
+    [
+        ("app", "reflex/app.py"),
+        ("component", "packages/reflex-base/src/reflex_base/components/component.py"),
+        ("componentstate", "reflex/state.py"),
+        ("config", "packages/reflex-base/src/reflex_base/config.py"),
+        ("event", "packages/reflex-base/src/reflex_base/event/__init__.py"),
+        ("eventhandler", "packages/reflex-base/src/reflex_base/event/__init__.py"),
+        ("eventspec", "packages/reflex-base/src/reflex_base/event/__init__.py"),
+        ("state", "reflex/state.py"),
+        ("statemanager", "reflex/istate/manager/__init__.py"),
+        ("importvar", "packages/reflex-base/src/reflex_base/utils/imports.py"),
+        ("var", "packages/reflex-base/src/reflex_base/vars/base.py"),
+    ],
+)
+def test_api_reference_edit_links_target_documented_class(routes_fixture, name, source):
+    """Generated API pages edit the class whose docstrings they display."""
+    from reflex_docs.templates.docpage.docpage import doc_edit_hrefs
+
+    assert doc_edit_hrefs[f"/api-reference/{name}/"] == (
+        f"https://github.com/reflex-dev/reflex/edit/main/{source}"
+    )
+
+
+@pytest.mark.parametrize(
+    ("name", "source"),
+    [
+        ("login", "reflex/reflex.py"),
+        ("deploy", "packages/reflex-hosting-cli/src/reflex_cli/v2/deploy.py"),
+        ("apps", "packages/reflex-hosting-cli/src/reflex_cli/v2/apps.py"),
+        ("providers", "packages/reflex-hosting-cli/src/reflex_cli/v2/providers.py"),
+        ("projects", "packages/reflex-hosting-cli/src/reflex_cli/v2/project.py"),
+        ("secrets", "packages/reflex-hosting-cli/src/reflex_cli/v2/secrets.py"),
+        ("scan", "packages/reflex-hosting-cli/src/reflex_cli/v2/scan.py"),
+        ("regions", "packages/reflex-hosting-cli/src/reflex_cli/v2/vmtypes_regions.py"),
+        ("vmtypes", "packages/reflex-hosting-cli/src/reflex_cli/v2/vmtypes_regions.py"),
+        ("config", "packages/reflex-hosting-cli/src/reflex_cli/v2/vmtypes_regions.py"),
+    ],
+)
+def test_cloud_cli_edit_links_target_command_help(routes_fixture, name, source):
+    """CLI references edit the callbacks supplying their command help."""
+    from reflex_docs.templates.docpage.docpage import doc_edit_hrefs
+
+    assert doc_edit_hrefs[f"/hosting/cli/{name}/"] == (
+        f"https://github.com/reflex-dev/reflex/edit/main/{source}"
     )
 
 
@@ -325,3 +395,38 @@ def test_docs_do_not_link_to_retired_demo_apps():
             offenders[virtual] = found
 
     assert offenders == {}, f"Docs link to retired demo apps: {offenders}"
+
+
+def test_docs_titles_and_descriptions_are_unique(routes_fixture):
+    """Search snippets distinguish pages in different product sections."""
+    for attr in ("title", "description"):
+        values = [
+            (route.seo_title or route.title) if attr == "title" else route.description
+            for route in routes_fixture
+        ]
+        duplicates = {
+            value: count
+            for value, count in Counter(values).items()
+            if value and count > 1
+        }
+        assert duplicates == {}, (attr, duplicates)
+
+
+def test_routes_have_specific_descriptions(routes_fixture):
+    """Published pages must not fall back to the generic documentation snippet."""
+    from reflex_docs.pages.docs.metadata import (
+        GENERIC_DESCRIPTION_TEMPLATE,
+        truncate_meta_description,
+    )
+
+    failures = [
+        route.path
+        for route in routes_fixture
+        if route.description
+        == truncate_meta_description(
+            GENERIC_DESCRIPTION_TEMPLATE.format(
+                subject=(route.seo_title or route.title).removesuffix(" · Reflex Docs")
+            )
+        )
+    ]
+    assert not failures, failures

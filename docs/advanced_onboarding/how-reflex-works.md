@@ -1,3 +1,8 @@
+---
+title: How Reflex Works — Python State and React UI
+meta_description: Learn how Reflex compiles a React interface and connects it to Python state and event handlers, including browser behavior and backend execution.
+---
+
 # How Reflex Works
 
 We'll use the following basic app that displays Github profile images as an example to explain the different parts of the architecture.
@@ -48,7 +53,7 @@ We wanted to simplify this process in Reflex by defining both the frontend and b
 
 ### TLDR
 
-Under the hood, Reflex apps compile down to a [React](https://react.dev) frontend app and a [FastAPI](https://github.com/tiangolo/fastapi) backend app. Only the UI is compiled to Javascript; all the app logic and state management stays in Python and is run on the server. Reflex uses [WebSockets](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API) to send events from the frontend to the backend, and to send state updates from the backend to the frontend.
+Under the hood, Reflex compiles the interface to a [React](https://react.dev) frontend connected to a [FastAPI](https://github.com/tiangolo/fastapi) backend. Ordinary Python state handlers run on the server. Component-local behavior, compiled Var expressions, and explicitly added JavaScript can run in the browser. Reflex uses [WebSockets](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API) to send events from the frontend to the backend, and to send state updates from the backend to the frontend.
 
 The diagram below provides a detailed overview of how a Reflex app works. We'll go through each part in more detail in the following sections.
 
@@ -72,9 +77,9 @@ rx.box(height="1em")
 
 We wanted Reflex apps to look and feel like a traditional web app to the end user, while still being easy to build and maintain for the developer. To do this, we built on top of mature and popular web technologies.
 
-When you run `uv run reflex run`, Reflex compiles the frontend down to a single-page [Next.js](https://nextjs.org) app and serves it on a port (by default `3000`) that you can access in your browser.
+When you run `uv run reflex run`, Reflex compiles the frontend to a React application and serves it on a port (by default `3000`) that you can access in your browser.
 
-The frontend's job is to reflect the app's state, and send events to the backend when the user interacts with the UI. No actual logic is run on the frontend.
+The frontend reflects the app's state and sends events to the backend when an interaction is connected to a Python handler. Not every interaction requires that round trip: a component can handle local browser behavior, and custom components can include [JavaScript hooks](/docs/wrapping-react/custom-code-and-hooks/). Read [performance and execution](/docs/advanced-onboarding/performance-and-execution/) for the costs of each path.
 
 ### Components
 
@@ -117,23 +122,23 @@ Many of our core components are based on [Radix](https://radix-ui.com/), a popul
 
 We chose React because it is a popular library with a huge ecosystem. Our goal isn't to recreate the web ecosystem, but to make it accessible to Python developers.
 
-This also lets our users bring their own components if we don't have a component they need. Users can [wrap their own React components](/docs/wrapping-react/overview) and then [publish them](/docs/custom-components/overview) for others to use. Over time we will build out our [third party component ecosystem](/docs/custom-components/overview) so that users can easily find and use components that others have built.
+This also lets our users bring their own components if we don't have a component they need. Users can [wrap their own React components](/docs/wrapping-react/overview/) and then [publish them](/docs/custom-components/overview/) for others to use. Over time we will build out our [third party component ecosystem](/docs/custom-components/overview/) so that users can easily find and use components that others have built.
 
 ### Styling
 
 We wanted to make sure Reflex apps look good out of the box, while still giving developers full control over the appearance of their app.
 
-We have a core [theming system](/docs/styling/theming) that lets you set high level styling options such as dark mode and accent color throughout your app to give it a unified look and feel.
+We have a core [theming system](/docs/styling/theming/) that lets you set high level styling options such as dark mode and accent color throughout your app to give it a unified look and feel.
 
-Beyond this, Reflex components can be styled using the full power of CSS. We leverage the [Emotion](https://emotion.sh/docs/introduction) library to allow "CSS-in-Python" styling, so you can pass any CSS prop as a keyword argument to a component. This includes [responsive props](/docs/styling/responsive) by passing a list of values.
+Beyond this, Reflex components can be styled using the full power of CSS. We leverage the [Emotion](https://emotion.sh/docs/introduction) library to allow "CSS-in-Python" styling, so you can pass any CSS prop as a keyword argument to a component. This includes [responsive props](/docs/styling/responsive/) by passing a list of values.
 
 ## Backend
 
 Now let's look at how we added interactivity to our apps.
 
-In Reflex only the frontend compiles to Javascript and runs on the user's browser, while all the state and logic stays in Python and is run on the server. When you run `uv run reflex run`, we start a FastAPI server (by default on port `8000`) that the frontend connects to through a websocket.
+Reflex runs Python state handlers and backend state management on the server. The compiled React interface, Var expressions, and component-local JavaScript run in the user's browser. When you run `uv run reflex run`, we start a FastAPI server (by default on port `8000`) that the frontend connects to through a websocket.
 
-All the state and logic are defined within a `State` class.
+Backend state and event handlers are defined within a `State` class.
 
 ```python
 class GithubState(rx.State):
@@ -200,7 +205,7 @@ On the frontend, we maintain an event queue of all pending events.
 When an event is triggered, it is added to the queue. We have a `processing` flag to make sure only one event is processed at a time. This ensures that the state is always consistent and there aren't any race conditions with two event handlers modifying the state at the same time.
 
 ```md alert info
-# There are exceptions to this, such as [background events](/docs/events/background-events) which allow you to run events in the background without blocking the UI.
+# There are exceptions to this, such as [background events](/docs/events/background-events/) which allow you to run events in the background without blocking the UI.
 ```
 
 Once the event is ready to be processed, it is sent to the backend through a WebSocket connection.
@@ -228,7 +233,7 @@ In our example, the `set_profile` event handler is run on the user's state. This
 
 ### State Updates
 
-Every time an event handler returns (or [yields](/docs/events/yield-events)), we save the state in the state manager and send the **state updates** to the frontend to update the UI.
+Every time an event handler returns (or [yields](/docs/events/yield-events/)), we save the state in the state manager and send the **state updates** to the frontend to update the UI.
 
 To maintain performance as your state grows, internally Reflex keeps track of vars that were updated during the event handler (**dirty vars**). When the event handler is done processing, we find all the dirty vars and create a state update to send to the frontend.
 
