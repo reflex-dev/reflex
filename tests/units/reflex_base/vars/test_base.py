@@ -1366,3 +1366,7 @@ async def test_cached_async_computed_var_checks_return_type_on_recompute_only(
     assert await state.doubled == [2, 4, 6]
     assert await state.doubled == [2, 4, 6]
     assert checked == [[2, 4, 6]]
+
+    state.items = [5]
+    assert await state.doubled == [10]
+    assert checked == [[2, 4, 6], [10]]

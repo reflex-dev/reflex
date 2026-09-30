@@ -2865,13 +2865,13 @@ class ComputedVar(Var[RETURN_TYPE]):
         # handle caching
         if hasattr(instance, self._cache_attr) and not self.needs_update(instance):
             return getattr(instance, self._cache_attr)
+        value = self.fget(instance)
         # Set cache attr on state instance.
-        setattr(instance, self._cache_attr, self.fget(instance))
+        setattr(instance, self._cache_attr, value)
         # Ensure the computed var gets serialized to redis.
         instance._was_touched = True
         # Set the last updated timestamp on the state instance.
         setattr(instance, self._last_updated_attr, datetime.datetime.now())
-        value = getattr(instance, self._cache_attr)
         self._check_deprecated_return_type(instance, value)
         return value
 
@@ -3158,13 +3158,13 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
         async def _awaitable_result(instance: BaseState = instance) -> RETURN_TYPE:
             if hasattr(instance, self._cache_attr) and not self.needs_update(instance):
                 return getattr(instance, self._cache_attr)
+            value = await self.fget(instance)
             # Set cache attr on state instance.
-            setattr(instance, self._cache_attr, await self.fget(instance))
+            setattr(instance, self._cache_attr, value)
             # Ensure the computed var gets serialized to redis.
             instance._was_touched = True
             # Set the last updated timestamp on the state instance.
             setattr(instance, self._last_updated_attr, datetime.datetime.now())
-            value = getattr(instance, self._cache_attr)
             self._check_deprecated_return_type(instance, value)
             return value
 
