@@ -16,6 +16,20 @@ from reflex_base.environment import environment
 join = os.linesep.join
 
 
+def write_file(path: str | Path, code: str):
+    """Write the given code to the given path, skipping unchanged contents.
+
+    Args:
+        path: The path to write the code to.
+        code: The code to write.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists() and path.read_text(encoding="utf-8") == code:
+        return
+    path.write_text(code, encoding="utf-8")
+
+
 def chmod_rm(path: Path):
     """Remove a file or directory with chmod.
 

@@ -4,10 +4,15 @@ import asyncio
 import contextlib
 import dataclasses
 import logging
+import sys
+from collections.abc import AsyncIterator, Mapping
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
+from opentelemetry.trace import SpanKind
 from pytest_mock import MockerFixture
+from reflex_base import otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import (
     EventProcessor,
@@ -18,6 +23,7 @@ from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegistrationContext
 
 from reflex.event import Event, EventHandler
+from tests.units.conftest import active_tracer
 
 # Module-level log so event handlers can record what happened.
 _CALL_LOG: list[dict[str, Any]] = []
@@ -39,6 +45,12 @@ async def _slow_handler(delay: float = 0.5):
 async def _error_handler():  # noqa: RUF029
     """A handler that always raises."""
     raise RuntimeError("boom")  # noqa: EM101
+
+
+async def _recovery_handler():
+    """Log recovery and emit a delta, as an event chained after a failure."""
+    _CALL_LOG.append({"value": "recovered"})
+    await EventContext.get().emit_delta({"state": {"recovered": True}})
 
 
 async def _logging_handler(value: str = "default"):  # noqa: RUF029
@@ -83,6 +95,21 @@ async def _rapid_multi_delta_handler():
     ctx = EventContext.get()
     for i in range(2):
         await ctx.emit_delta({"state": {"i": i}})
+
+
+async def _delta_then_chain_handler():
+    """A handler that emits a delta, then chains an event that emits another."""
+    ctx = EventContext.get()
+    await ctx.emit_delta({"state": {"x": 0}})
+    await ctx.enqueue(Event.from_event_type(delta_event())[0])
+
+
+async def _other_token_delta_handler():
+    """A handler that emits a delta for another token, then one for its own."""
+    ctx = EventContext.get()
+    other_ctx = dataclasses.replace(ctx, token="other_token")
+    await other_ctx.emit_delta({"state": {"other": 1}})
+    await ctx.emit_delta({"state": {"own": 1}})
 
 
 async def _slow_logging_handler(value: str = "default"):
@@ -146,6 +173,18 @@ async def _gated_logging_handler(value: str = "default"):
     _CALL_LOG.append({"value": value})
 
 
+async def _gated_delta_handler(value: str = "default"):
+    """Emit a delta, wait for the gate named ``value``, then emit another.
+
+    Args:
+        value: The key of the emitted deltas; also names the gate to wait for.
+    """
+    ctx = EventContext.get()
+    await ctx.emit_delta({"state": {value: "started"}})
+    await _GATES[value].wait()
+    await ctx.emit_delta({"state": {value: "finished"}})
+
+
 async def _cancellable_load_handler(value: str = "default"):
     """Log ``value``; if a gate named ``value`` exists, signal it and block.
 
@@ -197,23 +236,160 @@ async def _superseding_root_handler(value: str = "default", child: str = "load")
 _superseding_root_handler._reflex_supersedes = True  # type: ignore[attr-defined]
 
 
+async def _polling_handler(tick: int = 0, ticks: int = 0):
+    """Re-chain itself ``ticks`` times, then signal the ``poll`` gate and block.
+
+    Each tick is a child of the previous one, so the chain grows one level
+    deeper per tick like a self-chaining polling handler.
+
+    Args:
+        tick: The current tick number.
+        ticks: How many ticks to run before blocking.
+    """
+    if tick < ticks:
+        ctx = EventContext.get()
+        await ctx.enqueue(Event.from_event_type(polling_event(tick + 1, ticks))[0])
+        return
+    _GATES["poll"].set()
+    await asyncio.sleep(10)
+
+
+async def _superseding_poll_root_handler(ticks: int = 0):
+    """A superseding root that chains a polling loop, like on_load -> poll.
+
+    Args:
+        ticks: How many ticks the polling loop runs before blocking.
+    """
+    ctx = EventContext.get()
+    await ctx.enqueue(Event.from_event_type(polling_event(0, ticks))[0])
+
+
+_superseding_poll_root_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+
+
+async def _shared_refresh_handler(value: str = "default"):
+    """A superseding background worker shared by several parents.
+
+    If a gate named ``value`` exists, signal it and block until cancelled,
+    logging the cancellation; otherwise log completion immediately.
+
+    Args:
+        value: The value to log; also names the gate to signal.
+    """
+    gate = _GATES.get(value)
+    if gate is not None:
+        gate.set()
+        try:
+            await asyncio.sleep(10)
+        except asyncio.CancelledError:
+            _CALL_LOG.append({"value": f"{value}_cancelled"})
+            raise
+    else:
+        await asyncio.sleep(0)
+    _CALL_LOG.append({"value": value})
+
+
+_shared_refresh_handler._reflex_background_task = True  # type: ignore[attr-defined]
+_shared_refresh_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+
+
+async def _refresh_spawner_handler(value: str = "default", gated: bool = False):
+    """Chain the shared refresh handler, optionally waiting on a gate first.
+
+    Args:
+        value: Label forwarded to the shared refresh handler.
+        gated: If True, wait for the gate named ``<value>_go`` before chaining.
+    """
+    if gated:
+        await _GATES[f"{value}_go"].wait()
+    ctx = EventContext.get()
+    await ctx.enqueue(Event.from_event_type(shared_refresh_event(value))[0])
+
+
+_refresh_spawner_handler._reflex_background_task = True  # type: ignore[attr-defined]
+
+
+async def _refresh_fanout_handler():
+    """Chain the shared superseding refresh handler twice from one parent."""
+    ctx = EventContext.get()
+    await ctx.enqueue(Event.from_event_type(shared_refresh_event("fan_x"))[0])
+    await ctx.enqueue(Event.from_event_type(shared_refresh_event("fan_y"))[0])
+
+
+async def _lingering_refresh_handler(value: str = "default", chain: bool = False):
+    """A superseding handler that either chains a slow child or gate-blocks.
+
+    Args:
+        value: The value to log; also names the gate to signal.
+        chain: If True, chain a slow child so this invocation's future
+            outlives its handler in the tracked futures.
+    """
+    if chain:
+        ctx = EventContext.get()
+        await ctx.enqueue(Event.from_event_type(slow_event(0.5))[0])
+        return
+    gate = _GATES.get(value)
+    if gate is not None:
+        gate.set()
+        try:
+            await asyncio.sleep(10)
+        except asyncio.CancelledError:
+            _CALL_LOG.append({"value": f"{value}_cancelled"})
+            raise
+    _CALL_LOG.append({"value": value})
+
+
+_lingering_refresh_handler._reflex_background_task = True  # type: ignore[attr-defined]
+_lingering_refresh_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+
+
+async def _counting_superseding_handler(tick: int = 0, limit: int = 3):
+    """Re-chain itself until ``limit`` ticks, then log the final tick.
+
+    Args:
+        tick: The current tick number.
+        limit: How many ticks to run before logging.
+    """
+    if tick < limit:
+        ctx = EventContext.get()
+        await ctx.enqueue(
+            Event.from_event_type(counting_superseding_event(tick + 1, limit))[0]
+        )
+        return
+    _CALL_LOG.append({"value": f"tick_{tick}"})
+
+
+_counting_superseding_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+
+
 noop_event = EventHandler(fn=_noop_handler)
 slow_event = EventHandler(fn=_slow_handler)
 error_event = EventHandler(fn=_error_handler)
+recovery_event = EventHandler(fn=_recovery_handler)
 logging_event = EventHandler(fn=_logging_handler)
 chaining_event = EventHandler(fn=_chaining_handler)
 delta_event = EventHandler(fn=_delta_handler)
 multi_delta_event = EventHandler(fn=_multi_delta_handler)
 rapid_multi_delta_event = EventHandler(fn=_rapid_multi_delta_handler)
+delta_then_chain_event = EventHandler(fn=_delta_then_chain_handler)
+other_token_delta_event = EventHandler(fn=_other_token_delta_handler)
 slow_logging_event = EventHandler(fn=_slow_logging_handler)
 multi_chaining_event = EventHandler(fn=_multi_chaining_handler)
 background_slow_logging_event = EventHandler(fn=_background_slow_logging_handler)
 background_then_normal_event = EventHandler(fn=_background_then_normal_handler)
 error_then_logging_event = EventHandler(fn=_error_then_logging_handler)
 gated_logging_event = EventHandler(fn=_gated_logging_handler)
+gated_delta_event = EventHandler(fn=_gated_delta_handler)
 cancellable_load_event = EventHandler(fn=_cancellable_load_handler)
 resurrecting_load_event = EventHandler(fn=_resurrecting_load_handler)
 superseding_root_event = EventHandler(fn=_superseding_root_handler)
+shared_refresh_event = EventHandler(fn=_shared_refresh_handler)
+refresh_spawner_event = EventHandler(fn=_refresh_spawner_handler)
+refresh_fanout_event = EventHandler(fn=_refresh_fanout_handler)
+lingering_refresh_event = EventHandler(fn=_lingering_refresh_handler)
+counting_superseding_event = EventHandler(fn=_counting_superseding_handler)
+polling_event = EventHandler(fn=_polling_handler)
+superseding_poll_root_event = EventHandler(fn=_superseding_poll_root_handler)
 
 
 @pytest.fixture(autouse=True)
@@ -229,20 +405,31 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         noop_event,
         slow_event,
         error_event,
+        recovery_event,
         logging_event,
         chaining_event,
         delta_event,
         multi_delta_event,
         rapid_multi_delta_event,
+        delta_then_chain_event,
+        other_token_delta_event,
         slow_logging_event,
         multi_chaining_event,
         background_slow_logging_event,
         background_then_normal_event,
         error_then_logging_event,
         gated_logging_event,
+        gated_delta_event,
         cancellable_load_event,
         resurrecting_load_event,
         superseding_root_event,
+        shared_refresh_event,
+        refresh_spawner_event,
+        refresh_fanout_event,
+        lingering_refresh_event,
+        counting_superseding_event,
+        polling_event,
+        superseding_poll_root_event,
     ):
         RegistrationContext.register_event_handler(handler)
 
@@ -255,6 +442,43 @@ def processor() -> EventProcessor:
         A fresh EventProcessor instance.
     """
     return EventProcessor(graceful_shutdown_timeout=2)
+
+
+class _RecoveringProcessor(EventProcessor):
+    """A processor whose backend exception handler chains a recovery event."""
+
+    async def _handle_backend_exception(
+        self, ex: Exception, ev_ctx: EventContext | None = None
+    ) -> None:
+        """Chain the recovery event from the failed event's context.
+
+        Args:
+            ex: The exception that was raised.
+            ev_ctx: The failed event's context.
+        """
+        if ev_ctx is not None:
+            EventContext.set(ev_ctx)
+        await EventContext.get().enqueue(Event.from_event_type(recovery_event())[0])
+
+
+def _record_root_deltas(ep: EventProcessor) -> list[tuple[str, Mapping[str, Any]]]:
+    """Configure ``ep`` so the deltas its root context emits are recorded.
+
+    Args:
+        ep: The unconfigured event processor.
+
+    Returns:
+        The ``(token, delta)`` pairs emitted the usual way, in order.
+    """
+    emitted: list[tuple[str, Mapping[str, Any]]] = []
+
+    async def _emit(token: str, delta: Mapping[str, Any]) -> None:  # noqa: RUF029
+        emitted.append((token, delta))
+
+    ep.configure()
+    assert ep._root_context is not None
+    ep._root_context = dataclasses.replace(ep._root_context, emit_delta_impl=_emit)
+    return emitted
 
 
 def test_configure_once(processor: EventProcessor):
@@ -573,17 +797,6 @@ async def test_exception_handler_can_chain_recovery_events(token: str):
     Args:
         token: The client token.
     """
-
-    class _RecoveringProcessor(EventProcessor):
-        async def _handle_backend_exception(
-            self, ex: Exception, ev_ctx: EventContext | None = None
-        ) -> None:
-            if ev_ctx is not None:
-                EventContext.set(ev_ctx)
-            await EventContext.get().enqueue(
-                Event.from_event_type(logging_event("recovered"))[0]
-            )
-
     ep = _RecoveringProcessor(
         backend_exception_handler=lambda ex: None, graceful_shutdown_timeout=2
     )
@@ -752,12 +965,173 @@ async def test_stream_delta_noop_handler_yields_nothing(token: str):
     assert collected == []
 
 
+async def test_stream_delta_waits_for_chained_events(token: str):
+    """The stream ends once the events its handler chains are done.
+
+    The root context has no txid, so only a stream context with a txid of its
+    own lets the chained events find the stream's future as their parent.
+
+    Args:
+        token: The client token.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        event = Event.from_event_type(multi_chaining_event())[0]
+        assert [d async for d in ep.enqueue_stream_delta(token, event)] == []
+        assert _CALL_LOG == [
+            {"value": "first"},
+            {"value": "second"},
+            {"value": "third"},
+        ]
+
+
 async def test_stream_delta_not_configured_raises():
     """enqueue_stream_delta raises RuntimeError if processor is not configured."""
     ep = EventProcessor()
     with pytest.raises(RuntimeError, match="not configured"):
         async for _ in ep.enqueue_stream_delta("tok", Event(name="x", payload={})):
             pass
+
+
+async def test_stream_delta_does_not_adopt_top_level_events(
+    processor: EventProcessor,
+):
+    """Top-level events enqueued while a stream runs stay out of its chain.
+
+    Every top-level event named the root context's txid as its parent, so a
+    stream registered under that txid adopted them all: they were chained to
+    it and cancelled with it when its consumer left early, e.g. an upload
+    whose client disconnected.
+
+    Args:
+        processor: The event processor fixture.
+    """
+    _GATES["upload"] = asyncio.Event()
+    _GATES["other"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        stream = ep.enqueue_stream_delta(
+            "token_a", Event.from_event_type(gated_delta_event("upload"))[0]
+        )
+        assert await anext(stream) == {"state": {"upload": "started"}}
+        other = await ep.enqueue(
+            "token_b", Event.from_event_type(gated_logging_event("other"))[0]
+        )
+        assert other.parent is None
+        await ep.join(timeout=1)
+
+        await stream.aclose()
+        assert not other.cancelled()
+        _GATES["other"].set()
+        await asyncio.wait_for(other, timeout=1)
+
+    assert _CALL_LOG == [{"value": "other"}]
+
+
+async def _drain(stream: AsyncIterator[Any]) -> list[Any]:
+    """Collect the remaining items of an async iterator.
+
+    Args:
+        stream: The iterator to drain.
+
+    Returns:
+        The remaining items, in order.
+    """
+    return [item async for item in stream]
+
+
+async def test_concurrent_stream_deltas_are_tracked_independently(
+    processor: EventProcessor,
+):
+    """Concurrent streams each keep their own future and handler task.
+
+    Streams sharing the root context's txid overwrote each other's tracking,
+    so here the first handler to finish resolved the second stream's future,
+    ending that stream early, and its own stream never ended.
+
+    Args:
+        processor: The event processor fixture.
+    """
+    _GATES["a"] = asyncio.Event()
+    _GATES["b"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        stream_a = ep.enqueue_stream_delta(
+            "token_a", Event.from_event_type(gated_delta_event("a"))[0]
+        )
+        stream_b = ep.enqueue_stream_delta(
+            "token_b", Event.from_event_type(gated_delta_event("b"))[0]
+        )
+        assert await anext(stream_a) == {"state": {"a": "started"}}
+        assert await anext(stream_b) == {"state": {"b": "started"}}
+        assert len(ep._futures) == len(ep._tasks) == 2
+
+        _GATES["a"].set()
+        assert await asyncio.wait_for(_drain(stream_a), timeout=1) == [
+            {"state": {"a": "finished"}}
+        ]
+        _GATES["b"].set()
+        assert await asyncio.wait_for(_drain(stream_b), timeout=1) == [
+            {"state": {"b": "finished"}}
+        ]
+
+
+async def test_stream_delta_yields_chained_event_deltas(token: str):
+    """Deltas from events the handler chains are streamed too, in order.
+
+    The whole chain's updates reach the caller over one channel, so a chained
+    event's delta cannot overtake the handler's own on the way to the client.
+
+    Args:
+        token: The client token.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    emitted = _record_root_deltas(ep)
+    async with ep:
+        event = Event.from_event_type(delta_then_chain_event())[0]
+        collected = [d async for d in ep.enqueue_stream_delta(token, event)]
+    assert collected == [{"state": {"x": 0}}, {"state": {"x": 1}}]
+    assert emitted == []
+
+
+async def test_stream_delta_sends_other_tokens_deltas_normally(token: str):
+    """A delta for another token goes out the usual way, never to the stream.
+
+    Args:
+        token: The client token.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    emitted = _record_root_deltas(ep)
+    async with ep:
+        event = Event.from_event_type(other_token_delta_event())[0]
+        collected = [d async for d in ep.enqueue_stream_delta(token, event)]
+    assert collected == [{"state": {"own": 1}}]
+    assert emitted == [("other_token", {"state": {"other": 1}})]
+
+
+async def test_stream_delta_emits_deltas_after_it_ends_normally(token: str):
+    """Deltas emitted after the stream ended reach the client the usual way.
+
+    A recovery event the backend exception handler chains after the streamed
+    handler failed runs in a fork of the stream's context, so it inherited the
+    stream's emitter and its deltas went to a queue nobody read anymore.
+
+    Args:
+        token: The client token.
+    """
+    ep = _RecoveringProcessor(
+        backend_exception_handler=lambda ex: None, graceful_shutdown_timeout=2
+    )
+    emitted = _record_root_deltas(ep)
+    async with ep:
+        event = Event.from_event_type(error_event())[0]
+        with pytest.raises(RuntimeError, match="boom"):
+            async for _ in ep.enqueue_stream_delta(token, event):
+                pass
+    # Stopping the processor drained the recovery event.
+    assert _CALL_LOG == [{"value": "recovered"}]
+    assert emitted == [(token, {"state": {"recovered": True}})]
 
 
 async def test_sequential_chained_events_run_in_order(token: str):
@@ -1045,7 +1419,8 @@ async def test_superseding_event_skips_queued_stale_chain(
         current = await ep.enqueue(
             token, Event.from_event_type(superseding_root_event("fresh"))[0]
         )
-        assert stale.cancelled()
+        # The root already completed, so superseding it cancels the pending leaf.
+        assert stale.all_done()
         _GATES["blocker"].set()
         await asyncio.wait_for(current.wait_all(), timeout=1)
 
@@ -1081,3 +1456,331 @@ async def test_superseded_chain_cannot_chain_new_events(
 
     assert {"value": "resurrected"} not in _CALL_LOG
     assert {"value": "fresh"} in _CALL_LOG
+
+
+async def test_superseding_child_shared_by_distinct_roots_is_cancelled(
+    processor: EventProcessor,
+    token: str,
+):
+    """A newer chain's invocation of a shared superseding child cancels the older one (#7041).
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    _GATES["held"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        first = await ep.enqueue(
+            token, Event.from_event_type(refresh_spawner_event("held"))[0]
+        )
+        await asyncio.wait_for(_GATES["held"].wait(), timeout=1)
+        assert not first.all_done()
+
+        second = await ep.enqueue(
+            token, Event.from_event_type(refresh_spawner_event("fresh"))[0]
+        )
+        await asyncio.wait_for(second.wait_all(), timeout=1)
+        await _drain_superseded(ep)
+
+        # The cancelled task logs during its unwind, shortly after its future
+        # is cancelled; poll briefly instead of racing it.
+        for _ in range(100):
+            if {"value": "held_cancelled"} in _CALL_LOG:
+                break
+            await asyncio.sleep(0.01)
+        assert {"value": "held_cancelled"} in _CALL_LOG
+        assert {"value": "fresh"} in _CALL_LOG
+        assert {"value": "held"} not in _CALL_LOG
+
+
+async def test_self_chaining_superseding_handler_continues(
+    processor: EventProcessor,
+    token: str,
+):
+    """Invocations of the same chain coexist, so a superseding handler can re-chain itself.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    processor.configure()
+    async with processor as ep:
+        root = await ep.enqueue(
+            token, Event.from_event_type(counting_superseding_event())[0]
+        )
+        await asyncio.wait_for(root.wait_all(), timeout=1)
+        await _drain_superseded(ep)
+
+    assert {"value": "tick_3"} in _CALL_LOG
+
+
+async def test_superseding_siblings_from_one_parent_all_run(
+    processor: EventProcessor,
+    token: str,
+):
+    """Sibling invocations yielded by one parent share a generation and all run.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    processor.configure()
+    async with processor as ep:
+        root = await ep.enqueue(token, Event.from_event_type(refresh_fanout_event())[0])
+        await asyncio.wait_for(root.wait_all(), timeout=1)
+        await _drain_superseded(ep)
+
+    assert {"value": "fan_x"} in _CALL_LOG
+    assert {"value": "fan_y"} in _CALL_LOG
+
+
+async def test_late_chained_invocation_stays_cancellable(
+    processor: EventProcessor,
+    token: str,
+):
+    """An invocation late-chained to a done parent registers for cancellation.
+
+    A late-chained event is not attached to its completed parent's cancellation
+    tree, so it must register in the supersession slot itself or a newer
+    generation could never cancel it.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    _GATES["late"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        first = await ep.enqueue(
+            token,
+            Event.from_event_type(lingering_refresh_event("first", chain=True))[0],
+        )
+        # The handler is done but its future is retained for the slow child.
+        await asyncio.wait_for(asyncio.shield(first), timeout=1)
+        assert first.done()
+        assert first.txid in ep._futures
+
+        late_ctx = dataclasses.replace(
+            ep._root_context.fork(token=token),  # pyright: ignore[reportOptionalMemberAccess]
+            parent_txid=first.txid,
+        )
+        late = await ep.enqueue(
+            token,
+            Event.from_event_type(lingering_refresh_event("late"))[0],
+            ev_ctx=late_ctx,
+        )
+        await asyncio.wait_for(_GATES["late"].wait(), timeout=1)
+
+        newer = await ep.enqueue(
+            token, Event.from_event_type(lingering_refresh_event("winner"))[0]
+        )
+        await asyncio.wait_for(newer.wait_all(), timeout=1)
+
+        assert late.cancelled()
+        with contextlib.suppress(asyncio.CancelledError):
+            await asyncio.wait_for(late.wait_all(), timeout=1)
+        await _drain_superseded(ep)
+
+    assert {"value": "late_cancelled"} in _CALL_LOG
+    assert {"value": "winner"} in _CALL_LOG
+
+
+async def test_stale_chain_late_enqueue_is_dropped(
+    processor: EventProcessor,
+    token: str,
+):
+    """A stale chain enqueuing the shared child late does not cancel newer work.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    _GATES["late_go"] = asyncio.Event()
+    _GATES["late"] = asyncio.Event()
+    _GATES["live"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        stale_root = await ep.enqueue(
+            token, Event.from_event_type(refresh_spawner_event("late", gated=True))[0]
+        )
+        newer_root = await ep.enqueue(
+            token, Event.from_event_type(refresh_spawner_event("live"))[0]
+        )
+        await asyncio.wait_for(_GATES["live"].wait(), timeout=1)
+
+        # The stale chain now enqueues the shared child after the newer chain.
+        _GATES["late_go"].set()
+        await asyncio.wait_for(stale_root.wait_all(), timeout=1)
+        await asyncio.sleep(0.1)
+
+        # The dropped invocation never starts (it would signal its gate), and
+        # the newer chain's work is untouched.
+        assert not _GATES["late"].is_set()
+        assert not newer_root.all_done()
+        assert {"value": "late"} not in _CALL_LOG
+        assert {"value": "late_cancelled"} not in _CALL_LOG
+
+        newer_root.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await asyncio.wait_for(newer_root.wait_all(), timeout=1)
+        await _drain_superseded(ep)
+
+    assert {"value": "live_cancelled"} in _CALL_LOG
+
+
+async def test_deep_self_chaining_poll_loop_under_superseding_root(
+    processor: EventProcessor,
+    token: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """A polling loop chained deeper than the recursion limit keeps working (#7145).
+
+    A handler that re-chains itself on every tick (a polling loop started from
+    ``on_load``) builds a linear chain of futures one level deeper per tick.
+    Walking that chain recursively blows the stack in the cleanup callbacks and
+    in ``_supersede_previous`` on the client's next navigation.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+        caplog: Log capture fixture.
+    """
+    _GATES["poll"] = asyncio.Event()
+    ticks = sys.getrecursionlimit() + 100
+    processor.configure()
+    async with processor as ep:
+        stale = await ep.enqueue(
+            token, Event.from_event_type(superseding_poll_root_event(ticks))[0]
+        )
+        await asyncio.wait_for(_GATES["poll"].wait(), timeout=10)
+        assert stale.done()
+        assert not stale.all_done()
+        assert [f for slot in ep._superseded.values() for f in slot.values()] == [stale]
+
+        # The next navigation supersedes the running poll loop.
+        _GATES["poll"] = asyncio.Event()
+        current = await ep.enqueue(
+            token, Event.from_event_type(superseding_poll_root_event(0))[0]
+        )
+        # The root already completed, so superseding it cancels the pending leaf.
+        assert stale.all_done()
+        await asyncio.wait_for(_GATES["poll"].wait(), timeout=1)
+        current.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await asyncio.wait_for(current.wait_all(), timeout=1)
+        await _drain_superseded(ep)
+
+    assert not [r for r in caplog.records if r.levelno >= logging.ERROR], [
+        r.getMessage() for r in caplog.records if r.levelno >= logging.ERROR
+    ]
+
+
+async def test_no_spans_when_otel_disabled(
+    mock_event_processor: EventProcessor, token: str, monkeypatch
+):
+    """With tracing off the processor never touches the tracer.
+
+    Args:
+        mock_event_processor: The event processor with mock root context.
+        token: The client token.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    assert otel.enabled is False
+    tracer = Mock()
+    # Nothing has bound the tracer yet in a process that never enabled tracing.
+    monkeypatch.setattr(otel, "_tracer", tracer, raising=False)
+    async with mock_event_processor as ep:
+        await ep.enqueue(token, Event.from_event_type(noop_event())[0])
+    tracer.start_as_current_span.assert_not_called()
+
+
+async def test_stream_delta_span_nests_under_caller(token: str, otel_exporter):
+    """enqueue_stream_delta captures the caller's trace context like enqueue().
+
+    Args:
+        token: The client token.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        event = Event.from_event_type(delta_event())[0]
+        with active_tracer().start_as_current_span("POST /_upload") as http_span:
+            async for _ in ep.enqueue_stream_delta(token, event):
+                pass
+    spans = {s.name: s for s in otel_exporter.get_finished_spans()}
+    handler = spans[event.name]
+    assert handler.parent is not None
+    assert handler.parent.span_id == http_span.get_span_context().span_id
+    assert handler.kind == SpanKind.INTERNAL
+    # A top-level event: no parent event, even though its span has a parent.
+    assert handler.attributes is not None
+    assert otel.ATTR_EVENT_PARENT_TXID not in handler.attributes
+
+
+async def test_event_spans_chain_parent_child(token: str, otel_exporter):
+    """Each event gets a span; chained events are children of the enqueuing span.
+
+    Args:
+        token: The client token.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        await ep.enqueue(token, Event.from_event_type(chaining_event())[0])
+    assert _CALL_LOG == [{"value": "chained"}]
+    spans = {s.name.rsplit(".", 1)[-1]: s for s in otel_exporter.get_finished_spans()}
+    parent = spans["_chaining_handler"]
+    child = spans["_logging_handler"]
+    assert parent.parent is None
+    assert parent.kind == SpanKind.CONSUMER
+    assert child.parent is not None
+    assert child.parent.span_id == parent.context.span_id
+    assert child.kind == SpanKind.INTERNAL
+    assert (
+        child.attributes[otel.ATTR_EVENT_PARENT_TXID]
+        == parent.attributes[otel.ATTR_EVENT_TXID]
+    )
+    assert child.attributes[otel.ATTR_SESSION_ID] == otel._session_id(token)
+
+
+async def test_top_level_event_under_local_span_names_no_parent_event(
+    token: str, otel_exporter
+):
+    """A top-level event enqueued under a local span has no parent event.
+
+    An event a request enqueues (a custom API route, a chunked upload) is an
+    INTERNAL child of the request's span, but it is forked from the
+    processor's root context, which belongs to no event. The events it chains
+    still name it as their parent event.
+
+    Args:
+        token: The client token.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        with active_tracer().start_as_current_span("POST /api") as http_span:
+            future = await ep.enqueue(token, Event.from_event_type(chaining_event())[0])
+        await asyncio.wait_for(future.wait_all(), timeout=1)
+    assert _CALL_LOG == [{"value": "chained"}]
+    assert future.parent is None
+    (chained_future,) = future.children
+    assert chained_future.parent is future
+    spans = {s.name.rsplit(".", 1)[-1]: s for s in otel_exporter.get_finished_spans()}
+    top = spans["_chaining_handler"]
+    chained = spans["_logging_handler"]
+    assert top.parent is not None
+    assert top.parent.span_id == http_span.get_span_context().span_id
+    assert top.kind == SpanKind.INTERNAL
+    assert top.attributes is not None
+    assert otel.ATTR_EVENT_PARENT_TXID not in top.attributes
+    assert chained.attributes is not None
+    assert (
+        chained.attributes[otel.ATTR_EVENT_PARENT_TXID]
+        == top.attributes[otel.ATTR_EVENT_TXID]
+        == future.txid
+    )

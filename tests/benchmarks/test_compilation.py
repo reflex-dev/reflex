@@ -9,8 +9,6 @@ from reflex.compiler import compiler
 from reflex.compiler.plugins import DefaultCollectorPlugin, default_page_plugins
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
 
-from .fixtures import ImportOnlyCollectorPlugin
-
 
 def import_templates():
     # Importing the templates module to avoid the import time in the benchmark
@@ -40,31 +38,6 @@ def _compile_page_context(component: Component) -> PageContext:
         hooks.compile_page(page_ctx, compile_context=compile_ctx)
 
     return page_ctx
-
-
-def _collect_imports(component: Component) -> dict:
-    """Collect only imports via a single walk of the component tree.
-
-    Returns:
-        The collapsed import dict for the page.
-    """
-    page_ctx = PageContext(
-        name="benchmark",
-        route="/benchmark",
-        root_component=component,
-    )
-    hooks = CompilerHooks(plugins=(ImportOnlyCollectorPlugin(),))
-    compile_ctx = CompileContext(pages=[], hooks=hooks)
-
-    with compile_ctx, page_ctx:
-        hooks.compile_component(
-            component,
-            page_context=page_ctx,
-            compile_context=compile_ctx,
-        )
-        hooks.compile_page(page_ctx, compile_context=compile_ctx)
-
-    return page_ctx.frontend_imports
 
 
 def _compile_page(component: Component) -> str:
@@ -106,17 +79,6 @@ def test_compile_page_full_context(
     import_templates()
 
     benchmark(lambda: _compile_page_full_context(unevaluated_page))
-
-
-def test_get_all_imports(evaluated_page: Component, benchmark: BenchmarkFixture):
-    benchmark(lambda: evaluated_page._get_all_imports())
-
-
-def test_collect_imports(
-    evaluated_page: Component,
-    benchmark: BenchmarkFixture,
-):
-    benchmark(lambda: _collect_imports(evaluated_page))
 
 
 def test_compile_all_artifacts(

@@ -1,14 +1,10 @@
-from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import cast
 
 import pytest
 from pydantic import BaseModel
-from reflex_base.components.component import BaseComponent, Component
-from reflex_base.plugins import CompileContext, PageContext
 
 import reflex as rx
-from reflex.compiler.plugins import DefaultCollectorPlugin
 
 
 class SideBarState(rx.State):
@@ -225,56 +221,9 @@ class NestedElement(BaseModel):
     value: list[int]
 
 
-@dataclass(frozen=True, slots=True)
-class ImportOnlyCollectorPlugin(DefaultCollectorPlugin):
-    """Collect only imports — same scope as Component._get_all_imports.
-
-    Inherits import collection from DefaultCollectorPlugin but disables
-    hooks, custom code, app_wrap, and stateful code rendering.
-    """
-
-    _compiler_stateful_only_leave_component = False
-
-    def leave_component(self, *_args: Any, **_kwargs: Any) -> None:
-        """No-op: skip stateful code rendering."""
-
-    def _compiler_bind_leave_component(
-        self, *_args: Any, **_kwargs: Any
-    ) -> Callable[..., None]:
-        """Return a no-op leave hook."""
-
-        def _noop(*_a: Any, **_kw: Any) -> None:
-            pass
-
-        return _noop
-
-    def _compiler_bind_enter_component(
-        self,
-        page_context: PageContext,
-        compile_context: CompileContext,
-    ) -> Callable[[BaseComponent, bool], None]:
-        del compile_context
-
-        frontend_imports = page_context.frontend_imports
-        extend_imports = self._extend_imports
-
-        def enter_component(
-            comp: BaseComponent,
-            in_prop_tree: bool,
-        ) -> None:
-            if not isinstance(comp, Component) or in_prop_tree:
-                return
-
-            imports = comp._get_imports()
-            if imports:
-                extend_imports(frontend_imports, imports)
-
-        return enter_component
-
-
 @dataclass
 class Order:
-    """A row of the table state used by the holistic event benchmark."""
+    """An order in the table event benchmark."""
 
     name: str
     customer: str
@@ -283,13 +232,7 @@ class Order:
 
 
 class TableState(rx.State):
-    """A state with a 1000-row table, a filter, and derived views of the rows.
-
-    One event on it drives the whole per-event runtime path: a base var
-    assignment, iterating proxied dataclass rows, sorting them, re-running
-    the computed vars with their return-type checks, and a delta carrying
-    hundreds of rows.
-    """
+    """A 1000-row table with filtering, sorting, and a computed total."""
 
     orders: rx.Field[list[Order]] = rx.field(
         default_factory=lambda: [
@@ -303,7 +246,6 @@ class TableState(rx.State):
         ]
     )
     status: rx.Field[str] = rx.field("")
-    sort_key: rx.Field[str] = rx.field("amount")
     sort_reverse: rx.Field[bool] = rx.field(False)
 
     @rx.event
@@ -328,7 +270,7 @@ class TableState(rx.State):
             orders = [order for order in orders if order.status == self.status]
         return sorted(
             orders,
-            key=lambda order: getattr(order, self.sort_key),
+            key=lambda order: order.amount,
             reverse=self.sort_reverse,
         )
 
@@ -488,11 +430,28 @@ def _stateful_page():
     )
 
 
-@pytest.fixture(params=[_complicated_page, _stateful_page])
+def _repeated_stateful_page() -> rx.Component:
+    """Build repeated memo bodies with distinct call-site children.
+
+    Returns:
+        A page containing 100 repeated stateful rows.
+    """
+    return rx.vstack(
+        *(
+            rx.hstack(
+                rx.text(BenchmarkState.counter),
+                rx.button(f"Increment {index}", on_click=BenchmarkState.increment),
+            )
+            for index in range(100)
+        )
+    )
+
+
+@pytest.fixture(params=[_complicated_page, _stateful_page, _repeated_stateful_page])
 def unevaluated_page(request: pytest.FixtureRequest):
     return request.param
 
 
-@pytest.fixture(params=[_complicated_page, _stateful_page])
+@pytest.fixture(params=[_complicated_page, _stateful_page, _repeated_stateful_page])
 def evaluated_page(request: pytest.FixtureRequest):
     return request.param()
