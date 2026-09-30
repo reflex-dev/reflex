@@ -358,6 +358,7 @@ def sync_root_package_json_to_web() -> bool:
 
     Returns:
         True if an existing ``.web/package.json`` was meaningfully changed.
+        Formatting and object key order do not count as changes.
         Initial creation does not count as a meaningful change since no install
         cache could exist yet.
     """
@@ -367,7 +368,7 @@ def sync_root_package_json_to_web() -> bool:
 
     output_path = get_web_lockfile_path(constants.PackageJson.PATH)
     rendered = _compile_package_json()
-    if output_path.exists() and output_path.read_text() == rendered:
+    if _read_package_json_object(output_path) == json.loads(rendered):
         return False
 
     changed = output_path.exists()
