@@ -128,6 +128,13 @@ shows in review:
 | Computed vars | 20 (14 outside the benchmark states) |
 | Seeded products | 2000 |
 
+The `rx.dynamic` badge on `/widgets` is expensive by design: its var is
+uncached and always dirty, so reflex rebuilds the component on every event of
+every state, `BenchState.set_seq` included. On a 4-core VM the closed-loop
+throughput of `set_seq` (disk state manager, 10 sessions) was about 2,200
+events per second without that one call and about 900 with it. The event and
+memory benchmarks measure the app with it.
+
 ## Benchmark contract
 
 The benchmarks rely on the names below; keep each with the same meaning. The
