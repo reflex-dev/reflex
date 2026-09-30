@@ -1882,19 +1882,14 @@ def test_compile_app_drops_event_caches_from_earlier_compiles(
 @pytest.mark.parametrize(
     ("compile_context", "tier", "configured", "expected"),
     [
-        # Free deploys always show the badge, even when the app opts out.
-        (constants.CompileContext.DEPLOY, "free", False, True),
-        (constants.CompileContext.DEPLOY, "free", None, True),
-        (constants.CompileContext.DEPLOY, "inactive", False, True),
-        (constants.CompileContext.DEPLOY, "", False, True),
-        # Paid deploys hide the badge unless the app opts in.
-        (constants.CompileContext.DEPLOY, "pro", None, False),
-        (constants.CompileContext.DEPLOY, "enterprise", False, False),
+        # A deploy keeps an explicit setting whatever the stored login's tier:
+        # the hosting CLI enforces the badge from the tier of the deploy token.
+        (constants.CompileContext.DEPLOY, "free", False, False),
         (constants.CompileContext.DEPLOY, "team", True, True),
-        # An unresolved tier (e.g. `reflex deploy --token`) keeps the app's own
-        # setting; the hosting CLI enforces the badge from the tier it verified.
+        # An unset setting follows the stored login's tier.
+        (constants.CompileContext.DEPLOY, "free", None, True),
+        (constants.CompileContext.DEPLOY, "pro", None, False),
         (constants.CompileContext.DEPLOY, "anonymous", None, True),
-        (constants.CompileContext.DEPLOY, "anonymous", False, False),
         # Outside of deploys the badge shows unless the app opts out.
         (constants.CompileContext.EXPORT, "free", None, True),
         (constants.CompileContext.EXPORT, "free", False, False),
@@ -1910,7 +1905,7 @@ def test_compile_app_resolves_show_built_with_reflex(
     configured: bool | None,
     expected: bool,
 ):
-    """A production compile installs the badge according to the deploy's tier.
+    """A production compile installs the badge according to the app's setting.
 
     Args:
         tmp_path: Directory for compiler output.
@@ -1939,7 +1934,7 @@ def test_compile_app_resolves_show_built_with_reflex(
 
         assert config.show_built_with_reflex is expected
         assert ((0, "StickyBadge") in app.app_wraps) is expected
-    # An app that opts in shows the badge on any tier, so it needs no lookup.
+    # Only an unset setting on a deploy needs the tier.
     assert get_user_tier.called is (
-        compile_context == constants.CompileContext.DEPLOY and configured is not True
+        compile_context == constants.CompileContext.DEPLOY and configured is None
     )
