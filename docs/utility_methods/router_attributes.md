@@ -55,10 +55,6 @@ router_data = [
         "value": RouterState.router.headers.connection,
     },
     {
-        "name": "rx.State.router.headers.cookie",
-        "value": RouterState.router.headers.cookie,
-    },
-    {
         "name": "rx.State.router.headers.pragma",
         "value": RouterState.router.headers.pragma,
     },
@@ -119,7 +115,7 @@ The `self.router` attribute has several sub-attributes that provide various info
   - `origin`: The origin of the request.
   - `upgrade`: The upgrade header for websocket connections.
   - `connection`: The connection header.
-  - `cookie`: The cookie header.
+  - `cookie`: The cookie header, available only on the server through `self.router.headers.cookie`.
   - `pragma`: The pragma header.
   - `cache_control`: The cache control header.
   - `user_agent`: The user agent string of the client.
@@ -128,7 +124,9 @@ The `self.router` attribute has several sub-attributes that provide various info
   - `sec_websocket_extensions`: The websocket extensions.
   - `accept_encoding`: The accepted encodings.
   - `accept_language`: The accepted languages.
-  - `raw_headers`: A mapping of all HTTP headers as a frozen dictionary. This provides access to any header that was sent with the request, not just the common ones listed above.
+  - `raw_headers`: A mapping of HTTP headers as a frozen dictionary. The server can access every header; the cookie header is omitted when this mapping is sent to the frontend.
+
+Request cookies, including `HttpOnly` cookies, are never included in router data sent to the frontend. Using `State.router.headers.cookie` in a component is deprecated and renders an empty string. Use [rx.Cookie](/docs/client-storage/overview/) for cookies that need to be accessible to the frontend. Server-side access through `self.router.headers.cookie` is unchanged.
 
 ## URL Attributes
 

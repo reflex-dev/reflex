@@ -679,7 +679,6 @@ formatted_router_vars = {
         "origin": "",
         "upgrade": "",
         "connection": "",
-        "cookie": "",
         "pragma": "",
         "cache_control": "",
         "user_agent": "",
