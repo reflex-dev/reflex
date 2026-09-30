@@ -6,21 +6,23 @@ mode, drives it with Playwright, and writes a report listing every blocking
 call (file/socket/sqlite/lock/sleep) that ran on an asyncio loop, with the
 Python stack that reached it.
 
-Usage (blockbuster and aiosqlite are not project deps, so install them
-ad hoc; ``uv run`` would re-sync them away, hence the direct interpreter)::
+Usage (blockbuster and aiosqlite are not project deps, so ``uv run --with``
+layers them over the project environment for the run)::
 
-    uv pip install blockbuster aiosqlite
-    REFLEX_STATE_MANAGER_MODE=memory .venv/bin/python scripts/blockbuster_audit.py
-    REFLEX_STATE_MANAGER_MODE=disk .venv/bin/python scripts/blockbuster_audit.py
+    REFLEX_STATE_MANAGER_MODE=memory uv run --with blockbuster --with aiosqlite \\
+        python scripts/blockbuster_audit.py
+    REFLEX_STATE_MANAGER_MODE=disk uv run --with blockbuster --with aiosqlite \\
+        python scripts/blockbuster_audit.py
     REFLEX_STATE_MANAGER_MODE=redis REFLEX_REDIS_URL=redis://localhost:6379 \\
-        .venv/bin/python scripts/blockbuster_audit.py
-    .venv/bin/python scripts/blockbuster_audit.py --prod   # backend-served static frontend
+        uv run --with blockbuster --with aiosqlite python scripts/blockbuster_audit.py
+    # backend-served static frontend
+    uv run --with blockbuster --with aiosqlite python scripts/blockbuster_audit.py --prod
 
 The same recorder doubles as a pytest plugin that instruments the unit-test
 loops::
 
-    BB_REPORT=/tmp/bb_pytest.txt .venv/bin/python -m pytest \\
-        -p scripts.blockbuster_audit tests/units/istate
+    BB_REPORT=/tmp/bb_pytest.txt uv run --with blockbuster --with aiosqlite \\
+        pytest -p scripts.blockbuster_audit tests/units/istate
 
 Blockbuster only sees *syscall-shaped* blocking (stat/open/read/socket/
 sqlite/contended threading.Lock/time.sleep). CPU-bound work on the loop such
