@@ -1277,17 +1277,20 @@ def select_project(project: str, token: str | None = None) -> str:
 
 
 def normalize_project_id(value: Any) -> str | None:
-    """Normalize a project ID value, treating empty/whitespace strings and non-strings as None.
+    """Normalize a project ID, canonicalizing valid UUIDs.
 
     Args:
         value: The raw project ID value from config, CLI args, or hosting.json.
 
     Returns:
-        The stripped project ID, or None if the value is missing or blank.
+        The canonical UUID, stripped non-UUID string, or None if missing or blank.
     """
-    if isinstance(value, str) and value.strip():
-        return value.strip()
-    return None
+    if not isinstance(value, str) or not (value := value.strip()):
+        return None
+    try:
+        return str(uuid.UUID(value))
+    except ValueError:
+        return value
 
 
 def get_selected_project() -> str | None:
