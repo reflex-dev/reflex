@@ -14,11 +14,18 @@ permissions:
 # If a warm job takes longer than 10 min, shrink the `macro` suite first, then
 # move the schedule to every second day ("17 3 */2 * *").
 # Measured 2026-09-29 on the macro runner (Cortex-A72, 16 cores, profile
-# linux-arm64-cortex-a72-py3.12), cold run (no Playwright or uv cache): 5:35
-# billed after 1:18 in the queue (not billed): setup 2:27 (checkout 0:10,
-# uv + Python + Node 0:14, uv sync 0:26, chromium with apt deps 1:28), the
-# suite 2:49, summary + upload + cache saves 0:19. That run still had
-# events.simple.capacity, which failed on this runner and left the suite.
+# linux-arm64-cortex-a72-py3.12), billed time after 1:10-1:20 in the queue
+# (not billed):
+#   warm (Playwright and uv caches hit): 7:24 = checkout 0:11, uv + Python +
+#   Node 0:19, uv sync 0:25, cache restore + chromium 1:24 (apt deps run even
+#   on a cache hit),
+#   the suite 4:48 (browser.dev.ready 71 s, hmr.handler 47 s, hmr.render.leaf
+#   54 s, compile.incremental 18 s, compile.warm 15 s, import 11 s,
+#   run.prod.ready 69 s), summary, upload and cleanup 0:10.
+#   cold (no cache): 5:35 with an older, shorter suite, chromium 1:28.
+# So 30 * 7.4 + 10 * 7.4 = 296 min a month, 204 min of headroom.
+# events.simple.capacity failed on this runner (its 2 s setup probe got no
+# answer), so the event benchmarks run on the standard runner only.
 #
 # Policy: --min-runs 6 --max-runs 10 --min-time 10: at least 6 timed runs per
 # instance (the fewest with a median CI), up to 10 for samples under 1 s.
@@ -56,7 +63,7 @@ jobs:
     concurrency:
       group: codspeed-macro
       cancel-in-progress: false
-    timeout-minutes: 15
+    timeout-minutes: 12
     runs-on: codspeed-macro-arm64-graviton-ubuntu-22-04
     steps:
       # fetch-tags/fetch-depth: the workspace packages derive their versions from git.
