@@ -213,11 +213,10 @@ def test_update_secrets_success_message(
 
     assert result.exit_code == 0, result.output
     successes = [r.getMessage() for r in caplog.records if r.levelno == SUCCESS]
+    # The exact match is also what proves no value reaches a log record.
     assert successes == [
         "Updated 2 secrets (A, B). Not rebooting; run with --reboot or redeploy to apply."
     ]
-    # The values themselves never reach a log record.
-    assert "2" not in successes[0].replace("2 secrets", "")
 
 
 def test_update_secrets_success_message_singular_and_reboot(
