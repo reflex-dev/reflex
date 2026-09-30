@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, TypeVar
 from reflex_base.constants import ROUTER_DATA, ROUTER_VARS
 from reflex_base.event import Event, get_hydrate_event
 from reflex_base.registry import RegistrationContext
+from reflex_base.session import SessionToken
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_base.vars.base import _owner_state
 from typing_extensions import Self
@@ -70,6 +71,7 @@ def _do_update_other_tokens(
         async with app.modify_state(
             BaseStateToken(ident=token, cls=state_type),
             previous_dirty_vars=previous_dirty_vars,
+            session_token=SessionToken.SYSTEM,
         ):
             pass
 

@@ -10,6 +10,11 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 from reflex_base import otel
 from reflex_base.context.base import BaseContext
+from reflex_base.environment import environment
+from reflex_base.session import SessionToken
+from reflex_base.utils import console
+from reflex_base.utils.compat import MISSING_TYPE
+from reflex_base.utils.exceptions import SessionAuthorizationError
 from reflex_base.utils.format import to_snake_case
 
 if TYPE_CHECKING:
@@ -81,6 +86,9 @@ class EventContext(BaseContext):
     # Identifies the client session.
     token: str
 
+    # Validated browser session, or SYSTEM for trusted server-side work.
+    session_token: SessionToken | None = dataclasses.field(default=None, repr=False)
+
     # Manages persistence of state across events.
     state_manager: StateManager = dataclasses.field(repr=False)
 
@@ -108,17 +116,53 @@ class EventContext(BaseContext):
     # event a handler yields resolves against the view that produced it.
     router_data: dict[str, Any] = dataclasses.field(default_factory=dict, repr=False)
 
-    def fork(self, token: str | None = None) -> EventContext:
+    def __post_init__(self) -> None:
+        """Validate the requested client state against the session.
+
+        Raises:
+            SessionAuthorizationError: If enforcement rejects the client token.
+        """
+        if not self.token or (
+            self.session_token is not None and self.session_token.authorizes(self.token)
+        ):
+            return
+        mode = environment.REFLEX_SESSION_TOKEN_MODE.get()
+        if mode == "off":
+            return
+        if mode == "enforce":
+            msg = "The session does not authorize this client token."
+            raise SessionAuthorizationError(msg)
+        console.deprecate(
+            feature_name="State access without an authorized session",
+            reason=(
+                "Pass the requesting session when accessing client state. "
+                "Trusted server-side work may explicitly use SessionToken.SYSTEM. "
+                "REFLEX_SESSION_TOKEN_MODE=enforce rejects this access."
+            ),
+            deprecation_version="0.9.13",
+            removal_version="1.0",
+        )
+
+    def fork(
+        self,
+        token: str | None = None,
+        *,
+        session_token: SessionToken | MISSING_TYPE | None = dataclasses.MISSING,
+    ) -> EventContext:
         """Return a new EventContext with the specified fields replaced.
 
         Args:
             token: The client token for the new context.
+            session_token: The session to use, or omitted to inherit this context's session.
 
         Returns:
             A new EventContext with the specified fields replaced.
         """
         return type(self)(
-            token=token or self.token,
+            token=self.token if token is None else token,
+            session_token=self.session_token
+            if session_token is dataclasses.MISSING
+            else session_token,
             parent_txid=self.txid,
             state_manager=self.state_manager,
             enqueue_impl=self.enqueue_impl,

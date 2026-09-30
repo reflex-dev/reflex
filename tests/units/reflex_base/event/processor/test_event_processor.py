@@ -840,6 +840,26 @@ async def test_stream_delta_yields_single_delta(token: str):
     assert collected == [{"state": {"x": 1}}]
 
 
+async def test_stream_delta_forks_ambient_transaction(mocker: MockerFixture):
+    """A buffered upload must not reuse the root transaction ID.
+
+    Args:
+        mocker: The mock fixture.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2).configure()
+    enqueue = mocker.spy(EventProcessor, "enqueue")
+    async with ep:
+        parent = EventContext.get().fork(token="upload")
+        with parent:
+            event = Event.from_event_type(delta_event())[0]
+            assert [d async for d in ep.enqueue_stream_delta("upload", event)]
+        upload_context = enqueue.call_args.kwargs["ev_ctx"]
+        assert ep._root_context is not None
+        assert upload_context.txid != ep._root_context.txid
+        assert upload_context.txid != parent.txid
+        assert upload_context.parent_txid == parent.txid
+
+
 async def test_stream_delta_yields_multiple_deltas(token: str):
     """enqueue_stream_delta yields all deltas in order.
 
