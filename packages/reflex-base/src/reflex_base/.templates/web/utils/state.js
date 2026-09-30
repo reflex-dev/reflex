@@ -202,7 +202,8 @@ const isPlainObject = (value) => {
  * @returns prev if deep-equal to next, otherwise next with unchanged parts shared from prev.
  */
 const replaceEqualDeep = (prev, next) => {
-  if (prev === next) {
+  // Object.is, unlike ===, tells -0 from 0 and treats NaN as equal to itself.
+  if (Object.is(prev, next)) {
     return prev;
   }
   if (Array.isArray(prev) && Array.isArray(next)) {
@@ -210,7 +211,7 @@ const replaceEqualDeep = (prev, next) => {
     let out;
     for (let i = 0; i < next.length; i++) {
       const value = replaceEqualDeep(prev[i], next[i]);
-      if (out === undefined && value !== prev[i]) {
+      if (out === undefined && !Object.is(value, prev[i])) {
         out = prev.slice(0, i);
       }
       out?.push(value);
@@ -240,7 +241,7 @@ const replaceEqualDeep = (prev, next) => {
         continue;
       }
       const value = replaceEqualDeep(prev[key], next[key]);
-      if (out === undefined && value !== prev[key]) {
+      if (out === undefined && !Object.is(value, prev[key])) {
         copyPrefix(i);
       }
       if (out !== undefined) {
@@ -274,7 +275,7 @@ export const applyDelta = (state, delta) => {
   for (const key in delta) {
     const own = Object.hasOwn(state, key);
     const value = own ? replaceEqualDeep(state[key], delta[key]) : delta[key];
-    if (!own || value !== state[key]) {
+    if (!own || !Object.is(value, state[key])) {
       out ??= { ...state };
       out[key] = value;
     }

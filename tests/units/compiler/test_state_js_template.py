@@ -181,6 +181,14 @@ assert.equal(removed.b, state.kpi.b);
 const undef = {kpi: {a: undefined}};
 assert.deepEqual(applyDelta(undef, {kpi: {b: undefined}}).kpi, {b: undefined});
 
+// Values compare with Object.is: python's -0.0 replaces 0, while a repeated
+// NaN (revived by parseJson) is unchanged.
+const zeros = {z: 0, a: [0], o: {v: 0}};
+const negated = applyDelta(zeros, JSON.parse('{"z": -0.0, "a": [-0.0], "o": {"v": -0.0}}'));
+assert.deepEqual(negated, {z: -0, a: [-0], o: {v: -0}});
+const nans = {x: NaN, a: [NaN], o: {v: NaN}};
+assert.equal(applyDelta(nans, {x: NaN, a: [NaN], o: {v: NaN}}), nans);
+
 // Type changes and non-plain values are replaced as before.
 assert.deepEqual(applyDelta(state, {kpi: [1]}).kpi, [1]);
 assert.equal(applyDelta(state, {none: {}}).none.constructor, Object);
