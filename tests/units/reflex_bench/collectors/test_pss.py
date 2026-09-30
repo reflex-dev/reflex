@@ -70,13 +70,19 @@ def test_uss_adds_up_processes_with_the_same_name(
 
 
 def _sampled(sampler: pss.PssSampler, count: int, timeout: float = 30) -> None:
-    """Wait until the sampler took at least ``count`` samples.
+    """Wait until the sampler takes ``count`` more samples.
 
     A sample under way when the fake ``/proc`` changed may still show the old
     values: two more samples guarantee one taken after the change.
+
+    Args:
+        sampler: The running sampler.
+        count: The number of additional samples to wait for.
+        timeout: The maximum seconds to wait.
     """
+    target = len(sampler._timeline) + count
     deadline = time.monotonic() + timeout
-    while len(sampler._timeline) < count:
+    while len(sampler._timeline) < target:
         assert time.monotonic() < deadline, "the sampler stalled"
         time.sleep(0.005)
 
@@ -88,9 +94,9 @@ def test_sampler_reports_the_peak(tmp_path: Path, tree: tuple[int, int]):
     sampler = pss.PssSampler(parent, interval=0.01, proc_root=tmp_path).start()
     _sampled(sampler, 2)
     fake_proc(tmp_path, child, "bun", fake_rollup(9000, 8000, 1000, 50, 7950))
-    _sampled(sampler, 4)
+    _sampled(sampler, 2)
     fake_proc(tmp_path, child, "bun", fake_rollup(2000, 1000, 1000, 50, 950))
-    _sampled(sampler, 6)
+    _sampled(sampler, 2)
     result = sampler.stop()
     assert result.method == "pss_sampling"
     assert result.peak_bytes == 10_000 * 1024
