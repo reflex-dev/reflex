@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import dataclasses
 import io
 import logging
 import os
-import time
+import tempfile
 import zipfile
 from pathlib import Path
 from typing import Any
@@ -14,7 +15,6 @@ import click
 
 from reflex_cli import constants
 from reflex_cli.utils import console, log
-from reflex_cli.utils.exceptions import NotAuthenticatedError
 from reflex_cli.utils.output import interactive_option, json_option, print_json
 
 logger = logging.getLogger(__name__)
@@ -196,47 +196,42 @@ def scan_command(
     Uploads the app source under DIRECTORY (the current directory by default)
     and reports security and logic flaws specific to Reflex apps.
     """
+    from reflex_build_sdk import SecurityReviewFailedError, SecurityReviewTimeoutError
+
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
 
-    try:
+    with hosting.reporting_api_errors():
         authenticated_client = hosting.get_authenticated_client(
             token=token, interactive=interactive
         )
 
         zip_bytes = _zip_app_source(directory)
 
-        with console.status("Uploading app source..."):
-            job_id = hosting.submit_security_review(
-                zip_bytes=zip_bytes, client=authenticated_client
-            )
+        with tempfile.TemporaryDirectory() as workdir:
+            # The review is uploaded from a file, streamed rather than held in
+            # memory a second time beside the archive it was zipped into.
+            archive = Path(workdir) / "source.zip"
+            archive.write_bytes(zip_bytes)
+            with console.status("Uploading app source..."):
+                job_id = authenticated_client.api.security_reviews.submit(archive)
 
-        deadline = time.monotonic() + _POLL_TIMEOUT_SECONDS
-        payload: dict[str, Any] = {}
-        with console.status("Scanning..."):
-            while True:
-                payload = hosting.get_security_review(
-                    job_id=job_id, client=authenticated_client
+        try:
+            with console.status("Scanning..."):
+                review = authenticated_client.api.security_reviews.wait(
+                    job_id,
+                    timeout=_POLL_TIMEOUT_SECONDS,
+                    poll_interval=_POLL_INTERVAL_SECONDS,
                 )
-                if payload.get("status") != "pending":
-                    break
-                if time.monotonic() >= deadline:
-                    logger.error("Security review timed out. Try again later.")
-                    raise click.exceptions.Exit(1)
-                time.sleep(_POLL_INTERVAL_SECONDS)
-    except NotAuthenticatedError as err:
-        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
-        raise click.exceptions.Exit(1) from err
-    except hosting.SecurityReviewError as err:
-        logger.error(f"Security review failed: {err}")
-        raise click.exceptions.Exit(1) from err
+        except SecurityReviewTimeoutError as err:
+            logger.error("Security review timed out. Try again later.")
+            raise click.exceptions.Exit(1) from err
+        except SecurityReviewFailedError as err:
+            logger.error(str(err))
+            raise click.exceptions.Exit(1) from err
 
-    if payload.get("status") == "error":
-        logger.error(f"Security review failed: {payload.get('error')}")
-        raise click.exceptions.Exit(1)
-
-    result = payload.get("result") or {}
+    result = dataclasses.asdict(review)
 
     if as_json:
         print_json(result)

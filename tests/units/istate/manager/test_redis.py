@@ -9,8 +9,13 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
+from reflex_base.utils.exceptions import EnvironmentVarValueError
 
-from reflex.istate.manager.redis import StateManagerRedis
+from reflex.istate.manager.redis import (
+    StateManagerRedis,
+    _default_lock_expiration,
+    _default_oplock_hold_time_ms,
+)
 from reflex.istate.manager.token import BaseStateToken
 from reflex.state import BaseState
 from tests.units.mock_redis import mock_redis, real_redis
@@ -736,3 +741,33 @@ async def test_oplock_hold_oplock_after_cancel(
     )
     assert isinstance(final_state, root_state)
     assert final_state.count == 2
+
+
+def test_oplock_hold_time_below_one_millisecond(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A sub-millisecond hold time must not read as the unset default.
+
+    Zero means "use half the lock expiration", so a duration that floors to
+    zero milliseconds has to round up instead of falling into that branch.
+    """
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME", "500us")
+    assert _default_oplock_hold_time_ms() == 1
+
+
+def test_oplock_hold_time_unset_halves_the_lock_expiration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An unset hold time keeps deriving from the lock expiration."""
+    monkeypatch.delenv("REFLEX_OPLOCK_HOLD_TIME", raising=False)
+    monkeypatch.delenv("REFLEX_OPLOCK_HOLD_TIME_MS", raising=False)
+    assert _default_oplock_hold_time_ms() == _default_lock_expiration() // 2
+
+
+def test_oplock_hold_time_rejects_a_negative_duration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A negative hold time is a configuration error, not one millisecond."""
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME", "-5s")
+    with pytest.raises(EnvironmentVarValueError, match="must not be negative"):
+        _default_oplock_hold_time_ms()

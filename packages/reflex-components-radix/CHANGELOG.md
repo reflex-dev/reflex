@@ -1,3 +1,25 @@
+## v0.9.10.post1 (2026-09-21)
+
+### Bug Fixes
+
+- Require `reflex-base >= 0.9.12`. The declared floor was older than the `reflex_base.components.tags.CommonTag` import this package relies on, so a resolver was free to pair it with a `reflex-base` that fails at import time with `ImportError: cannot import name 'CommonTag'`. ([#7268](https://github.com/reflex-dev/reflex/issues/7268))
+
+
+## v0.9.10 (2026-09-21)
+
+### Bug Fixes
+
+- Stop `rx.form.message` from passing `force_match` to the DOM when `match` is not set. ([#7133](https://github.com/reflex-dev/reflex/issues/7133))
+
+### Performance
+
+- The segmented control no longer keeps a permanent reference to the vars it builds its selected-index expression from. ([#7198](https://github.com/reflex-dev/reflex/issues/7198))
+
+### Miscellaneous
+
+- Annotate `_render` overrides as returning `CommonTag`, the new base of every tag class. ([#7121](https://github.com/reflex-dev/reflex/issues/7121))
+
+
 ## v0.9.9 (2026-09-11)
 
 ### Bug Fixes

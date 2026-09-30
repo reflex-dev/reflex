@@ -7,8 +7,6 @@ on:
       - "**/*.md"
   pull_request:
     branches: ["main"]
-    paths-ignore:
-      - "**/*.md"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.id || github.sha }}
@@ -32,7 +30,30 @@ env:
   NODE_OPTIONS: "--max_old_space_size=8192"
 
 jobs:
+  # This filter cannot live on the pull_request trigger: a workflow that a path
+  # filter skips never reports its checks at all, so a branch rule requiring
+  # them blocks the merge forever. Filtered out here, the jobs below skip
+  # instead, and a skipped job reports as a pass.
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      run: ${{ steps.filter.outputs.changed }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/changed_paths
+        id: filter
+        with:
+          paths-ignore: |
+            **/*.md
+
   example-counter-and-nba-proxy:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     env:
       OUTPUT_FILE: import_benchmark.json
     timeout-minutes: 30
@@ -105,6 +126,8 @@ jobs:
           uv run bash scripts/integration.sh ./reflex-examples/nba-proxy dev
 
   reflex-docs:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -181,6 +204,8 @@ jobs:
           if-no-files-found: warn
 
   rx-shout-from-template:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     strategy:
       fail-fast: false
     runs-on: ubuntu-latest
@@ -252,3 +277,18 @@ jobs:
           # Check that npm is home
           npm -v
           uv run --active --no-sync bash scripts/integration.sh ./docs/app prod
+
+  # The one status check the branch rules require from this workflow. Naming the
+  # jobs above directly does not survive: check names follow the matrix and the
+  # display names, and a job that a filter skips must not block the merge.
+  integration-tests-gate:
+    needs: [changes, example-counter-and-nba-proxy, reflex-docs, rx-shout-from-template, reflex-docs-macos]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/ci_gate
+        with:
+          needs: ${{ toJSON(needs) }}
