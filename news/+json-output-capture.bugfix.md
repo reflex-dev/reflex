@@ -1,1 +1,1 @@
-`reflex run --json` now emits every output line as a JSON record on POSIX systems: `print()` output from the app, subprocess output, and worker tracebacks (as one record with an `exception` field) no longer break the JSON-lines stream.
+`reflex run --json` now emits every output line as a JSON record: `print()` output from the app, subprocess output, and worker tracebacks (as one record with an `exception` field) no longer break the JSON-lines stream.

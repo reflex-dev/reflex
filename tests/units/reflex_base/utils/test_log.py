@@ -1,9 +1,10 @@
 """Tests for the standard logging pipeline in reflex_base.utils.log."""
 
-import io
+import contextlib
 import json
 import logging
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -895,14 +896,12 @@ def test_reset_releases_the_reservation():
     assert log.is_stdout_reserved() is False
 
 
-_CAPTURE_SCRIPT = """
+_SUPERVISED_SCRIPT = """
 import logging
 import multiprocessing
 import os
 import subprocess
 import sys
-import time
-import warnings
 
 from reflex_base.utils import log
 
@@ -913,7 +912,8 @@ def crash():
 
 if __name__ == "__main__":
     log.enable_managed_logging()
-    log.capture_output()
+    if not log.is_output_supervised():
+        sys.exit(log.supervise_output([sys.executable, __file__]))
     print("from print")
     os.write(1, b"from os.write\\n")
     sys.stderr.write("from stderr\\n")
@@ -927,50 +927,54 @@ if __name__ == "__main__":
     sys.stderr.write("Traceback (most recent call last):\\n  File \\"x.py\\"\\n")
     sys.stderr.write('{"level": "error", "logger": "other", "message": "mid"}\\n')
     sys.stderr.write("KeyError: 'interleaved'\\n")
-    sys.stderr.flush()
     logging.getLogger("reflex").info("from logger")
     worker = multiprocessing.get_context("spawn").Process(target=crash)
     worker.start()
     worker.join()
-    warnings.simplefilter("ignore", DeprecationWarning)  # fork with threads
-    if os.fork() == 0:
-        sys.exit(0)  # a normal exit runs the atexit hooks inherited by fork
-    os.wait()
-    print("after fork")
+    print("\\u2713 unicode")
     print("partial line", end="")
+    sys.exit(3)
 """
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="fd capture is POSIX-only")
-def test_capture_output_turns_every_line_into_json(tmp_path):
-    """Output written below the logging pipeline still reaches the streams as JSON."""
-    script = tmp_path / "capture.py"
-    script.write_text(_CAPTURE_SCRIPT)
-    env = {
-        **os.environ,
-        "REFLEX_LOG_JSON": "true",
-    }
-    result = subprocess.run(
+def _run_script(tmp_path: Path, source: str, **kwargs) -> subprocess.CompletedProcess:
+    """Run a Python script in JSON mode.
+
+    Args:
+        tmp_path: The directory for the script.
+        source: The script source.
+        kwargs: Extra arguments for subprocess.run.
+
+    Returns:
+        The completed process, with bytes output.
+    """
+    script = tmp_path / "script.py"
+    script.write_text(source)
+    return subprocess.run(
         [sys.executable, str(script)],
         capture_output=True,
-        text=True,
-        env=env,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
         cwd=tmp_path,
         timeout=60,
+        **kwargs,
     )
-    assert result.returncode == 0, result.stderr
+
+
+def test_supervise_output_turns_every_line_into_json(tmp_path):
+    """Everything the command and its descendants print reaches the streams as JSON."""
+    result = _run_script(tmp_path, _SUPERVISED_SCRIPT)
+
+    assert result.returncode == 3, result.stderr
     out = [json.loads(line) for line in result.stdout.splitlines()]
     err = [json.loads(line) for line in result.stderr.splitlines()]
-
-    # Python buffers print() when stdout is a pipe, so only the set is stable.
     assert sorted(r["message"] for r in out if r.get("logger") == "stdout") == [
-        "after fork",
         "from child",
         "from os.write",
         "from print",
         "partial line",
         # JSON that is not a log record is wrapped like any other line.
         '{"passed": 1}',
+        "\u2713 unicode",
     ]
     assert {"level": "info", "logger": "child", "message": "passed"} in out
     assert {"level": "error", "logger": "other", "message": "mid"} in err
@@ -979,7 +983,7 @@ def test_capture_output_turns_every_line_into_json(tmp_path):
         "logger": "stderr",
         "level": "warning",
         "message": "from stderr",
-    }.items() <= (err[0].items())
+    }.items() <= err[0].items()
     interleaved, crash = [r for r in err if "exception" in r]
     assert interleaved["message"] == "KeyError: 'interleaved'"
     assert interleaved["exception"] == (
@@ -991,80 +995,20 @@ def test_capture_output_turns_every_line_into_json(tmp_path):
     assert 'raise RuntimeError("boom")' in crash["exception"]
 
 
-_FORK_LOCK_SCRIPT = """
-import logging
-import os
-import sys
-import time
-import warnings
-
-from reflex_base.utils import log
-
-log.enable_managed_logging()
-log.capture_output()
-warnings.simplefilter("ignore", DeprecationWarning)  # fork with threads
-# A reader thread holds the lock while it writes; fork at that moment.
-with log._write_lock:
-    pid = os.fork()
-    if pid == 0:
-        logging.getLogger("reflex").info("from forked child")
-        sys.stdout.flush()
-        os._exit(0)
-_, status = os.waitpid(pid, 0)
-sys.exit(os.waitstatus_to_exitcode(status))
-"""
-
-
-@pytest.mark.skipif(sys.platform == "win32", reason="fd capture is POSIX-only")
-def test_capture_output_forked_child_does_not_inherit_held_lock(tmp_path):
-    """A child forked while the write lock is held can still log."""
-    script = tmp_path / "fork_lock.py"
-    script.write_text(_FORK_LOCK_SCRIPT)
-    result = subprocess.run(
-        [sys.executable, str(script)],
-        capture_output=True,
-        text=True,
-        env={**os.environ, "REFLEX_LOG_JSON": "true"},
-        timeout=10,
-    )
-    assert result.returncode == 0, result.stderr
-    [record] = [json.loads(line) for line in result.stdout.splitlines()]
-    assert record["message"] == "from forked child"
-
-
-def test_capture_output_without_stdout_is_noop(monkeypatch):
-    """A process started with fd 1 closed keeps running without capture."""
-    monkeypatch.setattr(sys, "stdout", None)
-    log.capture_output()
-    assert log._real_out is None
-
-
-def test_pump_survives_a_broken_output_stream():
-    """A reader never raises when the consumer of the real stream is gone."""
-
-    class Broken(io.StringIO):
-        def write(self, s: str) -> int:
-            raise BrokenPipeError
-
-    read_fd, write_fd = os.pipe()
-    os.write(write_fd, b"plain\nTraceback (most recent call last):\n  File 'x'\n")
-    os.close(write_fd)
-    log._pump(read_fd, Broken(), "info", "stdout")
-
-
 _BURST_SCRIPT = """
+import sys
+
 from reflex_base.utils import log
 
-log.enable_managed_logging()
-log.capture_output()
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
 for i in range(200):
     print(f"line {i:03d} " + "x" * 1000)
 """
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="fd capture is POSIX-only")
-def test_capture_output_drains_everything_for_a_slow_consumer(tmp_path):
-    """Output buffered at exit reaches a consumer that reads late."""
+def test_supervise_output_drains_everything_for_a_slow_consumer(tmp_path):
+    """Output still in the pipes at exit reaches a consumer that reads late."""
     script = tmp_path / "burst.py"
     script.write_text(_BURST_SCRIPT)
     with subprocess.Popen(
@@ -1074,10 +1018,76 @@ def test_capture_output_drains_everything_for_a_slow_consumer(tmp_path):
     ) as proc:
         assert proc.stdout is not None
         lines = []
-        # A consumer slower than the writer keeps both pipes full at exit.
+        # A consumer slower than the writer keeps the pipes full at exit.
         for line in proc.stdout:
             lines.append(line)
             time.sleep(0.015)
         proc.wait(timeout=30)
     assert len(lines) == 200
     assert json.loads(lines[-1])["message"].startswith("line 199 ")
+
+
+_LINGERING_SCRIPT = """
+import subprocess
+import sys
+
+from reflex_base.utils import log
+
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+sleeper = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
+print(sleeper.pid)
+"""
+
+
+def test_supervise_output_does_not_wait_for_lingering_descendants(tmp_path):
+    """A descendant that outlives the command and holds the pipe does not block exit."""
+    start = time.monotonic()
+    result = _run_script(tmp_path, _LINGERING_SCRIPT)
+    elapsed = time.monotonic() - start
+    [record] = [json.loads(line) for line in result.stdout.splitlines()]
+    with contextlib.suppress(OSError):
+        os.kill(int(record["message"]), signal.SIGTERM)
+    assert result.returncode == 0, result.stderr
+    assert elapsed < 10
+
+
+_SIGTERM_SCRIPT = """
+import sys
+import time
+
+from reflex_base.utils import log
+
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+print("ready")
+time.sleep(30)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="SIGTERM is POSIX-only")
+def test_supervise_output_forwards_sigterm(tmp_path):
+    """Terminating the supervisor terminates the command and reports the signal."""
+    script = tmp_path / "sigterm.py"
+    script.write_text(_SIGTERM_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+    ) as proc:
+        assert proc.stdout is not None
+        assert json.loads(proc.stdout.readline())["message"] == "ready"
+        proc.send_signal(signal.SIGTERM)
+        assert proc.wait(timeout=10) == 128 + signal.SIGTERM
+
+
+def test_output_pump_survives_a_gone_consumer():
+    """The reader keeps draining the child when its consumer closed the stream."""
+    child_read, child_write = os.pipe()
+    out_read, out_write = os.pipe()
+    os.close(out_read)
+    os.write(child_write, b"plain\nTraceback (most recent call last):\n  File 'x'\n")
+    os.close(child_write)
+    pump = log._OutputPump(child_read, out_write, "info", "stdout")
+    pump.run()
+    os.close(out_write)

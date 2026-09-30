@@ -434,17 +434,25 @@ def test_init_records_version_check_after_frontend_setup(
     assert events == ["frontend", "version"]
 
 
-@pytest.mark.parametrize(("argv", "captured"), [(["--json"], True), ([], False)])
-def test_run_captures_output_only_in_json_mode(
-    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch, argv, captured
+@pytest.mark.parametrize(
+    ("argv", "supervised", "expected"),
+    [(["--json"], False, True), (["--json"], True, False), ([], False, False)],
+)
+def test_run_supervises_output_only_in_json_mode(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    argv: list[str],
+    supervised: bool,
+    expected: bool,
 ):
-    """``reflex run --json`` routes all process output through JSON records.
+    """``reflex run --json`` runs itself again below an output supervisor.
 
     Args:
         mocker: The pytest-mock fixture.
         monkeypatch: The pytest monkeypatch fixture.
         argv: Extra ``reflex run`` arguments.
-        captured: Whether output capture is expected.
+        supervised: Whether the process already runs under the supervisor.
+        expected: Whether the supervisor is expected to start.
     """
     from reflex_base.environment import environment
     from reflex_base.utils import log
@@ -452,8 +460,10 @@ def test_run_captures_output_only_in_json_mode(
     # Registered so teardown restores the variables the CLI callbacks set.
     monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
     monkeypatch.setenv(environment.REFLEX_LOG_JSON.name, "false")
-    capture = mocker.patch.object(log, "capture_output")
-    mocker.patch.object(reflex, "_run")
+    monkeypatch.setenv(log._SUPERVISED_ENV_VAR, "true" if supervised else "false")
+    monkeypatch.setattr(sys, "argv", ["reflex", "run", *argv])
+    supervise = mocker.patch.object(log, "supervise_output", return_value=7)
+    run = mocker.patch.object(reflex, "_run")
     mocker.patch("reflex.utils.prerequisites.check_running_mode")
 
     try:
@@ -461,5 +471,17 @@ def test_run_captures_output_only_in_json_mode(
     finally:
         log._reset()
 
-    assert result.exit_code == 0, result.output
-    assert capture.called is captured
+    if expected:
+        assert result.exit_code == 7
+        supervise.assert_called_once_with([
+            sys.executable,
+            "-m",
+            "reflex",
+            "run",
+            *argv,
+        ])
+        run.assert_not_called()
+    else:
+        assert result.exit_code == 0, result.output
+        supervise.assert_not_called()
+        run.assert_called_once()

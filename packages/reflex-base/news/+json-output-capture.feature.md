@@ -1,1 +1,1 @@
-Add `reflex_base.utils.log.capture_output()`, which on POSIX systems routes everything written to fd 1 and fd 2 of the process and its children through JSON records; lines that already are JSON log records pass through unchanged. It is a no-op on Windows.
+Add `reflex_base.utils.log.supervise_output()`, which runs a command with its stdout and stderr on pipes and writes every line it and its descendants print as a JSON record; lines that already are JSON log records pass through unchanged.
