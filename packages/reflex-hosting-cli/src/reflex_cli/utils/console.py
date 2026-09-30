@@ -67,13 +67,15 @@ def print_table(
     # _MIN_FOLD_WIDTH, so it stays readable.
     min_widths = []
     for index, column in enumerate(headers):
-        widest = max(cell_len(column), *(cell_len(row[index]) for row in tabular_data))
+        # Rows may be shorter than headers; the table leaves their tail blank.
+        values = (cell_len(row[index]) for row in tabular_data if index < len(row))
+        widest = max(cell_len(column), max(values, default=0))
         min_widths.append(widest if column in no_wrap else min(widest, _MIN_FOLD_WIDTH))
     # Each column also takes 3 cells of padding and gap, plus 1 for the edge.
     if sum(min_widths) + 3 * len(headers) + 1 > console.width:
         label_width = max(map(cell_len, headers), default=0)
         for row in tabular_data:
-            for column, value in zip(headers, row, strict=True):
+            for column, value in zip(headers, row, strict=False):
                 console.print(
                     f"{column.ljust(label_width)}  {value}",
                     markup=False,

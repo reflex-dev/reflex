@@ -323,6 +323,26 @@ def test_print_table_too_narrow_prints_rows_as_blocks(monkeypatch, capsys):
     assert "name  docs" in lines
 
 
+@pytest.mark.parametrize("columns", ["80", "20"])
+def test_print_table_short_row(monkeypatch, capsys, columns):
+    """A row with fewer cells than headers prints as a table or as a block."""
+    monkeypatch.setenv("COLUMNS", columns)
+    console.print_table(
+        [["small", "Small VM"]], headers=["id", "name", "cpu (cores)", "ram (gb)"]
+    )
+
+    out = capsys.readouterr().out
+    assert "small" in out
+    assert "Small VM" in out
+
+
+def test_print_table_no_rows(capsys):
+    """A table with no rows prints its headers."""
+    console.print_table([], headers=["id", "name"])
+
+    assert "name" in capsys.readouterr().out
+
+
 def test_print_table_no_wrap_with_older_reflex_base(monkeypatch, capsys):
     """A reflex-base that predates no_wrap renders the CLI's tables anyway.
 
