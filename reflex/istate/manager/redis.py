@@ -9,7 +9,7 @@ import os
 import sys
 import time
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from datetime import timedelta
 from typing import Any, TypedDict, cast
 
@@ -126,6 +126,23 @@ class RedisPubSubMessage(TypedDict):
 
 class OplockFound(Exception):  # noqa: N818
     """Indicates that an opportunistic lock was found."""
+
+
+def _touched_states(state: BaseState) -> Iterator[BaseState]:
+    """Iterate over the states of a tree that were touched since they were loaded.
+
+    Args:
+        state: The root of the tree to search.
+
+    Yields:
+        Each touched state, after the state it is a substate of.
+    """
+    pending = [state]
+    while pending:
+        current = pending.pop()
+        pending.extend(current.substates.values())
+        if current._was_touched:
+            yield current
 
 
 @dataclasses.dataclass
@@ -345,7 +362,7 @@ class StateManagerRedis(StateManager):
 
         redis_pipeline = self.redis.pipeline()
         for state_cls in required_state_classes:
-            redis_pipeline.get(str(token.with_cls(state_cls)))
+            redis_pipeline.get(token._state_key(state_cls))
 
         for state_cls, redis_state in zip(
             required_state_classes,
@@ -364,15 +381,14 @@ class StateManagerRedis(StateManager):
                     init_substates=False,
                     _reflex_internal_init=True,
                 )
-            flat_state_tree[state.get_full_name()] = state
+            state_full_name = state.get_full_name()
+            flat_state_tree[state_full_name] = state
             if state.get_parent_state() is not None:
-                parent_state_name, _dot, state_name = state.get_full_name().rpartition(
-                    "."
-                )
+                parent_state_name, _dot, state_name = state_full_name.rpartition(".")
                 parent_state = flat_state_tree.get(parent_state_name)
                 if parent_state is None:
                     msg = (
-                        f"Parent state for {state.get_full_name()} was not found "
+                        f"Parent state for {state_full_name} was not found "
                         "in the state tree, but should have already been fetched. "
                         "This is a bug"
                     )
@@ -437,8 +453,6 @@ class StateManagerRedis(StateManager):
                 await self.redis.set(str(token), pickle_state, ex=self.token_expiration)
             return
 
-        base_state = cast(BaseState, state)
-
         lock_key = token.lock_key
 
         if lock_id is not None and lock_key not in self._local_leases:
@@ -458,32 +472,17 @@ class StateManagerRedis(StateManager):
                     extra={"dedupe": True},
                 )
 
-        # Recursively set_state on all known substates.
-        tasks = [
-            asyncio.create_task(
-                self.set_state(
-                    token,
-                    substate,
-                    lock_id=lock_id,
-                    **context,
-                ),
-                name=f"reflex_set_state|{lock_key}|{substate.get_full_name()}",
-            )
-            for substate in base_state.substates.values()
-        ]
-        # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
-        if base_state._was_touched:
-            pickle_state = base_state._serialize()
-            if pickle_state:
-                await self.redis.set(
-                    str(token.with_cls(type(base_state))),
-                    pickle_state,
-                    ex=self.token_expiration,
-                )
-
-        # Wait for substates to be persisted.
-        for t in tasks:
-            await t
+        # Persist each touched state of the tree on its own (BaseState.__getstate__
+        # excludes parents and substates), all in a single round trip.
+        writes = {
+            token._state_key(type(touched)): touched._serialize()
+            for touched in _touched_states(cast(BaseState, state))
+        }
+        if writes:
+            pipeline = self.redis.pipeline()
+            for key, payload in writes.items():
+                pipeline.set(key, payload, ex=self.token_expiration)
+            await pipeline.execute()
 
     @contextlib.asynccontextmanager
     async def _try_modify_state(

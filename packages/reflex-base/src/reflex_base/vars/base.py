@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import builtins
-import contextlib
 import copy
 import dataclasses
 import datetime
@@ -2665,7 +2664,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
         return type(self)(**field_values)
 
-    @property
+    @functools.cached_property
     def _cache_attr(self) -> str:
         """The attribute used to cache the value on the instance.
 
@@ -2674,7 +2673,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         """
         return f"__cached_{self._js_expr}"
 
-    @property
+    @functools.cached_property
     def _last_updated_attr(self) -> str:
         """The attribute used to store the last updated timestamp.
 
@@ -2683,7 +2682,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         """
         return f"__last_updated_{self._js_expr}"
 
-    @property
+    @functools.cached_property
     def _last_delta_key_attr(self) -> str:
         """The attribute used to store the key of the last value sent in a delta.
 
@@ -2810,7 +2809,7 @@ class ComputedVar(Var[RETURN_TYPE]):
     @overload
     def __get__(self, instance: BaseState, owner: type) -> RETURN_TYPE: ...
 
-    def __get__(self, instance: BaseState | None, owner: type):
+    def __get__(self, instance: Any, owner: type):
         """Get the ComputedVar value.
 
         If the value is already cached on the instance, return the cached value.
@@ -2838,22 +2837,29 @@ class ComputedVar(Var[RETURN_TYPE]):
                 existing_var=self,
             )
 
-        instance = self._owner_instance(instance)
+        owner_cls = self._owner
+        if owner_cls is not None and type(instance) is not owner_cls:
+            instance = _owner_state(instance, owner_cls)
         if not self._cache:
             value = self.fget(instance)
-        else:
-            # handle caching
-            if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
-                # Set cache attr on state instance.
-                setattr(instance, self._cache_attr, self.fget(instance))
-                # Ensure the computed var gets serialized to redis.
-                instance._was_touched = True
-                # Set the last updated timestamp on the state instance.
-                setattr(instance, self._last_updated_attr, datetime.datetime.now())
-            value = getattr(instance, self._cache_attr)
+            self._check_deprecated_return_type(instance, value)
+            return value
 
-        self._check_deprecated_return_type(instance, value)
-
+        # handle caching
+        cache = instance.__dict__
+        cache_attr = self._cache_attr
+        value = cache.get(cache_attr, MISSING)
+        if value is MISSING or (
+            self._update_interval is not None and self.needs_update(instance)
+        ):
+            # Set cache attr on state instance.
+            value = cache[cache_attr] = self.fget(instance)
+            # Ensure the computed var gets serialized to redis.
+            instance._was_touched = True
+            if self._update_interval is not None:
+                # Only needs_update reads the last updated timestamp.
+                cache[self._last_updated_attr] = datetime.datetime.now()
+            self._check_deprecated_return_type(instance, value)
         return value
 
     def __set_name__(self, owner: type[BaseState], name: str) -> None:
@@ -2879,8 +2885,25 @@ class ComputedVar(Var[RETURN_TYPE]):
             return instance
         return _owner_state(instance, owner)
 
+    @functools.cached_property
+    def _plain_types(self) -> frozenset[Any]:
+        """The classes whose instances match the return type without the full type check.
+
+        Returns:
+            The classes that take no arguments in the return type, or in the members of a union.
+        """
+        return _plain_types_of(self._var_type)
+
     def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
-        if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
+        """Log an error if a computed value does not match the return type.
+
+        Args:
+            instance: The state instance the value was computed for.
+            value: The computed value.
+        """
+        if type(value) not in self._plain_types and not _isinstance(
+            value, self._var_type, nested=1, treat_var_as_type=False
+        ):
             logger.error(
                 f"Computed var '{type(instance).__name__}.{self._name}' must return"
                 f" a value of type '{self._var_type}', got '{value!s}' of type {type(value)}."
@@ -2943,8 +2966,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         Args:
             instance: the state instance that needs to recompute the value.
         """
-        with contextlib.suppress(AttributeError):
-            delattr(instance, self._cache_attr)
+        instance.__dict__.pop(self._cache_attr, None)  # pyright: ignore [reportAttributeAccessIssue]
 
     def add_dependency(self, objclass: type[BaseState], dep: Var):
         """Explicitly add a dependency to the ComputedVar.
@@ -3126,7 +3148,7 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
         instance = self._owner_instance(instance)
         if not self._cache:
 
-            async def _awaitable_result(instance: BaseState = instance) -> RETURN_TYPE:
+            async def _awaitable_result(instance: Any = instance) -> RETURN_TYPE:
                 value = await self.fget(instance)
                 self._check_deprecated_return_type(instance, value)
                 return value
@@ -3134,16 +3156,21 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
             return _awaitable_result()
 
         # handle caching
-        async def _awaitable_result(instance: BaseState = instance) -> RETURN_TYPE:
-            if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
+        async def _awaitable_result(instance: Any = instance) -> RETURN_TYPE:
+            cache = instance.__dict__
+            cache_attr = self._cache_attr
+            value = cache.get(cache_attr, MISSING)
+            if value is MISSING or (
+                self._update_interval is not None and self.needs_update(instance)
+            ):
                 # Set cache attr on state instance.
-                setattr(instance, self._cache_attr, await self.fget(instance))
+                value = cache[cache_attr] = await self.fget(instance)
                 # Ensure the computed var gets serialized to redis.
                 instance._was_touched = True
-                # Set the last updated timestamp on the state instance.
-                setattr(instance, self._last_updated_attr, datetime.datetime.now())
-            value = getattr(instance, self._cache_attr)
-            self._check_deprecated_return_type(instance, value)
+                if self._update_interval is not None:
+                    # Only needs_update reads the last updated timestamp.
+                    cache[self._last_updated_attr] = datetime.datetime.now()
+                self._check_deprecated_return_type(instance, value)
             return value
 
         return _awaitable_result()
@@ -3768,6 +3795,26 @@ _RESERVED_FIELD_ATTRS = frozenset({
     "_var",
 })
 
+# Exact types of values that are never wrapped in a MutableProxy. Checking them
+# first spares the is_mutable_type lookup on most field reads.
+_SCALAR_TYPES: Final = frozenset({str, int, float, bool, type(None)})
+
+
+def _plain_types_of(type_: Any) -> frozenset[Any]:
+    """Get the classes whose instances match a type without the full type check.
+
+    Args:
+        type_: The type, possibly a union.
+
+    Returns:
+        The classes that take no arguments in the type, or in the members of a union.
+    """
+    return frozenset(
+        arg
+        for arg in (get_args(type_) if types.is_union(type_) else (type_,))
+        if isinstance(arg, type) and not get_args(arg)
+    )
+
 
 def _owner_state(state: Any, owner: type) -> Any:
     """Get the instance holding an attribute bound to a state class.
@@ -3896,12 +3943,7 @@ class Field(Generic[FIELD_TYPE]):
         self._name = name
         self._backend = not self.is_var or name.startswith("_")
         self._tracked = hasattr(owner, "_mark_dirty")
-        type_ = self.outer_type_
-        self._plain_types = frozenset(
-            arg
-            for arg in (get_args(type_) if types.is_union(type_) else (type_,))
-            if isinstance(arg, type) and not get_args(arg)
-        )
+        self._plain_types = _plain_types_of(self.outer_type_)
 
     def _replace(self, **kwargs: Any) -> Self:
         """Derive an unbound field of the same class, with some arguments replaced.
@@ -3968,6 +4010,26 @@ class Field(Generic[FIELD_TYPE]):
             return f"Field(default={self.default!r}, is_var={self.is_var}{annotated_type_str})"
         return f"Field(default_factory={self.default_factory!r}, is_var={self.is_var}{annotated_type_str})"
 
+    def _get_raw(self, instance: Any) -> FIELD_TYPE | None:
+        """Get the value on a state instance, never wrapped in a proxy.
+
+        Args:
+            instance: The state instance the field is read on.
+
+        Returns:
+            The value of the field.
+        """
+        state = (
+            instance
+            if type(instance) is self._owner
+            else _owner_state(instance, self._owner)  # pyright: ignore[reportArgumentType]
+        )
+        try:
+            return state.__dict__[self._name]
+        except KeyError:
+            value = state.__dict__[self._name] = self.default_value()
+            return value
+
     def __set__(self, instance: Any, value: FIELD_TYPE):
         """Set the value, marking the field dirty.
 
@@ -4005,7 +4067,9 @@ class Field(Generic[FIELD_TYPE]):
             state: The state instance holding the field.
         """
         state.dirty_vars.add(self._name)
-        state._was_touched = True
+        if not state._was_touched:
+            # Assigning goes through the state's __setattr__ hook in dev mode.
+            state._was_touched = True
         state._mark_dirty((self._name,))
 
     @overload
@@ -4105,7 +4169,12 @@ class Field(Generic[FIELD_TYPE]):
             value = state.__dict__[self._name]
         except KeyError:
             value = state.__dict__[self._name] = self.default_value()
-        if self._tracked and self.is_var and is_mutable_type(type(value)):
+        if (
+            (value_type := type(value)) not in _SCALAR_TYPES
+            and self._tracked
+            and self.is_var
+            and is_mutable_type(value_type)
+        ):
             return self._proxy(wrapped=value, state=state, field_name=self._name)
         return value
 

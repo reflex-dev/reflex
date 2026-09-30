@@ -1,7 +1,10 @@
 """Tests for reflex_base.vars.base state metaclass field handling."""
 
 import dataclasses
+import datetime
+import enum
 import gc
+import logging
 import pickle
 import subprocess
 import sys
@@ -43,6 +46,7 @@ from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
 from typing_extensions import Self, TypeAliasType, TypeVarTuple, Unpack
 
+from reflex.istate.proxy import MutableProxy
 from reflex.state import BaseState, State, _override_base_method
 
 _MARKER_ATTR = "_marker"
@@ -1223,3 +1227,255 @@ def test_classvar_over_inherited_field_is_not_a_field():
 
     assert Child.get_fields()["count"] is Parent.get_fields()["count"]
     assert "count" not in Child.base_vars
+
+
+def test_computed_var_type_mismatch_is_logged_once_per_value(
+    caplog: pytest.LogCaptureFixture,
+):
+    """A computed value of the wrong type is reported when computed, not on each read.
+
+    Args:
+        caplog: The log capture fixture.
+    """
+
+    class MismatchState(BaseState):
+        count: int = 0
+
+        @computed_var
+        def cached(self) -> int:
+            return str(self.count)  # pyright: ignore [reportReturnType]
+
+        @computed_var(cache=False)
+        def uncached(self) -> int:
+            return str(self.count)  # pyright: ignore [reportReturnType]
+
+    state = MismatchState()
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        assert [state.cached for _ in range(3)] == ["0"] * 3
+        assert len(caplog.records) == 1
+        assert "MismatchState.cached" in caplog.text
+        state.count = 1
+        assert state.cached == "1"
+        assert len(caplog.records) == 2
+        caplog.clear()
+        assert [state.uncached for _ in range(3)] == ["1"] * 3
+        assert len(caplog.records) == 3
+
+
+async def test_async_computed_var_type_mismatch_is_logged_once_per_value(
+    caplog: pytest.LogCaptureFixture,
+):
+    """An async computed value of the wrong type is reported when computed, not on each read.
+
+    Args:
+        caplog: The log capture fixture.
+    """
+
+    class AsyncMismatchState(BaseState):
+        count: int = 0
+
+        @computed_var
+        async def cached(self) -> int:
+            return str(self.count)  # pyright: ignore [reportReturnType]
+
+        @computed_var(cache=False)
+        async def uncached(self) -> int:
+            return str(self.count)  # pyright: ignore [reportReturnType]
+
+    state = AsyncMismatchState()
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        for _ in range(3):
+            assert await state.cached == "0"  # pyright: ignore [reportGeneralTypeIssues]
+        assert len(caplog.records) == 1
+        state.count = 1
+        assert await state.cached == "1"  # pyright: ignore [reportGeneralTypeIssues]
+        assert len(caplog.records) == 2
+        caplog.clear()
+        for _ in range(3):
+            assert await state.uncached == "1"  # pyright: ignore [reportGeneralTypeIssues]
+        assert len(caplog.records) == 3
+
+
+@pytest.mark.parametrize(
+    ("annotation", "value", "mismatch"),
+    [
+        (int, 1, False),
+        (int, "1", True),
+        (bool, 1, True),
+        (float, 1, False),
+        (float, "1", True),
+        (int | None, None, False),
+        (int | None, "1", True),
+        (list[int], [1], False),
+        (list[int], ["1"], True),
+        (dict[str, int], {"a": 1}, False),
+        (dict[str, int], {"a": "1"}, True),
+    ],
+)
+def test_computed_var_return_type_check(
+    annotation: Any,
+    value: Any,
+    mismatch: bool,
+    caplog: pytest.LogCaptureFixture,
+    clean_registration_context,
+):
+    """A computed value is checked against the return type, plain classes included.
+
+    Args:
+        annotation: The return type of the computed var.
+        value: The value it computes.
+        mismatch: Whether the value does not match the return type.
+        caplog: The log capture fixture.
+        clean_registration_context: An isolated state registry.
+    """
+
+    def compute(self):
+        return value
+
+    state_cls = type(
+        "ReturnTypeState",
+        (BaseState,),
+        {
+            "__module__": __name__,
+            "compute": computed_var(compute, return_type=annotation, auto_deps=False),
+        },
+    )
+    state = state_cls()
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        assert state.compute == value  # pyright: ignore [reportAttributeAccessIssue]
+    assert bool(caplog.records) is mismatch
+
+
+def test_computed_var_update_time_is_only_kept_for_interval_vars():
+    """Only a computed var with an update interval stores when it was last computed."""
+    calls = 0
+
+    class TimedState(BaseState):
+        count: int = 0
+
+        @computed_var
+        def plain(self) -> int:
+            return self.count
+
+        @computed_var(interval=datetime.timedelta(seconds=30))
+        def timed(self) -> int:
+            nonlocal calls
+            calls += 1
+            return self.count
+
+    state = TimedState()
+    plain, timed = TimedState.computed_vars["plain"], TimedState.computed_vars["timed"]
+    assert (state.plain, state.timed) == (0, 0)
+    assert plain._last_updated_attr not in vars(state)
+    assert timed._last_updated_attr in vars(state)
+    assert not plain.needs_update(state)
+    assert not timed.needs_update(state)
+
+    # The cached value is served until the interval has elapsed.
+    assert (state.timed, calls) == (0, 1)
+    vars(state)[timed._last_updated_attr] -= datetime.timedelta(seconds=31)
+    assert timed.needs_update(state)
+    assert (state.timed, calls) == (0, 2)
+    assert not timed.needs_update(state)
+
+
+def test_computed_var_mark_dirty_drops_only_the_cached_value():
+    """Marking a computed var dirty drops its cached value, whether there is one or not."""
+
+    class DirtyState(BaseState):
+        count: int = 1
+
+        @computed_var
+        def doubled(self) -> int:
+            return self.count * 2
+
+    state = DirtyState()
+    doubled = DirtyState.computed_vars["doubled"]
+    doubled.mark_dirty(state)
+    assert doubled._cache_attr not in vars(state)
+    assert state.doubled == 2
+    assert vars(state)[doubled._cache_attr] == 2
+    doubled.mark_dirty(state)
+    doubled.mark_dirty(state)
+    assert doubled._cache_attr not in vars(state)
+    assert state.doubled == 2
+
+
+class _Flavor(enum.IntEnum):
+    SWEET = 1
+
+
+class _Label(str):
+    pass
+
+
+class _Items(list):
+    pass
+
+
+@dataclasses.dataclass
+class _Point:
+    x: int = 0
+
+
+@pytest.mark.parametrize(
+    ("annotation", "value"),
+    [
+        (int, 1),
+        (str, "a"),
+        (float, 1.5),
+        (bool, True),
+        (int | None, None),
+        (_Flavor, _Flavor.SWEET),
+        (_Label, _Label("a")),
+    ],
+    ids=repr,
+)
+def test_field_read_leaves_immutable_values_unwrapped(annotation: Any, value: Any):
+    """A field holding an immutable value reads back that very value.
+
+    Args:
+        annotation: The type of the field.
+        value: The value to store.
+    """
+    state_cls = type(
+        "ImmutableReadState",
+        (BaseState,),
+        {
+            "__module__": __name__,
+            "__annotations__": {"item": annotation},
+            "item": value,
+        },
+    )
+    state = state_cls()
+    state.item = value  # pyright: ignore [reportAttributeAccessIssue]
+    assert state.item is value  # pyright: ignore [reportAttributeAccessIssue]
+
+
+@pytest.mark.parametrize(
+    ("annotation", "value"),
+    [
+        (list[int], [1]),
+        (dict[str, int], {"a": 1}),
+        (set[int], {1}),
+        (_Items, _Items([1])),
+        (_Point, _Point(1)),
+    ],
+    ids=repr,
+)
+def test_field_read_wraps_mutable_values(annotation: Any, value: Any):
+    """A field holding a mutable value reads back a proxy of it.
+
+    Args:
+        annotation: The type of the field.
+        value: The value to store.
+    """
+    state_cls = type(
+        "MutableReadState",
+        (BaseState,),
+        {"__module__": __name__, "__annotations__": {"item": annotation}},
+    )
+    state = state_cls()
+    state.item = value  # pyright: ignore [reportAttributeAccessIssue]
+    assert isinstance(state.item, MutableProxy)  # pyright: ignore [reportAttributeAccessIssue]
+    assert state.item.__wrapped__ is value  # pyright: ignore [reportAttributeAccessIssue]

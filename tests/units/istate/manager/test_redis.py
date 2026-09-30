@@ -4,6 +4,7 @@ import asyncio
 import os
 import time
 import uuid
+from collections import Counter
 from collections.abc import AsyncGenerator
 from typing import Any
 
@@ -34,6 +35,24 @@ class SubState1(RedisTestState):
 
 class SubState2(RedisTestState):
     """A test substate for redis state manager tests."""
+
+
+class TreeRoot(BaseState):
+    """The root of a state tree with a value in each state."""
+
+    root_value: int = 0
+
+
+class TreeFirst(TreeRoot):
+    """A substate of the tree root."""
+
+    first_value: int = 0
+
+
+class TreeSecond(TreeRoot):
+    """Another substate of the tree root."""
+
+    second_value: int = 0
 
 
 @pytest.fixture
@@ -771,3 +790,104 @@ def test_oplock_hold_time_rejects_a_negative_duration(
     monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME", "-5s")
     with pytest.raises(EnvironmentVarValueError, match="must not be negative"):
         _default_oplock_hold_time_ms()
+
+
+def _count_redis_calls(redis: Any, *names: str) -> Counter[str]:
+    """Count the calls to some methods of a redis client.
+
+    Args:
+        redis: The redis client to instrument.
+        *names: The names of the methods to count.
+
+    Returns:
+        The counter of calls per method name, updated as the client is used.
+    """
+    calls: Counter[str] = Counter()
+    for name in names:
+        method = getattr(redis, name)
+
+        def counted(
+            *args: Any, _name: str = name, _method: Any = method, **kwargs: Any
+        ):
+            calls[_name] += 1
+            return _method(*args, **kwargs)
+
+        setattr(redis, name, counted)
+    return calls
+
+
+async def test_set_state_checks_the_lock_once_per_tree(
+    state_manager_redis: StateManagerRedis,
+):
+    """Persisting a tree costs one lock check, not one per state.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+    """
+    state_manager_redis._oplock_enabled = False
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=TreeRoot)
+    redis = state_manager_redis.redis
+    state = await state_manager_redis.get_state(token)
+    assert len(state.substates) == 2
+
+    lock_id = b"test-lock-id"
+    await redis.set(
+        state_manager_redis._lock_key(token),
+        lock_id,
+        px=state_manager_redis.lock_expiration,
+    )
+    calls = _count_redis_calls(redis, "get", "pttl")
+    await state_manager_redis.set_state(token, state, lock_id=lock_id)
+
+    assert calls == {"get": 1, "pttl": 1}
+    await redis.delete(state_manager_redis._lock_key(token))
+
+
+async def test_set_state_persists_the_touched_states_in_one_round_trip(
+    state_manager_redis: StateManagerRedis,
+):
+    """Every touched state of a tree is written in a single pipeline.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+    """
+    state_manager_redis._oplock_enabled = False
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=TreeRoot)
+    state = await state_manager_redis.get_state(token)
+    assert isinstance(state, TreeRoot)
+    state.root_value = 4
+    first = state.substates[TreeFirst.get_name()]
+    assert isinstance(first, TreeFirst)
+    first.first_value = 5
+
+    calls = _count_redis_calls(state_manager_redis.redis, "pipeline")
+    await state_manager_redis.set_state(token, state)
+
+    assert calls == {"pipeline": 1}
+    persisted = await state_manager_redis.get_state(token)
+    assert isinstance(persisted, TreeRoot)
+    assert persisted.root_value == 4
+    persisted_first = persisted.substates[TreeFirst.get_name()]
+    persisted_second = persisted.substates[TreeSecond.get_name()]
+    assert isinstance(persisted_first, TreeFirst)
+    assert isinstance(persisted_second, TreeSecond)
+    assert persisted_first.first_value == 5
+    assert persisted_second.second_value == 0
+
+
+async def test_set_state_writes_nothing_when_no_state_was_touched(
+    state_manager_redis: StateManagerRedis,
+):
+    """A tree without touched states costs no write at all.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+    """
+    state_manager_redis._oplock_enabled = False
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=TreeRoot)
+    state = await state_manager_redis.get_state(token)
+
+    calls = _count_redis_calls(state_manager_redis.redis, "pipeline")
+    await state_manager_redis.set_state(token, state)
+
+    assert not calls
