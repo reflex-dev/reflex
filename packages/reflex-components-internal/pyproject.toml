@@ -9,6 +9,7 @@ maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 requires-python = ">=3.10"
 dependencies = [
     "reflex >= 0.9.4",
+    "reflex-base >= 0.9.12.post57.dev0",
 ]
 
 [tool.hatch.version]
