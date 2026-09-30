@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import threading
+import time
 import uuid
 import warnings
 from types import SimpleNamespace
@@ -877,6 +878,25 @@ def test_shutdown_executor_drains_queued_work_and_stops_the_thread():
     )
     # The next send lazily starts a new worker.
     assert telemetry._get_telemetry_executor().submit(lambda: 1).result(5) == 1
+
+
+def test_shutdown_executor_gives_up_on_a_stalled_task():
+    """A send that hangs (e.g. on DNS) cannot block the fork past the timeout."""
+    release = threading.Event()
+    executor = telemetry._get_telemetry_executor()
+    stalled = executor.submit(release.wait, 10)
+    queued = executor.submit(lambda: None)
+    started = time.monotonic()
+    try:
+        telemetry._shutdown_executor(timeout=0.05)
+        elapsed = time.monotonic() - started
+    finally:
+        release.set()
+        stalled.result(timeout=5)
+
+    assert elapsed < 2
+    assert telemetry._executor is None
+    assert queued.cancelled()
 
 
 def test_shutdown_executor_without_executor_is_a_noop():
