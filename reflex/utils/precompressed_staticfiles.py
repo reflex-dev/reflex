@@ -193,7 +193,12 @@ class PrecompressedStaticFiles(StaticFiles):
             # SPA fallback: a path with no prerendered file that still matches
             # the app's route table is a valid page, so serve it with 200 and
             # reserve 404 for genuinely unknown paths.
-            if self._router is not None and self._router("/" + path) is not None:
+            # ``path`` was normalized with OS separators, so restore the URL
+            # form before matching (Windows serves ``articles\\7`` here).
+            if (
+                self._router is not None
+                and self._router("/" + path.replace(os.sep, "/")) is not None
+            ):
                 return self.file_response(
                     response.path, response.stat_result, scope, status_code=200
                 )

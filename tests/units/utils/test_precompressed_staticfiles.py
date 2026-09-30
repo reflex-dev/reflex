@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import ntpath
+import os
 from pathlib import Path
 
 import pytest
@@ -201,6 +203,69 @@ async def test_missing_file_with_extension_matching_route_serves_fallback_200(
     response = await static_files.get_response(
         "articles/report.pdf", _scope("/articles/report.pdf")
     )
+
+    assert isinstance(response, FileResponse)
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_routable_spa_fallback_served_with_200_via_asgi(tmp_path: Path):
+    """The route check survives ``StaticFiles.get_path`` normalization.
+
+    Driving the ASGI callable (rather than ``get_response`` directly) exercises
+    the OS-specific separator handling of ``get_path``, so this fails on
+    Windows if the request path is matched with backslashes.
+    """
+    (tmp_path / "404.html").write_text("<html>spa-fallback</html>")
+
+    static_files = PrecompressedStaticFiles(
+        directory=tmp_path,
+        html=True,
+        encodings=[],
+        router=_articles_router,
+    )
+
+    messages: list[Message] = []
+
+    async def receive() -> dict:
+        await asyncio.sleep(0)
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    async def send(message: Message) -> None:
+        await asyncio.sleep(0)
+        messages.append(message)
+
+    await static_files(_scope("/articles/7"), receive, send)
+
+    assert messages[0]["type"] == "http.response.start"
+    assert messages[0]["status"] == 200
+    assert (
+        b"".join(
+            m.get("body", b"") for m in messages if m["type"] == "http.response.body"
+        )
+        == b"<html>spa-fallback</html>"
+    )
+
+
+@pytest.mark.asyncio
+async def test_routable_spa_fallback_matches_os_separator_paths(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Paths normalized with the Windows separator still match the route table."""
+    (tmp_path / "404.html").write_text("<html>spa-fallback</html>")
+    monkeypatch.setattr(os, "sep", ntpath.sep)
+
+    static_files = PrecompressedStaticFiles(
+        directory=tmp_path,
+        html=True,
+        encodings=[],
+        router=_articles_router,
+    )
+
+    # What ``StaticFiles.get_path`` produces on Windows for ``/articles/7``.
+    path = ntpath.normpath(ntpath.join("articles", "7"))
+    assert path == "articles\\7"
+    response = await static_files.get_response(path, _scope("/articles/7"))
 
     assert isinstance(response, FileResponse)
     assert response.status_code == 200
