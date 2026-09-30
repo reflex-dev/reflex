@@ -53,7 +53,7 @@ The `assets` directory is where you can store any static assets you want to be p
 For example, if you save an image to `assets/image.png` you can display it from your app like this:
 
 ```python
-rx.image(src="https://web.reflex-assets.dev/other/image.png")
+rx.image(src="https://web.reflex-assets.dev/other/image.png", alt="Example image asset")
 ```
 
 ## Main Project
@@ -81,4 +81,4 @@ config = rx.Config(
 )
 ```
 
-We will discuss project structure and configuration in more detail in the [advanced project structure](/docs/advanced-onboarding/code-structure) documentation.
+We will discuss project structure and configuration in more detail in the [advanced project structure](/docs/advanced-onboarding/code-structure/) documentation.

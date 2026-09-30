@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import logging
 from collections.abc import Mapping, Sequence
 from enum import Enum
 from hashlib import md5
@@ -11,12 +12,14 @@ from typing import Any, Literal, TypedDict
 from reflex_base.components.component import Component, NoSSRComponent, field
 from reflex_base.components.literals import LiteralRowMarker
 from reflex_base.event import EventHandler, no_args_event_spec, passthrough_event_spec
-from reflex_base.utils import console, format, types
+from reflex_base.utils import format, types
 from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.utils.serializers import serializer
 from reflex_base.vars.base import Var, VarData
 from reflex_base.vars.function import FunctionStringVar
 from reflex_base.vars.sequence import ArrayVar
+
+logger = logging.getLogger(__name__)
 
 
 # TODO: Fix the serialization issue for custom types.
@@ -407,7 +410,10 @@ class DataEditor(NoSSRComponent):
         if self.library is None:
             return {}
         return {
-            "": f"{format.format_library_name(self.library)}/dist/index.css",
+            "": [
+                f"{format.format_library_name(self.library)}/dist/index.css",
+                "react-responsive-carousel/lib/styles/carousel.min.css",
+            ],
             self.library: ["GridCellKind", "CompactSelection"],
             "$/utils/helpers/dataeditor.js": ImportVar(
                 tag="formatDataEditorCells", is_default=False, install=False
@@ -561,7 +567,7 @@ class DataEditor(NoSSRComponent):
         props.setdefault("on_paste", False)
 
         if props.pop("get_cell_content", None) is not None:
-            console.warn(
+            logger.warning(
                 "get_cell_content is not user configurable, the provided value will be discarded"
             )
 

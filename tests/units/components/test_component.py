@@ -1,9 +1,11 @@
+import copy
 from contextlib import nullcontext
 from dataclasses import dataclass
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypedDict
 
 import pytest
 from reflex_base.components.component import Component, field
+from reflex_base.components.tags import CommonTag, Tag
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import (
@@ -42,6 +44,33 @@ from reflex import (
 )
 from reflex.state import BaseState
 from reflex.utils import imports
+
+
+@pytest.mark.parametrize("name", ["div", "", None])
+def test_plain_tag_render_matches_tag_protocol(name, monkeypatch):
+    """Direct rendering preserves names, props, children, and render caching."""
+    tag = Tag(name=name).add_props(title="hello")
+    component = Component._create(children=[Bare.create("child")])
+    monkeypatch.setattr(Component, "_render", lambda self: tag)
+    expected = dict(tag.set(children=[child.render() for child in component.children]))
+    assert component.render() == expected
+    assert component.render() is component.render()
+    assert not tag.children
+
+
+def test_custom_tag_render_uses_subclass_protocol(monkeypatch):
+    """A custom tag renders through the generic field protocol."""
+
+    class ChildrenTag(CommonTag):
+        """A tag whose iteration depends on its child list."""
+
+        def __iter__(self):
+            """Yield a value derived from the child list."""
+            yield "child_count", len(self.children)
+
+    component = Component._create(children=[Bare.create("child")])
+    monkeypatch.setattr(Component, "_render", lambda self: ChildrenTag())
+    assert component.render() == {"child_count": 1}
 
 
 class TestState(BaseState):
@@ -522,6 +551,63 @@ def test_get_imports_includes_components_in_props():
     })
 
 
+@pytest.mark.parametrize(
+    "bad_library",
+    [
+        "react-router-dom",
+        "react-router-dom@7.18.2",
+        "react-router-dom/server",
+        "react-router-dom@7.18.2/server",
+    ],
+)
+def test_get_imports_rejects_react_router_dom_library(bad_library: str):
+    """Test that a library resolving to react-router-dom raises a pointered error.
+
+    React Router 8 removed the react-router-dom package, so installing it would
+    silently pull in a second, unpinned React Router 7 copy that breaks prod builds.
+
+    Args:
+        bad_library: A library string that resolves to the removed package.
+    """
+
+    class BadDomLink(Component):
+        library = bad_library
+        tag = "Link"
+
+    with pytest.raises(ValueError, match=r"`BadDomLink`.*react-router-dom"):
+        BadDomLink.create()._get_all_imports()
+
+
+def test_get_imports_rejects_react_router_dom_lib_dependency():
+    """Test that a lib_dependencies entry of react-router-dom raises the same error."""
+
+    class BadDepLink(Component):
+        library = "react-router"
+        tag = "Link"
+        lib_dependencies = ["react-router-dom"]
+
+    with pytest.raises(ValueError, match=r"`BadDepLink`.*react-router-dom"):
+        BadDepLink.create()._get_all_imports()
+
+
+@pytest.mark.parametrize(
+    "good_library",
+    ["react-router", "react-router/dom", "react-router-dom-fork"],
+)
+def test_get_imports_allows_react_router_libraries(good_library: str):
+    """Test that react-router and unrelated similarly named libraries still work.
+
+    Args:
+        good_library: A library string that must not be rejected.
+    """
+
+    class GoodLink(Component):
+        library = good_library
+        tag = "Link"
+
+    assert good_library in GoodLink.create()._get_all_imports()
+
+
 def test_get_custom_code(component1: Component, component2: Component):
     """Test getting the custom code of a component.
 
@@ -837,6 +923,34 @@ def test_component_event_trigger_arbitrary_args():
             }
 
     C1.create(on_foo=C1State.mock_handler)
+
+
+def test_non_submit_mapping_events_do_not_accept_typed_dict_handlers():
+    """TypedDict relaxation should stay scoped to form submission handlers."""
+
+    class Payload(TypedDict):
+        email: str
+
+    class C1State(BaseState):
+        def mock_handler(self, payload: Payload):
+            """Mock handler."""
+
+    def on_foo_spec(payload: Var[dict[str, int]]) -> tuple[Var[dict[str, int]]]:
+        return (payload,)
+
+    class C1(Component):
+        library = "/local"
+        tag = "C1"
+
+        @classmethod
+        def get_event_triggers(cls) -> dict[str, Any]:
+            return {
+                **super().get_event_triggers(),
+                "on_foo": on_foo_spec,
+            }
+
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        C1.create(on_foo=C1State.mock_handler)
 
 
 def test_invalid_event_handler_args(component2, test_state: type[TestState]):
@@ -2397,3 +2511,70 @@ def test_component_equality_handles_var_fields():
     dict_a = VarProbe.create(meta={"k": VarState.text})
     dict_b = VarProbe.create(meta={"k": VarState.text})
     assert dict_a == dict_b
+
+
+def test_deepcopy_drops_stale_render_cache() -> None:
+    """A deep-copied component drops render caches and supports copied children."""
+    original = Fragment.create()
+    original.render()  # populate _cached_render_result with no children
+
+    clone = copy.deepcopy(original)
+    assert "_cached_render_result" not in vars(clone)
+    assert clone._frozen
+    clone = clone.copy_with(children=(*clone.children, Bare.create("page-content")))
+
+    assert len(clone.render()["children"]) == 1
+    # The original must be untouched (independent deep copy).
+    assert original.render()["children"] == []
+
+
+def test_deepcopy_produces_independent_children() -> None:
+    """Deep copy produces independent child components and keeps them frozen."""
+    original = Fragment.create(Bare.create(contents="a"))
+    clone = copy.deepcopy(original)
+    assert clone.children[0] is not original.children[0]
+    assert clone.children[0]._frozen
+    clone = clone.copy_with(children=(*clone.children, Bare.create("b")))
+
+    assert len(original.children) == 1
+    assert len(clone.children) == 2
+
+
+def test_get_all_hooks_internal_does_not_mutate_hooks_cache():
+    """Collecting subtree hooks must not pollute each node's own hooks cache."""
+    child = Box.create(id="hooks_cache_child")
+    parent = Box.create(child, id="hooks_cache_parent")
+
+    parent_own_hooks = dict(parent._get_hooks_internal())
+    child_own_hooks = dict(child._get_hooks_internal())
+    combined = parent._get_all_hooks_internal()
+
+    # The subtree collection includes both nodes' hooks.
+    for hook in (*parent_own_hooks, *child_own_hooks):
+        assert hook in combined
+
+    # The parent's per-node cache must not absorb the child's hooks.
+    assert dict(parent._get_hooks_internal()) == parent_own_hooks
+    # And repeated collection yields the same result.
+    assert parent._get_all_hooks_internal() == combined
+
+
+def test_set_props_iteration_skips_unset_props_and_keeps_defaults():
+    """Only set props and class defaults are visited, in declaration order."""
+
+    class DefaultedProps(Component):
+        first: Var[str]
+        second: Var[str] = LiteralVar.create("second-default")
+        third: Var[str]
+
+    component = DefaultedProps._create(children=(), third="set")
+    assert [(prop, str(value)) for prop, value in component._iter_set_props()] == [
+        ("second", '"second-default"'),
+        ("third", '"set"'),
+    ]
+    assert [str(var) for var in component._get_vars()] == ['"second-default"', '"set"']
+    assert {prop: str(value) for prop, value in component._render().props.items()} == {
+        "second": '"second-default"',
+        "third": '"set"',
+    }
+    assert "first" not in vars(component)

@@ -143,7 +143,11 @@ class PrecompressedStaticFiles(StaticFiles):
         response_path: str | PathLike[str] = full_path
         response_stat = stat_result
         response_headers: dict[str, str] = {}
-        media_type: str | None = None
+        media_type = (
+            "text/javascript"
+            if Path(full_path).suffix.lower() in {".js", ".mjs"}
+            else guess_type(os.fspath(full_path))[0]
+        )
 
         if self._encodings:
             response_headers["Vary"] = "Accept-Encoding"
@@ -151,7 +155,6 @@ class PrecompressedStaticFiles(StaticFiles):
             if sidecar is not None:
                 content_encoding, response_path, response_stat = sidecar
                 response_headers["Content-Encoding"] = content_encoding
-                media_type = guess_type(os.fspath(full_path))[0] or "text/plain"
 
         response = FileResponse(
             response_path,

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 from reflex_base import constants
 from reflex_base.components.component import Component
 from reflex_base.constants import Dirs, Hooks, Imports
@@ -22,8 +24,8 @@ from reflex_components_core.core.cond import cond
 from reflex_components_core.el.elements.typography import Div
 
 connect_error_var_data: VarData = VarData(
-    imports=Imports.EVENTS,
-    hooks={Hooks.EVENTS: None},
+    imports=Imports.CONNECT_ERRORS,
+    hooks={Hooks.CONNECT_ERRORS: None},
 )
 
 connect_errors = Var(
@@ -124,7 +126,7 @@ setTimeout(() => {{
     if ({has_too_many_connection_errors!s}) {{
         setWaitedForBackend(true);
     }}
-}}, {environment.REFLEX_BACKEND_COLD_START_TIMEOUT.get() * 1000});
+}}, {environment.REFLEX_BACKEND_COLD_START_TIMEOUT.get() // timedelta(milliseconds=1)});
 """
             )
         else:
@@ -173,7 +175,7 @@ setTimeout(() => {{
         ]
 
         return [
-            Hooks.EVENTS,
+            Hooks.CONNECT_ERRORS,
             *individual_hooks,
         ]
 

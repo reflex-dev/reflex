@@ -40,7 +40,7 @@ class SliderBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the slider component."""
+        """The import variable for the slider component."""
         return ImportVar(tag="Slider", package_path="", install=False)
 
 

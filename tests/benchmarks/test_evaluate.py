@@ -14,7 +14,7 @@ def test_evaluate_page(
     benchmark(unevaluated_page)
 
 
-def test_evaluate_page_single_pass(
+def test_evaluate_page_with_hooks(
     unevaluated_page: Callable[[], Component],
     benchmark: BenchmarkFixture,
 ):

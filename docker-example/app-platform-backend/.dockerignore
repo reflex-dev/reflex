@@ -1,0 +1,9 @@
+.web
+.git
+.venv
+__pycache__
+*.py[cod]
+.states
+*.db
+uploaded_files
+Dockerfile

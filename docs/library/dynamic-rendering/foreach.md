@@ -142,7 +142,7 @@ def get_item(item: rx.Var[TodoItem]):
 
 def todo_example():
     return rx.vstack(
-        rx.heading("Todos"),
+        rx.heading("Todos", as_="h2"),
         rx.input(
             on_blur=ListState.set_new_item, placeholder="Add a todo...", bg="white"
         ),

@@ -6,7 +6,7 @@ from typing import Any, TypeVar, overload
 
 from reflex_base.components.component import BaseComponent, Component, field
 from reflex_base.components.memoize_helpers import passthrough_children_var
-from reflex_base.components.tags import CondTag, Tag
+from reflex_base.components.tags import CommonTag, CondTag
 from reflex_base.constants import Dirs
 from reflex_base.style import LIGHT_COLOR_MODE, resolved_color_mode
 from reflex_base.utils import types
@@ -14,6 +14,7 @@ from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.number import ternary_operation
+from typing_extensions import LiteralString
 
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
@@ -83,7 +84,7 @@ class Cond(Component):
             )
         )
 
-    def _render(self) -> Tag:
+    def _render(self) -> CommonTag:
         true_child, false_child = self._get_cond_children()
         return CondTag(
             cond_state=str(self.cond),
@@ -131,6 +132,25 @@ def cond(condition: Any, c1: Any, c2: Component, /) -> Component: ...  # pyright
 
 T = TypeVar("T", covariant=True)
 U = TypeVar("U", covariant=True)
+LITERAL_STRING_S = TypeVar("LITERAL_STRING_S", bound=LiteralString)
+
+
+@overload
+def cond(
+    condition: Any, c1: LITERAL_STRING_S, c2: LITERAL_STRING_S, /
+) -> Var[LITERAL_STRING_S]: ...  # pyright: ignore [reportOverlappingOverload]
+
+
+@overload
+def cond(
+    condition: Any, c1: LITERAL_STRING_S, c2: Var[U], /
+) -> Var[LITERAL_STRING_S | U]: ...  # pyright: ignore [reportOverlappingOverload]
+
+
+@overload
+def cond(
+    condition: Any, c1: Var[T], c2: LITERAL_STRING_S, /
+) -> Var[T | LITERAL_STRING_S]: ...  # pyright: ignore [reportOverlappingOverload]
 
 
 @overload

@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from reflex_base.components.component import NoSSRComponent, field
-from reflex_base.components.tags import Tag
+from reflex_base.components.tags import CommonTag
 from reflex_base.utils import types
 from reflex_base.utils.imports import ImportDict
 from reflex_base.utils.serializers import serialize
@@ -105,7 +105,7 @@ class DataTable(Gridjs):
         """
         return {"": "gridjs/dist/theme/mermaid.css"}
 
-    def _render(self) -> Tag:
+    def _render(self) -> CommonTag:
         columns: Any = self.columns
         data: Any = self.data
         if isinstance(data, Var) and types.is_dataframe(data._var_type):

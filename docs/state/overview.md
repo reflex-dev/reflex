@@ -5,7 +5,11 @@ import reflex as rx
 def definition(title, *children):
     return rx.vstack(
         rx.heading(
-            title, font_size="1em", font_weight="bold", color=rx.color("mauve", 12)
+            title,
+            as_="h2",
+            font_size="1em",
+            font_weight="bold",
+            color=rx.color("mauve", 12),
         ),
         *children,
         color=rx.color("mauve", 10),
@@ -47,6 +51,12 @@ A state class is made up of two parts: vars and event handlers.
 **Vars** are variables in your app that can change over time.
 
 **Event handlers** are functions that modify these vars in response to events.
+
+State declarations cannot reuse framework method or bookkeeping names, such as
+`get_state`, `get_delta`, or `dirty_vars`. Reflex checks these names when
+creating a state class and when adding vars, event handlers, or route arguments
+dynamically. Rename a conflicting declaration and update its references. Ordinary
+backend names such as `_count` remain supported.
 
 These are the main concepts to understand how state works in Reflex:
 
@@ -134,6 +144,7 @@ class ExampleState(rx.State):
 def index():
     return rx.heading(
         "Welcome to Reflex!",
+        as_="h2",
         # Event handlers can be bound to event triggers.
         on_click=ExampleState.next_color,
         # State vars can be bound to component props.

@@ -13,4 +13,4 @@ def get_default_telemetry_script() -> rx.Component:
     Returns:
         The component.
     """
-    return rx.el.script(DEFAULT_TELEMETRY_SCRIPT)
+    return rx.el.script(DEFAULT_TELEMETRY_SCRIPT, type="module")

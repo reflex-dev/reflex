@@ -8,6 +8,7 @@ from reflex_site_shared.constants import (
     FORUM_URL,
     GITHUB_URL,
     LINKEDIN_URL,
+    OG_IMAGE_URL,
     REFLEX_ASSETS_CDN,
     REFLEX_DOMAIN,
     REFLEX_DOMAIN_URL,
@@ -69,7 +70,7 @@ def _build_meta_tags(
 meta_tags = _build_meta_tags(
     title=TITLE,
     description=ONE_LINE_DESCRIPTION,
-    image=f"{REFLEX_ASSETS_CDN}previews/index_preview.webp",
+    image=OG_IMAGE_URL,
 )
 
 hosting_meta_tags = _build_meta_tags(
@@ -104,6 +105,11 @@ def favicons_links() -> list[dict[str, str] | rx.Component]:
             href=rx.asset("meta/favicon-16x16.png"),
         ),
         rx.el.link(rel="manifest", href=rx.asset("meta/site.webmanifest")),
+        rx.el.link(
+            rel="icon",
+            type="image/svg+xml",
+            href=rx.asset("favicon.svg"),
+        ),
         rx.el.link(rel="shortcut icon", href=rx.asset("favicon.ico")),
     ]
 
@@ -260,6 +266,7 @@ def website_organization_jsonld(url: str = REFLEX_DOMAIN_URL) -> rx.Component:
                 "url": REFLEX_DOMAIN_URL,
                 "logo": f"{org_url}/meta/apple-touch-icon.png",
                 "description": "Open-source Python framework for building full-stack web applications. Deploy to any cloud with AI-powered code generation.",
+                "image": OG_IMAGE_URL,
                 "sameAs": [
                     GITHUB_URL,
                     TWITTER_URL,
@@ -292,7 +299,6 @@ def blog_index_jsonld(posts: list[tuple[str, dict]], url: str) -> rx.Component:
             "position": i + 1,
             "url": f"{REFLEX_DOMAIN_URL.rstrip('/')}/blog/{path}",
             "name": meta.get("title_tag") or meta.get("title", ""),
-            "datePublished": str(meta.get("date", "")),
         }
         for i, (path, meta) in enumerate(posts[:20])
     ]
@@ -352,29 +358,35 @@ def pricing_jsonld(url: str) -> rx.Component:
                 "@type": "SoftwareApplication",
                 "name": "Reflex",
                 "applicationCategory": "DeveloperApplication",
+                "operatingSystem": "Web",
                 "description": "The platform to build and scale enterprise apps. Python full-stack framework for web apps and internal tools.",
                 "url": url,
+                # Reflex has three pricing tiers (Free $0, Pro $200/mo,
+                # Enterprise custom). Google's SoftwareApplication rich result
+                # requires offers/review/aggregateRating; an AggregateOffer over
+                # the tier price range satisfies it without inventing a rating.
+                "offers": {
+                    "@type": "AggregateOffer",
+                    "priceCurrency": "USD",
+                    "lowPrice": "0",
+                    "highPrice": "200",
+                    "offerCount": "3",
+                    "availability": "https://schema.org/InStock",
+                },
             },
             {
                 "@type": "Product",
                 "name": "Reflex Enterprise Platform",
                 "brand": {"@type": "Brand", "name": "Reflex"},
                 "description": "Enterprise-grade fullstack app building platform with AI-powered code generation in pure Python. Includes dedicated support, SSO, on-prem deployment, and custom SLAs.",
-                "offers": [
-                    {
-                        "@type": "Offer",
-                        "price": "0",
-                        "priceCurrency": "USD",
-                        "name": "Free",
-                        "availability": "https://schema.org/InStock",
-                    },
-                    {
-                        "@type": "Offer",
-                        "name": "Enterprise",
-                        "description": "Custom enterprise pricing",
-                        "availability": "https://schema.org/PreOrder",
-                    },
-                ],
+                "offers": {
+                    "@type": "AggregateOffer",
+                    "priceCurrency": "USD",
+                    "lowPrice": "0",
+                    "highPrice": "200",
+                    "offerCount": "3",
+                    "availability": "https://schema.org/InStock",
+                },
             },
         ],
     }

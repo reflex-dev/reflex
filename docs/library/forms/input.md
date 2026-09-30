@@ -42,7 +42,7 @@ class TextfieldBlur(rx.State):
 
 def blur_example():
     return rx.vstack(
-        rx.heading(TextfieldBlur.text),
+        rx.heading(TextfieldBlur.text, as_="h2"),
         rx.input(
             placeholder="Search here...",
             on_blur=TextfieldBlur.set_text,
@@ -63,7 +63,7 @@ class TextfieldControlled(rx.State):
 
 def controlled_example():
     return rx.vstack(
-        rx.heading(TextfieldControlled.text),
+        rx.heading(TextfieldControlled.text, as_="h2"),
         rx.input(
             placeholder="Search here...",
             value=TextfieldControlled.text,
@@ -108,7 +108,7 @@ The `name` prop is needed to submit with its owning form as part of a name/value
 
 When the `required` prop is `True`, it indicates that the user must input text before the owning form can be submitted.
 
-The `type` is set here to `password`. The element is presented as a one-line plain text editor control in which the text is obscured so that it cannot be read. The `type` prop can take any value of `email`, `file`, `password`, `text` and several others. Learn more [here](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input).
+The `type` is set here to `password`. The element is presented as a one-line plain text editor control in which the text is obscured so that it cannot be read. The `type` prop can take any value of `email`, `file`, `password`, `text` and several others. Learn more in the [HTML input reference](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input).
 
 ```python demo exec
 class FormInputState(rx.State):
@@ -123,7 +123,7 @@ class FormInputState(rx.State):
 def form_input1():
     return rx.card(
         rx.vstack(
-            rx.heading("Example Form"),
+            rx.heading("Example Form", as_="h2"),
             rx.form.root(
                 rx.hstack(
                     rx.input(
@@ -140,7 +140,7 @@ def form_input1():
             ),
             rx.divider(),
             rx.hstack(
-                rx.heading("Results:"),
+                rx.heading("Results:", as_="h2"),
                 rx.badge(FormInputState.form_data.to_string()),
             ),
             align_items="left",
@@ -150,7 +150,7 @@ def form_input1():
     )
 ```
 
-To learn more about how to use forms in the [Form](/docs/library/forms/form) docs.
+To learn more about how to use forms in the [Form](/docs/library/forms/form/) docs.
 
 ## Setting a value without using a State var
 

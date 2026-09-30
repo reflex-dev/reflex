@@ -27,7 +27,7 @@ class CheckboxState(rx.State):
 
 def checkbox_example():
     return rx.vstack(
-        rx.heading(CheckboxState.checked),
+        rx.heading(CheckboxState.checked, as_="h2"),
         rx.checkbox(on_change=CheckboxState.set_checked),
     )
 ```
@@ -48,7 +48,7 @@ class FormCheckboxState(rx.State):
 def form_checkbox_example():
     return rx.card(
         rx.vstack(
-            rx.heading("Example Form"),
+            rx.heading("Example Form", as_="h2"),
             rx.form.root(
                 rx.hstack(
                     rx.checkbox(
@@ -63,7 +63,7 @@ def form_checkbox_example():
             ),
             rx.divider(),
             rx.hstack(
-                rx.heading("Results:"),
+                rx.heading("Results:", as_="h2"),
                 rx.badge(FormCheckboxState.form_data.to_string()),
             ),
             align_items="left",

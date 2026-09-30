@@ -1,20 +1,19 @@
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 from unittest import mock
 
-import httpx
 import pytest
 from click.testing import CliRunner
 from pytest_mock import MockFixture
-from reflex_cli.utils import hosting
+from reflex_build_sdk.types import CloudRunManifest
 from reflex_cli.v2.deployments import hosting_cli
-from typer.main import Typer, get_command
 
-hosting_cli = (
-    get_command(hosting_cli) if isinstance(hosting_cli, Typer) else hosting_cli
-)
+from .utils import api_error, as_click_command, fake_client
+
+hosting_cli = as_click_command(hosting_cli)
 
 runner = CliRunner()
 
@@ -25,6 +24,7 @@ DEPLOY_SCRIPT = (
     "#!/usr/bin/env bash\n"
     "set -euo pipefail\n"
     'IMAGE="us-central1-docker.pkg.dev/${GCP_PROJECT}/reflex/${SERVICE_NAME}:${VERSION}"\n'
+    "AUTH=${CLOUD_RUN_ALLOW_UNAUTHENTICATED:-true}\n"
     "gcloud builds submit \\\n"
     '    --tag "${IMAGE}" \\\n'
     '    --project "${GCP_PROJECT}" \\\n'
@@ -34,13 +34,19 @@ DEPLOY_SCRIPT = (
 MANIFEST = {"dockerfile": DOCKERFILE, "deploy_command": DEPLOY_SCRIPT}
 
 
+_CLIENT = fake_client()
+
+
 def _patch_environment(
     mocker: MockFixture, account: str = "user@example.com"
 ) -> mock.MagicMock:
     """Patch auth + tool detection. Returns the deploy-script subprocess mock."""
+    _CLIENT.api.reset_mock(return_value=True, side_effect=True)
+    _CLIENT.api.providers.cloud_run_manifest.return_value = CloudRunManifest(
+        dockerfile=DOCKERFILE, deploy_command=DEPLOY_SCRIPT
+    )
     mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(token="fake-token", validated_data={}),
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=_CLIENT
     )
 
     def fake_which(name: str) -> str | None:
@@ -52,19 +58,28 @@ def _patch_environment(
 
 
 def _mock_manifest_response(
-    mocker: MockFixture, body=MANIFEST, status_code: int = 200
+    body: dict[str, str] = MANIFEST,
+    status_code: int = 200,
+    detail: str = "boom",
 ) -> mock.MagicMock:
-    response = mock.MagicMock(spec=httpx.Response)
-    response.status_code = status_code
-    response.json.return_value = body
-    response.text = "ok"
+    """Make the manifest read answer with `body`, or refuse with `status_code`.
+
+    Args:
+        body: The manifest the API returns, when it answers.
+        status_code: The status to refuse with, or 200 to answer.
+        detail: The API's explanation, when it refuses.
+
+    Returns:
+        The mocked manifest call.
+    """
+    manifest = _CLIENT.api.providers.cloud_run_manifest
     if status_code >= 400:
-        response.raise_for_status.side_effect = httpx.HTTPStatusError(
-            "boom", request=mock.MagicMock(), response=response
-        )
+        manifest.side_effect = api_error(status_code, detail)
     else:
-        response.raise_for_status.return_value = None
-    return mocker.patch("httpx.get", return_value=response)
+        manifest.return_value = CloudRunManifest(
+            dockerfile=body["dockerfile"], deploy_command=body["deploy_command"]
+        )
+    return manifest
 
 
 def test_gcp_deploy_runs_script_from_source_with_cloudbuild_yaml(
@@ -88,7 +103,7 @@ def test_gcp_deploy_runs_script_from_source_with_cloudbuild_yaml(
 
     run_mock = _patch_environment(mocker)
     run_mock.side_effect = capture
-    get_mock = _mock_manifest_response(mocker)
+    get_mock = _mock_manifest_response()
 
     # Pre-populate the source with a file and an existing Dockerfile that
     # must NOT be touched.
@@ -98,7 +113,7 @@ def test_gcp_deploy_runs_script_from_source_with_cloudbuild_yaml(
     result = runner.invoke(
         hosting_cli,
         [
-            "deploy",
+            "gcp-standalone",
             "--gcp",
             "--gcp-project",
             "my-gcp-project",
@@ -153,19 +168,18 @@ def test_gcp_deploy_runs_script_from_source_with_cloudbuild_yaml(
     assert captured["env_overrides"]["VERSION"] == "v1"
 
     assert run_mock.call_count == 1
-    # X-API-Token header is sent.
-    assert get_mock.call_args.kwargs["headers"] == {"X-API-TOKEN": "fake-token"}
+    get_mock.assert_called_once_with()
 
 
 def test_gcp_deploy_forwards_resource_flags(mocker: MockFixture, tmp_path: Path):
     """--cpu / --memory / --min-instances flow through to the deploy script env."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
         [
-            "deploy",
+            "gcp-standalone",
             "--gcp",
             "--gcp-project",
             "p",
@@ -188,14 +202,59 @@ def test_gcp_deploy_forwards_resource_flags(mocker: MockFixture, tmp_path: Path)
     assert env_overrides["CLOUD_RUN_MIN_INSTANCES"] == "0"
 
 
-def test_gcp_deploy_resource_flags_have_defaults(mocker: MockFixture, tmp_path: Path):
-    """When the user omits the new flags, defaults reach the deploy script env."""
+def test_gcp_deploy_legacy_name_still_works_and_says_so(
+    mocker: MockFixture, tmp_path: Path
+):
+    """`reflex cloud deploy` keeps working, warning that it is not the managed path."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
         ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+        # Wide enough that the warning is not wrapped mid-sentence.
+        env={"COLUMNS": "200"},
+    )
+
+    assert result.exit_code == 0, result.output
+    run_mock.assert_called_once()
+    assert "gcp-standalone" in result.output
+    assert "reflex deploy --provider gcp" in result.output
+
+
+def test_gcp_deploy_new_name_does_not_warn(mocker: MockFixture, tmp_path: Path):
+    """Reached by its own name, the command has nothing to correct."""
+    _patch_environment(mocker)
+    _mock_manifest_response()
+
+    result = runner.invoke(
+        hosting_cli,
+        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "is now" not in result.output
+
+
+def test_gcp_deploy_legacy_name_is_hidden_from_help():
+    """Only the name that says what the command does is offered."""
+    result = runner.invoke(hosting_cli, ["--help"])
+
+    assert result.exit_code == 0, result.output
+    assert "gcp-standalone" in result.output
+    assert "\n  deploy " not in result.output
+
+
+def test_gcp_deploy_resource_flags_have_defaults(mocker: MockFixture, tmp_path: Path):
+    """When the user omits the new flags, defaults reach the deploy script env."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response()
+
+    result = runner.invoke(
+        hosting_cli,
+        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
         input="y\n",
     )
 
@@ -206,15 +265,328 @@ def test_gcp_deploy_resource_flags_have_defaults(mocker: MockFixture, tmp_path: 
     assert env_overrides["CLOUD_RUN_MIN_INSTANCES"] == "1"
 
 
-def test_gcp_deploy_forwards_service_account(mocker: MockFixture, tmp_path: Path):
-    """--service-account threads through to CLOUD_RUN_SERVICE_ACCOUNT."""
+def test_gcp_deploy_forwards_max_instances(mocker: MockFixture, tmp_path: Path):
+    """--max-instances threads through to CLOUD_RUN_MAX_INSTANCES."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
         [
-            "deploy",
+            "gcp-standalone",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--max-instances",
+            "42",
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env_overrides = run_mock.call_args.kwargs["env_overrides"]
+    assert env_overrides["CLOUD_RUN_MAX_INSTANCES"] == "42"
+
+
+def test_gcp_deploy_max_instances_default(mocker: MockFixture, tmp_path: Path):
+    """Default --max-instances is 100, matching Cloud Run's own default."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response()
+
+    result = runner.invoke(
+        hosting_cli,
+        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env_overrides = run_mock.call_args.kwargs["env_overrides"]
+    assert env_overrides["CLOUD_RUN_MAX_INSTANCES"] == "100"
+
+
+def test_gcp_deploy_rejects_max_less_than_min(mocker: MockFixture, tmp_path: Path):
+    """--max-instances < --min-instances is caught at the CLI, not inside gcloud."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response()
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "gcp-standalone",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--min-instances",
+            "5",
+            "--max-instances",
+            "3",
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert "max-instances" in result.output.lower()
+    assert "min-instances" in result.output.lower()
+    assert run_mock.call_count == 0
+
+
+def test_gcp_deploy_allow_unauthenticated_defaults_true(
+    mocker: MockFixture, tmp_path: Path
+):
+    """Default is --allow-unauthenticated (public service), matching prior behavior."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response()
+
+    result = runner.invoke(
+        hosting_cli,
+        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env_overrides = run_mock.call_args.kwargs["env_overrides"]
+    assert env_overrides["CLOUD_RUN_ALLOW_UNAUTHENTICATED"] == "true"
+
+
+def test_gcp_deploy_no_allow_unauthenticated_requires_backend_support(
+    mocker: MockFixture, tmp_path: Path
+):
+    """--no-allow-unauthenticated aborts when the fetched script doesn't honor it.
+
+    The deploy script's auth flag is read from CLOUD_RUN_ALLOW_UNAUTHENTICATED.
+    If we shipped a CLI build against an older backend that still hard-codes
+    --allow-unauthenticated, the user's --no-allow-unauthenticated would be
+    silently ignored and the service would deploy as PUBLIC. Catch the
+    mismatch at the CLI before we deploy anything.
+    """
+    run_mock = _patch_environment(mocker)
+    # Manifest from an older backend that doesn't reference the env var —
+    # built from scratch so it doesn't inherit DEPLOY_SCRIPT's auth env var.
+    legacy_script = (
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        'IMAGE="us-central1-docker.pkg.dev/${GCP_PROJECT}/reflex/${SERVICE_NAME}:${VERSION}"\n'
+        "gcloud builds submit \\\n"
+        '    --tag "${IMAGE}" \\\n'
+        '    --project "${GCP_PROJECT}" \\\n'
+        "    .\n"
+        'gcloud run deploy "${SERVICE_NAME}" --image "${IMAGE}" --allow-unauthenticated\n'
+    )
+    _mock_manifest_response(
+        body={"dockerfile": DOCKERFILE, "deploy_command": legacy_script}
+    )
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "gcp-standalone",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--no-allow-unauthenticated",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "CLOUD_RUN_ALLOW_UNAUTHENTICATED" in result.output
+    assert "PUBLIC" in result.output
+    assert run_mock.call_count == 0
+
+
+def test_gcp_deploy_no_allow_unauthenticated(mocker: MockFixture, tmp_path: Path):
+    """--no-allow-unauthenticated produces the 'false' value."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response()
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "gcp-standalone",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--no-allow-unauthenticated",
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env_overrides = run_mock.call_args.kwargs["env_overrides"]
+    assert env_overrides["CLOUD_RUN_ALLOW_UNAUTHENTICATED"] == "false"
+
+
+def test_gcp_deploy_no_env_vars_means_no_env_vars_file(
+    mocker: MockFixture, tmp_path: Path
+):
+    """Without --env or --envfile, REFLEX_ENV_VARS_FILE is absent from env_overrides."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response()
+
+    result = runner.invoke(
+        hosting_cli,
+        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    env_overrides = run_mock.call_args.kwargs["env_overrides"]
+    assert "REFLEX_ENV_VARS_FILE" not in env_overrides
+
+
+def test_gcp_deploy_forwards_env_flag(mocker: MockFixture, tmp_path: Path):
+    """--env KEY=VALUE writes a tempfile and forwards its path via REFLEX_ENV_VARS_FILE.
+
+    Captures the file's contents during the run (the tempfile is unlinked
+    afterward) and verifies the YAML body uses json-encoded values.
+    """
+    captured: dict = {}
+
+    def capture(**kwargs):
+        path = Path(kwargs["env_overrides"]["REFLEX_ENV_VARS_FILE"])
+        captured["existed_during_run"] = path.exists()
+        captured["path"] = path
+        captured["yaml"] = path.read_text()
+        return 0
+
+    run_mock = _patch_environment(mocker)
+    run_mock.side_effect = capture
+    _mock_manifest_response()
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "gcp-standalone",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--env",
+            "DB_URL=postgres://u:p@h/d",
+            "--env",
+            "FEATURE_FLAG=on",
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    assert captured["existed_during_run"]
+    assert not captured["path"].exists()  # cleaned up after run
+    # YAML uses json.dumps per value, so embedded special chars are escaped.
+    assert captured["yaml"] == 'DB_URL: "postgres://u:p@h/d"\nFEATURE_FLAG: "on"\n'
+
+
+def test_gcp_deploy_envfile_loads_dotenv(mocker: MockFixture, tmp_path: Path):
+    """--envfile reads a .env file via dotenv_values and forwards its contents."""
+    envfile = tmp_path / ".env"
+    envfile.write_text('DB_URL="postgres://u:p@h/d"\nFEATURE_FLAG=on\n')
+
+    captured: dict = {}
+
+    def capture(**kwargs):
+        path = Path(kwargs["env_overrides"]["REFLEX_ENV_VARS_FILE"])
+        captured["yaml"] = path.read_text()
+        return 0
+
+    run_mock = _patch_environment(mocker)
+    run_mock.side_effect = capture
+    _mock_manifest_response()
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "gcp-standalone",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--envfile",
+            str(envfile),
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    yaml = captured["yaml"]
+    assert 'DB_URL: "postgres://u:p@h/d"' in yaml
+    assert 'FEATURE_FLAG: "on"' in yaml
+
+
+def test_gcp_deploy_envfile_takes_precedence_over_env_with_warning(
+    mocker: MockFixture, tmp_path: Path
+):
+    """When both --envfile and --env are passed, --envfile wins (matches existing flow)."""
+    envfile = tmp_path / ".env"
+    envfile.write_text("FROM_FILE=yes\n")
+
+    captured: dict = {}
+
+    def capture(**kwargs):
+        path = Path(kwargs["env_overrides"]["REFLEX_ENV_VARS_FILE"])
+        captured["yaml"] = path.read_text()
+        return 0
+
+    run_mock = _patch_environment(mocker)
+    run_mock.side_effect = capture
+    _mock_manifest_response()
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "gcp-standalone",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--envfile",
+            str(envfile),
+            "--env",
+            "FROM_FLAG=no",
+        ],
+        input="y\n",
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "FROM_FILE" in captured["yaml"]
+    assert "FROM_FLAG" not in captured["yaml"]
+    assert "envfile" in result.output.lower()
+    assert "ignoring --env" in result.output
+
+
+def test_format_env_vars_yaml_escapes_specials():
+    """Values with quotes, backslashes, and newlines round-trip via json.dumps."""
+    from reflex_cli.v2 import gcp as gcp_module
+
+    envs = {
+        "QUOTED": 'has "quotes" and \\ backslash',
+        "MULTILINE": "line1\nline2",
+        "EMPTY": "",
+    }
+    yaml = gcp_module._format_env_vars_yaml(envs)
+    # Each line is `KEY: <json-encoded-value>`.
+    assert 'QUOTED: "has \\"quotes\\" and \\\\ backslash"' in yaml
+    assert 'MULTILINE: "line1\\nline2"' in yaml
+    assert 'EMPTY: ""' in yaml
+
+
+def test_gcp_deploy_forwards_service_account(mocker: MockFixture, tmp_path: Path):
+    """--service-account threads through to CLOUD_RUN_SERVICE_ACCOUNT."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response()
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "gcp-standalone",
             "--gcp",
             "--gcp-project",
             "p",
@@ -243,11 +615,11 @@ def test_gcp_deploy_omits_service_account_when_unset(
     than sending an empty string) keeps the dry-run output tidy.
     """
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
-        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
         input="y\n",
     )
 
@@ -263,12 +635,12 @@ def test_gcp_deploy_rejects_empty_service_account(mocker: MockFixture, tmp_path:
     flag would otherwise resolve to the default compute SA against user intent.
     """
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
         [
-            "deploy",
+            "gcp-standalone",
             "--gcp",
             "--gcp-project",
             "p",
@@ -287,12 +659,12 @@ def test_gcp_deploy_rejects_empty_service_account(mocker: MockFixture, tmp_path:
 def test_gcp_deploy_rejects_negative_min_instances(mocker: MockFixture, tmp_path: Path):
     """--min-instances is IntRange(min=0); negative values fail at the CLI layer."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
         [
-            "deploy",
+            "gcp-standalone",
             "--gcp",
             "--gcp-project",
             "p",
@@ -311,11 +683,19 @@ def test_gcp_deploy_rejects_negative_min_instances(mocker: MockFixture, tmp_path
 def test_gcp_deploy_aborts_on_no(mocker: MockFixture, tmp_path: Path):
     """Declining the run prompt aborts before any staging."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
-        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        [
+            "gcp-standalone",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--interactive",
+        ],
         input="n\n",
     )
 
@@ -328,11 +708,11 @@ def test_gcp_deploy_aborts_on_no(mocker: MockFixture, tmp_path: Path):
 def test_gcp_deploy_propagates_script_failure(mocker: MockFixture, tmp_path: Path):
     run_mock = _patch_environment(mocker)
     run_mock.return_value = 7
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
-        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
         input="y\n",
     )
 
@@ -341,12 +721,12 @@ def test_gcp_deploy_propagates_script_failure(mocker: MockFixture, tmp_path: Pat
 
 def test_gcp_deploy_dry_run(mocker: MockFixture, tmp_path: Path):
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
         [
-            "deploy",
+            "gcp-standalone",
             "--gcp",
             "--gcp-project",
             "p",
@@ -367,13 +747,13 @@ def test_gcp_deploy_existing_dockerfile_in_source_is_preserved(
 ):
     """An existing Dockerfile in --source is never read or modified."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
     existing = tmp_path / "Dockerfile"
     existing.write_text("FROM existing\n")
 
     result = runner.invoke(
         hosting_cli,
-        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
         input="y\n",
     )
 
@@ -385,7 +765,7 @@ def test_gcp_deploy_existing_dockerfile_in_source_is_preserved(
 def test_gcp_deploy_requires_gcloud(mocker: MockFixture, tmp_path: Path):
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(token="t", validated_data={}),
+        return_value=fake_client(),
     )
     mocker.patch(
         "reflex_cli.v2.gcp.shutil.which",
@@ -394,7 +774,7 @@ def test_gcp_deploy_requires_gcloud(mocker: MockFixture, tmp_path: Path):
 
     result = runner.invoke(
         hosting_cli,
-        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
     )
 
     assert result.exit_code == 1
@@ -404,7 +784,7 @@ def test_gcp_deploy_requires_gcloud(mocker: MockFixture, tmp_path: Path):
 def test_gcp_deploy_requires_docker(mocker: MockFixture, tmp_path: Path):
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(token="t", validated_data={}),
+        return_value=fake_client(),
     )
     mocker.patch(
         "reflex_cli.v2.gcp.shutil.which",
@@ -413,7 +793,7 @@ def test_gcp_deploy_requires_docker(mocker: MockFixture, tmp_path: Path):
 
     result = runner.invoke(
         hosting_cli,
-        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
     )
 
     assert result.exit_code == 1
@@ -425,7 +805,7 @@ def test_gcp_deploy_requires_gcp_login(mocker: MockFixture, tmp_path: Path):
 
     result = runner.invoke(
         hosting_cli,
-        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
     )
 
     assert result.exit_code == 1
@@ -433,38 +813,40 @@ def test_gcp_deploy_requires_gcp_login(mocker: MockFixture, tmp_path: Path):
 
 
 def test_gcp_deploy_403_mentions_enterprise_tier(mocker: MockFixture, tmp_path: Path):
+    """A 403 is explained as the plan it needs, not as the API's own wording."""
     _patch_environment(mocker)
-    _mock_manifest_response(mocker, body={"detail": "denied"}, status_code=403)
+    _mock_manifest_response(status_code=403, detail="denied")
 
     result = runner.invoke(
         hosting_cli,
-        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
     )
 
     assert result.exit_code == 1
     assert "Enterprise" in result.output
 
 
-def test_gcp_deploy_rejects_missing_fields(mocker: MockFixture, tmp_path: Path):
+def test_gcp_deploy_reports_a_refused_manifest(mocker: MockFixture, tmp_path: Path):
+    """A manifest the API will not hand over stops the deploy with its reason."""
     _patch_environment(mocker)
-    _mock_manifest_response(mocker, body={"dockerfile": "FROM scratch"})
+    _mock_manifest_response(status_code=500)
 
     result = runner.invoke(
         hosting_cli,
-        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
     )
 
     assert result.exit_code == 1
-    assert "deploy_command" in result.output
+    assert "boom" in result.output
 
 
 def test_gcp_deploy_default_version_is_timestamp(mocker: MockFixture, tmp_path: Path):
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
-        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
         input="y\n",
     )
 
@@ -480,12 +862,12 @@ def test_gcp_deploy_no_interactive_skips_run_prompt(
     mocker: MockFixture, tmp_path: Path
 ):
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
         [
-            "deploy",
+            "gcp-standalone",
             "--gcp",
             "--gcp-project",
             "p",
@@ -507,9 +889,9 @@ def test_gcp_deploy_env_is_restricted_to_allowlist(mocker: MockFixture, tmp_path
     """Verify the script env excludes host secrets and only includes allowlisted vars."""
     from reflex_cli.v2 import gcp as gcp_module
 
+    _CLIENT.api.reset_mock(return_value=True, side_effect=True)
     mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(token="fake-token", validated_data={}),
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=_CLIENT
     )
     mocker.patch(
         "reflex_cli.v2.gcp.shutil.which", side_effect=lambda n: f"/usr/bin/{n}"
@@ -517,7 +899,7 @@ def test_gcp_deploy_env_is_restricted_to_allowlist(mocker: MockFixture, tmp_path
     mocker.patch(
         "reflex_cli.v2.gcp._get_active_gcp_account", return_value="u@example.com"
     )
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     captured: dict[str, dict[str, str]] = {}
 
@@ -541,7 +923,7 @@ def test_gcp_deploy_env_is_restricted_to_allowlist(mocker: MockFixture, tmp_path
 
     result = runner.invoke(
         hosting_cli,
-        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
         input="y\n",
     )
 
@@ -563,7 +945,7 @@ def test_deploy_requires_gcp_target_flag(tmp_path: Path):
     """Without any target flag, the command errors with usage hint."""
     result = runner.invoke(
         hosting_cli,
-        ["deploy", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["gcp-standalone", "--gcp-project", "p", "--source", str(tmp_path)],
     )
 
     assert result.exit_code == 2
@@ -663,7 +1045,6 @@ def test_gcp_deploy_surfaces_rewrite_failure(mocker: MockFixture, tmp_path: Path
     """If the manifest's script can't be rewritten, the command errors out clearly."""
     _patch_environment(mocker)
     _mock_manifest_response(
-        mocker,
         body={
             "dockerfile": DOCKERFILE,
             "deploy_command": "#!/usr/bin/env bash\necho no build here\n",
@@ -672,7 +1053,7 @@ def test_gcp_deploy_surfaces_rewrite_failure(mocker: MockFixture, tmp_path: Path
 
     result = runner.invoke(
         hosting_cli,
-        ["deploy", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
     )
 
     assert result.exit_code == 1
@@ -682,11 +1063,12 @@ def test_gcp_deploy_surfaces_rewrite_failure(mocker: MockFixture, tmp_path: Path
 def test_deploy_gcp_requires_gcp_project(mocker: MockFixture, tmp_path: Path):
     """With --gcp set but --gcp-project missing, errors before any auth/manifest call."""
     auth_mock = mocker.patch("reflex_cli.utils.hosting.get_authenticated_client")
-    get_mock = mocker.patch("httpx.get")
+    _CLIENT.api.reset_mock(return_value=True, side_effect=True)
+    get_mock = _CLIENT.api.providers.cloud_run_manifest
 
     result = runner.invoke(
         hosting_cli,
-        ["deploy", "--gcp", "--source", str(tmp_path)],
+        ["gcp-standalone", "--gcp", "--source", str(tmp_path)],
     )
 
     assert result.exit_code == 2
@@ -698,3 +1080,115 @@ def test_deploy_gcp_requires_gcp_project(mocker: MockFixture, tmp_path: Path):
 @pytest.fixture(autouse=True)
 def _no_log_level_side_effects(mocker: MockFixture):
     mocker.patch("reflex_cli.utils.console.set_log_level")
+
+
+def test_gcp_deploy_json_output(mocker: MockFixture, tmp_path: Path):
+    """A standalone deploy reports where it deployed and whether it worked."""
+    _patch_environment(mocker)
+    _mock_manifest_response()
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "gcp-standalone",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--region",
+            "us-central1",
+            "--service-name",
+            "svc",
+            "--version",
+            "v1",
+            "--source",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "dry_run": False,
+        "deployed": True,
+        "exit_code": 0,
+        "gcp_project": "p",
+        "region": "us-central1",
+        "service_name": "svc",
+        "version": "v1",
+    }
+
+
+def test_gcp_deploy_json_output_on_dry_run(mocker: MockFixture, tmp_path: Path):
+    """A dry run hands back what it would have staged, unrendered."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response()
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "gcp-standalone",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--dry-run",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.stdout)
+    assert payload["dry_run"] is True
+    assert payload["dockerfile"] == DOCKERFILE
+    assert "gcloud builds submit" in payload["deploy_script"]
+    assert payload["deploy_env"]["GCP_PROJECT"] == "p"
+    run_mock.assert_not_called()
+
+
+def test_gcp_deploy_json_output_on_script_failure(mocker: MockFixture, tmp_path: Path):
+    """A failing script still produces a document, alongside the non-zero exit."""
+    run_mock = _patch_environment(mocker)
+    run_mock.return_value = 7
+    _mock_manifest_response()
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "gcp-standalone",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 7
+    payload = json.loads(result.stdout)
+    assert payload["deployed"] is False
+    assert payload["exit_code"] == 7
+
+
+@pytest.mark.parametrize("field", ["dockerfile", "deploy_command"])
+def test_gcp_deploy_rejects_an_empty_manifest_field(
+    mocker: MockFixture, tmp_path: Path, field: str
+):
+    """A manifest missing either half cannot drive a deploy.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        tmp_path: The source directory to deploy from.
+        field: The half of the manifest the API returned empty.
+    """
+    _patch_environment(mocker)
+    _mock_manifest_response(body={**MANIFEST, field: "  "})
+
+    result = runner.invoke(
+        hosting_cli,
+        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+    )
+
+    assert result.exit_code == 1
+    assert field in result.output

@@ -16,7 +16,7 @@ from reflex_components_internal.blocks.telemetry.posthog import (
 )
 from reflex_components_internal.components.base.button import button
 from reflex_components_internal.components.base.dialog import dialog
-from reflex_components_internal.components.base.input import input
+from reflex_components_internal.components.base.input import INPUT_SIZE_VARIANTS, input
 from reflex_components_internal.components.base.textarea import textarea
 from reflex_components_internal.components.icons.hugeicon import hi
 from reflex_components_internal.components.icons.others import select_arrow
@@ -256,16 +256,18 @@ def select_field(
                 required=required,
                 class_name=cn(
                     "w-full appearance-none pr-9",
-                    button.class_names.for_button("outline", "md"),
-                    "outline-primary-6 focus:border-primary-6",
+                    input.class_names.DIV,
+                    INPUT_SIZE_VARIANTS["md"],
+                    input.class_names.INPUT,
+                    "block cursor-pointer bg-white dark:bg-secondary-3",
                 ),
             ),
             select_arrow(
                 class_name="size-4 text-secondary-9 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
             ),
-            class_name="relative",
+            class_name="relative w-full min-w-0",
         ),
-        class_name="flex flex-col gap-1.5 min-w-0",
+        class_name="flex flex-col gap-1.5 min-w-0 w-full",
     )
 
 
@@ -402,11 +404,9 @@ def demo_form_dialog(
     Returns:
         A Reflex dialog component containing the demo form
     """
-    if trigger is None:
-        trigger = rx.fragment()
     class_name = cn("w-auto", props.pop("class_name", ""))
     return dialog.root(
-        dialog.trigger(render_=trigger),
+        dialog.trigger(render_=trigger) if trigger is not None else None,
         dialog.portal(
             dialog.backdrop(),
             dialog.popup(

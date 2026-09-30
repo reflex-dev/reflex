@@ -1,0 +1,1 @@
+Deprecation warnings no longer point at a pseudo-location such as `<string>` or `<frozen importlib._bootstrap>` when the deprecated call runs inside generated or frozen code; the location now names the first real user file.

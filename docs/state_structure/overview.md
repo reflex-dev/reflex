@@ -97,6 +97,26 @@ def index():
     )
 ```
 
+## Inheriting from Another State
+
+A state that inherits from another state can read and set the parent's vars and call its event handlers. Each var and event handler belongs to the state that declares it: an inherited var is stored once, on the parent, and an inherited event handler runs on the parent.
+
+A state that declares a var with the same name as an inherited one gets a var of its own. The parent's event handlers keep using the parent's var:
+
+```python
+class ParentState(rx.State):
+    value: int = 0
+
+    def increment(self):
+        self.value += 1
+
+
+class ChildState(ParentState):
+    value: str = "child"  # Independent of ParentState.value.
+```
+
+Only a declaration with a default creates a new var: a bare annotation of an inherited var, like `value: str` in `ChildState`, still refers to the parent's var.
+
 ## Accessing Arbitrary States
 
 An event handler in a particular state can access and modify vars in another state instance by calling
@@ -200,7 +220,7 @@ class DisplayState(rx.State):
 
 def var_value_example():
     return rx.vstack(
-        rx.heading("Get Var Value Example"),
+        rx.heading("Get Var Value Example", as_="h2"),
         rx.hstack(
             # This button calls DisplayState.show_count to display the current count
             rx.button("Get Count Value", on_click=DisplayState.show_count),

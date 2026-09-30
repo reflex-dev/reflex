@@ -1,0 +1,1 @@
+Keep frontmatter out of rendered guides when files contain a BOM or leading whitespace. Accept CSV uploads with CR line endings and leading blank lines in the pandas tutorial, and clarify errors for empty files.

@@ -25,6 +25,6 @@ def get_rb2b_trackers() -> list[rx.Component]:
         list[rx.Component]: Both PIXEL_SCRIPT_RB2B and PIXEL2 script components
     """
     return [
-        rx.script(PIXEL_SCRIPT_RB2B),
-        rx.script(PIXEL2),
+        rx.el.script(PIXEL_SCRIPT_RB2B, type="module"),
+        rx.el.script(PIXEL2, type="module"),
     ]

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import inspect
+import re
+from collections.abc import Callable
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import patch
@@ -11,6 +13,8 @@ import pytest
 from reflex_base.components.component import Component
 from reflex_base.components.memo import (
     _SPECS,
+    DEFAULT_MEMO_WRAPPER,
+    EMPTY_VAR_COMPONENT,
     MEMOS,
     MemoComponent,
     MemoComponentDefinition,
@@ -18,16 +22,26 @@ from reflex_base.components.memo import (
     MemoParam,
     MemoParamKind,
     _analyze_params,
+    _LazyBody,
     _MemoCallBinding,
+    _strip_optional,
+    component_hash,
+    memo_tag,
 )
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec
+from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
-from reflex_base.utils import console
+from reflex_base.utils import console, memo_paths
 from reflex_base.utils import format as format_utils
+from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import Var
-from reflex_base.vars.function import FunctionVar
+from reflex_base.vars.function import FunctionStringVar, FunctionVar
+from reflex_base.vars.object import ObjectVar
+from reflex_components_core.base.bare import Bare
+from reflex_components_core.core.upload import UploadFilesProvider
+from reflex_components_radix.themes.layout.box import Box
 
 import reflex as rx
 from reflex.compiler import compiler
@@ -49,17 +63,18 @@ def test_var_returning_memo():
     price = Var(_js_expr="price", _var_type=int)
     currency = Var(_js_expr="currency", _var_type=str)
 
+    sym = memo_paths.mirrored_symbol("format_price", __name__)
     assert (
         str(format_price(amount=price, currency=currency))
-        == "(format_price(price, currency))"
+        == f"({sym}(price, currency))"
     )
     assert (
         str(format_price.call(amount=price, currency=currency))
-        == "(format_price(price, currency))"
+        == f"({sym}(price, currency))"
     )
     assert isinstance(format_price._as_var(), FunctionVar)
 
-    definition = MEMOS["format_price"]
+    definition = MEMOS["format_price", __name__]
     assert isinstance(definition, MemoFunctionDefinition)
     assert (
         str(definition.function) == '((amount, currency) => ((currency+": $")+amount))'
@@ -94,26 +109,32 @@ def test_component_returning_memo_with_children_and_rest():
     )
     component_again = my_card(title="World")
 
+    sym = memo_paths.mirrored_symbol("MyCard", __name__)
     assert isinstance(component, MemoComponent)
     assert len(component.children) == 2
-    assert component.get_props() == ("title", "foo")
+    # `foo` is not a field of the rest target (`Box`), so it joins `style` and
+    # renders as `css` just like `rx.box(foo="extra")` would — via
+    # `Component._get_style()`, so it is not a declared prop. `className` is a
+    # base field and stays out of the rest sweep entirely.
+    assert component.get_props() == ("title",)
     assert type(component) is type(component_again)
-    assert type(component).tag == "MyCard"
-    assert type(component).get_fields()["tag"].default == "MyCard"
+    assert type(component).tag == sym
+    assert type(component).get_fields()["tag"].default == sym
 
     rendered = component.render()
-    assert rendered["name"] == "MyCard"
+    assert rendered["name"] == sym
     assert 'title:"Hello"' in rendered["props"]
-    assert 'foo:"extra"' in rendered["props"]
+    assert 'css:({ ["foo"] : "extra" })' in rendered["props"]
     assert 'className:"extra"' in rendered["props"]
 
-    definition = MEMOS["MyCard"]
+    definition = MEMOS["MyCard", __name__]
     assert isinstance(definition, MemoComponentDefinition)
     assert any(str(prop) == "rest" for prop in definition.component.special_props)
 
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
-    assert "export const MyCard = memo(({children, title:title" in code
+    assert f"const {sym} = memo(" in code
+    assert "({children, title:title" in code
     assert "...rest" in code
     assert "jsx(RadixThemesBox,{...rest}" in code
 
@@ -129,15 +150,17 @@ def test_component_returning_memo_accepts_component_var_result():
     ) -> rx.Var[rx.Component]:
         return rx.cond(show, first, second)
 
-    definition = MEMOS["ConditionalSlot"]
+    definition = MEMOS["ConditionalSlot", __name__]
     assert isinstance(definition, MemoComponentDefinition)
     assert definition.component.render() == {
         "contents": "(showRxMemo ? firstRxMemo : secondRxMemo)"
     }
 
+    sym = memo_paths.mirrored_symbol("ConditionalSlot", __name__)
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
-    assert "export const ConditionalSlot = memo(({show:showRxMemo" in code
+    assert f"const {sym} = memo(" in code
+    assert "({show:showRxMemo" in code
     assert "(showRxMemo ? firstRxMemo : secondRxMemo)" in code
 
 
@@ -159,10 +182,11 @@ def test_var_returning_memo_with_rest_props():
     assert '["color"] : "red"' in str(merged)
     assert '["className"] : "primary"' in str(merged)
 
+    sym = memo_paths.mirrored_symbol("merge_styles", __name__)
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
     assert (
-        "export const merge_styles = (({base, ...overrides}) => ({...base, ...overrides}));"
+        f"export const {sym} = (({{base, ...overrides}}) => ({{...base, ...overrides}}));"
         in code
     )
 
@@ -181,6 +205,37 @@ def test_component_returning_memo_with_only_rest():
     code = "\n".join(c for _, c in files)
     assert "memo(({...rest})" in code
     assert "({," not in code
+
+
+def test_component_memo_rest_prop_merge_is_forwarded_as_rest_prop():
+    """A merged ``RestProp`` stays a ``RestProp``.
+
+    Passing ``rest.merge({...})`` to another component must lift it onto that
+    component's ``special_props`` (a JSX spread), exactly like the bare ``rest``
+    — not render it as a literal child.
+    """
+
+    @rx.memo
+    def primary_button(rest: rx.RestProp, *, label: rx.Var[str]) -> rx.Component:
+        return rx.button(label, rest.merge({"className": "btn"}))
+
+    definition = MEMOS["PrimaryButton", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+
+    # The merged value is accepted as a RestProp: lifted onto special_props
+    # rather than wrapped as a child.
+    merged_specials = [
+        prop
+        for prop in definition.component.special_props
+        if isinstance(prop, rx.RestProp)
+    ]
+    assert len(merged_specials) == 1
+    assert "...rest" in str(merged_specials[0])
+
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    code = "\n".join(c for _, c in files)
+    # Spread into the button props, not emitted as a jsx child.
+    assert '{...({...rest, ...({ ["className"] : "btn" })})}' in code
 
 
 def test_var_returning_memo_with_only_rest():
@@ -218,18 +273,368 @@ def test_var_returning_memo_with_children_and_rest():
     assert '["children"]' in str(rendered)
     assert '["className"] : "slot"' in str(rendered)
 
+    sym = memo_paths.mirrored_symbol("label_slot", __name__)
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
-    assert "export const label_slot = (({children, label, ...rest}) => label);" in code
+    assert f"export const {sym} = (({{children, label, ...rest}}) => label);" in code
 
 
-def test_memo_requires_var_annotations():
-    """Memos should reject non-Var annotations on parameters."""
-    with pytest.raises(TypeError, match="must be annotated"):
+def test_memo_munges_legacy_bare_type_param():
+    """Legacy bare-type params should coerce to ``rx.Var[...]`` with a warning."""
+    with patch.object(console, "deprecate") as mock_deprecate:
 
         @rx.memo
         def bad_annotation(value: int) -> rx.Var[str]:
             return rx.Var.create("x")
+
+    mock_deprecate.assert_called_once()
+    kwargs = mock_deprecate.call_args.kwargs
+    assert "bad_annotation" in kwargs["feature_name"]
+    assert "`value`" in kwargs["reason"]
+
+    definition = MEMOS["bad_annotation", __name__]
+    assert isinstance(definition, MemoFunctionDefinition)
+    (value_param,) = definition.params
+    assert value_param.kind is MemoParamKind.VALUE
+    # The bare ``int`` annotation is coerced into ``Var[int]``.
+    assert value_param.annotation == rx.Var[int]
+
+
+def test_memo_munges_legacy_bare_type_params_for_component():
+    """Component memos coerce legacy bare-type params and keep their defaults."""
+    with patch.object(console, "deprecate") as mock_deprecate:
+
+        @rx.memo
+        def legacy_card(title: str, count: int = 3) -> rx.Component:
+            return rx.box(rx.heading(title), rx.text(count))
+
+    mock_deprecate.assert_called_once()
+    reason = mock_deprecate.call_args.kwargs["reason"]
+    assert "`title`" in reason
+    assert "`count`" in reason
+
+    definition = MEMOS["LegacyCard", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+    assert {p.name: p.kind for p in definition.params} == {
+        "title": MemoParamKind.VALUE,
+        "count": MemoParamKind.VALUE,
+    }
+    count_param = next(p for p in definition.params if p.name == "count")
+    assert count_param.default == 3
+
+    # The munged props bind at instantiation; ``count`` falls back to its default.
+    component = legacy_card(title="Hi")
+    assert isinstance(component, MemoComponent)
+
+
+def test_memo_does_not_warn_for_event_handler_param():
+    """``rx.EventHandler`` params are recognized and must not be munged/warned."""
+    with patch.object(console, "deprecate") as mock_deprecate:
+
+        @rx.memo
+        def eh_only(event: rx.EventHandler) -> rx.Component:
+            return rx.button("click", on_click=event())
+
+    mock_deprecate.assert_not_called()
+
+
+def test_memo_component_forwards_key_without_rest():
+    """``key`` passes through a ``RestProp``-less memo and reaches the element.
+
+    ``key`` is the one base ``Component`` prop that takes effect without an
+    ``rx.RestProp``: React consumes it at the reconciliation layer, so the
+    legacy custom-component use case (notably setting ``key`` under
+    ``rx.foreach``) keeps working. It is set as a real base field while a
+    deprecation warning points at ``rx.RestProp``. Props that only matter once
+    spread onto the rendered root (``id``, ``class_name``, ...) are *not*
+    forwardable here — see ``test_memo_nonkey_base_props_require_rest_prop``.
+    """
+
+    @rx.memo
+    def keyed_card(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    with patch.object(console, "deprecate") as mock_deprecate:
+        component = keyed_card(title="hi", key="row-1")
+
+    mock_deprecate.assert_called_once()
+    feature_name = mock_deprecate.call_args.kwargs["feature_name"]
+    assert "keyed_card" in feature_name
+    assert "`key`" in feature_name
+
+    assert isinstance(component, MemoComponent)
+    # ``key`` lands as a real base field, not as a declared memo prop ...
+    assert component.key == "row-1"
+    assert component.get_props() == ("title",)
+    # ... and reaches the rendered element, where React reads it for list
+    # reconciliation.
+    assert 'key:"row-1"' in component.render()["props"]
+
+
+def test_memo_component_key_deprecation_warns_once_across_instances():
+    """Repeated ``key=`` instantiations warn once, without re-walking the stack.
+
+    Under ``rx.foreach`` a keyed memo is instantiated once per row. The warning
+    is deduped, but ``console.deprecate`` walks and path-resolves the call stack
+    *before* its dedupe check, so an ungated call site would pay that walk on
+    every row. The wrapper gates the call so only the first row reaches
+    ``console.deprecate`` at all.
+    """
+
+    @rx.memo
+    def row_card(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    with patch.object(console, "deprecate") as mock_deprecate:
+        for i in range(5):
+            row_card(title="hi", key=f"row-{i}")
+
+    mock_deprecate.assert_called_once()
+
+
+def test_memo_nonkey_base_props_require_rest_prop():
+    """Non-``key`` base props raise without a ``RestProp`` rather than silently dropping.
+
+    Without a ``RestProp`` the compiled memo function destructures only its
+    declared params and emits no ``...rest`` spread, so ``id``/``class_name``/
+    ``style``/``custom_attrs``/``ref`` set on the wrapper never reach the
+    rendered root — they would be silently discarded. Reject them and point at
+    ``rx.RestProp``, which genuinely forwards them (see
+    ``test_memo_base_props_forward_to_root_via_rest_prop``).
+    """
+
+    @rx.memo
+    def plain_card(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    for prop, value in (
+        ("id", "card-id"),
+        ("class_name", "c"),
+        ("style", {"color": "red"}),
+        ("custom_attrs", {"data-x": "y"}),
+        ("ref", "myref"),
+    ):
+        with pytest.raises(TypeError, match=f"does not accept prop `{prop}`"):
+            plain_card(title="hi", **{prop: value})
+
+
+def test_memo_nonkey_base_prop_dropped_from_render_without_rest():
+    """Guard the *reason* non-``key`` base props are rejected: they don't render.
+
+    Bypass the call-site gate by setting ``class_name`` directly on a built memo
+    wrapper, then compile. The base prop shows up on the page-level element but
+    the memo's own function body neither destructures nor spreads it onto the
+    root — proving a ``RestProp``-less memo cannot forward it, which is why the
+    call site rejects it.
+    """
+
+    @rx.memo
+    def dropper(title: rx.Var[str]) -> rx.Component:
+        return rx.box(rx.text(title))
+
+    component = dropper(title="hi")
+    component = component.copy_with(class_name=Var.create("leaks"))
+
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    segments = memo_paths.module_to_mirrored_segments(__name__)
+    assert segments is not None
+    exp_path = compiler_utils.get_memo_module_path(segments)
+    code = next(c for path, c in files if path == exp_path)
+    # No rest capture, and the root Box gets an empty props object.
+    assert "...rest" not in code
+    assert "className" not in code
+
+
+def test_memo_base_props_forward_to_root_via_rest_prop():
+    """With an ``rx.RestProp``, base props reach the rendered root via JS ``...rest``.
+
+    This is the supported forwarding path the rejection message points users at.
+    """
+
+    @rx.memo
+    def rest_card(rest: rx.RestProp, *, title: rx.Var[str]) -> rx.Component:
+        return rx.box(rx.text(title), rest)
+
+    component = rest_card(title="hi", class_name="c", id="card-id")
+    assert isinstance(component, MemoComponent)
+
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    segments = memo_paths.module_to_mirrored_segments(__name__)
+    assert segments is not None
+    exp_path = compiler_utils.get_memo_module_path(segments)
+    code = next(c for path, c in files if path == exp_path)
+    # Undeclared props are captured in ``...rest`` and spread onto the root, so
+    # ``className``/``id`` actually reach the rendered element.
+    assert "...rest" in code
+    assert "{...rest}" in code
+
+
+def test_memo_css_props_forwarded_via_rest_prop_become_css():
+    """CSS props forwarded through an ``rx.RestProp`` compile to ``css`` (ENG-9676).
+
+    A normal component folds any kwarg that is not a declared field of the target
+    into emotion ``css``. A memo forwarding via ``rx.RestProp`` must do the same:
+    ``font_weight`` is not a ``Text`` field, so it has to reach the root as ``css``
+    rather than a raw ``fontWeight`` plain prop the target silently drops.
+    """
+
+    @rx.memo
+    def styled_text(rest: rx.RestProp) -> rx.Component:
+        return rx.text("Foo", rest)
+
+    rendered = str(styled_text(font_weight="bold", class_name="c"))
+    # Matches the shape of `rx.text("Bar", font_weight="bold")`.
+    assert "css:" in rendered
+    assert '["fontWeight"] : "bold"' in rendered
+    # Not forwarded as a plain prop the target would ignore.
+    assert 'fontWeight:"bold"' not in rendered
+    # A genuine base `Component` field stays a normal plain prop.
+    assert 'className:"c"' in rendered
+
+
+def test_memo_rest_prop_keeps_real_target_props_as_props():
+    """A prop that IS a declared field of the rest target stays a plain prop (ENG-9676).
+
+    Guards the shadowing case: ``weight`` is a real ``Text`` prop, so it must be
+    forwarded normally and never reclassified into ``css``.
+    """
+
+    @rx.memo
+    def styled_text(rest: rx.RestProp) -> rx.Component:
+        return rx.text("Foo", rest)
+
+    rendered = str(styled_text(weight="bold"))
+    assert 'weight:"bold"' in rendered
+    assert "css:" not in rendered
+
+
+def test_memo_css_props_merge_with_explicit_style_via_rest_prop():
+    """A forwarded CSS prop merges into an explicit ``style=`` instead of vanishing.
+
+    ``Component._render`` applies ``_get_style()`` (derived from ``style``) *after*
+    the declared props, so a separately-emitted ``css`` prop is overwritten
+    whenever the caller also passes ``style=``. The CSS props therefore have to
+    join ``style`` itself, matching ``rx.el.div(background_color=..., style=...)``,
+    which emits one merged ``css``.
+    """
+
+    @rx.memo
+    def mycomp(children: rx.Var[rx.Component], rest: rx.RestProp) -> rx.Component:
+        return rx.el.div(children, rest)
+
+    rendered = str(
+        mycomp(
+            rx.heading("Hello World!"),
+            background_color="red",
+            style={"padding": "10px", "border-radius": "5px"},
+        )
+    )
+    # One `css` prop carrying both the explicit style and the forwarded CSS prop.
+    assert rendered.count("css:") == 1
+    assert '["padding"] : "10px"' in rendered
+    assert '["borderRadius"] : "5px"' in rendered
+    assert '["backgroundColor"] : "red"' in rendered
+
+
+def test_memo_rest_prop_css_matches_plain_component_shape():
+    """Forwarded CSS props compile to the same ``css`` a plain component emits.
+
+    The classification rule the fix implements is `Component._post_init`'s own:
+    a kwarg that is not a declared field joins ``style``. Pinning the memo's
+    output to the non-memo component's keeps the two from drifting.
+    """
+
+    @rx.memo
+    def mycomp(rest: rx.RestProp) -> rx.Component:
+        return rx.el.div(rest)
+
+    # Each case is applied to the memo and to a bare `div`; both must render the
+    # same `css`. `make` is untyped so one lambda can call either signature.
+    cases: tuple[Callable[[Any], rx.Component], ...] = (
+        lambda make: make(background_color="red"),
+        lambda make: make(background_color="red", style={"padding": "10px"}),
+        lambda make: make(style={"padding": "10px"}),
+    )
+    for case in cases:
+        assert _css_prop(str(case(mycomp))) == _css_prop(str(case(rx.el.div)))
+
+
+def _css_prop(rendered: str) -> str | None:
+    """Extract the ``css`` prop's source text from a rendered component.
+
+    Args:
+        rendered: The compiled JSX for a single component.
+
+    Returns:
+        The ``css`` prop text, or ``None`` when the component has no ``css``.
+    """
+    match = re.search(r"css:\((.*?)\)(?:,|\})", rendered)
+    return match.group(1) if match else None
+
+
+def test_memo_component_still_rejects_unknown_props_without_rest():
+    """Props that are not base ``Component`` fields still raise without a ``RestProp``."""
+
+    @rx.memo
+    def plain_card(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    with pytest.raises(TypeError, match="does not accept prop `bogus`"):
+        plain_card(title="hi", bogus="x")
+
+
+def test_memo_component_rejects_unknown_even_alongside_base_props():
+    """A genuinely-unknown prop raises even when a base prop is also present."""
+
+    @rx.memo
+    def mixed_card(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    with pytest.raises(TypeError, match="does not accept prop `bogus`"):
+        mixed_card(title="hi", key="row-1", bogus="x")
+
+
+def test_memo_component_rejects_structural_base_fields_without_rest():
+    """Identity/internal base fields (``tag``, ``library``, ...) are not forwardable.
+
+    Overriding them would corrupt the memo's render, so they keep raising like
+    any other unknown prop rather than passing through.
+    """
+
+    @rx.memo
+    def struct_card(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    for prop in ("tag", "library", "event_triggers", "special_props"):
+        with pytest.raises(TypeError, match=f"does not accept prop `{prop}`"):
+            struct_card(title="hi", **{prop: "x"})
+
+
+def test_analyze_params_strict_mode_rejects_bare_type():
+    """Strict callers (``defaulted_params=None``) must still reject bare types."""
+
+    def bare(value: int) -> rx.Component:
+        return rx.text("x")
+
+    with pytest.raises(TypeError, match="must be annotated"):
+        _analyze_params(bare, for_component=True)
+
+
+def test_is_memo_annotation_recognizes_supported_kinds():
+    """``_is_memo_annotation`` gates which annotations are coerced to ``Var``."""
+    from reflex_base.components.memo import _is_memo_annotation
+
+    assert _is_memo_annotation(rx.Var[int]) is True
+    assert _is_memo_annotation(rx.RestProp) is True
+    assert _is_memo_annotation(rx.EventHandler) is True
+    assert (
+        _is_memo_annotation(rx.EventHandler[rx.event.passthrough_event_spec(str)])
+        is True
+    )
+    # Legacy bare types are not recognized -> they get munged + warned.
+    assert _is_memo_annotation(int) is False
+    assert _is_memo_annotation(str) is False
+    assert _is_memo_annotation(list[str]) is False
 
 
 def test_memo_warns_on_missing_param_annotation():
@@ -246,6 +651,59 @@ def test_memo_warns_on_missing_param_annotation():
     assert "`value`" in kwargs["reason"]
 
 
+def test_memo_uses_first_call_value_type_for_missing_param_annotation():
+    """Component memos should infer missing parameter types from the first call."""
+
+    @rx.memo
+    def user_card(user) -> rx.Component:
+        return rx.box(
+            rx.heading(user["name"].upper()),
+            rx.text(user["email"]),
+        )
+
+    component = user_card(
+        user={"name": "Ada", "email": "ada@example.com"},
+    )
+
+    assert isinstance(component, MemoComponent)
+
+
+def test_memo_uses_var_runtime_value_type_for_missing_param_annotation():
+    """Component memos should infer missing parameter types from runtime Vars."""
+
+    @rx.memo
+    def user_card(user) -> rx.Component:
+        assert isinstance(user, ObjectVar)
+        assert user._var_type is dict
+        return rx.box(
+            rx.heading(user["name"]),
+            rx.text(user["email"]),
+        )
+
+    component = user_card(
+        user=Var(_js_expr="user", _var_type=dict),
+    )
+
+    assert isinstance(component, MemoComponent)
+    user_var = cast(Any, component).user
+    assert isinstance(user_var, Var)
+    assert user_var._var_type is dict
+
+
+def test_memo_does_not_infer_explicit_any_from_runtime_value():
+    """An explicit ``Var[Any]`` annotation should remain intentionally untyped."""
+
+    @rx.memo
+    def explicit_any(value: rx.Var[Any]) -> rx.Component:
+        assert type(value) is Var
+        assert value._var_type is Any
+        return rx.text(value.to(str))
+
+    component = explicit_any(value={"name": "Ada"})
+
+    assert isinstance(component, MemoComponent)
+
+
 def test_memo_warns_on_missing_return_annotation():
     """A missing return annotation should default to ``rx.Component`` with a warning."""
     with patch.object(console, "deprecate") as mock_deprecate:
@@ -260,16 +718,147 @@ def test_memo_warns_on_missing_return_annotation():
     assert "return annotation" in kwargs["reason"]
 
 
-def test_memo_warning_suggests_inferred_return_type():
-    """The warning should surface the inferred public qualname of the body's return."""
+def test_memo_warning_suggests_component_return():
+    """A missing return annotation warns with a constant `-> rx.Component` hint.
+
+    The suggestion no longer inspects the body's return value, so the warning
+    fires eagerly at decoration time even though the body itself runs lazily.
+    """
+    evaluated = []
     with patch.object(console, "deprecate") as mock_deprecate:
 
         @rx.memo
         def fragment_memo():
+            evaluated.append(1)
             return rx.fragment(rx.text("x"))
 
+    mock_deprecate.assert_called_once()
     reason = mock_deprecate.call_args.kwargs["reason"]
-    assert "-> rx.Fragment" in reason
+    assert "-> rx.Component" in reason
+    # Emitting the warning did not require evaluating the body.
+    assert evaluated == []
+
+
+def test_memo_component_body_not_evaluated_until_used():
+    """A component memo's body must not run until the wrapper is instantiated."""
+    evaluated = []
+
+    @rx.memo
+    def lazy_box(value: rx.Var[str]) -> rx.Component:
+        evaluated.append(1)
+        return rx.box(value)
+
+    # Decoration registers the memo without running the body.
+    assert ("LazyBox", __name__) in MEMOS
+    assert evaluated == []
+
+    # First instantiation triggers a single evaluation...
+    component = lazy_box(value="hi")
+    assert isinstance(component, MemoComponent)
+    assert evaluated == [1]
+
+    # ...and subsequent uses reuse the cached body.
+    lazy_box(value="bye")
+    assert evaluated == [1]
+
+
+def test_memo_function_body_not_evaluated_until_compiled():
+    """A var memo's body must not run at decoration or when merely called."""
+    evaluated = []
+
+    @rx.memo
+    def lazy_join(value: rx.Var[str]) -> rx.Var[str]:
+        evaluated.append(1)
+        return value
+
+    assert ("lazy_join", __name__) in MEMOS
+    assert evaluated == []
+
+    # Calling a function memo references the imported var, not the body.
+    lazy_join(value=Var(_js_expr="x", _var_type=str))
+    assert evaluated == []
+
+    # The compiler (reading ``.function``) triggers a single evaluation.
+    definition = MEMOS["lazy_join", __name__]
+    assert isinstance(definition, MemoFunctionDefinition)
+    _ = definition.function
+    assert evaluated == [1]
+    _ = definition.function
+    assert evaluated == [1]
+
+
+def test_lazy_body_placeholder_stands_in_for_reentrant_read():
+    """A re-entrant read returns the placeholder, then caches the real body."""
+    cell: _LazyBody[str]
+    seen = []
+
+    def thunk() -> str:
+        seen.append(cell.get())  # re-enters while the thunk is running
+        return "real"
+
+    cell = _LazyBody(thunk, placeholder="placeholder")
+    assert cell.get() == "real"
+    assert seen == ["placeholder"]
+    # Cached afterwards; the thunk does not run again (``seen`` stays unchanged).
+    assert cell.get() == "real"
+    assert seen == ["placeholder"]
+
+
+def test_lazy_body_reentrant_read_without_placeholder_raises():
+    """A placeholder-less body that re-enters its own evaluation fails loudly."""
+    cell: _LazyBody[str]
+
+    def thunk() -> str:
+        return cell.get()
+
+    cell = _LazyBody(thunk)
+    with pytest.raises(RuntimeError, match="Re-entrant"):
+        cell.get()
+
+
+def test_lazy_body_first_read_can_override_thunk():
+    """A contextual first read should be cached instead of the default thunk."""
+    cell = _LazyBody(lambda: "default")
+
+    assert cell.get(lambda: "contextual") == "contextual"
+    assert cell.get() == "contextual"
+
+
+@pytest.mark.parametrize(
+    ("attr_name", "expected_type", "expected_render"),
+    [
+        ("EMPTY_VAR_STR", str, '""'),
+        ("EMPTY_VAR_INT", int, "0"),
+        ("EMPTY_VAR_COMPONENT", Component, "(jsx(Fragment, ({})))"),
+    ],
+)
+def test_empty_var_sentinels_are_public_typed_vars(
+    attr_name: str, expected_type: type, expected_render: str
+):
+    """`rx.EMPTY_VAR_*` defaults are public, correctly-typed empty Vars.
+
+    These back the documented `rx.Var[...]` memo prop defaults;
+    `EMPTY_VAR_COMPONENT` lives in `memo` (not `component`) to avoid a circular
+    import, but must still be reachable as `rx.EMPTY_VAR_COMPONENT`.
+    """
+    sentinel = getattr(rx, attr_name)
+    assert isinstance(sentinel, Var)
+    assert sentinel._var_type is expected_type
+    assert str(sentinel) == expected_render
+
+
+def test_empty_var_component_default_for_memo_children_slot():
+    """`EMPTY_VAR_COMPONENT` works as the default for a memo `children` slot."""
+
+    @rx.memo
+    def slot(
+        children: rx.Var[rx.Component] = EMPTY_VAR_COMPONENT,
+    ) -> rx.Component:
+        return rx.box(children)
+
+    # Omitting children falls back to the empty-component default.
+    assert isinstance(slot(), MemoComponent)
+    assert isinstance(slot(rx.text("hi")), MemoComponent)
 
 
 def test_memo_warns_once_when_return_and_param_both_missing():
@@ -300,7 +889,7 @@ def test_memo_defaults_children_to_var_component():
 
     mock_deprecate.assert_called_once()
 
-    definition = MEMOS["SoftChildren"]
+    definition = MEMOS["SoftChildren", __name__]
     assert isinstance(definition, MemoComponentDefinition)
     (children_param,) = definition.params
     assert children_param.name == "children"
@@ -356,7 +945,7 @@ def test_memo_rejects_component_and_function_name_collision():
     def foo_bar() -> rx.Component:
         return rx.box()
 
-    assert "FooBar" in MEMOS
+    assert ("FooBar", __name__) in MEMOS
 
     with pytest.raises(ValueError, match=r"name collision.*FooBar"):
 
@@ -377,6 +966,36 @@ def test_memo_rejects_component_export_name_collision():
         @rx.memo
         def foo__bar() -> rx.Component:
             return rx.box()
+
+
+def test_same_module_same_name_shadow_is_last_wins():
+    """Two memos sharing a name in one module: the later definition wins.
+
+    This is plain Python shadowing — a second ``def`` of the same name rebinds
+    the module global — and the registry follows suit rather than erroring,
+    because a genuine shadow is indistinguishable from a hot-reload
+    re-registration (same type/python_name/module/qualname). The factory builds
+    two distinct function objects with identical identity metadata, exactly as
+    two module-level ``def shadow`` would.
+    """
+
+    def _make_shadow(marker: str):
+        def shadow() -> rx.Component:
+            return rx.text(marker)
+
+        return shadow
+
+    rx.memo(_make_shadow("first-shadow-body"))
+    rx.memo(_make_shadow("second-shadow-body"))
+
+    shadow_keys = [k for k in MEMOS if isinstance(k, tuple) and k[0] == "Shadow"]
+    assert len(shadow_keys) == 1
+
+    definition = MEMOS["Shadow", __name__]
+    files, _ = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    assert "second-shadow-body" in code
+    assert "first-shadow-body" not in code
 
 
 def test_memo_rejects_varargs():
@@ -438,29 +1057,39 @@ def test_var_memo_rejects_invalid_positional_usage():
 
 
 def test_var_returning_memo_rejects_hooks():
-    """Var-returning memos should reject hook-bearing expressions."""
-    with pytest.raises(TypeError, match="cannot depend on hooks"):
+    """Var-returning memos should reject hook-bearing expressions (lazily)."""
 
-        @rx.memo
-        def bad_hook(value: rx.Var[str]) -> rx.Var[str]:
-            return Var(
-                _js_expr="value",
-                _var_type=str,
-                _var_data=VarData(hooks={"const badHook = 1": None}),
-            )
+    @rx.memo
+    def bad_hook(value: rx.Var[str]) -> rx.Var[str]:
+        return Var(
+            _js_expr="value",
+            _var_type=str,
+            _var_data=VarData(hooks={"const badHook = 1": None}),
+        )
+
+    # Decoration defers the body; reading ``.function`` surfaces the error.
+    definition = MEMOS["bad_hook", __name__]
+    assert isinstance(definition, MemoFunctionDefinition)
+    with pytest.raises(TypeError, match="cannot depend on hooks"):
+        _ = definition.function
 
 
 def test_var_returning_memo_rejects_non_bundled_imports():
-    """Var-returning memos should reject non-bundled imports."""
-    with pytest.raises(TypeError, match="not bundled"):
+    """Var-returning memos should reject non-bundled imports (lazily)."""
 
-        @rx.memo
-        def bad_import(value: rx.Var[str]) -> rx.Var[str]:
-            return Var(
-                _js_expr="value",
-                _var_type=str,
-                _var_data=VarData(imports={"some-lib": [ImportVar(tag="x")]}),
-            )
+    @rx.memo
+    def bad_import(value: rx.Var[str]) -> rx.Var[str]:
+        return Var(
+            _js_expr="value",
+            _var_type=str,
+            _var_data=VarData(imports={"some-lib": [ImportVar(tag="x")]}),
+        )
+
+    # Decoration defers the body; reading ``.function`` surfaces the error.
+    definition = MEMOS["bad_import", __name__]
+    assert isinstance(definition, MemoFunctionDefinition)
+    with pytest.raises(TypeError, match="not bundled"):
+        _ = definition.function
 
 
 def test_compile_memo_components_includes_functions_and_components():
@@ -481,9 +1110,316 @@ def test_compile_memo_components_includes_functions_and_components():
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
 
-    assert "export const TextWrapper = memo(" in code
-    assert "export const format_price =" in code
-    assert "export const MyCard = memo(" in code
+    text_wrapper_sym = memo_paths.mirrored_symbol("TextWrapper", __name__)
+    format_price_sym = memo_paths.mirrored_symbol("format_price", __name__)
+    my_card_sym = memo_paths.mirrored_symbol("MyCard", __name__)
+    assert f"const {text_wrapper_sym} = memo(" in code
+    assert f"export const {format_price_sym} =" in code
+    assert f"const {my_card_sym} = memo(" in code
+
+
+def test_compile_memo_components_groups_by_source_module():
+    """Memos sharing a source module are concatenated into one mirrored file."""
+
+    @rx.memo
+    def grouped_first(title: rx.Var[str]) -> rx.Component:
+        return rx.text(title)
+
+    @rx.memo
+    def grouped_second(title: rx.Var[str]) -> rx.Component:
+        return rx.heading(title)
+
+    definition = MEMOS["GroupedFirst", __name__]
+    assert definition.source_module is not None
+    segments = memo_paths.module_to_mirrored_segments(definition.source_module)
+    assert segments is not None
+
+    files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
+    exp_path = compiler_utils.get_memo_module_path(segments)
+
+    grouped_files = [(path, code) for path, code in files if path == exp_path]
+    assert len(grouped_files) == 1
+    code = grouped_files[0][1]
+    first_sym = memo_paths.mirrored_symbol("GroupedFirst", __name__)
+    second_sym = memo_paths.mirrored_symbol("GroupedSecond", __name__)
+    assert f"const {first_sym} = memo(" in code
+    assert f"const {second_sym} = memo(" in code
+    # The merged module must carry imports its memos use, not just the
+    # framework-level ones added by the compiler.
+    assert "RadixThemesText" in code
+    assert "RadixThemesHeading" in code
+
+
+def test_compile_memo_components_falls_back_when_no_source_module():
+    """Memos with no source module emit to the legacy per-name path."""
+    legacy_definition = MemoComponentDefinition(
+        fn=lambda: None,
+        python_name="legacy_memo",
+        params=(),
+        export_name="LegacyMemo",
+        _component=_LazyBody.ready(rx.fragment()),
+        passthrough_hole_child=None,
+    )
+
+    files, _ = compiler.compile_memo_components((legacy_definition,))
+    exp_path = compiler._memo_component_file_path(
+        compiler_utils.get_memo_components_dir(), "LegacyMemo"
+    )
+    assert any(path == exp_path for path, _ in files)
+
+
+def test_default_memo_wrapper_is_react_memo():
+    """The default wrapper is React's ``memo``, carrying its own import."""
+    assert str(DEFAULT_MEMO_WRAPPER) == "memo"
+    var_data = DEFAULT_MEMO_WRAPPER._get_all_var_data()
+    assert var_data is not None
+    assert [imp.tag for imp in dict(var_data.imports)["react"]] == ["memo"]
+
+
+def test_component_memo_default_wrapper():
+    """Bare ``@rx.memo`` wraps the compiled component in React's ``memo``."""
+
+    @rx.memo
+    def default_wrapped(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    definition = MEMOS["DefaultWrapped", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+    assert definition.wrapper is DEFAULT_MEMO_WRAPPER
+
+    files, imports = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    sym = memo_paths.mirrored_symbol("DefaultWrapped", __name__)
+    assert f"export const {sym} = /*#__PURE__*/ (() => {{" in code
+    assert f"const {sym} = memo(({{label:labelRxMemo}}) => {{" in code
+    assert any(imp.tag == "memo" for imp in imports.get("react", []))
+
+
+def test_component_memo_wrapper_none_emits_bare_function():
+    """``@rx.memo(wrapper=None)`` exports the bare function component."""
+
+    @rx.memo(wrapper=None)
+    def unwrapped(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    definition = MEMOS["Unwrapped", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+    assert definition.wrapper is None
+
+    files, imports = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    sym = memo_paths.mirrored_symbol("Unwrapped", __name__)
+    assert f"export const {sym} = (({{label:labelRxMemo}}) => {{" in code
+    assert " = memo(" not in code
+    assert all(imp.tag != "memo" for imp in imports.get("react", []))
+
+    # The call site is unaffected by the wrapper choice.
+    component = unwrapped(label="hi")
+    assert isinstance(component, MemoComponent)
+
+
+def test_component_memo_custom_wrapper():
+    """``@rx.memo(wrapper=...)`` swaps React's ``memo`` for the given helper."""
+    track_render = FunctionStringVar.create(
+        "trackRender",
+        _var_data=VarData(imports={"my-render-lib": [ImportVar(tag="trackRender")]}),
+    )
+
+    @rx.memo(wrapper=track_render)
+    def tracked(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    definition = MEMOS["Tracked", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+    assert definition.wrapper is track_render
+
+    files, imports = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    sym = memo_paths.mirrored_symbol("Tracked", __name__)
+    assert f"export const {sym} = trackRender(({{label:labelRxMemo}}) => {{" in code
+    assert " = memo(" not in code
+    assert 'import {trackRender} from "my-render-lib"' in code
+    assert all(imp.tag != "memo" for imp in imports.get("react", []))
+    assert any(imp.tag == "trackRender" for imp in imports.get("my-render-lib", []))
+
+
+def test_component_memo_inline_function_wrapper_is_parenthesized():
+    """A wrapper that isn't a bare callee is parenthesized before the call.
+
+    An inline arrow expression concatenated directly against the component
+    function would swallow the call into its own body (``(c) => track(c)((...))``);
+    the emitted code must invoke the wrapper with the component instead.
+    """
+    inline = FunctionStringVar.create(
+        "(Comp) => trackRender(Comp)",
+        _var_data=VarData(imports={"my-render-lib": [ImportVar(tag="trackRender")]}),
+    )
+
+    @rx.memo(wrapper=inline)
+    def inline_wrapped(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    definition = MEMOS["InlineWrapped", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+
+    files, _ = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    sym = memo_paths.mirrored_symbol("InlineWrapped", __name__)
+    assert (
+        f"export const {sym} = ((Comp) => trackRender(Comp))(({{label:labelRxMemo}}) => {{"
+        in code
+    )
+
+
+def test_component_memo_sets_display_name_from_python_name():
+    """A ``@rx.memo`` component is labelled with its Python function name.
+
+    ``memo()`` erases the name JS would otherwise infer from the assignment,
+    so React DevTools shows ``Anonymous`` without an explicit ``displayName``.
+    """
+
+    @rx.memo
+    def named_widget(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    definition = MEMOS["NamedWidget", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+
+    files, _ = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    sym = memo_paths.mirrored_symbol("NamedWidget", __name__)
+    assert f'{sym}.displayName = "NamedWidget";' in code
+
+
+def test_component_memo_display_name_survives_custom_wrapper():
+    """The ``displayName`` is assigned on the exported symbol, whatever wraps it."""
+    track_render = FunctionStringVar.create(
+        "trackRender",
+        _var_data=VarData(imports={"my-render-lib": [ImportVar(tag="trackRender")]}),
+    )
+
+    @rx.memo(wrapper=track_render)
+    def wrapped_widget(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    files, _ = compiler.compile_memo_components((MEMOS["WrappedWidget", __name__],))
+    code = "\n".join(c for _, c in files)
+    sym = memo_paths.mirrored_symbol("WrappedWidget", __name__)
+    assert f"export const {sym} = trackRender((" in code
+    assert f'{sym}.displayName = "WrappedWidget";' in code
+
+
+def test_component_memo_display_name_is_escaped():
+    """A display name is emitted as a JS string literal, never raw."""
+    definition = MemoComponentDefinition(
+        fn=lambda: None,
+        python_name="quoted",
+        params=(),
+        export_name="Quoted",
+        _component=_LazyBody.ready(rx.text("hi")),
+        passthrough_hole_child=None,
+        display_name='Weird"Name',
+    )
+
+    files, _ = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    assert 'Quoted.displayName = "Weird\\"Name";' in code
+
+
+def test_component_memo_wrapper_none_in_unmirrored_module():
+    """The per-name fallback module honors ``wrapper=None`` too."""
+    definition = MemoComponentDefinition(
+        fn=lambda: None,
+        python_name="bare_single",
+        params=(),
+        export_name="BareSingle",
+        _component=_LazyBody.ready(rx.text("hi")),
+        passthrough_hole_child=None,
+        wrapper=None,
+    )
+
+    files, _ = compiler.compile_memo_components((definition,))
+    exp_path = compiler._memo_component_file_path(
+        compiler_utils.get_memo_components_dir(), "BareSingle"
+    )
+    single_code = next(code for path, code in files if path == exp_path)
+    assert "export const BareSingle = ((" in single_code
+    assert " = memo(" not in single_code
+
+
+def test_var_returning_memo_rejects_wrapper():
+    """``wrapper=`` is only supported on component-returning memos."""
+    with pytest.raises(TypeError, match="only supports `wrapper=`"):
+
+        @rx.memo(wrapper=None)  # pyright: ignore[reportArgumentType]
+        def format_id(value: rx.Var[int]) -> rx.Var[str]:
+            return value.to(str)
+
+
+def test_memo_decorator_parens_form_matches_bare_decorator():
+    """``@rx.memo()`` with no arguments behaves like bare ``@rx.memo``."""
+
+    @rx.memo()
+    def parens_component(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    definition = MEMOS["ParensComponent", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+    assert definition.wrapper is DEFAULT_MEMO_WRAPPER
+    assert isinstance(parens_component(label="hi"), MemoComponent)
+
+    @rx.memo()
+    def parens_function(value: rx.Var[int]) -> rx.Var[str]:
+        return value.to(str)
+
+    assert isinstance(MEMOS["parens_function", __name__], MemoFunctionDefinition)
+
+
+def test_compile_memo_components_mirrors_underscore_module_without_error():
+    """A module named ``_internal`` mirrors normally — no reserved-name restriction.
+
+    There is no reserved memo output directory anymore, so a developer is free
+    to name a package ``_internal``; it simply mirrors to
+    ``app_components/_internal/...`` like any other module.
+    """
+    definition = MemoComponentDefinition(
+        fn=lambda: None,
+        python_name="thing",
+        params=(),
+        export_name="Thing",
+        _component=_LazyBody.ready(rx.fragment()),
+        passthrough_hole_child=None,
+        source_module="_internal.widgets",
+    )
+
+    files, _ = compiler.compile_memo_components((definition,))
+    exp_path = compiler_utils.get_memo_module_path(("_internal", "widgets"))
+    assert any(path == exp_path for path, _ in files)
+
+
+def test_compile_memo_components_rejects_case_insensitive_path_collision():
+    """Two modules whose mirrored paths differ only by case fail loudly.
+
+    On case-insensitive filesystems (macOS/Windows) both would resolve to one
+    file, silently overwriting one memo module with the other.
+    """
+
+    def _definition(export_name: str, source_module: str) -> MemoComponentDefinition:
+        return MemoComponentDefinition(
+            fn=lambda: None,
+            python_name=export_name.lower(),
+            params=(),
+            export_name=export_name,
+            _component=_LazyBody.ready(rx.fragment()),
+            passthrough_hole_child=None,
+            source_module=source_module,
+        )
+
+    with pytest.raises(ReflexError, match="case"):
+        compiler.compile_memo_components((
+            _definition("Upper", "casecollide.Widget"),
+            _definition("Lower", "casecollide.widget"),
+        ))
 
 
 def test_compile_memo_components_extends_imports_without_remerging(
@@ -500,7 +1436,7 @@ def test_compile_memo_components_extends_imports_without_remerging(
             python_name=f"memo_{idx}",
             params=(),
             export_name=f"Memo{idx}",
-            component=rx.fragment(),
+            _component=_LazyBody.ready(rx.fragment()),
             passthrough_hole_child=None,
         )
         for idx in range(5)
@@ -563,35 +1499,30 @@ def test_experimental_component_memo_get_imports():
 
     assert "inner" not in experimental_component._get_all_imports()
 
-    definition = MEMOS["Wrapper"]
+    definition = MEMOS["Wrapper", __name__]
     assert isinstance(definition, MemoComponentDefinition)
     _, imports = compiler_utils.compile_experimental_component_memo(definition)
     assert "inner" in imports
 
 
-def test_compile_experimental_component_memo_does_not_mutate_definition(
-    monkeypatch: pytest.MonkeyPatch,
-):
+def test_compile_experimental_component_memo_does_not_mutate_definition():
     """Experimental component memo compilation should not mutate stored components."""
 
     @rx.memo
     def wrapper() -> rx.Component:
         return rx.box("hi")
 
-    definition = MEMOS["Wrapper"]
+    definition = MEMOS["Wrapper", __name__]
     assert isinstance(definition, MemoComponentDefinition)
+    # Reading ``.component`` triggers the deferred body evaluation.
     assert definition.component.style == Style()
 
-    monkeypatch.setattr(
-        "reflex.utils.prerequisites.get_and_validate_app",
-        lambda: SimpleNamespace(
-            app=SimpleNamespace(
-                style={type(definition.component): Style({"color": "red"})}
-            )
-        ),
+    fake_app = SimpleNamespace(
+        style={type(definition.component): Style({"color": "red"})}
     )
-
-    render, _ = compiler_utils.compile_experimental_component_memo(definition)
+    with RegistrationContext() as ctx:
+        ctx._set_app(cast(Any, fake_app))
+        render, _ = compiler_utils.compile_experimental_component_memo(definition)
 
     assert render["render"]["props"] == ['css:({ ["color"] : "red" })']
     assert definition.component.style == Style()
@@ -652,7 +1583,7 @@ def test_component_memo_accepts_event_handler():
             rx.input(on_change=event),
         )
 
-    definition = MEMOS["EhMemo"]
+    definition = MEMOS["EhMemo", __name__]
     assert isinstance(definition, MemoComponentDefinition)
     event_param = next(p for p in definition.params if p.name == "event")
     assert event_param.kind is MemoParamKind.EVENT_TRIGGER
@@ -667,7 +1598,7 @@ def test_component_memo_accepts_bare_event_handler():
     def bare_eh_memo(event: rx.EventHandler) -> rx.Component:
         return rx.button("click", on_click=event())
 
-    definition = MEMOS["BareEhMemo"]
+    definition = MEMOS["BareEhMemo", __name__]
     assert isinstance(definition, MemoComponentDefinition)
     event_param = next(p for p in definition.params if p.name == "event")
     assert event_param.kind is MemoParamKind.EVENT_TRIGGER
@@ -743,6 +1674,41 @@ def test_component_memo_rejects_event_handler_with_default():
             event: rx.EventHandler[rx.event.passthrough_event_spec(str)] = None,  # pyright: ignore[reportArgumentType]
         ) -> rx.Component:
             return rx.button("hi")
+
+
+def test_strip_optional_unwraps_none_union():
+    """`_strip_optional` collapses a ``X | None`` union to ``X``; any other
+    annotation passes through unchanged.
+    """
+    assert _strip_optional(int | None) is int
+    var = rx.Var[str]
+    assert _strip_optional(var) is var
+
+
+def test_analyze_params_unwraps_optional_event_handler_default(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Regression: on Python 3.10 ``get_type_hints`` rewrites ``event: EH = None``
+    to ``Optional[EH]``. With that shim active, ``_analyze_params`` must still see
+    the ``EventHandler`` underneath and reject the default (it silently passed on
+    3.10 before the fix, since ``Optional[...]`` is not recognized as an EH).
+
+    Force the shim on so this exercises the path on every Python version, not
+    only the <=3.10 interpreters that actually wrap the annotation.
+    """
+    monkeypatch.setattr(
+        "reflex_base.components.memo._GET_TYPE_HINTS_WRAPS_NONE_DEFAULT", True
+    )
+
+    def fn(event=None) -> rx.Component:
+        return rx.button("hi")
+
+    # Python <=3.10 wraps a ``= None`` param into a union with ``None`` (its
+    # ``get_type_hints`` adds ``Optional``); the ``EventHandler`` underneath
+    # must still be recognized so the default is rejected.
+    wrapped_hints = {"event": EventHandler | None}
+    with pytest.raises(TypeError, match="default"):
+        _analyze_params(fn, for_component=True, hints=wrapped_hints)
 
 
 def test_component_memo_rejects_event_handler_named_children():
@@ -921,12 +1887,17 @@ def test_bind_children_and_rest_are_noops_at_the_param_level():
     assert binding._event_triggers == {}
 
 
-def test_take_rest_sweeps_unconsumed_keys_into_camel_cased_dict():
-    """binding.take_rest collects every leftover kwarg not on the Component."""
-    binding = _MemoCallBinding({"foo_bar": "x", "class_name": "y"})
-    rest = binding.take_rest(component_fields={})
-    assert set(rest) == {"fooBar", "className"}
-    assert binding.raw_kwargs == {}
+def test_take_rest_forwards_target_fields_and_leaves_css_props_behind():
+    """take_rest claims declared target fields and leaves the remainder in place.
+
+    Keys that are fields of the rest target are popped and forwarded as
+    camelCased plain props. Everything else is a CSS prop, left in
+    ``raw_kwargs`` for ``Component._post_init`` to fold into ``style``.
+    """
+    binding = _MemoCallBinding({"foo_bar": "x", "font_weight": "bold"})
+    rest = binding.take_rest(component_fields={}, rest_target_fields={"foo_bar"})
+    assert set(rest) == {"fooBar"}
+    assert binding.raw_kwargs == {"font_weight": "bold"}
 
 
 @pytest.mark.parametrize(
@@ -983,20 +1954,80 @@ def test_self_referencing_component_memo():
             rx.foreach(items, lambda item: recursive_box(items=items)),
         )
 
-    assert "RecursiveBox" in MEMOS
-    definition = MEMOS["RecursiveBox"]
+    assert ("RecursiveBox", __name__) in MEMOS
+    definition = MEMOS["RecursiveBox", __name__]
     assert isinstance(definition, MemoComponentDefinition)
 
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
-    body_source = next(
-        code for path, code in files if path.endswith("RecursiveBox.jsx")
-    )
+    # The memo mirrors to its source module's combined file (named after the
+    # module, not the memo), so look it up by that path rather than a per-name
+    # ``RecursiveBox.jsx``.
+    segments = memo_paths.module_to_mirrored_segments(definition.source_module)
+    assert segments is not None
+    exp_path = compiler_utils.get_memo_module_path(segments)
+    body_source = next(code for path, code in files if path == exp_path)
     # ``>= 2``: once for the export, once for the recursive foreach call site.
     assert body_source.count("RecursiveBox") >= 2
 
     instance = recursive_box(items=Var(_js_expr="items", _var_type=list[int]))
     assert isinstance(instance, MemoComponent)
-    assert type(instance).tag == "RecursiveBox"
+    assert type(instance).tag == memo_paths.mirrored_symbol("RecursiveBox", __name__)
+
+
+def test_self_referencing_memo_omits_self_import_from_aggregate():
+    """A self-importing memo must not leak its own specifier into the aggregate.
+
+    The mirrored module specifier a memo uses to reference itself must be
+    stripped from the aggregate import set returned to the frontend-package scan.
+    """
+
+    @rx.memo
+    def recursive_card(items: rx.Var[list[int]]) -> rx.Component:
+        return rx.box(rx.foreach(items, lambda item: recursive_card(items=items)))
+
+    definition = MEMOS["RecursiveCard", __name__]
+    segments = memo_paths.module_to_mirrored_segments(definition.source_module)
+    assert segments is not None
+    self_specifier = memo_paths.mirrored_library_specifier(segments)
+
+    _, aggregate_imports = compiler.compile_memo_components((definition,))
+    assert self_specifier not in aggregate_imports
+
+
+def test_reset_memo_component_classes_recomputes_stale_library(monkeypatch):
+    """Resetting the class cache re-resolves a memo's library.
+
+    A module that flips to a package across hot-reload compiles keeps its name
+    but gains an ``index`` segment; without a reset the cached wrapper class
+    would keep serving the pre-flip specifier.
+    """
+    from reflex_base.components.memo import (
+        _get_memo_component_class,
+        reset_memo_component_classes,
+    )
+
+    reset_memo_component_classes()
+    monkeypatch.setattr(
+        memo_paths, "module_to_mirrored_segments", lambda module: ("pkgflip",)
+    )
+    flat = _get_memo_component_class("Flip", source_module="pkgflip")
+    assert flat.library == "$/app_components/pkgflip"
+
+    # The module is now a package: same name, segments gain ``index``.
+    monkeypatch.setattr(
+        memo_paths, "module_to_mirrored_segments", lambda module: ("pkgflip", "index")
+    )
+    # Stale until the cache is cleared.
+    assert (
+        _get_memo_component_class("Flip", source_module="pkgflip").library
+        == "$/app_components/pkgflip"
+    )
+    reset_memo_component_classes()
+    assert (
+        _get_memo_component_class("Flip", source_module="pkgflip").library
+        == "$/app_components/pkgflip/index"
+    )
+    reset_memo_component_classes()
 
 
 def test_self_referencing_var_memo():
@@ -1007,9 +2038,423 @@ def test_self_referencing_var_memo():
         recurse = cast("rx.vars.NumberVar[int]", recursive_count(n=n - 1))
         return cast("rx.Var[int]", rx.cond(n.bool(), n + recurse, 0))
 
-    definition = MEMOS["recursive_count"]
+    definition = MEMOS["recursive_count", __name__]
     assert isinstance(definition, MemoFunctionDefinition)
     assert "recursive_count" in str(definition.function)
 
     invoked = recursive_count(n=Var(_js_expr="three", _var_type=int))
     assert "recursive_count" in str(invoked)
+
+
+class _AppWrapProbe(Component):
+    """A component whose only per-instance artifact is an app-wrap component."""
+
+    library = "app-wrap-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        """Wrap the app in a ``MarkdownComponentMap``-based component.
+
+        Returns:
+            The app wrap components.
+        """
+        return {(50, "AppWrapProbe"): rx.text(self.marker)}
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only the app wrap differs.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_dataclass_inheriting_app_wrap_components():
+    """App-wrap components that also inherit a dataclass must hash by render.
+
+    ``rx.text`` and friends inherit ``MarkdownComponentMap``, a dataclass with
+    no fields, so encoding the dataclass ahead of the component collapsed every
+    one of them to the same nine bytes -- and two memo bodies whose app wraps
+    differed only in such a component shared a tag, dropping one app wrap.
+    """
+    a = _AppWrapProbe.create(marker="alpha")
+    b = _AppWrapProbe.create(marker="beta")
+
+    assert a.render() == b.render()
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert component_hash(a, recursive=True) != component_hash(b, recursive=True)
+    assert memo_tag(a) != memo_tag(b)
+
+
+class _ImportLibraryProbe(Component):
+    """One class whose import library varies with a prop ``_render`` drops."""
+
+    library = "import-library-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def _get_imports(self):
+        """Import the same binding from a marker-dependent library.
+
+        Returns:
+            The imports.
+        """
+        return {
+            **super()._get_imports(),
+            f"probe-lib-{self.marker!s}": [ImportVar(tag="Thing")],
+        }
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only the imports differ.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_import_libraries():
+    """The libraries a memo body imports from must reach the hash."""
+    a = _ImportLibraryProbe.create(marker="alpha")
+    b = _ImportLibraryProbe.create(marker="beta")
+
+    assert a.render() == b.render()
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert component_hash(a, recursive=True) != component_hash(b, recursive=True)
+    assert memo_tag(a) != memo_tag(b)
+
+
+class _ImportPayloadProbe(Component):
+    """One class, one library, an ``ImportVar`` payload that varies by prop."""
+
+    library = "import-payload-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def _get_imports(self):
+        """Import a side-effect stylesheet whose path varies with the marker.
+
+        Returns:
+            The imports.
+        """
+        return {
+            **super()._get_imports(),
+            "payload-lib": [ImportVar(tag=None, package_path=f"/{self.marker!s}.css")],
+        }
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only the imports differ.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_import_var_payloads():
+    """``ImportVar`` fields must reach the hash, not just the library name.
+
+    ``package_path`` and ``alias`` vary per instance in shipping components
+    (``Icon._get_imports`` builds both), and a tagless ``ImportVar`` defaults to
+    ``render=True``, so it emits as a side-effect import. Two such bodies render
+    identically under one library key; sharing a tag drops one body's import
+    from the compiled module with no error.
+    """
+    a = _ImportPayloadProbe.create(marker="light")
+    b = _ImportPayloadProbe.create(marker="dark")
+
+    assert a.render() == b.render()
+    assert sorted(dict(a._get_all_imports())) == sorted(dict(b._get_all_imports()))
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert component_hash(a, recursive=True) != component_hash(b, recursive=True)
+    assert memo_tag(a) != memo_tag(b)
+
+
+class _CustomCodeProbe(Component):
+    """A component whose only per-instance artifact is its custom code."""
+
+    library = "custom-code-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def add_custom_code(self) -> list[str]:
+        """Emit a marker-dependent module-level constant.
+
+        Returns:
+            The custom code lines.
+        """
+        return [f"const PROBE = {self.marker!s};"]
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only custom code differs.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_add_custom_code():
+    """``add_custom_code`` output must reach the own-node hash.
+
+    Two bodies that render identically and differ only in the module-level code
+    they emit compile to different modules, so they must not share a tag — a
+    collision would drop one of the two constants.
+    """
+    a = _CustomCodeProbe.create(marker="alpha")
+    b = _CustomCodeProbe.create(marker="beta")
+
+    assert a.render() == b.render()
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert memo_tag(a) != memo_tag(b)
+
+
+def test_component_hash_recursive_covers_descendant_artifacts():
+    """A recursive hash must see artifacts that a descendant's JSX omits."""
+    inner_a = Box.create(Bare.create(contents="x"), on_mount=rx.console_log("x"))
+    inner_b = Box.create(Bare.create(contents="x"))
+    outer_a, outer_b = Box.create(inner_a), Box.create(inner_b)
+
+    # ``on_mount`` lives in a lifecycle hook, not in the rendered props.
+    assert outer_a.render() == outer_b.render()
+    assert component_hash(outer_a, recursive=True) != component_hash(
+        outer_b, recursive=True
+    )
+    # The passthrough form deliberately ignores descendants: they render at the
+    # call site behind the ``{children}`` hole, not inside the memo body.
+    assert component_hash(outer_a, recursive=False) == component_hash(
+        outer_b, recursive=False
+    )
+
+
+class _DynamicImportProbe(Component):
+    """One class whose dynamic import varies with a prop ``_render`` drops."""
+
+    library = "dynamic-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def _get_dynamic_imports(self) -> str:
+        """Emit a marker-dependent dynamic import.
+
+        Returns:
+            The dynamic import statement.
+        """
+        return f"const EXTRA = await import({self.marker!s});"
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only the dynamic import differs.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_dynamic_imports():
+    """Dynamic imports are emitted into the memo body, so they must be hashed.
+
+    Same class, same rendered JSX, different dynamic import: a collision here
+    would drop one of the two import statements from the compiled output.
+    """
+    a = _DynamicImportProbe.create(marker="alpha")
+    b = _DynamicImportProbe.create(marker="beta")
+
+    assert type(a) is type(b)
+    assert a.render() == b.render()
+    assert a._get_dynamic_imports() != b._get_dynamic_imports()
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert memo_tag(a) != memo_tag(b)
+
+
+def test_memo_tag_separates_same_named_classes_from_different_modules():
+    """Two modules defining an identical component must not share a memo tag.
+
+    ``__qualname__`` alone does not distinguish them -- both are ``Probe`` -- so
+    the defining module has to reach the digest.
+    """
+    probes = []
+    for module_name in ("_memo_tag_module_a", "_memo_tag_module_b"):
+        namespace = {"Component": Component, "__name__": module_name}
+        exec(
+            "class Probe(Component):\n    tag = 'Probe'\n    library = 'probe-lib'\n",
+            namespace,
+        )
+        probes.append(namespace["Probe"].create())
+
+    a, b = probes
+    assert type(a) is not type(b)
+    assert type(a).__qualname__ == type(b).__qualname__
+    assert a.render() == b.render()
+    assert memo_tag(a) != memo_tag(b)
+
+
+def test_memo_tag_separates_identically_rendering_classes():
+    """Distinct classes that render alike must not collide on a tag."""
+
+    class _AlphaProbe(Component):
+        tag = "Same"
+
+    class _BetaProbe(Component):
+        tag = "Same"
+
+    alpha, beta = _AlphaProbe.create(), _BetaProbe.create()
+
+    assert alpha.render() == beta.render()
+    assert memo_tag(alpha) != memo_tag(beta)
+
+
+def test_custom_wrapper_named_memo_is_not_treated_as_react_memo():
+    """A custom wrapper may share React's name and still have side effects."""
+    wrapper = FunctionStringVar.create(
+        "memo", _var_data=VarData(imports={"tracking-library": [ImportVar(tag="memo")]})
+    )
+
+    @rx.memo(wrapper=wrapper)
+    def tracked_named_memo() -> rx.Component:
+        return rx.text("Tracked")
+
+    definition = MEMOS["TrackedNamedMemo", __name__]
+    files, _ = compiler.compile_memo_components((definition,))
+    code = "\n".join(content for _, content in files)
+    assert "/*#__PURE__*/" not in code
+
+
+class _ProviderProbe(Component):
+    """A component that requests an app wrap via the class-level hook."""
+
+    library = "provider-probe"
+    tag = "ProviderProbe"
+
+    @staticmethod
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
+        """Request the probe provider at the app root.
+
+        Returns:
+            The app wrap components.
+        """
+        return {(60, "ProbeProvider"): Bare.create("probe-provider")}
+
+
+def test_memo_collects_app_wraps_from_nested_body_children():
+    """A memo body's descendants contribute their app wraps, not just its root.
+
+    The body compiles into its own module, so nothing else in the compile tree
+    ever sees those descendants -- the wrapper has to stand in for them.
+    """
+
+    @rx.memo
+    def nested_provider_memo() -> rx.Component:
+        return rx.box(rx.box(_ProviderProbe.create()))
+
+    assert (60, "ProbeProvider") in nested_provider_memo()._get_app_wrap_components()
+
+
+def test_memo_collects_app_wraps_from_body_root():
+    """A memo body whose root requests an app wrap still contributes it."""
+
+    @rx.memo
+    def root_provider_memo() -> rx.Component:
+        return _ProviderProbe.create()
+
+    assert (60, "ProbeProvider") in root_provider_memo()._get_app_wrap_components()
+
+
+def test_memo_collects_var_declared_app_wraps_from_body():
+    """``VarData.app_wraps`` inside a memo body reach the app root too.
+
+    ``rx.upload`` requests ``UploadFilesProvider`` through the var data on the
+    upload-context hook rather than a class-level hook, so a class-only copy
+    drops it at every depth -- including the body root.
+    """
+
+    @rx.memo
+    def upload_memo() -> rx.Component:
+        return rx.box(rx.upload(rx.text("drop"), id="memo-upload"))
+
+    wraps = upload_memo()._get_app_wrap_components()
+    assert any(
+        isinstance(wrapper, UploadFilesProvider) for wrapper in wraps.values()
+    ), wraps
+
+
+def test_memo_app_wraps_are_distinct_per_wrapper_class():
+    """Two memos must not share one ``_get_app_wrap_components`` function.
+
+    The page collector dedupes by ``type(comp)._get_app_wrap_components``
+    identity, so a single shared function would make only the first memo on a
+    page contribute its wraps.
+    """
+
+    @rx.memo
+    def first_provider_memo() -> rx.Component:
+        return rx.box(_ProviderProbe.create())
+
+    @rx.memo
+    def second_provider_memo() -> rx.Component:
+        return rx.box(rx.text("no provider here"))
+
+    first, second = first_provider_memo(), second_provider_memo()
+    assert (
+        type(first)._get_app_wrap_components
+        is not type(second)._get_app_wrap_components
+    )
+    assert (60, "ProbeProvider") in first._get_app_wrap_components()
+    assert (60, "ProbeProvider") not in second._get_app_wrap_components()
+
+
+def test_memo_app_wraps_reach_all_app_wrap_components():
+    """``_get_all_app_wrap_components`` sees a memo's body wraps.
+
+    ``App._app_root`` expands the app-wrap chain through this method, and that
+    chain contains memo components (the toaster provider, the sticky badge).
+    """
+
+    @rx.memo
+    def chained_provider_memo() -> rx.Component:
+        return rx.box(_ProviderProbe.create())
+
+    assert (60, "ProbeProvider") in rx.box(
+        chained_provider_memo()
+    )._get_all_app_wrap_components()
+
+
+def test_memo_app_wraps_survive_self_referencing_body():
+    """A memo whose body holds an instance of itself must not recurse forever.
+
+    Collecting the body's wraps walks the body, which reaches that inner
+    instance, which is asked for its own body's wraps -- the same body. Without
+    a re-entrancy guard the walk never bottoms out.
+    """
+
+    @rx.memo
+    def recursive_provider_memo(items: rx.Var[list[int]]) -> rx.Component:
+        return rx.box(
+            _ProviderProbe.create(),
+            rx.foreach(items, lambda _item: recursive_provider_memo(items=items)),
+        )
+
+    instance = recursive_provider_memo(items=Var(_js_expr="items", _var_type=list[int]))
+
+    assert (60, "ProbeProvider") in instance._get_app_wrap_components()

@@ -1,48 +1,20 @@
 # Share App
 
-The **Share** feature makes it easy to show your app to others without deploying it.
-When you share, Reflex Build generates a unique link that points to the current version of your project in the builder.
+Sharing creates a link to a read-only view of an app generation. It is useful for feedback and demos before a production deployment.
 
-```python exec
-import reflex as rx
+## Before You Share
 
+The **Share** action is available for public apps. Open **Settings** and review **App Visibility** first:
 
-def render_image():
-    return rx.el.div(
-        rx.image(
-            src="https://web.reflex-assets.dev/ai_builder/app_lifecycle/share_light.avif",
-            class_name="rounded-md h-auto",
-            border=f"0.81px solid {rx.color('slate', 5)}",
-        ),
-        class_name="w-full flex flex-col rounded-md",
-    )
-```
+- **Public** apps can be shared by link.
+- **Private** apps remain restricted to people with access to the project.
 
-```python eval
-rx.el.div(render_image())
-```
+Review the app for secrets, personal data, and unfinished content before changing its visibility.
 
-## How to Share
+## Share a Public App
 
-1. In the AI Builder workspace, click on the arrow down icon next to the deploy button and click on the **Share** button.
-2. A popup will appear with a **shareable link**.
-3. Copy the link and send it to teammates, collaborators, or stakeholders.
+1. Open the menu next to **Deploy**.
+2. Select **Share**.
+3. Copy the generated link and send it to the intended reviewers.
 
-
-## What Others See
-
-- The link opens a **read-only view** of your app generation.
-- Recipients can see the app preview but cannot make edits.
-- This makes it safe to share work-in-progress versions for quick feedback.
-
-
-## Common Use Cases
-
-- **Get Feedback Quickly**
-  Share a work-in-progress version with your team before deploying.
-
-- **Demo Features**
-  Send a link to showcase a new component, layout, or integration.
-
-- **Collaboration**
-  Share context with another developer before handing off to GitHub or download.
+Recipients can view and interact with the shared app preview but cannot edit the source app. Use deployment instead when you need a production URL and production configuration.

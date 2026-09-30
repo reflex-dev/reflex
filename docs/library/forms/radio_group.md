@@ -73,7 +73,7 @@ class FormRadioState(rx.State):
 def radio_form_example():
     return rx.card(
         rx.vstack(
-            rx.heading("Example Form"),
+            rx.heading("Example Form", as_="h2"),
             rx.form.root(
                 rx.vstack(
                     rx.radio_group(
@@ -90,7 +90,7 @@ def radio_form_example():
             ),
             rx.divider(),
             rx.hstack(
-                rx.heading("Results:"),
+                rx.heading("Results:", as_="h2"),
                 rx.badge(FormRadioState.form_data.to_string()),
             ),
             align_items="left",
