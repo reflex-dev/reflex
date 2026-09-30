@@ -11,6 +11,7 @@ from reflex_base import constants
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
 from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import PageNames
+from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
@@ -1888,3 +1889,64 @@ def test_compile_app_drops_event_caches_from_earlier_compiles(
 
         assert (0, 0, None) not in context._bound_event_chains
         assert ("on_click", 0) not in context._memoized_event_triggers
+
+
+@pytest.mark.parametrize(
+    ("compile_context", "tier", "configured", "expected"),
+    [
+        # A deploy keeps an explicit setting whatever the stored login's tier:
+        # the hosting CLI enforces the badge from the tier of the deploy token.
+        (constants.CompileContext.DEPLOY, "free", False, False),
+        (constants.CompileContext.DEPLOY, "team", True, True),
+        # An unset setting follows the stored login's tier.
+        (constants.CompileContext.DEPLOY, "free", None, True),
+        (constants.CompileContext.DEPLOY, "pro", None, False),
+        (constants.CompileContext.DEPLOY, "anonymous", None, True),
+        # Outside of deploys the badge shows unless the app opts out.
+        (constants.CompileContext.EXPORT, "free", None, True),
+        (constants.CompileContext.EXPORT, "free", False, False),
+        (constants.CompileContext.RUN, "pro", True, True),
+    ],
+)
+def test_compile_app_resolves_show_built_with_reflex(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    compile_context: constants.CompileContext,
+    tier: str,
+    configured: bool | None,
+    expected: bool,
+):
+    """A production compile installs the badge according to the app's setting.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory and compile context.
+        mocker: Fixture for configuring the test app, the user's tier and prod mode.
+        compile_context: The context the app is compiled in.
+        tier: The tier of the deploying user.
+        configured: The app's own show_built_with_reflex setting.
+        expected: The setting the compile should resolve to.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv(environment.REFLEX_COMPILE_CONTEXT.name, compile_context.value)
+    get_user_tier = mocker.patch(
+        "reflex.utils.prerequisites.get_user_tier", return_value=tier
+    )
+    mocker.patch("reflex.compiler.compiler.is_prod_mode", return_value=True)
+    with RegistrationContext():
+        config = rx.Config(
+            app_name="badge_test", plugins=[], show_built_with_reflex=configured
+        )
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+        app = rx.App()
+        app.add_page(lambda: rx.el.div("hello"), route="/")
+
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+        assert config.show_built_with_reflex is expected
+        assert ((0, "StickyBadge") in app.app_wraps) is expected
+    # Only an unset setting on a deploy needs the tier.
+    assert get_user_tier.called is (
+        compile_context == constants.CompileContext.DEPLOY and configured is None
+    )

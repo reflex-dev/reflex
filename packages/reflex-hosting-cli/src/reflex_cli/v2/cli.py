@@ -582,6 +582,33 @@ def _warn_if_full_deploy_outlives_deploy(
         raise
 
 
+def _resolve_badge_from_token_tier(client: AuthenticatedClient) -> None:
+    """Resolve the "Built with Reflex" badge from the tier of the deploying org.
+
+    Without a paid plan the badge is forced on, since older reflex releases honor
+    an app's ``show_built_with_reflex=False`` on any tier. On a paid plan an unset
+    setting is resolved to hidden, since reflex would otherwise resolve it from
+    the stored login, which may belong to a different org than the deploy token.
+    Persisting the value in the environment also covers a config the export
+    reloads.
+
+    Args:
+        client: The authenticated client the deploy is running under.
+    """
+    from reflex.config import get_config
+    from reflex_cli.utils import hosting
+
+    config = get_config()
+    # Reflex releases that predate the badge have no setting to resolve.
+    if not hasattr(config, "show_built_with_reflex"):
+        return
+    tier = hosting.get_token_tier(client) or ""
+    if tier.lower() not in constants.Hosting.PAID_TIERS:
+        config._set_persistent(show_built_with_reflex=True)
+    elif config.show_built_with_reflex is None:
+        config._set_persistent(show_built_with_reflex=False)
+
+
 def deploy(
     export_fn: Callable[[str, str, str, bool, bool, bool, bool], None]
     | Callable[[str, str, str, bool, bool, bool], None],
@@ -999,6 +1026,8 @@ def deploy(
                     """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
                 )
                 raise click.exceptions.Exit(1) from None
+
+        _resolve_badge_from_token_tier(authenticated_client)
 
         # Compile the app in production mode: backend first then frontend.
         temporary_dir = tempfile.TemporaryDirectory()
