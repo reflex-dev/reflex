@@ -101,3 +101,20 @@ jobs:
         uses: github/codeql-action/analyze@68bde559dea0fdcac2102bfdf6230c5f70eb485e # v4.35.4
         with:
           category: "/language:${{matrix.language}}"
+
+  # The one status check the branch rules require from this workflow. Naming the
+  # jobs above directly does not survive: check names follow the matrix and the
+  # display names, and a job that a filter skips must not block the merge.
+  codeql-gate:
+    needs: [analyze]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/ci_gate
+        with:
+          needs: ${{ toJSON(needs) }}

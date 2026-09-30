@@ -1,0 +1,66 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var
+TELEMETRY_ENABLED=false
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.03s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Debug: Running command: ['/tmp/rb-head/reflex/bun/bin/bun', 'add',
+'--legacy-peer-deps', '-d', '@tailwindcss/typography@0.5.20',
+'postcss-import@17.0.0', 'vite@8.2.2', '@tailwindcss/postcss@4.3.0',
+'postcss@8.5.26', '@emotion/react@11.14.0', '@react-router/dev@8.4.0',
+'autoprefixer@10.5.4', 'tailwindcss@4.3.0', '@react-router/fs-routes@8.4.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [127]
+Debug: Saved lockfile
+Debug:
+Debug: installed @tailwindcss/typography@0.5.20
+Debug: installed postcss-import@17.0.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed @tailwindcss/postcss@4.3.0
+Debug: installed postcss@8.5.26
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed tailwindcss@4.3.0
+Debug: installed @react-router/fs-routes@8.4.0
+Debug:
+Debug: 147 packages installed [3.41s]
+Debug: Running command: ['/tmp/rb-head/reflex/bun/bin/bun', 'add',
+'--legacy-peer-deps', '@react-router/node@8.4.0', 'universal-cookie@8.1.2',
+'mergician@v2.0.2', '@radix-ui/themes@3.3.0', 'react-dom@19.2.8',
+'react-helmet@6.1.0', 'socket.io-client@4.8.3', 'lucide-react@1.26.0',
+'react@19.2.8', 'react-error-boundary@6.1.2', 'isbot@5.2.2',
+'react-router@8.4.0', 'sonner@2.0.8']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [28]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug:
+Debug: installed @react-router/node@8.4.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed mergician@2.0.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-dom@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: installed socket.io-client@4.8.3
+Debug: installed lucide-react@1.26.0
+Debug: installed react@19.2.8
+Debug: installed react-error-boundary@6.1.2
+Debug: installed isbot@5.2.2
+Debug: installed react-router@8.4.0
+Debug: installed sonner@2.0.8
+Debug:
+Debug: 99 packages installed [396.00ms]
+Debug: Copying .web/bun.lock to /tmp/rb-head/app/reflex.lock/bun.lock
+Debug: Copying .web/package.json to /tmp/rb-head/app/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 3.82s
+Debug: [timing] Write to Disk: 0.00s
+Success: App compiled successfully in 4.310 seconds.

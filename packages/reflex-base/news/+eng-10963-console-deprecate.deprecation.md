@@ -1,1 +1,0 @@
-The `console.debug/info/success/log/warn/error/timing` helpers are deprecated (removal in 1.0) but keep working as shims; use `logging.getLogger(__name__)` and the pipeline in `reflex_base.utils.log` instead. The interactive Rich features (`print`/`rule`/`status`/`ask`/`progress`) remain first-class.

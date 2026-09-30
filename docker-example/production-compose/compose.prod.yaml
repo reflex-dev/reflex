@@ -17,6 +17,9 @@ services:
     environment:
       REFLEX_DB_URL: postgresql+psycopg://postgres:secret@db/postgres
       REFLEX_REDIS_URL: redis://redis:6379
+      # With redis available, the backend runs `2 * cpu_count + 1` workers.
+      # Uncomment to cap the worker count on memory constrained hosts.
+      # GRANIAN_WORKERS: 2
     depends_on:
       - db
       - redis

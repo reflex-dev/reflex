@@ -4,6 +4,7 @@ import enum
 import logging
 import os
 import tempfile
+from datetime import timedelta
 from pathlib import Path
 from typing import Annotated
 from unittest.mock import patch
@@ -32,6 +33,9 @@ from reflex_base.environment import (
     interpret_path_env,
     interpret_plugin_class_env,
     interpret_plugin_env,
+    interpret_timedelta_env,
+    oplock_hold_time,
+    state_manager_disk_debounce,
 )
 from reflex_base.plugins import Plugin
 from reflex_base.utils.exceptions import EnvironmentVarValueError
@@ -675,6 +679,8 @@ def cleanup_env_vars():
         "BOOLEAN",
         "LIST",
         "__INTERNAL_VAR",
+        # `EnvVar.set` writes `os.environ` directly, so monkeypatch never sees it
+        "TEST_TIMEOUT_ROUNDTRIP",
     ]
 
     yield
@@ -683,3 +689,294 @@ def cleanup_env_vars():
         if var in os.environ:
             print(var)
             del os.environ[var]
+
+
+def test_interpret_timedelta_env_defaults_to_seconds() -> None:
+    """A bare number is read as seconds."""
+    assert interpret_timedelta_env("30", "TEST_FIELD") == timedelta(seconds=30)
+    assert interpret_timedelta_env("1.5", "TEST_FIELD") == timedelta(seconds=1.5)
+    assert interpret_timedelta_env("0", "TEST_FIELD") == timedelta(0)
+
+
+def test_interpret_timedelta_env_units() -> None:
+    """A suffix overrides the default unit."""
+    assert interpret_timedelta_env("1us", "TEST_FIELD") == timedelta(microseconds=1)
+    assert interpret_timedelta_env("500ms", "TEST_FIELD") == timedelta(milliseconds=500)
+    assert interpret_timedelta_env("30s", "TEST_FIELD") == timedelta(seconds=30)
+    assert interpret_timedelta_env("5m", "TEST_FIELD") == timedelta(minutes=5)
+    assert interpret_timedelta_env("2h", "TEST_FIELD") == timedelta(hours=2)
+    assert interpret_timedelta_env("1d", "TEST_FIELD") == timedelta(days=1)
+
+
+def test_interpret_timedelta_env_tolerates_spacing_and_case() -> None:
+    """Values come from a shell, where spacing and case are easily off."""
+    assert interpret_timedelta_env(" 5 M ", "TEST_FIELD") == timedelta(minutes=5)
+
+
+def test_interpret_timedelta_env_negative() -> None:
+    """``timedelta`` is signed, so a negative offset is a legitimate value."""
+    assert interpret_timedelta_env("-5m", "TEST_FIELD") == timedelta(minutes=-5)
+
+
+def test_interpret_timedelta_env_invalid() -> None:
+    """Test duration interpretation with invalid values."""
+    for value in ("not_a_number", "30 weeks", "30y", "", "s"):
+        with pytest.raises(EnvironmentVarValueError, match="Invalid duration value"):
+            interpret_timedelta_env(value, "TEST_FIELD")
+
+
+def test_interpret_timedelta_env_out_of_range() -> None:
+    """A well-formed value can still be more than a timedelta holds.
+
+    ``timedelta`` raises ``OverflowError``, which is not a ``ValueError``, so
+    letting it out would escape both this function's contract and the union
+    fallback in ``interpret_env_var_value``.
+    """
+    for value in ("999999999999d", "9" * 400):
+        with pytest.raises(EnvironmentVarValueError, match="out of range"):
+            interpret_timedelta_env(value, "TEST_FIELD")
+
+
+def test_timedelta_env_var_reads_a_duration(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A duration setting reads like any other typed environment variable.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("TEST_TIMEOUT", "90s")
+    env_var_instance = EnvVar("TEST_TIMEOUT", timedelta(seconds=30), timedelta)
+
+    assert env_var_instance.getenv() == timedelta(seconds=90)
+
+
+def test_timedelta_env_var_falls_back_to_its_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An unset duration keeps the default the app declared.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("TEST_TIMEOUT_UNSET", raising=False)
+    env_var_instance = EnvVar("TEST_TIMEOUT_UNSET", timedelta(minutes=3), timedelta)
+
+    assert env_var_instance.get() == timedelta(minutes=3)
+
+
+def test_timedelta_env_var_round_trips_through_set(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``set`` has to write a form the interpreter reads back.
+
+    ``str(timedelta)`` renders ``0:01:30``, and ``-1 day, 23:58:30`` below zero,
+    neither of which is valid input.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("TEST_TIMEOUT_ROUNDTRIP", raising=False)
+    env_var_instance = EnvVar("TEST_TIMEOUT_ROUNDTRIP", timedelta(0), timedelta)
+
+    for value in (
+        timedelta(minutes=1, seconds=30),
+        timedelta(days=1, seconds=30),
+        timedelta(seconds=-90),
+        # sub-second and boundary values are where a float round trip loses the
+        # microseconds or rounds past what a timedelta holds
+        timedelta(microseconds=1),
+        timedelta(seconds=90, microseconds=500000),
+        timedelta(days=999999998, microseconds=1),
+        timedelta.max,
+        timedelta.min,
+    ):
+        # `EnvVar` binds its type var to the class object, so a value argument
+        # never matches - the same quirk the other `set` tests here work around.
+        env_var_instance.set(value)  # type: ignore[arg-type]
+        assert env_var_instance.get() == value
+
+
+@pytest.fixture(autouse=True)
+def _forget_superseded_warnings(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Each test sees the deprecation warning as if the process had just started.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr("reflex_base.environment._WARNED_SUPERSEDED", set())
+
+
+def test_a_superseded_duration_setting_warns_once_per_process(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Every code path that reads the setting must not repeat the warning.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_OPLOCK_HOLD_TIME", raising=False)
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME_MS", "250")
+
+    with patch("reflex_base.utils.console.deprecate") as deprecate:
+        oplock_hold_time()
+        oplock_hold_time()
+
+    deprecate.assert_called_once()
+
+
+def test_duration_env_vars_accept_a_suffix(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The duration settings read a unit, not just a count of seconds.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_SOCKET_TIMEOUT", "2m")
+
+    assert environment.REFLEX_SOCKET_TIMEOUT.get() == timedelta(minutes=2)
+
+
+def test_duration_env_vars_still_read_a_bare_number_as_seconds(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Values set before these became durations keep their meaning.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("SQLALCHEMY_POOL_TIMEOUT", "45")
+
+    assert environment.SQLALCHEMY_POOL_TIMEOUT.get() == timedelta(seconds=45)
+
+
+def test_a_superseded_duration_setting_is_still_honoured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Its value counts the unit in its name, not seconds.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_OPLOCK_HOLD_TIME", raising=False)
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME_MS", "250")
+
+    with patch("reflex_base.utils.console.deprecate") as deprecate:
+        assert oplock_hold_time() == timedelta(milliseconds=250)
+
+    deprecate.assert_called_once()
+    assert deprecate.call_args.kwargs["feature_name"] == "REFLEX_OPLOCK_HOLD_TIME_MS"
+    # The exact replacement, so nobody renames the variable and loses the unit.
+    assert "REFLEX_OPLOCK_HOLD_TIME=250ms" in deprecate.call_args.kwargs["reason"]
+
+
+def test_a_superseded_seconds_setting_names_its_replacement_in_seconds(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A fractional count of seconds converts to the matching suffixed value.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_STATE_MANAGER_DISK_DEBOUNCE", raising=False)
+    monkeypatch.setenv("REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS", "0.5")
+
+    with patch("reflex_base.utils.console.deprecate") as deprecate:
+        assert state_manager_disk_debounce() == timedelta(milliseconds=500)
+
+    assert (
+        "REFLEX_STATE_MANAGER_DISK_DEBOUNCE=0.5s"
+        in deprecate.call_args.kwargs["reason"]
+    )
+
+
+@pytest.mark.parametrize(
+    ("superseded_value", "suggested"),
+    [(".5", "0.5s"), ("1e3", "1000.0s"), ("2.0", "2.0s")],
+)
+def test_the_suggested_replacement_always_parses(
+    monkeypatch: pytest.MonkeyPatch, superseded_value: str, suggested: str
+) -> None:
+    """A bare float accepts forms the duration parser rejects.
+
+    Suggesting the raw text would tell a project to set a value that fails to
+    start the app, so the number comes from the parsed value instead.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+        superseded_value: The value set on the superseded setting.
+        suggested: The replacement the warning should name.
+    """
+    monkeypatch.delenv("REFLEX_STATE_MANAGER_DISK_DEBOUNCE", raising=False)
+    monkeypatch.setenv("REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS", superseded_value)
+
+    with patch("reflex_base.utils.console.deprecate") as deprecate:
+        state_manager_disk_debounce()
+
+    reason = deprecate.call_args.kwargs["reason"]
+    assert f"REFLEX_STATE_MANAGER_DISK_DEBOUNCE={suggested}" in reason
+    # The suggestion has to survive being pasted back into the environment.
+    assert interpret_timedelta_env(suggested, "REFLEX_STATE_MANAGER_DISK_DEBOUNCE")
+
+
+def test_a_blank_superseded_setting_counts_as_unset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A blank value is unset everywhere else in the environment, so no warning.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_OPLOCK_HOLD_TIME", raising=False)
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME_MS", "   ")
+
+    with patch("reflex_base.utils.console.deprecate") as deprecate:
+        assert oplock_hold_time() == timedelta(0)
+
+    deprecate.assert_not_called()
+
+
+def test_a_blank_duration_setting_does_not_shadow_the_one_it_supersedes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Templated deployments leave the new name present but empty.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME", "")
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME_MS", "250")
+
+    with patch("reflex_base.utils.console.deprecate"):
+        assert oplock_hold_time() == timedelta(milliseconds=250)
+
+
+def test_the_duration_setting_wins_over_the_one_it_supersedes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Setting both is how a project migrates, so the new name has to lead.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME_MS", "250")
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME", "2s")
+
+    with patch("reflex_base.utils.console.deprecate") as deprecate:
+        assert oplock_hold_time() == timedelta(seconds=2)
+
+    deprecate.assert_called_once()
+
+
+def test_a_duration_setting_left_alone_does_not_warn(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The deprecation only fires for projects that actually set the old name.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_OPLOCK_HOLD_TIME_MS", raising=False)
+    monkeypatch.delenv("REFLEX_OPLOCK_HOLD_TIME", raising=False)
+
+    with patch("reflex_base.utils.console.deprecate") as deprecate:
+        assert oplock_hold_time() == timedelta(0)
+
+    deprecate.assert_not_called()

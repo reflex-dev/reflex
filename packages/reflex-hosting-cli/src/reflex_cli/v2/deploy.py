@@ -18,6 +18,7 @@ from pathlib import Path
 import click
 
 from reflex_cli.utils.cli_options import log_options
+from reflex_cli.utils.output import interactive_option
 
 
 @click.command(name="deploy")
@@ -97,12 +98,7 @@ from reflex_cli.utils.cli_options import log_options
     help="An optional note recorded on this deployment and shown in "
     "`reflex cloud apps history`.",
 )
-@click.option(
-    "--interactive/--no-interactive",
-    is_flag=True,
-    default=True,
-    help="Whether to list configuration options and ask for confirmation.",
-)
+@interactive_option
 @click.option(
     "--envfile",
     help="The path to an env file to use. Will override any envs set manually.",

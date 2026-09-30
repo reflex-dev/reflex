@@ -50,7 +50,7 @@ def MediaApp():
 
         @rx.var
         def img_from_url(self) -> Image.Image:
-            img_url = "https://picsum.photos/id/1/200/300"
+            img_url = "https://raw.githubusercontent.com/reflex-dev/reflex/dd96aea556948ea95217ef1d8b5431546dc58363/docs/images/reflex-image-generation-app.png"
             img_resp = httpx.get(img_url, follow_redirects=True)
             img_bytes = img_resp.content
             return Image.open(io.BytesIO(img_bytes))
@@ -193,8 +193,13 @@ def test_media_app(media_app: AppHarness):
 
     from_url_img_src = from_url_img.get_attribute("src")
     assert from_url_img_src is not None
-    assert from_url_img_src.startswith("data:image/jpeg;base64")
-    assert check_image_loaded(driver, from_url_img, expected_height=300)
+    assert from_url_img_src.startswith("data:image/png;base64")
+    assert check_image_loaded(
+        driver,
+        from_url_img,
+        expected_width=1280,
+        expected_height=733,
+    )
 
     uploaded_img_src = uploaded_img.get_attribute("src")
     assert uploaded_img_src is not None

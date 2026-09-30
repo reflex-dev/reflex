@@ -20,7 +20,7 @@ You can also provide local links to other pages in your project without writing 
 ```python demo
 rx.link(
     "Example",
-    href="/docs/library",
+    href="/library/",
 )
 ```
 
@@ -39,13 +39,13 @@ rx.box("Example", id="example")
 To reference an anchor, you can use the `href` prop of the `link` component. The `href` should be in the format of the page you want to link to followed by a # and the id of the anchor.
 
 ```python demo
-rx.link("Example", href="/docs/library/typography/link#example")
+rx.link("Example", href="/library/typography/link/#example")
 ```
 
 ```md alert info
 # Redirecting the user using State
 
-It is also possible to redirect the user to a new path within the application, using `rx.redirect()`. Check out the docs [here](/docs/api-reference/special-events).
+It is also possible to redirect the user to a new path within the application, using `rx.redirect()`. Check out the docs [here](/docs/api-reference/special-events/).
 ```
 
 ## Style

@@ -321,7 +321,7 @@ def _selects_package(packages: tuple[str, ...]) -> str:
     return f"contains(fromJson('{listing}'), inputs.package)"
 
 
-def _uv_setup_block(config: Config) -> str:
+def _uv_setup_block(config: Config, *, checkout: bool = True) -> str:
     """Render the ``with:`` block pinning the uv and Python the workflows use.
 
     Every generated workflow installs uv the same way, so the pins live in one
@@ -331,19 +331,22 @@ def _uv_setup_block(config: Config) -> str:
 
     Args:
         config: The repository configuration.
+        checkout: Whether the job installing uv checked the repository out. A
+            job that did not runs in an empty working directory, where setup-uv
+            has nothing to key a cache on and warns twice per run about it —
+            noise on a job that installs no dependencies anyway.
 
     Returns:
         The block, indented under a ``uses: astral-sh/setup-uv`` step, or an
-        empty string when neither version is pinned.
+        empty string when there is nothing to pass.
     """
-    pins = [
-        f'          {key}: "{value}"'
-        for key, value in (
-            ("version", config.uv_version),
-            ("python-version", config.python_version),
-        )
-        if value
+    settings = [
+        ("version", config.uv_version),
+        ("python-version", config.python_version),
     ]
+    if not checkout:
+        settings += [("enable-cache", "false"), ("ignore-empty-workdir", "true")]
+    pins = [f'          {key}: "{value}"' for key, value in settings if value]
     return "\n".join(["        with:", *pins]) if pins else ""
 
 
@@ -504,6 +507,7 @@ def render(name: str, config: Config) -> str:
         "@@HEADER@@": header,
         "@@CLI@@": cli,
         "@@UV_SETUP_WITH@@": _uv_setup_block(config),
+        "@@UV_SETUP_NO_CHECKOUT@@": _uv_setup_block(config, checkout=False),
         "@@MAIN_BRANCH@@": config.main_branch,
         "@@PRERELEASE_PREFIX@@": config.prerelease_branch_prefix,
         "@@HOTFIX_PREFIX@@": config.hotfix_branch_prefix,

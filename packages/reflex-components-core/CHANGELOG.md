@@ -1,3 +1,45 @@
+## v0.9.10.post1 (2026-09-21)
+
+### Bug Fixes
+
+- Require `reflex-base >= 0.9.12`. The declared floor was older than the `reflex_base.components.tags.CommonTag` import this package relies on, so a resolver was free to pair it with a `reflex-base` that fails at import time with `ImportError: cannot import name 'CommonTag'`. ([#7268](https://github.com/reflex-dev/reflex/issues/7268))
+
+
+## v0.9.10 (2026-09-21)
+
+### Bug Fixes
+
+- `rx.el.svg` and its children now render as one memoized component, so `defs` such as gradients and the elements that reference them by id always share one render scope. ([#6708](https://github.com/reflex-dev/reflex/issues/6708))
+- `rx.debounce_input` (which fully-controlled inputs compile to) now delivers a parent-provided ref to the underlying input element instead of the component instance, fixing crashes under `rx.form.control(..., as_child=True)`. ([#6850](https://github.com/reflex-dev/reflex/issues/6850))
+- Return a controlled 400 response when an upload request references an unknown event handler. ([#6860](https://github.com/reflex-dev/reflex/issues/6860))
+- Give the Built with Reflex badge an accessible name when its visual text is hidden on small screens. ([#7078](https://github.com/reflex-dev/reflex/issues/7078))
+- `reflex_components_core.datadisplay` no longer advertises `code_block`, `data_editor` and friends: those moved to the standalone `reflex-components-code` and `reflex-components-dataeditor` packages, so accessing them here raised `ModuleNotFoundError`. Reach them as before via `rx.code_block` / `rx.data_editor`, or `reflex.components.datadisplay.code`. ([#7124](https://github.com/reflex-dev/reflex/issues/7124))
+- Stop the default error boundary fallback from logging invalid DOM property warnings for its SVG icon. ([#7130](https://github.com/reflex-dev/reflex/issues/7130))
+
+### Miscellaneous
+
+- Annotate `_render` overrides as returning `CommonTag`, the new base of every tag class. ([#7121](https://github.com/reflex-dev/reflex/issues/7121))
+
+
+## v0.9.9 (2026-08-28)
+
+### Features
+
+- The "Built with Reflex" badge appends a urlencoded `ref` query parameter to its reflex.dev link when the `REFLEX_REFERRER_PARAM` environment variable is set at compile time. ([#6951](https://github.com/reflex-dev/reflex/issues/6951))
+
+### Bug Fixes
+
+- Sanitize buffered upload filenames the same way streamed upload filenames are sanitized. ([#6753](https://github.com/reflex-dev/reflex/issues/6753))
+- `rx.script` head updates now flush synchronously instead of via react-helmet's requestAnimationFrame batching, fixing intermittently missing script tags after hydration (flaky "scripts not loaded" failures). ([#6905](https://github.com/reflex-dev/reflex/issues/6905))
+- Upload filenames whose segments contain nothing but dots and spaces (e.g. `".."`, `"./../."`, `".. "`) now sanitize to the fallback name `upload` instead of returning the bare segment. Such names pointed the saved path outside the upload directory — directly on POSIX, and via Win32's trailing dot/space trimming on Windows — and crashed the upload handler with a 500. ([#6971](https://github.com/reflex-dev/reflex/issues/6971))
+
+### Miscellaneous
+
+- Hoist the `RegistrationContext` import in the upload handler to module level. ([#6382](https://github.com/reflex-dev/reflex/issues/6382))
+- Internal logging migrated from the legacy console helpers to standard python `logging` per-module loggers. ([#6864](https://github.com/reflex-dev/reflex/issues/6864))
+- Property docstrings are now noun phrases rather than "Get the ..." / "Return the ..." (ruff 0.16's new `D421`). ([#6893](https://github.com/reflex-dev/reflex/issues/6893))
+
+
 ## v0.9.8 (2026-08-04)
 
 ### Miscellaneous

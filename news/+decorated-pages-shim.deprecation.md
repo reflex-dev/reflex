@@ -1,1 +1,0 @@
-`reflex.page.DECORATED_PAGES` is deprecated (removal in 1.0) but keeps working: reading it emits a deprecation warning and resolves to a mapping of the app name to the active `RegistrationContext`'s `decorated_pages` list of `(render_fn, kwargs)` entries. Use `RegistrationContext.ensure_context().decorated_pages` instead.
