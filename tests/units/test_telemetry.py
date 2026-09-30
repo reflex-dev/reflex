@@ -829,16 +829,20 @@ def test_executor_is_recreated_after_fork():
     fresh = telemetry._get_telemetry_executor()
     assert fresh is not inherited
     assert fresh.submit(lambda: 1).result(timeout=5) == 1
+    # In this process the orphaned pool's thread is real; stop it.
+    inherited.shutdown()
 
 
 def test_executor_lock_is_recreated_after_fork():
     """A lock held by another thread at fork time does not block the child."""
+    orphaned = telemetry._get_telemetry_executor()
     held = telemetry._executor_lock
     held.acquire()
     try:
         telemetry._reset_executor_after_fork()
     finally:
         held.release()
+        orphaned.shutdown()
 
     assert telemetry._executor_lock is not held
     assert not telemetry._executor_lock.locked()
@@ -868,16 +872,37 @@ def test_shutdown_executor_drains_queued_work_and_stops_the_thread():
     done = threading.Event()
     executor = telemetry._get_telemetry_executor()
     executor.submit(done.set)
+    workers = list(executor._threads)  # pyright: ignore[reportAttributeAccessIssue]
 
     telemetry._shutdown_executor()
 
     assert done.is_set()
     assert telemetry._executor is None
-    assert not any(
-        thread.name.startswith("reflex-telemetry") for thread in threading.enumerate()
-    )
+    assert workers
+    assert not any(worker.is_alive() for worker in workers)
     # The next send lazily starts a new worker.
     assert telemetry._get_telemetry_executor().submit(lambda: 1).result(5) == 1
+
+
+def test_shutdown_executor_keeps_the_pool_published_until_it_stops(
+    mocker: MockerFixture,
+):
+    """A send racing the shutdown cannot start a second pool before the fork."""
+    executor = telemetry._get_telemetry_executor()
+    seen = []
+    stop = executor.shutdown
+
+    def shutdown(*args, **kwargs):
+        # What a concurrent send() would submit to while the pool stops.
+        seen.append(telemetry._get_telemetry_executor())
+        stop(*args, **kwargs)
+
+    mocker.patch.object(executor, "shutdown", side_effect=shutdown)
+
+    telemetry._shutdown_executor()
+
+    assert seen == [executor]
+    assert telemetry._executor is None
 
 
 def test_shutdown_executor_gives_up_on_a_stalled_task():

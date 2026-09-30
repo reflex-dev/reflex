@@ -514,13 +514,17 @@ def _shutdown_executor(timeout: float = 2) -> None:
         timeout: Maximum number of seconds to wait for queued telemetry.
     """
     global _executor
+    if (executor := _executor) is None:
+        return
     drained = _flush(timeout)
     if not drained:
         logger.debug(f"Telemetry did not drain within {timeout}s before forking.")
+    # Stay published while stopping: a racing send() then fails to submit (and
+    # is suppressed) instead of starting a second pool before the fork.
+    executor.shutdown(wait=drained, cancel_futures=True)
     with _executor_lock:
-        executor, _executor = _executor, None
-    if executor is not None:
-        executor.shutdown(wait=drained, cancel_futures=True)
+        if _executor is executor:
+            _executor = None
 
 
 def _reset_executor_after_fork() -> None:
