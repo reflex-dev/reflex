@@ -418,7 +418,6 @@ def test_get_routes_manifest_router_invalid_manifest(
     assert f"Ignoring invalid routes manifest {manifest}" in caplog.text
 
 
-
 def test_get_routes_manifest_router_matches_dynamic_routes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
