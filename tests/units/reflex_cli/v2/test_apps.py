@@ -12,9 +12,10 @@ from pytest_mock import MockerFixture, MockFixture
 from reflex_base.utils.log import SUCCESS
 from reflex_build_sdk.types import App, AppSummary, DeploymentRecord, LogRecord
 from reflex_cli.core.config import Config
-from reflex_cli.utils import hosting
+from reflex_cli.utils import console, hosting
 from reflex_cli.v2.apps import _resolve_app_id, apps_cli
 from reflex_cli.v2.deployments import hosting_cli
+from rich.console import Console
 
 from .utils import api_error, as_click_command, fake_client
 
@@ -234,6 +235,24 @@ def test_list_apps_keeps_ids_and_names_on_one_line(mocker: MockFixture):
 
     assert result.exit_code == 0, result.output
     _assert_on_one_line(result.output, _LONG_ID, _OTHER_LONG_ID, "customer-dashboard")
+
+
+def test_list_apps_wide_terminal_prints_a_table(mocker: MockFixture):
+    """A terminal wide enough for the table prints one app per row."""
+    client = _authed(mocker)
+    client.api.apps.list.return_value = [
+        app_summary("customer-dashboard", id=_LONG_ID, description=_LONG_DESCRIPTION),
+    ]
+    mocker.patch.object(console, "_console", Console(width=120, highlight=False))
+
+    result = runner.invoke(hosting_cli, ["apps", "list", "--project", "project123"])
+
+    assert result.exit_code == 0, result.output
+    lines = result.output.splitlines()
+    assert ["id", "name", "description", "provider"] in [line.split() for line in lines]
+    assert any(
+        str(_LONG_ID) in line and "customer-dashboard" in line for line in lines
+    ), result.output
 
 
 def test_list_apps_too_narrow_for_a_table_cuts_nothing(mocker: MockFixture):

@@ -72,7 +72,7 @@ def print_table(
         widest = max(cell_len(column), max(values, default=0))
         min_widths.append(widest if column in no_wrap else min(widest, _MIN_FOLD_WIDTH))
     # Each column also takes 3 cells of padding and gap, plus 1 for the edge.
-    if sum(min_widths) + 3 * len(headers) + 1 > console.width:
+    if tabular_data and sum(min_widths) + 3 * len(headers) + 1 > console.width:
         label_width = max(map(cell_len, headers), default=0)
         for row in tabular_data:
             for column, value in zip(headers, row, strict=False):
