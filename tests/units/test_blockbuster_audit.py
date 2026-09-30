@@ -9,21 +9,31 @@ import pytest
 from scripts import blockbuster_audit
 
 
-def test_isolate_db_keeps_the_cwd_database(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize("root_db", ["file", "symlink"])
+def test_isolate_db_keeps_existing_databases(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, root_db: str
 ):
-    """The audit database lives under the root; a reflex.db in the cwd survives.
+    """The audit gets a fresh database; reflex.db files in the cwd and root survive.
 
     Args:
         tmp_path: A temporary directory.
         monkeypatch: The pytest monkeypatch fixture.
+        root_db: Whether the root's reflex.db is a file or a symlink to one.
     """
     cwd, root = tmp_path / "cwd", tmp_path / "root"
     cwd.mkdir()
     root.mkdir()
     monkeypatch.chdir(cwd)
-    (cwd / "reflex.db").write_text("user data")
-    (root / "reflex.db").write_text("previous audit")
+    (cwd / "reflex.db").write_text("cwd data")
+    target = tmp_path / "target.db"
+    target.write_text("target data")
+    if root_db == "file":
+        (root / "reflex.db").write_text("root data")
+    else:
+        try:
+            (root / "reflex.db").symlink_to(target)
+        except OSError:
+            pytest.skip("symlinks are not supported here")
     for name in ("REFLEX_DB_URL", "REFLEX_ASYNC_DB_URL"):
         # setenv first so monkeypatch also removes the value the helper sets.
         monkeypatch.setenv(name, "")
@@ -31,13 +41,40 @@ def test_isolate_db_keeps_the_cwd_database(
 
     db_path = blockbuster_audit._isolate_db(root)
 
-    assert db_path == (root / "reflex.db").resolve()
+    assert (cwd / "reflex.db").read_text() == "cwd data"
+    assert target.read_text() == "target data"
+    assert (root / "reflex.db").read_text() == (
+        "root data" if root_db == "file" else "target data"
+    )
+    assert db_path is not None
+    assert db_path.parent.parent == root
     assert not db_path.exists()
-    assert (cwd / "reflex.db").read_text() == "user data"
     assert os.environ["REFLEX_DB_URL"] == f"sqlite:///{db_path.as_posix()}"
     assert (
         os.environ["REFLEX_ASYNC_DB_URL"] == f"sqlite+aiosqlite:///{db_path.as_posix()}"
     )
+
+
+def test_isolate_db_leaves_explicit_urls_alone(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """With both database URLs set, nothing is created, removed or changed.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_DB_URL", "sqlite:///elsewhere.db")
+    monkeypatch.setenv("REFLEX_ASYNC_DB_URL", "sqlite+aiosqlite:///elsewhere.db")
+    (tmp_path / "reflex.db").write_text("root data")
+
+    db_path = blockbuster_audit._isolate_db(tmp_path)
+
+    assert (tmp_path / "reflex.db").read_text() == "root data"
+    assert [path.name for path in tmp_path.iterdir()] == ["reflex.db"]
+    assert db_path is None
+    assert os.environ["REFLEX_DB_URL"] == "sqlite:///elsewhere.db"
+    assert os.environ["REFLEX_ASYNC_DB_URL"] == "sqlite+aiosqlite:///elsewhere.db"
 
 
 def test_report_matches_repo_frames_by_resolved_path(

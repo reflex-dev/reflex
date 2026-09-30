@@ -39,6 +39,7 @@ import functools
 import inspect
 import os
 import sys
+import tempfile
 import threading
 import time
 import urllib.request
@@ -377,20 +378,23 @@ def _drive_prod(harness, page, expect) -> None:
         print("GET / enc", enc, "->", r.status, r.headers.get("Content-Encoding"))
 
 
-def _isolate_db(root: Path) -> Path:
-    """Point the app databases at a fresh sqlite file under ``root``.
+def _isolate_db(root: Path) -> Path | None:
+    """Point unset database URLs at a fresh sqlite file for this run.
 
-    Explicit ``REFLEX_DB_URL``/``REFLEX_ASYNC_DB_URL`` settings are kept, and
-    only the audit's own file is removed, never a ``reflex.db`` in the cwd.
+    The file goes in a new directory under ``root``, so no existing database is
+    ever removed; explicit ``REFLEX_DB_URL``/``REFLEX_ASYNC_DB_URL`` settings
+    are kept, and nothing is created when both are set.
 
     Args:
         root: The audit's working directory.
 
     Returns:
-        The path of the audit database.
+        The path of the audit database, or None when both URLs are already set.
     """
-    db_path = (root / "reflex.db").resolve()
-    db_path.unlink(missing_ok=True)
+    if "REFLEX_DB_URL" in os.environ and "REFLEX_ASYNC_DB_URL" in os.environ:
+        return None
+    db_dir = Path(tempfile.mkdtemp(prefix="bb_audit_db_", dir=root)).absolute()
+    db_path = db_dir / "reflex.db"
     os.environ.setdefault("REFLEX_DB_URL", f"sqlite:///{db_path.as_posix()}")
     os.environ.setdefault(
         "REFLEX_ASYNC_DB_URL", f"sqlite+aiosqlite:///{db_path.as_posix()}"
