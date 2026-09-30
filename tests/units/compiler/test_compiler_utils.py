@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import json
+import os
+import shutil
+from pathlib import Path
 
 import pytest
 from reflex_base.registry import RegistrationContext
@@ -15,6 +19,390 @@ from reflex.constants.state import FIELD_MARKER
 from reflex.state import State
 from reflex.utils.path_ops import write_file
 from reflex.vars.base import computed_var
+
+
+@pytest.fixture(params=["relative", "absolute"])
+def asset_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, request):
+    """Prepare an app with a relative or custom absolute frontend directory.
+
+    Args:
+        tmp_path: The temporary application directory.
+        monkeypatch: Fixture for configuring paths.
+        request: The frontend directory variant.
+
+    Returns:
+        The source assets and public output directories.
+    """
+    monkeypatch.chdir(tmp_path)
+    web_dir = Path(".web") if request.param == "relative" else tmp_path / "custom-web"
+    monkeypatch.setattr(utils, "get_web_dir", lambda: web_dir)
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    public = web_dir / "public"
+    public.mkdir(parents=True)
+    return assets, public
+
+
+def test_sync_app_assets_renames_and_prunes_empty_directories(asset_project):
+    """Renamed files replace old copies without deleting unrelated public files.
+
+    Args:
+        asset_project: The source and destination directories.
+    """
+    assets, public = asset_project
+    (assets / "nested" / "empty").mkdir(parents=True)
+    old = assets / "nested" / "empty" / "old.txt"
+    old.write_text("asset")
+    (public / "untracked.txt").write_text("generated before the first compile")
+    utils._sync_app_assets()
+    old.rename(assets / "new.txt")
+    shutil.rmtree(assets / "nested")
+
+    utils._sync_app_assets()
+
+    assert not (public / "nested").exists()
+    assert (public / "new.txt").read_text() == "asset"
+    assert (
+        public / "untracked.txt"
+    ).read_text() == "generated before the first compile"
+    assert list(
+        json.loads((public.parent / utils._ASSET_MANIFEST_FILENAME).read_text())
+    ) == ["new.txt"]
+    assert not (public / utils._ASSET_MANIFEST_FILENAME).exists()
+
+
+def test_sync_app_assets_preserves_incremental_copies(asset_project):
+    """Unchanged assets and their manifest keep timestamps across compiles.
+
+    Args:
+        asset_project: The source and destination directories.
+    """
+    assets, public = asset_project
+    source = assets / "keep.txt"
+    source.write_text("original")
+    utils._sync_app_assets()
+    destination = public / source.name
+    manifest = public.parent / utils._ASSET_MANIFEST_FILENAME
+    old_time = source.stat().st_mtime_ns - 10_000_000_000
+    os.utime(source, ns=(old_time, old_time))
+    before = destination.stat(), manifest.stat()
+
+    utils._sync_app_assets()
+
+    assert destination.stat().st_mtime_ns == before[0].st_mtime_ns
+    assert manifest.stat().st_mtime_ns == before[1].st_mtime_ns
+    source.write_text("changed")
+    new_time = before[0].st_mtime_ns + 10_000_000_000
+    os.utime(source, ns=(new_time, new_time))
+    utils._sync_app_assets()
+    assert destination.read_text() == "changed"
+
+
+def test_sync_app_assets_scan_failure_preserves_copies(
+    asset_project, monkeypatch: pytest.MonkeyPatch
+):
+    """Unreadable source directories must not be treated as deleted assets.
+
+    Args:
+        asset_project: The source and destination directories.
+        monkeypatch: Fixture for simulating an unreadable directory.
+    """
+    assets, public = asset_project
+    nested = assets / "nested"
+    nested.mkdir()
+    (nested / "asset.txt").write_text("keep")
+    utils._sync_app_assets()
+    manifest = public.parent / utils._ASSET_MANIFEST_FILENAME
+    previous_manifest = manifest.read_bytes()
+    scandir = os.scandir
+
+    def unreadable_scandir(path):
+        """Fail when listing the nested source directory.
+
+        Args:
+            path: The directory being listed.
+
+        Returns:
+            The directory iterator for readable directories.
+
+        Raises:
+            PermissionError: When listing the nested source directory.
+        """
+        if Path(path).resolve() == nested:
+            msg = "unreadable assets"
+            raise PermissionError(msg)
+        return scandir(path)
+
+    monkeypatch.setattr(os, "scandir", unreadable_scandir)
+    with pytest.raises(PermissionError, match="unreadable assets"):
+        utils._sync_app_assets()
+
+    assert (public / "nested" / "asset.txt").read_text() == "keep"
+    assert manifest.read_bytes() == previous_manifest
+
+
+@pytest.mark.parametrize("start_with_directory", [False, True])
+def test_sync_app_assets_changes_file_type(asset_project, start_with_directory: bool):
+    """An app asset may change between a file and a directory.
+
+    Args:
+        asset_project: The source and destination directories.
+        start_with_directory: Whether the original asset is a directory.
+    """
+    assets, public = asset_project
+    source = assets / "asset"
+    if start_with_directory:
+        source.mkdir()
+        (source / "child.txt").write_text("old")
+    else:
+        source.write_text("old")
+    utils._sync_app_assets()
+    if start_with_directory:
+        shutil.rmtree(source)
+        source.write_text("new")
+    else:
+        source.unlink()
+        source.mkdir()
+        (source / "child.txt").write_text("new")
+
+    utils._sync_app_assets()
+
+    destination = public / "asset"
+    if not start_with_directory:
+        destination /= "child.txt"
+    assert destination.read_text() == "new"
+
+
+@pytest.mark.parametrize(
+    "contents",
+    [
+        None,
+        "not json",
+        "{}",
+        '[1, "../outside.txt", "", "."]',
+        '["untracked.txt"]',
+        '{"untracked.txt": 42}',
+    ],
+)
+def test_sync_app_assets_without_valid_ownership_preserves_public_files(
+    asset_project, contents: str | None
+):
+    """Missing or corrupt ownership data never claims existing public files.
+
+    Args:
+        asset_project: The source and destination directories.
+        contents: Optional invalid manifest content.
+    """
+    assets, public = asset_project
+    manifest = public.parent / utils._ASSET_MANIFEST_FILENAME
+    (public / "untracked.txt").write_text("keep")
+    outside = public.parent / "outside.txt"
+    outside.write_text("outside")
+    if contents is not None:
+        manifest.write_text(contents)
+    (assets / "tracked.txt").write_text("asset")
+
+    utils._sync_app_assets()
+    shutil.rmtree(assets)
+    utils._sync_app_assets()
+
+    assert not (public / "tracked.txt").exists()
+    assert (public / "untracked.txt").read_text() == "keep"
+    assert outside.read_text() == "outside"
+
+
+def test_sync_app_assets_preserves_directory_replacing_a_copy(asset_project):
+    """Removing a tracked file never recursively deletes a generated directory.
+
+    Args:
+        asset_project: The source and destination directories.
+    """
+    assets, public = asset_project
+    (assets / "asset").write_text("old")
+    utils._sync_app_assets()
+    (assets / "asset").unlink()
+    destination = public / "asset"
+    destination.unlink()
+    destination.mkdir()
+    (destination / "generated.txt").write_text("keep")
+
+    utils._sync_app_assets()
+
+    assert (destination / "generated.txt").read_text() == "keep"
+
+
+@pytest.mark.parametrize("intermediate_compiles", [0, 2])
+@pytest.mark.parametrize("replacement", ["content", "same_metadata", "same_content"])
+def test_sync_app_assets_preserves_replaced_copy(
+    asset_project, intermediate_compiles: int, replacement: str
+):
+    """A plugin replacement must not be deleted or adopted by later compiles.
+
+    Args:
+        asset_project: The source and destination directories.
+        intermediate_compiles: Compiles while both source and replacement exist.
+        replacement: Whether the replacement retains the original metadata or bytes.
+    """
+    assets, public = asset_project
+    source = assets / "shared.txt"
+    source.write_bytes(b"app original")
+    utils._sync_app_assets()
+    destination = public / source.name
+    original_stat = destination.stat()
+    content = b"app original" if replacement == "same_content" else b"plugin asset"
+    destination.write_bytes(content)
+    mtime = original_stat.st_mtime_ns
+    if replacement != "same_metadata":
+        mtime += 10_000_000_000
+    os.utime(destination, ns=(mtime, mtime))
+    for _ in range(intermediate_compiles):
+        utils._sync_app_assets()
+    source.unlink()
+
+    utils._sync_app_assets()
+
+    assert destination.read_bytes() == content
+
+
+@pytest.mark.parametrize("existing_copy", [False, True])
+def test_sync_app_assets_initial_ownership_comes_from_source(
+    asset_project, existing_copy: bool
+):
+    """Adopt existing app copies without claiming skipped plugin output.
+
+    Args:
+        asset_project: The source and destination directories.
+        existing_copy: Whether public contains a prior app copy or a plugin file.
+    """
+    assets, public = asset_project
+    source = assets / "shared.txt"
+    source.write_text("app")
+    destination = public / source.name
+    shutil.copy2(source, destination)
+    if not existing_copy:
+        destination.write_text("plugin")
+        mtime = source.stat().st_mtime_ns + 10_000_000_000
+        os.utime(destination, ns=(mtime, mtime))
+    utils._sync_app_assets()
+    source.unlink()
+
+    utils._sync_app_assets()
+
+    if existing_copy:
+        assert not destination.exists()
+    else:
+        assert destination.read_text() == "plugin"
+
+
+@pytest.mark.parametrize("copy_update", [False, True])
+def test_sync_app_assets_tracks_the_last_actual_copy(asset_project, copy_update: bool):
+    """Source changes only replace the ownership fingerprint when copied.
+
+    Args:
+        asset_project: The source and destination directories.
+        copy_update: Whether the source change is newer than the destination.
+    """
+    assets, public = asset_project
+    source = assets / "asset.txt"
+    source.write_text("original")
+    utils._sync_app_assets()
+    destination = public / source.name
+    source.write_text("updated")
+    mtime = destination.stat().st_mtime_ns
+    mtime += 10_000_000_000 if copy_update else -10_000_000_000
+    os.utime(source, ns=(mtime, mtime))
+    utils._sync_app_assets()
+    assert destination.read_text() == ("updated" if copy_update else "original")
+    source.unlink()
+
+    utils._sync_app_assets()
+
+    assert not destination.exists()
+
+
+def test_sync_app_assets_follows_source_symlinks(asset_project, windows_platform: bool):
+    """Shared assets copied through symlinks are removed when their links disappear.
+
+    Args:
+        asset_project: The source and destination directories.
+        windows_platform: Whether symlinks require Windows privileges.
+    """
+    if windows_platform:
+        pytest.skip("Symlinks require additional privileges on Windows")
+    assets, public = asset_project
+    shared = assets.parent / "shared"
+    shared.mkdir()
+    (shared / "file.txt").write_text("shared")
+    (assets / "directory").symlink_to(shared, target_is_directory=True)
+    (assets / "file.txt").symlink_to(shared / "file.txt")
+    utils._sync_app_assets()
+    assert (public / "directory" / "file.txt").read_text() == "shared"
+    assert (public / "file.txt").read_text() == "shared"
+    (assets / "directory").unlink()
+    (shared / "file.txt").unlink()
+
+    utils._sync_app_assets()
+
+    assert not (public / "directory").exists()
+    assert not (public / "file.txt").exists()
+    assert shared.is_dir()
+
+
+def test_sync_app_assets_preserves_symlink_replacing_a_copy(
+    asset_project, windows_platform: bool
+):
+    """A new symlink is not the owned copy even if its target still matches.
+
+    Args:
+        asset_project: The source and destination directories.
+        windows_platform: Whether symlinks require Windows privileges.
+    """
+    if windows_platform:
+        pytest.skip("Symlinks require additional privileges on Windows")
+    assets, public = asset_project
+    source = assets / "asset.txt"
+    source.write_text("asset")
+    utils._sync_app_assets()
+    destination = public / source.name
+    target = assets.parent / "generated.txt"
+    shutil.copy2(destination, target)
+    destination.unlink()
+    destination.symlink_to(target)
+    source.unlink()
+
+    utils._sync_app_assets()
+
+    assert destination.is_symlink()
+    assert target.read_text() == "asset"
+
+
+@pytest.mark.parametrize("outside_public", [False, True])
+def test_sync_app_assets_does_not_prune_through_symlinks(
+    asset_project, windows_platform: bool, outside_public: bool
+):
+    """Cleanup cannot follow a replaced public directory to another file.
+
+    Args:
+        asset_project: The source and destination directories.
+        windows_platform: Whether symlinks require Windows privileges.
+        outside_public: Whether the symlink points outside the public directory.
+    """
+    if windows_platform:
+        pytest.skip("Symlinks require additional privileges on Windows")
+    assets, public = asset_project
+    (assets / "nested").mkdir()
+    (assets / "nested" / "asset.txt").write_text("old")
+    utils._sync_app_assets()
+    generated = (assets.parent if outside_public else public) / "generated"
+    generated.mkdir()
+    shutil.copy2(public / "nested" / "asset.txt", generated / "asset.txt")
+    shutil.rmtree(assets)
+    shutil.rmtree(public / "nested")
+    (public / "nested").symlink_to(generated.resolve(), target_is_directory=True)
+
+    utils._sync_app_assets()
+
+    assert (generated / "asset.txt").read_text() == "old"
 
 
 def test_write_file_reexport() -> None:
