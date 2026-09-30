@@ -251,10 +251,16 @@ const replaceEqualDeep = (prev, next) => {
     if (out !== undefined) {
       return out;
     }
-    if (Object.keys(prev).length === keys.length) {
+    // Mappings render in key order, so prev is only reused with the same keys
+    // in the same order.
+    const prevKeys = Object.keys(prev);
+    if (
+      prevKeys.length === keys.length &&
+      prevKeys.every((key, i) => key === keys[i])
+    ) {
       return prev;
     }
-    // Keys were removed; every remaining value is unchanged.
+    // Keys were removed or reordered; every remaining value is unchanged.
     copyPrefix(keys.length);
     return out;
   }

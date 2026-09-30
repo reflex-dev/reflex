@@ -181,6 +181,12 @@ assert.equal(removed.b, state.kpi.b);
 const undef = {kpi: {a: undefined}};
 assert.deepEqual(applyDelta(undef, {kpi: {b: undefined}}).kpi, {b: undefined});
 
+// Reordering a mapping without changing its values takes the new key order.
+const ordered = {d: {a: 1, b: {c: 2}}};
+const reordered = applyDelta(ordered, {d: JSON.parse('{"b": {"c": 2}, "a": 1}')}).d;
+assert.deepEqual(Object.keys(reordered), ['b', 'a']);
+assert.equal(reordered.b, ordered.d.b);
+
 // Values compare with Object.is: python's -0.0 replaces 0, while a repeated
 // NaN (revived by parseJson) is unchanged.
 const zeros = {z: 0, a: [0], o: {v: 0}};
