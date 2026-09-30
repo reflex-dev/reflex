@@ -39,6 +39,7 @@ from tests.units.reflex_build_sdk.conftest import (
 APP_ID = "5f0c5e0e-8f6a-4d57-9a55-3c1c1d7b6a01"
 PROJECT_ID = "b3c1e3f2-2d0a-4d8e-9a0e-7f7a1c2d3e4f"
 DEPLOYMENT_ID = "0e7b9d2c-5a4f-4c3b-8e1d-6f2a9b8c7d10"
+PREVIOUS_DEPLOYMENT_ID = "1f8c0e3d-6b5a-4d4c-9f2e-7a3b0c9d8e21"
 USER_ID = "8b0f4a52-3a8a-4c43-9d7e-2f0c7d2a4b11"
 APP_PATH = f"/api/v1/apps/{APP_ID}"
 UTC = datetime.timezone.utc
@@ -49,14 +50,14 @@ APP_SUMMARY = {
     "description": "",
     "project_id": PROJECT_ID,
     "provider": "fly",
+    "disable_secrets": False,
 }
 
 # Shaped like the control plane's responses, including fields the SDK does not model.
 APP_INFO = {
     **APP_SUMMARY,
     "org_id": None,
-    "source_thread_id": None,
-    "disable_secrets": False,
+    "source_thread_id": APP_ID,
     "full_deploy": False,
     "weekly_report_enabled": True,
     "min_instances": None,
@@ -77,7 +78,7 @@ APP_INFO = {
         "python_version": "3.13",
         "timestamp": "2026-09-16T10:00:00Z",
         "regions": ["ams", "sjc"],
-        "persist": False,
+        "persist": True,
         "strategy": "immediate",
         "last_updated": None,
         "last_updated_by": {"id": USER_ID, "username": "dev"},
@@ -117,6 +118,7 @@ def test_list(client: ReflexBuild, mock_api: MockAPI):
             description="",
             project_id=uuid.UUID(PROJECT_ID),
             provider="fly",
+            disable_secrets=False,
         )
     ]
     assert _query(mock_api.requests[0]) == {"project": [PROJECT_ID]}
@@ -141,7 +143,12 @@ def test_get(client: ReflexBuild, mock_api: MockAPI):
         full_deploy=False,
         min_instances=None,
         max_instances=3,
+        disable_secrets=False,
+        weekly_report_enabled=True,
+        source_thread_id=uuid.UUID(APP_ID),
+        unreleased_provider=None,
         has_deployments=True,
+        backend_url="https://dashboard-api.reflex.run",
         latest_deployment=AppDeployment(
             id=uuid.UUID(DEPLOYMENT_ID),
             url="https://dashboard.reflex.run",
@@ -154,9 +161,16 @@ def test_get(client: ReflexBuild, mock_api: MockAPI):
             vm_type_name="c1m1",
             vm_type_cpu=1.0,
             vm_type_ram=1.0,
+            strategy="immediate",
+            persistent=True,
+            screenshot_uri=None,
             updated_at=None,
             updated_by=User(id=uuid.UUID(USER_ID), username="dev"),
         ),
+        any_environment_live=True,
+        any_environment_stopped=False,
+        any_environment_paused=False,
+        any_environment_credit_paused=False,
     )
 
 
@@ -514,14 +528,14 @@ def test_history(client: ReflexBuild, mock_api: MockAPI):
         "failure_code": None,
         "failure_reason": None,
         "description": "release",
-        "last_updated": None,
+        "last_updated": "2026-09-16T11:00:00Z",
         "deployment_user": {"id": USER_ID, "username": "dev"},
-        "last_updated_by": None,
+        "last_updated_by": {"id": USER_ID, "username": "dev"},
         # Machine size ids are names, although the schema declares a UUID.
         "vm_type": {"id": "c1m1", "name": "c1m1", "ram": 1.0, "cpu": 1.0},
         "environment_id": None,
         "environment_name": None,
-        "promoted_from_deployment_id": None,
+        "promoted_from_deployment_id": PREVIOUS_DEPLOYMENT_ID,
         "can_rollback": True,
     }
     mock_api.add("GET", f"{APP_PATH}/history", reply(200, json=[record]))
@@ -538,11 +552,13 @@ def test_history(client: ReflexBuild, mock_api: MockAPI):
             reflex_version="0.9.11",
             python_version="3.13",
             created_at=datetime.datetime(2026, 9, 16, 10, tzinfo=UTC),
-            updated_at=None,
+            updated_at=datetime.datetime(2026, 9, 16, 11, tzinfo=UTC),
             deployed_by=User(id=uuid.UUID(USER_ID), username="dev"),
+            updated_by=User(id=uuid.UUID(USER_ID), username="dev"),
             vm_type=VmType(id="c1m1", name="c1m1", cpu=1.0, ram=1.0),
             environment_id=None,
             environment_name=None,
+            promoted_from_id=uuid.UUID(PREVIOUS_DEPLOYMENT_ID),
             can_rollback=True,
         )
     ]
@@ -558,6 +574,8 @@ def _log(ns: int, message: str | dict[str, Any] = "line") -> dict[str, Any]:
         "details": None,
         "log_level": "info",
         "region": "sjc",
+        "event_id": f"event-{ns}",
+        "stream_id": "app",
     }
 
 
@@ -605,6 +623,8 @@ def test_logs_follow_cursor_until_empty_page(client: ReflexBuild, mock_api: Mock
         message={"event": "start"},
         log_level="info",
         region="sjc",
+        event_id="event-2",
+        stream_id="app",
     )
     first, second, third = (_query(request) for request in mock_api.requests)
     assert first == {
