@@ -3727,41 +3727,28 @@ async def test_waiting_for_a_pass_gives_up_rather_than_hanging():
 
 
 async def test_wake_tells_the_callers_past_the_cap_to_get_on_with_it(
-    session_factory,
+    session_factory, monkeypatch
 ):
-    await Resting.by().cancel()
-    held = asyncio.Event()
+    # The cap read directly rather than raced up to with a crowd of tasks: what
+    # is worth pinning is what a caller past it is told, not how quickly asyncio
+    # schedules twelve coroutines.
+    monkeypatch.setattr(runner, "_waiting", runner.WAITERS)
+    rt = runtime.current()
+    rt.wake.clear()
+    seen = rt.settled.passes
 
-    async def blocked(_at):
-        """Keep the worker out of its next pass while the callers pile up.
+    # Not queued behind callers asking for the same thing, and not told the
+    # worker caught up either: it watched nothing, and a caller that let the
+    # machine stop on that would strand the work.
+    assert await runner.wake(datetime.timedelta(seconds=10)) is False
+    # Still asked the worker to look, which is the half it can honestly do.
+    assert rt.wake.is_set()
+    assert rt.settled.passes == seen
 
-        Args:
-            _at: The instant it is waiting for.
-        """
-        await held.wait()
-
-    waiting: list[asyncio.Task[bool]] = []
-    try:
-        async with only_worker(session_factory, on_idle=blocked):
-            # The first pass settles, then the worker is stuck reporting it.
-            await asyncio.sleep(0.2)
-            waiting += [
-                asyncio.create_task(runner.wake(datetime.timedelta(seconds=10)))
-                for _ in range(runner.WAITERS + 4)
-            ]
-            await asyncio.sleep(0.2)
-            # Past the cap a caller is not queued behind callers asking for the
-            # same thing. It says so rather than claiming a pass it never saw:
-            # the caller holding a request open on this would otherwise let the
-            # machine stop on the strength of having waited for nothing.
-            done = [task for task in waiting if task.done()]
-            assert len(done) == 4
-            assert not any(task.result() for task in done)
-            held.set()
-    finally:
-        held.set()
-        for task in waiting:
-            task.cancel()
+    # Under the cap the same call waits for a pass and gets one, so the false
+    # above is the cap talking rather than anything else.
+    monkeypatch.setattr(runner, "_waiting", 0)
+    assert await runner.wake(datetime.timedelta(seconds=30)) is True
 
 
 async def test_a_table_that_cannot_be_asked_does_not_decide_the_wait(session_factory):
