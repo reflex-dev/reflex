@@ -8,6 +8,7 @@ import dataclasses
 import functools
 import json
 import time
+import urllib.request
 from collections.abc import Callable, Mapping
 from typing import Any
 from urllib.parse import quote
@@ -18,6 +19,39 @@ from socketio.exceptions import TimeoutError as SocketTimeoutError
 # Silence window that marks the connection quiescent while draining the extra
 # deltas the first event on a fresh token emits (hydrate + on_load_internal).
 _PRIME_DRAIN_TIMEOUT = 0.5
+
+
+@dataclasses.dataclass(frozen=True)
+class ClientSession:
+    """Server-issued credentials for one benchmark client and its reconnects."""
+
+    token: str
+    cookie: str = dataclasses.field(repr=False)
+
+
+def create_session(url: str, timeout: float = 10) -> ClientSession:
+    """Acquire session credentials before starting a measured connection.
+
+    Args:
+        url: Backend URL, including any backend path prefix.
+        timeout: Maximum HTTP request wait in seconds.
+
+    Returns:
+        The bound client token and its session cookie.
+    """
+    request = urllib.request.Request(
+        f"{url.rstrip('/')}/_reflex/session",
+        data=b"{}",
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        payload = json.load(response)
+        cookie = "; ".join(
+            value.partition(";")[0]
+            for value in response.headers.get_all("Set-Cookie", [])
+        )
+    return ClientSession(token=payload["client_token"], cookie=cookie)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -56,7 +90,7 @@ def _payload_size(response: Any) -> int:
 def _connect(
     client: socketio.SimpleClient,
     url: str,
-    token: str,
+    token: str | ClientSession,
     namespace: str,
     timeout: float,
 ) -> None:
@@ -65,16 +99,20 @@ def _connect(
     Args:
         client: Blocking Socket.IO client.
         url: Backend Socket.IO URL.
-        token: Reflex client token.
+        token: Session credentials, or a legacy token for a baseline server.
         namespace: Reflex Socket.IO namespace.
         timeout: Maximum connection wait.
     """
     separator = "&" if "?" in url else "?"
+    headers = {"Origin": url}
+    if isinstance(token, ClientSession):
+        headers["Cookie"] = token.cookie
+        token = token.token
     client.connect(
         f"{url}{separator}token={quote(token)}",
         transports=["websocket"],
         socketio_path="_event",
-        headers={"Origin": url},
+        headers=headers,
         namespace=namespace,
         wait_timeout=max(1, int(timeout)),
     )
@@ -120,7 +158,7 @@ def _prime(
 
 async def run_socket_client(
     url: str,
-    token: str,
+    token: str | ClientSession,
     payload: Mapping[str, Any],
     events: int,
     *,
@@ -134,7 +172,7 @@ async def run_socket_client(
 
     Args:
         url: Backend Socket.IO URL.
-        token: Reflex client token.
+        token: Session credentials, or a legacy token for a baseline server.
         payload: Event payload emitted for each operation.
         events: Number of operations.
         event_name: Socket event name used for requests.
@@ -165,7 +203,7 @@ async def run_socket_client(
 
 def _run_socket_client_sync(
     url: str,
-    token: str,
+    token: str | ClientSession,
     payload: Mapping[str, Any],
     events: int,
     event_name: str,
@@ -177,7 +215,7 @@ def _run_socket_client_sync(
 
     Args:
         url: Backend Socket.IO URL.
-        token: Reflex client token.
+        token: Session credentials, or a legacy token for a baseline server.
         payload: Event payload emitted for each operation.
         events: Number of operations.
         event_name: Socket event name used for requests.
@@ -215,13 +253,16 @@ def _run_socket_client_sync(
             client.disconnect()
 
     return ClientLoadResult(
-        token, tuple(latencies), tuple(errors), tuple(payload_sizes)
+        token.token if isinstance(token, ClientSession) else token,
+        tuple(latencies),
+        tuple(errors),
+        tuple(payload_sizes),
     )
 
 
 async def run_reconnect_client(
     url: str,
-    token: str,
+    token: str | ClientSession,
     payload: Mapping[str, Any],
     *,
     event_name: str = "event",
@@ -234,7 +275,7 @@ async def run_reconnect_client(
 
     Args:
         url: Backend Socket.IO URL.
-        token: Reflex client token.
+        token: Session credentials, or a legacy token for a baseline server.
         payload: Event payload emitted after connecting.
         event_name: Socket event name used for the request.
         response_name: Socket event name carrying state updates.
@@ -263,7 +304,7 @@ async def run_reconnect_client(
 
 def _run_reconnect_client_sync(
     url: str,
-    token: str,
+    token: str | ClientSession,
     payload: Mapping[str, Any],
     event_name: str,
     response_name: str,
@@ -274,7 +315,7 @@ def _run_reconnect_client_sync(
 
     Args:
         url: Backend Socket.IO URL.
-        token: Reflex client token.
+        token: Session credentials, or a legacy token for a baseline server.
         payload: Event payload emitted after connecting.
         event_name: Socket event name used for the request.
         response_name: Socket event name carrying state updates.
@@ -307,7 +348,12 @@ def _run_reconnect_client_sync(
         if client.connected:
             client.disconnect()
 
-    return ReconnectResult(token, connect_ms, first_response_ms, tuple(errors))
+    return ReconnectResult(
+        token.token if isinstance(token, ClientSession) else token,
+        connect_ms,
+        first_response_ms,
+        tuple(errors),
+    )
 
 
 async def run_clients(

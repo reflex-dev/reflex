@@ -1,1 +1,1 @@
-Establish browser sessions over the WebSocket while hydration begins, then persist them through HTTP-only cookies with automatic refresh. Browser storage is isolated for each backend application.
+Establish browser sessions over the WebSocket while hydration begins, then persist them through HTTP-only cookies with automatic refresh. Browser storage is isolated for each backend application. See the [browser session guide](https://reflex.dev/docs/api-routes/sessions/) for configuration and migration.

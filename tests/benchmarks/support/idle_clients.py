@@ -14,7 +14,7 @@ import sys
 
 import socketio
 
-from tests.benchmarks.support.socket_client import _connect
+from tests.benchmarks.support.socket_client import _connect, create_session
 
 
 def main() -> int:
@@ -23,13 +23,13 @@ def main() -> int:
     Returns:
         Process exit code.
     """
-    url, token_prefix, count, payload_json = sys.argv[1:5]
+    url, _token_prefix, count, payload_json = sys.argv[1:5]
     payload = json.loads(payload_json)
     clients: list[socketio.SimpleClient] = []
     try:
-        for index in range(int(count)):
+        for _ in range(int(count)):
             client = socketio.SimpleClient(logger=False)
-            _connect(client, url, f"{token_prefix}-{index}", "/_event", timeout=10)
+            _connect(client, url, create_session(url), "/_event", timeout=10)
             client.emit("event", payload)
             response = client.receive(timeout=10)
             while response and response[0] != "event":

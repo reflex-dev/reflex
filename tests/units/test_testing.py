@@ -227,3 +227,4 @@ def test_app_harness_frontend_env_has_development_condition(
     )
     harness._start_frontend()
     assert "--conditions=development" in captured["env"]["NODE_OPTIONS"]
+    assert harness_mocks.config.api_url == "http://localhost:8000"
