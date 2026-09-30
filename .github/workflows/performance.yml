@@ -50,7 +50,12 @@ jobs:
         with:
           mode: simulation
           simulation-track-subprocess: true
-          run: uv run pytest -v tests/benchmarks --codspeed
+          # Callgrind can segfault when profiling state benchmarks after the
+          # repeated-page workloads. Give compilation its own interpreter.
+          run: |
+            set -e
+            uv run pytest -v tests/benchmarks/test_compilation.py tests/benchmarks/test_evaluate.py --codspeed
+            uv run pytest -v tests/benchmarks --ignore=tests/benchmarks/test_compilation.py --ignore=tests/benchmarks/test_evaluate.py --codspeed
 
       - name: Run event-loop and wire-size smoke
         run: >-
@@ -141,3 +146,18 @@ jobs:
             !.pytest-tmp/lighthouse/*current
             !.pytest-tmp/lighthouse/*current/**
           if-no-files-found: ignore
+
+  # The one status check the branch rules require from this workflow. Naming the
+  # jobs above directly does not survive: check names follow the matrix and the
+  # display names, and a job that a filter skips must not block the merge.
+  performance-tests-gate:
+    needs: [benchmarks, browser-performance, lighthouse]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/ci_gate
+        with:
+          needs: ${{ toJSON(needs) }}
