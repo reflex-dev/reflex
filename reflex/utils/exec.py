@@ -359,21 +359,27 @@ def notify_app_running():
 
 
 def _match_routable_page(router: Callable[[str], str | None], path: str) -> str | None:
-    """Match a path against the app routes, treating the 404 page as unroutable.
+    """Match a path against the app routes, excluding paths the frontend renders as 404.
 
     The compiler registers a synthetic ``404`` page, so a literal ``/404``
-    request would otherwise count as routable and lose its 404 status.
+    request would otherwise count as routable and lose its 404 status. The
+    router also aliases ``/index`` to the index page, which the frontend does
+    not route, so only the bare root path counts as the index page.
 
     Args:
         router: The app route matcher.
         path: The request path.
 
     Returns:
-        The matching route, or None when the path matches no route or only the
-        404 page.
+        The matching route, or None when the path matches no route, only the
+        404 page, or the index page through its ``/index`` alias.
     """
     route = router(path)
-    return route if route != constants.Page404.SLUG else None
+    if route == constants.Page404.SLUG or (
+        route == constants.PageNames.INDEX_ROUTE and path.strip("/")
+    ):
+        return None
+    return route
 
 
 def get_routes_manifest_router() -> Callable[[str], str | None] | None:

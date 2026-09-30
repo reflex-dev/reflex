@@ -510,6 +510,25 @@ def test_get_frontend_mount_explicit_router_excludes_synthetic_404_route(
     assert router("/articles/7") == "articles/[id]"
 
 
+@pytest.mark.parametrize("path", ["/index", "/index/", "index"])
+def test_get_frontend_mount_router_excludes_index_alias(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, path: str
+):
+    """``/index`` keeps its 404 status since the frontend renders it as the 404 page."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    (tmp_path / "build" / "client").mkdir(parents=True)
+    (tmp_path / "routes.json").write_text('["index", "articles/[id]"]')
+
+    mount = exec_utils.get_frontend_mount()
+
+    static_files = mount.app
+    assert isinstance(static_files, PrecompressedStaticFiles)
+    router = static_files._router
+    assert router is not None
+    assert router(path) is None
+    assert router("/") == "index"
+
+
 @pytest.mark.parametrize("json_mode", [False, True])
 def test_run_granian_backend_json_logs_in_json_mode(
     tmp_path: Path,
