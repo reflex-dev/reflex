@@ -599,13 +599,18 @@ def _write_hosting_config(hosting_config: dict[str, Any]):
         raise
 
 
-def delete_token_from_config():
-    """Delete the invalid token from the config file if applicable."""
+def delete_token_from_config(token: str | None = None):
+    """Delete the token from the config file if it matches the expected token.
+
+    Args:
+        token: The token expected to be stored. If None, delete unconditionally.
+    """
     if constants.Hosting.HOSTING_JSON.exists():
         try:
             hosting_config = _read_hosting_config()
-            hosting_config.pop("access_token", None)
-            _write_hosting_config(hosting_config)
+            if token is None or hosting_config.get("access_token") == token:
+                hosting_config.pop("access_token", None)
+                _write_hosting_config(hosting_config)
         except Exception as ex:
             # Best efforts removing invalid token is OK
             logger.debug(
@@ -833,7 +838,7 @@ def _validate_with_retries(
             # getattr: mocks/foreign ValueErrors don't carry a request id.
             request_id = getattr(ex, "request_id", "") or get_auth_request_id()
             logger.error(f"Access denied (auth request id: {request_id})")
-            delete_token_from_config()
+            delete_token_from_config(access_token)
         except Exception as ex:
             request_id = getattr(ex, "request_id", "") or get_auth_request_id()
             logger.warning(
@@ -911,7 +916,7 @@ def get_authenticated_client(
             api.close()
             logger.error(rejected_token_message(source, err))
             if source is TokenSource.CONFIG:
-                delete_token_from_config()
+                delete_token_from_config(access_token)
             raise click.exceptions.Exit(1) from err
         except TokenValidationError as err:
             api.close()
