@@ -57,14 +57,6 @@ jobs:
             uv run pytest -v tests/benchmarks/test_compilation.py tests/benchmarks/test_evaluate.py --codspeed
             uv run pytest -v tests/benchmarks --ignore=tests/benchmarks/test_compilation.py --ignore=tests/benchmarks/test_evaluate.py --codspeed
 
-      - name: Show native benchmark diagnostics
-        if: failure()
-        run: |
-          shopt -s nullglob
-          for log in /tmp/profile.*.out/valgrind.*.log; do
-            cat "$log"
-          done
-
       - name: Run event-loop and wire-size smoke
         run: >-
           uv run pytest tests/performance/test_event_loop.py tests/performance/test_wire_size.py
