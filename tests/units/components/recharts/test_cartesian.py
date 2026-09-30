@@ -105,6 +105,23 @@ def test_axis_tick_formatter_function_string_var(axis):
 
 
 @pytest.mark.parametrize("axis", [XAxis, YAxis])
+def test_axis_tick_formatter_preserves_partial_metadata(axis):
+    var_data = VarData(
+        imports={"some-package": ["some-import"]},
+        hooks=("const formatterHook = useFormatter();",),
+    )
+    partial_arg = rx.Var(_js_expr='"!"', _var_type=str, _var_data=var_data)
+    formatter = rx.vars.FunctionStringVar.create(
+        "((value, suffix) => value + suffix)"
+    ).partial(partial_arg)
+
+    axis_component = axis.create(tick_formatter=formatter)
+
+    assert axis_component.tick_formatter._var_data == formatter._get_all_var_data()
+    assert axis_component.tick_formatter._var_data == var_data
+
+
+@pytest.mark.parametrize("axis", [XAxis, YAxis])
 def test_axis_tick_formatter_rejects_dynamic_string_var(axis):
     formatter = rx.Var(_js_expr="state.formatter", _var_type=str)
     with pytest.raises(TypeError, match="dynamic string Var"):

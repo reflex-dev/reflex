@@ -149,7 +149,7 @@ class Axis(Recharts):
             props["tick_formatter"] = Var(
                 _js_expr=tick_formatter._js_expr,
                 _var_type=FunctionVar,
-                _var_data=tick_formatter._var_data,
+                _var_data=tick_formatter._get_all_var_data(),
             )
         elif isinstance(tick_formatter, Var) and tick_formatter._var_type is str:
             raise TypeError(
