@@ -17,6 +17,7 @@ async function setup({
   stateful = true,
   disabled = false,
   hidden = false,
+  storedToken = "original-token",
 } = {}) {
   const sockets = [];
   const microtasks = [];
@@ -25,7 +26,7 @@ async function setup({
   const updates = [];
   const window = new EventTarget();
   window.location = new URL("http://localhost:3000/page?query=value");
-  const storage = new Map([["token", "original-token"]]);
+  const storage = new Map(storedToken ? [["token", storedToken]] : []);
   window.sessionStorage = {
     getItem: (key) => storage.get(key),
     setItem: (key, value) => storage.set(key, value),
@@ -192,6 +193,36 @@ test("warm the transport without hydrating, then reuse it with every handler att
   assert.equal(app.timers.size, 0);
   assert.equal(app.window.sessionStorage.getItem("token"), "assigned-token");
   assert.equal(app.socket.current.auth.event.router_data.pathname, "/page");
+});
+
+test("a new session's token is saved only once the mounted app connects", async () => {
+  const app = await setup({ storedToken: null });
+  app.flush();
+  const warm = app.sockets[0];
+  const token = warm.io.opts.query.token;
+  assert.ok(token);
+  // Waiting for the token in session storage must mean the app has mounted.
+  assert.equal(app.window.sessionStorage.getItem("token"), undefined);
+  const saved = [];
+  const setItem = app.window.sessionStorage.setItem;
+  app.window.sessionStorage.setItem = (key, value) => {
+    saved.push(value);
+    setItem(key, value);
+  };
+  await app.connect();
+  assert.equal(app.socket.current, warm);
+  assert.deepEqual(saved, [token, "assigned-token"]);
+});
+
+test("a warm transport carrying another session's token is replaced", async () => {
+  const app = await setup();
+  app.flush();
+  const warm = app.sockets[0];
+  app.window.sessionStorage.setItem("token", "replaced-token");
+  await app.connect();
+  assert.equal(warm.disconnects, 1);
+  assert.equal(app.sockets.length, 2);
+  assert.equal(app.socket.current.io.opts.query.token, "replaced-token");
 });
 
 test("reconnect uses the assigned token and requests a full hydrate", async () => {

@@ -33,6 +33,10 @@ const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
 // Global variable to hold the token.
 let token;
 
+// A token generated for the transport warmed up before the app mounted. It is
+// saved to the session storage by getToken, once the mounted app connects.
+let unsavedToken;
+
 // Key for the token in the session storage.
 const TOKEN_KEY = "token";
 
@@ -91,12 +95,24 @@ export const getToken = () => {
   }
   if (typeof window !== "undefined") {
     if (!window.sessionStorage.getItem(TOKEN_KEY)) {
-      window.sessionStorage.setItem(TOKEN_KEY, generateUUID());
+      window.sessionStorage.setItem(TOKEN_KEY, unsavedToken ?? generateUUID());
     }
     token = window.sessionStorage.getItem(TOKEN_KEY);
   }
   return token;
 };
+
+/**
+ * Get the token for the current session without saving a new one.
+ *
+ * A new token only reaches the session storage when the mounted app
+ * connects, so anything waiting for it there sees the rendered page.
+ * @returns The saved token, or a new one that getToken saves later.
+ */
+const peekToken = () =>
+  token ||
+  window.sessionStorage.getItem(TOKEN_KEY) ||
+  (unsavedToken ??= generateUUID());
 
 /**
  * Get the URL for the backend server
@@ -144,16 +160,17 @@ export const isBackendDisabled = () => {
  * Create a socket without starting its namespace or hydration events.
  * @param endpoint The backend URL.
  * @param transports The configured transports.
+ * @param token The session token the backend links the connection to.
  * @returns The disconnected socket.
  */
-const createSocket = (endpoint, transports) =>
+const createSocket = (endpoint, transports, token) =>
   io(endpoint.href, {
     path: endpoint.pathname,
     transports,
     protocols: [reflexEnvironment.version],
     autoUnref: false,
     autoConnect: false,
-    query: { token: getToken() },
+    query: { token },
     reconnection: false,
   });
 
@@ -183,7 +200,11 @@ if (typeof window !== "undefined") {
       return;
     }
     try {
-      warmSocket = createSocket(getBackendURL(EVENTURL), [env.TRANSPORT]);
+      warmSocket = createSocket(
+        getBackendURL(EVENTURL),
+        [env.TRANSPORT],
+        peekToken(),
+      );
     } catch {
       // Speculative setup may fail (for example, blocked session storage).
       // The normal connection path will report failures when the app mounts.
@@ -686,18 +707,22 @@ export const connect = async (
     return { event: boot_event };
   };
 
-  // Create the socket.
+  // Create the socket. A new session's token is saved here, once the app has
+  // mounted, even when a transport warmed up with it earlier.
   socketStarted = true;
+  const session_token = getToken();
   if (
     warmSocket &&
-    (warmSocket.io.opts.transports.length !== transports.length ||
+    (warmSocket.io.opts.query.token !== session_token ||
+      warmSocket.io.opts.transports.length !== transports.length ||
       transports.some(
         (transport, i) => transport !== warmSocket.io.opts.transports[i],
       ))
   ) {
     discardWarmSocket();
   }
-  socket.current = warmSocket ?? createSocket(endpoint, transports);
+  socket.current =
+    warmSocket ?? createSocket(endpoint, transports, session_token);
   warmSocket = null;
   cancelWarmup();
   socket.current.auth = bootAuth(true);
