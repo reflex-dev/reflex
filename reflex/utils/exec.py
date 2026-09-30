@@ -386,14 +386,20 @@ def get_routes_manifest_router() -> Callable[[str], str | None] | None:
     """Build a route matcher from the routes manifest written at compile time.
 
     Returns:
-        A route matcher, or None when no manifest exists.
+        A route matcher, or None when no manifest exists or it is not valid JSON.
     """
     from reflex.route import get_router
 
     manifest = get_web_dir() / constants.Dirs.ROUTES_MANIFEST
     try:
         routes = json.loads(manifest.read_text())
-    except (OSError, ValueError):
+    except OSError:
+        return None
+    except ValueError as err:
+        logger.warning(
+            f"Ignoring invalid routes manifest {manifest} ({err}); dynamic routes "
+            "without a prerendered file will be served with status 404."
+        )
         return None
     return get_router(routes)
 

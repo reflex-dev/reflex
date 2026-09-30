@@ -1,6 +1,7 @@
 """Tests for development backend launchers in ``reflex.utils.exec``."""
 
 import builtins
+import logging
 import multiprocessing
 import os
 import socket
@@ -396,20 +397,26 @@ def test_arbitrate_ssr_env_var_wins(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_get_routes_manifest_router_missing_manifest(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ):
-    """Return None when no routes manifest has been written."""
+    """Return None without warning when no routes manifest has been written."""
     monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
-    assert exec_utils.get_routes_manifest_router() is None
+    with caplog.at_level(logging.WARNING, logger=exec_utils.logger.name):
+        assert exec_utils.get_routes_manifest_router() is None
+    assert not caplog.records
 
 
 def test_get_routes_manifest_router_invalid_manifest(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ):
-    """Return None when the routes manifest is not valid JSON."""
+    """Warn and return None when the routes manifest is not valid JSON."""
     monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
-    (tmp_path / "routes.json").write_text("not valid json{")
-    assert exec_utils.get_routes_manifest_router() is None
+    manifest = tmp_path / "routes.json"
+    manifest.write_text("not valid json{")
+    with caplog.at_level(logging.WARNING, logger=exec_utils.logger.name):
+        assert exec_utils.get_routes_manifest_router() is None
+    assert f"Ignoring invalid routes manifest {manifest}" in caplog.text
+
 
 
 def test_get_routes_manifest_router_matches_dynamic_routes(
