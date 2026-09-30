@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import functools
 import inspect
 import os
 import sys
@@ -120,16 +121,29 @@ def report(path: str | Path) -> int:
     Returns:
         Number of distinct findings written.
     """
-    root = str(REPO_ROOT) + "/"
-    venv = root + ".venv/"
+
+    @functools.cache
+    def rel(fn: str) -> str | None:
+        # Pseudo-files such as "<frozen runpy>" are relative and never in the repo.
+        path = Path(fn)
+        if not path.is_absolute():
+            return None
+        try:
+            return path.resolve().relative_to(REPO_ROOT).as_posix()
+        except ValueError:
+            return None
 
     def short(fn: str) -> str:
-        if fn.startswith(venv):
-            return "venv:" + fn.split("site-packages/", 1)[-1]
-        return fn.removeprefix(root)
+        r = rel(fn)
+        if r is None:
+            return fn
+        if r.startswith(".venv/"):
+            return "venv:" + r.split("site-packages/", 1)[-1]
+        return r
 
     def is_repo(fn: str) -> bool:
-        return fn.startswith(root) and not fn.startswith(venv)
+        r = rel(fn)
+        return r is not None and not r.startswith(".venv/")
 
     with _lock:
         items = sorted(_findings.items(), key=lambda kv: -_counts[kv[0]])
@@ -142,7 +156,7 @@ def report(path: str | Path) -> int:
         innermost = repo_frames[-1] if repo_frames else frames[-1]
         if not repo_frames:
             origin = "3RDPARTY"
-        elif "/tests/" in innermost[0]:
+        elif "tests" in short(innermost[0]).split("/")[:-1]:
             origin = "TEST"
         else:
             origin = "REFLEX"
