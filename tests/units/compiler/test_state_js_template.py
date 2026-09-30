@@ -132,6 +132,7 @@ def test_apply_delta_shares_unchanged_values() -> None:
             "export const evalReactComponent ="
         )
     ]
+    assert "export const applyDelta" in helpers
     subprocess.run(
         [
             "node",
