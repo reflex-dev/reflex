@@ -428,13 +428,23 @@ def test_an_unordered_shape_takes_answers_in_any_order():
     assert result.answered == result.sent
 
 
-def test_a_new_token_is_adopted():
+@pytest.mark.parametrize("session_controls", [False, True])
+def test_a_new_token_is_adopted(session_controls: bool):
+    """Adopt bound client tokens without delaying events for cookie-only controls.
+
+    Args:
+        session_controls: Whether the server also emits browser cookie controls.
+    """
+
     class Renaming(Scripted):
         """Hands every connection a new token, as reflex does for a duplicate tab."""
 
         async def on_connect(self, ws, sid):
             """Send the new token before the namespace ack, like python-socketio."""
             await ws.send(events.emit_frame("new_token", f"fresh-{sid}"))
+            if session_controls:
+                await ws.send(events.emit_frame("session_token", "signed-session"))
+                await ws.send(events.emit_frame("session_refresh"))
             await super().on_connect(ws, sid)
 
     server = Renaming()

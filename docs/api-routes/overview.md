@@ -16,6 +16,10 @@ The API transformer provides a way to:
 
 This is useful for creating a backend API that can be used for purposes beyond your Reflex app, or for integrating Reflex with existing backend services.
 
+Routes accessing Reflex state inherit the requesting browser's session. See
+[browser sessions](/docs/api-routes/sessions/) for ownership checks, trusted
+server-side access, and deployment configuration.
+
 ## Using API Transformer
 
 You can set the `api_transformer` parameter when initializing your Reflex app:

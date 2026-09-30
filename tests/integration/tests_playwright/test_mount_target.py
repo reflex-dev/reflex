@@ -87,12 +87,14 @@ def mount_target_app(
     Yields:
         Running harness.
     """
-    with AppHarnessProd.create(
-        root=tmp_path_factory.mktemp("mount_target_app"),
-        app_source=MountTargetApp,
-    ) as harness:
-        assert harness.app_instance is not None, "app is not running"
-        yield harness
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", "enforce")
+        with AppHarnessProd.create(
+            root=tmp_path_factory.mktemp("mount_target_app"),
+            app_source=MountTargetApp,
+        ) as harness:
+            assert harness.app_instance is not None, "app is not running"
+            yield harness
 
 
 def _static_dir(harness: AppHarnessProd) -> Path:
@@ -167,3 +169,40 @@ def test_on_load_fires_for_embedded_route(mount_target_app: AppHarnessProd, page
     expect(page.locator("#reflex-root #counter-marker")).to_be_visible()
     expect(page.locator("#reflex-root #count")).to_have_text("count: 1")
     expect(page.locator("#reflex-root #loaded-path")).to_have_text("loaded: /counter")
+
+
+def test_embedded_session_cookie_preserves_state_on_reload(
+    mount_target_app: AppHarnessProd, page: Page
+):
+    """Persist the embedded widget's state through its HTTP-only session cookie.
+
+    Args:
+        mount_target_app: The running embedded app.
+        page: The browser page hosting the widget.
+    """
+    _write_host(_static_dir(mount_target_app))
+    base = mount_target_app.frontend_url
+    assert base is not None
+    with page.expect_response(
+        lambda response: response.url.endswith("/_reflex/session")
+    ) as exchanged:
+        page.goto(f"{base.rstrip('/')}/host.html")
+    assert exchanged.value.status == 200
+    cookies = [
+        cookie
+        for cookie in page.context.cookies()
+        if "reflex_session_" in cookie.get("name", "")
+    ]
+    assert len(cookies) == 1
+    assert cookies[0].get("httpOnly") is True
+    assert cookies[0].get("secure") is True
+    assert cookies[0].get("sameSite") == "None"
+    cookie_value = cookies[0].get("value")
+    assert cookie_value
+    assert cookie_value not in page.evaluate("document.cookie")
+
+    expect(page.locator("#reflex-root #count")).to_have_text("count: 0")
+    page.locator("#reflex-root #inc").click()
+    expect(page.locator("#reflex-root #count")).to_have_text("count: 1")
+    page.reload()
+    expect(page.locator("#reflex-root #count")).to_have_text("count: 1")
