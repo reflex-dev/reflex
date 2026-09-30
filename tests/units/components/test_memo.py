@@ -40,6 +40,7 @@ from reflex_base.vars.base import Var
 from reflex_base.vars.function import FunctionStringVar, FunctionVar
 from reflex_base.vars.object import ObjectVar
 from reflex_components_core.base.bare import Bare
+from reflex_components_core.core.upload import UploadFilesProvider
 from reflex_components_radix.themes.layout.box import Box
 
 import reflex as rx
@@ -132,7 +133,7 @@ def test_component_returning_memo_with_children_and_rest():
 
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
-    assert f"export const {sym} = memo(" in code
+    assert f"const {sym} = memo(" in code
     assert "({children, title:title" in code
     assert "...rest" in code
     assert "jsx(RadixThemesBox,{...rest}" in code
@@ -158,7 +159,7 @@ def test_component_returning_memo_accepts_component_var_result():
     sym = memo_paths.mirrored_symbol("ConditionalSlot", __name__)
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
-    assert f"export const {sym} = memo(" in code
+    assert f"const {sym} = memo(" in code
     assert "({show:showRxMemo" in code
     assert "(showRxMemo ? firstRxMemo : secondRxMemo)" in code
 
@@ -1112,9 +1113,9 @@ def test_compile_memo_components_includes_functions_and_components():
     text_wrapper_sym = memo_paths.mirrored_symbol("TextWrapper", __name__)
     format_price_sym = memo_paths.mirrored_symbol("format_price", __name__)
     my_card_sym = memo_paths.mirrored_symbol("MyCard", __name__)
-    assert f"export const {text_wrapper_sym} = memo(" in code
+    assert f"const {text_wrapper_sym} = memo(" in code
     assert f"export const {format_price_sym} =" in code
-    assert f"export const {my_card_sym} = memo(" in code
+    assert f"const {my_card_sym} = memo(" in code
 
 
 def test_compile_memo_components_groups_by_source_module():
@@ -1141,8 +1142,8 @@ def test_compile_memo_components_groups_by_source_module():
     code = grouped_files[0][1]
     first_sym = memo_paths.mirrored_symbol("GroupedFirst", __name__)
     second_sym = memo_paths.mirrored_symbol("GroupedSecond", __name__)
-    assert f"export const {first_sym} = memo(" in code
-    assert f"export const {second_sym} = memo(" in code
+    assert f"const {first_sym} = memo(" in code
+    assert f"const {second_sym} = memo(" in code
     # The merged module must carry imports its memos use, not just the
     # framework-level ones added by the compiler.
     assert "RadixThemesText" in code
@@ -1189,7 +1190,8 @@ def test_component_memo_default_wrapper():
     files, imports = compiler.compile_memo_components((definition,))
     code = "\n".join(c for _, c in files)
     sym = memo_paths.mirrored_symbol("DefaultWrapped", __name__)
-    assert f"export const {sym} = memo(({{label:labelRxMemo}}) => {{" in code
+    assert f"export const {sym} = /*#__PURE__*/ (() => {{" in code
+    assert f"const {sym} = memo(({{label:labelRxMemo}}) => {{" in code
     assert any(imp.tag == "memo" for imp in imports.get("react", []))
 
 
@@ -2321,3 +2323,138 @@ def test_memo_tag_separates_identically_rendering_classes():
 
     assert alpha.render() == beta.render()
     assert memo_tag(alpha) != memo_tag(beta)
+
+
+def test_custom_wrapper_named_memo_is_not_treated_as_react_memo():
+    """A custom wrapper may share React's name and still have side effects."""
+    wrapper = FunctionStringVar.create(
+        "memo", _var_data=VarData(imports={"tracking-library": [ImportVar(tag="memo")]})
+    )
+
+    @rx.memo(wrapper=wrapper)
+    def tracked_named_memo() -> rx.Component:
+        return rx.text("Tracked")
+
+    definition = MEMOS["TrackedNamedMemo", __name__]
+    files, _ = compiler.compile_memo_components((definition,))
+    code = "\n".join(content for _, content in files)
+    assert "/*#__PURE__*/" not in code
+
+
+class _ProviderProbe(Component):
+    """A component that requests an app wrap via the class-level hook."""
+
+    library = "provider-probe"
+    tag = "ProviderProbe"
+
+    @staticmethod
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
+        """Request the probe provider at the app root.
+
+        Returns:
+            The app wrap components.
+        """
+        return {(60, "ProbeProvider"): Bare.create("probe-provider")}
+
+
+def test_memo_collects_app_wraps_from_nested_body_children():
+    """A memo body's descendants contribute their app wraps, not just its root.
+
+    The body compiles into its own module, so nothing else in the compile tree
+    ever sees those descendants -- the wrapper has to stand in for them.
+    """
+
+    @rx.memo
+    def nested_provider_memo() -> rx.Component:
+        return rx.box(rx.box(_ProviderProbe.create()))
+
+    assert (60, "ProbeProvider") in nested_provider_memo()._get_app_wrap_components()
+
+
+def test_memo_collects_app_wraps_from_body_root():
+    """A memo body whose root requests an app wrap still contributes it."""
+
+    @rx.memo
+    def root_provider_memo() -> rx.Component:
+        return _ProviderProbe.create()
+
+    assert (60, "ProbeProvider") in root_provider_memo()._get_app_wrap_components()
+
+
+def test_memo_collects_var_declared_app_wraps_from_body():
+    """``VarData.app_wraps`` inside a memo body reach the app root too.
+
+    ``rx.upload`` requests ``UploadFilesProvider`` through the var data on the
+    upload-context hook rather than a class-level hook, so a class-only copy
+    drops it at every depth -- including the body root.
+    """
+
+    @rx.memo
+    def upload_memo() -> rx.Component:
+        return rx.box(rx.upload(rx.text("drop"), id="memo-upload"))
+
+    wraps = upload_memo()._get_app_wrap_components()
+    assert any(
+        isinstance(wrapper, UploadFilesProvider) for wrapper in wraps.values()
+    ), wraps
+
+
+def test_memo_app_wraps_are_distinct_per_wrapper_class():
+    """Two memos must not share one ``_get_app_wrap_components`` function.
+
+    The page collector dedupes by ``type(comp)._get_app_wrap_components``
+    identity, so a single shared function would make only the first memo on a
+    page contribute its wraps.
+    """
+
+    @rx.memo
+    def first_provider_memo() -> rx.Component:
+        return rx.box(_ProviderProbe.create())
+
+    @rx.memo
+    def second_provider_memo() -> rx.Component:
+        return rx.box(rx.text("no provider here"))
+
+    first, second = first_provider_memo(), second_provider_memo()
+    assert (
+        type(first)._get_app_wrap_components
+        is not type(second)._get_app_wrap_components
+    )
+    assert (60, "ProbeProvider") in first._get_app_wrap_components()
+    assert (60, "ProbeProvider") not in second._get_app_wrap_components()
+
+
+def test_memo_app_wraps_reach_all_app_wrap_components():
+    """``_get_all_app_wrap_components`` sees a memo's body wraps.
+
+    ``App._app_root`` expands the app-wrap chain through this method, and that
+    chain contains memo components (the toaster provider, the sticky badge).
+    """
+
+    @rx.memo
+    def chained_provider_memo() -> rx.Component:
+        return rx.box(_ProviderProbe.create())
+
+    assert (60, "ProbeProvider") in rx.box(
+        chained_provider_memo()
+    )._get_all_app_wrap_components()
+
+
+def test_memo_app_wraps_survive_self_referencing_body():
+    """A memo whose body holds an instance of itself must not recurse forever.
+
+    Collecting the body's wraps walks the body, which reaches that inner
+    instance, which is asked for its own body's wraps -- the same body. Without
+    a re-entrancy guard the walk never bottoms out.
+    """
+
+    @rx.memo
+    def recursive_provider_memo(items: rx.Var[list[int]]) -> rx.Component:
+        return rx.box(
+            _ProviderProbe.create(),
+            rx.foreach(items, lambda _item: recursive_provider_memo(items=items)),
+        )
+
+    instance = recursive_provider_memo(items=Var(_js_expr="items", _var_type=list[int]))
+
+    assert (60, "ProbeProvider") in instance._get_app_wrap_components()

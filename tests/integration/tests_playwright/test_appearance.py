@@ -297,3 +297,15 @@ def test_appearance_color_toggle(color_toggle_app: AppHarness, page: Page):
     expect(resolved_color_mode).to_have_text("light")
     expect(color_mode_cond).to_have_text("LightMode")
     expect(root_body).to_have_css("background-color", light_background)
+
+    # System preference changes must reach consumers through the memoized providers.
+    page.emulate_media(color_scheme="dark")
+    expect(current_color_mode).to_have_text("system")
+    expect(resolved_color_mode).to_have_text("dark")
+    expect(color_mode_cond).to_have_text("DarkMode")
+    expect(root_body).to_have_css("background-color", dark_background)
+
+    page.emulate_media(color_scheme="light")
+    expect(resolved_color_mode).to_have_text("light")
+    expect(color_mode_cond).to_have_text("LightMode")
+    expect(root_body).to_have_css("background-color", light_background)

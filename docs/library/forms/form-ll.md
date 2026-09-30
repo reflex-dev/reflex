@@ -452,6 +452,7 @@ def radix_form_example():
             "Username submitted: ",
             rx.text(
                 RadixFormState.username,
+                as_="span",
                 weight="bold",
                 color="var(--accent-11)",
             ),
@@ -460,6 +461,7 @@ def radix_form_example():
             "Email submitted: ",
             rx.text(
                 RadixFormState.email,
+                as_="span",
                 weight="bold",
                 color="var(--accent-11)",
             ),

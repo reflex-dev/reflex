@@ -1,6 +1,6 @@
 import json
 from importlib.util import find_spec
-from unittest.mock import MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock
 
 import pytest
 from pytest_mock import MockerFixture
@@ -8,11 +8,20 @@ from redis.exceptions import RedisError
 
 from reflex.app import health
 from reflex.model import get_db_status
-from reflex.utils.prerequisites import get_redis_status
+from reflex.utils import prerequisites
+from reflex.utils.prerequisites import close_health_redis, get_redis_status
 
 pytest.importorskip("sqlalchemy")
 
 import sqlalchemy.exc
+
+
+@pytest.fixture(autouse=True)
+def _reset_health_redis():
+    """Drop the cached health-check client so each test sees its own mock."""
+    prerequisites._health_redis = None
+    yield
+    prerequisites._health_redis = None
 
 
 def _get_async_function(func):
@@ -51,6 +60,39 @@ async def test_get_redis_status(
     # Verify the result
     assert status == expected_status
     mock_get_redis.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_redis_status_reuses_client(mocker: MockerFixture):
+    """Repeated health checks ping one long-lived client instead of dialing Redis each time."""
+    client = Mock(ping=_get_async_function(lambda: None))
+    mock_get_redis = mocker.patch(
+        "reflex.utils.prerequisites.get_redis", return_value=client
+    )
+
+    for _ in range(3):
+        assert await get_redis_status() == {"redis": True}
+
+    mock_get_redis.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_close_health_redis(mocker: MockerFixture):
+    """Closing releases the cached client and the next probe builds a fresh one."""
+    client = Mock(ping=_get_async_function(lambda: None), aclose=AsyncMock())
+    mock_get_redis = mocker.patch(
+        "reflex.utils.prerequisites.get_redis", return_value=client
+    )
+
+    await close_health_redis()
+    client.aclose.assert_not_awaited()
+
+    assert await get_redis_status() == {"redis": True}
+    await close_health_redis()
+    client.aclose.assert_awaited_once_with(close_connection_pool=True)
+
+    assert await get_redis_status() == {"redis": True}
+    assert mock_get_redis.call_count == 2
 
 
 @pytest.mark.skipif(

@@ -307,7 +307,7 @@ with rx.session() as session:
 ```
 
 If the related objects are linked with foreign keys, the
-[relationship loading techniques](/docs/database/relationships) can also fetch
+[relationship loading techniques](/docs/database/relationships/) can also fetch
 linked objects without extra queries.
 
 ### Return Only What the UI Needs
@@ -315,7 +315,7 @@ linked objects without extra queries.
 - Select only the columns the UI displays when tables are wide, instead of
   whole rows.
 - Give every query that returns detail rows a `.limit()`, and use
-  offset-based [pagination](/docs/library/tables-and-data-grids/table) when
+  offset-based [pagination](/docs/library/tables-and-data-grids/table/) when
   the user needs more rows.
 - Load static data (dropdown options, date bounds) once in an `on_load` event
   handler. When a filter changes, re-run only the filtered queries — not the

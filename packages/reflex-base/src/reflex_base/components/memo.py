@@ -28,6 +28,7 @@ from typing import (
 from reflex_components_core.base.fragment import Fragment
 
 from reflex_base import constants
+from reflex_base.components.app_wraps import collect_subtree_app_wraps
 from reflex_base.components.component import Component
 from reflex_base.components.memoize_helpers import (
     MemoizationStrategy,
@@ -320,6 +321,22 @@ class MemoComponentDefinition(MemoDefinition):
     # imports collection, so descendants emit their refs/imports/hooks in the
     # page scope rather than being duplicated inside the memo body.
     passthrough_hole_child: Component | None = None
+    # For wrappers built by the auto-memoize plugin: make the wrapper
+    # transparent to its parent by forwarding runtime-injected props to the
+    # root component of the memo body. The compiled function destructures
+    # ``({children, ...rest})`` — ``rest`` includes ``ref`` via React 19
+    # ref-as-prop — and the root renders ``mergeSlotProps(rest, {...own})``,
+    # which merges following Radix ``Slot`` semantics (own props win, ``on*``
+    # handlers compose, refs compose, ``className`` concatenates, and
+    # object-valued props deep-merge). Set only when the root renders a tag
+    # that can carry props and a ref.
+    forward_root_props: bool = False
+    # The camelCased JS prop that carries the root's DOM ref when the root
+    # does not accept ``ref`` directly (from the component class's
+    # ``_dom_ref_prop``, e.g. DebounceInput's ``inputRef``). The generated
+    # ``mergeSlotProps`` call routes a runtime-injected ref to this prop so it
+    # reaches the real element instead of a class-component instance.
+    root_ref_prop: str | None = None
     # The JS function the compiled function component is wrapped in — React's
     # ``memo`` by default. ``None`` exports the bare function component. The
     # wrapper's ``VarData`` supplies its imports, so a custom wrapper brings
@@ -387,6 +404,12 @@ class MemoComponent(Component):
     # without parsing the wrapper's auto-generated class name.
     _wrapped_component_type: ClassVar[type[Component] | None] = None
 
+    # The definition whose compiled body this wrapper stands in for, attached
+    # by ``_MemoComponentWrapper.__call__``. Held on the class rather than the
+    # instance so copying a memo component (``copy.deepcopy`` in the style pass
+    # and in ``App._app_root``) doesn't drag the whole body along.
+    _memo_definition: ClassVar[MemoComponentDefinition | None] = None
+
     def _validate_component_children(self, children: list[Component]) -> None:
         """Skip direct parent/child validation for memo wrapper instances.
 
@@ -433,11 +456,12 @@ def _get_memo_component_class(
 ) -> type[MemoComponent]:
     """Get the component subclass for a memo export.
 
-    Class-level metadata that the compiler reads via ``type(comp)._get_*()``
-    (notably ``_get_app_wrap_components``, which carries providers like
-    ``UploadFilesProvider`` that must reach the app root) is inherited from
-    ``wrapped_component_type`` so the wrapper is a transparent substitute for
-    the original in the compile tree.
+    The class carries a per-class ``_get_app_wrap_components`` built by
+    :func:`_make_memo_app_wrap_getter`, so the wrapper is a transparent
+    substitute for the body it stands in for: providers the body requires (a
+    ``UploadFilesProvider``, a drag-and-drop context) still reach the app root
+    even though the body itself compiles into a separate module and never
+    enters the page tree.
 
     Args:
         export_name: The exported React component name.
@@ -465,23 +489,86 @@ def _get_memo_component_class(
         "tag": symbol,
         "library": library,
         "_wrapped_component_type": wrapped_component_type,
+        "_get_app_wrap_components": _make_memo_app_wrap_getter(),
     }
     if auto_memo_wrapper:
         attrs["_memoization_mode"] = MemoizationMode(
             disposition=MemoizationDisposition.NEVER
-        )
-    if (
-        wrapped_component_type._get_app_wrap_components
-        is not Component._get_app_wrap_components
-    ):
-        attrs["_get_app_wrap_components"] = staticmethod(
-            wrapped_component_type._get_app_wrap_components
         )
     return type(
         f"MemoComponent_{symbol}",
         (MemoComponent,),
         attrs,
     )
+
+
+def _memo_body_app_wraps(
+    definition: MemoComponentDefinition | None,
+) -> dict[tuple[int, str], Component]:
+    """Collect the app wraps a memo's compiled body requires.
+
+    Args:
+        definition: The memo definition, or ``None`` for a wrapper class no
+            call site has bound a definition to yet.
+
+    Returns:
+        Mapping of ``(priority, name)`` -> wrapper component.
+    """
+    if definition is None:
+        return {}
+    body = definition.component
+    if definition.passthrough_hole_child is not None:
+        # A passthrough wrapper renders its descendants at the call site, where
+        # the page walk collects their wraps already; only the body root is
+        # compiled into the memo module.
+        return body._get_app_wrap_components()
+    return collect_subtree_app_wraps(body)
+
+
+def _make_memo_app_wrap_getter() -> Callable[
+    [MemoComponent], dict[tuple[int, str], Component]
+]:
+    """Build the ``_get_app_wrap_components`` for one memo wrapper class.
+
+    A distinct function per class is load-bearing: the page collector dedupes
+    the scan by ``type(comp)._get_app_wrap_components`` identity, so wrapper
+    classes sharing one function would let only the first memo on a page
+    contribute its wraps. The body is a per-definition singleton, so the result
+    is computed once per class -- and classes are rebuilt each compile by
+    :func:`reset_memo_component_classes`, which keeps the result fresh.
+
+    Returns:
+        The method to install on the wrapper class.
+    """
+    collected: dict[tuple[int, str], Component] | None = None
+    collecting = False
+
+    def _get_app_wrap_components(
+        self: MemoComponent,
+    ) -> dict[tuple[int, str], Component]:
+        """Get the app wrap components the memo body requires.
+
+        Returns:
+            The app wrap components.
+        """
+        nonlocal collected, collecting
+        if collected is None:
+            if collecting:
+                # A self-referencing memo (see ``_LazyBody``): the body holds an
+                # instance of this same memo, so walking it again would never
+                # bottom out. Its requirements are the ones the walk one frame
+                # up is already collecting, so contribute nothing here.
+                return {}
+            collecting = True
+            try:
+                collected = _memo_body_app_wraps(type(self)._memo_definition)
+            finally:
+                collecting = False
+        # Callers merge into the returned mapping (``_get_all_app_wrap_components``
+        # does), so hand out a copy rather than the cached one.
+        return dict(collected)
+
+    return _get_app_wrap_components
 
 
 def reset_memo_component_classes() -> None:
@@ -1784,12 +1871,17 @@ class _MemoComponentWrapper:
             )
         else:
             component = definition.component
-        return _get_memo_component_class(
+        memo_class = _get_memo_component_class(
             definition.export_name,
             type(component),
             definition.source_module,
             definition.auto_memo_wrapper,
-        )._create(
+        )
+        # The class is cached per export, so the first call site binds the
+        # definition its ``_get_app_wrap_components`` reads the body from.
+        if memo_class._memo_definition is None:
+            memo_class._memo_definition = definition
+        return memo_class._create(
             children=list(children),
             memo_definition=definition,
             **explicit_values,
@@ -2021,6 +2113,24 @@ def create_passthrough_component_memo(
         replacements["export_name"] = tag
     if captured_hole_child:
         replacements["passthrough_hole_child"] = captured_hole_child[0]
+    # Wrappers whose memo body renders ``component`` as its root are made
+    # transparent to their parent: props and refs set on the wrapper at
+    # runtime (e.g. injected by a Radix ``asChild``/``Slot`` parent cloning
+    # its child element) reach the root component instead of being dropped by
+    # the wrapper's destructured signature. This holds for passthrough and
+    # snapshot bodies alike — both render ``component`` as the outermost
+    # element. Untagged roots (``Bare``, ``Cond``, ``Match``, ``Foreach``)
+    # render no element to attach to; an empty tag (``Upload``) and
+    # ``Fragment`` both render a ``Fragment``, which accepts neither props nor
+    # refs.
+    if (
+        component.tag
+        and not isinstance(component, Fragment)
+        and component._render().name
+    ):
+        replacements["forward_root_props"] = True
+        if (dom_ref_prop := type(component)._dom_ref_prop) is not None:
+            replacements["root_ref_prop"] = format.to_camel_case(dom_ref_prop)
     definition = dataclasses.replace(definition, **replacements)
 
     return _create_component_wrapper(definition), definition

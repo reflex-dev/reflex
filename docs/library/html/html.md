@@ -14,9 +14,9 @@ Reflex also provides a set of HTML elements that can be used to create web pages
 
 The most commonly used HTML elements are listed below. The full API reference is split into smaller pages:
 
-- [Text elements](/docs/library/html/text)
-- [Document and layout elements](/docs/library/html/layout)
-- [Form elements](/docs/library/html/forms)
-- [Media and embedded elements](/docs/library/html/media)
-- [Table elements](/docs/library/html/tables)
-- [SVG elements](/docs/library/html/svg)
+- [Text elements](/docs/library/html/text/)
+- [Document and layout elements](/docs/library/html/layout/)
+- [Form elements](/docs/library/html/forms/)
+- [Media and embedded elements](/docs/library/html/media/)
+- [Table elements](/docs/library/html/tables/)
+- [SVG elements](/docs/library/html/svg/)

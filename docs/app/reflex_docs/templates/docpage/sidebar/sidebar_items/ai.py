@@ -7,7 +7,7 @@ def get_sidebar_items_ai_builder_overview():
 
     return [
         create_item(
-            "Overview",
+            "Getting Started",
             children=[
                 ai_builder.overview.best_practices,
                 ai_builder.overview.what_is_reflex_build,

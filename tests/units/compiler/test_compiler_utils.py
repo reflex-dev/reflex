@@ -3,13 +3,119 @@ from __future__ import annotations
 import asyncio
 
 import pytest
+from reflex_base.registry import RegistrationContext
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.base.script import Script
+from reflex_components_core.el.elements.metadata import Link
 
+from reflex.compiler import utils
 from reflex.compiler.utils import compile_state, create_document_root
+from reflex.compiler.utils import write_file as compiler_write_file
 from reflex.constants.state import FIELD_MARKER
 from reflex.state import State
+from reflex.utils.path_ops import write_file
 from reflex.vars.base import computed_var
+
+
+def test_write_file_reexport() -> None:
+    """Existing compiler callers retain the shared file-writing helper."""
+    assert compiler_write_file is write_file
+
+
+def test_bundled_libraries_artifact_round_trip(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Backend-only workers can restore the registry from the frontend build."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+    with RegistrationContext() as context:
+        context.bundled_libraries.append("@radix-ui/themes")
+        output_path, output = utils._compile_bundled_libraries()
+        artifact_path = tmp_path / output_path
+        artifact_path.parent.mkdir()
+        artifact_path.write_text(output, encoding="utf-8")
+        context.bundled_libraries[:] = ["react"]
+
+        utils._restore_bundled_libraries()
+
+        assert context.bundled_libraries == [
+            "react",
+            "@emotion/react",
+            "$/utils/context",
+            "$/utils/state",
+            "@radix-ui/themes",
+        ]
+
+
+def test_restore_bundled_libraries_preserves_page_registrations(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Restoring frontend metadata retains libraries discovered by page evaluation."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+    artifact_path = tmp_path / utils.constants.Dirs.BUNDLED_LIBRARIES
+    artifact_path.parent.mkdir()
+    artifact_path.write_text('["@radix-ui/themes"]', encoding="utf-8")
+    with RegistrationContext() as context:
+        context.bundled_libraries.append("page-library")
+
+        utils._restore_bundled_libraries()
+
+        assert "@radix-ui/themes" in context.bundled_libraries
+        assert "page-library" in context.bundled_libraries
+
+
+def test_restore_bundled_libraries_ignores_invalid_utf8(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Malformed registry artifacts do not interrupt backend-only startup."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+    artifact_path = tmp_path / utils.constants.Dirs.BUNDLED_LIBRARIES
+    artifact_path.parent.mkdir()
+    artifact_path.write_bytes(b"\xff")
+
+    utils._restore_bundled_libraries()
+
+
+@pytest.mark.parametrize(
+    "contents",
+    ["{", '"@radix-ui/themes"', '["@radix-ui/themes", 1]'],
+)
+def test_restore_bundled_libraries_ignores_invalid_json(
+    tmp_path, monkeypatch: pytest.MonkeyPatch, contents: str
+) -> None:
+    """Malformed registry data does not change backend registrations."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+    artifact_path = tmp_path / utils.constants.Dirs.BUNDLED_LIBRARIES
+    artifact_path.parent.mkdir()
+    artifact_path.write_text(contents, encoding="utf-8")
+    with RegistrationContext() as context:
+        original = list(context.bundled_libraries)
+
+        utils._restore_bundled_libraries()
+
+        assert context.bundled_libraries == original
+
+
+def test_restore_bundled_libraries_ignores_missing_artifact(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A missing frontend artifact does not interrupt backend-only startup."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+
+    utils._restore_bundled_libraries()
+
+
+def test_document_preloads_the_global_stylesheet():
+    """Render-blocking CSS should be discoverable alongside early resource hints."""
+    head = create_document_root().children[0]
+    links = [
+        child.render()["props"] for child in head.children if isinstance(child, Link)
+    ]
+    preload = next(props for props in links if 'rel:"preload"' in props)
+    stylesheet = next(props for props in links if 'rel:"stylesheet"' in props)
+    assert next(prop for prop in preload if prop.startswith("href:")) == next(
+        prop for prop in stylesheet if prop.startswith("href:")
+    )
+    assert 'as:"style"' in preload
 
 
 class CompileStateState(State):

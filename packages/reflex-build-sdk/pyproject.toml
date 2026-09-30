@@ -1,0 +1,33 @@
+[project]
+name = "reflex-build-sdk"
+dynamic = ["version"]
+description = "Python client for the Reflex Build API."
+license.text = "Apache-2.0"
+readme = "README.md"
+authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+aiohttp = ["aiohttp >=3.10.0,<4.0"]
+httpx = ["httpx >=0.25.1,<1.0"]
+httpx2 = ["httpx2 >=2.0.0,<3.0"]
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+pattern-prefix = "reflex-build-sdk-"
+fallback-version = "0.0.0dev0"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/reflex_build_sdk"]
+
+[tool.hatch.build.targets.sdist]
+# The API schema snapshot and its maintenance scripts are for the monorepo.
+exclude = ["/openapi.json", "/scripts"]
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"

@@ -112,6 +112,20 @@ def _persisted_lockfile_implies_npm() -> bool:
     ).exists()
 
 
+@functools.cache
+def _log_implicit_npm_notice(root_dir: Path) -> None:
+    """Say once per lock directory why npm is preferred without REFLEX_USE_NPM.
+
+    Args:
+        root_dir: The ``reflex.lock/`` directory holding the npm lockfile.
+    """
+    logger.info(
+        f"Preferring npm because {root_dir.name}/ has {constants.Node.LOCKFILE_PATH} "
+        f"and no {constants.Bun.LOCKFILE_PATH}. "
+        "Run once with REFLEX_USE_NPM=0 to switch this project back to bun."
+    )
+
+
 def prefer_npm_over_bun() -> bool:
     """Check if npm should be preferred over bun.
 
@@ -129,7 +143,10 @@ def prefer_npm_over_bun() -> bool:
     explicit = environment.REFLEX_USE_NPM.getenv()
     if explicit is not None:
         return explicit
-    return _persisted_lockfile_implies_npm()
+    if _persisted_lockfile_implies_npm():
+        _log_implicit_npm_notice(Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR)
+        return True
+    return False
 
 
 def get_nodejs_compatible_package_managers(
@@ -356,6 +373,35 @@ def validate_bun(bun_path: Path | None = None):
             )
 
 
+def _is_npm(package_manager: str) -> bool:
+    """Whether a package manager executable is npm.
+
+    Args:
+        package_manager: The package manager executable path.
+
+    Returns:
+        Whether the executable is npm.
+    """
+    return Path(package_manager).stem.lower() == "npm"
+
+
+def _require_supported_node_for_npm(uses_npm: bool) -> None:
+    """Exit when npm will run but the installed node version is unsupported.
+
+    Args:
+        uses_npm: Whether npm is the package manager that will run.
+
+    Raises:
+        SystemExit: If npm will run and the node version is unsupported.
+    """
+    if not uses_npm or check_node_version():
+        return
+    logger.error(
+        f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {get_node_version()}",
+    )
+    raise SystemExit(1)
+
+
 def validate_frontend_dependencies(init: bool = True):
     """Validate frontend dependencies to ensure they meet requirements.
 
@@ -365,19 +411,16 @@ def validate_frontend_dependencies(init: bool = True):
     Raises:
         SystemExit: If the package manager is invalid.
     """
-    if not init:
-        try:
-            get_js_package_executor(raise_on_none=True)
-        except FileNotFoundError as e:
-            logger.error(f"Failed to find a valid package manager due to {e}.")
-            raise SystemExit(1) from None
-
-    if prefer_npm_over_bun() and not check_node_version():
-        node_version = get_node_version()
-        logger.error(
-            f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
-        )
-        raise SystemExit(1)
+    if init:
+        # Bun may not be installed yet, so only an explicit npm preference is final.
+        _require_supported_node_for_npm(prefer_npm_over_bun())
+        return
+    try:
+        executor = get_js_package_executor(raise_on_none=True)
+    except FileNotFoundError as e:
+        logger.error(f"Failed to find a valid package manager due to {e}.")
+        raise SystemExit(1) from None
+    _require_supported_node_for_npm(_is_npm(executor[0][0]))
 
 
 def remove_existing_bun_installation():
@@ -786,6 +829,8 @@ def install_frontend_packages(packages: set[str], config: Config):
     install_package_managers = tuple(
         get_nodejs_compatible_package_managers(raise_on_none=True)
     )
+    # Check before any lockfile sync: a rejected npm install must not persist npm lockfiles.
+    _require_supported_node_for_npm(_is_npm(install_package_managers[0]))
     packages = set(packages)
     development_dependencies: set[str] = set()
     for plugin in config.plugins:
@@ -799,4 +844,35 @@ def install_frontend_packages(packages: set[str], config: Config):
         config.frozen_lockfile,
         install_package_managers,
     )
+    _drop_lockfile_of_other_package_manager(install_package_managers[0])
     frontend_skeleton.sync_web_lockfiles_to_root()
+
+
+def _drop_lockfile_of_other_package_manager(primary_package_manager: str) -> None:
+    """Remove the other manager's lockfile from ``.web`` and ``reflex.lock/``.
+
+    Stale lockfiles can select the wrong manager or break frozen installs.
+    Preserve both for unknown executable names, including custom bun binaries.
+
+    Args:
+        primary_package_manager: The package manager that ran the install.
+    """
+    stem = Path(primary_package_manager).stem.lower()
+    if stem == "bun":
+        stale_lockfile = constants.Node.LOCKFILE_PATH
+    elif stem == "npm":
+        stale_lockfile = constants.Bun.LOCKFILE_PATH
+    else:
+        logger.debug(
+            f"Not pruning lockfiles: cannot tell which package manager {primary_package_manager!r} is."
+        )
+        return
+    for stale_path in (
+        frontend_skeleton.get_web_lockfile_path(stale_lockfile),
+        frontend_skeleton.get_root_lockfile_path(stale_lockfile),
+    ):
+        if stale_path.exists():
+            logger.debug(
+                f"Removing {stale_path}: it belongs to the package manager that did not run."
+            )
+            path_ops.rm(stale_path)

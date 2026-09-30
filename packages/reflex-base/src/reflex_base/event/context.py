@@ -8,10 +8,13 @@ import uuid
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Protocol
 
+from reflex_base import otel
 from reflex_base.context.base import BaseContext
 from reflex_base.utils.format import to_snake_case
 
 if TYPE_CHECKING:
+    from opentelemetry.context import Context
+
     from reflex.istate.manager import StateManager
     from reflex_base.event import Event
 
@@ -84,9 +87,11 @@ class EventContext(BaseContext):
     # Function responsible for enqueuing an event handler to be executed.
     enqueue_impl: EnqueueProtocol = dataclasses.field(repr=False)
 
-    # Each event is associated with a top-level transaction id.
+    # Each event is associated with a top-level transaction id. Empty for a
+    # context that belongs to no event, like an event processor's root context.
     txid: str = dataclasses.field(default_factory=lambda: uuid.uuid4().hex[:12])
-    # The txid of another EventContext that enqueued this context's event.
+    # The txid of another EventContext that enqueued this context's event, or
+    # None for a top-level event.
     parent_txid: str | None = None
 
     emit_delta_impl: EmitDeltaProtocol | None = dataclasses.field(
@@ -98,6 +103,8 @@ class EventContext(BaseContext):
     cached_states: dict[type, Any] = dataclasses.field(
         default_factory=dict, init=False, repr=False
     )
+    # OpenTelemetry context active when this event was enqueued (None when tracing is off).
+    otel_context: Context | None = dataclasses.field(default=None, repr=False)
 
     # Routing data of the event being processed. Inherited by fork(), so an
     # event a handler yields resolves against the view that produced it.
@@ -114,12 +121,14 @@ class EventContext(BaseContext):
         """
         return type(self)(
             token=token or self.token,
-            parent_txid=self.txid,
+            # Forks of a context without a txid are top-level events.
+            parent_txid=self.txid or None,
             state_manager=self.state_manager,
             enqueue_impl=self.enqueue_impl,
             emit_delta_impl=self.emit_delta_impl,
             emit_event_impl=self.emit_event_impl,
             router_data=self.router_data,
+            otel_context=otel.capture_context(),
         )
 
     async def emit_delta(self, delta: Mapping[str, Mapping[str, Any]]) -> None:
