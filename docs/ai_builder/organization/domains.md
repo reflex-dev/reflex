@@ -11,21 +11,13 @@ import reflex as rx
 
 Inviting people one at a time works for small teams. For a whole company, verify your email domain (such as `acme.com`) so anyone with a matching address joins the organization automatically, without an individual invitation.
 
-Verified domains are managed under **Settings → Domains** and are part of the **Enterprise** plan.
+Verified domains are managed from **Domains** in the organization sidebar and are part of the **Enterprise** plan.
 
 ## How it works
 
 1. Claim a domain your company owns.
 2. Prove ownership by adding a DNS record.
 3. Once verified, people with an email on that domain join automatically, including both new sign-ups and existing Reflex users.
-
-```python eval
-rx.image(
-    src="https://web.reflex-assets.dev/docs-preview/organization/domains/domains_list.webp",
-    alt="The Domains tab showing a verified domain with an auto-join toggle and a pending domain awaiting verification",
-    class_name="rounded-md h-auto",
-)
-```
 
 ## Claiming and verifying a domain
 
@@ -37,7 +29,7 @@ To verify ownership, add the **TXT record** shown (its Type, Name, and Value) wi
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/organization/domains/dns_verification.webp",
     alt="A pending domain card showing the TXT record type, name, and value to add, with a Verify button",
-    class_name="rounded-md h-auto",
+    class_name="rounded-md h-auto mb-4",
 )
 ```
 

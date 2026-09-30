@@ -122,6 +122,35 @@ async def test_precompressed_static_files_prefers_best_accept_encoding(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("accept_encoding", "response_name"),
+    [("identity", "app.js"), ("gzip", "app.js.gz")],
+)
+async def test_precompressed_static_files_use_javascript_mime_independent_of_system_mapping(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    accept_encoding: str,
+    response_name: str,
+):
+    """Serve JavaScript with its standard MIME type despite a host override."""
+    (tmp_path / "app.js").write_text("console.log('hello');")
+    (tmp_path / "app.js.gz").write_bytes(b"compressed-gzip")
+    monkeypatch.setattr(
+        "reflex.utils.precompressed_staticfiles.guess_type",
+        lambda _path: ("text/plain", None),
+    )
+
+    static_files = PrecompressedStaticFiles(directory=tmp_path, encodings=["gzip"])
+    response = await static_files.get_response(
+        "app.js", _scope("/app.js", accept_encoding)
+    )
+
+    assert isinstance(response, FileResponse)
+    assert str(response.path).endswith(response_name)
+    assert response.media_type == "text/javascript"
+
+
+@pytest.mark.asyncio
 async def test_precompressed_static_files_fall_back_to_identity(tmp_path: Path):
     """Keep serving the original file when no accepted sidecar is available."""
     (tmp_path / "app.js").write_text("console.log('hello');")

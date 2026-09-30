@@ -1,1 +1,0 @@
-Added `reflex cloud apps rollback DEPLOYMENT_ID`, which rolls an app back to a previous deployment by redeploying its already-built image without rebuilding from source. `reflex cloud apps history` now reports whether each deployment can be rolled back to.

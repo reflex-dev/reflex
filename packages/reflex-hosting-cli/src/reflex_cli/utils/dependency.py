@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.metadata
 import io
+import logging
 import re
 import subprocess
 import sys
@@ -12,6 +13,8 @@ from urllib.parse import urlparse
 
 from reflex_cli import constants
 from reflex_cli.utils import console
+
+logger = logging.getLogger(__name__)
 
 
 def detect_encoding(filename: Path) -> str | None:
@@ -70,7 +73,7 @@ def check_requirements():
         SystemExit: If no requirements.txt is found.
     """
     if not does_requirements_file_or_pyproject_exist():
-        console.warn("No requirements.txt or pyproject.toml found.")
+        logger.warning("No requirements.txt or pyproject.toml found.")
         return
 
     if not Path(constants.RequirementsTxt.FILE).exists():
@@ -94,8 +97,8 @@ def check_requirements():
             check=True,
         )
     except subprocess.CalledProcessError as cpe:
-        console.debug(f"Unable to run pip freeze in subprocess: {cpe}")
-        console.warn(
+        logger.debug(f"Unable to run pip freeze in subprocess: {cpe}")
+        logger.warning(
             "Unable to detect installed packages in your environment using pip freeze."
             " Please make sure your requirements.txt is up to date."
         )
@@ -112,8 +115,8 @@ def check_requirements():
     if Path(constants.RequirementsTxt.FILE).exists():
         with Path(constants.RequirementsTxt.FILE).open(encoding=encoding) as f:
             current_requirements_lines = set(f)
-            console.debug("Current requirements.txt:")
-            console.debug("".join(current_requirements_lines))
+            logger.debug("Current requirements.txt:")
+            logger.debug("".join(current_requirements_lines))
 
     diff = list(new_requirements_lines - current_requirements_lines)
 
@@ -121,11 +124,11 @@ def check_requirements():
         return
 
     if not current_requirements_lines:
-        console.warn("It seems like there's no requirements.txt in your project.")
+        logger.warning("It seems like there's no requirements.txt in your project.")
         raise SystemExit("No requirements.txt found.")
 
-    console.warn("Detected difference in requirements.txt and python env.")
-    console.warn("The requirements.txt may need to be updated.")
+    logger.warning("Detected difference in requirements.txt and python env.")
+    logger.warning("The requirements.txt may need to be updated.")
     console.ask("Do you wish to proceed? (ctl+c to cancel)")
     return
 

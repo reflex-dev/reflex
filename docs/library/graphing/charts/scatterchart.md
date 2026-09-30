@@ -81,7 +81,7 @@ def scatter_double():
     )
 ```
 
-To learn how to use the `x_axis_id` and `y_axis_id` props, check out the Multiple Axis section of the area chart [documentation](/docs/library/graphing/charts/areachart).
+To learn how to use the `x_axis_id` and `y_axis_id` props, check out the Multiple Axis section of the area chart [documentation](/docs/library/graphing/charts/areachart/).
 
 ## Dynamic Data
 
@@ -292,6 +292,6 @@ def bubble_chart():
 
 Explore more chart types you can build with Reflex and Recharts in pure Python:
 
-- [Line Chart](/docs/library/graphing/charts/linechart)
-- [Bar Chart](/docs/library/graphing/charts/barchart)
-- [Error Bar](/docs/library/graphing/charts/errorbar)
+- [Line Chart](/docs/library/graphing/charts/linechart/)
+- [Bar Chart](/docs/library/graphing/charts/barchart/)
+- [Error Bar](/docs/library/graphing/charts/errorbar/)

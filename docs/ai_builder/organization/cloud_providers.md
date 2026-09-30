@@ -11,24 +11,21 @@ import reflex as rx
 
 By default, apps run on Reflex's infrastructure. On the **Enterprise** plan, you can connect your organization's own cloud account instead, so apps run on infrastructure you control and are billed directly by your provider. This is often required by security, procurement, or data-residency policies.
 
-You connect a cloud account once, at the organization level, under **Settings → Cloud providers**. The whole organization can then deploy to it.
-
-```python eval
-rx.image(
-    src="https://web.reflex-assets.dev/docs-preview/organization/cloud-providers/providers_overview.webp",
-    alt="The Cloud providers tab showing Google Cloud connected, with AWS and Azure greyed out and unavailable",
-    class_name="rounded-md h-auto",
-)
-```
+You connect a cloud account once from **Cloud Providers** in the organization sidebar. The whole organization can then deploy to it.
 
 ```md alert info
 # Who can connect a cloud provider
 Only organization admins can connect, view, or remove cloud provider accounts. Connecting is an Enterprise feature; [contact sales](https://reflex.dev/pricing/) to enable it.
 ```
 
-## Supported providers
+## Supported managed provider
 
-**Google Cloud** is available now. **AWS** and **Azure** aren't available yet.
+The organization-managed connection on this page currently supports **Google Cloud**. AWS and Azure cannot be connected from **Cloud Providers** yet.
+
+```md alert info
+# Managed connection and self-service deployment are different
+An organization admin can connect GCP once so members deploy to it through the normal managed Reflex workflow. Separately, Enterprise customers can run `reflex cloud deploy --gcp`, `--aws`, or `--azure` from their own machine. The self-service commands use the operator's local cloud credentials and do not create an organization-level connection.
+```
 
 ## Connecting Google Cloud
 
@@ -47,7 +44,7 @@ Reflex validates the details and marks the provider connected.
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/organization/cloud-providers/connect_gcp.webp",
     alt="The Connect your GCP account dialog with fields for the service account key, project number, and region",
-    class_name="rounded-md h-auto",
+    class_name="rounded-md h-auto mb-4",
 )
 ```
 
@@ -67,7 +64,7 @@ To disconnect, open the connected provider and select **Remove connection**. Two
 
 ## Deploying to your own cloud
 
-Connecting an account here lets your organization's apps target your cloud. You can also deploy to your own cloud from the command line. For the full workflow and provider details, see:
+Connecting an account here lets your organization's apps target managed GCP. For self-service cloud deployment and a detailed GCP walkthrough, see:
 
 - [Bring Your Own Cloud](/docs/hosting/bring-your-own-cloud/) — deploying to AWS, GCP, or Azure from the command line.
 - [Deploy to GCP Cloud Run](/docs/hosting/deploy-to-gcp/) — a detailed Google Cloud walkthrough.
@@ -80,5 +77,4 @@ This separation is called a *namespace*. Reflex sets it up and manages it; you d
 
 ## Related
 
-- [Bring Your Own Cloud (CLI)](/docs/hosting/bring-your-own-cloud/) — deploy from the command line.
 - [Roles & permissions](/docs/ai/organization/roles-and-permissions/) — who can manage organization settings.

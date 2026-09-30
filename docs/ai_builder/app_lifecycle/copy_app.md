@@ -1,51 +1,26 @@
 # Copy App
 
-The **Copy** feature lets you duplicate an existing app inside Reflex Build.
-This is useful when you want to experiment with changes without affecting the original project, or when you want to use an app as a starting point for a new idea.
-
-
 ```python exec
 import reflex as rx
-
-
-def render_image():
-    return rx.el.div(
-        rx.image(
-            src="https://web.reflex-assets.dev/ai_builder/app_lifecycle/copy_light.avif",
-            alt="Copying an app in Reflex AI Builder",
-            class_name="rounded-md h-auto",
-            border=f"0.81px solid {rx.color('slate', 5)}",
-        ),
-        class_name="w-full flex flex-col rounded-md",
-    )
 ```
+
+Copying creates an independent app from an existing Reflex Build app. Use it to try a significant change without altering the original or to reuse a working starting point.
+
+## Copy an App
+
+1. Open the menu next to **Deploy** and select **Copy**. You can also use the copy action in **Settings**.
+2. Wait for the copied app to open in the current project.
+3. Rename it so it is easy to distinguish from the original.
 
 ```python eval
-rx.el.div(render_image())
+rx.image(
+    src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/app_copy_action.webp",
+    alt="The Copy action in the menu next to Deploy",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
+)
 ```
 
-## How to Copy an App
+The copy includes the app's code, state, configuration, and dependencies. Changes to the copied app do not change the original app.
 
-1. In the Reflex Build workspace, click on the arrow down icon next to the deploy button and click on the **Copy** button. You can also do this in the Settings tab.
-2. Reflex Build will create a new app in your workspace with the same:
-   - Code files and components
-   - State and configuration
-   - Dependencies
-
-The copied app will appear as a separate project, independent from the original.
-
-
-## Common Use Cases
-
-- **Experiment Safely**
-  Try out new components, layouts, or integrations without risking your working app.
-
-- **Create Variations**
-  Use the original app as a base to quickly spin up a different version (e.g., a light and dark theme version).
-
-- **Template Reuse**
-  Turn an app into a personal template and copy it each time you start a new project.
-
-## Best Practices
-
-- Rename your copied app immediately so it’s easy to distinguish from the original.
+Review integrations, secrets, and visibility before sharing or deploying the copy. Credentials and access requirements may need to be confirmed separately.

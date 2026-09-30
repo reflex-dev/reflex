@@ -1,59 +1,72 @@
+# Secrets and Environment Variables
+
+Use environment variables for API keys, database URLs, tokens, and other values that must not be committed to source control.
+
 ```python exec
 import reflex as rx
 ```
 
-# Secrets (Environment Variables)
+## Project Secrets in Reflex Build
 
+Open **Secrets** in the project sidebar to add, edit, or remove project-level values. Access is controlled by project permissions:
 
-## Adding Secrets through the CLI
+- **View secret names** allows a member to see which variables exist.
+- **Reveal secret values** allows reading stored values.
+- **Edit secrets** allows adding and changing values.
 
-Below is an example of how to use an environment variable file. You can pass the `--envfile` flag with the path to the env file. For example:
+An app can also open **Secrets** from its more menu to manage values for that app only. An app-level secret overrides a project secret with the same name. Store credentials in Secrets or an integration form, never in a prompt or source file.
 
-```bash
-reflex deploy --project f88b1574-f101-####-####-5f########## --envfile .env
-```
+## Hosted App Secrets
 
-In this example the path to the file is `.env`.
+For a deployed app, open **Deployments**, select the app, and go to **Settings > Secrets**. From this page you can:
 
+- Search existing environment-variable names.
+- Add or edit one variable.
+- Use **Raw editor** to update multiple `NAME=value` entries.
+- Choose whether to restart the app so a changed value takes effect immediately.
 
-If you prefer to pass the environment variables manually below is deployment command example:
+Enable **Sensitive** when no team member should be able to view, edit, or delete the stored values. Sensitive mode availability and who can change it depend on the organization's plan and project permissions.
 
-```bash
-reflex deploy --project f88b1574-f101-####-####-5f########## --env OPENAI_API_KEY=sk-proj-vD4i9t6U############################
-```
-
-They are passed after the `--env` flag as key value pairs. 
-
-To pass multiple environment variables, you can repeat the `--env` tag. i.e. `reflex deploy --project f88b1574-f101-####-####-5f########## --env KEY1=VALUE1 --env KEY2=VALUE`. The `--envfile` flag will override any envs set manually.
-
-
-```md alert info
-# More information on Environment Variables
-Environment variables are encrypted and safely stored. We recommend that backend API keys or secrets are entered as `envs`. Make sure to enter the `envs` without any quotation marks. We do not show the values of them in any CLI commands, only their names (or keys).
-
-You access the values of `envs` by referencing `os.environ` with their names as keys in your app's backend. For example, if you set an env `ASYNC_DB_URL`, you are able to access it by `os.environ["ASYNC_DB_URL"]`. Some Python libraries automatically look for certain environment variables. For example, `OPENAI_API_KEY` for the `openai` python client. The `boto3` client credentials can be configured by setting `AWS_ACCESS_KEY_ID`,`AWS_SECRET_ACCESS_KEY`. This information is typically available in the documentation of the Python packages you use.
-```
-
-## Adding Secrets through the Cloud UI
-
-To find the secrets tab, click on the `Settings` tab in the Cloud UI on the app page.
+Never expose a real value while preparing screenshots or support material.
 
 ```python eval
 rx.image(
-    src="https://web.reflex-assets.dev/other/environment_variables.webp",
-    alt="Environment variables panel in Reflex Cloud UI",
+    src="https://web.reflex-assets.dev/docs-preview/hosting/settings_secrets.webp",
+    alt="Hosted app secret settings with values concealed",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
 )
 ```
 
-Then click on the `Secrets` tab as shown below.
+## Deploy with an Environment File
 
-```python eval
-rx.image(
-    src="https://web.reflex-assets.dev/other/environment_variables_2.webp",
-    alt="Adding environment variables in Reflex Cloud UI",
-)
+Pass a local environment file to the CLI:
+
+```bash
+reflex deploy --project <project-id> --envfile .env
 ```
 
-From here you can add or edit your environment variables. You will need to restart your app for these changes to take effect.
+Or pass an individual value:
 
-This functionality in the UI can be disabled by an admin of the project.
+```bash
+reflex deploy --project <project-id> --env OPENAI_API_KEY=<value>
+```
+
+Repeat `--env` for multiple values. When both are provided, values from `--envfile` take precedence.
+
+## Read a Value in the App
+
+Backend Python code can read a value with `os.environ`:
+
+```python
+import os
+
+database_url = os.environ["ASYNC_DB_URL"]
+```
+
+Some SDKs read standard names automatically, such as `OPENAI_API_KEY`.
+
+```md alert warning
+# Keep secrets out of source control
+Do not commit `.env` files, paste credentials into Build prompts, or include real values in screenshots and logs.
+```

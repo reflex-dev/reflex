@@ -25,13 +25,17 @@ task is running, **outside of the context block, Vars accessed by the background
 task may be _stale_**. Attempting to modify the state from a background task
 outside of the context block will raise an `ImmutableStateError` exception.
 
+This also applies to mutable values nested inside `self.router`, including legacy
+`self.router.page.params`. A reference obtained inside the context block cannot
+be mutated after leaving it.
+
 In the following example, the `my_task` event handler is decorated with
 `@rx.event(background=True)` and increments the `counter` variable every half second, as
 long as certain conditions are met. While it is running, the UI remains
 interactive and continues to process events normally.
 
 ```md alert info
-# Background events are similar to simple Task Queues like [Celery](https://www.fullstackpython.com/celery.html) allowing asynchronous events.
+# Background events run in the application backend; they are not a durable job queue. Use a separate worker and persistent job records when work needs restart recovery or guaranteed retries. See [performance and execution](/docs/advanced-onboarding/performance-and-execution/) for execution tradeoffs.
 ```
 
 ```python demo exec id=background_demo
@@ -103,6 +107,40 @@ def background_task_example():
         ),
     )
 ```
+
+## Passing Mutable Values to Helpers
+
+A helper that only receives a mutable state value can enter that value as an
+async context manager. This refreshes the value from its owning state and holds
+the same exclusive state lock as `async with self`.
+
+```python
+import asyncio
+
+import reflex as rx
+
+
+async def advance_job(job):
+    async with job:
+        job["progress"] += 1
+
+
+class JobState(rx.State):
+    jobs: dict[str, dict[str, int]] = {"build": {"progress": 0}}
+
+    @rx.event(background=True)
+    async def run_job(self):
+        job = self.jobs["build"]
+        await asyncio.sleep(1)
+        await advance_job(job)
+```
+
+Root mutable state fields and nested values reached through stable dictionary
+keys or object attributes can be refreshed this way. Values taken from list
+indexes, list slices, iteration, or a missing `dict.get()` default cannot be
+safely identified after concurrent state changes, so using those values as
+async context managers raises `RuntimeError`. Enter `async with self` and
+retrieve the current list item again while holding the state lock instead.
 
 ## Terminating Background Tasks on Page Close or Navigation
 

@@ -10,6 +10,7 @@ import reflex_components_internal as ui
 from reflex_components_internal.blocks.demo_form import demo_form_dialog
 
 import reflex as rx
+from reflex_site_shared.backend.slack import escape_slack_text, post_to_slack
 from reflex_site_shared.backend.status import StatusState
 from reflex_site_shared.components.icons import get_icon
 from reflex_site_shared.components.marketing_button import button
@@ -19,17 +20,45 @@ from reflex_site_shared.constants import (
     FORUM_URL,
     GITHUB_URL,
     LINKEDIN_URL,
-    ROADMAP_URL,
+    SLACK_DOCS_FEEDBACK_CHANNEL,
     TWITTER_URL,
 )
 from reflex_site_shared.views.footer import dark_mode_toggle
-from reflex_site_shared.views.hosting_banner import HostingBannerState, hosting_banner
+from reflex_site_shared.views.hosting_banner import hosting_banner
+
+# Identifiers of the two feedback popovers, stored in DocsFeedbackState.open_popover.
+_FOOTER_FEEDBACK_POPOVER = "footer"
+_TOC_FEEDBACK_POPOVER = "toc"
 
 
 class DocsFeedbackState(rx.State):
     """Store the feedback selection shared by documentation shells."""
 
     score: int = -1
+    # Which feedback popover is open, or "" for neither.
+    open_popover: str = ""
+    # Bumped after a delivered post to remount, and so clear, the feedback form.
+    form_version: int = 0
+    # Whether a submission is being posted; blocks resubmitting and switching popovers.
+    sending: bool = False
+    # The validated message handle_submit queued for post_feedback. Backend-only,
+    # so a client cannot supply the text post_feedback sends.
+    _pending_message: str = ""
+
+    @rx.event
+    def set_popover_open(self, location: str, open_: bool) -> None:
+        """Open or close one of the feedback popovers, unless a post is pending.
+
+        Args:
+            location: The feedback control requesting the change.
+            open_: Whether that control should be open.
+        """
+        if self.sending:
+            return
+        if open_:
+            self.open_popover = location
+        elif self.open_popover == location:
+            self.open_popover = ""
 
     @rx.event
     def set_score(self, score: int) -> None:
@@ -41,13 +70,66 @@ class DocsFeedbackState(rx.State):
         self.score = score
 
     @rx.event
-    def handle_submit(self, form_data: dict[str, Any]) -> None:
-        """Accept an optional documentation feedback comment.
+    def handle_submit(self, form_data: dict[str, Any]) -> rx.event.EventSpec | None:
+        """Validate the feedback, then post it with the selected score and page.
+
+        Runs in order with the reader's score selection, and hands the Slack
+        request to a background task so it does not hold the state lock.
 
         Args:
             form_data: Submitted feedback fields.
+
+        Returns:
+            A validation warning, the background event that posts the feedback,
+            or None while an earlier submission is still being posted.
         """
-        del form_data
+        if self.sending:
+            return None
+        feedback = form_data.get("feedback", "").strip()
+        if not 10 <= len(feedback) <= 500:
+            return rx.toast.warning(
+                "Please enter your feedback. Between 10 and 500 characters.",
+                close_button=True,
+            )
+        self.sending = True
+        self._pending_message = (
+            f"Contact: {escape_slack_text(form_data.get('email', ''))}\n"
+            f"Page: {escape_slack_text(self.router.url)}\n"
+            f"Score: {({1: '👍', 0: '👎'}).get(self.score, 'none')}\n"
+            f"Feedback: {escape_slack_text(feedback)}"
+        )
+        return DocsFeedbackState.post_feedback()
+
+    @rx.event(background=True)
+    async def post_feedback(self) -> rx.event.EventSpec | None:
+        """Post the message handle_submit queued to the docs feedback Slack channel.
+
+        Returns:
+            A toast telling the reader whether the feedback was sent, or None
+            when no message is queued.
+        """
+        async with self:
+            message, self._pending_message = self._pending_message, ""
+        if not message:
+            return None
+        delivered = False
+        try:
+            delivered = await post_to_slack(message, SLACK_DOCS_FEEDBACK_CHANNEL)
+        finally:
+            async with self:
+                self.sending = False
+                # Popovers cannot switch while sending, so the open one is the
+                # one that submitted.
+                if delivered:
+                    self.open_popover = ""
+                    self.form_version += 1
+        if not delivered:
+            return rx.toast.error(
+                "An error occurred while submitting your feedback. If the issue "
+                "persists, please file a GitHub issue or stop by our Discord.",
+                close_button=True,
+            )
+        return rx.toast.success("Thank you for your feedback!", close_button=True)
 
 
 def docs_navbar_frame(
@@ -72,9 +154,9 @@ def docs_navbar_frame(
             rx.el.div(
                 logo,
                 navigation,
-                class_name="relative mx-auto flex h-full w-full max-w-[108rem] flex-row items-center justify-between gap-6",
+                class_name="mx-auto flex h-full w-full max-w-[108rem] flex-row items-center justify-between gap-6",
             ),
-            class_name="mx-auto flex h-[4.5rem] w-full max-w-full flex-row items-center bg-gradient-to-b from-secondary-2 to-secondary-1 px-6 shadow-[0_-2px_2px_1px_rgba(0,0,0,0.02),0_1px_1px_0_rgba(0,0,0,0.08),0_4px_8px_0_rgba(0,0,0,0.03),0_0_0_1px_#FFF_inset] backdrop-blur-[16px] dark:border-b dark:border-secondary-4 dark:shadow-none 3xl:px-16",
+            class_name="relative [&_nav]:!static [&_ul]:!static mx-auto flex h-16 w-full max-w-full flex-row items-center border-b border-border-subtle bg-background px-6 shadow-[0_2px_6px_-2px_rgba(0,0,0,0.08)] 3xl:px-16",
         ),
         class_name="fixed top-0 z-[9999] flex w-full flex-col self-center",
     )
@@ -97,17 +179,10 @@ def docs_left_sidebar(
     return rx.box(
         content,
         class_name=ui.cn(
-            "sticky left-0 z-10 hidden w-[19.5rem] shrink-0 border-r border-secondary-4 before:absolute before:bottom-0 before:right-0 before:top-0 before:-z-10 before:w-[100vw] before:bg-white-1 lg:block",
-            (
-                rx.cond(
-                    HostingBannerState.is_banner_visible,
-                    "top-[113px] h-[calc(100vh-113px)]",
-                    "top-[77px] h-[calc(100vh-77px)]",
-                )
-                if show_banner
-                else "top-[77px] h-[calc(100vh-77px)]"
-            ),
+            "sticky left-0 z-10 hidden w-[19.5rem] shrink-0 border-r border-border-subtle before:absolute before:bottom-0 before:right-0 before:top-0 before:-z-10 before:w-[100vw] before:bg-white-1 lg:block",
+            "top-[var(--docs-header-height)] h-[calc(100vh-var(--docs-header-height))]",
         ),
+        style={} if show_banner else {"--docs-header-height": "4rem"},
     )
 
 
@@ -134,7 +209,7 @@ def docs_sidebar_leaf(
             rx.cond(
                 active,
                 rx.el.div(
-                    class_name="absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-secondary-3 z-[-1]",
+                    class_name="absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-accent z-[-1]",
                 ),
                 rx.fragment(),
             ),
@@ -142,7 +217,7 @@ def docs_sidebar_leaf(
                 rx.cond(
                     active,
                     rx.el.div(
-                        class_name="pointer-events-none absolute -bottom-1 -top-1 left-0 w-px bg-primary-10",
+                        class_name="pointer-events-none absolute -bottom-1 -top-1 left-0 w-px bg-primary-hover",
                     ),
                     rx.fragment(),
                 ),
@@ -150,8 +225,8 @@ def docs_sidebar_leaf(
                     title,
                     class_name=rx.cond(
                         active,
-                        "m-0 pl-4 text-sm font-[525] text-primary-10 transition-color",
-                        "m-0 w-full text-sm font-[525] text-secondary-11 transition-color hover:text-secondary-12",
+                        "m-0 pl-4 text-sm font-[475] text-foreground transition-color",
+                        "m-0 w-full text-sm font-[475] text-foreground transition-color",
                     ),
                 ),
                 class_name=rx.cond(
@@ -162,10 +237,11 @@ def docs_sidebar_leaf(
             ),
             href=href,
             underline="none",
+            aria_current=rx.cond(active, "page", "false"),
             class_name=rx.cond(
                 active,
-                "relative block w-full",
-                f"block w-full {guide_margin_class}",
+                "relative block w-full rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                f"block w-full {guide_margin_class} rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
             ),
         ),
         class_name="relative m-0 w-full list-none p-0 !overflow-visible",
@@ -193,7 +269,7 @@ def docs_sidebar_section(
         rx.link(
             rx.el.h2(
                 title,
-                class_name="m-0 font-mono text-[0.8125rem] font-medium uppercase leading-6 text-secondary-12 hover:text-primary-10 dark:hover:text-primary-9",
+                class_name="m-0 font-mono text-[0.8125rem] font-[450] uppercase leading-6 text-muted-foreground hover:text-foreground",
             ),
             underline="none",
             href=href,
@@ -203,7 +279,7 @@ def docs_sidebar_section(
             *(
                 (
                     rx.el.li(
-                        class_name="pointer-events-none absolute bottom-0 left-[3rem] top-0 -z-10 m-0 w-px list-none !rounded-none bg-secondary-4 p-0",
+                        class_name="pointer-events-none absolute bottom-0 left-[2.5rem] top-0 -z-10 m-0 w-px list-none !rounded-none bg-border-subtle p-0",
                     ),
                 )
                 if connected_line
@@ -212,7 +288,7 @@ def docs_sidebar_section(
             *children,
             class_name=ui.cn(
                 "m-0 ml-0 flex w-full list-none flex-col rounded-none p-0 pl-0 !bg-transparent !shadow-none",
-                "relative gap-0" if connected_line else "gap-1",
+                "relative gap-1" if connected_line else "gap-1",
             ),
         ),
         class_name="m-0 ml-0 flex w-full list-none flex-col items-start p-0",
@@ -222,7 +298,7 @@ def docs_sidebar_section(
 def docs_sidebar_category(
     name: str,
     href: str,
-    icon: str,
+    icon: str | None,
     active: rx.Var[bool] | bool,
 ) -> rx.Component:
     """Render an official top-level documentation category row.
@@ -230,7 +306,7 @@ def docs_sidebar_category(
     Args:
         name: Visible category label.
         href: Category landing route.
-        icon: Lucide icon identifier.
+        icon: Lucide icon identifier, or None for a text-only row.
         active: Whether the category is selected.
 
     Returns:
@@ -241,21 +317,19 @@ def docs_sidebar_category(
             rx.cond(
                 active,
                 rx.el.div(
-                    class_name="absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-secondary-3 z-[-1]",
+                    class_name="absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-accent z-[-1]",
                 ),
                 rx.fragment(),
             ),
             rx.box(
-                rx.icon(tag=icon, size=16),
-                rx.el.h3(name, class_name="m-0 w-full font-[525]"),
-                class_name=ui.cn(
-                    "cursor-pointer flex flex-row justify-start items-center gap-2.5 ml-[3rem] text-sm text-secondary-11 hover:text-secondary-12 h-8",
-                    rx.cond(active, "text-primary-10 hover:text-primary-10", ""),
-                ),
+                rx.icon(tag=icon, size=16) if icon is not None else rx.fragment(),
+                rx.el.h3(name, class_name="m-0 w-full font-[475]"),
+                class_name="cursor-pointer flex flex-row justify-start items-center gap-2.5 ml-[2.5rem] text-sm text-foreground h-8",
             ),
             href=href,
             underline="none",
             class_name="block w-full relative no-underline",
+            aria_current=rx.cond(active, "true", "false"),
             custom_attrs={"aria-label": f"Navigate to {name}"},
         ),
         class_name="m-0 p-0 w-full relative list-none",
@@ -287,17 +361,17 @@ def docs_sidebar_group(
                 rx.icon(tag=icon, size=16, class_name="mr-4")
                 if icon is not None
                 else rx.fragment(),
-                rx.text(title, class_name="m-0 text-sm font-[525]"),
+                rx.text(title, class_name="m-0 text-sm font-[475]"),
                 rx.box(class_name="flex-grow"),
                 ui.icon(
                     "ArrowDown01Icon",
                     class_name="size-4 group-open/details:rotate-180 transition-transform",
                 ),
-                class_name="!px-0 m-0 flex items-center justify-start !ml-[2.5rem] !bg-transparent !hover:bg-transparent !py-1 !pr-0 w-[calc(100%-2.5rem)] !text-secondary-11 hover:!text-secondary-12 transition-color group xl:max-w-[14rem] cursor-pointer list-none [&::-webkit-details-marker]:hidden [&::marker]:hidden",
+                class_name="!px-0 m-0 flex items-center justify-start !ml-[2.5rem] !bg-transparent !hover:bg-transparent !py-1 !pr-0 w-[calc(100%-2.5rem)] !text-foreground transition-color group xl:max-w-[14rem] cursor-pointer list-none [&::-webkit-details-marker]:hidden [&::marker]:hidden",
             ),
             rx.el.ul(
                 rx.el.li(
-                    class_name=f"m-0 p-0 absolute {guide_left} top-0 bottom-0 w-px bg-secondary-4 z-[-1] pointer-events-none !rounded-none list-none",
+                    class_name=f"m-0 p-0 absolute {guide_left} top-0 bottom-0 w-px bg-border-subtle z-[-1] pointer-events-none !rounded-none list-none",
                 ),
                 *children,
                 class_name="!my-1 p-0 flex flex-col items-start gap-1 list-none !bg-transparent !rounded-none !shadow-none relative",
@@ -334,11 +408,11 @@ def _feedback_choice_button(
         class_name=rx.cond(
             active,
             ui.cn(
-                "border-primary-6 bg-primary-3 text-primary-11 shadow-none",
+                "border-border bg-accent text-foreground shadow-small",
                 class_name,
             ),
             ui.cn(
-                "border-secondary-5 bg-secondary-1 text-secondary-9 shadow-large hover:bg-secondary-3 hover:text-secondary-11",
+                "border-border bg-background text-subtle-foreground shadow-small hover:bg-accent hover:text-muted-foreground",
                 class_name,
             ),
         ),
@@ -365,8 +439,8 @@ def _feedback_thumb_card(score: int, icon: str, label: str) -> rx.Component:
         on_click=DocsFeedbackState.set_score(score),
         class_name=rx.cond(
             DocsFeedbackState.score == score,
-            "flex h-9 items-center justify-center gap-2 rounded-md border border-primary-6 bg-primary-3 px-3 text-sm font-medium text-primary-11 transition-colors",
-            "flex h-9 items-center justify-center gap-2 rounded-md border border-secondary-5 bg-secondary-1 px-3 text-sm font-medium text-secondary-9 transition-colors hover:bg-secondary-3 hover:text-secondary-11",
+            "flex h-9 items-center justify-center gap-2 rounded-full shadow-small border border-border bg-accent px-3 text-sm font-medium text-foreground transition-colors",
+            "flex h-9 items-center justify-center gap-2 rounded-full shadow-small border border-border bg-background px-3 text-sm font-medium text-subtle-foreground transition-colors hover:bg-accent hover:text-muted-foreground",
         ),
     )
 
@@ -402,13 +476,16 @@ def _feedback_content() -> rx.Component:
                         placeholder="Contact email (optional)",
                         max_length=100,
                     ),
-                    ui.popover.close(
-                        ui.button("Send feedback", type="submit", class_name="w-full")
+                    ui.button(
+                        rx.cond(DocsFeedbackState.sending, "Sending…", "Send feedback"),
+                        type="submit",
+                        disabled=DocsFeedbackState.sending,
+                        class_name="w-full !rounded-full",
                     ),
                     class_name="w-full gap-4 flex flex-col",
                 ),
                 class_name="w-full",
-                reset_on_submit=True,
+                key=DocsFeedbackState.form_version,
                 on_submit=DocsFeedbackState.handle_submit,
             ),
             class_name="flex flex-col gap-4 w-full",
@@ -425,24 +502,30 @@ def docs_feedback_button() -> rx.Component:
     """
     shared_class = "flex w-full cursor-pointer flex-row items-center justify-center gap-2 whitespace-nowrap border px-3 py-0.5 font-small transition-colors"
     return ui.popover.root(
-        ui.popover.trigger(
-            render_=rx.el.div(
-                _feedback_choice_button(
+        rx.el.div(
+            ui.popover.trigger(
+                render_=_feedback_choice_button(
                     "Yes",
                     "ThumbsUpIcon",
                     1,
-                    ui.cn("rounded-[20px_0_0_20px] border-r-0", shared_class),
+                    ui.cn("rounded-full", shared_class),
                 ),
-                _feedback_choice_button(
+            ),
+            ui.popover.trigger(
+                render_=_feedback_choice_button(
                     "No",
                     "ThumbsDownIcon",
                     0,
-                    ui.cn("rounded-[0_20px_20px_0]", shared_class),
+                    ui.cn("rounded-full", shared_class),
                 ),
-                class_name="flex w-full flex-row items-center lg:w-auto",
             ),
+            class_name="flex w-full flex-row items-center gap-1.5 lg:w-auto",
         ),
         ui.popover.portal(ui.popover.positioner(ui.popover.popup(_feedback_content()))),
+        open=DocsFeedbackState.open_popover == _FOOTER_FEEDBACK_POPOVER,
+        on_open_change=lambda open_, details: DocsFeedbackState.set_popover_open(
+            _FOOTER_FEEDBACK_POPOVER, open_
+        ),
     )
 
 
@@ -460,9 +543,13 @@ def docs_feedback_button_toc() -> rx.Component:
             size="sm",
             type="button",
             on_click=DocsFeedbackState.set_score(1),
-            class_name="justify-start pl-0 text-secondary-11",
+            class_name="justify-start pl-0 text-muted-foreground hover:!bg-transparent hover:!text-foreground",
         ),
         content=_feedback_content(),
+        open=DocsFeedbackState.open_popover == _TOC_FEEDBACK_POPOVER,
+        on_open_change=lambda open_, details: DocsFeedbackState.set_popover_open(
+            _TOC_FEEDBACK_POPOVER, open_
+        ),
     )
 
 
@@ -493,9 +580,9 @@ def docs_right_sidebar(
         rx.el.nav(
             rx.box(
                 rx.el.p(
-                    rx.icon("align-left", size=14, class_name="text-secondary-12"),
+                    rx.icon("align-left", size=14, class_name="text-foreground"),
                     "On This Page",
-                    class_name="flex h-8 items-center justify-start gap-1.5 text-sm font-[525] text-secondary-12",
+                    class_name="flex h-8 items-center justify-start gap-1.5 text-sm font-[475] text-foreground",
                 ),
                 rx.el.ul(
                     *(
@@ -503,7 +590,7 @@ def docs_right_sidebar(
                             rx.el.a(
                                 text,
                                 class_name=ui.cn(
-                                    "line-clamp-2 py-1 text-sm font-[525] text-secondary-11 transition-colors hover:text-secondary-12",
+                                    "line-clamp-2 py-1 text-sm font-[475] text-muted-foreground transition-colors hover:text-foreground",
                                     "pl-4" if level <= 2 else "pl-8",
                                 ),
                                 href=f"{path}#{make_slug(text)}",
@@ -512,7 +599,7 @@ def docs_right_sidebar(
                         for level, text in toc
                     ),
                     id="toc-navigation",
-                    class_name="flex max-h-[60vh] list-none flex-col gap-y-1 overflow-y-auto scroll-mask-y-10 shadow-[1.5px_0_0_0_var(--secondary-4)_inset] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+                    class_name="flex max-h-[60vh] list-none flex-col gap-y-1 overflow-y-auto scroll-mask-y-10 shadow-[1.5px_0_0_0_var(--border-subtle)_inset] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
                 ),
                 rx.el.div(
                     feedback or docs_feedback_button_toc(),
@@ -520,20 +607,10 @@ def docs_right_sidebar(
                 ),
                 class_name="sticky top-4 flex flex-col justify-start gap-y-4 overflow-y-auto",
             ),
-            class_name=ui.cn(
-                "h-full w-full",
-                (
-                    rx.cond(
-                        HostingBannerState.is_banner_visible,
-                        "mt-[146px]",
-                        "mt-[90px]",
-                    )
-                    if show_banner
-                    else "mt-[90px]"
-                ),
-            ),
+            class_name="h-full w-full mt-[calc(var(--docs-header-height)+2rem)]",
         ),
         class_name="sticky top-0 hidden h-screen w-[240px] shrink-0 2xl:block",
+        style={} if show_banner else {"--docs-header-height": "4rem"},
     )
 
 
@@ -560,7 +637,7 @@ def docs_footer_shell(
         rx.box(
             feedback,
             actions,
-            class_name="flex w-full flex-row items-center justify-center border-y-0 border-secondary-4 pb-6 pt-0 lg:justify-between lg:border-y lg:pb-8 lg:pt-8",
+            class_name="flex w-full flex-row items-center justify-center border-y-0 border-border-subtle pb-6 pt-0 lg:justify-between lg:border-y lg:pb-8 lg:pt-8",
         ),
         rx.box(
             link_columns,
@@ -589,8 +666,8 @@ def _docs_footer_link(
         Styled footer link.
     """
     class_name = (
-        "font-small text-secondary-9 hover:!text-secondary-11 "
-        "transition-color no-underline"
+        "text-sm font-book leading-6 text-foreground hover:!text-muted-foreground "
+        "transition-colors no-underline"
     )
     if root_site:
         return rx.el.elements.a(text, href=href, class_name=class_name)
@@ -613,7 +690,7 @@ def _docs_footer_link_column(
     return rx.box(
         rx.el.h4(
             heading,
-            class_name="font-semibold text-secondary-12 text-sm tracking-[-0.01313rem]",
+            class_name="text-xs font-book leading-5 text-muted-foreground",
         ),
         *links,
         class_name="flex flex-col gap-4",
@@ -636,7 +713,7 @@ def _docs_social_menu_item(icon: str, url: str, name: str) -> rx.Component:
             get_icon(icon, class_name="shrink-0"),
             variant="ghost",
             size="icon-sm",
-            class_name="text-secondary-11",
+            class_name="text-muted-foreground",
             native_button=False,
         ),
         href=url,
@@ -678,7 +755,7 @@ def _docs_footer_action(
         text,
         href=href,
         underline="none",
-        class_name="lg:flex hidden flex-row justify-center items-center gap-2 lg:border-secondary-5 bg-secondary-3 lg:bg-secondary-1 hover:bg-secondary-3 shadow-none lg:shadow-large px-3 py-0.5 lg:border lg:border-solid border-none rounded-lg lg:rounded-full w-auto font-small font-small text-secondary-9 !hover:text-secondary-11 hover:!text-secondary-9 truncate whitespace-nowrap transition-bg transition-color cursor-pointer",
+        class_name="lg:flex hidden flex-row justify-center items-center gap-2 lg:border-border bg-accent lg:bg-background hover:bg-accent shadow-none lg:shadow-small px-3 py-0.5 lg:border lg:border-solid border-none rounded-lg lg:rounded-full w-auto font-small font-small text-subtle-foreground !hover:text-muted-foreground hover:!text-subtle-foreground truncate whitespace-nowrap transition-bg transition-color cursor-pointer",
     )
 
 
@@ -701,61 +778,61 @@ def _docs_page_footer_content(
     feedback = rx.box(
         rx.text(
             "Did you find this useful?",
-            class_name="whitespace-nowrap font-small text-secondary-11 lg:text-secondary-9",
+            class_name="whitespace-nowrap font-small text-muted-foreground lg:text-subtle-foreground",
         ),
         docs_feedback_button(),
-        class_name="flex w-full flex-col items-center gap-3 rounded-lg bg-secondary-3 p-4 lg:w-auto lg:flex-row lg:gap-4 lg:bg-transparent lg:p-0",
+        class_name="flex w-full flex-col items-center gap-3 rounded-lg bg-accent p-4 lg:w-auto lg:flex-row lg:gap-4 lg:bg-transparent lg:p-0",
     )
     actions = rx.box(
         _docs_footer_action("Raise an issue", issue_href),
-        _docs_footer_action("Edit this page", edit_href),
+        rx.cond(edit_href, _docs_footer_action("Edit this page", edit_href)),
         class_name="hidden w-auto flex-row items-center gap-2 lg:flex",
     )
     docs_prefix = "https://reflex.dev/docs" if external_docs_links else ""
-    root_prefix = "https://reflex.dev" if external_docs_links else ""
     link_columns = rx.box(
-        _docs_footer_link_column(
-            "Links",
-            _docs_footer_link(
-                "Home",
-                f"{docs_prefix}/" if external_docs_links else "/",
-                root_site=external_docs_links,
-            ),
-            _docs_footer_link("Blog", f"{root_prefix}/blog/", root_site=True),
-            _docs_footer_link(
-                "Changelog",
-                f"{docs_prefix}/changelog/" if external_docs_links else "/changelog/",
-                root_site=external_docs_links,
-            ),
-        ),
-        _docs_footer_link_column(
-            "Documentation",
-            _docs_footer_link(
-                "Introduction",
-                f"{docs_prefix}/getting-started/introduction/",
-                root_site=external_docs_links,
-            ),
-            _docs_footer_link(
-                "Installation",
-                f"{docs_prefix}/getting-started/installation/",
-                root_site=external_docs_links,
-            ),
-            _docs_footer_link(
-                "Components",
-                f"{docs_prefix}/library/",
-                root_site=external_docs_links,
-            ),
-            _docs_footer_link(
-                "Hosting",
-                f"{docs_prefix}/hosting/deploy-quick-start/",
-                root_site=external_docs_links,
-            ),
+        *(
+            _docs_footer_link_column(
+                heading,
+                *(
+                    _docs_footer_link(
+                        label,
+                        f"{docs_prefix}{path}",
+                        root_site=external_docs_links,
+                    )
+                    for label, path in links
+                ),
+            )
+            for heading, links in (
+                (
+                    "Get started",
+                    (
+                        ("Docs overview", "/"),
+                        ("Build with AI", "/ai/"),
+                        ("Explore framework", "/getting-started/introduction/"),
+                        ("Deploy your app", "/hosting/deploy-quick-start/"),
+                    ),
+                ),
+                (
+                    "Documentation",
+                    (
+                        ("Components", "/library/"),
+                        ("API reference", "/api-reference/app/"),
+                        ("Agent Toolkit", "/ai/integrations/agent-toolkit/"),
+                        ("Enterprise", "/enterprise/overview/"),
+                    ),
+                ),
+            )
         ),
         _docs_footer_link_column(
             "Resources",
-            _docs_footer_link("FAQ", f"{root_prefix}/faq/", root_site=True),
-            _docs_footer_link("Roadmap", ROADMAP_URL),
-            _docs_footer_link("Forum", FORUM_URL),
+            _docs_footer_link("Home", "https://reflex.dev/", root_site=True),
+            _docs_footer_link("Blog", "https://reflex.dev/blog/", root_site=True),
+            _docs_footer_link(
+                "Changelog",
+                f"{docs_prefix}/changelog/",
+                root_site=external_docs_links,
+            ),
+            _docs_footer_link("FAQ", "https://reflex.dev/faq/", root_site=True),
         ),
         class_name="flex w-full flex-wrap justify-between gap-12",
     )
@@ -767,7 +844,7 @@ def _docs_page_footer_content(
     copyright_status = rx.el.div(
         rx.text(
             f"Copyright © {datetime.now().year} Pynecone, Inc.",
-            class_name="font-small text-secondary-9",
+            class_name="font-small text-subtle-foreground",
         ),
         server_status(StatusState.status),
         class_name="flex w-full flex-row items-center justify-between gap-4",

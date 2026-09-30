@@ -15,8 +15,6 @@ To enable pivot mode, set the `pivot_mode` property to `True` in the grid props.
 
 You can also define how rows are aggregated by passing the `agg_func` property in the column definition. The `agg_func` property should be set to a string that represents the aggregation function to use. The built-in aggregation functions are `sum`, `min`, `max`, `count`, `avg`, `first`, and `last`.
 
-You can find a live example here: [Pivot Mode Example](https://aggrid.reflex.run/pivot).
-
 ```python demo exec
 import pandas as pd
 import reflex as rx

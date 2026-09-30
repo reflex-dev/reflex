@@ -1,5 +1,7 @@
 """Miscellaneous functions for the experimental package."""
 
+from __future__ import annotations
+
 import asyncio
 import contextlib
 import inspect
@@ -7,7 +9,25 @@ import sys
 import threading
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from reflex_base.vars import Var
+
+
+def is_page_meta_set(value: str | Var | None) -> bool:
+    """Whether a page title or description was explicitly provided.
+
+    Empty strings mean "unset" and fall back to the default; Vars always
+    count as provided.
+
+    Args:
+        value: The metadata value to check.
+
+    Returns:
+        Whether the value should be used instead of the default.
+    """
+    return value is not None and (not isinstance(value, str) or bool(value))
 
 
 def get_module_path(module_name: str) -> Path | None:

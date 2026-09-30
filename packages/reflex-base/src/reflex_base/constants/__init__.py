@@ -53,13 +53,19 @@ from .config import (
     UvLock,
 )
 from .custom_components import CustomComponents
-from .event import Endpoint, EventTriggers, SocketEvent
+from .event import ClientErrorType, Endpoint, EventTriggers, SocketEvent
 from .installer import Bun, Node, PackageJson
 from .route import (
     ROUTE_NOT_FOUND,
     ROUTER,
     ROUTER_DATA,
     ROUTER_DATA_INCLUDE,
+    ROUTER_HEADERS,
+    ROUTER_PAGE,
+    ROUTER_ROUTE_ID,
+    ROUTER_SESSION,
+    ROUTER_URL,
+    ROUTER_VARS,
     DefaultPage,
     Page404,
     RouteArgType,
@@ -86,12 +92,19 @@ __all__ = [
     "ROUTER",
     "ROUTER_DATA",
     "ROUTER_DATA_INCLUDE",
+    "ROUTER_HEADERS",
+    "ROUTER_PAGE",
+    "ROUTER_ROUTE_ID",
+    "ROUTER_SESSION",
+    "ROUTER_URL",
+    "ROUTER_VARS",
     "ROUTE_NOT_FOUND",
     "SESSION_STORAGE",
     "SETTER_PREFIX",
     "SYSTEM_COLOR_MODE",
     "AgentsMd",
     "Bun",
+    "ClientErrorType",
     "ColorMode",
     "CompileContext",
     "CompileVars",

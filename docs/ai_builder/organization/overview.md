@@ -19,16 +19,14 @@ Reflex has three levels.
 
 ```python eval
 rx.image(
-    src=rx.color_mode_cond(
-        "https://web.reflex-assets.dev/docs-preview/organization/overview/hierarchy.webp",
-        "https://web.reflex-assets.dev/docs-preview/organization/overview/hierarchy_dark.webp",
-    ),
+    src="https://web.reflex-assets.dev/docs-preview/organization/overview/organization_hierarchy.webp",
     alt="Diagram showing an organization containing projects, and each project containing apps",
-    class_name="rounded-md h-auto",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
 )
 ```
 
-- **Organization**: the top level, usually one per company or team. Members, seats, billing, credits, verified domains, and single sign-on are set here.
+- **Organization**: the top level, usually one per company. Members, teams, organization roles, machine identities, tokens, usage, billing, verified domains, and single sign-on are set here.
 - **Project**: a group of related apps within an organization, with its own members, roles, and settings. Teams commonly use one project per product or client.
 - **App**: an application you build and deploy. Each app belongs to a project.
 
@@ -40,10 +38,11 @@ Settings live at either the organization or the project level.
 
 | Organization level | Project level |
 | --- | --- |
-| Members and seats | Which members can open the project |
-| Organization roles (Admin, Manager, Member) | Project roles (Viewer, Editor, Admin, and custom roles) |
-| Billing, credits, and spending limits | Project name and deletion |
-| Verified domains and auto-join | Deployment approvals |
+| Members, teams, seats, and provisioning | Which members and teams can open the project |
+| Built-in and custom organization roles | Built-in and custom project roles |
+| Service accounts | Project name and deletion |
+| AI and Cloud usage, billing, and credits | Project overview and usage summary |
+| Verified domains and auto-join | Deployment and project-access approvals |
 | Single sign-on (SSO) | Secrets and integrations |
 | Connected cloud providers | Project activity (audit log) |
 | Organization-wide activity (audit log) | Apps and deployments |
@@ -58,7 +57,7 @@ Open the **organization switcher** at the top of the page, choose **Create organ
 rx.image(
     src="https://web.reflex-assets.dev/docs-preview/organization/overview/create_organization.webp",
     alt="The organization switcher menu open, with the Create organization option highlighted",
-    class_name="rounded-md h-auto",
+    class_name="rounded-md h-auto mb-4",
 )
 ```
 
@@ -78,11 +77,17 @@ The **General** tab of your organization's settings shows two fields:
 - **Organization name**: the display name used throughout Reflex. Admins can change it at any time.
 - **Organization ID**: a fixed identifier used by the CLI and API. You can copy it, but not change it.
 
+## Leaving an organization
+
+Use **Leave organization** in **General** when you no longer need access. You immediately lose access to its projects and apps.
+
+An organization must always have at least one admin. If you are the only admin, use **Hand off admin access** to promote another member before leaving. Review the new admin's identity and responsibilities before transferring control.
+
 ## Deleting an organization
 
 Deleting an organization is permanent and removes every project inside it.
 
-Open **Settings → General** and use **Delete organization**. You'll be asked to type the organization's name to confirm.
+Open **General** in the organization sidebar and use **Delete organization**. You'll be asked to type the organization's name to confirm.
 
 ```md alert warning
 # You can't delete your only organization
@@ -98,6 +103,10 @@ Verified domains, single sign-on, bring-your-own-cloud, and inviting teammates a
 Getting your team in:
 
 - [Members & seats](/docs/ai/organization/members/) — add people and manage seats.
+- [Teams](/docs/ai/organization/teams/) — group members and grant project access once.
+- [Provisioning](/docs/ai/organization/provisioning/) — synchronize membership through SCIM.
+- [Service accounts](/docs/ai/organization/service-accounts/) — give CI, scripts, and integrations an organization-owned identity.
+- [Tokens](/docs/hosting/tokens/) — create organization-scoped credentials with limited project and resource access.
 - [Verified domains & auto-join](/docs/ai/organization/domains/) — let teammates join by email domain.
 - [Single sign-on (SSO)](/docs/ai/organization/sso/) — sign in through your identity provider.
 
@@ -105,11 +114,12 @@ Controlling access:
 
 - [Roles & permissions](/docs/ai/organization/roles-and-permissions/) — what each organization and project role can do.
 - [Managing project access](/docs/ai/organization/project-access/) — add members to specific projects.
-- [Custom roles](/docs/ai/organization/custom-roles/) — define a role with the exact permissions you need.
+- [Custom project roles](/docs/ai/organization/custom-roles/) — define project access with the exact permissions you need.
 
 Governing and organizing:
 
-- [Deployment approvals](/docs/ai/organization/deployment-approvals/) — require sign-off before a deployment runs.
+- [Usage](/docs/ai/organization/usage/) — review AI credits and Cloud resources.
+- [Project approvals](/docs/ai/organization/deployment-approvals/) — require sign-off before deployments or project membership changes.
 - [Audit logs](/docs/ai/organization/audit-logs/) — review who did what.
 - [Moving projects & apps](/docs/ai/organization/moving-projects-and-apps/) — move work between projects and organizations.
 - [Bring your own cloud](/docs/ai/organization/cloud-providers/) — run apps on your own infrastructure.

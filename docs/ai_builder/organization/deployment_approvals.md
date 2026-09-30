@@ -1,57 +1,45 @@
 ---
 tags: Organization
-description: Require deployments in a Reflex project to be approved before they go live, and manage the approval queue.
+description: Require approval before deployments or project membership changes, and manage the pending queues.
 ---
 
-# Deployment Approvals
+# Project Approvals
 
-```python exec
-import reflex as rx
-```
+Approvals add a checkpoint before sensitive project actions take effect. A project can require approval for deployments, member additions and role changes, or member removals.
 
-You can require every deployment in a project to be **approved** before it runs. With approvals on, anyone can request a deployment, but it waits for sign-off from someone with permission. This gives the team a checkpoint before changes reach production.
+Configure these policies from **Approvals** in the project sidebar.
 
-Deployment approvals are configured per project, under **Settings → Deploy approvals**.
+## Approval policies
 
-## Turning on approvals
+The page provides three independent policies:
 
-On the **Deploy approvals** tab, switch on **Require approval to deploy**. Deployments in the project are then held until approved.
+- **Require approval to deploy**: holds deployments until someone with **Approve deployments** approves them.
+- **Require approval to add members or change roles**: holds member additions, team access grants, and role changes until someone with **Approve project changes** approves them.
+- **Require approval to remove members**: holds member removals until someone with **Approve project changes** approves them.
 
-Only **project admins** can change this setting; others can see it but not change it.
+Only project admins can change these policies. Turn on only the checkpoints your project needs.
 
-```python eval
-rx.image(
-    src="https://web.reflex-assets.dev/docs-preview/organization/deployment-approvals/approval_policy.webp",
-    alt="The Deploy approvals tab with the Require approval to deploy toggle switched on",
-    class_name="rounded-md h-auto",
-)
-```
+## Approval permissions
 
-## Who can approve
+Project admins have both approval permissions by default. A [custom project role](/docs/ai/organization/custom-roles/) can grant either permission without granting full Admin access:
 
-Anyone with the **Approve deployments** permission can approve a deployment:
+- **Approve deployments** covers deployment requests.
+- **Approve project changes** covers member additions, removals, team access grants, and role changes.
 
-- **Project admins**, who have it by default.
-- Anyone with a [custom role](/docs/ai/organization/custom-roles/) that grants **Approve deployments**.
+This lets a release manager approve deployments while another trusted reviewer handles access changes.
 
-This separates who can request a deployment from who can approve one. For example, editors can deploy to staging while a release manager signs off on production.
+## Pending requests
 
-## The approval flow
+When an enabled policy applies, the action waits in its matching section:
 
-1. A team member starts a deployment as usual.
-2. With approvals on, the deployment is held instead of running.
-3. It appears under **Pending deployments** on the **Deploy approvals** tab, showing the app, who requested it, and where it would deploy (provider, region, and machine size).
-4. An approver selects **Approve** to run it, or **Reject** to stop it.
+- **Pending deployments**
+- **Pending member additions and role changes**
+- **Pending member removals**
 
-```python eval
-rx.image(
-    src="https://web.reflex-assets.dev/docs-preview/organization/deployment-approvals/pending_deployments.webp",
-    alt="A pending deployments list showing an app, the requester, deployment details, and Approve and Reject buttons",
-    class_name="rounded-md h-auto",
-)
-```
+An authorized reviewer can approve the request so it continues, or reject it so the requested change does not take effect.
 
 ## Related
 
-- [Custom roles](/docs/ai/organization/custom-roles/) — grant the Approve deployments permission.
+- [Custom project roles](/docs/ai/organization/custom-roles/) — grant approval permissions without full Admin access.
+- [Managing project access](/docs/ai/organization/project-access/) — add members and teams to a project.
 - [Audit logs](/docs/ai/organization/audit-logs/) — review approvals and other activity.

@@ -28,7 +28,7 @@ class StateManagerMemory(StateManager):
     states: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     # The mutex ensures the dict of mutexes is updated exclusively
-    _state_manager_lock: asyncio.Lock = dataclasses.field(default=asyncio.Lock())
+    _state_manager_lock: asyncio.Lock = dataclasses.field(default_factory=asyncio.Lock)
 
     # The dict of mutexes for each client
     _states_locks: dict[str, asyncio.Lock] = dataclasses.field(

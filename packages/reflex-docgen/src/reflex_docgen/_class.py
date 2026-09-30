@@ -114,6 +114,31 @@ def _attributes_from_sections(sections: list[Any]) -> dict[str, str]:
     }
 
 
+def _attributes_from_mro(cls: type, sections: list[Any]) -> dict[str, str]:
+    """Merge Attributes sections from the class and its base classes.
+
+    Fields are inherited from base classes, so their descriptions must be too
+    (e.g. ``Config`` inherits every documented field from ``BaseConfig``). Bases
+    are merged in reverse MRO order so a class closer to ``cls`` wins, and
+    ``cls``'s own docstring (already parsed as ``sections``) wins over all bases.
+
+    Args:
+        cls: The class whose MRO to walk.
+        sections: The parsed docstring sections of ``cls`` itself.
+
+    Returns:
+        A mapping from attribute name to description string.
+    """
+    attrs: dict[str, str] = {}
+    for base in reversed(cls.__mro__[1:]):
+        # Only parse docstrings defined on the base itself; object and
+        # undocumented bases contribute nothing.
+        if base is not object and base.__dict__.get("__doc__"):
+            attrs.update(_attributes_from_sections(_parse_docstring_sections(base)))
+    attrs.update(_attributes_from_sections(sections))
+    return attrs
+
+
 def _description_from_sections(sections: list[Any]) -> str | None:
     """Join the prose body of a docstring, excluding the Attributes section.
 
@@ -556,7 +581,7 @@ def generate_class_documentation(cls: type) -> ClassDocumentation:
     try:
         sections = _parse_docstring_sections(cls)
         description = _description_from_sections(sections)
-        docstring_attrs = _attributes_from_sections(sections)
+        docstring_attrs = _attributes_from_mro(cls, sections)
 
         if dataclasses.is_dataclass(cls):
             fields = _get_dataclass_fields(cls, docstring_attrs)

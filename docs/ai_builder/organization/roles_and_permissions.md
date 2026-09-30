@@ -5,18 +5,14 @@ description: How Reflex roles and permissions work at the organization and proje
 
 # Roles & Permissions
 
-```python exec
-import reflex as rx
-```
-
 Roles decide what each person can do. Reflex has two levels of roles:
 
-- **Organization roles** apply across the whole organization: managing members, billing, and creating projects.
-- **Project roles** apply within a single project: building apps, editing secrets, and approving deployments.
+- **Organization roles** apply across the whole organization: creating projects, viewing audit activity, managing billing, and administering the organization.
+- **Project roles** apply within a single project: building apps, editing secrets, and approving protected actions. They can be assigned directly to a member or inherited through a team.
 
 The two are assigned separately. Organization roles govern running the organization; project roles govern the work done inside a project.
 
-## Organization roles
+## Built-in organization roles
 
 Every member has one organization role.
 
@@ -33,17 +29,26 @@ Every member has one organization role.
 | Automatically an **Admin** of every project | | | ✓ |
 
 - **Member**: has access only to the projects they're added to, with the project role they're given there.
-- **Manager**: a member who can also create projects. Suited to team leads who don't manage people or billing.
+- **Manager**: a member who can also create projects and view organization audit activity. Suited to team leads who don't manage people or billing.
 - **Admin**: manages members and billing, and is an admin of every project in the organization.
 
-```md alert info
-# Organization admins have access to every project
-An organization admin is a project admin everywhere, so you don't add them to projects individually. They appear in a project's member list with an **Organization admin** badge, and their access can't be edited there.
-```
+Manage these roles from **Roles** in the organization sidebar.
+
+### Custom organization roles
+
+When the built-in roles grant too much or too little access, an organization admin can select **New role** and create a custom organization role. Each custom role starts with Member access and can add:
+
+- **Create projects**
+- **Manage billing**
+- **View audit logs**
+
+For example, a billing manager can manage billing without receiving Admin access to every project. Custom organization roles do not replace Admin for managing organization members or administering every project.
 
 ## Project roles
 
-When you add a member to a project, you assign a **project role**. Reflex has three built-in roles, plus [custom roles](/docs/ai/organization/custom-roles/) for cases the built-ins don't cover.
+When you add a member or [team](/docs/ai/organization/teams/) to a project, you assign a **project role**. Reflex has three built-in roles, plus [custom roles](/docs/ai/organization/custom-roles/) for cases the built-ins don't cover.
+
+Team assignments have additional role restrictions. See [Adding a team to a project](/docs/ai/organization/project-access/#adding-a-team-to-a-project).
 
 | | **Viewer** | **Editor** | **Admin** |
 | --- | :---: | :---: | :---: |
@@ -55,6 +60,7 @@ When you add a member to a project, you assign a **project role**. Reflex has th
 | Add and edit secrets | | | ✓ |
 | Manage integrations | | | ✓ |
 | Approve deployments | | | ✓ |
+| Approve project changes | | | ✓ |
 | View the project audit log | | | ✓ |
 | Rename the project | | | ✓ |
 | Delete the project | | | ✓ |
@@ -63,26 +69,24 @@ When you add a member to a project, you assign a **project role**. Reflex has th
 
 - **Viewer**: read-only. Can see the project and its apps but can't edit, deploy, or reveal secret values.
 - **Editor**: creates and edits apps, works in Build, and manages app secrets. Can see that project secrets exist but not reveal their values.
-- **Admin**: full control of the project, including members, roles, integrations, secrets, approvals, and deletion.
+- **Admin**: full control of the project, including members, roles, integrations, secrets, approval policies, and deletion.
+
+## Service-account roles
+
+[Service accounts](/docs/ai/organization/service-accounts/) can have the organization Member or Manager role, but never organization Admin. Grant their project access separately from the service account's **Manage** dialog, where they can receive Viewer, Editor, or Admin.
+
+Use the lowest organization and project roles required by the automation.
 
 ## How the two levels combine
 
-A person's access to a project comes from either their organization role or their project role:
+A person's effective access to a project can combine their organization role, team assignments, and a directly assigned project role:
 
 - **Organization admins** are admins of every project automatically; you don't add them.
-- **Managers and members** have no project access until you add them to a project and assign a role. See [Managing project access](/docs/ai/organization/project-access/).
+- **Managers and members** have no project access until they receive a direct project role or inherit one through a team. See [Managing project access](/docs/ai/organization/project-access/).
+- **Team assignments** grant the team's project role to every member of that team.
 - Changing someone's project role doesn't change their organization role, and the reverse is also true.
 
-```python eval
-rx.image(
-    src=rx.color_mode_cond(
-        light="https://web.reflex-assets.dev/docs-preview/organization/roles-and-permissions/roles_overview.webp",
-        dark="https://web.reflex-assets.dev/docs-preview/organization/roles-and-permissions/roles_overview_dark.webp",
-    ),
-    alt="Diagram showing organization roles on the left and project roles on the right, with an organization admin inheriting project admin across all projects",
-    class_name="rounded-md h-auto",
-)
-```
+For instructions on reviewing direct and inherited access, see [Viewing effective permissions](/docs/ai/organization/project-access/#viewing-effective-permissions).
 
 ## Choosing a role
 
@@ -91,21 +95,17 @@ Guidelines for most teams:
 - Give organization **Admin** only to the few people who manage the team and its billing.
 - Use **Manager** for team leads who create projects but shouldn't manage people or billing.
 - Keep most people as **Member** and control their access project by project.
+- Use a custom organization role when someone needs only project creation, billing management, or audit-log access.
+- Use [teams](/docs/ai/organization/teams/) when the same group needs consistent access, and reserve direct assignments for exceptions.
 - Within a project, make builders **Editors**, reserve **Admin** for project owners, and use **Viewer** for anyone who only needs to view.
 - When a built-in project role is close but not exact, create a [custom role](/docs/ai/organization/custom-roles/) rather than over-granting Admin.
 
-## Permission reference
+## Custom permissions at each level
 
-The built-in project roles are combinations of individual permissions, which you can also assemble into a [custom role](/docs/ai/organization/custom-roles/). Reflex groups them as:
-
-- **Project:** Create apps, Create threads, Rename project, Delete project.
-- **Secrets & integrations:** Manage integrations, View secret names, Reveal secret values, Edit secrets.
-- **Deployments:** Approve deployments.
-- **Activity:** View audit log.
-
-**Managing members** and **managing roles** can't be granted on their own. Either one amounts to admin control, so both stay with the Admin role. Billing permissions come from your organization role, not from project roles.
+Organization custom roles add selected organization permissions to Member access. Project custom roles start from a project access level and add selected project permissions. See [Custom project roles](/docs/ai/organization/custom-roles/) for the complete project permission list and setup steps.
 
 ## Related
 
 - [Managing project access](/docs/ai/organization/project-access/) — add members to a project and assign roles.
-- [Custom roles](/docs/ai/organization/custom-roles/) — define a role with specific permissions.
+- [Teams](/docs/ai/organization/teams/) — group members and grant inherited project access.
+- [Custom project roles](/docs/ai/organization/custom-roles/) — define a project role with specific permissions.
