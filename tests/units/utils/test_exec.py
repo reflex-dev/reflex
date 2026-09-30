@@ -292,7 +292,7 @@ def test_run_granian_backend_binds_listen_socket_in_supervisor(
         with socket.create_connection(listener.getsockname(), timeout=1):
             pass
     finally:
-        listener.close()
+        server._close_shared_socket()  # pyright: ignore[reportAttributeAccessIssue]
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="Granian uses this path on Linux")
@@ -654,8 +654,7 @@ def test_run_granian_backend_releases_socket_when_worker_dies(
 
         assert _port_is_bindable(port)
     finally:
-        if server._sso is not None:
-            server._sso.close()
+        server._close_shared_socket()
 
 
 def test_run_granian_backend_keeps_socket_across_worker_restart(
@@ -673,8 +672,7 @@ def test_run_granian_backend_keeps_socket_across_worker_restart(
 
         assert not _port_is_bindable(port)
     finally:
-        if server._sso is not None:
-            server._sso.close()
+        server._close_shared_socket()
 
 
 def test_run_granian_backend_rebinds_socket_for_the_next_worker(
@@ -695,8 +693,7 @@ def test_run_granian_backend_rebinds_socket_for_the_next_worker(
         assert not _port_is_bindable(port)
         assert server._sso.get_inheritable()
     finally:
-        if server._sso is not None:
-            server._sso.close()
+        server._close_shared_socket()
 
 
 def test_run_granian_backend_releases_socket_on_shutdown(
@@ -712,8 +709,40 @@ def test_run_granian_backend_releases_socket_on_shutdown(
         assert _port_is_bindable(port)
         assert server.shutdowns == [0]
     finally:
-        if server._sso is not None:
-            server._sso.close()
+        server._close_shared_socket()
+
+
+def test_run_granian_backend_closes_released_socket_once(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Releasing the socket closes its handle through exactly one owner.
+
+    The socket object and granian's SocketHolder wrap the same handle, and only
+    the Windows holder closes it when dropped. Closing it through both lets the
+    second close hit whichever socket has reused the handle by then.
+    """
+    port = _free_port()
+    server = _dev_granian_supervisor(mocker, tmp_path, port)
+    server._init_shared_socket()
+    # Outliving the release shows which of the two owners closes the handle.
+    holder = server._shd
+    try:
+        server._close_shared_socket()
+
+        assert server._shd is None
+        assert not server._shared_socket_is_open()
+        if exec_utils.constants.IS_WINDOWS:
+            assert not _port_is_bindable(port)
+        else:
+            assert _port_is_bindable(port)
+        # Takes over the handle if the socket object freed it.
+        later = socket.socket()
+    finally:
+        del holder
+    with later:
+        # Raises if dropping the holder closed the reused handle again.
+        later.bind(("127.0.0.1", 0))
+    assert _port_is_bindable(port)
 
 
 def _wait_for_refused_connection(port: int, timeout: float = 20) -> bool:
