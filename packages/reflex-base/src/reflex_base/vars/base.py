@@ -12,7 +12,6 @@ import hashlib
 import inspect
 import json
 import logging
-import os
 import re
 import string
 import warnings
@@ -45,6 +44,7 @@ from typing_extensions import LiteralString, dataclass_transform, override
 from reflex_base import constants
 from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.environment import _on_env_var_set, environment
 from reflex_base.utils import exceptions, imports, serializers, types
 from reflex_base.utils.compat import MISSING_TYPE, annotations_from_namespace
 from reflex_base.utils.decorator import once
@@ -2446,17 +2446,22 @@ def _delta_value_key(value: Any) -> Any:
         return _UNKEYABLE_VALUE
 
 
+@functools.cache
 def _type_check_depth() -> int:
     """Get how many container levels state var type checks look into.
 
     The checks only log an error, so production mode checks just the outer type
-    instead of walking every element. The environment is read on each call, so
-    a mode set at runtime applies at once.
+    instead of walking every element. Reading the environment costs more than
+    the check it would skip, so the mode is resolved once and re-resolved when
+    ``environment.REFLEX_ENV_MODE.set`` changes it.
 
     Returns:
         The ``nested`` depth to pass to ``_isinstance``.
     """
-    return 0 if os.environ.get("REFLEX_ENV_MODE") == constants.Env.PROD.value else 1
+    return 0 if environment.REFLEX_ENV_MODE.get() == constants.Env.PROD else 1
+
+
+_on_env_var_set(environment.REFLEX_ENV_MODE.name, _type_check_depth.cache_clear)
 
 
 def is_computed_var(obj: Any) -> TypeGuard[ComputedVar]:

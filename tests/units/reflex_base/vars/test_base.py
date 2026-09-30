@@ -3,6 +3,7 @@
 import dataclasses
 import gc
 import logging
+import os
 import pickle
 import subprocess
 import sys
@@ -11,10 +12,13 @@ import traceback
 import typing
 import weakref
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
 from typing import Any, ClassVar, Literal, TypeVar
 
 import pytest
+from reflex_base import constants
 from reflex_base.constants import RouteArgType
+from reflex_base.environment import environment
 from reflex_base.utils import serializers
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 from reflex_base.utils.imports import ImportVar
@@ -32,6 +36,7 @@ from reflex_base.vars.base import (
     VarData,
     _global_vars,
     _linearize_bases,
+    _type_check_depth,
     cached_property,
     cached_property_no_lock,
     computed_var,
@@ -1258,19 +1263,46 @@ def test_cached_computed_var_checks_return_type_on_recompute_only(
     assert checked == [[2, 4, 6], [10]]
 
 
+@pytest.fixture
+def restore_env_mode() -> Iterator[None]:
+    """Restore REFLEX_ENV_MODE and the cached type check depth after a test.
+
+    Yields:
+        None.
+    """
+    original = os.environ.get(environment.REFLEX_ENV_MODE.name)
+    yield
+    if original is None:
+        os.environ.pop(environment.REFLEX_ENV_MODE.name, None)
+    else:
+        os.environ[environment.REFLEX_ENV_MODE.name] = original
+    _type_check_depth.cache_clear()
+
+
+@pytest.mark.usefixtures("restore_env_mode")
+def test_type_check_depth_follows_env_mode_set():
+    """Setting REFLEX_ENV_MODE re-resolves the cached type check depth."""
+    environment.REFLEX_ENV_MODE.set(constants.Env.DEV)
+    assert _type_check_depth() == 1
+    environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
+    assert _type_check_depth() == 0
+    environment.REFLEX_ENV_MODE.set(None)
+    assert _type_check_depth() == 1
+
+
+@pytest.mark.usefixtures("restore_env_mode")
 @pytest.mark.parametrize(
-    ("env_mode", "element_error_logged"), [("dev", True), ("prod", False)]
+    ("env_mode", "element_error_logged"),
+    [(constants.Env.DEV, True), (constants.Env.PROD, False)],
 )
 def test_state_var_type_check_depth_follows_env_mode(
-    monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
-    env_mode: str,
+    env_mode: constants.Env,
     element_error_logged: bool,
 ):
     """Prod mode checks only the outer type of assigned and computed values.
 
     Args:
-        monkeypatch: Pytest monkeypatch fixture.
         caplog: Pytest log capture fixture.
         env_mode: The REFLEX_ENV_MODE value.
         element_error_logged: Whether a wrong element type is reported.
@@ -1284,7 +1316,7 @@ def test_state_var_type_check_depth_follows_env_mode(
         def as_ints(self) -> list[int]:
             return self.wrong_elements  # pyright: ignore[reportReturnType]
 
-    monkeypatch.setenv("REFLEX_ENV_MODE", env_mode)
+    environment.REFLEX_ENV_MODE.set(env_mode)
     state = DepthState()
 
     with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):

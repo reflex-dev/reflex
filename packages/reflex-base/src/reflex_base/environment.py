@@ -8,7 +8,7 @@ import importlib
 import logging
 import os
 import re
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
@@ -448,6 +448,20 @@ def interpret_env_var_value(
 
 T = TypeVar("T")
 
+# Callbacks run after ``EnvVar.set`` changes the variable of the same name, so
+# values cached off the hot path stay in sync with in-process changes.
+_SET_CALLBACKS: dict[str, list[Callable[[], object]]] = {}
+
+
+def _on_env_var_set(name: str, callback: Callable[[], object]) -> None:
+    """Run a callback whenever ``EnvVar.set`` changes the named variable.
+
+    Args:
+        name: The environment variable name.
+        callback: The function to call after the variable changes.
+    """
+    _SET_CALLBACKS.setdefault(name, []).append(callback)
+
 
 def _serialize_env_value(value: Any) -> str:
     """Render a value in the form :func:`interpret_env_var_value` reads back.
@@ -548,6 +562,8 @@ class EnvVar(Generic[T]):
             else:
                 str_value = _serialize_env_value(value)
             os.environ[self.name] = str_value
+        for callback in _SET_CALLBACKS.get(self.name, ()):
+            callback()
 
 
 @lru_cache
