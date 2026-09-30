@@ -18,7 +18,7 @@ def _event_loop_provider_body() -> str:
         state_name="state",
     )
     start = rendered.index("export function EventLoopProvider")
-    end = rendered.index("export function StateProvider", start)
+    end = rendered.index("const useIsomorphicLayoutEffect", start)
     return rendered[start:end]
 
 
