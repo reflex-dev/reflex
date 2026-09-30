@@ -710,6 +710,20 @@ def test_base_context_subclasses_initialize_distinct_context_vars() -> None:
     assert DynamicContext._context_var is not AnotherDynamicContext._context_var
 
 
+def test_compiler_contexts_use_identity_equality() -> None:
+    root = Fragment.create()
+    page_a = PageContext(name="page", route="/eq", root_component=root)
+    page_b = PageContext(name="page", route="/eq", root_component=root)
+    hooks = CompilerHooks()
+    compile_a = CompileContext(pages=[], hooks=hooks)
+    compile_b = CompileContext(pages=[], hooks=hooks)
+
+    for a, b in ((page_a, page_b), (compile_a, compile_b)):
+        assert a == a
+        assert a != b
+        assert len({a, b}) == 2
+
+
 def test_apply_style_plugin_matches_legacy_style_behavior() -> None:
     component = create_component_tree()
     legacy_component = create_component_tree()
