@@ -864,15 +864,22 @@ class StateNode(EvenMoreBasicBaseState):
 
         Raises:
             ValueError: If both data and fp are provided, or neither are provided.
-            StateSchemaMismatchError: If the state schema does not match the expected schema.
+            StateSchemaMismatchError: If the state schema does not match the expected schema,
+                or the stored state can no longer be unpickled (e.g. a class it references
+                was moved, deleted or changed).
         """
         if data is not None and fp is None:
-            (substate_schema, state) = pickle.loads(data)
+            unpickle = functools.partial(pickle.loads, data)
         elif fp is not None and data is None:
-            (substate_schema, state) = pickle.load(fp)
+            unpickle = functools.partial(pickle.load, fp)
         else:
             msg = "Only one of `data` or `fp` must be provided"
             raise ValueError(msg)
+        try:
+            (substate_schema, state) = unpickle()
+        except Exception as err:
+            msg = f"Stored state could not be unpickled: {err!r}"
+            raise StateSchemaMismatchError(msg) from err
         if substate_schema != state._to_schema():
             raise StateSchemaMismatchError
         return state
