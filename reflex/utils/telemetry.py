@@ -503,17 +503,28 @@ def _get_telemetry_executor() -> ThreadPoolExecutor:
     return _executor
 
 
-def _shutdown_executor() -> None:
+def _shutdown_executor(timeout: float = 2) -> None:
     """Deliver queued telemetry and stop the worker thread.
 
     Called before forking so no telemetry thread is alive at the fork; the
-    next send lazily starts a new worker.
+    next send lazily starts a new worker. A send that stalls past the timeout
+    (e.g. on a DNS lookup) is abandoned so it cannot hold up startup.
+
+    Args:
+        timeout: Maximum number of seconds to wait for queued telemetry.
     """
     global _executor
+    if (executor := _executor) is None:
+        return
+    drained = _flush(timeout)
+    if not drained:
+        logger.debug(f"Telemetry did not drain within {timeout}s before forking.")
+    # Stay published while stopping: a racing send() then fails to submit (and
+    # is suppressed) instead of starting a second pool before the fork.
+    executor.shutdown(wait=drained, cancel_futures=True)
     with _executor_lock:
-        executor, _executor = _executor, None
-    if executor is not None:
-        executor.shutdown(wait=True)
+        if _executor is executor:
+            _executor = None
 
 
 def _reset_executor_after_fork() -> None:
