@@ -1,0 +1,29 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><link rel="preload" as="image" href="/logo.svg"/><link as="style" href="/assets/__reflex_global_styles-Bja7d8zq.css" rel="preload"/><title>Reflex playground</title><meta content="favicon.ico" property="og:image"/><link rel="modulepreload" href="/assets/manifest-24546cb6.js"/><link rel="modulepreload" href="/assets/entry.client-PAjQ1ewH.js"/><link rel="modulepreload" href="/assets/components-DzQT6F3y.js"/><link rel="modulepreload" href="/assets/react-dom-CM0sdMnz.js"/><link rel="modulepreload" href="/assets/errorBoundaries-m9jGFIQ4.js"/><link rel="modulepreload" href="/assets/root-ajGuFAV2.js"/><link rel="modulepreload" href="/assets/link-D_rz9Rcp.js"/><link rel="modulepreload" href="/assets/reflex-env-BVGF6eGS.js"/><link rel="modulepreload" href="/assets/emotion-react.browser.esm-BUuhssUM.js"/><link rel="modulepreload" href="/assets/button-Ca3xX7bl.js"/><link rel="modulepreload" href="/assets/code-D7agZnkH.js"/><link rel="modulepreload" href="/assets/_index-CaNbpnaO.js"/><script>
+// Only run in browser environment, not during SSR
+if (typeof document !== 'undefined') {
+    try {
+        const theme = localStorage.getItem("theme") || 'system';
+        const systemPreference = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        const resolvedTheme = theme === "system" ? systemPreference : theme;
+
+        // Apply theme immediately - blocks until complete
+        // Use classList to avoid overwriting other classes
+        document.documentElement.classList.remove("light", "dark");
+        document.documentElement.classList.add(resolvedTheme);
+        document.documentElement.style.colorScheme = resolvedTheme;
+
+    } catch (e) {
+        // Fallback to system preference on any error (resolve "system" to actual theme)
+        const fallbackTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.classList.remove("light", "dark");
+        document.documentElement.classList.add(fallbackTheme);
+        document.documentElement.style.colorScheme = fallbackTheme;
+    }
+}
+</script><link href="/assets/__reflex_global_styles-Bja7d8zq.css" rel="stylesheet" type="text/css"/></head><body><script type="module" async="">import "/assets/manifest-24546cb6.js";
+import * as route0 from "/assets/root-ajGuFAV2.js";
+import * as route1 from "/assets/_index-CaNbpnaO.js";
+  
+  window.__reactRouterRouteModules = {"root":route0,"routes/_index":route1};
+
+import("/assets/entry.client-PAjQ1ewH.js");</script></body></html>

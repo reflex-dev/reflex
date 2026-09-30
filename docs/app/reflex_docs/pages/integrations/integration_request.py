@@ -10,7 +10,7 @@ def request_integration_dialog() -> rx.Component:
         description="Let us know what integration you'd like to see added.",
         trigger=rx.el.strong(
             rx.el.u("here"),
-            class_name="cursor-pointer text-primary-11 decoration-primary-9",
+            class_name="cursor-pointer text-foreground decoration-primary",
         ),
         content=rx.el.form(
             ui.textarea(

@@ -1,0 +1,1 @@
+`reflex cloud secrets update` now prints a success line naming the keys it set and whether the app is rebooting, like `secrets delete` already did. Only key names are printed; values are never logged.

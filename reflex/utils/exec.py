@@ -10,9 +10,11 @@ import logging
 import os
 import platform
 import re
+import socket
 import subprocess
 import sys
-from collections.abc import Mapping, Sequence
+import threading
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
 
@@ -21,7 +23,7 @@ from reflex_base.config import get_config
 from reflex_base.constants.base import LogLevel
 from reflex_base.environment import environment
 from reflex_base.telemetry_context import CompileTrigger
-from reflex_base.utils import console
+from reflex_base.utils import console, log
 from reflex_base.utils.decorator import once
 
 from reflex.utils import path_ops
@@ -223,26 +225,41 @@ _DEV_CONDITION_FLAG = "--conditions=development"
 def _with_development_condition(environ: Mapping[str, str]) -> dict[str, str]:
     """Copy an environment with the `development` export condition enabled.
 
-    react-router's dev CLI requires the condition and re-executes itself with
-    NODE_OPTIONS to enable it; bun does not apply NODE_OPTIONS when it runs
-    the CLI on node-less installs, so the restarted process trips the CLI's
-    restart guard and exits. Enabling the condition for both runtimes in the
-    dev server's environment lets it start under either, without leaking the
-    setting into the parent process.
+    react-router's dev CLI requires the condition and relaunches itself to
+    enable it. Setting it up front skips that relaunch under node, which reads
+    NODE_OPTIONS. Bun applies neither NODE_OPTIONS nor BUN_OPTIONS to the
+    process it spawns for a package script, so a node-less install relaunches
+    regardless and relies on the CLI passing the condition along as a flag.
+    The setting does not leak into the parent process.
 
     Args:
         environ: The base environment.
 
     Returns:
-        A copy of the environment with the flag merged into NODE_OPTIONS and
-        BUN_OPTIONS.
+        A copy of the environment with the flag merged into NODE_OPTIONS.
     """
     env = dict(environ)
-    for options_var in ("NODE_OPTIONS", "BUN_OPTIONS"):
-        existing = env.get(options_var, "")
-        if _DEV_CONDITION_FLAG not in existing.split():
-            env[options_var] = f"{existing} {_DEV_CONDITION_FLAG}".strip()
+    existing = env.get("NODE_OPTIONS", "")
+    if _DEV_CONDITION_FLAG not in existing.split():
+        env["NODE_OPTIONS"] = f"{existing} {_DEV_CONDITION_FLAG}".strip()
     return env
+
+
+def frontend_env(environ: Mapping[str, str]) -> dict[str, str]:
+    """Build the environment for the frontend toolchain processes.
+
+    Rolldown, which vite and react-router run for dependency pre-bundling and
+    builds, allocates through mimalloc. Disabling eager arena commit keeps the
+    memory it touches during pre-bundling from staying resident for the life of
+    the dev server or build. A value already present in ``environ`` wins.
+
+    Args:
+        environ: The base environment.
+
+    Returns:
+        A copy of the environment for the vite/react-router processes.
+    """
+    return {"MIMALLOC_ARENA_EAGER_COMMIT": "0", **environ, "NO_COLOR": "1"}
 
 
 # run_process_and_launch_url is assumed to be used
@@ -267,7 +284,7 @@ def run_process_and_launch_url(
     while True:
         if process is None:
             kwargs: dict[str, Any] = {
-                "env": _with_development_condition({**os.environ, "NO_COLOR": "1"})
+                "env": _with_development_condition(frontend_env(os.environ))
             }
             if constants.IS_WINDOWS and backend_present:
                 kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
@@ -381,7 +398,9 @@ def _frontend_prod_app():
     return Starlette(routes=[get_frontend_mount()])
 
 
-def run_frontend_prod(host: str, port: int):
+def run_frontend_prod(
+    host: str, port: int, on_started: Callable[[], Any] | None = None
+):
     """Run the frontend in production mode by serving compiled static files.
 
     Uses the same granian/uvicorn infrastructure as the backend.
@@ -389,16 +408,25 @@ def run_frontend_prod(host: str, port: int):
     Args:
         host: The host to serve on.
         port: The port to serve on.
+        on_started: Called once the server's workers have been started.
     """
     loglevel = get_config().loglevel.subprocess_level()
 
     if should_use_granian():
         run_granian_backend_prod(
-            host, port, loglevel, app_target=f"{__name__}:_frontend_prod_app"
+            host,
+            port,
+            loglevel,
+            app_target=f"{__name__}:_frontend_prod_app",
+            on_started=on_started,
         )
     else:
         run_uvicorn_backend_prod(
-            host, port, loglevel, app_target=f"{__name__}:_frontend_prod_app"
+            host,
+            port,
+            loglevel,
+            app_target=f"{__name__}:_frontend_prod_app",
+            on_started=on_started,
         )
 
 
@@ -489,17 +517,35 @@ def run_backend(
         frontend_present: Whether the frontend is present.
     """
     web_dir = get_web_dir()
-    # Create a .nocompile file to skip compile for backend.
+    # Only a backend running with a frontend needs to skip its own compile.
+    # Backend-only runs must not leave this marker for the next full run.
     if web_dir.exists():
-        (web_dir / constants.NOCOMPILE_FILE).touch()
+        nocompile = web_dir / constants.NOCOMPILE_FILE
+        if frontend_present:
+            nocompile.touch()
+        else:
+            nocompile.unlink(missing_ok=True)
 
     if not frontend_present:
         notify_backend(host)
 
     # Run the backend in development mode.
     if should_use_granian():
-        # We import reflex app because this lets granian cache the module
-        import reflex.app  # noqa: F401
+        # Fix the start method first so a backend-only run, which skips the
+        # compile pool, preloads under the same rule as the reload worker.
+        set_dev_start_method()
+        # Forked workers inherit imported modules from the supervisor. Spawned
+        # and forkserver workers do not, so preloading the app there only keeps
+        # the full framework graph resident in the long-lived supervisor.
+        if not environment.REFLEX_STRICT_HOT_RELOAD.get():
+            import multiprocessing
+
+            if multiprocessing.get_start_method() == "fork":
+                from reflex_base.utils import serializers
+
+                import reflex.app  # noqa: F401
+
+                serializers._prepare_serializers_for_fork()
 
         run_granian_backend(host, port, loglevel)
     else:
@@ -652,6 +698,22 @@ HOTRELOAD_IGNORE_PATTERNS = (
 )
 
 
+def _granian_log_dictconfig() -> dict[str, Any] | None:
+    """Get the Granian logging config override for the active log mode.
+
+    Granian replaces top-level keys of its default config, so both of its
+    handlers are redefined.
+
+    Returns:
+        A config routing Granian records through the JSON handler in JSON
+        mode, otherwise None to keep the Granian defaults.
+    """
+    if not log.is_json_mode():
+        return None
+    json_handler = {"()": "reflex_base.utils.log.JsonHandler"}
+    return {"handlers": {"console": json_handler, "access": json_handler}}
+
+
 def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     """Run the backend in development mode using Granian.
 
@@ -668,8 +730,128 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
 
     from granian.constants import Interfaces
     from granian.log import LogLevels
+    from granian.net import SocketSpec  # pyright: ignore[reportPrivateImportUsage]
     from granian.server import Server as Granian
     from reflex_base.environment import _load_dotenv_from_env
+
+    class ParentBoundGranian(Granian):  # pyright: ignore[reportGeneralTypeIssues]
+        """Granian server that binds the listen socket in the supervisor.
+
+        On Linux each worker otherwise binds only after loading the app, so
+        requests during a reload are refused. With the supervisor holding the
+        socket they wait in the accept backlog for the new worker.
+
+        The socket is released again whenever no worker is left to serve it --
+        a worker that died on its own (an app module that raises on import), or
+        the supervisor shutting down -- so that clients are refused right away
+        instead of waiting in the accept backlog. The next worker spawn
+        re-creates it.
+        """
+
+        def __init__(self, *args, **kwargs):
+            """Create the supervisor.
+
+            Args:
+                args: Positional arguments for the Granian server.
+                kwargs: Keyword arguments for the Granian server.
+            """
+            super().__init__(*args, **kwargs)
+            self._socket_lock = threading.RLock()
+            self._spawn_count = 0
+
+        def _init_shared_socket(self):
+            """Bind the listening socket in the supervisor process."""
+            self._ssp = SocketSpec(self.bind_addr, self.bind_port, self.backlog)
+            self._shd = self._ssp.build()
+            self._sfd = self._shd.get_fd()
+            self._ssp = None
+            sock = socket.socket(fileno=self._sfd)
+            sock.set_inheritable(True)
+            self._sso = sock
+            # Resolve port 0 so a re-created socket keeps the same port.
+            self.bind_port = sock.getsockname()[1]
+
+        def _shared_socket_is_open(self) -> bool:
+            """Report whether the supervisor still holds the listening socket.
+
+            Returns:
+                Whether the listening socket is open.
+            """
+            return self._sso is not None and self._sso.fileno() >= 0
+
+        def _close_shared_socket(self):
+            """Release the listening socket, so the port refuses connections."""
+            with self._socket_lock:
+                if not self._shared_socket_is_open():
+                    return
+                # The socket object and granian's SocketHolder wrap the same
+                # handle, which must be closed exactly once: by dropping the
+                # holder on Windows, and by the socket object elsewhere, where
+                # the holder never closes it. The released object stays in
+                # place for granian to detach on shutdown.
+                if constants.IS_WINDOWS:
+                    self._sso.detach()
+                else:
+                    self._sso.close()
+                self._shd = self._sfd = None
+
+        def _release_socket_unless_served(self, wrk: Any, spawn_count: int):
+            """Release the socket when an exited worker leaves nobody serving.
+
+            Workers stopped by the supervisor keep the socket bound: their
+            replacement is already on its way and requests should queue for it.
+
+            Args:
+                wrk: The worker that exited.
+                spawn_count: The spawn counter when that worker was created.
+            """
+            if wrk.interrupt_by_parent:
+                return
+            with self._socket_lock:
+                if spawn_count == self._spawn_count and not any(
+                    worker.is_alive() for worker in self.wrks
+                ):
+                    self._close_shared_socket()
+
+        def _spawn_worker(self, idx: int, target: Any, callback_loader: Any):
+            """Spawn a worker, re-creating the socket if it has been released.
+
+            Args:
+                idx: The index of the worker.
+                target: The worker entrypoint.
+                callback_loader: The loader for the ASGI app.
+
+            Returns:
+                The spawned worker.
+            """
+            with self._socket_lock:
+                if not self._shared_socket_is_open():
+                    self._init_shared_socket()
+                self._spawn_count += 1
+                spawn_count = self._spawn_count
+                wrk = super()._spawn_worker(
+                    idx=idx, target=target, callback_loader=callback_loader
+                )
+            granian_watcher = wrk._watcher
+
+            def watcher():
+                granian_watcher()
+                self._release_socket_unless_served(wrk, spawn_count)
+
+            wrk._watcher = watcher
+            return wrk
+
+        def shutdown(self, exit_code: int = 0):
+            """Release the listening socket, then shut the supervisor down.
+
+            Granian only detaches the socket object, which leaves the port
+            bound for as long as the supervisor process lives.
+
+            Args:
+                exit_code: The exit code to terminate with.
+            """
+            self._close_shared_socket()
+            super().shutdown(exit_code)
 
     # The app itself is not imported here: the reload worker must load it
     # fresh on every restart. Only the framework pages are shared.
@@ -679,13 +861,14 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     reset_dev_backend_reload_marker()
     environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)
 
-    granian_app = Granian(
+    granian_app = ParentBoundGranian(
         target=get_app_instance_from_file(),
         factory=True,
         address=host,
         port=port,
         interface=Interfaces.ASGI,
         log_level=LogLevels(loglevel.value),
+        log_dictconfig=_granian_log_dictconfig(),
         reload=True,
         reload_paths=get_reload_paths(),
         reload_ignore_worker_failure=True,
@@ -704,6 +887,7 @@ def run_backend_prod(
     port: int,
     loglevel: constants.LogLevel = constants.LogLevel.ERROR,
     mount_frontend_compiled_app: bool = False,
+    on_started: Callable[[], Any] | None = None,
 ):
     """Run the backend.
 
@@ -712,13 +896,14 @@ def run_backend_prod(
         port: The app port
         loglevel: The log level.
         mount_frontend_compiled_app: Whether to mount the compiled frontend app with the backend.
+        on_started: Called once the server's workers have been started.
     """
     environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.set(mount_frontend_compiled_app)
 
     if should_use_granian():
-        run_granian_backend_prod(host, port, loglevel)
+        run_granian_backend_prod(host, port, loglevel, on_started=on_started)
     else:
-        run_uvicorn_backend_prod(host, port, loglevel)
+        run_uvicorn_backend_prod(host, port, loglevel, on_started=on_started)
 
 
 def _get_backend_workers():
@@ -728,7 +913,11 @@ def _get_backend_workers():
 
 
 def run_uvicorn_backend_prod(
-    host: str, port: int, loglevel: LogLevel, app_target: str | None = None
+    host: str,
+    port: int,
+    loglevel: LogLevel,
+    app_target: str | None = None,
+    on_started: Callable[[], Any] | None = None,
 ):
     """Run the backend in production mode using Uvicorn.
 
@@ -737,6 +926,8 @@ def run_uvicorn_backend_prod(
         port: The app port
         loglevel: The log level.
         app_target: The ASGI app target to run. Defaults to the reflex app instance.
+        on_started: Called right before the server process is launched; it
+            runs in a separate interpreter, so nothing here is forked.
     """
     import os
     import shlex
@@ -778,6 +969,9 @@ def run_uvicorn_backend_prod(
     command += [
         *("--log-level", loglevel.value),
     ]
+
+    if on_started is not None:
+        on_started()
 
     processes.new_process(
         command,
@@ -842,15 +1036,24 @@ def _preload_for_fork(app_target: str | None) -> None:
         app_target: The ASGI app target; None means the reflex app, which is
             imported here. Any other target lives in an already-loaded module.
     """
-    from reflex.utils import prerequisites
+    from reflex_base.utils import serializers
+
+    from reflex.utils import prerequisites, telemetry
 
     if app_target is None:
         prerequisites.get_app()
+    serializers._prepare_serializers_for_fork()
+    # Forking while the telemetry thread may hold a lock can deadlock the child.
+    telemetry._shutdown_executor()
     _freeze_for_fork()
 
 
 def run_granian_backend_prod(
-    host: str, port: int, loglevel: LogLevel, app_target: str | None = None
+    host: str,
+    port: int,
+    loglevel: LogLevel,
+    app_target: str | None = None,
+    on_started: Callable[[], Any] | None = None,
 ):
     """Run the backend in production mode using Granian.
 
@@ -859,6 +1062,8 @@ def run_granian_backend_prod(
         port: The app port
         loglevel: The log level.
         app_target: The ASGI app target to run. Defaults to the reflex app instance.
+        on_started: Called in the supervisor once the workers have been started,
+            so work it does (e.g. a telemetry thread) is not forked into them.
     """
     import multiprocessing
 
@@ -873,13 +1078,28 @@ def run_granian_backend_prod(
         if start_method == "fork":
             _preload_for_fork(app_target)
 
-    granian_app = Granian(
+    class NotifyingGranian(Granian):  # pyright: ignore[reportGeneralTypeIssues]
+        """Granian server that reports when its workers have been started."""
+
+        def startup(self, *args, **kwargs):
+            """Start the supervisor and its workers, then notify the caller.
+
+            Args:
+                args: Positional arguments for the Granian startup.
+                kwargs: Keyword arguments for the Granian startup.
+            """
+            super().startup(*args, **kwargs)
+            if on_started is not None:
+                on_started()
+
+    granian_app = NotifyingGranian(
         target=app_target or get_app_instance_from_file(),
         factory=True,
         address=host,
         port=port,
         interface=Interfaces.ASGI,
         log_level=LogLevels(os.getenv("GRANIAN_LOG_LEVEL", loglevel.value)),
+        log_dictconfig=_granian_log_dictconfig(),
         workers=int(os.getenv("GRANIAN_WORKERS", str(_get_backend_workers()))),
     )
 

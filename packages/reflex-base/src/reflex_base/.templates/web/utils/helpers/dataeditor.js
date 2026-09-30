@@ -40,6 +40,16 @@ export function formatCell(value, column) {
         readonly: !editable,
         allowOverlay: editable,
       };
+    case "image": {
+      const images = Array.isArray(value) ? value : value ? [value] : [];
+      return {
+        kind: GridCellKind.Image,
+        data: images,
+        allowAdd: false,
+        readonly: !editable,
+        allowOverlay: true,
+      };
+    }
     case "bool":
       return {
         kind: GridCellKind.Boolean,

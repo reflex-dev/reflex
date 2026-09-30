@@ -1,5 +1,9 @@
+import asyncio
+import importlib.metadata
 import json
 import shutil
+import subprocess
+import sys
 import tempfile
 import uuid
 from collections.abc import Callable, Generator
@@ -7,6 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Protocol
+from unittest import mock
 
 import pytest
 from click.testing import CliRunner
@@ -15,6 +20,7 @@ from reflex_base.config import Config
 from reflex_base.environment import environment
 from reflex_base.utils import log
 from reflex_base.utils.decorator import cached_procedure
+from reflex_base.utils.exceptions import EnvironmentVarValueError
 
 from reflex.reflex import cli
 from reflex.testing import chdir
@@ -64,10 +70,12 @@ def _mock_pypi_versions(
     Returns:
         The installed-version and network request mocks.
     """
-    installed_version = mocker.patch.object(
-        prerequisites.importlib.metadata,
-        "version",
-        return_value=current_version,
+    installed_version = mocker.Mock(return_value=current_version)
+    # Keep lazy dependency imports on real metadata, outside this consumer's mock.
+    mocker.patch.object(
+        prerequisites,
+        "importlib",
+        mocker.Mock(metadata=mocker.Mock(version=installed_version)),
     )
     response = mocker.Mock()
     response.json.return_value = {"info": {"version": latest_version}}
@@ -113,6 +121,14 @@ def test_check_latest_package_version_tracks_packages_independently(
     )
     stored = json.loads(version_check_file.read_text())
     assert "last_version_check_datetime_reflex_hosting_cli" in stored
+
+
+def test_version_check_mock_keeps_dependency_metadata_real(mocker):
+    """Lazy dependency imports must not see the version check's fixture value."""
+    original_version = importlib.metadata.version
+    installed_version, _ = _mock_pypi_versions(mocker)
+    assert importlib.metadata.version is original_version
+    assert prerequisites.importlib.metadata.version is installed_version
 
 
 def test_check_latest_package_version_refreshes_expired_check(
@@ -289,6 +305,26 @@ def test_check_latest_package_version_can_be_disabled(
     assert json.loads(version_check_file.read_text()) == {}
 
 
+def test_prerequisites_does_not_import_database_stack() -> None:
+    """Importing general prerequisites must not load optional database support."""
+    script = """
+import sys
+
+from reflex.utils import prerequisites  # noqa: F401
+
+loaded = [name for name in ("reflex.model", "alembic", "sqlmodel") if name in sys.modules]
+assert not loaded, f"database modules imported eagerly: {loaded}"
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
 def _patch_web_dir(monkeypatch: pytest.MonkeyPatch, web_dir: Path):
     monkeypatch.setattr(frontend_skeleton, "get_web_dir", lambda: web_dir)
     monkeypatch.setattr(js_runtimes, "get_web_dir", lambda: web_dir)
@@ -299,6 +335,14 @@ def _patch_frontend_package_manager(
     package_managers: list[str],
     run_package_manager,
 ):
+    """Stub package-manager execution and its Node-version prerequisite.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        package_managers: The package-manager paths to return from discovery.
+        run_package_manager: The replacement package-manager runner.
+    """
+    monkeypatch.setattr(js_runtimes, "check_node_version", lambda: True)
     monkeypatch.setattr(
         js_runtimes,
         "get_nodejs_compatible_package_managers",
@@ -706,9 +750,70 @@ def test_install_frontend_packages_cache_respects_root_bun_lock(
     assert install_runs == 2
 
 
+@pytest.mark.parametrize("package_manager", ["bun", "npm"])
+def test_install_frontend_packages_cache_ignores_package_json_formatting(
+    install_packages_env: InstallPackagesEnv, package_manager: str
+):
+    """Package manager formatting must not cause installs on subsequent compiles.
+
+    Args:
+        install_packages_env: The isolated frontend installation environment.
+        package_manager: The package manager used for installation.
+    """
+    env = install_packages_env
+    env.root_package_json.write_text("{}")
+    calls: list[list[str]] = []
+
+    def run_package_manager(args, **kwargs):
+        """Record the command and simulate a package manager rewriting its manifest.
+
+        Args:
+            args: Package manager command arguments.
+            **kwargs: Package manager invocation options.
+        """
+        calls.append(list(args))
+        package_json = json.loads(env.web_package_json.read_text())
+        package_json["dependencies"] = {"some-pkg": "1.0.0"}
+        env.web_package_json.write_text(
+            json.dumps(package_json, indent=2, sort_keys=True) + "\n"
+        )
+
+    env.patch_pm([package_manager], run_package_manager)
+    env.install({"some-pkg@1.0.0"})
+    assert len(calls) == 1
+    formatted = env.web_package_json.read_text()
+    cache_file = js_runtimes._frontend_packages_cache_path()
+    cache_mtime = cache_file.stat().st_mtime_ns
+
+    for _ in range(2):
+        env.install({"some-pkg@1.0.0"})
+        assert len(calls) == 1
+        assert env.web_package_json.read_text() == formatted
+        assert env.root_package_json.read_text() == formatted
+        assert cache_file.stat().st_mtime_ns == cache_mtime
+
+    package_json = json.loads(env.root_package_json.read_text())
+    package_json["dependencies"]["some-pkg"] = "2.0.0"
+    env.root_package_json.write_text(json.dumps(package_json))
+    env.install({"some-pkg@1.0.0"})
+    assert len(calls) == 2
+
+
 def test_install_frontend_packages_npm_does_not_create_bogus_bun_lock(
     install_packages_env: InstallPackagesEnv,
+    mocker,
 ):
+    """Mocked npm installs neither probe host Node nor retain stale Bun locks.
+
+    Args:
+        install_packages_env: The isolated frontend install environment.
+        mocker: The pytest mocker fixture.
+    """
+    mocker.patch.object(
+        js_runtimes,
+        "get_node_version",
+        side_effect=AssertionError("Mocked npm install probed host Node"),
+    )
     env = install_packages_env
     env.web_lock.write_text("stale-lock")
     call_count = 0
@@ -1804,6 +1909,44 @@ def test_prefer_npm_over_bun_implicit_from_npm_lock(tmp_path, monkeypatch):
         assert js_runtimes.prefer_npm_over_bun() is True
 
 
+def test_prefer_npm_over_bun_implicit_logs_notice_once(
+    tmp_path, monkeypatch, caplog: pytest.LogCaptureFixture
+):
+    """Implicit npm from a persisted lockfile says why and how to switch back."""
+    monkeypatch.delenv("REFLEX_USE_NPM", raising=False)
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    js_runtimes._log_implicit_npm_notice.cache_clear()
+    root_dir = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR
+    root_dir.mkdir(parents=True)
+    (root_dir / constants.Node.LOCKFILE_PATH).write_text("{}")
+
+    with chdir(tmp_path), caplog.at_level("INFO"):
+        assert js_runtimes.prefer_npm_over_bun() is True
+        assert js_runtimes.prefer_npm_over_bun() is True
+
+    notices = [m for m in caplog.messages if "REFLEX_USE_NPM=0" in m]
+    assert len(notices) == 1
+    assert constants.Node.LOCKFILE_PATH in notices[0]
+    assert "Preferring npm" in notices[0]
+
+
+def test_prefer_npm_over_bun_explicit_npm_logs_no_notice(
+    tmp_path, monkeypatch, caplog: pytest.LogCaptureFixture
+):
+    """An explicit REFLEX_USE_NPM=1 needs no lockfile notice."""
+    monkeypatch.setenv("REFLEX_USE_NPM", "1")
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    js_runtimes._log_implicit_npm_notice.cache_clear()
+    root_dir = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR
+    root_dir.mkdir(parents=True)
+    (root_dir / constants.Node.LOCKFILE_PATH).write_text("{}")
+
+    with chdir(tmp_path), caplog.at_level("INFO"):
+        assert js_runtimes.prefer_npm_over_bun() is True
+
+    assert not [m for m in caplog.messages if "REFLEX_USE_NPM=0" in m]
+
+
 def test_prefer_npm_over_bun_implicit_disabled_when_bun_lock_present(
     tmp_path, monkeypatch
 ):
@@ -1857,6 +2000,129 @@ def test_install_frontend_packages_does_not_fall_back(
 
     with pytest.raises(RuntimeError, match=error_message):
         env.install({"some-pkg@1.0.0"})
+
+
+def test_npm_install_drops_stale_bun_lock_instead_of_persisting_both(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """Switching to npm removes stale bun lockfiles.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    env.root_lock.write_text("exact-spec bun lock from an earlier bun run")
+    env.web_package_json.write_text('{"dependencies": {"react": "19.0.0"}}')
+    root_npm_lock = env.root_lock.parent / constants.Node.LOCKFILE_PATH
+    web_npm_lock = env.web_dir / constants.Node.LOCKFILE_PATH
+
+    def run_npm(args, **kwargs):
+        # npm rewrites exact versions to caret ranges.
+        web_npm_lock.write_text('{"lockfileVersion": 3}')
+        env.web_package_json.write_text('{"dependencies": {"react": "^19.0.0"}}')
+
+    env.patch_pm(["npm"], run_npm)
+
+    with chdir(env.tmp_path):
+        env.install()
+        implies_npm = js_runtimes._persisted_lockfile_implies_npm()
+
+    assert root_npm_lock.exists()
+    assert not env.root_lock.exists(), (
+        "stale bun.lock was persisted beside package-lock.json"
+    )
+    assert not env.web_lock.exists()
+    assert implies_npm is True
+
+
+def test_bun_install_drops_stale_npm_lock_instead_of_persisting_both(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """Switching to bun removes stale npm lockfiles.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    root_npm_lock = env.root_lock.parent / constants.Node.LOCKFILE_PATH
+    web_npm_lock = env.web_dir / constants.Node.LOCKFILE_PATH
+    root_npm_lock.write_text('{"lockfileVersion": 3}')
+    env.web_package_json.write_text('{"dependencies": {"react": "^19.0.0"}}')
+
+    def run_bun(args, **kwargs):
+        env.web_lock.write_text("bun lock")
+        env.web_package_json.write_text('{"dependencies": {"react": "19.0.0"}}')
+
+    env.patch_pm(["bun"], run_bun)
+
+    with chdir(env.tmp_path):
+        env.install()
+        implies_npm = js_runtimes._persisted_lockfile_implies_npm()
+
+    assert env.root_lock.exists()
+    assert not root_npm_lock.exists(), (
+        "stale package-lock.json was persisted beside bun.lock"
+    )
+    assert not web_npm_lock.exists()
+    assert implies_npm is False
+
+
+def test_install_keeps_the_running_managers_lockfile_untouched(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """Preserve the active manager's lockfile unchanged.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    env.root_lock.write_text("bun lock")
+    env.web_package_json.write_text("{}")
+
+    def run_bun(args, **kwargs):
+        env.web_lock.write_text("bun lock")
+
+    env.patch_pm(["bun"], run_bun)
+
+    with chdir(env.tmp_path):
+        env.install()
+
+    assert env.root_lock.read_text() == "bun lock"
+    assert env.web_lock.read_text() == "bun lock"
+
+
+def test_install_drops_nothing_for_a_custom_named_bun_binary(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """Custom bun executable names leave both lockfiles intact.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    root_npm_lock = env.root_lock.parent / constants.Node.LOCKFILE_PATH
+    root_npm_lock.write_text('{"lockfileVersion": 3}')
+    env.web_package_json.write_text("{}")
+
+    def run_custom_bun(args, **kwargs):
+        env.web_lock.write_text("fresh bun lock")
+
+    env.patch_pm(["/opt/tools/bun-1.3"], run_custom_bun)
+
+    with chdir(env.tmp_path):
+        env.install()
+
+    assert env.root_lock.read_text() == "fresh bun lock"
+    assert env.web_lock.read_text() == "fresh bun lock"
+    assert root_npm_lock.exists()
 
 
 @pytest.mark.usefixtures("install_packages_env")
@@ -2268,3 +2534,92 @@ def test_ensure_installation_id_keeps_legacy_install_unmarked(
 
     assert install_id == 12345
     assert prerequisites.has_uuid_distinct_id_semantics() is False
+
+
+@pytest.fixture
+def redis_url(monkeypatch: pytest.MonkeyPatch) -> str:
+    """Point get_redis at a redis url without a running server.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+
+    Returns:
+        The redis url.
+    """
+    url = "redis://localhost:6379"
+    monkeypatch.setattr(prerequisites, "parse_redis_url", lambda: url)
+    monkeypatch.delenv("REFLEX_REDIS_MAX_CONNECTIONS", raising=False)
+    monkeypatch.delenv("REFLEX_REDIS_POOL_TIMEOUT", raising=False)
+    return url
+
+
+def test_get_redis_pool_unbounded_by_default(redis_url: str):
+    """Without a cap, get_redis keeps redis-py's default pool."""
+    from redis.asyncio import BlockingConnectionPool
+
+    redis = prerequisites.get_redis()
+
+    assert redis is not None
+    assert not isinstance(redis.connection_pool, BlockingConnectionPool)
+
+
+def test_get_redis_max_connections(redis_url: str, monkeypatch: pytest.MonkeyPatch):
+    """REFLEX_REDIS_MAX_CONNECTIONS caps the pool and makes it wait instead of raise."""
+    from redis.asyncio import BlockingConnectionPool
+    from redis.exceptions import RedisError
+
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
+    monkeypatch.setenv("REFLEX_REDIS_POOL_TIMEOUT", "5")
+
+    redis = prerequisites.get_redis()
+
+    assert redis is not None
+    pool = redis.connection_pool
+    assert isinstance(pool, BlockingConnectionPool)
+    assert pool.max_connections == 3
+    assert pool.timeout == 5
+    assert pool.connection_kwargs["retry_on_error"] == [RedisError]
+    assert redis.auto_close_connection_pool
+
+
+@pytest.mark.parametrize("cap", ["0", "-1", "1", "2"])
+def test_get_redis_rejects_cap_without_command_headroom(
+    redis_url: str, monkeypatch: pytest.MonkeyPatch, cap: str
+):
+    """The two token pub/sub listeners cannot occupy every connection."""
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", cap)
+    with pytest.raises(EnvironmentVarValueError, match="at least 3"):
+        prerequisites.get_redis()
+
+
+@pytest.mark.parametrize("timeout", ["0", "10", "20"])
+def test_get_redis_rejects_pool_wait_outside_state_lock(
+    redis_url: str, monkeypatch: pytest.MonkeyPatch, timeout: str
+):
+    """A saturated pool must wait, but not past the state-lock lifetime."""
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
+    monkeypatch.setenv("REFLEX_REDIS_POOL_TIMEOUT", timeout)
+    with pytest.raises(EnvironmentVarValueError, match="greater than 0"):
+        prerequisites.get_redis()
+
+
+async def test_get_redis_max_connections_waits_for_release(
+    redis_url: str, monkeypatch: pytest.MonkeyPatch
+):
+    """At the cap, a caller waits for a free connection rather than failing."""
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
+    redis = prerequisites.get_redis()
+    assert redis is not None
+    pool = redis.connection_pool
+    monkeypatch.setattr(pool, "ensure_connection", mock.AsyncMock())
+
+    connections = [await pool.get_connection() for _ in range(3)]
+    waiter = asyncio.create_task(pool.get_connection())
+    await asyncio.sleep(0.05)
+    assert not waiter.done()
+
+    await pool.release(connections[0])
+    assert await asyncio.wait_for(waiter, timeout=1) is connections[0]
+    for connection in connections[1:]:
+        await pool.release(connection)
+    await pool.disconnect()

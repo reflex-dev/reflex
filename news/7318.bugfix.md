@@ -1,0 +1,1 @@
+The memory and disk state managers now free expired session states right away instead of waiting for a garbage collection pass, and the disk state manager no longer keeps a lock for every expired session.

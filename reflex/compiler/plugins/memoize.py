@@ -23,6 +23,10 @@ from __future__ import annotations
 import dataclasses
 from typing import Any
 
+from reflex_base.components.app_wraps import (
+    collect_var_app_wraps_for_component,
+    collect_var_app_wraps_in_subtree,
+)
 from reflex_base.components.component import BaseComponent, Component
 from reflex_base.components.memo import create_passthrough_component_memo
 from reflex_base.components.memoize_helpers import (
@@ -35,11 +39,9 @@ from reflex_base.components.memoize_helpers import (
 from reflex_base.constants.compiler import MemoizationDisposition
 from reflex_base.plugins import ComponentAndChildren, PageContext
 from reflex_base.plugins.base import Plugin
-
-from reflex.compiler.plugins.builtin import (
-    collect_var_app_wraps_for_component,
-    collect_var_app_wraps_in_subtree,
-)
+from reflex_components_core.base.bare import Bare
+from reflex_components_core.core.cond import Cond
+from reflex_components_core.core.match import Match
 
 
 def _subtree_has_reactive_data(
@@ -146,10 +148,6 @@ def _should_memoize(component: Component) -> bool:
     Returns:
         True if the component should be wrapped in a memo definition.
     """
-    from reflex_components_core.base.bare import Bare
-    from reflex_components_core.core.cond import Cond
-    from reflex_components_core.core.match import Match
-
     strategy = get_memoization_strategy(component)
 
     if component._memoization_mode.disposition == MemoizationDisposition.NEVER:

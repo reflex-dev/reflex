@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
@@ -362,13 +363,38 @@ def _compile_app(*, avoid_dirty_check: bool = True):
 
         exec.set_dev_start_method()
         with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
-            compile_future = executor.submit(app_task, *args, **kwargs)
+            compile_future = executor.submit(
+                _compile_app_worker, app_task, args, kwargs
+            )
             return_result = compile_future.result()
     else:
         return_result = app_task(*args, **kwargs)
 
     if not return_result:
         raise SystemExit(1)
+
+
+def _compile_app_worker(
+    app_task: Callable[..., bool],
+    args: tuple[Any, ...],
+    kwargs: dict[str, Any],
+) -> bool:
+    """Compile an app in a worker and flush telemetry before the worker exits.
+
+    Args:
+        app_task: The app compilation callable.
+        args: Positional arguments for ``app_task``.
+        kwargs: Keyword arguments for ``app_task``.
+
+    Returns:
+        Whether the app compiled successfully.
+    """
+    from reflex_base import otel
+
+    try:
+        return app_task(*args, **kwargs)
+    finally:
+        otel.flush()
 
 
 def _run_dev(
@@ -490,8 +516,11 @@ def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
 
     _skip_compile()
 
-    # Post a telemetry event.
-    telemetry.send("run-prod")
+    # Post the telemetry event once the workers are running: sending it here
+    # would start the telemetry thread before the server forks its workers.
+    def on_started():
+        """Send the run telemetry from the supervisor."""
+        telemetry.send("run-prod")
 
     # Display custom message when there is a keyboard interrupt.
     atexit.register(processes.atexit_handler)
@@ -503,10 +532,14 @@ def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
     )
     if running_mode.has_backend():
         exec.run_backend_prod(
-            host, port, config.loglevel.subprocess_level(), running_mode.has_frontend()
+            host,
+            port,
+            config.loglevel.subprocess_level(),
+            running_mode.has_frontend(),
+            on_started=on_started,
         )
     else:
-        exec.run_frontend_prod(host, port)
+        exec.run_frontend_prod(host, port, on_started=on_started)
 
 
 def _run(
@@ -916,9 +949,22 @@ def logout():
     logout(get_config().loglevel)
 
 
+_DB_PACKAGES = ("sqlalchemy", "alembic", "sqlmodel", "pydantic")
+
+
 @click.group
 def db_cli():
     """Subcommands for managing the database schema."""
+    try:
+        db_available = all(find_spec(name) is not None for name in _DB_PACKAGES)
+    except (AttributeError, ImportError, ValueError):
+        db_available = False
+    if not db_available:
+        logger.error(
+            "Database is not available. Please install the required packages: "
+            "`pip install reflex[db]`."
+        )
+        raise click.exceptions.Exit(1)
 
 
 @click.group
