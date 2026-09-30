@@ -1,3 +1,19 @@
+## v0.9.4 (2026-09-11)
+
+### Breaking Changes
+
+- `rx.moment` now fires `on_change` on mount and remount, including for static dates and `interval=0`. Handlers with side effects should account for the initial call and for React Strict Mode invoking it twice in development. ([#7085](https://github.com/reflex-dev/reflex/issues/7085))
+
+### Bug Fixes
+
+- Migrate `rx.moment` to `react-moment` 2.0.2 and include its duration-format dependency. ([#7003](https://github.com/reflex-dev/reflex/issues/7003))
+- Keep `rx.moment` locales independent: components without a `locale` render in English even when another component or route imports a different locale. Explicit `locale="en"` also works without importing a nonexistent locale module. ([#7110](https://github.com/reflex-dev/reflex/issues/7110))
+
+### Miscellaneous
+
+- Bump `moment-timezone` to 0.6.3. ([#7019](https://github.com/reflex-dev/reflex/issues/7019))
+
+
 ## v0.9.3 (2026-08-04)
 
 ### Bug Fixes

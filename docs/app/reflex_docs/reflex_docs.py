@@ -1,22 +1,28 @@
 """The main Reflex website."""
 
+import json
 import os
 import sys
+from collections.abc import Callable
+from copy import deepcopy
+from functools import cache, partial, wraps
 
 import reflex as rx
 import reflex_enterprise as rxe
+from reflex_components_internal.blocks.telemetry import get_google_analytics_trackers
 from reflex_site_shared import styles
 from reflex_site_shared.backend.status import monitor_checkly_status
-from reflex_site_shared.constants import REFLEX_ASSETS_CDN, REFLEX_DOMAIN_URL
+from reflex_site_shared.constants import OG_IMAGE_URL, REFLEX_DOMAIN_URL
 from reflex_site_shared.meta.meta import (
     ONE_LINE_DESCRIPTION,
     create_meta_tags,
     favicons_links,
     to_cdn_image_url,
 )
-from reflex_site_shared.telemetry import get_pixel_website_trackers
 
 from reflex_docs.pages import page404, routes
+from reflex_docs.redirects import DocsRedirectMiddleware
+from reflex_docs.templates.docpage.docpage import breadcrumb_data
 from reflex_docs.whitelist import _check_whitelisted_path
 
 # This number discovered by trial and error on Windows 11 w/ Node 18, any
@@ -25,15 +31,42 @@ WINDOWS_MAX_ROUTES = int(os.environ.get("REFLEX_WEB_WINDOWS_MAX_ROUTES", "100"))
 LLMS_TXT_PATH = "/llms.txt"
 
 
+def _stable_page_factory(
+    component: Callable[[], rx.Component],
+) -> Callable[[], rx.Component]:
+    """Keep demo state identities stable while isolating compiler mutations.
+
+    Args:
+        component: The page factory whose demos must be instantiated only once.
+
+    Returns:
+        A factory yielding independent copies of the pristine component tree.
+    """
+    build_once = cache(component)
+
+    @wraps(component)
+    def page() -> rx.Component:
+        """Copy the pristine tree before handing it to a compiler or plugin.
+
+        Returns:
+            A fresh component tree retaining the original state classes.
+        """
+        return deepcopy(build_once())
+
+    return page
+
+
 def _llms_txt_directive() -> rx.Component:
     """Return the agent-facing docs index directive."""
     return rx.el.blockquote(
         rx.el.span("For AI agents: the complete documentation index is at "),
         rx.el.a("llms.txt", href=LLMS_TXT_PATH),
         rx.el.span(
-            ". Markdown versions are available by appending .md or sending "
-            "Accept: text/markdown."
+            ". Remove the trailing slash from a page URL and append .md "
+            "to read its Markdown version. For the docs home, use "
         ),
+        rx.el.a("index.md", href="/index.md"),
+        ".",
         class_name="sr-only",
     )
 
@@ -48,7 +81,10 @@ app = rxe.App(
         radius="large",
         accent_color="violet",
     ),
-    head_components=get_pixel_website_trackers() + favicons_links(),
+    head_components=[
+        *get_google_analytics_trackers(tracking_id="G-4T7C8ZD9TR"),
+        *favicons_links(),
+    ],
 )
 
 app.register_lifespan_task(monitor_checkly_status)
@@ -87,7 +123,7 @@ def _canonical_url(path: str) -> str:
 
 
 # Add the pages to the app.
-_DEFAULT_PREVIEW = f"{REFLEX_ASSETS_CDN}previews/index_preview.webp"
+_DEFAULT_PREVIEW = OG_IMAGE_URL
 for route in routes:
     # print(f"Adding route: {route}")
     if _check_whitelisted_path(route.path):
@@ -135,6 +171,25 @@ for route in routes:
             # can't be emitted, so keep any page-provided meta as-is.
             canonical = None
             meta = list(route.meta) if route.meta is not None else []
+        if canonical is not None:
+            meta.append(
+                rx.el.link(
+                    rel="alternate",
+                    type="text/markdown",
+                    href=canonical + "index.md"
+                    if route.path.strip("/") == ""
+                    else canonical.rstrip("/") + ".md",
+                )
+            )
+            meta.append(
+                rx.el.script(
+                    json.dumps(
+                        breadcrumb_data(route.path, head_title.split(" · ")[0]),
+                        ensure_ascii=False,
+                    ).replace("<", "\\u003c"),
+                    type="application/ld+json",
+                )
+            )
         meta.append({"name": "theme-color", "content": route.background_color})
 
         # Reflex's compiler always renders exactly one og:image from add_page's
@@ -148,7 +203,11 @@ for route in routes:
         ]
 
         page_args = {
-            "component": route.component,
+            # XY registers chart plans by evaluating pages again at worker startup.
+            # Instantiate demos once, but give each compiler its own mutable tree.
+            "component": _stable_page_factory(route.component)
+            if callable(route.component)
+            else route.component,
             "route": route.path,
             "title": head_title,
             "image": image_url,
@@ -188,21 +247,56 @@ redirects.extend([
 ])
 
 
-def _redirect_page():
+def _redirect_page(target: str):
+    """Render a usable destination link for static hosting.
+
+    Args:
+        target: The app-relative destination, prefixed by the router.
+
+    Returns:
+        The static redirect page content.
+    """
     return rx.fragment(
-        rx.el.h1("Redirecting", class_name="sr-only"),
+        rx.el.h1("This page has moved"),
+        rx.el.a("Continue to the documentation", href=target),
     )
 
 
 for source, target in redirects:
     if _check_whitelisted_path(target):
         app.add_page(
-            _redirect_page,
+            partial(_redirect_page, target),
             route=source,
             title="Redirecting - Reflex Web Framework",
             description="You are being redirected to the requested page.",
             on_load=rx.redirect(target),
             context={"sitemap": None},
+            meta=[
+                rx.el.link(rel="canonical", href=_canonical_url(target)),
+                {"name": "robots", "content": "noindex, follow"},
+                rx.el.meta(
+                    http_equiv="refresh", content=f"0;url={_FRONTEND_PATH}{target}"
+                ),
+            ],
         )
 
-app.add_page(page404.component, route=page404.path)
+app.add_page(
+    page404.component,
+    route=page404.path,
+    title=page404.title,
+    description=page404.description,
+    meta=page404.meta,
+)
+
+
+# HTTP 301 applies when page requests reach this backend. Separate frontend
+# hosts use the redirect pages above and need edge rules for HTTP 301 semantics.
+app.api_transformer = partial(
+    DocsRedirectMiddleware,
+    redirects=[
+        (source, target)
+        for source, target in redirects
+        if _check_whitelisted_path(target)
+    ],
+    frontend_path=_FRONTEND_PATH,
+)

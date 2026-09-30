@@ -1,0 +1,1 @@
+State changes made after a buffered upload's response has ended, such as by events a backend exception handler chains after the upload handler fails, now reach the client instead of being silently dropped.

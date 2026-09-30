@@ -9,7 +9,7 @@ import types
 import typing
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from enum import Enum
-from functools import cached_property, lru_cache
+from functools import lru_cache
 from importlib.util import find_spec
 from types import GenericAlias
 from typing import (  # noqa: UP035
@@ -36,11 +36,13 @@ from typing import (  # noqa: UP035
 from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
 
+import typing_extensions
 from typing_extensions import Self as Self
 from typing_extensions import TypeAliasType, TypeVarTuple
 from typing_extensions import override as override
 
 from reflex_base import constants
+from reflex_base.utils.compat import declares_annotation
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +51,8 @@ if TYPE_CHECKING:
 
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)
+
+_AnnotatedAlias = type(typing.Annotated[int, ""])
 
 # Potential Union types for isinstance checks.
 UnionTypes = (Union, types.UnionType)
@@ -82,7 +86,6 @@ PrimitiveTypes = (int, float, bool, str, list, dict, set, tuple)
 StateVarTypes = (*PrimitiveTypes, type(None))
 
 if TYPE_CHECKING:
-    from reflex.state import BaseState
     from reflex_base.vars.base import Var
 
 VAR1 = TypeVar("VAR1", bound="Var")
@@ -187,8 +190,6 @@ PrimitiveToAnnotation = {
     tuple: Tuple,  # noqa: UP006
     dict: Dict,  # noqa: UP006
 }
-
-RESERVED_BACKEND_VAR_NAMES = {"_abc_impl", "_backend_vars", "_was_touched", "_mixin"}
 
 
 class Unset:
@@ -490,11 +491,24 @@ def _apply_type_params(
         return _substitute_type_params(value, substitution)
 
 
-def resolve_type_alias(cls: GenericType) -> GenericType:
-    """Resolve a TypeAliasType (PEP 695 ``type`` statement) to its underlying value.
+def _annotated_origin(cls: Any) -> Any:
+    """Get the type that ``Annotated[X, ...]`` annotates.
 
-    Handles bare aliases, subscripted generic aliases (``Keys[str]`` for
-    ``type Keys[T] = list[T]``, substituting the type parameters into the
+    Args:
+        cls: The type to inspect.
+
+    Returns:
+        ``X`` for ``Annotated[X, ...]``, else None.
+    """
+    return cls.__origin__ if type(cls) is _AnnotatedAlias else None
+
+
+def resolve_type_alias(cls: GenericType) -> GenericType:
+    """Resolve a type alias to its underlying value.
+
+    Unwraps ``Annotated[X, ...]`` to ``X``, and resolves TypeAliasTypes (PEP 695
+    ``type`` statement): bare aliases, subscripted generic aliases (``Keys[str]``
+    for ``type Keys[T] = list[T]``, substituting the type parameters into the
     alias value), and aliases appearing as members of a union.
 
     Args:
@@ -503,6 +517,12 @@ def resolve_type_alias(cls: GenericType) -> GenericType:
     Returns:
         The resolved type, or the original type if it contains no alias.
     """
+    # ``Annotated`` metadata (a pydantic discriminator, a validator, a unit) is
+    # never part of the type Reflex reasons about, and ``__origin__`` already
+    # flattens nested annotations. Unwrapped before the alias branches so that
+    # ``Annotated[SomeAlias, ...]`` resolves both layers.
+    if (annotated := _annotated_origin(cls)) is not None:
+        return resolve_type_alias(annotated)
     origin = get_origin(cls)
     # The subscripted case is checked first: on Python 3.10 ``types.GenericAlias``
     # proxies ``__class__`` to its origin, so ``Keys[str]`` passes an isinstance
@@ -687,7 +707,7 @@ def get_attribute_access_type(
     if hasattr(cls, "__fields__") and name in cls.__fields__:
         # pydantic models
         return get_field_type(cls, name)
-    if find_spec("sqlalchemy") and find_spec("sqlalchemy.orm"):
+    if isinstance(cls, type) and "sqlalchemy.orm" in sys.modules:
         import sqlalchemy
         from sqlalchemy.ext.associationproxy import AssociationProxyInstance
         from sqlalchemy.orm import (
@@ -697,16 +717,9 @@ def get_attribute_access_type(
             Relationship,
         )
 
-        from reflex.model import Model
+        sqlmodel_type = getattr(sys.modules.get("sqlmodel"), "SQLModel", None)
 
-        if find_spec("sqlmodel"):
-            from sqlmodel import SQLModel
-
-            sqlmodel_types = (Model, SQLModel)
-        else:
-            sqlmodel_types = (Model,)
-
-        if isinstance(cls, type) and issubclass(cls, DeclarativeBase):
+        if issubclass(cls, DeclarativeBase):
             insp = sqlalchemy.inspect(cls)
             if name in insp.columns:
                 # check for list types
@@ -747,9 +760,12 @@ def get_attribute_access_type(
                         )
                     ]
         elif (
-            isinstance(cls, type)
+            sqlmodel_type is not None
             and not is_generic_alias(cls)
-            and issubclass(cls, sqlmodel_types)
+            and issubclass(cls, sqlmodel_type)
+            # Probes for unannotated names must not trigger hint resolution,
+            # which may fail on unresolvable ForwardRefs.
+            and declares_annotation(cls, name)
         ):
             # Check in the annotations directly (for sqlmodel.Relationship)
             hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
@@ -765,13 +781,16 @@ def get_attribute_access_type(
             *(get_attribute_access_type(arg, name) for arg in get_args(cls))
         )
     if isinstance(cls, type):
-        # Bare class
-        exceptions = NameError
+        # Bare class. Skip hint resolution entirely when the name is not
+        # annotated anywhere in the MRO: attribute probes (e.g. inspect's
+        # `_is_coroutine_marker` check) must not trigger, and warn about,
+        # ForwardRef resolution of unrelated annotations.
         try:
-            hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
-            if name in hints:
-                return hints[name]
-        except exceptions as e:
+            if declares_annotation(cls, name):
+                hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
+                if name in hints:
+                    return hints[name]
+        except NameError as e:
             logger.warning(f"Failed to resolve ForwardRefs for {cls}.{name} due to {e}")
     return None  # Attribute is not accessible.
 
@@ -803,6 +822,15 @@ def get_base_class(cls: GenericType) -> type:
     return get_base_class(cls.__origin__) if is_generic_alias(cls) else cls
 
 
+# "No extra items" sentinels of PEP 728 TypedDicts (typing on Python 3.15+,
+# typing_extensions on older versions).
+_NO_EXTRA_ITEMS_SENTINELS = tuple(
+    sentinel
+    for mod in (typing, typing_extensions)
+    if (sentinel := getattr(mod, "NoExtraItems", None)) is not None
+)
+
+
 def does_obj_satisfy_typed_dict(
     obj: Any,
     cls: GenericType,
@@ -830,6 +858,10 @@ def does_obj_satisfy_typed_dict(
     required_keys: frozenset[str] = getattr(cls, "__required_keys__", frozenset())
     is_closed = getattr(cls, "__closed__", False)
     extra_items_type = getattr(cls, "__extra_items__", Any)
+    if any(extra_items_type is sentinel for sentinel in _NO_EXTRA_ITEMS_SENTINELS):
+        # Extra keys of a non-closed TypedDict are unconstrained; a closed
+        # one already rejected them above.
+        extra_items_type = Any
 
     for key, value in obj.items():
         if is_closed and key not in key_names_to_values:
@@ -1126,69 +1158,6 @@ def is_valid_var_type(type_: type) -> bool:
     )
 
 
-def is_backend_base_variable(name: str, cls: type[BaseState]) -> bool:
-    """Check if this variable name correspond to a backend variable.
-
-    Args:
-        name: The name of the variable to check
-        cls: The class of the variable to check (must be a BaseState subclass)
-
-    Returns:
-        bool: The result of the check
-    """
-    if name in RESERVED_BACKEND_VAR_NAMES:
-        return False
-
-    if not name.startswith("_"):
-        return False
-
-    if name.startswith("__"):
-        return False
-
-    if name.startswith(f"_{cls.__name__}__"):
-        return False
-
-    hints = cls._get_type_hints()
-    if name in hints:
-        hint = get_origin(hints[name])
-        if hint == ClassVar:
-            return False
-
-    if name in cls.inherited_backend_vars:
-        return False
-
-    from reflex_base.vars.base import Field, Var, is_computed_var
-
-    # Read the class dicts directly: `getattr` would run the descriptor this
-    # lookup is meant to detect, against a class that is still being built.
-    for klass in cls.__mro__:
-        if name in klass.__dict__:
-            value = klass.__dict__[name]
-            break
-    else:
-        return True
-
-    if type(value) is classmethod:
-        return False
-    if callable(value):
-        return False
-
-    if isinstance(
-        value,
-        (
-            types.FunctionType,
-            property,
-            cached_property,
-        ),
-    ) or is_computed_var(value):
-        return False
-
-    # Custom descriptors should be invoked via their __get__/__set__
-    # rather than shadowed by backend var storage. Field/Var define
-    # __get__ for type-checking but are not user descriptors.
-    return not hasattr(type(value), "__get__") or isinstance(value, (Field, Var))
-
-
 def check_type_in_allowed_types(value_type: type, allowed_types: Iterable) -> bool:
     """Check that a value type is found in a list of allowed types.
 
@@ -1303,6 +1272,21 @@ def typehint_issubclass(
         return treat_any_as_subtype_of_everything
     if possible_subclass is NoReturn:
         return True
+
+    # ``Annotated[X, ...]`` compares as ``X``. ``get_origin`` reports ``X``
+    # rather than ``Annotated``, so the comparisons below would otherwise read
+    # the hint as a bare ``X`` carrying the metadata as a type argument.
+    if (
+        _annotated_origin(possible_subclass) is not None
+        or _annotated_origin(possible_superclass) is not None
+    ):
+        return typehint_issubclass(
+            resolve_type_alias(possible_subclass),
+            resolve_type_alias(possible_superclass),
+            treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+            treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+            treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
+        )
 
     provided_type_origin = get_origin(possible_subclass)
     accepted_type_origin = get_origin(possible_superclass)
@@ -1567,6 +1551,40 @@ def is_immutable(i: Any) -> bool:
         Whether the value is immutable.
     """
     return isinstance(i, IMMUTABLE_TYPES)
+
+
+_MUTABLE_BUILTIN_TYPES = (list, dict, set)
+
+_MUTABLE_MODEL_BASES = (
+    ("sqlalchemy.orm.decl_api", "DeclarativeBase"),
+    ("pydantic.main", "BaseModel"),
+)
+
+
+@lru_cache(maxsize=1024)
+def is_mutable_type(type_: type) -> bool:
+    """Check if a type is mutable, so in-place changes to a state value of it must be tracked.
+
+    Args:
+        type_: The type to check.
+
+    Returns:
+        Whether the type is mutable and should be wrapped.
+    """
+    from reflex_base.vars.base import Var
+
+    if issubclass(type_, _MUTABLE_BUILTIN_TYPES) or (
+        dataclasses.is_dataclass(type_) and not issubclass(type_, Var)
+    ):
+        return True
+    # A model's defining module is already loaded before its subclasses exist.
+    # Read its namespace directly so lazy module attributes cannot load packages.
+    for module_name, base_name in _MUTABLE_MODEL_BASES:
+        if (module := sys.modules.get(module_name)) is not None:
+            base = vars(module).get(base_name)
+            if base is not None and issubclass(type_, base):
+                return True
+    return False
 
 
 if not TYPE_CHECKING:

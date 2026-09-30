@@ -1,6 +1,9 @@
 """Test process utilities."""
 
+import logging
+import signal
 import socket
+import subprocess
 import threading
 import time
 from contextlib import closing
@@ -9,11 +12,13 @@ from unittest import mock
 import pytest
 
 from reflex.testing import DEFAULT_TIMEOUT, AppHarness
+from reflex.utils import processes
 from reflex.utils.processes import (
     _can_bind_at_any_port,
     is_process_on_port,
     run_concurrently,
     run_concurrently_context,
+    stream_logs,
 )
 
 # `socket.has_ipv6` only reflects build-time support; without a runtime IPv6
@@ -284,3 +289,130 @@ def test_run_concurrently_context_no_interrupt_after_pre_body_failure():
     # The interrupt callback runs within microseconds of the task finishing;
     # a stale interrupt would surface as KeyboardInterrupt in this window.
     time.sleep(0.1)
+
+
+def _finished_process(returncode: int, output: str = "ready\n") -> mock.MagicMock:
+    """Build a Popen stand-in that has already exited with the given code.
+
+    Args:
+        returncode: The exit status the process reports.
+        output: The stdout the process produced before exiting.
+
+    Returns:
+        A mock that satisfies what stream_logs reads from a Popen.
+    """
+    process = mock.MagicMock(spec=subprocess.Popen)
+    process.__enter__.return_value = process
+    process.__exit__.return_value = False
+    process.stdout = iter([output])
+    process.poll.return_value = returncode
+    process.returncode = returncode
+    return process
+
+
+@pytest.mark.parametrize(
+    "returncode",
+    [
+        pytest.param(-signal.SIGINT, id="sigint-direct"),
+        pytest.param(128 + signal.SIGINT, id="sigint-via-shell"),
+        pytest.param(-signal.SIGTERM, id="sigterm-direct"),
+        pytest.param(128 + signal.SIGTERM, id="sigterm-via-shell"),
+    ],
+)
+def test_stream_logs_treats_user_interrupt_as_clean_exit_on_posix(
+    returncode: int, caplog, monkeypatch
+):
+    """On POSIX a child torn down by SIGINT or SIGTERM is an orderly stop.
+
+    Each signal is reported two ways, negative by Popen and 128+N by a shell
+    wrapper. SIGINT was accepted in both forms; SIGTERM in neither, so a plain
+    `kill -TERM` of `reflex run` logged "Starting frontend failed" and raised
+    SystemExit (#6981).
+
+    Args:
+        returncode: The signal-derived exit status to check.
+        caplog: Pytest log capture.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(processes.constants, "IS_WINDOWS", False)
+    process = _finished_process(returncode)
+
+    with caplog.at_level(logging.ERROR):
+        lines = list(stream_logs("Starting frontend", process))
+
+    assert lines == ["ready\n"]
+    assert caplog.records == []
+
+
+@pytest.mark.parametrize(
+    "returncode",
+    [
+        pytest.param(-signal.SIGINT, id="sigint-direct"),
+        pytest.param(128 + signal.SIGINT, id="sigint-via-shell"),
+        pytest.param(15, id="sigterm-terminateprocess"),
+    ],
+)
+def test_stream_logs_treats_user_interrupt_as_clean_exit_on_windows(
+    returncode: int, caplog, monkeypatch
+):
+    """On Windows the accepted set is unchanged: os.kill(pid, SIGTERM) calls
+    TerminateProcess with the signal number, so SIGTERM surfaces as a bare 15.
+
+    Args:
+        returncode: The exit status to check.
+        caplog: Pytest log capture.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(processes.constants, "IS_WINDOWS", True)
+    process = _finished_process(returncode)
+
+    with caplog.at_level(logging.ERROR):
+        lines = list(stream_logs("Starting frontend", process))
+
+    assert lines == ["ready\n"]
+    assert caplog.records == []
+
+
+@pytest.mark.parametrize(
+    "returncode",
+    [
+        pytest.param(-signal.SIGTERM, id="minus-15"),
+        pytest.param(128 + signal.SIGTERM, id="143"),
+    ],
+)
+def test_stream_logs_keeps_posix_sigterm_codes_as_failures_on_windows(
+    returncode: int, caplog, monkeypatch
+):
+    """On Windows -15 and 143 are ordinary application exit codes, not signals.
+
+    Accepting them there would let a genuine frontend failure skip the error
+    log and the SystemExit.
+
+    Args:
+        returncode: The exit status to check.
+        caplog: Pytest log capture.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(processes.constants, "IS_WINDOWS", True)
+    process = _finished_process(returncode)
+
+    with caplog.at_level(logging.ERROR), pytest.raises(SystemExit):
+        list(stream_logs("Starting frontend", process))
+
+    assert any(
+        f"failed with exit code {returncode}" in r.getMessage() for r in caplog.records
+    )
+
+
+def test_stream_logs_still_fails_on_a_real_error_exit(caplog):
+    """The relaxed set must not swallow an actual non-zero exit.
+
+    Args:
+        caplog: Pytest log capture.
+    """
+    process = _finished_process(1)
+
+    with caplog.at_level(logging.ERROR), pytest.raises(SystemExit):
+        list(stream_logs("Starting frontend", process))
+
+    assert any("failed with exit code 1" in r.getMessage() for r in caplog.records)

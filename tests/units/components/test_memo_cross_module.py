@@ -160,8 +160,8 @@ def test_memo_depends_on_memo_across_modules_in_grouped_file():
     # group's own self-import is stripped), so the two never redeclare a symbol.
     assert sym_a != sym_c
     assert f'import {{{sym_a}}} from "{lib_a}"' in code_c
-    assert f"export const {sym_consumer} = memo(" in code_c
-    assert f"export const {sym_c} = memo(" in code_c
+    assert f"const {sym_consumer} = memo(" in code_c
+    assert f"const {sym_c} = memo(" in code_c
 
 
 def test_three_modules_sharing_a_name_all_compile():

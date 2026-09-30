@@ -440,12 +440,24 @@ def stream_logs(
                 raise
             # If the process exited, break out of the loop for post processing.
 
-    # Check if the process failed (not printing the logs for SIGINT).
-
-    # Windows uvicorn bug
-    # https://github.com/reflex-dev/reflex/issues/2335
-    # 130 is the exit code that react router returns when it is interrupted by a signal.
-    accepted_return_codes = [0, -2, 15, 130] if constants.IS_WINDOWS else [0, -2, 130]
+    # A child torn down by the user's own interrupt is not a failure.
+    if constants.IS_WINDOWS:
+        # Windows has no POSIX signal exit codes. os.kill(pid, SIGTERM) calls
+        # TerminateProcess with the signal number, so SIGTERM surfaces as a
+        # bare 15, and Node reports Ctrl+C as 130 by convention. -15 and 143
+        # are ordinary application exit codes here and must stay failures.
+        # https://github.com/reflex-dev/reflex/issues/2335
+        accepted_return_codes = {0, -2, 15, 130}
+    else:
+        # On POSIX each signal shows up two ways: negative when Popen saw it
+        # directly, 128+N when a shell wrapper such as react router reported
+        # it (130 for SIGINT, 143 for SIGTERM).
+        interrupt_signals = (int(signal.SIGINT), int(signal.SIGTERM))
+        accepted_return_codes = {
+            0,
+            *(-sig for sig in interrupt_signals),
+            *(128 + sig for sig in interrupt_signals),
+        }
     if process.returncode not in accepted_return_codes and not suppress_errors:
         logger.error(f"{message} failed with exit code {process.returncode}")
         if "".join(logs).count("CERT_HAS_EXPIRED") > 0:

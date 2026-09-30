@@ -32,16 +32,16 @@ dependencies = [
   "starlette >=1.3.1",
   "typing_extensions >=4.13.0",
   "wrapt >=1.17.0,<2.4",
-  "reflex-base >= 0.9.10.post1",
+  "reflex-base >= 0.9.12.dev0",
   "reflex-components-code >= 0.9.0",
   "reflex-components-core >= 0.9.6",
   "reflex-components-dataeditor >= 0.9.0",
   "reflex-components-gridjs >= 0.9.0",
   "reflex-components-lucide >= 0.9.0",
   "reflex-components-markdown >= 0.9.0",
-  "reflex-components-moment >= 0.9.0",
+  "reflex-components-moment >= 0.9.4",
   "reflex-components-plotly >= 0.9.0",
-  "reflex-components-radix >= 0.9.2",
+  "reflex-components-radix >= 0.9.9",
   "reflex-components-react-player >= 0.9.0",
   "reflex-components-recharts >= 0.9.0",
   "reflex-components-sonner >= 0.9.0",
@@ -91,13 +91,19 @@ dev = [
   "hatchling",
   "libsass",
   "numpy",
+  "opentelemetry-sdk",
   "pandas",
   "pillow",
   "playwright",
   "plotly",
   "pre-commit",
   "psutil",
-  "psycopg[binary]",
+  # No cp315 psycopg-binary wheels yet; use pure-python psycopg on 3.15+.
+  # This only affects dev/test environments (3.15 CI), not the published
+  # package. TODO: revert to a single "psycopg[binary]" once a psycopg
+  # release ships cp315 wheels for psycopg-binary.
+  "psycopg[binary]; python_version < '3.15'",
+  "psycopg; python_version >= '3.15'",
   "pydantic",
   "pyright",
   "pytest-asyncio",
@@ -111,8 +117,11 @@ dev = [
   "pytest",
   "python-dotenv",
   "pyyaml",
+  "reflex-bench",
   "reflex-docgen",
+  "reflex-otel",
   "reflex-release",
+  "reflex-build-sdk[aiohttp,httpx,httpx2]",
   "reflex-site-shared",
   "ruff",
   "selenium",
@@ -153,6 +162,7 @@ require-runtime-dependencies = true
 
 [tool.pyright]
 extraPaths = [
+  "packages/reflex-bench/src",
   "packages/reflex-code/src",
   "packages/reflex-components/src",
   "packages/reflex-dataeditor/src",
@@ -168,6 +178,8 @@ extraPaths = [
   "packages/reflex-recharts/src",
   "packages/reflex-sonner/src",
   "packages/reflex-components-internal/src",
+  "packages/reflex-otel/src",
+  "packages/reflex-build-sdk/src",
   "packages/reflex-site-shared/src",
   "packages/integrations-docs/src",
 ]
@@ -262,6 +274,8 @@ preview = true
 "*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]
 "pyi_generator.py" = ["N802"]
 "packages/reflex-base/src/reflex_base/constants/*.py" = ["N"]
+# Generated from async generators, which cannot `yield from`.
+"packages/reflex-build-sdk/src/reflex_build_sdk/_sync/**/*.py" = ["UP028"]
 "packages/reflex-hosting-cli/src/reflex_cli/**/*.py" = [
   "B008",
   "D420",
@@ -270,11 +284,16 @@ preview = true
   "RET504",
 ]
 "tests/units/reflex_cli/**/*.py" = ["DOC201", "PT006", "RUF052"]
+# Generated from async comprehensions, which have no list() equivalent.
+"tests/units/reflex_build_sdk/_sync/**/*.py" = ["C416"]
 "*/.templates/apps/blank/code/*" = ["INP001"]
 "*/blank.py" = ["I001"]
 "docs/package/scripts/*.py" = ["INP001"]
+"packages/reflex-build-sdk/scripts/*.py" = ["INP001", "T201"]
+"scripts/changed_paths.py" = ["T201"]
 "scripts/check_min_deps.py" = ["T201"]
 "scripts/check_outdated_deps.py" = ["T201"]
+"scripts/hash_examples.py" = ["T201"]
 "scripts/verify_pyi.py" = ["T201"]
 # Skill helper scripts are CLIs whose whole job is printing a report.
 ".claude/skills/*/scripts/*.py" = ["T201"]
@@ -283,9 +302,12 @@ preview = true
 filterwarnings = "ignore:fields may not start with an underscore:RuntimeWarning"
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
+markers = [
+  "performance: scheduled wall-time, service, memory, lifecycle, or browser benchmark",
+]
 
 [tool.codespell]
-skip = "*.html, examples, *.pyi, */nba.csv, */olympic-winners.json, uv.lock, */bun.lock, node_modules"
+skip = "*.html, examples, *.pyi, */nba.csv, */olympic-winners.json, packages/reflex-build-sdk/openapi.json, uv.lock, */bun.lock, node_modules"
 ignore-words-list = "te, TreeE, selectin"
 
 
@@ -306,10 +328,13 @@ source = [
   "reflex_components_sonner",
   "reflex_base",
   "reflex_docgen",
+  "reflex_otel",
   "reflex_release",
+  "reflex_build_sdk",
   "reflex_site_shared",
   "reflex_components_internal",
   "reflex_integrations_docs",
+  "reflex_bench",
 ]
 branch = true
 omit = [
@@ -366,9 +391,10 @@ release-timezone = "America/Los_Angeles"
 # No changelog, no news fragments: patch-released on every push to main that
 # touches them.
 internal-packages = ["reflex-components-internal", "reflex-site-shared"]
-# Built for the docs site rather than published to PyPI: no release checkbox, no
+# Built for the docs site (integrations-docs) or used only inside this repository
+# (reflex-bench) rather than published to PyPI: no release checkbox, no
 # changelog detection, no news fragment, and publish refuses it.
-never-publish-packages = ["integrations-docs"]
+never-publish-packages = ["integrations-docs", "reflex-bench"]
 
 # reflex's metadata pins reflex-base exactly, so the two always release together
 # at one version and reflex uploads only after reflex-base is on PyPI.
@@ -476,7 +502,12 @@ frontend_pinned = [
 ]
 
 [tool.uv]
-required-version = ">=0.9.17"
+# 0.11.8 is the first release that resolves a URL dependency reached through a
+# URL build requirement. reflex's build hook sets require-runtime-dependencies,
+# so every workspace package it depends on is a file:// build requirement, and
+# reflex-hosting-cli reaches reflex-build-sdk the same way. Older uv refuses the
+# second hop and `uv sync` cannot build reflex at all.
+required-version = ">=0.11.8"
 exclude-newer = "7 days"
 
 # Internal Reflex packages release in lockstep and are routinely pinned (>=) at a version
@@ -488,6 +519,7 @@ exclude-newer = "7 days"
 hatch-reflex-pyi = false
 reflex = false
 reflex-base = false
+reflex-build-sdk = false
 reflex-components-code = false
 reflex-components-core = false
 reflex-components-dataeditor = false
@@ -507,6 +539,7 @@ reflex-hosting-cli = false
 [tool.uv.sources]
 hatch-reflex-pyi.workspace = true
 reflex-base.workspace = true
+reflex-bench.workspace = true
 reflex-components-code.workspace = true
 reflex-components-core.workspace = true
 reflex-components-dataeditor.workspace = true
@@ -522,6 +555,8 @@ reflex-components-sonner.workspace = true
 reflex-docgen.workspace = true
 reflex-release.workspace = true
 reflex-hosting-cli.workspace = true
+reflex-otel.workspace = true
+reflex-build-sdk.workspace = true
 reflex-components-internal.workspace = true
 reflex-site-shared.workspace = true
 reflex-integrations-docs.workspace = true
