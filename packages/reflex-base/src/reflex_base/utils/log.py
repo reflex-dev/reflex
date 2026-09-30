@@ -263,7 +263,8 @@ def _write_json(payload: dict, *, stderr: bool):
     stream.flush()
 
 
-# Marks the child of supervise_output(); its descendants inherit it.
+# The supervisor PID, set for the child of supervise_output() and inherited
+# by its descendants.
 _SUPERVISED_ENV_VAR = "REFLEX_OUTPUT_SUPERVISED"
 
 # How long a reader may sit idle after the child exits before the supervisor
@@ -283,7 +284,7 @@ def is_output_supervised() -> bool:
     Returns:
         True if a parent process turns this process's output into JSON records.
     """
-    return os.environ.get(_SUPERVISED_ENV_VAR) == "true"
+    return bool(os.environ.get(_SUPERVISED_ENV_VAR))
 
 
 def _is_json_record(line: bytes) -> bool:
@@ -460,12 +461,14 @@ def supervise_output(args: list[str]) -> int:
     for stream in (sys.stdout, sys.stderr):
         if stream is not None:
             stream.flush()
+    # The readers decode UTF-8; Python otherwise uses the locale encoding.
+    # A configured error handler is kept.
+    _, _, errors = os.environ.get("PYTHONIOENCODING", "").partition(":")
     env = {
-        **os.environ,
-        _SUPERVISED_ENV_VAR: "true",
         "PYTHONUNBUFFERED": "1",
-        # The readers decode UTF-8; Python otherwise uses the locale encoding.
-        "PYTHONIOENCODING": "utf-8",
+        **os.environ,
+        _SUPERVISED_ENV_VAR: str(os.getpid()),
+        "PYTHONIOENCODING": f"utf-8:{errors}" if errors else "utf-8",
     }
     # Raw pipes that only the readers close: closing a pipe while a reader is
     # blocked on it waits for that read on Windows.

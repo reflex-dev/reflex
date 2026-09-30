@@ -460,7 +460,7 @@ def test_run_supervises_output_only_in_json_mode(
     # Registered so teardown restores the variables the CLI callbacks set.
     monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
     monkeypatch.setenv(environment.REFLEX_LOG_JSON.name, "false")
-    monkeypatch.setenv(log._SUPERVISED_ENV_VAR, "true" if supervised else "false")
+    monkeypatch.setenv(log._SUPERVISED_ENV_VAR, "1234" if supervised else "")
     monkeypatch.setattr(sys, "argv", ["reflex", "run", *argv])
     supervise = mocker.patch.object(log, "supervise_output", return_value=7)
     run = mocker.patch.object(reflex, "_run")

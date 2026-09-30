@@ -1144,8 +1144,46 @@ def test_supervise_output_does_not_wait_for_a_chatty_descendant(tmp_path):
     start = time.monotonic()
     result = _run_script(tmp_path, _CHATTY_LINGERING_SCRIPT)
     elapsed = time.monotonic() - start
-    pid = int(json.loads(result.stdout.splitlines()[0])["message"])
+    # The descendant can print before the command prints its PID.
+    [pid] = [
+        int(record["message"])
+        for record in map(json.loads, result.stdout.splitlines())
+        if record["message"].isdigit()
+    ]
     with contextlib.suppress(OSError):
         os.kill(pid, signal.SIGTERM)
     assert result.returncode == 0, result.stderr
     assert elapsed < 15
+
+
+_CHILD_ENV_SCRIPT = """
+import os
+import sys
+
+from reflex_base.utils import log
+
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+print(os.environ["REFLEX_OUTPUT_SUPERVISED"] == str(os.getppid()))
+print(sys.stdout.write_through)
+print(sys.stdout.encoding, sys.stdout.errors)
+"""
+
+
+def test_supervise_output_child_environment(tmp_path):
+    """The child gets the supervisor PID, keeps user buffering and error handler, and writes UTF-8."""
+    result = _run_script(
+        tmp_path,
+        _CHILD_ENV_SCRIPT,
+        env={
+            **os.environ,
+            "PYTHONUNBUFFERED": "",
+            "PYTHONIOENCODING": "latin-1:backslashreplace",
+        },
+    )
+    assert result.returncode == 0, result.stderr
+    assert [json.loads(line)["message"] for line in result.stdout.splitlines()] == [
+        "True",
+        "False",
+        "utf-8 backslashreplace",
+    ]
