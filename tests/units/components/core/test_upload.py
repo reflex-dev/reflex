@@ -3,9 +3,12 @@ import io
 import json
 from pathlib import Path
 from typing import Any, cast
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from reflex_base.event import EventChain, EventHandler, EventSpec, parse_args_spec
+from reflex_base.event.context import EventContext
+from reflex_base.session import SessionToken, SessionTokenManager
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_components_core.core._upload import (
@@ -16,6 +19,7 @@ from reflex_components_core.core._upload import (
     _sanitize_upload_filename,
     _upload_file_from_starlette,
     _UploadChunkMultipartParser,
+    upload,
 )
 from reflex_components_core.core.upload import (
     GhostUpload,
@@ -30,6 +34,7 @@ from starlette.datastructures import FormData, Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
 from starlette.exceptions import HTTPException
 from starlette.formparsers import MultiPartException
+from starlette.requests import Request
 
 import reflex as rx
 from reflex import event
@@ -89,6 +94,125 @@ class StreamingUploadStateTest(State):
     @event(background=True)
     async def chunk_drop_handler_missing_annotation(self, chunk_iter):
         """Invalid handler missing the UploadChunkIterator annotation."""
+
+
+@pytest.mark.parametrize("streaming", [False, True])
+@pytest.mark.parametrize("mode", ["off", "warn", "enforce"])
+@pytest.mark.parametrize("authorization", ["owned", "foreign", "anonymous"])
+async def test_upload_session_authorization(
+    monkeypatch: pytest.MonkeyPatch,
+    streaming: bool,
+    mode: str,
+    authorization: str,
+):
+    """Upload requests validate before body reads and propagate their own session.
+
+    Args:
+        monkeypatch: Environment fixture.
+        streaming: Whether to dispatch a streaming upload handler.
+        mode: The authorization policy.
+        authorization: The request session's relationship to the client token.
+    """
+    monkeypatch.setenv("REFLEX_SESSION_TOKEN_MODE", mode)
+    codec = SessionTokenManager("upload", secrets=(b"s" * 32,))
+    session = codec.create()
+    token = codec.create_client_token(session)
+    request_session = {
+        "owned": session,
+        "foreign": codec.create(),
+        "anonymous": None,
+    }[authorization]
+    handler = (
+        f"{StreamingUploadStateTest.get_full_name()}.chunk_drop_handler"
+        if streaming
+        else f"{UploadStateTest.get_full_name()}.upload_alias_handler"
+    )
+    body = (
+        b'--upload\r\nContent-Disposition: form-data; name="files"; filename="test.txt"\r\n'
+        b"Content-Type: text/plain\r\n\r\ncontent\r\n--upload--\r\n"
+    )
+    receive = AsyncMock(
+        return_value={"type": "http.request", "body": body, "more_body": False}
+    )
+    request = Request(
+        {
+            "type": "http",
+            "method": "POST",
+            "asgi": {"spec_version": "2.4"},
+            "headers": [
+                (b"reflex-client-token", token.encode()),
+                (b"reflex-event-handler", handler.encode()),
+                (b"content-type", b"multipart/form-data; boundary=upload"),
+            ],
+            "reflex.session": request_session,
+        },
+        receive=receive,
+    )
+    dispatched = []
+    tasks = []
+
+    async def buffered(client_token, event, *, session_token):  # noqa: RUF029
+        """Record the request identity forwarded to the buffered event stream.
+
+        Args:
+            client_token: The upload's client token.
+            event: The upload event.
+            session_token: The authorizing request session.
+
+        Yields:
+            An empty state delta.
+        """
+        dispatched.append((client_token, session_token))
+        yield {}
+
+    async def enqueue(client_token, event, *, session_token):  # noqa: RUF029
+        """Drain streamed chunks and record the dispatch context.
+
+        Args:
+            client_token: The upload's client token.
+            event: The upload event.
+            session_token: The authorizing request session.
+
+        Returns:
+            The background upload task.
+        """
+        dispatched.append((client_token, session_token))
+
+        async def consume():
+            """Drain all chunks so the multipart parser can finish."""
+            async for _ in event.payload["chunk_iter"]:
+                pass
+
+        task = asyncio.create_task(consume())
+        tasks.append(task)
+        return task
+
+    app = Mock(
+        event_processor=Mock(
+            enqueue=AsyncMock(side_effect=enqueue), enqueue_stream_delta=buffered
+        )
+    )
+    root = EventContext(
+        token="",
+        session_token=SessionToken.SYSTEM,
+        state_manager=Mock(),
+        enqueue_impl=AsyncMock(),
+    )
+    with root:
+        if mode == "enforce" and authorization != "owned":
+            with pytest.raises(HTTPException) as error:
+                await upload(app)(request)
+            assert error.value.status_code == 403
+            receive.assert_not_awaited()
+            app.event_processor.enqueue.assert_not_awaited()
+            assert dispatched == []
+        else:
+            response = await upload(app)(request)
+            await response(request.scope, receive, AsyncMock())
+            if tasks:
+                await asyncio.gather(*tasks)
+            assert dispatched == [(token, request_session)]
+    assert not app.state_manager.mock_calls
 
 
 def test_cancel_upload():

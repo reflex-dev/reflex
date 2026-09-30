@@ -97,12 +97,15 @@ class TokenManager(ABC):
         return token in self.token_to_socket
 
     @abstractmethod
-    async def link_token_to_sid(self, token: str, sid: str) -> str | None:
+    async def link_token_to_sid(
+        self, token: str, sid: str, *, token_factory: Callable[[], str] = _get_new_token
+    ) -> str | None:
         """Link a token to a session ID.
 
         Args:
             token: The client token.
             sid: The Socket.IO session ID.
+            token_factory: Create a replacement token when a duplicate tab connects.
 
         Returns:
             New token if duplicate detected and new token generated, None otherwise.
@@ -155,12 +158,15 @@ class LocalTokenManager(TokenManager):
         """Initialize the local token manager."""
         super().__init__()
 
-    async def link_token_to_sid(self, token: str, sid: str) -> str | None:
+    async def link_token_to_sid(
+        self, token: str, sid: str, *, token_factory: Callable[[], str] = _get_new_token
+    ) -> str | None:
         """Link a token to a session ID.
 
         Args:
             token: The client token.
             sid: The Socket.IO session ID.
+            token_factory: Create a replacement token when a duplicate tab connects.
 
         Returns:
             New token if duplicate detected and new token generated, None otherwise.
@@ -169,7 +175,7 @@ class LocalTokenManager(TokenManager):
         if (
             socket_record := self.token_to_socket.get(token)
         ) is not None and sid != socket_record.sid:
-            new_token = _get_new_token()
+            new_token = token_factory()
             self.token_to_socket[new_token] = SocketRecord(
                 instance_id=self.instance_id, sid=sid
             )
@@ -312,12 +318,15 @@ class RedisTokenManager(LocalTokenManager):
             suppress_exceptions=[Exception],
         )
 
-    async def link_token_to_sid(self, token: str, sid: str) -> str | None:
+    async def link_token_to_sid(
+        self, token: str, sid: str, *, token_factory: Callable[[], str] = _get_new_token
+    ) -> str | None:
         """Link a token to a session ID with Redis-based duplicate detection.
 
         Args:
             token: The client token.
             sid: The Socket.IO session ID.
+            token_factory: Create a replacement token when a duplicate tab connects.
 
         Returns:
             New token if duplicate detected and new token generated, None otherwise.
@@ -338,12 +347,14 @@ class RedisTokenManager(LocalTokenManager):
             token_exists_in_redis = await self.redis.exists(redis_key)
         except Exception as e:
             logger.error(f"Redis error checking token existence: {e}")
-            return await super().link_token_to_sid(token, sid)
+            return await super().link_token_to_sid(
+                token, sid, token_factory=token_factory
+            )
 
         new_token = None
         if token_exists_in_redis:
             # Duplicate exists somewhere - generate new token
-            token = new_token = _get_new_token()
+            token = new_token = token_factory()
 
         # Store in local dicts
         socket_record = self.token_to_socket[token] = SocketRecord(

@@ -22,6 +22,8 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.event.processor.timeout import DrainTimeoutManager
 from reflex_base.registry import RegisteredEventHandler, RegistrationContext
+from reflex_base.session import SessionToken
+from reflex_base.utils.compat import MISSING_TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -207,6 +209,7 @@ class EventProcessor:
 
         self._root_context = EventContext(
             token="",
+            session_token=SessionToken.SYSTEM,
             # Belongs to no event: the events forked from it are top-level.
             txid="",
             parent_txid=None,
@@ -384,7 +387,12 @@ class EventProcessor:
         return self._queue
 
     async def enqueue(
-        self, token: str, event: Event, ev_ctx: EventContext | None = None
+        self,
+        token: str,
+        event: Event,
+        ev_ctx: EventContext | None = None,
+        *,
+        session_token: SessionToken | MISSING_TYPE | None = dataclasses.MISSING,
     ) -> EventFuture:
         """Enqueue an event to be processed.
 
@@ -392,6 +400,7 @@ class EventProcessor:
             token: The client token associated with the event.
             event: The event to be enqueued.
             ev_ctx: The event context to use for this event.
+            session_token: The session authorizing the event, or omitted to inherit it.
 
         Returns:
             An EventFuture that resolves to the result of the associated task.
@@ -405,12 +414,16 @@ class EventProcessor:
         if ev_ctx is None:
             try:
                 ev_ctx = EventContext.get().fork(
-                    token=token, router_data=event.router_data
+                    token=token,
+                    router_data=event.router_data,
+                    session_token=session_token,
                 )
             except LookupError as le:
                 if self._root_context is not None:
                     ev_ctx = self._root_context.fork(
-                        token=token, router_data=event.router_data
+                        token=token,
+                        router_data=event.router_data,
+                        session_token=session_token,
                     )
                 else:
                     msg = "Event processor is not running, call .start(...) first."
@@ -476,6 +489,8 @@ class EventProcessor:
         self,
         token: str,
         event: Event,
+        *,
+        session_token: SessionToken | MISSING_TYPE | None = dataclasses.MISSING,
     ) -> AsyncGenerator[Mapping[str, Any]]:
         """Enqueue an event and yield the deltas its chain emits for ``token``.
 
@@ -494,6 +509,7 @@ class EventProcessor:
         Args:
             token: The client token associated with the event.
             event: The event to be enqueued.
+            session_token: The session authorizing the event, or omitted to inherit it.
 
         Yields:
             Deltas for the token emitted by the event handler and the events it chains.
@@ -518,17 +534,19 @@ class EventProcessor:
                 # go to the client the usual way.
                 await root.emit_delta_impl(token, delta)
 
+        try:
+            parent_context = EventContext.get()
+        except LookupError:
+            parent_context = self._root_context
         task_future = await self.enqueue(
             token,
             event,
-            # A fresh context rather than a copy of the root, which has no txid:
-            # this event needs one of its own, so the events it chains find its
-            # future and concurrent streams stay apart. As a top-level event,
-            # it has no parent.
-            ev_ctx=type(root)(
-                token=token,
-                state_manager=root.state_manager,
-                enqueue_impl=root.enqueue_impl,
+            ev_ctx=dataclasses.replace(
+                parent_context.fork(
+                    token=token,
+                    router_data=event.router_data,
+                    session_token=session_token,
+                ),
                 emit_delta_impl=_emit_delta_impl,
                 emit_event_impl=root.emit_event_impl,
                 # Like fork(): the handler span nests under the caller's span
