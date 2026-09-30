@@ -771,10 +771,15 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
             with self._socket_lock:
                 if not self._shared_socket_is_open():
                     return
-                # Granian's SocketHolder does not own the descriptor, so
-                # closing the socket object is what frees the port. The closed
-                # object stays in place for granian to detach on shutdown.
-                self._sso.close()
+                # The socket object and granian's SocketHolder wrap the same
+                # handle, which must be closed exactly once: by dropping the
+                # holder on Windows, and by the socket object elsewhere, where
+                # the holder never closes it. The released object stays in
+                # place for granian to detach on shutdown.
+                if constants.IS_WINDOWS:
+                    self._sso.detach()
+                else:
+                    self._sso.close()
                 self._shd = self._sfd = None
 
         def _release_socket_unless_served(self, wrk: Any, spawn_count: int):

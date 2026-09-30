@@ -552,6 +552,179 @@ def test_deploy_non_interactive_with_invalid_project(
     assert errors[-1] == "project does not exist"
 
 
+def test_deploy_missing_project_name_does_not_fall_back_to_selected_project(
+    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+):
+    client = _common_deploy_mocks(mocker, selected_project="selected-project-id")
+    client.api.projects.search.return_value = []
+    export_fn = MagicMock()
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_id=str(_APP_ID),
+            export_fn=export_fn,
+            project_name="missing-project",
+            interactive=False,
+        )
+
+    client.api.apps.get.assert_not_called()
+    export_fn.assert_not_called()
+    assert "No project found with the name 'missing-project'." in _log_messages(
+        caplog, logging.ERROR
+    )
+
+
+@pytest.mark.parametrize("project_selector", ["project_name", "project_id"])
+def test_deploy_rejects_app_id_from_another_requested_project(
+    mocker: MockerFixture,
+    project_selector: str,
+):
+    client = _common_deploy_mocks(mocker)
+    other_project_id = uuid.UUID(int=71)
+    selected_project_name: str | None = None
+    selected_project_id: str | None = None
+    if project_selector == "project_name":
+        client.api.projects.search.return_value = [
+            ProjectRef(id=other_project_id, name="other-project")
+        ]
+        selected_project_name = "other-project"
+    else:
+        selected_project_id = str(other_project_id)
+    client.api.apps.get.return_value = app()
+    export_fn = MagicMock()
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_id=str(_APP_ID),
+            export_fn=export_fn,
+            interactive=False,
+            project=selected_project_id,
+            project_name=selected_project_name,
+        )
+
+    client.api.deployments.check.assert_not_called()
+    client.api.apps.reserve_hostname.assert_not_called()
+    export_fn.assert_not_called()
+
+
+def test_deploy_rejects_project_name_that_disagrees_with_project_id(
+    mocker: MockerFixture,
+):
+    client = _common_deploy_mocks(mocker)
+    client.api.projects.search.return_value = [
+        ProjectRef(id=uuid.UUID(int=71), name="named-project")
+    ]
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(
+            app_id=str(_APP_ID),
+            export_fn=MagicMock(),
+            project=str(_PROJECT_ID),
+            project_name="named-project",
+            interactive=False,
+        )
+
+    client.api.apps.get.assert_not_called()
+
+
+def test_deploy_project_id_disambiguates_duplicate_project_names(
+    mocker: MockerFixture,
+):
+    client = _common_deploy_mocks(mocker)
+    client.api.projects.search.return_value = [
+        ProjectRef(id=uuid.UUID(int=71), name="shared-project"),
+        ProjectRef(id=_PROJECT_ID, name="shared-project"),
+    ]
+    client.api.projects.get.return_value = project("shared-project")
+    client.api.apps.get.return_value = app()
+
+    cli.deploy(
+        app_id=str(_APP_ID),
+        export_fn=MagicMock(),
+        project=str(_PROJECT_ID),
+        project_name="shared-project",
+        interactive=False,
+    )
+
+    client.api.projects.search.assert_called_once_with("shared-project")
+    client.api.projects.get.assert_called_once_with(str(_PROJECT_ID))
+    client.api.deployments.create.assert_called_once()
+
+
+@pytest.mark.parametrize("project_name", [None, "chosen-project"])
+@pytest.mark.parametrize(
+    "project_id",
+    [
+        "abcdefab-1234-4567-89ab-abcdefabcdef",
+        "ABCDEFAB-1234-4567-89AB-ABCDEFABCDEF",
+        "abcdefab1234456789ababcdefabcdef",
+    ],
+)
+def test_deploy_accepts_equivalent_project_ids(
+    mocker: MockerFixture, project_id: str, project_name: str | None
+):
+    """Accept equivalent UUID spellings with or without a project name.
+
+    Args:
+        mocker: The mock fixture.
+        project_id: The project ID spelling supplied to deploy.
+        project_name: The optional project name to validate against the ID.
+    """
+    client = _common_deploy_mocks(mocker)
+    project_uuid = uuid.UUID(project_id)
+    client.api.projects.search.return_value = [
+        ProjectRef(id=project_uuid, name="chosen-project")
+    ]
+    client.api.projects.get.return_value = project("chosen-project", id=project_uuid)
+    client.api.apps.get.return_value = app(project_id=project_uuid)
+
+    cli.deploy(
+        app_id=str(_APP_ID),
+        export_fn=MagicMock(),
+        project=project_id,
+        project_name=project_name,
+        interactive=False,
+    )
+
+    client.api.projects.get.assert_called_once_with(str(project_uuid))
+    assert client.api.deployments.check.call_args.kwargs["project_id"] == str(
+        project_uuid
+    )
+    client.api.deployments.create.assert_called_once()
+
+
+def test_deploy_project_name_ignores_apps_in_other_projects(
+    mocker: MockerFixture,
+):
+    client = _common_deploy_mocks(mocker)
+    client.api.projects.search.return_value = [
+        ProjectRef(id=_PROJECT_ID, name="chosen-project")
+    ]
+    client.api.projects.get.return_value = project("chosen-project")
+    client.api.apps.search.side_effect = lambda _name, *, project_id: (
+        []
+        if project_id == str(_PROJECT_ID)
+        else [app_summary("fake-app", project_id=uuid.UUID(int=71))]
+    )
+    client.api.apps.create.return_value = app()
+    mocker.patch("reflex_cli.utils.console.ask", return_value="y")
+
+    cli.deploy(
+        app_name="fake-app",
+        export_fn=MagicMock(),
+        project_name="chosen-project",
+        interactive=True,
+        description="",
+    )
+
+    client.api.apps.search.assert_called_once_with(
+        "fake-app", project_id=str(_PROJECT_ID)
+    )
+    client.api.apps.create.assert_called_once()
+    client.api.deployments.create.assert_called_once()
+
+
 def test_deploy_create_deployment_multiple_apps_non_interactive(
     mocker: MockerFixture,
     mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
