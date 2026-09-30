@@ -66,7 +66,7 @@ def _wrap_blocking_recording(
     modules, excluded_modules, func, func_name, can_block_functions, can_block_predicate
 ):
     """Drop-in for ``blockbuster._wrap_blocking`` that records instead of raising."""
-    import blockbuster.blockbuster as bbmod
+    import blockbuster.blockbuster as bbmod  # pyright: ignore[reportMissingImports]
 
     def wrapper(*args, **kwargs):
         if bbmod.blockbuster_skip.get(False):
@@ -101,7 +101,7 @@ def activate():
     Returns:
         The active BlockBuster instance.
     """
-    import blockbuster.blockbuster as bbmod
+    import blockbuster.blockbuster as bbmod  # pyright: ignore[reportMissingImports]
 
     bbmod._wrap_blocking = _wrap_blocking_recording  # pyright: ignore[reportPrivateUsage]
     bb = bbmod.BlockBuster()
@@ -179,9 +179,9 @@ def BbApp():
     class State(rx.State):
         count: int = 0
         loaded: str = ""
-        log: list[str] = []
+        log: rx.Field[list[str]] = rx.field([])
         bg_progress: int = 0
-        upload_done: bool = False
+        upload_done: rx.Field[bool] = rx.field(False)
         cookie_val: str = rx.Cookie("")
         ls_val: str = rx.LocalStorage("")
         db_rows: int = 0
@@ -275,7 +275,9 @@ def BbApp():
             rx.button(
                 "upload",
                 id="upload",
-                on_click=State.handle_upload(rx.upload_files(upload_id="upload_root")),
+                on_click=State.handle_upload(
+                    rx.upload_files(upload_id="upload_root")  # pyright: ignore [reportArgumentType]
+                ),
             ),
             rx.text(State.upload_done.to_string(), id="updone"),
             rx.button("storage", id="storage", on_click=State.set_storage),
