@@ -209,6 +209,8 @@ class EventProcessor:
 
         self._root_context = EventContext(
             token="",
+            # Belongs to no event: the events forked from it are top-level.
+            txid="",
             parent_txid=None,
             state_manager=state_manager,
             enqueue_impl=self.enqueue_many,
@@ -517,10 +519,10 @@ class EventProcessor:
         task_future = await self.enqueue(
             token,
             event,
-            # A fresh context rather than a copy of the root: every top-level
-            # event names the root context's txid as its parent, so tracking
-            # this event under that txid would chain them all to this stream.
-            # Its txid is new and, as a top-level event, it has no parent.
+            # A fresh context rather than a copy of the root, which has no txid:
+            # this event needs one of its own, so the events it chains find its
+            # future and concurrent streams stay apart. As a top-level event,
+            # it has no parent.
             ev_ctx=type(root)(
                 token=token,
                 state_manager=root.state_manager,

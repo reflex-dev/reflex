@@ -324,6 +324,7 @@ class BaseComponentMeta(FieldBasedMeta, ABCMeta):
 
 
 _COMPILE_CACHE_ATTRS = (
+    "_memo_analysis_key",
     "_cached_render_result",
     "_vars_cache",
     "_imports_cache",
