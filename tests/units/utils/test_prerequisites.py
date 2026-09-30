@@ -1,5 +1,7 @@
 """Tests for reflex.utils.prerequisites."""
 
+from types import SimpleNamespace
+
 import pytest
 
 from reflex.utils import prerequisites
@@ -24,6 +26,12 @@ def test_get_redis_pins_driver_version(monkeypatch, max_connections: str | None)
     from redis.asyncio import BlockingConnectionPool
 
     monkeypatch.setattr(prerequisites, "parse_redis_url", lambda: "redis://localhost")
+    # Pin the state lock lifetime that the default 2s pool timeout must stay under.
+    monkeypatch.setattr(
+        prerequisites,
+        "get_config",
+        lambda: SimpleNamespace(redis_lock_expiration=10_000),
+    )
     monkeypatch.delenv("REFLEX_REDIS_POOL_TIMEOUT", raising=False)
     if max_connections is None:
         monkeypatch.delenv("REFLEX_REDIS_MAX_CONNECTIONS", raising=False)
