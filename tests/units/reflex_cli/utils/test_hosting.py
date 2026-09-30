@@ -904,6 +904,22 @@ def test_get_selected_project_normalizes_empty_to_none(
     [
         ("abc-uuid", "abc-uuid"),
         ("  abc-uuid  ", "abc-uuid"),
+        (
+            "abcdefab-1234-4567-89ab-abcdefabcdef",
+            "abcdefab-1234-4567-89ab-abcdefabcdef",
+        ),
+        (
+            "ABCDEFAB-1234-4567-89AB-ABCDEFABCDEF",
+            "abcdefab-1234-4567-89ab-abcdefabcdef",
+        ),
+        (
+            "abcdefab1234456789ababcdefabcdef",
+            "abcdefab-1234-4567-89ab-abcdefabcdef",
+        ),
+        (
+            "  ABCDEFAB1234456789ABABCDEFABCDEF  ",
+            "abcdefab-1234-4567-89ab-abcdefabcdef",
+        ),
         ("", None),
         ("   ", None),
         (None, None),
@@ -913,6 +929,12 @@ def test_get_selected_project_normalizes_empty_to_none(
     ],
 )
 def test_normalize_project_id(value: object, expected: str | None):
+    """Canonicalize UUIDs while preserving other IDs and missing-value handling.
+
+    Args:
+        value: The raw project ID.
+        expected: The normalized project ID.
+    """
     assert normalize_project_id(value) == expected
 
 
