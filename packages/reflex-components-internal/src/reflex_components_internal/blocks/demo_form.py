@@ -404,11 +404,9 @@ def demo_form_dialog(
     Returns:
         A Reflex dialog component containing the demo form
     """
-    if trigger is None:
-        trigger = rx.fragment()
     class_name = cn("w-auto", props.pop("class_name", ""))
     return dialog.root(
-        dialog.trigger(render_=trigger),
+        dialog.trigger(render_=trigger) if trigger is not None else None,
         dialog.portal(
             dialog.backdrop(),
             dialog.popup(

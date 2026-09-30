@@ -202,7 +202,7 @@ class BaseStateToken(StateToken["BaseState"]):
         Returns:
             The touched state of the BaseState.
         """
-        was_touched = state._get_was_touched()
+        was_touched = state._was_touched
         state._was_touched = False  # Reset the touched flag after serializing.
         return was_touched
 

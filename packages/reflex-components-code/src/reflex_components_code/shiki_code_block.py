@@ -423,7 +423,7 @@ class ShikiBaseTransformers:
 class ShikiJsTransformer(ShikiBaseTransformers):
     """A Wrapped shikijs transformer."""
 
-    library: str = "@shikijs/transformers@4.3.1"
+    library: str = "@shikijs/transformers@4.4.3"
     fns: list[FunctionStringVar] = dataclasses.field(
         default_factory=lambda: [
             FunctionStringVar.create(fn) for fn in SHIKIJS_TRANSFORMER_FNS
@@ -546,7 +546,7 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
 
     alias = "ShikiCode"
 
-    lib_dependencies: list[str] = ["shiki@4.3.1"]
+    lib_dependencies: list[str] = ["shiki@4.4.3"]
 
     language: Var[LiteralCodeLanguage] = field(
         default=Var.create("python"), doc="The language to use."
@@ -785,6 +785,8 @@ class ShikiHighLevelCodeBlock(ShikiCodeBlock):
                 if copy_button is not None
                 else Button.create(
                     Icon.create(tag="copy", size=16, color=color("gray", 11)),
+                    aria_label="Copy code",
+                    type="button",
                     on_click=[
                         set_clipboard(cls._strip_transformer_triggers(code)),
                         copy_script(),

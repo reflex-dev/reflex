@@ -1,5 +1,5 @@
-import JSON5 from "json5";
 import env from "$/env.json";
+import { parseJson } from "$/utils/helpers/json";
 
 /**
  * Upload files to the server.
@@ -47,7 +47,7 @@ export const uploadFiles = async (
     // So only process _new_ chunks beyond resp_idx.
     chunks.slice(resp_idx).map((chunk_json) => {
       try {
-        const chunk = JSON5.parse(chunk_json);
+        const chunk = parseJson(chunk_json);
         event_callbacks.map((f, ix) => {
           f(chunk)
             .then(() => {
@@ -156,6 +156,12 @@ export const uploadFiles = async (
     xhr.open("POST", getBackendURL(env.UPLOAD));
     xhr.setRequestHeader("Reflex-Client-Token", getToken());
     xhr.setRequestHeader("Reflex-Event-Handler", handler);
+    // Instrumentation hook (installed by reflex-otel): may add trace headers.
+    const trace_headers = {};
+    window.__reflex_otel?.onUploadSend?.(handler, trace_headers);
+    for (const [key, value] of Object.entries(trace_headers)) {
+      xhr.setRequestHeader(key, value);
+    }
     for (const [key, value] of Object.entries(extra_headers || {})) {
       xhr.setRequestHeader(key, value);
     }

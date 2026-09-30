@@ -1,3 +1,32 @@
+## v0.9.7 (2026-09-21)
+
+### Bug Fixes
+
+- `rx.plotly(..., id="...")` now reaches the DOM: the `id` prop is rendered as react-plotly.js's `divId`, which is the only id prop the library forwards to its container div. ([#6977](https://github.com/reflex-dev/reflex/issues/6977))
+
+### Miscellaneous
+
+- Avoid redundant frontend dependency installation when using Plotly components. ([#6850](https://github.com/reflex-dev/reflex/issues/6850))
+
+
+## v0.9.6 (2026-09-11)
+
+### Miscellaneous
+
+- Bump `react-plotly.js` to 4.1.0. ([#7019](https://github.com/reflex-dev/reflex/issues/7019))
+
+
+## v0.9.5 (2026-08-28)
+
+### Features
+
+- The generated client-only wrapper for each plotly component now carries the component's name, so React DevTools shows `ClientSide(Plot)` instead of an anonymous wrapper. ([#6945](https://github.com/reflex-dev/reflex/issues/6945))
+
+### Miscellaneous
+
+- Internal logging migrated from the legacy console helpers to standard python `logging` per-module loggers. ([#6864](https://github.com/reflex-dev/reflex/issues/6864))
+
+
 ## v0.9.4 (2026-08-04)
 
 ### Miscellaneous

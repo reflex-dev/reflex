@@ -1,18 +1,61 @@
 """Components that are dynamically generated on the backend."""
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from reflex_base import constants
 from reflex_base.registry import RegistrationContext, _default_bundled_libraries
-from reflex_base.utils import imports
+from reflex_base.utils import console, imports
 from reflex_base.utils.exceptions import DynamicComponentMissingLibraryError
 from reflex_base.utils.format import format_library_name
+from reflex_base.utils.imports import ParsedImportDict
 from reflex_base.utils.serializers import serializer
 from reflex_base.vars import Var, get_unique_variable_name
 from reflex_base.vars.base import VarData, transform
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
+
+
+def __getattr__(name: str) -> Any:
+    """Provide the module-level globals that moved onto `RegistrationContext`.
+
+    Kept so downstream packages pinned to an older Reflex (notably
+    reflex-enterprise, which reads `dynamic.bundled_libraries`) keep working.
+
+    Args:
+        name: The name of the attribute to look up.
+
+    Returns:
+        The relocated value, resolved against the active `RegistrationContext`.
+
+    Raises:
+        AttributeError: If the attribute is not a relocated global.
+    """
+    if name == "bundled_libraries":
+        console.deprecate(
+            feature_name="reflex_base.components.dynamic.bundled_libraries",
+            reason=(
+                "The bundled library list now lives on the active RegistrationContext. "
+                "Use RegistrationContext.ensure_context().bundled_libraries to read it, "
+                "or bundle_library()/reset_bundled_libraries() to modify it"
+            ),
+            deprecation_version="0.9.9",
+            removal_version="1.0",
+        )
+        return RegistrationContext.ensure_context().bundled_libraries
+    if name == "DEFAULT_BUNDLED_LIBRARIES":
+        console.deprecate(
+            feature_name="reflex_base.components.dynamic.DEFAULT_BUNDLED_LIBRARIES",
+            reason=(
+                "Every RegistrationContext starts with these libraries bundled; call "
+                "reset_bundled_libraries() to restore them on the active context"
+            ),
+            deprecation_version="0.9.9",
+            removal_version="1.0",
+        )
+        return _default_bundled_libraries()
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)
 
 
 def get_cdn_url(lib: str) -> str:
@@ -29,27 +72,87 @@ def get_cdn_url(lib: str) -> str:
 
 def reset_bundled_libraries() -> None:
     """Reset the bundled library registry to its default values."""
-    bundled = RegistrationContext.ensure_context().bundled_libraries
-    bundled[:] = _default_bundled_libraries()
+    context = RegistrationContext.ensure_context()
+    context.bundled_libraries[:] = _default_bundled_libraries()
+    context._explicit_bundled_libraries.clear()
 
 
-def bundle_library(component: Union["Component", str]):
-    """Bundle a library with the component.
+def _reset_bundled_libraries_for_compile() -> None:
+    """Clear compiler-derived libraries while retaining app registrations."""
+    context = RegistrationContext.ensure_context()
+    libraries = dict.fromkeys(_default_bundled_libraries())
+    libraries.update(context._explicit_bundled_libraries)
+    context.bundled_libraries[:] = libraries
+
+
+def bundle_library(component: Union["Component", str]) -> None:
+    """Register a library for dynamic components.
+
+    Explicit app registrations survive compilation, including registrations in
+    modules first imported while evaluating a page. Passing a component bundles
+    the rendered library imports of its entire tree, including children,
+    component-valued props, and subpaths, even when absent from the initial
+    state. Components present in the initial state have their imports bundled
+    automatically.
 
     Args:
-        component: The component to bundle the library with.
+        component: A library name string or a prototype component instance to bundle.
 
     Raises:
+        TypeError: If the argument is not a library name string or component instance.
         DynamicComponentMissingLibraryError: Raised when a dynamic component is missing a library.
     """
-    bundled = RegistrationContext.ensure_context().bundled_libraries
     if isinstance(component, str):
-        bundled.append(format_library_name(component))
+        _bundle_library(component, explicit=True)
         return
-    if component.library is None:
+    # Component imports this module, so defer the runtime import.
+    from reflex_base.components.component import Component
+
+    if not isinstance(component, Component):
+        msg = (
+            "Pass a library name as a str or a prototype Component instance "
+            "to bundle_library(), for example bundle_library(rx.icon('apple'))."
+        )
+        raise TypeError(msg)
+    component_imports = component._get_all_imports()
+    if not component_imports:
         msg = "Component must have a library to bundle."
         raise DynamicComponentMissingLibraryError(msg)
-    bundled.append(format_library_name(component.library))
+    _bundle_imports(component_imports, explicit=True)
+
+
+def _bundle_imports(
+    component_imports: ParsedImportDict, *, explicit: bool = False
+) -> None:
+    """Register the rendered module paths in an import dictionary.
+
+    Args:
+        component_imports: The component's library imports.
+        explicit: Whether the registrations should survive compiler resets.
+    """
+    for library, fields in component_imports.items():
+        if not library:
+            continue
+        library = format_library_name(library)
+        for field in fields:
+            if field.render:
+                subpath = field.package_path if field.package_path != "/" else ""
+                _bundle_library(library + subpath, explicit=explicit)
+
+
+def _bundle_library(library: str, *, explicit: bool = False) -> None:
+    """Register a library, optionally retaining it across compiler resets.
+
+    Args:
+        library: The library or subpath to bundle.
+        explicit: Whether this registration belongs to the app rather than a compile.
+    """
+    library = format_library_name(library)
+    context = RegistrationContext.ensure_context()
+    if explicit:
+        context._explicit_bundled_libraries[library] = None
+    if library not in context.bundled_libraries:
+        context.bundled_libraries.append(library)
 
 
 def load_dynamic_serializer():
@@ -98,42 +201,55 @@ def load_dynamic_serializer():
         imports = {}
         for lib, names in component_imports.items():
             formatted_lib_name = format_library_name(lib)
-            if (
-                not lib.startswith((".", "/", "$/"))
-                and not lib.startswith("http")
-                and formatted_lib_name not in libs_in_window
-            ):
-                imports[get_cdn_url(lib)] = names
-            else:
-                imports[lib] = names
+            root_is_bundled = formatted_lib_name in libs_in_window
+            fallback = (
+                lib
+                if root_is_bundled or lib.startswith((".", "/", "$/", "http"))
+                else get_cdn_url(lib)
+            )
+            for name in names:
+                subpath = name.package_path if name.package_path != "/" else ""
+                import_path = formatted_lib_name + subpath
+                is_bundled = root_is_bundled or import_path in libs_in_window
+                imports.setdefault(lib if is_bundled else fallback, []).append(name)
+                if subpath and is_bundled:
+                    _bundle_library(import_path)
 
-        module_code_lines = templates.dynamic_components_module_template(
-            imports=utils.compile_imports(imports),
-            memoized_code="\n".join(rendered_components),
-        ).splitlines()
+        module_imports = []
+        bundled_declarations = []
+        for module in utils.compile_imports(imports):
+            if module["lib"] not in libs_in_window and not module["lib"].startswith((
+                "$/",
+                "/",
+            )):
+                module_imports.append(module)
+                continue
 
-        # Rewrite imports from `/` to destructure from window
-        for ix, line in enumerate(module_code_lines[:]):
-            if line.startswith("import "):
-                if 'from "$/' in line or 'from "/' in line:
-                    module_code_lines[ix] = (
-                        line
-                        .replace("import ", "const ", 1)
-                        .replace(" as ", ": ")
-                        .replace(" from ", " = window['__reflex'][", 1)
-                        + "]"
+            window_library = f"window.__reflex['{module['lib']}']"
+            if module["default"]:
+                bundled_declarations.append(
+                    f"const {module['default']} = {window_library}.default"
+                )
+            named_imports = []
+            for name in module["rest"]:
+                if name.startswith("* as "):
+                    bundled_declarations.append(
+                        f"const {name.removeprefix('* as ')} = {window_library}"
                     )
                 else:
-                    for lib in libs_in_window:
-                        if f'from "{lib}"' in line:
-                            module_code_lines[ix] = (
-                                line
-                                .replace("import ", "const ", 1)
-                                .replace(
-                                    f' from "{lib}"', f" = window.__reflex['{lib}']", 1
-                                )
-                                .replace(" as ", ": ")
-                            )
+                    named_imports.append(name.replace(" as ", ": "))
+            if named_imports:
+                bundled_declarations.append(
+                    f"const {{{','.join(named_imports)}}} = {window_library}"
+                )
+        bundled_declarations.extend(rendered_components)
+
+        module_code_lines = templates.dynamic_components_module_template(
+            imports=module_imports,
+            memoized_code="\n".join(bundled_declarations),
+        ).splitlines()
+
+        for ix, line in enumerate(module_code_lines[:]):
             if line.startswith("export function"):
                 module_code_lines[ix] = line.replace(
                     "export function", "export default function", 1

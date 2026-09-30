@@ -1,17 +1,26 @@
 import copy
 import hashlib
 import io
+import itertools
+import logging
+import os
 import pickle
 import shutil
-from collections.abc import Generator
+import threading
+from collections.abc import Callable, Generator
 from pathlib import Path
 from typing import cast
 
 import pytest
 
 import reflex as rx
+import reflex.assets as assets_module
 import reflex.constants as constants
-from reflex.assets import AssetPathStr, remove_stale_external_asset_symlinks
+from reflex.assets import (
+    AssetPathStr,
+    _link_shared_asset,
+    remove_stale_external_asset_symlinks,
+)
 
 
 def _asset_hash(path: Path) -> str:
@@ -77,6 +86,370 @@ def test_shared_asset(mock_asset_path: Path) -> None:
 
     # Nothing is done to assets when file does not exist.
     assert not Path(mock_asset_path / "assets" / "external").exists()
+
+
+# Captured before any patching so the simulated competitor below can write
+# symlinks without recursing back into the fake that wraps `os.symlink`.
+_REAL_SYMLINK = os.symlink
+
+
+def _shared_dst_file(mock_asset_path: Path) -> Path:
+    """Return the symlink `rx.asset(shared=True)` creates for this test module.
+
+    The `test_assets` component is the calling module's name, which is what
+    `asset()` derives the external subfolder from.
+
+    Args:
+        mock_asset_path: The mock current working directory.
+
+    Returns:
+        The path of the symlink in the app's external assets directory.
+    """
+    return (
+        mock_asset_path
+        / constants.Dirs.APP_ASSETS
+        / constants.Dirs.EXTERNAL_APP_ASSETS
+        / "test_assets"
+        / "custom_script.js"
+    )
+
+
+def _competitor_links(dst_file: Path, target: Path) -> None:
+    """Have the competing process point `dst_file` at `target`.
+
+    Args:
+        dst_file: The destination the competitor writes to.
+        target: The file the competitor links to.
+    """
+    dst_file.unlink(missing_ok=True)
+    _REAL_SYMLINK(target, dst_file)
+
+
+def _simulate_competing_process(
+    monkeypatch: pytest.MonkeyPatch,
+    script: list[tuple[Callable[[], None], Callable[[], None]]],
+) -> None:
+    """Run another process's writes around each `os.symlink` call.
+
+    Models a second app compiling into the same working directory: each entry
+    of `script` is a (before, after) pair applied around the n-th symlink call,
+    so the competitor can create, remove or repoint the destination inside the
+    window a check-then-act implementation depends on. The last entry is reused
+    once the script is exhausted.
+
+    Patching `os.symlink` rather than the asset code keeps the simulation
+    implementation-agnostic: an implementation that links straight to the
+    destination sees the competitor's writes collide with its own, while one
+    that links to a private temporary name is untouched by them.
+
+    Args:
+        monkeypatch: A pytest fixture for patching.
+        script: The (before, after) callbacks to apply to successive calls.
+    """
+    real_symlink = os.symlink
+    calls = itertools.count()
+
+    def fake_symlink(target, path, *args, **kwargs):
+        before, after = script[min(next(calls), len(script) - 1)]
+        before()
+        try:
+            return real_symlink(target, path, *args, **kwargs)
+        finally:
+            after()
+
+    monkeypatch.setattr(os, "symlink", fake_symlink)
+
+
+def test_shared_asset_survives_concurrent_removal(
+    mock_asset_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A competitor that creates then removes the link must not break `asset()`.
+
+    Regression test: a destination that existed when the link was created but
+    was gone again by the time it was cleaned up escaped as `FileNotFoundError`
+    from `dst_file.unlink()`.
+
+    Args:
+        mock_asset_path: The mock current working directory.
+        monkeypatch: A pytest fixture for patching.
+    """
+    source_file = Path(__file__).parent / "custom_script.js"
+    dst_file = _shared_dst_file(mock_asset_path)
+    decoy = mock_asset_path / "decoy.js"
+    decoy.write_text("decoy")
+
+    _simulate_competing_process(
+        monkeypatch,
+        [
+            (
+                lambda: _competitor_links(dst_file, decoy),
+                lambda: dst_file.unlink(missing_ok=True),
+            )
+        ],
+    )
+
+    asset = rx.asset(path="custom_script.js", shared=True)
+
+    assert (
+        asset == f"/external/test_assets/custom_script.js?v={_asset_hash(source_file)}"
+    )
+    assert dst_file.is_symlink()
+    assert dst_file.resolve() == source_file.resolve()
+
+
+def test_shared_asset_survives_concurrent_recreation(
+    mock_asset_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A competitor recreating the link on every attempt must not break `asset()`.
+
+    Regression test: the retry after `FileExistsError` raised a second,
+    unhandled `FileExistsError` when the destination reappeared in between.
+
+    Args:
+        mock_asset_path: The mock current working directory.
+        monkeypatch: A pytest fixture for patching.
+    """
+    source_file = Path(__file__).parent / "custom_script.js"
+    dst_file = _shared_dst_file(mock_asset_path)
+    decoy = mock_asset_path / "decoy.js"
+    decoy.write_text("decoy")
+
+    _simulate_competing_process(
+        monkeypatch, [(lambda: _competitor_links(dst_file, decoy), lambda: None)]
+    )
+
+    rx.asset(path="custom_script.js", shared=True)
+
+    assert dst_file.is_symlink()
+    assert dst_file.resolve() == source_file.resolve()
+
+
+@pytest.mark.parametrize("existing", ["symlink_to_decoy", "regular_file"])
+def test_shared_asset_converges_on_correct_target(
+    mock_asset_path: Path, existing: str
+) -> None:
+    """An existing destination is repointed at the asset rather than trusted.
+
+    Args:
+        mock_asset_path: The mock current working directory.
+        existing: What another process left at the destination.
+    """
+    source_file = Path(__file__).parent / "custom_script.js"
+    dst_file = _shared_dst_file(mock_asset_path)
+    dst_file.parent.mkdir(parents=True, exist_ok=True)
+    if existing == "symlink_to_decoy":
+        decoy = mock_asset_path / "decoy.js"
+        decoy.write_text("decoy")
+        dst_file.symlink_to(decoy)
+    else:
+        dst_file.write_text("stale copy")
+
+    rx.asset(path="custom_script.js", shared=True)
+
+    assert dst_file.is_symlink()
+    assert dst_file.resolve() == source_file.resolve()
+    assert dst_file.read_text() == source_file.read_text()
+
+
+def test_shared_asset_is_thread_safe(mock_asset_path: Path) -> None:
+    """Concurrent `asset()` calls for the same file all succeed.
+
+    Args:
+        mock_asset_path: The mock current working directory.
+    """
+    source_file = Path(__file__).parent / "custom_script.js"
+    dst_file = _shared_dst_file(mock_asset_path)
+    errors: list[BaseException] = []
+    start = threading.Barrier(8)
+
+    def compile_once() -> None:
+        start.wait()
+        try:
+            for _ in range(25):
+                rx.asset(path="custom_script.js", shared=True)
+        except BaseException as exc:
+            errors.append(exc)
+
+    threads = [threading.Thread(target=compile_once) for _ in range(8)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert not errors
+    assert dst_file.is_symlink()
+    assert dst_file.resolve() == source_file.resolve()
+    # No temporary link is left behind in the destination directory.
+    assert [p.name for p in dst_file.parent.iterdir()] == ["custom_script.js"]
+
+
+@pytest.mark.parametrize(
+    "stem",
+    [
+        # All are just under the 255-byte component limit of ext4, APFS and
+        # NTFS, with no room left for a suffix. The multi-byte names guard a
+        # staged name derived from the asset name by slicing it: whether the
+        # slice is taken in characters or in bytes, and if in bytes, whether it
+        # splits an encoded character (which `off_boundary` does at 64 bytes).
+        pytest.param("a" * 247, id="ascii"),
+        pytest.param("😀" * 61, id="multibyte"),
+        pytest.param("a" + "😀" * 60, id="multibyte_off_boundary"),
+    ],
+)
+def test_link_shared_asset_with_long_filename(tmp_path: Path, stem: str) -> None:
+    """An asset named up to the filesystem's limit still links.
+
+    The temporary name the link is staged under has to stay within the same
+    limit, so it cannot simply append to an already maximal basename.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        stem: The asset name, without its extension.
+    """
+    name = stem + ".js"
+    src_dir = tmp_path / "src"
+    src_dir.mkdir()
+    src_file = src_dir / name
+    src_file.write_text("script")
+    dst_dir = tmp_path / "dst"
+    dst_dir.mkdir()
+
+    _link_shared_asset(dst_dir / name, src_file)
+
+    assert (dst_dir / name).is_symlink()
+    assert (dst_dir / name).resolve() == src_file.resolve()
+    assert [p.name for p in dst_dir.iterdir()] == [name]
+
+
+def _staged_link_fixture(tmp_path: Path) -> tuple[Path, Path]:
+    """Create a source asset and an empty destination directory.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+
+    Returns:
+        The source asset and the destination the link should be created at.
+    """
+    src_dir = tmp_path / "src"
+    src_dir.mkdir()
+    src_file = src_dir / "custom_script.js"
+    src_file.write_text("script")
+    dst_dir = tmp_path / "dst"
+    dst_dir.mkdir()
+    return src_file, dst_dir / "custom_script.js"
+
+
+def test_link_shared_asset_replaces_symlink_loop(tmp_path: Path) -> None:
+    """A destination caught in a symlink loop is replaced, not reported.
+
+    Resolving a loop raises `RuntimeError` on Python below 3.13, so a
+    destination left in that state by a crashed or racing writer would
+    otherwise abort the compile.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+    partner = dst_file.parent / "loop_partner.js"
+    dst_file.symlink_to(partner)
+    partner.symlink_to(dst_file)
+
+    _link_shared_asset(dst_file, src_file)
+
+    assert dst_file.is_symlink()
+    assert dst_file.resolve() == src_file.resolve()
+
+
+def test_link_shared_asset_leaves_destination_on_source_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A source that cannot be resolved surfaces, without touching the link.
+
+    Only the destination is inspected defensively; swallowing a source error
+    would replace a good link on the way to failing on the source anyway.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+    decoy = tmp_path / "decoy.js"
+    decoy.write_text("decoy")
+    dst_file.symlink_to(decoy)
+    real_resolve = Path.resolve
+
+    def fake_resolve(self: Path, *args, **kwargs) -> Path:
+        if self == src_file:
+            msg = "Symlink loop"
+            raise RuntimeError(msg)
+        return real_resolve(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", fake_resolve)
+
+    with pytest.raises(RuntimeError):
+        _link_shared_asset(dst_file, src_file)
+
+    # Compared after resolution: Windows reads a symlink back with a `\\?\`
+    # prefix, so the raw target is not comparable to the path it was made from.
+    assert dst_file.is_symlink()
+    assert dst_file.resolve() == decoy.resolve()
+
+
+def test_link_shared_asset_concedes_denied_replace(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A replace denied by the process that linked the same asset is conceded.
+
+    Windows denies a replace while another process is replacing the same
+    destination, so this cannot be reached on POSIX without the patch.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+
+    def denied_replace(self: Path, target) -> Path:
+        _REAL_SYMLINK(src_file, dst_file)
+        msg = "Access is denied"
+        raise PermissionError(13, msg)
+
+    monkeypatch.setattr(Path, "replace", denied_replace)
+
+    _link_shared_asset(dst_file, src_file)
+
+    assert dst_file.is_symlink()
+    assert dst_file.resolve() == src_file.resolve()
+    assert [p.name for p in dst_file.parent.iterdir()] == ["custom_script.js"]
+
+
+def test_link_shared_asset_raises_when_replace_stays_denied(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A destination that never becomes linkable surfaces the error.
+
+    Args:
+        tmp_path: A temporary directory provided by pytest.
+        monkeypatch: A pytest fixture for patching.
+    """
+    src_file, dst_file = _staged_link_fixture(tmp_path)
+    attempts = 0
+
+    def denied_replace(self: Path, target) -> Path:
+        nonlocal attempts
+        attempts += 1
+        msg = "Access is denied"
+        raise PermissionError(13, msg)
+
+    monkeypatch.setattr(Path, "replace", denied_replace)
+    monkeypatch.setattr(assets_module, "_LINK_RETRY_DELAY", 0)
+
+    with pytest.raises(PermissionError):
+        _link_shared_asset(dst_file, src_file)
+
+    assert attempts == assets_module._MAX_LINK_ATTEMPTS
+    # The staged link is cleaned up rather than left in the assets directory.
+    assert list(dst_file.parent.iterdir()) == []
 
 
 @pytest.mark.parametrize(
@@ -258,11 +631,13 @@ def test_asset_hash_retries_after_in_place_rewrite(
 
 def test_asset_hash_uses_timestamp_when_file_never_stabilizes(
     monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     """Hashing falls back to a timestamp if every read sees a file change.
 
     Args:
         monkeypatch: A pytest fixture for patching.
+        caplog: Pytest log capture fixture.
     """
     import reflex.assets as assets_module
 
@@ -274,16 +649,19 @@ def test_asset_hash_uses_timestamp_when_file_never_stabilizes(
             self.open_calls += 1
             return io.BytesIO(str(self.open_calls).encode())
 
-    warn_calls: list[str] = []
     monkeypatch.setattr(assets_module.time, "time", lambda: 1234.5)
-    monkeypatch.setattr(assets_module.console, "warn", warn_calls.append)
 
     result = assets_module._short_content_hash(cast(Path, _ChangingPath()))
 
     assert result == "1234.5"
+    warn_calls = [r for r in caplog.records if r.levelno == logging.WARNING]
     assert len(warn_calls) == 1
-    assert warn_calls[0].endswith(
-        f"was modified {assets_module._MAX_HASH_ATTEMPTS} times while calculating hash."
+    assert (
+        warn_calls[0]
+        .getMessage()
+        .endswith(
+            f"was modified {assets_module._MAX_HASH_ATTEMPTS} times while calculating hash."
+        )
     )
 
 

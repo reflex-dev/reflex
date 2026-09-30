@@ -7,11 +7,11 @@ from datetime import date, datetime
 from typing import Any, Literal, TypeVar
 
 from reflex_base.utils.exceptions import VarTypeError
+from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.number import BooleanVar
 
 from .base import (
     CustomVarOperationReturn,
-    ImportVar,
     LiteralVar,
     Var,
     VarData,
@@ -224,7 +224,7 @@ def date_compare_operation(
         The result of the operation.
     """
     return var_operation_return(
-        f"(compareDatetime({lhs}, {rhs}) {operator} 0)",
+        f"(compareDatetime({lhs!s}, {rhs!s}) {operator} 0)",
         bool,
         VarData(imports=_COMPARE_DATETIME_IMPORT),
     )

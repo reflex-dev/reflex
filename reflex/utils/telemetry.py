@@ -3,11 +3,13 @@
 import dataclasses
 import importlib.metadata
 import json
+import logging
 import multiprocessing
 import os
 import platform
 import sys
 import threading
+import urllib.request
 import uuid
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -16,16 +18,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, TypedDict, cast
 
-from packaging.requirements import Requirement
-from packaging.utils import canonicalize_name
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import environment
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.decorator import once, once_unless_none
 from reflex_base.utils.exceptions import ReflexError
 from typing_extensions import NotRequired
 
-from reflex.utils import console, processes
+from reflex.utils import processes
 from reflex.utils.js_runtimes import get_bun_version, get_node_version
 from reflex.utils.prerequisites import (
     ensure_reflex_installation_id,
@@ -33,6 +34,8 @@ from reflex.utils.prerequisites import (
     has_uuid_distinct_id_semantics,
     mark_uuid_distinct_id_semantics,
 )
+
+logger = logging.getLogger(__name__)
 
 UTC = timezone.utc
 POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
@@ -104,7 +107,7 @@ def _retrieve_cpu_info() -> CpuInfo | None:
                 "uname -m"
             )
     except Exception as err:
-        console.error(f"Failed to retrieve CPU info. {err}")
+        logger.error(f"Failed to retrieve CPU info. {err}")
         return None
 
     return (
@@ -238,6 +241,9 @@ def get_reflex_package_versions() -> dict[str, str]:
     Returns:
         A mapping of Reflex subpackage name to installed version, sorted by name.
     """
+    from packaging.requirements import Requirement
+    from packaging.utils import canonicalize_name
+
     try:
         requirements = importlib.metadata.requires("reflex") or ()
     except importlib.metadata.PackageNotFoundError:
@@ -330,7 +336,7 @@ def _get_event_defaults() -> _DefaultEvent | None:
         The default event data.
     """
     if (installation_id := ensure_reflex_installation_id()) is None:
-        console.debug("Could not get installation_id")
+        logger.debug("Could not get installation_id")
         return None
     cpuinfo = get_cpu_info()
     properties: _Properties = {
@@ -432,10 +438,15 @@ def _prepare_event(
 
 
 def _send_event(event_data: _Event) -> bool:
-    import httpx
-
+    # urllib keeps httpx and its import cost out of the backend workers, which
+    # only ever send from here.
+    request = urllib.request.Request(
+        POSTHOG_API_URL,
+        data=json.dumps(event_data).encode(),
+        headers={"Content-Type": "application/json"},
+    )
     try:
-        httpx.post(POSTHOG_API_URL, json=event_data)
+        urllib.request.urlopen(request, timeout=5).close()
     except Exception:
         return False
     else:
@@ -492,33 +503,80 @@ def _get_telemetry_executor() -> ThreadPoolExecutor:
     return _executor
 
 
-def _run_suppressed(fn: Callable[..., Any], /, *args, **kwargs) -> None:
+def _current_registration_context() -> RegistrationContext | None:
+    """Return the caller's RegistrationContext, or None if none is attached.
+
+    Unlike ``ensure_context()`` this never attaches a context to the caller: a
+    thread that has none keeps none.
+
+    Returns:
+        The attached RegistrationContext, or None.
+    """
+    try:
+        return RegistrationContext.get()
+    except LookupError:
+        return None
+
+
+def _run_suppressed(
+    registration_context: RegistrationContext | None,
+    fn: Callable[..., Any],
+    /,
+    *args,
+    **kwargs,
+) -> None:
     """Run ``fn`` in the worker thread, never letting a failure escape.
+
+    The submitting thread's RegistrationContext is attached for the duration of
+    the call, so the config the app already loaded is reused instead of the
+    worker importing ``rxconfig.py`` again into a context of its own.
 
     Telemetry must never break the app, so any error (including a failed send)
     is reported at debug level and otherwise discarded.
 
+    Caveat: a job submitted before any context exists runs without one, so a
+    config lookup inside it attaches a context of the worker's own that later
+    context-less jobs then reuse. Harmless for a Reflex app (one app, one config
+    per process), and once the app's context has loaded its config, every
+    subsequent send carries that context in and overrides the worker's.
+
     Args:
+        registration_context: The submitter's RegistrationContext, or None when
+            it had none attached.
         fn: The callable to run.
         args: Positional arguments forwarded to ``fn``.
         kwargs: Keyword arguments forwarded to ``fn``.
     """
+    token = (
+        None
+        if registration_context is None
+        else RegistrationContext.set(registration_context)
+    )
     try:
         fn(*args, **kwargs)
     except Exception as err:
-        console.debug(f"Failed to process telemetry event: {err}")
+        logger.debug(f"Failed to process telemetry event: {err}")
+    finally:
+        if token is not None:
+            RegistrationContext.reset(token)
 
 
 def _submit(fn: Callable[..., Any], /, *args, **kwargs) -> None:
     """Queue telemetry work on the background executor, swallowing all errors.
+
+    The caller's RegistrationContext travels with the job so event collection
+    sees the same config (and registrations) the caller does.
 
     Args:
         fn: The callable to run in the telemetry worker thread.
         args: Positional arguments forwarded to ``fn``.
         kwargs: Keyword arguments forwarded to ``fn``.
     """
+    registration_context = _current_registration_context()
     with suppress(Exception):
-        _get_telemetry_executor().submit(_run_suppressed, fn, *args, **kwargs)
+        _get_telemetry_executor().submit(
+            _run_suppressed, registration_context, fn, *args, **kwargs
+        )
 
 
 def _flush(timeout: float | None = None) -> bool:
