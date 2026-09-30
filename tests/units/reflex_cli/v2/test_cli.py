@@ -652,6 +652,48 @@ def test_deploy_project_id_disambiguates_duplicate_project_names(
     client.api.deployments.create.assert_called_once()
 
 
+@pytest.mark.parametrize("project_name", [None, "chosen-project"])
+@pytest.mark.parametrize(
+    "project_id",
+    [
+        "abcdefab-1234-4567-89ab-abcdefabcdef",
+        "ABCDEFAB-1234-4567-89AB-ABCDEFABCDEF",
+        "abcdefab1234456789ababcdefabcdef",
+    ],
+)
+def test_deploy_accepts_equivalent_project_ids(
+    mocker: MockerFixture, project_id: str, project_name: str | None
+):
+    """Accept equivalent UUID spellings with or without a project name.
+
+    Args:
+        mocker: The mock fixture.
+        project_id: The project ID spelling supplied to deploy.
+        project_name: The optional project name to validate against the ID.
+    """
+    client = _common_deploy_mocks(mocker)
+    project_uuid = uuid.UUID(project_id)
+    client.api.projects.search.return_value = [
+        ProjectRef(id=project_uuid, name="chosen-project")
+    ]
+    client.api.projects.get.return_value = project("chosen-project", id=project_uuid)
+    client.api.apps.get.return_value = app(project_id=project_uuid)
+
+    cli.deploy(
+        app_id=str(_APP_ID),
+        export_fn=MagicMock(),
+        project=project_id,
+        project_name=project_name,
+        interactive=False,
+    )
+
+    client.api.projects.get.assert_called_once_with(str(project_uuid))
+    assert client.api.deployments.check.call_args.kwargs["project_id"] == str(
+        project_uuid
+    )
+    client.api.deployments.create.assert_called_once()
+
+
 def test_deploy_project_name_ignores_apps_in_other_projects(
     mocker: MockerFixture,
 ):
