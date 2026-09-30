@@ -1,13 +1,12 @@
 """Tests specific to redis state manager."""
 
 import asyncio
-import dataclasses
+import enum
 import os
-import sys
 import time
-import types
 import uuid
 from collections.abc import AsyncGenerator
+from types import ModuleType
 from typing import Any
 
 import pytest
@@ -42,7 +41,7 @@ class SubState2(RedisTestState):
 class RedisAppObjectState(BaseState):
     """A root state holding an instance of an app-defined class."""
 
-    _entry: Any = None
+    _value: Any = None
 
 
 @pytest.fixture
@@ -166,42 +165,35 @@ async def test_modify(
 
 async def test_get_state_discards_unpicklable_state(
     state_manager_redis: StateManagerRedis,
+    app_classes_module: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    """A stored state referencing a class that no longer exists is replaced.
+    """A stored state that can no longer be unpickled is replaced.
 
-    After a deploy moves or deletes a class held in a state var, unpickling the
-    stored state fails before the schema check. The tab must get a fresh state
-    instead of failing on every event until the redis key expires.
+    After a deploy changes a class held in a state var, unpickling the stored
+    state fails before the schema check. The tab must get a fresh state instead
+    of failing on every event until the redis key expires.
 
     Args:
         state_manager_redis: The StateManagerRedis to test.
+        app_classes_module: The module of app classes held in the state.
         monkeypatch: The pytest monkeypatch fixture.
     """
     state_manager_redis._oplock_enabled = False
-
-    module_name = "_reflex_test_moved_module"
-    module = types.ModuleType(module_name)
-    monkeypatch.setitem(sys.modules, module_name, module)
-
-    @dataclasses.dataclass
-    class Entry:
-        name: str
-
-    Entry.__module__ = module_name
-    Entry.__qualname__ = "Entry"
-    module.Entry = Entry  # pyright: ignore[reportAttributeAccessIssue]
+    module = app_classes_module
 
     token = BaseStateToken(ident=str(uuid.uuid4()), cls=RedisAppObjectState)
     async with state_manager_redis.modify_state(token) as state:
-        state._entry = Entry("a")
+        state._value = module.Color.BLUE
 
-    # The deploy: the class now lives elsewhere, the old module is gone.
-    monkeypatch.delitem(sys.modules, module_name)
+    # The deploy: the stored enum member no longer exists.
+    monkeypatch.setattr(
+        module, "Color", enum.Enum("Color", {"RED": "red"}, module=module.__name__)
+    )
 
     fresh_state = await state_manager_redis.get_state(token)
     assert isinstance(fresh_state, RedisAppObjectState)
-    assert fresh_state._entry is None
+    assert fresh_state._value is None
 
 
 async def test_modify_oplock(
