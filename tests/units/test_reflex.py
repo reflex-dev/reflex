@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 
+import click
 import click.testing
 import pytest
 
@@ -120,6 +121,52 @@ print(json.dumps({{"exit_code": result.exit_code, "loaded": loaded}}))
 
     assert outcome["exit_code"] == 0
     assert outcome["loaded"] == []
+
+
+def test_backend_launcher_does_not_import_compiler_or_state() -> None:
+    """The backend supervisor must not load the worker's compiler and state."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            """
+import sys
+from reflex import reflex
+from reflex.istate.manager import reset_disk_state_manager
+from reflex.utils import build, exec, telemetry
+
+unexpected = {"reflex.state", "reflex.compiler.utils", "sqlalchemy"} & sys.modules.keys()
+assert not unexpected, unexpected
+""",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_compile_app_worker_flushes_telemetry(mocker):
+    """Flush the completed compile span before an isolated worker exits."""
+    app_task = mocker.Mock(return_value=True)
+    flush = mocker.patch("reflex_base.otel.flush")
+
+    assert reflex._compile_app_worker(app_task, (True,), {"trigger": "initial"})
+
+    app_task.assert_called_once_with(True, trigger="initial")
+    flush.assert_called_once_with()
+
+
+def test_compile_app_worker_flushes_telemetry_on_failure(mocker):
+    """Flush telemetry even when the worker's compile task raises."""
+    app_task = mocker.Mock(side_effect=RuntimeError("compile failed"))
+    flush = mocker.patch("reflex_base.otel.flush")
+
+    with pytest.raises(RuntimeError, match="compile failed"):
+        reflex._compile_app_worker(app_task, (), {})
+
+    flush.assert_called_once_with()
 
 
 def test_cloud_commands_registered():
@@ -384,3 +431,38 @@ def test_init_records_version_check_after_frontend_setup(
     reflex._init("demo")
 
     assert events == ["frontend", "version"]
+
+
+@pytest.mark.parametrize(
+    "args", [["init"], ["migrate"], ["makemigrations"], ["status"]]
+)
+def test_db_commands_without_db_extra_point_to_install(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, args: list[str]
+):
+    """Without the db extra, db commands print the install hint instead of a traceback."""
+    monkeypatch.setattr(reflex, "find_spec", lambda name: None)
+
+    result = click.testing.CliRunner().invoke(reflex.db_cli, args)
+
+    assert result.exit_code == 1
+    assert "pip install reflex[db]" in caplog.text
+    assert not isinstance(result.exception, ImportError)
+
+
+@pytest.mark.parametrize("missing", reflex._DB_PACKAGES)
+def test_db_commands_with_partial_db_install_point_to_install(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, missing: str
+):
+    """A partial install missing any one db package still gets the install hint."""
+    real_find_spec = reflex.find_spec
+    monkeypatch.setattr(
+        reflex,
+        "find_spec",
+        lambda name: None if name == missing else real_find_spec(name),
+    )
+
+    result = click.testing.CliRunner().invoke(reflex.db_cli, ["init"])
+
+    assert result.exit_code == 1
+    assert "pip install reflex[db]" in caplog.text
+    assert not isinstance(result.exception, ImportError)

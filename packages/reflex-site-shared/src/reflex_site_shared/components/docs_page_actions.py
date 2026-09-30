@@ -46,26 +46,35 @@ def _menu_item(
         A button or external link row.
     """
     row = rx.el.div(
-        rx.el.div(
+        rx.el.span(
             icon,
-            class_name="flex size-8 items-center justify-center rounded-md border border-secondary-5 bg-secondary-2 text-secondary-11 shrink-0",
+            class_name="mt-0.5 inline-flex size-4 shrink-0 items-center justify-center text-muted-foreground",
         ),
         rx.el.div(
             rx.el.div(
-                rx.el.span(title, class_name="text-sm font-medium text-secondary-12"),
+                rx.el.span(
+                    title, class_name="text-sm font-medium leading-5 text-foreground"
+                ),
                 ui.icon(
                     "ArrowUpRight01Icon",
                     size=12,
-                    class_name="text-secondary-9",
+                    class_name="shrink-0 text-subtle-foreground",
                 )
                 if href
                 else rx.fragment(),
-                class_name="flex items-center gap-1",
+                class_name="flex items-center justify-between gap-3",
             ),
-            rx.el.span(description, class_name="text-xs text-secondary-10"),
-            class_name="flex flex-col items-start gap-0.5",
+            rx.el.span(
+                description, class_name="text-xs leading-5 text-muted-foreground"
+            ),
+            class_name="flex min-w-0 flex-1 flex-col items-stretch",
         ),
-        class_name="flex items-start gap-3 px-3 py-2 w-full hover:bg-secondary-3 transition-colors cursor-pointer",
+        class_name="flex w-full items-start gap-2.5",
+    )
+    action_class = (
+        "block w-full cursor-pointer rounded-md px-2.5 py-2 text-left no-underline "
+        "transition-colors hover:bg-accent focus-visible:bg-accent "
+        "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
     )
     if href:
         return rx.el.a(
@@ -73,72 +82,33 @@ def _menu_item(
             href=href,
             target="_blank",
             rel="noopener noreferrer",
-            class_name="no-underline",
+            class_name=action_class,
         )
     return rx.el.button(
         row,
         type="button",
         on_click=on_click,
-        class_name="w-full text-left",
+        class_name=action_class,
     )
 
 
 def _reflex_build_menu_item(markdown_url: str) -> rx.Component:
-    """Render the highlighted Reflex Build action.
+    """Render the Reflex Build action using the shared menu treatment.
 
     Args:
         markdown_url: Absolute public URL for the current page's Markdown.
 
     Returns:
-        The highlighted external action row.
+        The external Reflex Build action row.
     """
-    href = _prefill_url(
-        "https://build.reflex.dev/?prompt=",
-        markdown_url,
-        "and help me build an app based on it.",
-    )
-    return rx.el.a(
-        rx.el.div(
-            rx.el.div(
-                ui.icon("AiMagicIcon", size=16, class_name="text-primary-contrast"),
-                class_name=(
-                    "flex size-8 items-center justify-center rounded-md "
-                    "bg-gradient-to-br from-primary-9 to-primary-11 "
-                    "dark:from-primary-7 dark:to-primary-9 "
-                    "shadow-[0_0_0_1px_var(--primary-7),0_2px_8px_-2px_var(--primary-a8)] shrink-0"
-                ),
-            ),
-            rx.el.div(
-                rx.el.div(
-                    rx.el.span(
-                        "Build this with AI",
-                        class_name="text-sm font-semibold text-secondary-12",
-                    ),
-                    ui.icon(
-                        "ArrowUpRight01Icon",
-                        size=12,
-                        class_name="!text-primary-11",
-                    ),
-                    class_name="flex items-center gap-1",
-                ),
-                rx.el.span(
-                    "Open in Reflex Build",
-                    class_name="text-xs text-secondary-10",
-                ),
-                class_name="flex flex-col items-start gap-0.5",
-            ),
-            class_name="flex items-start gap-3 px-3 py-3 w-full",
-        ),
-        href=href,
-        target="_blank",
-        rel="noopener noreferrer",
-        class_name=(
-            "no-underline w-full text-left block "
-            "bg-gradient-to-br from-primary-2 to-secondary-1 "
-            "hover:from-primary-3 hover:to-primary-2 "
-            "dark:from-primary-a3 dark:to-secondary-2 "
-            "dark:hover:from-primary-a4 dark:hover:to-secondary-3 "
-            "border-b border-secondary-4 transition-colors cursor-pointer"
+    return _menu_item(
+        icon=ui.icon("AiMagicIcon", size=16),
+        title="Build this with AI",
+        description="Open in Reflex Build",
+        href=_prefill_url(
+            "https://build.reflex.dev/?prompt=",
+            markdown_url,
+            "and help me build an app based on it.",
         ),
     )
 
@@ -268,8 +238,8 @@ def docs_page_actions(
             on_click=copy_action,
             class_name=(
                 "flex items-center justify-center px-2.5 h-8 "
-                "border border-secondary-5 border-r-0 rounded-l-md text-secondary-11 "
-                "hover:text-secondary-12 hover:bg-secondary-3 active:scale-[0.96] "
+                "border border-border border-r-0 rounded-l-md text-muted-foreground "
+                "hover:text-foreground hover:bg-accent active:scale-[0.96] "
                 "transition-all cursor-pointer"
             ),
         ),
@@ -281,8 +251,8 @@ def docs_page_actions(
                     aria_label="Copy page options",
                     class_name=(
                         "flex items-center justify-center px-1.5 h-8 "
-                        "border border-secondary-5 rounded-r-md text-secondary-11 "
-                        "hover:text-secondary-12 hover:bg-secondary-3 active:scale-[0.96] "
+                        "border border-border rounded-r-md text-muted-foreground "
+                        "hover:text-foreground hover:bg-accent active:scale-[0.96] "
                         "transition-all cursor-pointer"
                     ),
                 )
@@ -292,6 +262,7 @@ def docs_page_actions(
                     ui.popover.popup(
                         rx.el.div(
                             _reflex_build_menu_item(markdown_url),
+                            rx.el.div(class_name="mx-2.5 my-1 h-px bg-border-subtle"),
                             _menu_item(
                                 icon=ui.icon("Copy01Icon", size=16),
                                 title="Copy page",
@@ -304,7 +275,7 @@ def docs_page_actions(
                                 description="View all docs as Markdown for LLMs",
                                 href=llms_full_txt_url,
                             ),
-                            rx.el.div(class_name="h-px bg-secondary-4"),
+                            rx.el.div(class_name="mx-2.5 my-1 h-px bg-border-subtle"),
                             _menu_item(
                                 icon=ui.icon("MessageProgrammingIcon", size=16),
                                 title="Open in ChatGPT",
@@ -325,17 +296,17 @@ def docs_page_actions(
                                     "so I can ask questions about its contents",
                                 ),
                             ),
-                            class_name=(
-                                "flex flex-col min-w-[260px] "
-                                "bg-white dark:bg-secondary-2 border border-secondary-5 rounded-lg shadow-lg "
-                                "data-[state=open]:animate-in data-[state=open]:fade-in-0 "
-                                "data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-top-2"
-                            ),
+                            class_name="flex w-full flex-col",
                         ),
-                        class_name="p-0 overflow-hidden",
+                        class_name=(
+                            "docs-page-actions-menu w-[304px] max-w-[calc(100vw-2rem)] "
+                            "gap-0 rounded-lg border border-border bg-background p-1.5 "
+                            "shadow-[0_8px_24px_rgb(0_0_0/0.08)]"
+                        ),
                     ),
                     align="end",
-                    align_offset=-4,
+                    align_offset=0,
+                    side_offset=8,
                 )
             ),
         ),

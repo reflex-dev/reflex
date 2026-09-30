@@ -13,12 +13,12 @@ def right_sidebar_item_highlight():
     setTimeout(() => {
         const tocLinks = document.querySelectorAll('#toc-navigation a');
         const activeClasses = [
-            'text-primary-9',
-            'dark:text-primary-10',
-            'shadow-[1.5px_0_0_0_var(--primary-11)_inset]',
-            'dark:shadow-[1.5px_0_0_0_var(--primary-9)_inset]',
+            'text-primary',
+            'dark:text-primary-hover',
+            'shadow-[1.5px_0_0_0_var(--foreground)_inset]',
+            'dark:shadow-[1.5px_0_0_0_var(--primary)_inset]',
         ];
-        const defaultClasses = ['text-secondary-11'];
+        const defaultClasses = ['text-muted-foreground'];
 
         function normalizeId(id) {
             return id.toLowerCase().replace(/\s+/g, '-');

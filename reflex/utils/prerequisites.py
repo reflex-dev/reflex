@@ -25,9 +25,9 @@ from reflex_base.constants.base import RunningMode
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.decorator import once
+from reflex_base.utils.exceptions import EnvironmentVarValueError
 from rich.markup import escape
 
-from reflex import model
 from reflex.utils import net, path_ops
 from reflex.utils.misc import get_module_path
 
@@ -444,24 +444,64 @@ def compile_or_validate_app(
         return True
 
 
+def _redis_pool_limits() -> tuple[int, float] | None:
+    """Read the optional redis pool cap and its wait time.
+
+    Returns:
+        The max connections and the pool timeout in seconds, or None if uncapped.
+
+    Raises:
+        EnvironmentVarValueError: If the cap or the pool timeout is out of range.
+    """
+    if (max_connections := environment.REFLEX_REDIS_MAX_CONNECTIONS.get()) is None:
+        return None
+    # The token manager keeps two pub/sub listeners on this separate client;
+    # leave at least one connection for ordinary commands.
+    if max_connections < 3:
+        msg = "REFLEX_REDIS_MAX_CONNECTIONS must be at least 3 when set."
+        raise EnvironmentVarValueError(msg)
+    timeout = environment.REFLEX_REDIS_POOL_TIMEOUT.get().total_seconds()
+    # A state lock defaults to ten seconds. Do not wait longer for a pool
+    # connection while holding that lock; reserve time for the state write.
+    if not 0 < timeout < get_config().redis_lock_expiration / 1000:
+        msg = (
+            "REFLEX_REDIS_POOL_TIMEOUT must be greater than 0 and shorter than "
+            "the configured redis_lock_expiration."
+        )
+        raise EnvironmentVarValueError(msg)
+    return max_connections, timeout
+
+
 def get_redis() -> Redis | None:
     """Get the asynchronous redis client.
+
+    When REFLEX_REDIS_MAX_CONNECTIONS is set, the client uses a blocking pool of
+    that size, so callers wait for a free connection instead of opening more.
 
     Returns:
         The asynchronous redis client.
     """
     try:
-        from redis.asyncio import Redis
+        from redis.asyncio import BlockingConnectionPool, Redis
         from redis.exceptions import RedisError
     except ImportError:
         logger.debug("Redis package not installed.")
         return None
-    if (redis_url := parse_redis_url()) is not None:
+    if (redis_url := parse_redis_url()) is None:
+        return None
+    if (limits := _redis_pool_limits()) is None:
         return Redis.from_url(
             redis_url,
             retry_on_error=[RedisError],
         )
-    return None
+    max_connections, timeout = limits
+    pool = BlockingConnectionPool.from_url(
+        redis_url,
+        max_connections=max_connections,
+        timeout=timeout,
+        retry_on_error=[RedisError],
+    )
+    return Redis.from_pool(pool)
 
 
 def get_redis_sync() -> RedisSync | None:
@@ -502,17 +542,44 @@ def parse_redis_url() -> str | None:
     return config.redis_url
 
 
+# The long-lived redis client shared by health checks, closed on app shutdown.
+_health_redis: Redis | None = None
+
+
+def _get_health_redis() -> Redis | None:
+    """Get the long-lived redis client used by health checks.
+
+    Each health probe pings this one client so it reuses an established
+    connection instead of opening and closing a new TCP connection per probe.
+
+    Returns:
+        The asynchronous redis client, or None if redis is not configured.
+    """
+    global _health_redis
+    if _health_redis is None:
+        _health_redis = get_redis()
+    return _health_redis
+
+
+async def close_health_redis() -> None:
+    """Close the cached health-check redis client, if one was created."""
+    global _health_redis
+    if _health_redis is not None:
+        await _health_redis.aclose(close_connection_pool=True)
+        _health_redis = None
+
+
 async def get_redis_status() -> dict[str, bool | None]:
     """Checks the status of the Redis connection.
 
-    Attempts to connect to Redis and send a ping command to verify connectivity.
+    Sends a ping command over the cached health-check client to verify connectivity.
 
     Returns:
         The status of the Redis connection.
     """
     try:
         status = True
-        redis_client = get_redis()
+        redis_client = _get_health_redis()
         if redis_client is not None:
             ping_command = redis_client.ping()
             if inspect.isawaitable(ping_command):
@@ -788,6 +855,8 @@ def check_schema_up_to_date():
     """Check if the sqlmodel metadata matches the current database schema."""
     if get_config().db_url is None or not environment.ALEMBIC_CONFIG.get().exists():
         return
+    from reflex import model
+
     with model.get_engine().connect() as connection:
         from alembic.util.exc import CommandError
 

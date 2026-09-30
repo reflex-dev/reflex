@@ -1,15 +1,174 @@
 from __future__ import annotations
 
 import asyncio
+from copy import deepcopy
 
 import pytest
+from reflex_base import constants
+from reflex_base.components.memo import create_passthrough_component_memo
+from reflex_base.registry import RegistrationContext
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.base.script import Script
+from reflex_components_core.el.elements.metadata import Link
+from reflex_components_core.el.elements.typography import Div
 
+from reflex.compiler import utils
 from reflex.compiler.utils import compile_state, create_document_root
+from reflex.compiler.utils import write_file as compiler_write_file
 from reflex.constants.state import FIELD_MARKER
 from reflex.state import State
+from reflex.utils.path_ops import write_file
 from reflex.vars.base import computed_var
+
+
+def test_memo_root_prop_forwarding_preserves_cached_analysis() -> None:
+    """Repeated emission of shared memo bodies must not accumulate prop merges."""
+    with RegistrationContext.ensure_context().fork() as context:
+        _, first = create_passthrough_component_memo(Div.create("first", id="root"))
+        _, second = create_passthrough_component_memo(Div.create("second", id="root"))
+        assert first.export_name == second.export_name
+        analysis = context._memo_body_analyses[
+            first.component.__dict__["_memo_analysis_key"]
+        ]
+        original_render = deepcopy(analysis.rendered)
+
+        for definition in (first, first, second):
+            compiled, _ = utils.compile_experimental_component_memo(definition)
+            props = ", ".join(compiled["render"]["props"])
+            assert props.count("mergeSlotProps(") == 1
+            assert "ref:ref_root" in props
+            assert analysis.rendered == original_render
+
+
+def test_write_file_reexport() -> None:
+    """Existing compiler callers retain the shared file-writing helper."""
+    assert compiler_write_file is write_file
+
+
+def test_bundled_libraries_artifact_round_trip(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Backend-only workers can restore the registry from the frontend build."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+    with RegistrationContext() as context:
+        context.bundled_libraries.append("@radix-ui/themes")
+        output_path, output = utils._compile_bundled_libraries()
+        artifact_path = tmp_path / output_path
+        artifact_path.parent.mkdir()
+        artifact_path.write_text(output, encoding="utf-8")
+        context.bundled_libraries[:] = ["react"]
+
+        utils._restore_bundled_libraries()
+
+        assert context.bundled_libraries == [
+            "react",
+            "@emotion/react",
+            "$/utils/context",
+            "$/utils/state",
+            "@radix-ui/themes",
+        ]
+
+
+def test_restore_bundled_libraries_preserves_page_registrations(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Restoring frontend metadata retains libraries discovered by page evaluation."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+    artifact_path = tmp_path / utils.constants.Dirs.BUNDLED_LIBRARIES
+    artifact_path.parent.mkdir()
+    artifact_path.write_text('["@radix-ui/themes"]', encoding="utf-8")
+    with RegistrationContext() as context:
+        context.bundled_libraries.append("page-library")
+
+        utils._restore_bundled_libraries()
+
+        assert "@radix-ui/themes" in context.bundled_libraries
+        assert "page-library" in context.bundled_libraries
+
+
+def test_restore_bundled_libraries_ignores_invalid_utf8(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Malformed registry artifacts do not interrupt backend-only startup."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+    artifact_path = tmp_path / utils.constants.Dirs.BUNDLED_LIBRARIES
+    artifact_path.parent.mkdir()
+    artifact_path.write_bytes(b"\xff")
+
+    utils._restore_bundled_libraries()
+
+
+@pytest.mark.parametrize(
+    "contents",
+    ["{", '"@radix-ui/themes"', '["@radix-ui/themes", 1]'],
+)
+def test_restore_bundled_libraries_ignores_invalid_json(
+    tmp_path, monkeypatch: pytest.MonkeyPatch, contents: str
+) -> None:
+    """Malformed registry data does not change backend registrations."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+    artifact_path = tmp_path / utils.constants.Dirs.BUNDLED_LIBRARIES
+    artifact_path.parent.mkdir()
+    artifact_path.write_text(contents, encoding="utf-8")
+    with RegistrationContext() as context:
+        original = list(context.bundled_libraries)
+
+        utils._restore_bundled_libraries()
+
+        assert context.bundled_libraries == original
+
+
+def test_restore_bundled_libraries_ignores_missing_artifact(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A missing frontend artifact does not interrupt backend-only startup."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+
+    utils._restore_bundled_libraries()
+
+
+def _global_stylesheet_links() -> list[list[str]]:
+    """Render the framework link tags of a fresh document head.
+
+    Returns:
+        The rendered props of every ``Link`` in the head.
+    """
+    head = create_document_root().children[0]
+    return [
+        child.render()["props"] for child in head.children if isinstance(child, Link)
+    ]
+
+
+def test_document_preloads_the_global_stylesheet_in_prod(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Production builds hint the render-blocking CSS ahead of the stylesheet link.
+
+    Args:
+        monkeypatch: Selects prod mode and restores the previous mode afterwards.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.PROD.value)
+    links = _global_stylesheet_links()
+    preload = next(props for props in links if 'rel:"preload"' in props)
+    stylesheet = next(props for props in links if 'rel:"stylesheet"' in props)
+    assert next(prop for prop in preload if prop.startswith("href:")) == next(
+        prop for prop in stylesheet if prop.startswith("href:")
+    )
+    assert 'as:"style"' in preload
+
+
+def test_document_does_not_preload_the_global_stylesheet_in_dev(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Dev builds link the stylesheet once so Vite's css-update swaps that link.
+
+    Args:
+        monkeypatch: Selects dev mode and restores the previous mode afterwards.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
+    links = _global_stylesheet_links()
+    assert not any('rel:"preload"' in props for props in links)
+    assert sum('rel:"stylesheet"' in props for props in links) == 1
 
 
 class CompileStateState(State):

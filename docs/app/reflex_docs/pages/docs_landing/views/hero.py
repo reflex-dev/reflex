@@ -1,66 +1,64 @@
+"""Editorial introduction to the documentation."""
+
 import reflex as rx
 import reflex_components_internal as ui
 from reflex_site_shared.components.marketing_button import button
-from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 from reflex_site_shared.views.hosting_banner import HostingBannerState
 
 from reflex_docs.pages.docs import getting_started
+from reflex_docs.pages.docs_landing.views.artwork import artwork
 
 
 def hero() -> rx.Component:
+    """Render the docs introduction using the marketing typography and actions."""
     return rx.el.section(
         rx.el.div(
-            rx.el.p(
-                "About Reflex",
-                class_name="text-sm font-[525] text-primary-10 dark:text-secondary-11",
-            ),
             rx.el.h1(
                 "Reflex Documentation",
-                class_name="text-secondary-12 lg:text-5xl text-3xl font-[575] lg:text-nowrap",
+                class_name="text-foreground text-4xl sm:text-5xl lg:text-6xl font-book tracking-[-0.03em] leading-[1.06] text-balance",
             ),
             rx.el.p(
-                "Get up and running with Reflex in minutes. A complete set ",
-                rx.el.br(class_name="max-lg:hidden"),
-                " of resources to build, deploy, and scale your application. ",
-                class_name="text-base text-secondary-11 font-[475]",
+                "Get up and running with Reflex in minutes. A complete set of resources "
+                "to build, deploy, and scale your application.",
+                class_name="max-w-2xl text-muted-foreground text-base sm:text-lg leading-7 font-normal text-balance",
             ),
-            rx.el.a(
-                button(
-                    "Get Started",
-                    ui.icon("ArrowRight01Icon"),
-                    variant="primary",
-                    size="md",
-                    native_button=False,
-                    class_name="w-fit",
+            rx.el.div(
+                rx.el.a(
+                    button(
+                        "Explore Framework",
+                        ui.icon("ArrowRight01Icon"),
+                        variant="primary",
+                        size="lg",
+                        class_name="!px-6",
+                        native_button=False,
+                    ),
+                    href=getting_started.introduction.path,
+                    class_name="rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
                 ),
-                to=getting_started.introduction.path,
-            ),
-            class_name=ui.cn(
-                "flex flex-col gap-6 max-lg:text-center relative just-start lg:pb-24",
-                rx.cond(
-                    HostingBannerState.is_banner_visible,
-                    "lg:pt-[14.5rem] pt-[12.5rem]",
-                    "lg:pt-[10.5rem] pt-[7.5rem]",
+                rx.el.a(
+                    button(
+                        "Build with AI",
+                        ui.icon("ArrowRight01Icon"),
+                        variant="outline",
+                        size="lg",
+                        class_name="!px-6",
+                        native_button=False,
+                    ),
+                    href="/ai/",
+                    class_name="rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
                 ),
+                class_name="flex flex-wrap items-center gap-3",
             ),
+            class_name="relative z-10 flex flex-col items-start gap-6 lg:max-w-[55%]",
         ),
-        rx.el.div(
-            rx.image(
-                alt="Squares Docs Logo",
-                custom_attrs={"fetchPriority": "high"},
-                src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/squares_docs_logo_1.svg",
-                class_name="pointer-events-none h-auto w-auto lg:absolute max-lg:hidden",
-            ),
-            class_name=ui.cn(
-                "flex",
-                rx.cond(
-                    HostingBannerState.is_banner_visible,
-                    "lg:pt-[8.5rem] pt-0",
-                    "lg:pt-[4.5rem] pt-0",
-                ),
-            ),
+        artwork(
+            "squares_docs_logo",
+            class_name="docs-hero-art absolute left-1/2 w-1/2 max-lg:hidden",
         ),
-        class_name=ui.cn(
-            "flex lg:flex-row flex-col max-w-(--landing-layout-max-width) mx-auto w-full max-lg:pb-10 max-xl:px-6",
-        ),
+        style={
+            "--docs-hero-header-height": rx.cond(
+                HostingBannerState.is_banner_visible, "6.5rem", "4rem"
+            )
+        },
+        class_name="docs-hero relative max-w-[90rem] px-4 min-[55rem]:px-8 lg:px-12 mx-auto w-full pb-16 lg:pb-24",
     )

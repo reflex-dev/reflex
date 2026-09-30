@@ -6,15 +6,16 @@ import {
   createElement,
   useRef,
   useMemo,
+  useCallback,
 } from "react";
 
-import { isDevMode, defaultColorMode, ColorModeContext } from "$/utils/context";
+import { ColorModeContext, app } from "$/utils/context-registry";
 
 const allowedModes = ["light", "dark", "system"];
 
 const ThemeContext = createContext({
-  theme: defaultColorMode,
-  resolvedTheme: defaultColorMode !== "system" ? defaultColorMode : "light",
+  theme: "system",
+  resolvedTheme: "light",
   setTheme: () => {},
 });
 ThemeContext.displayName = "ThemeContext";
@@ -26,24 +27,24 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
   );
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const setColorMode = (mode) => {
+  const setColorMode = useCallback((mode) => {
     if (!allowedModes.includes(mode)) {
       console.error(
-        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`,
+        `Invalid color mode "${mode}". Defaulting to "${app.defaultColorMode}".`,
       );
-      mode = defaultColorMode;
+      mode = app.defaultColorMode;
     }
     setTheme(mode);
-  };
+  }, []);
 
   const resolvedTheme = useMemo(
     () => (theme === "system" ? systemTheme : theme),
     [theme, systemTheme],
   );
 
-  const toggleColorMode = () => {
+  const toggleColorMode = useCallback(() => {
     setColorMode(resolvedTheme === "light" ? "dark" : "light");
-  };
+  }, [setColorMode, resolvedTheme]);
 
   const firstRender = useRef(true);
 
@@ -54,13 +55,13 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
 
     firstRender.current = false;
 
-    if (isDevMode) {
+    if (app.isDevMode) {
       const lastCompiledTheme = localStorage.getItem("last_compiled_theme");
-      if (lastCompiledTheme !== defaultColorMode) {
+      if (lastCompiledTheme !== app.defaultColorMode) {
         // on app startup, make sure the application color mode is persisted correctly.
-        setColorMode(defaultColorMode);
-        localStorage.setItem("last_compiled_theme", defaultColorMode);
-        localStorage.setItem("theme", defaultColorMode);
+        setColorMode(app.defaultColorMode);
+        localStorage.setItem("last_compiled_theme", app.defaultColorMode);
+        localStorage.setItem("theme", app.defaultColorMode);
         setIsInitialized(true);
         return;
       }
@@ -88,7 +89,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
     return () => {
       mediaQuery.removeEventListener("change", handleChange);
     };
-  });
+  }, []);
 
   // Save theme to localStorage whenever it changes
   // Skip saving only if theme key already exists and we haven't initialized yet
@@ -106,19 +107,27 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
     root.style.colorScheme = resolvedTheme;
   }, [resolvedTheme, isInitialized]);
 
+  const themeContextValue = useMemo(
+    () => ({ theme, resolvedTheme, setTheme }),
+    [theme, resolvedTheme],
+  );
+
+  const colorModeContextValue = useMemo(
+    () => ({
+      rawColorMode: theme,
+      resolvedColorMode: resolvedTheme,
+      toggleColorMode,
+      setColorMode,
+    }),
+    [theme, resolvedTheme, toggleColorMode, setColorMode],
+  );
+
   return createElement(
     ThemeContext.Provider,
-    { value: { theme, resolvedTheme, setTheme } },
+    { value: themeContextValue },
     createElement(
       ColorModeContext.Provider,
-      {
-        value: {
-          rawColorMode: theme,
-          resolvedColorMode: resolvedTheme,
-          toggleColorMode,
-          setColorMode,
-        },
-      },
+      { value: colorModeContextValue },
       children,
     ),
   );

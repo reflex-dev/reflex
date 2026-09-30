@@ -13,6 +13,7 @@ from reflex_base.components.component import field as component_field
 from reflex_base.components.memo import (
     MemoComponent,
     MemoComponentDefinition,
+    MemoParamKind,
     create_passthrough_component_memo,
 )
 from reflex_base.components.memoize_helpers import (
@@ -964,8 +965,8 @@ def test_shared_subtree_in_distinct_source_modules_emits_per_module() -> None:
     matched_b = find_emitted("memo_collision_test/module_b.jsx")
     assert matched_a is not None, f"missing module_a memo file in {sorted(emitted)}"
     assert matched_b is not None, f"missing module_b memo file in {sorted(emitted)}"
-    assert f"export const {symbol_a} = memo" in matched_a
-    assert f"export const {symbol_b} = memo" in matched_b
+    assert f"const {symbol_a} = memo" in matched_a
+    assert f"const {symbol_b} = memo" in matched_b
 
 
 def test_shared_parent_instance_across_pages_preserves_original() -> None:
@@ -1308,6 +1309,37 @@ def test_match_stateful_condition_memoizes_whole_match_and_stateful_branch() -> 
     assert any("withprop" in tag.lower() for tag in wrapper_tags)
 
 
+def test_match_stateful_case_condition_memoizes_match_and_branch() -> None:
+    """A state Var in a case condition memoizes Match and its stateful branch.
+
+    The case-condition Vars count toward Match's statefulness, so the memo
+    wrapper binds the state they read even when the subject is a literal.
+    Branches are still memoized independently.
+    """
+
+    def page() -> Component:
+        comp = rx.match(
+            True,
+            (SpecialFormMemoState.value == "a", WithProp.create(label=STATE_VAR)),
+            (
+                SpecialFormMemoState.value == "b",
+                WithProp.create(label=LiteralVar.create("B")),
+            ),
+            WithProp.create(label=LiteralVar.create("default")),
+        )
+        assert isinstance(comp, Component)
+        return comp
+
+    ctx, _page_ctx = _compile_single_page(page)
+    assert len(ctx.memoize_wrappers) == 2, (
+        "Expected both Match and its stateful branch component to be memoized, "
+        f"got wrappers: {list(ctx.memoize_wrappers)}"
+    )
+    wrapper_tags = tuple(ctx.memoize_wrappers)
+    assert any("match" in tag.lower() for tag in wrapper_tags)
+    assert any("withprop" in tag.lower() for tag in wrapper_tags)
+
+
 def test_cond_stateful_branch_component_renders_via_memoized_wrapper() -> None:
     """Components inside Cond branches must render via their memo wrappers.
 
@@ -1599,6 +1631,36 @@ def test_client_state_setter_in_call_function_event_imports_refs() -> None:
         "'refs' — the on_click handler references refs['_client_state_setCounter'].\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
+
+
+def test_client_state_setter_only_sibling_memo_initializes_state() -> None:
+    """A memoized sibling that only sets a global ``ClientStateVar`` owns its hooks.
+
+    Regression: the setter did not carry the ``useState``/``refs`` hooks, so a
+    button memo calling ``refs['_client_state_set<name>']`` relied on a sibling
+    rendering ``.value`` to define it. If that sibling was not mounted, clicking
+    raised ``TypeError: refs._client_state_set<name> is not a function``.
+    """
+    from reflex.experimental.client_state import ClientStateVar
+
+    shared = ClientStateVar.create("sibling", default="a")
+
+    def page() -> Component:
+        return rx.box(
+            rx.text(shared.value),
+            rx.el.button("set", on_click=shared.set_value("b")),
+        )
+
+    ctx, _page_ctx = _compile_single_page(page)
+    memo_code = _compile_memo_module_text(ctx)
+    button_memo = next(
+        chunk
+        for chunk in memo_code.split("export const ")
+        if chunk.startswith("Button_")
+    )
+    assert "refs['_client_state_setSibling'](\"b\")" in button_memo
+    assert 'const [sibling, setSibling] = useState("a")' in button_memo
+    assert "refs['_client_state_setSibling'] = " in button_memo
 
 
 def test_debounce_input_memo_renders_react_debounce_wrapper() -> None:
@@ -2620,3 +2682,346 @@ def test_each_memo_wrapper_emits_one_component_module_file() -> None:
         "for Plain, one for WithProp, and one snapshot wrapper for the "
         f"LeafComponent boundary. Got: {sorted(ctx.memoize_wrappers)}"
     )
+
+
+def test_passthrough_memo_forwards_ref_and_props_to_root() -> None:
+    """Passthrough wrappers are transparent to their parent.
+
+    Props and refs set on the generated memo wrapper at runtime (e.g.
+    injected by a Radix ``Slot``/``asChild`` parent cloning its child
+    element) must reach the root element inside the memo body. The wrapper's
+    compiled function destructures only declared props, so without explicit
+    forwarding the injections are silently dropped — regression for
+    reflex-dev/reflex#6849, where a Slot-injected ``name`` never reached a
+    stateful form input and the field was missing from ``form_data``.
+    """
+    ctx, page_ctx = _compile_single_page(
+        lambda: Plain.create("content", on_click=rx.console_log("x"))
+    )
+    memo_code = _compile_memo_module_text(ctx)
+
+    assert "{children, ...rest}" in memo_code, (
+        "Passthrough memo signature must collect injected props (including "
+        "the React 19 ref-as-prop) into a rest param.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+    assert "...mergeSlotProps(rest, ({" in memo_code, (
+        "The root's compiled-in props must be merged with the injected rest "
+        "props.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+    assert re.search(
+        r'^import\s*\{[^}]*\bmergeSlotProps\b[^}]*\}\s*from\s*"\$/utils/state"',
+        memo_code,
+        flags=re.MULTILINE,
+    ), (
+        "The memo module must import mergeSlotProps from $/utils/state.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+    # The helpers referenced at runtime must exist in the template, otherwise
+    # every wrapper render is a ReferenceError (mergeSlotProps composes refs
+    # through mergeRefs and deep-merges object props through mergician).
+    import reflex_base
+    from reflex_base.constants.installer import PackageJson
+
+    state_js_text = (
+        Path(reflex_base.__file__).parent / ".templates" / "web" / "utils" / "state.js"
+    ).read_text()
+    assert "export const mergeSlotProps" in state_js_text
+    assert "export const mergeRefs" in state_js_text
+    # state.js statically imports mergician, so it must be a base dependency.
+    assert 'from "mergician"' in state_js_text
+    assert "mergician" in PackageJson.DEPENDENCIES
+    # The page-side call site is unchanged; injections only arrive at runtime.
+    page_output = page_ctx.output_code or ""
+    assert "mergeSlotProps" not in page_output
+
+
+def test_memo_forwarded_ref_merges_with_id_ref() -> None:
+    """A root's own ``id``-derived ref rides its props into the runtime merge.
+
+    An injected ref must not clobber the ``useRef`` that backs
+    ``refs['ref_<id>']`` (form value collection, focus helpers), and vice
+    versa — ``mergeSlotProps`` composes both at runtime via ``mergeRefs``, so
+    the compiled body must keep the plain ``ref_<id>`` inside its own props.
+    """
+    ctx, _page_ctx = _compile_single_page(
+        lambda: Plain.create("content", id="plain-id", on_click=rx.console_log("x"))
+    )
+    memo_code = _compile_memo_module_text(ctx)
+
+    assert "const ref_plain_id = useRef(null)" in memo_code, (
+        "The id-derived ref hook must stay in the memo body.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+    assert re.search(
+        r"\.\.\.mergeSlotProps\(rest, \(\{[^)]*ref:ref_plain_id[^)]*\}\)\)",
+        memo_code,
+    ), (
+        "The id-derived ref must ride the own-props side of the merge.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+
+
+def test_snapshot_boundary_memo_forwards_ref_to_root() -> None:
+    """Snapshot wrappers with a tagged root also forward the incoming ref.
+
+    Void/raw-text elements (``<input>``, ``<textarea>``) memoize as snapshot
+    boundaries, but their memo body still renders the element itself as the
+    one and only root — a ref on the wrapper must reach it the same way.
+    """
+    ctx, _page_ctx = _compile_single_page(
+        lambda: BaseInput.create(id="myinput", on_click=rx.console_log("x"))
+    )
+    memo_code = _compile_memo_module_text(ctx)
+
+    assert "{children, ...rest}" in memo_code, (
+        "Snapshot memo signature must collect injected props into a rest "
+        "param.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+    assert "...mergeSlotProps(rest, ({" in memo_code, (
+        "The snapshot root must merge injected props with its own.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+    assert "ref:ref_myinput" in memo_code, (
+        "The snapshot root's id ref must ride the own-props side of the "
+        "merge.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+
+
+def test_debounce_input_root_routes_injected_ref_to_input_ref() -> None:
+    """A ``DebounceInput`` root routes a runtime-injected ref to ``inputRef``.
+
+    ``DebounceInput`` is a class component: its ``_render`` strips ``ref``
+    (a plain ref resolves to the instance, not the ``<input>``) and the real
+    element rides the ``inputRef`` prop. The generated merge call must carry
+    that prop name so an injected ref reaches the DOM node — handing it to
+    the root as ``ref`` makes Radix ``Form.Control`` call ``addEventListener``
+    on the class instance and crash the page.
+    """
+    from reflex_base.event import EventChain
+    from reflex_components_core.core.debounce import DebounceInput
+
+    stateful_change = Var(_js_expr="evt")._replace(
+        _var_type=EventChain,
+        merge_var_data=VarData(state="TestState"),
+    )
+
+    def debounced() -> Component:
+        return DebounceInput.create(
+            Textarea.create(id="c2_input", on_change=stateful_change)
+        )
+
+    _factory, definition = create_passthrough_component_memo(debounced())
+    assert definition.forward_root_props
+    assert definition.root_ref_prop == "inputRef"
+
+    ctx, _page_ctx = _compile_single_page(debounced)
+    memo_code = _compile_memo_module_text(ctx)
+    assert re.search(
+        r"\.\.\.mergeSlotProps\(rest, \(\{[^)]*inputRef:ref_c2_input[^)]*\}\), \"inputRef\"\)",
+        memo_code,
+    ), (
+        "The DebounceInput root's merge must route injected refs to inputRef.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+
+    # Ordinary roots keep the two-argument call — no ref routing.
+    ctx, _page_ctx = _compile_single_page(
+        lambda: Plain.create("content", on_click=rx.console_log("x"))
+    )
+    plain_code = _compile_memo_module_text(ctx)
+    assert re.search(r"\.\.\.mergeSlotProps\(rest, \(\{[^)]*\}\)\)", plain_code), (
+        f"Plain roots must not gain a ref-prop argument: {plain_code[:2000]}"
+    )
+
+
+def test_untagged_memo_roots_do_not_forward_ref() -> None:
+    """Roots that render no element get no ref or rest parameter.
+
+    ``Bare`` renders a raw expression, ``Cond``/``Match`` render ternaries,
+    ``Foreach`` renders an ``Array.map`` — none can carry props or a ref, and
+    ``Fragment`` rejects both at runtime.
+    """
+    from reflex_components_core.core.foreach import Foreach
+
+    for component in (
+        Bare.create(STATE_VAR),
+        Fragment.create(Plain.create(), on_mount=rx.console_log("x")),
+        Foreach.create(
+            SpecialFormMemoState.items,
+            render_fn=lambda item: Plain.create(item),
+        ),
+    ):
+        _factory, definition = create_passthrough_component_memo(component)
+        assert not definition.forward_root_props, (
+            f"{type(component).__name__} root must not forward props/refs"
+        )
+
+    _factory, definition = create_passthrough_component_memo(Plain.create(STATE_VAR))
+    assert definition.forward_root_props, "tagged passthrough root must forward"
+    _factory, definition = create_passthrough_component_memo(
+        LeafComponent.create(Plain.create())
+    )
+    assert definition.forward_root_props, "tagged snapshot root must forward"
+
+    # End-to-end: a Bare wrapper's compiled module keeps its bare signature.
+    ctx, _page_ctx = _compile_single_page(
+        lambda: WithProp.create(Bare.create(STATE_VAR), label=STATE_VAR)
+    )
+    memo_code = _compile_memo_module_text(ctx)
+    assert "{children, ...rest}" in memo_code  # the WithProp wrapper
+    bare_tag = next(tag for tag in ctx.memoize_wrappers if tag.startswith("Bare"))
+    bare_signature = (
+        memo_code
+        .partition(f"export const {bare_tag}")[2]
+        .partition("memo(")[2]
+        .partition("=>")[0]
+    )
+    assert "({children})" in bare_signature, (
+        f"Bare wrapper signature must not take a ref or rest: {bare_signature!r}"
+    )
+
+
+def test_user_memo_definition_does_not_forward_ref() -> None:
+    """User-defined ``@rx.memo`` components keep their documented contract.
+
+    Base props (including ``ref``) are deliberately not forwardable on user
+    memos without an ``rx.RestProp``; only compiler-generated wrappers opt
+    into root prop/ref transparency.
+    """
+    from reflex.compiler import utils as compiler_utils
+
+    @rx.memo
+    def user_memo_no_ref_forward(children: rx.Var[rx.Component]) -> rx.Component:
+        return Plain.create(children)
+
+    definition = user_memo_no_ref_forward._definition
+    assert not definition.forward_root_props
+
+    render_dict, _imports = compiler_utils.compile_experimental_component_memo(
+        definition
+    )
+    assert "ref" not in render_dict["signature"], (
+        f"User memo signature must not destructure ref: {render_dict['signature']}"
+    )
+    assert "..." not in render_dict["signature"], (
+        f"User memo signature must not gain a rest param: {render_dict['signature']}"
+    )
+    assert "mergeSlotProps" not in str(render_dict["render"]), (
+        "User memo bodies must not merge injected props onto their root"
+    )
+
+
+def test_empty_tag_memo_root_does_not_forward_props() -> None:
+    """A root with an empty tag renders a Fragment, which takes no props.
+
+    ``render_tag`` falls back to ``Fragment`` when the rendered name is
+    falsy, so ``Upload``'s empty tag reaches React as a real ``Fragment``.
+    Spreading injected props (or a ref) onto one is a React error, and the
+    injections would be dropped anyway — the element the parent means to
+    address is the dropzone ``<div>`` nested inside the body, not the root.
+    """
+    from reflex_components_core.core.upload import Upload
+
+    _factory, definition = create_passthrough_component_memo(
+        Upload.create(Bare.create(STATE_VAR))
+    )
+    assert not definition.forward_root_props, (
+        "an empty tag renders a Fragment and must not forward props/refs"
+    )
+
+    ctx, _page_ctx = _compile_single_page(lambda: rx.upload(rx.text(STATE_VAR)))
+    memo_code = _compile_memo_module_text(ctx)
+    assert "mergeSlotProps" not in memo_code, (
+        f"Fragment-rendering root must not merge injected props: {memo_code[:2000]}"
+    )
+    assert "...rest" not in memo_code, (
+        f"Fragment-rendering root must not take a rest param: {memo_code[:2000]}"
+    )
+
+
+def test_rendered_empty_tag_memo_root_does_not_forward_props() -> None:
+    """An overridden render tag controls forwarding instead of the class tag."""
+
+    class RenderedFragment(Plain):
+        """A nominally tagged component whose rendered root is a fragment."""
+
+        def _render(self, props=None):
+            """Render the root without an element name.
+
+            Args:
+                props: The root props.
+
+            Returns:
+                The tagless root.
+            """
+            return dataclasses.replace(super()._render(props), name="")
+
+    _factory, definition = create_passthrough_component_memo(
+        RenderedFragment.create(Bare.create(STATE_VAR))
+    )
+    assert not definition.forward_root_props
+
+
+def test_forwarded_props_use_the_definitions_rest_param_name() -> None:
+    """The merge call and the signature always name the same rest binding.
+
+    A transparent wrapper synthesizes ``rest``, but a definition that already
+    declares its own rest param owns the name — emitting a hardcoded ``rest``
+    into the merge would be a ``ReferenceError`` at render time.
+    """
+    from reflex.compiler import utils as compiler_utils
+
+    @rx.memo
+    def memo_with_rest(
+        children: rx.Var[rx.Component], extra: rx.RestProp
+    ) -> rx.Component:
+        return Plain.create(children, extra)
+
+    definition = dataclasses.replace(
+        memo_with_rest._definition, forward_root_props=True
+    )
+    rest_param = next(p for p in definition.params if p.kind is MemoParamKind.REST)
+    assert rest_param.placeholder_name == "extra"
+
+    render_dict, imports = compiler_utils.compile_experimental_component_memo(
+        definition
+    )
+
+    assert f"...mergeSlotProps({rest_param.placeholder_name}," in str(
+        render_dict["render"]
+    ), render_dict["render"]
+    assert f"...{rest_param.placeholder_name}" in render_dict["signature"], render_dict[
+        "signature"
+    ]
+    assert any(
+        tag.tag == "mergeSlotProps" for tag in imports.get("$/utils/state", [])
+    ), imports
+
+
+def test_svg_boundary_shares_hook_var_between_children() -> None:
+    """Elements under one ``rx.el.svg`` read a hook var from a single hook call."""
+    from reflex_base.vars.special import use_id
+    from reflex_components_core.el.elements.media import LinearGradient, Rect, Svg
+
+    from reflex.compiler.compiler import compile_memo_components
+
+    def page() -> Component:
+        gradient_id = use_id()
+        return Svg.create(
+            LinearGradient.create(id=gradient_id),
+            Rect.create(fill=f"url(#{gradient_id})"),
+        )
+
+    ctx, page_ctx = _compile_single_page(page)
+    memo_files, _ = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values())
+    )
+    memo_code = "\n".join(code for _, code in memo_files)
+
+    assert len(ctx.memoize_wrappers) == 1
+    assert len(re.findall(r"= useId_\w+\(\);", memo_code)) == 1
+    assert not any("useId" in hook for hook in page_ctx.hooks)
