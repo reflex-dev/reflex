@@ -26,6 +26,7 @@ import functools
 import json
 import logging
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -269,6 +270,12 @@ _SUPERVISED_ENV_VAR = "REFLEX_OUTPUT_SUPERVISED"
 # stops waiting for descendants that still hold the pipe.
 _DRAIN_IDLE_SECONDS = 0.5
 
+# How long the supervisor drains the pipes after the child exits, at most.
+_DRAIN_MAX_SECONDS = 5
+
+# Line ends in child output; a lone ``\r`` ends a progress-bar update.
+_LINE_END = re.compile(rb"\r\n|\r|\n")
+
 
 def is_output_supervised() -> bool:
     """Check whether this process runs under supervise_output().
@@ -331,7 +338,6 @@ def _to_records(
         out.append(json.dumps(payload).encode())
 
     for raw in lines:
-        raw = raw.removesuffix(b"\r")
         if _is_json_record(raw):
             out.append(raw)
             continue
@@ -393,8 +399,14 @@ class _OutputPump(threading.Thread):
             self.idle_since = None
             if not chunk:
                 break
-            *lines, pending = (pending + chunk).split(b"\n")
+            data = pending + chunk
+            # A trailing \r may be the first half of a \r\n.
+            cut = len(data) - data.endswith(b"\r")
+            *lines, pending = _LINE_END.split(data[:cut])
+            pending += data[cut:]
             self._write(lines, traceback, final=False)
+        os.close(self.read_fd)
+        pending = pending.removesuffix(b"\r")
         self._write([pending] if pending else [], traceback, final=True)
 
     def _write(self, lines: list[bytes], traceback: list[str], final: bool):
@@ -413,18 +425,20 @@ class _OutputPump(threading.Thread):
     def drain(self, exited_at: float):
         """Wait until the pipe is drained after the child exited.
 
-        Returns early when the reader sat idle for a while after the exit:
-        only a descendant that outlived the child still holds the pipe.
+        Returns early when the reader sat idle for a while after the exit, or
+        when the drain took too long: only a descendant that outlived the
+        child still holds the pipe.
 
         Args:
             exited_at: The monotonic time the child exited.
         """
         while self.is_alive():
             self.join(0.05)
+            now = time.monotonic()
             idle_since = self.idle_since
-            if (
+            if now - exited_at > _DRAIN_MAX_SECONDS or (
                 idle_since is not None
-                and time.monotonic() - max(idle_since, exited_at) > _DRAIN_IDLE_SECONDS
+                and now - max(idle_since, exited_at) > _DRAIN_IDLE_SECONDS
             ):
                 return
 
@@ -446,17 +460,23 @@ def supervise_output(args: list[str]) -> int:
     for stream in (sys.stdout, sys.stderr):
         if stream is not None:
             stream.flush()
-    env = {**os.environ, _SUPERVISED_ENV_VAR: "true", "PYTHONUNBUFFERED": "1"}
-    # The readers decode UTF-8; Python otherwise uses the locale encoding on a pipe.
-    env.setdefault("PYTHONIOENCODING", "utf-8")
-    proc = subprocess.Popen(
-        args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
-    )
-    assert proc.stdout is not None
-    assert proc.stderr is not None
+    env = {
+        **os.environ,
+        _SUPERVISED_ENV_VAR: "true",
+        "PYTHONUNBUFFERED": "1",
+        # The readers decode UTF-8; Python otherwise uses the locale encoding.
+        "PYTHONIOENCODING": "utf-8",
+    }
+    # Raw pipes that only the readers close: closing a pipe while a reader is
+    # blocked on it waits for that read on Windows.
+    out_read, out_write = os.pipe()
+    err_read, err_write = os.pipe()
+    proc = subprocess.Popen(args, stdout=out_write, stderr=err_write, env=env)
+    os.close(out_write)
+    os.close(err_write)
     pumps = [
-        _OutputPump(proc.stdout.fileno(), 1, "info", "stdout"),
-        _OutputPump(proc.stderr.fileno(), 2, "warning", "stderr"),
+        _OutputPump(out_read, 1, "info", "stdout"),
+        _OutputPump(err_read, 2, "warning", "stderr"),
     ]
     for pump in pumps:
         pump.start()

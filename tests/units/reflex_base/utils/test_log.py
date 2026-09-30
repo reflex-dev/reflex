@@ -950,10 +950,11 @@ def _run_script(tmp_path: Path, source: str, **kwargs) -> subprocess.CompletedPr
     """
     script = tmp_path / "script.py"
     script.write_text(source)
+    env = {**kwargs.pop("env", os.environ), "REFLEX_LOG_JSON": "true"}
     return subprocess.run(
         [sys.executable, str(script)],
         capture_output=True,
-        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+        env=env,
         cwd=tmp_path,
         timeout=60,
         **kwargs,
@@ -1091,3 +1092,60 @@ def test_output_pump_survives_a_gone_consumer():
     pump = log._OutputPump(child_read, out_write, "info", "stdout")
     pump.run()
     os.close(out_write)
+
+
+_ENCODING_SCRIPT = """
+import os
+import sys
+
+from reflex_base.utils import log
+
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+print("gr\\u00fc\\u00dfe")
+sys.stdout.flush()
+os.write(1, b"10%\\r50%\\r100%\\r\\n")
+"""
+
+
+def test_supervise_output_decodes_utf8_and_splits_progress(tmp_path):
+    """Non-ASCII survives any PYTHONIOENCODING, and carriage-return updates are lines."""
+    result = _run_script(
+        tmp_path, _ENCODING_SCRIPT, env={**os.environ, "PYTHONIOENCODING": "latin-1"}
+    )
+    assert result.returncode == 0, result.stderr
+    assert [json.loads(line)["message"] for line in result.stdout.splitlines()] == [
+        "grüße",
+        "10%",
+        "50%",
+        "100%",
+    ]
+
+
+_CHATTY_LINGERING_SCRIPT = """
+import subprocess
+import sys
+
+from reflex_base.utils import log
+
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+chatter = subprocess.Popen([
+    sys.executable,
+    "-c",
+    "import time\\nfor _ in range(600):\\n    print('tick', flush=True)\\n    time.sleep(0.05)",
+])
+print(chatter.pid)
+"""
+
+
+def test_supervise_output_does_not_wait_for_a_chatty_descendant(tmp_path):
+    """A descendant that keeps writing after the command exits does not block exit."""
+    start = time.monotonic()
+    result = _run_script(tmp_path, _CHATTY_LINGERING_SCRIPT)
+    elapsed = time.monotonic() - start
+    pid = int(json.loads(result.stdout.splitlines()[0])["message"])
+    with contextlib.suppress(OSError):
+        os.kill(pid, signal.SIGTERM)
+    assert result.returncode == 0, result.stderr
+    assert elapsed < 15
