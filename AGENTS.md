@@ -19,7 +19,7 @@ uv run pytest tests/integration                                  # integration t
 uv run ruff check .                                              # lint
 uv run ruff format .                                             # format
 uv run pyright reflex tests                                      # type check
-uv run python scripts/check_min_deps.py                          # validate each package's declared minimum dep versions (pyright in isolated min-version envs; *.dev pins resolve from the local workspace, all other deps from PyPI)
+uv run python scripts/check_min_deps.py                          # validate each package's declared minimum dep versions (pyright in isolated min-version envs; workspace siblings resolve from locally built wheels, all other deps from PyPI). CI passes --wheelhouse instead, reusing the build jobs' artifacts
 uv run python scripts/check_min_deps.py --check-dev-pins [pkg]    # fail if pkg (default: all) declares an unpublishable *.dev dependency pin (the publish workflow runs the same gate via `reflex-release check-dev-pins`)
 uv run reflex-release sync                                       # regenerate the release workflows after editing [tool.reflex-release] or the reflex-release templates
 uv run python scripts/make_pyi.py                                # regenerate .pyi stubs
@@ -90,6 +90,47 @@ Playwright tests use the `page` fixture and navigate to `harness.frontend_url`. 
 ## .pyi stubs
 
 When adding/modifying components: `uv run python scripts/make_pyi.py`. Commit `pyi_hashes.json` (not `.pyi` files). If the diff removes many modules, run `uv sync`, delete `.pyi_generator_last_run`, and regenerate.
+
+## CI workflows
+
+Branch rules require one check per workflow, listed in
+`.github/rulesets/main-required-checks.json`. Check names are matched literally —
+no wildcards — so two rules follow:
+
+- **A required workflow must not filter its `pull_request` trigger.** A workflow
+  a path filter skips never reports its checks, so a required check on it blocks
+  the merge forever. Filter in a `changes` job instead and gate the real jobs on
+  `if: needs.changes.outputs.run == 'true'` — a job skipped by `if:` reports as a
+  pass. `push` triggers may keep their filters; nothing gates a merge there. So
+  may a workflow that blocks no merge — absent from the ruleset and listed in
+  that test's `ADVISORY` — where the filter costs a run rather than a merge.
+- **Every merge-blocking workflow ends in a gate job** named `<workflow>-gate`,
+  which collapses it into one check name that matrix expansion cannot move. The
+  exception is a workflow with one job whose name cannot drift — `pre-commit`,
+  `changelog` — which the ruleset requires by that name (`DIRECTLY_REQUIRED` in
+  the test). A gate looks like:
+
+```yaml
+  unit-tests-gate:
+    needs: [changes, unit-tests, unit-tests-macos]  # every other job
+    if: always()  # not !cancelled(): a cancelled run would report a pass
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@... # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/ci_gate
+        with:
+          needs: ${{ toJSON(needs) }}
+```
+
+Adding a job means adding it to the gate's `needs`; adding a workflow means
+adding its gate to the ruleset. `tests/units/test_workflow_gates.py` fails when
+either drifts. Every matrix leg blocks through its gate, pre-release Python
+versions included, so leave `continue-on-error` off a gated job. A workflow
+disabled in the repository's Actions settings never reports, which no test can
+see: disabling one means moving it to `ADVISORY` and out of the ruleset, or every
+merge waits on it.
 
 ## Changelog fragments
 
