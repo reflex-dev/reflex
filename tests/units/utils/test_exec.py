@@ -284,6 +284,19 @@ def test_set_dev_start_method(
     assert calls == ([expected] if expected else [])
 
 
+def test_set_dev_start_method_explicit_method_beats_strict_hot_reload(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """REFLEX_BACKEND_START_METHOD wins even when strict hot reload is on."""
+    monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, "True")
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "forkserver")
+    set_start_method = mocker.patch.object(multiprocessing, "set_start_method")
+
+    exec_utils.set_dev_start_method()
+
+    set_start_method.assert_called_once_with("forkserver", force=True)
+
+
 @pytest.mark.parametrize(("start_method", "frozen"), [("fork", True), ("spawn", False)])
 def test_run_granian_backend_freezes_only_for_fork(
     mocker: MockerFixture,
@@ -291,7 +304,11 @@ def test_run_granian_backend_freezes_only_for_fork(
     start_method: str,
     frozen: bool,
 ):
-    """Forked reload workers share a frozen heap; the app is never preloaded."""
+    """Forked reload workers share a frozen heap; the app is never preloaded.
+
+    The telemetry thread (e.g. from the run-dev event) is drained and stopped
+    first, so the supervisor has no telemetry thread when it forks the worker.
+    """
     monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, start_method)
     monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, "False")
     granian_server = pytest.importorskip("granian.server")
@@ -318,13 +335,16 @@ def test_run_granian_backend_freezes_only_for_fork(
     mocker.patch.object(
         prerequisites, "get_app", side_effect=lambda: calls.append("preload")
     )
+    mocker.patch.object(
+        telemetry, "_shutdown_executor", side_effect=lambda: calls.append("drain")
+    )
     mocker.patch.object(gc, "freeze", side_effect=lambda: calls.append("freeze"))
 
     exec_utils.run_granian_backend(
         host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
     )
 
-    assert calls == (["freeze", "serve"] if frozen else ["serve"])
+    assert calls == (["drain", "freeze", "serve"] if frozen else ["serve"])
 
 
 def test_run_granian_backend_binds_listen_socket_in_supervisor(

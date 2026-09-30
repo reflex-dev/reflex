@@ -1004,27 +1004,36 @@ def _backend_start_method() -> str | None:
 def set_dev_start_method() -> None:
     """Fix the multiprocessing start method for the development backend.
 
-    Strict hot reload spawns workers; otherwise the platform rule of
-    ``_backend_start_method`` applies. Call this before the first child
-    process starts, or a forkserver started for the compile pool stays alive
-    for the whole session.
+    An explicit ``REFLEX_BACKEND_START_METHOD`` wins; otherwise strict hot
+    reload spawns workers and the platform rule of ``_backend_start_method``
+    applies. Call this before the first child process starts, or a forkserver
+    started for the compile pool stays alive for the whole session.
     """
     import multiprocessing
 
-    if environment.REFLEX_STRICT_HOT_RELOAD.get():
-        multiprocessing.set_start_method("spawn", force=True)
-    elif (start_method := _backend_start_method()) is not None:
+    if (
+        environment.REFLEX_STRICT_HOT_RELOAD.get()
+        and environment.REFLEX_BACKEND_START_METHOD.get() is None
+    ):
+        start_method = "spawn"
+    else:
+        start_method = _backend_start_method()
+    if start_method is not None:
         multiprocessing.set_start_method(start_method, force=True)
 
 
 def _freeze_for_fork() -> None:
-    """Freeze the heap so forked workers keep the supervisor's pages shared.
+    """Stop the telemetry thread and freeze the heap before forking workers.
 
-    Without this, worker GC passes write to the inherited objects' headers,
-    which copies the shared pages private again.
+    Forking while the telemetry thread may hold a lock can deadlock the child.
+    Without the freeze, worker GC passes write to the inherited objects'
+    headers, which copies the shared pages private again.
     """
     import gc
 
+    from reflex.utils import telemetry
+
+    telemetry._shutdown_executor()
     gc.collect()
     gc.freeze()
 
@@ -1038,13 +1047,11 @@ def _preload_for_fork(app_target: str | None) -> None:
     """
     from reflex_base.utils import serializers
 
-    from reflex.utils import prerequisites, telemetry
+    from reflex.utils import prerequisites
 
     if app_target is None:
         prerequisites.get_app()
     serializers._prepare_serializers_for_fork()
-    # Forking while the telemetry thread may hold a lock can deadlock the child.
-    telemetry._shutdown_executor()
     _freeze_for_fork()
 
 
