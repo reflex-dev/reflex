@@ -5,9 +5,14 @@ import pickle
 import time
 from collections.abc import Callable, Generator
 from contextlib import asynccontextmanager
+from functools import partial
+from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from pytest_mock import MockerFixture
+from reflex_base.event.context import EventContext
+from reflex_base.session import SessionTokenManager
 
 from reflex import config
 from reflex.app import EventNamespace
@@ -19,6 +24,45 @@ from reflex.utils.token_manager import (
     SocketRecord,
     TokenManager,
 )
+
+
+@pytest.mark.parametrize("backend", ["local", "redis", "redis-down"])
+async def test_duplicate_token_uses_session_bound_factory(
+    mocker: MockerFixture, backend: str
+):
+    """Every duplicate path preserves the caller's session-bound token factory.
+
+    Args:
+        mocker: Mock fixture.
+        backend: The token manager backend and availability.
+    """
+    codec = SessionTokenManager("duplicates", secrets=(b"s" * 32,))
+    session = codec.create()
+    token = codec.create_client_token(session)
+    if backend == "local":
+        manager = LocalTokenManager()
+    else:
+        redis = AsyncMock()
+        redis.get_connection_kwargs = Mock(return_value={"db": 0})
+        redis.exists.return_value = True
+        if backend == "redis-down":
+            redis.exists.side_effect = ConnectionError("unavailable")
+        manager = RedisTokenManager(redis)
+        mocker.patch.object(manager, "_ensure_socket_record_task")
+    manager.token_to_socket[token] = SocketRecord(
+        instance_id=manager.instance_id, sid="sid1"
+    )
+    manager.sid_to_token["sid1"] = token
+    factory = Mock(side_effect=partial(codec.create_client_token, session))
+
+    replacement = await manager.link_token_to_sid(token, "sid2", token_factory=factory)
+
+    assert replacement is not None
+    assert replacement != token
+    assert session.authorizes(replacement)
+    assert not codec.create().authorizes(replacement)
+    assert manager.sid_to_token == {"sid1": token, "sid2": replacement}
+    factory.assert_called_once_with()
 
 
 class TestTokenManager:
@@ -365,16 +409,19 @@ class TestRedisTokenManager:
         """
         token, sid = "token1", "sid1"
         mock_redis.exists.side_effect = Exception("Redis connection error")
+        token_factory = Mock(return_value="replacement-token")
 
         with patch.object(
             LocalTokenManager, "link_token_to_sid", new_callable=AsyncMock
         ) as mock_super:
             mock_super.return_value = None
 
-            result = await manager.link_token_to_sid(token, sid)
+            result = await manager.link_token_to_sid(
+                token, sid, token_factory=token_factory
+            )
 
             assert result is None
-            mock_super.assert_called_once_with(token, sid)
+            mock_super.assert_called_once_with(token, sid, token_factory=token_factory)
 
     async def test_link_token_to_sid_redis_set_error_continues(
         self, manager, mock_redis
@@ -692,7 +739,7 @@ def redis_url():
     return redis_url
 
 
-def query_string_for(token: str) -> dict[str, str]:
+def query_string_for(token: str) -> dict[str, Any]:
     """Generate query string for given token.
 
     Args:
@@ -701,12 +748,25 @@ def query_string_for(token: str) -> dict[str, str]:
     Returns:
         The generated query string.
     """
-    return {"QUERY_STRING": f"token={token}"}
+    codec = SessionTokenManager("namespace", secrets=(b"s" * 32,))
+    return {
+        "QUERY_STRING": f"token={token}",
+        "asgi.scope": {"reflex.session": codec.create()},
+    }
 
 
 @pytest.fixture
-def event_namespace_factory() -> Generator[Callable[[], EventNamespace], None, None]:
-    """Yields the EventNamespace factory function."""
+def event_namespace_factory(
+    attached_mock_event_context: EventContext,
+) -> Generator[Callable[[], EventNamespace], None, None]:
+    """Create namespaces with validated browser sessions and an active context.
+
+    Args:
+        attached_mock_event_context: The active event context.
+
+    Yields:
+        The EventNamespace factory function.
+    """
     namespace = config.get_config().get_event_namespace()
     created_objs = []
 
@@ -715,6 +775,9 @@ def event_namespace_factory() -> Generator[Callable[[], EventNamespace], None, N
         state.router_data = {}
 
         mock_app = Mock()
+        mock_app._session_token_manager = SessionTokenManager(
+            "namespace", secrets=(b"s" * 32,)
+        )
         mock_app.state_manager.modify_state = Mock(
             return_value=AsyncMock(__aenter__=AsyncMock(return_value=state))
         )

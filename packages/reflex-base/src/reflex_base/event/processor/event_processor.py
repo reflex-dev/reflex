@@ -24,6 +24,8 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.event.processor.timeout import DrainTimeoutManager
 from reflex_base.registry import RegisteredEventHandler, RegistrationContext
+from reflex_base.session import SessionToken
+from reflex_base.utils.compat import MISSING_TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -209,6 +211,7 @@ class EventProcessor:
 
         self._root_context = EventContext(
             token="",
+            session_token=SessionToken.SYSTEM,
             parent_txid=None,
             state_manager=state_manager,
             enqueue_impl=self.enqueue_many,
@@ -384,7 +387,12 @@ class EventProcessor:
         return self._queue
 
     async def enqueue(
-        self, token: str, event: Event, ev_ctx: EventContext | None = None
+        self,
+        token: str,
+        event: Event,
+        ev_ctx: EventContext | None = None,
+        *,
+        session_token: SessionToken | MISSING_TYPE | None = dataclasses.MISSING,
     ) -> EventFuture:
         """Enqueue an event to be processed.
 
@@ -392,6 +400,7 @@ class EventProcessor:
             token: The client token associated with the event.
             event: The event to be enqueued.
             ev_ctx: The event context to use for this event.
+            session_token: The session authorizing the event, or omitted to inherit it.
 
         Returns:
             An EventFuture that resolves to the result of the associated task.
@@ -402,10 +411,14 @@ class EventProcessor:
         """
         if ev_ctx is None:
             try:
-                ev_ctx = EventContext.get().fork(token=token)
+                ev_ctx = EventContext.get().fork(
+                    token=token, session_token=session_token
+                )
             except LookupError as le:
                 if self._root_context is not None:
-                    ev_ctx = self._root_context.fork(token=token)
+                    ev_ctx = self._root_context.fork(
+                        token=token, session_token=session_token
+                    )
                 else:
                     msg = "Event processor is not running, call .start(...) first."
                     raise RuntimeError(msg) from le
@@ -472,6 +485,8 @@ class EventProcessor:
         self,
         token: str,
         event: Event,
+        *,
+        session_token: SessionToken | MISSING_TYPE | None = dataclasses.MISSING,
     ) -> AsyncGenerator[Mapping[str, Any]]:
         """Enqueue an event to be processed and yield deltas emitted by the event handler.
 
@@ -489,6 +504,7 @@ class EventProcessor:
         Args:
             token: The client token associated with the event.
             event: The event to be enqueued.
+            session_token: The session authorizing the event, or omitted to inherit it.
 
         Yields:
             Deltas emitted by the event handler for the specified token.
@@ -512,12 +528,15 @@ class EventProcessor:
                 return
             await deltas.put(delta)
 
+        try:
+            parent_context = EventContext.get()
+        except LookupError:
+            parent_context = self._root_context
         task_future = await self.enqueue(
             token,
             event,
             ev_ctx=dataclasses.replace(
-                self._root_context,
-                token=token,
+                parent_context.fork(token=token, session_token=session_token),
                 emit_delta_impl=_emit_delta_impl,
                 # Like fork(): the handler span nests under the caller's span
                 # (the upload request, a custom route).

@@ -18,6 +18,7 @@ from pathlib import Path, PureWindowsPath
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
 from python_multipart.multipart import MultipartParser, parse_options_header
+from reflex_base.event.context import EventContext
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import exceptions
 from reflex_base.utils.format import json_dumps
@@ -668,7 +669,9 @@ async def _upload_buffered_file(
         if disconnect_seen:
             return
         # Enqueue the task on the main event loop, but emit deltas to the local queue.
-        async for delta in app.event_processor.enqueue_stream_delta(token, event):
+        async for delta in app.event_processor.enqueue_stream_delta(
+            token, event, session_token=request.scope.get("reflex.session")
+        ):
             yield json_dumps(StateUpdate(delta=delta)) + "\n"
 
     return DisconnectAwareStreamingResponse(
@@ -725,7 +728,9 @@ async def _upload_chunk_file(
                 handler_upload_param[0]: chunk_iter,
             },
         )
-        task_future = await app.event_processor.enqueue(token, event)
+        task_future = await app.event_processor.enqueue(
+            token, event, session_token=request.scope.get("reflex.session")
+        )
         chunk_iter.set_consumer_task(task_future)
 
     parser = _UploadChunkMultipartParser(
@@ -844,6 +849,14 @@ def upload(app: App):
         )
 
         token, handler_name = _require_upload_headers(request)
+        try:
+            dataclasses.replace(
+                EventContext.get(),
+                token=token,
+                session_token=request.scope.get("reflex.session"),
+            )
+        except exceptions.SessionAuthorizationError as error:
+            raise HTTPException(status_code=403, detail=str(error)) from error
         registered_event_handler = RegistrationContext.get().event_handlers.get(
             handler_name
         )
