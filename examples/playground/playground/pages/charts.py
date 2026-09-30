@@ -5,7 +5,7 @@ from typing import Any
 import reflex as rx
 
 from playground.layout import layout
-from playground.states.charts import KINDS, ChartsState
+from playground.states.charts import KINDS, MAX_POINTS, MIN_POINTS, ChartsState
 
 CHART_SIZE = {"width": "100%", "height": 280}
 
@@ -78,8 +78,8 @@ def charts() -> rx.Component:
             ),
             rx.slider(
                 default_value=[24],
-                min=4,
-                max=96,
+                min=MIN_POINTS,
+                max=MAX_POINTS,
                 on_value_commit=ChartsState.set_points,
                 id="charts-resolution",
             ),

@@ -1,11 +1,10 @@
 """A room's visitor: the name it shows and the events it sends to the room's board."""
 
-import random
 import re
 
 import reflex as rx
 
-from playground.state import BoardState
+from playground.state import BoardState, guest_name
 from playground.states import route_arg
 
 BURST = 10
@@ -32,7 +31,7 @@ class RoomState(rx.State):
     room: str = ""
     token_draft: str = ""
     sent: int = 0
-    # Backend only: the client number sent with broadcasts.
+    # Backend only: the client number sent with broadcasts, from the name.
     _client: int = 0
 
     @rx.event
@@ -42,11 +41,10 @@ class RoomState(rx.State):
         Returns:
             The event linking the board and showing this session's name.
         """
-        if not self.name:
-            self._client = random.randrange(1000, 10_000)
-            self.name = f"guest-{self._client}"
+        self.name = guest_name(self.router.session.client_token)
+        self._client = int(self.name.removeprefix("guest-")[:4], 16)
         self.room = room_token(route_arg(self.router.url.path))
-        return BoardState.enter_room(self.room, self.name)
+        return BoardState.enter_room(self.room)
 
     @rx.event
     def leave(self):
@@ -56,7 +54,7 @@ class RoomState(rx.State):
             The event unlinking the board.
         """
         self.room = ""
-        return BoardState.leave_room(self.name)
+        return BoardState.leave_room()
 
     @rx.event
     def broadcast(self):

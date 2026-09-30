@@ -7,6 +7,7 @@ import reflex as rx
 from playground.states.tasks import TasksState
 
 STEPS = 5
+MAX_REPEAT = 10
 
 
 class EventsState(rx.State):
@@ -114,9 +115,9 @@ class EventsState(rx.State):
 
         Args:
             label: What to log.
-            times: How often.
+            times: How often, at most ``MAX_REPEAT`` whatever the client sends.
         """
-        for _ in range(times):
+        for _ in range(min(times, MAX_REPEAT)):
             self._record(f"args: {label}")
 
     @rx.event

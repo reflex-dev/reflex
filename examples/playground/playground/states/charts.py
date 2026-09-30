@@ -5,6 +5,8 @@ import math
 import reflex as rx
 
 KINDS = ("line", "area", "bar")
+MIN_POINTS = 4
+MAX_POINTS = 96
 
 
 class ChartsState(rx.State):
@@ -57,9 +59,10 @@ class ChartsState(rx.State):
         """Change the resolution.
 
         Args:
-            value: The slider's values; the first is the number of points.
+            value: The slider's values; the first is the number of points,
+                kept within the slider's range whatever the client sends.
         """
-        self.points = max(4, int(value[0]))
+        self.points = min(MAX_POINTS, max(MIN_POINTS, int(value[0])))
 
     @rx.event
     def shift(self):

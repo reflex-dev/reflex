@@ -7,6 +7,18 @@ import reflex as rx
 PLANS = ("hobby", "team", "enterprise")
 
 
+def is_email(value: str) -> bool:
+    """Tell whether a value looks like an email address.
+
+    Args:
+        value: The value.
+
+    Returns:
+        Whether it has an ``@`` followed by a domain with a dot.
+    """
+    return "@" in value and "." in value.rpartition("@")[2]
+
+
 def check_signup(form: dict[str, str]) -> dict[str, str]:
     """Validate a sign-up.
 
@@ -19,8 +31,7 @@ def check_signup(form: dict[str, str]) -> dict[str, str]:
     errors: dict[str, str] = {}
     if len(form.get("username", "").strip()) < 3:
         errors["username"] = "At least 3 characters."
-    email = form.get("email", "")
-    if "@" not in email or "." not in email.rpartition("@")[2]:
+    if not is_email(form.get("email", "")):
         errors["email"] = "Not an email address."
     age = form.get("age", "")
     if not age.isdigit() or not 13 <= int(age) <= 120:
@@ -64,7 +75,7 @@ class FormState(rx.State):
         Args:
             value: The field's value.
         """
-        if "@" in value:
+        if is_email(value):
             self.errors.pop("email", None)
         else:
             self.errors["email"] = "Not an email address."

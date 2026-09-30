@@ -116,7 +116,7 @@ def content() -> rx.Component:
                 ),
                 rx.box(
                     rx.video(
-                        src="/chime.wav", controls=True, width="16rem", height="9rem"
+                        src="/clip.webm", controls=True, width="16rem", height="9rem"
                     ),
                     id="content-video",
                 ),

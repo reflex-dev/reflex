@@ -31,7 +31,7 @@ def product_stats() -> dict[str, int]:
 
 
 def add_stats_route(app: ASGIApp) -> ASGIApp:
-    """Answer ``GET /api/playground/stats`` with the catalog's counts; pass anything else on.
+    """Answer ``GET`` (and ``HEAD``) ``/api/playground/stats`` with the catalog's counts; pass anything else on.
 
     Args:
         app: The backend's ASGI app.
@@ -41,7 +41,11 @@ def add_stats_route(app: ASGIApp) -> ASGIApp:
     """
 
     async def with_stats(scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] != "http" or scope["path"] != STATS_PATH:
+        if (
+            scope["type"] != "http"
+            or scope["path"] != STATS_PATH
+            or scope["method"] not in {"GET", "HEAD"}
+        ):
             await app(scope, receive, send)
             return
         body = json.dumps(product_stats()).encode()
@@ -53,6 +57,10 @@ def add_stats_route(app: ASGIApp) -> ASGIApp:
                 (b"content-length", str(len(body)).encode()),
             ],
         })
-        await send({"type": "http.response.body", "body": body})
+        # HEAD gets the headers only.
+        await send({
+            "type": "http.response.body",
+            "body": body if scope["method"] == "GET" else b"",
+        })
 
     return with_stats

@@ -6,16 +6,18 @@ from playground.layout import layout
 from playground.states.upload import UPLOAD_ID, UploadState
 
 
-def uploaded_file(name: rx.Var[str]) -> rx.Component:
+def uploaded_file(file: rx.vars.ObjectVar[dict[str, str]]) -> rx.Component:
     """Render one stored file.
 
     Args:
-        name: The file's name.
+        file: The file's name and its path in the upload directory.
 
     Returns:
         A link to the file.
     """
-    return rx.list_item(rx.link(name, href=rx.get_upload_url(name), is_external=True))
+    return rx.list_item(
+        rx.link(file["name"], href=rx.get_upload_url(file["path"]), is_external=True)
+    )
 
 
 def upload() -> rx.Component:

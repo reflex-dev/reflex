@@ -52,7 +52,7 @@ sidebar inside it (`data_layout`, a nested layout).
 | `/data/new` | The same form, creating a product. |
 | `/data/analytics` | An expensive computed var (a sort over every row) and a recharts bar chart. |
 | `/forms` | A sign-up form validated on blur and on submit. |
-| `/upload` | `rx.upload` with progress; files land in `uploaded_files/`. |
+| `/upload` | `rx.upload` with progress; each visitor's files land in a folder of their own under `uploaded_files/`. |
 | `/storage` | `rx.Cookie`, `rx.LocalStorage` and `rx.SessionStorage`. |
 | `/charts` | Recharts line, area and bar charts over a computed series, and a plotly figure built as a dict. |
 | `/grids` | The same rows in `rx.data_table` (gridjs) and `rx.data_editor`. |
@@ -179,7 +179,7 @@ Keep each target on its own line, in exactly this form, and add no other
 `width` or `height` of its own) and `assets/playground.css` (whose `.bench-hooks`
 rule keeps `font-size: 0.75rem`, the literal `hmr.css` rewrites) are there for the
 asset hot reload benchmarks; `assets/favicon.ico` is the one `reflex init`
-creates, and `assets/chime.wav` the sound of the media players.
+creates, and `assets/chime.wav` and `assets/clip.webm` (a one-second 64×36 clip) are the media players' sources.
 
 The event benchmarks send these `BenchState` handlers over the websocket, each with the
 payload `{"seq": <int>}`. Every one sets `last_seq` to `seq`, so the delta of

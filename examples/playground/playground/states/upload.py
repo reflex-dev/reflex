@@ -1,5 +1,6 @@
 """File uploads with progress, stored under the upload directory."""
 
+import secrets
 from pathlib import Path
 
 import reflex as rx
@@ -10,9 +11,12 @@ UPLOAD_ID = "upload-files"
 class UploadState(rx.State):
     """The uploaded files and the progress of the current upload."""
 
-    files: list[str] = []
+    # One entry per stored file: its ``name`` and its ``path`` in the upload directory.
+    files: list[dict[str, str]] = []
     progress: int = 0
     uploading: bool = False
+    # Backend only: this visitor's folder, so no visitor replaces another's file.
+    _folder: str = ""
 
     @rx.event
     async def handle_upload(self, files: list[rx.UploadFile]):
@@ -21,16 +25,19 @@ class UploadState(rx.State):
         Args:
             files: The files the browser sent.
         """
-        directory = rx.get_upload_dir()
+        if not self._folder:
+            self._folder = secrets.token_hex(8)
+        directory = rx.get_upload_dir() / self._folder
         directory.mkdir(parents=True, exist_ok=True)
         for file in files:
-            # The base name only, so no upload lands outside the directory.
+            # The base name only, so no upload lands outside the folder.
             name = Path(file.name or "").name
             if name in {"", ".", ".."}:
                 continue
             (directory / name).write_bytes(await file.read())
-            if name not in self.files:
-                self.files.append(name)
+            entry = {"name": name, "path": f"{self._folder}/{name}"}
+            if entry not in self.files:
+                self.files.append(entry)
         self.uploading = False
 
     @rx.event
