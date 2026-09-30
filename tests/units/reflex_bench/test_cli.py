@@ -9,7 +9,7 @@ import os
 import platform
 import sys
 import time
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -397,12 +397,32 @@ def test_compare_refuses_other_profiles_unless_forced(
     monkeypatch.setenv("REFLEX_BENCH_PROFILE", "other-profile")
     assert _noise_run("head.json", "--seed", "2").exit_code == 0
     refused = invoke("compare", "base.json", "head.json")
-    assert refused.exit_code == 1
+    assert refused.exit_code == 4
     assert "machine profile differs: test-profile vs other-profile" in refused.output
     assert "nothing compared: no benchmark has samples on both sides" in refused.output
     forced = invoke("compare", "base.json", "head.json", "--force")
     assert forced.exit_code == 0, forced.output
     assert "(forced: series keys not checked)" in forced.output
+
+
+@pytest.mark.parametrize(
+    ("base", "head", "code"),
+    [
+        (make_run(1.0, day=1), make_run(1.0, day=2), 0),
+        (make_run(1.0, day=1), make_run(1.0, day=2, version="sha256:" + "1" * 64), 4),
+        (make_run(1.0, day=1), make_run(1.0, day=2, status="failed"), 1),
+        ({}, make_run(1.0, day=2), 1),
+    ],
+    ids=["compared", "nothing compared", "every benchmark failed", "unreadable base"],
+)
+def test_compare_tells_nothing_compared_from_errors(
+    home: Path, base: Mapping[str, Any], head: Mapping[str, Any], code: int
+):
+    # macro_benchmarks.yml keeps a labeled run green on 4 and fails on any other error.
+    for path, doc in (("base.json", base), ("head.json", head)):
+        Path(path).write_text(json.dumps(doc), encoding="utf-8")
+    result = invoke("compare", "base.json", "head.json", "--fail-on", "never")
+    assert result.exit_code == code, result.output
 
 
 def test_ci_mode(home: Path, monkeypatch: pytest.MonkeyPatch):

@@ -6,7 +6,7 @@ targets. When ``CI=true`` the output is plain (no colors, no live progress) and
 
 Exit codes: 0 ok, 1 harness error (including every benchmark failing),
 2 regression found with ``--fail-on regression``, 3 inconclusive result with
-``--fail-on-inconclusive``.
+``--fail-on-inconclusive``, 4 nothing to compare.
 """
 
 from __future__ import annotations
@@ -74,6 +74,7 @@ EXIT_OK = 0
 EXIT_ERROR = 1
 EXIT_REGRESSION = 2
 EXIT_INCONCLUSIVE = 3
+EXIT_NOTHING_COMPARED = 4
 EXIT_INTERRUPTED = 130
 # Subject venvs default to the harness's Python, which the workspace runs on.
 DEFAULT_PYTHON = f"{sys.version_info.major}.{sys.version_info.minor}"
@@ -440,7 +441,7 @@ def _exit_code(
         return EXIT_ERROR
     failed = comparing.failed_in_head(doc)
     if compared and not failed and not comparing.rows(doc):
-        return EXIT_ERROR
+        return EXIT_NOTHING_COMPARED
     counts = comparing.verdict_counts(doc)
     if fail_on == "regression" and (counts["regressed"] or failed):
         return EXIT_REGRESSION

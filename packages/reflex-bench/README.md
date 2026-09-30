@@ -67,11 +67,13 @@ the result's `policy` block):
 | `--keep` | | Keeps each benchmark's work directory. |
 | `--kind` | `local` or `ci` | The run kind recorded in the result (`pr`, `daily`, `backfill`, `aa`). |
 
-Exit codes: `0` ok, `1` harness error (including usage errors, every benchmark
-failing, or nothing to compare), `2` regression with `--fail-on regression`, `3`
-inconclusive result with `--fail-on-inconclusive`. A benchmark that fails or
-times out is reported with its status and does not stop the run; when comparing,
-one that fails or times out in head but not in base (or is new) is a regression.
+Exit codes: `0` ok, `1` harness error (including usage errors and every benchmark
+failing), `2` regression with `--fail-on regression`, `3` inconclusive result
+with `--fail-on-inconclusive`, `4` nothing to compare (no metric has samples on
+both sides with matching series keys, and no benchmark started failing). A
+benchmark that fails or times out is reported with its status and does not stop
+the run; when comparing, one that fails or times out in head but not in base (or
+is new) is a regression.
 Ctrl-C during `run` exits with `130` after saving the benchmarks that finished,
 marked with `"interrupted": true`; the benchmark in progress is left out, and `--save-as` keeps the old baseline.
 

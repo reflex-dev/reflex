@@ -100,7 +100,7 @@ jobs:
           uv run --no-sync reflex-bench run --suite macro --kind "$RUN_KIND"
           --json macro.json --no-save
           --min-runs 6 --max-runs 10 --min-time 10 --fail-on never
-      # Warn-only: the comparison with the latest daily result never fails the job.
+      # Warn-only: a regression against the latest daily result never fails the job.
       - name: Summarize
         if: always() && hashFiles('macro.json') != ''
         env:
@@ -116,12 +116,17 @@ jobs:
             if [ -n "$base" ]; then
               git show "FETCH_HEAD:$base" > base.json
               echo "Compared with \`$base\` of the benchmark-data branch." >> "$GITHUB_STEP_SUMMARY"
-              # compare exits 1 when no metric is comparable (another benchmark
+              # compare exits 4 when no metric is comparable (another benchmark
               # version, fixture or profile); the table then lists the reasons.
-              if uv run --no-sync reflex-bench compare base.json macro.json --format md --fail-on never >> "$GITHUB_STEP_SUMMARY"; then
-                exit 0
-              fi
-              echo "Nothing in this run is comparable with the daily result; this run's own values:" >> "$GITHUB_STEP_SUMMARY"
+              # Any other failure (an unreadable result, every benchmark
+              # failing) fails the step.
+              status=0
+              uv run --no-sync reflex-bench compare base.json macro.json --format md --fail-on never >> "$GITHUB_STEP_SUMMARY" || status=$?
+              case "$status" in
+                0) exit 0 ;;
+                4) echo "Nothing in this run is comparable with the daily result; this run's own values:" >> "$GITHUB_STEP_SUMMARY" ;;
+                *) exit "$status" ;;
+              esac
             else
               echo "No daily result of profile \`$profile\` on the benchmark-data branch yet: nothing to compare with." >> "$GITHUB_STEP_SUMMARY"
             fi
