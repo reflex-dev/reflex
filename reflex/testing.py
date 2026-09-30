@@ -397,9 +397,8 @@ class AppHarness:
         with chdir(self.app_path):
             config = get_config()
             print("Polling for servers...")  # for pytest diagnosis #noqa: T201
-            config.api_url = "http://{}:{}".format(
-                *self._poll_for_servers(timeout=30).getsockname(),
-            )
+            # Match the dev frontend's hostname so browser cookies are same-site.
+            config.api_url = f"http://localhost:{self._poll_for_servers(timeout=30).getsockname()[1]}"
             print("Building frontend...")  # for pytest diagnosis #noqa: T201
             reflex.utils.build.setup_frontend(self.app_path)
 
