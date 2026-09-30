@@ -350,13 +350,14 @@ def test_print_table_short_row(monkeypatch, capsys, width, table):
         assert ["name", "Small", "VM"] in [line.split() for line in lines]
 
 
-@pytest.mark.parametrize("width", [80, 10])
+@pytest.mark.parametrize("width", [80, 12])
 def test_print_table_no_rows(monkeypatch, capsys, width):
     """A table with no rows prints its headers, even in a narrow terminal."""
     _set_width(monkeypatch, width)
     console.print_table([], headers=["id", "name"])
 
-    assert "id" in capsys.readouterr().out
+    lines = capsys.readouterr().out.splitlines()
+    assert ["id", "name"] in [line.split() for line in lines]
 
 
 def test_print_table_no_wrap_with_older_reflex_base(monkeypatch, capsys):
