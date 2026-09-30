@@ -994,12 +994,15 @@ def _backend_start_method() -> str | None:
     return None
 
 
-def _preload_for_fork(app_target: str | None) -> None:
+def _preload_for_fork(app_target: str | None) -> bool:
     """Import the app in the supervisor so forked workers share its pages.
 
     Args:
         app_target: The ASGI app target; None means the reflex app, which is
             imported here. Any other target lives in an already-loaded module.
+
+    Returns:
+        Whether forking is safe; False when a telemetry thread is still alive.
     """
     import gc
 
@@ -1011,11 +1014,13 @@ def _preload_for_fork(app_target: str | None) -> None:
         prerequisites.get_app()
     serializers._prepare_serializers_for_fork()
     # Forking while the telemetry thread may hold a lock can deadlock the child.
-    telemetry._shutdown_executor()
+    if not telemetry._shutdown_executor():
+        return False
     # Freezing keeps worker GC passes from writing to the preloaded objects'
     # headers, which would copy-on-write the shared pages private again.
     gc.collect()
     gc.freeze()
+    return True
 
 
 def run_granian_backend_prod(
@@ -1044,9 +1049,10 @@ def run_granian_backend_prod(
     logger.debug("Using Granian for backend")
 
     if (start_method := _backend_start_method()) is not None:
+        if start_method == "fork" and not _preload_for_fork(app_target):
+            logger.debug("A telemetry send is still running; spawning workers.")
+            start_method = "spawn"
         multiprocessing.set_start_method(start_method, force=True)
-        if start_method == "fork":
-            _preload_for_fork(app_target)
 
     class NotifyingGranian(Granian):  # pyright: ignore[reportGeneralTypeIssues]
         """Granian server that reports when its workers have been started."""

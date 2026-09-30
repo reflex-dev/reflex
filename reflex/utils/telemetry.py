@@ -503,7 +503,7 @@ def _get_telemetry_executor() -> ThreadPoolExecutor:
     return _executor
 
 
-def _shutdown_executor(timeout: float = 2) -> None:
+def _shutdown_executor(timeout: float = 2) -> bool:
     """Deliver queued telemetry and stop the worker thread.
 
     Called before forking so no telemetry thread is alive at the fork; the
@@ -512,10 +512,13 @@ def _shutdown_executor(timeout: float = 2) -> None:
 
     Args:
         timeout: Maximum number of seconds to wait for queued telemetry.
+
+    Returns:
+        Whether the worker thread has stopped, i.e. whether forking is safe.
     """
     global _executor
     if (executor := _executor) is None:
-        return
+        return True
     drained = _flush(timeout)
     if not drained:
         logger.debug(f"Telemetry did not drain within {timeout}s before forking.")
@@ -525,6 +528,7 @@ def _shutdown_executor(timeout: float = 2) -> None:
     with _executor_lock:
         if _executor is executor:
             _executor = None
+    return not any(thread.is_alive() for thread in executor._threads)
 
 
 def _reset_executor_after_fork() -> None:

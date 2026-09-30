@@ -396,7 +396,9 @@ def test_arbitrate_ssr_env_var_wins(monkeypatch: pytest.MonkeyPatch):
     assert exec_utils.arbitrate_ssr(True) is False
 
 
-def _fake_granian_prod(mocker: MockerFixture, calls: list[str]):
+def _fake_granian_prod(
+    mocker: MockerFixture, calls: list[str], telemetry_stopped: bool = True
+):
     """Patch granian and the prod launcher's collaborators, recording call order."""
     granian_server = pytest.importorskip("granian.server")
 
@@ -430,7 +432,9 @@ def _fake_granian_prod(mocker: MockerFixture, calls: list[str]):
         side_effect=lambda: calls.append("serializers"),
     )
     mocker.patch.object(
-        telemetry, "_shutdown_executor", side_effect=lambda: calls.append("drain")
+        telemetry,
+        "_shutdown_executor",
+        side_effect=lambda: calls.append("drain") or telemetry_stopped,
     )
     mocker.patch.object(gc, "freeze", side_effect=lambda: calls.append("freeze"))
 
@@ -454,14 +458,36 @@ def test_run_granian_backend_prod_preloads_app_before_forking(
     )
 
     assert calls == [
-        "start:fork",
         "preload",
         "serializers",
         "drain",
         "freeze",
+        "start:fork",
         "serve",
         "workers",
         "started",
+    ]
+
+
+def test_run_granian_backend_prod_spawns_when_telemetry_is_stuck(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A telemetry thread that outlives the drain makes forking unsafe."""
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
+    calls: list[str] = []
+    _fake_granian_prod(mocker, calls, telemetry_stopped=False)
+
+    exec_utils.run_granian_backend_prod(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    assert calls == [
+        "preload",
+        "serializers",
+        "drain",
+        "start:spawn",
+        "serve",
+        "workers",
     ]
 
 
@@ -495,7 +521,7 @@ def test_run_granian_backend_prod_custom_target_only_freezes(
         app_target="reflex.utils.exec:_frontend_prod_app",
     )
 
-    assert calls == ["start:fork", "serializers", "drain", "freeze", "serve", "workers"]
+    assert calls == ["serializers", "drain", "freeze", "start:fork", "serve", "workers"]
 
 
 @pytest.mark.parametrize("use_granian", [True, False])
