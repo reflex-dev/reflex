@@ -1,4 +1,5 @@
 import pytest
+from reflex_base.vars.base import VarData
 from reflex_components_recharts import (
     Area,
     Bar,
@@ -89,6 +90,25 @@ def test_xaxis_tick_formatter_literal_string_var():
     x_axis = XAxis.create(tick_formatter=rx.Var.create("(value) => value.toFixed(2)"))
     props = x_axis.render()["props"]
     assert "tickFormatter:(value) => value.toFixed(2)" in props
+
+
+@pytest.mark.parametrize("axis", [XAxis, YAxis])
+def test_axis_tick_formatter_function_string_var(axis):
+    var_data = VarData(hooks=("const formatterHook = useFormatter();",))
+    formatter = rx.vars.FunctionStringVar.create(
+        "((value) => value.toFixed(2))", _var_data=var_data
+    )
+    axis_component = axis.create(tick_formatter=formatter)
+    props = axis_component.render()["props"]
+    assert "tickFormatter:((value) => value.toFixed(2))" in props
+    assert axis_component.tick_formatter._var_data == var_data
+
+
+@pytest.mark.parametrize("axis", [XAxis, YAxis])
+def test_axis_tick_formatter_rejects_dynamic_string_var(axis):
+    formatter = rx.Var(_js_expr="state.formatter", _var_type=str)
+    with pytest.raises(TypeError, match="dynamic string Var"):
+        axis.create(tick_formatter=formatter)
 
 
 def test_scatter():

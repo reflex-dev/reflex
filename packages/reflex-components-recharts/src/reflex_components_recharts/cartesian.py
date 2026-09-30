@@ -10,6 +10,7 @@ from reflex_base.constants import EventTriggers
 from reflex_base.constants.colors import Color
 from reflex_base.event import EventHandler, no_args_event_spec
 from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.function import FunctionVar
 from reflex_base.vars.sequence import LiteralStringVar
 
 from .recharts import (
@@ -115,9 +116,10 @@ class Axis(Recharts):
 
     tick_size: Var[int] = field(doc="The length of tick line. Default: 6")
 
-    tick_formatter: Var[str] = field(
+    tick_formatter: Var[str | FunctionVar] = field(
         doc="A JS function expression that formats the tick value shown in the "
-        'axis, e.g. tick_formatter="(value) => value.toFixed(2)".'
+        'axis, e.g. tick_formatter="(value) => value.toFixed(2)". '
+        "A FunctionVar can also be passed."
     )
 
     min_tick_gap: Var[int] = field(
@@ -143,6 +145,21 @@ class Axis(Recharts):
             tick_formatter = tick_formatter._var_value
         if isinstance(tick_formatter, str):
             props["tick_formatter"] = Var(_js_expr=tick_formatter)
+        elif isinstance(tick_formatter, FunctionVar):
+            props["tick_formatter"] = Var(
+                _js_expr=tick_formatter._js_expr,
+                _var_type=FunctionVar,
+                _var_data=tick_formatter._var_data,
+            )
+        elif isinstance(tick_formatter, Var) and tick_formatter._var_type is str:
+            raise TypeError(
+                "tick_formatter must be a JavaScript function expression, not a "
+                "dynamic string Var. Use FunctionStringVar.create() instead."
+            )
+        elif callable(tick_formatter) and not isinstance(tick_formatter, Var):
+            raise TypeError(
+                "tick_formatter must be a FunctionVar, not a Python callable."
+            )
         return super().create(*children, **props)
 
     stroke: Var[str | Color] = field(
