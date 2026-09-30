@@ -1,0 +1,1 @@
+Add `reflex_base.state`, holding what `rx.State` builds on: `StateNode` (a node of a state tree, with dirty tracking, deltas, locking and pickling), `MutableProxy`, delta building and state tokens. The old import paths `reflex.istate.proxy`, `reflex.istate.delta` and `reflex.istate.manager.token` still work.

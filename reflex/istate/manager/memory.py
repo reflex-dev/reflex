@@ -7,6 +7,7 @@ import time
 from collections.abc import AsyncIterator
 from typing import Any, cast
 
+from reflex_base.state.token import TOKEN_TYPE, BaseStateToken, StateToken
 from typing_extensions import Unpack, override
 
 from reflex.istate.manager import (
@@ -15,7 +16,6 @@ from reflex.istate.manager import (
     _default_token_expiration,
     _release_state_tree,
 )
-from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 
 
 @dataclasses.dataclass

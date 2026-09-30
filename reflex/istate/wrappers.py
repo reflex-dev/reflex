@@ -3,8 +3,8 @@
 from typing import Any
 
 from reflex_base.event.context import EventContext
+from reflex_base.state.token import BaseStateToken
 
-from reflex.istate.manager.token import BaseStateToken
 from reflex.state import BaseState, State, _split_substate_key
 
 

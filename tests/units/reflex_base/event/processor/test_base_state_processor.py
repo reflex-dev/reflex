@@ -19,6 +19,7 @@ from reflex_base.environment import environment
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.registry import RegistrationContext
+from reflex_base.state.token import BaseStateToken
 
 import reflex as rx
 from reflex import event
@@ -28,7 +29,6 @@ from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
-from reflex.istate.manager.token import BaseStateToken
 from reflex.middleware.middleware import Middleware
 from reflex.state import BaseState, OnLoadInternalState, State, StateUpdate
 from tests.units.conftest import metric_points

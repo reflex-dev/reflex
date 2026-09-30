@@ -13,12 +13,12 @@ from importlib.util import find_spec
 from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
-from reflex.istate.manager.token import BaseStateToken
 from reflex.utils import types
 from reflex_base import otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.registry import RegisteredEventHandler
+from reflex_base.state.token import BaseStateToken
 from reflex_base.utils.format import format_event_handler
 
 logger = logging.getLogger(__name__)

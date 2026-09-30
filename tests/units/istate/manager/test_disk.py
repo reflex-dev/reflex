@@ -5,9 +5,9 @@ import os
 from pathlib import Path
 
 import pytest
+from reflex_base.state.token import BaseStateToken, StateToken
 
 from reflex.istate.manager.disk import StateManagerDisk
-from reflex.istate.manager.token import BaseStateToken, StateToken
 from reflex.state import BaseState
 from reflex.utils import prerequisites
 

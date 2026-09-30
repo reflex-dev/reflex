@@ -10,10 +10,10 @@ from typing import TYPE_CHECKING, TypedDict, overload
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.event import Event
+from reflex_base.state.token import TOKEN_TYPE, StateToken
 from reflex_base.utils.exceptions import InvalidStateManagerModeError
 from typing_extensions import ReadOnly, Unpack, deprecated
 
-from reflex.istate.manager.token import TOKEN_TYPE, StateToken
 from reflex.utils import console, prerequisites
 
 logger = logging.getLogger(__name__)
@@ -105,7 +105,8 @@ class StateManager(ABC):
             The coerced StateToken.
         """
         if isinstance(token, str):
-            from reflex.istate.manager.token import BaseStateToken
+            from reflex_base.state.token import BaseStateToken
+
             from reflex.state import State
 
             return BaseStateToken.from_legacy_token(token, root_state=State)  # type: ignore[return-value]

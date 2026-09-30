@@ -48,6 +48,7 @@ from reflex_base.event import (
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
+from reflex_base.state.token import BaseStateToken
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
@@ -80,7 +81,6 @@ from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
 from reflex.istate.data import SessionData
 from reflex.istate.manager import StateManager, StateModificationContext
-from reflex.istate.manager.token import BaseStateToken
 from reflex.route import (
     get_route_args,
     replace_brackets_with_keywords,

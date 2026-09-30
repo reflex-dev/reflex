@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from reflex.istate.delta import _DROP_FROM_DELTA, _resolve_delta
+from reflex_base.state.delta import _DROP_FROM_DELTA, _resolve_delta
 
 
 async def _coro(value: Any) -> Any:  # noqa: RUF029 - a trivial coroutine value for the delta

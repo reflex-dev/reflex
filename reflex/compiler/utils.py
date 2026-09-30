@@ -27,6 +27,7 @@ from reflex_base.components.memo import (
 )
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.registry import RegistrationContext
+from reflex_base.state.delta import _resolve_delta
 from reflex_base.style import Style
 from reflex_base.utils import format, imports, memo_paths, serializers
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
@@ -39,7 +40,6 @@ from reflex_components_core.el.elements.metadata import Head, Link, Meta, Title
 from reflex_components_core.el.elements.other import Html
 from reflex_components_core.el.elements.sectioning import Body
 
-from reflex.istate.delta import _resolve_delta
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.state import BaseState
 from reflex.utils import path_ops

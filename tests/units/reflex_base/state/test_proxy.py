@@ -1,4 +1,4 @@
-"""Tests for reflex.istate.proxy."""
+"""Tests for reflex_base.state.proxy."""
 
 import asyncio
 import dataclasses
@@ -14,13 +14,14 @@ from typing import Any, ClassVar, TypeVar
 import pytest
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event.context import EventContext
+from reflex_base.state.proxy import MutableProxy
+from reflex_base.state.token import BaseStateToken
 from reflex_base.utils.exceptions import ImmutableStateError
+from reflex_base.utils.types import is_mutable_type
 
 import reflex as rx
 from reflex.istate.data import HeaderData, PageData, RouterData
 from reflex.istate.manager import StateManager
-from reflex.istate.manager.token import BaseStateToken
-from reflex.istate.proxy import MutableProxy, is_mutable_type
 from reflex.state import BaseState
 
 T_STATE = TypeVar("T_STATE", bound=BaseState)
@@ -52,7 +53,7 @@ def test_proxy_does_not_import_sqlalchemy() -> None:
             "-c",
             """
 import sys
-from reflex.istate.proxy import is_mutable_type
+from reflex_base.state.proxy import is_mutable_type
 
 assert is_mutable_type(list)
 assert not is_mutable_type(str)
@@ -78,7 +79,7 @@ from pydantic.v1 import BaseModel as LegacyPydanticBase
 from sqlalchemy.orm import DeclarativeBase, DeclarativeBaseNoMeta, declarative_base
 from sqlmodel import SQLModel
 """
-    proxy_import = "from reflex.istate import proxy\n"
+    proxy_import = "from reflex_base.state import proxy\n"
     script = script + proxy_import if models_first else proxy_import + script
     script += """
 class DatabaseBase(DeclarativeBase):

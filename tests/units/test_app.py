@@ -40,6 +40,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.registry import RegistrationContext
+from reflex_base.state.token import BaseStateToken
 from reflex_base.style import Style
 from reflex_base.utils import exceptions, format, memo_paths
 from reflex_base.utils.imports import ImportVar
@@ -83,7 +84,6 @@ from reflex.istate.data import RouterData, URLData
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
-from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.model import Model
 from reflex.state import (

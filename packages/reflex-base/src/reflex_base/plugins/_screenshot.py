@@ -97,8 +97,8 @@ class ScreenshotPlugin(BasePlugin):
 
             from starlette.responses import JSONResponse
 
-            from reflex.istate.manager.token import BaseStateToken
             from reflex.state import State
+            from reflex_base.state.token import BaseStateToken
 
             if not app.event_namespace:
                 return JSONResponse({})

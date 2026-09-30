@@ -5,11 +5,11 @@ from collections.abc import AsyncGenerator
 import pytest
 import pytest_asyncio
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.state.token import BaseStateToken
 
 import reflex as rx
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.redis import StateManagerRedis
-from reflex.istate.manager.token import BaseStateToken
 from reflex.state import BaseState
 
 
