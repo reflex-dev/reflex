@@ -111,18 +111,21 @@ def CondMatchApp():
 
 @pytest.fixture(scope="module")
 def cond_match_app(
+    app_harness_env: type[AppHarness],
     tmp_path_factory: pytest.TempPathFactory,
 ) -> Generator[AppHarness, None, None]:
-    """Create a harness for the cond/match regression app.
+    """Create a dev or prod harness for the cond/match regression app.
 
     Args:
+        app_harness_env: AppHarness (dev) or AppHarnessProd (prod).
         tmp_path_factory: Pytest fixture for creating temporary directories.
 
     Yields:
         Running AppHarness for the test app.
     """
-    with AppHarness.create(
+    with app_harness_env.create(
         root=tmp_path_factory.mktemp("cond_match_app"),
+        app_name=f"condmatchapp_{app_harness_env.__name__.lower()}",
         app_source=CondMatchApp,
     ) as harness:
         yield harness
@@ -165,7 +168,7 @@ def test_cond_and_match_render_only_selected_branch(
 
 
 def test_deep_equals_literals(cond_match_app: AppHarness, page: Page):
-    """Compare nested literals by value while preserving types and array order.
+    """Check key-order independence, nested equality, and booleans versus numbers.
 
     Args:
         cond_match_app: Running harness for the comparison app.
