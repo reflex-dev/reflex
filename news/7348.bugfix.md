@@ -1,0 +1,1 @@
+On Windows, the development backend no longer closes its listening socket twice when it releases the port, which could close another socket that had reused the handle and make it fail with `OSError: [WinError 10038]`.
