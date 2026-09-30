@@ -872,9 +872,9 @@ def test_shutdown_executor_drains_queued_work_and_stops_the_thread():
     done = threading.Event()
     executor = telemetry._get_telemetry_executor()
     executor.submit(done.set)
-    workers = list(executor._threads)  # pyright: ignore[reportAttributeAccessIssue]
+    workers = list(executor._threads)
 
-    telemetry._shutdown_executor()
+    assert telemetry._shutdown_executor()
 
     assert done.is_set()
     assert telemetry._executor is None
@@ -913,7 +913,8 @@ def test_shutdown_executor_gives_up_on_a_stalled_task():
     queued = executor.submit(lambda: None)
     started = time.monotonic()
     try:
-        telemetry._shutdown_executor(timeout=0.05)
+        # The stalled send's thread is still alive, so forking is unsafe.
+        assert not telemetry._shutdown_executor(timeout=0.05)
         elapsed = time.monotonic() - started
     finally:
         release.set()
@@ -926,8 +927,8 @@ def test_shutdown_executor_gives_up_on_a_stalled_task():
 
 def test_shutdown_executor_without_executor_is_a_noop():
     """Nothing to drain when no telemetry was ever sent."""
-    telemetry._shutdown_executor()
-    telemetry._shutdown_executor()
+    assert telemetry._shutdown_executor()
+    assert telemetry._shutdown_executor()
 
     assert telemetry._executor is None
 

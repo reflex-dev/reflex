@@ -1022,28 +1022,36 @@ def set_dev_start_method() -> None:
         multiprocessing.set_start_method(start_method, force=True)
 
 
-def _freeze_for_fork() -> None:
+def _freeze_for_fork() -> bool:
     """Stop the telemetry thread and freeze the heap before forking workers.
 
     Forking while the telemetry thread may hold a lock can deadlock the child.
     Without the freeze, worker GC passes write to the inherited objects'
     headers, which copies the shared pages private again.
+
+    Returns:
+        Whether forking is safe; False when a telemetry thread is still alive.
     """
     import gc
 
     from reflex.utils import telemetry
 
-    telemetry._shutdown_executor()
+    if not telemetry._shutdown_executor():
+        return False
     gc.collect()
     gc.freeze()
+    return True
 
 
-def _preload_for_fork(app_target: str | None) -> None:
+def _preload_for_fork(app_target: str | None) -> bool:
     """Import the app in the supervisor so forked workers share its pages.
 
     Args:
         app_target: The ASGI app target; None means the reflex app, which is
             imported here. Any other target lives in an already-loaded module.
+
+    Returns:
+        Whether forking is safe; False when a telemetry thread is still alive.
     """
     from reflex_base.utils import serializers
 
@@ -1052,7 +1060,7 @@ def _preload_for_fork(app_target: str | None) -> None:
     if app_target is None:
         prerequisites.get_app()
     serializers._prepare_serializers_for_fork()
-    _freeze_for_fork()
+    return _freeze_for_fork()
 
 
 def run_granian_backend_prod(
@@ -1081,9 +1089,10 @@ def run_granian_backend_prod(
     logger.debug("Using Granian for backend")
 
     if (start_method := _backend_start_method()) is not None:
+        if start_method == "fork" and not _preload_for_fork(app_target):
+            logger.debug("A telemetry send is still running; spawning workers.")
+            start_method = "spawn"
         multiprocessing.set_start_method(start_method, force=True)
-        if start_method == "fork":
-            _preload_for_fork(app_target)
 
     class NotifyingGranian(Granian):  # pyright: ignore[reportGeneralTypeIssues]
         """Granian server that reports when its workers have been started."""
