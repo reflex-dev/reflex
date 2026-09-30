@@ -198,53 +198,6 @@ def test_app_history_success(mocker: MockFixture):
     )
 
 
-def test_app_inspect_uses_fold_overflow(mocker: MockFixture):
-    """Keep long values in the human-readable app details table.
-
-    Args:
-        mocker: The pytest-mock fixture.
-    """
-    client = _authed(mocker)
-    client.api.apps.get.return_value = app()
-    mock_print_table = mocker.patch("reflex_cli.utils.console.print_table")
-
-    result = runner.invoke(hosting_cli, ["apps", "inspect", str(_APP_ID)])
-
-    assert result.exit_code == 0, result.output
-    assert mock_print_table.call_args.kwargs["overflow"] == "fold"
-
-
-def test_app_inspect_renders_full_app_id_at_narrow_width(mocker: MockFixture):
-    """Preserve a long app ID in the rendered inspect table.
-
-    Args:
-        mocker: The pytest-mock fixture.
-    """
-    client = _authed(mocker)
-    app_id = uuid.UUID("7fb2de10-2e8d-48bd-9c79-a98b3f52e10f")
-    client.api.apps.get.return_value = app(id=app_id)
-    output = StringIO()
-    narrow_console = Console(file=output, width=40)
-    for console_module in ("reflex_base.utils.console", "reflex_cli.utils.console"):
-        mocker.patch(f"{console_module}._console", narrow_console, create=True)
-        mocker.patch(f"{console_module}._console_stderr", narrow_console, create=True)
-    for log_module in ("reflex_base.utils.log", "reflex_cli.utils.log"):
-        mocker.patch(f"{log_module}.is_json_mode", return_value=False, create=True)
-        mocker.patch(
-            f"{log_module}.is_stdout_reserved", return_value=False, create=True
-        )
-
-    result = runner.invoke(hosting_cli, ["apps", "inspect", str(app_id)])
-
-    assert result.exit_code == 0, result.output
-    rendered_hex = "".join(
-        character
-        for character in output.getvalue().lower()
-        if character in "0123456789abcdef"
-    )
-    assert app_id.hex in rendered_hex
-
-
 def test_app_history_as_json(mocker: MockFixture):
     """Test retrieving deployment history with JSON output."""
     client = _authed(mocker)
@@ -943,30 +896,77 @@ def test_list_apps_with_project(mocker: MockFixture):
     )
 
 
-def test_list_apps_renders_full_app_id_on_one_line(mocker: MockFixture):
-    """Keep app IDs copyable in the human-readable list output.
+_LONG_ID = uuid.UUID("7fb2de10-2e8d-48bd-9c79-a98b3f52e10f")
+
+_TABLE_COMMANDS = {
+    "list": (["apps", "list", "--project", "project123"], ["id", "name"]),
+    "inspect": (["apps", "inspect", str(_LONG_ID)], ["id", "name"]),
+    "history": (["apps", "history", str(_LONG_ID)], ["id", "status"]),
+}
+
+
+@pytest.fixture
+def table_client(mocker: MockFixture):
+    """Serve one app and one deployment, both identified by a full-length UUID.
 
     Args:
         mocker: The pytest-mock fixture.
+
+    Returns:
+        The client every command under test will receive.
     """
     client = _authed(mocker)
-    app_id = uuid.UUID("7fb2de10-2e8d-48bd-9c79-a98b3f52e10f")
-    client.api.apps.list.return_value = [app_summary("App1", id=app_id)]
-    output = StringIO()
-    narrow_console = Console(file=output, width=80)
-    for console_module in ("reflex_base.utils.console", "reflex_cli.utils.console"):
-        mocker.patch(f"{console_module}._console", narrow_console, create=True)
-        mocker.patch(f"{console_module}._console_stderr", narrow_console, create=True)
-    for log_module in ("reflex_base.utils.log", "reflex_cli.utils.log"):
-        mocker.patch(f"{log_module}.is_json_mode", return_value=False, create=True)
-        mocker.patch(
-            f"{log_module}.is_stdout_reserved", return_value=False, create=True
-        )
+    client.api.apps.list.return_value = [app_summary("App1", id=_LONG_ID)]
+    client.api.apps.get.return_value = app(id=_LONG_ID)
+    client.api.apps.history.return_value = [deployment_record(id=_LONG_ID)]
+    return client
 
-    result = runner.invoke(hosting_cli, ["apps", "list", "--project", "project123"])
+
+@pytest.mark.parametrize("command", _TABLE_COMMANDS)
+def test_app_tables_render_full_id_on_one_line(
+    table_client, mocker: MockFixture, command: str
+):
+    """Keep IDs copyable in the human-readable tables of an 80-column terminal.
+
+    Args:
+        table_client: The client serving the app and its deployment.
+        mocker: The pytest-mock fixture.
+        command: The command under test.
+    """
+    output = StringIO()
+    mocker.patch("reflex_base.utils.console._console", Console(file=output, width=80))
+
+    result = runner.invoke(hosting_cli, _TABLE_COMMANDS[command][0])
 
     assert result.exit_code == 0, result.output
-    assert any(str(app_id) in line for line in output.getvalue().splitlines())
+    assert any(str(_LONG_ID) in line for line in output.getvalue().splitlines())
+
+
+@pytest.mark.parametrize("command", _TABLE_COMMANDS)
+def test_app_tables_json_log_mode_emit_one_table(
+    table_client, monkeypatch: pytest.MonkeyPatch, command: str
+):
+    """Emit one row per record under the record's own keys in JSON log mode.
+
+    Args:
+        table_client: The client serving the app and its deployment.
+        monkeypatch: The pytest monkeypatch fixture.
+        command: The command under test.
+    """
+    monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+    args, leading_headers = _TABLE_COMMANDS[command]
+
+    result = runner.invoke(hosting_cli, args)
+
+    assert result.exit_code == 0, result.output
+    tables = [
+        record["table"]
+        for line in result.output.splitlines()
+        if line.startswith("{") and "table" in (record := json.loads(line))
+    ]
+    assert len(tables) == 1
+    assert tables[0]["headers"][:2] == leading_headers
+    assert tables[0]["rows"][0][0] == str(_LONG_ID)
 
 
 def test_list_apps_json_output(mocker: MockFixture):

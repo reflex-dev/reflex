@@ -31,6 +31,28 @@ def apps_cli():
     """Commands for managing apps."""
 
 
+def _print_records(records: list[dict[str, Any]]) -> None:
+    """Print each record as a field/value table, so long values such as IDs stay whole.
+
+    JSON log mode keeps one table of all records, one row per record.
+
+    Args:
+        records: The records to print, all with the same keys.
+    """
+    if log.is_json_mode():
+        console.print_table(
+            [[str(value) for value in record.values()] for record in records],
+            headers=list(records[0]),
+        )
+        return
+    for record in records:
+        console.print_table(
+            [[key, str(value)] for key, value in record.items()],
+            headers=["field", "value"],
+            overflow="fold",
+        )
+
+
 def _resolve_app_id(
     app_id: str | None,
     app_name: str | None,
@@ -153,9 +175,7 @@ def app_history(
             print_json(history)
             return
         if history:
-            for deployment in history:
-                table = [[key, str(value)] for key, value in deployment.items()]
-                console.print_table(table, headers=["field", "value"], overflow="fold")
+            _print_records(history)
         else:
             console.print(str(history))
 
@@ -807,9 +827,7 @@ def list_apps(
         print_json(deployments)
         return
     if deployments:
-        for deployment in deployments:
-            table = [[key, str(value)] for key, value in deployment.items()]
-            console.print_table(table, headers=["field", "value"], overflow="fold")
+        _print_records(deployments)
     else:
         console.print(str(deployments))
 
@@ -970,8 +988,4 @@ def inspect_app(
             print_json(app_info)
             return
 
-        console.print_table(
-            [[str(key), str(value)] for key, value in app_info.items()],
-            headers=["field", "value"],
-            overflow="fold",
-        )
+        _print_records([app_info])
