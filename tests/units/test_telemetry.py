@@ -1,9 +1,11 @@
 import asyncio
 import importlib.metadata
 import json
+import os
 import sys
 import threading
 import uuid
+import warnings
 from types import SimpleNamespace
 
 import pytest
@@ -826,6 +828,63 @@ def test_executor_is_recreated_after_fork():
     fresh = telemetry._get_telemetry_executor()
     assert fresh is not inherited
     assert fresh.submit(lambda: 1).result(timeout=5) == 1
+
+
+def test_executor_lock_is_recreated_after_fork():
+    """A lock held by another thread at fork time does not block the child."""
+    held = telemetry._executor_lock
+    held.acquire()
+    try:
+        telemetry._reset_executor_after_fork()
+    finally:
+        held.release()
+
+    assert telemetry._executor_lock is not held
+    assert not telemetry._executor_lock.locked()
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is POSIX-only")
+def test_forked_child_starts_with_fresh_executor_state():
+    """The at-fork hook is registered and runs in a real forked child."""
+    telemetry._get_telemetry_executor()
+    with warnings.catch_warnings():
+        # The telemetry worker thread is alive, which is the point of the test.
+        warnings.simplefilter("ignore", DeprecationWarning)
+        with telemetry._executor_lock:
+            pid = os.fork()
+            if pid == 0:
+                clean = (
+                    telemetry._executor is None
+                    and not telemetry._executor_lock.locked()
+                )
+                os._exit(0 if clean else 1)
+    _, status = os.waitpid(pid, 0)
+    assert os.waitstatus_to_exitcode(status) == 0
+
+
+def test_shutdown_executor_drains_queued_work_and_stops_the_thread():
+    """Queued events are delivered and no telemetry thread survives the call."""
+    done = threading.Event()
+    executor = telemetry._get_telemetry_executor()
+    executor.submit(done.set)
+
+    telemetry._shutdown_executor()
+
+    assert done.is_set()
+    assert telemetry._executor is None
+    assert not any(
+        thread.name.startswith("reflex-telemetry") for thread in threading.enumerate()
+    )
+    # The next send lazily starts a new worker.
+    assert telemetry._get_telemetry_executor().submit(lambda: 1).result(5) == 1
+
+
+def test_shutdown_executor_without_executor_is_a_noop():
+    """Nothing to drain when no telemetry was ever sent."""
+    telemetry._shutdown_executor()
+    telemetry._shutdown_executor()
+
+    assert telemetry._executor is None
 
 
 def test_send_event_posts_json_without_httpx(mocker: MockerFixture):

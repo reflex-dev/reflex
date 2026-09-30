@@ -19,7 +19,7 @@ from reflex_base.environment import environment
 from reflex_base.utils import serializers
 
 from reflex.utils import exec as exec_utils
-from reflex.utils import prerequisites
+from reflex.utils import prerequisites, telemetry
 
 DEV_BACKEND_RELOAD_ENV_NAME = environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
 
@@ -404,8 +404,12 @@ def _fake_granian_prod(mocker: MockerFixture, calls: list[str]):
         def __init__(self, *_args, **_kwargs):
             pass
 
+        def startup(self, *_args):
+            calls.append("workers")
+
         def serve(self):
             calls.append("serve")
+            self.startup(None, None)
 
     mocker.patch.object(granian_server, "Server", FakeGranian)
     mocker.patch.object(
@@ -420,22 +424,45 @@ def _fake_granian_prod(mocker: MockerFixture, calls: list[str]):
     mocker.patch.object(
         prerequisites, "get_app", side_effect=lambda: calls.append("preload")
     )
+    mocker.patch.object(
+        serializers,
+        "_prepare_serializers_for_fork",
+        side_effect=lambda: calls.append("serializers"),
+    )
+    mocker.patch.object(
+        telemetry, "_shutdown_executor", side_effect=lambda: calls.append("drain")
+    )
     mocker.patch.object(gc, "freeze", side_effect=lambda: calls.append("freeze"))
 
 
 def test_run_granian_backend_prod_preloads_app_before_forking(
     mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
 ):
-    """With fork, the app is imported and the heap frozen before workers start."""
+    """With fork, the app is imported, telemetry drained and the heap frozen first.
+
+    ``on_started`` runs only once the workers have been started.
+    """
     monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
     calls: list[str] = []
     _fake_granian_prod(mocker, calls)
 
     exec_utils.run_granian_backend_prod(
-        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+        host="0.0.0.0",
+        port=8000,
+        loglevel=exec_utils.LogLevel.INFO,
+        on_started=lambda: calls.append("started"),
     )
 
-    assert calls == ["start:fork", "preload", "freeze", "serve"]
+    assert calls == [
+        "start:fork",
+        "preload",
+        "serializers",
+        "drain",
+        "freeze",
+        "serve",
+        "workers",
+        "started",
+    ]
 
 
 def test_run_granian_backend_prod_spawn_skips_preload(
@@ -450,7 +477,7 @@ def test_run_granian_backend_prod_spawn_skips_preload(
         host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
     )
 
-    assert calls == ["start:spawn", "serve"]
+    assert calls == ["start:spawn", "serve", "workers"]
 
 
 def test_run_granian_backend_prod_custom_target_only_freezes(
@@ -468,7 +495,65 @@ def test_run_granian_backend_prod_custom_target_only_freezes(
         app_target="reflex.utils.exec:_frontend_prod_app",
     )
 
-    assert calls == ["start:fork", "freeze", "serve"]
+    assert calls == ["start:fork", "serializers", "drain", "freeze", "serve", "workers"]
+
+
+@pytest.mark.parametrize("use_granian", [True, False])
+def test_run_backend_prod_forwards_on_started(mocker: MockerFixture, use_granian: bool):
+    """The prod backend hands ``on_started`` to whichever server it runs."""
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=use_granian)
+    launcher = mocker.patch.object(
+        exec_utils,
+        "run_granian_backend_prod" if use_granian else "run_uvicorn_backend_prod",
+    )
+    on_started = mocker.Mock()
+
+    exec_utils.run_backend_prod(
+        "0.0.0.0", 8000, exec_utils.LogLevel.INFO, on_started=on_started
+    )
+
+    launcher.assert_called_once_with(
+        "0.0.0.0", 8000, exec_utils.LogLevel.INFO, on_started=on_started
+    )
+
+
+@pytest.mark.parametrize("use_granian", [True, False])
+def test_run_frontend_prod_forwards_on_started(
+    mocker: MockerFixture, use_granian: bool
+):
+    """The prod frontend server hands ``on_started`` to its launcher."""
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=use_granian)
+    launcher = mocker.patch.object(
+        exec_utils,
+        "run_granian_backend_prod" if use_granian else "run_uvicorn_backend_prod",
+    )
+    on_started = mocker.Mock()
+
+    exec_utils.run_frontend_prod("0.0.0.0", 3000, on_started=on_started)
+
+    assert launcher.call_args.kwargs["on_started"] is on_started
+
+
+def test_run_uvicorn_backend_prod_calls_on_started_before_launch(
+    mocker: MockerFixture,
+):
+    """The server runs in a separate interpreter, so the callback runs first."""
+    calls: list[str] = []
+    mocker.patch.object(exec_utils, "_get_backend_workers", return_value=1)
+    mocker.patch(
+        "reflex.utils.processes.new_process",
+        side_effect=lambda *_args, **_kwargs: calls.append("launch"),
+    )
+
+    exec_utils.run_uvicorn_backend_prod(
+        "0.0.0.0",
+        8000,
+        exec_utils.LogLevel.INFO,
+        app_target="app:app",
+        on_started=lambda: calls.append("started"),
+    )
+
+    assert calls == ["started", "launch"]
 
 
 @pytest.mark.parametrize(
