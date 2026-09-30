@@ -70,6 +70,12 @@ def worker(factory: async_sessionmaker[AsyncSession]):
             cls for cls in REGISTRY.values() if cls.__module__.startswith("examples.")
         ],
         poll_interval=datetime.timedelta(milliseconds=100),
+        # These tests write rows straight into the tables, which announces
+        # nothing, so such a row waits out whatever sleep the worker had already
+        # settled into. Left at the default that is thirty seconds against a
+        # thirty-second bound in the tests, and which arrives first is a race --
+        # measured at 27.6s for one row, and 0.1s with this set.
+        max_idle_interval=datetime.timedelta(milliseconds=100),
         lease=datetime.timedelta(seconds=5),
         # One worker here serves every lane the examples declare.
         lanes=[DEFAULT_LANE, MEDIA],
