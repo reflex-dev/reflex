@@ -363,6 +363,27 @@ def _drive_prod(harness, page, expect) -> None:
         print("GET / enc", enc, "->", r.status, r.headers.get("Content-Encoding"))
 
 
+def _isolate_db(root: Path) -> Path:
+    """Point the app databases at a fresh sqlite file under ``root``.
+
+    Explicit ``REFLEX_DB_URL``/``REFLEX_ASYNC_DB_URL`` settings are kept, and
+    only the audit's own file is removed, never a ``reflex.db`` in the cwd.
+
+    Args:
+        root: The audit's working directory.
+
+    Returns:
+        The path of the audit database.
+    """
+    db_path = (root / "reflex.db").resolve()
+    db_path.unlink(missing_ok=True)
+    os.environ.setdefault("REFLEX_DB_URL", f"sqlite:///{db_path.as_posix()}")
+    os.environ.setdefault(
+        "REFLEX_ASYNC_DB_URL", f"sqlite+aiosqlite:///{db_path.as_posix()}"
+    )
+    return db_path
+
+
 def main() -> None:
     """Run the audit."""
     parser = argparse.ArgumentParser()
@@ -374,9 +395,7 @@ def main() -> None:
     tag = "prod" if args.prod else mode
     report_path = args.report or args.root / f"report_{tag}.txt"
     args.root.mkdir(parents=True, exist_ok=True)
-    os.environ.setdefault("REFLEX_DB_URL", "sqlite:///reflex.db")
-    os.environ.setdefault("REFLEX_ASYNC_DB_URL", "sqlite+aiosqlite:///reflex.db")
-    Path("reflex.db").unlink(missing_ok=True)
+    _isolate_db(args.root)
 
     activate()
     from playwright.sync_api import expect, sync_playwright
