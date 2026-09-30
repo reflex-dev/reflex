@@ -28,9 +28,7 @@ class SimpleIcon(rx.Component):
         Returns:
             The component instance.
         """
-        instance = super().create(**props)
-        instance.tag = icon_name
-        return instance
+        return super().create(**props).copy_with(tag=icon_name)
 
     def add_imports(self):
         """Add the specific icon import.

@@ -44,11 +44,13 @@ class Clipboard(Fragment):
         """
         if "targets" not in props:
             # Add all children as targets if not specified.
-            targets = props.setdefault("targets", [])
-            for c in children:
-                if c.id is None:
-                    c.id = f"clipboard_{get_unique_variable_name()}"
-                targets.append(c.id)
+            children = tuple(
+                child.copy_with(id=f"clipboard_{get_unique_variable_name()}")
+                if child.id is None
+                else child
+                for child in children
+            )
+            props["targets"] = [child.id for child in children]
 
         if "on_paste" in props:
             # Capture the event actions for the on_paste handler if not specified.
