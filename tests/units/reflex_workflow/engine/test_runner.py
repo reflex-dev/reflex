@@ -3729,26 +3729,28 @@ async def test_waiting_for_a_pass_gives_up_rather_than_hanging():
 async def test_wake_tells_the_callers_past_the_cap_to_get_on_with_it(
     session_factory, monkeypatch
 ):
-    # The cap read directly rather than raced up to with a crowd of tasks: what
-    # is worth pinning is what a caller past it is told, not how quickly asyncio
-    # schedules twelve coroutines.
-    monkeypatch.setattr(runner, "_waiting", runner.WAITERS)
-    rt = runtime.current()
-    rt.wake.clear()
-    seen = rt.settled.passes
+    # A worker of this test's own, like the other wake tests: the count below is
+    # set rather than raced up to with a crowd of tasks, since what is worth
+    # pinning is what a caller past the cap is told and not how quickly asyncio
+    # schedules coroutines.
+    async with only_worker(session_factory):
+        rt = runtime.current()
+        rt.wake.clear()
+        monkeypatch.setattr(runner, "_waiting", runner.WAITERS)
 
-    # Not queued behind callers asking for the same thing, and not told the
-    # worker caught up either: it watched nothing, and a caller that let the
-    # machine stop on that would strand the work.
-    assert await runner.wake(datetime.timedelta(seconds=10)) is False
-    # Still asked the worker to look, which is the half it can honestly do.
-    assert rt.wake.is_set()
-    assert rt.settled.passes == seen
+        # Not queued behind callers asking for the same thing, and not told the
+        # worker caught up either: it watched nothing, and a caller that let the
+        # machine stop on that would strand the work.
+        assert await runner.wake(datetime.timedelta(seconds=10)) is False
+        # Returned without joining the wait, which is the point of the cap.
+        assert runner._waiting == runner.WAITERS
+        # Still asked the worker to look, which is the half it can honestly do.
+        assert rt.wake.is_set()
 
-    # Under the cap the same call waits for a pass and gets one, so the false
-    # above is the cap talking rather than anything else.
-    monkeypatch.setattr(runner, "_waiting", 0)
-    assert await runner.wake(datetime.timedelta(seconds=30)) is True
+        # Under the cap the same call waits for a pass and gets one, so the
+        # false above is the cap talking rather than anything else.
+        monkeypatch.setattr(runner, "_waiting", 0)
+        assert await runner.wake(datetime.timedelta(seconds=30)) is True
 
 
 async def test_a_table_that_cannot_be_asked_does_not_decide_the_wait(session_factory):
