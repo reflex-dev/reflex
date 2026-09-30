@@ -1,5 +1,7 @@
 # Reflex Docs
 
+Run the docs app with **Python 3.11+**. The XY demonstrations require it; the conditional XY dependency keeps the shared workspace resolvable for the framework's Python 3.10 tests.
+
 ## Getting Started
 
 1. Install dependencies:
@@ -19,6 +21,12 @@ uv run reflex run
 ## Editing Docs
 
 Markdown docs live in the parent `docs/` directory (one level above `app/`). Edit any `.md` file there and the dev server will pick up the changes so you can preview them live in the app.
+
+Ordinary Markdown pages may set a descriptive `title` and `meta_description` in
+YAML frontmatter. The title supplies the page's search/browser title; it does not
+change the file-derived route or the short navigation label. Add new guides to
+the appropriate sidebar and link them from related pages so readers can find them.
+For component-library pages, the frontmatter title also supplies the sidebar label.
 
 ## Page Whitelist (Faster Dev Builds)
 

@@ -16,11 +16,17 @@ from types import MethodType
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, SupportsIndex, TypeVar, cast
 
 import wrapt
+from reflex_base import constants
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
 from reflex_base.utils.exceptions import ImmutableStateError
 from reflex_base.utils.serializers import can_serialize, serialize, serializer
-from reflex_base.vars.base import Var
+from reflex_base.utils.types import (
+    _MUTABLE_BUILTIN_TYPES,
+    _MUTABLE_MODEL_BASES,
+    is_mutable_type,
+)
+from reflex_base.vars.base import Field
 from typing_extensions import Self
 
 from reflex.istate.manager.token import BaseStateToken
@@ -72,6 +78,48 @@ def _dataclass_proxy_namespace(wrapped_cls: type) -> dict[str, Any]:
         # `__match_args__` under `@dataclass(match_args=False)`.
         if attr not in instance_fields and hasattr(wrapped_cls, attr)
     }
+
+
+def _is_ancestor(obj: Any, state: BaseState) -> bool:
+    """Whether an object is an ancestor of a state in its tree.
+
+    Args:
+        obj: The object.
+        state: The state.
+
+    Returns:
+        True if the object is a parent, grandparent, etc. of the state.
+    """
+    parent = state.parent_state
+    while parent is not None:
+        if parent is obj:
+            return True
+        parent = parent.parent_state
+    return False
+
+
+def _call_on_ancestor(
+    proxy: StateProxy, func: Callable, owner: type, /, *args: Any, **kwargs: Any
+) -> Any:
+    """Call an inherited event handler on the ancestor declaring it.
+
+    The ancestor is found when called, in the tree the proxy wraps then: entering
+    the proxy may have reloaded the tree since the handler was accessed.
+
+    Args:
+        proxy: The proxy the handler was accessed through.
+        func: The function of the handler.
+        owner: The class of the ancestor declaring the handler.
+        *args: The positional arguments of the call.
+        **kwargs: The keyword arguments of the call.
+
+    Returns:
+        The return value of the handler.
+    """
+    ancestor = proxy.__wrapped__.parent_state
+    while type(ancestor) is not owner:
+        ancestor = ancestor.parent_state
+    return func(type(proxy)(ancestor, parent_state_proxy=proxy), *args, **kwargs)
 
 
 class StateProxy(wrapt.ObjectProxy):
@@ -165,16 +213,12 @@ class StateProxy(wrapt.ObjectProxy):
             ImmutableStateError: If the state is already mutable.
         """
         if self._self_parent_state_proxy is not None:
-            from reflex.state import State
-
             parent_state = (
                 await self._self_parent_state_proxy.__aenter__()
             ).__wrapped__
             super().__setattr__(
                 "__wrapped__",
-                await parent_state.get_state(
-                    State.get_class_substate(self._self_substate_path)
-                ),
+                await parent_state.get_state(self._self_substate_token.cls),
             )
             self._self_entered_context = True
             return self
@@ -267,6 +311,19 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             ImmutableStateError: If the state is not in mutable mode.
         """
+        if name == constants.ROUTER:
+            from reflex.state import _router_fget
+
+            # Router fields belong to the root. A linked proxy keeps their dirty
+            # tracking there while enforcing the calling proxy's mutation guard.
+            root_state = self.__wrapped__._get_root_state()
+            router_proxy = (
+                self
+                if root_state is self.__wrapped__
+                else type(self)(root_state, parent_state_proxy=self)
+            )
+            return _router_fget(cast("BaseState", router_proxy))
+
         if name in ["substates", "parent_state"] and not self._is_mutable():
             msg = (
                 "Background task StateProxy is immutable outside of a context "
@@ -276,25 +333,29 @@ class StateProxy(wrapt.ObjectProxy):
 
         value = super().__getattr__(name)  # pyright: ignore[reportAttributeAccessIssue]
         if not name.startswith("_self_") and isinstance(value, MutableProxy):
-            # ensure mutations to these containers are blocked unless proxy is _mutable
+            # Ensure mutations to these containers are blocked unless proxy is
+            # mutable. An inherited field lives on an ancestor state: proxy
+            # that one, linked to this proxy for mutability.
+            owner = value._self_state
             return ImmutableMutableProxy(
                 wrapped=value.__wrapped__,
-                # The proxy stands in for the wrapped state, and is passed
-                # deliberately so mutability is still gated on this proxy.
-                state=cast("BaseState", self),
+                state=cast(
+                    "BaseState",
+                    self
+                    if owner is self.__wrapped__
+                    else type(self)(owner, parent_state_proxy=self),
+                ),
                 field_name=value._self_field_name,
             )
-        if isinstance(value, functools.partial) and value.args[0] is self.__wrapped__:
-            # Rebind event handler to the proxy instance
-            value = functools.partial(
-                value.func,
-                self,
-                *value.args[1:],
-                **value.keywords,
-            )
-        if isinstance(value, MethodType) and value.__self__ is self.__wrapped__:
-            # Rebind methods to the proxy instance
-            value = type(value)(value.__func__, self)
+        if isinstance(value, MethodType):
+            if value.__self__ is self.__wrapped__:
+                # Rebind methods and event handlers to the proxy instance
+                value = type(value)(value.__func__, self)
+            elif _is_ancestor(value.__self__, self.__wrapped__):
+                # An inherited event handler runs on the ancestor declaring it.
+                value = functools.partial(
+                    _call_on_ancestor, self, value.__func__, type(value.__self__)
+                )
         return value
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -309,11 +370,12 @@ class StateProxy(wrapt.ObjectProxy):
         Raises:
             ImmutableStateError: If the state is not in mutable mode.
         """
+        from reflex.state import BaseState
+
         if (
             name.startswith("_self_")  # wrapper attribute
             or self._is_mutable()  # lock held
-            # non-persisted state attribute
-            or name in self.__wrapped__.get_skip_vars()
+            or name in BaseState.__slots__  # bookkeeping, never persisted
         ):
             super().__setattr__(name, value)
             return
@@ -414,18 +476,6 @@ class ReadOnlyStateProxy(StateProxy):
         """
         msg = "This is a read-only state proxy."
         raise NotImplementedError(msg)
-
-
-_MUTABLE_BUILTIN_TYPES = (
-    list,
-    dict,
-    set,
-)
-
-_MUTABLE_MODEL_BASES = (
-    ("sqlalchemy.orm.decl_api", "DeclarativeBase"),
-    ("pydantic.main", "BaseModel"),
-)
 
 
 def __getattr__(name: str) -> Any:
@@ -649,6 +699,14 @@ class MutableProxy(wrapt.ObjectProxy):
         finally:
             self._self_actx_state = None
 
+    def _dirty_state(self) -> BaseState:
+        """Get the state whose field changes along with the wrapped object.
+
+        Returns:
+            The state instance holding the field.
+        """
+        return self._self_state
+
     def _mark_dirty(
         self,
         wrapped: Callable | None = None,
@@ -656,7 +714,7 @@ class MutableProxy(wrapt.ObjectProxy):
         args: tuple = (),
         kwargs: dict | None = None,
     ) -> Any:
-        """Mark the state as dirty, then call a wrapped function.
+        """Mark the field dirty, then call a wrapped function.
 
         Intended for use with `FunctionWrapper` from the `wrapt` library.
 
@@ -669,8 +727,8 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The result of the wrapped function.
         """
-        self._self_state.dirty_vars.add(self._self_field_name)
-        self._self_state._mark_dirty()
+        state = self._dirty_state()
+        type(state).__fields__[self._self_field_name]._mark_dirty(state)
         if wrapped is not None:
             return wrapped(*args, **(kwargs or {}))
         return None
@@ -986,59 +1044,23 @@ class ImmutableMutableProxy(MutableProxy):
     # Ensure that recursively wrapped proxies use ImmutableMutableProxy as base.
     __base_proxy__ = "ImmutableMutableProxy"
 
-    def _mark_dirty(
-        self,
-        wrapped: Callable | None = None,
-        instance: BaseState | None = None,
-        args: tuple = (),
-        kwargs: dict | None = None,
-    ) -> Any:
-        """Raise an exception when an attempt is made to modify the object.
-
-        Intended for use with `FunctionWrapper` from the `wrapt` library.
-
-        Args:
-            wrapped: The wrapped function.
-            instance: The instance of the wrapped function.
-            args: The args for the wrapped function.
-            kwargs: The kwargs for the wrapped function.
+    def _dirty_state(self) -> BaseState:
+        """Get the state holding the field, if the StateProxy is mutable.
 
         Returns:
-            The result of the wrapped function.
+            The state instance behind the StateProxy.
 
         Raises:
             ImmutableStateError: if the StateProxy is not mutable.
         """
-        if not self._self_state._is_mutable():  # pyright: ignore[reportAttributeAccessIssue]
+        state = cast("StateProxy", self._self_state)
+        if not state._is_mutable():
             msg = (
                 "Background task StateProxy is immutable outside of a context "
                 "manager. Use `async with self` to modify state."
             )
             raise ImmutableStateError(msg)
-        return super()._mark_dirty(
-            wrapped=wrapped, instance=instance, args=args, kwargs=kwargs
-        )
+        return state.__wrapped__
 
 
-@functools.lru_cache(maxsize=1024)
-def is_mutable_type(type_: type) -> bool:
-    """Check if a type is mutable and should be wrapped.
-
-    Args:
-        type_: The type to check.
-
-    Returns:
-        Whether the type is mutable and should be wrapped.
-    """
-    if issubclass(type_, _MUTABLE_BUILTIN_TYPES) or (
-        dataclasses.is_dataclass(type_) and not issubclass(type_, Var)
-    ):
-        return True
-    # A model's defining module is already loaded before its subclasses exist.
-    # Read its namespace directly so lazy module attributes cannot load packages.
-    for module_name, base_name in _MUTABLE_MODEL_BASES:
-        if (module := sys.modules.get(module_name)) is not None:
-            base = vars(module).get(base_name)
-            if base is not None and issubclass(type_, base):
-                return True
-    return False
+Field._proxy = MutableProxy

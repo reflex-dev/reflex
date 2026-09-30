@@ -2,9 +2,8 @@ import logging
 import os
 import typing
 from collections.abc import Mapping, Sequence
-from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, List, Literal, NoReturn  # noqa: UP035
+from typing import Any, List, Literal, NoReturn  # noqa: UP035
 
 import pytest
 from packaging import version
@@ -227,53 +226,6 @@ def test_remove_existing_bun_installation(mocker: MockerFixture):
 
     js_runtimes.remove_existing_bun_installation()
     rm.assert_called_once()
-
-
-@pytest.fixture
-def test_backend_variable_cls():
-    class TestBackendVariable(BaseState):
-        """Test backend variable."""
-
-        _classvar: ClassVar[int] = 0
-        _hidden: int = 0
-        not_hidden: int = 0
-        __dunderattr__: int = 0
-
-        @classmethod
-        def _class_method(cls):
-            pass
-
-        def _hidden_method(self):
-            pass
-
-        @property
-        def _hidden_property(self):
-            pass
-
-        @cached_property
-        def _cached_hidden_property(self):
-            pass
-
-    return TestBackendVariable
-
-
-@pytest.mark.parametrize(
-    ("input", "output"),
-    [
-        ("_classvar", False),
-        ("_class_method", False),
-        ("_hidden_method", False),
-        ("_hidden", True),
-        ("not_hidden", False),
-        ("__dundermethod__", False),
-        ("_hidden_property", False),
-        ("_cached_hidden_property", False),
-    ],
-)
-def test_is_backend_base_variable(
-    test_backend_variable_cls: type[BaseState], input: str, output: bool
-):
-    assert types.is_backend_base_variable(input, test_backend_variable_cls) == output
 
 
 @pytest.mark.parametrize(

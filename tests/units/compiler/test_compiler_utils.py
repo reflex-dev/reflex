@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import asyncio
+from copy import deepcopy
 
 import pytest
+from reflex_base import constants
+from reflex_base.components.memo import create_passthrough_component_memo
 from reflex_base.registry import RegistrationContext
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.base.script import Script
 from reflex_components_core.el.elements.metadata import Link
+from reflex_components_core.el.elements.typography import Div
 
 from reflex.compiler import utils
 from reflex.compiler.utils import compile_state, create_document_root
@@ -15,6 +19,25 @@ from reflex.constants.state import FIELD_MARKER
 from reflex.state import State
 from reflex.utils.path_ops import write_file
 from reflex.vars.base import computed_var
+
+
+def test_memo_root_prop_forwarding_preserves_cached_analysis() -> None:
+    """Repeated emission of shared memo bodies must not accumulate prop merges."""
+    with RegistrationContext.ensure_context().fork() as context:
+        _, first = create_passthrough_component_memo(Div.create("first", id="root"))
+        _, second = create_passthrough_component_memo(Div.create("second", id="root"))
+        assert first.export_name == second.export_name
+        analysis = context._memo_body_analyses[
+            first.component.__dict__["_memo_analysis_key"]
+        ]
+        original_render = deepcopy(analysis.rendered)
+
+        for definition in (first, first, second):
+            compiled, _ = utils.compile_experimental_component_memo(definition)
+            props = ", ".join(compiled["render"]["props"])
+            assert props.count("mergeSlotProps(") == 1
+            assert "ref:ref_root" in props
+            assert analysis.rendered == original_render
 
 
 def test_write_file_reexport() -> None:
@@ -104,18 +127,48 @@ def test_restore_bundled_libraries_ignores_missing_artifact(
     utils._restore_bundled_libraries()
 
 
-def test_document_preloads_the_global_stylesheet():
-    """Render-blocking CSS should be discoverable alongside early resource hints."""
+def _global_stylesheet_links() -> list[list[str]]:
+    """Render the framework link tags of a fresh document head.
+
+    Returns:
+        The rendered props of every ``Link`` in the head.
+    """
     head = create_document_root().children[0]
-    links = [
+    return [
         child.render()["props"] for child in head.children if isinstance(child, Link)
     ]
+
+
+def test_document_preloads_the_global_stylesheet_in_prod(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Production builds hint the render-blocking CSS ahead of the stylesheet link.
+
+    Args:
+        monkeypatch: Selects prod mode and restores the previous mode afterwards.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.PROD.value)
+    links = _global_stylesheet_links()
     preload = next(props for props in links if 'rel:"preload"' in props)
     stylesheet = next(props for props in links if 'rel:"stylesheet"' in props)
     assert next(prop for prop in preload if prop.startswith("href:")) == next(
         prop for prop in stylesheet if prop.startswith("href:")
     )
     assert 'as:"style"' in preload
+
+
+def test_document_does_not_preload_the_global_stylesheet_in_dev(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Dev builds link the stylesheet once so Vite's css-update swaps that link.
+
+    Args:
+        monkeypatch: Selects dev mode and restores the previous mode afterwards.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
+    links = _global_stylesheet_links()
+    assert not any('rel:"preload"' in props for props in links)
+    assert sum('rel:"stylesheet"' in props for props in links) == 1
 
 
 class CompileStateState(State):
