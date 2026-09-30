@@ -203,6 +203,17 @@ def test_logout(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
     assert _log_messages(caplog, SUCCESS) == ["Successfully logged out."]
 
 
+@pytest.fixture(autouse=True)
+def _isolate_badge_setting(monkeypatch: pytest.MonkeyPatch):
+    """Keep the badge setting a deploy persists in the environment out of other tests.
+
+    Args:
+        monkeypatch: Fixture that removes the variable again after the test.
+    """
+    # Set (not deleted) so monkeypatch removes what the deploy persists.
+    monkeypatch.setenv("REFLEX_SHOW_BUILT_WITH_REFLEX", "")
+
+
 @pytest.fixture
 def mock_export_fn():
     rx_version = version.parse(importlib.metadata.version("reflex"))
@@ -455,32 +466,42 @@ def test_deploy_non_interactive_no_app_name_and_id(
 
 
 @pytest.mark.parametrize(
-    ("tier", "forced"),
-    [("Free", True), ("Inactive", True), ("Pro", False), ("Enterprise", False)],
+    ("tier", "configured", "exported", "persisted"),
+    [
+        # Without a paid plan the badge is forced on, whatever the app sets.
+        ("Free", False, True, "True"),
+        ("Inactive", None, True, "True"),
+        # Paid plans keep an explicit setting.
+        ("Pro", True, True, ""),
+        ("Enterprise", False, False, ""),
+        # An unset setting on a paid plan hides the badge, so the compiler
+        # never resolves it from a login other than the deploy token.
+        ("Pro", None, False, "False"),
+    ],
 )
-def test_deploy_forces_badge_for_free_tier(
+def test_deploy_resolves_badge_from_token_tier(
     mocker: MockerFixture,
-    monkeypatch: pytest.MonkeyPatch,
     tier: str,
-    forced: bool,
+    configured: bool | None,
+    exported: bool,
+    persisted: str,
 ):
-    """A deploy without a paid plan exports with the badge, whatever the app sets.
+    """A deploy exports with the badge setting that the deploy token's tier allows.
 
     Args:
         mocker: The pytest-mock fixture.
-        monkeypatch: Fixture restoring the env var the deploy persists.
         tier: The tier of the deploying org.
-        forced: Whether the badge should be forced on.
+        configured: The app's own show_built_with_reflex setting.
+        exported: The setting the export should see.
+        persisted: The value the deploy should leave in the environment.
     """
     _common_deploy_mocks(mocker, tier=tier)
     mocker.patch(
         "reflex_cli.utils.hosting.search_app", return_value=app_summary("fake-app")
     )
-    # Set (not deleted) so monkeypatch removes what the deploy persists.
-    monkeypatch.setenv("REFLEX_SHOW_BUILT_WITH_REFLEX", "")
     exported_with: list[bool | None] = []
     with RegistrationContext():
-        config = Config(app_name="fake_app", show_built_with_reflex=False)
+        config = Config(app_name="fake_app", show_built_with_reflex=configured)
         mocker.patch("reflex_base.config._get_config", return_value=config)
 
         cli.deploy(
@@ -491,8 +512,8 @@ def test_deploy_forces_badge_for_free_tier(
             interactive=False,
         )
 
-    assert exported_with == [forced, forced]
-    assert (os.environ["REFLEX_SHOW_BUILT_WITH_REFLEX"] == "True") is forced
+    assert exported_with == [exported, exported]
+    assert os.environ["REFLEX_SHOW_BUILT_WITH_REFLEX"] == persisted
 
 
 def test_deploy_non_interactive_export_failure(
