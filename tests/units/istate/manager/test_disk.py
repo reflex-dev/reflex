@@ -204,21 +204,25 @@ async def test_get_state_keeps_state_cached_during_its_disk_read(
     """
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
     state_manager = StateManagerDisk(_write_debounce_seconds=60)
-    load_state = state_manager.load_state
     reader_parked = asyncio.Event()
     release_reader = asyncio.Event()
 
-    async def gated_load_state(token: StateToken):
-        loaded = await load_state(token)
-        if asyncio.current_task() is reader:
-            # Hold the reader inside its disk read while the locked modify runs.
-            reader_parked.set()
-            await release_reader.wait()
-        return loaded
+    def gate(load):
+        async def gated_load(token: StateToken):
+            loaded = await load(token)
+            if asyncio.current_task() is reader:
+                # Hold the reader inside its disk read while the locked modify runs.
+                reader_parked.set()
+                await release_reader.wait()
+            return loaded
 
-    monkeypatch.setattr(state_manager, "load_state", gated_load_state)
+        return gated_load
+
+    for name in ("load_state", "_load_state_tree"):
+        monkeypatch.setattr(state_manager, name, gate(getattr(state_manager, name)))
     reader = asyncio.create_task(state_manager.get_state(state_token))
-    await reader_parked.wait()
+    # Only bounds a hang if get_state stops reading through these methods.
+    await asyncio.wait_for(reader_parked.wait(), timeout=30)
 
     async with state_manager.modify_state(state_token) as state:
         pass
@@ -228,3 +232,54 @@ async def test_get_state_keeps_state_cached_during_its_disk_read(
     assert await reader is state
     assert state_manager.states[state_token.cache_key] is state
     await state_manager.close()
+
+
+@pytest.mark.asyncio
+async def test_get_state_reads_a_state_tree_in_one_worker_call(
+    tmp_path: Path, monkeypatch, token: str
+):
+    """An uncached get_state hands every file of the state tree to one worker call.
+
+    A thread pool hop costs more than reading a small state, so a hop per state
+    would multiply the cost of a cache miss by the size of the tree.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        token: A token.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+
+    class TreeRoot(BaseState):
+        pass
+
+    class TreeChild(TreeRoot):
+        num: int = 0
+
+    class TreeGrandChild(TreeChild):
+        pass
+
+    bs_token = BaseStateToken(ident=token, cls=TreeRoot)
+    writer = StateManagerDisk(_write_debounce_seconds=0)
+    async with writer.modify_state(bs_token) as root:
+        (await root.get_state(TreeChild)).num = 1
+    await writer.close()
+
+    to_thread = asyncio.to_thread
+    worker_calls = []
+
+    async def counting_to_thread(func, /, *args, **kwargs):
+        worker_calls.append(func)
+        return await to_thread(func, *args, **kwargs)
+
+    monkeypatch.setattr(asyncio, "to_thread", counting_to_thread)
+    reader = StateManagerDisk(_write_debounce_seconds=0)
+    root = await reader.get_state(bs_token)
+
+    assert len(worker_calls) == 1
+    child = await root.get_state(TreeChild)
+    grandchild = await root.get_state(TreeGrandChild)
+    assert child.num == 1
+    assert child.parent_state is root
+    assert grandchild.parent_state is child
+    await reader.close()

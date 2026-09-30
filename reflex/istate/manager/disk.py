@@ -6,7 +6,7 @@ import dataclasses
 import functools
 import logging
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Mapping
 from hashlib import md5
 from pathlib import Path
 from typing import Any, Generic, cast
@@ -60,6 +60,44 @@ def _mark_replacement_state_touched(cached_state: object, state: object) -> None
     """
     if state is not cached_state and isinstance(state, BaseState):
         _mark_state_tree_touched(state)
+
+
+def _state_tree_classes(state_cls: type[BaseState]) -> list[type[BaseState]]:
+    """List a state class and every state class below it, parents first.
+
+    Args:
+        state_cls: The root of the tree.
+
+    Returns:
+        The state classes of the tree.
+    """
+    classes = [state_cls]
+    for substate in state_cls.get_substates():
+        classes.extend(_state_tree_classes(substate))
+    return classes
+
+
+def _populate_substates(
+    state: BaseState, stored: Mapping[type[BaseState], BaseState | None]
+) -> None:
+    """Swap the stored substates into a freshly instantiated tree, recursively.
+
+    Args:
+        state: The state whose substates to populate.
+        stored: The stored state of each class, None where nothing is stored.
+    """
+    for substate in state.get_substates():
+        name = substate.get_name()
+        fresh_instance = state.substates[name]
+        instance = stored.get(substate)
+        if instance is not None:
+            # Ensure all substates exist, even if they weren't serialized previously.
+            instance.substates = fresh_instance.substates
+        else:
+            instance = fresh_instance
+        state.substates[name] = instance
+        instance.parent_state = state
+        _populate_substates(instance, stored)
 
 
 @dataclasses.dataclass
@@ -143,6 +181,21 @@ class StateManagerDisk(StateManager):
             self.states_directory / f"{md5(str(token).encode()).hexdigest()}.pkl"
         ).absolute()
 
+    def _read_state(self, token: StateToken[TOKEN_TYPE]) -> TOKEN_TYPE | None:
+        """Read and unpickle a stored state, blocking the calling thread.
+
+        Args:
+            token: The token identifying the state.
+
+        Returns:
+            The stored state, or None if it is missing or cannot be read.
+        """
+        try:
+            with self.token_path(token).open(mode="rb") as file:
+                return token.deserialize(fp=file)
+        except Exception:
+            return None
+
     async def load_state(self, token: StateToken[TOKEN_TYPE]) -> TOKEN_TYPE | None:
         """Load a state object based on the provided token.
 
@@ -155,42 +208,26 @@ class StateManagerDisk(StateManager):
         Returns:
             The loaded state object or None.
         """
-        token_path = self.token_path(token)
+        return await asyncio.to_thread(self._read_state, token)
 
-        def _read() -> TOKEN_TYPE | None:
-            try:
-                with token_path.open(mode="rb") as file:
-                    return token.deserialize(fp=file)
-            except Exception:
-                return None
+    async def _load_state_tree(
+        self, token: BaseStateToken
+    ) -> dict[type[BaseState], BaseState | None]:
+        """Load the stored states of ``token.cls`` and every state below it.
 
-        # The open and unpickle are blocking, keep them off the event loop.
-        return await asyncio.to_thread(_read)
-
-    async def populate_substates(
-        self, token: BaseStateToken, state: BaseState, root_state: BaseState
-    ):
-        """Populate the substates of a state object.
+        All the files are read in one worker thread hop: handing each one to
+        the thread pool on its own costs more than reading a small state.
 
         Args:
-            token: The token used to identify the state object.
-            state: The state object to populate.
-            root_state: The root state object.
+            token: The token of the tree's root state.
+
+        Returns:
+            The stored state of each class, None where nothing is stored.
         """
-        for substate in state.get_substates():
-            substate_token = token.with_cls(substate)
-
-            fresh_instance = await root_state.get_state(substate)
-            instance = await self.load_state(substate_token)
-            if instance is not None:
-                # Ensure all substates exist, even if they weren't serialized previously.
-                instance.substates = fresh_instance.substates
-            else:
-                instance = fresh_instance
-            state.substates[substate.get_name()] = instance
-            instance.parent_state = state
-
-            await self.populate_substates(token, instance, root_state)
+        state_classes = _state_tree_classes(token.cls)
+        tokens = [token.with_cls(state_cls) for state_cls in state_classes]
+        stored = await asyncio.to_thread(lambda: [self._read_state(t) for t in tokens])
+        return dict(zip(state_classes, stored, strict=True))
 
     @override
     async def get_state(
@@ -216,7 +253,8 @@ class StateManagerDisk(StateManager):
         if isinstance(token, BaseStateToken):
             # Find the root state
             root_state_cls = token.cls.get_root_state()
-            root_state = await self.load_state(token.with_cls(root_state_cls))
+            stored = await self._load_state_tree(token.with_cls(root_state_cls))
+            root_state = stored[root_state_cls]
             # Create a new root state tree with all substates instantiated.
             fresh_root_state = root_state_cls(_reflex_internal_init=True)
             if root_state is None:
@@ -227,7 +265,7 @@ class StateManagerDisk(StateManager):
             else:
                 # Ensure all substates exist, even if they were not serialized previously.
                 root_state.substates = fresh_root_state.substates
-            await self.populate_substates(token, root_state, root_state)
+            _populate_substates(root_state, stored)
             # The disk reads yield to the event loop, so a concurrent get_state or
             # modify_state may have cached this state meanwhile; keep that one.
             return cast(TOKEN_TYPE, self.states.setdefault(token.cache_key, root_state))
