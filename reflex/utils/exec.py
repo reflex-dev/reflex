@@ -855,8 +855,9 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
 
     # The app itself is not imported here: the reload worker must load it
     # fresh on every restart. Only the framework pages are shared.
-    if multiprocessing.get_start_method() == "fork":
-        _freeze_for_fork()
+    if multiprocessing.get_start_method() == "fork" and not _freeze_for_fork():
+        logger.debug("A telemetry send is still running; spawning the worker.")
+        multiprocessing.set_start_method("spawn", force=True)
 
     reset_dev_backend_reload_marker()
     environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)

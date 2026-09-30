@@ -349,6 +349,51 @@ def test_run_granian_backend_freezes_only_for_fork(
     assert calls == (["drain", "freeze", "serve"] if frozen else ["serve"])
 
 
+def test_run_granian_backend_spawns_when_telemetry_is_stuck(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A telemetry thread that outlives the drain makes the dev fork unsafe."""
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
+    monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, "False")
+    granian_server = pytest.importorskip("granian.server")
+    calls: list[str] = []
+
+    class FakeGranian:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def on_reload(self, _callback):
+            pass
+
+        def serve(self):
+            calls.append("serve")
+
+    mocker.patch.object(granian_server, "Server", FakeGranian)
+    mocker.patch.object(
+        exec_utils, "get_app_instance_from_file", return_value="app:app"
+    )
+    mocker.patch.object(exec_utils, "get_reload_paths", return_value=[])
+    mocker.patch.object(exec_utils, "reset_dev_backend_reload_marker")
+    mocker.patch.object(
+        multiprocessing,
+        "set_start_method",
+        side_effect=lambda method, force=False: calls.append(f"start:{method}"),
+    )
+    mocker.patch.object(multiprocessing, "get_start_method", return_value="fork")
+    mocker.patch.object(
+        telemetry,
+        "_shutdown_executor",
+        side_effect=lambda: calls.append("drain") and False,
+    )
+    mocker.patch.object(gc, "freeze", side_effect=lambda: calls.append("freeze"))
+
+    exec_utils.run_granian_backend(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    assert calls == ["start:fork", "drain", "start:spawn", "serve"]
+
+
 def test_run_granian_backend_binds_listen_socket_in_supervisor(
     tmp_path: Path, mocker: MockerFixture
 ):
