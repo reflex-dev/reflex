@@ -154,6 +154,7 @@ export const uploadFiles = async (
 
     // Configure and send request
     xhr.open("POST", getBackendURL(env.UPLOAD));
+    xhr.withCredentials = true;
     xhr.setRequestHeader("Reflex-Client-Token", getToken());
     xhr.setRequestHeader("Reflex-Event-Handler", handler);
     // Instrumentation hook (installed by reflex-otel): may add trace headers.
