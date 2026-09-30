@@ -111,3 +111,18 @@ jobs:
           merge-multiple: true
       - name: Check minimum declared dependency versions
         run: uv run --no-sync python scripts/check_min_deps.py --python "${{ matrix.python-version }}" --wheelhouse wheelhouse "${{ matrix.package }}"
+
+  # The one status check the branch rules require from this workflow. Naming the
+  # jobs above directly does not survive: check names follow the matrix and the
+  # display names, and a job that a filter skips must not block the merge.
+  build-packages-gate:
+    needs: [discover, build, check-min-deps]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/ci_gate
+        with:
+          needs: ${{ toJSON(needs) }}

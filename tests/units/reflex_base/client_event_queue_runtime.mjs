@@ -1,7 +1,10 @@
 import { SourceTextModule, SyntheticModule } from "node:vm";
 
 /** Evaluate the complete frontend module with isolated dependency stubs. */
-export async function createQueueRuntime(source, { uploadFiles } = {}) {
+export async function createQueueRuntime(
+  source,
+  { uploadFiles, throttle } = {},
+) {
   const unused = () => {
     throw new Error("Unexpected frontend dependency in queue test");
   };
@@ -31,16 +34,16 @@ export async function createQueueRuntime(source, { uploadFiles } = {}) {
       },
     },
     react: {
-      useCallback: unused,
-      useEffect: unused,
-      useRef: unused,
-      useState: unused,
+      useCallback: (callback) => callback,
+      useEffect: () => {},
+      useRef: (value) => ({ current: value }),
+      useState: (value) => [value, () => {}],
     },
     "react-router": {
-      useLocation: unused,
-      useNavigate: unused,
-      useSearchParams: unused,
-      useParams: unused,
+      useLocation: () => ({ pathname: "/", search: "", hash: "" }),
+      useNavigate: () => unused,
+      useSearchParams: () => [new URLSearchParams()],
+      useParams: () => ({}),
     },
     "$/utils/context": app,
     "$/utils/context-registry": {
@@ -49,7 +52,7 @@ export async function createQueueRuntime(source, { uploadFiles } = {}) {
     },
     "$/utils/helpers/debounce": { default: unused },
     "$/utils/helpers/json": { parseJson: unused },
-    "$/utils/helpers/throttle": { default: unused },
+    "$/utils/helpers/throttle": { default: throttle ?? unused },
     "$/utils/helpers/upload": {
       uploadFiles: uploadFiles ?? unused,
     },
