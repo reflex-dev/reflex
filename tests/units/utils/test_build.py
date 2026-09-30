@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -12,6 +13,21 @@ from pytest_mock import MockerFixture
 
 from reflex.plugins import EmbedPlugin, Plugin
 from reflex.utils import build, path_ops
+
+
+def test_zip_app_excludes_session_secret(tmp_path, monkeypatch):
+    """Exported apps include backend markers but never the local signing secret."""
+    monkeypatch.chdir(tmp_path)
+    backend_dir = tmp_path / ".web" / "backend"
+    backend_dir.mkdir(parents=True)
+    (backend_dir / "session_secret").write_text("private signing secret")
+    (backend_dir / "stateful_pages.json").write_text("[]")
+
+    build.zip_app(frontend=False)
+
+    with zipfile.ZipFile(tmp_path / "backend.zip") as archive:
+        assert ".web/backend/stateful_pages.json" in archive.namelist()
+        assert ".web/backend/session_secret" not in archive.namelist()
 
 
 def test_compress_static_output_overwrites_stale_sidecars(

@@ -545,6 +545,37 @@ def test_initialise_vite_config(config, expected_output):
 
 
 @pytest.mark.usefixtures("_stub_skeleton_initializers")
+def test_initialize_web_directory_preserves_session_secret(tmp_path, monkeypatch):
+    """Reinitializing frontend files keeps the signing secret and removes old markers."""
+    template_dir = tmp_path / "template"
+    template_dir.mkdir()
+    (template_dir / "new-file").write_text("new")
+    monkeypatch.setattr(
+        frontend_skeleton.constants.Templates.Dirs, "WEB_TEMPLATE", template_dir
+    )
+    web_dir = tmp_path / constants.Dirs.WEB
+    backend_dir = web_dir / constants.Dirs.BACKEND
+    backend_dir.mkdir(parents=True)
+    secret = backend_dir / "session_secret"
+    secret.write_text("persistent-secret")
+    secret.chmod(0o600)
+    inode = secret.stat().st_ino
+    (backend_dir / "stale-marker").write_text("stale")
+    (web_dir / "stale-file").write_text("stale")
+    _patch_web_dir(monkeypatch, web_dir)
+
+    with chdir(tmp_path):
+        frontend_skeleton.initialize_web_directory()
+
+    assert secret.read_text() == "persistent-secret"
+    assert secret.stat().st_ino == inode
+    assert secret.stat().st_mode & 0o777 == 0o600
+    assert not (backend_dir / "stale-marker").exists()
+    assert not (web_dir / "stale-file").exists()
+    assert (web_dir / "new-file").read_text() == "new"
+
+
+@pytest.mark.usefixtures("_stub_skeleton_initializers")
 def test_initialize_web_directory_restores_root_bun_lock(tmp_path, monkeypatch):
     template_dir = tmp_path / "template"
     template_dir.mkdir()
