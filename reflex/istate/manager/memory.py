@@ -13,6 +13,7 @@ from reflex.istate.manager import (
     StateManager,
     StateModificationContext,
     _default_token_expiration,
+    _release_state_tree,
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 
@@ -79,7 +80,9 @@ class StateManagerMemory(StateManager):
         """
         self._token_expires_at.pop(token.cache_key, None)
         self._states_locks.pop(token.lock_key, None)
-        self.states.pop(token.cache_key, None)
+        state = self.states.pop(token.cache_key, None)
+        if state is not None and isinstance(token, BaseStateToken):
+            _release_state_tree(state)
 
     def _purge_expired_tokens(self) -> float | None:
         """Purge expired in-memory state entries and return the next deadline.

@@ -151,22 +151,35 @@ def update_secrets(
                 raise click.exceptions.Exit(1) from None
             # A bare `KEY` line with no `=` parses to None, which names no
             # value to set; only assignments become secrets.
-            secrets = {
+            env_vars = {
                 name: value
                 for name, value in dotenv_values(envfile).items()
                 if value is not None
             }
         else:
-            secrets = hosting.process_envs(list(envs))
-        authenticated_client.api.apps.secrets.set(app_id, secrets, reboot=reboot)
+            env_vars = hosting.process_envs(list(envs))
+        authenticated_client.api.apps.secrets.set(app_id, env_vars, reboot=reboot)
+        names = sorted(env_vars)
         if as_json:
             # Names only: a value the caller just sent back to them is a secret
             # written into a log or a transcript.
             print_json({
                 "app_id": app_id,
-                "updated": sorted(secrets),
+                "updated": names,
                 "rebooted": reboot,
             })
+            return
+        reboot_note = (
+            "Rebooting to apply."
+            if reboot
+            else "Not rebooting; run with --reboot or redeploy to apply."
+        )
+        logger.log(
+            log.SUCCESS,
+            # Names only, for the same reason as the JSON branch above.
+            f"Updated {len(names)} secret{'' if len(names) == 1 else 's'} "
+            f"({', '.join(names)}). {reboot_note}",
+        )
 
 
 @secrets_cli.command(name="delete")

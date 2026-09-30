@@ -1,0 +1,1 @@
+OpenTelemetry spans of top-level events enqueued during an HTTP request (a chunked upload, or a custom API route calling `app.event_processor.enqueue`) no longer carry a `reflex.event.parent_txid` naming the event processor's root context; only chained events name the event that produced them.
