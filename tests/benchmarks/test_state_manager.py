@@ -427,7 +427,7 @@ def test_state_manager_memory_cold_get(benchmark: BenchmarkFixture):
 
     def teardown(token: BaseStateToken) -> None:
         """Purge the measured state."""
-        manager._purge_token(token)  # pyright: ignore [reportPrivateUsage]
+        manager._purge_ident(token.ident)  # pyright: ignore [reportPrivateUsage]
 
     # Isolate the registry so the measured cold construction instantiates only
     # PerformanceState's subtree, not every state in the collected session.

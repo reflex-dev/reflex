@@ -1,0 +1,1 @@
+`EventContext.get_state` and `EventContext.modify_state` check out states in the context, one instance per state, locked, refreshed and stored through the state manager. The tasks of a context share its states and its lock, which is released when the last of them leaves; `EventContext.hold_while_locked` keeps a context manager entered until then.

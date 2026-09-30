@@ -3942,15 +3942,16 @@ async def test_app_modify_state_clean(token: str, substate: bool, frontend: bool
                 root_state.count = 1
             else:
                 root_state._backend = 1
+        # Storing the states when leaving may reset these.
+        if substate:
+            assert sub._was_touched
+            assert not root_state._was_touched
+        else:
+            assert root_state._was_touched
+            assert not sub._was_touched
 
     assert not root_state.dirty_vars
     assert not root_state.dirty_substates
-    if substate:
-        assert sub._was_touched
-        assert not root_state._was_touched
-    else:
-        assert root_state._was_touched
-        assert not sub._was_touched
 
     if frontend:
         assert app._event_namespace.emit_update.call_count == 1

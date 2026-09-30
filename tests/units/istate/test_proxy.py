@@ -163,16 +163,12 @@ async def test_state_proxy_recovery(
     with monkeypatch.context() as m:
 
         @asynccontextmanager
-        async def mock_modify_state_context(*args, **kwargs):
+        async def mock_lock(*args, **kwargs):
             msg = "Simulated lock issue"
             raise CancelledError(msg)
             yield
 
-        m.setattr(
-            attached_mock_event_context.state_manager,
-            "modify_state",
-            mock_modify_state_context,
-        )
+        m.setattr(attached_mock_event_context.state_manager, "lock", mock_lock)
 
         with pytest.raises(CancelledError, match="Simulated lock issue"):
             async with state_proxy:

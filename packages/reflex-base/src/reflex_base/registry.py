@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from typing_extensions import Self
 
@@ -48,6 +48,10 @@ class RegisteredEventHandler:
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True, eq=False)
 class RegistrationContext(BaseContext):
     """Context for registering event handlers and states."""
+
+    # Bumped when a state class is registered or its dependencies change, to
+    # invalidate what is derived from the shape of the state tree.
+    state_tree_version: ClassVar[int] = 0
 
     event_handlers: dict[str, RegisteredEventHandler] = dataclasses.field(
         default_factory=dict,
@@ -180,6 +184,11 @@ class RegistrationContext(BaseContext):
             cls._context_var.set(ctx)
             return ctx
 
+    @staticmethod
+    def state_tree_changed() -> None:
+        """Invalidate what is derived from the shape of the state tree."""
+        RegistrationContext.state_tree_version += 1
+
     @classmethod
     def register_base_state(cls, state_cls: type[BaseState]) -> type[BaseState]:
         """Register a base state class with its full name.
@@ -206,6 +215,7 @@ class RegistrationContext(BaseContext):
             The registered base state class.
         """
         self.base_states[state_cls.get_full_name()] = state_cls
+        RegistrationContext.state_tree_changed()
         for event_handler in state_cls.event_handlers.values():
             self._register_event_handler(event_handler, states=(state_cls,))
         if (parent_state := state_cls.get_parent_state()) is not None:

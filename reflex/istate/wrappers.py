@@ -18,12 +18,9 @@ async def get_state(token: str, state_cls: Any | None = None) -> ReadOnlyStatePr
     Returns:
         A read-only proxy of the state instance.
     """
-    mng = get_state_manager()
-    if state_cls is not None:
-        root_state = await mng.get_state(BaseStateToken(ident=token, cls=state_cls))
-    else:
-        root_state = await mng.get_state(BaseStateToken(ident=token, cls=State))
+    if state_cls is None:
         _, state_path = _split_substate_key(token)
-        state_cls = root_state.get_class_substate(tuple(state_path.split(".")))
-    instance = await root_state.get_state(state_cls)
+        state_cls = State.get_class_substate(tuple(state_path.split(".")))
+    ctx = get_state_manager()._state_context(token)
+    instance = await ctx.get_state(BaseStateToken(ident=token, cls=state_cls))
     return ReadOnlyStateProxy(instance)

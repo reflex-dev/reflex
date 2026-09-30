@@ -6,21 +6,21 @@ import dataclasses
 import functools
 import logging
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterable, Sequence
 from hashlib import md5
 from pathlib import Path
-from typing import Any, Generic, cast
+from typing import Any, Generic
 
 from reflex_base.environment import state_manager_disk_debounce
 from typing_extensions import Unpack, override
 
 from reflex.istate.manager import (
+    StateLease,
     StateManager,
     StateModificationContext,
     _default_token_expiration,
 )
-from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
-from reflex.state import BaseState
+from reflex.istate.manager.token import TOKEN_TYPE, StateToken
 from reflex.utils import path_ops, prerequisites
 from reflex.utils.misc import run_in_thread
 
@@ -36,42 +36,22 @@ class QueueItem(Generic[TOKEN_TYPE]):
     timestamp: float
 
 
-def _mark_state_tree_touched(state: BaseState) -> None:
-    """Mark a state and all of its substates as touched.
-
-    Args:
-        state: The root of the state tree to mark.
-    """
-    state._was_touched = True
-    for substate in state.substates.values():
-        _mark_state_tree_touched(substate)
-
-
-def _mark_replacement_state_touched(cached_state: object, state: object) -> None:
-    """Mark a state tree as touched when it replaces the cached instance.
-
-    A state instance not obtained from get_state carries no touched tracking,
-    so mark the whole tree touched to ensure it gets persisted.
-
-    Args:
-        cached_state: The instance currently cached for the token, if any.
-        state: The instance supplied to set_state.
-    """
-    if state is not cached_state and isinstance(state, BaseState):
-        _mark_state_tree_touched(state)
-
-
 @dataclasses.dataclass
 class StateManagerDisk(StateManager):
     """A state manager that stores states on disk."""
 
-    # The mapping of client ids to states.
+    # The states loaded in memory, by the str of their token.
     states: dict[str, Any] = dataclasses.field(default_factory=dict)
+
+    # The keys of the states of each ident loaded in memory.
+    _ident_keys: dict[str, set[str]] = dataclasses.field(
+        default_factory=dict, init=False
+    )
 
     # The mutex ensures the dict of mutexes is updated exclusively
     _state_manager_lock: asyncio.Lock = dataclasses.field(default_factory=asyncio.Lock)
 
-    # The dict of mutexes for each client
+    # The dict of mutexes for each ident
     _states_locks: dict[str, asyncio.Lock] = dataclasses.field(
         default_factory=dict,
         init=False,
@@ -80,14 +60,14 @@ class StateManagerDisk(StateManager):
     # The token expiration time (s).
     token_expiration: int = dataclasses.field(default_factory=_default_token_expiration)
 
-    # Last time a token was touched.
+    # Last time the states of an ident were used.
     _token_last_touched: dict[str, float] = dataclasses.field(
         default_factory=dict,
         init=False,
     )
 
-    # Pending writes
-    _write_queue: dict[StateToken, QueueItem] = dataclasses.field(
+    # Pending writes, by the str of their token.
+    _write_queue: dict[str, QueueItem] = dataclasses.field(
         default_factory=dict,
         init=False,
     )
@@ -142,14 +122,14 @@ class StateManagerDisk(StateManager):
             self.states_directory / f"{md5(str(token).encode()).hexdigest()}.pkl"
         ).absolute()
 
-    async def load_state(self, token: StateToken[TOKEN_TYPE]) -> TOKEN_TYPE | None:
-        """Load a state object based on the provided token.
+    def _load_state(self, token: StateToken[TOKEN_TYPE]) -> TOKEN_TYPE | None:
+        """Load a state from disk.
 
         Args:
-            token: The token used to identify the state object.
+            token: The token of the state.
 
         Returns:
-            The loaded state object or None.
+            The loaded state, or None if it is not stored or cannot be loaded.
         """
         token_path = self.token_path(token)
 
@@ -161,99 +141,64 @@ class StateManagerDisk(StateManager):
                 pass
         return None
 
-    async def populate_substates(
-        self, token: BaseStateToken, state: BaseState, root_state: BaseState
-    ):
-        """Populate the substates of a state object.
+    def _put(self, token: StateToken, state: Any) -> None:
+        """Keep a state in memory.
 
         Args:
-            token: The token used to identify the state object.
-            state: The state object to populate.
-            root_state: The root state object.
+            token: The token of the state.
+            state: The state.
         """
-        for substate in state.get_substates():
-            substate_token = token.with_cls(substate)
+        key = str(token)
+        self.states[key] = state
+        self._ident_keys.setdefault(token.ident, set()).add(key)
 
-            fresh_instance = await root_state.get_state(substate)
-            instance = await self.load_state(substate_token)
-            if instance is not None:
-                # Ensure all substates exist, even if they weren't serialized previously.
-                instance.substates = fresh_instance.substates
-            else:
-                instance = fresh_instance
-            state.substates[substate.get_name()] = instance
-            instance.parent_state = state
+    def _track_idents(self, tokens: Iterable[StateToken]) -> None:
+        """Record that the states of the idents of some tokens are in use.
 
-            await self.populate_substates(token, instance, root_state)
+        Args:
+            tokens: The tokens in use.
+        """
+        now = time.time()
+        for token in tokens:
+            self._token_last_touched[token.ident] = now
 
     @override
-    async def get_state(
-        self,
-        token: StateToken[TOKEN_TYPE],
-    ) -> TOKEN_TYPE:
-        """Get the state for a token.
+    async def load_states(
+        self, tokens: Sequence[StateToken], *, create: bool = True
+    ) -> list[Any]:
+        """Load the states for some tokens, from memory or else from disk.
 
         Args:
-            token: The token to get the state for.
+            tokens: The tokens of the states to load.
+            create: Whether to create the states that are not stored.
 
         Returns:
-            The state for the token.
+            The state for each token, in order.
         """
-        token = self._coerce_token(token)
-        root_state = self.states.get(token.cache_key)
-        self._token_last_touched[token.cache_key] = time.time()
-        if root_state is not None:
-            # Retrieved state from memory.
-            return root_state
+        states = []
+        for token in tokens:
+            if (state := self.states.get(str(token))) is None:
+                if (state := self._load_state(token)) is None and create:
+                    state = token.new_instance()
+                if state is not None:
+                    self._put(token, state)
+            states.append(state)
+        self._track_idents(tokens)
+        return states
 
-        # Deserialize root state from disk.
-        if isinstance(token, BaseStateToken):
-            # Find the root state
-            root_state_cls = token.cls.get_root_state()
-            root_state = await self.load_state(token.with_cls(root_state_cls))
-            # Create a new root state tree with all substates instantiated.
-            fresh_root_state = root_state_cls(_reflex_internal_init=True)
-            if root_state is None:
-                root_state = fresh_root_state
-            elif not isinstance(root_state, BaseState):
-                msg = "Deserialized state is not an instance of BaseState, cannot populate substates."
-                raise TypeError(msg)
-            else:
-                # Ensure all substates exist, even if they were not serialized previously.
-                root_state.substates = fresh_root_state.substates
-            await self.populate_substates(token, root_state, root_state)
-            self.states[token.cache_key] = root_state
-            return cast(TOKEN_TYPE, root_state)
-        # For non-BaseState tokens, if the deserialized state is None, we create a new instance using the token's cls.
-        state = await self.load_state(token)
-        if state is None:
-            state = token.cls()
-        self.states[token.cache_key] = state
-        return cast(TOKEN_TYPE, state)
-
-    async def set_state_for_substate(
-        self, token: StateToken[TOKEN_TYPE], substate: TOKEN_TYPE
-    ):
-        """Set the state for a substate.
+    async def _write_state(self, token: StateToken, state: Any) -> None:
+        """Write a state to disk.
 
         Args:
-            token: The token used to identify the state object.
-            substate: The substate to set.
+            token: The token of the state.
+            state: The state to write.
         """
-        substate_token = token.with_cls(type(substate))
-
-        if token.get_and_reset_touched_state(substate):
-            pickle_state = token.serialize(substate)
-            if pickle_state:
-                if not self.states_directory.exists():
-                    self.states_directory.mkdir(parents=True, exist_ok=True)
-                await run_in_thread(
-                    lambda: self.token_path(substate_token).write_bytes(pickle_state),
-                )
-
-        if isinstance(token, BaseStateToken) and isinstance(substate, BaseState):
-            for substate_substate in substate.substates.values():
-                await self.set_state_for_substate(token, substate_substate)
+        if pickle_state := token.serialize(state):
+            if not self.states_directory.exists():
+                self.states_directory.mkdir(parents=True, exist_ok=True)
+            await run_in_thread(
+                lambda: self.token_path(token).write_bytes(pickle_state),
+            )
 
     async def _process_write_queue_delay(self):
         """Wait for the debounce period before processing the write queue again."""
@@ -298,15 +243,18 @@ class StateManagerDisk(StateManager):
                     key=lambda item: item.timestamp,
                 )
                 for item in items_to_write:
-                    token = item.token
-                    await self.set_state_for_substate(
-                        token, self._write_queue.pop(token).state
-                    )
+                    self._write_queue.pop(str(item.token))
+                    if item.token.get_and_reset_touched_state(item.state):
+                        await self._write_state(item.token, item.state)
                 # Check for expired states to purge.
-                for cache_key, last_touched in list(self._token_last_touched.items()):
-                    if now - last_touched > self.token_expiration:
-                        self._token_last_touched.pop(cache_key)
-                        self.states.pop(cache_key, None)
+                for ident, last_touched in list(self._token_last_touched.items()):
+                    if now - last_touched > self.token_expiration and not (
+                        (state_lock := self._states_locks.get(ident)) is not None
+                        and state_lock.locked()
+                    ):
+                        self._token_last_touched.pop(ident)
+                        for key in self._ident_keys.pop(ident, ()):
+                            self.states.pop(key, None)
                 await run_in_thread(self._purge_expired_states)
                 await self._process_write_queue_delay()
             except asyncio.CancelledError:  # noqa: PERF203
@@ -329,10 +277,8 @@ class StateManagerDisk(StateManager):
             f"StateManagerDisk._flush_write_queue: writing {n_outstanding_items} remaining items to disk"
         )
         for item in outstanding_items:
-            await self.set_state_for_substate(
-                item.token,
-                item.state,
-            )
+            if item.token.get_and_reset_touched_state(item.state):
+                await self._write_state(item.token, item.state)
         logger.debug(
             f"StateManagerDisk._flush_write_queue: Finished writing {n_outstanding_items} items"
         )
@@ -349,67 +295,59 @@ class StateManagerDisk(StateManager):
                     await asyncio.sleep(0)  # Yield to allow the task to start.
 
     @override
-    async def set_state(
+    async def store_states(
         self,
-        token: StateToken[TOKEN_TYPE],
-        state: TOKEN_TYPE,
+        states: Sequence[tuple[StateToken, Any]],
+        lease: StateLease | None,
         **context: Unpack[StateModificationContext],
-    ):
-        """Set the state for a token.
+    ) -> None:
+        """Keep states in memory, and write the touched ones to disk.
 
         Args:
-            token: The token to set the state for.
-            state: The state to set.
+            states: The tokens and states to store.
+            lease: The lease of the lock held on the states' ident, if any.
             context: The state modification context.
         """
-        token = self._coerce_token(token)
-        _mark_replacement_state_touched(self.states.get(token.cache_key), state)
-        self._token_last_touched[token.cache_key] = time.time()
-        if self._write_debounce_seconds > 0:
-            # Deferred write to reduce disk IO overhead.
-            self.states[token.cache_key] = state
-            queued_item = self._write_queue.get(token)
-            if queued_item is None:
-                self._write_queue[token] = QueueItem(
-                    token=token,
-                    state=state,
-                    timestamp=time.time(),
-                )
-            else:
-                queued_item.state = state
-        else:
-            # Immediate write to disk.
-            await self.set_state_for_substate(token, state)
-            self.states[token.cache_key] = state
+        now = time.time()
+        for token, state in states:
+            self._put(token, state)
+            if self._write_debounce_seconds > 0:
+                # Deferred write to reduce disk IO overhead, if touched by then.
+                key = str(token)
+                if (queued_item := self._write_queue.get(key)) is None:
+                    self._write_queue[key] = QueueItem(
+                        token=token, state=state, timestamp=now
+                    )
+                else:
+                    queued_item.state = state
+            elif token.get_and_reset_touched_state(state):
+                await self._write_state(token, state)
+        self._track_idents(token for token, _ in states)
         # Ensure the processing task is scheduled to handle expirations and any deferred writes.
         await self._schedule_process_write_queue()
 
     @override
     @contextlib.asynccontextmanager
-    async def modify_state(
-        self, token: StateToken[TOKEN_TYPE], **context: Unpack[StateModificationContext]
-    ) -> AsyncIterator[TOKEN_TYPE]:
-        """Modify the state for a token while holding exclusive lock.
+    async def lock(
+        self, token: StateToken, **context: Unpack[StateModificationContext]
+    ) -> AsyncIterator[StateLease]:
+        """Hold the exclusive lock on a token's ident.
 
         Args:
-            token: The token to modify the state for.
+            token: The token to lock.
             context: The state modification context.
 
         Yields:
-            The state for the token.
+            The lease of the lock.
         """
-        token = self._coerce_token(token)
-        # Disk state manager ignores the substate suffix and always returns the top-level state.
-        lock_key = token.lock_key
-        if lock_key not in self._states_locks:
+        ident = token.ident
+        if ident not in self._states_locks:
             async with self._state_manager_lock:
-                if lock_key not in self._states_locks:
-                    self._states_locks[lock_key] = asyncio.Lock()
+                if ident not in self._states_locks:
+                    self._states_locks[ident] = asyncio.Lock()
 
-        async with self._states_locks[lock_key]:
-            state = await self.get_state(token)
-            yield state
-            await self.set_state(token, state, **context)
+        async with self._states_locks[ident]:
+            yield StateLease(ident=ident)
 
     async def close(self):
         """Close the state manager, flushing any pending writes to disk."""
