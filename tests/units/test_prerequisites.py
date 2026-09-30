@@ -950,6 +950,7 @@ def test_react_compiler_dependencies_toggle(install_packages_env: InstallPackage
         install_packages_env: The isolated install environment.
     """
     env = install_packages_env
+    compiler_deps = constants.PackageJson.REACT_COMPILER_DEV_DEPENDENCIES
     calls = _record_calls(env)
     env.install()
     assert calls == []
@@ -959,25 +960,21 @@ def test_react_compiler_dependencies_toggle(install_packages_env: InstallPackage
     assert len(calls) == 1
     assert "add" in calls[0]
     assert "-d" in calls[0]
-    assert "@babel/core@7.29.7" in calls[0]
-    assert "babel-plugin-react-compiler@1.0.0" in calls[0]
+    assert {f"{name}@{version}" for name, version in compiler_deps.items()} <= set(
+        calls[0]
+    )
 
     env.install()
     assert len(calls) == 1
 
     # Model the package.json written by the package manager after enabling.
-    env.web_package_json.write_text(
-        json.dumps({
-            "devDependencies": constants.PackageJson.REACT_COMPILER_DEV_DEPENDENCIES
-        })
-    )
+    env.web_package_json.write_text(json.dumps({"devDependencies": compiler_deps}))
     frontend_skeleton.sync_web_lockfiles_to_root()
     env.config.react_compiler = False
     env.install()
     assert len(calls) == 2
     assert "remove" in calls[1]
-    assert "@babel/core" in calls[1]
-    assert "babel-plugin-react-compiler" in calls[1]
+    assert set(compiler_deps) <= set(calls[1])
 
     env.install()
     assert len(calls) == 2
@@ -999,11 +996,14 @@ def test_react_compiler_dependency_versions_invalidate_cache(
     monkeypatch.setattr(
         constants.PackageJson,
         "REACT_COMPILER_DEV_DEPENDENCIES",
-        {"@babel/core": "7.29.7", "babel-plugin-react-compiler": "1.0.1"},
+        {
+            **constants.PackageJson.REACT_COMPILER_DEV_DEPENDENCIES,
+            "babel-plugin-react-compiler": "0.0.0-test",
+        },
     )
     env.install()
     assert len(calls) == 2
-    assert "babel-plugin-react-compiler@1.0.1" in calls[1]
+    assert "babel-plugin-react-compiler@0.0.0-test" in calls[1]
 
 
 def test_install_frontend_packages_pinned_packages_single_call(
