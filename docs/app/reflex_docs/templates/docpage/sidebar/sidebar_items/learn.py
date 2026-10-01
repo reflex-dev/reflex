@@ -140,6 +140,7 @@ def get_sidebar_items_backend():
         state_structure,
         utility_methods,
         vars,
+        workflows,
     )
     from reflex_docs.templates.docpage.sidebar.state import SideBarItem, SideBarSection
 
@@ -199,6 +200,24 @@ def get_sidebar_items_backend():
                 database.tables,
                 database.queries,
                 database.relationships,
+            ],
+        ),
+        create_item(
+            "Workflows",
+            children=[
+                workflows.overview,
+                workflows.tutorial,
+                workflows.defining_workflows,
+                workflows.steps,
+                workflows.runs,
+                workflows.events,
+                workflows.schedules,
+                workflows.fan_out,
+                workflows.concurrency,
+                workflows.workers,
+                workflows.inspecting_runs,
+                workflows.how_it_works,
+                workflows.reference,
             ],
         ),
         SideBarItem(
