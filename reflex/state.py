@@ -2357,7 +2357,7 @@ def state_snapshot_hashes(snapshot: Delta) -> list[str]:
     return [
         _short_digest("\n".join(names)),
         *(
-            _short_digest(format.json_dumps(snapshot[state_name], sort_keys=True))
+            _short_digest(format.json_dumps(snapshot[state_name]))
             for state_name in names
         ),
     ]
@@ -2382,7 +2382,10 @@ _initial_snapshot_cache: dict[type[BaseState], _InitialSnapshot] = {}
 
 
 def _serialize_var(value: Any) -> str:
-    """Serialize a var value the way it reaches the frontend.
+    """Serialize a var value exactly as it reaches the frontend.
+
+    Dict keys are not sorted: their order is observable (e.g. in
+    ``rx.foreach``), and sorting fails on keys of mixed types.
 
     Args:
         value: The resolved var value.
@@ -2390,7 +2393,7 @@ def _serialize_var(value: Any) -> str:
     Returns:
         The JSON text of the value.
     """
-    return format.json_dumps(value, sort_keys=True)
+    return format.json_dumps(value)
 
 
 def cache_initial_snapshot(root_cls: type[BaseState], snapshot: Delta) -> None:
@@ -2423,7 +2426,7 @@ async def _diff_against_initial_state(
 
     Values are compared in their serialized form, so a value that is
     Python-equal but JSON-distinct from its default (``1`` vs ``1.0``,
-    ``0`` vs ``False``) is still sent.
+    ``0`` vs ``False``, a dict with its keys reordered) is still sent.
 
     Args:
         root_cls: The root state class; its default snapshot is computed once.

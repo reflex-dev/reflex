@@ -1592,10 +1592,14 @@ async def test_hydrate_and_load_diffs_against_compiled_defaults(
         flavor: str = rx.Cookie("plain")
         loads: int = 0
         ratio: float = 1.0
+        ordered: dict[str, int] = {"alpha": 1, "beta": 2}
 
         @event
-        def set_ratio_int(self):
-            self.ratio = 1  # Python-equal to the default, JSON-distinct.
+        def set_python_equal_values(self):
+            # Python-equal to the defaults, but JSON-distinct: key order is
+            # observable, e.g. in rx.foreach.
+            self.ratio = 1
+            self.ordered = {"beta": 2, "alpha": 1}
 
     wired_app.add_page(lambda: rx.text(CookieState.flavor), route="/")
     wired_app._compile_page("index")
@@ -1626,12 +1630,12 @@ async def test_hydrate_and_load_diffs_against_compiled_defaults(
         "flavor" + FIELD_MARKER: "chocolate"
     }
 
-    # A value that is Python-equal but serializes differently is still sent.
+    # Values that are Python-equal but serialize differently are still sent.
     emitted_deltas.clear()
     async with real_base_state_processor as processor:
         await (
             await processor.enqueue(
-                token, Event.from_event_type(CookieState.set_ratio_int())[0]
+                token, Event.from_event_type(CookieState.set_python_equal_values())[0]
             )
         ).wait_all()
         emitted_deltas.clear()
@@ -1641,6 +1645,10 @@ async def test_hydrate_and_load_diffs_against_compiled_defaults(
         await future.wait_all()
     snapshot = emitted_deltas[0][1]
     assert snapshot[CookieState.get_full_name()]["ratio" + FIELD_MARKER] == 1
+    assert list(snapshot[CookieState.get_full_name()]["ordered" + FIELD_MARKER]) == [
+        "beta",
+        "alpha",
+    ]
 
     # Hashes compiled against a different set of states (a different names
     # digest) fall back to the full snapshot.

@@ -72,6 +72,7 @@ from reflex.state import (
     ImmutableStateError,
     OnLoadInternalState,
     State,
+    state_snapshot_hashes,
 )
 from reflex.testing import chdir
 from reflex.utils import prerequisites
@@ -6287,6 +6288,19 @@ async def test_on_load_internal_supersedes_previous_navigation(
         # The fresh navigation completes without waiting behind the stale chain.
         await asyncio.wait_for(current.wait_all(), timeout=5)
         assert stale.done()
+
+
+def test_state_snapshot_hashes_keep_dict_key_order():
+    """Defaults that differ only in dict key order render differently, so hash differently."""
+    var_name = f"ordered{FIELD_MARKER}"
+    names_digest, ordered_hash = state_snapshot_hashes({
+        "state": {var_name: {"alpha": 1, "beta": 2}}
+    })
+    reordered_names_digest, reordered_hash = state_snapshot_hashes({
+        "state": {var_name: {"beta": 2, "alpha": 1}}
+    })
+    assert reordered_names_digest == names_digest
+    assert reordered_hash != ordered_hash
 
 
 _ALIAS_ITEM = TypeVar("_ALIAS_ITEM")
