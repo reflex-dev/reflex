@@ -42,3 +42,30 @@ def test_make_pyi_files_delegates_recursive_scan_without_path_walk(
     custom_components._make_pyi_files()
 
     assert scans == [[package]]
+
+
+def test_share_reports_the_retired_gallery_without_contacting_it(monkeypatch):
+    """``reflex component share`` deprecates itself and sends nothing anywhere.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    import httpx
+    from click.testing import CliRunner
+
+    deprecations: list[dict] = []
+    monkeypatch.setattr(
+        custom_components.console, "deprecate", lambda **kw: deprecations.append(kw)
+    )
+
+    def _refuse(*_args, **_kwargs):
+        msg = "share must not make a request"
+        raise AssertionError(msg)
+
+    monkeypatch.setattr(httpx, "post", _refuse)
+
+    result = CliRunner().invoke(custom_components.custom_components_cli, ["share"])
+
+    assert result.exit_code == 0, result.output
+    assert [d["feature_name"] for d in deprecations] == ["reflex component share"]
+    assert deprecations[0]["removal_version"] == "1.0"

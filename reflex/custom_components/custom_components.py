@@ -222,9 +222,6 @@ def custom_components_cli():
     """CLI for creating custom components."""
 
 
-POST_CUSTOM_COMPONENTS_GALLERY_TIMEOUT = 15
-
-
 @contextmanager
 def set_directory(working_directory: str | Path):
     """Context manager that sets the working directory.
@@ -628,142 +625,16 @@ def build():
     _run_build()
 
 
-def _collect_details_for_gallery():
-    """Helper to collect details on the custom component to be included in the gallery.
-
-    Raises:
-        SystemExit: If pyproject.toml file is ill-formed or the request to the backend services fails.
-    """
-    import httpx
-    from reflex_cli.utils import hosting
-
-    console.rule("[bold]Authentication with Reflex Services")
-    console.print("First let's log in to Reflex backend services.")
-    access_token, _ = hosting.authenticated_token()
-
-    if not access_token:
-        logger.error(
-            "Unable to authenticate with Reflex backend services. Make sure you are logged in."
-        )
-        raise SystemExit(1)
-
-    console.rule("[bold]Custom Component Information")
-    params = {}
-
-    package_name = console.ask("[ Published python package name ]")
-    console.print(f"[ Custom component package name ] : {package_name}")
-    params["package_name"] = package_name
-
-    post_custom_components_gallery_endpoint = (
-        "https://gallery-backend.reflex.dev/custom-components/gallery"
-    )
-
-    # Check the backend services if the user is allowed to update information of this package is already shared.
-    try:
-        logger.debug(
-            f"Checking if user has permission to upsert information for {package_name} by POST."
-        )
-        # Send a POST request to achieve two things at once:
-        # 1. Check if the package is already shared by the user. If not, the backend will return 403.
-        # 2. If this package is not shared before, this request records the package name in the backend.
-        response = httpx.post(
-            post_custom_components_gallery_endpoint,
-            headers={"Authorization": f"Bearer {access_token}"},
-            data=params,
-        )
-        if response.status_code == httpx.codes.FORBIDDEN:
-            logger.error(
-                f"{package_name} is owned by another user. Unable to update the information for it."
-            )
-            raise SystemExit(1)
-        response.raise_for_status()
-    except httpx.HTTPError as he:
-        logger.error(f"Unable to complete request due to {he}.")
-        raise SystemExit(1) from None
-
-    files = []
-    if (image_file_and_extension := _get_file_from_prompt_in_loop()) is not None:
-        files.append((
-            "files",
-            (image_file_and_extension[1], image_file_and_extension[0]),
-        ))
-
-    demo_url = None
-    while True:
-        demo_url = (
-            console.ask(
-                "[ Full URL of deployed demo app, e.g. `https://my-app.reflex.run` ] (enter to skip)"
-            )
-            or None
-        )
-        if _validate_url_with_protocol_prefix(demo_url):
-            break
-    if demo_url:
-        params["demo_url"] = demo_url
-
-    # Now send the post request to Reflex backend services.
-    try:
-        logger.debug(f"Sending custom component data: {params}")
-        response = httpx.post(
-            post_custom_components_gallery_endpoint,
-            headers={"Authorization": f"Bearer {access_token}"},
-            data=params,
-            files=files,
-            timeout=POST_CUSTOM_COMPONENTS_GALLERY_TIMEOUT,
-        )
-        response.raise_for_status()
-
-    except httpx.HTTPError as he:
-        logger.error(f"Unable to complete request due to {he}.")
-        raise SystemExit(1) from None
-
-    logger.info("Custom component information successfully shared!")
-
-
-def _validate_url_with_protocol_prefix(url: str | None) -> bool:
-    """Validate the URL with protocol prefix. Empty string is acceptable.
-
-    Args:
-        url: the URL string to check.
-
-    Returns:
-        Whether the entered URL is acceptable.
-    """
-    return not url or (url.startswith(("http://", "https://")))
-
-
-def _get_file_from_prompt_in_loop() -> tuple[bytes, str] | None:
-    image_file = file_extension = None
-    while image_file is None:
-        image_path_str = console.ask(
-            "Upload a preview image of your demo app (enter to skip)"
-        )
-        if not image_path_str:
-            break
-        image_file_path = Path(image_path_str)
-        if not image_file_path:
-            break
-        if not image_file_path.exists():
-            logger.error(f"File {image_file_path} does not exist.")
-            continue
-        file_extension = image_file_path.suffix
-        try:
-            image_file = image_file_path.read_bytes()
-        except OSError as ose:
-            logger.error(f"Unable to read the {file_extension} file due to {ose}")
-            raise SystemExit(1) from None
-        else:
-            return image_file, file_extension
-
-    logger.debug(f"File extension detected: {file_extension}")
-    return None
-
-
 @custom_components_cli.command(name="share")
 @log_options
 def share_more_detail():
-    """Collect more details on the published package for gallery."""
-    _collect_details_for_gallery()
+    """Retired: the custom components gallery no longer accepts submissions."""
+    console.deprecate(
+        feature_name="reflex component share",
+        reason="The custom components gallery has been retired, so there is nowhere to share to. Publish your package to PyPI to make it available.",
+        deprecation_version="0.9.13",
+        removal_version="1.0",
+    )
 
 
 @custom_components_cli.command(name="install")
