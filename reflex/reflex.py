@@ -1117,13 +1117,6 @@ cli.add_command(
 
 cli.add_command(db_cli, name="db")
 cli.add_command(script_cli, name="script")
-cli.add_command(
-    _LazyCommand(
-        "component",
-        "reflex.custom_components.custom_components:custom_components_cli",
-        help="CLI for creating custom components.",
-    )
-)
 
 if __name__ == "__main__":
     cli()
