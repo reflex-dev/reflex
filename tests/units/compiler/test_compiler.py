@@ -1734,16 +1734,15 @@ def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
     assert "captureOwnerStack" in rendered
 
 
-def test_context_template_one_provider_per_substate():
-    """Each substate gets its own provider so one delta re-renders one context.
+def _render_two_substate_context() -> str:
+    """Render the context template for a state with one substate.
 
-    A single provider owning every reducer means any delta recreates every
-    ``StateContexts`` element; nesting one ``SubstateProvider`` per substate
-    keeps the untouched providers memoized.
+    Returns:
+        The rendered context module source.
     """
     from reflex_base.compiler.templates import context_template
 
-    rendered = context_template(
+    return context_template(
         is_dev_mode=True,
         default_color_mode='"light"',
         initial_state={
@@ -1753,18 +1752,56 @@ def test_context_template_one_provider_per_substate():
         state_name="reflex___state____state",
     )
 
+
+def test_context_template_one_provider_per_substate():
+    """Each substate gets its own provider so one delta re-renders one context.
+
+    A single provider owning every reducer means any delta recreates every
+    ``StateContexts`` element; nesting one ``SubstateProvider`` per substate
+    keeps the untouched providers memoized.
+    """
+    rendered = _render_two_substate_context()
+
     assert (
-        "createElement(SubstateProvider, {substateName: 'reflex___state____state', "
-        "contextName: 'reflex___state____state'}," in rendered
+        "const SUBSTATES = [\n"
+        "  ['reflex___state____state', 'reflex___state____state'],\n"
+        "  ['reflex___state____state__sub', 'reflex___state____state__sub'],\n"
+        "];" in rendered
     )
+    # The reducers live in SubstateProvider; the client provider only composes.
+    client = rendered[
+        rendered.index("function ClientStateProvider") : rendered.index(
+            "function ServerStateProvider"
+        )
+    ]
+    assert "useReducer" not in client
+    assert "createElement(SubstateProvider, { substateName, contextName }, tree)" in (
+        client
+    )
+    assert "createElement(DispatchProvider, {}, tree)" in client
+
+
+def test_context_template_server_state_provider_is_flat():
+    """The server provides initial state without a component per substate.
+
+    Server rendering recurses once per element level, so a ``SubstateProvider``
+    around every context doubled the depth of every page render and overflowed
+    the stack of apps with many substates.
+    """
+    rendered = _render_two_substate_context()
+
+    server = rendered[rendered.index("function ServerStateProvider") :]
+    assert "SubstateProvider" not in server
+    assert "DispatchProvider" not in server
+    assert "useReducer" not in server
     assert (
-        "createElement(SubstateProvider, {substateName: 'reflex___state____state__sub', "
-        "contextName: 'reflex___state____state__sub'}," in rendered
+        "StateContexts[contextName],\n"
+        "      { value: initialState[substateName] }," in server
     )
-    # The reducers moved into SubstateProvider; StateProvider only composes.
-    provider_body = rendered[rendered.index("export function StateProvider") :]
-    assert "useReducer" not in provider_body
-    assert "createElement(DispatchProvider, {}," in provider_body
+    assert rendered.rstrip().endswith(
+        "export const StateProvider =\n"
+        '  typeof document === "undefined" ? ServerStateProvider : ClientStateProvider;'
+    )
 
 
 def test_context_template_client_side_component_is_named():
