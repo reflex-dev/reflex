@@ -2,6 +2,7 @@
 
 import builtins
 import gc
+import logging
 import multiprocessing
 import os
 import socket
@@ -20,6 +21,7 @@ from reflex_base.utils import serializers
 
 from reflex.utils import exec as exec_utils
 from reflex.utils import prerequisites, telemetry
+from reflex.utils.precompressed_staticfiles import PrecompressedStaticFiles
 
 DEV_BACKEND_RELOAD_ENV_NAME = environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
 
@@ -750,6 +752,145 @@ def test_backend_start_method_follows_platform_default(
     )
 
     assert exec_utils._backend_start_method() == expected
+
+
+def test_get_routes_manifest_router_missing_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """Return None without warning when no routes manifest has been written."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    with caplog.at_level(logging.WARNING, logger=exec_utils.logger.name):
+        assert exec_utils.get_routes_manifest_router() is None
+    assert not caplog.records
+
+
+def test_get_routes_manifest_router_invalid_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """Warn and return None when the routes manifest is not valid JSON."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    manifest = tmp_path / "routes.json"
+    manifest.write_text("not valid json{")
+    with caplog.at_level(logging.WARNING, logger=exec_utils.logger.name):
+        assert exec_utils.get_routes_manifest_router() is None
+    assert f"Ignoring invalid routes manifest {manifest}" in caplog.text
+
+
+def test_get_routes_manifest_router_matches_dynamic_routes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Build a matcher from the manifest that resolves dynamic routes."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    (tmp_path / "routes.json").write_text(
+        '["index", "articles/[id]", "posts/[[...splat]]", "404"]'
+    )
+
+    router = exec_utils.get_routes_manifest_router()
+
+    assert router is not None
+    assert router("/") == "index"
+    assert router("/articles/7") == "articles/[id]"
+    assert router("/posts/a/b") == "posts/[[...splat]]"
+    assert router("/definitely-not-a-page") is None
+
+
+def test_get_frontend_mount_builds_router_from_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """The frontend mount picks up the routes manifest when no router is given."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    (tmp_path / "build" / "client").mkdir(parents=True)
+    (tmp_path / "routes.json").write_text('["index", "articles/[id]"]')
+
+    mount = exec_utils.get_frontend_mount()
+
+    static_files = mount.app
+    assert isinstance(static_files, PrecompressedStaticFiles)
+    router = static_files._router
+    assert router is not None
+    assert router("/articles/7") == "articles/[id]"
+    assert router("/missing") is None
+
+
+def test_get_frontend_mount_router_respects_frontend_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """The mount-relative path is matched with the frontend path restored."""
+    from reflex_base.config import get_config
+
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    monkeypatch.setattr(get_config(), "frontend_path", "/sub")
+    (tmp_path / "build" / "client" / "sub").mkdir(parents=True)
+    (tmp_path / "routes.json").write_text('["index", "articles/[id]"]')
+
+    mount = exec_utils.get_frontend_mount()
+
+    static_files = mount.app
+    assert isinstance(static_files, PrecompressedStaticFiles)
+    router = static_files._router
+    assert router is not None
+    assert router("/articles/7") == "articles/[id]"
+    assert router("/") == "index"
+    assert router("/missing") is None
+
+
+def test_get_frontend_mount_router_excludes_synthetic_404_route(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A literal /404 request stays a 404 despite the compiled 404 page route."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    (tmp_path / "build" / "client").mkdir(parents=True)
+    (tmp_path / "routes.json").write_text('["index", "articles/[id]", "404"]')
+
+    mount = exec_utils.get_frontend_mount()
+
+    static_files = mount.app
+    assert isinstance(static_files, PrecompressedStaticFiles)
+    router = static_files._router
+    assert router is not None
+    assert router("/404") is None
+    assert router("/404/") is None
+    assert router("/articles/7") == "articles/[id]"
+
+
+def test_get_frontend_mount_explicit_router_excludes_synthetic_404_route(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """An explicitly passed app router is also filtered for the 404 page route."""
+    from reflex.route import get_router
+
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    (tmp_path / "build" / "client").mkdir(parents=True)
+
+    mount = exec_utils.get_frontend_mount(
+        router=get_router(["index", "articles/[id]", "404"])
+    )
+
+    static_files = mount.app
+    assert isinstance(static_files, PrecompressedStaticFiles)
+    router = static_files._router
+    assert router is not None
+    assert router("/404") is None
+    assert router("/articles/7") == "articles/[id]"
+
+
+@pytest.mark.parametrize("path", ["/index", "/index/", "index"])
+def test_get_frontend_mount_router_excludes_index_alias(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, path: str
+):
+    """``/index`` keeps its 404 status since the frontend renders it as the 404 page."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    (tmp_path / "build" / "client").mkdir(parents=True)
+    (tmp_path / "routes.json").write_text('["index", "articles/[id]"]')
+
+    mount = exec_utils.get_frontend_mount()
+
+    static_files = mount.app
+    assert isinstance(static_files, PrecompressedStaticFiles)
+    router = static_files._router
+    assert router is not None
+    assert router(path) is None
+    assert router("/") == "index"
 
 
 @pytest.mark.parametrize("json_mode", [False, True])
