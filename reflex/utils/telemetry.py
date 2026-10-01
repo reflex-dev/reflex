@@ -591,6 +591,10 @@ def _send_detached(event: str) -> None:
     Args:
         event: The event name.
     """
+    if not hasattr(os, "fork"):
+        # Nothing forks here (Windows), so an in-process send is safe.
+        send(event)
+        return
     with suppress(Exception):
         if not get_config().telemetry_enabled:
             return

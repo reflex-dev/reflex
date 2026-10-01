@@ -988,6 +988,7 @@ def test_real_fork_keeps_the_parent_paused():
         telemetry._get_telemetry_executor()
 
 
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is POSIX-only")
 def test_send_detached_hands_the_event_to_a_detached_process(
     mocker: MockerFixture,
 ):
@@ -1009,6 +1010,20 @@ def test_send_detached_hands_the_event_to_a_detached_process(
     # The direct child exits right after detaching, so it is reaped at once.
     popen.return_value.wait.assert_called_once()
     assert telemetry._executor is None
+
+
+def test_send_detached_sends_in_process_without_fork(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """Where nothing forks (Windows) the event is sent in-process."""
+    monkeypatch.delattr(os, "fork", raising=False)
+    send = mocker.patch.object(telemetry, "send")
+    popen = mocker.patch.object(telemetry.subprocess, "Popen")
+
+    telemetry._send_detached("run-prod")
+
+    send.assert_called_once_with("run-prod")
+    popen.assert_not_called()
 
 
 def test_send_detached_starts_nothing_when_disabled(mocker: MockerFixture):
