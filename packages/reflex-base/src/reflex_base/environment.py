@@ -448,13 +448,14 @@ def interpret_env_var_value(
 
 T = TypeVar("T")
 
-# Callbacks run after ``EnvVar.set`` changes the variable of the same name, so
-# values cached off the hot path stay in sync with in-process changes.
+# Callbacks run after ``EnvVar.set`` changes the variable of the same name, or
+# after env files are loaded, so values cached off the hot path stay in sync
+# with in-process changes.
 _SET_CALLBACKS: dict[str, list[Callable[[], object]]] = {}
 
 
 def _on_env_var_set(name: str, callback: Callable[[], object]) -> None:
-    """Run a callback whenever ``EnvVar.set`` changes the named variable.
+    """Run a callback whenever ``EnvVar.set`` or an env file changes the variable.
 
     Args:
         name: The environment variable name.
@@ -1013,9 +1014,16 @@ def _load_dotenv_from_files(files: list[Path]):
         )
         return
 
+    loaded = False
     for env_file in files:
         if env_file.exists():
             load_dotenv(env_file, override=True)
+            loaded = True
+    if loaded:
+        # The files write os.environ directly, so notify every registered var.
+        for callbacks in _SET_CALLBACKS.values():
+            for callback in callbacks:
+                callback()
 
 
 def _paths_from_environment() -> list[Path]:

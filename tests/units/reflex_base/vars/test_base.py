@@ -13,12 +13,13 @@ import typing
 import weakref
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
+from pathlib import Path
 from typing import Any, ClassVar, Literal, TypeVar
 
 import pytest
 from reflex_base import constants
 from reflex_base.constants import RouteArgType
-from reflex_base.environment import environment
+from reflex_base.environment import _load_dotenv_from_files, environment
 from reflex_base.utils import serializers
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 from reflex_base.utils.imports import ImportVar
@@ -1288,6 +1289,23 @@ def test_type_check_depth_follows_env_mode_set():
     assert _type_check_depth() == 0
     environment.REFLEX_ENV_MODE.set(None)
     assert _type_check_depth() == 1
+
+
+@pytest.mark.usefixtures("restore_env_mode")
+def test_type_check_depth_follows_env_mode_from_env_file(tmp_path: Path):
+    """Loading an env file that sets REFLEX_ENV_MODE re-resolves the depth.
+
+    Args:
+        tmp_path: Pytest temporary directory.
+    """
+    environment.REFLEX_ENV_MODE.set(constants.Env.DEV)
+    assert _type_check_depth() == 1
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        f"{environment.REFLEX_ENV_MODE.name}={constants.Env.PROD.value}\n"
+    )
+    _load_dotenv_from_files([env_file])
+    assert _type_check_depth() == 0
 
 
 @pytest.mark.usefixtures("restore_env_mode")
