@@ -17,7 +17,7 @@ from reflex_base.constants import CompileVars, RouteVar
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
 from reflex_base.event.context import EventContext
-from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.event.processor import BaseStateEventProcessor, base_state_processor
 from reflex_base.registry import RegistrationContext
 
 import reflex as rx
@@ -1336,6 +1336,52 @@ async def test_execute_event_records_state_acquire_duration(
         for p in metric_points(otel_metrics, otel.METRIC_STATE_ACQUIRE_DURATION)
     }
     assert Event.from_event_type(AcquireState.noop())[0].name in names
+
+
+async def test_unannotated_handler_reuses_its_resolved_type_hints(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A handler without annotations does not resolve its type hints again per event.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class UnannotatedState(State):
+        count: int = 0
+
+        @event
+        def bump(self):
+            self.count += 1
+
+    # Resolved at registration, to an empty mapping.
+    assert UnannotatedState.event_handlers["bump"]._type_hints == {}
+    resolved: list[Any] = []
+    get_type_hints = base_state_processor.types.get_type_hints
+
+    def recording_get_type_hints(obj: Any) -> dict[str, Any]:
+        resolved.append(obj)
+        return get_type_hints(obj)
+
+    monkeypatch.setattr(
+        base_state_processor.types, "get_type_hints", recording_get_type_hints
+    )
+    async with real_base_state_processor as processor:
+        for _ in range(2):
+            await processor.enqueue(
+                token, Event.from_event_type(UnannotatedState.bump())[0]
+            )
+        await processor.join(1)
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(UnannotatedState)).count == 2
+    assert resolved == []
 
 
 async def test_no_op_partial_router_data_leaves_the_state_untouched(

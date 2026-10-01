@@ -288,9 +288,12 @@ async def process_event(
     handler_name = fn.__qualname__
 
     try:
-        # Resolved hints are cached on the handler; fall back for ones that
-        # were not resolvable at registration, raising again if still unresolved.
-        type_hints = handler._type_hints or types.get_type_hints(fn)
+        # Resolved hints are cached on the handler, empty for an unannotated one;
+        # fall back for ones that were not resolvable at registration (None),
+        # raising again if still unresolved.
+        type_hints = handler._type_hints
+        if type_hints is None:
+            type_hints = types.get_type_hints(fn)
         payload = _transform_event_payload(payload, type_hints)
     except Exception as ex:
         # No transformation was possible, continue with the original payload
