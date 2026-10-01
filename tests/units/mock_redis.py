@@ -233,7 +233,12 @@ def mock_redis() -> Redis:
                             if asyncio.iscoroutine(res):
                                 await res
                         else:
-                            yield event
+                            yield {
+                                "type": "pmessage",
+                                "pattern": pattern.encode(),
+                                "channel": event["channel"],
+                                "data": event["data"],
+                            }
 
         pubsub_mock = AsyncMock()
         pubsub_mock.psubscribe = psubscribe
