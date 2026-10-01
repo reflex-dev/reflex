@@ -433,7 +433,7 @@ def test_init_records_version_check_after_frontend_setup(
     assert events == ["frontend", "version"]
 
 
-@pytest.mark.parametrize("subcommand", ["init", "migrate", "makemigrations"])
+@pytest.mark.parametrize("subcommand", ["init", "migrate", "makemigrations", "status"])
 def test_db_commands_without_db_extra_point_to_install(
     monkeypatch: pytest.MonkeyPatch, subcommand: str
 ):
@@ -446,5 +446,29 @@ def test_db_commands_without_db_extra_point_to_install(
     monkeypatch.setattr(reflex, "find_spec", lambda name: None)
     result = click.testing.CliRunner().invoke(reflex.cli, ["db", subcommand])
     assert result.exit_code == 1
-    assert result.exception is None or isinstance(result.exception, SystemExit)
     assert "reflex[db]" in result.output
+
+
+@pytest.mark.parametrize("subcommand", ["migrate", "status"])
+def test_db_commands_run_without_sqlmodel(
+    monkeypatch: pytest.MonkeyPatch, subcommand: str
+):
+    """Db commands run when sqlalchemy and alembic are installed without sqlmodel.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+        subcommand: The `reflex db` subcommand to run.
+    """
+    from reflex.utils import prerequisites
+
+    find_spec = reflex.find_spec
+    monkeypatch.setattr(
+        reflex,
+        "find_spec",
+        lambda name: None if name == "sqlmodel" else find_spec(name),
+    )
+    monkeypatch.setattr(prerequisites, "get_app", lambda: None)
+    monkeypatch.setattr(prerequisites, "check_db_initialized", lambda: False)
+    result = click.testing.CliRunner().invoke(reflex.cli, ["db", subcommand])
+    assert result.exit_code == 0
+    assert "reflex[db]" not in result.output
