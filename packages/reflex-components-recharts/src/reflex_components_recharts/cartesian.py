@@ -35,12 +35,10 @@ from .recharts import (
 )
 
 _TICK_FORMATTER_DYNAMIC_VAR_ERROR = (
-    "tick_formatter must be a JavaScript function expression, not a "
+    "tick_formatter must be a JavaScript function, not a "
     "dynamic string Var. Use FunctionStringVar.create() instead."
 )
-_TICK_FORMATTER_TYPE_ERROR = (
-    "tick_formatter must be a FunctionVar or JavaScript string."
-)
+_TICK_FORMATTER_TYPE_ERROR = "tick_formatter must be a FunctionVar."
 _TICK_FORMATTER_CALLABLE_ERROR = (
     "tick_formatter must be a FunctionVar, not a Python callable."
 )
@@ -160,8 +158,6 @@ class Axis(Recharts):
             props["tick_formatter"] = tick_formatter
         elif isinstance(tick_formatter, Var) and tick_formatter._var_type is str:
             raise TypeError(_TICK_FORMATTER_DYNAMIC_VAR_ERROR)
-        elif isinstance(tick_formatter, Var):
-            raise TypeError(_TICK_FORMATTER_TYPE_ERROR)
         elif callable(tick_formatter) and not isinstance(tick_formatter, Var):
             raise TypeError(_TICK_FORMATTER_CALLABLE_ERROR)
         elif tick_formatter is not None:
