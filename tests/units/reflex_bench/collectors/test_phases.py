@@ -374,9 +374,11 @@ def test_tree_phases_samples_a_real_tree(tmp_path: Path):
         [sys.executable, "-c", code], stdout=subprocess.PIPE, text=True
     )
     sampler = phases.TreePhases(root.pid, interval=0.01).start()
-    runs = json.loads(root.communicate(timeout=30)[0])
+    try:
+        runs = json.loads(root.communicate(timeout=30)[0])
+    finally:
+        report = sampler.stop()
     assert root.returncode == 0
-    report = sampler.stop()
     for kind, (run_start, run_end) in runs.items():
         ((start, end),) = report.classes[kind].intervals
         # A tool is only sampled while it runs; a sample's time is read just
@@ -433,10 +435,12 @@ def test_tree_phases_credits_a_reaped_child_from_its_parent(tmp_path: Path):
         assert root.stdout.readline() == "spawned\n"
         # One sample while the child runs, the final one after it was reaped.
         sampler = phases.TreePhases(root.pid, interval=3600).start()
-        assert root.stdout.readline() == "reaped\n"
-        times = psutil.Process(root.pid).cpu_times()
-        expected_cpu = times.children_user + times.children_system
-        report = sampler.stop()
+        try:
+            assert root.stdout.readline() == "reaped\n"
+            times = psutil.Process(root.pid).cpu_times()
+            expected_cpu = times.children_user + times.children_system
+        finally:
+            report = sampler.stop()
     finally:
         root.stdin.close()
         root.wait(30)
