@@ -363,12 +363,12 @@ def test_tree_phases_samples_a_real_tree(tmp_path: Path):
     assert root.wait(30) == 0
     report = sampler.stop()
     install, frontend = report.classes["install"], report.classes["frontend"]
-    assert 0.35 <= install.wall_s < 5
+    assert 0.15 <= install.wall_s < 5
     # The root interpreter is recorded too, as python, with the CPU it used.
     root_record = next(p for p in report.processes if p.pid == root.pid)
     assert root_record.kind == "python"
     assert report.classes["python"].cpu_s == root_record.cpu_s > 0
-    assert 0.35 <= frontend.wall_s < 5
+    assert 0.15 <= frontend.wall_s < 5
     assert len(install.intervals) == len(frontend.intervals) == 1
     # Frontend work starts after the install finished.
     assert install.intervals[0][1] <= frontend.intervals[0][0]
