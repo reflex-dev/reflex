@@ -424,7 +424,7 @@ async def test_wait_remembers_completion_until_the_recorded_state_is_running(
     messages = []
 
     report = await client.deployments.wait(
-        FIRST_ID, timeout=0.05, poll_interval=0, on_status=messages.append
+        FIRST_ID, poll_interval=0, on_status=messages.append
     )
 
     assert report.status == "Running"
@@ -449,10 +449,10 @@ async def test_wait_new_terminal_narration_overrides_remembered_completion(
 
     if message == "Rejected":
         with pytest.raises(DeploymentFailedError) as exc_info:
-            await client.deployments.wait(FIRST_ID, timeout=0.05, poll_interval=0)
+            await client.deployments.wait(FIRST_ID, poll_interval=0)
         assert exc_info.value.report.status == "Pending"
     else:
-        report = await client.deployments.wait(FIRST_ID, timeout=0.05, poll_interval=0)
+        report = await client.deployments.wait(FIRST_ID, poll_interval=0)
         assert report.status == "Pending"
     assert len([r for r in mock_api.requests if r.url.endswith("/failure")]) == 2
 
@@ -477,22 +477,23 @@ async def test_wait_remembered_completion_respects_the_recorded_outcome(
 
     if recorded == "Superseded":
         with pytest.raises(DeploymentFailedError) as exc_info:
-            await client.deployments.wait(FIRST_ID, timeout=0.05, poll_interval=0)
+            await client.deployments.wait(FIRST_ID, poll_interval=0)
         assert exc_info.value.report.status == recorded
     else:
-        report = await client.deployments.wait(FIRST_ID, timeout=0.05, poll_interval=0)
+        report = await client.deployments.wait(FIRST_ID, poll_interval=0)
         assert report.status == recorded
     assert len([r for r in mock_api.requests if r.url.endswith("/failure")]) == 2
 
 
 async def test_wait_remembered_completion_still_times_out_while_pending(
-    client: AsyncReflexBuild, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI, monkeypatch: pytest.MonkeyPatch
 ):
     """An earlier completion does not remove the deadline for a pending row.
 
     Args:
         client: The SDK client.
         mock_api: The mock API.
+        monkeypatch: The monkeypatch fixture.
     """
     _statuses(
         mock_api,
@@ -500,9 +501,13 @@ async def test_wait_remembered_completion_still_times_out_while_pending(
         "Building backend application...",
     )
     _reports(mock_api, "Pending")
+    clock = iter([0.0, 0.0, 1.0])
+    monkeypatch.setattr(
+        "reflex_build_sdk._async.resources.deployments.monotonic", lambda: next(clock)
+    )
     with pytest.raises(DeploymentTimeoutError, match="Building backend application"):
-        await client.deployments.wait(FIRST_ID, timeout=0.05, poll_interval=0)
-    assert len([r for r in mock_api.requests if r.url.endswith("/failure")]) >= 2
+        await client.deployments.wait(FIRST_ID, timeout=1, poll_interval=0)
+    assert len([r for r in mock_api.requests if r.url.endswith("/failure")]) == 2
 
 
 async def test_wait_returns_approval_despite_a_cached_completion_message(
