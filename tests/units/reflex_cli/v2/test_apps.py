@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import json
 import logging
+import re
 import uuid
 from collections.abc import Iterator
 from io import StringIO
@@ -923,23 +924,28 @@ def table_client(mocker: MockFixture):
 
 
 @pytest.mark.parametrize("command", _TABLE_COMMANDS)
-def test_app_tables_render_full_id_on_one_line(
-    table_client, mocker: MockFixture, command: str
+@pytest.mark.parametrize("width", [40, 80])
+def test_app_tables_render_full_id_without_truncation(
+    table_client, mocker: MockFixture, command: str, width: int
 ):
-    """Keep IDs copyable in the human-readable tables of an 80-column terminal.
+    """Keep the complete ID visible at narrow and standard terminal widths.
 
     Args:
         table_client: The client serving the app and its deployment.
         mocker: The pytest-mock fixture.
         command: The command under test.
+        width: The terminal width used to render the table.
     """
     output = StringIO()
-    mocker.patch("reflex_base.utils.console._console", Console(file=output, width=80))
+    mocker.patch(
+        "reflex_base.utils.console._console", Console(file=output, width=width)
+    )
 
     result = runner.invoke(hosting_cli, _TABLE_COMMANDS[command][0])
 
     assert result.exit_code == 0, result.output
-    assert any(str(_LONG_ID) in line for line in output.getvalue().splitlines())
+    visible_id_text = re.sub(r"[^0-9a-f-]", "", output.getvalue().lower())
+    assert str(_LONG_ID) in visible_id_text
 
 
 @pytest.mark.parametrize("command", _TABLE_COMMANDS)
