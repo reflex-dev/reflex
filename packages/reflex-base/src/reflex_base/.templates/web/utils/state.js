@@ -42,6 +42,17 @@ const cookies = new Cookies();
 // Dictionary holding component references.
 export const refs = {};
 
+/**
+ * Create a ref and register it in `refs` under the given name.
+ * @param name The registry key, e.g. "ref_my_id".
+ * @returns The ref object.
+ */
+export const useRegisteredRef = (name) => {
+  const ref = useRef(null);
+  refs[name] = ref;
+  return ref;
+};
+
 // Set when the backend sends a delta the frontend cannot process. A mismatch
 // between frontend and backend state definitions is fatal (#6019): no further
 // events are sent until the frontend is rebuilt/reloaded.

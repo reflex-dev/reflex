@@ -682,6 +682,19 @@ def test_var_operation_str_interpolation_matches_tagged_form() -> None:
     assert str(tagged) == str(untagged) == "wrap(operandValue)"
 
 
+def test_uuid_string_var_memoizes_with_inline_callback():
+    """The UUID hook passes ``useMemo`` an inline callback, as React Compiler requires."""
+    from reflex_base.vars.base import get_uuid_string_var
+
+    uuid_var = get_uuid_string_var()
+    var_data = uuid_var._get_all_var_data()
+
+    assert var_data is not None
+    assert list(var_data.hooks) == [
+        f"const {uuid_var._js_expr} = useMemo(() => generateUUID(), [])"
+    ]
+
+
 @pytest.mark.parametrize(
     "name",
     [

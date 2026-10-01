@@ -123,18 +123,17 @@ def get_memoized_event_triggers(
             continue
 
         rendered_chain = LiteralVar.create(event)
+        rendered_js = str(rendered_chain)
         rendered_data = rendered_chain._get_all_var_data()
         event_var_data = [
             data for arg in event_args if (data := arg._get_all_var_data()) is not None
         ]
-        chain_hash = md5(
-            str(rendered_chain).encode("utf-8"), usedforsecurity=False
-        ).hexdigest()
+        chain_hash = md5(rendered_js.encode("utf-8"), usedforsecurity=False).hexdigest()
         memo_name = f"{event_trigger}_{chain_hash}"
 
-        var_deps = ["addEvents", "ReflexEvent"]
-        var_deps.extend(_get_deps_from_event_trigger(event))
-
+        var_deps = list(_get_deps_from_event_trigger(event))
+        # Keep hook bindings here; the React Compiler adapter can use Babel's
+        # scopes to remove unused dependencies without losing captured values.
         for var_data in event_var_data:
             for hook in var_data.hooks:
                 var_deps.extend(_get_hook_deps(hook))
@@ -144,7 +143,7 @@ def get_memoized_event_triggers(
             rendered_data,
             VarData(
                 hooks=[
-                    f"const {memo_name} = useCallback({rendered_chain!s}, [{', '.join(var_deps)}])"
+                    f"const {memo_name} = useCallback({rendered_js}, [{', '.join(var_deps)}])"
                 ],
                 imports={"react": [ImportVar(tag="useCallback")]},
             ),

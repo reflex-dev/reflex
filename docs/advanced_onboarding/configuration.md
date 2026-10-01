@@ -164,6 +164,22 @@ The compiler adds build time and memory overhead. Runtime performance depends on
 
 Restart `reflex run` after changing the flag, and rebuild production output. Disabling the flag removes the compiler transform and its optional build dependencies on the next frontend install, unless another component or plugin requires those dependencies.
 
+### Letting React Compiler replace auto-memoization
+
+By default, Reflex wraps each stateful component in a generated memo component. With `react_compiler=True`, you can turn this off and let React Compiler memoize whole pages instead:
+
+```python
+config = rx.Config(
+    app_name="my_app_name",
+    react_compiler=True,
+    auto_memoize=False,
+)
+```
+
+This also shortens Python compilation. React Compiler skips any component it cannot prove safe, such as a custom component whose hook code modifies values during render. Without auto-memoization, a skipped page re-renders completely on every state change, so measure your pages before turning `auto_memoize` off.
+
+Setting both `auto_memoize=False` and `react_compiler=False` logs a warning because page memoization is disabled. Enable one of these options for normal use.
+
 ## Customizable App Data Directory
 
 The `REFLEX_DIR` environment variable can be set, which allows users to set the location where Reflex writes helper tools like Bun and NodeJS.
