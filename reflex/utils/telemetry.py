@@ -562,21 +562,52 @@ if hasattr(os, "register_at_fork"):
     os.register_at_fork(after_in_child=_reset_executor_after_fork)
 
 
-# Run by _send_detached in a fresh interpreter. It forks once more and exits,
-# so the supervisor reaps it at once and the sender is reparented to init.
-_DETACHED_SEND = """\
+# Run by _send_detached in a fresh interpreter (argv: event, mode). In
+# "detach" mode it forks once more and exits, so the supervisor reaps it at
+# once and the sender is reparented to whoever reaps orphans.
+_DETACH = """\
 import os
 import sys
 
-if os.fork():
-    os._exit(0)
-os.setsid()
+if sys.argv[2] == "detach":
+    if os.fork():
+        os._exit(0)
+    os.setsid()
+"""
+_SEND_EVENT = """\
 from reflex.utils import telemetry
 
 telemetry._process_event(sys.argv[1], True)
 telemetry._flush(30)
 os._exit(0)
 """
+# Seconds the supervisor waits for its direct child before killing it.
+_DETACHED_TIMEOUT = 10
+_PR_GET_CHILD_SUBREAPER = 37
+
+
+def _reaps_orphans() -> bool:
+    """Report whether orphaned descendants are reparented to this process.
+
+    True as PID 1 (a container without an init) or as a Linux child
+    subreaper. Such a process would inherit a detached sender, and a server
+    supervisor never reaps it.
+
+    Returns:
+        Whether this process inherits orphans.
+    """
+    if os.getpid() == 1:
+        return True
+    if sys.platform != "linux":
+        return False
+    import ctypes
+
+    flag = ctypes.c_int()
+    with suppress(Exception):
+        prctl = ctypes.CDLL(None, use_errno=True).prctl
+        if prctl(_PR_GET_CHILD_SUBREAPER, ctypes.byref(flag), 0, 0, 0) == 0:
+            return bool(flag.value)
+    return False
 
 
 def _send_detached(event: str) -> None:
@@ -586,7 +617,10 @@ def _send_detached(event: str) -> None:
     to a fresh interpreter, so it never gains a thread or waits on the
     network. The direct child exits right after detaching the sender, so no
     zombie is left, and ``close_fds`` keeps the server's sockets out of it.
-    Any other process sends in-process without waiting on a child.
+    Where orphans would come back to this process (PID 1, a subreaper), the
+    direct child sends itself and is waited for instead. A child that
+    outlives ``_DETACHED_TIMEOUT`` is killed and reaped. Any other process
+    sends in-process without waiting on a child.
 
     Args:
         event: The event name.
@@ -600,13 +634,19 @@ def _send_detached(event: str) -> None:
     with suppress(Exception):
         if not get_config().telemetry_enabled:
             return
-        subprocess.Popen(
-            [sys.executable, "-c", _DETACHED_SEND, event],
+        mode = "attached" if _reaps_orphans() else "detach"
+        child = subprocess.Popen(
+            [sys.executable, "-c", _DETACH + _SEND_EVENT, event, mode],
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             close_fds=True,
-        ).wait(timeout=10)
+        )
+        try:
+            child.wait(timeout=_DETACHED_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            child.kill()
+            child.wait()
 
 
 def _current_registration_context() -> RegistrationContext | None:
