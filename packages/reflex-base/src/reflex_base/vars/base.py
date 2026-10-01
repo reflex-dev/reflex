@@ -4423,20 +4423,20 @@ def _validate_state_declaration(
 
 
 def _validate_mixin_vars(
-    name: str, namespace: Mapping[str, Any], lookup_order: Sequence[type]
+    class_name: str, lookup_order: Sequence[type], own_fields: Mapping[str, Field]
 ) -> None:
     """Reject a var that two mixins not inheriting from one another both declare.
 
     A state combines its mixins into one coherent state, and two independent
     mixins would each use their shared var as their own. A mixin may still
-    declare without a default a var that the class or its parent state declares,
-    which only types it for the mixin. The mixins of the parent state are left
-    out: they were checked with it, and its vars may be redeclared.
+    declare without a default a var of the class or of its parent state, which
+    only types it for the mixin. The mixins of the parent state are left out:
+    they were checked with it, and its vars may be redeclared.
 
     Args:
-        name: The name of the class being created.
-        namespace: The class namespace.
+        class_name: The qualified name of the class being created.
         lookup_order: The bases of the class in method resolution order.
+        own_fields: The fields the class declares itself.
 
     Raises:
         MixinVarNameConflictError: If two such mixins declare the same var.
@@ -4450,20 +4450,18 @@ def _validate_mixin_vars(
     ]
     if len(mixins) < 2:
         return
-    state_declares = (
-        namespace.keys()
-        | annotations_from_namespace(namespace).keys()
-        | (parent.__fields__.keys() if parent is not None else set())
-    )
+    parent_fields = parent.__fields__ if parent is not None else {}
     declared_by: dict[str, type] = {}
     for base in mixins:
         for key, base_field in base.__own_fields__.items():
-            if base_field._default_from_type and key in state_declares:
+            if base_field._default_from_type and (
+                key in own_fields or key in parent_fields
+            ):
                 continue
             first = declared_by.setdefault(key, base)
             if not issubclass(first, base):
                 msg = (
-                    f"The var `{key}` in {namespace['__module__']}.{name} is declared "
+                    f"The var `{key}` in {class_name} is declared "
                     f"by both {first.__module__}.{first.__name__} and "
                     f"{base.__module__}.{base.__name__}, mixins that do not inherit "
                     "from one another; rename it in one of them, or declare it in a "
@@ -4656,7 +4654,6 @@ class BaseStateMeta(ABCMeta):
             if root is not None:
                 _validate_state_declaration(root, lookup_order, namespace)
                 break
-        _validate_mixin_vars(name, namespace, lookup_order)
 
         state_bases = [
             base for base in bases if issubclass(base, EvenMoreBasicBaseState)
@@ -4695,6 +4692,9 @@ class BaseStateMeta(ABCMeta):
                 own_fields[key] = inherited_fields[key]._replace(
                     **_default_arguments(value)
                 )
+        _validate_mixin_vars(
+            f"{namespace['__module__']}.{name}", lookup_order, own_fields
+        )
 
         # The fields are the class attributes: descriptors storing the values.
         namespace.update(own_fields)

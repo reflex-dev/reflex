@@ -781,8 +781,8 @@ def test_abc_mixin(state_mixin: bool, clean_registration_context):
 def test_mixin_var_name_conflict(clean_registration_context):
     """Reject two mixins that do not inherit from one another declaring the same var.
 
-    Declaring it without a default conflicts all the same when the state declares
-    no such var, as does declaring a backend var.
+    Declaring it without a default conflicts too when the state has no var of that
+    name, which a ClassVar is not. So does declaring a backend var.
 
     Args:
         clean_registration_context: An isolated state registry.
@@ -825,6 +825,13 @@ def test_mixin_var_name_conflict(clean_registration_context):
 
         class AnnotatedState(AnnotatingMixin, SecondMixin, State):
             pass
+
+    with pytest.raises(
+        MixinVarNameConflictError, match=r"`shared`.*AnnotatingMixin.*SecondMixin"
+    ):
+
+        class ClassVarState(AnnotatingMixin, SecondMixin, State):
+            shared: ClassVar[int] = 1  # pyright: ignore[reportIncompatibleVariableOverride]
 
     with pytest.raises(MixinVarNameConflictError, match="`_shared`"):
 

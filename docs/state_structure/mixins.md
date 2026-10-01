@@ -247,7 +247,7 @@ class ChildState(DoublingMixin, ParentState):
 # Important Limitations
 
 - Mixins cannot be instantiated directly - they must be inherited by concrete State classes
-- Two mixins that do not inherit from one another cannot both declare a variable of the same name: creating the state that combines them raises `MixinVarNameConflictError`. The exception is a variable they declare without a default that the state or its parent state declares. Declare a variable the mixins share in a mixin both inherit from
+- Two mixins that do not inherit from one another cannot both declare a variable of the same name: creating the state that combines them raises `MixinVarNameConflictError`. The exception is a variable they declare without a default that the state or its parent state declares. Mixins a parent state already combines do not count: a substate's mixins may redeclare their variables, like any inherited variable. Declare a variable the mixins share in a mixin both inherit from
 - Mixins cannot override methods from the base State class
 - The `mixin=True` parameter is required when defining a mixin
 ```
