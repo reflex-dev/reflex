@@ -520,12 +520,13 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(msg)
 
 
-@functools.cache
 def _proxy_class(base: type[MutableProxy], wrapped_cls: type) -> type[MutableProxy]:
     """Get the class to proxy the instances of a type through.
 
     A dataclass is proxied through a class generated for its type, carrying the
-    dataclass metadata. Any other type is proxied through the base class itself.
+    dataclass metadata. Any other type is proxied through the base class itself,
+    without caching it: a cache would keep every proxied type alive, like a model
+    class generated at runtime.
 
     Args:
         base: The proxy class the generated classes derive from.
@@ -534,8 +535,25 @@ def _proxy_class(base: type[MutableProxy], wrapped_cls: type) -> type[MutablePro
     Returns:
         The class to instantiate for an instance of the wrapped type.
     """
-    if not dataclasses.is_dataclass(wrapped_cls):
+    # What `dataclasses.is_dataclass` checks on a class, without the call.
+    if not hasattr(wrapped_cls, "__dataclass_fields__"):
         return base
+    return _dataclass_proxy_class(base, wrapped_cls)
+
+
+@functools.cache
+def _dataclass_proxy_class(
+    base: type[MutableProxy], wrapped_cls: type
+) -> type[MutableProxy]:
+    """Generate the class to proxy the instances of a dataclass type through.
+
+    Args:
+        base: The proxy class the generated class derives from.
+        wrapped_cls: The dataclass type.
+
+    Returns:
+        The proxy class carrying the dataclass metadata of the type.
+    """
     return type(
         wrapped_cls.__name__ + base.__name__,
         (base,),
