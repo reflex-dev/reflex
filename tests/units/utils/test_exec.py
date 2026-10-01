@@ -466,7 +466,6 @@ def test_run_granian_backend_prod_preloads_app_before_forking(
         "serve",
         "workers",
         "started",
-        "drain",
     ]
 
 
