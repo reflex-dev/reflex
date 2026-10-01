@@ -405,6 +405,106 @@ async def test_wait_does_not_finish_before_the_recorded_state_is_running(
     assert len([r for r in mock_api.requests if r.url.endswith("/failure")]) == 3
 
 
+@pytest.mark.parametrize(
+    "message", ["Building backend application...", "Waiting for backend to be ready..."]
+)
+async def test_wait_remembers_completion_until_the_recorded_state_is_running(
+    client: AsyncReflexBuild, mock_api: MockAPI, message: str
+):
+    """A later nonterminal message does not erase observed completion.
+
+    Args:
+        client: The SDK client.
+        mock_api: The mock API.
+        message: The nonterminal message after completion.
+    """
+    completion = "Deployment completed successfully!"
+    _statuses(mock_api, completion, message)
+    _reports(mock_api, "Pending", "Pending", "Running")
+    messages = []
+
+    report = await client.deployments.wait(
+        FIRST_ID, timeout=0.05, poll_interval=0, on_status=messages.append
+    )
+
+    assert report.status == "Running"
+    assert messages == [completion, message]
+    assert len([r for r in mock_api.requests if r.url.endswith("/status")]) == 3
+    assert len([r for r in mock_api.requests if r.url.endswith("/failure")]) == 3
+
+
+@pytest.mark.parametrize("message", ["Rejected", "AwaitingApproval"])
+async def test_wait_new_terminal_narration_overrides_remembered_completion(
+    client: AsyncReflexBuild, mock_api: MockAPI, message: str
+):
+    """Failure and approval messages take precedence over earlier completion.
+
+    Args:
+        client: The SDK client.
+        mock_api: The mock API.
+        message: The terminal message after completion.
+    """
+    _statuses(mock_api, "Deployment completed successfully!", message)
+    _reports(mock_api, "Pending")
+
+    if message == "Rejected":
+        with pytest.raises(DeploymentFailedError) as exc_info:
+            await client.deployments.wait(FIRST_ID, timeout=0.05, poll_interval=0)
+        assert exc_info.value.report.status == "Pending"
+    else:
+        report = await client.deployments.wait(FIRST_ID, timeout=0.05, poll_interval=0)
+        assert report.status == "Pending"
+    assert len([r for r in mock_api.requests if r.url.endswith("/failure")]) == 2
+
+
+@pytest.mark.parametrize("recorded", ["Superseded", "AwaitingApproval"])
+async def test_wait_remembered_completion_respects_the_recorded_outcome(
+    client: AsyncReflexBuild, mock_api: MockAPI, recorded: str
+):
+    """Remembering completion does not bypass recorded failure or approval.
+
+    Args:
+        client: The SDK client.
+        mock_api: The mock API.
+        recorded: The final recorded state after completion.
+    """
+    _statuses(
+        mock_api,
+        "Deployment completed successfully!",
+        "Building backend application...",
+    )
+    _reports(mock_api, "Pending", recorded)
+
+    if recorded == "Superseded":
+        with pytest.raises(DeploymentFailedError) as exc_info:
+            await client.deployments.wait(FIRST_ID, timeout=0.05, poll_interval=0)
+        assert exc_info.value.report.status == recorded
+    else:
+        report = await client.deployments.wait(FIRST_ID, timeout=0.05, poll_interval=0)
+        assert report.status == recorded
+    assert len([r for r in mock_api.requests if r.url.endswith("/failure")]) == 2
+
+
+async def test_wait_remembered_completion_still_times_out_while_pending(
+    client: AsyncReflexBuild, mock_api: MockAPI
+):
+    """An earlier completion does not remove the deadline for a pending row.
+
+    Args:
+        client: The SDK client.
+        mock_api: The mock API.
+    """
+    _statuses(
+        mock_api,
+        "Deployment completed successfully!",
+        "Building backend application...",
+    )
+    _reports(mock_api, "Pending")
+    with pytest.raises(DeploymentTimeoutError, match="Building backend application"):
+        await client.deployments.wait(FIRST_ID, timeout=0.05, poll_interval=0)
+    assert len([r for r in mock_api.requests if r.url.endswith("/failure")]) >= 2
+
+
 async def test_wait_returns_approval_despite_a_cached_completion_message(
     client: AsyncReflexBuild, mock_api: MockAPI
 ):
