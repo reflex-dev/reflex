@@ -283,22 +283,23 @@ class _ModifyStateWithLinks(Generic[TOKEN_TYPE]):
             token, **self._context
         )
         root_state = await state_context.__aenter__()
-        # Only a state that has links needs the shared-state imports.
-        if getattr(root_state, "_reflex_internal_links", None) is not None:
-            from reflex.istate.shared import SharedStateBaseInternal
-            from reflex.state import BaseState
+        try:
+            # Only a state that has links needs the shared-state imports.
+            if getattr(root_state, "_reflex_internal_links", None) is not None:
+                from reflex.istate.shared import SharedStateBaseInternal
+                from reflex.state import BaseState
 
-            if isinstance(root_state, BaseState):
-                try:
+                if isinstance(root_state, BaseState):
                     shared_state = await root_state.get_state(SharedStateBaseInternal)
                     links = shared_state._modify_linked_states(
                         previous_dirty_vars=self._previous_dirty_vars
                     )
                     await links.__aenter__()
-                except BaseException:
-                    await state_context.__aexit__(*sys.exc_info())
-                    raise
-                self._links = links
+                    self._links = links
+        except BaseException:
+            # __aexit__ does not run when __aenter__ raises: release the lock here.
+            await state_context.__aexit__(*sys.exc_info())
+            raise
         return root_state
 
     async def __aexit__(
