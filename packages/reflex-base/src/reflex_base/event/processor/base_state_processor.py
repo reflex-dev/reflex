@@ -11,20 +11,17 @@ from collections.abc import Callable, Mapping, Sequence
 from enum import Enum
 from importlib.util import find_spec
 from time import perf_counter
-from typing import TYPE_CHECKING, Any, get_origin
-
-from typing_extensions import get_type_hints, is_typeddict
+from typing import TYPE_CHECKING, Any
 
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import types
 from reflex_base import otel
-from reflex_base.event import FORM_DATA_ENTRIES_KEY
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.registry import RegisteredEventHandler
+from reflex_base.utils.form import form_data_as_dict, transform_form_data
 from reflex_base.utils.format import format_event_handler
-from reflex_base.utils.multidict import MultiDict
 
 logger = logging.getLogger(__name__)
 
@@ -92,117 +89,6 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
     raise TypeError(msg)
 
 
-@dataclasses.dataclass(frozen=True, slots=True)
-class _CoercedFormField:
-    """A TypedDict field that submitted form data is coerced into."""
-
-    name: str
-    is_list: bool
-    # An unsubmitted field is left out unless it is required: then it is None
-    # when its type allows None, otherwise an empty list or False.
-    optional: bool
-    required: bool
-
-
-@functools.cache
-def _typed_dict_form_fields(typed_dict: type) -> tuple[_CoercedFormField, ...]:
-    """Find the TypedDict fields that form data is coerced into.
-
-    Args:
-        typed_dict: The TypedDict annotating the form data.
-
-    Returns:
-        The ``list`` and ``bool`` fields, optional or not.
-    """
-    required = types.get_required_typed_dict_keys(typed_dict)
-    fields = []
-    for name, hint in get_type_hints(typed_dict).items():
-        field_type = types.value_inside_optional(hint)
-        if (
-            field_type is not bool
-            and (get_origin(field_type) or field_type) is not list
-        ):
-            continue
-        fields.append(
-            _CoercedFormField(
-                name=name,
-                is_list=field_type is not bool,
-                optional=field_type is not hint,
-                required=name in required,
-            )
-        )
-    return tuple(fields)
-
-
-def _form_data_as_typed_dict(form_data: MultiDict, typed_dict: type) -> dict[str, Any]:
-    """Build the dict for a TypedDict-annotated form data argument.
-
-    Args:
-        form_data: The submitted form data.
-        typed_dict: The TypedDict annotating the argument.
-
-    Returns:
-        A dict of each field's last value, where ``list`` fields hold every
-        value and ``bool`` fields whether a truthy value was submitted. An
-        unsubmitted field is left out when it is not required, and otherwise is
-        None when its type allows None, else an empty list or False.
-    """
-    result = dict(form_data)
-    for field in _typed_dict_form_fields(typed_dict):
-        if field.name not in form_data:
-            if not field.required:
-                continue
-            if field.optional:
-                result[field.name] = None
-                continue
-        result[field.name] = (
-            form_data.getlist(field.name)
-            if field.is_list
-            else bool(form_data.get(field.name))
-        )
-    return result
-
-
-def _form_data_entries(value: Any) -> list | None:
-    """Get a form's wrapped ``[name, value]`` entries from an event argument.
-
-    Args:
-        value: The event argument.
-
-    Returns:
-        The entries, or None when the argument is not submitted form data.
-    """
-    return value.get(FORM_DATA_ENTRIES_KEY) if isinstance(value, dict) else None
-
-
-def _transform_form_data(value: Any, hinted_args: Any) -> Any:
-    """Build form data for the argument's annotation.
-
-    Args:
-        value: The event argument, possibly a form's wrapped ``[name, value]`` entries.
-        hinted_args: The type hint for the argument.
-
-    Returns:
-        For a MultiDict annotation, a MultiDict of every entry (also built from a
-        plain mapping); for a TypedDict annotation of form data, its coerced
-        dict; for other form data, a dict of each name's last value; otherwise
-        the value unchanged.
-    """
-    entries = _form_data_entries(value)
-    if entries is not None:
-        value = MultiDict(entries)
-    elif not isinstance(value, Mapping):
-        return value
-    if types.is_union(hinted_args):
-        hinted_args = types.value_inside_optional(hinted_args)
-    hinted_type = get_origin(hinted_args) or hinted_args
-    if isinstance(hinted_type, type) and issubclass(hinted_type, MultiDict):
-        return value if isinstance(value, hinted_type) else hinted_type(value)
-    if isinstance(value, MultiDict) and is_typeddict(hinted_args):
-        return _form_data_as_typed_dict(value, hinted_args)
-    return value if entries is None else dict(value)
-
-
 def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
     """Transform an event argument based on its type hint.
 
@@ -219,7 +105,7 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
     from reflex.model import Model
     from reflex.utils.serializers import deserializers
 
-    value = _transform_form_data(value, hinted_args)
+    value = transform_form_data(value, hinted_args)
     if hinted_args is Any:
         return value
     if types.is_union(hinted_args):
@@ -306,12 +192,7 @@ def _prepare_event_payload(
         logger.warning(
             f"Error transforming event payload for handler {fn.__qualname__}: {ex}"
         )
-        return {
-            arg: value
-            if (entries := _form_data_entries(value)) is None
-            else dict(entries)
-            for arg, value in payload.items()
-        }
+        return {arg: form_data_as_dict(value) for arg, value in payload.items()}
 
 
 async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:

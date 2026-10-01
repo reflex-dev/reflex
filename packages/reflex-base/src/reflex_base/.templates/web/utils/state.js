@@ -1502,7 +1502,7 @@ export const spreadArraysOrObjects = (first, second) => {
 };
 
 // Wire key wrapping a form's ordered [name, value] entries; must match
-// FORM_DATA_ENTRIES_KEY in reflex_base.event.
+// FORM_DATA_ENTRIES_KEY in reflex_base.utils.form.
 const FORM_DATA_ENTRIES_KEY = "__reflex_form_data__";
 const formDataEntries = Symbol("formDataEntries");
 

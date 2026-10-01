@@ -1138,9 +1138,6 @@ def checked_input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[bool]]:
 
 FORM_DATA = Var(_js_expr="form_data")
 FORM_SUBMIT_MAPPING = TypeVar("FORM_SUBMIT_MAPPING", bound=Mapping[str, Any])
-# Wire key wrapping a form's ordered ``[name, value]`` entries; must match
-# ``FORM_DATA_ENTRIES_KEY`` in ``state.js``.
-FORM_DATA_ENTRIES_KEY = "__reflex_form_data__"
 
 
 def on_submit_event() -> tuple[Var[dict[str, Any]]]:
@@ -3044,7 +3041,6 @@ class EventNamespace:
     _EVENT_FIELDS = _EVENT_FIELDS
     FORM_DATA = FORM_DATA
     FORM_SUBMIT_MAPPING = FORM_SUBMIT_MAPPING
-    FORM_DATA_ENTRIES_KEY = FORM_DATA_ENTRIES_KEY
     upload_files = upload_files
     upload_files_chunk = upload_files_chunk
     stop_propagation = stop_propagation

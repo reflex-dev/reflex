@@ -32,7 +32,7 @@ def FormSubmitName(form_component):
             self.form_data = form_data
 
         @rx.event
-        def form_submit_multi(self, form_data: rx.MultiDict[str, str]):
+        def form_submit_all(self, form_data: rx.FormData[str, str]):
             self.tags = form_data.getlist("tag")
 
     app = rx.App()
@@ -71,7 +71,7 @@ def FormSubmitName(form_component):
                     rx.button("Submit", type_="submit"),
                     rx.icon_button(rx.icon(tag="plus")),
                 ),
-                on_submit=[FormState.form_submit, FormState.form_submit_multi],
+                on_submit=[FormState.form_submit, FormState.form_submit_all],
                 custom_attrs={"action": "/invalid"},
             ),
             rx.text(FormState.form_data.to_string(), id="form-data"),
@@ -196,7 +196,7 @@ async def test_submit(driver, form_submit: AppHarness):
     assert form_data["debounce_input"] == "bar baz"
     # Only named controls are submitted; an id alone does not add a field.
     assert "id_only_input" not in form_data
-    # A dict keeps the last value of a repeated name; a MultiDict keeps them all.
+    # A dict keeps the last value of a repeated name; FormData keeps them all.
     assert form_data["tag"] == "b"
     tags = form_submit.poll_for_content(
         driver.find_element(By.ID, "tags"), exp_not_equal="[]"

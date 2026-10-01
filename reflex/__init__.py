@@ -161,6 +161,7 @@ _ALL_COMPONENTS_MAPPING: lazy_loader.SubmodAttrsType = {
     ],
     "reflex_components_sonner.toast": ["toast"],
     "reflex_base.components.props": ["PropsBase"],
+    "reflex_base.utils.form": ["FormData"],
     "reflex_components_core.datadisplay.logo": ["logo"],
     "reflex_components_gridjs": ["data_table"],
     "reflex_components_moment": ["MomentDelta", "moment"],
@@ -234,7 +235,6 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
     "style": ["Style", "toggle_color_mode"],
     "utils.imports": ["ImportDict", "ImportVar"],
     "utils.misc": ["run_in_thread"],
-    "utils.multidict": ["MultiDict"],
     "utils.serializers": ["serializer"],
     "vars": ["Var", "field", "Field", "RestProp", "EMPTY_VAR_STR", "EMPTY_VAR_INT"],
 }

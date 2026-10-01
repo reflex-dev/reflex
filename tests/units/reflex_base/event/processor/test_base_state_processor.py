@@ -7,7 +7,7 @@ import logging
 import traceback
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, cast
 
 import pytest
 import pytest_asyncio
@@ -16,7 +16,6 @@ from reflex_base import constants, otel
 from reflex_base.constants import CompileVars, RouteVar
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
-from reflex_base.event import FORM_DATA_ENTRIES_KEY
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.event.processor.base_state_processor import (
@@ -24,8 +23,7 @@ from reflex_base.event.processor.base_state_processor import (
     _transform_event_payload,
 )
 from reflex_base.registry import RegistrationContext
-from reflex_base.utils.multidict import MultiDict
-from typing_extensions import NotRequired
+from reflex_base.utils.form import FORM_DATA_ENTRIES_KEY, FormData
 
 import reflex as rx
 from reflex import event
@@ -1508,180 +1506,33 @@ async def test_navigation_delta_elides_connection_scoped_router_vars(
 _FORM_DATA_ENTRIES = [["tag", "a"], ["name", "x"], ["tag", "b"]]
 
 
-def _transform_form_data_payload(hint: Any, value: Any = None) -> Any:
-    """Transform submitted form entries (or ``value``) for a ``form_data`` arg.
-
-    Args:
-        hint: The handler's annotation for the arg.
-        value: The wire value, defaulting to the wrapped form entries.
-
-    Returns:
-        The value the handler receives.
-    """
-    if value is None:
-        value = {FORM_DATA_ENTRIES_KEY: _FORM_DATA_ENTRIES}
-    return _transform_event_payload(
-        {"form_data": value}, {"form_data": hint} if hint is not None else {}
-    )["form_data"]
-
-
-class _TagsData(TypedDict):
-    tag: str
-    name: str
-
-
-class _TagsMultiData(TypedDict):
-    tag: list[str]
-    name: str
-    subscribe: bool
-    topics: NotRequired[list[str]]
-    agree: NotRequired[bool]
-
-
-class _TagsOptionalData(TypedDict):
-    name: str
-    tag: list[str] | None
-    subscribe: bool | None
-    topics: NotRequired[list[str] | None]
-    agree: NotRequired[bool | None]
-
-
-class _SubMultiDict(MultiDict[str, str]):
-    pass
-
-
 @dataclasses.dataclass
 class _TagsRecord:
     tag: str
     name: str
 
 
-@pytest.mark.parametrize(
-    "hint", [None, Any, dict, dict[str, Any], Mapping[str, Any], _TagsData]
-)
-def test_transform_form_data_to_dict(hint: Any):
-    """Submitted form entries become a dict keeping each name's last value."""
-    form_data = _transform_form_data_payload(hint)
-    assert type(form_data) is dict
-    assert form_data == {"tag": "b", "name": "x"}
-
-
-@pytest.mark.parametrize(
-    ("hint", "expected_type"),
-    [
-        (MultiDict, MultiDict),
-        (MultiDict[str, str], MultiDict),
-        (MultiDict | None, MultiDict),
-        (_SubMultiDict, _SubMultiDict),
-    ],
-)
-def test_transform_form_data_to_multidict(hint: Any, expected_type: type):
-    """A MultiDict annotation receives every submitted entry in order."""
-    form_data = _transform_form_data_payload(hint)
-    assert type(form_data) is expected_type
-    assert form_data.getlist("tag") == ["a", "b"]
-    assert form_data["tag"] == "b"
-    assert form_data.multi_items() == [("tag", "a"), ("name", "x"), ("tag", "b")]
-
-
-def test_transform_plain_mapping_to_multidict():
-    """A plain dict payload, e.g. from a backend-built event, becomes a MultiDict."""
-    form_data = _transform_form_data_payload(MultiDict, {"tag": "a"})
-    assert type(form_data) is MultiDict
-    assert form_data.getlist("tag") == ["a"]
-
-
-def test_transform_multidict_passes_through_for_multidict_hint():
-    """A MultiDict built by a previous handler is passed on unchanged."""
-    multidict = MultiDict([("tag", "a"), ("tag", "b")])
-    assert _transform_form_data_payload(MultiDict, multidict) is multidict
-
-
-def test_transform_form_data_to_typed_dict_coerces_lists_and_bools():
-    """TypedDict list fields take every value and bool fields are cast."""
-    form_data = _transform_form_data_payload(
-        _TagsMultiData,
-        {
-            FORM_DATA_ENTRIES_KEY: [
-                *_FORM_DATA_ENTRIES,
-                ["subscribe", "on"],
-                ["topics", "news"],
-                ["topics", "events"],
-                ["agree", ""],
-            ]
-        },
+def test_transform_event_payload_decodes_unannotated_form_data():
+    """Form data reaches an unannotated handler arg as a dict."""
+    payload = _transform_event_payload(
+        {"form_data": {FORM_DATA_ENTRIES_KEY: _FORM_DATA_ENTRIES}}, {}
     )
-    assert form_data == {
-        "tag": ["a", "b"],
-        "name": "x",
-        "subscribe": True,
-        "topics": ["news", "events"],
-        "agree": False,
-    }
+    assert payload == {"form_data": {"tag": "b", "name": "x"}}
 
 
-def test_transform_form_data_to_typed_dict_with_missing_fields():
-    """Unsubmitted required fields are empty or False; NotRequired ones are left out."""
-    form_data = _transform_form_data_payload(
-        _TagsMultiData, {FORM_DATA_ENTRIES_KEY: [["name", "x"]]}
-    )
-    assert form_data == {"tag": [], "name": "x", "subscribe": False}
-
-
-def test_transform_form_data_to_typed_dict_with_optional_fields():
-    """Submitted optional list and bool fields are coerced like required ones."""
-    form_data = _transform_form_data_payload(
-        _TagsOptionalData,
-        {
-            FORM_DATA_ENTRIES_KEY: [
-                *_FORM_DATA_ENTRIES,
-                ["subscribe", ""],
-                ["topics", "news"],
-                ["agree", "on"],
-            ]
-        },
-    )
-    assert form_data == {
-        "tag": ["a", "b"],
-        "name": "x",
-        "subscribe": False,
-        "topics": ["news"],
-        "agree": True,
-    }
-
-
-def test_transform_form_data_to_typed_dict_with_missing_optional_fields():
-    """Unsubmitted optional fields are None, or left out when NotRequired."""
-    form_data = _transform_form_data_payload(
-        _TagsOptionalData, {FORM_DATA_ENTRIES_KEY: [["name", "x"]]}
-    )
-    assert form_data == {"name": "x", "tag": None, "subscribe": None}
-
-
-def test_transform_multidict_to_typed_dict():
-    """A MultiDict from a previous handler is coerced like submitted entries."""
-    form_data = _transform_form_data_payload(
-        _TagsMultiData, MultiDict([("tag", "a"), ("tag", "b"), ("name", "x")])
-    )
-    assert form_data["tag"] == ["a", "b"]
-    assert form_data["subscribe"] is False
-
-
-def test_transform_plain_dict_to_typed_dict_is_unchanged():
-    """A dict that is not form data, e.g. an already coerced one, is left alone."""
-    value = {"tag": ["a", "b"], "name": "x", "subscribe": True}
-    assert _transform_form_data_payload(_TagsMultiData, value) is value
-
-
-def test_transform_form_data_to_dataclass():
+def test_transform_event_payload_form_data_to_dataclass():
     """Decoded form entries still feed structured annotations."""
-    assert _transform_form_data_payload(_TagsRecord) == _TagsRecord(tag="b", name="x")
+    payload = _transform_event_payload(
+        {"form_data": {FORM_DATA_ENTRIES_KEY: _FORM_DATA_ENTRIES}},
+        {"form_data": _TagsRecord},
+    )
+    assert payload["form_data"] == _TagsRecord(tag="b", name="x")
 
 
 def test_prepare_event_payload_transforms_form_data():
     """A payload is transformed for the handler's annotations."""
 
-    def handler(self, form_data: MultiDict[str, str], count: int):
+    def handler(self, form_data: FormData[str, str], count: int):
         pass
 
     payload = _prepare_event_payload(
