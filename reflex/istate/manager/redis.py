@@ -676,8 +676,6 @@ class StateManagerRedis(StateManager):
         Returns:
             The lease break task, or None when there is contention.
         """
-        self._ensure_lock_task()
-
         lock_key = token.lock_key
 
         async def do_flush() -> None:
@@ -749,6 +747,13 @@ class StateManagerRedis(StateManager):
             if existing_task is not None:
                 with contextlib.suppress(asyncio.CancelledError):
                     await existing_task
+
+        try:
+            # Only a contention notification breaks the lease early, so the
+            # subscriber must be listening before contenders are counted below.
+            await self._ensure_lock_task_subscribed()
+        except (TimeoutError, asyncio.TimeoutError):
+            return None
 
         # Now we might need to create a new lock.
         if (state_lock := self._cached_states_locks.get(lock_key)) is None:
@@ -862,10 +867,11 @@ class StateManagerRedis(StateManager):
         }
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(**handlers)  # pyright: ignore[reportArgumentType]
-            self._lock_updates_subscribed.set()
             try:
-                async for _ in pubsub.listen():
-                    pass
+                # Notifications are only delivered once redis confirms the subscription.
+                async for message in pubsub.listen():
+                    if message["type"] == "psubscribe":
+                        self._lock_updates_subscribed.set()
             finally:
                 self._lock_updates_subscribed.clear()
 
@@ -889,6 +895,8 @@ class StateManagerRedis(StateManager):
         Raises:
             TimeoutError: If the lock updates subscriber task fails to subscribe in time.
         """
+        if self._lock_updates_subscribed.is_set():
+            return
         if timeout is None:
             timeout = min(
                 LOCK_SUBSCRIBE_TASK_TIMEOUT,
