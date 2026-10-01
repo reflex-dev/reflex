@@ -708,6 +708,9 @@ async def test_oplock_immediate_cancel(
 
     state_manager_redis._debug_enabled = True
     state_manager_redis._oplock_enabled = True
+    # The canceller below spins until a lease exists, so fail fast if the
+    # subscription a lease requires is unavailable.
+    await _subscribed(state_manager_redis)
 
     async def canceller():
         while (lease_task := state_manager_redis._local_leases.get(token)) is None:  # noqa: ASYNC110
