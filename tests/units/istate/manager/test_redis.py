@@ -582,6 +582,10 @@ async def test_oplock_contention_racers(
         modify_2(),
     )
 
+    if lease_1 is not None and lease_2 is not None:
+        # A broken lease is only cancelled() once its final flush completes.
+        await asyncio.wait({lease_1, lease_2}, return_when=asyncio.FIRST_COMPLETED)
+
     if lease_1 is None or lease_1.cancelled():
         assert lease_2 is not None
         assert not lease_2.cancelled()
@@ -592,6 +596,43 @@ async def test_oplock_contention_racers(
         pytest.fail(
             "One lease should have been cancelled, other should still be active."
         )
+
+
+@pytest.mark.asyncio
+async def test_oplock_lease_waits_for_lock_updates_subscriber(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+):
+    """Test that no lease is taken until the lock updates subscriber is listening.
+
+    A lease taken before the subscriber listens could miss the contention
+    notification that breaks it, stalling other instances for the full hold time.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+    """
+    token = str(uuid.uuid4())
+    state_manager_redis._oplock_enabled = True
+    await state_manager_redis._ensure_lock_task_subscribed()
+    # Simulate a subscriber whose subscription redis has not yet confirmed.
+    state_manager_redis._lock_updates_subscribed.clear()
+
+    async def modify():
+        async with state_manager_redis.modify_state(
+            BaseStateToken(ident=token, cls=root_state),
+        ) as new_state:
+            assert isinstance(new_state, root_state)
+            new_state.count += 1
+
+    modify_task = asyncio.create_task(modify())
+    await asyncio.sleep(0.1)
+    assert not modify_task.done()
+    assert await state_manager_redis._get_local_lease(token) is None
+
+    state_manager_redis._lock_updates_subscribed.set()
+    await modify_task
+    assert await state_manager_redis._get_local_lease(token) is not None
 
 
 @pytest.mark.asyncio
