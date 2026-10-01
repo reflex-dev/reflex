@@ -50,6 +50,7 @@ from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
     ComputedVarSignatureError,
     EventHandlerShadowsBuiltInStateMethodError,
+    MixinVarNameConflictError,
     ReflexRuntimeError,
     StateValueError,
     UntypedComputedVarError,
@@ -3802,6 +3803,7 @@ _RESERVED_FIELD_ATTRS = frozenset({
     "_tracked",
     "_plain_types",
     "_var",
+    "_default_from_type",
 })
 
 
@@ -3855,6 +3857,8 @@ class Field(Generic[FIELD_TYPE]):
     _plain_types: frozenset[Any] = frozenset()
     # The Var standing for the field on its owner, if sent to the client.
     _var: Var | None = None
+    # Whether the declaration gave no default, so it comes from the type.
+    _default_from_type: bool = False
 
     def __init__(
         self,
@@ -3890,6 +3894,7 @@ class Field(Generic[FIELD_TYPE]):
                 type_origin = get_origin(annotated_type) or annotated_type
 
             if self.default is MISSING and self.default_factory is None:
+                self._default_from_type = True
                 # A type with no computed default gets None, even when FIELD_TYPE
                 # itself excludes None; `annotated_type` is widened to match below.
                 default_value: FIELD_TYPE | None = types.get_default_value_for_type(
@@ -3951,7 +3956,7 @@ class Field(Generic[FIELD_TYPE]):
         Returns:
             The new field.
         """
-        return type(self)(**{
+        replaced = type(self)(**{
             "default": self.default,
             "default_factory": self.default_factory,
             "is_var": self.is_var,
@@ -3959,6 +3964,14 @@ class Field(Generic[FIELD_TYPE]):
             "source_field": self,
             **kwargs,
         })
+        if (
+            self._default_from_type
+            and "default" not in kwargs
+            and "default_factory" not in kwargs
+        ):
+            # The default carried over still comes from the type.
+            replaced._default_from_type = True
+        return replaced
 
     @classmethod
     def _with_default(cls, value: Any, annotated_type: Any = MISSING) -> Self:
@@ -4253,6 +4266,50 @@ def _inherited_value(lookup_order: Sequence[type], name: str) -> Any:
     return MISSING
 
 
+def _restates_type(value: Any) -> bool:
+    """Whether a class attribute is a var a mixin declares without a default.
+
+    Args:
+        value: The class attribute.
+
+    Returns:
+        True for a mixin's field whose default comes from its type.
+    """
+    return (
+        isinstance(value, Field)
+        and value._default_from_type
+        and getattr(value._owner, "_mixin", False)
+    )
+
+
+def _declared_value(lookup_order: Sequence[type], name: str) -> Any:
+    """Look up the class attribute declaring a name, as `_inherited_value` does.
+
+    A var a mixin declares without a default only restates the type of a var a
+    state further along the lookup order declares, as re-annotating that var on
+    a substate does, so the state's var is the one found.
+
+    Args:
+        lookup_order: The bases in method resolution order.
+        name: The attribute name to look up.
+
+    Returns:
+        The value declaring `name`, or MISSING.
+    """
+    found = MISSING
+    for klass in lookup_order:
+        if name not in klass.__dict__:
+            continue
+        value = klass.__dict__[name]
+        if found is MISSING:
+            found = value
+        elif isinstance(value, Field) and _is_tree_state(value._owner):
+            return value
+        if not _restates_type(value):
+            return found
+    return found
+
+
 _FIELD_MAP_NAMES = frozenset({"__fields__", "__own_fields__", "__inherited_fields__"})
 
 # ``ABCMeta`` writes this onto every class it creates, so an ``ABC`` mixin carries its own.
@@ -4364,6 +4421,43 @@ def _validate_state_declaration(
         seen.update(vars(base))
 
 
+def _validate_mixin_vars(
+    name: str, namespace: Mapping[str, Any], lookup_order: Sequence[type]
+) -> None:
+    """Reject a var that two mixins not inheriting from one another both declare.
+
+    A state combines its mixins into one coherent state, and two independent
+    mixins would each use their shared var as their own. The mixins of the parent
+    state are left out: they were checked with it, and its vars may be redeclared.
+
+    Args:
+        name: The name of the class being created.
+        namespace: The class namespace.
+        lookup_order: The bases of the class in method resolution order.
+
+    Raises:
+        MixinVarNameConflictError: If two such mixins declare the same var.
+    """
+    parent = next((base for base in lookup_order if _is_tree_state(base)), None)
+    declared_by: dict[str, type] = {}
+    for base in lookup_order:
+        if not getattr(base, "_mixin", False) or (
+            parent is not None and issubclass(parent, base)
+        ):
+            continue
+        for key in base.__own_fields__:
+            first = declared_by.setdefault(key, base)
+            if not issubclass(first, base):
+                msg = (
+                    f"The var `{key}` in {namespace['__module__']}.{name} is declared "
+                    f"by both {first.__module__}.{first.__name__} and "
+                    f"{base.__module__}.{base.__name__}, mixins that do not inherit "
+                    "from one another; rename it in one of them, or declare it in a "
+                    "mixin both inherit from"
+                )
+                raise MixinVarNameConflictError(msg)
+
+
 def _unannotated_fields(namespace: Mapping[str, Any]) -> dict[str, Field]:
     """Get the fields a class namespace declares by value alone.
 
@@ -4418,9 +4512,7 @@ def _annotated_fields(
         if types.is_classvar(annotation) or key in slots:
             continue
         value = namespace.get(key, MISSING)
-        declared = (
-            value if value is not MISSING else _inherited_value(lookup_order, key)
-        )
+        declared = value if value is not MISSING else _declared_value(lookup_order, key)
         if _is_descriptor(declared):
             # A property, computed var or other descriptor under an annotated
             # name stays as is, here or on a base; a field would shadow it.
@@ -4436,7 +4528,7 @@ def _annotated_fields(
             fields[key] = Field(annotated_type=annotation)
         elif isinstance(value, Field):
             fields[key] = value._replace(annotated_type=annotation)
-        elif isinstance(inherited := _inherited_value(lookup_order, key), Field):
+        elif isinstance(inherited := _declared_value(lookup_order, key), Field):
             # A new default for an inherited field keeps its kind of field.
             fields[key] = inherited._replace(
                 annotated_type=annotation, **_default_arguments(value)
@@ -4550,6 +4642,7 @@ class BaseStateMeta(ABCMeta):
             if root is not None:
                 _validate_state_declaration(root, lookup_order, namespace)
                 break
+        _validate_mixin_vars(name, namespace, lookup_order)
 
         state_bases = [
             base for base in bases if issubclass(base, EvenMoreBasicBaseState)

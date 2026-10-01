@@ -206,8 +206,8 @@ class ComputedVarShadowsBaseVarsError(ReflexError, NameError):
     """Raised when a computed var shadows a base var."""
 
 
-class BaseVarShadowsInheritedVarError(ReflexError, NameError):
-    """Raised when a base var shadows a var inherited from a parent state."""
+class MixinVarNameConflictError(ReflexError, NameError):
+    """Raised when two mixins that do not inherit from one another declare the same var."""
 
 
 class EventHandlerShadowsBuiltInStateMethodError(ReflexError, NameError):
