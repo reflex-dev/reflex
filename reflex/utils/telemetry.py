@@ -478,6 +478,10 @@ def _send(
 
 _executor_lock = threading.Lock()
 _executor: ThreadPoolExecutor | None = None
+# Set by _shutdown_executor() so no new pool (and thread) starts before a
+# pending fork; _resume_after_fork says whether that fork lifts it again.
+_paused = False
+_resume_after_fork = True
 
 
 def _get_telemetry_executor() -> ThreadPoolExecutor:
@@ -492,10 +496,16 @@ def _get_telemetry_executor() -> ThreadPoolExecutor:
 
     Returns:
         The shared single-worker telemetry executor.
+
+    Raises:
+        RuntimeError: When the pool is stopped for a pending fork.
     """
     global _executor
     if _executor is None:
         with _executor_lock:
+            if _paused:
+                msg = "Telemetry is paused for a pending fork."
+                raise RuntimeError(msg)
             if _executor is None:
                 _executor = ThreadPoolExecutor(
                     max_workers=1, thread_name_prefix="reflex-telemetry"
@@ -503,21 +513,28 @@ def _get_telemetry_executor() -> ThreadPoolExecutor:
     return _executor
 
 
-def _shutdown_executor(timeout: float = 2) -> bool:
+def _shutdown_executor(timeout: float = 2, *, resume_after_fork: bool = True) -> bool:
     """Deliver queued telemetry and stop the worker thread.
 
-    Called before forking so no telemetry thread is alive at the fork; the
-    next send lazily starts a new worker. A send that stalls past the timeout
-    (e.g. on a DNS lookup) is abandoned so it cannot hold up startup.
+    Called before forking so no telemetry thread is alive at the fork. Until
+    then no new worker starts and sends are dropped. A send that stalls past
+    the timeout (e.g. on a DNS lookup) is abandoned so it cannot hold up
+    startup.
 
     Args:
         timeout: Maximum number of seconds to wait for queued telemetry.
+        resume_after_fork: Whether the parent sends again after the next fork,
+            or stays paused for a supervisor that keeps forking.
 
     Returns:
         Whether the worker thread has stopped, i.e. whether forking is safe.
     """
-    global _executor
-    if (executor := _executor) is None:
+    global _executor, _paused, _resume_after_fork
+    with _executor_lock:
+        _paused = True
+        _resume_after_fork = resume_after_fork
+        executor = _executor
+    if executor is None:
         return True
     drained = _flush(timeout)
     if not drained:
@@ -525,21 +542,36 @@ def _shutdown_executor(timeout: float = 2) -> bool:
     # Stay published while stopping: a racing send() then fails to submit (and
     # is suppressed) instead of starting a second pool before the fork.
     executor.shutdown(wait=drained, cancel_futures=True)
+    stopped = not any(thread.is_alive() for thread in executor._threads)
     with _executor_lock:
         if _executor is executor:
             _executor = None
-    return not any(thread.is_alive() for thread in executor._threads)
+        if not stopped:
+            # The caller will not fork with a live thread, so sends may resume.
+            _paused = False
+    return stopped
+
+
+def _resume_in_parent_after_fork() -> None:
+    """Let the parent send again once the fork it paused for has happened."""
+    global _paused
+    if _resume_after_fork:
+        _paused = False
 
 
 def _reset_executor_after_fork() -> None:
     """Drop the inherited executor and lock; the child owns neither's thread."""
-    global _executor, _executor_lock
+    global _executor, _executor_lock, _paused
     _executor_lock = threading.Lock()
     _executor = None
+    _paused = False
 
 
 if hasattr(os, "register_at_fork"):
-    os.register_at_fork(after_in_child=_reset_executor_after_fork)
+    os.register_at_fork(
+        after_in_parent=_resume_in_parent_after_fork,
+        after_in_child=_reset_executor_after_fork,
+    )
 
 
 def _current_registration_context() -> RegistrationContext | None:
@@ -612,10 +644,12 @@ def _submit(fn: Callable[..., Any], /, *args, **kwargs) -> None:
         kwargs: Keyword arguments forwarded to ``fn``.
     """
     registration_context = _current_registration_context()
-    with suppress(Exception):
+    try:
         _get_telemetry_executor().submit(
             _run_suppressed, registration_context, fn, *args, **kwargs
         )
+    except Exception as err:
+        logger.debug(f"Dropped telemetry event: {err}")
 
 
 def _flush(timeout: float | None = None) -> bool:

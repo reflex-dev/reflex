@@ -33,6 +33,8 @@ def _drain_telemetry_executor():
     """
     yield
     telemetry._flush()
+    # A test that stops the pool for a fork must not silence the next test.
+    telemetry._paused = False
 
 
 @pytest.fixture
@@ -880,7 +882,8 @@ def test_shutdown_executor_drains_queued_work_and_stops_the_thread():
     assert telemetry._executor is None
     assert workers
     assert not any(worker.is_alive() for worker in workers)
-    # The next send lazily starts a new worker.
+    # Once the fork has happened, the next send lazily starts a new worker.
+    telemetry._resume_in_parent_after_fork()
     assert telemetry._get_telemetry_executor().submit(lambda: 1).result(5) == 1
 
 
@@ -934,6 +937,54 @@ def test_shutdown_executor_gives_up_on_a_stalled_task():
     assert elapsed < 2
     assert telemetry._executor is None
     assert queued.cancelled()
+
+
+def test_send_after_pre_fork_shutdown_starts_no_thread(mocker: MockerFixture):
+    """Until the pending fork happens, a send cannot start a telemetry thread."""
+    job = mocker.Mock()
+    telemetry._get_telemetry_executor()
+    assert telemetry._shutdown_executor()
+
+    telemetry._submit(job)
+
+    assert telemetry._executor is None
+    job.assert_not_called()
+
+
+def test_parent_resumes_sending_after_the_fork():
+    """The parent sends again once the fork it paused for has happened."""
+    assert telemetry._shutdown_executor()
+
+    telemetry._resume_in_parent_after_fork()
+
+    assert telemetry._get_telemetry_executor().submit(lambda: 1).result(5) == 1
+
+
+def test_supervisor_can_stay_paused_across_forks():
+    """A supervisor that keeps forking can keep telemetry paused for good."""
+    assert telemetry._shutdown_executor(resume_after_fork=False)
+
+    telemetry._resume_in_parent_after_fork()
+
+    with pytest.raises(RuntimeError, match="paused"):
+        telemetry._get_telemetry_executor()
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is POSIX-only")
+def test_real_fork_resumes_parent_and_child():
+    """The at-fork hooks lift the pause in both the parent and the child."""
+    assert telemetry._shutdown_executor()
+    pid = os.fork()
+    if pid == 0:
+        code = 1
+        try:
+            code = int(telemetry._paused)
+        finally:
+            os._exit(code)
+    _, status = os.waitpid(pid, 0)
+
+    assert os.waitstatus_to_exitcode(status) == 0
+    assert not telemetry._paused
 
 
 def test_shutdown_executor_without_executor_is_a_noop():
