@@ -87,7 +87,7 @@ def test_custom_components_gallery_route_is_freed_for_its_redirect(routes_fixtur
 
 
 def test_custom_components_gallery_redirects_to_the_overview():
-    """The app registers the old gallery URL's redirect to the overview."""
+    """The old gallery URL is registered as a page that redirects to the overview."""
     import subprocess
     import sys
 
@@ -95,8 +95,9 @@ def test_custom_components_gallery_redirects_to_the_overview():
         [
             sys.executable,
             "-c",
-            "from reflex_docs.reflex_docs import redirects; "
-            "assert ('/custom-components/', '/custom-components/overview/') in redirects",
+            "from reflex_docs.reflex_docs import app; "
+            "page = app._unevaluated_pages['custom-components']; "
+            "assert '/custom-components/overview/' in str(page.on_load), page.on_load",
         ],
         cwd=Path(__file__).resolve().parents[1],
         capture_output=True,
