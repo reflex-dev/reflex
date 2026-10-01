@@ -100,7 +100,7 @@ With the values above, the step runs up to six times, waiting 10, 20, 40, 80, an
 
 An attempt fails when the step raises, when it returns something that isn't a valid transition, or when the database refuses its commit, for example because a value is too long for its column or breaks a constraint.
 
-After the last retry fails, the run stops with `last_error` set and no next step. To try again, for example after fixing the cause, schedule the step again with [`run`](/docs/workflows/runs/#run-a-step-now).
+After the last retry fails, the run stops with `last_error` set and no next step. To try again, for example after fixing the cause, [run the step again](/docs/workflows/runs/#run-a-step-now).
 
 ## Make steps safe to repeat
 

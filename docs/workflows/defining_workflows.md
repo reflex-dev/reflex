@@ -48,13 +48,13 @@ class Expense(Base, Workflow):
         self.status = "submitted"
 ```
 
-Any primary key works, including composite keys. Add a unique constraint on whatever identifies the work, such as `request_id` above: [`start`](/docs/workflows/runs/) never inserts a row that conflicts with an existing one, so the constraint is what stops a retried request from starting a second run.
+Any primary key works, including composite keys. Add a unique constraint on whatever identifies the work, such as `request_id` above: `start` [never inserts](/docs/workflows/runs/#start-a-run) a row that conflicts with an existing one, so the constraint is what stops a retried request from starting a second run.
 
 Every workflow needs its own table. Two workflow classes with the same `__tablename__` raise a `ValueError`.
 
 ## Columns the mixin adds
 
-The mixin adds twelve columns that the engine reads and writes. You can query them, but don't write to them directly: use [`start`, `run`, `cancel`, and `deliver`](/docs/workflows/runs/) instead.
+The mixin adds twelve columns that the engine reads and writes. You can query them, but don't write to them directly: use `start`, `run`, `cancel`, and `deliver` instead, as described in [Starting and controlling runs](/docs/workflows/runs/).
 
 | Column | Holds |
 | --- | --- |
@@ -84,7 +84,7 @@ uv run reflex db migrate
 
 The migration includes the mixin's columns and indexes. As with any model, Reflex only sees workflows in modules your app imports. If you manage migrations with Alembic directly, set `target_metadata = Base.metadata`.
 
-You can add the mixin to a table that already has rows. The two non-nullable columns it adds, `attempts` and `wf_version`, have server defaults, so the migration fills them in. Existing rows have no `next_step`, so they are finished runs; to give them something to do, use [`run`](/docs/workflows/runs/#run-a-step-now).
+You can add the mixin to a table that already has rows. The two non-nullable columns it adds, `attempts` and `wf_version`, have server defaults, so the migration fills them in. Existing rows have no `next_step`, so they are finished runs; to give them something to do, [run a step](/docs/workflows/runs/#run-a-step-now) on them.
 
 ## Create a session factory
 
@@ -101,7 +101,7 @@ Keep `expire_on_commit=False`: the engine reads a row's columns after committing
 
 Use the psycopg 3 driver (`postgresql+psycopg://`). It serves both the synchronous URL Reflex uses for migrations and the asynchronous one the workflows use, and it lets workers hear about new runs immediately.
 
-Pass the factory to [`run_workflows`](/docs/workflows/workers/) or [`connect_workflows`](/docs/workflows/workers/#processes-that-only-start-runs).
+Pass the factory to `run_workflows`, or to `connect_workflows` in a process that only starts runs. See [Running workers](/docs/workflows/workers/).
 
 ## Use dataclass models
 

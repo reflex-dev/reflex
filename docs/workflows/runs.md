@@ -6,7 +6,7 @@ meta_description: Start reflex-workflow runs from Reflex event handlers and webh
 
 Code outside a run, such as an event handler, a webhook, or an admin action, starts runs and steers them. This page covers starting a run exactly once, finding runs, running a step on demand, and cancelling.
 
-These calls need the engine set up in the process that makes them: either [`run_workflows`](/docs/workflows/workers/) or, in a process that doesn't run steps, [`connect_workflows`](/docs/workflows/workers/#processes-that-only-start-runs). Without one, they raise a `RuntimeError`.
+These calls need the engine set up in the process that makes them: either `run_workflows` or, in a process that doesn't run steps, `connect_workflows`. See [Running workers](/docs/workflows/workers/). Without one, they raise a `RuntimeError`.
 
 ## Start a run
 
