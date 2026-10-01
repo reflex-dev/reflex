@@ -5712,6 +5712,26 @@ def test_get_value(key_factory, expected_result, should_raise):
         assert state.dirty_vars == initial_dirty_vars
 
 
+def test_get_value_through_a_state_proxy(
+    grandchild_state: GrandchildState,
+    attached_mock_event_context: EventContext,
+):
+    """A StateProxy reads field values with get_value outside of its context.
+
+    Args:
+        grandchild_state: A grandchild state.
+        attached_mock_event_context: The event context the proxy takes its token from.
+    """
+    grandchild_state.value2 = "own"
+    proxy = StateProxy(grandchild_state)
+
+    assert proxy.get_value("value2") == "own"
+    assert proxy.get_value("value") == grandchild_state.value
+    array = proxy.get_value("array")
+    assert not isinstance(array, MutableProxy)
+    assert array == [1, 2, 3.15]
+
+
 def test_init_mixin() -> None:
     """Ensure that State mixins can not be instantiated directly."""
 

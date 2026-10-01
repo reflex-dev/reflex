@@ -1896,8 +1896,11 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             TypeError: If the key is not a string or MutableProxy.
         """
         if isinstance(key, str):
-            # __class__, not type(): a StateProxy reports the wrapped state's class.
-            if (field := self.__class__.__fields__.get(key)) is not None:
+            # A StateProxy reports the wrapped state's __class__ but not its type,
+            # and reads through getattr below, on the state it wraps.
+            if (cls := type(self)) is self.__class__ and (
+                field := cls.__fields__.get(key)
+            ) is not None:
                 return field._get_raw(self)
             if isinstance(val := getattr(self, key), MutableProxy):
                 return val.__wrapped__
