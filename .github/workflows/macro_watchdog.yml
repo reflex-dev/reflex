@@ -41,6 +41,7 @@ jobs:
           limit=$((QUEUED_LIMIT_MINUTES * 60))
           now=$(date -u +%s)
           cancelled=0
+          failed=0
           for workflow in $MACRO_WORKFLOWS; do
             for status in queued in_progress; do
               runs=$(gh api "repos/$GH_REPO/actions/workflows/$workflow/runs?status=$status&per_page=100" --jq '.workflow_runs[] | "\(.id) \(.html_url)"')
@@ -53,16 +54,24 @@ jobs:
                 [ -n "$waiting_since" ] || continue
                 waited=$((now - $(date -u -d "$waiting_since" +%s)))
                 if [ "$waited" -gt "$limit" ]; then
-                  # A run that finished since it was listed cannot be cancelled;
-                  # that must not stop the scan of the others.
+                  # A run that finished since it was listed cannot be cancelled,
+                  # which is fine. Any other failed cancel fails the job, but
+                  # only once the remaining runs have been checked.
                   if gh run cancel "$run"; then
                     echo "- cancelled [$workflow run $run]($url): its job waited $((waited / 60)) min for a macro runner (limit $QUEUED_LIMIT_MINUTES min); the month's macro minutes are probably spent." | tee -a "$GITHUB_STEP_SUMMARY"
                     cancelled=$((cancelled + 1))
+                  elif [ "$(gh api "repos/$GH_REPO/actions/runs/$run" --jq .status)" = completed ]; then
+                    echo "- [$workflow run $run]($url) finished before it could be cancelled." | tee -a "$GITHUB_STEP_SUMMARY"
                   else
-                    echo "::warning::could not cancel $workflow run $run ($url); it may have finished meanwhile"
+                    echo "- could not cancel [$workflow run $run]($url)." | tee -a "$GITHUB_STEP_SUMMARY"
+                    failed=$((failed + 1))
                   fi
                 fi
               done <<< "$runs"
             done
           done
           echo "$cancelled run(s) cancelled" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ "$failed" -gt 0 ]; then
+            echo "::error::$failed run(s) could not be cancelled"
+            exit 1
+          fi
