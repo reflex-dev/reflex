@@ -7,6 +7,7 @@ import threading
 import time
 import uuid
 import warnings
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -998,11 +999,18 @@ def test_send_detached_hands_the_event_to_a_detached_process(
         telemetry, "get_config", return_value=SimpleNamespace(telemetry_enabled=True)
     )
     popen = mocker.patch.object(telemetry.subprocess, "Popen")
+    mocker.patch.object(telemetry, "_reaps_orphans", return_value=False)
 
     telemetry._send_detached("run-prod")
 
     popen.assert_called_once_with(
-        [sys.executable, "-c", telemetry._DETACHED_SEND, "run-prod"],
+        [
+            sys.executable,
+            "-c",
+            telemetry._DETACH + telemetry._SEND_EVENT,
+            "run-prod",
+            "detach",
+        ],
         stdin=telemetry.subprocess.DEVNULL,
         stdout=telemetry.subprocess.DEVNULL,
         stderr=telemetry.subprocess.DEVNULL,
@@ -1064,14 +1072,78 @@ def test_detached_send_leaves_no_child_behind(
     mocker.patch.object(
         telemetry, "get_config", return_value=SimpleNamespace(telemetry_enabled=True)
     )
-    # Same detaching prologue, but the grandchild exits instead of sending.
-    prologue = telemetry._DETACHED_SEND.split("from reflex")[0]
-    mocker.patch.object(telemetry, "_DETACHED_SEND", prologue + "os._exit(0)\n")
+    mocker.patch.object(telemetry, "_reaps_orphans", return_value=False)
+    # The real detaching prologue, but the sender exits instead of sending.
+    mocker.patch.object(telemetry, "_SEND_EVENT", "os._exit(0)\n")
     popen = mocker.spy(telemetry.subprocess, "Popen")
 
     telemetry._send_detached("run-prod")
 
     assert popen.spy_return.returncode == 0
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is POSIX-only")
+def test_detached_send_kills_and_reaps_a_child_that_hangs(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A child that does not exit in time is killed and reaped, not leaked."""
+    monkeypatch.setattr(telemetry, "_paused", True)
+    monkeypatch.setattr(telemetry, "_DETACHED_TIMEOUT", 0.2)
+    mocker.patch.object(
+        telemetry, "get_config", return_value=SimpleNamespace(telemetry_enabled=True)
+    )
+    mocker.patch.object(telemetry, "_reaps_orphans", return_value=True)
+    mocker.patch.object(telemetry, "_SEND_EVENT", "import time\ntime.sleep(30)\n")
+    popen = mocker.spy(telemetry.subprocess, "Popen")
+
+    telemetry._send_detached("run-prod")
+
+    assert popen.spy_return.returncode == -9
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is POSIX-only")
+def test_detached_send_stays_attached_where_orphans_come_back(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+):
+    """As PID 1 or a subreaper the sender is not orphaned to this process.
+
+    Orphans would be reparented to the supervisor, which never reaps them,
+    so the single child sends and is waited for instead.
+    """
+    monkeypatch.setattr(telemetry, "_paused", True)
+    mocker.patch.object(
+        telemetry, "get_config", return_value=SimpleNamespace(telemetry_enabled=True)
+    )
+    mocker.patch.object(telemetry, "_reaps_orphans", return_value=True)
+    sent = tmp_path / "sent"
+    mocker.patch.object(
+        telemetry,
+        "_SEND_EVENT",
+        f"open({str(sent)!r}, 'w').write(str(os.getppid()))\n",
+    )
+    popen = mocker.spy(telemetry.subprocess, "Popen")
+
+    telemetry._send_detached("run-prod")
+
+    assert popen.spy_return.args[-1] == "attached"
+    assert popen.spy_return.returncode == 0
+    # The sender ran in the direct child, which was reaped before returning.
+    assert sent.read_text() == str(os.getpid())
+
+
+def test_reaps_orphans_as_pid_1(mocker: MockerFixture):
+    """PID 1 inherits every orphan."""
+    mocker.patch.object(telemetry.os, "getpid", return_value=1)
+
+    assert telemetry._reaps_orphans()
+
+
+def test_reaps_orphans_is_false_for_an_ordinary_process():
+    """The test runner is neither PID 1 nor a child subreaper."""
+    assert os.getpid() != 1
+    assert not telemetry._reaps_orphans()
 
 
 def test_shutdown_executor_without_executor_is_a_noop():
