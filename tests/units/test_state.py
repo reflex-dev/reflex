@@ -555,6 +555,22 @@ def test_state_names_remain_cached_for_large_apps(mocker: MockerFixture):
     snake_case.assert_not_called()
 
 
+def test_substate_does_not_read_metadata_its_parent_cached():
+    """A substate defined after its parent cached its metadata computes its own."""
+    parent = type("CachedMetaParentState", (BaseState,), {"__module__": __name__})
+    parent_name = parent.get_name()
+    parent_full_name = parent.get_full_name()
+    assert parent.get_parent_state() is None
+    assert parent.get_root_state() is parent
+
+    child = type("CachedMetaChildState", (parent,), {"__module__": __name__})
+
+    assert child.get_name() != parent_name
+    assert child.get_full_name() == f"{parent_full_name}.{child.get_name()}"
+    assert child.get_parent_state() is parent
+    assert child.get_root_state() is parent
+
+
 def test_get_substates():
     """Test getting the substates."""
     assert TestState.get_substates() == {ChildState, ChildState2, ChildState3}

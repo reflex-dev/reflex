@@ -304,9 +304,10 @@ def _cache_per_class(
 ) -> Callable[[type[BaseState]], RETURN]:
     """Cache immutable metadata on the class that owns it.
 
-    The value lives in the class's own dict, so subclasses never inherit their
-    parent's cached result, lookups stay O(1) however many state classes an
-    app defines, and the cache dies with its class.
+    The value lives in a dict that ``BaseState.__init_subclass__`` gives each
+    class, so subclasses never inherit their parent's cached result, lookups
+    stay O(1) however many state classes an app defines, and the cache dies
+    with its class.
 
     Args:
         fn: The class method to cache.
@@ -326,7 +327,9 @@ def _cache_per_class(
         Returns:
             The cached metadata.
         """
-        cache = cls.__dict__["_reflex_internal_class_cache"]
+        # Every class has its own dict, so a plain attribute read finds it, and
+        # costs less than building a cls.__dict__ proxy on every state write.
+        cache = cls._reflex_internal_class_cache
         try:
             return cache[cache_key]
         except KeyError:
@@ -501,7 +504,8 @@ _ROUTER_FIELD_NAMES = frozenset((*constants.ROUTER_VARS, constants.ROUTER_DATA))
 class BaseState(EvenMoreBasicBaseState, state_root=True):
     """The state of the app."""
 
-    # Immutable metadata belongs to each class, including when an LRU evicts it.
+    # The class's cached immutable metadata; __init_subclass__ gives every
+    # subclass its own, so the cached values are never inherited.
     _reflex_internal_class_cache: ClassVar[builtins.dict[str, Any]] = {}
 
     # A map from the var name to the var.
