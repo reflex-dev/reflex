@@ -133,7 +133,11 @@ dev = [
   "ty",
   "typer",
   "uvicorn",
+  { include-group = "pr-bot" },
 ]
+# The pull request automation in scripts/pr_bot. Its workflows install only this
+# group (`uv run --only-group pr-bot`); dev includes it so the tests can import it.
+pr-bot = ["anthropic >=1.8.0,<2"]
 
 
 [build-system]
@@ -294,6 +298,7 @@ preview = true
 "scripts/check_min_deps.py" = ["T201"]
 "scripts/check_outdated_deps.py" = ["T201"]
 "scripts/hash_examples.py" = ["T201"]
+"scripts/pr_bot/*.py" = ["T201"]
 "scripts/verify_pyi.py" = ["T201"]
 # Skill helper scripts are CLIs whose whole job is printing a report.
 ".claude/skills/*/scripts/*.py" = ["T201"]

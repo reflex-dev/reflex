@@ -191,6 +191,16 @@ uv run pre-commit install
 
 That's it you can now submit your PR. Thanks for contributing to Reflex!
 
+### After you open it
+
+A bot labels every open PR with whose turn it is, and keeps one comment saying why:
+
+- `status: waiting on submitter`: the next step is yours. The PR is a draft, conflicts with `main`, fails a required check, or has review feedback (from people or AI reviewers) newer than your last commit or reply.
+- `status: waiting on maintainer`: the next step is ours, such as a review, a re-review, or a look at new commits.
+- `status: ready to merge`: approved, checks green, nothing new since the approval.
+
+It also estimates review effort (`complexity: low`, `medium` or `high`), and when you open a PR it points out other open PRs it conflicts with or that solve the same problem. The rules are in [scripts/pr_bot/README.md](scripts/pr_bot/README.md).
+
 ## 🤖 AI-Assisted PRs
 
 We welcome AI-assisted contributions, but they must meet the same quality bar as any other PR.

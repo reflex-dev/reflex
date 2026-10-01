@@ -1,0 +1,65 @@
+name: pr-overlap
+
+# When a pull request is opened, finds the open pull requests it would conflict
+# with or that solve the same problem, and says so in one comment.
+# scripts/pr_bot/README.md describes how.
+#
+# The job runs in this repository's context so it can comment on pull requests
+# from forks, so it never checks out or runs their code: it reads them through the
+# API and merges their commits in git's object database only.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number
+        required: true
+        type: string
+      dry-run:
+        description: Report what would change without changing it
+        type: boolean
+        default: false
+
+permissions: {}
+
+jobs:
+  overlap:
+    if: github.repository == 'reflex-dev/reflex'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    concurrency:
+      group: pr-overlap-${{ github.event.pull_request.number || inputs.pr }}
+      cancel-in-progress: true
+    steps:
+      # The base branch's full history, for merge bases; pull request heads are
+      # fetched by the script.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.12.5"
+          python-version: "3.14.7"
+      - name: Find overlapping pull requests
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PR_BOT_MODEL: ${{ vars.PR_BOT_MODEL }}
+          PYTHONUNBUFFERED: "1"
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
+          DRY_RUN: ${{ inputs.dry-run || false }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--pr "$PR_NUMBER")
+          if [ "$DRY_RUN" = true ]; then
+            args+=(--dry-run)
+          fi
+          uv run --frozen --only-group pr-bot python -m scripts.pr_bot overlap "${args[@]}"

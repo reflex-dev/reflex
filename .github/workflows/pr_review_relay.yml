@@ -1,0 +1,23 @@
+name: pr-review-relay
+
+# A review on a pull request from a fork starts workflows with a read-only token,
+# which cannot update the triage labels. This workflow does nothing itself:
+# finishing is its whole job, because pr-triage listens for it through
+# workflow_run, which runs in this repository's context.
+
+on:
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions: {}
+
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Hand the review to pr-triage
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: echo "pr-triage picks up the review of pull request #$PR_NUMBER."

@@ -1,0 +1,242 @@
+name: pr-on-deck
+
+# Keeps the pull requests labeled "on deck" mergeable: whenever one conflicts with
+# main, merges main into it, has Claude resolve the conflicts, and pushes the
+# merge commit to its branch. scripts/pr_bot/README.md covers the setup.
+#
+# The three jobs split the work so that none both reads untrusted input and holds
+# a credential worth stealing, and none runs pull request code
+# (scripts/pr_bot/on_deck.py has the details):
+# - find, with a read-only token, lists the on-deck pull requests that conflict;
+# - resolve, with the Anthropic key and a read-only token, merges in a scratch
+#   worktree where Claude Code may only read and edit files, and bundles the result;
+# - push, with the GitHub App's token, checks the bundle against a merge it
+#   computes itself and pushes it, or explains on the pull request why not.
+
+on:
+  push:
+    branches: [main]
+  pull_request_target:
+    types: [labeled, synchronize]
+  schedule:
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Retry this pull request even if the bot failed on it before
+        required: false
+        type: string
+      dry-run:
+        description: Resolve, but push and comment nothing
+        type: boolean
+        default: false
+
+permissions: {}
+
+# One run at a time, and every run checks every on-deck pull request, so a run
+# that replaces a pending one loses nothing. Events that concern no on-deck pull
+# request get a group of their own, so they cannot displace a pending run.
+concurrency:
+  group: >-
+    ${{ (github.event_name != 'pull_request_target'
+        || (github.event.action == 'labeled' && github.event.label.name == 'on deck')
+        || (github.event.action == 'synchronize'
+            && contains(github.event.pull_request.labels.*.name, 'on deck')))
+    && 'pr-on-deck'
+    || format('pr-on-deck-ignored-{0}', github.run_id) }}
+  cancel-in-progress: false
+
+jobs:
+  find:
+    if: >-
+      github.repository == 'reflex-dev/reflex'
+      && (github.event_name != 'pull_request_target'
+          || (github.event.action == 'labeled' && github.event.label.name == 'on deck')
+          || (github.event.action == 'synchronize'
+              && contains(github.event.pull_request.labels.*.name, 'on deck')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      prs: ${{ steps.find.outputs.prs }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.12.5"
+          python-version: "3.14.7"
+      - name: Find the on-deck pull requests that conflict with main
+        id: find
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PYTHONUNBUFFERED: "1"
+          # Adding the label, or a manual run for one pull request, retries it
+          # even if the bot already failed on its current head.
+          FORCE: >-
+            ${{ github.event.action == 'labeled' && github.event.pull_request.number
+            || inputs.pr }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=()
+          if [ -n "$FORCE" ]; then
+            args+=(--force "$FORCE")
+          fi
+          uv run --frozen --only-group pr-bot python -m scripts.pr_bot on-deck find "${args[@]}"
+
+  resolve:
+    needs: find
+    if: needs.find.outputs.prs != '[]'
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        pr: ${{ fromJSON(needs.find.outputs.prs) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      pull-requests: read
+    env:
+      # The matrix entry carries branch names, which are attacker-chosen text: it
+      # reaches the scripts through the environment, never through an expression
+      # in a script.
+      CANDIDATE: ${{ toJSON(matrix.pr) }}
+      PYTHONUNBUFFERED: "1"
+      # The worktree is pull request content; git-lfs has no business fetching
+      # anything for it.
+      GIT_LFS_SKIP_SMUDGE: "1"
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: bot
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.12.5"
+          python-version: "3.14.7"
+      - name: Merge main and collect the conflicts
+        id: prepare
+        if: matrix.pr.pushable
+        working-directory: bot
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: >-
+          uv run --frozen --only-group pr-bot python -m scripts.pr_bot on-deck prepare
+          --candidate "$CANDIDATE" --worktree "$GITHUB_WORKSPACE/work"
+          --context "$RUNNER_TEMP/context" --out "$RUNNER_TEMP/out"
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        if: steps.prepare.outputs.status == 'conflicted'
+        with:
+          node-version: 22
+      - name: Install Claude Code
+        if: steps.prepare.outputs.status == 'conflicted'
+        shell: bash
+        run: npm install --global @anthropic-ai/claude-code@2.1.285
+      - name: Resolve the conflicts with Claude
+        if: steps.prepare.outputs.status == 'conflicted'
+        working-directory: work
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MODEL: ${{ vars.PR_BOT_MODEL || 'claude-opus-5-5' }}
+          BUDGET_USD: ${{ vars.PR_BOT_RESOLVE_BUDGET_USD || '10' }}
+        shell: bash
+        # --bare loads no hooks, settings, MCP servers or CLAUDE.md from the pull
+        # request's checkout. --restricted confines the file tools to the worktree
+        # and the context directory, and the tool list has no shell, so nothing
+        # the pull request contains can run. A failed or cut-short run is not an
+        # error here: the next step reports it on the pull request.
+        run: |
+          set +e -uo pipefail
+          claude -p "$(cat "$RUNNER_TEMP/context/prompt.md")" \
+            --bare --restricted \
+            --tools Read,Edit,Write,Glob,Grep \
+            --add-dir "$RUNNER_TEMP/context" \
+            --permission-mode acceptEdits --permission-prompts none \
+            --model "$MODEL" --max-turns 200 --max-budget-usd "$BUDGET_USD" \
+            --output-format json \
+            --json-schema "$(cat "$RUNNER_TEMP/context/schema.json")" \
+            > "$RUNNER_TEMP/claude.json"
+          status=$?
+          jq '{subtype, is_error, num_turns, total_cost_usd}' "$RUNNER_TEMP/claude.json" || true
+          echo "Claude Code exited with $status"
+      - name: Check the resolution and bundle the merge
+        if: steps.prepare.outputs.status == 'conflicted'
+        working-directory: bot
+        shell: bash
+        run: >-
+          uv run --frozen --only-group pr-bot python -m scripts.pr_bot on-deck finalize
+          --candidate "$CANDIDATE" --worktree "$GITHUB_WORKSPACE/work"
+          --context "$RUNNER_TEMP/context" --agent-output "$RUNNER_TEMP/claude.json"
+          --out "$RUNNER_TEMP/out"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always() && matrix.pr.pushable
+        with:
+          name: on-deck-${{ matrix.pr.number }}
+          path: ${{ runner.temp }}/out
+          if-no-files-found: ignore
+          retention-days: 3
+
+  push:
+    needs: [find, resolve]
+    # Also after a failed resolve, to say on the pull request what went wrong.
+    if: always() && needs.find.result == 'success' && needs.find.outputs.prs != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        pr: ${{ fromJSON(needs.find.outputs.prs) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Only for the checkout: the app's token does everything else.
+    permissions:
+      contents: read
+    steps:
+      # A push made with GITHUB_TOKEN starts no workflows, so the pull request's CI
+      # would never run on the merge; and only an app or a person with write access
+      # may push to a fork's branch, when its author allows edits by maintainers.
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app
+        with:
+          client-id: ${{ vars.PR_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.PR_BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+          # A merge commit carries main's changes to .github/workflows.
+          permission-workflows: write
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.12.5"
+          python-version: "3.14.7"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        # Missing when the resolve job was skipped or died; push says so.
+        continue-on-error: true
+        with:
+          name: on-deck-${{ matrix.pr.number }}
+          path: ${{ runner.temp }}/out
+      - name: Push the merge, or explain the conflict
+        env:
+          GITHUB_TOKEN: ${{ steps.app.outputs.token }}
+          APP_SLUG: ${{ steps.app.outputs.app-slug }}
+          PR_NUMBER: ${{ matrix.pr.number }}
+          DRY_RUN: ${{ inputs.dry-run || false }}
+          PYTHONUNBUFFERED: "1"
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--pr "$PR_NUMBER" --artifact "$RUNNER_TEMP/out" --app-slug "$APP_SLUG")
+          if [ "$DRY_RUN" = true ]; then
+            args+=(--dry-run)
+          fi
+          uv run --frozen --only-group pr-bot python -m scripts.pr_bot on-deck push "${args[@]}"

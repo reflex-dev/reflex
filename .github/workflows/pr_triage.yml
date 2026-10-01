@@ -1,0 +1,107 @@
+name: pr-triage
+
+# Keeps two labels on every open pull request, whose turn it is ("status: ...")
+# and how much review it needs ("complexity: ..."), and one comment saying why.
+# scripts/pr_bot/README.md describes the rules and the setup.
+#
+# Every trigger here runs in this repository's context, with a token that can
+# label pull requests from forks, so nothing checks out or runs pull request code:
+# the bot reads pull requests through the API only. A review on a fork's pull
+# request only gets a read-only token, so reviews arrive through pr-review-relay,
+# and the half-hourly sweep catches what no event reports (CI finishing, a thread
+# resolved, an event that was missed).
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+      - converted_to_draft
+      - labeled
+      - unlabeled
+  issue_comment:
+    types: [created]
+  workflow_run:
+    workflows: [pr-review-relay]
+    types: [completed]
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number (empty triages every open pull request)
+        required: false
+        type: string
+      dry-run:
+        description: Report what would change without changing it
+        type: boolean
+        default: false
+
+permissions: {}
+
+jobs:
+  triage:
+    # Bots' comments (AI reviewers, benchmark reports) say nothing the rules read
+    # that the sweep would miss, and each would otherwise start a run.
+    if: >-
+      github.repository == 'reflex-dev/reflex'
+      && (github.event_name != 'issue_comment'
+          || (github.event.issue.pull_request
+              && github.event.comment.user.type != 'Bot'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    concurrency:
+      # Fork pull requests often share a branch name (main), so a review relayed
+      # through workflow_run is keyed by the fork and the branch together.
+      group: >-
+        pr-triage-${{ github.event.pull_request.number
+        || github.event.issue.number
+        || inputs.pr
+        || (github.event.workflow_run
+            && format('{0}:{1}', github.event.workflow_run.head_repository.full_name,
+                      github.event.workflow_run.head_branch))
+        || 'sweep' }}
+      # A newer event on the same pull request supersedes the run in progress;
+      # sweeps finish instead, because each one picks up where events left off.
+      cancel-in-progress: ${{ github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.12.5"
+          python-version: "3.14.7"
+      - name: Triage
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PR_BOT_MODEL: ${{ vars.PR_BOT_MODEL }}
+          PYTHONUNBUFFERED: "1"
+          EVENT: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number || inputs.pr }}
+          # Branch names are attacker-chosen text: they reach the script through
+          # the environment, never through an expression in the script itself.
+          HEAD_OWNER: ${{ github.event.workflow_run.head_repository.owner.login }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          DRY_RUN: ${{ inputs.dry-run || false }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = workflow_run ]; then
+            args=(--head "$HEAD_OWNER:$HEAD_BRANCH")
+          elif [ -n "$PR_NUMBER" ]; then
+            args=(--pr "$PR_NUMBER")
+          else
+            args=(--all)
+          fi
+          if [ "$DRY_RUN" = true ]; then
+            args+=(--dry-run)
+          fi
+          uv run --frozen --only-group pr-bot python -m scripts.pr_bot triage "${args[@]}"
