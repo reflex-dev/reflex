@@ -5330,6 +5330,30 @@ def test_state_unannotated_dataclasses_factory():
     assert state.items == []
 
 
+@pytest.mark.parametrize("name", ["items", "_items"])
+def test_state_unannotated_dataclasses_mutable_default_is_copied(name):
+    """Mutable dataclass defaults stay isolated and reset to their original value.
+
+    Args:
+        name: A frontend or backend field name.
+    """
+    default = {"nested": []}
+    state_cls = type(
+        "MutableDataclassesFieldState",
+        (BaseState,),
+        {"__module__": __name__, name: dataclasses.field(default=default)},
+    )
+    first = state_cls(_reflex_internal_init=True)
+    second = state_cls(_reflex_internal_init=True)
+    getattr(first, name)["nested"].append("changed")
+    assert getattr(first, name) == {"nested": ["changed"]}
+    assert getattr(second, name) == default == {"nested": []}
+    first.reset()
+    assert getattr(first, name) == {"nested": []}
+    getattr(first, name)["nested"].append("again")
+    assert getattr(second, name) == default == {"nested": []}
+
+
 def test_state_unannotated_dataclasses_custom_factory_requires_annotation():
     """A custom dataclass factory without an annotation raises a clear error."""
 

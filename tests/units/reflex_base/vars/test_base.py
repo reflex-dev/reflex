@@ -163,6 +163,31 @@ def test_dataclasses_field_default_is_unpacked():
     assert MyState.get_fields()["n"].default == 5
 
 
+@pytest.mark.parametrize("default", [[[]], {"nested": []}, {1}])
+def test_unannotated_dataclasses_mutable_default_is_copied(default):
+    """Mutable dataclass defaults are deeply copied for each plain model.
+
+    Args:
+        default: A mutable default, including nested containers.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        items = dataclasses.field(default=default)
+
+    first, second = Model(), Model()
+    assert first.items == second.items == default
+    assert first.items is not second.items
+    assert first.items is not default
+    if isinstance(default, list):
+        first.items[0].append("changed")
+    elif isinstance(default, dict):
+        first.items["nested"].append("changed")
+    else:
+        first.items.add(2)
+    assert first.items != default
+    assert second.items == default
+
+
 def test_dataclasses_field_custom_factory_allowed_on_plain_model():
     """A plain model is not serialized, so a custom factory needs no annotation."""
 

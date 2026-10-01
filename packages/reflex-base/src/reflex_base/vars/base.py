@@ -4369,11 +4369,10 @@ def _unannotated_fields(
             else:
                 # A plain model is not serialized; Any matches rx.field here.
                 annotated = Any
-            fields[key] = Field(
+            fields[key] = field(
                 default=value.default,
                 default_factory=factory,
-                annotated_type=annotated,
-            )
+            )._replace(annotated_type=annotated)
         elif isinstance(value, Field):
             if value.annotated_type is not Any:
                 fields[key] = value
