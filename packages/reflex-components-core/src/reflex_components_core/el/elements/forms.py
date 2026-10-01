@@ -146,7 +146,7 @@ def _get_static_string_prop(
 def _is_form_control_component(component: BaseComponent) -> bool:
     """Return whether a component or its memoized type is a form control.
 
-    Custom component classes can opt in with ``is_form_control = True``.
+    Custom component classes can opt in with ``_is_form_control = True``.
 
     Args:
         component: The component to inspect.
@@ -154,14 +154,10 @@ def _is_form_control_component(component: BaseComponent) -> bool:
     Returns:
         Whether the component contributes a form field.
     """
-    if getattr(component, "_is_form_control", False) or getattr(
-        component, "is_form_control", False
-    ):
+    if getattr(component, "_is_form_control", False):
         return True
     wrapped_component_type = getattr(component, "_wrapped_component_type", None)
-    if getattr(wrapped_component_type, "_is_form_control", False) or getattr(
-        wrapped_component_type, "is_form_control", False
-    ):
+    if getattr(wrapped_component_type, "_is_form_control", False):
         return True
     return getattr(component, "tag", None) in _NATIVE_FORM_CONTROL_TAGS
 

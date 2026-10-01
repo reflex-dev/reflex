@@ -103,7 +103,7 @@ def test_form_refs_include_opted_in_custom_controls():
 
     class CustomControl(rx.Component):
         tag = "CustomControl"
-        is_form_control = True
+        _is_form_control = True
 
     form = HTMLForm.create(CustomControl.create(id="custom_control"))
 
