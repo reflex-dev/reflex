@@ -344,12 +344,13 @@ class Deployments:
             stale = "bad response" in message
             if outcome is not None or stale or polls % _REPORT_EVERY_POLLS == 0:
                 report = self.report(deployment_id)
-                if outcome is None:
-                    recorded = report_outcome(report.status)
-                    # A running deployment is only live once its message says so,
-                    # unless the message is stale and cannot.
-                    if recorded != "succeeded" or stale:
-                        outcome = recorded
+                recorded = report_outcome(report.status)
+                # Completion can be published before the deployment row is updated.
+                # Running still needs a completion message, unless that message is stale.
+                if outcome == "succeeded" or (
+                    outcome is None and (recorded != "succeeded" or stale)
+                ):
+                    outcome = recorded
                 if outcome == "failed":
                     # The API has accepted the id by now, so it parses.
                     raise DeploymentFailedError(uuid.UUID(str(deployment_id)), report)
