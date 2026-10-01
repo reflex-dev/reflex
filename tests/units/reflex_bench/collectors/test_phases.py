@@ -462,16 +462,49 @@ def _wait_for(condition: Callable[[], bool], timeout: float = 10) -> None:
         time.sleep(0.01)
 
 
+def _stdin_tool(directory: Path, name: str) -> list[str]:
+    """Write a tool that runs until a line arrives on its stdin.
+
+    Args:
+        directory: Where to write it.
+        name: Its file name, e.g. ``bun``.
+
+    Returns:
+        A command line that runs it as an install.
+    """
+    path = directory / name
+    path.write_text("#!/bin/sh\nread line\n", encoding="utf-8")
+    path.chmod(0o755)
+    return [str(path), "add", "react"]
+
+
+def _signal_samples(monkeypatch: pytest.MonkeyPatch) -> threading.Event:
+    """Set an event after each sample of every :class:`phases.TreePhases`.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Returns:
+        The event.
+    """
+    sampled = threading.Event()
+    sample = phases.TreePhases._sample
+
+    def signal_sample(self: phases.TreePhases) -> None:
+        sample(self)
+        sampled.set()
+
+    monkeypatch.setattr(phases.TreePhases, "_sample", signal_sample)
+    return sampled
+
+
 @posix_only
 def test_tree_phases_rereads_the_command_line_after_exec(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     """Classify a process by the program it execs, not the parent it forked from."""
     # The tool waits on the stdin it shares with the root until the test lets it exit.
-    bun = tmp_path / "bun"
-    bun.write_text("#!/bin/sh\nread line\n", encoding="utf-8")
-    bun.chmod(0o755)
-    tool = [str(bun), "add", "react"]
+    tool = _stdin_tool(tmp_path, "bun")
     # The root forks a child that execs the tool once it reads a byte, and
     # never reaps it.
     code = (
@@ -483,14 +516,7 @@ def test_tree_phases_rereads_the_command_line_after_exec(
         "print(pid, flush=True)\n"
         "time.sleep(60)\n"
     )
-    sampled = threading.Event()
-    sample = phases.TreePhases._sample
-
-    def signal_sample(self: phases.TreePhases) -> None:
-        sample(self)
-        sampled.set()
-
-    monkeypatch.setattr(phases.TreePhases, "_sample", signal_sample)
+    sampled = _signal_samples(monkeypatch)
     root = subprocess.Popen(
         [sys.executable, "-c", code], stdin=subprocess.PIPE, stdout=subprocess.PIPE
     )
@@ -499,18 +525,20 @@ def test_tree_phases_rereads_the_command_line_after_exec(
     try:
         child = psutil.Process(int(root.stdout.readline()))
         sampler = phases.TreePhases(root.pid, interval=3600).start()
-        # The loop's first sample sees the child before its exec, with the
-        # root's command line.
-        assert sampled.wait(10)
-        root.stdin.write(b"x")
-        root.stdin.flush()
-        _wait_for(lambda: child.cmdline()[1:] == tool)
-        sampler._sample()
-        root.stdin.write(b"\n")
-        root.stdin.flush()
-        _wait_for(lambda: child.status() == psutil.STATUS_ZOMBIE)
-        exited = time.perf_counter() - sampler.t0
-        report = sampler.stop()
+        try:
+            # The loop's first sample sees the child before its exec, with the
+            # root's command line.
+            assert sampled.wait(10)
+            root.stdin.write(b"x")
+            root.stdin.flush()
+            _wait_for(lambda: child.cmdline()[1:] == tool)
+            sampler._sample()
+            root.stdin.write(b"\n")
+            root.stdin.flush()
+            _wait_for(lambda: child.status() == psutil.STATUS_ZOMBIE)
+            exited = time.perf_counter() - sampler.t0
+        finally:
+            report = sampler.stop()
     finally:
         root.stdin.close()
         root.kill()
@@ -521,6 +549,30 @@ def test_tree_phases_rereads_the_command_line_after_exec(
     assert len(report.classes["install"].intervals) == 1
     # The zombie's sighting still counts and keeps the command line read before.
     assert record.last_seen > exited
+
+
+@posix_only
+def test_tree_phases_keeps_the_command_line_over_an_empty_read(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Keep the command line when a later read is empty, as mid-exec or mid-exit."""
+    tool = _stdin_tool(tmp_path, "bun")
+    sampled = _signal_samples(monkeypatch)
+    root = subprocess.Popen(tool, stdin=subprocess.PIPE)
+    assert root.stdin is not None
+    sampler = phases.TreePhases(root.pid, interval=3600).start()
+    try:
+        assert sampled.wait(10)
+        # The kernel reads an empty command line while the process has no
+        # memory map, or its new one has no arguments yet.
+        monkeypatch.setattr(psutil.Process, "cmdline", lambda self: [])
+    finally:
+        report = sampler.stop()
+        root.stdin.close()
+        root.wait(30)
+    (record,) = report.processes
+    assert record.cmdline[1:] == tool
+    assert record.kind == "install"
 
 
 def test_tree_phases_raises_when_sampling_fails(monkeypatch: pytest.MonkeyPatch):

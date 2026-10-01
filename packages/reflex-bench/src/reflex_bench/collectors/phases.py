@@ -160,8 +160,8 @@ class ProcessRecord:
     Attributes:
         pid: The process id.
         ppid: The parent process id when first seen.
-        cmdline: The command line at the last sample that could read it; a
-            process sampled between its fork and its exec still shows its parent's.
+        cmdline: The last non-empty command line a sample read; a process
+            sampled between its fork and its exec still shows its parent's.
         first_seen: When a sample first saw it, in seconds since the sampler's origin.
         last_seen: When a sample last saw it.
         cpu_s: Its user and system CPU time at the last sample.
@@ -324,9 +324,10 @@ class TreePhases:
                     )
                 else:
                     # A sample between a fork and its exec read the parent's
-                    # command line; a zombie's can no longer be read.
+                    # command line. A zombie's can no longer be read, and one
+                    # mid-exec or mid-exit reads empty.
                     with contextlib.suppress(psutil.ZombieProcess):
-                        record.cmdline = child.cmdline()
+                        record.cmdline = child.cmdline() or record.cmdline
                     record.cpu_s = times.user + times.system
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             return
