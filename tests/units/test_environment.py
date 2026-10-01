@@ -989,17 +989,16 @@ def test_env_var_set_runs_callbacks_for_its_name(monkeypatch: pytest.MonkeyPatch
     Args:
         monkeypatch: pytest monkeypatch fixture.
     """
+    name = "TEST_CALLBACK_VAR"
     monkeypatch.setattr("reflex_base.environment._SET_CALLBACKS", {})
-    monkeypatch.delenv("TEST_CALLBACK_VAR", raising=False)
+    monkeypatch.delenv(name, raising=False)
     calls = []
-    _on_env_var_set(
-        "TEST_CALLBACK_VAR", lambda: calls.append(os.environ.get("TEST_CALLBACK_VAR"))
-    )
+    _on_env_var_set(name, lambda: calls.append(os.environ.get(name)))
 
     EnvVar("OTHER_TEST_VAR", None, str).set(None)
     assert calls == []
 
-    env_var_instance = EnvVar("TEST_CALLBACK_VAR", None, str)
+    env_var_instance = EnvVar(name, None, str)
     env_var_instance.set("value")  # type: ignore[arg-type]
     env_var_instance.set(None)
     assert calls == ["value", None]
