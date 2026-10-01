@@ -6331,9 +6331,9 @@ def test_base_var_shadowing_parent_before_mixin_does_not_raise() -> None:
         shadowed_value: int = 1
 
     class ShadowMixin(BaseState, mixin=True):
-        shadowed_value: str = "ninety-nine"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+        shadowed_value: str = "ninety-nine"
 
-    class ShadowChild(ShadowParent, ShadowMixin):
+    class ShadowChild(ShadowParent, ShadowMixin):  # pyright: ignore[reportIncompatibleVariableOverride]
         pass
 
     assert isinstance(ShadowChild.shadowed_value, Var)
