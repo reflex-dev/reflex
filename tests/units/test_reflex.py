@@ -181,10 +181,14 @@ def test_compile_app_worker_flushes_telemetry_on_failure(mocker):
 def test_run_prod_sends_telemetry_once_the_server_started(
     mocker, running_mode: constants.RunningMode, launcher: str
 ):
-    """The run-prod event waits for the server so no telemetry thread is forked."""
+    """The run-prod event waits for the server and leaves the supervisor.
+
+    Sending it from another process keeps the supervisor, which granian may
+    fork again to respawn workers, free of telemetry threads.
+    """
     from reflex.utils import build, exec, processes, telemetry
 
-    send = mocker.patch.object(telemetry, "send")
+    send = mocker.patch.object(telemetry, "_send_detached")
     mocker.patch.object(reflex, "get_config")
     mocker.patch.object(reflex, "_compile_app")
     mocker.patch.object(reflex, "_skip_compile")

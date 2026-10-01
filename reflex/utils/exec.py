@@ -855,11 +855,9 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
 
     # The app itself is not imported here: the reload worker must load it
     # fresh on every restart. Only the framework pages are shared.
-    # The supervisor forks again on every reload, so it keeps telemetry
-    # paused; the run-dev event was sent before this point.
-    if multiprocessing.get_start_method() == "fork" and not _freeze_for_fork(
-        resume_after_fork=False
-    ):
+    # The supervisor forks again on every reload, so it never sends telemetry
+    # in-process from here on; the run-dev event was sent before this point.
+    if multiprocessing.get_start_method() == "fork" and not _freeze_for_fork():
         logger.debug("A telemetry send is still running; spawning the worker.")
         multiprocessing.set_start_method("spawn", force=True)
 
@@ -1027,16 +1025,12 @@ def set_dev_start_method() -> None:
         multiprocessing.set_start_method(start_method, force=True)
 
 
-def _freeze_for_fork(*, resume_after_fork: bool) -> bool:
+def _freeze_for_fork() -> bool:
     """Stop the telemetry thread and freeze the heap before forking workers.
 
     Forking while the telemetry thread may hold a lock can deadlock the child.
     Without the freeze, worker GC passes write to the inherited objects'
     headers, which copies the shared pages private again.
-
-    Args:
-        resume_after_fork: Whether the supervisor may send telemetry again
-            once the workers have forked.
 
     Returns:
         Whether forking is safe; False when a telemetry thread is still alive.
@@ -1045,7 +1039,7 @@ def _freeze_for_fork(*, resume_after_fork: bool) -> bool:
 
     from reflex.utils import telemetry
 
-    if not telemetry._shutdown_executor(resume_after_fork=resume_after_fork):
+    if not telemetry._shutdown_executor():
         return False
     gc.collect()
     gc.freeze()
@@ -1069,7 +1063,7 @@ def _preload_for_fork(app_target: str | None) -> bool:
     if app_target is None:
         prerequisites.get_app()
     serializers._prepare_serializers_for_fork()
-    return _freeze_for_fork(resume_after_fork=True)
+    return _freeze_for_fork()
 
 
 def run_granian_backend_prod(
@@ -1086,16 +1080,15 @@ def run_granian_backend_prod(
         port: The app port
         loglevel: The log level.
         app_target: The ASGI app target to run. Defaults to the reflex app instance.
-        on_started: Called in the supervisor once the workers have been started,
-            so work it does (e.g. a telemetry thread) is not forked into them.
+        on_started: Called in the supervisor once the workers have been started.
+            It must not start threads: granian forks the supervisor again to
+            respawn workers.
     """
     import multiprocessing
 
     from granian.constants import Interfaces
     from granian.log import LogLevels
     from granian.server import Server as Granian
-
-    from reflex.utils import telemetry
 
     logger.debug("Using Granian for backend")
 
@@ -1105,8 +1098,7 @@ def run_granian_backend_prod(
         multiprocessing.set_start_method(start_method, force=True)
         if start_method == "fork" and not _preload_for_fork(app_target):
             logger.debug("A telemetry send is still running; spawning workers.")
-            start_method = "spawn"
-            multiprocessing.set_start_method(start_method, force=True)
+            multiprocessing.set_start_method("spawn", force=True)
 
     class NotifyingGranian(Granian):  # pyright: ignore[reportGeneralTypeIssues]
         """Granian server that reports when its workers have been started."""
@@ -1121,10 +1113,6 @@ def run_granian_backend_prod(
             super().startup(*args, **kwargs)
             if on_started is not None:
                 on_started()
-                if start_method == "fork":
-                    # Respawned workers fork too: stop the thread the
-                    # callback may have started.
-                    telemetry._shutdown_executor()
 
     granian_app = NotifyingGranian(
         target=app_target or get_app_instance_from_file(),

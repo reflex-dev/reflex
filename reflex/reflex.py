@@ -516,11 +516,12 @@ def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
 
     _skip_compile()
 
-    # Post the telemetry event once the workers are running: sending it here
-    # would start the telemetry thread before the server forks its workers.
+    # Post the telemetry event once the workers are running, from a separate
+    # process: the server may fork its supervisor again to respawn workers, so
+    # it must never hold a telemetry thread.
     def on_started():
-        """Send the run telemetry from the supervisor."""
-        telemetry.send("run-prod")
+        """Send the run telemetry without a thread in the supervisor."""
+        telemetry._send_detached("run-prod")
 
     # Display custom message when there is a keyboard interrupt.
     atexit.register(processes.atexit_handler)

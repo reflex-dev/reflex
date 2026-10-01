@@ -7,6 +7,7 @@ import logging
 import multiprocessing
 import os
 import platform
+import subprocess
 import sys
 import threading
 import urllib.request
@@ -478,10 +479,9 @@ def _send(
 
 _executor_lock = threading.Lock()
 _executor: ThreadPoolExecutor | None = None
-# Set by _shutdown_executor() so no new pool (and thread) starts before a
-# pending fork; _resume_after_fork says whether that fork lifts it again.
+# Set by _shutdown_executor(): a process that is about to fork, and may fork
+# again later, never starts another pool (and thread). Forked children reset it.
 _paused = False
-_resume_after_fork = True
 
 
 def _get_telemetry_executor() -> ThreadPoolExecutor:
@@ -513,26 +513,24 @@ def _get_telemetry_executor() -> ThreadPoolExecutor:
     return _executor
 
 
-def _shutdown_executor(timeout: float = 2, *, resume_after_fork: bool = True) -> bool:
-    """Deliver queued telemetry and stop the worker thread.
+def _shutdown_executor(timeout: float = 2) -> bool:
+    """Deliver queued telemetry and stop the worker thread for good.
 
-    Called before forking so no telemetry thread is alive at the fork. Until
-    then no new worker starts and sends are dropped. A send that stalls past
-    the timeout (e.g. on a DNS lookup) is abandoned so it cannot hold up
-    startup.
+    Called by a supervisor before it forks workers, so no telemetry thread is
+    alive at that fork or any later one (e.g. a worker respawn). From then on
+    in-process sends are dropped; use ``_send_detached`` instead. A send that
+    stalls past the timeout (e.g. on a DNS lookup) is abandoned so it cannot
+    hold up startup, and the caller must then not fork.
 
     Args:
         timeout: Maximum number of seconds to wait for queued telemetry.
-        resume_after_fork: Whether the parent sends again after the next fork,
-            or stays paused for a supervisor that keeps forking.
 
     Returns:
         Whether the worker thread has stopped, i.e. whether forking is safe.
     """
-    global _executor, _paused, _resume_after_fork
+    global _executor, _paused
     with _executor_lock:
         _paused = True
-        _resume_after_fork = resume_after_fork
         executor = _executor
     if executor is None:
         return True
@@ -552,13 +550,6 @@ def _shutdown_executor(timeout: float = 2, *, resume_after_fork: bool = True) ->
     return stopped
 
 
-def _resume_in_parent_after_fork() -> None:
-    """Let the parent send again once the fork it paused for has happened."""
-    global _paused
-    if _resume_after_fork:
-        _paused = False
-
-
 def _reset_executor_after_fork() -> None:
     """Drop the inherited executor and lock; the child owns neither's thread."""
     global _executor, _executor_lock, _paused
@@ -568,10 +559,52 @@ def _reset_executor_after_fork() -> None:
 
 
 if hasattr(os, "register_at_fork"):
-    os.register_at_fork(
-        after_in_parent=_resume_in_parent_after_fork,
-        after_in_child=_reset_executor_after_fork,
-    )
+    os.register_at_fork(after_in_child=_reset_executor_after_fork)
+
+
+# Run by _send_detached in a fresh interpreter. It forks once more and exits,
+# so the supervisor reaps it at once and the sender is reparented to init.
+_DETACHED_SEND = """\
+import os
+import sys
+
+if os.fork():
+    os._exit(0)
+os.setsid()
+from reflex.utils import telemetry
+
+telemetry._process_event(sys.argv[1], True)
+telemetry._flush(30)
+os._exit(0)
+"""
+
+
+def _send_detached(event: str) -> None:
+    """Send an event from a short-lived detached process.
+
+    For a supervisor that has stopped its telemetry thread to fork workers
+    safely: the event is collected and delivered by a fresh interpreter, so
+    the supervisor never gains a thread or waits on the network. The direct
+    child exits right after detaching the sender, so no zombie is left, and
+    ``close_fds`` keeps the server's sockets out of it.
+
+    Args:
+        event: The event name.
+    """
+    if not hasattr(os, "fork"):
+        # Nothing forks here (Windows), so an in-process send is safe.
+        send(event)
+        return
+    with suppress(Exception):
+        if not get_config().telemetry_enabled:
+            return
+        subprocess.Popen(
+            [sys.executable, "-c", _DETACHED_SEND, event],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            close_fds=True,
+        ).wait(timeout=10)
 
 
 def _current_registration_context() -> RegistrationContext | None:
