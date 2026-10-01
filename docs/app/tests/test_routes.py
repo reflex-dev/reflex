@@ -78,6 +78,34 @@ def test_authentication_overview_moved_to_enterprise(routes_fixture):
     assert "/enterprise/auth/overview/" in paths
 
 
+def test_custom_components_gallery_route_is_freed_for_its_redirect(routes_fixture):
+    """The gallery page is gone, and the overview it redirects to still exists."""
+    paths = {route.path for route in routes_fixture if route.path}
+
+    assert "/custom-components/" not in paths
+    assert "/custom-components/overview/" in paths
+
+
+def test_custom_components_gallery_redirects_to_the_overview():
+    """The app registers the old gallery URL's redirect to the overview."""
+    import subprocess
+    import sys
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from reflex_docs.reflex_docs import redirects; "
+            "assert ('/custom-components/', '/custom-components/overview/') in redirects",
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr[-2000:]
+
+
 def test_docs_route_descriptions_fit_search_snippet_length(routes_fixture):
     """Generated docs meta descriptions should not exceed the SEO snippet cap."""
     overlong = {
