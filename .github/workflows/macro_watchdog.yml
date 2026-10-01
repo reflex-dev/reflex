@@ -53,9 +53,14 @@ jobs:
                 [ -n "$waiting_since" ] || continue
                 waited=$((now - $(date -u -d "$waiting_since" +%s)))
                 if [ "$waited" -gt "$limit" ]; then
-                  gh run cancel "$run"
-                  echo "- cancelled [$workflow run $run]($url): its job waited $((waited / 60)) min for a macro runner (limit $QUEUED_LIMIT_MINUTES min); the month's macro minutes are probably spent." | tee -a "$GITHUB_STEP_SUMMARY"
-                  cancelled=$((cancelled + 1))
+                  # A run that finished since it was listed cannot be cancelled;
+                  # that must not stop the scan of the others.
+                  if gh run cancel "$run"; then
+                    echo "- cancelled [$workflow run $run]($url): its job waited $((waited / 60)) min for a macro runner (limit $QUEUED_LIMIT_MINUTES min); the month's macro minutes are probably spent." | tee -a "$GITHUB_STEP_SUMMARY"
+                    cancelled=$((cancelled + 1))
+                  else
+                    echo "::warning::could not cancel $workflow run $run ($url); it may have finished meanwhile"
+                  fi
                 fi
               done <<< "$runs"
             done
