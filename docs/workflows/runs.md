@@ -88,9 +88,17 @@ Cancelling doesn't undo anything. Emails already sent stay sent, and your column
 if await Onboarding.by(Onboarding.id == run_id).cancel():
     async with sessions() as session, session.begin():
         await session.execute(
-            update(Onboarding).where(Onboarding.id == run_id).values(status="cancelled")
+            update(Onboarding)
+            .where(
+                Onboarding.id == run_id,
+                Onboarding.next_step.is_(None),
+                Onboarding.waiting_for.is_(None),
+            )
+            .values(status="cancelled")
         )
 ```
+
+`cancel` and the status update are separate transactions. The conditions on `next_step` and `waiting_for` skip the update if something started the run again in between.
 
 A cancelled child of a [fan-out](/docs/workflows/fan-out/) counts as finished, so its parent doesn't wait for it forever.
 

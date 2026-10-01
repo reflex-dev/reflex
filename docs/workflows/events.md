@@ -83,16 +83,19 @@ from fastapi import HTTPException
 @fastapi_app.post("/webhooks/payments")
 async def payment_webhook(event: PaymentEvent):
     invoice = Invoice.by(Invoice.payment_id == event.payment_id)
-    accepted = await invoice.deliver(Invoice.paid(event.amount), key=event.id)
-    if not accepted and await invoice.get() is None:
-        # No run for this payment yet: ask the sender to retry later.
-        raise HTTPException(status_code=503)
-    return {"ok": True}
+    if await invoice.deliver(Invoice.paid(event.amount), key=event.id):
+        return {"ok": True}
+    run = await invoice.get()
+    if run is not None and event.id in (run.recent_event_keys or []):
+        # Accepted by an earlier delivery.
+        return {"ok": True}
+    # Not taken: ask the sender to retry.
+    raise HTTPException(status_code=503)
 ```
 
 A run remembers the last 16 keys it has accepted, and `deliver` returns `0` for a repeat. Without a key, every delivery counts as a new event.
 
-A return value of `0` doesn't tell you why no run took the event. In the webhook above, a run that already has the event, or has stopped waiting for it, is acknowledged so the sender stops retrying, while a missing run gets an error so the sender tries again once the run exists.
+A return value of `0` doesn't tell you why no run took the event: the run may not exist yet, may already have the event, may be holding a different one, or may have stopped waiting. The webhook above acknowledges an event only when it knows a run took it, now or on an earlier delivery, and otherwise returns an error so the sender retries. A run created between the two calls is safe, because the error makes the sender deliver again. The cost is that an event no run will ever take is retried until the sender gives up.
 
 ## Events that arrive early
 

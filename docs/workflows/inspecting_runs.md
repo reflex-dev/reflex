@@ -1,10 +1,10 @@
 ---
-meta_description: Tell where a reflex-workflow run is from its row, find failed and waiting runs with SQL, and record a history of every step attempt.
+meta_description: Tell where a reflex-workflow run is from its row, find failed and waiting runs with SQL, and keep a history of each run's step attempts.
 ---
 
 # Inspecting Runs
 
-Every run is a row, so you inspect runs with the same queries you use for the rest of your data. This page shows how to read a run's state from its row, find runs that need attention, and keep a history of every attempt.
+Every run is a row, so you inspect runs with the same queries you use for the rest of your data. This page shows how to read a run's state from its row, find runs that need attention, and keep a history of each run's attempts.
 
 ## Read a run's state
 
@@ -63,7 +63,7 @@ A due run that no worker takes usually means its step is in a [lane](/docs/workf
 
 To retry failed runs once you have fixed the cause, use [`run`](/docs/workflows/runs/#run-a-step-now).
 
-## Record every attempt
+## Keep an attempt history
 
 The row shows where a run is now. To see how it got there, map an attempt history table onto your base:
 
@@ -75,7 +75,7 @@ class WorkflowAttempt(Base, AttemptLog):
     __tablename__ = "workflow_attempt"
 ```
 
-Generate a migration, and the engine writes a row for every attempt of every step, in every workflow. Read a run's history, most recent first, with `history`:
+Generate a migration, and the engine writes a row for each attempt whose result it commits, in every workflow. Read a run's history, most recent first, with `history`:
 
 ```python
 for attempt in await invoice.history():

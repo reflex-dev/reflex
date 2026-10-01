@@ -220,7 +220,7 @@ Raises `ValueError` unless it sets `at_most`, `rate`, or both; if only one of `r
 class AttemptLog
 ```
 
-A mixin for the table that records every step attempt. Map it once onto your base to turn history on. Its columns are `id`, `workflow`, `run`, `step`, `attempt`, `outcome`, `error`, `took_ms`, and `finished_at`. See [Record every attempt](/docs/workflows/inspecting-runs/#record-every-attempt).
+A mixin for the table that records each committed step attempt. Map it once onto your base to turn history on. Its columns are `id`, `workflow`, `run`, `step`, `attempt`, `outcome`, `error`, `took_ms`, and `finished_at`. See [Keep an attempt history](/docs/workflows/inspecting-runs/#keep-an-attempt-history).
 
 ## RateBucket
 
