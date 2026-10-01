@@ -193,10 +193,12 @@ class Runner:
             # a request open on that count lets the machine suspend when it
             # returns, and it must not do that until whatever wakes the machine
             # again has been told when to. Nor counted while a step is still
-            # running: suspending then would stop it midway, and each one that
-            # finishes wakes the loop for another pass.
+            # running, since suspending then would stop it midway, nor once
+            # something woke the loop during the pass: a step that finished
+            # meanwhile may have left its next one due, and the wake that says
+            # so sends the loop round for another pass instead.
             seconds = await self.until_something_is_due()
-            if not self.inflight:
+            if not self.inflight and not wake.is_set():
                 await self.runtime.settled.record()
             # Against the wall clock rather than one timeout of that length: a
             # machine that suspends leaves asyncio's monotonic clock where it
