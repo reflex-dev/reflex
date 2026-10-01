@@ -29,7 +29,6 @@ def test_checkbox_group_root_renders_native_form_props():
     """
     root = checkbox_group.root(
         checkbox_group.item("Red", value="red"),
-        as_child=False,
         value=ColorState.colors,
         disabled=False,
         required=True,
@@ -40,7 +39,6 @@ def test_checkbox_group_root_renders_native_form_props():
     )
     props = root.render()["props"]
 
-    assert "asChild:false" in props
     assert 'dir:"ltr"' in props
     assert "disabled:false" in props
     assert "loop:true" in props
@@ -58,3 +56,13 @@ def test_checkbox_group_item_required_renders():
 
 def test_checkbox_group_root_is_form_control():
     assert CheckboxGroupRoot._is_form_control is True
+
+
+def test_checkbox_group_root_has_no_as_child_prop():
+    """Radix Themes deliberately excludes asChild from CheckboxGroup.Root
+    (ComponentPropsWithout<..., 'asChild' | 'color' | 'defaultChecked'> in
+    checkbox-group.tsx): with as_child=True the Root merges into its first
+    child instead of rendering its own group element, silently dropping
+    the grid/group wrapper. It must not be a declared field here.
+    """
+    assert "as_child" not in CheckboxGroupRoot.get_fields()

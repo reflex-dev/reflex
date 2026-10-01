@@ -30,7 +30,6 @@ def test_checkbox_cards_root_renders_native_form_props():
     """
     root = checkbox_cards.root(
         checkbox_cards.item("Red", value="red"),
-        as_child=False,
         name="colors",
         default_value=["red"],
         disabled=False,
@@ -41,7 +40,6 @@ def test_checkbox_cards_root_renders_native_form_props():
     )
     props = root.render()["props"]
 
-    assert "asChild:false" in props
     assert 'name:"colors"' in props
     assert 'defaultValue:["red"]' in props
     assert "disabled:false" in props
@@ -79,6 +77,16 @@ def test_checkbox_cards_root_is_form_control():
     now collected by TypedDict validation on a form's on_submit handler.
     """
     assert CheckboxCardsRoot._is_form_control is True
+
+
+def test_checkbox_cards_root_has_no_as_child_prop():
+    """Radix Themes deliberately excludes asChild from CheckboxCards.Root
+    (ComponentPropsWithout<..., 'asChild' | 'color' | 'defaultChecked'> in
+    checkbox-cards.tsx): with as_child=True the Root merges into its first
+    child instead of rendering its own grid/group element. It must not be
+    a declared field here.
+    """
+    assert "as_child" not in CheckboxCardsRoot.get_fields()
 
 
 def test_on_submit_accepts_typed_dict_matching_checkbox_cards_name():

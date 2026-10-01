@@ -18,10 +18,6 @@ class CheckboxGroupRoot(RadixThemesComponent):
     tag = "CheckboxGroup.Root"
     _is_form_control = True
 
-    as_child: Var[bool] = field(
-        doc="Change the default rendered element for the one passed as a child, merging their props and behavior."
-    )
-
     size: Var[Responsive[Literal["1", "2", "3"]]] = field(
         doc="Use the size prop to control the checkbox size."
     )
@@ -50,7 +46,9 @@ class CheckboxGroupRoot(RadixThemesComponent):
 
     disabled: Var[bool] = field(doc="Whether the checkbox group is disabled")
 
-    required: Var[bool] = field(doc="Whether the checkbox group is required")
+    required: Var[bool] = field(
+        doc="When true, every item in the group must be checked before the owning form can be submitted (Radix forwards this to every item, not just one of them)."
+    )
 
     orientation: Var[Literal["horizontal", "vertical"]] = field(
         doc="The orientation of the component."
