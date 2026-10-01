@@ -4285,9 +4285,10 @@ def _restates_type(value: Any) -> bool:
 def _declared_value(lookup_order: Sequence[type], name: str) -> Any:
     """Look up the class attribute declaring a name, as `_inherited_value` does.
 
-    A var a mixin declares without a default only restates the type of a var a
-    state further along the lookup order declares, as re-annotating that var on
-    a substate does, so the state's var is the one found.
+    A var a mixin declares without a default only restates the type of a var
+    declared further along the lookup order, as re-annotating that var on a
+    substate does, so that var is the one found. Only when no field further
+    along declares it does the mixin's var declare it.
 
     Args:
         lookup_order: The bases in method resolution order.
@@ -4303,7 +4304,7 @@ def _declared_value(lookup_order: Sequence[type], name: str) -> Any:
         value = klass.__dict__[name]
         if found is MISSING:
             found = value
-        elif isinstance(value, Field) and _is_tree_state(value._owner):
+        elif isinstance(value, Field) and not _restates_type(value):
             return value
         if not _restates_type(value):
             return found
@@ -4427,8 +4428,10 @@ def _validate_mixin_vars(
     """Reject a var that two mixins not inheriting from one another both declare.
 
     A state combines its mixins into one coherent state, and two independent
-    mixins would each use their shared var as their own. The mixins of the parent
-    state are left out: they were checked with it, and its vars may be redeclared.
+    mixins would each use their shared var as their own. A mixin may still
+    declare without a default a var that the class or its parent state declares,
+    which only types it for the mixin. The mixins of the parent state are left
+    out: they were checked with it, and its vars may be redeclared.
 
     Args:
         name: The name of the class being created.
@@ -4439,13 +4442,24 @@ def _validate_mixin_vars(
         MixinVarNameConflictError: If two such mixins declare the same var.
     """
     parent = next((base for base in lookup_order if _is_tree_state(base)), None)
+    mixins = [
+        base
+        for base in lookup_order
+        if getattr(base, "_mixin", False)
+        and not (parent is not None and issubclass(parent, base))
+    ]
+    if len(mixins) < 2:
+        return
+    state_declares = (
+        namespace.keys()
+        | annotations_from_namespace(namespace).keys()
+        | (parent.__fields__.keys() if parent is not None else set())
+    )
     declared_by: dict[str, type] = {}
-    for base in lookup_order:
-        if not getattr(base, "_mixin", False) or (
-            parent is not None and issubclass(parent, base)
-        ):
-            continue
-        for key in base.__own_fields__:
+    for base in mixins:
+        for key, base_field in base.__own_fields__.items():
+            if base_field._default_from_type and key in state_declares:
+                continue
             first = declared_by.setdefault(key, base)
             if not issubclass(first, base):
                 msg = (

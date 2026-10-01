@@ -781,7 +781,8 @@ def test_abc_mixin(state_mixin: bool, clean_registration_context):
 def test_mixin_var_name_conflict(clean_registration_context):
     """Reject two mixins that do not inherit from one another declaring the same var.
 
-    Declaring it without a default, or as a backend var, conflicts all the same.
+    Declaring it without a default conflicts all the same when the state declares
+    no such var, as does declaring a backend var.
 
     Args:
         clean_registration_context: An isolated state registry.
@@ -793,13 +794,16 @@ def test_mixin_var_name_conflict(clean_registration_context):
     class SecondMixin(BaseState, mixin=True):
         shared: int
 
+    class AnnotatingMixin(BaseState, mixin=True):
+        shared: int
+
     class FirstBackendMixin(BaseState, mixin=True):
         _shared: int = 1
 
     class SecondBackendMixin(BaseState, mixin=True):
         _shared: int = 2
 
-    match = "`shared`.*FirstMixin.*SecondMixin"
+    match = r"`shared`.*FirstMixin.*SecondMixin"
     with pytest.raises(MixinVarNameConflictError, match=match):
 
         class SubState(FirstMixin, SecondMixin, State):
@@ -815,10 +819,54 @@ def test_mixin_var_name_conflict(clean_registration_context):
         class CombinedMixin(FirstMixin, SecondMixin, mixin=True):
             pass
 
+    with pytest.raises(
+        MixinVarNameConflictError, match=r"`shared`.*AnnotatingMixin.*SecondMixin"
+    ):
+
+        class AnnotatedState(AnnotatingMixin, SecondMixin, State):
+            pass
+
     with pytest.raises(MixinVarNameConflictError, match="`_shared`"):
 
         class BackendState(FirstBackendMixin, SecondBackendMixin, State):
             pass
+
+
+def test_mixins_may_type_a_var_the_state_declares(clean_registration_context):
+    """Mixins may each declare without a default a var the state declares.
+
+    Such a declaration only types the var for the mixin's code: the state keeps
+    the var it declares, or one a mixin declares with a default.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+
+    class FirstMixin(BaseState, mixin=True):
+        shared: int
+
+    class SecondMixin(BaseState, mixin=True):
+        shared: int
+
+    class ValueMixin(BaseState, mixin=True):
+        shared: int = 3
+
+    class Parent(State):
+        shared: int = 1
+
+    class Child(FirstMixin, SecondMixin, Parent):
+        pass
+
+    class OwnState(FirstMixin, SecondMixin, State):
+        shared: int = 2
+
+    class RedeclaringChild(FirstMixin, ValueMixin, Parent):
+        pass
+
+    assert Child.get_fields()["shared"]._owner is Parent
+    assert OwnState.get_fields()["shared"].default == 2
+    assert RedeclaringChild.get_fields()["shared"]._owner is RedeclaringChild
+    assert RedeclaringChild.get_fields()["shared"].default == 3
 
 
 def test_mixin_may_redeclare_a_var_of_the_parents_mixin(clean_registration_context):

@@ -733,9 +733,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         A field declared on this class or a parent state stays bound where it
         is declared: its value lives on that state's instance. One declared on
-        a mixin or non-state base gets a copy bound to this class, unless the
-        mixin declares it without a default and so only restates the type of a
-        parent state's var.
+        a mixin or non-state base gets a copy bound to this class. A var a mixin
+        declares without a default only restates the type of the var declared
+        further along the MRO, which is bound in its place.
         """
         tree_states = set()
         state_cls: type[BaseState] | None = cls

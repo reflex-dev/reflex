@@ -227,7 +227,7 @@ class ChildState(DoublingMixin, ParentState):
     pass
 ```
 
-`ChildState.double` doubles `ParentState.count`. When no parent state declares `count`, the mixin's declaration creates the variable, with the type's default (`0` here).
+`ChildState.double` doubles `ParentState.count`, and the declaration types `count` for the mixin's own code. Several mixins combined into one state may each declare a variable this way, as long as the state or its parent state declares it. When no parent state declares `count`, the mixin's declaration creates the variable, with the type's default (`0` here).
 
 ## Best Practices
 
@@ -247,7 +247,7 @@ class ChildState(DoublingMixin, ParentState):
 # Important Limitations
 
 - Mixins cannot be instantiated directly - they must be inherited by concrete State classes
-- Two mixins that do not inherit from one another cannot both declare a variable of the same name, even without a default: creating the state that combines them raises `MixinVarNameConflictError`. Declare a variable they share in a mixin both inherit from
+- Two mixins that do not inherit from one another cannot both declare a variable of the same name: creating the state that combines them raises `MixinVarNameConflictError`. The exception is a variable they declare without a default that the state or its parent state declares. Declare a variable the mixins share in a mixin both inherit from
 - Mixins cannot override methods from the base State class
 - The `mixin=True` parameter is required when defining a mixin
 ```
