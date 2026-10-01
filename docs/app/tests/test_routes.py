@@ -1,6 +1,8 @@
 """Integration tests for all routes in Reflex."""
 
 import re
+import subprocess
+import sys
 from collections import Counter
 from pathlib import Path
 
@@ -88,9 +90,6 @@ def test_custom_components_gallery_route_is_freed_for_its_redirect(routes_fixtur
 
 def test_custom_components_gallery_redirects_to_the_overview():
     """The old gallery URL is registered as a page that redirects to the overview."""
-    import subprocess
-    import sys
-
     result = subprocess.run(
         [
             sys.executable,
