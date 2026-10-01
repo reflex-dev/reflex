@@ -10,13 +10,14 @@ from collections.abc import Callable
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
-import orjson
 from rich.markup import escape as escape_markup
 
 from reflex_base import constants
 from reflex_base.utils import exceptions
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from reflex_base.components.component import ComponentStyle
     from reflex_base.event import EventChain, EventHandler, EventSpec, EventType
     from reflex_base.utils.types import ArgsSpec
@@ -698,8 +699,26 @@ def format_library_name(library_fullname: str | dict[str, Any]) -> str:
     return lib
 
 
-if TYPE_CHECKING:
-    from types import ModuleType
+_serialize: Callable[[Any], Any] | None = None
+
+
+def _get_serialize() -> Callable[[Any], Any]:
+    """Get ``serializers.serialize``, importing it on first use.
+
+    The import cannot live at module scope (``serializers`` imports this
+    module), and repeating it per call is measurable on the compile path,
+    so the resolved function is cached.
+
+    Returns:
+        The ``serializers.serialize`` callable.
+    """
+    global _serialize
+    if _serialize is None:
+        from reflex_base.utils import serializers
+
+        _serialize = serializers.serialize
+    return _serialize
+
 
 _serializers: ModuleType | None = None
 
@@ -707,9 +726,7 @@ _serializers: ModuleType | None = None
 def _get_serializers() -> ModuleType:
     """Get the ``serializers`` module, importing it on first use.
 
-    The import cannot live at module scope (``serializers`` imports this
-    module), and repeating it per call is measurable on the compile path,
-    so the resolved module is cached.
+    Cached for the same reason as ``_get_serialize``.
 
     Returns:
         The ``reflex_base.utils.serializers`` module.
@@ -722,22 +739,31 @@ def _get_serializers() -> ModuleType:
     return _serializers
 
 
-def _get_serialize() -> Callable[[Any], Any]:
-    """Get ``serializers.serialize``.
+_orjson_dumps: Callable[..., bytes] | None = None
+_orjson_options = 0
+
+
+def _load_orjson() -> Callable[..., bytes]:
+    """Import orjson on first use and cache its encoder and options.
+
+    Only ``json_dumps_compact`` needs it, and most processes that import this
+    module (the CLI, compile workers) never encode a state update.
 
     Returns:
-        The ``serializers.serialize`` callable.
+        ``orjson.dumps``.
     """
-    return _get_serializers().serialize
+    global _orjson_dumps, _orjson_options
+    import orjson
 
-
-# Dataclasses and datetimes keep going through the reflex serializers so their
-# output matches ``json_dumps``; orjson's own rendering of both differs.
-_ORJSON_OPTIONS = (
-    orjson.OPT_NON_STR_KEYS
-    | orjson.OPT_PASSTHROUGH_DATACLASS
-    | orjson.OPT_PASSTHROUGH_DATETIME
-)
+    # Dataclasses and datetimes keep going through the reflex serializers so their
+    # output matches ``json_dumps``; orjson's own rendering of both differs.
+    _orjson_options = (
+        orjson.OPT_NON_STR_KEYS
+        | orjson.OPT_PASSTHROUGH_DATACLASS
+        | orjson.OPT_PASSTHROUGH_DATETIME
+    )
+    _orjson_dumps = orjson.dumps
+    return _orjson_dumps
 
 
 def json_dumps(obj: Any, **kwargs) -> str:
@@ -771,10 +797,9 @@ def json_dumps_compact(obj: Any) -> str:
     """
     serializers = _get_serializers()
     if not serializers.overrides_native_json_type():
+        dumps = _orjson_dumps or _load_orjson()
         try:
-            encoded = orjson.dumps(
-                obj, default=serializers.serialize, option=_ORJSON_OPTIONS
-            )
+            encoded = dumps(obj, default=serializers.serialize, option=_orjson_options)
         except TypeError:
             # orjson rejects integers beyond 64 bits, which json accepts.
             pass

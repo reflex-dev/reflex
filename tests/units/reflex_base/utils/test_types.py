@@ -55,6 +55,30 @@ def test_types_import_keeps_optional_orm_lazy():
     assert json.loads(result.stdout) == []
 
 
+def test_runtime_isinstance_imports_pydantic_core_on_first_compile():
+    """Importing type helpers leaves pydantic-core unloaded until a hint compiles."""
+    pytest.importorskip("pydantic_core")
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import json, sys; from reflex_base.utils import types; "
+                "loaded = ['pydantic_core' in sys.modules]; "
+                "checks = [types.runtime_isinstance([1], list[int]), "
+                "types.runtime_isinstance(['a'], list[int])]; "
+                "loaded.append('pydantic_core' in sys.modules); "
+                "print(json.dumps([loaded, checks]))"
+            ),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert json.loads(result.stdout) == [[False, True], [True, False]]
+
+
 def test_property_classes_compatibility_export():
     """The legacy property-class tuple remains available from both modules."""
     import reflex_base.utils.types as base_types
@@ -388,6 +412,25 @@ def test_runtime_isinstance_tolerates_class_spoofing_without_wrapped():
     impostor = _Impostor()
     assert runtime_isinstance(impostor, list[int]) is False
     assert runtime_isinstance(impostor, Any) is True
+
+
+def test_runtime_isinstance_without_pydantic_core(monkeypatch: pytest.MonkeyPatch):
+    """Without pydantic-core installed, every hint falls back to ``_isinstance``.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    import reflex_base.utils.types as base_types
+
+    monkeypatch.setitem(sys.modules, "pydantic_core", None)
+    monkeypatch.setattr(base_types, "_RUNTIME_VALIDATORS", {})
+    base_types._get_schema_validator.cache_clear()
+    try:
+        assert runtime_isinstance([1], list[int])
+        assert not runtime_isinstance(["a"], list[int])
+        assert {list[int]: None} == base_types._RUNTIME_VALIDATORS
+    finally:
+        base_types._get_schema_validator.cache_clear()
 
 
 @pytest.mark.parametrize("alias_cls", _type_alias_types())

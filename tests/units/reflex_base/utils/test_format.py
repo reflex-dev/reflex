@@ -1,5 +1,9 @@
 """Unit tests for reflex_base.utils.format."""
 
+import json
+import subprocess
+import sys
+
 from reflex_base import constants
 from reflex_base.utils import format
 
@@ -34,3 +38,25 @@ def test_format_queue_events_args_spec():
         args_spec=lambda result: [result],
     )
     assert str(var).startswith("(_result) => {addEvents([")
+
+
+def test_json_dumps_compact_imports_orjson_on_first_use():
+    """Importing format leaves orjson unloaded until a payload is encoded."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import json, sys; from reflex_base.utils import format; "
+                "loaded = ['orjson' in sys.modules]; "
+                "encoded = format.json_dumps_compact({'a': [1, 'b']}); "
+                "loaded.append('orjson' in sys.modules); "
+                "print(json.dumps([loaded, encoded]))"
+            ),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert json.loads(result.stdout) == [[False, True], '{"a":[1,"b"]}']
