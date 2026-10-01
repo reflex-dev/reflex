@@ -60,7 +60,7 @@ class Research(Base, Workflow):
 
 ## Read the children's results
 
-Each child is a run in its own table, so its results are in its own columns. In the `then` step, `self.children(Lookup)` addresses the children of this run in the `Lookup` table, and returns the same kind of handle as `Workflow.by`; see [Find runs](/docs/workflows/runs/#find-runs).
+Each child is a run in its own table, so its results are in its own columns. In the `then` step, `self.children(Lookup)` addresses the children of this run in the `Lookup` table, and returns the same kind of handle as [`Workflow.by`](/docs/workflows/runs/#find-runs).
 
 ## How children run
 
@@ -80,6 +80,6 @@ If there are no children to start, `then` runs straight away.
 
 ## Avoid starting a child twice
 
-The children are inserted in the same transaction that commits the parent's step. If the parent's step is overtaken, for example by [running a step](/docs/workflows/runs/#run-a-step-now) on it or by a worker that took over its claim, none of its children start.
+The children are inserted in the same transaction that commits the parent's step. If the parent's step is overtaken, for example by [`run`](/docs/workflows/runs/#run-a-step-now) or a worker that took over its claim, none of its children start.
 
 A child that would break a unique constraint isn't started, and the parent doesn't wait for it. Give each child a key derived from the parent and the item, like `f"{self.id}:{company}"` above, and running the fan-out step again can't start a second run for the same item.

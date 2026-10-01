@@ -61,7 +61,7 @@ stuck = await Invoice.by(
 
 A due run that no worker takes usually means its step is in a [lane](/docs/workflows/concurrency/#route-steps-to-dedicated-workers) that no running worker serves, its group is at its [limit](/docs/workflows/concurrency/), or no worker is running at all.
 
-To retry failed runs once you have fixed the cause, [run their step again](/docs/workflows/runs/#run-a-step-now).
+To retry failed runs once you have fixed the cause, use [`run`](/docs/workflows/runs/#run-a-step-now).
 
 ## Keep an attempt history
 
