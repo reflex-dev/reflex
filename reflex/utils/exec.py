@@ -855,7 +855,11 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
 
     # The app itself is not imported here: the reload worker must load it
     # fresh on every restart. Only the framework pages are shared.
-    if multiprocessing.get_start_method() == "fork" and not _freeze_for_fork():
+    # The supervisor forks again on every reload, so it keeps telemetry
+    # paused; the run-dev event was sent before this point.
+    if multiprocessing.get_start_method() == "fork" and not _freeze_for_fork(
+        resume_after_fork=False
+    ):
         logger.debug("A telemetry send is still running; spawning the worker.")
         multiprocessing.set_start_method("spawn", force=True)
 
@@ -1023,12 +1027,16 @@ def set_dev_start_method() -> None:
         multiprocessing.set_start_method(start_method, force=True)
 
 
-def _freeze_for_fork() -> bool:
+def _freeze_for_fork(*, resume_after_fork: bool) -> bool:
     """Stop the telemetry thread and freeze the heap before forking workers.
 
     Forking while the telemetry thread may hold a lock can deadlock the child.
     Without the freeze, worker GC passes write to the inherited objects'
     headers, which copies the shared pages private again.
+
+    Args:
+        resume_after_fork: Whether the supervisor may send telemetry again
+            once the workers have forked.
 
     Returns:
         Whether forking is safe; False when a telemetry thread is still alive.
@@ -1037,7 +1045,7 @@ def _freeze_for_fork() -> bool:
 
     from reflex.utils import telemetry
 
-    if not telemetry._shutdown_executor():
+    if not telemetry._shutdown_executor(resume_after_fork=resume_after_fork):
         return False
     gc.collect()
     gc.freeze()
@@ -1061,7 +1069,7 @@ def _preload_for_fork(app_target: str | None) -> bool:
     if app_target is None:
         prerequisites.get_app()
     serializers._prepare_serializers_for_fork()
-    return _freeze_for_fork()
+    return _freeze_for_fork(resume_after_fork=True)
 
 
 def run_granian_backend_prod(

@@ -338,7 +338,9 @@ def test_run_granian_backend_freezes_only_for_fork(
     mocker.patch.object(
         telemetry,
         "_shutdown_executor",
-        side_effect=lambda: calls.append("drain") or True,
+        side_effect=lambda resume_after_fork: (
+            calls.append(f"drain:resume={resume_after_fork}") or True
+        ),
     )
     mocker.patch.object(gc, "freeze", side_effect=lambda: calls.append("freeze"))
 
@@ -346,7 +348,8 @@ def test_run_granian_backend_freezes_only_for_fork(
         host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
     )
 
-    assert calls == (["drain", "freeze", "serve"] if frozen else ["serve"])
+    # The supervisor forks again on every reload, so telemetry stays paused.
+    assert calls == (["drain:resume=False", "freeze", "serve"] if frozen else ["serve"])
 
 
 def test_run_granian_backend_spawns_when_telemetry_is_stuck(
@@ -383,7 +386,7 @@ def test_run_granian_backend_spawns_when_telemetry_is_stuck(
     mocker.patch.object(
         telemetry,
         "_shutdown_executor",
-        side_effect=lambda: calls.append("drain") and False,
+        side_effect=lambda resume_after_fork: calls.append("drain") and False,
     )
     mocker.patch.object(gc, "freeze", side_effect=lambda: calls.append("freeze"))
 
@@ -582,7 +585,9 @@ def _fake_granian_prod(
     mocker.patch.object(
         telemetry,
         "_shutdown_executor",
-        side_effect=lambda: calls.append("drain") or telemetry_stopped,
+        side_effect=lambda resume_after_fork=True: (
+            calls.append(f"drain:resume={resume_after_fork}") or telemetry_stopped
+        ),
     )
     mocker.patch.object(gc, "freeze", side_effect=lambda: calls.append("freeze"))
 
@@ -609,12 +614,12 @@ def test_run_granian_backend_prod_preloads_app_before_forking(
         "start:fork",
         "preload",
         "serializers",
-        "drain",
+        "drain:resume=True",
         "freeze",
         "serve",
         "workers",
         "started",
-        "drain",
+        "drain:resume=True",
     ]
 
 
@@ -638,7 +643,7 @@ def test_run_granian_backend_prod_spawns_when_telemetry_is_stuck(
         "start:fork",
         "preload",
         "serializers",
-        "drain",
+        "drain:resume=True",
         "start:spawn",
         "serve",
         "workers",
@@ -675,7 +680,14 @@ def test_run_granian_backend_prod_custom_target_only_freezes(
         app_target="reflex.utils.exec:_frontend_prod_app",
     )
 
-    assert calls == ["start:fork", "serializers", "drain", "freeze", "serve", "workers"]
+    assert calls == [
+        "start:fork",
+        "serializers",
+        "drain:resume=True",
+        "freeze",
+        "serve",
+        "workers",
+    ]
 
 
 @pytest.mark.parametrize("use_granian", [True, False])
