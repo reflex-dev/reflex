@@ -49,5 +49,5 @@ def test_axis_tick_formatter_rejects_dynamic_string_var(axis):
 @pytest.mark.parametrize("axis", [XAxis, YAxis])
 def test_axis_tick_formatter_rejects_non_string_var(axis):
     formatter = rx.Var(_js_expr="state.formatter", _var_type=int)
-    with pytest.raises(TypeError, match="FunctionVar or JavaScript string"):
+    with pytest.raises(TypeError, match="tick_formatter must be a FunctionVar"):
         axis.create(tick_formatter=formatter)
