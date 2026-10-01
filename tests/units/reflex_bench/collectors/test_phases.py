@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
+import threading
+import time
+from collections.abc import Callable
 from pathlib import Path
 
 import psutil
@@ -351,25 +355,40 @@ def test_tree_phases_samples_a_real_tree(tmp_path: Path):
     node = _tool(tmp_path, "node", 0.4)
     # Startup alone can round down to zero in Linux's CPU accounting. Do
     # measurable CPU work before waiting on the tools so the sampler sees it.
+    # The root times each tool run on the sampler's clock (perf_counter is
+    # system-wide on POSIX), so the samples can be checked against the real
+    # lifetimes, however much a loaded runner stretches them.
     code = (
-        "import subprocess, time\n"
+        "import json, subprocess, time\n"
         "end = time.process_time() + 0.1\n"
         "while time.process_time() < end: pass\n"
-        f"subprocess.run([{bun!r}, 'add', 'react'], check=True)\n"
-        f"subprocess.run([{node!r}, 'build'], check=True)\n"
+        "runs = {}\n"
+        f"for kind, cmd in (('install', [{bun!r}, 'add', 'react']), "
+        f"('frontend', [{node!r}, 'build'])):\n"
+        "    start = time.perf_counter()\n"
+        "    subprocess.run(cmd, check=True)\n"
+        "    runs[kind] = (start, time.perf_counter())\n"
+        "print(json.dumps(runs))\n"
     )
-    root = subprocess.Popen([sys.executable, "-c", code])
+    root = subprocess.Popen(
+        [sys.executable, "-c", code], stdout=subprocess.PIPE, text=True
+    )
     sampler = phases.TreePhases(root.pid, interval=0.01).start()
-    assert root.wait(30) == 0
+    runs = json.loads(root.communicate(timeout=30)[0])
+    assert root.returncode == 0
     report = sampler.stop()
+    for kind, (run_start, run_end) in runs.items():
+        ((start, end),) = report.classes[kind].intervals
+        # A tool is only sampled while it runs; a sample's time is read just
+        # before the tree is listed, so its first sighting can lead the spawn
+        # by one sweep.
+        assert run_start - sampler.t0 - 0.1 <= start < end <= run_end - sampler.t0
+        assert report.classes[kind].wall_s == end - start >= 0.15
     install, frontend = report.classes["install"], report.classes["frontend"]
-    assert install.wall_s == pytest.approx(0.4, abs=0.25)
     # The root interpreter is recorded too, as python, with the CPU it used.
     root_record = next(p for p in report.processes if p.pid == root.pid)
     assert root_record.kind == "python"
     assert report.classes["python"].cpu_s == root_record.cpu_s > 0
-    assert frontend.wall_s == pytest.approx(0.4, abs=0.25)
-    assert len(install.intervals) == len(frontend.intervals) == 1
     # Frontend work starts after the install finished.
     assert install.intervals[0][1] <= frontend.intervals[0][0]
     tools = {
@@ -428,6 +447,80 @@ def test_tree_phases_credits_a_reaped_child_from_its_parent(tmp_path: Path):
     root_record = next(p for p in report.processes if p.pid == root.pid)
     assert root_record.children_cpu_s == pytest.approx(frontend.cpu_s)
     assert report.classes["python"].cpu_s == root_record.cpu_s
+
+
+def _wait_for(condition: Callable[[], bool], timeout: float = 10) -> None:
+    """Poll until a condition holds.
+
+    Args:
+        condition: The condition.
+        timeout: Seconds before failing.
+    """
+    deadline = time.monotonic() + timeout
+    while not condition():
+        assert time.monotonic() < deadline, "timed out"
+        time.sleep(0.01)
+
+
+@posix_only
+def test_tree_phases_rereads_the_command_line_after_exec(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Classify a process by the program it execs, not the parent it forked from."""
+    # The tool waits on the stdin it shares with the root until the test lets it exit.
+    bun = tmp_path / "bun"
+    bun.write_text("#!/bin/sh\nread line\n", encoding="utf-8")
+    bun.chmod(0o755)
+    tool = [str(bun), "add", "react"]
+    # The root forks a child that execs the tool once it reads a byte, and
+    # never reaps it.
+    code = (
+        "import os, time\n"
+        "pid = os.fork()\n"
+        "if pid == 0:\n"
+        "    os.read(0, 1)\n"
+        f"    os.execv({tool[0]!r}, {tool!r})\n"
+        "print(pid, flush=True)\n"
+        "time.sleep(60)\n"
+    )
+    sampled = threading.Event()
+    sample = phases.TreePhases._sample
+
+    def signal_sample(self: phases.TreePhases) -> None:
+        sample(self)
+        sampled.set()
+
+    monkeypatch.setattr(phases.TreePhases, "_sample", signal_sample)
+    root = subprocess.Popen(
+        [sys.executable, "-c", code], stdin=subprocess.PIPE, stdout=subprocess.PIPE
+    )
+    assert root.stdin is not None
+    assert root.stdout is not None
+    try:
+        child = psutil.Process(int(root.stdout.readline()))
+        sampler = phases.TreePhases(root.pid, interval=3600).start()
+        # The loop's first sample sees the child before its exec, with the
+        # root's command line.
+        assert sampled.wait(10)
+        root.stdin.write(b"x")
+        root.stdin.flush()
+        _wait_for(lambda: child.cmdline()[1:] == tool)
+        sampler._sample()
+        root.stdin.write(b"\n")
+        root.stdin.flush()
+        _wait_for(lambda: child.status() == psutil.STATUS_ZOMBIE)
+        exited = time.perf_counter() - sampler.t0
+        report = sampler.stop()
+    finally:
+        root.stdin.close()
+        root.kill()
+        root.wait(30)
+    (record,) = [p for p in report.processes if p.pid == child.pid]
+    assert record.cmdline[1:] == tool
+    assert record.kind == "install"
+    assert len(report.classes["install"].intervals) == 1
+    # The zombie's sighting still counts and keeps the command line read before.
+    assert record.last_seen > exited
 
 
 def test_tree_phases_raises_when_sampling_fails(monkeypatch: pytest.MonkeyPatch):

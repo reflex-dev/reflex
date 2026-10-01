@@ -16,6 +16,7 @@ and the attribution keeps them as the finer breakdown of the python part.
 
 from __future__ import annotations
 
+import contextlib
 import itertools
 import re
 import time
@@ -159,7 +160,8 @@ class ProcessRecord:
     Attributes:
         pid: The process id.
         ppid: The parent process id when first seen.
-        cmdline: The command line.
+        cmdline: The command line at the last sample that could read it; a
+            process sampled between its fork and its exec still shows its parent's.
         first_seen: When a sample first saw it, in seconds since the sampler's origin.
         last_seen: When a sample last saw it.
         cpu_s: Its user and system CPU time at the last sample.
@@ -236,8 +238,9 @@ class TreePhases:
     CPU time and the CPU time of the children it reaped. Lifetimes are only
     known to the sampling interval, and a process that lives shorter than it
     can be missed; its CPU time is not, as long as its parent is sampled after
-    reaping it. The root's own final time needs a sample after it exited and
-    before it is reaped.
+    reaping it. A process is classified by the command line its last sample
+    read, so it must be sampled once after its exec. The root's own final time
+    needs a sample after it exited and before it is reaped.
     """
 
     def __init__(
@@ -320,6 +323,10 @@ class TreePhases:
                         cpu_s=times.user + times.system,
                     )
                 else:
+                    # A sample between a fork and its exec read the parent's
+                    # command line; a zombie's can no longer be read.
+                    with contextlib.suppress(psutil.ZombieProcess):
+                        record.cmdline = child.cmdline()
                     record.cpu_s = times.user + times.system
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             return
