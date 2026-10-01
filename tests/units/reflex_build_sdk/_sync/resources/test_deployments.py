@@ -390,7 +390,7 @@ def test_wait_does_not_finish_before_the_recorded_state_is_running(
     messages = []
 
     report = client.deployments.wait(
-        FIRST_ID, poll_interval=0, on_status=messages.append
+        FIRST_ID, timeout=30, poll_interval=0, on_status=messages.append
     )
 
     assert report.status == "Running"
@@ -417,7 +417,7 @@ def test_wait_remembers_completion_until_the_recorded_state_is_running(
     messages = []
 
     report = client.deployments.wait(
-        FIRST_ID, poll_interval=0, on_status=messages.append
+        FIRST_ID, timeout=30, poll_interval=0, on_status=messages.append
     )
 
     assert report.status == "Running"
@@ -442,10 +442,10 @@ def test_wait_new_terminal_narration_overrides_remembered_completion(
 
     if message == "Rejected":
         with pytest.raises(DeploymentFailedError) as exc_info:
-            client.deployments.wait(FIRST_ID, poll_interval=0)
+            client.deployments.wait(FIRST_ID, timeout=30, poll_interval=0)
         assert exc_info.value.report.status == "Pending"
     else:
-        report = client.deployments.wait(FIRST_ID, poll_interval=0)
+        report = client.deployments.wait(FIRST_ID, timeout=30, poll_interval=0)
         assert report.status == "Pending"
     assert len([r for r in mock_api.requests if r.url.endswith("/failure")]) == 2
 
@@ -470,10 +470,10 @@ def test_wait_remembered_completion_respects_the_recorded_outcome(
 
     if recorded == "Superseded":
         with pytest.raises(DeploymentFailedError) as exc_info:
-            client.deployments.wait(FIRST_ID, poll_interval=0)
+            client.deployments.wait(FIRST_ID, timeout=30, poll_interval=0)
         assert exc_info.value.report.status == recorded
     else:
-        report = client.deployments.wait(FIRST_ID, poll_interval=0)
+        report = client.deployments.wait(FIRST_ID, timeout=30, poll_interval=0)
         assert report.status == recorded
     assert len([r for r in mock_api.requests if r.url.endswith("/failure")]) == 2
 
@@ -515,7 +515,7 @@ def test_wait_returns_approval_despite_a_cached_completion_message(
     _statuses(mock_api, "Deployment completed successfully!")
     _reports(mock_api, "AwaitingApproval")
 
-    report = client.deployments.wait(FIRST_ID, poll_interval=0)
+    report = client.deployments.wait(FIRST_ID, timeout=30, poll_interval=0)
 
     assert report.status == "AwaitingApproval"
     assert len([r for r in mock_api.requests if r.url.endswith("/failure")]) == 1
@@ -534,7 +534,7 @@ def test_wait_raises_when_a_completion_message_outlives_the_deployment(
     _reports(mock_api, "Pending", "Superseded")
 
     with pytest.raises(DeploymentFailedError) as exc_info:
-        client.deployments.wait(FIRST_ID, poll_interval=0)
+        client.deployments.wait(FIRST_ID, timeout=30, poll_interval=0)
 
     assert exc_info.value.report.status == "Superseded"
     assert len([r for r in mock_api.requests if r.url.endswith("/failure")]) == 2
