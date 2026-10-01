@@ -17,7 +17,7 @@ from reflex_base.constants import CompileVars, RouteVar
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
 from reflex_base.event.context import EventContext
-from reflex_base.event.processor import BaseStateEventProcessor, base_state_processor
+from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.registry import RegistrationContext
 
 import reflex as rx
@@ -31,6 +31,7 @@ from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.middleware.middleware import Middleware
 from reflex.state import BaseState, OnLoadInternalState, State, StateUpdate
+from reflex.utils import types as reflex_types
 from tests.units.conftest import metric_points
 from tests.units.mock_redis import mock_redis
 
@@ -1363,15 +1364,14 @@ async def test_unannotated_handler_reuses_its_resolved_type_hints(
     # Resolved at registration, to an empty mapping.
     assert UnannotatedState.event_handlers["bump"]._type_hints == {}
     resolved: list[Any] = []
-    get_type_hints = base_state_processor.types.get_type_hints
+    get_type_hints = reflex_types.get_type_hints
 
     def recording_get_type_hints(obj: Any) -> dict[str, Any]:
         resolved.append(obj)
         return get_type_hints(obj)
 
-    monkeypatch.setattr(
-        base_state_processor.types, "get_type_hints", recording_get_type_hints
-    )
+    # The module the processor resolves type hints through.
+    monkeypatch.setattr(reflex_types, "get_type_hints", recording_get_type_hints)
     async with real_base_state_processor as processor:
         for _ in range(2):
             await processor.enqueue(

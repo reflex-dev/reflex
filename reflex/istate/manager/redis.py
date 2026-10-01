@@ -494,9 +494,12 @@ class StateManagerRedis(StateManager):
             return
         # Serializing the tree can outlast the lock, so its ownership is checked
         # again, atomically with the writes.
-        existing_lock_id = await self._set_states_if_locked(
-            keys=[self._lock_key(token), *writes],
-            args=[lock_id, self.token_expiration, *writes.values()],
+        existing_lock_id = cast(
+            "bytes | None",
+            await self._set_states_if_locked(
+                keys=[self._lock_key(token), *writes],
+                args=[lock_id, self.token_expiration, *writes.values()],
+            ),
         )
         if existing_lock_id != lock_id:
             raise self._lock_expired_error(token, existing_lock_id, lock_id, context)
