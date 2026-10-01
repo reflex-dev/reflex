@@ -12,8 +12,8 @@ from reflex_base.environment import environment
 from reflex_base.plugins.embed import get_embed_plugin
 
 from reflex.compiler import templates
-from reflex.compiler.utils import write_file
 from reflex.utils import net, path_ops
+from reflex.utils.path_ops import write_file
 from reflex.utils.prerequisites import get_project_hash, get_web_dir
 from reflex.utils.registry import get_npm_registry
 
@@ -358,6 +358,7 @@ def sync_root_package_json_to_web() -> bool:
 
     Returns:
         True if an existing ``.web/package.json`` was meaningfully changed.
+        Formatting and object key order do not count as changes.
         Initial creation does not count as a meaningful change since no install
         cache could exist yet.
     """
@@ -367,7 +368,7 @@ def sync_root_package_json_to_web() -> bool:
 
     output_path = get_web_lockfile_path(constants.PackageJson.PATH)
     rendered = _compile_package_json()
-    if output_path.exists() and output_path.read_text() == rendered:
+    if _read_package_json_object(output_path) == json.loads(rendered):
         return False
 
     changed = output_path.exists()
@@ -618,8 +619,11 @@ def _compile_vite_config(config: Config):
     return templates.vite_config_template(
         base=base,
         hmr=environment.VITE_HMR.get(),
-        force_full_reload=environment.VITE_FORCE_FULL_RELOAD.get(),
+        force_full_reload=environment.VITE_FORCE_FULL_RELOAD.get()
+        or environment.REFLEX_DEV_PROD_REACT.get(),
         experimental_hmr=environment.VITE_EXPERIMENTAL_HMR.get(),
+        prod_react=environment.REFLEX_DEV_PROD_REACT.get(),
+        warmup_routes=environment.REFLEX_VITE_WARMUP_ROUTES.get(),
         sourcemap=environment.VITE_SOURCEMAP.get(),
         minify=environment.VITE_MINIFY.get(),
         allowed_hosts=config.vite_allowed_hosts,

@@ -10,13 +10,15 @@ import sys
 import time
 import uuid
 from collections.abc import AsyncIterator
+from datetime import timedelta
 from typing import Any, TypedDict, cast
 
 from redis import ResponseError
 from redis.asyncio import Redis
 from reflex_base.config import get_config
-from reflex_base.environment import environment
+from reflex_base.environment import environment, oplock_hold_time
 from reflex_base.utils.exceptions import (
+    EnvironmentVarValueError,
     InvalidLockWarningThresholdError,
     LockExpiredError,
     StateSchemaMismatchError,
@@ -87,10 +89,22 @@ def _default_oplock_hold_time_ms() -> int:
 
     Returns:
         The default opportunistic lock hold time.
+
+    Raises:
+        EnvironmentVarValueError: If the configured hold time is negative.
     """
-    return environment.REFLEX_OPLOCK_HOLD_TIME_MS.get() or (
-        _default_lock_expiration() // 2
-    )
+    hold_time = oplock_hold_time()
+    if hold_time < timedelta(0):
+        msg = (
+            "The opportunistic lock hold time must not be negative, got "
+            f"{hold_time.total_seconds()} seconds."
+        )
+        raise EnvironmentVarValueError(msg)
+    if not hold_time:
+        return _default_lock_expiration() // 2
+    # A configured hold time is worth at least one millisecond, so that a
+    # sub-millisecond duration is not mistaken for the unset default above.
+    return max(hold_time // timedelta(milliseconds=1), 1)
 
 
 # The lock waiter task should subscribe to lock channel updates within this period.
@@ -310,7 +324,7 @@ class StateManagerRedis(StateManager):
         token = self._coerce_token(token)
         if not isinstance(token, BaseStateToken):
             # Non-BaseState token: simple single-key fetch.
-            redis_data = await self.redis.get(str(token))
+            redis_data = cast("bytes | None", await self.redis.get(str(token)))
             if redis_data is not None:
                 return token.deserialize(data=redis_data)
             return token.cls()
@@ -458,7 +472,7 @@ class StateManagerRedis(StateManager):
             for substate in base_state.substates.values()
         ]
         # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
-        if base_state._get_was_touched():
+        if base_state._was_touched:
             pickle_state = base_state._serialize()
             if pickle_state:
                 await self.redis.set(
@@ -736,6 +750,12 @@ class StateManagerRedis(StateManager):
                 with contextlib.suppress(asyncio.CancelledError):
                     await existing_task
 
+        if not self._lock_updates_subscribed.is_set():
+            # Only a contention notification breaks the lease early, so the
+            # subscriber must be listening before contenders are counted below.
+            # Until it is, update without a lease rather than wait for it.
+            return None
+
         # Now we might need to create a new lock.
         if (state_lock := self._cached_states_locks.get(lock_key)) is None:
             async with self._state_manager_lock:
@@ -792,11 +812,15 @@ class StateManagerRedis(StateManager):
         Returns:
             True if the lock was obtained.
         """
-        return await self.redis.set(
-            lock_key,
-            lock_id,
-            px=self.lock_expiration,
-            nx=True,  # only set if it doesn't exist
+        # With `nx=True` and no `get=True`, SET replies with True or None.
+        return cast(
+            "bool | None",
+            await self.redis.set(
+                lock_key,
+                lock_id,
+                px=self.lock_expiration,
+                nx=True,  # only set if it doesn't exist
+            ),
         )
 
     async def _handle_lock_release(self, message: RedisPubSubMessage) -> None:
@@ -844,10 +868,11 @@ class StateManagerRedis(StateManager):
         }
         async with self.redis.pubsub() as pubsub:
             await pubsub.psubscribe(**handlers)  # pyright: ignore[reportArgumentType]
-            self._lock_updates_subscribed.set()
             try:
-                async for _ in pubsub.listen():
-                    pass
+                # Notifications are only delivered once redis confirms the subscription.
+                async for message in pubsub.listen():
+                    if message["type"] == "psubscribe":
+                        self._lock_updates_subscribed.set()
             finally:
                 self._lock_updates_subscribed.clear()
 
@@ -871,6 +896,8 @@ class StateManagerRedis(StateManager):
         Raises:
             TimeoutError: If the lock updates subscriber task fails to subscribe in time.
         """
+        if self._lock_updates_subscribed.is_set():
+            return
         if timeout is None:
             timeout = min(
                 LOCK_SUBSCRIBE_TASK_TIMEOUT,
@@ -1101,7 +1128,9 @@ class StateManagerRedis(StateManager):
         finally:
             if state_is_locked:
                 # only delete our lock
-                deleted_lock_id = await self.redis.getdel(lock_key)
+                deleted_lock_id = cast(
+                    "bytes | None", await self.redis.getdel(lock_key)
+                )
                 if deleted_lock_id == lock_id:
                     if self._debug_enabled:
                         logger.debug(

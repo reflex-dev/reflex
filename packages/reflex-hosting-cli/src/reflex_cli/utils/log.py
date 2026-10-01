@@ -82,8 +82,12 @@ except ImportError:
             """
             try:
                 style, prefix = _style_for_level(record.levelno)
+                # Errors always go to stderr; everything else joins them there
+                # while stdout is carrying a document.
                 console = (
-                    _console_stderr if record.levelno >= logging.ERROR else _console
+                    _console_stderr
+                    if record.levelno >= logging.ERROR or is_stdout_reserved()
+                    else _console
                 )
                 # Markup is opt-in per record (``extra={"rich": True}``); plain
                 # messages keep their literal brackets.
@@ -129,3 +133,38 @@ except ImportError:
         # no-op when the handler is already attached, so this stays idempotent.
         _CLI_LOGGER.propagate = False
         _CLI_LOGGER.addHandler(_handler)
+
+
+# Asked separately from the names above, and that separation is the whole point.
+# The reservation is younger than the rest of this shim: every published
+# reflex-base exports SUCCESS, is_json_mode and set_log_level, and none of them
+# exports these two. Importing all five together sent an installation with a
+# perfectly good reflex-base down the fallback path entirely -- losing its
+# console, its log parenting and is_json_mode to acquire a feature it was only
+# ever meant to go without.
+try:
+    from reflex_base.utils.log import is_stdout_reserved as is_stdout_reserved
+    from reflex_base.utils.log import reserve_stdout as reserve_stdout
+
+except ImportError:
+    # Tracked here rather than delegated, so `--json` keeps its stdout even
+    # against a reflex-base that has never heard of the reservation. Only this
+    # shim's own sinks consult it; a reflex-base console cannot be told.
+    _stdout_reserved = False
+
+    def reserve_stdout(reserved: bool = True) -> None:
+        """Reserve stdout for a machine-readable document.
+
+        Args:
+            reserved: Whether stdout carries data rather than human output.
+        """
+        global _stdout_reserved
+        _stdout_reserved = reserved
+
+    def is_stdout_reserved() -> bool:
+        """Check whether stdout is reserved for machine-readable output.
+
+        Returns:
+            True while a document owns stdout.
+        """
+        return _stdout_reserved

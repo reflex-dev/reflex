@@ -9,7 +9,7 @@ from hashlib import md5
 from typing import Any, ClassVar, Literal, get_origin, get_type_hints
 
 from reflex_base.components.component import BaseComponent, Component, field
-from reflex_base.components.tags.tag import Tag
+from reflex_base.components.tags.tag import CommonTag
 from reflex_base.constants import Dirs, EventTriggers
 from reflex_base.event import (
     FORM_DATA,
@@ -347,7 +347,7 @@ class Form(BaseHTML):
             )
         ]
 
-    def _render(self) -> Tag:
+    def _render(self) -> CommonTag:
         render_tag = super()._render()
         if EventTriggers.ON_SUBMIT in self.event_triggers:
             render_tag = render_tag.add_props(**{

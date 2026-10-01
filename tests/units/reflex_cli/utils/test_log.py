@@ -5,7 +5,9 @@ from __future__ import annotations
 import ast
 import contextlib
 import importlib
+import json
 import logging
+import subprocess
 import sys
 from collections.abc import Iterator
 from enum import Enum
@@ -15,6 +17,7 @@ from types import ModuleType
 import pytest
 import reflex_cli
 from reflex_cli.utils import console, log
+from rich.console import Console
 
 
 class _ReflexBaseBlocker:
@@ -289,6 +292,104 @@ def test_fallback_console_helpers(capsys):
     assert "a@b.com" in out
     assert "email" in out
     assert "a rule" in out
+
+
+def test_fallback_print_table_no_wrap(monkeypatch, capsys):
+    """The forked table keeps a no_wrap column's value on one line."""
+    long_id = "7fb2de10-2e8d-48bd-9c79-a98b3f52e10f"
+    monkeypatch.setenv("COLUMNS", "60")
+    with _without_reflex_base() as (_, _log, fallback_console):
+        fallback_console.print_table(
+            [[long_id, "a description long enough that it has to fold"]],
+            headers=["id", "description"],
+            overflow="fold",
+            no_wrap=["id"],
+        )
+
+    out = capsys.readouterr().out
+    assert any(long_id in line for line in out.splitlines()), out
+    assert "│" not in out
+
+
+def test_print_table_too_narrow_prints_rows_as_blocks(monkeypatch, capsys):
+    """A table that would cut a no_wrap value prints each row as a block."""
+    long_id = "7fb2de10-2e8d-48bd-9c79-a98b3f52e10f"
+    _set_width(monkeypatch, 30)
+    console.print_table(
+        [[long_id, "docs"]], headers=["id", "name"], overflow="fold", no_wrap=["id"]
+    )
+
+    lines = capsys.readouterr().out.splitlines()
+    assert f"id    {long_id}" in lines
+    assert "name  docs" in lines
+
+
+def _set_width(monkeypatch, width: int):
+    """Give the CLI console a fixed width, whatever COLUMNS the session has.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        width: The console width in cells.
+    """
+    monkeypatch.setattr(console, "_console", Console(width=width, highlight=False))
+
+
+@pytest.mark.parametrize(("width", "table"), [(80, True), (20, False)])
+def test_print_table_short_row(monkeypatch, capsys, width, table):
+    """A row with fewer cells than headers prints as a table or as a block."""
+    _set_width(monkeypatch, width)
+    console.print_table(
+        [["small", "Small VM"]], headers=["id", "name", "cpu (cores)", "ram (gb)"]
+    )
+
+    lines = capsys.readouterr().out.splitlines()
+    if table:
+        assert any("small" in line and "Small VM" in line for line in lines)
+    else:
+        assert ["id", "small"] in [line.split() for line in lines]
+        assert ["name", "Small", "VM"] in [line.split() for line in lines]
+
+
+@pytest.mark.parametrize("width", [80, 12])
+def test_print_table_no_rows(monkeypatch, capsys, width):
+    """A table with no rows prints its headers, even in a narrow terminal."""
+    _set_width(monkeypatch, width)
+    console.print_table([], headers=["id", "name"])
+
+    lines = capsys.readouterr().out.splitlines()
+    assert ["id", "name"] in [line.split() for line in lines]
+
+
+def test_print_table_no_wrap_with_older_reflex_base(monkeypatch, capsys):
+    """A reflex-base that predates no_wrap renders the CLI's tables anyway.
+
+    The CLI owns its table rendering and only hands reflex-base the rows in JSON
+    mode, through the signature every reflex-base release accepts.
+    """
+    from reflex_base.utils import console as base_console
+
+    long_id = "7fb2de10-2e8d-48bd-9c79-a98b3f52e10f"
+    rows = [[long_id, "a description long enough that it has to fold"]]
+    headers = ["id", "description"]
+    calls = []
+
+    def old_print_table(tabular_data, headers=()):
+        calls.append((tabular_data, list(headers)))
+
+    monkeypatch.setattr(base_console, "print_table", old_print_table)
+    monkeypatch.setenv("COLUMNS", "60")
+    try:
+        importlib.reload(console)
+        console.print_table(rows, headers=headers, overflow="fold", no_wrap=["id"])
+        out = capsys.readouterr().out
+        assert any(long_id in line for line in out.splitlines()), out
+
+        monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+        console.print_table(rows, headers=headers, overflow="fold", no_wrap=["id"])
+        assert calls == [(rows, headers)]
+    finally:
+        monkeypatch.undo()
+        importlib.reload(console)
 
 
 def test_fallback_progress_bars(capsys):
@@ -593,3 +694,194 @@ def test_no_command_trusts_the_log_level_it_is_handed():
         f"{offenders}. Pass it to console.set_log_level, which resolves a "
         "foreign reflex's LogLevel by value, and use the result."
     )
+
+
+# Each of these runs the shim in a subprocess of its own, the way
+# test_deploy.py probes the framework-free import. The obvious in-process
+# version -- swapping sys.modules["reflex_base.utils.log"] for a copy missing
+# the two names -- leaves the parent package's `log` attribute pointing at the
+# stand-in, which is invisible here and destabilized async tests elsewhere in
+# the suite.
+def _probe(body: str, stdin: str = "") -> subprocess.CompletedProcess[str]:
+    """Run a snippet against the shim in a clean interpreter.
+
+    Args:
+        body: The python source to run.
+        stdin: What to feed the snippet's stdin, for a prompt that reads it.
+
+    Returns:
+        The finished process, with stdout and stderr captured.
+    """
+    return subprocess.run(
+        [sys.executable, "-c", body],
+        input=stdin,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+_HIDE_THE_RESERVATION = """
+import sys, types
+import reflex_base.utils.log as real
+
+# reflex-base as every published release has it: the three long-standing names,
+# and no stdout reservation.
+older = types.ModuleType("reflex_base.utils.log")
+for attr in dir(real):
+    if attr not in ("reserve_stdout", "is_stdout_reserved"):
+        setattr(older, attr, getattr(real, attr))
+sys.modules["reflex_base.utils.log"] = older
+"""
+
+
+def test_a_reflex_base_without_the_reservation_is_still_adopted():
+    """Two unreleased names must not cost a good reflex-base its whole adoption.
+
+    `reserve_stdout` and `is_stdout_reserved` are newer than the rest of this
+    shim, so asking for them in the same `try` as SUCCESS / is_json_mode /
+    set_log_level sent every currently-published reflex-base down the fallback
+    path -- swapping out its console, its log parenting and its is_json_mode to
+    acquire a feature it was only ever meant to go without.
+    """
+    result = _probe(
+        _HIDE_THE_RESERVATION
+        + """
+from reflex_cli.utils import log
+import reflex_cli.utils.console as console
+
+print(log.HAS_REFLEX_BASE, console.print.__module__, log.reserve_stdout.__module__)
+"""
+    )
+
+    assert result.returncode == 0, result.stderr
+    adopted, console_module, reserve_module = result.stdout.split()
+    assert adopted == "True"
+    assert console_module == "reflex_base.utils.console"
+    # The reservation itself degrades, which is the documented trade.
+    assert reserve_module == "reflex_cli.utils.log"
+
+
+def test_the_reservation_survives_having_no_reflex_base_at_all():
+    """`--json` keeps its stdout on a reflex too old to have reflex-base.
+
+    The fallback used to answer False unconditionally, so the reservation was a
+    no-op: the fallback handler wrote INFO records to stdout in front of the
+    document, corrupting exactly the output `--json` exists to produce, and
+    only on old reflex, where nothing would catch it.
+    """
+    result = _probe(
+        """
+import sys
+
+class Blocked:
+    def find_spec(self, name, path=None, target=None):
+        if name == "reflex_base" or name.startswith("reflex_base."):
+            raise ImportError(name)
+
+sys.meta_path.insert(0, Blocked())
+
+from reflex_cli.utils import log
+
+assert not log.HAS_REFLEX_BASE, "reflex_base should be unreachable here"
+print(log.is_stdout_reserved(), end=" ")
+log.reserve_stdout(True)
+print(log.is_stdout_reserved(), end=" ")
+log.reserve_stdout(False)
+print(log.is_stdout_reserved())
+"""
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.split() == ["False", "True", "False"]
+
+
+def test_the_fallback_moves_human_output_off_a_reserved_stdout():
+    """While a document owns stdout, records and prints go to stderr instead."""
+    result = _probe(
+        """
+import sys
+
+class Blocked:
+    def find_spec(self, name, path=None, target=None):
+        if name == "reflex_base" or name.startswith("reflex_base."):
+            raise ImportError(name)
+
+sys.meta_path.insert(0, Blocked())
+
+import logging
+from reflex_cli.constants.base import LogLevel
+from reflex_cli.utils import console, log
+
+console.set_log_level(LogLevel.INFO)
+log.reserve_stdout(True)
+logging.getLogger("reflex_cli.probe").info("a message for a person")
+console.print("a table-ish thing")
+print('{"ok": true}')
+"""
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) == {"ok": True}
+    assert "a message for a person" in result.stderr
+    assert "a table-ish thing" in result.stderr
+
+
+def test_the_fallback_asks_its_questions_on_a_reserved_stdout_too():
+    """A prompt is the one piece of human output that must not reach stdout.
+
+    It blocks, so a caller parsing the document reads the question as data and
+    never answers it -- which is how `--json` came to emit one non-JSON line on
+    the bad-token login fall-through. `console.ask` was reaching Prompt.ask with
+    no console of its own, so it bypassed the reservation the prints observe.
+    """
+    result = _probe(
+        """
+import sys
+
+class Blocked:
+    def find_spec(self, name, path=None, target=None):
+        if name == "reflex_base" or name.startswith("reflex_base."):
+            raise ImportError(name)
+
+sys.meta_path.insert(0, Blocked())
+
+from reflex_cli.utils import console, log
+
+log.reserve_stdout(True)
+console.ask("a question for a person")
+print('{"ok": true}')
+""",
+        # Prompt.ask still reads stdin; only where it writes the question moves.
+        stdin="an answer\n",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout) == {"ok": True}
+    assert "a question for a person" in result.stderr
+
+
+def test_the_reservation_is_asked_for_separately_from_the_rest_of_the_shim():
+    """The two import blocks stay two, so one unreleased name cannot widen.
+
+    Read off the source, because merging them back is a one-line edit whose
+    only symptom is a silent downgrade against a reflex-base that is fine.
+    """
+    source = (Path(reflex_cli.__file__).parent / "utils" / "log.py").read_text()
+    reservation = {"reserve_stdout", "is_stdout_reserved"}
+    adoption = {"SUCCESS", "is_json_mode", "set_log_level"}
+
+    for node in ast.walk(ast.parse(source)):
+        if not isinstance(node, ast.Try):
+            continue
+        imported = {
+            alias.name
+            for stmt in ast.walk(node)
+            if isinstance(stmt, ast.ImportFrom)
+            and (stmt.module or "").startswith("reflex_base")
+            for alias in stmt.names
+        }
+        assert not (imported & reservation and imported & adoption), (
+            "the stdout reservation must be imported in a try of its own: "
+            f"found {sorted(imported)} together"
+        )

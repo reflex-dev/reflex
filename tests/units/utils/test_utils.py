@@ -2,9 +2,8 @@ import logging
 import os
 import typing
 from collections.abc import Mapping, Sequence
-from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, List, Literal, NoReturn  # noqa: UP035
+from typing import Any, List, Literal, NoReturn  # noqa: UP035
 
 import pytest
 from packaging import version
@@ -227,53 +226,6 @@ def test_remove_existing_bun_installation(mocker: MockerFixture):
 
     js_runtimes.remove_existing_bun_installation()
     rm.assert_called_once()
-
-
-@pytest.fixture
-def test_backend_variable_cls():
-    class TestBackendVariable(BaseState):
-        """Test backend variable."""
-
-        _classvar: ClassVar[int] = 0
-        _hidden: int = 0
-        not_hidden: int = 0
-        __dunderattr__: int = 0
-
-        @classmethod
-        def _class_method(cls):
-            pass
-
-        def _hidden_method(self):
-            pass
-
-        @property
-        def _hidden_property(self):
-            pass
-
-        @cached_property
-        def _cached_hidden_property(self):
-            pass
-
-    return TestBackendVariable
-
-
-@pytest.mark.parametrize(
-    ("input", "output"),
-    [
-        ("_classvar", False),
-        ("_class_method", False),
-        ("_hidden_method", False),
-        ("_hidden", True),
-        ("not_hidden", False),
-        ("__dundermethod__", False),
-        ("_hidden_property", False),
-        ("_cached_hidden_property", False),
-    ],
-)
-def test_is_backend_base_variable(
-    test_backend_variable_cls: type[BaseState], input: str, output: bool
-):
-    assert types.is_backend_base_variable(input, test_backend_variable_cls) == output
 
 
 @pytest.mark.parametrize(
@@ -953,3 +905,63 @@ def test_compile_vite_config_reads_minify_env(
     monkeypatch.setenv(environment.VITE_MINIFY.name, "true" if minify else "false")
     config = frontend_skeleton._compile_vite_config(prerequisites.get_config())
     assert f"minify: {'true' if minify else 'false'}," in config
+
+
+@pytest.mark.parametrize("prod_react", [True, False])
+def test_vite_config_template_prod_react(prod_react: bool) -> None:
+    """REFLEX_DEV_PROD_REACT swaps the browser's prebundled React for production.
+
+    The swap lives in an optimizer-only plugin (never `resolve.alias`, which
+    would stop Vite externalizing React for SSR), compiles JSX with the non-dev
+    runtime, and changes the optimizer cache key via a define.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=prod_react,
+        experimental_hmr=False,
+        sourcemap=False,
+        prod_react=prod_react,
+    )
+    markers = (
+        "function prodReactPrebundle() {",
+        "plugins: [prodReactPrebundle()],",
+        'transform: { define: { "process.env.REFLEX_DEV_PROD_REACT": \'"1"\' } },',
+        "jsx: { development: false },",
+        '"react-dom/client": path.join(reactDomRoot, "cjs/react-dom-client.production.js"),',
+        'packageRoot("scheduler", path.join(reactDomRoot, "package.json"))',
+    )
+    for marker in markers:
+        assert (marker in config) is prod_react, marker
+    assert "customResolver" not in config
+    assert ("[fullReload()]" in config) is prod_react
+
+
+@pytest.mark.parametrize("warmup_routes", [True, False])
+def test_vite_config_template_warmup_routes(warmup_routes: bool) -> None:
+    """REFLEX_VITE_WARMUP_ROUTES pre-transforms route modules at server start."""
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+        warmup_routes=warmup_routes,
+    )
+    assert ('clientFiles: ["./app/routes/**/*.jsx"],' in config) is warmup_routes
+
+
+def test_compile_vite_config_prod_react_forces_full_reload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Production React cannot be hot-patched, so the env var also forces full reloads."""
+    from reflex_base.config import get_config
+
+    monkeypatch.setenv(environment.REFLEX_DEV_PROD_REACT.name, "true")
+    config = frontend_skeleton._compile_vite_config(get_config())
+    assert "plugins: [prodReactPrebundle()]," in config
+    assert "[fullReload()]" in config

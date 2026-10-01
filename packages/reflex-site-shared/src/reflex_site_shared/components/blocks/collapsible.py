@@ -67,4 +67,5 @@ def collapsible_box(
         margin_bottom="16px",
         margin_top="16px",
         overflow="hidden",
+        class_name="docs-callout",
     )

@@ -36,7 +36,7 @@ data: list[list[Any]] = [
 ]
 ```
 
-This component is introduced as an alternative to the [datatable](/docs/library/tables-and-data-grids/data-table) to support editing the displayed data.
+This component is introduced as an alternative to the [datatable](/docs/library/tables-and-data-grids/data-table/) to support editing the displayed data.
 
 ## Columns
 
@@ -51,6 +51,28 @@ Property of a column dict:
 ## Data
 
 The `data` props of `rx.data_editor` accept a `list` of `list`, where each `list` represent a row of data to display in the table.
+
+### Image cells
+
+Use `type="image"` to render an image URL as a thumbnail. Image columns can be used alongside text and other built-in cell types. The value can be a single URL or a list of URLs for a cell containing multiple images.
+
+```python
+columns = [
+    {"title": "Preview", "type": "image", "width": 120},
+    {"title": "Name", "type": "str"},
+]
+data = [
+    ["https://picsum.photos/id/1025/160/100", "Puppy"],
+]
+
+rx.data_editor(
+    columns=columns,
+    data=data,
+    row_height=90,
+)
+```
+
+Clicking an image cell opens Glide Data Grid's built-in image preview.
 
 ## Simple Example
 
@@ -459,6 +481,6 @@ rx.data_editor(
 
 Explore the other ways to work with tabular data in Reflex, all in pure Python:
 
-- [Data Table](/docs/library/tables-and-data-grids/data-table)
-- [Table](/docs/library/tables-and-data-grids/table)
+- [Data Table](/docs/library/tables-and-data-grids/data-table/)
+- [Table](/docs/library/tables-and-data-grids/table/)
 - [Tables and Data Grids](/docs/library/tables-and-data-grids/)

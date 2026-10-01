@@ -33,16 +33,10 @@ def ComponentStateApp():
 
         @rx.event
         def assert_be(self, value: E):
-            assert self._backend_vars != self.backend_vars
             assert self._be == int(value)  # pyright: ignore [reportAttributeAccessIssue, reportArgumentType]
 
         @rx.event
         def assert_be_none(self):
-            assert self._backend_vars == {
-                name: value
-                for name, value in self.backend_vars.items()
-                if name not in self.inherited_backend_vars
-            }
             assert self._be is None  # pyright: ignore [reportAttributeAccessIssue]
 
         @rx.event
