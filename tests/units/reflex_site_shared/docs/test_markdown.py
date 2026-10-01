@@ -243,6 +243,24 @@ def test_render_inline_markdown_handles_inline_and_block_content() -> None:
     assert "Paragraph." in block
 
 
+@pytest.mark.parametrize(
+    ("source", "inner", "after"),
+    [
+        ("Pass [`run_workflows`](/docs/workers/) here.", "run_workflows", " here."),
+        ("See [the **worker** guide](/docs/workers/) first.", "worker", " first."),
+        ("Use [`start` and `run`](/docs/workers/) instead.", "start", " instead."),
+    ],
+)
+@pytest.mark.parametrize("render", [render_markdown, render_inline_markdown])
+def test_link_text_keeps_its_inline_markup(
+    render, source: str, inner: str, after: str
+) -> None:
+    """A link whose text is code or emphasis renders that text inside the link."""
+    rendered = str(render(source))
+    link = rendered.split('href:"/docs/workers/"', 1)[1].split(after, 1)[0]
+    assert inner in link
+
+
 def test_render_docgen_document_extracts_faq_jsonld(tmp_path: Path) -> None:
     """Strip the FAQ block into JSON-LD and keep it out of the visible body."""
     doc = tmp_path / "faq.md"

@@ -186,15 +186,23 @@ def _render_spans(spans: tuple[Span, ...]) -> list[rx.Component | str]:
             case CodeSpan(code=code):
                 out.append(code_comp(text=code))
             case LinkSpan(children=children, target=target):
-                inner = "".join(
-                    c if isinstance(c, str) else "" for c in _render_spans(children)
-                )
-                out.append(doclink2(text=inner, href=target))
+                out.append(_render_link(children, target))
             case ImageSpan(src=src):
                 out.append(img_comp_xd(src=src))
             case LineBreakSpan(soft=soft):
                 out.append("\n" if soft else rx.el.br())
     return out
+
+
+def _render_link(children: tuple[Span, ...], target: str) -> rx.Component:
+    """Render a link, keeping inline markup such as code inside its text."""
+    parts = _render_spans(children)
+    text = (
+        "".join(parts)
+        if all(isinstance(part, str) for part in parts)
+        else rx.fragment(*parts)
+    )
+    return doclink2(text=text, href=target)
 
 
 def _spans_to_plaintext(spans: tuple[Span, ...]) -> str:
@@ -458,8 +466,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         return code_comp(text=span.code)
 
     def link(self, span: LinkSpan) -> rx.Component:
-        inner = _spans_to_plaintext(span.children)
-        return doclink2(text=inner, href=span.target)
+        return _render_link(span.children, span.target)
 
     def image(self, span: ImageSpan) -> rx.Component:
         return img_comp_xd(src=span.src)
