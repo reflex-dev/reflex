@@ -13,7 +13,7 @@ import traceback
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 from urllib.parse import urlparse
 
 from reflex_base import constants
@@ -39,10 +39,15 @@ from reflex_components_core.el.elements.metadata import Head, Link, Meta, Title
 from reflex_components_core.el.elements.other import Html
 from reflex_components_core.el.elements.sectioning import Body
 
+from reflex.istate.delta import _resolve_delta
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
-from reflex.state import BaseState, _resolve_delta
+from reflex.state import BaseState
 from reflex.utils import path_ops
+from reflex.utils.exec import is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
+
+if TYPE_CHECKING:
+    from reflex_base.components.memo import _MemoBodyAnalysis
 
 # To re-export this function.
 merge_imports = imports.merge_imports
@@ -346,7 +351,7 @@ def _compile_client_storage_recursive(
     session_storage: dict[str, dict[str, Any]] = {}
     state_name = state.get_full_name()
     for name, field in state.__fields__.items():
-        if name in state.inherited_vars:
+        if field._owner is not state:
             # only include vars defined in this state
             continue
         state_key = f"{state_name}.{name}" + FIELD_MARKER
@@ -504,9 +509,20 @@ def compile_experimental_component_memo(
         render = copy.copy(definition.component)
         _apply_root_style(render)
 
-        hooks = _root_only_hooks(render)
-        custom_code = _root_only_custom_code(render)
-        dynamic_imports = _root_only_dynamic_imports(render)
+        analysis = None
+        if (key := definition.component.__dict__.get("_memo_analysis_key")) is not None:
+            analysis = RegistrationContext.ensure_context()._memo_body_analyses.get(key)
+            if analysis is not None and not analysis.can_reuse(render):
+                analysis = None
+        hooks = _root_only_hooks(render, analysis=analysis)
+        custom_code = _root_only_custom_code(render, analysis=analysis)
+        if analysis is None:
+            dynamic_imports = _root_only_dynamic_imports(render)
+        else:
+            dynamic_imports = (
+                {analysis.dynamic_import} if analysis.dynamic_import else set()
+            )
+            render._imports_cache = analysis.imports
         # Strings returned by the root's ``add_hooks`` can reference symbols
         # (``refs``, ``StateContexts``, etc.) that normally reach this module
         # through descendants' ``_get_hooks_imports`` / ``_get_imports``. JS
@@ -519,7 +535,13 @@ def compile_experimental_component_memo(
         # Swap children for JSX render: the memo body template emits a
         # ``{children}`` hole in place of the real descendants.
         render.children = [hole_child]
-        rendered = render.render()
+        if analysis is None:
+            rendered = render.render()
+        else:
+            rendered = analysis.rendered
+            if definition.forward_root_props:
+                # Prop forwarding replaces the root props during emission.
+                rendered = rendered.copy()
     else:
         render = _apply_component_style_for_compile(copy.deepcopy(definition.component))
         hooks = render._get_all_hooks()
@@ -587,7 +609,9 @@ def compile_experimental_component_memo(
     )
 
 
-def _root_only_hooks(component: Component) -> dict[str, VarData | None]:
+def _root_only_hooks(
+    component: Component, *, analysis: _MemoBodyAnalysis | None = None
+) -> dict[str, VarData | None]:
     """Return hooks contributed by ``component`` itself, not its subtree.
 
     Used by the passthrough memo compile path where descendants render in the
@@ -596,34 +620,52 @@ def _root_only_hooks(component: Component) -> dict[str, VarData | None]:
 
     Args:
         component: The root component whose own hooks to collect.
+        analysis: Previously collected artifacts for an unchanged root.
 
     Returns:
         The root-level hook map, keyed by hook source string.
     """
-    code: dict[str, VarData | None] = {}
-    code.update(component._get_hooks_internal())
-    explicit = component._get_hooks()
+    if analysis is None:
+        internal = component._get_hooks_internal()
+        explicit = component._get_hooks()
+        added = component._get_added_hooks()
+    else:
+        internal = analysis.internal_hooks
+        explicit = analysis.hook
+        added = analysis.added_hooks
+    code: dict[str, VarData | None] = dict(internal)
     if explicit is not None:
         code[explicit] = None
-    code.update(component._get_added_hooks())
+    code.update(added)
     return code
 
 
-def _root_only_custom_code(component: Component) -> dict[str, None]:
+def _root_only_custom_code(
+    component: Component, *, analysis: _MemoBodyAnalysis | None = None
+) -> dict[str, None]:
     """Return custom code contributed by ``component`` itself, not its subtree.
 
     Args:
         component: The root component whose own custom code to collect.
+        analysis: Previously collected artifacts for an unchanged root.
 
     Returns:
         The root-level custom code snippets.
     """
     code: dict[str, None] = {}
-    own = component._get_custom_code()
+    if analysis is None:
+        own = component._get_custom_code()
+        additions = (
+            clz.add_custom_code(component)
+            for clz in component._iter_parent_classes_with_method("add_custom_code")
+        )
+    else:
+        own = analysis.custom_code
+        additions = analysis.added_custom_code
     if own is not None:
         code[own] = None
-    for clz in component._iter_parent_classes_with_method("add_custom_code"):
-        for item in clz.add_custom_code(component):
+    for items in additions:
+        for item in items:
             code[item] = None
     return code
 
@@ -755,11 +797,21 @@ def create_document_root(
             }
         ),
     )
-    # Always include the framework meta and link tags.
+    # Always include the framework meta and link tags. The preload hint is a
+    # production-only optimization: in dev, Vite's css-update swaps the first
+    # link matching the stylesheet path, so it must be the stylesheet link.
     always_head_components = [
         ReactMeta.create(),
-        Link.create(
-            rel="preload", custom_attrs={"as": "style"}, href=global_styles_href
+        *(
+            [
+                Link.create(
+                    rel="preload",
+                    custom_attrs={"as": "style"},
+                    href=global_styles_href,
+                )
+            ]
+            if is_prod_mode()
+            else []
         ),
         Link.create(
             rel="stylesheet",

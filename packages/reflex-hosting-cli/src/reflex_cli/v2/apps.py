@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime
 import logging
+from collections.abc import Sequence
 from typing import Any
 
 import click
@@ -24,6 +25,25 @@ logger = logging.getLogger(__name__)
 
 # How many log lines `apps logs --follow` prints before prompting for more.
 _LOGS_PAGE_SIZE = 100
+
+# The fields `apps list` and `apps history` show; --json carries all of them.
+_LIST_COLUMNS = ("id", "name", "description", "provider")
+_HISTORY_COLUMNS = ("id", "status", "timestamp", "can rollback", "description")
+
+
+def _print_records(records: list[dict[str, Any]], columns: Sequence[str]) -> None:
+    """Print records as a table whose ids and names stay whole on one line.
+
+    Args:
+        records: The records to print, one row each.
+        columns: The fields to show, in order.
+    """
+    console.print_table(
+        [[str(record[column]) for column in columns] for record in records],
+        headers=columns,
+        overflow="fold",
+        no_wrap=("id", "name"),
+    )
 
 
 @click.group()
@@ -153,11 +173,7 @@ def app_history(
             print_json(history)
             return
         if history:
-            headers = list(history[0].keys())
-            table = [
-                [str(value) for value in deployment.values()] for deployment in history
-            ]
-            console.print_table(table, headers=headers)
+            _print_records(history, _HISTORY_COLUMNS)
         else:
             console.print(str(history))
 
@@ -570,15 +586,12 @@ def delete_app(
         if app_name_from_search is None and app_id:
             try:
                 app_name_from_search = authenticated_client.api.apps.get(app_id).name
-            except NotFoundError:
-                logger.warning(f"No application found with ID '{app_id}'")
+            except NotFoundError as err:
+                message = f"No application found with ID '{app_id}'"
+                logger.error(message)
                 if as_json:
-                    print_json({
-                        "app_id": app_id,
-                        "deleted": False,
-                        "message": f"No application found with ID '{app_id}'",
-                    })
-                return
+                    print_json({"app_id": app_id, "deleted": False, "message": message})
+                raise click.exceptions.Exit(1) from err
 
         if not app_id:
             logger.error("No valid app_id or app_name provided.")
@@ -812,11 +825,7 @@ def list_apps(
         print_json(deployments)
         return
     if deployments:
-        headers = list(deployments[0].keys())
-        table = [
-            [str(value) for value in deployment.values()] for deployment in deployments
-        ]
-        console.print_table(table, headers=headers)
+        _print_records(deployments, _LIST_COLUMNS)
     else:
         console.print(str(deployments))
 
@@ -978,6 +987,7 @@ def inspect_app(
             return
 
         console.print_table(
-            [[str(value) for value in app_info.values()]],
-            headers=list(app_info.keys()),
+            [[key, str(value)] for key, value in app_info.items()],
+            headers=["field", "value"],
+            overflow="fold",
         )

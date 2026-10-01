@@ -188,6 +188,82 @@ def test_update_secrets_with_envs(mocker: MockFixture):
     )
 
 
+def test_update_secrets_success_message(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """An update names the keys it set and whether the app reboots.
+
+    Guards reflex-dev/reflex#7297: a successful text-mode update printed nothing,
+    which read as a no-op.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
+    mocker.patch(
+        "reflex_cli.utils.hosting.process_envs",
+        return_value={"B": "2", "A": "1"},
+    )
+    _authed(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        ["secrets", "update", "app_id", "--env", "B=2", "--env", "A=1", "--no-reboot"],
+    )
+
+    assert result.exit_code == 0, result.output
+    successes = [r.getMessage() for r in caplog.records if r.levelno == SUCCESS]
+    # The exact match is also what proves no value reaches a log record.
+    assert successes == [
+        "Updated 2 secrets (A, B). Not rebooting; run with --reboot or redeploy to apply."
+    ]
+
+
+def test_update_secrets_success_message_singular_and_reboot(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """One secret is reported in the singular, and a reboot is named.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
+    mocker.patch(
+        "reflex_cli.utils.hosting.process_envs",
+        return_value={"A": "1"},
+    )
+    _authed(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        ["secrets", "update", "app_id", "--env", "A=1", "--reboot"],
+    )
+
+    assert result.exit_code == 0, result.output
+    successes = [r.getMessage() for r in caplog.records if r.levelno == SUCCESS]
+    assert successes == ["Updated 1 secret (A). Rebooting to apply."]
+
+
+def test_update_secrets_json_output_logs_no_success(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """The JSON document stays the only output in JSON mode.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
+    _authed(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        ["secrets", "update", "app123", "--env", "A=1", "--json"],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert [r for r in caplog.records if r.levelno == SUCCESS] == []
+
+
 def test_update_secrets_missing_arguments(
     mocker: MockFixture, caplog: pytest.LogCaptureFixture
 ):
