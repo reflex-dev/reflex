@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import sys
 import warnings
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -176,8 +177,9 @@ def profile_id(
 def _cpu_model(cpuinfo: str | None) -> str | None:
     """Find the CPU model name.
 
-    Linux on arm64 names no model, only the core's implementer and part numbers,
-    which tell a Cortex-A72 from a Neoverse-N2: the model is built from them.
+    Linux on arm64 names no model, only each core's implementer and part
+    numbers, which tell a Cortex-A72 from a Neoverse-N2: the model is built from
+    them, naming every core type with its count when the cores differ.
 
     Args:
         cpuinfo: The content of ``/proc/cpuinfo`` on Linux.
@@ -186,18 +188,28 @@ def _cpu_model(cpuinfo: str | None) -> str | None:
         The model name, or ``None`` when unknown.
     """
     fields: dict[str, str] = {}
+    cores: Counter[tuple[str, str]] = Counter()
+    implementer = ""
     for line in (cpuinfo or "").splitlines():
         key, _, value = line.partition(":")
-        fields.setdefault(key.strip(), value.strip())
+        key, value = key.strip(), value.strip()
+        if key == "CPU implementer":
+            implementer = value.lower()
+        elif key == "CPU part":
+            cores[implementer, value.lower()] += 1
+        elif value:
+            fields.setdefault(key, value)
     for key in ("model name", "Model", "Hardware"):
-        if fields.get(key):
+        if key in fields:
             return fields[key]
-    implementer, part = fields.get("CPU implementer"), fields.get("CPU part")
-    if implementer and part:
-        return _ARM_PARTS.get(
-            (implementer.lower(), part.lower()),
-            f"implementer {implementer} part {part}",
-        )
+    names = [
+        (_ARM_PARTS.get(core, f"implementer {core[0]} part {core[1]}"), count)
+        for core, count in sorted(cores.items())
+    ]
+    if len(names) > 1:
+        return " + ".join(f"{count}x {name}" for name, count in names)
+    if names:
+        return names[0][0]
     return platform.processor() or None
 
 

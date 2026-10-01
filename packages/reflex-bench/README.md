@@ -927,9 +927,11 @@ a hash of the spec, when the commit is unknown).
 
 The machine profile id is `<os>-<arch>-<cpu model>-py<major.minor>`, for example
 `linux-x86_64-ryzen-9-7950x-py3.12` (Linux on arm64 names no model, so the
-core's implementer and part numbers do: `linux-arm64-neoverse-n2-py3.12`); `REFLEX_BENCH_PROFILE` overrides it (other
-characters than letters, digits, `.`, `_` and `-` become `-`). Results from
-different profiles are never compared.
+core's implementer and part numbers do: `linux-arm64-neoverse-n2-py3.12`, or
+each core type with its count on a host that mixes them:
+`linux-arm64-4x-implementer-0x41-part-0xd05-4x-cortex-a76-py3.12`);
+`REFLEX_BENCH_PROFILE` overrides it (other characters than letters, digits, `.`,
+`_` and `-` become `-`). Results from different profiles are never compared.
 
 ## CI
 
