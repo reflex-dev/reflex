@@ -10,6 +10,7 @@ import sys
 import click
 import click.testing
 import pytest
+from pytest_mock import MockerFixture
 
 from reflex import reflex
 
@@ -431,6 +432,59 @@ def test_init_records_version_check_after_frontend_setup(
     reflex._init("demo")
 
     assert events == ["frontend", "version"]
+
+
+@pytest.mark.parametrize(
+    ("argv", "supervised", "expected"),
+    [(["--json"], False, True), (["--json"], True, False), ([], False, False)],
+)
+def test_run_supervises_output_only_in_json_mode(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    argv: list[str],
+    supervised: bool,
+    expected: bool,
+):
+    """``reflex run --json`` runs itself again below an output supervisor.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        argv: Extra ``reflex run`` arguments.
+        supervised: Whether the process already runs under the supervisor.
+        expected: Whether the supervisor is expected to start.
+    """
+    from reflex_base.environment import environment
+    from reflex_base.utils import log
+
+    # Registered so teardown restores the variables the CLI callbacks set.
+    monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
+    monkeypatch.setenv(environment.REFLEX_LOG_JSON.name, "false")
+    monkeypatch.setenv(log._SUPERVISED_ENV_VAR, "1234" if supervised else "")
+    monkeypatch.setattr(sys, "argv", ["reflex", "run", *argv])
+    supervise = mocker.patch.object(log, "supervise_output", return_value=7)
+    run = mocker.patch.object(reflex, "_run")
+    mocker.patch("reflex.utils.prerequisites.check_running_mode")
+
+    try:
+        result = click.testing.CliRunner().invoke(reflex.cli, ["run", *argv])
+    finally:
+        log._reset()
+
+    if expected:
+        assert result.exit_code == 7
+        supervise.assert_called_once_with([
+            sys.executable,
+            "-m",
+            "reflex",
+            "run",
+            *argv,
+        ])
+        run.assert_not_called()
+    else:
+        assert result.exit_code == 0, result.output
+        supervise.assert_not_called()
+        run.assert_called_once()
 
 
 @pytest.mark.parametrize(

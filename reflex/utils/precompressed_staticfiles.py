@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import stat
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from functools import lru_cache
 from mimetypes import guess_type
@@ -73,6 +73,7 @@ class PrecompressedStaticFiles(StaticFiles):
         self,
         *args,
         encodings: Sequence[str] = (),
+        router: Callable[[str], str | None] | None = None,
         **kwargs,
     ):
         """Initialize the static file server.
@@ -80,10 +81,15 @@ class PrecompressedStaticFiles(StaticFiles):
         Args:
             *args: Passed through to ``StaticFiles``.
             encodings: Ordered list of supported precompressed formats.
+            router: Optional route matcher taking the request path (with leading
+                slash) and returning the matching app route, or ``None``. Paths
+                with no on-disk file that match a route are served the SPA
+                fallback with status 200 instead of 404.
             **kwargs: Passed through to ``StaticFiles``.
         """
         super().__init__(*args, **kwargs)
         self._encodings = tuple(_SUPPORTED_ENCODINGS[name] for name in encodings)
+        self._router = router
 
     def _select_sidecar(
         self, full_path: str | PathLike[str], scope: Scope
@@ -179,7 +185,8 @@ class PrecompressedStaticFiles(StaticFiles):
 
         The sidecar lookup stats files, so it runs in a worker thread like
         Starlette's own path lookup. This also covers the 404.html fallback,
-        which Starlette builds with a bare FileResponse.
+        which Starlette builds with a bare FileResponse, and which is served
+        with status 200 when the path matches one of the app's routes.
 
         Args:
             path: The requested relative file path.
@@ -189,12 +196,27 @@ class PrecompressedStaticFiles(StaticFiles):
             The resolved static response for the request.
         """
         response = await super().get_response(path, scope)
-        if (
-            not self._encodings
-            or not isinstance(response, FileResponse)
-            or response.stat_result is None
-        ):
+        if not isinstance(response, FileResponse) or response.stat_result is None:
             return response
+        status_code = response.status_code
+        # SPA fallback: a path with no prerendered file that still matches the
+        # app's route table is a valid page, so serve it with 200 and reserve
+        # 404 for genuinely unknown paths. ``path`` was normalized with OS
+        # separators, so restore the URL form before matching (Windows serves
+        # ``articles\\7`` here).
+        if (
+            self.html
+            and status_code == 404
+            and self._router is not None
+            and self._router("/" + path.replace(os.sep, "/")) is not None
+        ):
+            status_code = 200
+        if not self._encodings:
+            if status_code == response.status_code:
+                return response
+            return self.file_response(
+                response.path, response.stat_result, scope, status_code=status_code
+            )
         sidecar = await anyio.to_thread.run_sync(
             self._select_sidecar, response.path, scope
         )
@@ -207,7 +229,7 @@ class PrecompressedStaticFiles(StaticFiles):
         return self._conditional(
             FileResponse(
                 response_path,
-                status_code=response.status_code,
+                status_code=status_code,
                 headers=headers,
                 media_type=response.media_type,
                 stat_result=response_stat,
