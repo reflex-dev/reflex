@@ -342,10 +342,21 @@ def dynamic_form():
 
 ## Multi-value Fields
 
-A control that submits more than one value under the same `name` -- most commonly
-`rx.checkbox_group` -- reports all of its checked values as a list in `form_data`, instead of
-overwriting each other. A field that only ever submits one value (like `rx.input`) still comes
-through as a plain scalar.
+A control that can hold more than one value under the same `name` -- `rx.checkbox_group`, a native
+`<select multiple>`, or any group of non-radio inputs sharing one `name` -- always reports its
+value as a **list** in `form_data`, even when only one value is checked or selected (or an empty
+list when none are). This is decided by the kind of control, not by how many values happen to be
+submitted, so the shape stays consistent as the user checks or unchecks boxes. A radio group or a
+field that can only ever hold one value (like `rx.input`) always reports a plain scalar.
+
+If you annotate the handler with a `TypedDict` (see
+[Validating Form Data with a TypedDict](#validating-form-data-with-a-typeddict) above), type a
+multi-value field as `list[str]`, not `str`:
+
+```python
+class PreferencesForm(TypedDict):
+    channels: list[str]  # rx.checkbox_group, name="channels"
+```
 
 ```python demo exec
 class MultiValueFormState(rx.State):

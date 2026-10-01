@@ -292,7 +292,7 @@ def test_handle_submit_uses_form_data_to_object_not_fromentries():
     """
     f = HTMLForm.create(on_submit=prevent_default)
     hooks = "\n".join(f.add_hooks())
-    assert "formDataToObject(new FormData($form))" in hooks
+    assert "formDataToObject(new FormData($form), $form)" in hooks
     assert "Object.fromEntries" not in hooks
 
 
@@ -301,10 +301,26 @@ import { readFileSync } from "node:fs";
 const helperSrc = readFileSync(process.argv[2], "utf8");
 const formDataToObject = new Function(`${helperSrc}; return formDataToObject;`)();
 const cases = JSON.parse(readFileSync(process.argv[3], "utf8"));
-const results = cases.map((entries) => {
+const results = cases.map(({ entries, elements }) => {
   const fd = new FormData();
   for (const [key, value] of entries) fd.append(key, value);
-  return formDataToObject(fd);
+  // A minimal stand-in for a real HTMLFormElement: namedItem(key) returns
+  // either a single element-like object ({tagName, multiple?}) or an
+  // array of element-like objects (simulating a RadioNodeList), matching
+  // the shapes the real helper branches on.
+  const form = {
+    elements: {
+      namedItem(key) {
+        const spec = elements[key];
+        if (!spec) return null;
+        if (Array.isArray(spec)) {
+          return spec.map((type) => ({ type }));
+        }
+        return spec;
+      },
+    },
+  };
+  return formDataToObject(fd, form);
 });
 process.stdout.write(JSON.stringify(results));
 """
@@ -313,10 +329,18 @@ requires_node = pytest.mark.skipif(shutil.which("node") is None, reason="node mi
 
 
 @requires_node
-def test_form_data_to_object_groups_repeated_keys_preserves_scalars(tmp_path):
-    """The helper must group repeated keys into arrays and keep single
-    keys as scalars, and must not corrupt keys that collide with
-    Object.prototype members like "constructor" or "toString".
+def test_form_data_to_object_decides_shape_from_the_control_not_the_count(tmp_path):
+    """The helper must decide scalar-vs-list from the control's own
+    cardinality (a checkbox group, a <select multiple>, a shared-name
+    non-radio group), not from how many values happen to be submitted --
+    otherwise checking exactly one box out of a checkbox group would
+    silently turn that field from a list into a scalar.
+
+    Also covers: a radio group stays scalar (only one value is possible),
+    an unsubmitted multi-value field is simply absent, single-value
+    scalar fields are unaffected, and keys that collide with
+    Object.prototype members like "constructor"/"toString" are not
+    corrupted.
 
     Args:
         tmp_path: Pytest temporary directory.
@@ -327,9 +351,57 @@ def test_form_data_to_object_groups_repeated_keys_preserves_scalars(tmp_path):
     driver_file.write_text(_FORM_DATA_TO_OBJECT_DRIVER, encoding="utf-8")
     cases_file = tmp_path / "cases.json"
     cases = [
-        [["colors", "red"], ["colors", "green"], ["colors", "blue"], ["name", "bob"]],
-        [["name", "bob"]],
-        [["constructor", "a"], ["constructor", "b"], ["toString", "x"]],
+        {
+            # checkbox_group: three checked.
+            "entries": [
+                ["colors", "red"],
+                ["colors", "green"],
+                ["colors", "blue"],
+            ],
+            "elements": {"colors": ["checkbox", "checkbox", "checkbox"]},
+        },
+        {
+            # checkbox_group: exactly one checked -- must still be a list.
+            "entries": [["colors", "green"]],
+            "elements": {"colors": ["checkbox", "checkbox", "checkbox"]},
+        },
+        {
+            # checkbox_group: none checked -- the key is simply absent.
+            "entries": [["name", "bob"]],
+            "elements": {
+                "colors": ["checkbox", "checkbox", "checkbox"],
+                "name": {"tagName": "INPUT"},
+            },
+        },
+        {
+            # <select multiple>: one option selected -- still a list.
+            "entries": [["sizes", "m"]],
+            "elements": {"sizes": {"tagName": "SELECT", "multiple": True}},
+        },
+        {
+            # <select multiple>: two options selected.
+            "entries": [["sizes", "m"], ["sizes", "l"]],
+            "elements": {"sizes": {"tagName": "SELECT", "multiple": True}},
+        },
+        {
+            # radio_group: a RadioNodeList of all-radio stays scalar.
+            "entries": [["plan", "pro"]],
+            "elements": {"plan": ["radio", "radio", "radio"]},
+        },
+        {
+            # Plain single-value field is unaffected.
+            "entries": [["name", "bob"]],
+            "elements": {"name": {"tagName": "INPUT"}},
+        },
+        {
+            # Fields named after Object.prototype members must not corrupt
+            # the accumulator or get treated as "already seen".
+            "entries": [["constructor", "a"], ["toString", "x"]],
+            "elements": {
+                "constructor": {"tagName": "INPUT"},
+                "toString": {"tagName": "INPUT"},
+            },
+        },
     ]
     cases_file.write_text(json.dumps(cases), encoding="utf-8")
 
@@ -342,9 +414,14 @@ def test_form_data_to_object_groups_repeated_keys_preserves_scalars(tmp_path):
     results = json.loads(result.stdout)
 
     assert results == [
-        {"colors": ["red", "green", "blue"], "name": "bob"},
+        {"colors": ["red", "green", "blue"]},
+        {"colors": ["green"]},
         {"name": "bob"},
-        {"constructor": ["a", "b"], "toString": "x"},
+        {"sizes": ["m"]},
+        {"sizes": ["m", "l"]},
+        {"plan": "pro"},
+        {"name": "bob"},
+        {"constructor": "a", "toString": "x"},
     ]
 
 

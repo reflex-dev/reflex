@@ -42,18 +42,28 @@ _DYNAMIC_FORM_FIELD = object()
 
 
 FORM_DATA_TO_OBJECT_JS = """
-const formDataToObject = (formData) => {
+const formDataToObject = (formData, form) => {
     const obj = Object.create(null);
-    for (const [key, value] of formData.entries()) {
-        if (key in obj) {
-            if (Array.isArray(obj[key])) {
-                obj[key].push(value);
-            } else {
-                obj[key] = [obj[key], value];
-            }
-        } else {
-            obj[key] = value;
-        }
+    const seen = new Set();
+    for (const key of formData.keys()) {
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const node = form.elements.namedItem(key);
+        // A control's shape (scalar vs. list) is decided by what kind of
+        // control it is, not by how many values happened to be submitted
+        // this time -- otherwise checking one box out of a checkbox group
+        // (or a <select multiple> with one selection) would silently
+        // change the field from a list to a scalar.
+        const isMultiValue = node
+            ? node.tagName
+                // A single element: only a <select multiple> can hold more
+                // than one value.
+                ? node.tagName === "SELECT" && node.multiple
+                // Multiple elements share this name (a RadioNodeList): only
+                // an all-radio group is inherently single-valued.
+                : !Array.prototype.every.call(node, (el) => el.type === "radio")
+            : false;
+        obj[key] = isMultiValue ? formData.getAll(key) : formData.get(key);
     }
     return obj;
 }
@@ -83,7 +93,7 @@ def _handle_submit_js_template(
     const handleSubmit_{handle_submit_unique_name} = useCallback((ev) => {{
         const $form = ev.target
         ev.preventDefault()
-        const {form_data} = {{...formDataToObject(new FormData($form)), ...{field_ref_mapping}}};
+        const {form_data} = {{...formDataToObject(new FormData($form), $form), ...{field_ref_mapping}}};
 
         ({on_submit_event_chain}(ev));
 
