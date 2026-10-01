@@ -606,21 +606,26 @@ def test_run_granian_backend_prod_preloads_app_before_forking(
     )
 
     assert calls == [
+        "start:fork",
         "preload",
         "serializers",
         "drain",
         "freeze",
-        "start:fork",
         "serve",
         "workers",
         "started",
+        "drain",
     ]
 
 
 def test_run_granian_backend_prod_spawns_when_telemetry_is_stuck(
     mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
 ):
-    """A telemetry thread that outlives the drain makes forking unsafe."""
+    """A telemetry thread that outlives the drain makes forking unsafe.
+
+    The app is still imported under the requested start method, so anything it
+    creates at import time uses the same context as before the fallback.
+    """
     monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
     calls: list[str] = []
     _fake_granian_prod(mocker, calls, telemetry_stopped=False)
@@ -630,6 +635,7 @@ def test_run_granian_backend_prod_spawns_when_telemetry_is_stuck(
     )
 
     assert calls == [
+        "start:fork",
         "preload",
         "serializers",
         "drain",
@@ -669,7 +675,7 @@ def test_run_granian_backend_prod_custom_target_only_freezes(
         app_target="reflex.utils.exec:_frontend_prod_app",
     )
 
-    assert calls == ["serializers", "drain", "freeze", "start:fork", "serve", "workers"]
+    assert calls == ["start:fork", "serializers", "drain", "freeze", "serve", "workers"]
 
 
 @pytest.mark.parametrize("use_granian", [True, False])

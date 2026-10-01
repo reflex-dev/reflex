@@ -1087,13 +1087,18 @@ def run_granian_backend_prod(
     from granian.log import LogLevels
     from granian.server import Server as Granian
 
+    from reflex.utils import telemetry
+
     logger.debug("Using Granian for backend")
 
     if (start_method := _backend_start_method()) is not None:
+        # Set before the preload so the app's import-time multiprocessing
+        # objects use the requested context.
+        multiprocessing.set_start_method(start_method, force=True)
         if start_method == "fork" and not _preload_for_fork(app_target):
             logger.debug("A telemetry send is still running; spawning workers.")
             start_method = "spawn"
-        multiprocessing.set_start_method(start_method, force=True)
+            multiprocessing.set_start_method(start_method, force=True)
 
     class NotifyingGranian(Granian):  # pyright: ignore[reportGeneralTypeIssues]
         """Granian server that reports when its workers have been started."""
@@ -1108,6 +1113,10 @@ def run_granian_backend_prod(
             super().startup(*args, **kwargs)
             if on_started is not None:
                 on_started()
+                if start_method == "fork":
+                    # Respawned workers fork too: stop the thread the
+                    # callback may have started.
+                    telemetry._shutdown_executor()
 
     granian_app = NotifyingGranian(
         target=app_target or get_app_instance_from_file(),
