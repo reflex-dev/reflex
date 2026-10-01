@@ -1200,6 +1200,7 @@ def test_reaps_orphans_as_a_child_subreaper(
     assert telemetry._reaps_orphans()
 
 
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is POSIX-only")
 def test_send_detached_stays_attached_under_a_pid_1_output_supervisor(
     mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
 ):
