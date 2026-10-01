@@ -354,17 +354,22 @@ class Conversation(Base, Workflow):
         return Conversation.think(calls + 1)
 
     @step(retries=RETRIES, backoff=BACKOFF)
-    async def reply(self, text: str) -> Wait[Conversation]:
+    async def reply(self, text: str) -> Call[Conversation] | Wait[Conversation]:
         """Send the agent's reply, then wait for the customer.
 
-        A message that arrived during the turn has already asked for the next one,
-        and the engine holds that request until this wait arms.
+        A message that arrived during the turn has usually asked for the next one
+        already, and the engine holds that request until this wait arms. Not
+        always: a run holds one event at a time, and while the turn ran one it
+        was holding, a wake for a message arriving after the turn read the
+        transcript was refused. So the transcript is read again here, under the
+        arrival lock: a message that landed first is taken now, and one that
+        lands after finds this run still stepping, so its wake is held.
 
         Args:
             text: What to say.
 
         Returns:
-            The wait.
+            Another turn for a message nothing woke the run for, or the wait.
         """
         await world.call(
             "chat.send",
@@ -373,7 +378,10 @@ class Conversation(Base, Workflow):
             text=text,
         )
         async with current().session_factory() as session, session.begin():
+            await session.execute(arrival_lock(self.conversation))
             await write(session, self.conversation, f"reply:{self.seen}", "agent", text)
+            if await unread(session, self.conversation, self.seen) is not None:
+                return Conversation.turn()
         return self.waiting()
 
     @step(retries=RETRIES, backoff=BACKOFF)
@@ -495,9 +503,9 @@ async def wake(conversation: str, key: str) -> None:
     A conversation that is waiting takes a turn now; one in the middle of a turn
     keeps the wake until it waits again; one that closed opens again. A
     conversation that has already read the entry is left alone, so a repeat of
-    a wake that did land, or a redelivered message, costs nothing. And since the
-    turn reads the transcript, a wake refused because another is already held
-    loses nothing either.
+    a wake that did land, or a redelivered message, costs nothing. A wake
+    refused because another is already held loses nothing either: the turn
+    reads the transcript, and ``reply`` reads it again before waiting.
 
     Args:
         conversation: The conversation.

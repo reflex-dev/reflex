@@ -13,6 +13,7 @@ concurrently with a customer's reply without sending an obsolete one.
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import datetime
 import uuid
 
@@ -321,6 +322,52 @@ async def test_a_message_that_arrives_during_a_turn_gets_the_next_one(database):
                 "Please confirm sending 6 to gu.",
             )
         )
+
+
+async def test_a_message_whose_wake_is_refused_while_a_held_one_runs_is_answered(
+    database, monkeypatch
+):
+    conversation = new_conversation()
+    async with connect_workflows(database):
+        await receive(conversation, conversation, "m1", "hello")
+    [first] = await transcript_of(database, conversation)
+    # The reply to m1 is slow to send, so m2 arrives while that step is still
+    # running, and the engine holds m2's wake for the wait the reply arms.
+    sending = world.hold("chat.send", key=f"reply:{conversation}:{first.id}")
+    # Then m3 arrives just after the turn taking m2 has read the transcript.
+    # The run is still holding m2's wake, so m3's is refused.
+    in_turn = contextvars.ContextVar("in_turn", default=False)
+    turn, unread = Conversation.turn.fn, ex13_conversation.unread
+    arrived = []
+
+    async def taking_a_turn(self):
+        token = in_turn.set(True)
+        try:
+            return await turn(self)
+        finally:
+            in_turn.reset(token)
+
+    async def reading(session, conversation_, seen):
+        newest = await unread(session, conversation_, seen)
+        if in_turn.get() and newest is not None and newest > first.id and not arrived:
+            arrived.append(newest)
+            await receive(conversation, conversation, "m3", "send 7 to bo")
+        return newest
+
+    monkeypatch.setattr(Conversation.turn, "fn", taking_a_turn)
+    monkeypatch.setattr(ex13_conversation, "unread", reading)
+    async with worker(database):
+        await eventually(lambda: world.attempts("chat.send") == 1)
+        await receive(conversation, conversation, "m2", "send 5 to amy")
+        sending.set()
+        await eventually(
+            said(
+                conversation,
+                "Please confirm sending 5 to amy.",
+                "Please confirm sending 7 to bo.",
+            )
+        )
+    assert arrived
 
 
 async def test_a_burst_after_a_restart_is_answered_in_order(database):
