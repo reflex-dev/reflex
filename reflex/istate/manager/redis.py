@@ -514,11 +514,6 @@ class StateManagerRedis(StateManager):
                 self._notify_next_waiter(self._lock_key(token))
                 return
 
-        # A lease needs the lock updates subscriber, so wait for it before the
-        # lock is held rather than spending the lock's TTL on the wait.
-        with contextlib.suppress(TimeoutError, asyncio.TimeoutError):
-            await self._ensure_lock_task_subscribed()
-
         # Opportunistic locking is enabled, so try to hold the lock across multiple calls.
         lock_key = token.lock_key
         lock_held_ctx = contextlib.AsyncExitStack()
@@ -681,6 +676,8 @@ class StateManagerRedis(StateManager):
         Returns:
             The lease break task, or None when there is contention.
         """
+        self._ensure_lock_task()
+
         lock_key = token.lock_key
 
         async def do_flush() -> None:
@@ -756,6 +753,7 @@ class StateManagerRedis(StateManager):
         if not self._lock_updates_subscribed.is_set():
             # Only a contention notification breaks the lease early, so the
             # subscriber must be listening before contenders are counted below.
+            # Until it is, update without a lease rather than wait for it.
             return None
 
         # Now we might need to create a new lock.
