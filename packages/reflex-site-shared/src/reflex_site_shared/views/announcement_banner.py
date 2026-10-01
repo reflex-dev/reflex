@@ -24,7 +24,6 @@ def announcement_banner() -> rx.Component:
                     rx.el.span(
                         rx.el.span(
                             "New",
-                            aria_hidden=True,
                             class_name=(
                                 "inline-flex h-5 shrink-0 items-center justify-center rounded-full "
                                 "border border-white/20 bg-white/10 dark:border-black/10 dark:bg-black/[0.02] px-2 "
@@ -61,10 +60,11 @@ def announcement_banner() -> rx.Component:
                             "justify-center gap-2 px-10 sm:gap-3 sm:px-12"
                         ),
                     ),
+                    rx.el.span(" (opens in a new tab)", class_name="sr-only"),
+                    aria_label="New — xy is now in Reflex Build — Read more (opens in a new tab)",
                     href=XY_IN_REFLEX_BUILD_URL,
                     target="_blank",
                     rel="noopener noreferrer",
-                    aria_label="xy is now in Reflex Build — Read more (opens in a new tab)",
                     class_name=(
                         "group block h-full w-full bg-primary text-primary-foreground hover:bg-primary-hover focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-primary-foreground "
                         "transition-colors duration-200 motion-reduce:transition-none"

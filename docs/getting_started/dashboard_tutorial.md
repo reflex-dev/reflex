@@ -1,12 +1,30 @@
+---
+title: Build a Python Analytics Dashboard with Reflex
+meta_description: Build a Python analytics dashboard and internal tool with Reflex. Add a data table, an input form, and a bar chart that updates when users add data.
+---
+
 ```python exec
 import reflex as rx
 ```
 
-# Data Dashboard
+# Python Analytics Dashboard & Internal Tool Tutorial
 
-**~20 min hands-on** · Build a small data dashboard where users can input data that renders in a table and a graph.
+```md tutorial-intro 20
+Build a Python analytics dashboard with a live table, an add-data form, and a chart that updates as you add customers—all in Python. Use this pattern as the foundation for internal tools, admin panels, and CRM-style apps.
 
-This tutorial does not assume any existing Reflex knowledge, but we do recommend checking out the quick [Basics Guide](/docs/getting-started/basics/) first. The techniques you'll learn are fundamental to any Reflex app.
+**Before you start:** No Reflex experience is required. Familiarity with Python helps; the [Basics Guide](/docs/getting-started/basics/) is a useful introduction.
+```
+
+## Key takeaways
+
+- Build an interactive analytics dashboard using Python components for the table, form, and chart.
+- Store changing data in state variables and update it through event handlers.
+- Recalculate chart data when a user submits the form so the table and chart reflect the same records.
+- Extend the example with database queries or API calls to build an internal business tool using your own data.
+
+## What you'll learn
+
+For chart selections that filter other views, follow the [linked charts and cross-filtering tutorial](/docs/getting-started/linked-charts-tutorial/). For database-backed editing and refresh strategies, see [dashboards and internal tools](/docs/guides/dashboards-and-internal-tools/).
 
 This tutorial is divided into several sections:
 
@@ -84,8 +102,8 @@ def add_customer_button5() -> rx.Component:
     return rx.dialog.root(
         rx.dialog.trigger(
             rx.button(
-                rx.icon("plus", size=26),
-                rx.text("Add User", size="4"),
+                rx.icon("plus", size=18),
+                rx.text("Add User", size="2"),
             ),
         ),
         rx.dialog.content(
@@ -104,13 +122,16 @@ def add_customer_button5() -> rx.Component:
                     ),
                     rx.select(
                         ["Male", "Female"],
-                        placeholder="male",
+                        placeholder="Select gender",
+                        default_value="Male",
                         name="gender",
+                        custom_attrs={"aria-label": "Gender"},
                     ),
                     rx.flex(
                         rx.dialog.close(
                             rx.button(
                                 "Cancel",
+                                type="button",
                                 variant="soft",
                                 color_scheme="gray",
                             ),
@@ -134,32 +155,34 @@ def add_customer_button5() -> rx.Component:
 
 def graph5():
     return rx.recharts.bar_chart(
+        rx.recharts.cartesian_grid(
+            horizontal=False, stroke_dasharray="3 3", stroke=rx.color("slate", 4)
+        ),
+        rx.recharts.x_axis(
+            type_="number",
+            allow_decimals=False,
+            axis_line=False,
+            tick_line=False,
+            domain=[0, "dataMax + 1"],
+        ),
+        rx.recharts.y_axis(
+            type_="category",
+            data_key="name",
+            axis_line=False,
+            tick_line=False,
+            width=64,
+        ),
         rx.recharts.bar(
             data_key="value",
             fill=rx.color("accent", 9),
-            radius=6,
-            bar_size=48,
-        ),
-        rx.recharts.x_axis(
-            data_key="name",
-            tick_line=False,
-            axis_line=False,
-            padding={"left": 24, "right": 24},
-        ),
-        rx.recharts.y_axis(
-            tick_line=False,
-            axis_line=False,
-            allow_decimals=False,
-        ),
-        rx.recharts.cartesian_grid(
-            stroke_dasharray="3 3",
-            vertical=False,
-            stroke=rx.color("slate", 4),
+            radius=[0, 6, 6, 0],
+            bar_size=28,
         ),
         data=State5.users_for_graph,
+        layout="vertical",
         width="100%",
-        height=200,
-        margin={"top": 8, "right": 8, "bottom": 0, "left": 0},
+        height=160,
+        margin={"top": 0, "right": 16, "bottom": 0, "left": 0},
     )
 ```
 
@@ -169,54 +192,104 @@ rx.box(
         rx.hstack(
             rx.vstack(
                 rx.text(
-                    "Users",
-                    size="4",
+                    "CUSTOMER OVERVIEW",
+                    size="1",
                     weight="bold",
-                    color=rx.color("slate", 12),
-                    text_align="left",
-                    width="100%",
+                    letter_spacing="0.08em",
+                    color=rx.color("accent", 11),
+                ),
+                rx.heading(
+                    "Your customers, at a glance", size="5", as_="h3", text_align="left"
                 ),
                 rx.text(
-                    "Add customers and watch the chart update.",
+                    "Manage your directory and see how it grows.",
                     size="2",
-                    color=rx.color("slate", 10),
-                    text_align="left",
-                    width="100%",
+                    color=rx.color("slate", 11),
                 ),
-                spacing="1",
+                spacing="2",
                 align="start",
             ),
             rx.spacer(),
             add_customer_button5(),
             align="center",
+            wrap="wrap",
+            spacing="4",
             width="100%",
         ),
-        rx.table.root(
-            rx.table.header(
-                rx.table.row(
-                    rx.table.column_header_cell("Name"),
-                    rx.table.column_header_cell("Email"),
-                    rx.table.column_header_cell("Gender"),
+        rx.box(
+            rx.hstack(
+                rx.text("Customer directory", size="3", weight="bold"),
+                rx.badge(
+                    State5.users.length(), " total", variant="soft", radius="full"
                 ),
+                align="center",
+                spacing="3",
+                padding="1em 1.25em",
             ),
-            rx.table.body(
-                rx.foreach(State5.users, show_user5),
+            rx.box(
+                rx.table.root(
+                    rx.table.header(
+                        rx.table.row(
+                            rx.table.column_header_cell("Name"),
+                            rx.table.column_header_cell("Email"),
+                            rx.table.column_header_cell("Gender"),
+                        ),
+                    ),
+                    rx.table.body(rx.foreach(State5.users, show_user5)),
+                    variant="surface",
+                    size="3",
+                    width="100%",
+                ),
+                overflow_x="auto",
+                min_width="0",
+                box_sizing="border-box",
+                width="100%",
             ),
-            variant="surface",
-            size="2",
+            border=f"1px solid {rx.color('slate', 5)}",
+            border_radius="12px",
+            overflow="hidden",
+            min_width="0",
+            box_sizing="border-box",
             width="100%",
+            background=rx.color("slate", 1),
         ),
-        graph5(),
+        rx.box(
+            rx.vstack(
+                rx.text("Customer breakdown", size="3", weight="bold"),
+                rx.text(
+                    "Number of customers by gender",
+                    size="2",
+                    color=rx.color("slate", 11),
+                ),
+                spacing="1",
+                align="start",
+                margin_bottom="1.5em",
+            ),
+            graph5(),
+            padding="1.25em",
+            min_width="0",
+            box_sizing="border-box",
+            width="100%",
+            border=f"1px solid {rx.color('slate', 5)}",
+            border_radius="12px",
+            background=rx.color("slate", 1),
+        ),
+        spacing="5",
         align="stretch",
         width="100%",
-        on_mouse_enter=State5.transform_data,
-        spacing="4",
-        padding="1.75em 2em",
+        on_mount=State5.transform_data,
+        padding=rx.breakpoints(initial="1em", sm="1.5em"),
     ),
+    width="100%",
+    max_width="64em",
+    min_width="0",
+    box_sizing="border-box",
+    style={"& *": {"box_sizing": "border-box"}, "& p": {"text_align": "left"}},
+    margin_x="auto",
+    margin_y="1.5em",
     border=f"1px solid {rx.color('slate', 5)}",
-    border_radius="12px",
-    margin_y="1em",
-    background=rx.color("slate", 1),
+    border_radius="16px",
+    background=rx.color("slate", 2),
 )
 ```
 
@@ -249,7 +322,7 @@ app.add_page(index)
 ```
 
 ```md alert info
-For the rest of the tutorial the `app = rx.App()` and `app.add_page` lines are implied and not shown — we'll come back to them in [Customize](#customize).
+Keep the imports and `User` dataclass as you work through the steps. Replace the earlier `State`, `index`, or component definitions when a new version is shown, rather than adding a second definition. Keep `app = rx.App()` and `app.add_page(index)` at the bottom of the file, after all definitions. We will update registration in [Customize](#customize).
 ```
 
 ### Create a table
@@ -338,7 +411,9 @@ class State(rx.State):
     ]
 ```
 
-To iterate a list state var, use [`rx.foreach`](/docs/components/rendering-iterables/) — it takes an iterable and a function that renders each item. Here `show_user` receives a `User` and returns a `table.row`:
+> **From example data to your own data.** This tutorial keeps two users in memory. For a business dashboard, load records from PostgreSQL or MySQL using a Python database library, or fetch data from Airtable or a CRM through its API. Map the records to the fields in `User` and update `State.users`. Saving form submissions requires a corresponding database write or API call. Start with the [database overview](/docs/database/overview/).
+
+To iterate a list state var, use `rx.foreach` (see [rendering iterables](/docs/components/rendering-iterables/)) — it takes an iterable and a function that renders each item. Here `show_user` receives a `User` and returns a `table.row`:
 
 ```python
 def show_user(user: User) -> rx.Component:
@@ -431,7 +506,7 @@ We build a form using `rx.form`, which takes several components such as `rx.inpu
 
 The `rx.input` component takes in several props. The `placeholder` prop is the text that is displayed in the input field when it is empty. The `name` prop is the name of the input field, which gets passed through in the dictionary when the form is submitted. The `required` prop is a boolean that determines if the input field is required.
 
-The `rx.select` component takes in a list of options that are displayed in the dropdown. The other props used here are identical to the `rx.input` component.
+The `rx.select` component takes in a list of options that are displayed in the dropdown. The `name` prop identifies the submitted field. `default_value="Male"` selects an initial value; a placeholder alone does not select an option.
 
 ```python demo
 rx.form(
@@ -442,13 +517,15 @@ rx.form(
     ),
     rx.select(
         ["Male", "Female"],
-        placeholder="Male",
+        placeholder="Select gender",
+        default_value="Male",
         name="gender",
+        custom_attrs={"aria-label": "Gender"},
     ),
 )
 ```
 
-This form is all very compact as you can see from the example, so we need to add some styling to make it look better. We can do this by adding a `vstack` component around the form fields. The `vstack` component stacks the form fields vertically. Check out the [layout](/docs/styling/layout/) docs for more information on how to layout your app.
+The unstyled form above has no space between its fields. Wrap them in `rx.vstack` to add consistent gaps, use `align="stretch"` to give them matching widths, and limit the form to `24em` so it stays readable on wide screens. See the [layout](/docs/styling/layout/) docs for more options.
 
 ```python demo
 rx.form(
@@ -460,10 +537,17 @@ rx.form(
         ),
         rx.select(
             ["Male", "Female"],
-            placeholder="Male",
+            placeholder="Select gender",
+            default_value="Male",
             name="gender",
+            custom_attrs={"aria-label": "Gender"},
         ),
+        align="stretch",
+        spacing="3",
+        width="100%",
     ),
+    width="100%",
+    max_width="24em",
 )
 ```
 
@@ -493,19 +577,26 @@ def form():
             ),
             rx.select(
                 ["Male", "Female"],
-                placeholder="Male",
+                placeholder="Select gender",
+                default_value="Male",
                 name="gender",
+                custom_attrs={"aria-label": "Gender"},
             ),
             rx.button("Submit", type="submit"),
+            align="stretch",
+            spacing="3",
+            width="100%",
         ),
         on_submit=State.add_user,
         reset_on_submit=True,
+        width="100%",
+        max_width="24em",
     )
 ```
 
 Finally we must add the new `form()` component we have defined to the `index()` function so that the form is rendered on the page.
 
-Below is the full code for the app so far. If you try this form out you will see that you can add new users to the table by filling out the form and clicking the submit button. The form data will also appear as a toast (a small window in the corner of the page) on the screen when submitted.
+Below is the full code for the app so far. If you try this form out you will see that you can add new users to the table by filling out the form and clicking the submit button. The embedded demo also shows a toast; the code below focuses on adding the row.
 
 ```python exec
 class State3(rx.State):
@@ -542,13 +633,20 @@ def form():
             ),
             rx.select(
                 ["Male", "Female"],
-                placeholder="Male",
+                placeholder="Select gender",
+                default_value="Male",
                 name="gender",
+                custom_attrs={"aria-label": "Gender"},
             ),
             rx.button("Submit", type="submit"),
+            align="stretch",
+            spacing="3",
+            width="100%",
         ),
         on_submit=State3.add_user,
         reset_on_submit=True,
+        width="100%",
+        max_width="24em",
     )
 ```
 
@@ -606,13 +704,20 @@ def form():
             ),
             rx.select(
                 ["Male", "Female"],
-                placeholder="Male",
+                placeholder="Select gender",
+                default_value="Male",
                 name="gender",
+                custom_attrs={"aria-label": "Gender"},
             ),
             rx.button("Submit", type="submit"),
+            align="stretch",
+            spacing="3",
+            width="100%",
         ),
         on_submit=State.add_user,
         reset_on_submit=True,
+        width="100%",
+        max_width="24em",
     )
 
 
@@ -645,8 +750,8 @@ We will place the form inside of a `rx.dialog` component (also called a modal). 
 ```python
 rx.dialog.trigger(
     rx.button(
-        rx.icon("plus", size=26),
-        rx.text("Add User", size="4"),
+        rx.icon("plus", size=18),
+        rx.text("Add User", size="2"),
     ),
 )
 ```
@@ -654,19 +759,17 @@ rx.dialog.trigger(
 After the trigger we have the `rx.dialog.content` which contains everything within our dialog, including a title, a description and our form. The Cancel button uses `rx.dialog.close`. The Submit button stays inside the form, and the `on_submit` handler closes the controlled dialog only after the required fields validate.
 
 ```python
-(
+rx.flex(
     rx.dialog.close(
-        rx.button(
-            "Cancel",
-            variant="soft",
-            color_scheme="gray",
-        ),
+        rx.button("Cancel", type="button", variant="soft", color_scheme="gray"),
     ),
+    rx.button("Submit", type="submit"),
+    spacing="3",
+    justify="end",
 )
-rx.button("Submit", type="submit")
 ```
 
-To close the dialog after a valid submission, add a dialog-specific state class. The browser will not call `add_user` while a required field is empty, so the dialog remains open for native validation in that case.
+To close the dialog after a valid submission, add `add_user_dialog_open` and its setter to your existing `State` class, then close it in `add_user` as shown in the full code below. The isolated embedded demo uses `DialogState3` for the same behavior. The browser will not call `add_user` while a required field is empty, so the dialog remains open for native validation in that case.
 
 ```python exec
 class DialogState3(rx.State):
@@ -690,14 +793,14 @@ class DialogState3(rx.State):
         )
 ```
 
-The total code for the dialog with the form in it is below.
+The demo below shows the dialog layout. For your app, use the complete `State` and `add_customer_button` code immediately after the demo.
 
 ```python demo
 rx.dialog.root(
     rx.dialog.trigger(
         rx.button(
-            rx.icon("plus", size=26),
-            rx.text("Add User", size="4"),
+            rx.icon("plus", size=18),
+            rx.text("Add User", size="2"),
         ),
     ),
     rx.dialog.content(
@@ -717,13 +820,16 @@ rx.dialog.root(
                 ),
                 rx.select(
                     ["Male", "Female"],
-                    placeholder="Male",
+                    placeholder="Select gender",
+                    default_value="Male",
                     name="gender",
+                    custom_attrs={"aria-label": "Gender"},
                 ),
                 rx.flex(
                     rx.dialog.close(
                         rx.button(
                             "Cancel",
+                            type="button",
                             variant="soft",
                             color_scheme="gray",
                         ),
@@ -753,8 +859,8 @@ def add_customer_button() -> rx.Component:
     return rx.dialog.root(
         rx.dialog.trigger(
             rx.button(
-                rx.icon("plus", size=26),
-                rx.text("Add User", size="4"),
+                rx.icon("plus", size=18),
+                rx.text("Add User", size="2"),
             ),
         ),
         rx.dialog.content(
@@ -773,13 +879,16 @@ def add_customer_button() -> rx.Component:
                     ),
                     rx.select(
                         ["Male", "Female"],
-                        placeholder="Male",
+                        placeholder="Select gender",
+                        default_value="Male",
                         name="gender",
+                        custom_attrs={"aria-label": "Gender"},
                     ),
                     rx.flex(
                         rx.dialog.close(
                             rx.button(
                                 "Cancel",
+                                type="button",
                                 variant="soft",
                                 color_scheme="gray",
                             ),
@@ -864,8 +973,8 @@ def add_customer_button() -> rx.Component:
     return rx.dialog.root(
         rx.dialog.trigger(
             rx.button(
-                rx.icon("plus", size=26),
-                rx.text("Add User", size="4"),
+                rx.icon("plus", size=18),
+                rx.text("Add User", size="2"),
             ),
         ),
         rx.dialog.content(
@@ -884,13 +993,16 @@ def add_customer_button() -> rx.Component:
                     ),
                     rx.select(
                         ["Male", "Female"],
-                        placeholder="Male",
+                        placeholder="Select gender",
+                        default_value="Male",
                         name="gender",
+                        custom_attrs={"aria-label": "Gender"},
                     ),
                     rx.flex(
                         rx.dialog.close(
                             rx.button(
                                 "Cancel",
+                                type="button",
                                 variant="soft",
                                 color_scheme="gray",
                             ),
@@ -935,6 +1047,8 @@ def index() -> rx.Component:
 ## Plot a graph
 
 Next we'll plot the user data in a graph using Reflex's built-in recharts library, counting users by gender.
+
+> **Real-time dashboards and cross-filtering.** The chart in this tutorial updates after a form submission changes its state data. To extend it to streaming data, add a data source and an event handler that updates state as records arrive; see [background events](/docs/events/background-events/). For cross-filtering across several charts, connect chart click events to a shared filter in state and use that filter when computing each chart's data. These are extensions to the example below.
 
 ### Transform the data
 
@@ -1034,8 +1148,8 @@ def add_customer_button() -> rx.Component:
     return rx.dialog.root(
         rx.dialog.trigger(
             rx.button(
-                rx.icon("plus", size=26),
-                rx.text("Add User", size="4"),
+                rx.icon("plus", size=18),
+                rx.text("Add User", size="2"),
             ),
         ),
         rx.dialog.content(
@@ -1054,13 +1168,16 @@ def add_customer_button() -> rx.Component:
                     ),
                     rx.select(
                         ["Male", "Female"],
-                        placeholder="Male",
+                        placeholder="Select gender",
+                        default_value="Male",
                         name="gender",
+                        custom_attrs={"aria-label": "Gender"},
                     ),
                     rx.flex(
                         rx.dialog.close(
                             rx.button(
                                 "Cancel",
+                                type="button",
                                 variant="soft",
                                 color_scheme="gray",
                             ),
@@ -1168,8 +1285,8 @@ def add_customer_button() -> rx.Component:
     return rx.dialog.root(
         rx.dialog.trigger(
             rx.button(
-                rx.icon("plus", size=26),
-                rx.text("Add User", size="4"),
+                rx.icon("plus", size=18),
+                rx.text("Add User", size="2"),
             ),
         ),
         rx.dialog.content(
@@ -1188,13 +1305,16 @@ def add_customer_button() -> rx.Component:
                     ),
                     rx.select(
                         ["Male", "Female"],
-                        placeholder="male",
+                        placeholder="Select gender",
+                        default_value="Male",
                         name="gender",
+                        custom_attrs={"aria-label": "Gender"},
                     ),
                     rx.flex(
                         rx.dialog.close(
                             rx.button(
                                 "Cancel",
+                                type="button",
                                 variant="soft",
                                 color_scheme="gray",
                             ),
@@ -1252,7 +1372,7 @@ def index() -> rx.Component:
     )
 ```
 
-If you run the app locally with no seed users, the graph is empty until you add one — `transform_data` only runs when a user is added. The next section fixes that by calling it on page load.
+Even with the two seed users, the graph is empty until you add one — `transform_data` only runs when a user is added. The next section fixes that by calling it on page load.
 
 ## Customize
 
@@ -1284,7 +1404,7 @@ rx.vstack(
         size="3",
     ),
     graph(),
-    on_mouse_enter=State4.transform_data,
+    on_mount=State4.transform_data,
     spacing="4",
     border=f"1px solid {rx.color('slate', 5)}",
     border_radius="12px",
@@ -1301,94 +1421,122 @@ app.add_page(
 )
 ```
 
-### Revisit `rx.App()`
+### Customize the theme
 
-At the beginning of the tutorial we also mentioned that we defined our app using `app=rx.App()`. We can also pass in some props to the `rx.App` component to customize the app.
-
-The most important one is `theme` which allows you to customize the look and feel of the app. The `theme` prop takes in an `rx.theme` component which has several props that can be set.
-
-The `radius` prop sets the global radius value for the app that is inherited by all components that have a `radius` prop. It can be overwritten locally for a specific component by manually setting the `radius` prop.
-
-The `accent_color` prop sets the accent color of the app. See the [theme docs](/docs/library/other/theme/) for the full list of options.
-
-To see other props that can be set at the app level check out this [documentation](/docs/styling/theming/)
+Configure Radix styling in `rxconfig.py` with `RadixThemesPlugin`. Keep the generated `app_name` and any other configuration you already use:
 
 ```python
-app = rx.App(
-    theme=rx.theme(radius="full", accent_color="grass"),
+# rxconfig.py
+import reflex as rx
+
+config = rx.Config(
+    app_name="dashboard_tutorial",
+    plugins=[
+        rx.plugins.RadixThemesPlugin(
+            theme=rx.theme(radius="full", accent_color="grass"),
+        ),
+    ],
 )
 ```
 
-The theme applies at the app level, so you'll need to run locally to see it in action.
+`radius` sets the default corner radius and `accent_color` sets the theme's accent color. Individual components can override these defaults. See [theming](/docs/styling/theming/) for more options. Restart the app after editing `rxconfig.py`.
 
 ## Full app styled
 
-Finally let's make some styling updates. We will add hover styling to the table rows and center the table inside `show_user` with `style={"_hover": {"bg": rx.color("gray", 3)}}, align="center"`.
+Replace `dashboard_tutorial/dashboard_tutorial.py` with the complete code below. Keep the `rxconfig.py` from the previous section. The app uses session state: added users are not saved to a database.
 
-In addition, we will add some `width="100%"` and `align="center"` to the `index()` component to center the items on the page and ensure they stretch the full width of the page.
+Finally let's make some styling updates. We will add hover styling to the table rows and vertically align the cells inside `show_user` with `style={"_hover": {"bg": rx.color("gray", 3)}}, align="center"`.
+
+The finished layout uses one clean card with a directory and an audience breakdown. A live badge shows the customer count. The chart uses horizontal bars with a numeric x-axis and category y-axis; its range adjusts to the data. The table scrolls horizontally on smaller screens.
 
 Check out the full code and interactive app below:
 
 ```python eval
 rx.box(
-    rx.vstack(
-        rx.hstack(
-            rx.vstack(
-                rx.text(
-                    "Users",
-                    size="4",
-                    weight="bold",
-                    color=rx.color("slate", 12),
-                    text_align="left",
-                    width="100%",
+    rx.box(
+        rx.box(
+            rx.box(
+                rx.heading("Customers", size="6", as_="h3", margin="0"),
+                rx.badge(
+                    State5.users.length(),
+                    variant="soft",
+                    color_scheme="gray",
+                    radius="full",
                 ),
-                rx.text(
-                    "Add customers and watch the chart update.",
-                    size="2",
-                    color=rx.color("slate", 10),
-                    text_align="left",
-                    width="100%",
-                ),
-                spacing="1",
-                align="start",
+                display="flex",
+                align_items="center",
+                gap="12px",
             ),
-            rx.spacer(),
-            add_customer_button5(),
-            align="center",
-            width="100%",
+            rx.text(
+                "Your customer directory and audience breakdown.",
+                size="2",
+                color=rx.color("slate", 11),
+                margin_top="6px",
+            ),
         ),
+        add_customer_button5(),
+        display="flex",
+        align_items="center",
+        justify_content="space-between",
+        flex_wrap="wrap",
+        gap="16px",
+        padding="24px",
+    ),
+    rx.box(
         rx.table.root(
             rx.table.header(
                 rx.table.row(
                     rx.table.column_header_cell("Name"),
                     rx.table.column_header_cell("Email"),
                     rx.table.column_header_cell("Gender"),
-                ),
+                )
             ),
-            rx.table.body(
-                rx.foreach(State5.users, show_user5),
-            ),
-            variant="surface",
-            size="2",
+            rx.table.body(rx.foreach(State5.users, show_user5)),
+            variant="ghost",
+            size="3",
             width="100%",
         ),
-        graph5(),
-        align="stretch",
+        overflow_x="auto",
         width="100%",
-        on_mouse_enter=State5.transform_data,
-        spacing="4",
-        padding="1.75em 2em",
+        border_top=f"1px solid {rx.color('slate', 4)}",
+        border_bottom=f"1px solid {rx.color('slate', 4)}",
+        padding_x="12px",
     ),
+    rx.box(
+        rx.text("Audience breakdown", size="3", weight="bold"),
+        rx.text(
+            "Customers by gender",
+            size="2",
+            color=rx.color("slate", 11),
+            margin_top="4px",
+            margin_bottom="20px",
+        ),
+        graph5(),
+        padding="24px",
+    ),
+    width="100%",
+    min_width="0",
+    max_width="64em",
+    on_mount=State5.transform_data,
+    margin_x="auto",
+    margin_y="24px",
     border=f"1px solid {rx.color('slate', 5)}",
-    border_radius="12px",
-    margin_y="1em",
+    border_radius="16px",
     background=rx.color("slate", 1),
+    overflow="hidden",
+    box_shadow="0 4px 24px rgba(0, 0, 0, 0.03)",
+    style={
+        "& *": {"box_sizing": "border-box"},
+        "& p, & h3": {"text_align": "left"},
+    },
 )
 ```
 
 ```python
-import reflex as rx
+import dataclasses
 from collections import Counter
+
+import reflex as rx
 
 
 @dataclasses.dataclass
@@ -1444,8 +1592,8 @@ def add_customer_button() -> rx.Component:
     return rx.dialog.root(
         rx.dialog.trigger(
             rx.button(
-                rx.icon("plus", size=26),
-                rx.text("Add User", size="4"),
+                rx.icon("plus", size=18),
+                rx.text("Add User", size="2"),
             ),
         ),
         rx.dialog.content(
@@ -1464,13 +1612,16 @@ def add_customer_button() -> rx.Component:
                     ),
                     rx.select(
                         ["Male", "Female"],
-                        placeholder="male",
+                        placeholder="Select gender",
+                        default_value="Male",
                         name="gender",
+                        custom_attrs={"aria-label": "Gender"},
                     ),
                     rx.flex(
                         rx.dialog.close(
                             rx.button(
                                 "Cancel",
+                                type="button",
                                 variant="soft",
                                 color_scheme="gray",
                             ),
@@ -1494,94 +1645,118 @@ def add_customer_button() -> rx.Component:
 
 def graph():
     return rx.recharts.bar_chart(
+        rx.recharts.cartesian_grid(
+            horizontal=False, stroke_dasharray="3 3", stroke=rx.color("slate", 4)
+        ),
+        rx.recharts.x_axis(
+            type_="number",
+            allow_decimals=False,
+            axis_line=False,
+            tick_line=False,
+            domain=[0, "dataMax + 1"],
+        ),
+        rx.recharts.y_axis(
+            type_="category",
+            data_key="name",
+            axis_line=False,
+            tick_line=False,
+            width=64,
+        ),
         rx.recharts.bar(
             data_key="value",
             fill=rx.color("accent", 9),
-            radius=6,
-            bar_size=48,
-        ),
-        rx.recharts.x_axis(
-            data_key="name",
-            tick_line=False,
-            axis_line=False,
-            padding={"left": 24, "right": 24},
-        ),
-        rx.recharts.y_axis(
-            tick_line=False,
-            axis_line=False,
-            allow_decimals=False,
-        ),
-        rx.recharts.cartesian_grid(
-            stroke_dasharray="3 3",
-            vertical=False,
-            stroke=rx.color("slate", 4),
+            radius=[0, 6, 6, 0],
+            bar_size=28,
         ),
         data=State.users_for_graph,
+        layout="vertical",
         width="100%",
-        height=200,
-        margin={"top": 8, "right": 8, "bottom": 0, "left": 0},
+        height=160,
+        margin={"top": 0, "right": 16, "bottom": 0, "left": 0},
     )
 
 
 def index() -> rx.Component:
     return rx.box(
-        rx.vstack(
-            rx.hstack(
-                rx.vstack(
-                    rx.text(
-                        "Users",
-                        size="4",
-                        weight="bold",
-                        color=rx.color("slate", 12),
-                        text_align="left",
-                        width="100%",
+        rx.box(
+            rx.box(
+                rx.box(
+                    rx.heading("Customers", size="6", as_="h3", margin="0"),
+                    rx.badge(
+                        State.users.length(),
+                        variant="soft",
+                        color_scheme="gray",
+                        radius="full",
                     ),
-                    rx.text(
-                        "Add customers and watch the chart update.",
-                        size="2",
-                        color=rx.color("slate", 10),
-                        text_align="left",
-                        width="100%",
-                    ),
-                    spacing="1",
-                    align="start",
+                    display="flex",
+                    align_items="center",
+                    gap="12px",
                 ),
-                rx.spacer(),
-                add_customer_button(),
-                align="center",
-                width="100%",
+                rx.text(
+                    "Your customer directory and audience breakdown.",
+                    size="2",
+                    color=rx.color("slate", 11),
+                    margin_top="6px",
+                ),
             ),
+            add_customer_button(),
+            display="flex",
+            align_items="center",
+            justify_content="space-between",
+            flex_wrap="wrap",
+            gap="16px",
+            padding="24px",
+        ),
+        rx.box(
             rx.table.root(
                 rx.table.header(
                     rx.table.row(
                         rx.table.column_header_cell("Name"),
                         rx.table.column_header_cell("Email"),
                         rx.table.column_header_cell("Gender"),
-                    ),
+                    )
                 ),
-                rx.table.body(
-                    rx.foreach(State.users, show_user),
-                ),
-                variant="surface",
-                size="2",
+                rx.table.body(rx.foreach(State.users, show_user)),
+                variant="ghost",
+                size="3",
                 width="100%",
             ),
-            graph(),
-            align="stretch",
+            overflow_x="auto",
             width="100%",
-            spacing="4",
-            padding="1.75em 2em",
+            border_top=f"1px solid {rx.color('slate', 4)}",
+            border_bottom=f"1px solid {rx.color('slate', 4)}",
+            padding_x="12px",
         ),
+        rx.box(
+            rx.text("Audience breakdown", size="3", weight="bold"),
+            rx.text(
+                "Customers by gender",
+                size="2",
+                color=rx.color("slate", 11),
+                margin_top="4px",
+                margin_bottom="20px",
+            ),
+            graph(),
+            padding="24px",
+        ),
+        width="100%",
+        min_width="0",
+        max_width="64em",
+        margin_x="auto",
+        margin_y="24px",
         border=f"1px solid {rx.color('slate', 5)}",
-        border_radius="12px",
-        margin_y="1em",
+        border_radius="16px",
         background=rx.color("slate", 1),
+        overflow="hidden",
+        box_shadow="0 4px 24px rgba(0, 0, 0, 0.03)",
+        style={
+            "& *": {"box_sizing": "border-box"},
+            "& p, & h3": {"text_align": "left"},
+        },
     )
 
 
-app = rx.App(
-    theme=rx.theme(radius="full", accent_color="grass"),
-)
+app = rx.App()
 
 app.add_page(
     index,
@@ -1604,3 +1779,25 @@ Along the way you learned:
 - **State** — how to store data that changes over time.
 - **Events** — how to respond to user actions and update the UI.
 - **Styling** — tweaking theme, layout, and hover states.
+
+Use this table, form, and chart pattern as the starting point for an internal admin panel, an order tracker, or a sales dashboard. To replace a shared spreadsheet or connect a CRM, add persistent storage and the access controls your team needs.
+
+## FAQ
+
+```md faq
+# Which Python framework can I use for an internal tool or analytics dashboard?
+
+Reflex lets you build the UI and backend logic in Python. This tutorial combines a data table, a form, and a bar chart into an interactive analytics dashboard. You can reuse those components for an internal tool without writing a separate JavaScript frontend.
+```
+
+```md faq
+# Can this dashboard connect to a real database instead of hardcoded data?
+
+Yes. Load records with a Python database library and assign them to `State.users`, then persist new records in the form's event handler. PostgreSQL and MySQL require a database connection; Airtable and CRM services require their own API integration. The [database docs](/docs/database/overview/) explain how to connect and query a database.
+```
+
+```md faq
+# Does the chart update in real time as data changes?
+
+The chart updates when `transform_data` changes `users_for_graph`, which happens after a user submits the form in this tutorial. External database changes do not automatically update this state. A streaming dashboard needs additional polling or event handling to fetch new data and refresh the chart.
+```

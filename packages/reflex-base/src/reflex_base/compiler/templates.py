@@ -388,18 +388,8 @@ export const initialEvents = () => []
 """
     )
 
-    state_reducer_str = "\n".join(
-        rf'const [{format_state_name(state_name)}, dispatch_{format_state_name(state_name)}] = useReducer(applyDelta, initialState["{state_name}"])'
-        for state_name in initial_state
-    )
-
-    create_state_contexts_str = "\n".join(
-        rf"createElement(StateContexts.{format_state_name(state_name)},{{value: {format_state_name(state_name)}}},"
-        for state_name in initial_state
-    )
-
-    dispatchers_str = "\n".join(
-        f'"{state_name}": dispatch_{format_state_name(state_name)},'
+    substates_str = "".join(
+        f"\n  ['{state_name}', '{format_state_name(state_name)}'],"
         for state_name in initial_state
     )
 
@@ -431,7 +421,7 @@ if (typeof window !== "undefined") {
         else ""
     )
 
-    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useReducer, useState, createElement, useEffect }} from "react"
+    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useReducer, useRef, useState, createElement, useEffect, useLayoutEffect }} from "react"
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
 import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, getStateContext, registerApp, eventLoop }} from "$/utils/context-registry"
 import {{ jsx }} from "@emotion/react";
@@ -522,20 +512,82 @@ export function EventLoopProvider({{ children }}) {{
   );
 }}
 
-export function StateProvider({{ children }}) {{
-  {state_reducer_str}
-  const dispatchers = useMemo(() => {{
-    return {{
-      {dispatchers_str}
-    }}
-  }}, [])
+// ``useLayoutEffect`` warns when rendered on the server, where no effect runs
+// at all, so fall back to ``useEffect`` there.
+const useIsomorphicLayoutEffect =
+  typeof document !== "undefined" ? useLayoutEffect : useEffect;
 
-  return (
-    {create_state_contexts_str}
-    createElement(DispatchContext, {{value: dispatchers}}, children)
-    {")" * len(initial_state)}
-  )
-}}"""
+// Holds the mutable substate -> dispatch registry that ``SubstateProvider``
+// writes into and ``EventLoopProvider`` reads. The registry object identity is
+// stable for the lifetime of the tree, so neither adding a dispatcher nor
+// updating a substate re-renders the consumers of ``DispatchContext``.
+const DispatchProvider = ({{ children }}) => {{
+  const dispatchers = useRef({{}});
+  return useMemo(
+    () =>
+      createElement(DispatchContext, {{ value: dispatchers.current }}, children),
+    [children],
+  );
+}};
+
+// One provider per substate: each owns its own reducer, so a delta for one
+// substate only re-renders its provider instead of recreating every provider.
+const SubstateProvider = ({{ children, substateName, contextName }}) => {{
+  const dispatchers = useContext(DispatchContext);
+  const [state, dispatchSubstate] = useReducer(
+    applyDelta,
+    initialState[substateName],
+  );
+  // A layout effect, not a passive one: layout effects for the whole commit
+  // run before any passive effect, so every dispatcher is registered before
+  // ``EventLoopProvider`` (mounted below this provider) connects the socket.
+  // A delta naming an unregistered substate is a fatal state mismatch.
+  useIsomorphicLayoutEffect(() => {{
+    dispatchers[substateName] = dispatchSubstate;
+    return () => {{
+      delete dispatchers[substateName];
+    }};
+  }}, [dispatchers, dispatchSubstate, substateName]);
+  return useMemo(
+    () => createElement(StateContexts[contextName], {{ value: state }}, children),
+    [children, state, contextName],
+  );
+}};
+
+// ``[substateName, contextName]`` for every substate, outermost first.
+const SUBSTATES = [{substates_str}
+];
+
+function ClientStateProvider({{ children }}) {{
+  return useMemo(() => {{
+    let tree = children;
+    for (let i = SUBSTATES.length - 1; i >= 0; i--) {{
+      const [substateName, contextName] = SUBSTATES[i];
+      tree = createElement(SubstateProvider, {{ substateName, contextName }}, tree);
+    }}
+    return createElement(DispatchProvider, {{}}, tree);
+  }}, [children]);
+}}
+
+// The server renders once and never applies a delta, so it provides the
+// initial state through bare context providers. ``SubstateProvider`` would add
+// a second render level per substate, and the server renderer recurses once per
+// level, so with many substates rendering a page can exhaust the stack.
+function ServerStateProvider({{ children }}) {{
+  let tree = children;
+  for (let i = SUBSTATES.length - 1; i >= 0; i--) {{
+    const [substateName, contextName] = SUBSTATES[i];
+    tree = createElement(
+      StateContexts[contextName],
+      {{ value: initialState[substateName] }},
+      tree,
+    );
+  }}
+  return createElement(DispatchContext, {{ value: {{}} }}, tree);
+}}
+
+export const StateProvider =
+  typeof document === "undefined" ? ServerStateProvider : ClientStateProvider;"""
 
 
 def component_template(component: Component):

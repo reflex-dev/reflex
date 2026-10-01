@@ -1,5 +1,6 @@
 """Validate URL metadata in the actual production build, not only its inputs."""
 
+import json
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urljoin, urlsplit
@@ -14,7 +15,7 @@ SITEMAP = WEB / "public/sitemap.xml"
 
 
 class PageURLs(HTMLParser):
-    """Collect canonical and social URLs from generated HTML."""
+    """Collect canonical, social and structured metadata from generated HTML."""
 
     def __init__(self, html: str):
         super().__init__()
@@ -22,11 +23,15 @@ class PageURLs(HTMLParser):
         self.social = []
         self.markdown = []
         self.links = []
+        self.structured_data = []
+        self._json_ld = None
         self.feed(html)
 
     def handle_starttag(self, tag, attrs):
         """Collect URL-bearing metadata tags."""
         attrs = dict(attrs)
+        if tag == "script" and attrs.get("type") == "application/ld+json":
+            self._json_ld = []
         if tag == "link" and attrs.get("rel") == "canonical":
             self.canonical.append(attrs.get("href"))
         if (
@@ -42,6 +47,34 @@ class PageURLs(HTMLParser):
             or attrs.get("name") == "twitter:url"
         ):
             self.social.append(attrs.get("content"))
+
+    def handle_data(self, data):
+        """Collect script text without decoding JSON until the closing tag."""
+        if self._json_ld is not None:
+            self._json_ld.append(data)
+
+    def handle_endtag(self, tag):
+        """Parse complete structured-data scripts."""
+        if tag == "script" and self._json_ld is not None:
+            self.structured_data.append(json.loads("".join(self._json_ld)))
+            self._json_ld = None
+
+
+def check_breadcrumbs(metadata, url, canonical_urls):
+    """Validate ordered breadcrumbs against the exported public page inventory."""
+    breadcrumbs = [
+        data
+        for data in metadata.structured_data
+        if data.get("@type") == "BreadcrumbList"
+    ]
+    assert len(breadcrumbs) == 1, (url, breadcrumbs)
+    items = breadcrumbs[0]["itemListElement"]
+    assert items, url
+    assert [item["position"] for item in items] == list(range(1, len(items) + 1))
+    assert items[-1]["item"] == url
+    for item in items:
+        assert item["@type"] == "ListItem" and item["name"], (url, item)
+        assert item["item"] in canonical_urls, (url, item)
 
 
 @pytest.mark.xfail(
@@ -59,6 +92,7 @@ def test_generated_sitemap_and_page_urls_share_public_origin():
     ]
     assert urls
     assert len(urls) == len(set(urls))
+    canonical_urls = set(urls)
     canonical_paths = {urlsplit(url).path for url in urls}
     redirected = set()
     for url in urls:
@@ -70,6 +104,7 @@ def test_generated_sitemap_and_page_urls_share_public_origin():
         assert page.is_file(), page
         metadata = PageURLs(page.read_text())
         assert metadata.canonical == [url], (url, metadata.canonical)
+        check_breadcrumbs(metadata, url, canonical_urls)
         assert len(metadata.social) == 2, (url, metadata.social)
         assert all(value == url for value in metadata.social), (url, metadata.social)
         markdown_url = (
