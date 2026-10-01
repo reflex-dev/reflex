@@ -49,6 +49,43 @@ def test_state_js_still_handles_page_lifecycle_disconnect() -> None:
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
+def test_get_ref_value_preserves_empty_and_unset_controls() -> None:
+    """Form fields retain falsy values and serialize unset refs as null."""
+    content = STATE_JS_TEMPLATE.read_text()
+    helper = content[
+        content.index("export const getRefValue =") : content.index(
+            "export const getRefValues ="
+        )
+    ]
+    subprocess.run(
+        [
+            "node",
+            "--input-type=module",
+            "--eval",
+            helper
+            + """
+import assert from 'node:assert/strict';
+for (const value of ['', 0, false, 'filled']) {
+  const result = getRefValue({current: {value}});
+  assert.equal(result, value);
+}
+for (const ref of [undefined, {current: null},
+                   {current: {querySelector: () => null}}]) {
+  assert.equal(JSON.stringify({field: getRefValue(ref)}), '{"field":null}');
+}
+assert.equal(getRefValue({current: {
+  querySelector: () => ({value: 'selected'})
+}}), 'selected');
+assert.equal(getRefValue({current: {type: 'checkbox', checked: false}}), false);
+""",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
 def test_merge_slot_props_handles_conditional_event_handlers() -> None:
     """Falsy handlers, direct object merges and DOM-ref routing behave per contract."""
     content = STATE_JS_TEMPLATE.read_text()

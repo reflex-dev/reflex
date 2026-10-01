@@ -2089,6 +2089,35 @@ def _compile_memo_module_text(ctx: CompileContext) -> str:
     return "\n".join(code for _, code in memo_files)
 
 
+@pytest.mark.parametrize("form_factory", [rx.form.root, rx.el.form])
+def test_form_memo_preserves_control_refs(form_factory) -> None:
+    """Generated submit handlers keep control refs through nested auto-memos."""
+    from reflex_components_core.el.elements.forms import Form
+
+    ctx, _ = _compile_single_page(
+        lambda: form_factory(
+            rx.box(
+                rx.input(id="plain_field"),
+                rx.input(id="debounced_field", on_change=rx.console_log),
+                rx.radio_group(["a", "b"], id="unset_field"),
+                rx.text("Label", id="label"),
+                id="wrapper",
+            ),
+            id="form",
+        )
+    )
+    forms = [
+        definition.component
+        for definition in ctx.auto_memo_components.values()
+        if isinstance(definition.component, Form)
+    ]
+    assert len(forms) == 1
+    form_hooks = "\n".join(forms[0].add_hooks())
+    for field_id in ("plain_field", "debounced_field", "unset_field"):
+        assert f'getRefValue(refs["ref_{field_id}"])' in form_hooks
+    assert 'getRefValue(refs["ref_label"])' not in form_hooks
+
+
 def test_title_memo_body_renders_text_interpolation_not_bare_component() -> None:
     """The title's memo body must interpolate the state Var as text.
 

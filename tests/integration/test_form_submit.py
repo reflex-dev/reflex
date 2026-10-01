@@ -28,7 +28,12 @@ def FormSubmit(
         form_id: The form element ID.
         form_content_wrapper_id: The non-control wrapper ID.
     """
+    from reflex_components_core.el.elements.base import BaseHTML
+
     import reflex as rx
+
+    class NativeInput(BaseHTML):
+        tag = "input"
 
     class FormState(rx.State):
         form_data: rx.Field[dict] = rx.field(default_factory=dict)
@@ -52,12 +57,16 @@ def FormSubmit(
                 rx.vstack(
                     rx.input(id="name_input"),
                     rx.input(id="empty_input"),
+                    NativeInput.create(
+                        id="native_input", custom_attrs={"defaultValue": "native"}
+                    ),
                     rx.checkbox(id="bool_input"),
                     rx.switch(id="bool_input2"),
                     rx.checkbox(id="bool_input3"),
                     rx.switch(id="bool_input4"),
                     rx.slider(id="slider_input", default_value=[50], width="100%"),
                     rx.radio(["option1", "option2"], id="radio_input"),
+                    rx.radio_group(["u1", "u2"], id="radio_unset"),
                     rx.radio(FormState.var_options, id="radio_input_var"),
                     rx.select(
                         ["option1", "option2"],
@@ -270,6 +279,9 @@ async def test_submit(driver, form_submit: AppHarness):
 
     assert form_data["slider_input"] == "50"
     assert form_data["radio_input"] == "option2"
+    if by == By.ID:
+        assert form_data["radio_unset"] is None
+        assert form_data["native_input"] == "native"
     assert form_data["select_input"] == "option1"
     assert form_data["text_area_input"] == "Some\nText"
     assert form_data["debounce_input"] == "bar baz"

@@ -5,6 +5,7 @@ from reflex_base.event import EventChain, prevent_default
 from reflex_base.utils.exceptions import EventHandlerValueError
 from reflex_base.vars.base import Var
 from reflex_components_core.core.debounce import DebounceInput
+from reflex_components_core.el.elements.base import BaseHTML
 from reflex_components_core.el.elements.forms import (
     AUTO_HEIGHT_JS,
     ENTER_KEY_SUBMIT_JS,
@@ -46,8 +47,8 @@ def test_render_no_on_submit():
     assert f.event_triggers["on_submit"].events[0] == prevent_default
 
 
-def test_form_submit_filters_null_ref_values():
-    """Only form-control refs with resolved values should be submitted."""
+def test_form_submit_preserves_null_control_values():
+    """ID-backed form controls remain in the payload when their value is null."""
 
     class FormState(rx.State):
         @rx.event
@@ -65,12 +66,48 @@ def test_form_submit_filters_null_ref_values():
         id=FORM_ID,
     )
     submit_hook = form.add_hooks()[0]
-    assert "filter(([, value]) => value != null)" in submit_hook
+    assert "filter(([, value]) => value != null)" not in submit_hook
     assert f"ref_{EMAIL_FIELD_ID}" in submit_hook
     assert f"ref_{EMAIL_LABEL_ID}" not in submit_hook
     assert f"ref_{SUBMIT_BUTTON_ID}" not in submit_hook
     assert f"ref_{INPUT_WRAPPER_ID}" not in submit_hook
     assert f"ref_{FORM_ID}" not in submit_hook
+
+
+@pytest.mark.parametrize("native_tag", ["input", "select", "textarea"])
+def test_form_refs_include_custom_native_controls(native_tag):
+    """Custom native input elements with IDs are included in form data."""
+
+    class NativeInput(BaseHTML):
+        tag = native_tag
+
+    form = HTMLForm.create(NativeInput.create(id="native_input"))
+
+    assert "ref_native_input" in form.add_hooks()[0]
+
+
+def test_form_refs_follow_replaced_children():
+    """Replacing form children must not retain refs from the previous subtree."""
+    form = HTMLForm.create(Input.create(id="original"))
+    assert 'getRefValue(refs["ref_original"])' in form.add_hooks()[0]
+
+    form.children = [Input.create(id="replacement")]
+
+    hook = form.add_hooks()[0]
+    assert 'getRefValue(refs["ref_replacement"])' in hook
+    assert 'getRefValue(refs["ref_original"])' not in hook
+
+
+def test_form_refs_include_opted_in_custom_controls():
+    """Custom wrapped controls can opt in to ID-based form data."""
+
+    class CustomControl(rx.Component):
+        tag = "CustomControl"
+        is_form_control = True
+
+    form = HTMLForm.create(CustomControl.create(id="custom_control"))
+
+    assert "ref_custom_control" in form.add_hooks()[0]
 
 
 def test_form_refs_include_debounced_controls():

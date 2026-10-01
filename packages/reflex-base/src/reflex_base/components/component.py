@@ -729,6 +729,8 @@ T = TypeVar("T", bound="Component")
 class Component(BaseComponent, ABC):
     """A component with style, event trigger and other props."""
 
+    is_form_control: ClassVar[bool] = False
+
     style: Style = field(
         doc="The style of the component.",
         default_factory=Style,

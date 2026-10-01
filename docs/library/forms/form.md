@@ -164,6 +164,8 @@ def form_example():
 When using the `name` attribute in form controls like `rx.switch`, `rx.radio_group`, and `rx.checkbox`, these controls will only be included in the form data if their values are set (e.g., if the checkbox is checked, the switch is toggled, or a radio option is selected).
 
 If you need these controls to be passed in the form data even when their values are not set, you can use the `id` attribute instead of name. The id attribute ensures that the control is always included in the submitted form data, regardless of whether its value is set or not.
+
+Custom native `input`, `select`, and `textarea` components with an `id` are included automatically. For other custom form controls, set `is_form_control = True` on the component class to include its ID-based value in submissions.
 ```
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=5287&end=6040

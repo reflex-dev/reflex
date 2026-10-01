@@ -39,6 +39,7 @@ from reflex_components_core.el.element import Element
 from .base import BaseHTML, RawTextBaseHTML, VoidBaseHTML
 
 _DYNAMIC_FORM_FIELD = object()
+_NATIVE_FORM_CONTROL_TAGS = frozenset({"input", "select", "textarea"})
 
 
 def _handle_submit_js_template(
@@ -66,9 +67,7 @@ def _handle_submit_js_template(
         ev.preventDefault()
         const {form_data} = {{
             ...Object.fromEntries(new FormData($form).entries()),
-            ...Object.fromEntries(
-                Object.entries({field_ref_mapping}).filter(([, value]) => value != null)
-            )
+            ...{field_ref_mapping}
         }};
 
         ({on_submit_event_chain}(ev));
@@ -103,6 +102,10 @@ def _iter_form_components(component: BaseComponent) -> Iterator[BaseComponent]:
     Yields:
         The component and its nested component descendants.
     """
+    form_control_source = getattr(component, "_form_control_source", None)
+    if isinstance(form_control_source, BaseComponent):
+        yield from _iter_form_components(form_control_source)
+        return
     yield component
     for child in component.children:
         if isinstance(child, BaseComponent):
@@ -143,16 +146,24 @@ def _get_static_string_prop(
 def _is_form_control_component(component: BaseComponent) -> bool:
     """Return whether a component or its memoized type is a form control.
 
+    Custom component classes can opt in with ``is_form_control = True``.
+
     Args:
         component: The component to inspect.
 
     Returns:
         Whether the component contributes a form field.
     """
-    if getattr(component, "_is_form_control", False):
+    if getattr(component, "_is_form_control", False) or getattr(
+        component, "is_form_control", False
+    ):
         return True
     wrapped_component_type = getattr(component, "_wrapped_component_type", None)
-    return getattr(wrapped_component_type, "_is_form_control", False)
+    if getattr(wrapped_component_type, "_is_form_control", False) or getattr(
+        wrapped_component_type, "is_form_control", False
+    ):
+        return True
+    return getattr(component, "tag", None) in _NATIVE_FORM_CONTROL_TAGS
 
 
 def _get_form_control_refs(component: BaseComponent) -> set[str]:
@@ -353,18 +364,6 @@ class Form(BaseHTML):
         ).hexdigest()
         return form
 
-    def _get_form_control_refs(self) -> set[str]:
-        """Get refs for form controls in this form's component subtree.
-
-        Returns:
-            The refs owned by form controls.
-        """
-        refs = getattr(self, "_form_control_refs", None)
-        if refs is None:
-            refs = _get_form_control_refs(self)
-            object.__setattr__(self, "_form_control_refs", refs)
-        return refs
-
     def add_imports(self) -> ImportDict:
         """Add imports needed by the form component.
 
@@ -408,9 +407,9 @@ class Form(BaseHTML):
         return render_tag
 
     def _get_form_refs(self) -> dict[str, Any]:
-        form_control_refs = self._get_form_control_refs()
+        form_control_refs = _get_form_control_refs(self)
         form_refs = {}
-        for ref in dict.fromkeys(self._get_all_refs()):
+        for ref in self._get_all_refs():
             if ref not in form_control_refs:
                 continue
             # when ref start with refs_ it's an array of refs, so we need different method
