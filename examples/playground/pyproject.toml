@@ -1,0 +1,9 @@
+[project]
+name = "reflex-playground"
+version = "0.1.0"
+description = "Reflex example app, also the fixture of the Reflex macro benchmarks."
+readme = "README.md"
+requires-python = ">=3.10"
+# PyPI rejects uploads carrying this classifier: the playground is never published.
+classifiers = ["Private :: Do Not Upload"]
+dependencies = ["reflex>=0.8.23"]
