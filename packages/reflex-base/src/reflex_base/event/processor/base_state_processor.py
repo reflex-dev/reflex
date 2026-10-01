@@ -11,12 +11,13 @@ from collections.abc import Mapping, Sequence
 from enum import Enum
 from importlib.util import find_spec
 from time import perf_counter
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, get_origin
 
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import types
 from reflex_base import otel
+from reflex_base.event import FORM_DATA_ENTRIES_KEY
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.registry import RegisteredEventHandler
@@ -88,6 +89,34 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
     raise TypeError(msg)
 
 
+def _transform_form_data(value: Any, hinted_args: Any) -> Any:
+    """Build form data as the annotated MultiDict or a dict.
+
+    Args:
+        value: The event argument, possibly a form's wrapped ``[name, value]`` entries.
+        hinted_args: The type hint for the argument.
+
+    Returns:
+        A MultiDict of every entry when annotated as one (also from a plain
+        mapping), a dict keeping each name's last value for other form data,
+        otherwise the value unchanged.
+    """
+    entries = value.get(FORM_DATA_ENTRIES_KEY) if isinstance(value, dict) else None
+    if isinstance(value, Mapping) and hinted_args is not Any:
+        from starlette.datastructures import ImmutableMultiDict
+
+        if types.is_union(hinted_args):
+            hinted_args = types.value_inside_optional(hinted_args)
+        multidict_type = get_origin(hinted_args) or hinted_args
+        if isinstance(multidict_type, type) and issubclass(
+            multidict_type, ImmutableMultiDict
+        ):
+            if entries is None:
+                return multidict_type(value)
+            return multidict_type([(name, field) for name, field in entries])
+    return value if entries is None else dict(entries)
+
+
 def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
     """Transform an event argument based on its type hint.
 
@@ -104,6 +133,7 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
     from reflex.model import Model
     from reflex.utils.serializers import deserializers
 
+    value = _transform_form_data(value, hinted_args)
     if hinted_args is Any:
         return value
     if types.is_union(hinted_args):

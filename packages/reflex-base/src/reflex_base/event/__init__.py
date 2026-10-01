@@ -1138,6 +1138,9 @@ def checked_input_event(e: ObjectVar[JavascriptInputEvent]) -> tuple[Var[bool]]:
 
 FORM_DATA = Var(_js_expr="form_data")
 FORM_SUBMIT_MAPPING = TypeVar("FORM_SUBMIT_MAPPING", bound=Mapping[str, Any])
+# Wire key wrapping a form's ordered ``[name, value]`` entries; must match
+# ``FORM_DATA_ENTRIES_KEY`` in ``state.js``.
+FORM_DATA_ENTRIES_KEY = "__reflex_form_data__"
 
 
 def on_submit_event() -> tuple[Var[dict[str, Any]]]:
@@ -2082,16 +2085,23 @@ def _check_event_args_subclass_of_callback(
             type_match_found.setdefault(arg, False)
             callback_param_type = callback_param_name_to_type[arg]
 
+            provided_type = args_types_without_vars[i]
             try:
-                compare_result = typehint_issubclass(
-                    args_types_without_vars[i], callback_param_type
-                ) or _is_on_submit_mapping_event_arg_compatible_with_typed_dict(
-                    args_types_without_vars[i], callback_param_type, key
-                )
+                if isinstance(provided_type, TypeVar):
+                    # A generic spec arg takes on the callback's type within its bound.
+                    compare_result = typehint_issubclass(
+                        callback_param_type, provided_type.__bound__ or Any
+                    )
+                else:
+                    compare_result = typehint_issubclass(
+                        provided_type, callback_param_type
+                    ) or _is_on_submit_mapping_event_arg_compatible_with_typed_dict(
+                        provided_type, callback_param_type, key
+                    )
             except TypeError as te:
                 callback_name_context = f" of {callback_name}" if callback_name else ""
                 key_context = f" for {key}" if key else ""
-                msg = f"Could not compare types {args_types_without_vars[i]} and {callback_param_type} for argument {arg}{callback_name_context}{key_context}."
+                msg = f"Could not compare types {provided_type} and {callback_param_type} for argument {arg}{callback_name_context}{key_context}."
                 raise TypeError(msg) from te
 
             if compare_result:
@@ -2103,13 +2113,16 @@ def _check_event_args_subclass_of_callback(
             )
             delayed_exceptions.append(
                 EventHandlerArgTypeMismatchError(
-                    f"Event handler {key} expects {args_types_without_vars[i]} for argument {arg} but got {callback_param_type}{as_annotated_in} instead."
+                    f"Event handler {key} expects {provided_type} for argument {arg} but got {callback_param_type}{as_annotated_in} instead."
                 )
             )
 
         if all(type_match_found.values()):
             delayed_exceptions.clear()
-            if event_spec_index:
+            # A generic spec matches the callback's own types, so it is not a fallback.
+            if event_spec_index and not any(
+                isinstance(arg, TypeVar) for arg in args_types_without_vars
+            ):
                 args = get_args(provided_event_types[0])
 
                 args_types_without_vars = [
@@ -3031,6 +3044,7 @@ class EventNamespace:
     _EVENT_FIELDS = _EVENT_FIELDS
     FORM_DATA = FORM_DATA
     FORM_SUBMIT_MAPPING = FORM_SUBMIT_MAPPING
+    FORM_DATA_ENTRIES_KEY = FORM_DATA_ENTRIES_KEY
     upload_files = upload_files
     upload_files_chunk = upload_files_chunk
     stop_propagation = stop_propagation

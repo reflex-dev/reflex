@@ -10,7 +10,7 @@ from typing import Any, ClassVar, Literal, get_origin, get_type_hints
 
 from reflex_base.components.component import BaseComponent, Component, field
 from reflex_base.components.tags.tag import CommonTag
-from reflex_base.constants import EventTriggers
+from reflex_base.constants import Dirs, EventTriggers
 from reflex_base.event import (
     FORM_DATA,
     FORM_SUBMIT_MAPPING,
@@ -62,7 +62,7 @@ def _handle_submit_js_template(
     const handleSubmit_{handle_submit_unique_name} = useCallback((ev) => {{
         const $form = ev.target
         ev.preventDefault()
-        const {form_data} = Object.fromEntries(new FormData($form).entries());
+        const {form_data} = getFormData($form);
 
         ({on_submit_event_chain}(ev));
 
@@ -320,7 +320,10 @@ class Form(BaseHTML):
         Returns:
             The imports for the form component.
         """
-        return {"react": "useCallback"}
+        return {
+            "react": "useCallback",
+            f"$/{Dirs.STATE_PATH}": "getFormData",
+        }
 
     def add_hooks(self) -> list[str]:
         """Add hooks for the form.

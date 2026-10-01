@@ -121,3 +121,42 @@ assert.ok(!('ref' in mergeSlotProps({ref: null}, {inputRef: ownRef}, 'inputRef')
         capture_output=True,
         text=True,
     )
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
+def test_form_data_keeps_repeated_names_only_on_the_wire() -> None:
+    """Form data reads as a plain object but sends every entry to the backend."""
+    content = STATE_JS_TEMPLATE.read_text()
+    start = content.index("const FORM_DATA_ENTRIES_KEY =")
+    end = content.index("\n};\n", content.index("export const encodeEventValue =")) + 4
+    subprocess.run(
+        [
+            "node",
+            "--input-type=module",
+            "--eval",
+            """
+// The test form stands in for an HTMLFormElement: an array of its entries.
+globalThis.FormData = class {
+  constructor(form) { this.form = form; }
+  entries() { return this.form.values(); }
+};
+"""
+            + content[start:end]
+            + """
+import assert from 'node:assert/strict';
+const formData = getFormData([['tag', 'a'], ['name', 'x'], ['tag', 'b']]);
+assert.deepEqual(Object.keys(formData), ['tag', 'name']);
+assert.equal(formData.tag, 'b');
+assert.equal(JSON.stringify(formData), '{"tag":"b","name":"x"}');
+assert.equal(
+  JSON.stringify({payload: {form_data: formData}, missing: undefined}, encodeEventValue),
+  '{"payload":{"form_data":{"__reflex_form_data__":[["tag","a"],["name","x"],["tag","b"]]}},"missing":null}',
+);
+// A copy of the fields is a plain object again.
+assert.equal(JSON.stringify({...formData}, encodeEventValue), '{"tag":"b","name":"x"}');
+""",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )

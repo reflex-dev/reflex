@@ -168,6 +168,38 @@ Only controls with a `name` are included in the form data; the `id` attribute do
 # Video: Forms
 ```
 
+## Fields with the Same Name
+
+Several controls can share a `name`, such as a group of checkboxes. A `dict`
+annotation keeps only the last value submitted for each name. To receive every
+value in the order the form submitted them, annotate the handler's parameter
+with `MultiDict` (or `ImmutableMultiDict`) from `starlette.datastructures` and
+read them with `getlist`:
+
+```python
+from starlette.datastructures import MultiDict
+
+
+class ToppingsState(rx.State):
+    toppings: list[str] = []
+
+    @rx.event
+    def handle_submit(self, form_data: MultiDict):
+        self.toppings = form_data.getlist("topping")
+
+
+def toppings_form():
+    return rx.form(
+        rx.el.input(type="checkbox", name="topping", value="cheese"),
+        rx.el.input(type="checkbox", name="topping", value="olives"),
+        rx.button("Submit", type="submit"),
+        on_submit=ToppingsState.handle_submit,
+    )
+```
+
+Indexing a `MultiDict` with `form_data["topping"]` returns the last value, the
+same as a `dict`.
+
 ## Validating Form Data with a TypedDict
 
 The `on_submit` handler usually receives the form data as a plain `dict`, which

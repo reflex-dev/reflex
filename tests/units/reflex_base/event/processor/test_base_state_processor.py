@@ -7,7 +7,7 @@ import logging
 import traceback
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, TypedDict, cast
 
 import pytest
 import pytest_asyncio
@@ -16,9 +16,12 @@ from reflex_base import constants, otel
 from reflex_base.constants import CompileVars, RouteVar
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
+from reflex_base.event import FORM_DATA_ENTRIES_KEY
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.event.processor.base_state_processor import _transform_event_payload
 from reflex_base.registry import RegistrationContext
+from starlette.datastructures import ImmutableMultiDict, MultiDict
 
 import reflex as rx
 from reflex import event
@@ -1496,3 +1499,78 @@ async def test_navigation_delta_elides_connection_scoped_router_vars(
     # A reconnect (new sid, same headers) re-sends only the session.
     await run_event(view("/b", sid="sid2"))
     assert router_vars_in_deltas() == {"rx_router_session"}
+
+
+_FORM_DATA_ENTRIES = [["tag", "a"], ["name", "x"], ["tag", "b"]]
+
+
+class _TagsData(TypedDict):
+    tag: str
+    name: str
+
+
+@dataclasses.dataclass
+class _TagsRecord:
+    tag: str
+    name: str
+
+
+@pytest.mark.parametrize(
+    "hint", [Any, dict, dict[str, Any], Mapping[str, Any], _TagsData]
+)
+def test_transform_form_data_to_dict(hint: Any):
+    """Submitted form entries become a dict keeping each name's last value."""
+    payload = _transform_event_payload(
+        {"form_data": {FORM_DATA_ENTRIES_KEY: _FORM_DATA_ENTRIES}},
+        {"form_data": hint},
+    )
+    assert type(payload["form_data"]) is dict
+    assert payload["form_data"] == {"tag": "b", "name": "x"}
+
+
+def test_transform_form_data_for_unannotated_arg():
+    """Form entries are decoded even when the handler has no annotation."""
+    payload = _transform_event_payload(
+        {"form_data": {FORM_DATA_ENTRIES_KEY: _FORM_DATA_ENTRIES}}, {}
+    )
+    assert payload["form_data"] == {"tag": "b", "name": "x"}
+
+
+@pytest.mark.parametrize(
+    ("hint", "expected_type"),
+    [
+        (MultiDict, MultiDict),
+        (ImmutableMultiDict, ImmutableMultiDict),
+        (ImmutableMultiDict[str, str], ImmutableMultiDict),
+        (MultiDict | None, MultiDict),
+    ],
+)
+def test_transform_form_data_to_multidict(hint: Any, expected_type: type):
+    """A MultiDict annotation receives every submitted entry in order."""
+    payload = _transform_event_payload(
+        {"form_data": {FORM_DATA_ENTRIES_KEY: _FORM_DATA_ENTRIES}},
+        {"form_data": hint},
+    )
+    form_data = payload["form_data"]
+    assert type(form_data) is expected_type
+    assert form_data.getlist("tag") == ["a", "b"]
+    assert form_data["tag"] == "b"
+    assert form_data.multi_items() == [("tag", "a"), ("name", "x"), ("tag", "b")]
+
+
+def test_transform_plain_mapping_to_multidict():
+    """A plain dict payload, e.g. from a backend-built event, becomes a MultiDict."""
+    payload = _transform_event_payload(
+        {"form_data": {"tag": "a"}}, {"form_data": MultiDict}
+    )
+    assert type(payload["form_data"]) is MultiDict
+    assert payload["form_data"].getlist("tag") == ["a"]
+
+
+def test_transform_form_data_to_dataclass():
+    """Decoded form entries still feed structured annotations."""
+    payload = _transform_event_payload(
+        {"form_data": {FORM_DATA_ENTRIES_KEY: _FORM_DATA_ENTRIES}},
+        {"form_data": _TagsRecord},
+    )
+    assert payload["form_data"] == _TagsRecord(tag="b", name="x")

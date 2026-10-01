@@ -19,15 +19,23 @@ def FormSubmitName(form_component):
     Args:
         form_component: The str name of the form component to use.
     """
+    from starlette.datastructures import MultiDict
+
     import reflex as rx
 
     class FormState(rx.State):
         form_data: rx.Field[dict] = rx.field(default_factory=dict)
+        tags: rx.Field[list[str]] = rx.field(default_factory=list)
         val: str = "foo"
         options: list[str] = ["option1", "option2"]
 
+        @rx.event
         def form_submit(self, form_data: dict):
             self.form_data = form_data
+
+        @rx.event
+        def form_submit_multi(self, form_data: MultiDict):
+            self.tags = form_data.getlist("tag")
 
     app = rx.App()
 
@@ -43,6 +51,8 @@ def FormSubmitName(form_component):
                 rx.vstack(
                     rx.input(name="name_input"),
                     rx.input(id="id_only_input", default_value="unsubmitted"),
+                    rx.el.input(type="hidden", name="tag", value="a"),
+                    rx.el.input(type="hidden", name="tag", value="b"),
                     rx.checkbox(name="bool_input"),
                     rx.switch(name="bool_input2"),
                     rx.checkbox(name="bool_input3"),
@@ -63,10 +73,11 @@ def FormSubmitName(form_component):
                     rx.button("Submit", type_="submit"),
                     rx.icon_button(rx.icon(tag="plus")),
                 ),
-                on_submit=FormState.form_submit,
+                on_submit=[FormState.form_submit, FormState.form_submit_multi],
                 custom_attrs={"action": "/invalid"},
             ),
             rx.text(FormState.form_data.to_string(), id="form-data"),
+            rx.text(FormState.tags.to_string(), id="tags"),
             rx.spacer(),
             height="100vh",
         )
@@ -187,6 +198,12 @@ async def test_submit(driver, form_submit: AppHarness):
     assert form_data["debounce_input"] == "bar baz"
     # Only named controls are submitted; an id alone does not add a field.
     assert "id_only_input" not in form_data
+    # A dict keeps the last value of a repeated name; a MultiDict keeps them all.
+    assert form_data["tag"] == "b"
+    tags = form_submit.poll_for_content(
+        driver.find_element(By.ID, "tags"), exp_not_equal="[]"
+    )
+    assert json.loads(tags) == ["a", "b"]
 
     # submitting the form should NOT change the url (preventDefault on_submit event)
     assert driver.current_url == prev_url

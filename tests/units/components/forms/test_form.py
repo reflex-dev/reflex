@@ -1,8 +1,12 @@
-from typing import TypedDict
+import logging
+from typing import Any, TypedDict
 
 import pytest
 from reflex_base.event import EventChain, prevent_default
-from reflex_base.utils.exceptions import EventHandlerValueError
+from reflex_base.utils.exceptions import (
+    EventHandlerArgTypeMismatchError,
+    EventHandlerValueError,
+)
 from reflex_base.vars.base import Var
 from reflex_components_core.el.elements.forms import (
     AUTO_HEIGHT_JS,
@@ -12,6 +16,7 @@ from reflex_components_core.el.elements.forms import (
 )
 from reflex_components_core.el.elements.forms import Form as HTMLForm
 from reflex_components_radix.primitives.form import Form, FormMessage
+from starlette.datastructures import ImmutableMultiDict, MultiDict
 from typing_extensions import NotRequired
 
 import reflex as rx
@@ -103,7 +108,7 @@ def test_on_submit_collects_form_data_by_name_only(form_factory):
         on_submit=Var(_js_expr="submit_it", _var_type=EventChain),
     )
     (hook,) = form.add_hooks()
-    assert "Object.fromEntries(new FormData($form).entries())" in hook
+    assert "const form_data = getFormData($form);" in hook
     assert "ref_email_input" not in hook
     assert "getRefValue" not in hook
 
@@ -242,6 +247,41 @@ def test_on_submit_accepts_typed_dict_with_inherited_optional_fields():
         on_submit=SignupState.on_submit,
     )
     assert isinstance(form_with_both.event_triggers["on_submit"], EventChain)
+
+
+@pytest.mark.parametrize(
+    "annotation",
+    [MultiDict, ImmutableMultiDict[str, Any], ImmutableMultiDict[str, str]],
+)
+@pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
+def test_on_submit_accepts_multidict_form_data(form_factory, annotation, caplog):
+    """MultiDict-annotated submit handlers are accepted without a mismatch warning."""
+
+    class TagsState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: annotation):  # pyright: ignore[reportInvalidTypeForm]
+            pass
+
+    with caplog.at_level(logging.WARNING):
+        form = form_factory(
+            Input.create(name="tag"),
+            on_submit=TagsState.on_submit,
+        )
+
+    assert isinstance(form.event_triggers["on_submit"], EventChain)
+    assert "intentionally ignored" not in caplog.text
+
+
+def test_on_submit_rejects_non_mapping_form_data():
+    """A non-mapping annotation is a type mismatch, not a failed comparison."""
+
+    class TagsState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: list[str]):
+            pass
+
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        HTMLForm.create(on_submit=TagsState.on_submit)  # pyright: ignore[reportArgumentType]
 
 
 def test_on_submit_accepts_controls_associated_via_form_attribute():

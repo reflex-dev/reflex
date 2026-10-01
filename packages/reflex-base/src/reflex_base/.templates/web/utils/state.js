@@ -608,8 +608,7 @@ export const connect = async (
     reconnection: false, // Reconnection will be handled manually.
   });
   socket.current.wait_connect = !socket.current.connected;
-  // Ensure undefined fields in events are sent as null instead of removed
-  socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
+  socket.current.io.encoder.replacer = encodeEventValue;
   socket.current.io.decoder.tryParse = (str) => {
     try {
       return parseJson(str);
@@ -1500,4 +1499,37 @@ export const spreadArraysOrObjects = (first, second) => {
   } else {
     throw new Error("Both parameters must be either arrays or objects.");
   }
+};
+
+// Wire key wrapping a form's ordered [name, value] entries; must match
+// FORM_DATA_ENTRIES_KEY in reflex_base.event.
+const FORM_DATA_ENTRIES_KEY = "__reflex_form_data__";
+const formDataEntries = Symbol("formDataEntries");
+
+/**
+ * Collect the fields of a submitted form.
+ * @param form The form element.
+ * @returns An object mapping each field name to its last value, which also
+ * carries every entry so repeated names reach the backend.
+ */
+export const getFormData = (form) => {
+  const entries = [...new FormData(form).entries()];
+  return Object.defineProperty(Object.fromEntries(entries), formDataEntries, {
+    value: entries,
+  });
+};
+
+/**
+ * JSON replacer for events sent to the backend.
+ * @param key The key being serialized.
+ * @param value The value being serialized.
+ * @returns null for undefined (so the field is kept), the ordered entries of
+ * form data from getFormData, otherwise the value unchanged.
+ */
+export const encodeEventValue = (key, value) => {
+  if (value === undefined) {
+    return null;
+  }
+  const entries = value?.[formDataEntries];
+  return entries ? { [FORM_DATA_ENTRIES_KEY]: entries } : value;
 };
