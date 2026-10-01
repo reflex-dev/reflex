@@ -52,6 +52,7 @@ from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
+from reflex_base.vars.dep_tracking import is_dependency
 from reflex_components_core.base.error_boundary import ErrorBoundary
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.banner import (
@@ -829,7 +830,7 @@ class App(MiddlewareMixin, LifespanMixin):
         if environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.get():
             from reflex.utils.exec import get_frontend_mount
 
-            asgi_app.routes.append(get_frontend_mount())
+            asgi_app.routes.append(get_frontend_mount(router=self.router))
 
         if self.api_transformer is not None:
             api_transformers: Sequence[Starlette | Callable[[ASGIApp], ASGIApp]] = (
@@ -1359,6 +1360,15 @@ class App(MiddlewareMixin, LifespanMixin):
         if save_page:
             self._pages[route] = component
 
+    @property
+    def _page_routes(self) -> list[str]:
+        """All registered page routes in registration order.
+
+        Returns:
+            The deduplicated list of page routes.
+        """
+        return list(dict.fromkeys([*self._unevaluated_pages, *self._pages]))
+
     @functools.cached_property
     def router(self) -> Callable[[str], str | None]:
         """The route computer function.
@@ -1368,7 +1378,7 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         from reflex.route import get_router
 
-        return get_router(list(dict.fromkeys([*self._unevaluated_pages, *self._pages])))
+        return get_router(self._page_routes)
 
     def get_load_events(self, path: str) -> list[IndividualEventType[()]]:
         """Get the load events for a route.
@@ -1688,7 +1698,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     else state
                 )
                 for dep in dep_set:
-                    if dep not in state_cls.vars and dep not in state_cls.backend_vars:
+                    if not is_dependency(state_cls, dep):
                         msg = f"ComputedVar {var._name} on state {state.__name__} has an invalid dependency {state_name}.{dep}"
                         raise exceptions.VarDependencyError(msg)
 

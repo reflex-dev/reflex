@@ -1,10 +1,12 @@
 """Tests specific to redis state manager."""
 
 import asyncio
+import enum
 import os
 import time
 import uuid
 from collections.abc import AsyncGenerator
+from types import ModuleType
 from typing import Any
 
 import pytest
@@ -34,6 +36,12 @@ class SubState1(RedisTestState):
 
 class SubState2(RedisTestState):
     """A test substate for redis state manager tests."""
+
+
+class RedisAppObjectState(BaseState):
+    """A root state holding an instance of an app-defined class."""
+
+    _value: Any = None
 
 
 @pytest.fixture
@@ -153,6 +161,39 @@ async def test_modify(
     )
     assert isinstance(final_state, root_state)
     assert final_state.count == 3
+
+
+async def test_get_state_discards_unpicklable_state(
+    state_manager_redis: StateManagerRedis,
+    app_classes_module: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A stored state that can no longer be unpickled is replaced.
+
+    After a deploy changes a class held in a state var, unpickling the stored
+    state fails before the schema check. The tab must get a fresh state instead
+    of failing on every event until the redis key expires.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        app_classes_module: The module of app classes held in the state.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    state_manager_redis._oplock_enabled = False
+    module = app_classes_module
+
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=RedisAppObjectState)
+    async with state_manager_redis.modify_state(token) as state:
+        state._value = module.Color.BLUE
+
+    # The deploy: the stored enum member no longer exists.
+    monkeypatch.setattr(
+        module, "Color", enum.Enum("Color", {"RED": "red"}, module=module.__name__)
+    )
+
+    fresh_state = await state_manager_redis.get_state(token)
+    assert isinstance(fresh_state, RedisAppObjectState)
+    assert fresh_state._value is None
 
 
 async def test_modify_oplock(

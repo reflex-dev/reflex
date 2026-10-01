@@ -9,7 +9,7 @@ import types
 import typing
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from enum import Enum
-from functools import cached_property, lru_cache
+from functools import lru_cache
 from importlib.util import find_spec
 from types import GenericAlias
 from typing import (  # noqa: UP035
@@ -86,7 +86,6 @@ PrimitiveTypes = (int, float, bool, str, list, dict, set, tuple)
 StateVarTypes = (*PrimitiveTypes, type(None))
 
 if TYPE_CHECKING:
-    from reflex.state import BaseState
     from reflex_base.vars.base import Var
 
 VAR1 = TypeVar("VAR1", bound="Var")
@@ -191,8 +190,6 @@ PrimitiveToAnnotation = {
     tuple: Tuple,  # noqa: UP006
     dict: Dict,  # noqa: UP006
 }
-
-RESERVED_BACKEND_VAR_NAMES = {"_abc_impl", "_backend_vars", "_was_touched", "_mixin"}
 
 
 class Unset:
@@ -1161,69 +1158,6 @@ def is_valid_var_type(type_: type) -> bool:
     )
 
 
-def is_backend_base_variable(name: str, cls: type[BaseState]) -> bool:
-    """Check if this variable name correspond to a backend variable.
-
-    Args:
-        name: The name of the variable to check
-        cls: The class of the variable to check (must be a BaseState subclass)
-
-    Returns:
-        bool: The result of the check
-    """
-    if name in RESERVED_BACKEND_VAR_NAMES:
-        return False
-
-    if not name.startswith("_"):
-        return False
-
-    if name.startswith("__"):
-        return False
-
-    if name.startswith(f"_{cls.__name__}__"):
-        return False
-
-    hints = cls._get_type_hints()
-    if name in hints:
-        hint = get_origin(hints[name])
-        if hint == ClassVar:
-            return False
-
-    if name in cls.inherited_backend_vars:
-        return False
-
-    from reflex_base.vars.base import Field, Var, is_computed_var
-
-    # Read the class dicts directly: `getattr` would run the descriptor this
-    # lookup is meant to detect, against a class that is still being built.
-    for klass in cls.__mro__:
-        if name in klass.__dict__:
-            value = klass.__dict__[name]
-            break
-    else:
-        return True
-
-    if type(value) is classmethod:
-        return False
-    if callable(value):
-        return False
-
-    if isinstance(
-        value,
-        (
-            types.FunctionType,
-            property,
-            cached_property,
-        ),
-    ) or is_computed_var(value):
-        return False
-
-    # Custom descriptors should be invoked via their __get__/__set__
-    # rather than shadowed by backend var storage. Field/Var define
-    # __get__ for type-checking but are not user descriptors.
-    return not hasattr(type(value), "__get__") or isinstance(value, (Field, Var))
-
-
 def check_type_in_allowed_types(value_type: type, allowed_types: Iterable) -> bool:
     """Check that a value type is found in a list of allowed types.
 
@@ -1617,6 +1551,40 @@ def is_immutable(i: Any) -> bool:
         Whether the value is immutable.
     """
     return isinstance(i, IMMUTABLE_TYPES)
+
+
+_MUTABLE_BUILTIN_TYPES = (list, dict, set)
+
+_MUTABLE_MODEL_BASES = (
+    ("sqlalchemy.orm.decl_api", "DeclarativeBase"),
+    ("pydantic.main", "BaseModel"),
+)
+
+
+@lru_cache(maxsize=1024)
+def is_mutable_type(type_: type) -> bool:
+    """Check if a type is mutable, so in-place changes to a state value of it must be tracked.
+
+    Args:
+        type_: The type to check.
+
+    Returns:
+        Whether the type is mutable and should be wrapped.
+    """
+    from reflex_base.vars.base import Var
+
+    if issubclass(type_, _MUTABLE_BUILTIN_TYPES) or (
+        dataclasses.is_dataclass(type_) and not issubclass(type_, Var)
+    ):
+        return True
+    # A model's defining module is already loaded before its subclasses exist.
+    # Read its namespace directly so lazy module attributes cannot load packages.
+    for module_name, base_name in _MUTABLE_MODEL_BASES:
+        if (module := sys.modules.get(module_name)) is not None:
+            base = vars(module).get(base_name)
+            if base is not None and issubclass(type_, base):
+                return True
+    return False
 
 
 if not TYPE_CHECKING:

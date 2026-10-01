@@ -175,7 +175,9 @@ def _collect_state_stats(state_cls: type[BaseState]) -> _StateStats:
     return {
         "event_handlers_count": len(state_cls.event_handlers),
         "vars_count": len(state_cls.vars),
-        "backend_vars_count": len(state_cls.backend_vars),
+        "backend_vars_count": sum(
+            f._backend and f.is_var for f in state_cls.get_fields().values()
+        ),
         "computed_vars_count": len(state_cls.computed_vars),
         "depth_from_root": depth,
     }

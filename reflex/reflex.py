@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 from collections.abc import Callable
 from importlib import import_module
 from importlib.util import find_spec
@@ -726,6 +727,13 @@ def run(
     """Run the app in the current directory."""
     from reflex.utils import prerequisites
 
+    if log.is_json_mode() and not log.is_output_supervised():
+        # Run the command again below a process that turns every line it and
+        # its workers print into a JSON record.
+        raise SystemExit(
+            log.supervise_output([sys.executable, "-m", "reflex", *sys.argv[1:]])
+        )
+
     if frontend_only and backend_only:
         logger.error("Cannot use both --frontend-only and --backend-only options.")
         raise SystemExit(1)
@@ -941,19 +949,17 @@ def logout():
     logout(get_config().loglevel)
 
 
+_DB_PACKAGES = ("sqlalchemy", "alembic")
+
+
 @click.group
 def db_cli():
     """Subcommands for managing the database schema."""
-    _require_db_extra()
-
-
-def _require_db_extra():
-    """Exit with an install hint when the packages the db commands need are missing.
-
-    Raises:
-        Exit: If sqlalchemy or alembic is not installed.
-    """
-    if not (find_spec("sqlalchemy") and find_spec("alembic")):
+    try:
+        db_available = all(find_spec(name) is not None for name in _DB_PACKAGES)
+    except (AttributeError, ImportError, ValueError):
+        db_available = False
+    if not db_available:
         logger.error(
             "Database is not available. Please install the required packages: "
             "`pip install reflex[db]`."

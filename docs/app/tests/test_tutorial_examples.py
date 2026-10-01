@@ -389,11 +389,9 @@ def test_xy_data_handles_recover_after_pre_session_render(monkeypatch):
     assert state.source_data.token == ""
     assert state.revenue_data.token == ""
     # Set the session without dirtying computed vars to reproduce the cached handle.
-    object.__setattr__(
-        root,
-        "rx_router_session",
-        RouterData.from_router_data({"token": str(uuid4())}).session,
-    )
+    vars(root)["rx_router_session"] = RouterData.from_router_data({
+        "token": str(uuid4())
+    }).session
     assert state.source_data.token
     assert state.revenue_data.token
 
