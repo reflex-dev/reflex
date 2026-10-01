@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, Mock
 from redis.asyncio import Redis
 from redis.typing import EncodableT, KeyT
 
+from reflex.istate.manager.redis import _SET_STATES_IF_LOCKED_SCRIPT
 from reflex.utils import prerequisites
 
 WRONGTYPE_MESSAGE = "WRONGTYPE Operation against a key holding the wrong kind of value"
@@ -183,6 +184,22 @@ def mock_redis() -> Redis:
             * 1000
         )
 
+    def register_script(script: str) -> Callable[..., Any]:
+        if script != _SET_STATES_IF_LOCKED_SCRIPT:
+            msg = "mock_redis only runs the state manager's scripts."
+            raise NotImplementedError(msg)
+
+        async def set_states_if_locked(keys: list[KeyT], args: list[Any]) -> Any:
+            lock_key, *state_keys = keys
+            lock_id, expiration, *payloads = args
+            current_lock_id = await mock_get(lock_key)
+            if current_lock_id == lock_id:
+                for key, payload in zip(state_keys, payloads, strict=True):
+                    await mock_set(key, payload, ex=expiration)
+            return current_lock_id
+
+        return set_states_if_locked
+
     @contextlib.asynccontextmanager
     async def pubsub():
         watch_patterns = {}
@@ -245,6 +262,7 @@ def mock_redis() -> Redis:
     redis_mock.pexpire = mock_pexpire
     redis_mock.pipeline = pipeline
     redis_mock.pttl = pttl
+    redis_mock.register_script = register_script
     redis_mock.pubsub = pubsub
     redis_mock.config_set = AsyncMock()
     redis_mock.get_connection_kwargs = Mock(return_value={"db": 1})

@@ -3,6 +3,7 @@
 import asyncio
 import contextlib
 import dataclasses
+import functools
 import inspect
 import logging
 import os
@@ -15,6 +16,7 @@ from typing import Any, TypedDict, cast
 
 from redis import ResponseError
 from redis.asyncio import Redis
+from redis.commands.core import AsyncScript
 from reflex_base.config import get_config
 from reflex_base.environment import environment, oplock_hold_time
 from reflex_base.utils.exceptions import (
@@ -126,6 +128,21 @@ class RedisPubSubMessage(TypedDict):
 
 class OplockFound(Exception):  # noqa: N818
     """Indicates that an opportunistic lock was found."""
+
+
+# Writes the states of a tree only while their lock is held with the given id,
+# checked atomically with the writes, and replies with the id the lock is held
+# with. KEYS: the lock key, then the state keys. ARGV: the lock id, the
+# expiration (s), then the payload of each state key.
+_SET_STATES_IF_LOCKED_SCRIPT = """
+local lock_id = redis.call('GET', KEYS[1])
+if lock_id == ARGV[1] then
+    for i = 2, #KEYS do
+        redis.call('SET', KEYS[i], ARGV[i + 1], 'EX', ARGV[2])
+    end
+end
+return lock_id
+"""
 
 
 def _touched_states(state: BaseState) -> Iterator[BaseState]:
@@ -433,18 +450,7 @@ class StateManagerRedis(StateManager):
             and (existing_lock_id := await self.redis.get(self._lock_key(token)))
             != lock_id
         ):
-            msg = (
-                f"Lock expired for token {token} while processing. Consider increasing "
-                f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
-                "or use `@rx.event(background=True)` decorator for long-running tasks. "
-                f"Current lock id: {existing_lock_id!r}, expected lock id: {lock_id!r}."
-                + (
-                    f" Happened in event: {event.name}"
-                    if (event := context.get("event")) is not None
-                    else ""
-                )
-            )
-            raise LockExpiredError(msg)
+            raise self._lock_expired_error(token, existing_lock_id, lock_id, context)
 
         if not isinstance(token, BaseStateToken):
             # Non-BaseState token: simple single-key write.
@@ -478,11 +484,62 @@ class StateManagerRedis(StateManager):
             token._state_key(type(touched)): touched._serialize()
             for touched in _touched_states(cast(BaseState, state))
         }
-        if writes:
+        if not writes:
+            return
+        if lock_id is None:
             pipeline = self.redis.pipeline()
             for key, payload in writes.items():
                 pipeline.set(key, payload, ex=self.token_expiration)
             await pipeline.execute()
+            return
+        # Serializing the tree can outlast the lock, so its ownership is checked
+        # again, atomically with the writes.
+        existing_lock_id = await self._set_states_if_locked(
+            keys=[self._lock_key(token), *writes],
+            args=[lock_id, self.token_expiration, *writes.values()],
+        )
+        if existing_lock_id != lock_id:
+            raise self._lock_expired_error(token, existing_lock_id, lock_id, context)
+
+    @functools.cached_property
+    def _set_states_if_locked(self) -> AsyncScript:
+        """The script writing the states of a tree while their lock is held.
+
+        Returns:
+            The script, registered with the redis client.
+        """
+        return self.redis.register_script(_SET_STATES_IF_LOCKED_SCRIPT)
+
+    def _lock_expired_error(
+        self,
+        token: StateToken,
+        existing_lock_id: bytes | None,
+        lock_id: bytes,
+        context: StateModificationContext,
+    ) -> LockExpiredError:
+        """Build the error for a lock that expired while its holder was processing.
+
+        Args:
+            token: The token the lock is for.
+            existing_lock_id: The id the lock is held with now, if any.
+            lock_id: The id the lock was expected to be held with.
+            context: The state modification context.
+
+        Returns:
+            The error to raise.
+        """
+        msg = (
+            f"Lock expired for token {token} while processing. Consider increasing "
+            f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
+            "or use `@rx.event(background=True)` decorator for long-running tasks. "
+            f"Current lock id: {existing_lock_id!r}, expected lock id: {lock_id!r}."
+            + (
+                f" Happened in event: {event.name}"
+                if (event := context.get("event")) is not None
+                else ""
+            )
+        )
+        return LockExpiredError(msg)
 
     @contextlib.asynccontextmanager
     async def _try_modify_state(

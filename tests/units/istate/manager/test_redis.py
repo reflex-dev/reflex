@@ -12,7 +12,7 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
-from reflex_base.utils.exceptions import EnvironmentVarValueError
+from reflex_base.utils.exceptions import EnvironmentVarValueError, LockExpiredError
 
 from reflex.istate.manager.redis import (
     StateManagerRedis,
@@ -957,3 +957,87 @@ async def test_set_state_writes_nothing_when_no_state_was_touched(
 
     assert not calls
     assert not await _stored_tree_states(state_manager_redis, token)
+
+
+async def test_set_state_writes_the_touched_states_in_one_lock_checked_call(
+    state_manager_redis: StateManagerRedis,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """With the lock held, the touched states are written by one lock-checked script.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    state_manager_redis._oplock_enabled = False
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=TreeRoot)
+    redis = state_manager_redis.redis
+    lock_key = state_manager_redis._lock_key(token)
+    state = await state_manager_redis.get_state(token)
+    first = state.substates[TreeFirst.get_name()]
+    assert isinstance(first, TreeFirst)
+    first.first_value = 5
+
+    lock_id = b"test-lock-id"
+    await redis.set(lock_key, lock_id, px=state_manager_redis.lock_expiration)
+    script = state_manager_redis._set_states_if_locked
+    script_keys: list[list[Any]] = []
+
+    async def recording_script(keys: list[Any], args: list[Any]) -> Any:
+        script_keys.append(keys)
+        return await script(keys=keys, args=args)
+
+    monkeypatch.setattr(state_manager_redis, "_set_states_if_locked", recording_script)
+    calls = _count_redis_calls(redis, "pipeline", "set")
+    await state_manager_redis.set_state(token, state, lock_id=lock_id)
+
+    assert not calls
+    assert script_keys == [[lock_key, token._state_key(TreeFirst)]]
+    assert await _stored_tree_states(state_manager_redis, token) == {TreeFirst}
+    await redis.delete(lock_key)
+
+
+async def test_set_state_keeps_the_writes_of_the_next_lock_holder(
+    state_manager_redis: StateManagerRedis,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A tree whose lock changed hands before it was written does not overwrite the newer state.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    state_manager_redis._oplock_enabled = False
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=TreeRoot)
+    redis = state_manager_redis.redis
+    lock_key = state_manager_redis._lock_key(token)
+    stale = await state_manager_redis.get_state(token)
+    stale_first = stale.substates[TreeFirst.get_name()]
+    assert isinstance(stale_first, TreeFirst)
+    stale_first.first_value = 5
+    newer = await state_manager_redis.get_state(token)
+    newer_first = newer.substates[TreeFirst.get_name()]
+    assert isinstance(newer_first, TreeFirst)
+    newer_first.first_value = 7
+
+    await redis.set(lock_key, b"stale-lock-id", px=state_manager_redis.lock_expiration)
+    pttl = redis.pttl
+
+    async def take_over_the_lock(key: Any) -> Any:
+        # After the ownership check, the lock expires and the next holder takes
+        # it and persists its own changes before this tree is written.
+        await redis.set(
+            lock_key, b"newer-lock-id", px=state_manager_redis.lock_expiration
+        )
+        await state_manager_redis.set_state(token, newer)
+        return await pttl(key)
+
+    monkeypatch.setattr(redis, "pttl", take_over_the_lock)
+    with pytest.raises(LockExpiredError, match="newer-lock-id"):
+        await state_manager_redis.set_state(token, stale, lock_id=b"stale-lock-id")
+
+    persisted = await state_manager_redis.get_state(token)
+    persisted_first = persisted.substates[TreeFirst.get_name()]
+    assert isinstance(persisted_first, TreeFirst)
+    assert persisted_first.first_value == 7
+    await redis.delete(lock_key)
