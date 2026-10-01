@@ -32,7 +32,6 @@ from reflex_docs.whitelist import _check_whitelisted_path
 from .apiref import pages as apiref_pages
 from .cloud import pages as cloud_pages
 from .cloud_cliref import pages as cloud_cliref_pages
-from .custom_components import custom_components
 from .library import library
 from .recipes_overview import overview
 
@@ -539,7 +538,6 @@ for _virtual, _actual in all_docs.items():
 
 doc_routes = [
     library,
-    custom_components,
     overview,
     *components_previews_pages,
     *apiref_pages,
