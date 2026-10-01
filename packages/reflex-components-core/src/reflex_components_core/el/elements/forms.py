@@ -56,9 +56,17 @@ const formDataToObject = (formData, form) => {
         // change the field from a list to a scalar.
         const isMultiValue = node
             ? node.tagName
-                // A single element: only a <select multiple> can hold more
-                // than one value.
-                ? node.tagName === "SELECT" && node.multiple
+                // A single element: a <select multiple>, a multi-file
+                // <input>, or a checkbox_group/checkbox_cards item (even
+                // the only one currently rendered -- recognized by Radix's
+                // own hidden-input class names, since a lone item is
+                // otherwise indistinguishable in the DOM from an ordinary
+                // single checkbox) can all hold more than one value.
+                ? (node.tagName === "SELECT" && node.multiple) ||
+                  (node.tagName === "INPUT" && node.type === "file" && node.multiple) ||
+                  (node.classList &&
+                      (node.classList.contains("rt-CheckboxGroupItemCheckbox") ||
+                          node.classList.contains("rt-CheckboxCardCheckbox")))
                 // Multiple elements share this name (a RadioNodeList): only
                 // an all-radio group is inherently single-valued.
                 : !Array.prototype.every.call(node, (el) => el.type === "radio")

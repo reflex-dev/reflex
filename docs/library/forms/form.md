@@ -344,10 +344,12 @@ def dynamic_form():
 
 A control that can hold more than one value under the same `name` -- `rx.checkbox_group`, a native
 `<select multiple>`, or any group of non-radio inputs sharing one `name` -- always reports its
-value as a **list** in `form_data`, even when only one value is checked or selected (or an empty
-list when none are). This is decided by the kind of control, not by how many values happen to be
-submitted, so the shape stays consistent as the user checks or unchecks boxes. A radio group or a
-field that can only ever hold one value (like `rx.input`) always reports a plain scalar.
+value as a **list** in `form_data` whenever at least one value is checked or selected, even if
+that's only one value. This is decided by the kind of control, not by how many values happen to
+be submitted, so the shape stays consistent as the user checks or unchecks boxes. If nothing is
+checked or selected, the field is omitted from `form_data` entirely (the same as any other
+unsubmitted control), so don't assume the key is always present. A radio group or a field that
+can only ever hold one value (like `rx.input`) always reports a plain scalar.
 
 If you annotate the handler with a `TypedDict` (see
 [Validating Form Data with a TypedDict](#validating-form-data-with-a-typeddict) above), type a

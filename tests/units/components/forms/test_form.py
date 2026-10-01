@@ -316,7 +316,11 @@ const results = cases.map(({ entries, elements }) => {
         if (Array.isArray(spec)) {
           return spec.map((type) => ({ type }));
         }
-        return spec;
+        const { classes, ...rest } = spec;
+        if (classes) {
+          rest.classList = { contains: (name) => classes.includes(name) };
+        }
+        return rest;
       },
     },
   };
@@ -389,6 +393,43 @@ def test_form_data_to_object_decides_shape_from_the_control_not_the_count(tmp_pa
             "elements": {"plan": ["radio", "radio", "radio"]},
         },
         {
+            # checkbox_group/checkbox_cards rendered with only one option:
+            # namedItem returns a lone Element, indistinguishable from an
+            # ordinary single checkbox by tagName/type alone. Recognized
+            # instead by Radix's own hidden-input class name.
+            "entries": [["colors", "green"]],
+            "elements": {
+                "colors": {
+                    "tagName": "INPUT",
+                    "type": "checkbox",
+                    "classes": ["rt-CheckboxGroupItemCheckbox"],
+                }
+            },
+        },
+        {
+            # Same, for checkbox_cards's own class name.
+            "entries": [["colors", "green"]],
+            "elements": {
+                "colors": {
+                    "tagName": "INPUT",
+                    "type": "checkbox",
+                    "classes": ["rt-CheckboxCardCheckbox"],
+                }
+            },
+        },
+        {
+            # A multi-file <input> is multi-value even as a single element.
+            "entries": [["attachments", "a.png"], ["attachments", "b.png"]],
+            "elements": {
+                "attachments": {"tagName": "INPUT", "type": "file", "multiple": True}
+            },
+        },
+        {
+            # A single-file <input> (no multiple) stays scalar.
+            "entries": [["resume", "a.pdf"]],
+            "elements": {"resume": {"tagName": "INPUT", "type": "file"}},
+        },
+        {
             # Plain single-value field is unaffected.
             "entries": [["name", "bob"]],
             "elements": {"name": {"tagName": "INPUT"}},
@@ -420,6 +461,10 @@ def test_form_data_to_object_decides_shape_from_the_control_not_the_count(tmp_pa
         {"sizes": ["m"]},
         {"sizes": ["m", "l"]},
         {"plan": "pro"},
+        {"colors": ["green"]},
+        {"colors": ["green"]},
+        {"attachments": ["a.png", "b.png"]},
+        {"resume": "a.pdf"},
         {"name": "bob"},
         {"constructor": "a", "toString": "x"},
     ]
