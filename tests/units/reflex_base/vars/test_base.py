@@ -511,6 +511,88 @@ def test_literal_var_dispatch_follows_later_registrations():
         base._literal_var_by_type.clear()
 
 
+def test_guess_type_dispatch_follows_later_registrations():
+    """A Var subclass registered after a guess wins the next guess for its type."""
+
+    class Tags(list):
+        """A list type no Var subclass claims yet."""
+
+    from reflex_base.vars import base
+
+    var_subclasses = len(base._var_subclasses)
+    tags = Var(_js_expr="tags", _var_type=Tags)
+    try:
+        assert isinstance(tags.guess_type(), ArrayVar)
+        assert isinstance(tags.guess_type(), ArrayVar)
+
+        class TagsVar(ArrayVar, python_types=Tags):
+            """A Var holding tags."""
+
+        assert isinstance(tags.guess_type(), TagsVar)
+    finally:
+        del base._var_subclasses[var_subclasses:]
+        base._clear_var_subclass_lookup_caches()
+
+
+def test_guess_type_with_an_unhashable_var_type():
+    """A var type that cannot be a cache key is still guessed."""
+    var = Var(_js_expr="x", _var_type=typing.Annotated[int, []])
+    assert isinstance(var.guess_type(), NumberVar)
+    assert isinstance(var.guess_type(), NumberVar)
+
+
+def test_cached_property_releases_entries_across_a_hierarchy():
+    """Every cached property of a class and its bases is released with the instance."""
+
+    class Base:
+        @cached_property
+        def first(self) -> list[int]:
+            return [1]
+
+    class Child(Base):
+        @cached_property
+        def second(self) -> list[int]:
+            return [2]
+
+        @cached_property
+        def never_read(self) -> list[int]:
+            return [3]
+
+    child = Child()
+    assert child.first == [1]
+    assert child.second == [2]
+    keys = [
+        child.__dict__["_reflex_cache_first"],
+        child.__dict__["_reflex_cache_second"],
+    ]
+    assert all(key in GLOBAL_CACHE for key in keys)
+    del child
+    gc.collect()
+    assert not any(key in GLOBAL_CACHE for key in keys)
+
+
+def test_cached_property_keeps_running_an_inherited_del():
+    """A __del__ the owner inherits still runs after its cached entries are released."""
+    deleted = []
+
+    class Base:
+        def __del__(self):
+            deleted.append(type(self).__name__)
+
+    class Child(Base):
+        @cached_property
+        def value(self) -> list[int]:
+            return [1]
+
+    child = Child()
+    assert child.value == [1]
+    key = child.__dict__["_reflex_cache_value"]
+    del child
+    gc.collect()
+    assert deleted == ["Child"]
+    assert key not in GLOBAL_CACHE
+
+
 def _operand_with_var_data() -> NumberVar[int]:
     """Build an operand carrying imports and hooks worth losing.
 

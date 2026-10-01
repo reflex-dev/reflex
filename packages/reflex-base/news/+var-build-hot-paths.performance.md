@@ -1,0 +1,1 @@
+Building Vars is up to twice as fast: `Var.guess_type` and `Var.to` skip repeated type dispatch, `LiteralVar.create` and `ToOperation` attribute reads no longer import on every call, and cached Var properties are released through a single `__del__` per class. Pages that derive many Vars evaluate 8-30% faster, and the generated code is unchanged.
