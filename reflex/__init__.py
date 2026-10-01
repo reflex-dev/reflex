@@ -234,6 +234,7 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
     "style": ["Style", "toggle_color_mode"],
     "utils.imports": ["ImportDict", "ImportVar"],
     "utils.misc": ["run_in_thread"],
+    "utils.multidict": ["MultiDict"],
     "utils.serializers": ["serializer"],
     "vars": ["Var", "field", "Field", "RestProp", "EMPTY_VAR_STR", "EMPTY_VAR_INT"],
 }

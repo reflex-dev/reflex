@@ -7,6 +7,7 @@ from reflex_base.utils.exceptions import (
     EventHandlerArgTypeMismatchError,
     EventHandlerValueError,
 )
+from reflex_base.utils.multidict import MultiDict
 from reflex_base.vars.base import Var
 from reflex_components_core.el.elements.forms import (
     AUTO_HEIGHT_JS,
@@ -16,7 +17,6 @@ from reflex_components_core.el.elements.forms import (
 )
 from reflex_components_core.el.elements.forms import Form as HTMLForm
 from reflex_components_radix.primitives.form import Form, FormMessage
-from starlette.datastructures import ImmutableMultiDict, MultiDict
 from typing_extensions import NotRequired
 
 import reflex as rx
@@ -251,7 +251,7 @@ def test_on_submit_accepts_typed_dict_with_inherited_optional_fields():
 
 @pytest.mark.parametrize(
     "annotation",
-    [MultiDict, ImmutableMultiDict[str, Any], ImmutableMultiDict[str, str]],
+    [MultiDict, MultiDict[str, Any], MultiDict[str, str], rx.MultiDict],
 )
 @pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
 def test_on_submit_accepts_multidict_form_data(form_factory, annotation, caplog):

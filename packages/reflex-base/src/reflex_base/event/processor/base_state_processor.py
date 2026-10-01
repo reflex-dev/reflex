@@ -13,6 +13,8 @@ from importlib.util import find_spec
 from time import perf_counter
 from typing import TYPE_CHECKING, Any, get_origin
 
+from typing_extensions import get_type_hints, is_typeddict
+
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import types
@@ -22,6 +24,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.registry import RegisteredEventHandler
 from reflex_base.utils.format import format_event_handler
+from reflex_base.utils.multidict import MultiDict
 
 logger = logging.getLogger(__name__)
 
@@ -89,32 +92,73 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
     raise TypeError(msg)
 
 
+@functools.cache
+def _typed_dict_form_fields(
+    typed_dict: type,
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Find the TypedDict fields that form data is coerced into.
+
+    Args:
+        typed_dict: The TypedDict annotating the form data.
+
+    Returns:
+        The names of the ``list`` fields and of the ``bool`` fields.
+    """
+    hints = get_type_hints(typed_dict)
+    return (
+        tuple(
+            name for name, hint in hints.items() if (get_origin(hint) or hint) is list
+        ),
+        tuple(name for name, hint in hints.items() if hint is bool),
+    )
+
+
+def _form_data_as_typed_dict(form_data: MultiDict, typed_dict: type) -> dict[str, Any]:
+    """Build the dict for a TypedDict-annotated form data argument.
+
+    Args:
+        form_data: The submitted form data.
+        typed_dict: The TypedDict annotating the argument.
+
+    Returns:
+        A dict of each field's last value, where ``list`` fields hold every
+        value and ``bool`` fields whether a truthy value was submitted.
+    """
+    list_fields, bool_fields = _typed_dict_form_fields(typed_dict)
+    result = dict(form_data)
+    for name in list_fields:
+        result[name] = form_data.getlist(name)
+    for name in bool_fields:
+        result[name] = bool(form_data.get(name))
+    return result
+
+
 def _transform_form_data(value: Any, hinted_args: Any) -> Any:
-    """Build form data as the annotated MultiDict or a dict.
+    """Build form data for the argument's annotation.
 
     Args:
         value: The event argument, possibly a form's wrapped ``[name, value]`` entries.
         hinted_args: The type hint for the argument.
 
     Returns:
-        A MultiDict of every entry when annotated as one (also from a plain
-        mapping), a dict keeping each name's last value for other form data,
-        otherwise the value unchanged.
+        For a MultiDict annotation, a MultiDict of every entry (also built from a
+        plain mapping); for a TypedDict annotation of form data, its coerced
+        dict; for other form data, a dict of each name's last value; otherwise
+        the value unchanged.
     """
     entries = value.get(FORM_DATA_ENTRIES_KEY) if isinstance(value, dict) else None
-    if isinstance(value, Mapping) and hinted_args is not Any:
-        from starlette.datastructures import ImmutableMultiDict
-
-        if types.is_union(hinted_args):
-            hinted_args = types.value_inside_optional(hinted_args)
-        multidict_type = get_origin(hinted_args) or hinted_args
-        if isinstance(multidict_type, type) and issubclass(
-            multidict_type, ImmutableMultiDict
-        ):
-            if entries is None:
-                return multidict_type(value)
-            return multidict_type([(name, field) for name, field in entries])
-    return value if entries is None else dict(entries)
+    if entries is not None:
+        value = MultiDict(entries)
+    elif not isinstance(value, Mapping):
+        return value
+    if types.is_union(hinted_args):
+        hinted_args = types.value_inside_optional(hinted_args)
+    hinted_type = get_origin(hinted_args) or hinted_args
+    if isinstance(hinted_type, type) and issubclass(hinted_type, MultiDict):
+        return value if isinstance(value, hinted_type) else hinted_type(value)
+    if isinstance(value, MultiDict) and is_typeddict(hinted_args):
+        return _form_data_as_typed_dict(value, hinted_args)
+    return value if entries is None else dict(value)
 
 
 def _transform_event_arg(value: Any, hinted_args: Any) -> Any:

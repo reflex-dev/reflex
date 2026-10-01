@@ -19,8 +19,6 @@ def FormSubmitName(form_component):
     Args:
         form_component: The str name of the form component to use.
     """
-    from starlette.datastructures import MultiDict
-
     import reflex as rx
 
     class FormState(rx.State):
@@ -34,7 +32,7 @@ def FormSubmitName(form_component):
             self.form_data = form_data
 
         @rx.event
-        def form_submit_multi(self, form_data: MultiDict):
+        def form_submit_multi(self, form_data: rx.MultiDict[str, str]):
             self.tags = form_data.getlist("tag")
 
     app = rx.App()

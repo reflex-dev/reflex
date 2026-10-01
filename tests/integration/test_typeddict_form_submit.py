@@ -28,6 +28,8 @@ def TypedDictFormSubmit(form_component):
         name: str
         email: str
         message: NotRequired[str]
+        topics: list[str]
+        subscribe: bool
 
     class FormState(rx.State):
         form_data: rx.Field[dict] = rx.field(default_factory=dict)
@@ -50,6 +52,9 @@ def TypedDictFormSubmit(form_component):
                     rx.input(name="name"),
                     rx.input(name="email"),
                     rx.text_area(name="message"),
+                    rx.el.input(type="hidden", name="topics", value="news"),
+                    rx.el.input(type="hidden", name="topics", value="events"),
+                    rx.switch(name="subscribe"),
                     rx.button("Submit", type_="submit"),
                 ),
                 on_submit=FormState.form_submit,
@@ -116,6 +121,9 @@ _CONTACT_FIELDS = {
         "name": "Alice",
         "email": "alice@example.com",
         "message": "Hello there",
+        # Every value of a list field, and False for an unchecked bool field.
+        "topics": ["news", "events"],
+        "subscribe": False,
     },
 }
 _INHERITED_FIELDS = {

@@ -161,7 +161,7 @@ def form_example():
 ```md alert info
 # Form data is keyed by `name`.
 
-Only controls with a `name` are included in the form data; the `id` attribute does not add a field. Following standard HTML form behavior, controls like `rx.switch`, `rx.radio_group`, and `rx.checkbox` are only included when their values are set (e.g., if the checkbox is checked, the switch is toggled, or a radio option is selected), so read them with `form_data.get(...)`.
+Only controls with a `name` are included in the form data; the `id` attribute does not add a field. Following standard HTML form behavior, controls like `rx.switch`, `rx.radio_group`, and `rx.checkbox` are only included when their values are set (e.g., if the checkbox is checked, the switch is toggled, or a radio option is selected), so read them with `form_data.get(...)`, or declare them as `bool` fields of a [TypedDict](#validating-form-data-with-a-typeddict).
 ```
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=5287&end=6040
@@ -173,18 +173,14 @@ Only controls with a `name` are included in the form data; the `id` attribute do
 Several controls can share a `name`, such as a group of checkboxes. A `dict`
 annotation keeps only the last value submitted for each name. To receive every
 value in the order the form submitted them, annotate the handler's parameter
-with `MultiDict` (or `ImmutableMultiDict`) from `starlette.datastructures` and
-read them with `getlist`:
+with `rx.MultiDict` and read them with `getlist`:
 
 ```python
-from starlette.datastructures import MultiDict
-
-
 class ToppingsState(rx.State):
     toppings: list[str] = []
 
     @rx.event
-    def handle_submit(self, form_data: MultiDict):
+    def handle_submit(self, form_data: rx.MultiDict[str, str]):
         self.toppings = form_data.getlist("topping")
 
 
@@ -197,8 +193,11 @@ def toppings_form():
     )
 ```
 
-Indexing a `MultiDict` with `form_data["topping"]` returns the last value, the
-same as a `dict`.
+An `rx.MultiDict` is a read-only mapping: indexing it with
+`form_data["topping"]` returns the last value, the same as a `dict`, and
+`form_data.multi_items()` returns every `(name, value)` pair. A
+[TypedDict](#validating-form-data-with-a-typeddict) can also collect repeated
+names with a `list[str]` field.
 
 ## Validating Form Data with a TypedDict
 
@@ -274,6 +273,43 @@ class ContactForm(TypedDict):
     email: str  # required: a control named "email" must exist
     message: NotRequired[str]  # optional: no control required
 ```
+
+### List and bool fields
+
+Two kinds of `TypedDict` fields are filled in even when the form submits no
+value for them:
+
+- A `list[str]` field holds every value submitted under its name, in order, or
+  an empty list when there are none.
+- A `bool` field is `True` when a non-empty value was submitted under its name
+  and `False` otherwise, so an unchecked checkbox or switch reads as `False`
+  instead of a missing key.
+
+```python
+class PreferencesForm(TypedDict):
+    toppings: list[str]  # every checked "toppings" checkbox
+    subscribe: bool  # False when the switch is off
+
+
+class PreferencesState(rx.State):
+    preferences: PreferencesForm | None = None
+
+    @rx.event
+    def handle_submit(self, form_data: PreferencesForm):
+        self.preferences = form_data
+
+
+def preferences_form():
+    return rx.form(
+        rx.el.input(type="checkbox", name="toppings", value="cheese"),
+        rx.el.input(type="checkbox", name="toppings", value="olives"),
+        rx.switch(name="subscribe"),
+        rx.button("Submit", type="submit"),
+        on_submit=PreferencesState.handle_submit,
+    )
+```
+
+Other fields keep the last value submitted for their name.
 
 If a required field is missing, creating the form fails fast with a message that
 lists the expected, missing, and matching fields:
