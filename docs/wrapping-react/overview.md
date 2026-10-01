@@ -155,4 +155,8 @@ export default function App() {
 }
 ```
 
+## Sharing a Component as a Package
+
+To reuse a wrapped component across apps or publish it to PyPI, start from the [component template](https://github.com/reflex-dev/component-template). It is a GitHub template repository with a wrapped component, tests, a demo app, generated type stubs, and workflows that check every push and publish tagged releases to PyPI with trusted publishing. Select **Use this template** on GitHub, then run its rename script to give the package your own name.
+
 In the next page, we will go step by step through a more complex example of wrapping a React component.
