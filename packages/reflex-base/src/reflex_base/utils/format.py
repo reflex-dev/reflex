@@ -797,7 +797,9 @@ def json_dumps_compact(obj: Any) -> str:
     """
     serializers = _get_serializers()
     if not serializers.overrides_native_json_type():
-        dumps = _orjson_dumps or _load_orjson()
+        dumps = _orjson_dumps
+        if dumps is None:
+            dumps = _load_orjson()
         try:
             encoded = dumps(obj, default=serializers.serialize, option=_orjson_options)
         except TypeError:
