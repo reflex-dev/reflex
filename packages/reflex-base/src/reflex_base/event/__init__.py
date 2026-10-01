@@ -640,22 +640,7 @@ class EventHandler(EventActionsMixin):
         Returns:
             True if the event handler is marked as superseding.
         """
-        return bool(getattr(self.fn, SUPERSEDES_MARKER, False))
-
-    @property
-    def supersede_group(self) -> str | None:
-        """The name under which this handler's chains supersede each other.
-
-        Handlers sharing a group cancel each other's unfinished chains, so a
-        reconnect's hydrate and a navigation's on_load never run side by side.
-
-        Returns:
-            The group name, or None for handlers that do not supersede.
-        """
-        marker = getattr(self.fn, SUPERSEDES_MARKER, False)
-        if isinstance(marker, str):
-            return marker
-        return format.format_event_handler(self) if marker else None
+        return getattr(self.fn, SUPERSEDES_MARKER, False)
 
     def __get__(self, instance: Any, owner: type | None = None) -> Any:
         """Get the handler on class access, or its function bound to a state.
@@ -3067,7 +3052,7 @@ class EventNamespace:
         func: None = None,
         *,
         background: bool | None = None,
-        supersedes: bool | str | None = None,
+        supersedes: bool | None = None,
         stop_propagation: bool | None = None,
         prevent_default: bool | None = None,
         throttle: int | None = None,
@@ -3083,7 +3068,7 @@ class EventNamespace:
         func: "Callable[[BASE_STATE, Unpack[P]], Any]",
         *,
         background: bool | None = None,
-        supersedes: bool | str | None = None,
+        supersedes: bool | None = None,
         stop_propagation: bool | None = None,
         prevent_default: bool | None = None,
         throttle: int | None = None,
@@ -3096,7 +3081,7 @@ class EventNamespace:
         func: "Callable[[BASE_STATE, Unpack[P]], Any] | None" = None,
         *,
         background: bool | None = None,
-        supersedes: bool | str | None = None,
+        supersedes: bool | None = None,
         stop_propagation: bool | None = None,
         prevent_default: bool | None = None,
         throttle: int | None = None,
@@ -3110,10 +3095,8 @@ class EventNamespace:
             background: Whether the event should be run in the background. Defaults to False.
             supersedes: Whether enqueuing the event cancels the previous unfinished
                 chain of the same event for the same client token (latest-wins).
-                A string names a group instead: handlers sharing the group
-                supersede each other's chains. Cancellation is cooperative, so
-                a handler that never yields to the event loop is not
-                interrupted. Defaults to False.
+                Cancellation is cooperative, so a handler that never yields to the
+                event loop is not interrupted. Defaults to False.
             stop_propagation: Whether to stop the event from bubbling up the DOM tree.
             prevent_default: Whether to prevent the default behavior of the event.
             throttle: Throttle the event handler to limit calls (in milliseconds).
@@ -3165,8 +3148,8 @@ class EventNamespace:
                     msg = "Background task must be async function or generator."
                     raise TypeError(msg)
                 setattr(func, BACKGROUND_TASK_MARKER, True)
-            if supersedes:
-                setattr(func, SUPERSEDES_MARKER, supersedes)
+            if supersedes is True:
+                setattr(func, SUPERSEDES_MARKER, True)
             if getattr(func, "__name__", "").startswith("_"):
                 msg = "Event handlers cannot be private."
                 raise ValueError(msg)

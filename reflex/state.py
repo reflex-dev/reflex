@@ -2279,7 +2279,7 @@ class State(BaseState):
         """
         self.is_hydrated = value
 
-    @event(supersedes=constants.CompileVars.ON_LOAD_SUPERSEDE_GROUP)
+    @event
     async def hydrate_and_load(
         self,
         vars: dict[str, Any] | None = None,
@@ -2288,9 +2288,10 @@ class State(BaseState):
         """Hydrate the frontend and queue the current page's on_load handlers.
 
         Sent by the frontend once per websocket (re)connect. Doing the client
-        storage reset, the browser-provided client storage values, the state
-        snapshot and the on_load enumeration under one state lock avoids three
-        separate load/persist cycles of the state tree.
+        storage reset, the browser-provided client storage values and the
+        state snapshot under one state lock avoids separate load/persist
+        cycles of the state tree. A page with on_load handlers then gets
+        ``on_load_internal``, which only locks its leaf substate.
 
         Args:
             vars: Client storage vars set in the browser, keyed by fully
@@ -2302,7 +2303,7 @@ class State(BaseState):
                 everything else is sent in full.
 
         Returns:
-            The on_load events for the current page, if any.
+            ``on_load_internal`` if the current page has on_load handlers.
         """
         from reflex_base.event.context import EventContext
 
@@ -2320,7 +2321,12 @@ class State(BaseState):
                 delta = await _diff_against_initial_state(type(self), delta, hashes)
             await ctx.emit_delta(delta=delta)
         self._clean()
-        return _load_events_for_page(self)
+        if not RegistrationContext.get().app.get_load_events(self.rx_router_url.path):
+            self.is_hydrated = True
+            return None
+        # A separate superseding event, so a navigation can cancel the page's
+        # stale on_load work without cancelling this snapshot.
+        return [OnLoadInternalState.on_load_internal]
 
 
 T = TypeVar("T", bound=BaseState)
@@ -2643,7 +2649,7 @@ class OnLoadInternalState(State):
 
     # A newer navigation or reconnect supersedes the previous unfinished
     # on_load chain for the same client token, cancelling its stale work (#6593).
-    @event(supersedes=constants.CompileVars.ON_LOAD_SUPERSEDE_GROUP)
+    @event(supersedes=True)
     def on_load_internal(self) -> list[Event | EventSpec | event.EventCallback] | None:
         """Queue on_load handlers for the current page.
 

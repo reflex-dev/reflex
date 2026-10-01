@@ -1520,7 +1520,6 @@ async def test_hydrate_and_load_single_lock_cycle(
         emitted_deltas: List to capture emitted deltas.
         token: The client token.
     """
-    assert State.event_handlers["hydrate_and_load"].supersedes
 
     class CookieState(State):
         flavor: str = rx.Cookie("plain")
@@ -1671,3 +1670,75 @@ async def test_hydrate_and_load_diffs_against_compiled_defaults(
         await future.wait_all()
     snapshot = emitted_deltas[0][1]
     assert "loads" + FIELD_MARKER in snapshot[CookieState.get_full_name()]
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_navigation_does_not_cancel_the_hydrate_snapshot(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A navigation queued while hydrate_and_load waits for the lock still gets the snapshot.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+
+    class CounterState(State):
+        count: int = 0
+        loads: list[str] = []
+
+        @event
+        def increment(self):
+            self.count += 1
+
+        @event
+        def load_a(self):
+            self.loads = [*self.loads, "a"]
+
+        @event
+        def load_b(self):
+            self.loads = [*self.loads, "b"]
+
+    wired_app.add_page(lambda: rx.text("a"), route="/", on_load=CounterState.load_a)
+    wired_app.add_page(
+        lambda: rx.text("b"), route="/page-b", on_load=CounterState.load_b
+    )
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+    count_key = "count" + FIELD_MARKER
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+
+    async with real_base_state_processor as processor:
+        await _send(
+            processor, token, _client_event(CounterState.increment(), _view("/"))
+        )
+        emitted_deltas.clear()
+
+        # Hold the lock so the navigation is queued before the hydrate runs.
+        async with root_ctx.state_manager.modify_state(
+            BaseStateToken(ident=token, cls=State)
+        ):
+            hydrate = await processor.enqueue(token, _boot_event(boot_name, {}))
+            navigation = await processor.enqueue(
+                token,
+                _client_event(OnLoadInternalState.on_load_internal(), _view("/page-b")),
+            )
+        await asyncio.wait_for(navigation.wait_all(), timeout=10)
+        await asyncio.wait_for(hydrate.wait_all(), timeout=10)
+
+    assert any(
+        delta.get(CounterState.get_full_name(), {}).get(count_key) == 1
+        for _, delta in emitted_deltas
+    ), "the hydrate snapshot carrying the persisted count was never sent"
+    async with _read_back(real_base_state_processor, token) as root:
+        # "a" is from the first event's rehydrate; the reload's stale on_load
+        # work is dropped in favor of the navigation.
+        assert (await root.get_state(CounterState)).loads == ["a", "b"]
+        assert (await root.get_state(State)).is_hydrated is True

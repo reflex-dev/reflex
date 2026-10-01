@@ -59,9 +59,6 @@ class CompileVars(SimpleNamespace):
     HYDRATE = "hydrate"
     # The name of the event sent on (re)connect: hydrate plus on_load in one step.
     HYDRATE_AND_LOAD = "hydrate_and_load"
-    # The supersede group shared by hydrate_and_load and on_load_internal, so a
-    # reconnect or navigation cancels the previous unfinished on_load chain.
-    ON_LOAD_SUPERSEDE_GROUP = "on_load"
     # The key of the socket.io CONNECT auth packet that carries the boot event.
     CONNECT_AUTH_EVENT = "event"
     # Payload keys of hydrate_and_load / update_vars_internal; they are passed
