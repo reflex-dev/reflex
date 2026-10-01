@@ -2339,6 +2339,15 @@ def test_memo_tag_does_not_repeat_memo_component_tag():
     assert memo_tag(component).lower().count(component.tag.lower()) == 1
 
 
+def test_memo_tag_keeps_tag_of_class_named_with_tag_suffix():
+    """Only memo component classes drop the tag; other classes keep it."""
+
+    class Card_Button(Component):
+        tag = "Button"
+
+    assert "card_button_button_" in memo_tag(Card_Button.create())
+
+
 def test_custom_wrapper_named_memo_is_not_treated_as_react_memo():
     """A custom wrapper may share React's name and still have side effects."""
     wrapper = FunctionStringVar.create(

@@ -2086,7 +2086,7 @@ def memo_tag(component: Component) -> str:
     recursive = get_memoization_strategy(component) is MemoizationStrategy.SNAPSHOT
     prefix, tag = type(component).__qualname__, component.tag or "Comp"
     # Memo component classes are already named ``MemoComponent_<tag>``.
-    if not prefix.endswith(f"_{tag}"):
+    if prefix != f"MemoComponent_{tag}":
         prefix = f"{prefix}_{tag}"
     return format.format_state_name(
         f"{prefix}_{component_hash(component, recursive=recursive)}"
