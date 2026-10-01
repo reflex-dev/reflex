@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -351,25 +352,42 @@ def test_tree_phases_samples_a_real_tree(tmp_path: Path):
     node = _tool(tmp_path, "node", 0.4)
     # Startup alone can round down to zero in Linux's CPU accounting. Do
     # measurable CPU work before waiting on the tools so the sampler sees it.
+    # The root times each tool run on the sampler's clock (perf_counter is
+    # system-wide on POSIX), so the samples can be checked against the real
+    # lifetimes, however much a loaded runner stretches them.
     code = (
-        "import subprocess, time\n"
+        "import json, subprocess, time\n"
         "end = time.process_time() + 0.1\n"
         "while time.process_time() < end: pass\n"
-        f"subprocess.run([{bun!r}, 'add', 'react'], check=True)\n"
-        f"subprocess.run([{node!r}, 'build'], check=True)\n"
+        "runs = {}\n"
+        f"for kind, cmd in (('install', [{bun!r}, 'add', 'react']), "
+        f"('frontend', [{node!r}, 'build'])):\n"
+        "    start = time.perf_counter()\n"
+        "    subprocess.run(cmd, check=True)\n"
+        "    runs[kind] = (start, time.perf_counter())\n"
+        "print(json.dumps(runs))\n"
     )
-    root = subprocess.Popen([sys.executable, "-c", code])
+    root = subprocess.Popen(
+        [sys.executable, "-c", code], stdout=subprocess.PIPE, text=True
+    )
     sampler = phases.TreePhases(root.pid, interval=0.01).start()
-    assert root.wait(30) == 0
+    runs = json.loads(root.communicate(timeout=30)[0])
+    assert root.returncode == 0
     report = sampler.stop()
+    for kind, (run_start, run_end) in runs.items():
+        totals = report.classes[kind]
+        assert len(totals.intervals) == 1
+        ((start, end),) = totals.intervals
+        # A tool is only sampled while it runs; a sample's time is read just
+        # before the tree is listed, so its first sighting can lead the spawn
+        # by one sweep.
+        assert run_start - sampler.t0 - 0.1 <= start < end <= run_end - sampler.t0
+        assert totals.wall_s == end - start >= 0.15
     install, frontend = report.classes["install"], report.classes["frontend"]
-    assert 0.15 <= install.wall_s < 5
     # The root interpreter is recorded too, as python, with the CPU it used.
     root_record = next(p for p in report.processes if p.pid == root.pid)
     assert root_record.kind == "python"
     assert report.classes["python"].cpu_s == root_record.cpu_s > 0
-    assert 0.15 <= frontend.wall_s < 5
-    assert len(install.intervals) == len(frontend.intervals) == 1
     # Frontend work starts after the install finished.
     assert install.intervals[0][1] <= frontend.intervals[0][0]
     tools = {
