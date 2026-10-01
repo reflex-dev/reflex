@@ -204,6 +204,8 @@ def mock_redis() -> Redis:
     async def pubsub():
         watch_patterns = {}
         event_log_pointer = 0
+        # Subscribe confirmations not yet delivered by listen().
+        pending_confirmations: list[dict[str, Any]] = []
 
         async def psubscribe(  # noqa: RUF029
             *patterns: str,
@@ -212,22 +214,28 @@ def mock_redis() -> Redis:
             nonlocal event_log_pointer, watch_patterns
             event_log_pointer = len(event_log) - 1
 
-            for pattern in patterns:
-                watch_patterns[pattern] = None
-                _event_log_append_notify({
-                    "channel": b"psubscribe",
-                    "data": pattern.encode(),
-                })
-            for pattern, handler in handlers.items():
+            for pattern, handler in (
+                *((pattern, None) for pattern in patterns),
+                *handlers.items(),
+            ):
                 watch_patterns[pattern] = handler
+                pending_confirmations.append({
+                    "type": "psubscribe",
+                    "pattern": None,
+                    "channel": pattern.encode(),
+                    "data": len(watch_patterns),
+                })
                 _event_log_append_notify({
                     "channel": b"psubscribe",
                     "data": pattern.encode(),
                 })
 
-        async def listen() -> AsyncGenerator[dict[str, Any] | None, None]:
+        async def listen() -> AsyncGenerator[dict[str, Any], None]:
             nonlocal event_log_pointer
             while True:
+                # Like redis-py, deliver subscribe confirmations as messages.
+                while pending_confirmations:
+                    yield pending_confirmations.pop(0)
                 if event_log_pointer >= len(event_log):
                     await event_log_new_events.wait()
                     event_log_new_events.clear()
@@ -240,11 +248,14 @@ def mock_redis() -> Redis:
                         if handler is not None:
                             res = handler(event)
                             if asyncio.iscoroutine(res):
-                                res = await res
-                            # Yields None to indicate handled
-                            yield None
+                                await res
                         else:
-                            yield event
+                            yield {
+                                "type": "pmessage",
+                                "pattern": pattern.encode(),
+                                "channel": event["channel"],
+                                "data": event["data"],
+                            }
 
         pubsub_mock = AsyncMock()
         pubsub_mock.psubscribe = psubscribe

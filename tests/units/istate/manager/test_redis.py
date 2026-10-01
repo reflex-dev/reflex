@@ -1,6 +1,7 @@
 """Tests specific to redis state manager."""
 
 import asyncio
+import contextlib
 import enum
 import os
 import time
@@ -69,6 +70,21 @@ def root_state() -> type[RedisTestState]:
     return RedisTestState
 
 
+async def _subscribed(state_manager: StateManagerRedis) -> StateManagerRedis:
+    """Wait until the manager's lock updates subscription is confirmed.
+
+    Leases are only taken once it is, so tests that expect one must wait for it.
+
+    Args:
+        state_manager: The StateManagerRedis to wait for.
+
+    Returns:
+        The same StateManagerRedis.
+    """
+    await state_manager._ensure_lock_task_subscribed()
+    return state_manager
+
+
 @pytest_asyncio.fixture(loop_scope="function")
 async def state_manager_redis(
     root_state: type[RedisTestState],
@@ -85,6 +101,10 @@ async def state_manager_redis(
         if redis is None:
             redis = mock_redis()
         state_manager = StateManagerRedis(redis=redis)
+        # Best effort: tests that need no lease must still run on a Redis that
+        # rejects CONFIG, where the subscription never confirms.
+        with contextlib.suppress(TimeoutError, asyncio.TimeoutError):
+            await state_manager._ensure_lock_task_subscribed()
         test_start = time.monotonic()
         yield state_manager
         # None of the tests should have triggered a lock expiration.
@@ -234,7 +254,9 @@ async def test_modify_oplock(
     state_manager_redis._debug_enabled = True
     state_manager_redis._oplock_enabled = True
 
-    state_manager_2 = StateManagerRedis(redis=state_manager_redis.redis)
+    state_manager_2 = await _subscribed(
+        StateManagerRedis(redis=state_manager_redis.redis)
+    )
 
     state_manager_2._debug_enabled = True
     state_manager_2._oplock_enabled = True
@@ -368,7 +390,9 @@ async def test_oplock_contention_queue(
     state_manager_redis._debug_enabled = True
     state_manager_redis._oplock_enabled = True
 
-    state_manager_2 = StateManagerRedis(redis=state_manager_redis.redis)
+    state_manager_2 = await _subscribed(
+        StateManagerRedis(redis=state_manager_redis.redis)
+    )
 
     state_manager_2._debug_enabled = True
     state_manager_2._oplock_enabled = True
@@ -463,12 +487,16 @@ async def test_oplock_contention_no_lease(
     state_manager_redis._debug_enabled = True
     state_manager_redis._oplock_enabled = True
 
-    state_manager_2 = StateManagerRedis(redis=state_manager_redis.redis)
+    state_manager_2 = await _subscribed(
+        StateManagerRedis(redis=state_manager_redis.redis)
+    )
 
     state_manager_2._debug_enabled = True
     state_manager_2._oplock_enabled = True
 
-    state_manager_3 = StateManagerRedis(redis=state_manager_redis.redis)
+    state_manager_3 = await _subscribed(
+        StateManagerRedis(redis=state_manager_redis.redis)
+    )
     state_manager_3._debug_enabled = True
     state_manager_3._oplock_enabled = True
 
@@ -570,7 +598,9 @@ async def test_oplock_contention_racers(
     state_manager_redis._debug_enabled = True
     state_manager_redis._oplock_enabled = True
 
-    state_manager_2 = StateManagerRedis(redis=state_manager_redis.redis)
+    state_manager_2 = await _subscribed(
+        StateManagerRedis(redis=state_manager_redis.redis)
+    )
     state_manager_2._debug_enabled = True
     state_manager_2._oplock_enabled = True
     lease_1 = None
@@ -601,6 +631,10 @@ async def test_oplock_contention_racers(
         modify_2(),
     )
 
+    if lease_1 is not None and lease_2 is not None:
+        # A broken lease is only cancelled() once its final flush completes.
+        await asyncio.wait({lease_1, lease_2}, return_when=asyncio.FIRST_COMPLETED)
+
     if lease_1 is None or lease_1.cancelled():
         assert lease_2 is not None
         assert not lease_2.cancelled()
@@ -611,6 +645,69 @@ async def test_oplock_contention_racers(
         pytest.fail(
             "One lease should have been cancelled, other should still be active."
         )
+
+
+@pytest.mark.asyncio
+async def test_oplock_lease_waits_for_lock_updates_subscriber(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test that no lease is taken until redis confirms the lock updates subscription.
+
+    A lease taken before the subscriber listens could miss the contention
+    notification that breaks it, stalling other instances for the full hold time.
+    Events before the confirmation must not wait for it either, since a
+    subscriber that never confirms would then stall every event.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    state_token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    state_manager_redis._oplock_enabled = True
+    redis = state_manager_redis.redis
+    pubsub = redis.pubsub
+    confirm = asyncio.Event()
+
+    @contextlib.asynccontextmanager
+    async def delayed_confirmation_pubsub():
+        async with pubsub() as ps:
+            listen = ps.listen
+
+            async def delayed_listen():
+                await confirm.wait()
+                async for message in listen():
+                    yield message
+
+            ps.listen = delayed_listen
+            yield ps
+
+    # Restart the subscriber with its subscription confirmation held back.
+    if (lock_task := state_manager_redis._lock_task) is not None:
+        lock_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await lock_task
+    monkeypatch.setattr(redis, "pubsub", delayed_confirmation_pubsub)
+
+    async def modify() -> int:
+        async with state_manager_redis.modify_state(state_token) as new_state:
+            assert isinstance(new_state, root_state)
+            new_state.count += 1
+            return new_state.count
+
+    # Before the confirmation, an event updates without a lease instead of
+    # waiting out the subscribe timeout (2s).
+    assert await asyncio.wait_for(modify(), timeout=1) == 1
+    assert not state_manager_redis._lock_updates_subscribed.is_set()
+    assert await state_manager_redis._get_local_lease(state_token.lock_key) is None
+    assert await redis.get(state_manager_redis._lock_key(state_token)) is None
+
+    confirm.set()
+    await state_manager_redis._ensure_lock_task_subscribed()
+    assert await modify() == 2
+    assert await state_manager_redis._get_local_lease(state_token.lock_key) is not None
 
 
 @pytest.mark.asyncio
@@ -630,6 +727,9 @@ async def test_oplock_immediate_cancel(
 
     state_manager_redis._debug_enabled = True
     state_manager_redis._oplock_enabled = True
+    # The canceller below spins until a lease exists, so fail fast if the
+    # subscription a lease requires is unavailable.
+    await _subscribed(state_manager_redis)
 
     async def canceller():
         while (lease_task := state_manager_redis._local_leases.get(token)) is None:  # noqa: ASYNC110
