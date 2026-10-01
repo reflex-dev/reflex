@@ -246,9 +246,24 @@ def test_inspect_app_json_preserves_latest_deployment(mocker: MockFixture):
     result = runner.invoke(hosting_cli, ["apps", "inspect", str(_APP_ID), "--json"])
 
     assert result.exit_code == 0, result.output
-    assert json.loads(result.stdout)["latest_deployment"] == hosting.as_json_document(
-        deployment
-    )
+    assert json.loads(result.stdout)["latest_deployment"] == {
+        "id": str(_DEPLOYMENT_ID),
+        "url": "https://example.com",
+        "status": "Running",
+        "pause_reason": None,
+        "reflex_version": "0.9.0",
+        "python_version": "3.12",
+        "timestamp": "2026-01-01T00:00:00+00:00",
+        "regions": ["sjc"],
+        "vm_type_name": "c1m1",
+        "vm_type_cpu": 1.0,
+        "vm_type_ram": 1.0,
+        "strategy": "immediate",
+        "persist": False,
+        "screenshot_uri": None,
+        "last_updated": None,
+        "last_updated_by": None,
+    }
 
 
 def test_app_history_as_json(mocker: MockFixture):

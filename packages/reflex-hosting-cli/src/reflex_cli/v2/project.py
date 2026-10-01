@@ -338,9 +338,8 @@ def get_projects(
 
     rows = [hosting.as_json_document(project) for project in projects]
     if not as_json:
-        # Keep JSON complete; show only the tier label in the text table.
-        for project in rows:
-            project["tier"] = project["tier"]["name"]
+        for row, project in zip(rows, projects, strict=True):
+            row["tier"] = project.tier.name
 
     _print_rows(rows, as_json)
 

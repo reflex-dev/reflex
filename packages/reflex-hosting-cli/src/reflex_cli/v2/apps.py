@@ -968,20 +968,17 @@ def inspect_app(
             )
             raise click.exceptions.Exit(1)
 
-        app_info = hosting.as_json_document(authenticated_client.api.apps.get(app_id))
+        app = authenticated_client.api.apps.get(app_id)
+        app_info = hosting.as_json_document(app)
 
         if as_json:
             print_json(app_info)
             return
 
-        # Keep JSON output complete while shortening nested data in the table.
-        table_info = app_info.copy()
-        if deployment := table_info["latest_deployment"]:
-            table_info["latest_deployment"] = (
-                f"{deployment['status']} ({deployment['url']})"
-            )
+        if deployment := app.latest_deployment:
+            app_info["latest_deployment"] = f"{deployment.status} ({deployment.url})"
 
         console.print_table(
-            [[str(value) for value in table_info.values()]],
-            headers=list(table_info.keys()),
+            [[str(value) for value in app_info.values()]],
+            headers=list(app_info.keys()),
         )
