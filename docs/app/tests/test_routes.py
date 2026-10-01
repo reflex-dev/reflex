@@ -105,6 +105,7 @@ def test_custom_components_urls_redirect_to_wrapping_react():
         capture_output=True,
         text=True,
         check=False,
+        timeout=120,
     )
     assert result.returncode == 0, result.stderr[-2000:]
 
