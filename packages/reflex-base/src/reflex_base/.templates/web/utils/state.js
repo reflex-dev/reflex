@@ -1487,53 +1487,6 @@ export const mergeSlotProps = (injectedProps, ownProps, refProp) => {
 };
 
 /**
- * Get the value from a ref.
- * @param ref The ref to get the value from.
- * @returns The value.
- */
-export const getRefValue = (ref) => {
-  if (!ref || !ref.current) {
-    return;
-  }
-  if (ref.current.type == "checkbox") {
-    return ref.current.checked; // chakra
-  } else if (
-    ref.current.className?.includes("rt-CheckboxRoot") ||
-    ref.current.className?.includes("rt-SwitchRoot")
-  ) {
-    return ref.current.ariaChecked == "true"; // radix
-  } else if (ref.current.className?.includes("rt-SliderRoot")) {
-    // find the actual slider
-    return ref.current.querySelector(".rt-SliderThumb")?.ariaValueNow;
-  } else {
-    //querySelector(":checked") is needed to get value from radio_group
-    return (
-      ref.current.value ||
-      (ref.current.querySelector &&
-        ref.current.querySelector(":checked") &&
-        ref.current.querySelector(":checked")?.value)
-    );
-  }
-};
-
-/**
- * Get the values from a ref array.
- * @param refs The refs to get the values from.
- * @returns The values array.
- */
-export const getRefValues = (refs) => {
-  if (!refs) {
-    return;
-  }
-  // getAttribute is used by RangeSlider because it doesn't assign value
-  return refs.map((ref) =>
-    ref.current
-      ? ref.current.value || ref.current.getAttribute("aria-valuenow")
-      : null,
-  );
-};
-
-/**
  * Spread two arrays or two objects.
  * @param first The first array or object.
  * @param second The second array or object.

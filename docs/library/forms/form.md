@@ -159,11 +159,9 @@ def form_example():
 ```
 
 ```md alert info
-# Using `name` vs `id`.
+# Form data is keyed by `name`.
 
-When using the `name` attribute in form controls like `rx.switch`, `rx.radio_group`, and `rx.checkbox`, these controls will only be included in the form data if their values are set (e.g., if the checkbox is checked, the switch is toggled, or a radio option is selected).
-
-If you need these controls to be passed in the form data even when their values are not set, you can use the `id` attribute instead of name. The id attribute ensures that the control is always included in the submitted form data, regardless of whether its value is set or not.
+Only controls with a `name` are included in the form data; the `id` attribute does not add a field. Following standard HTML form behavior, controls like `rx.switch`, `rx.radio_group`, and `rx.checkbox` are only included when their values are set (e.g., if the checkbox is checked, the switch is toggled, or a radio option is selected), so read them with `form_data.get(...)`.
 ```
 
 ```md video https://youtube.com/embed/ITOZkzjtjUA?start=5287&end=6040
@@ -181,7 +179,7 @@ Instead, you can annotate the handler's parameter with a
 This gives you typed, autocompleted access to each field inside the handler, and
 Reflex validates the form **at compile time**: every required key of the
 `TypedDict` must have a matching form control. If a required field has no
-control with that `name` (or `id`), Reflex raises an `EventHandlerValueError`
+control with that `name`, Reflex raises an `EventHandlerValueError`
 before the app starts, pointing out exactly which fields are missing.
 
 ```python demo exec
@@ -271,7 +269,7 @@ rx.form(
 # When is validation skipped?
 
 The check only runs when the form fields are statically known. It is
-automatically skipped when control `name`/`id` values are dynamic (for example,
+automatically skipped when control `name` values are dynamic (for example,
 built with `rx.foreach`), or when the form has an `id` (since controls can be
 associated from elsewhere via the HTML `form` attribute). In those cases the
 `TypedDict` still provides typed access inside the handler. At runtime

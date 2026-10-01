@@ -1,0 +1,1 @@
+Form `on_submit` now builds `form_data` only from each control's `name`; a control's `id` no longer adds a field (named controls with an `id` were previously submitted twice). Give every submitted control a `name`, e.g. `rx.input(id="email")` becomes `rx.input(name="email")`.

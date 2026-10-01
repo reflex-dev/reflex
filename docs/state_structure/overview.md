@@ -164,7 +164,7 @@ def index():
         rx.form(
             rx.vstack(
                 rx.hstack(
-                    rx.input(placeholder="Name", id="name"),
+                    rx.input(placeholder="Name", name="name"),
                     set_salutation_popover(),
                 ),
                 rx.button("Submit"),

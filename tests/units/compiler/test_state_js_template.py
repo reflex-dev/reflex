@@ -54,7 +54,7 @@ def test_merge_slot_props_handles_conditional_event_handlers() -> None:
     content = STATE_JS_TEMPLATE.read_text()
     helpers = content[
         content.index("export const mergeRefs =") : content.index(
-            "export const getRefValue ="
+            "export const spreadArraysOrObjects ="
         )
     ]
     subprocess.run(

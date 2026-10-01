@@ -2741,7 +2741,7 @@ def test_memo_forwarded_ref_merges_with_id_ref() -> None:
     """A root's own ``id``-derived ref rides its props into the runtime merge.
 
     An injected ref must not clobber the ``useRef`` that backs
-    ``refs['ref_<id>']`` (form value collection, focus helpers), and vice
+    ``refs['ref_<id>']`` (e.g. focus and scroll helpers), and vice
     versa — ``mergeSlotProps`` composes both at runtime via ``mergeRefs``, so
     the compiled body must keep the plain ``ref_<id>`` inside its own props.
     """

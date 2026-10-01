@@ -59,8 +59,8 @@ def test_on_submit_accepts_typed_dict_form_data(form_factory):
     assert isinstance(form.event_triggers["on_submit"], EventChain)
 
 
-def test_on_submit_accepts_id_backed_typed_dict_form_data():
-    """Static ids that are mirrored into form_data should satisfy TypedDict keys."""
+def test_on_submit_rejects_id_backed_typed_dict_form_data():
+    """Static ids are not submitted, so they cannot satisfy TypedDict keys."""
 
     class SignupData(TypedDict):
         email_input: str
@@ -70,12 +70,42 @@ def test_on_submit_accepts_id_backed_typed_dict_form_data():
         def on_submit(self, form_data: SignupData):
             pass
 
-    form = HTMLForm.create(
-        Input.create(id="email_input"),
-        on_submit=SignupState.on_submit,
-    )
+    with pytest.raises(EventHandlerValueError, match="email_input"):
+        HTMLForm.create(
+            Input.create(id="email_input"),
+            on_submit=SignupState.on_submit,
+        )
 
-    assert isinstance(form.event_triggers["on_submit"], EventChain)
+
+def test_on_submit_typed_dict_ignores_dynamic_ids():
+    """A dynamic id cannot contribute a form_data key, so validation still runs."""
+
+    class SignupData(TypedDict):
+        email: str
+
+    class SignupState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: SignupData):
+            pass
+
+    with pytest.raises(EventHandlerValueError):
+        HTMLForm.create(
+            Input.create(id=Var(_js_expr="dynamic_id", _var_type=str)),
+            on_submit=SignupState.on_submit,
+        )
+
+
+@pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
+def test_on_submit_collects_form_data_by_name_only(form_factory):
+    """The submit handler reads FormData by name and never reads id refs."""
+    form = form_factory(
+        Input.create(id="email_input", name="email"),
+        on_submit=Var(_js_expr="submit_it", _var_type=EventChain),
+    )
+    (hook,) = form.add_hooks()
+    assert "Object.fromEntries(new FormData($form).entries())" in hook
+    assert "ref_email_input" not in hook
+    assert "getRefValue" not in hook
 
 
 def test_on_submit_accepts_typed_dict_with_optional_fields():
