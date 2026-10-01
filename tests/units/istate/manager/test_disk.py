@@ -14,6 +14,23 @@ from reflex.state import BaseState
 from reflex.utils import prerequisites
 
 
+def disk_warning_logs(caplog: pytest.LogCaptureFixture) -> list[logging.LogRecord]:
+    """Return warning records from the disk manager.
+
+    Args:
+        caplog: The pytest log capture fixture.
+
+    Returns:
+        Captured disk manager warning records.
+    """
+    return [
+        record
+        for record in caplog.records
+        if record.name == "reflex.istate.manager.disk"
+        and record.levelno >= logging.WARNING
+    ]
+
+
 class DiskPersistState(BaseState):
     """A state for testing disk persistence."""
 
@@ -178,13 +195,8 @@ async def test_load_state_logs_warning_for_corrupted_file(
     result = await state_manager.load_state(token)
     assert result is None
 
-    # Verify that an error was logged.
-    warning_logs = [
-        record
-        for record in caplog.records
-        if record.name == "reflex.istate.manager.disk"
-        and record.levelno >= logging.WARNING
-    ]
+    # Verify that a warning was logged.
+    warning_logs = disk_warning_logs(caplog)
     assert len(warning_logs) == 1
     assert "Failed to load state" in warning_logs[0].message
     assert token_path.name in warning_logs[0].message
@@ -222,12 +234,7 @@ async def test_load_state_logs_sanitized_exception_details(
 
     assert await state_manager.load_state(token) is None
 
-    warning_logs = [
-        record
-        for record in caplog.records
-        if record.name == "reflex.istate.manager.disk"
-        and record.levelno >= logging.WARNING
-    ]
+    warning_logs = disk_warning_logs(caplog)
     assert len(warning_logs) == 1
     assert warning_logs[0].levelno == logging.WARNING
     assert "ModuleNotFoundError" in warning_logs[0].message
@@ -243,7 +250,7 @@ async def test_load_state_logs_sanitized_exception_details(
 
 @pytest.mark.asyncio
 async def test_load_state_returns_none_for_missing_file(tmp_path, monkeypatch, caplog):
-    """Test that load_state returns None without logging an error for missing files.
+    """Test that load_state returns None without logging a warning for missing files.
 
     Args:
         tmp_path: A temporary directory.
@@ -254,17 +261,12 @@ async def test_load_state_returns_none_for_missing_file(tmp_path, monkeypatch, c
     state_manager = StateManagerDisk(_write_debounce_seconds=0)
     token = StateToken(ident="nonexistent_client", cls=dict)
 
-    # load_state should return None without logging an error.
+    # load_state should return None without logging a warning.
     result = await state_manager.load_state(token)
     assert result is None
 
-    # Verify that no error was logged.
-    warning_logs = [
-        record
-        for record in caplog.records
-        if record.name == "reflex.istate.manager.disk"
-        and record.levelno >= logging.WARNING
-    ]
+    # Verify that no warning was logged.
+    warning_logs = disk_warning_logs(caplog)
     assert len(warning_logs) == 0
 
     await state_manager.close()
