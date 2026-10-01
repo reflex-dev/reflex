@@ -764,7 +764,7 @@ def _validate(token: str, api: ReflexBuild | None = None) -> Me:
 def identity_as_dict(me: Me) -> dict[str, Any]:
     """Render an identity the way the CLI and the framework have always read it.
 
-    ``reflex.utils.prerequisites`` reads this
+    ``reflex.utils.prerequisites`` and ``reflex.custom_components`` read this
     out of ``authenticated_token`` across package versions, so it stays a
     mapping of the fields the control plane used to return.
 
