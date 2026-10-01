@@ -98,8 +98,8 @@ class _CoercedFormField:
 
     name: str
     is_list: bool
-    # An unsubmitted field is coerced like a submitted one (to [] or False)
-    # unless its type allows None: then it is None, or left out when NotRequired.
+    # An unsubmitted field is left out unless it is required: then it is None
+    # when its type allows None, otherwise an empty list or False.
     optional: bool
     required: bool
 
@@ -144,15 +144,17 @@ def _form_data_as_typed_dict(form_data: MultiDict, typed_dict: type) -> dict[str
     Returns:
         A dict of each field's last value, where ``list`` fields hold every
         value and ``bool`` fields whether a truthy value was submitted. An
-        unsubmitted field whose type allows None is None, or left out when it
-        is not required.
+        unsubmitted field is left out when it is not required, and otherwise is
+        None when its type allows None, else an empty list or False.
     """
     result = dict(form_data)
     for field in _typed_dict_form_fields(typed_dict):
-        if field.optional and field.name not in form_data:
-            if field.required:
+        if field.name not in form_data:
+            if not field.required:
+                continue
+            if field.optional:
                 result[field.name] = None
-            continue
+                continue
         result[field.name] = (
             form_data.getlist(field.name)
             if field.is_list

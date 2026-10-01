@@ -1598,32 +1598,34 @@ def test_transform_multidict_passes_through_for_multidict_hint():
 
 
 def test_transform_form_data_to_typed_dict_coerces_lists_and_bools():
-    """TypedDict list fields take every value and bool fields are always set."""
+    """TypedDict list fields take every value and bool fields are cast."""
     form_data = _transform_form_data_payload(
         _TagsMultiData,
-        {FORM_DATA_ENTRIES_KEY: [*_FORM_DATA_ENTRIES, ["subscribe", "on"]]},
+        {
+            FORM_DATA_ENTRIES_KEY: [
+                *_FORM_DATA_ENTRIES,
+                ["subscribe", "on"],
+                ["topics", "news"],
+                ["topics", "events"],
+                ["agree", ""],
+            ]
+        },
     )
     assert form_data == {
         "tag": ["a", "b"],
         "name": "x",
         "subscribe": True,
-        "topics": [],
+        "topics": ["news", "events"],
         "agree": False,
     }
 
 
 def test_transform_form_data_to_typed_dict_with_missing_fields():
-    """Unsubmitted list fields are empty and unchecked bool fields are False."""
+    """Unsubmitted required fields are empty or False; NotRequired ones are left out."""
     form_data = _transform_form_data_payload(
         _TagsMultiData, {FORM_DATA_ENTRIES_KEY: [["name", "x"]]}
     )
-    assert form_data == {
-        "tag": [],
-        "name": "x",
-        "subscribe": False,
-        "topics": [],
-        "agree": False,
-    }
+    assert form_data == {"tag": [], "name": "x", "subscribe": False}
 
 
 def test_transform_form_data_to_typed_dict_with_optional_fields():

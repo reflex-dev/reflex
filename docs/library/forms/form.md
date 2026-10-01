@@ -286,8 +286,9 @@ value for them:
   instead of a missing key.
 
 When no value is submitted for a field whose type allows `None`, such as
-`list[str] | None` or `bool | None`, the field is `None` instead, or left out
-entirely when it is also `NotRequired`.
+`list[str] | None` or `bool | None`, the field is `None` instead. A field
+marked `NotRequired` is left out when no value is submitted for it, whatever
+its type.
 
 ```python
 class PreferencesForm(TypedDict):
