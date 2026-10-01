@@ -32,7 +32,6 @@ from reflex_docs.whitelist import _check_whitelisted_path
 from .apiref import pages as apiref_pages
 from .cloud import pages as cloud_pages
 from .cloud_cliref import pages as cloud_cliref_pages
-from .custom_components import custom_components
 from .library import library
 from .recipes_overview import overview
 
@@ -191,8 +190,6 @@ manual_titles = {
     "docs/workflows/workers.md": "Running Workers",
     "docs/workflows/how_it_works.md": "How Workflows Work",
     "docs/workflows/reference.md": "API Reference",
-    "docs/custom-components/overview.md": "Custom Components Overview",
-    "docs/custom-components/command-reference.md": "Custom Component CLI Reference",
     "docs/api-routes/overview.md": "API Routes Overview",
     "docs/client_storage/overview.md": "Client Storage Overview",
     "docs/state_structure/overview.md": "State Structure Overview",
@@ -548,7 +545,6 @@ for _virtual, _actual in all_docs.items():
 
 doc_routes = [
     library,
-    custom_components,
     overview,
     *components_previews_pages,
     *apiref_pages,
