@@ -1,6 +1,7 @@
 """Tests specific to redis state manager."""
 
 import asyncio
+import contextlib
 import enum
 import os
 import time
@@ -602,8 +603,9 @@ async def test_oplock_contention_racers(
 async def test_oplock_lease_waits_for_lock_updates_subscriber(
     state_manager_redis: StateManagerRedis,
     root_state: type[RedisTestState],
+    monkeypatch: pytest.MonkeyPatch,
 ):
-    """Test that no lease is taken until the lock updates subscriber is listening.
+    """Test that no lease is taken until redis confirms the lock updates subscription.
 
     A lease taken before the subscriber listens could miss the contention
     notification that breaks it, stalling other instances for the full hold time.
@@ -611,28 +613,50 @@ async def test_oplock_lease_waits_for_lock_updates_subscriber(
     Args:
         state_manager_redis: The StateManagerRedis to test.
         root_state: The root state class.
+        monkeypatch: The pytest monkeypatch fixture.
     """
-    token = str(uuid.uuid4())
+    state_token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
     state_manager_redis._oplock_enabled = True
-    await state_manager_redis._ensure_lock_task_subscribed()
-    # Simulate a subscriber whose subscription redis has not yet confirmed.
-    state_manager_redis._lock_updates_subscribed.clear()
+    redis = state_manager_redis.redis
+    pubsub = redis.pubsub
+    confirm = asyncio.Event()
+
+    @contextlib.asynccontextmanager
+    async def delayed_confirmation_pubsub():
+        async with pubsub() as ps:
+            listen = ps.listen
+
+            async def delayed_listen():
+                await confirm.wait()
+                async for message in listen():
+                    yield message
+
+            ps.listen = delayed_listen
+            yield ps
+
+    # Restart the subscriber with its subscription confirmation held back.
+    if (lock_task := state_manager_redis._lock_task) is not None:
+        lock_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await lock_task
+    monkeypatch.setattr(redis, "pubsub", delayed_confirmation_pubsub)
 
     async def modify():
-        async with state_manager_redis.modify_state(
-            BaseStateToken(ident=token, cls=root_state),
-        ) as new_state:
+        async with state_manager_redis.modify_state(state_token) as new_state:
             assert isinstance(new_state, root_state)
             new_state.count += 1
 
     modify_task = asyncio.create_task(modify())
     await asyncio.sleep(0.1)
     assert not modify_task.done()
-    assert await state_manager_redis._get_local_lease(token) is None
+    assert not state_manager_redis._lock_updates_subscribed.is_set()
+    assert await state_manager_redis._get_local_lease(state_token.lock_key) is None
+    # The redis lock is not held while waiting, so its TTL is not spent.
+    assert await redis.get(state_manager_redis._lock_key(state_token)) is None
 
-    state_manager_redis._lock_updates_subscribed.set()
+    confirm.set()
     await modify_task
-    assert await state_manager_redis._get_local_lease(token) is not None
+    assert await state_manager_redis._get_local_lease(state_token.lock_key) is not None
 
 
 @pytest.mark.asyncio
