@@ -382,6 +382,84 @@ async def test_wait_until_live(client: AsyncReflexBuild, mock_api: MockAPI):
     ]
 
 
+async def test_wait_does_not_finish_before_the_recorded_state_is_running(
+    client: AsyncReflexBuild, mock_api: MockAPI
+):
+    """A completion message can arrive before the deployment is recorded as live.
+
+    Args:
+        client: The SDK client.
+        mock_api: The mock API.
+    """
+    message = "Deployment completed successfully!"
+    _statuses(mock_api, message)
+    _reports(mock_api, "Pending", "Pending", "Running")
+    messages = []
+
+    report = await client.deployments.wait(
+        FIRST_ID, poll_interval=0, on_status=messages.append
+    )
+
+    assert report.status == "Running"
+    assert messages == [message]
+    assert len([r for r in mock_api.requests if r.url.endswith("/failure")]) == 3
+
+
+async def test_wait_returns_approval_despite_a_cached_completion_message(
+    client: AsyncReflexBuild, mock_api: MockAPI
+):
+    """A build waiting for approval is not reported as running.
+
+    Args:
+        client: The SDK client.
+        mock_api: The mock API.
+    """
+    _statuses(mock_api, "Deployment completed successfully!")
+    _reports(mock_api, "AwaitingApproval")
+
+    report = await client.deployments.wait(FIRST_ID, poll_interval=0)
+
+    assert report.status == "AwaitingApproval"
+    assert len([r for r in mock_api.requests if r.url.endswith("/failure")]) == 1
+
+
+async def test_wait_raises_when_a_completion_message_outlives_the_deployment(
+    client: AsyncReflexBuild, mock_api: MockAPI
+):
+    """A cached completion message cannot turn a superseded deployment into success.
+
+    Args:
+        client: The SDK client.
+        mock_api: The mock API.
+    """
+    _statuses(mock_api, "Deployment completed successfully!")
+    _reports(mock_api, "Pending", "Superseded")
+
+    with pytest.raises(DeploymentFailedError) as exc_info:
+        await client.deployments.wait(FIRST_ID, poll_interval=0)
+
+    assert exc_info.value.report.status == "Superseded"
+    assert len([r for r in mock_api.requests if r.url.endswith("/failure")]) == 2
+
+
+async def test_wait_times_out_when_completion_precedes_the_recorded_state(
+    client: AsyncReflexBuild, mock_api: MockAPI
+):
+    """An early completion message does not bypass the wait's deadline.
+
+    Args:
+        client: The SDK client.
+        mock_api: The mock API.
+    """
+    _statuses(mock_api, "Deployment completed successfully!")
+    _reports(mock_api, "Pending")
+
+    with pytest.raises(DeploymentTimeoutError, match="completed successfully"):
+        await client.deployments.wait(FIRST_ID, timeout=0, poll_interval=0)
+
+    assert len([r for r in mock_api.requests if r.url.endswith("/failure")]) == 1
+
+
 async def test_wait_raises_on_failure(client: AsyncReflexBuild, mock_api: MockAPI):
     _statuses(
         mock_api,
