@@ -6,22 +6,43 @@ import os
 from pathlib import Path
 
 import pytest
+from reflex_base.utils.exceptions import StateSchemaMismatchError
 
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.token import BaseStateToken, StateToken
 from reflex.state import BaseState
 from reflex.utils import prerequisites
 
-CLIENT_ID = "client"
-NONEXISTENT_CLIENT_ID = "nonexistent_client"
-WHITESPACE_CLIENT_ID = "private  session\ttoken"
-OVERSIZED_MODULE_NAME = "oversized_module_name_" * 100
-
 
 class DiskPersistState(BaseState):
     """A state for testing disk persistence."""
 
     num: float = 3.15
+
+
+@pytest.mark.asyncio
+async def test_load_state_schema_mismatch_is_silent(tmp_path, monkeypatch, caplog):
+    """Schema changes during hot reload should silently discard stale state.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: The pytest caplog fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+    manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = StateToken(ident="client", cls=dict)
+    manager.token_path(token).write_bytes(b"stale state")
+
+    def fail_to_deserialize(cls, data=None, fp=None):
+        """Raise the expected hot-reload schema mismatch."""
+        raise StateSchemaMismatchError
+
+    monkeypatch.setattr(StateToken, "deserialize", classmethod(fail_to_deserialize))
+    with caplog.at_level(logging.WARNING, logger="reflex.istate.manager.disk"):
+        assert await manager.load_state(token) is None
+    assert not caplog.records
+    await manager.close()
 
 
 def test_states_directory_survives_chdir(tmp_path: Path, monkeypatch):
@@ -55,7 +76,7 @@ async def test_debounced_set_state_flushes_latest_value(tmp_path, monkeypatch):
     """
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
     state_manager = StateManagerDisk(_write_debounce_seconds=60)
-    token = StateToken(ident=CLIENT_ID, cls=int)
+    token = StateToken(ident="client", cls=int)
 
     await state_manager.set_state(token, 1)
     first_item = state_manager._write_queue[token]
@@ -86,7 +107,7 @@ async def test_set_state_updates_cache_for_arbitrary_instance(
     """
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
     state_manager = StateManagerDisk(_write_debounce_seconds=write_debounce_seconds)
-    token = StateToken(ident=CLIENT_ID, cls=dict)
+    token = StateToken(ident="client", cls=dict)
     cached_state = await state_manager.get_state(token)
     state = {"value": 2}
 
@@ -116,7 +137,7 @@ async def test_set_state_persists_untouched_base_state(
     """
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
     state_manager = StateManagerDisk(_write_debounce_seconds=write_debounce_seconds)
-    token = BaseStateToken(ident=CLIENT_ID, cls=DiskPersistState)
+    token = BaseStateToken(ident="client", cls=DiskPersistState)
     state = DiskPersistState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     object.__setattr__(state, "num", 9.5)
     state.dirty_vars.clear()
@@ -133,8 +154,10 @@ async def test_set_state_persists_untouched_base_state(
 
 
 @pytest.mark.asyncio
-async def test_load_state_logs_error_for_corrupted_file(tmp_path, monkeypatch, caplog):
-    """Test that load_state logs an error when a corrupted state file is encountered.
+async def test_load_state_logs_warning_for_corrupted_file(
+    tmp_path, monkeypatch, caplog
+):
+    """Test that load_state logs a warning when a corrupted state file is encountered.
 
     Args:
         tmp_path: A temporary directory.
@@ -143,7 +166,7 @@ async def test_load_state_logs_error_for_corrupted_file(tmp_path, monkeypatch, c
     """
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
     state_manager = StateManagerDisk(_write_debounce_seconds=0)
-    token = StateToken(ident=CLIENT_ID, cls=dict)
+    token = StateToken(ident="client", cls=dict)
 
     # Write a corrupted pickle file directly to the states directory.
     corrupted_content = b"not a valid pickle file"
@@ -151,24 +174,22 @@ async def test_load_state_logs_error_for_corrupted_file(tmp_path, monkeypatch, c
     token_path.parent.mkdir(parents=True, exist_ok=True)
     token_path.write_bytes(corrupted_content)
 
-    # load_state should return None and log an error.
+    # load_state should return None and log a warning.
     result = await state_manager.load_state(token)
     assert result is None
 
     # Verify that an error was logged.
-    error_logs = [
+    warning_logs = [
         record
         for record in caplog.records
         if record.name == "reflex.istate.manager.disk"
-        and record.levelno >= logging.ERROR
+        and record.levelno >= logging.WARNING
     ]
-    assert len(error_logs) == 1
-    assert "Failed to load state" in error_logs[0].message
-    assert token_path.name in error_logs[0].message
-    assert token.ident not in error_logs[0].message
-    assert "corrupted" not in error_logs[0].message
-    assert "replaced" not in error_logs[0].message
-    assert "Falling back to a default state for this load" in error_logs[0].message
+    assert len(warning_logs) == 1
+    assert "Failed to load state" in warning_logs[0].message
+    assert token_path.name in warning_logs[0].message
+    assert token.ident not in warning_logs[0].message
+    assert "falling back to a default state" in warning_logs[0].message
 
     await state_manager.close()
 
@@ -186,7 +207,7 @@ async def test_load_state_logs_sanitized_exception_details(
     """
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
     state_manager = StateManagerDisk(_write_debounce_seconds=0)
-    token = StateToken(ident=WHITESPACE_CLIENT_ID, cls=dict)
+    token = StateToken(ident="private  session\ttoken", cls=dict)
     token_path = state_manager.token_path(token)
     token_path.parent.mkdir(parents=True, exist_ok=True)
     token_path.write_bytes(b"existing state")
@@ -201,64 +222,21 @@ async def test_load_state_logs_sanitized_exception_details(
 
     assert await state_manager.load_state(token) is None
 
-    error_logs = [
+    warning_logs = [
         record
         for record in caplog.records
         if record.name == "reflex.istate.manager.disk"
-        and record.levelno >= logging.ERROR
+        and record.levelno >= logging.WARNING
     ]
-    assert len(error_logs) == 1
-    assert "ModuleNotFoundError" in error_logs[0].message
-    assert "missing_state_module" in error_logs[0].message
-    assert token.ident not in error_logs[0].message
-    assert str(token) not in error_logs[0].message
-    assert " ".join(token.ident.split()) not in error_logs[0].message
-    assert token_path.name in error_logs[0].message
-    assert "Falling back to a default state for this load" in error_logs[0].message
-
-    await state_manager.close()
-
-
-@pytest.mark.asyncio
-async def test_load_state_caps_exception_details(tmp_path, monkeypatch, caplog):
-    """Test that exception details are capped before they are logged.
-
-    Args:
-        tmp_path: A temporary directory.
-        monkeypatch: The pytest monkeypatch fixture.
-        caplog: The pytest caplog fixture.
-    """
-    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
-    state_manager = StateManagerDisk(_write_debounce_seconds=0)
-    token = StateToken(ident=CLIENT_ID, cls=dict)
-    token_path = state_manager.token_path(token)
-    token_path.parent.mkdir(parents=True, exist_ok=True)
-    token_path.write_bytes(b"existing state")
-    module_name = OVERSIZED_MODULE_NAME
-
-    def fail_to_deserialize(cls, data=None, fp=None):
-        """Raise a representative error with an oversized module name."""
-        error_message = f"No module named '{module_name}'"
-        raise ModuleNotFoundError(error_message)
-
-    monkeypatch.setattr(StateToken, "deserialize", classmethod(fail_to_deserialize))
-
-    assert await state_manager.load_state(token) is None
-
-    error_logs = [
-        record
-        for record in caplog.records
-        if record.name == "reflex.istate.manager.disk"
-        and record.levelno >= logging.ERROR
-    ]
-    assert len(error_logs) == 1
-    prefix = f"Failed to load state file {token_path.name}: ModuleNotFoundError: "
-    suffix = ". Falling back to a default state for this load."
-    assert error_logs[0].message.startswith(prefix)
-    assert error_logs[0].message.endswith(suffix)
-    exception_detail = error_logs[0].message[len(prefix) : -len(suffix)]
-    assert len(exception_detail) <= 512
-    assert "oversized_module_name_" in exception_detail
+    assert len(warning_logs) == 1
+    assert warning_logs[0].levelno == logging.WARNING
+    assert "ModuleNotFoundError" in warning_logs[0].message
+    assert "missing_state_module" in warning_logs[0].message
+    assert token.ident not in warning_logs[0].message
+    assert str(token) not in warning_logs[0].message
+    assert " ".join(token.ident.split()) not in warning_logs[0].message
+    assert token_path.name in warning_logs[0].message
+    assert "falling back to a default state" in warning_logs[0].message
 
     await state_manager.close()
 
@@ -274,19 +252,19 @@ async def test_load_state_returns_none_for_missing_file(tmp_path, monkeypatch, c
     """
     monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
     state_manager = StateManagerDisk(_write_debounce_seconds=0)
-    token = StateToken(ident=NONEXISTENT_CLIENT_ID, cls=dict)
+    token = StateToken(ident="nonexistent_client", cls=dict)
 
     # load_state should return None without logging an error.
     result = await state_manager.load_state(token)
     assert result is None
 
     # Verify that no error was logged.
-    error_logs = [
+    warning_logs = [
         record
         for record in caplog.records
         if record.name == "reflex.istate.manager.disk"
-        and record.levelno >= logging.ERROR
+        and record.levelno >= logging.WARNING
     ]
-    assert len(error_logs) == 0
+    assert len(warning_logs) == 0
 
     await state_manager.close()

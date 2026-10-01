@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Generic, cast
 
 from reflex_base.environment import state_manager_disk_debounce
+from reflex_base.utils.exceptions import StateSchemaMismatchError
 from typing_extensions import Unpack, override
 
 from reflex.istate.manager import (
@@ -157,6 +158,8 @@ class StateManagerDisk(StateManager):
             try:
                 with token_path.open(mode="rb") as file:
                     return token.deserialize(fp=file)
+            except StateSchemaMismatchError:
+                return None
             except Exception as e:
                 exception_detail = str(e)
                 for secret in (str(token), token.ident):
@@ -164,10 +167,8 @@ class StateManagerDisk(StateManager):
                         exception_detail = exception_detail.replace(
                             secret, "[redacted]"
                         )
-                exception_detail = " ".join(exception_detail.split())[:512]
-                logger.error(
-                    "Failed to load state file %s: %s: %s. "
-                    "Falling back to a default state for this load.",
+                logger.warning(
+                    "Failed to load state file %s, falling back to a default state: %s(%r)",
                     token_path.name,
                     type(e).__name__,
                     exception_detail,
