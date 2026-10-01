@@ -1163,10 +1163,13 @@ def test_dataclass_proxy_class_omits_absent_metadata() -> None:
 
 
 def test_proxy_class_caches_only_dataclass_proxy_classes() -> None:
-    """The class generated for a dataclass is reused, and other types stay collectable."""
+    """The class generated for a dataclass is reused per base, and other types stay collectable."""
     assert _proxy_class(MutableProxy, TaggedModel) is _proxy_class(
         MutableProxy, TaggedModel
     )
+    immutable_cls = _proxy_class(ImmutableMutableProxy, TaggedModel)
+    assert issubclass(immutable_cls, ImmutableMutableProxy)
+    assert immutable_cls is _proxy_class(ImmutableMutableProxy, TaggedModel)
 
     class RuntimeList(list):
         pass

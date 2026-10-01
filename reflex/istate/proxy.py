@@ -520,6 +520,12 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(msg)
 
 
+# The classes generated for dataclass types, by base proxy class, then dataclass.
+# Plain dicts rather than `functools.cache`: no key tuple is built per lookup, and
+# pyright cannot prove a proxy class `Hashable` against an untyped wrapt.
+_DATACLASS_PROXY_CLASSES: dict[type[MutableProxy], dict[type, type[MutableProxy]]] = {}
+
+
 def _proxy_class(base: type[MutableProxy], wrapped_cls: type) -> type[MutableProxy]:
     """Get the class to proxy the instances of a type through.
 
@@ -538,10 +544,14 @@ def _proxy_class(base: type[MutableProxy], wrapped_cls: type) -> type[MutablePro
     # What `dataclasses.is_dataclass` checks on a class, without the call.
     if not hasattr(wrapped_cls, "__dataclass_fields__"):
         return base
-    return _dataclass_proxy_class(base, wrapped_cls)
+    try:
+        return _DATACLASS_PROXY_CLASSES[base][wrapped_cls]
+    except KeyError:
+        proxy_cls = _dataclass_proxy_class(base, wrapped_cls)
+        _DATACLASS_PROXY_CLASSES.setdefault(base, {})[wrapped_cls] = proxy_cls
+        return proxy_cls
 
 
-@functools.cache
 def _dataclass_proxy_class(
     base: type[MutableProxy], wrapped_cls: type
 ) -> type[MutableProxy]:
