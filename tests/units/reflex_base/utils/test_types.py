@@ -15,10 +15,19 @@ from reflex_base.utils.types import (
     Scope,
     Send,
     _isinstance,
+    get_required_typed_dict_keys,
     resolve_type_alias,
     typehint_issubclass,
 )
-from typing_extensions import ParamSpec, TypeAliasType, TypeVarTuple, Unpack
+from typing_extensions import (
+    NotRequired,
+    ParamSpec,
+    Required,
+    TypeAliasType,
+    TypedDict,
+    TypeVarTuple,
+    Unpack,
+)
 
 P = ParamSpec("P")
 Ts = TypeVarTuple("Ts")
@@ -246,3 +255,18 @@ def test_isinstance_unwraps_annotated() -> None:
     assert not _isinstance(
         {"a": "x"}, dict[str, Annotated[int, "meta"]], nested=2, treat_var_as_type=False
     )
+
+
+class _OptionalBase(TypedDict, total=False):
+    nickname: str
+    email: Required[str]
+
+
+class _SignupData(_OptionalBase):
+    name: str
+    message: NotRequired[str]
+
+
+def test_get_required_typed_dict_keys():
+    """Required keys honor NotRequired, Required and inherited totality."""
+    assert get_required_typed_dict_keys(_SignupData) == {"name", "email"}

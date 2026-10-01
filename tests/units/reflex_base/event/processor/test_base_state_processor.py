@@ -19,7 +19,10 @@ from reflex_base.environment import environment
 from reflex_base.event import FORM_DATA_ENTRIES_KEY
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
-from reflex_base.event.processor.base_state_processor import _transform_event_payload
+from reflex_base.event.processor.base_state_processor import (
+    _prepare_event_payload,
+    _transform_event_payload,
+)
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.multidict import MultiDict
 from typing_extensions import NotRequired
@@ -1535,6 +1538,14 @@ class _TagsMultiData(TypedDict):
     agree: NotRequired[bool]
 
 
+class _TagsOptionalData(TypedDict):
+    name: str
+    tag: list[str] | None
+    subscribe: bool | None
+    topics: NotRequired[list[str] | None]
+    agree: NotRequired[bool | None]
+
+
 class _SubMultiDict(MultiDict[str, str]):
     pass
 
@@ -1615,6 +1626,36 @@ def test_transform_form_data_to_typed_dict_with_missing_fields():
     }
 
 
+def test_transform_form_data_to_typed_dict_with_optional_fields():
+    """Submitted optional list and bool fields are coerced like required ones."""
+    form_data = _transform_form_data_payload(
+        _TagsOptionalData,
+        {
+            FORM_DATA_ENTRIES_KEY: [
+                *_FORM_DATA_ENTRIES,
+                ["subscribe", ""],
+                ["topics", "news"],
+                ["agree", "on"],
+            ]
+        },
+    )
+    assert form_data == {
+        "tag": ["a", "b"],
+        "name": "x",
+        "subscribe": False,
+        "topics": ["news"],
+        "agree": True,
+    }
+
+
+def test_transform_form_data_to_typed_dict_with_missing_optional_fields():
+    """Unsubmitted optional fields are None, or left out when NotRequired."""
+    form_data = _transform_form_data_payload(
+        _TagsOptionalData, {FORM_DATA_ENTRIES_KEY: [["name", "x"]]}
+    )
+    assert form_data == {"name": "x", "tag": None, "subscribe": None}
+
+
 def test_transform_multidict_to_typed_dict():
     """A MultiDict from a previous handler is coerced like submitted entries."""
     form_data = _transform_form_data_payload(
@@ -1633,3 +1674,52 @@ def test_transform_plain_dict_to_typed_dict_is_unchanged():
 def test_transform_form_data_to_dataclass():
     """Decoded form entries still feed structured annotations."""
     assert _transform_form_data_payload(_TagsRecord) == _TagsRecord(tag="b", name="x")
+
+
+def test_prepare_event_payload_transforms_form_data():
+    """A payload is transformed for the handler's annotations."""
+
+    def handler(self, form_data: MultiDict[str, str], count: int):
+        pass
+
+    payload = _prepare_event_payload(
+        handler,
+        {"form_data": {FORM_DATA_ENTRIES_KEY: _FORM_DATA_ENTRIES}, "count": "3"},
+    )
+    assert payload["form_data"].getlist("tag") == ["a", "b"]
+    assert payload["count"] == 3
+
+
+def test_prepare_event_payload_falls_back_to_form_data_dict(caplog):
+    """When an arg cannot be transformed, form data still arrives as a dict."""
+
+    def handler(self, form_data: _TagsRecord, count: int):
+        pass
+
+    with caplog.at_level(logging.WARNING):
+        payload = _prepare_event_payload(
+            handler,
+            {
+                "form_data": {
+                    FORM_DATA_ENTRIES_KEY: [*_FORM_DATA_ENTRIES, ["extra", "y"]]
+                },
+                "count": "3",
+            },
+        )
+    assert payload == {
+        "form_data": {"tag": "b", "name": "x", "extra": "y"},
+        "count": "3",
+    }
+    assert "Error transforming event payload" in caplog.text
+
+
+def test_prepare_event_payload_falls_back_when_hints_do_not_resolve():
+    """Unresolvable annotations still never expose the wrapped form entries."""
+
+    def handler(self, form_data: "_UndefinedFormData"):  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+        pass
+
+    payload = _prepare_event_payload(
+        handler, {"form_data": {FORM_DATA_ENTRIES_KEY: _FORM_DATA_ENTRIES}}
+    )
+    assert payload == {"form_data": {"tag": "b", "name": "x"}}

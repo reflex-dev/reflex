@@ -54,7 +54,7 @@ def TypedDictFormSubmit(form_component):
                     rx.text_area(name="message"),
                     rx.el.input(type="hidden", name="topics", value="news"),
                     rx.el.input(type="hidden", name="topics", value="events"),
-                    rx.switch(name="subscribe"),
+                    rx.checkbox("Subscribe", name="subscribe"),
                     rx.button("Submit", type_="submit"),
                 ),
                 on_submit=FormState.form_submit,

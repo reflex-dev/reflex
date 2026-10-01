@@ -272,6 +272,29 @@ def test_on_submit_accepts_multidict_form_data(form_factory, annotation, caplog)
     assert "intentionally ignored" not in caplog.text
 
 
+@pytest.mark.parametrize(
+    "control",
+    [
+        lambda: rx.checkbox("Subscribe", name="subscribe"),
+        lambda: rx.switch(name="subscribe"),
+        lambda: Input.create(type="checkbox", name="subscribe"),
+    ],
+)
+def test_on_submit_typed_dict_bool_field_accepts_toggle_controls(control):
+    """Checkboxes and switches satisfy a required TypedDict bool field."""
+
+    class PrefsData(TypedDict):
+        subscribe: bool
+
+    class PrefsState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: PrefsData):
+            pass
+
+    form = HTMLForm.create(control(), on_submit=PrefsState.on_submit)
+    assert isinstance(form.event_triggers["on_submit"], EventChain)
+
+
 def test_on_submit_rejects_non_mapping_form_data():
     """A non-mapping annotation is a type mismatch, not a failed comparison."""
 

@@ -285,10 +285,15 @@ value for them:
   and `False` otherwise, so an unchecked checkbox or switch reads as `False`
   instead of a missing key.
 
+When no value is submitted for a field whose type allows `None`, such as
+`list[str] | None` or `bool | None`, the field is `None` instead, or left out
+entirely when it is also `NotRequired`.
+
 ```python
 class PreferencesForm(TypedDict):
     toppings: list[str]  # every checked "toppings" checkbox
-    subscribe: bool  # False when the switch is off
+    subscribe: bool  # False when the checkbox is unchecked
+    notify: bool | None  # None when the switch is off
 
 
 class PreferencesState(rx.State):
@@ -303,7 +308,8 @@ def preferences_form():
     return rx.form(
         rx.el.input(type="checkbox", name="toppings", value="cheese"),
         rx.el.input(type="checkbox", name="toppings", value="olives"),
-        rx.switch(name="subscribe"),
+        rx.checkbox("Subscribe", name="subscribe"),
+        rx.switch(name="notify"),
         rx.button("Submit", type="submit"),
         on_submit=PreferencesState.handle_submit,
     )

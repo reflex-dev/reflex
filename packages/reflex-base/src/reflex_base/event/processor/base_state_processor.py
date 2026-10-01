@@ -7,7 +7,7 @@ import functools
 import inspect
 import logging
 import warnings
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from enum import Enum
 from importlib.util import find_spec
 from time import perf_counter
@@ -92,25 +92,46 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
     raise TypeError(msg)
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class _CoercedFormField:
+    """A TypedDict field that submitted form data is coerced into."""
+
+    name: str
+    is_list: bool
+    # An unsubmitted field is coerced like a submitted one (to [] or False)
+    # unless its type allows None: then it is None, or left out when NotRequired.
+    optional: bool
+    required: bool
+
+
 @functools.cache
-def _typed_dict_form_fields(
-    typed_dict: type,
-) -> tuple[tuple[str, ...], tuple[str, ...]]:
+def _typed_dict_form_fields(typed_dict: type) -> tuple[_CoercedFormField, ...]:
     """Find the TypedDict fields that form data is coerced into.
 
     Args:
         typed_dict: The TypedDict annotating the form data.
 
     Returns:
-        The names of the ``list`` fields and of the ``bool`` fields.
+        The ``list`` and ``bool`` fields, optional or not.
     """
-    hints = get_type_hints(typed_dict)
-    return (
-        tuple(
-            name for name, hint in hints.items() if (get_origin(hint) or hint) is list
-        ),
-        tuple(name for name, hint in hints.items() if hint is bool),
-    )
+    required = types.get_required_typed_dict_keys(typed_dict)
+    fields = []
+    for name, hint in get_type_hints(typed_dict).items():
+        field_type = types.value_inside_optional(hint)
+        if (
+            field_type is not bool
+            and (get_origin(field_type) or field_type) is not list
+        ):
+            continue
+        fields.append(
+            _CoercedFormField(
+                name=name,
+                is_list=field_type is not bool,
+                optional=field_type is not hint,
+                required=name in required,
+            )
+        )
+    return tuple(fields)
 
 
 def _form_data_as_typed_dict(form_data: MultiDict, typed_dict: type) -> dict[str, Any]:
@@ -122,15 +143,34 @@ def _form_data_as_typed_dict(form_data: MultiDict, typed_dict: type) -> dict[str
 
     Returns:
         A dict of each field's last value, where ``list`` fields hold every
-        value and ``bool`` fields whether a truthy value was submitted.
+        value and ``bool`` fields whether a truthy value was submitted. An
+        unsubmitted field whose type allows None is None, or left out when it
+        is not required.
     """
-    list_fields, bool_fields = _typed_dict_form_fields(typed_dict)
     result = dict(form_data)
-    for name in list_fields:
-        result[name] = form_data.getlist(name)
-    for name in bool_fields:
-        result[name] = bool(form_data.get(name))
+    for field in _typed_dict_form_fields(typed_dict):
+        if field.optional and field.name not in form_data:
+            if field.required:
+                result[field.name] = None
+            continue
+        result[field.name] = (
+            form_data.getlist(field.name)
+            if field.is_list
+            else bool(form_data.get(field.name))
+        )
     return result
+
+
+def _form_data_entries(value: Any) -> list | None:
+    """Get a form's wrapped ``[name, value]`` entries from an event argument.
+
+    Args:
+        value: The event argument.
+
+    Returns:
+        The entries, or None when the argument is not submitted form data.
+    """
+    return value.get(FORM_DATA_ENTRIES_KEY) if isinstance(value, dict) else None
 
 
 def _transform_form_data(value: Any, hinted_args: Any) -> Any:
@@ -146,7 +186,7 @@ def _transform_form_data(value: Any, hinted_args: Any) -> Any:
         dict; for other form data, a dict of each name's last value; otherwise
         the value unchanged.
     """
-    entries = value.get(FORM_DATA_ENTRIES_KEY) if isinstance(value, dict) else None
+    entries = _form_data_entries(value)
     if entries is not None:
         value = MultiDict(entries)
     elif not isinstance(value, Mapping):
@@ -243,6 +283,33 @@ def _transform_event_payload(
             msg = f"Error transforming event argument '{arg}' with value '{value}' and type hint '{hinted_args}'"
             raise ValueError(msg) from ex
     return transformed
+
+
+def _prepare_event_payload(
+    fn: Callable[..., Any], payload: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Transform an event payload for a handler's annotations.
+
+    Args:
+        fn: The handler function.
+        payload: The event payload.
+
+    Returns:
+        The transformed payload or, when it cannot be transformed, the original
+        payload with any form data as a dict of each name's last value.
+    """
+    try:
+        return _transform_event_payload(payload, types.get_type_hints(fn))
+    except Exception as ex:
+        logger.warning(
+            f"Error transforming event payload for handler {fn.__qualname__}: {ex}"
+        )
+        return {
+            arg: value
+            if (entries := _form_data_entries(value)) is None
+            else dict(entries)
+            for arg, value in payload.items()
+        }
 
 
 async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
@@ -363,15 +430,7 @@ async def process_event(
 
     # Get the function to process the event.
     fn = functools.partial(handler.fn, state)
-
-    try:
-        type_hints = types.get_type_hints(handler.fn)
-        payload = _transform_event_payload(payload, type_hints)
-    except Exception as ex:
-        # No transformation was possible, continue with the original payload
-        logger.warning(
-            f"Error transforming event payload for handler {handler_name}: {ex}"
-        )
+    payload = _prepare_event_payload(handler.fn, payload)
 
     # Handle async functions.
     if inspect.iscoroutinefunction(fn.func):
