@@ -533,6 +533,16 @@ def test_dict_contains(var, expected):
     assert str(var.contains(other_var)) == f"{expected}.hasOwnProperty(other)"
 
 
+def test_var_replace_var_data():
+    original_var_data = VarData(imports={"react": [ImportVar(tag="useRef")]})
+    replacement_var_data = VarData(hooks={"const value = 1": None})
+    var = Var(_js_expr="value", _var_data=original_var_data)
+
+    replaced = var._replace(_var_data=replacement_var_data)
+
+    assert replaced._var_data == replacement_var_data
+
+
 @pytest.mark.parametrize(
     "var",
     [
@@ -1055,6 +1065,41 @@ def test_var_operation():
     seven = add(2, five)
 
     assert isinstance(seven, NumberVar)
+
+
+def test_deep_equals_operation():
+    left = LiteralObjectVar.create({"a": 1, "nested": {"values": [1, 2]}})
+    right = LiteralObjectVar.create({"nested": {"values": [1, 2]}, "a": 1})
+
+    result = left.deep_equals(right)
+
+    assert isinstance(result, rx.vars.BooleanVar)
+    assert str(result) == (
+        'isEqual(({ ["a"] : 1, ["nested"] : ({ ["values"] : [1, 2] }) }), '
+        '({ ["nested"] : ({ ["values"] : [1, 2] }), ["a"] : 1 }))'
+    )
+    var_data = result._get_all_var_data()
+    assert var_data is not None
+    assert any(
+        import_var.tag == "isEqual" and import_var.is_default
+        for import_var in dict(var_data.imports).get("lodash.isequal@4.5.0", ())
+    )
+
+
+def test_deep_equals_accepts_python_values_and_preserves_var_data():
+    state_value = Var(
+        _js_expr="state.value",
+        _var_type=dict[str, object],
+        _var_data=VarData(state="state", field_name="value"),
+    )
+
+    result = state_value.deep_equals({"items": [1, None, True]})
+
+    assert isinstance(result, rx.vars.BooleanVar)
+    assert str(result) == ('isEqual(state.value, ({ ["items"] : [1, null, true] }))')
+    var_data = result._get_all_var_data()
+    assert var_data is not None
+    assert var_data.state == "state"
 
 
 def test_string_operations():

@@ -2,14 +2,18 @@ from __future__ import annotations
 
 import importlib.metadata
 import logging
+import os
 import uuid
 from collections.abc import Callable
+from typing import Any
 from unittest.mock import MagicMock
 
 import click
 import pytest
 from packaging import version
 from pytest_mock import MockerFixture, MockFixture
+from reflex_base.config import Config, get_config
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.log import SUCCESS
 from reflex_build_sdk.types import (
     App,
@@ -197,6 +201,17 @@ def test_logout(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
     cli.logout()
     mock_delete_token.assert_called_once()
     assert _log_messages(caplog, SUCCESS) == ["Successfully logged out."]
+
+
+@pytest.fixture(autouse=True)
+def _isolate_badge_setting(monkeypatch: pytest.MonkeyPatch):
+    """Keep the badge setting a deploy persists in the environment out of other tests.
+
+    Args:
+        monkeypatch: Fixture that removes the variable again after the test.
+    """
+    # Set (not deleted) so monkeypatch removes what the deploy persists.
+    monkeypatch.setenv("REFLEX_SHOW_BUILT_WITH_REFLEX", "")
 
 
 @pytest.fixture
@@ -448,6 +463,57 @@ def test_deploy_non_interactive_no_app_name_and_id(
     assert _log_messages(caplog, logging.ERROR) == [
         "Please provide a valid app name or ID for the deployed instance."
     ]
+
+
+@pytest.mark.parametrize(
+    ("tier", "configured", "exported", "persisted"),
+    [
+        # Without a paid plan the badge is forced on, whatever the app sets.
+        ("Free", False, True, "True"),
+        ("Inactive", None, True, "True"),
+        # Paid plans keep an explicit setting.
+        ("Pro", True, True, ""),
+        ("Enterprise", False, False, ""),
+        # An unset setting on a paid plan hides the badge, so the compiler
+        # never resolves it from a login other than the deploy token.
+        ("Pro", None, False, "False"),
+    ],
+)
+def test_deploy_resolves_badge_from_token_tier(
+    mocker: MockerFixture,
+    tier: str,
+    configured: bool | None,
+    exported: bool,
+    persisted: str,
+):
+    """A deploy exports with the badge setting that the deploy token's tier allows.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        tier: The tier of the deploying org.
+        configured: The app's own show_built_with_reflex setting.
+        exported: The setting the export should see.
+        persisted: The value the deploy should leave in the environment.
+    """
+    _common_deploy_mocks(mocker, tier=tier)
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_app", return_value=app_summary("fake-app")
+    )
+    exported_with: list[bool | None] = []
+    with RegistrationContext():
+        config = Config(app_name="fake_app", show_built_with_reflex=configured)
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+
+        cli.deploy(
+            app_name="fake-app",
+            export_fn=lambda *_: exported_with.append(
+                get_config().show_built_with_reflex
+            ),
+            interactive=False,
+        )
+
+    assert exported_with == [exported, exported]
+    assert os.environ["REFLEX_SHOW_BUILT_WITH_REFLEX"] == persisted
 
 
 def test_deploy_non_interactive_export_failure(
@@ -807,17 +873,20 @@ def test_deploy_create_deployment_multiple_apps_interactive(
     )
 
 
-def _common_deploy_mocks(mocker: MockerFixture, *, selected_project: str | None = None):
+def _common_deploy_mocks(
+    mocker: MockerFixture, *, selected_project: str | None = None, **identity: Any
+):
     """Set up a deploy that reaches the submit without any of it being real.
 
     Args:
         mocker: The pytest-mock fixture.
         selected_project: The project the config has selected, if any.
+        identity: Overrides for the identity behind the token, e.g. ``tier``.
 
     Returns:
         The client the deploy under test will receive.
     """
-    client = fake_client(user_id="user-uuid")
+    client = fake_client(user_id="user-uuid", **identity)
     client.api.apps.reserve_hostname.return_value = _RESERVATION
     client.api.apps.set_provider.return_value = ProviderChange(provider="fly")
     client.api.deployments.create.return_value = uuid.UUID(int=41)

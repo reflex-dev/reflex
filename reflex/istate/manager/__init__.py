@@ -332,6 +332,20 @@ class _ModifyStateWithLinks(Generic[TOKEN_TYPE]):
         return await self._state_context.__aexit__(exc_type, exc, tb) or suppressed
 
 
+def _release_state_tree(state: "BaseState"):
+    """Clear the substate links of a purged state tree.
+
+    Breaking the parent/substate cycles lets reference counting free the tree
+    without waiting for a cyclic garbage collection.
+
+    Args:
+        state: The root of a state tree that no longer has any users.
+    """
+    for substate in state.substates.values():
+        _release_state_tree(substate)
+    state.substates.clear()
+
+
 def _default_token_expiration() -> int:
     """Get the default token expiration time.
 
