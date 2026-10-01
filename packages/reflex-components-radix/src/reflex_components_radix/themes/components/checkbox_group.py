@@ -15,6 +15,7 @@ class CheckboxGroupRoot(RadixThemesComponent):
     """Root element for a CheckboxGroup component."""
 
     tag = "CheckboxGroup.Root"
+    _is_form_control = True
 
     size: Var[Responsive[Literal["1", "2", "3"]]] = field(
         doc="Use the size prop to control the checkbox size."

@@ -1,34 +1,43 @@
-"""Functions to communicate to the user via console."""
+"""Functions to communicate to the user via console.
+
+The logging-shaped helpers (``debug``/``info``/``success``/``log``/``warn``/
+``error``/``timing``) are deprecated and kept with their legacy behavior until
+removal; new code should use ``logging.getLogger(__name__)`` and the pipeline
+in :mod:`reflex_base.utils.log`. The interactive Rich features
+(``print``/``rule``/``status``/``ask``/``progress``) remain first-class.
+"""
 
 from __future__ import annotations
 
 import contextlib
 import datetime
-import inspect
-import os
-import shutil
-import sys
 import time
-from pathlib import Path
-from types import FrameType, ModuleType
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, overload
 
-from rich.console import Console
+from rich.console import Console, OverflowMethod
 from rich.progress import MofNCompleteColumn, Progress, TaskID, TimeElapsedColumn
 from rich.prompt import Prompt
+from rich.table import Table
 
 from reflex_base.constants import LogLevel
-from reflex_base.constants.base import Reflex
+from reflex_base.utils import log as _log
 from reflex_base.utils.decorator import once
 
 # Console for pretty printing.
 _console = Console(highlight=False)
 _console_stderr = Console(stderr=True, highlight=False)
 
-# The current log level.
-_LOG_LEVEL = LogLevel.INFO
 
-# Deprecated features who's warning has been printed.
-_EMITTED_DEPRECATION_WARNINGS = set()
+def _human_console() -> Console:
+    """Get the console human-readable output renders to.
+
+    Returns:
+        The stderr console while stdout is reserved for a machine-readable
+        document, the stdout one otherwise.
+    """
+    return _console_stderr if _log.is_stdout_reserved() else _console
+
 
 # Info messages which have been printed.
 _EMITTED_INFO = set()
@@ -52,25 +61,28 @@ _EMITTED_LOGS = set()
 _EMITTED_PRINTS = set()
 
 
+def _shim_deprecation(name: str, replacement: str):
+    """Warn that a deprecated console logging helper was called.
+
+    Args:
+        name: The console function name.
+        replacement: The logging-API replacement to suggest.
+    """
+    deprecate(
+        feature_name=f"console.{name}",
+        reason=f"use {replacement} on logging.getLogger(__name__) instead",
+        deprecation_version="0.9.9",
+        removal_version="1.0",
+    )
+
+
 def set_log_level(log_level: LogLevel | None):
     """Set the log level.
 
     Args:
         log_level: The log level to set.
-
-    Raises:
-        TypeError: If the log level is a string.
     """
-    if log_level is None:
-        return
-    if not isinstance(log_level, LogLevel):
-        msg = f"log_level must be a LogLevel enum value, got {log_level} of type {type(log_level)} instead."
-        raise TypeError(msg)
-    global _LOG_LEVEL
-    if log_level != _LOG_LEVEL:
-        # Set the loglevel persistenly for subprocesses.
-        os.environ["REFLEX_LOGLEVEL"] = log_level.value
-    _LOG_LEVEL = log_level
+    _log.set_log_level(log_level)
 
 
 def is_debug() -> bool:
@@ -79,32 +91,40 @@ def is_debug() -> bool:
     Returns:
         True if the log level is debug.
     """
-    return _LOG_LEVEL <= LogLevel.DEBUG
+    return _log.is_debug()
 
 
-def print(msg: str, *, dedupe: bool = False, **kwargs):
+def print(msg: str, *, dedupe: bool = False, level: str = "info", **kwargs):
     """Print a message.
 
     Args:
         msg: The message to print.
         dedupe: If True, suppress multiple console logs of print message.
+        level: The severity reported in JSON mode.
         kwargs: Keyword arguments to pass to the print function.
     """
+    if _log.is_json_mode():
+        _log.emit_json_print(msg, level=level, dedupe=dedupe)
+        return
     if dedupe:
         if msg in _EMITTED_PRINTS:
             return
         _EMITTED_PRINTS.add(msg)
-    _console.print(msg, **kwargs)
+    _human_console().print(msg, **kwargs)
 
 
-def _print_stderr(msg: str, *, dedupe: bool = False, **kwargs):
+def _print_stderr(msg: str, *, dedupe: bool = False, level: str = "error", **kwargs):
     """Print a message to stderr.
 
     Args:
         msg: The message to print.
         dedupe: If True, suppress multiple console logs of print message.
+        level: The severity reported in JSON mode.
         kwargs: Keyword arguments to pass to the print function.
     """
+    if _log.is_json_mode():
+        _log.emit_json_print(msg, level=level, dedupe=dedupe, stderr=True)
+        return
     if dedupe:
         if msg in _EMITTED_PRINTS:
             return
@@ -116,22 +136,14 @@ def _print_stderr(msg: str, *, dedupe: bool = False, **kwargs):
 def log_file_console():
     """Create a console that logs to a file.
 
+    Writes through a proxy to the logging pipeline's file-handler stream, so
+    the legacy helpers and the ``logging`` sinks share one full-logging file
+    even after an external logging re-config closes and reopens the handler.
+
     Returns:
         A Console object that logs to a file.
     """
-    from reflex_base.environment import environment
-
-    if not (env_log_file := environment.REFLEX_LOG_FILE.get()):
-        subseconds = int((time.time() % 1) * 1000)
-        timestamp = time.strftime("%Y-%m-%d_%H-%M-%S") + f"_{subseconds:03d}"
-        log_file = Reflex.DIR / "logs" / (timestamp + ".log")
-        log_file.parent.mkdir(parents=True, exist_ok=True)
-    else:
-        log_file = env_log_file
-    if log_file.exists():
-        log_file.unlink()
-    log_file.touch()
-    return Console(file=log_file.open("a", encoding="utf-8"))
+    return Console(file=_log.log_file_proxy())
 
 
 @once
@@ -157,14 +169,8 @@ def print_to_log_file(msg: str, *, dedupe: bool = False, **kwargs):
     log_file_console().print(f"[{datetime.datetime.now()}] {msg}", **kwargs)
 
 
-def debug(msg: str, *, dedupe: bool = False, **kwargs):
-    """Print a debug message.
-
-    Args:
-        msg: The debug message.
-        dedupe: If True, suppress multiple console logs of debug message.
-        kwargs: Keyword arguments to pass to the print function.
-    """
+def _debug(msg: str, *, dedupe: bool = False, **kwargs):
+    """Render a debug message with the legacy behavior."""
     if is_debug():
         msg_ = f"[purple]Debug: {msg}[/purple]"
         if dedupe:
@@ -174,9 +180,21 @@ def debug(msg: str, *, dedupe: bool = False, **kwargs):
         if progress := kwargs.pop("progress", None):
             progress.console.print(msg_, **kwargs)
         else:
-            print(msg_, **kwargs)
+            print(msg_, level="debug", **kwargs)
     if should_use_log_file_console() and kwargs.pop("progress", None) is None:
         print_to_log_file(f"[purple]Debug: {msg}[/purple]", **kwargs)
+
+
+def debug(msg: str, *, dedupe: bool = False, **kwargs):
+    """Print a debug message.
+
+    Args:
+        msg: The debug message.
+        dedupe: If True, suppress multiple console logs of debug message.
+        kwargs: Keyword arguments to pass to the print function.
+    """
+    _shim_deprecation("debug", "logger.debug(msg)")
+    _debug(msg, dedupe=dedupe, **kwargs)
 
 
 def info(msg: str, *, dedupe: bool = False, **kwargs):
@@ -187,7 +205,8 @@ def info(msg: str, *, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of info message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if _LOG_LEVEL <= LogLevel.INFO:
+    _shim_deprecation("info", "logger.info(msg)")
+    if _log.get_log_level() <= LogLevel.INFO:
         if dedupe:
             if msg in _EMITTED_INFO:
                 return
@@ -205,12 +224,13 @@ def success(msg: str, *, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of success message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if _LOG_LEVEL <= LogLevel.INFO:
+    _shim_deprecation("success", "logger.log(log.SUCCESS, msg)")
+    if _log.get_log_level() <= LogLevel.INFO:
         if dedupe:
             if msg in _EMITTED_SUCCESS:
                 return
             _EMITTED_SUCCESS.add(msg)
-        print(f"[green]Success: {msg}[/green]", **kwargs)
+        print(f"[green]Success: {msg}[/green]", level="success", **kwargs)
     if should_use_log_file_console():
         print_to_log_file(f"[green]Success: {msg}[/green]", **kwargs)
 
@@ -223,12 +243,16 @@ def log(msg: str, *, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of log message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if _LOG_LEVEL <= LogLevel.INFO:
+    _shim_deprecation("log", "logger.info(msg)")
+    if _log.get_log_level() <= LogLevel.INFO:
         if dedupe:
             if msg in _EMITTED_LOGS:
                 return
             _EMITTED_LOGS.add(msg)
-        _console.log(msg, **kwargs)
+        if _log.is_json_mode():
+            _log.emit_json_print(msg)
+        else:
+            _human_console().log(msg, **kwargs)
     if should_use_log_file_console():
         print_to_log_file(msg, **kwargs)
 
@@ -240,7 +264,9 @@ def rule(title: str, **kwargs):
         title: The title of the rule.
         kwargs: Keyword arguments to pass to the print function.
     """
-    _console.rule(title, **kwargs)
+    if _log.is_json_mode():
+        return
+    _human_console().rule(title, **kwargs)
 
 
 def warn(msg: str, *, dedupe: bool = False, **kwargs):
@@ -251,67 +277,15 @@ def warn(msg: str, *, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of warning message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if _LOG_LEVEL <= LogLevel.WARNING:
+    _shim_deprecation("warn", "logger.warning(msg)")
+    if _log.get_log_level() <= LogLevel.WARNING:
         if dedupe:
             if msg in _EMITTED_WARNINGS:
                 return
             _EMITTED_WARNINGS.add(msg)
-        print(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
+        print(f"[orange1]Warning: {msg}[/orange1]", level="warning", **kwargs)
     if should_use_log_file_console():
         print_to_log_file(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
-
-
-@once
-def _exclude_paths_from_frame_info() -> list[Path]:
-    import importlib.util
-
-    import click
-    import granian
-    import socketio
-    import typing_extensions
-
-    import reflex_base
-
-    try:
-        import reflex as rx
-    except ImportError:
-        rx = None
-
-    # Exclude utility modules that should never be the source of deprecated reflex usage.
-    exclude_modules: list[ModuleType | None] = [
-        click,
-        rx,
-        typing_extensions,
-        socketio,
-        granian,
-        reflex_base,
-    ]
-
-    modules_paths = [file for m in exclude_modules if m and (file := m.__file__)] + [
-        spec.origin
-        for m in [*sys.builtin_module_names, *sys.stdlib_module_names]
-        if (spec := importlib.util.find_spec(m)) and spec.origin
-    ]
-    exclude_roots = [
-        p.parent.resolve() if (p := Path(file)).name == "__init__.py" else p.resolve()
-        for file in modules_paths
-    ]
-    # Specifically exclude the reflex cli module.
-    if reflex_bin := shutil.which(b"reflex"):
-        exclude_roots.append(Path(reflex_bin.decode()))
-
-    return exclude_roots
-
-
-def _get_first_non_framework_frame() -> FrameType | None:
-    exclude_roots = _exclude_paths_from_frame_info()
-
-    frame = inspect.currentframe()
-    while frame := frame and frame.f_back:
-        frame_path = Path(inspect.getfile(frame)).resolve()
-        if not any(frame_path.is_relative_to(root) for root in exclude_roots):
-            break
-    return frame
 
 
 def deprecate(
@@ -323,39 +297,25 @@ def deprecate(
     dedupe: bool = True,
     **kwargs,
 ):
-    """Print a deprecation warning.
+    """Log a deprecation warning through the standard logging pipeline.
 
     Args:
-        feature_name: The feature to deprecate.
-        reason: The reason for deprecation.
-        deprecation_version: The version the feature was deprecated
-        removal_version: The version the deprecated feature will be removed
-        dedupe: If True, suppress multiple console logs of deprecation message.
-        kwargs: Keyword arguments to pass to the print function.
+        feature_name: Passed to :func:`reflex_base.utils.log.deprecate`.
+        reason: Passed to :func:`reflex_base.utils.log.deprecate`.
+        deprecation_version: Passed to :func:`reflex_base.utils.log.deprecate`.
+        removal_version: Passed to :func:`reflex_base.utils.log.deprecate`.
+        dedupe: Passed to :func:`reflex_base.utils.log.deprecate`.
+        kwargs: Legacy Rich print arguments, ignored by the logging pipeline.
     """
-    dedupe_key = feature_name
-    loc = ""
-
-    # See if we can find where the deprecation exists in "user code"
-    origin_frame = _get_first_non_framework_frame()
-    if origin_frame is not None:
-        filename = Path(origin_frame.f_code.co_filename)
-        if filename.is_relative_to(Path.cwd()):
-            filename = filename.relative_to(Path.cwd())
-        loc = f" ({filename}:{origin_frame.f_lineno})"
-        dedupe_key = f"{dedupe_key} {loc}"
-
-    if dedupe_key not in _EMITTED_DEPRECATION_WARNINGS:
-        msg = (
-            f"{feature_name} has been deprecated in version {deprecation_version}. {reason.rstrip('.').lstrip('. ')}. It will be completely "
-            f"removed in {removal_version}.{loc}"
-        )
-        if _LOG_LEVEL <= LogLevel.WARNING:
-            print(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
-        if should_use_log_file_console():
-            print_to_log_file(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
-        if dedupe:
-            _EMITTED_DEPRECATION_WARNINGS.add(dedupe_key)
+    _log.ensure_configured()
+    _log.deprecate(
+        feature_name=feature_name,
+        reason=reason,
+        deprecation_version=deprecation_version,
+        removal_version=removal_version,
+        dedupe=dedupe,
+        **kwargs,
+    )
 
 
 def error(msg: str, *, dedupe: bool = False, **kwargs):
@@ -366,7 +326,8 @@ def error(msg: str, *, dedupe: bool = False, **kwargs):
         dedupe: If True, suppress multiple console logs of error message.
         kwargs: Keyword arguments to pass to the print function.
     """
-    if _LOG_LEVEL <= LogLevel.ERROR:
+    _shim_deprecation("error", "logger.error(msg)")
+    if _log.get_log_level() <= LogLevel.ERROR:
         if dedupe:
             if msg in _EMITTED_ERRORS:
                 return
@@ -374,6 +335,24 @@ def error(msg: str, *, dedupe: bool = False, **kwargs):
         _print_stderr(f"[red]{msg}[/red]", **kwargs)
     if should_use_log_file_console():
         print_to_log_file(f"[red]{msg}[/red]", **kwargs)
+
+
+@overload
+def ask(
+    question: str,
+    choices: list[str] | None = None,
+    *,
+    show_choices: bool = True,
+) -> str: ...
+
+
+@overload
+def ask(
+    question: str,
+    choices: list[str] | None = None,
+    default: str = ...,
+    show_choices: bool = True,
+) -> str: ...
 
 
 def ask(
@@ -394,9 +373,49 @@ def ask(
     Returns:
         A string with the user input.
     """
+    # A prompt is human output like any other, and the one that must not land
+    # on a reserved stdout: it blocks, so a caller parsing the document reads
+    # the question as data and never answers it.
     return Prompt.ask(
-        question, choices=choices, default=default, show_choices=show_choices
+        question,
+        choices=choices,
+        default=default,
+        show_choices=show_choices,
+        console=_human_console(),
     )
+
+
+def print_table(
+    tabular_data: list[list[str]],
+    headers: Sequence[str] = (),
+    overflow: OverflowMethod = "ellipsis",
+) -> None:
+    """Print a table to the console.
+
+    Args:
+        tabular_data: The data to print in tabular format.
+        headers: The headers for the table.
+        overflow: What to do with a cell too wide for its column. The default
+            cuts it short; pass "fold" for values a user has to read in full,
+            such as an email or an identifier.
+    """
+    if _log.is_json_mode():
+        # A table is requested output, not decoration: keep the rows in the
+        # machine-readable stream instead of rendering Rich text into it.
+        _log.emit_json_print(
+            "",
+            table={"headers": list(headers), "rows": tabular_data},
+        )
+        return
+    table = Table()
+
+    for column in headers:
+        table.add_column(column, overflow=overflow)
+
+    for row in tabular_data:
+        table.add_row(*row)
+
+    _human_console().print(table)
 
 
 def progress():
@@ -409,6 +428,10 @@ def progress():
         *Progress.get_default_columns()[:-1],
         MofNCompleteColumn(),
         TimeElapsedColumn(),
+        # A bar is decoration, and it redraws in place: there is nowhere to
+        # put it in a machine-readable stream, and nothing to draw it over
+        # once stdout belongs to a document.
+        disable=_log.is_json_mode() or _log.is_stdout_reserved(),
     )
 
 
@@ -422,7 +445,9 @@ def status(*args, **kwargs):
     Returns:
         A new status.
     """
-    return _console.status(*args, **kwargs)
+    if _log.is_json_mode():
+        return _log._quiet_console.status(*args, **kwargs)
+    return _human_console().status(*args, **kwargs)
 
 
 @contextlib.contextmanager
@@ -435,11 +460,12 @@ def timing(msg: str):
     Yields:
         None.
     """
+    _shim_deprecation("timing", "log.timing(logger, msg)")
     start = time.time()
     try:
         yield
     finally:
-        debug(f"[white]\\[timing] {msg}: {time.time() - start:.2f}s[/white]")
+        _debug(f"[white]\\[timing] {msg}: {time.time() - start:.2f}s[/white]")
 
 
 class PoorProgress:
@@ -477,10 +503,38 @@ class PoorProgress:
         if task in self.tasks:
             self.tasks[task]["current"] += advance
             self.progress += advance
-            _console.print(f"Progress: {self.progress}/{self.total}")
+            # Through console.print, so JSON mode gets a record instead of a
+            # plain line in the machine-readable stream.
+            print(f"Progress: {self.progress}/{self.total}")
+
+    def update(self, task: TaskID, total: int | None = None):
+        """Update properties of a task.
+
+        Args:
+            task: The task ID.
+            total: New total for the task.
+        """
+        if total is not None and task in self.tasks:
+            previous_total = self.tasks[task]["total"]
+            self.tasks[task]["total"] = total
+            self.total += total - previous_total
 
     def start(self):
         """Start the progress bar."""
 
     def stop(self):
         """Stop the progress bar."""
+
+
+if TYPE_CHECKING:
+    from typing_extensions import deprecated
+
+    debug = deprecated("Use logging.getLogger(__name__).debug(msg) instead")(debug)
+    info = deprecated("Use logging.getLogger(__name__).info(msg) instead")(info)
+    success = deprecated(
+        "Use logging.getLogger(__name__).log(log.SUCCESS, msg) instead"
+    )(success)
+    log = deprecated("Use logging.getLogger(__name__).info(msg) instead")(log)
+    warn = deprecated("Use logging.getLogger(__name__).warning(msg) instead")(warn)
+    error = deprecated("Use logging.getLogger(__name__).error(msg) instead")(error)
+    timing = deprecated("Use reflex_base.utils.log.timing(logger, msg) instead")(timing)

@@ -43,7 +43,7 @@ Similar to a navigation bar, a sidebar is a common UI element found on the side 
 
 ## Basic
 
-```python demo exec toggle
+```python demo exec
 def sidebar_item(text: str, icon: str, href: str) -> rx.Component:
     return rx.link(
         rx.hstack(
@@ -86,11 +86,12 @@ def sidebar() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
+                        alt="Reflex logo",
                         width="2.25em",
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="7", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="7", weight="bold"),
                     align="center",
                     justify="start",
                     padding_x="0.5rem",
@@ -144,7 +145,7 @@ def sidebar() -> rx.Component:
 
 ## Bottom user profile
 
-```python demo exec toggle
+```python demo exec
 def sidebar_item(text: str, icon: str, href: str) -> rx.Component:
     return rx.link(
         rx.hstack(
@@ -187,11 +188,12 @@ def sidebar_bottom_profile() -> rx.Component:
                 rx.hstack(
                     rx.image(
                         src="https://web.reflex-assets.dev/other/logo.jpg",
+                        alt="Reflex logo",
                         width="2.25em",
                         height="auto",
                         border_radius="25%",
                     ),
-                    rx.heading("Reflex", size="7", weight="bold"),
+                    rx.heading("Reflex", as_="h2", size="7", weight="bold"),
                     align="center",
                     justify="start",
                     padding_x="0.5rem",
@@ -312,7 +314,7 @@ def sidebar_bottom_profile() -> rx.Component:
 
 ## Top user profile
 
-```python demo exec toggle
+```python demo exec
 def sidebar_item(text: str, icon: str, href: str) -> rx.Component:
     return rx.link(
         rx.hstack(

@@ -5,7 +5,7 @@ from typing import ClassVar, Literal
 from reflex_base.components.component import field
 from reflex_base.vars.base import Var
 
-from .base import BaseHTML
+from .base import BaseHTML, VoidBaseHTML
 
 
 class Blockquote(BaseHTML):
@@ -52,7 +52,7 @@ class Figure(BaseHTML):
     tag = "figure"
 
 
-class Hr(BaseHTML):
+class Hr(VoidBaseHTML):
     """Display the hr element."""
 
     tag = "hr"

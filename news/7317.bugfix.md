@@ -1,0 +1,1 @@
+Fix stylesheet edits in `assets/` not applying in dev mode until a manual reload. The global stylesheet `<link rel="preload">` is now emitted only in production builds, so Vite's CSS hot update swaps the real stylesheet link again.

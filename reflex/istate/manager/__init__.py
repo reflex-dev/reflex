@@ -2,6 +2,7 @@
 
 import contextlib
 import dataclasses
+import logging
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, TypedDict, overload
@@ -14,6 +15,8 @@ from typing_extensions import ReadOnly, Unpack, deprecated
 
 from reflex.istate.manager.token import TOKEN_TYPE, StateToken
 from reflex.utils import console, prerequisites
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -34,7 +37,7 @@ class StateManager(ABC):
 
     @property
     def state(self):
-        """Get the state class.
+        """The state class.
 
         Deprecated: the state manager no longer holds a reference to the state class.
 
@@ -245,6 +248,20 @@ class StateManager(ABC):
         """Close the state manager."""
 
 
+def _release_state_tree(state: "BaseState"):
+    """Clear the substate links of a purged state tree.
+
+    Breaking the parent/substate cycles lets reference counting free the tree
+    without waiting for a cyclic garbage collection.
+
+    Args:
+        state: The root of a state tree that no longer has any users.
+    """
+    for substate in state.substates.values():
+        _release_state_tree(substate)
+    state.substates.clear()
+
+
 def _default_token_expiration() -> int:
     """Get the default token expiration time.
 
@@ -256,7 +273,7 @@ def _default_token_expiration() -> int:
 
 def reset_disk_state_manager():
     """Reset the disk state manager."""
-    console.debug("Resetting disk state manager.")
+    logger.debug("Resetting disk state manager.")
     states_directory = prerequisites.get_states_dir()
     if states_directory.exists():
         for path in states_directory.iterdir():

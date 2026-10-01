@@ -221,6 +221,69 @@ class NestedElement(BaseModel):
     value: list[int]
 
 
+@dataclass
+class Order:
+    """An order in the table event benchmark."""
+
+    name: str
+    customer: str
+    amount: float
+    status: str
+
+
+class TableState(rx.State):
+    """A 1000-row table with filtering, sorting, and a computed total."""
+
+    orders: rx.Field[list[Order]] = rx.field(
+        default_factory=lambda: [
+            Order(
+                name=f"order {i}",
+                customer=f"customer {i % 50}",
+                amount=i * 1.5,
+                status=("open", "paid", "shipped")[i % 3],
+            )
+            for i in range(1000)
+        ]
+    )
+    status: rx.Field[str] = rx.field("")
+    sort_reverse: rx.Field[bool] = rx.field(False)
+
+    @rx.event
+    def set_status(self, status: str):
+        """Filter the table by status, flipping the sort direction.
+
+        Args:
+            status: The status to keep, or an empty string for all rows.
+        """
+        self.status = status
+        self.sort_reverse = not self.sort_reverse
+
+    @rx.var
+    def filtered_orders(self) -> list[Order]:
+        """The rows matching the filter, sorted.
+
+        Returns:
+            The filtered, sorted rows.
+        """
+        orders = self.orders
+        if self.status:
+            orders = [order for order in orders if order.status == self.status]
+        return sorted(
+            orders,
+            key=lambda order: order.amount,
+            reverse=self.sort_reverse,
+        )
+
+    @rx.var
+    def total_amount(self) -> float:
+        """The amount summed over the filtered rows.
+
+        Returns:
+            The total amount.
+        """
+        return sum(order.amount for order in self.filtered_orders)
+
+
 class BenchmarkState(rx.State):
     """State for the benchmark."""
 
@@ -367,11 +430,28 @@ def _stateful_page():
     )
 
 
-@pytest.fixture(params=[_complicated_page, _stateful_page])
+def _repeated_stateful_page() -> rx.Component:
+    """Build repeated memo bodies with distinct call-site children.
+
+    Returns:
+        A page containing 100 repeated stateful rows.
+    """
+    return rx.vstack(
+        *(
+            rx.hstack(
+                rx.text(BenchmarkState.counter),
+                rx.button(f"Increment {index}", on_click=BenchmarkState.increment),
+            )
+            for index in range(100)
+        )
+    )
+
+
+@pytest.fixture(params=[_complicated_page, _stateful_page, _repeated_stateful_page])
 def unevaluated_page(request: pytest.FixtureRequest):
     return request.param
 
 
-@pytest.fixture(params=[_complicated_page, _stateful_page])
+@pytest.fixture(params=[_complicated_page, _stateful_page, _repeated_stateful_page])
 def evaluated_page(request: pytest.FixtureRequest):
     return request.param()

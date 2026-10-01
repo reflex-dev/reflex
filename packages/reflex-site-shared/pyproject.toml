@@ -12,6 +12,8 @@ dependencies = [
     "httpx",
     "pyyaml",
     "reflex-components-internal >= 0.9.0",
+    "reflex-docgen",
+    "reflex-integrations-docs",
     "reflex >= 0.9.0",
     "ruff-format",
 ]
@@ -25,8 +27,8 @@ pattern-prefix = "reflex-site-shared-"
 fallback-version = "0.0.0dev0"
 
 [tool.hatch.build]
-targets.sdist.artifacts = ["*.pyi"]
-targets.wheel.artifacts = ["*.pyi"]
+# Include uncommitted pyi stubs generated for this package.
+artifacts = ["/src/**/*.pyi"]
 
 [tool.hatch.build.hooks.reflex-pyi]
 dependencies = [
@@ -47,7 +49,9 @@ dependencies = [
     "reflex-components-react-player",
     "reflex-components-recharts",
     "reflex-components-sonner",
+    "reflex-docgen",
     "reflex-hosting-cli",
+    "reflex-integrations-docs",
     "reflex",
     "ruff-format",
     "ruff",

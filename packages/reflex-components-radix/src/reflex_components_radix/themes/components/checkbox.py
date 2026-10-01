@@ -23,6 +23,7 @@ class Checkbox(RadixThemesComponent):
     """Selects a single value, typically for submission in a form."""
 
     tag = "Checkbox"
+    _is_form_control = True
 
     as_child: Var[bool] = field(
         doc="Change the default rendered element for the one passed as a child, merging their props and behavior."

@@ -15,6 +15,7 @@ class RadioCardsRoot(RadixThemesComponent):
     """Root element for RadioCards component."""
 
     tag = "RadioCards.Root"
+    _is_form_control = True
 
     as_child: Var[bool] = field(
         doc="Change the default rendered element for the one passed as a child, merging their props and behavior."

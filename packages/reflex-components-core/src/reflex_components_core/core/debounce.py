@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from reflex_base.components.component import Component, field
 from reflex_base.constants import EventTriggers
 from reflex_base.event import EventHandler, no_args_event_spec
+from reflex_base.utils import format
 from reflex_base.vars import VarData
 from reflex_base.vars.base import Var
 
@@ -24,6 +25,11 @@ class DebounceInput(Component):
     library = "react-debounce-input@3.3.0"
     tag = "DebounceInput"
     is_default = True
+
+    # DebounceInput is a class component: a plain ``ref`` resolves to the
+    # instance (``_render`` strips it), and the real ``<input>`` is exposed
+    # through ``inputRef``. Runtime-injected refs are routed there.
+    _dom_ref_prop: ClassVar[str | None] = "input_ref"
 
     min_length: Var[int] = field(
         doc="Minimum input characters before triggering the on_change event"
@@ -106,7 +112,15 @@ class DebounceInput(Component):
         }
         props.setdefault("custom_attrs", {}).update(other_props, **child.custom_attrs)
 
-        # Carry base Component props.
+        # Carry base Component props. Drop any keys from child.style that
+        # collide with DebounceInput's own props — Reflex routes unknown child
+        # kwargs (e.g. ``debounce_timeout`` passed through ``rx.input``) into
+        # ``style``.
+        debounce_input_prop_names = {
+            format.to_camel_case(prop) for prop in cls.get_props()
+        }
+        for colliding_key in [k for k in child.style if k in debounce_input_prop_names]:
+            child.style.pop(colliding_key)
         props.setdefault("style", {}).update(child.style)
         if child.class_name is not None:
             props["class_name"] = f"{props.get('class_name', '')} {child.class_name}"
@@ -123,7 +137,7 @@ class DebounceInput(Component):
         props.setdefault(
             "element",
             Var(
-                _js_expr=str(child.alias or child.tag),
+                _js_expr=child._get_tag_name(),
                 _var_type=type[Component],
                 _var_data=VarData(
                     imports=child._get_imports(),

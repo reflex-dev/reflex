@@ -1,15 +1,12 @@
 """rx.match."""
 
 import textwrap
+from collections.abc import Iterator
 from typing import Any, cast
 
-from reflex_base.components.component import (
-    BaseComponent,
-    Component,
-    MemoizationLeaf,
-    field,
-)
-from reflex_base.components.tags import Tag
+from reflex_base.components.component import BaseComponent, Component, field
+from reflex_base.components.memoize_helpers import passthrough_children_var
+from reflex_base.components.tags import CommonTag
 from reflex_base.components.tags.match_tag import MatchTag
 from reflex_base.style import Style
 from reflex_base.utils import format
@@ -19,9 +16,10 @@ from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 
 from reflex_components_core.base import Fragment
+from reflex_components_core.base.bare import Bare
 
 
-class Match(MemoizationLeaf):
+class Match(Component):
     """Match cases based on a condition."""
 
     cond: Var[Any] = field(doc="The condition to determine which case to match.")
@@ -269,14 +267,40 @@ class Match(MemoizationLeaf):
             ),
         )
 
-    def _render(self) -> Tag:
+    def _render(self) -> CommonTag:
+        # Reconstruct match_cases and default from self.children, which may have
+        # been updated by the compiler walker to include memoized wrappers.
+        # self.children contains: [case_1_return, case_2_return, ..., default]
+        # self.match_cases contains the conditions as Vars.
+        num_cases = len(self.match_cases)
+        children_var = passthrough_children_var(self.children)
+        if children_var is not None:
+            # Auto-memo passthrough body: index into the placeholder array so
+            # branch JSX stays on the page side.
+            cases_returns = [Bare.create(children_var[i]) for i in range(num_cases)]
+            default_return = Bare.create(children_var[num_cases])
+        else:
+            if len(self.children) != num_cases + 1:
+                msg = (
+                    f"Match children count mismatch: expected {num_cases + 1} "
+                    f"(cases + default), got {len(self.children)}"
+                )
+                raise ValueError(msg)
+
+            cases_returns = self.children[:num_cases]
+            default_return = self.children[num_cases]
+
         return MatchTag(
             cond=str(self.cond),
             match_cases=[
                 ([str(cond) for cond in conditions], return_value.render())
-                for conditions, return_value in self.match_cases
+                for (conditions, _), return_value in zip(
+                    self.match_cases,
+                    cases_returns,
+                    strict=True,
+                )
             ],
-            default=self.default.render(),
+            default=default_return.render(),
         )
 
     def render(self) -> dict:
@@ -286,6 +310,28 @@ class Match(MemoizationLeaf):
             The dictionary for template of component.
         """
         return dict(self._render())
+
+    def _get_vars(
+        self, include_children: bool = False, ignore_ids: set[int] | None = None
+    ) -> Iterator[Var]:
+        """Walk all Vars used in this component, including the case conditions.
+
+        The case conditions live in ``match_cases``, which is not a JavaScript
+        property, so they are yielded here to count toward memoization and to
+        emit the hooks they need.
+
+        Args:
+            include_children: Whether to include Vars from children.
+            ignore_ids: The ids to ignore.
+
+        Yields:
+            Each Var referenced by the component, plus the case conditions.
+        """
+        yield from super()._get_vars(
+            include_children=include_children, ignore_ids=ignore_ids
+        )
+        for conditions, _ in self.match_cases:
+            yield from conditions
 
     def add_imports(self) -> ImportDict:
         """Add imports for the Match component.

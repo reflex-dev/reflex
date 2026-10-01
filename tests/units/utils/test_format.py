@@ -657,11 +657,24 @@ def test_format_query_params(input, output):
     assert format.format_query_params(input) == output
 
 
-formatted_router = {
-    "route_id": "",
-    "url": "",
-    "session": {"client_token": "", "client_ip": "", "session_id": ""},
-    "headers": {
+formatted_router_vars = {
+    "rx_router_route_id" + FIELD_MARKER: "",
+    "rx_router_url" + FIELD_MARKER: {
+        "scheme": "",
+        "netloc": "",
+        "origin": "://",
+        "path": "",
+        "query": "",
+        "query_parameters": {},
+        "fragment": "",
+        "href": "",
+    },
+    "rx_router_session" + FIELD_MARKER: {
+        "client_token": "",
+        "client_ip": "",
+        "session_id": "",
+    },
+    "rx_router_headers" + FIELD_MARKER: {
         "host": "",
         "origin": "",
         "upgrade": "",
@@ -677,7 +690,7 @@ formatted_router = {
         "accept_language": "",
         "raw_headers": {},
     },
-    "page": {
+    "rx_router_page" + FIELD_MARKER: {
         "host": "",
         "path": "",
         "raw_path": "",
@@ -711,7 +724,7 @@ formatted_router = {
                     "obj" + FIELD_MARKER: {"prop1": 42, "prop2": "hello"},
                     "sum" + FIELD_MARKER: 3.15,
                     "upper" + FIELD_MARKER: "",
-                    "router" + FIELD_MARKER: formatted_router,
+                    **formatted_router_vars,
                     "asynctest" + FIELD_MARKER: 0,
                 },
                 ChildState.get_full_name(): {
@@ -733,7 +746,7 @@ formatted_router = {
                     "dt" + FIELD_MARKER: "1989-11-09 18:53:00+01:00",
                     "t" + FIELD_MARKER: "18:53:00+01:00",
                     "td" + FIELD_MARKER: "11 days, 0:11:00",
-                    "router" + FIELD_MARKER: formatted_router,
+                    **formatted_router_vars,
                 },
             },
         ),
@@ -823,3 +836,55 @@ def test_format_library_name(input: str, output: str):
 )
 def test_json_dumps(input, output):
     assert format.json_dumps(input) == output
+
+
+def test_sanitize_client_log_value_respects_max_length():
+    """The sanitized value never exceeds max_length, even when truncated."""
+    out = format.sanitize_client_log_value("A" * 5000, max_length=500)
+    assert len(out) <= 500
+    assert out.endswith("... (truncated)")
+
+
+def test_sanitize_client_log_value_strips_control_characters():
+    """Control characters cannot be used to forge extra backend log lines."""
+    out = format.sanitize_client_log_value("\x1b[31mred\x1b[0m\nFAKE LOG LINE\tx")
+    assert "\x1b" not in out
+    assert "\n" not in out
+    assert "\t" not in out
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "x[/bold]y",
+        "x[/]y",
+        "[blink bold red]FAKE",
+        "[link=https://evil.example]z[/link]",
+    ],
+)
+def test_sanitize_client_log_value_escapes_markup(payload: str):
+    """Client-supplied rich markup is escaped so printing it cannot raise.
+
+    Args:
+        payload: The markup payload a client could send.
+    """
+    from reflex_base.utils import console
+
+    # Must not raise MarkupError when parsed by rich.
+    console.print(f"[Frontend Error] {format.sanitize_client_log_value(payload)}")
+
+
+def test_sanitize_client_log_value_bounds_work_before_scanning():
+    """Only max_length characters are scanned, however long the input is."""
+    scanned = 0
+
+    class CountingStr(str):
+        def __getitem__(self, item: Any):
+            nonlocal scanned
+            result = super().__getitem__(item)
+            if isinstance(item, slice):
+                scanned = len(result)
+            return result
+
+    format.sanitize_client_log_value(CountingStr("A" * 100_000), max_length=500)
+    assert scanned == 500

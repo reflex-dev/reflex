@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+from collections.abc import Iterator
 from typing import ClassVar, Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
@@ -387,8 +388,9 @@ class CodeBlock(Component, MarkdownComponentMap):
 
     alias = "SyntaxHighlighter"
 
-    theme: Var[Theme | str] = field(
-        default=Theme.one_light, doc='The theme to use ("light" or "dark").'
+    theme: Var[Theme] = field(
+        default=Theme.one_light,
+        doc="The theme to use, accessed via rx.code_block.themes (e.g. rx.code_block.themes.one_dark).",
     )
 
     language: Var[LiteralCodeLanguage] = field(
@@ -408,7 +410,6 @@ class CodeBlock(Component, MarkdownComponentMap):
     custom_style: dict[str, str | Var | Color] = field(
         doc="A custom style for the code block.",
         default_factory=dict,
-        is_javascript_property=False,
     )
 
     code_tag_props: Var[dict[str, str | dict[str, str]]] = field(
@@ -458,6 +459,25 @@ class CodeBlock(Component, MarkdownComponentMap):
                 dark=Theme.one_dark,
             )
 
+        if props.get("wrap_long_lines") is True:
+            code_tag_props = props.get("code_tag_props")
+            if code_tag_props is None:
+                props["code_tag_props"] = {"style": {"whiteSpace": "pre-wrap"}}
+            elif isinstance(code_tag_props, dict):
+                code_tag_props = code_tag_props.copy()
+                code_tag_style = code_tag_props.get("style")
+                if code_tag_style is None:
+                    code_tag_props["style"] = {"whiteSpace": "pre-wrap"}
+                elif (
+                    isinstance(code_tag_style, dict)
+                    and "whiteSpace" not in code_tag_style
+                ):
+                    code_tag_props["style"] = {
+                        "whiteSpace": "pre-wrap",
+                        **code_tag_style,
+                    }
+                props["code_tag_props"] = code_tag_props
+
         if can_copy:
             code = children[0]
             copy_button = (
@@ -465,6 +485,8 @@ class CodeBlock(Component, MarkdownComponentMap):
                 if copy_button is not None
                 else Button.create(
                     Icon.create(tag="copy"),
+                    aria_label="Copy code",
+                    type="button",
                     on_click=set_clipboard(code),
                     style=Style({"position": "absolute", "top": "0.5em", "right": "0"}),
                 )
@@ -497,6 +519,30 @@ class CodeBlock(Component, MarkdownComponentMap):
     def add_style(self):
         """Add style to the component."""
         self.custom_style.update(self.style)
+
+    def _get_vars(
+        self, include_children: bool = False, ignore_ids: set[int] | None = None
+    ) -> Iterator[Var]:
+        """Walk all Vars used in this component.
+
+        Args:
+            include_children: Whether to include Vars from children.
+            ignore_ids: The ids to ignore.
+
+        Yields:
+            Each var referenced by the component, including any embedded in
+            the custom_style dict, which is not a Var-typed prop.
+        """
+        yield from super()._get_vars(
+            include_children=include_children, ignore_ids=ignore_ids
+        )
+        custom_style = self.custom_style
+        if isinstance(custom_style, Style) and custom_style._var_data:
+            yield Var(
+                _js_expr="custom_style",
+                _var_type=str,
+                _var_data=custom_style._var_data,
+            )
 
     def _render(self):
         out = super()._render()

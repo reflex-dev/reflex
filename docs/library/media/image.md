@@ -14,7 +14,10 @@ This could either be a local path from the assets folder or an external link.
 
 ```python demo
 rx.image(
-    src="https://web.reflex-assets.dev/other/logo.jpg", width="100px", height="auto"
+    src="https://web.reflex-assets.dev/other/logo.jpg",
+    alt="Reflex logo",
+    width="100px",
+    height="auto",
 )
 ```
 
@@ -23,6 +26,7 @@ Image composes a box and can be styled similarly.
 ```python demo
 rx.image(
     src="https://web.reflex-assets.dev/other/logo.jpg",
+    alt="Reflex logo",
     width="100px",
     height="auto",
     border_radius="15px 50px",
@@ -47,7 +51,7 @@ class ImageState(rx.State):
 
 
 def image_pil_example():
-    return rx.vstack(rx.image(src=ImageState.image))
+    return rx.vstack(rx.image(src=ImageState.image, alt="Dynamically generated image"))
 ```
 
 ```md alert info
@@ -59,5 +63,5 @@ A cv2 image must be converted to a PIL image to be passed directly to `rx.image`
 ```md alert info
 # How to let your user upload an image
 
-To let a user upload an image to your app check out the [upload docs](/docs/library/forms/upload).
+To let a user upload an image to your app check out the [upload docs](/docs/library/forms/upload/).
 ```

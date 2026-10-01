@@ -1,8 +1,12 @@
 .web
 .git
-__pycache__/*
+.venv
+__pycache__
+*.py[cod]
+.states
+*.db
+uploaded_files
 Dockerfile
 Caddy.Dockerfile
 compose.yaml
 compose.*.yaml
-uploaded_files

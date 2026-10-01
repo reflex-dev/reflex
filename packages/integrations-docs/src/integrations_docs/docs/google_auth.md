@@ -16,19 +16,19 @@ The **Google Auth Integration** allows your app to authenticate users using thei
 
 3 - Click **Create Credentials**
 
-![Google Auth 1](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/google_auth_1.webp)
+![Creating credentials in Google Cloud Console](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/google_auth_1.webp)
 
 4 - Choose **OAuth client ID**.
 
-![Google Auth 2](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/google_auth_2.webp)
+![Choosing OAuth client ID credential type](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/google_auth_2.webp)
 
 5 - Choose **Web Application** as the application type, name the application and enter your sandbox URL, which you get from the Google Auth integration panel, as the **Authorized JavaScript Origin** and **Authorized Redirect URIs**.
 
-![Google Auth 3](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/google_auth_3.webp)
+![Configuring Google OAuth web application origins](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/google_auth_3.webp)
 
 6 - Copy the generated **Client ID** (`GOOGLE_CLIENT_ID`) and **Client Secret** (`GOOGLE_CLIENT_SECRET`).
 
-![Google Auth 4](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/google_auth_4.webp)
+![Copying Google client ID and secret](https://raw.githubusercontent.com/reflex-dev/integrations-docs/refs/heads/main/images/docs/google_auth_4.webp)
 
 
 ## Step 2: Configure the Integration in Your App

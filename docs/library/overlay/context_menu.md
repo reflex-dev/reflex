@@ -362,7 +362,9 @@ def context_menu_call_dialog() -> rx.Component:
         ),
         rx.cond(
             ContextMenuState.which_dialog_open,
-            rx.heading(f"{ContextMenuState.which_dialog_open} dialog is open"),
+            rx.heading(
+                f"{ContextMenuState.which_dialog_open} dialog is open", as_="h2"
+            ),
         ),
         delete_dialog(),
         settings_dialog(),

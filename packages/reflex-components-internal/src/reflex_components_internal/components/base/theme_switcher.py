@@ -4,8 +4,10 @@ from reflex_components_core.core.cond import cond
 from reflex_components_core.el.elements.forms import Button
 from reflex_components_core.el.elements.typography import Div
 
-from reflex.components.component import Component, memo
+from reflex.components.component import Component
+from reflex.components.memo import memo
 from reflex.style import LiteralColorMode, color_mode, set_color_mode
+from reflex.vars.base import EMPTY_VAR_STR, Var
 from reflex_components_internal.components.icons.hugeicon import hi
 from reflex_components_internal.utils.twmerge import cn
 
@@ -29,7 +31,7 @@ def theme_switcher_item(mode: LiteralColorMode, icon: str) -> Component:
     )
 
 
-def theme_switcher(class_name: str = "") -> Component:
+def theme_switcher(class_name: str | Var[str] = "") -> Component:
     """Theme switcher component.
 
     Returns:
@@ -47,7 +49,7 @@ def theme_switcher(class_name: str = "") -> Component:
 
 
 @memo
-def memoized_theme_switcher(class_name: str = "") -> Component:
+def memoized_theme_switcher(class_name: Var[str] = EMPTY_VAR_STR) -> Component:
     """Memoized theme switcher component.
 
     Returns:

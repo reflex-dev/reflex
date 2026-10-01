@@ -16,6 +16,10 @@ class ConfigError(ReflexError):
     """Custom exception for config related errors."""
 
 
+class InvalidPluginConfigError(ConfigError):
+    """Raised when ``Config.plugins`` contains a plugin that could not be loaded."""
+
+
 class InvalidStateManagerModeError(ReflexError, ValueError):
     """Raised when an invalid state manager mode is provided."""
 
@@ -202,6 +206,10 @@ class ComputedVarShadowsBaseVarsError(ReflexError, NameError):
     """Raised when a computed var shadows a base var."""
 
 
+class BaseVarShadowsInheritedVarError(ReflexError, NameError):
+    """Raised when a base var shadows a var inherited from a parent state."""
+
+
 class EventHandlerShadowsBuiltInStateMethodError(ReflexError, NameError):
     """Raised when an event handler shadows a built-in state method."""
 
@@ -284,3 +292,7 @@ class InvalidLockWarningThresholdError(ReflexError):
 
 class UnretrievableVarValueError(ReflexError):
     """Raised when the value of a var is not retrievable."""
+
+
+class HybridPropertyError(ReflexError):
+    """Raised when a hybrid property is misused while building its frontend var."""

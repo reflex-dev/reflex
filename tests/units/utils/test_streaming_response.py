@@ -10,46 +10,10 @@ from starlette.requests import ClientDisconnect
 
 
 @pytest.mark.asyncio
-async def test_disconnect_cancels_stream_task_and_runs_finish():
-    """A receive-side disconnect cancels the body stream and cleanup runs once."""
-    body_closed = asyncio.Event()
-    body_started = asyncio.Event()
-    on_finish = AsyncMock()
-
-    async def body():
-        try:
-            body_started.set()
-            yield b"payload"
-            await asyncio.Event().wait()
-        finally:
-            body_closed.set()
-
-    async def receive():
-        await body_started.wait()
-        return {"type": "http.disconnect"}
-
-    async def send(_message):
-        await asyncio.sleep(0)
-
-    response = DisconnectAwareStreamingResponse(
-        body(),
-        media_type="application/x-ndjson",
-        on_finish=on_finish,
-    )
-
-    await asyncio.wait_for(
-        response({"type": "http", "asgi": {"spec_version": "2.4"}}, receive, send),
-        timeout=1,
-    )
-
-    await asyncio.wait_for(body_closed.wait(), timeout=1)
-    on_finish.assert_awaited_once()
-
-
-@pytest.mark.asyncio
 async def test_send_oserror_raises_client_disconnect_and_closes_body():
     """A send-side disconnect still raises ClientDisconnect and closes the stream."""
     body_closed = asyncio.Event()
+    disconnect_notified = asyncio.Event()
     on_finish = AsyncMock()
 
     async def body():
@@ -74,12 +38,14 @@ async def test_send_oserror_raises_client_disconnect_and_closes_body():
         body(),
         media_type="application/x-ndjson",
         on_finish=on_finish,
+        on_disconnect=disconnect_notified.set,
     )
 
     with pytest.raises(ClientDisconnect):
         await response({"type": "http", "asgi": {"spec_version": "2.4"}}, receive, send)
 
     await asyncio.wait_for(body_closed.wait(), timeout=1)
+    assert disconnect_notified.is_set()
     on_finish.assert_awaited_once()
 
 

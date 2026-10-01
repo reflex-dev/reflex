@@ -20,7 +20,7 @@ class ToggleBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the toggle component."""
+        """The import variable for the toggle component."""
         return ImportVar(tag="Toggle", package_path="", install=False)
 
 

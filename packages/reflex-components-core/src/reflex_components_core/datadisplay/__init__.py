@@ -4,13 +4,10 @@ from __future__ import annotations
 
 from reflex_base.utils import lazy_loader
 
+# `code_block` and `data_editor` ship as the standalone reflex-components-code
+# and reflex-components-dataeditor packages, which `reflex.components.datadisplay`
+# maps onto.
 _SUBMOD_ATTRS: dict[str, list[str]] = {
-    "code": [
-        "CodeBlock",
-        "code_block",
-        "LiteralCodeLanguage",
-    ],
-    "dataeditor": ["data_editor", "data_editor_theme", "DataEditorTheme"],
     "logo": ["logo"],
 }
 

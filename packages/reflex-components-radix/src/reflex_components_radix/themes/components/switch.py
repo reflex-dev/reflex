@@ -16,6 +16,7 @@ class Switch(RadixThemesComponent):
     """A toggle switch alternative to the checkbox."""
 
     tag = "Switch"
+    _is_form_control = True
 
     as_child: Var[bool] = field(
         doc="Change the default rendered element for the one passed as a child, merging their props and behavior."

@@ -17,8 +17,6 @@ from typing import (
     overload,
 )
 
-from rich.markup import escape
-
 from reflex_base.utils import types
 from reflex_base.utils.exceptions import VarAttributeError
 from reflex_base.utils.types import (
@@ -39,6 +37,7 @@ from .base import (
     var_operation,
     var_operation_return,
 )
+from .hybrid_property import HybridProperty
 from .number import BooleanVar, NumberVar, raise_unsupported_operand_types
 from .sequence import ArrayVar, LiteralArrayVar, StringVar
 
@@ -331,23 +330,34 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
 
         fixed_type = get_origin(var_type) or var_type
 
-        if (
-            is_typeddict(fixed_type)
-            or (
-                isinstance(fixed_type, type)
-                and not safe_issubclass(fixed_type, Mapping)
-            )
-            or (fixed_type in types.UnionTypes)
-        ):
+        if isinstance(fixed_type, type) and not safe_issubclass(fixed_type, Mapping):
+            # Resolve the raw descriptor once and reuse it. A HybridProperty resolves to a
+            # frontend Var with this object var substituted as `self` (e.g. `State.info.a_b`);
+            # any other descriptor is passed to `get_attribute_access_type` so the class
+            # lookup is not repeated.
+            descriptor = types.get_attribute_descriptor(fixed_type, name)
+            if isinstance(descriptor, HybridProperty):
+                hybrid_var = descriptor._get_var(self)
+                if hybrid_var is None:
+                    msg = (
+                        f"The hybrid property '{name}' of {fixed_type.__name__} has no "
+                        f"frontend value, so it cannot be accessed on `{self!s}`."
+                    )
+                    raise VarAttributeError(msg)
+                return hybrid_var
+            attribute_type = get_attribute_access_type(var_type, name, descriptor)
+        elif is_typeddict(fixed_type) or fixed_type in types.UnionTypes:
             attribute_type = get_attribute_access_type(var_type, name)
-            if attribute_type is None:
-                msg = (
-                    f"The State var `{self!s}` of type {escape(str(self._var_type))} has no attribute '{name}' or may have been annotated "
-                    f"wrongly."
-                )
-                raise VarAttributeError(msg)
-            return ObjectItemOperation.create(self, name, attribute_type).guess_type()
-        return ObjectItemOperation.create(self, name).guess_type()
+        else:
+            return ObjectItemOperation.create(self, name).guess_type()
+
+        if attribute_type is None:
+            msg = (
+                f"The State var `{self!s}` of type {self._var_type} has no attribute '{name}' or may have been annotated "
+                f"wrongly."
+            )
+            raise VarAttributeError(msg)
+        return ObjectItemOperation.create(self, name, attribute_type).guess_type()
 
     def contains(self, key: Var | Any) -> BooleanVar:
         """Check if the object contains a key.
@@ -363,6 +373,29 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
 
 class RestProp(ObjectVar[dict[str, Any]]):
     """A special object var representing forwarded rest props."""
+
+    def merge(self, other: ObjectVar | Mapping[str, Any]):
+        """Merge another object into these RestProps.
+
+        Args:
+            other: The other object (or plain mapping) to merge.
+
+        Returns:
+            The merged RestProp-typed value.
+        """
+        other_var = (
+            other
+            if isinstance(other, ObjectVar)
+            else LiteralVar.create(other).to(ObjectVar)
+        )
+        merged_var = object_merge_operation(self, other_var)
+        return type(self)(
+            _js_expr=str(merged_var),
+            _var_type=self._var_type,
+            _var_data=VarData.merge(
+                self._get_all_var_data(), merged_var._get_all_var_data()
+            ),
+        )
 
 
 @dataclasses.dataclass(
@@ -429,14 +462,6 @@ class LiteralObjectVar(
                 raise TypeError(msg)
             keys_and_values.append(f"{key.json()}:{value.json()}")
         return "{" + ", ".join(keys_and_values) + "}"
-
-    def __hash__(self) -> int:
-        """Get the hash of the var.
-
-        Returns:
-            The hash of the var.
-        """
-        return hash((type(self).__name__, self._js_expr))
 
     @classmethod
     def _get_all_var_data_without_creating_var(
@@ -525,7 +550,7 @@ def object_keys_operation(value: ObjectVar):
         The keys of the object.
     """
     return var_operation_return(
-        js_expression=f"Object.keys({value} ?? {{}})",
+        js_expression=f"Object.keys({value!s} ?? {{}})",
         var_type=list[str],
     )
 
@@ -541,7 +566,7 @@ def object_values_operation(value: ObjectVar):
         The values of the object.
     """
     return var_operation_return(
-        js_expression=f"Object.values({value} ?? {{}})",
+        js_expression=f"Object.values({value!s} ?? {{}})",
         var_type=list[value._value_type()],
     )
 
@@ -557,7 +582,7 @@ def object_entries_operation(value: ObjectVar):
         The entries of the object.
     """
     return var_operation_return(
-        js_expression=f"Object.entries({value} ?? {{}})",
+        js_expression=f"Object.entries({value!s} ?? {{}})",
         var_type=list[tuple[str, value._value_type()]],
     )
 
@@ -574,7 +599,7 @@ def object_merge_operation(lhs: ObjectVar, rhs: ObjectVar):
         The merged object.
     """
     return var_operation_return(
-        js_expression=f"({{...{lhs}, ...{rhs}}})",
+        js_expression=f"({{...{lhs!s}, ...{rhs!s}}})",
         var_type=Mapping[
             lhs._key_type() | rhs._key_type(),
             lhs._value_type() | rhs._value_type(),
@@ -644,6 +669,6 @@ def object_has_own_property_operation(object: ObjectVar, key: Var):
         The result of the check.
     """
     return var_operation_return(
-        js_expression=f"{object}.hasOwnProperty({key})",
+        js_expression=f"{object!s}.hasOwnProperty({key!s})",
         var_type=bool,
     )
