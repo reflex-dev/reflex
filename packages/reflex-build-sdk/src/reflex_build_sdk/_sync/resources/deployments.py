@@ -332,6 +332,7 @@ class Deployments:
         """
         deadline = None if timeout is None else monotonic() + timeout
         last_message = None
+        completion_seen = False
         polls = 0
         while True:
             message = self.status(deployment_id)
@@ -340,6 +341,11 @@ class Deployments:
                 if on_status is not None:
                     on_status(message)
             outcome = status_message_outcome(message)
+            if outcome == "succeeded":
+                completion_seen = True
+            elif outcome is None and completion_seen:
+                # Nonterminal narration can replace completion before the row catches up.
+                outcome = "succeeded"
             polls += 1
             stale = "bad response" in message
             if outcome is not None or stale or polls % _REPORT_EVERY_POLLS == 0:
