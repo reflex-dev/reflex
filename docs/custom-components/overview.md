@@ -72,5 +72,3 @@ reflex component build
 Once you're ready to publish your package, run `reflex component build` to build the package. The command builds the distribution files if they are not already built. The end result is a `dist` folder containing the distribution files. The user does not need to do anything manually with these distribution files.
 
 In order to publish these files as a Python package, you need to use a publishing utility. Any would work, but we recommend either [Twine](https://twine.readthedocs.io/en/stable/) or (uv)[https://docs.astral.sh/uv/guides/package/#publishing-your-package]. Make sure to keep your package version in pyproject.toml updated.
-
-You can also share your components with the rest of the community at our website using the command `reflex component share`. See you there!

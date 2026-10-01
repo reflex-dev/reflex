@@ -124,8 +124,6 @@ Options:
 
 To publish to a package index, a user is required to already have an account with them. As of **0.7.5**, Reflex does not handle the publishing process for you. You can do so manually by first running `reflex component build` followed by `twine upload` or `uv publish` or your choice of a publishing utility.
 
-You can then share your build on our website with `reflex component share`.
-
 ## reflex component build
 
 It is not required to run the `build` command separately before publishing. The `publish` command will build the package if it is not already built. The `build` command is provided for the user's convenience.
