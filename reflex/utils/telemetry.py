@@ -580,19 +580,21 @@ os._exit(0)
 
 
 def _send_detached(event: str) -> None:
-    """Send an event from a short-lived detached process.
+    """Send an event without a telemetry thread in a process that forks.
 
-    For a supervisor that has stopped its telemetry thread to fork workers
-    safely: the event is collected and delivered by a fresh interpreter, so
-    the supervisor never gains a thread or waits on the network. The direct
-    child exits right after detaching the sender, so no zombie is left, and
-    ``close_fds`` keeps the server's sockets out of it.
+    A supervisor that paused telemetry to fork workers safely hands the event
+    to a fresh interpreter, so it never gains a thread or waits on the
+    network. The direct child exits right after detaching the sender, so no
+    zombie is left, and ``close_fds`` keeps the server's sockets out of it.
+    Any other process sends in-process without waiting on a child.
 
     Args:
         event: The event name.
     """
-    if not hasattr(os, "fork"):
-        # Nothing forks here (Windows), so an in-process send is safe.
+    with _executor_lock:
+        paused = _paused
+    if not paused or not hasattr(os, "fork"):
+        # Nothing forks this process with a telemetry thread alive.
         send(event)
         return
     with suppress(Exception):

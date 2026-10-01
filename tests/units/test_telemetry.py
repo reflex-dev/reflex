@@ -990,9 +990,10 @@ def test_real_fork_keeps_the_parent_paused():
 
 @pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is POSIX-only")
 def test_send_detached_hands_the_event_to_a_detached_process(
-    mocker: MockerFixture,
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
 ):
-    """The supervisor sends through a short-lived process, never a thread."""
+    """A supervisor paused to fork sends through a short-lived process."""
+    monkeypatch.setattr(telemetry, "_paused", True)
     mocker.patch.object(
         telemetry, "get_config", return_value=SimpleNamespace(telemetry_enabled=True)
     )
@@ -1012,6 +1013,19 @@ def test_send_detached_hands_the_event_to_a_detached_process(
     assert telemetry._executor is None
 
 
+def test_send_detached_sends_in_process_when_not_paused(mocker: MockerFixture):
+    """A process that does not fork (uvicorn, spawned granian) does not wait
+    on a child process: it sends in-process, as before.
+    """
+    send = mocker.patch.object(telemetry, "send")
+    popen = mocker.patch.object(telemetry.subprocess, "Popen")
+
+    telemetry._send_detached("run-prod")
+
+    send.assert_called_once_with("run-prod")
+    popen.assert_not_called()
+
+
 def test_send_detached_sends_in_process_without_fork(
     mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
 ):
@@ -1026,8 +1040,11 @@ def test_send_detached_sends_in_process_without_fork(
     popen.assert_not_called()
 
 
-def test_send_detached_starts_nothing_when_disabled(mocker: MockerFixture):
+def test_send_detached_starts_nothing_when_disabled(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
     """With telemetry disabled no process is started."""
+    monkeypatch.setattr(telemetry, "_paused", True)
     mocker.patch.object(
         telemetry, "get_config", return_value=SimpleNamespace(telemetry_enabled=False)
     )
@@ -1039,8 +1056,11 @@ def test_send_detached_starts_nothing_when_disabled(mocker: MockerFixture):
 
 
 @pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is POSIX-only")
-def test_detached_send_leaves_no_child_behind(mocker: MockerFixture):
+def test_detached_send_leaves_no_child_behind(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
     """The direct child exits after detaching, so no zombie is left to reap."""
+    monkeypatch.setattr(telemetry, "_paused", True)
     mocker.patch.object(
         telemetry, "get_config", return_value=SimpleNamespace(telemetry_enabled=True)
     )
