@@ -857,6 +857,25 @@ def _count_redis_calls(redis: Any, *names: str) -> Counter[str]:
     return calls
 
 
+async def _stored_tree_states(
+    state_manager_redis: StateManagerRedis, token: BaseStateToken
+) -> set[type[BaseState]]:
+    """Get the states of a TreeRoot tree that have a payload stored in redis.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to read from.
+        token: The token of the tree.
+
+    Returns:
+        The classes of the stored states.
+    """
+    return {
+        state_cls
+        for state_cls in (TreeRoot, TreeFirst, TreeSecond)
+        if await state_manager_redis.redis.get(token._state_key(state_cls)) is not None
+    }
+
+
 async def test_set_state_checks_the_lock_once_per_tree(
     state_manager_redis: StateManagerRedis,
 ):
@@ -905,6 +924,11 @@ async def test_set_state_persists_the_touched_states_in_one_round_trip(
     await state_manager_redis.set_state(token, state)
 
     assert calls == {"pipeline": 1}
+    # The untouched TreeSecond is not written.
+    assert await _stored_tree_states(state_manager_redis, token) == {
+        TreeRoot,
+        TreeFirst,
+    }
     persisted = await state_manager_redis.get_state(token)
     assert isinstance(persisted, TreeRoot)
     assert persisted.root_value == 4
@@ -928,7 +952,8 @@ async def test_set_state_writes_nothing_when_no_state_was_touched(
     token = BaseStateToken(ident=str(uuid.uuid4()), cls=TreeRoot)
     state = await state_manager_redis.get_state(token)
 
-    calls = _count_redis_calls(state_manager_redis.redis, "pipeline")
+    calls = _count_redis_calls(state_manager_redis.redis, "pipeline", "set")
     await state_manager_redis.set_state(token, state)
 
     assert not calls
+    assert not await _stored_tree_states(state_manager_redis, token)
