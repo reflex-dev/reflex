@@ -32,6 +32,7 @@ from typing import Any, Literal
 from rich.text import Text
 
 from reflex_bench.report.format import format_pct, format_value, scale_for
+from reflex_bench.report.markdown import markdown_table
 from reflex_bench.report.table import Cell, Line
 from reflex_bench.schema import (
     Assume,
@@ -346,13 +347,11 @@ def markdown(rows: Sequence[NoiseRow]) -> str:
     Returns:
         The table.
     """
+    cells = [_cells(row) for row in rows]
+    for line in cells:
+        line[0] = f"`{line[0]}`"
     header = [column.capitalize() for column in _COLUMNS]
-    lines = ["| " + " | ".join(header) + " |", "|" + "---|" * len(header)]
-    for row in rows:
-        cells = _cells(row)
-        cells[0] = f"`{cells[0]}`"
-        lines.append("| " + " | ".join(cells) + " |")
-    return "\n".join(lines) + "\n"
+    return "\n".join(markdown_table(header, cells)) + "\n"
 
 
 def to_json(rows: Sequence[NoiseRow], files: Sequence[Path]) -> dict[str, Any]:

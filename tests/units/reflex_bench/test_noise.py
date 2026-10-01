@@ -114,3 +114,13 @@ def test_rows_are_sorted_by_name_and_metric():
         (WARM, "bytes"),
         (WARM, "wall"),
     ]
+
+
+def test_markdown_escapes_pipes_and_newlines_in_cells():
+    doc = make_run(1.0, day=1)
+    doc["benchmarks"][0]["params"] = {"app": "a|b\nc"}
+    lines = noise.markdown(noise.series([doc])).splitlines()
+    assert len(lines) == 4
+    assert lines[3].startswith(
+        "| `lifecycle.compile.warm[app=a\\|b c]` | wall | 1 | 1.000 s |"
+    )
