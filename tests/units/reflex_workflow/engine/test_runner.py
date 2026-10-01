@@ -3634,6 +3634,56 @@ async def test_wake_settles_once_the_worker_has_nothing_left_to_take(
     assert left is None
 
 
+async def test_wake_waits_for_the_steps_it_took_to_finish(session_factory, monkeypatch):
+    await Resting.by().cancel()
+    key = uuid.uuid4().hex
+    async with session_factory() as session, session.begin():
+        await session.execute(
+            insert(Resting).values(
+                key=key,
+                next_step="rest",
+                wake_at=func.now(),
+                attempts=0,
+                wf_version=0,
+            )
+        )
+    running = asyncio.Event()
+    release = asyncio.Event()
+    real = runner.execute
+
+    async def held(*args, **kwargs):
+        """Run the step only once the test lets it, the way a slow one would.
+
+        Args:
+            *args: Passed on to execute.
+            **kwargs: Passed on to execute.
+
+        Returns:
+            What execute returns.
+        """
+        running.set()
+        await release.wait()
+        return await real(*args, **kwargs)
+
+    monkeypatch.setattr(runner, "execute", held)
+    async with only_worker(session_factory):
+        waiting = asyncio.create_task(runner.wake(datetime.timedelta(seconds=30)))
+        await asyncio.wait_for(running.wait(), 10)
+        # The pass after the claim takes nothing, the run being leased, but the
+        # step is still running: a host suspending now would stop it midway.
+        await asyncio.sleep(0.3)
+        assert not waiting.done()
+        release.set()
+        assert await waiting
+        async with session_factory() as session:
+            left = (
+                await session.execute(
+                    select(Resting.next_step).where(Resting.key == key)
+                )
+            ).scalar_one()
+    assert left is None
+
+
 async def test_wake_waits_for_the_next_wake_up_to_have_been_registered(
     session_factory,
 ):
