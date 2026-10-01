@@ -2493,6 +2493,10 @@ class FakeComputedVarBaseClass(property):
 # on a state instance, so it is safe from serialization round trips.
 _UNKEYABLE_VALUE: Final = object()
 
+# Marker for a computed var without a cached value. Private, so unlike
+# `dataclasses.MISSING` no computed value can be it.
+_NOT_CACHED: Final = object()
+
 # Types whose instances are immutable and cheap to compare directly. float is
 # deliberately absent: NaN is not equal to itself, so floats are keyed by their
 # serialized form instead of comparing equal to nothing forever.
@@ -2934,8 +2938,8 @@ class ComputedVar(Var[RETURN_TYPE]):
         # handle caching
         cache = instance.__dict__
         cache_attr = self._cache_attr
-        value = cache.get(cache_attr, MISSING)
-        if value is MISSING or (
+        value = cache.get(cache_attr, _NOT_CACHED)
+        if value is _NOT_CACHED or (
             self._update_interval is not None and self.needs_update(instance)
         ):
             # Set cache attr on state instance.
@@ -3245,8 +3249,8 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
         async def _awaitable_result(instance: Any = instance) -> RETURN_TYPE:
             cache = instance.__dict__
             cache_attr = self._cache_attr
-            value = cache.get(cache_attr, MISSING)
-            if value is MISSING or (
+            value = cache.get(cache_attr, _NOT_CACHED)
+            if value is _NOT_CACHED or (
                 self._update_interval is not None and self.needs_update(instance)
             ):
                 # Set cache attr on state instance.

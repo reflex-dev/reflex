@@ -1483,6 +1483,44 @@ def test_computed_var_mark_dirty_drops_only_the_cached_value():
     assert state.doubled == 2
 
 
+def test_computed_var_caches_a_missing_value():
+    """A computed var returning `dataclasses.MISSING` is cached like any other value."""
+    calls = 0
+
+    class MissingValueState(BaseState):
+        @computed_var
+        def missing(self) -> object:
+            nonlocal calls
+            calls += 1
+            return dataclasses.MISSING
+
+    state = MissingValueState()
+    assert state.missing is dataclasses.MISSING
+    state._was_touched = False
+    assert state.missing is dataclasses.MISSING
+    assert calls == 1
+    assert not state._was_touched
+
+
+async def test_async_computed_var_caches_a_missing_value():
+    """An async computed var returning `dataclasses.MISSING` is cached like any other value."""
+    calls = 0
+
+    class AsyncMissingValueState(BaseState):
+        @computed_var
+        async def missing(self) -> object:
+            nonlocal calls
+            calls += 1
+            return dataclasses.MISSING
+
+    state = AsyncMissingValueState()
+    assert await state.missing is dataclasses.MISSING  # pyright: ignore [reportGeneralTypeIssues]
+    state._was_touched = False
+    assert await state.missing is dataclasses.MISSING  # pyright: ignore [reportGeneralTypeIssues]
+    assert calls == 1
+    assert not state._was_touched
+
+
 class _Flavor(enum.IntEnum):
     SWEET = 1
 
