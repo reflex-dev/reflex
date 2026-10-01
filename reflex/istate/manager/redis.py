@@ -201,6 +201,8 @@ class StateManagerRedis(StateManager):
         init=False,
     )
     _lock_task: asyncio.Task | None = dataclasses.field(default=None, init=False)
+    # Whether the last subscribe attempt failed or timed out, so callers should not wait for it.
+    _lock_updates_subscribe_failed: bool = dataclasses.field(default=False, init=False)
 
     # Whether debug prints are enabled.
     _debug_enabled: bool = dataclasses.field(
@@ -859,24 +861,44 @@ class StateManagerRedis(StateManager):
 
     async def _subscribe_lock_updates(self):
         """Subscribe to redis keyspace notifications for lock updates."""
-        await self._enable_keyspace_notifications()
-        redis_db = self.redis.get_connection_kwargs().get("db", 0)
+        try:
+            await self._enable_keyspace_notifications()
+            redis_db = self.redis.get_connection_kwargs().get("db", 0)
 
-        lock_key_pattern = f"__keyspace@{redis_db}__:*_lock"
-        lock_waiter_key_pattern = f"__keyspace@{redis_db}__:*_lock_waiters"
-        handlers = {
-            lock_key_pattern: self._handle_lock_release,
-            lock_waiter_key_pattern: self._handle_lock_contention,
-        }
-        async with self.redis.pubsub() as pubsub:
-            await pubsub.psubscribe(**handlers)  # pyright: ignore[reportArgumentType]
-            try:
-                # Notifications are only delivered once redis confirms the subscription.
-                async for message in pubsub.listen():
-                    if message["type"] == "psubscribe":
-                        self._lock_updates_subscribed.set()
-            finally:
-                self._lock_updates_subscribed.clear()
+            lock_key_pattern = f"__keyspace@{redis_db}__:*_lock"
+            lock_waiter_key_pattern = f"__keyspace@{redis_db}__:*_lock_waiters"
+            handlers = {
+                lock_key_pattern: self._handle_lock_release,
+                lock_waiter_key_pattern: self._handle_lock_contention,
+            }
+            async with self.redis.pubsub() as pubsub:
+                await pubsub.psubscribe(**handlers)  # pyright: ignore[reportArgumentType]
+                try:
+                    # Notifications are only delivered once redis confirms the subscription.
+                    async for message in pubsub.listen():
+                        if message["type"] == "psubscribe":
+                            self._lock_updates_subscribe_failed = False
+                            self._lock_updates_subscribed.set()
+                finally:
+                    self._lock_updates_subscribed.clear()
+        except Exception as e:
+            self._set_lock_updates_subscribe_failed(f"{type(e).__name__}: {e}")
+            raise
+
+    def _set_lock_updates_subscribe_failed(self, reason: str) -> None:
+        """Stop waiting for the lock updates subscriber until it confirms a subscription.
+
+        Until then, modifications skip the wait and are written without an oplock lease.
+
+        Args:
+            reason: Why the subscription failed, for the warning.
+        """
+        if not self._lock_updates_subscribe_failed:
+            self._lock_updates_subscribe_failed = True
+            logger.warning(
+                f"{SMR} Redis lock updates subscriber is not subscribed ({reason}); "
+                "state is written without an opportunistic lock lease until it subscribes."
+            )
 
     def _ensure_lock_task(self) -> None:
         """Ensure the lock updates subscriber task is running."""
@@ -889,6 +911,9 @@ class StateManagerRedis(StateManager):
 
     async def _ensure_lock_task_subscribed(self, timeout: float | None = None) -> None:
         """Ensure the lock updates subscriber task is running and subscribed to avoid missing notifications.
+
+        Returns without waiting while a previous subscribe attempt has failed or
+        timed out, so an unavailable subscriber is not waited on by every caller.
 
         Args:
             timeout: How long to wait for the subscriber to be subscribed before
@@ -907,11 +932,17 @@ class StateManagerRedis(StateManager):
             )
         # Make sure lock waiter task is running.
         self._ensure_lock_task()
+        if self._lock_updates_subscribe_failed:
+            return
         # Make sure the lock waiter is subscribed to avoid missing notifications.
-        await asyncio.wait_for(
-            self._lock_updates_subscribed.wait(),
-            timeout=timeout,
-        )
+        try:
+            await asyncio.wait_for(
+                self._lock_updates_subscribed.wait(),
+                timeout=timeout,
+            )
+        except (TimeoutError, asyncio.TimeoutError):
+            self._set_lock_updates_subscribe_failed(f"not confirmed within {timeout}s")
+            raise
 
     async def _enable_keyspace_notifications(self):
         """Enable keyspace notifications for the redis server.

@@ -1,0 +1,1 @@
+With `REFLEX_OPLOCK_ENABLED`, state updates no longer each wait about 2 seconds when the Redis lock updates subscriber cannot subscribe (for example, when a managed Redis refuses `CONFIG SET notify-keyspace-events`). After one failed or timed-out attempt, updates are written without an oplock lease until the subscription is confirmed, and a warning is logged.

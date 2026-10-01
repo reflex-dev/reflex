@@ -12,8 +12,10 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
+from redis import ResponseError
 from reflex_base.utils.exceptions import EnvironmentVarValueError
 
+from reflex.istate.manager import redis as redis_manager
 from reflex.istate.manager.redis import (
     StateManagerRedis,
     _default_lock_expiration,
@@ -599,6 +601,18 @@ async def test_oplock_contention_racers(
         )
 
 
+async def _stop_lock_task(state_manager: StateManagerRedis) -> None:
+    """Stop the lock updates subscriber so the next modify restarts it.
+
+    Args:
+        state_manager: The StateManagerRedis whose subscriber to stop.
+    """
+    if (lock_task := state_manager._lock_task) is not None:
+        lock_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await lock_task
+
+
 @pytest.mark.asyncio
 async def test_oplock_lease_waits_for_lock_updates_subscriber(
     state_manager_redis: StateManagerRedis,
@@ -635,10 +649,7 @@ async def test_oplock_lease_waits_for_lock_updates_subscriber(
             yield ps
 
     # Restart the subscriber with its subscription confirmation held back.
-    if (lock_task := state_manager_redis._lock_task) is not None:
-        lock_task.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await lock_task
+    await _stop_lock_task(state_manager_redis)
     monkeypatch.setattr(redis, "pubsub", delayed_confirmation_pubsub)
 
     async def modify():
@@ -657,6 +668,132 @@ async def test_oplock_lease_waits_for_lock_updates_subscriber(
     confirm.set()
     await modify_task
     assert await state_manager_redis._get_local_lease(state_token.lock_key) is not None
+
+
+async def _modify_without_lease(
+    state_manager: StateManagerRedis, token: BaseStateToken
+) -> float:
+    """Increment the count and check that no lease was taken.
+
+    Args:
+        state_manager: The StateManagerRedis to modify state with.
+        token: The state token to modify.
+
+    Returns:
+        How long the modification took in seconds.
+    """
+    start = time.monotonic()
+    async with state_manager.modify_state(token) as new_state:
+        assert isinstance(new_state, RedisTestState)
+        new_state.count += 1
+    elapsed = time.monotonic() - start
+    assert await state_manager._get_local_lease(token.lock_key) is None
+    return elapsed
+
+
+@pytest.mark.asyncio
+async def test_oplock_skips_wait_after_lock_updates_subscribe_timeout(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test that only one modify waits for a subscriber that never confirms.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    subscribe_timeout = 0.5
+    monkeypatch.setattr(redis_manager, "LOCK_SUBSCRIBE_TASK_TIMEOUT", subscribe_timeout)
+    state_token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    state_manager_redis._oplock_enabled = True
+    redis = state_manager_redis.redis
+    pubsub = redis.pubsub
+    confirm = asyncio.Event()
+
+    @contextlib.asynccontextmanager
+    async def unconfirmed_pubsub():
+        async with pubsub() as ps:
+            listen = ps.listen
+
+            async def unconfirmed_listen():
+                await confirm.wait()
+                async for message in listen():
+                    yield message
+
+            ps.listen = unconfirmed_listen
+            yield ps
+
+    await _stop_lock_task(state_manager_redis)
+    monkeypatch.setattr(redis, "pubsub", unconfirmed_pubsub)
+
+    # The first modify waits out the timeout, then writes without a lease.
+    assert (
+        await _modify_without_lease(state_manager_redis, state_token)
+        >= subscribe_timeout
+    )
+    assert state_manager_redis._lock_updates_subscribe_failed
+
+    # Later modifies do not wait for the subscriber again.
+    n_modifies = 5
+    elapsed = 0.0
+    for _ in range(n_modifies):
+        elapsed += await _modify_without_lease(state_manager_redis, state_token)
+    assert elapsed < subscribe_timeout
+    final_state = await state_manager_redis.get_state(state_token)
+    assert isinstance(final_state, root_state)
+    assert final_state.count == n_modifies + 1
+
+    # Once the subscription is confirmed, leases are taken again.
+    confirm.set()
+    await asyncio.wait_for(
+        state_manager_redis._lock_updates_subscribed.wait(), timeout=1
+    )
+    assert not state_manager_redis._lock_updates_subscribe_failed
+    async with state_manager_redis.modify_state(state_token) as new_state:
+        assert isinstance(new_state, root_state)
+        new_state.count += 1
+    assert await state_manager_redis._get_local_lease(state_token.lock_key) is not None
+
+
+@pytest.mark.asyncio
+async def test_oplock_skips_wait_after_lock_updates_subscribe_error(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test that modifies do not wait for a subscriber whose setup keeps failing.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    state_token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    state_manager_redis._oplock_enabled = True
+
+    async def refuse_config_set(*args, **kwargs):  # noqa: RUF029
+        msg = "CONFIG SET is not allowed"
+        raise ResponseError(msg)
+
+    await _stop_lock_task(state_manager_redis)
+    state_manager_redis._redis_notify_keyspace_events_enabled = False
+    monkeypatch.setattr(state_manager_redis.redis, "config_set", refuse_config_set)
+    state_manager_redis._ensure_lock_task()
+    for _ in range(100):
+        if state_manager_redis._lock_updates_subscribe_failed:
+            break
+        await asyncio.sleep(0.01)
+    assert state_manager_redis._lock_updates_subscribe_failed
+
+    elapsed = 0.0
+    for _ in range(5):
+        elapsed += await _modify_without_lease(state_manager_redis, state_token)
+    assert elapsed < redis_manager.LOCK_SUBSCRIBE_TASK_TIMEOUT
+    final_state = await state_manager_redis.get_state(state_token)
+    assert isinstance(final_state, root_state)
+    assert final_state.count == 5
 
 
 @pytest.mark.asyncio
