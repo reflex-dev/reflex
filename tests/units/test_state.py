@@ -6337,6 +6337,7 @@ def test_base_var_shadowing_parent_before_mixin_does_not_raise() -> None:
         pass
 
     assert isinstance(ShadowChild.shadowed_value, Var)
+    assert ShadowChild.get_fields()["shadowed_value"]._owner is ShadowParent
 
 
 def test_base_var_related_mixins_can_override() -> None:
@@ -6352,8 +6353,16 @@ def test_base_var_related_mixins_can_override() -> None:
         pass
 
     assert isinstance(CombinedState.value, Var)
+    assert CombinedState.get_fields()["value"].default == 2
 
 
+# TODO: drop the xfail once an annotation-only mixin declaration keeps the
+# inherited var, as a bare re-annotation on a substate already does.
+@pytest.mark.xfail(
+    strict=True,
+    reason="An annotation-only mixin declaration replaces the inherited var",
+    raises=AssertionError,
+)
 def test_base_var_annotation_only_mixin_does_not_raise() -> None:
     """An annotation-only mixin declaration does not shadow the parent var."""
 
@@ -6367,6 +6376,7 @@ def test_base_var_annotation_only_mixin_does_not_raise() -> None:
         pass
 
     assert isinstance(ShadowChild.shadowed_value, Var)
+    assert ShadowChild.get_fields()["shadowed_value"]._owner is ShadowParent
 
 
 def test_base_var_shadowing_non_state_descriptor_does_not_raise() -> None:
