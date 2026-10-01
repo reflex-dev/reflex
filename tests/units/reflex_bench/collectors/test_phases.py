@@ -460,6 +460,7 @@ def _wait_for(condition: Callable[[], bool], timeout: float = 10) -> None:
         condition: The condition.
         timeout: Seconds before failing.
     """
+    # Allow timeout seconds for the condition to become true.
     deadline = time.monotonic() + timeout
     while not condition():
         assert time.monotonic() < deadline, "timed out"
