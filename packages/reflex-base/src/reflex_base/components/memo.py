@@ -427,34 +427,6 @@ class MemoComponent(Component):
             children: The children of the component (ignored).
         """
 
-    def _compute_memo_tag(self) -> str:
-        """Compute a stable tag name for this memo component.
-
-        Overrides ``Component._compute_memo_tag`` to avoid duplicating the
-        wrapped component's tag. For a ``MemoComponent`` the dynamic subclass
-        ``__qualname__`` is ``MemoComponent_<tag>`` (see
-        :func:`_get_memo_component_class`), which already encodes the inner
-        tag. Appending ``self.tag`` again would produce the inner tag twice
-        (e.g. ``Memocomponent_card_98ffd1e1_card_98ffd1e1_<hash>``).
-
-        The class identity is still preserved via the qualname prefix, so the
-        collision guarantee from the base implementation holds.
-
-        Returns:
-            The stable tag name.
-        """
-        from reflex_base.components.memoize_helpers import (
-            MemoizationStrategy,
-            get_memoization_strategy,
-        )
-
-        comp_hash = self._get_component_hash(
-            shallow=get_memoization_strategy(self) == MemoizationStrategy.PASSTHROUGH
-        )
-        return format.format_state_name(
-            f"{type(self).__qualname__}_{comp_hash}"
-        ).capitalize()
-
     def _post_init(self, **kwargs):
         """Initialize the memo component.
 
@@ -2112,9 +2084,12 @@ def memo_tag(component: Component) -> str:
         The stable tag name.
     """
     recursive = get_memoization_strategy(component) is MemoizationStrategy.SNAPSHOT
+    prefix, tag = type(component).__qualname__, component.tag or "Comp"
+    # Memo component classes are already named ``MemoComponent_<tag>``.
+    if not prefix.endswith(f"_{tag}"):
+        prefix = f"{prefix}_{tag}"
     return format.format_state_name(
-        f"{type(component).__qualname__}_{component.tag or 'Comp'}_"
-        f"{component_hash(component, recursive=recursive)}"
+        f"{prefix}_{component_hash(component, recursive=recursive)}"
     ).capitalize()
 
 

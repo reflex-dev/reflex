@@ -2325,6 +2325,20 @@ def test_memo_tag_separates_identically_rendering_classes():
     assert memo_tag(alpha) != memo_tag(beta)
 
 
+def test_memo_tag_does_not_repeat_memo_component_tag():
+    """A memo component's tag is in its class name, so the memo tag holds it once."""
+
+    @rx.memo
+    def tag_probe(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    component = tag_probe(label="x")
+    assert isinstance(component, MemoComponent)
+    assert component.tag
+
+    assert memo_tag(component).lower().count(component.tag.lower()) == 1
+
+
 def test_custom_wrapper_named_memo_is_not_treated_as_react_memo():
     """A custom wrapper may share React's name and still have side effects."""
     wrapper = FunctionStringVar.create(
