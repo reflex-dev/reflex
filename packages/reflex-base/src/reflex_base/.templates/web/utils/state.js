@@ -160,7 +160,33 @@ export const isStateful = () => {
   if (event_queue.length === 0) {
     return false;
   }
-  return event_queue.some((event) => event.name.startsWith("reflex___state"));
+  return event_queue.some(
+    (event) =>
+      typeof event?.name === "string" &&
+      event.name.startsWith("reflex___state"),
+  );
+};
+
+/** Append nested events to an output array in depth-first order. */
+const appendEvents = (events, normalized) => {
+  for (const event of events) {
+    if (Array.isArray(event)) {
+      appendEvents(event, normalized);
+    } else if (event !== undefined && event !== null) {
+      normalized.push(event);
+    }
+  }
+};
+
+/**
+ * Flatten event lists and discard empty event values.
+ * @param events Events or nested event lists.
+ * @returns A flat array of events in depth-first order.
+ */
+const normalizeEvents = (events) => {
+  const normalized = [];
+  appendEvents(events, normalized);
+  return normalized;
 };
 
 /**
@@ -500,16 +526,12 @@ export const queueEvents = async (
   navigate,
   params,
 ) => {
+  const normalized = normalizeEvents(events);
   if (prepend) {
-    // Drain the existing queue and place it after the given events.
-    events = [
-      ...events,
-      ...Array.from({ length: event_queue.length }).map(() =>
-        event_queue.shift(),
-      ),
-    ];
+    event_queue.unshift(...normalized);
+  } else {
+    event_queue.push(...normalized);
   }
-  event_queue.push(...events.filter((e) => e !== undefined && e !== null));
   await processEvent(resolveSocket(socket), navigate, params);
 };
 
@@ -520,8 +542,8 @@ export const queueEvents = async (
  * @param params The params object from React Router
  */
 export const processEvent = async (socket, navigate, params) => {
-  // Only proceed if the socket is up or no event in the queue uses state, otherwise we throw the event into the void
-  if (isStateful() && !(socket && socket.connected)) {
+  // A connected socket can dispatch without inspecting the queued event types.
+  if (!(socket && socket.connected) && isStateful()) {
     return;
   }
 
@@ -541,15 +563,18 @@ export const processEvent = async (socket, navigate, params) => {
   // Apply the next event in the queue.
   const event = event_queue.shift();
 
-  // Process events with handlers via REST and all others via websockets.
-  if (event.handler) {
-    await applyRestEvent(event, socket, navigate, params);
-  } else {
-    await applyEvent(event, socket, navigate, params);
-  }
-  // Process any remaining events.
-  if (event_queue.length > 0) {
-    await processEvent(socket, navigate, params);
+  try {
+    // Process events with handlers via REST and all others via websockets.
+    if (event.handler) {
+      await applyRestEvent(event, socket, navigate, params);
+    } else {
+      await applyEvent(event, socket, navigate, params);
+    }
+  } finally {
+    // Continue draining queued events even if this dispatch fails.
+    if (event_queue.length > 0) {
+      await processEvent(socket, navigate, params);
+    }
   }
 };
 
@@ -1031,7 +1056,7 @@ export const useEventLoop = (
 
   // Function to add new events to the event queue.
   const addEvents = useCallback((events, args, event_actions) => {
-    const _events = events.filter((e) => e !== undefined && e !== null);
+    const _events = normalizeEvents(events);
 
     event_actions = _events.reduce(
       (acc, e) => ({ ...acc, ...e.event_actions }),

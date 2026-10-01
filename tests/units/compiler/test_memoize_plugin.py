@@ -1309,6 +1309,37 @@ def test_match_stateful_condition_memoizes_whole_match_and_stateful_branch() -> 
     assert any("withprop" in tag.lower() for tag in wrapper_tags)
 
 
+def test_match_stateful_case_condition_memoizes_match_and_branch() -> None:
+    """A state Var in a case condition memoizes Match and its stateful branch.
+
+    The case-condition Vars count toward Match's statefulness, so the memo
+    wrapper binds the state they read even when the subject is a literal.
+    Branches are still memoized independently.
+    """
+
+    def page() -> Component:
+        comp = rx.match(
+            True,
+            (SpecialFormMemoState.value == "a", WithProp.create(label=STATE_VAR)),
+            (
+                SpecialFormMemoState.value == "b",
+                WithProp.create(label=LiteralVar.create("B")),
+            ),
+            WithProp.create(label=LiteralVar.create("default")),
+        )
+        assert isinstance(comp, Component)
+        return comp
+
+    ctx, _page_ctx = _compile_single_page(page)
+    assert len(ctx.memoize_wrappers) == 2, (
+        "Expected both Match and its stateful branch component to be memoized, "
+        f"got wrappers: {list(ctx.memoize_wrappers)}"
+    )
+    wrapper_tags = tuple(ctx.memoize_wrappers)
+    assert any("match" in tag.lower() for tag in wrapper_tags)
+    assert any("withprop" in tag.lower() for tag in wrapper_tags)
+
+
 def test_cond_stateful_branch_component_renders_via_memoized_wrapper() -> None:
     """Components inside Cond branches must render via their memo wrappers.
 
@@ -1600,6 +1631,36 @@ def test_client_state_setter_in_call_function_event_imports_refs() -> None:
         "'refs' — the on_click handler references refs['_client_state_setCounter'].\n"
         f"Memo code snippet: {memo_code[:2000]}"
     )
+
+
+def test_client_state_setter_only_sibling_memo_initializes_state() -> None:
+    """A memoized sibling that only sets a global ``ClientStateVar`` owns its hooks.
+
+    Regression: the setter did not carry the ``useState``/``refs`` hooks, so a
+    button memo calling ``refs['_client_state_set<name>']`` relied on a sibling
+    rendering ``.value`` to define it. If that sibling was not mounted, clicking
+    raised ``TypeError: refs._client_state_set<name> is not a function``.
+    """
+    from reflex.experimental.client_state import ClientStateVar
+
+    shared = ClientStateVar.create("sibling", default="a")
+
+    def page() -> Component:
+        return rx.box(
+            rx.text(shared.value),
+            rx.el.button("set", on_click=shared.set_value("b")),
+        )
+
+    ctx, _page_ctx = _compile_single_page(page)
+    memo_code = _compile_memo_module_text(ctx)
+    button_memo = next(
+        chunk
+        for chunk in memo_code.split("export const ")
+        if chunk.startswith("Button_")
+    )
+    assert "refs['_client_state_setSibling'](\"b\")" in button_memo
+    assert 'const [sibling, setSibling] = useState("a")' in button_memo
+    assert "refs['_client_state_setSibling'] = " in button_memo
 
 
 def test_debounce_input_memo_renders_react_debounce_wrapper() -> None:
