@@ -5330,6 +5330,7 @@ def test_state_unannotated_dataclasses_factory():
     assert state.items == []
 
 
+@pytest.mark.usefixtures("forked_registration_context")
 @pytest.mark.parametrize("name", ["items", "_items"])
 def test_state_unannotated_dataclasses_mutable_default_is_copied(name):
     """Mutable dataclass defaults stay isolated and reset to their original value.
