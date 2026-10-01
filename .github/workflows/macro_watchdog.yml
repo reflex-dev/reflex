@@ -46,8 +46,10 @@ jobs:
               runs=$(gh api "repos/$GH_REPO/actions/workflows/$workflow/runs?status=$status&per_page=100" --jq '.workflow_runs[] | "\(.id) \(.html_url)"')
               while read -r run url; do
                 [ -n "$run" ] || continue
-                # A job waiting for a runner: queued and not assigned to one.
-                waiting_since=$(gh api "repos/$GH_REPO/actions/runs/$run/jobs" --jq '[.jobs[] | select(.status == "queued" and ((.runner_name // "") == "")) | .created_at] | min // empty')
+                # A macro job waiting for a runner: queued, not assigned to one,
+                # and targeting a codspeed-macro runner. Other jobs of the run
+                # (e.g. history on ubuntu-latest) never count.
+                waiting_since=$(gh api "repos/$GH_REPO/actions/runs/$run/jobs" --jq '[.jobs[] | select(.status == "queued" and ((.runner_name // "") == "") and any(.labels[]?; startswith("codspeed-macro"))) | .created_at] | min // empty')
                 [ -n "$waiting_since" ] || continue
                 waited=$((now - $(date -u -d "$waiting_since" +%s)))
                 if [ "$waited" -gt "$limit" ]; then

@@ -88,10 +88,12 @@ jobs:
         env:
           FILTERS: ${{ matrix.filters }}
           SHARD: ${{ matrix.shard }}
+          # Manual dispatches are ad-hoc runs, kept out of the daily series.
+          RUN_KIND: ${{ github.event_name == 'schedule' && 'daily' || 'ci' }}
         run: |
           set -f
           # shellcheck disable=SC2086
-          uv run --no-sync reflex-bench run --suite daily $FILTERS --kind daily \
+          uv run --no-sync reflex-bench run --suite daily $FILTERS --kind "$RUN_KIND" \
             --json "$SHARD.json" --no-save --fail-on never
       - name: Summarize
         if: always() && hashFiles(format('{0}.json', matrix.shard)) != ''
