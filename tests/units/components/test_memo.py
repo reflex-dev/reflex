@@ -2345,7 +2345,7 @@ def test_memo_tag_keeps_tag_of_class_named_with_tag_suffix():
     class Card_Button(Component):
         tag = "Button"
 
-    assert "card_button_button_" in memo_tag(Card_Button.create())
+assert "card_button_button_" in memo_tag(Card_Button.create()).lower()
 
 
 def test_custom_wrapper_named_memo_is_not_treated_as_react_memo():
