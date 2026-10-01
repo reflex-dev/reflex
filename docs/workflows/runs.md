@@ -64,7 +64,7 @@ The new step replaces everything the run had planned:
 - A wait for an event ends, and any event held for it is discarded.
 - A fan-out stops waiting for its children.
 
-If a step is running on the row at that moment, the new step waits for it to finish instead of running beside it, and that step's result is discarded.
+If a step is running on the row at that moment, the new step waits for it to finish instead of running beside it, and that step's result is discarded. The wait lasts only while the running step holds its lease: if its worker stops renewing the lease, the new step can start before the old one has finished.
 
 `run` also works on runs that have finished or given up, so it is how you restart a run after fixing what made it fail:
 

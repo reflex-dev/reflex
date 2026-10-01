@@ -33,7 +33,7 @@ app = rx.App()
 app.register_lifespan_task(workflows)
 ```
 
-Every backend process of your app now runs steps. Workers claim different rows, so two workers never run the same step at the same time, and you can add or remove processes at any time.
+Every backend process of your app now runs steps. Workers claim different rows, so a step runs on one worker at a time while that worker holds its [lease](#configure-a-worker), and you can add or remove processes at any time.
 
 By default a worker runs every workflow class defined in the process. To run only some, pass `workflows=[Expense, Invoice]`.
 

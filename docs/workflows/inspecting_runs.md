@@ -48,6 +48,8 @@ retrying = await Invoice.by(Invoice.attempts > 0, Invoice.next_step.is_not(None)
 Runs that have been due for more than ten minutes without a worker taking them:
 
 ```python
+from datetime import timedelta
+
 from sqlalchemy import func, or_
 
 stuck = await Invoice.by(

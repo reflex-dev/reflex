@@ -8,7 +8,7 @@ A step can split its work into many child runs that execute in parallel, then co
 
 ## Start child runs
 
-Return `fan_out` with a `child` for each run to start, and the step to continue with:
+Return `fan_out` with a `child` for each run to start, and the step to continue with. As on the other pages, `Base` is the declarative base from [Defining workflows](/docs/workflows/defining-workflows/#declare-a-base-for-workflow-tables), and `research_company` stands in for your own code:
 
 ```python
 from sqlalchemy import String, Text

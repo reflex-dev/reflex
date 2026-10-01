@@ -561,6 +561,9 @@ In a Reflex app, the route goes on a FastAPI app passed as `api_transformer`, in
 the process that runs the worker:
 
 ```python
+from datetime import timedelta
+
+import reflex_workflow
 from fastapi import FastAPI, Response
 
 api = FastAPI()
