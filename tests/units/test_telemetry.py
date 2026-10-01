@@ -974,7 +974,10 @@ def test_supervisor_can_stay_paused_across_forks():
 def test_real_fork_resumes_parent_and_child():
     """The at-fork hooks lift the pause in both the parent and the child."""
     assert telemetry._shutdown_executor()
-    pid = os.fork()
+    with warnings.catch_warnings():
+        # Other tests leave unrelated threads behind in this process.
+        warnings.simplefilter("ignore", DeprecationWarning)
+        pid = os.fork()
     if pid == 0:
         code = 1
         try:
