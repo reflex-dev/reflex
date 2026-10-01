@@ -34,6 +34,17 @@ from .recharts import (
     Recharts,
 )
 
+_TICK_FORMATTER_DYNAMIC_VAR_ERROR = (
+    "tick_formatter must be a JavaScript function expression, not a "
+    "dynamic string Var. Use FunctionStringVar.create() instead."
+)
+_TICK_FORMATTER_TYPE_ERROR = (
+    "tick_formatter must be a FunctionVar or JavaScript string."
+)
+_TICK_FORMATTER_CALLABLE_ERROR = (
+    "tick_formatter must be a FunctionVar, not a Python callable."
+)
+
 
 class Axis(Recharts):
     """A base class for axes in Recharts."""
@@ -148,18 +159,13 @@ class Axis(Recharts):
         elif isinstance(tick_formatter, FunctionVar):
             props["tick_formatter"] = tick_formatter
         elif isinstance(tick_formatter, Var) and tick_formatter._var_type is str:
-            raise TypeError(
-                "tick_formatter must be a JavaScript function expression, not a "
-                "dynamic string Var. Use FunctionStringVar.create() instead."
-            )
+            raise TypeError(_TICK_FORMATTER_DYNAMIC_VAR_ERROR)
         elif isinstance(tick_formatter, Var):
-            raise TypeError("tick_formatter must be a FunctionVar or JavaScript string.")
+            raise TypeError(_TICK_FORMATTER_TYPE_ERROR)
         elif callable(tick_formatter) and not isinstance(tick_formatter, Var):
-            raise TypeError(
-                "tick_formatter must be a FunctionVar, not a Python callable."
-            )
+            raise TypeError(_TICK_FORMATTER_CALLABLE_ERROR)
         elif tick_formatter is not None:
-            raise TypeError("tick_formatter must be a FunctionVar or JavaScript string.")
+            raise TypeError(_TICK_FORMATTER_TYPE_ERROR)
         return super().create(*children, **props)
 
     stroke: Var[str | Color] = field(
