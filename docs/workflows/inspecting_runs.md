@@ -97,6 +97,6 @@ for attempt in await invoice.history():
 | `took_ms` | How long the step took, in milliseconds. |
 | `finished_at` | When the attempt finished. |
 
-The engine writes each history row in the same transaction as the step's own commit, so the history never shows an attempt that didn't happen and never misses one that did. An attempt whose commit was discarded, because the run had moved on without it, leaves no row.
+The engine writes each history row in the same transaction as the step's result, so the history records exactly the outcomes that changed the run. It isn't a log of every execution: an attempt whose result was discarded, because the run had moved on or its worker stopped before committing, leaves no row, even if its step ran and called other services.
 
 The engine never reads this table, so you can prune it on any schedule, for example with a [scheduled](/docs/workflows/schedules/) workflow that deletes old rows. An app can map one history table, and if you don't map one, the engine writes no history and `history` returns an empty list.

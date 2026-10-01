@@ -77,16 +77,22 @@ The arguments are checked against the step's signature before anything is writte
 Webhooks are retried and users double-click. Pass a `key` that identifies the event, such as the webhook's delivery ID, and a run accepts each key only once. This webhook is a route on a FastAPI app passed to Reflex as an [API transformer](/docs/api-routes/overview/):
 
 ```python
+from fastapi import HTTPException
+
+
 @fastapi_app.post("/webhooks/payments")
 async def payment_webhook(event: PaymentEvent):
-    await Invoice.by(Invoice.payment_id == event.payment_id).deliver(
-        Invoice.paid(event.amount),
-        key=event.id,
-    )
+    invoice = Invoice.by(Invoice.payment_id == event.payment_id)
+    accepted = await invoice.deliver(Invoice.paid(event.amount), key=event.id)
+    if not accepted and await invoice.get() is None:
+        # No run for this payment yet: ask the sender to retry later.
+        raise HTTPException(status_code=503)
     return {"ok": True}
 ```
 
 A run remembers the last 16 keys it has accepted, and `deliver` returns `0` for a repeat. Without a key, every delivery counts as a new event.
+
+A return value of `0` doesn't tell you why no run took the event. In the webhook above, a run that already has the event, or has stopped waiting for it, is acknowledged so the sender stops retrying, while a missing run gets an error so the sender tries again once the run exists.
 
 ## Events that arrive early
 

@@ -82,16 +82,13 @@ cancelled = await Onboarding.by(Onboarding.user_id == user_id).cancel()
 
 Nothing scheduled runs, a wait ends, and a held event is discarded. If a step is running, its result is discarded. `cancel` returns how many runs it stopped; runs that had already finished aren't counted.
 
-Cancelling doesn't undo anything. Emails already sent stay sent, and your columns keep their values. If you show a run's status in your app, set it yourself after cancelling:
+Cancelling doesn't undo anything. Emails already sent stay sent, and your columns keep their values. If you show a run's status in your app, set it yourself after cancelling. Address the run by its primary key, so the status changes only if `cancel` actually stopped that run:
 
 ```python
-handle = Onboarding.by(Onboarding.user_id == user_id)
-if await handle.cancel():
+if await Onboarding.by(Onboarding.id == run_id).cancel():
     async with sessions() as session, session.begin():
         await session.execute(
-            update(Onboarding)
-            .where(Onboarding.user_id == user_id)
-            .values(status="cancelled")
+            update(Onboarding).where(Onboarding.id == run_id).values(status="cancelled")
         )
 ```
 
