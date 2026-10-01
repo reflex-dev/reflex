@@ -13,9 +13,10 @@ different machine or benchmark version never pool. Per series:
   order they started.
 
 The class is provisional: ``exact`` for deterministic metrics, ``noisy`` below
-``min_runs`` runs, else a threshold of ``max(3 %, 3 * between_cv)`` rounded up
-to a whole percent makes the series a ``gate-candidate`` up to 10 % and
-``track`` above.
+``min_runs`` runs, ``track`` with no threshold when the median is 0 (no
+``between_cv``), else a threshold of ``max(3 %, 3 * between_cv)`` rounded up to
+a whole percent makes the series a ``gate-candidate`` up to 10 % and ``track``
+above.
 """
 
 from __future__ import annotations

@@ -2,11 +2,11 @@ name: macro-benchmarks
 permissions:
   contents: read
 
-# The `macro` suite of reflex-bench on the CodSpeed macro runner: timing,
-# latency and throughput, the metrics that need a quiet machine. Everything else
-# runs on standard runners (benchmarks-daily). Results are not uploaded to
-# CodSpeed: its walltime instrument times its own loop, and our metrics are not
-# the duration of one call. Advisory: this workflow never blocks a merge.
+# The `macro` suite of reflex-bench on the CodSpeed macro runner: timing and
+# latency, the metrics that need a quiet machine. Everything else runs on
+# standard runners (benchmarks-daily). Results are not uploaded to CodSpeed: its
+# walltime instrument times its own loop, and our metrics are not the duration
+# of one call. Advisory: this workflow never blocks a merge.
 #
 # Budget: 500 billed macro minutes a month, and the whole job is billed.
 #   30 daily runs * J + 10 label runs * J <= 400 min, so J <= 10 min,
@@ -57,9 +57,9 @@ jobs:
       && github.event.pull_request.head.repo.full_name == github.repository)
     # One group for every workflow on the macro runner, held by the job only,
     # so labels other than run-benchmarks never enter it. A cancelled run still
-    # bills the minutes it used, so nothing is cancelled: at most one job runs
-    # and GitHub keeps at most one pending (a newer pending job replaces an
-    # older one). macro_watchdog.yml cancels jobs no runner picks up.
+    # bills the minutes it used, so the running job is never cancelled: at most
+    # one job runs and GitHub keeps at most one pending (a newer pending job
+    # replaces an older one). macro_watchdog.yml cancels jobs no runner picks up.
     concurrency:
       group: codspeed-macro
       cancel-in-progress: false

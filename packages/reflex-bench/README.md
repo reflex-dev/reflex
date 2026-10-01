@@ -935,17 +935,18 @@ each core type with its count on a host that mixes them:
 
 ## CI
 
-Three workflows run the harness on a schedule, each through the same `reflex-bench`
-commands as a local run. None of them blocks a merge (they are `ADVISORY` in
-`tests/units/test_workflow_gates.py`), and none uploads to CodSpeed: its
-walltime instrument times its own benchmark loop, while most of these metrics
-(readiness tiers, edit-to-DOM latency, percentiles, throughput) are not the
-duration of one call.
+Two workflows run the harness on a schedule, each through the same `reflex-bench`
+commands as a local run, and a third cancels macro runs stuck in the queue. None
+of them blocks a merge (the only one that runs on pull requests,
+`macro_benchmarks.yml`, is `ADVISORY` in `tests/units/test_workflow_gates.py`),
+and none uploads to CodSpeed: its walltime instrument times its own benchmark
+loop, while most of these metrics (readiness tiers, edit-to-DOM latency,
+percentiles, throughput) are not the duration of one call.
 
 | Workflow | Runner | When | What |
 | --- | --- | --- | --- |
-| `macro_benchmarks.yml` | CodSpeed macro runner (arm64, Cortex-A72) | daily at 03:17 UTC, manually, and on a pull request labeled `run-benchmarks` | `--suite macro`: timings, latency and throughput that need a quiet machine |
-| `benchmarks_daily.yml` | `ubuntu-24.04-arm` | daily at 04:43 UTC and manually | `--suite daily` in six shards (`lifecycle`, `memory`, `events`, `hmr`, `browser`, and `wire` with `size`): trends of everything else, exact and memory metrics included |
+| `macro_benchmarks.yml` | CodSpeed macro runner (arm64, Cortex-A72) | daily at 03:17 UTC, manually, and on a pull request labeled `run-benchmarks` | `--suite macro`: timings and latency that need a quiet machine |
+| `benchmarks_daily.yml` | `ubuntu-24.04-arm` | daily at 04:43 UTC and manually | `--suite daily` in six shards (`lifecycle`, `memory`, `events`, `hmr`, `browser`, and `exact` for `wire.*` and `size.*`): trends of everything else, exact and memory metrics included |
 | `macro_watchdog.yml` | `ubuntu-latest` | every 15 minutes | cancels macro runs whose job waited more than 30 minutes for a runner |
 
 The `macro` suite is `lifecycle.compile.warm`, `.incremental` and
@@ -967,8 +968,9 @@ When a job outgrows that, the `macro` suite shrinks first, then the schedule
 moves to every second day. The measured numbers are in the comment at the top of
 `macro_benchmarks.yml`. A spent budget does not fail a job, it leaves it queued:
 the job holds the `codspeed-macro` concurrency group (shared by every workflow on
-the macro runner; one job runs, one waits, nothing is cancelled, since a
-cancelled job still bills its minutes) until the watchdog cancels its run.
+the macro runner) until the watchdog cancels its run. The group never cancels the
+job holding it, since a cancelled job still bills its minutes; at most one more
+job waits, and GitHub cancels that one when a newer job arrives.
 
 **Pull request runs.** A maintainer adds the `run-benchmarks` label to a pull
 request from a branch of this repository (never a fork: the runner is
@@ -1001,10 +1003,11 @@ noise between samples of one job), `between cv` (the robust CV of the run
 medians, `1.4826 * MAD / median`: the noise from one job to the next), `max
 step` (the largest relative change between consecutive runs, by start time) and
 a class: `exact` for deterministic metrics, `noisy` below `--min-runs` runs,
-else a threshold of `max(3 %, 3 * between cv)` rounded up to a whole percent
-makes it a `gate-candidate` up to 10 % and `track` above. These constants are
-provisional: the regression gate makes the final choice by replaying the
-history. `--format json` writes `{"schema": "reflex-bench-noise/1",
+`track` with no threshold when the `median` is 0 (no `between cv`, e.g.
+`full_reloads`), else a threshold of `max(3 %, 3 * between cv)` rounded up to a
+whole percent makes it a `gate-candidate` up to 10 % and `track` above. These
+constants are provisional: the regression gate makes the final choice by
+replaying the history. `--format json` writes `{"schema": "reflex-bench-noise/1",
 "generated_from": [...], "series": [...]}` with values in SI base units and
 fractions for CVs.
 

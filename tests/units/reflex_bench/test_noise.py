@@ -87,6 +87,7 @@ def test_other_kinds_interrupted_runs_and_failed_entries_are_skipped():
         ([1.0, 1.02, 0.98, 1.0, 1.02], 5, 0.09, "gate-candidate"),
         ([1.0, 1.1, 0.9, 1.0, 1.2], 5, 0.45, "track"),
         ([1.0, 1.0, 1.0, 1.0], 5, None, "noisy"),
+        ([0.0, 0.0, 0.0, 0.0, 0.0], 5, None, "track"),
     ],
 )
 def test_classes(medians, min_runs, threshold, expected):
