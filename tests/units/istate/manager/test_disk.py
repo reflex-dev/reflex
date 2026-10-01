@@ -208,8 +208,8 @@ async def test_get_state_keeps_state_cached_during_its_disk_read(
     release_reader = asyncio.Event()
 
     def gate(load):
-        async def gated_load(token: StateToken):
-            loaded = await load(token)
+        async def gated_load(*args):
+            loaded = await load(*args)
             if asyncio.current_task() is reader:
                 # Hold the reader inside its disk read while the locked modify runs.
                 reader_parked.set()
@@ -218,7 +218,7 @@ async def test_get_state_keeps_state_cached_during_its_disk_read(
 
         return gated_load
 
-    for name in ("load_state", "_load_state_tree"):
+    for name in ("load_state", "_load_states"):
         monkeypatch.setattr(state_manager, name, gate(getattr(state_manager, name)))
     reader = asyncio.create_task(state_manager.get_state(state_token))
     # Only bounds a hang if get_state stops reading through these methods.
@@ -280,6 +280,57 @@ async def test_get_state_reads_a_state_tree_in_one_worker_call(
     child = await root.get_state(TreeChild)
     grandchild = await root.get_state(TreeGrandChild)
     assert child.num == 1
+    assert child.parent_state is root
+    assert grandchild.parent_state is child
+    await reader.close()
+
+
+@pytest.mark.asyncio
+async def test_populate_substates_loads_stored_substates(
+    tmp_path: Path, monkeypatch, token: str
+):
+    """populate_substates fills a fresh tree's substates from disk in one worker call.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        token: A token.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+
+    class PopulateRoot(BaseState):
+        pass
+
+    class PopulateChild(PopulateRoot):
+        num: int = 0
+
+    class PopulateGrandChild(PopulateChild):
+        label: str = ""
+
+    bs_token = BaseStateToken(ident=token, cls=PopulateRoot)
+    writer = StateManagerDisk(_write_debounce_seconds=0)
+    async with writer.modify_state(bs_token) as root:
+        (await root.get_state(PopulateChild)).num = 1
+        (await root.get_state(PopulateGrandChild)).label = "stored"
+    await writer.close()
+
+    to_thread = asyncio.to_thread
+    worker_calls = []
+
+    async def counting_to_thread(func, /, *args, **kwargs):
+        worker_calls.append(func)
+        return await to_thread(func, *args, **kwargs)
+
+    monkeypatch.setattr(asyncio, "to_thread", counting_to_thread)
+    reader = StateManagerDisk(_write_debounce_seconds=0)
+    root = PopulateRoot(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    await reader.populate_substates(bs_token, root, root)
+
+    assert len(worker_calls) == 1
+    child = await root.get_state(PopulateChild)
+    grandchild = await root.get_state(PopulateGrandChild)
+    assert child.num == 1
+    assert grandchild.label == "stored"
     assert child.parent_state is root
     assert grandchild.parent_state is child
     await reader.close()

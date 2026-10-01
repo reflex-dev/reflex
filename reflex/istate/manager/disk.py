@@ -6,7 +6,7 @@ import dataclasses
 import functools
 import logging
 import time
-from collections.abc import AsyncIterator, Mapping
+from collections.abc import AsyncIterator, Mapping, Sequence
 from hashlib import md5
 from pathlib import Path
 from typing import Any, Generic, cast
@@ -78,26 +78,28 @@ def _state_tree_classes(state_cls: type[BaseState]) -> list[type[BaseState]]:
 
 
 def _populate_substates(
-    state: BaseState, stored: Mapping[type[BaseState], BaseState | None]
+    state: BaseState,
+    root_state: BaseState,
+    stored: Mapping[type[BaseState], BaseState | None],
 ) -> None:
     """Swap the stored substates into a freshly instantiated tree, recursively.
 
     Args:
         state: The state whose substates to populate.
+        root_state: The root state of the tree holding the fresh instances.
         stored: The stored state of each class, None where nothing is stored.
     """
     for substate in state.get_substates():
-        name = substate.get_name()
-        fresh_instance = state.substates[name]
+        fresh_instance = root_state._get_state_from_cache(substate)
         instance = stored.get(substate)
         if instance is not None:
             # Ensure all substates exist, even if they weren't serialized previously.
             instance.substates = fresh_instance.substates
         else:
             instance = fresh_instance
-        state.substates[name] = instance
+        state.substates[substate.get_name()] = instance
         instance.parent_state = state
-        _populate_substates(instance, stored)
+        _populate_substates(instance, root_state, stored)
 
 
 @dataclasses.dataclass
@@ -210,24 +212,40 @@ class StateManagerDisk(StateManager):
         """
         return await asyncio.to_thread(self._read_state, token)
 
-    async def _load_state_tree(
-        self, token: BaseStateToken
+    async def _load_states(
+        self, token: BaseStateToken, state_classes: Sequence[type[BaseState]]
     ) -> dict[type[BaseState], BaseState | None]:
-        """Load the stored states of ``token.cls`` and every state below it.
+        """Load the stored states of several state classes of a session.
 
         All the files are read in one worker thread hop: handing each one to
         the thread pool on its own costs more than reading a small state.
 
         Args:
-            token: The token of the tree's root state.
+            token: A token of the session.
+            state_classes: The state classes to load.
 
         Returns:
             The stored state of each class, None where nothing is stored.
         """
-        state_classes = _state_tree_classes(token.cls)
         tokens = [token.with_cls(state_cls) for state_cls in state_classes]
         stored = await asyncio.to_thread(lambda: [self._read_state(t) for t in tokens])
         return dict(zip(state_classes, stored, strict=True))
+
+    async def populate_substates(
+        self, token: BaseStateToken, state: BaseState, root_state: BaseState
+    ):
+        """Populate the substates of a state object.
+
+        The stored substates are all read in one worker thread hop.
+
+        Args:
+            token: The token used to identify the state object.
+            state: The state object to populate.
+            root_state: The root state object.
+        """
+        substate_classes = _state_tree_classes(type(state))[1:]
+        stored = await self._load_states(token, substate_classes)
+        _populate_substates(state, root_state, stored)
 
     @override
     async def get_state(
@@ -253,7 +271,8 @@ class StateManagerDisk(StateManager):
         if isinstance(token, BaseStateToken):
             # Find the root state
             root_state_cls = token.cls.get_root_state()
-            stored = await self._load_state_tree(token.with_cls(root_state_cls))
+            # Read the whole tree in one worker thread hop rather than one per state.
+            stored = await self._load_states(token, _state_tree_classes(root_state_cls))
             root_state = stored[root_state_cls]
             # Create a new root state tree with all substates instantiated.
             fresh_root_state = root_state_cls(_reflex_internal_init=True)
@@ -265,7 +284,7 @@ class StateManagerDisk(StateManager):
             else:
                 # Ensure all substates exist, even if they were not serialized previously.
                 root_state.substates = fresh_root_state.substates
-            _populate_substates(root_state, stored)
+            _populate_substates(root_state, root_state, stored)
             # The disk reads yield to the event loop, so a concurrent get_state or
             # modify_state may have cached this state meanwhile; keep that one.
             return cast(TOKEN_TYPE, self.states.setdefault(token.cache_key, root_state))
