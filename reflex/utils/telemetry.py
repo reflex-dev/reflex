@@ -587,16 +587,18 @@ _PR_GET_CHILD_SUBREAPER = 37
 
 
 def _reaps_orphans() -> bool:
-    """Report whether orphaned descendants are reparented to this process.
+    """Report whether a detached sender could be left unreaped.
 
     True as PID 1 (a container without an init) or as a Linux child
-    subreaper. Such a process would inherit a detached sender, and a server
-    supervisor never reaps it.
+    subreaper, which inherit the sender but never reap it as a server
+    supervisor, and under a PID 1 parent, which inherits it too: e.g. the
+    output supervisor of ``reflex run --json`` as a container's PID 1 only
+    waits for its own child. A false positive only costs a bounded wait.
 
     Returns:
-        Whether this process inherits orphans.
+        Whether orphans of this process may be left as zombies.
     """
-    if os.getpid() == 1:
+    if os.getpid() == 1 or os.getppid() == 1:
         return True
     if sys.platform != "linux":
         return False

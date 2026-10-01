@@ -1140,10 +1140,68 @@ def test_reaps_orphans_as_pid_1(mocker: MockerFixture):
     assert telemetry._reaps_orphans()
 
 
-def test_reaps_orphans_is_false_for_an_ordinary_process():
-    """The test runner is neither PID 1 nor a child subreaper."""
-    assert os.getpid() != 1
+def _fake_prctl(mocker: MockerFixture, subreaper: int):
+    """Make PR_GET_CHILD_SUBREAPER report the given flag.
+
+    Args:
+        mocker: The mocker fixture.
+        subreaper: The flag value prctl writes back.
+    """
+    import ctypes
+
+    def prctl(_option, flag, *_args):
+        flag._obj.value = subreaper
+        return 0
+
+    mocker.patch.object(ctypes, "CDLL", return_value=SimpleNamespace(prctl=prctl))
+
+
+def test_reaps_orphans_under_a_pid_1_parent(mocker: MockerFixture):
+    """Orphans go to PID 1, which may not reap them when it is our parent.
+
+    E.g. ``reflex run --json`` as a container's PID 1: the output supervisor
+    only waits for its own child, the server.
+    """
+    mocker.patch.object(telemetry.os, "getpid", return_value=7)
+    mocker.patch.object(telemetry.os, "getppid", return_value=1)
+
+    assert telemetry._reaps_orphans()
+
+
+def test_reaps_orphans_is_false_for_an_ordinary_process(mocker: MockerFixture):
+    """Neither PID 1, under PID 1, nor a child subreaper."""
+    mocker.patch.object(telemetry.os, "getpid", return_value=7)
+    mocker.patch.object(telemetry.os, "getppid", return_value=6)
+    _fake_prctl(mocker, 0)
+
     assert not telemetry._reaps_orphans()
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Linux-only prctl")
+def test_reaps_orphans_as_a_child_subreaper(mocker: MockerFixture):
+    """A child subreaper inherits its descendants' orphans."""
+    mocker.patch.object(telemetry.os, "getpid", return_value=7)
+    mocker.patch.object(telemetry.os, "getppid", return_value=6)
+    _fake_prctl(mocker, 1)
+
+    assert telemetry._reaps_orphans()
+
+
+def test_send_detached_stays_attached_under_a_pid_1_parent(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """Under a PID 1 parent the sender is not orphaned to that parent."""
+    monkeypatch.setattr(telemetry, "_paused", True)
+    mocker.patch.object(
+        telemetry, "get_config", return_value=SimpleNamespace(telemetry_enabled=True)
+    )
+    mocker.patch.object(telemetry.os, "getpid", return_value=7)
+    mocker.patch.object(telemetry.os, "getppid", return_value=1)
+    popen = mocker.patch.object(telemetry.subprocess, "Popen")
+
+    telemetry._send_detached("run-prod")
+
+    assert popen.call_args.args[0][-1] == "attached"
 
 
 def test_shutdown_executor_without_executor_is_a_noop():
