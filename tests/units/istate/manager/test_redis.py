@@ -81,7 +81,11 @@ async def state_manager_redis(
     async with real_redis() as redis:
         if redis is None:
             redis = mock_redis()
-        state_manager = await _subscribed(StateManagerRedis(redis=redis))
+        state_manager = StateManagerRedis(redis=redis)
+        # Best effort: tests that need no lease must still run on a Redis that
+        # rejects CONFIG, where the subscription never confirms.
+        with contextlib.suppress(TimeoutError, asyncio.TimeoutError):
+            await state_manager._ensure_lock_task_subscribed()
         test_start = time.monotonic()
         yield state_manager
         # None of the tests should have triggered a lock expiration.
