@@ -218,8 +218,13 @@ sibling's branch is working towards, which with
 [`bump = true`](#tag-derived-versions) is what every commit after the sibling's
 newest tag builds as: `>= 0.1.4.dev0` after `widget-core-v0.1.3`, and
 `>= 0.1.3.post2.dev0` after `widget-core-v0.1.3.post1`. That floor excludes
-every published release, none of which has the change, and any build of the
-branch meets it.
+every release up to the sibling's newest tag on the branch, none of which has
+the change, and every later commit of the branch meets it. It cannot tell
+releases made on another line apart: `0.2.0` from `main` satisfies a floor
+written on a `0.1` hotfix branch without containing the hotfix. And a post
+release of the sibling cut after the floor was written leaves the branch
+building `0.1.3.post2.devN`, below `>= 0.1.4.dev0`; re-floor it at that post
+release, which contains the change.
 
 The pin cannot be published: `*.dev` versions never reach PyPI, so the metadata
 would be uninstallable. `check-dev-pins` rejects it at build time, which means

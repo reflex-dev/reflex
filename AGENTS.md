@@ -166,8 +166,10 @@ tag builds as a dev release of that next version:
 - after `reflex-base-v0.9.12`: `reflex-base >= 0.9.13.dev0`
 - after `reflex-components-core-v0.9.10.post1`: `reflex-components-core >= 0.9.10.post2.dev0`
 
-Such a floor excludes every published release and is met by any workspace
-build, so check-min-deps passes. Releasing the dependent lifts it to the first
+Such a floor excludes every release up to that tag and is met by every later
+commit, so check-min-deps passes. A post release of the sibling cut after the
+floor was written leaves main building below it; re-floor at that post release.
+Releasing the dependent lifts it to the first
 published version that satisfies it (see `packages/reflex-release/README.md`,
 "Dependency pins across a release"). A floor the workspace can't meet fails
 check-min-deps with "builds as ... here".
