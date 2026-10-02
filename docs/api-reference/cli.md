@@ -18,7 +18,6 @@ Options:
 Commands:
   cloud      The Hosting CLI.
   compile    Compile the app in the current directory.
-  component  CLI for creating custom components.
   db         Subcommands for managing the database schema.
   deploy     Deploy the app to the Reflex hosting service.
   export     Export the app to a zip file.

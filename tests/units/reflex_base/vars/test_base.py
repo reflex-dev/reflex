@@ -2,6 +2,8 @@
 
 import dataclasses
 import gc
+import logging
+import os
 import pickle
 import subprocess
 import sys
@@ -9,15 +11,21 @@ import threading
 import traceback
 import typing
 import weakref
+from abc import ABC, abstractmethod
+from collections.abc import Iterator
+from pathlib import Path
 from typing import Any, ClassVar, Literal, TypeVar
 
 import pytest
+from reflex_base import constants
 from reflex_base.constants import RouteArgType
+from reflex_base.environment import _load_dotenv_from_files, environment
 from reflex_base.utils import serializers
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
 from reflex_base.vars.base import (
+    _ABC_BOOKKEEPING_NAME,
     FIELD_TYPE,
     GLOBAL_CACHE,
     BaseStateMeta,
@@ -29,6 +37,7 @@ from reflex_base.vars.base import (
     VarData,
     _global_vars,
     _linearize_bases,
+    _type_check_depth,
     cached_property,
     cached_property_no_lock,
     computed_var,
@@ -742,6 +751,60 @@ def test_reserved_mixin_var(state_mixin: bool, clean_registration_context):
         type("MixedState", (mixin, BaseState), {"__module__": __name__})
 
 
+@pytest.mark.parametrize("state_mixin", [False, True])
+def test_abc_mixin(state_mixin: bool, clean_registration_context):
+    """Accept an ``ABC`` mixin, whose ``_abc_impl`` the metaclass owns, and keep it abstract.
+
+    Args:
+        state_mixin: Whether the abstract mixin subclasses BaseState.
+        clean_registration_context: An isolated state registry.
+    """
+
+    class Abstract(ABC):
+        @abstractmethod
+        def _value(self) -> int: ...
+
+    if state_mixin:
+
+        class Mixin(Abstract, BaseState, mixin=True):
+            pass
+
+        bases = (Mixin, BaseState)
+    else:
+        bases = (Abstract, BaseState)
+
+    abstract_state = type("AbstractState", bases, {"__module__": __name__})
+    with pytest.raises(TypeError, match="_value"):
+        abstract_state()
+
+    concrete_state = type(
+        "ConcreteState", bases, {"__module__": __name__, "_value": lambda self: 7}
+    )
+    assert concrete_state()._value() == 7
+
+
+@pytest.mark.parametrize("registration", ["declared", "var"])
+def test_reserved_abc_bookkeeping(registration: str, clean_registration_context):
+    """Keep rejecting a state's own ``_abc_impl``, which would clash with ABCMeta's.
+
+    Args:
+        registration: Whether the name is declared in the class body or added later.
+        clean_registration_context: An isolated state registry.
+    """
+    with pytest.raises(StateValueError, match=_ABC_BOOKKEEPING_NAME):
+        if registration == "declared":
+
+            class ShadowState(ABC, BaseState):
+                _abc_impl: int = 7
+
+        else:
+
+            class DynamicState(ABC, BaseState):
+                """State receiving a dynamic declaration."""
+
+            DynamicState.add_var(_ABC_BOOKKEEPING_NAME, int, 7)
+
+
 @pytest.mark.parametrize("slots", [("cache",), "cache"])
 @pytest.mark.parametrize("state_base", [False, True])
 def test_reserved_slot_of_base(
@@ -1222,3 +1285,161 @@ def test_unregistered_state_name_is_taken_as_given():
     assert str(Var(_js_expr="field")._var_set_state("not_a_state")) == (
         "not_a_state.field"
     )
+
+
+def test_cached_computed_var_checks_return_type_on_recompute_only(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A cached computed var validates its return type only when it recomputes."""
+
+    class CheckedState(BaseState):
+        items: list[int] = [1, 2, 3]
+
+        @computed_var
+        def doubled(self) -> list[int]:
+            return [i * 2 for i in self.items]
+
+    checked = []
+    original = CheckedState.computed_vars["doubled"]._check_deprecated_return_type
+    monkeypatch.setattr(
+        type(CheckedState.computed_vars["doubled"]),
+        "_check_deprecated_return_type",
+        lambda self, instance, value: (
+            checked.append(value) or original(instance, value)
+        ),
+    )
+    state = CheckedState()
+
+    assert state.doubled == [2, 4, 6]
+    assert state.doubled == [2, 4, 6]
+    assert checked == [[2, 4, 6]]
+
+    state.items = [5]
+    assert state.doubled == [10]
+    assert checked == [[2, 4, 6], [10]]
+
+
+@pytest.fixture
+def restore_env_mode() -> Iterator[None]:
+    """Restore REFLEX_ENV_MODE and the cached type check depth after a test.
+
+    Yields:
+        None.
+    """
+    original = os.environ.get(environment.REFLEX_ENV_MODE.name)
+    yield
+    if original is None:
+        os.environ.pop(environment.REFLEX_ENV_MODE.name, None)
+    else:
+        os.environ[environment.REFLEX_ENV_MODE.name] = original
+    _type_check_depth.cache_clear()
+
+
+@pytest.mark.usefixtures("restore_env_mode")
+def test_type_check_depth_follows_env_mode_set():
+    """Setting REFLEX_ENV_MODE re-resolves the cached type check depth."""
+    environment.REFLEX_ENV_MODE.set(constants.Env.DEV)
+    assert _type_check_depth() == 1
+    environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
+    assert _type_check_depth() == 0
+    environment.REFLEX_ENV_MODE.set(None)
+    assert _type_check_depth() == 1
+
+
+@pytest.mark.usefixtures("restore_env_mode")
+def test_type_check_depth_follows_env_mode_from_env_file(tmp_path: Path):
+    """Loading an env file that sets REFLEX_ENV_MODE re-resolves the depth.
+
+    Args:
+        tmp_path: Pytest temporary directory.
+    """
+    environment.REFLEX_ENV_MODE.set(constants.Env.DEV)
+    assert _type_check_depth() == 1
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        f"{environment.REFLEX_ENV_MODE.name}={constants.Env.PROD.value}\n"
+    )
+    _load_dotenv_from_files([env_file])
+    assert _type_check_depth() == 0
+
+
+@pytest.mark.usefixtures("restore_env_mode")
+@pytest.mark.parametrize(
+    ("env_mode", "element_error_logged"),
+    [(constants.Env.DEV, True), (constants.Env.PROD, False)],
+)
+def test_state_var_type_check_depth_follows_env_mode(
+    caplog: pytest.LogCaptureFixture,
+    env_mode: constants.Env,
+    element_error_logged: bool,
+):
+    """Prod mode checks only the outer type of assigned and computed values.
+
+    Args:
+        caplog: Pytest log capture fixture.
+        env_mode: The REFLEX_ENV_MODE value.
+        element_error_logged: Whether a wrong element type is reported.
+    """
+
+    class DepthState(BaseState):
+        items: list[int] = []
+        wrong_elements: list[str] = []
+
+        @computed_var
+        def as_ints(self) -> list[int]:
+            return self.wrong_elements  # pyright: ignore[reportReturnType]
+
+    environment.REFLEX_ENV_MODE.set(env_mode)
+    state = DepthState()
+
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        state.items = ["a"]  # pyright: ignore[reportAttributeAccessIssue]
+        state.wrong_elements = ["b"]
+        _ = state.as_ints
+    name = type(state).__name__
+    messages = [r.getMessage() for r in caplog.records]
+    assert any(f"{name}.items" in m for m in messages) is element_error_logged
+    assert any(f"{name}.as_ints" in m for m in messages) is element_error_logged
+
+    caplog.clear()
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        state.items = "not a list"  # pyright: ignore[reportAttributeAccessIssue]
+    assert any(f"{name}.items" in r.getMessage() for r in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_cached_async_computed_var_checks_return_type_on_recompute_only(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A cached async computed var validates its return type only when it recomputes.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+
+    class AsyncCheckedState(BaseState):
+        items: list[int] = [1, 2, 3]
+
+        @computed_var
+        async def doubled(self) -> list[int]:
+            return [i * 2 for i in self.items]
+
+    cvar = AsyncCheckedState.computed_vars["doubled"]
+    checked = []
+    original = cvar._check_deprecated_return_type
+    monkeypatch.setattr(
+        type(cvar),
+        "_check_deprecated_return_type",
+        lambda self, instance, value: (
+            checked.append(value) or original(instance, value)
+        ),
+    )
+    state = AsyncCheckedState()
+
+    assert await state.doubled == [2, 4, 6]
+    assert await state.doubled == [2, 4, 6]
+    assert checked == [[2, 4, 6]]
+
+    state.items = [5]
+    assert await state.doubled == [10]
+    assert checked == [[2, 4, 6], [10]]

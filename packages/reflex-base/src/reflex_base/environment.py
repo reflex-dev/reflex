@@ -8,7 +8,7 @@ import importlib
 import logging
 import os
 import re
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
@@ -448,6 +448,21 @@ def interpret_env_var_value(
 
 T = TypeVar("T")
 
+# Callbacks run after ``EnvVar.set`` changes the variable of the same name, or
+# after env files are loaded, so values cached off the hot path stay in sync
+# with in-process changes.
+_SET_CALLBACKS: dict[str, list[Callable[[], object]]] = {}
+
+
+def _on_env_var_set(name: str, callback: Callable[[], object]) -> None:
+    """Run a callback whenever ``EnvVar.set`` or an env file changes the variable.
+
+    Args:
+        name: The environment variable name.
+        callback: The function to call after the variable changes.
+    """
+    _SET_CALLBACKS.setdefault(name, []).append(callback)
+
 
 def _serialize_env_value(value: Any) -> str:
     """Render a value in the form :func:`interpret_env_var_value` reads back.
@@ -548,6 +563,8 @@ class EnvVar(Generic[T]):
             else:
                 str_value = _serialize_env_value(value)
             os.environ[self.name] = str_value
+        for callback in _SET_CALLBACKS.get(self.name, ()):
+            callback()
 
 
 @lru_cache
@@ -698,6 +715,12 @@ class EnvironmentVariables:
 
     # The timeout for acquiring a connection from the pool.
     SQLALCHEMY_POOL_TIMEOUT: EnvVar[timedelta] = env_var(timedelta(seconds=30))
+
+    # Cap on connections in each redis client's pool; unset means unbounded. At the cap, callers wait for a free connection instead of opening a new one. Pub/sub listeners hold a connection each, so leave headroom.
+    REFLEX_REDIS_MAX_CONNECTIONS: EnvVar[int | None] = env_var(None)
+
+    # How long to wait for a free redis connection once REFLEX_REDIS_MAX_CONNECTIONS is reached.
+    REFLEX_REDIS_POOL_TIMEOUT: EnvVar[timedelta] = env_var(timedelta(seconds=2))
 
     # Whether to ignore the redis config error. Some redis servers only allow out-of-band configuration.
     REFLEX_IGNORE_REDIS_CONFIG_ERROR: EnvVar[bool] = env_var(False)
@@ -1003,9 +1026,16 @@ def _load_dotenv_from_files(files: list[Path]):
         )
         return
 
+    loaded = False
     for env_file in files:
         if env_file.exists():
             load_dotenv(env_file, override=True)
+            loaded = True
+    if loaded:
+        # The files write os.environ directly, so notify every registered var.
+        for callbacks in _SET_CALLBACKS.values():
+            for callback in callbacks:
+                callback()
 
 
 def _paths_from_environment() -> list[Path]:

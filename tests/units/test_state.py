@@ -5,8 +5,10 @@ import contextvars
 import copy
 import dataclasses
 import datetime
+import enum
 import functools
 import inspect
+import io
 import json
 import logging
 import math
@@ -14,9 +16,10 @@ import os
 import pickle
 import sys
 import threading
+from collections import namedtuple
 from collections.abc import AsyncGenerator, Callable, Mapping
 from textwrap import dedent
-from types import MethodType
+from types import MethodType, ModuleType
 from typing import Any, ClassVar, Literal, TypeVar, cast
 from unittest.mock import AsyncMock, Mock
 
@@ -38,6 +41,7 @@ from reflex_base.utils.exceptions import (
     LockExpiredError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
+    StateSchemaMismatchError,
     StateSerializationError,
     StateValueError,
     UnretrievableVarValueError,
@@ -5433,6 +5437,78 @@ def test_fallback_pickle():
 
     with pytest.raises(StateSerializationError):
         _ = state3._serialize()
+
+
+class AppObjectState(BaseState):
+    """A root state holding instances of app-defined classes."""
+
+    _value: Any = None
+
+
+@pytest.mark.parametrize(
+    "breakage",
+    [
+        "module_removed",
+        "class_removed",
+        "enum_member_removed",
+        "namedtuple_field_added",
+        "truncated",
+    ],
+)
+@pytest.mark.parametrize("use_fp", [False, True])
+def test_deserialize_unreadable_state_raises_schema_mismatch(
+    breakage: str,
+    use_fp: bool,
+    app_classes_module: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A stored state that can no longer be unpickled is treated as a schema mismatch.
+
+    Args:
+        breakage: How the stored state became unreadable.
+        use_fp: Whether to deserialize from a file object instead of bytes.
+        app_classes_module: The module of app classes held in the state.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    module = app_classes_module
+    state = AppObjectState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state._value = [module.Entry("a"), module.Color.BLUE, module.Point(1, 2)]
+    data = state._serialize()
+    assert isinstance(BaseState._deserialize(data=data), AppObjectState)
+
+    if breakage == "module_removed":
+        monkeypatch.delitem(sys.modules, module.__name__)
+    elif breakage == "class_removed":
+        monkeypatch.delattr(module, "Entry")
+    elif breakage == "enum_member_removed":
+        monkeypatch.setattr(
+            module, "Color", enum.Enum("Color", {"RED": "red"}, module=module.__name__)
+        )
+    elif breakage == "namedtuple_field_added":
+        monkeypatch.setattr(
+            module, "Point", namedtuple("Point", "x y z", module=module.__name__)
+        )
+    else:
+        data = data[: len(data) // 2]
+
+    with pytest.raises(StateSchemaMismatchError):
+        if use_fp:
+            BaseState._deserialize(fp=io.BytesIO(data))
+        else:
+            BaseState._deserialize(data=data)
+
+
+@pytest.mark.parametrize(
+    "kwargs", [{}, {"data": b"", "fp": io.BytesIO()}], ids=["neither", "both"]
+)
+def test_deserialize_requires_exactly_one_source(kwargs: dict[str, Any]):
+    """Passing neither or both of data and fp is a caller error, not a schema mismatch.
+
+    Args:
+        kwargs: The arguments passed to _deserialize.
+    """
+    with pytest.raises(ValueError, match="Only one of"):
+        BaseState._deserialize(**kwargs)
 
 
 def test_typed_state() -> None:

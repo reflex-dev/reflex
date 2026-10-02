@@ -622,33 +622,31 @@ def test_context_lifecycle_and_cleanup() -> None:
         root_component=Fragment.create(),
     )
 
-    with pytest.raises(RuntimeError, match="No active CompileContext"):
+    with pytest.raises(LookupError):
         CompileContext.get()
-    with pytest.raises(
-        RuntimeError, match="must be entered with 'with' or 'async with'"
-    ):
+    with pytest.raises(RuntimeError, match="must be entered"):
         compile_ctx.ensure_context_attached()
 
     with compile_ctx:
         assert CompileContext.get() is compile_ctx
-        with pytest.raises(RuntimeError, match="No active PageContext"):
+        with pytest.raises(LookupError):
             PageContext.get()
         with page_ctx:
             assert CompileContext.get() is compile_ctx
             assert PageContext.get() is page_ctx
             page_ctx.ensure_context_attached()
-        with pytest.raises(RuntimeError, match="No active PageContext"):
+        with pytest.raises(LookupError):
             PageContext.get()
         assert CompileContext.get() is compile_ctx
 
-    with pytest.raises(RuntimeError, match="No active CompileContext"):
+    with pytest.raises(LookupError):
         CompileContext.get()
 
     with pytest.raises(ValueError, match="boom"), compile_ctx:
         msg = "boom"
         raise ValueError(msg)
 
-    with pytest.raises(RuntimeError, match="No active CompileContext"):
+    with pytest.raises(LookupError):
         CompileContext.get()
 
 
@@ -709,7 +707,21 @@ def test_base_context_subclasses_initialize_distinct_context_vars() -> None:
     class AnotherDynamicContext(BaseContext):
         pass
 
-    assert DynamicContext.__context_var__ is not AnotherDynamicContext.__context_var__
+    assert DynamicContext._context_var is not AnotherDynamicContext._context_var
+
+
+def test_compiler_contexts_use_identity_equality() -> None:
+    root = Fragment.create()
+    page_a = PageContext(name="page", route="/eq", root_component=root)
+    page_b = PageContext(name="page", route="/eq", root_component=root)
+    hooks = CompilerHooks()
+    compile_a = CompileContext(pages=[], hooks=hooks)
+    compile_b = CompileContext(pages=[], hooks=hooks)
+
+    for a, b in ((page_a, page_b), (compile_a, compile_b)):
+        assert a == a
+        assert a != b
+        assert len({a, b}) == 2
 
 
 def test_apply_style_plugin_matches_legacy_style_behavior() -> None:
@@ -1146,9 +1158,7 @@ def test_compile_context_requires_attached_context() -> None:
         hooks=CompilerHooks(),
     )
 
-    with pytest.raises(
-        RuntimeError, match="must be entered with 'with' or 'async with'"
-    ):
+    with pytest.raises(RuntimeError, match="must be entered"):
         compile_ctx.compile()
 
 
