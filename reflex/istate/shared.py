@@ -125,7 +125,7 @@ async def _patch_state(
                 set[str],
                 set[str],
                 set[str],
-                dict[str, tuple[bool, Any, bool, Any, Any]],
+                dict[str, tuple[bool, Any, bool, Any]],
                 bool,
             ]
         ] = []
@@ -138,7 +138,7 @@ async def _patch_state(
                 computed_vars_to_preserve = state._expired_computed_vars().union(
                     state._always_dirty_computed_vars
                 )
-                computed_var_snapshots: dict[str, tuple[bool, Any, bool, Any, Any]] = {}
+                computed_var_snapshots: dict[str, tuple[bool, Any, bool, Any]] = {}
                 for name, computed_var in state.computed_vars.items():
                     had_cache = hasattr(state, computed_var._cache_attr)
                     cached_value = getattr(state, computed_var._cache_attr, None)
@@ -147,7 +147,6 @@ async def _patch_state(
                         cached_value,
                         hasattr(state, computed_var._last_updated_attr),
                         getattr(state, computed_var._last_updated_attr, None),
-                        _delta_value_key(cached_value) if had_cache else None,
                     )
                 dirty_state_snapshots.append((
                     state,
@@ -169,7 +168,7 @@ async def _patch_state(
                 set[str],
                 set[str],
                 set[str],
-                dict[str, tuple[bool, Any, bool, Any, Any]],
+                dict[str, tuple[bool, Any]],
             ]
         ] = []
         if not full_delta:
@@ -181,14 +180,26 @@ async def _patch_state(
                 computed_var_snapshots,
                 _,
             ) in dirty_state_snapshots:
+                router_dirty_vars = (
+                    state.dirty_vars - dirty_vars - computed_vars_to_preserve
+                )
+                router_computed_snapshots = {
+                    name: (
+                        computed_var_snapshots[name][0],
+                        _delta_value_key(computed_var_snapshots[name][1])
+                        if computed_var_snapshots[name][0]
+                        else None,
+                    )
+                    for name in router_dirty_vars.intersection(state.computed_vars)
+                }
                 router_dirty_snapshots.append((
                     state,
                     dirty_vars,
                     dirty_substates,
-                    state.dirty_vars - dirty_vars - computed_vars_to_preserve,
+                    router_dirty_vars,
                     state.dirty_substates - dirty_substates,
                     computed_vars_to_preserve,
-                    computed_var_snapshots,
+                    router_computed_snapshots,
                 ))
         try:
             # The delta is discarded: it is only resolved to refresh computed vars,
@@ -214,7 +225,6 @@ async def _patch_state(
                             cached_value,
                             had_last_updated,
                             last_updated,
-                            _,
                         ) = computed_var_snapshots[name]
                         if had_cache:
                             setattr(state, computed_var._cache_attr, cached_value)
@@ -241,20 +251,23 @@ async def _patch_state(
                     router_dirty_vars,
                     _,
                     computed_vars_to_preserve,
-                    computed_var_snapshots,
+                    router_computed_snapshots,
                 ) in router_dirty_snapshots:
                     computed_vars_refreshed = set(computed_vars_to_preserve) | (
                         state.dirty_vars - router_dirty_vars
                     ).intersection(state.computed_vars)
                     computed_vars_refreshed.update(
                         name
-                        for name, computed_var in state.computed_vars.items()
-                        if hasattr(state, computed_var._cache_attr)
+                        for name, (
+                            had_cache,
+                            cached_value_key,
+                        ) in router_computed_snapshots.items()
+                        if hasattr(state, state.computed_vars[name]._cache_attr)
                         and (
-                            not computed_var_snapshots[name][0]
-                            or computed_var_snapshots[name][4]
+                            not had_cache
+                            or cached_value_key
                             != _delta_value_key(
-                                getattr(state, computed_var._cache_attr)
+                                getattr(state, state.computed_vars[name]._cache_attr)
                             )
                         )
                     )

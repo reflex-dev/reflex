@@ -199,6 +199,10 @@ class _LinkedStatePatchRouterRoot(BaseState):
     def router_client_token(self) -> str:
         return self.router.session.client_token
 
+    @rx.var
+    def unrelated_values(self) -> list[int]:
+        return list(range(1000))
+
 
 class _LinkedStatePatchRouterShared(_LinkedStatePatchRouterRoot):
     """Substate used to exercise root router-dependent computations."""
@@ -246,6 +250,37 @@ async def test_linked_state_patch_does_not_emit_unchanged_router_computed_var():
         assert private_tree.router_client_token == original_value
         assert _PATCH_ROUTER_VALUE_VAR not in private_tree.dirty_vars
         assert private_tree.get_full_name() not in private_tree.get_delta()
+
+
+@pytest.mark.asyncio
+async def test_linked_state_patch_skips_unrelated_computed_value_keys(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Only router-dependent computed values need a cache comparison key."""
+    from reflex.istate import shared as shared_module
+
+    private_tree = _LinkedStatePatchRouterRoot()
+    linked_tree = _LinkedStatePatchRouterRoot()
+    shared_state_name = _LinkedStatePatchRouterShared.get_name()
+    private_state = private_tree.substates[shared_state_name]
+    linked_state = linked_tree.substates[shared_state_name]
+
+    unrelated_values = private_tree.unrelated_values
+    private_tree._clean()
+    delta_value_key = shared_module._delta_value_key
+    unrelated_key_calls = []
+
+    def track_unrelated_value_key(value):
+        if value is unrelated_values:
+            unrelated_key_calls.append(value)
+        return delta_value_key(value)
+
+    monkeypatch.setattr(shared_module, "_delta_value_key", track_unrelated_value_key)
+
+    async with _patch_state(private_state, linked_state, full_delta=False):
+        pass
+
+    assert unrelated_key_calls == []
 
 
 @pytest.mark.asyncio
