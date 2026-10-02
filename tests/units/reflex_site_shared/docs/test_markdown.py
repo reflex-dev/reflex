@@ -243,22 +243,47 @@ def test_render_inline_markdown_handles_inline_and_block_content() -> None:
     assert "Paragraph." in block
 
 
+def _anchors(component: rx.Component):
+    """Yield every anchor in a rendered tree.
+
+    Args:
+        component: The rendered component.
+
+    Yields:
+        Each ``a`` component, which renders only its own children.
+    """
+    if getattr(component, "tag", None) == "a":
+        yield component
+    for child in getattr(component, "children", ()):
+        yield from _anchors(child)
+
+
 @pytest.mark.parametrize(
-    ("source", "inner", "after"),
+    ("source", "markup"),
     [
-        ("Pass [`run_workflows`](/docs/workers/) here.", "run_workflows", " here."),
-        ("See [the **worker** guide](/docs/workers/) first.", "worker", " first."),
-        ("Use [`start` and `run`](/docs/workers/) instead.", "start", " instead."),
+        (
+            "Pass [`run_workflows`](/docs/workers/) here.",
+            ["jsx(CodeComp", 'text:"run_workflows"'],
+        ),
+        (
+            "See [the **worker** guide](/docs/workers/) first.",
+            ['"the "', 'jsx("strong",{},"worker")', '" guide"'],
+        ),
+        (
+            "Use [`start` and `run`](/docs/workers/) instead.",
+            ['text:"start"', '" and "', 'text:"run"'],
+        ),
     ],
 )
 @pytest.mark.parametrize("render", [render_markdown, render_inline_markdown])
 def test_link_text_keeps_its_inline_markup(
-    render, source: str, inner: str, after: str
+    render, source: str, markup: list[str]
 ) -> None:
-    """A link whose text is code or emphasis renders that text inside the link."""
-    rendered = str(render(source))
-    link = rendered.split('href:"/docs/workers/"', 1)[1].split(after, 1)[0]
-    assert inner in link
+    """A link whose text is code or emphasis renders that markup inside the link."""
+    [link] = _anchors(render(source))
+    rendered = str(link)
+    for fragment in markup:
+        assert fragment in rendered
 
 
 @pytest.mark.parametrize("level", [1, 2, 3, 4])

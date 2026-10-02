@@ -196,7 +196,15 @@ def _render_spans(spans: tuple[Span, ...]) -> list[rx.Component | str]:
 
 
 def _render_link(children: tuple[Span, ...], target: str) -> rx.Component:
-    """Render a link, keeping inline markup such as code inside its text."""
+    """Render a link, keeping inline markup such as code inside its text.
+
+    Args:
+        children: The spans that make up the link text.
+        target: The link destination.
+
+    Returns:
+        The link, with plain text kept as a string so plain links render as before.
+    """
     parts = _render_spans(children)
     text = (
         "".join(parts)
