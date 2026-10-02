@@ -210,13 +210,13 @@ def _default_drop_rejected(rejected_files: ArrayVar[list[dict[str, Any]]]) -> Ev
         rf = rf.to(ObjectVar, dict[str, dict[str, Any]])
         file = rf["file"].to(ObjectVar, dict[str, Any])
         errors = rf["errors"].to(ArrayVar, list[dict[str, Any]])
-        return f"{file['path']}: {errors.foreach(lambda kv: kv['message']).join(', ')}"  # noqa: FURB118
+        return f"{file['path']}: {errors.map(lambda kv: kv['message']).join(', ')}"  # noqa: FURB118
 
     return toast.error(
         title="Files not Accepted",
         description=rejected_files
         .to(ArrayVar)
-        .foreach(_format_rejected_file_record)
+        .map(_format_rejected_file_record)
         .join("\n\n"),
         close_button=True,
         style={"white_space": "pre-line"},

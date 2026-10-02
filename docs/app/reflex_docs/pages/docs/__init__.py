@@ -1,12 +1,13 @@
 import os
 import re
 from collections import defaultdict, namedtuple
+from functools import lru_cache
 from pathlib import Path
 from types import SimpleNamespace
 
 import reflex as rx
 from reflex_components_core.core.cond import Cond
-from reflex_docgen.markdown import parse_document
+from reflex_docgen.markdown import FrontMatter, parse_document
 
 # External Components
 from reflex_pyplot import pyplot as pyplot
@@ -23,6 +24,7 @@ from reflex_docs.docgen_pipeline import (
     render_markdown_with_toc,
 )
 from reflex_docs.pages.docs.component import multi_docs
+from reflex_docs.pages.docs.metadata import truncate_meta_description
 from reflex_docs.pages.library_previews import components_previews_pages
 from reflex_docs.templates.docpage import docpage
 from reflex_docs.whitelist import _check_whitelisted_path
@@ -30,7 +32,6 @@ from reflex_docs.whitelist import _check_whitelisted_path
 from .apiref import pages as apiref_pages
 from .cloud import pages as cloud_pages
 from .cloud_cliref import pages as cloud_cliref_pages
-from .custom_components import custom_components
 from .library import library
 from .recipes_overview import overview
 
@@ -72,14 +73,36 @@ def build_nested_namespace(
     return parent_namespace
 
 
+# Share the accepted frontmatter boundary across all page metadata.
+_FRONTMATTER_BLOCK_RE = re.compile(r"\A\ufeff?\s*---\r?\n(.*?)\r?\n---\r?\n", re.DOTALL)
+
+
+@lru_cache(maxsize=None)
+def _frontmatter_for(filepath: str) -> FrontMatter | None:
+    """Parse a doc's frontmatter once per file (cached for the process lifetime).
+
+    Only the frontmatter block is fed to the parser so this stays cheap even
+    when called for every doc at startup; the body is parsed separately by the
+    rendering pipeline. Read failures yield None (like docs without
+    frontmatter) so a missing/unreadable file can't abort route registration.
+    """
+    try:
+        source = Path(filepath).read_text(encoding="utf-8")
+    except OSError:
+        return None
+    block = _FRONTMATTER_BLOCK_RE.match(source)
+    if block is None:
+        return None
+    return parse_document(block.group(0)).frontmatter
+
+
 def get_components_from_frontmatter(filepath: str) -> list:
     """Extract component tuples from a doc's frontmatter."""
-    source = Path(filepath).read_text(encoding="utf-8")
-    doc = parse_document(source)
-    if doc.frontmatter is None:
+    fm = _frontmatter_for(filepath)
+    if fm is None:
         return []
     components = []
-    for comp_str in doc.frontmatter.components:
+    for comp_str in fm.components:
         if component := SPECIAL_COMPONENT_DOCS.get(comp_str):
             components.append((component, comp_str))
             continue
@@ -97,11 +120,16 @@ def get_components_from_frontmatter(filepath: str) -> list:
 
 def get_previews_from_frontmatter(filepath: str) -> dict[str, str]:
     """Extract component preview sources from a doc's frontmatter."""
-    source = Path(filepath).read_text(encoding="utf-8")
-    doc = parse_document(source)
-    if doc.frontmatter is None:
+    fm = _frontmatter_for(filepath)
+    if fm is None:
         return {}
-    return {p.name: p.source for p in doc.frontmatter.component_previews}
+    return {p.name: p.source for p in fm.component_previews}
+
+
+def get_image_from_frontmatter(filepath: str) -> str | None:
+    """Resolve a per-page social preview image from frontmatter, if any."""
+    fm = _frontmatter_for(filepath)
+    return fm.image if fm is not None else None
 
 
 # ---------------------------------------------------------------------------
@@ -150,9 +178,9 @@ doc_markdown_sources: dict[str, str] = {}
 
 
 manual_titles = {
+    "docs/ai_builder/apis.md": "APIs",
+    "docs/ai_builder/urls.md": "URLs",
     "docs/database/overview.md": "Database Overview",
-    "docs/custom-components/overview.md": "Custom Components Overview",
-    "docs/custom-components/command-reference.md": "Custom Component CLI Reference",
     "docs/api-routes/overview.md": "API Routes Overview",
     "docs/client_storage/overview.md": "Client Storage Overview",
     "docs/state_structure/overview.md": "State Structure Overview",
@@ -174,6 +202,8 @@ manual_titles = {
     "docs/enterprise/ag_grid/model-wrapper.md": "AG Grid with a Pandas DataFrame in Python",
     "docs/enterprise/ag_grid/value-transformers.md": "AG Grid Value Transformers in Python",
     "docs/enterprise/ag_grid/aligned-grids.md": "AG Grid Aligned Grids in Python",
+    "docs/enterprise/ag_grid/tree-data.md": "AG Grid Tree Data in Python",
+    "docs/enterprise/ag_grid/master-detail.md": "AG Grid Master Detail in Python",
 }
 
 
@@ -237,12 +267,14 @@ def extract_doc_description(
     Returns:
         A cleaned, truncated description, or None.
     """
-    min_len = 120
+    min_len = 40
     if metadata:
         for key in ("meta_description", "description"):
             value = metadata.get(key)
-            if isinstance(value, str) and len(value.strip()) >= min_len:
-                return value.strip()
+            # Normalize before the length gate so a whitespace-padded value
+            # can't pass min_len yet collapse below it after truncation.
+            if isinstance(value, str) and len(" ".join(value.split())) >= min_len:
+                return truncate_meta_description(value, max_len=max_len)
     if not markdown_text:
         return None
     try:
@@ -251,7 +283,7 @@ def extract_doc_description(
         # description only when it's already long enough; otherwise strip the
         # block and fall through to the body prose, which is usually richer than
         # a short frontmatter field.
-        frontmatter = re.match(r"﻿?\s*---\r?\n(.*?)\r?\n---\r?\n", text, flags=re.DOTALL)
+        frontmatter = _FRONTMATTER_BLOCK_RE.match(text)
         if frontmatter:
             for fm_line in frontmatter.group(1).splitlines():
                 key_value = re.match(
@@ -260,7 +292,7 @@ def extract_doc_description(
                 if key_value:
                     value = key_value.group(1).strip().strip("\"'")
                     if len(value) >= min_len:
-                        return value
+                        return truncate_meta_description(value, max_len=max_len)
                     # Too short: keep scanning in case a later key
                     # (e.g. `description:` after a short `meta_description:`)
                     # holds a long-enough value before falling to body prose.
@@ -283,8 +315,8 @@ def extract_doc_description(
             *(f"{n}." for n in range(1, 10)),
         )
         # Accumulate prose across paragraph breaks until the description is
-        # substantial (~120 chars) so a short opening sentence doesn't become a
-        # too-short meta description. Stop at the first structural line
+        # a useful summary (~40 chars) so a short opening sentence doesn't become a
+        # generic meta description. Stop at the first structural line
         # (heading/list/code) once some prose has been collected.
         for raw in text.splitlines():
             line = raw.strip()
@@ -316,22 +348,32 @@ def extract_doc_description(
         # fallback (~115 chars) is used instead of a too-short description.
         if len(para) < min_len:
             return None
-        if len(para) > max_len:
-            para = para[:max_len].rsplit(" ", 1)[0].rstrip(",.;:") + "…"
-        return para or None
+        return truncate_meta_description(para, max_len=max_len) or None
     except Exception:
         return None
 
 
 def make_docpage(
-    route: str, title: str, doc_virtual: str, render_fn, description: str | None = None
+    route: str,
+    title: str,
+    doc_virtual: str,
+    render_fn,
+    actual_path: str,
+    description: str | None = None,
+    image: str | None = None,
 ):
     """Wrap a render function as a docpage, setting module metadata."""
     doc_path = Path(doc_virtual)
     render_fn.__module__ = ".".join(doc_path.parts[:-1])
     render_fn.__name__ = doc_path.stem
     render_fn.__qualname__ = doc_path.stem
-    return docpage(set_path=route, t=title, description=description)(render_fn)
+    return docpage(
+        set_path=route,
+        t=title,
+        description=description,
+        image=image,
+        source_path=actual_path,
+    )(render_fn)
 
 
 CHANGELOG_VIRTUAL_PREFIX = "docs/changelog/"
@@ -351,7 +393,7 @@ def handle_changelog_doc(doc: str, actual_path: str, resolved: ResolvedDoc):
         toc = [(level, text) for level, text in toc if level <= 2]
         return ((toc, source), body)
 
-    return make_docpage(resolved.route, resolved.display_title, doc, comp)
+    return make_docpage(resolved.route, resolved.display_title, doc, comp, actual_path)
 
 
 def handle_library_doc(
@@ -363,6 +405,7 @@ def handle_library_doc(
     """Handle docs/library/** docs — component API reference via multi_docs."""
     clist = [title, *get_components_from_frontmatter(actual_path)]
     previews = get_previews_from_frontmatter(actual_path)
+    image = get_image_from_frontmatter(actual_path)
     ll_actual_path = actual_path.replace(".md", "-ll.md")
     ll_clist: list | None = None
     if os.path.exists(ll_actual_path):
@@ -402,6 +445,7 @@ def handle_library_doc(
         title=display_title,
         ll_component_list=ll_clist,
         description=description,
+        image=image,
         source=source,
     )
 
@@ -440,12 +484,18 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
         return ((toc, doc_content), body)
 
     description = extract_doc_description(doc_text)
+    image = get_image_from_frontmatter(actual_path)
+    frontmatter = _frontmatter_for(actual_path)
     return make_docpage(
         resolved.route,
-        resolved.display_title,
+        frontmatter.title
+        if frontmatter and frontmatter.title
+        else resolved.display_title,
         virtual_doc,
         comp,
+        actual_path,
         description=description,
+        image=image,
     )
 
 
@@ -486,7 +536,6 @@ for _virtual, _actual in all_docs.items():
 
 doc_routes = [
     library,
-    custom_components,
     overview,
     *components_previews_pages,
     *apiref_pages,

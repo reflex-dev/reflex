@@ -1,12 +1,13 @@
 """Helpers for managing asyncio tasks."""
 
 import asyncio
+import logging
 import time
 from collections.abc import Callable, Coroutine
 from contextvars import Context
 from typing import Any
 
-from reflex_base.utils import console
+logger = logging.getLogger(__name__)
 
 
 async def _run_forever(
@@ -46,11 +47,11 @@ async def _run_forever(
             if any(isinstance(e, ex) for ex in suppress_exceptions):
                 exception_count += 1
                 if exception_count >= exception_limit:
-                    console.error(
+                    logger.error(
                         f"{coro_function.__name__}: task exceeded exception limit {exception_limit} within {exception_limit_window}s: {e}"
                     )
                     raise
-                console.error(f"{coro_function.__name__}: task error suppressed: {e}")
+                logger.error(f"{coro_function.__name__}: task error suppressed: {e}")
                 await asyncio.sleep(exception_delay)
                 continue
             raise

@@ -6,7 +6,7 @@ from typing import Any, TypeVar, overload
 
 from reflex_base.components.component import BaseComponent, Component, field
 from reflex_base.components.memoize_helpers import passthrough_children_var
-from reflex_base.components.tags import CondTag, Tag
+from reflex_base.components.tags import CommonTag, CondTag
 from reflex_base.constants import Dirs
 from reflex_base.style import LIGHT_COLOR_MODE, resolved_color_mode
 from reflex_base.utils import types
@@ -84,7 +84,7 @@ class Cond(Component):
             )
         )
 
-    def _render(self) -> Tag:
+    def _render(self) -> CommonTag:
         true_child, false_child = self._get_cond_children()
         return CondTag(
             cond_state=str(self.cond),

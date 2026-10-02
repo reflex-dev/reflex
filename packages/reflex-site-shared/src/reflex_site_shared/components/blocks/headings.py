@@ -13,6 +13,14 @@ icon_margins = {
     "h4": "0px",
 }
 
+# Tag, top margin and classes for each Markdown heading level.
+HEADING_STYLES = {
+    1: ("h1", "4", "lg:text-4xl text-3xl font-medium"),
+    2: ("h2", "12", "lg:text-3xl text-2xl font-medium"),
+    3: ("h3", "8", "lg:text-2xl text-xl font-medium"),
+    4: ("h4", "2", "lg:text-base text-base font-semibold"),
+}
+
 
 class HeadingLink(rx.link.__self__):
     """HeadingLink."""
@@ -105,8 +113,18 @@ class HeadingLink(rx.link.__self__):
         style: dict | None = None,
         mt: str = "4",
         class_name: str = "",
+        content: rx.Component | None = None,
     ) -> rx.Component:
         """Create.
+
+        Args:
+            text: The heading's plain text, which its anchor is made from.
+            heading: The heading tag.
+            style: Extra style for the heading.
+            mt: The top margin.
+            class_name: Classes for the heading.
+            content: What to show in place of ``text``, such as text with inline
+                code in it.
 
         Returns:
             The component.
@@ -121,26 +139,50 @@ class HeadingLink(rx.link.__self__):
 
         return super().create(
             rx.heading(
-                text,
+                text if content is None else content,
                 id=id_,
                 as_=heading,
-                style=style if style is not None else {},
+                style={
+                    "letter_spacing": "-0.03em" if heading == "h1" else "-0.025em",
+                    "line_height": "1.2" if heading == "h1" else "1.25",
+                    **(style or {}),
+                },
                 class_name=class_name + " " + scroll_margin + " mt-" + mt,
             ),
             rx.icon(
                 tag="link",
                 size=18,
-                class_name="!text-primary-11 invisible transition-[visibility_0.075s_ease-out] group-hover:visible mt-"
+                class_name="!text-foreground invisible transition-[visibility_0.075s_ease-out] group-hover:visible mt-"
                 + mt,
             ),
             underline="none",
             href=href,
             on_click=lambda: rx.set_clipboard(href),
-            class_name="flex flex-row items-center gap-2 hover:!text-primary-11 cursor-pointer mb-3 transition-colors group text-secondary-12 ",
+            class_name="flex flex-row items-center gap-2 hover:!text-foreground cursor-pointer mb-3 transition-colors group text-foreground ",
         )
 
 
 h_comp_common = HeadingLink.create
+
+
+def heading_comp(
+    text: str | rx.Var[str], level: int, content: rx.Component | None = None
+) -> rx.Component:
+    """Render a Markdown heading with a link to its own anchor.
+
+    Args:
+        text: The heading's plain text, which its anchor is made from.
+        level: The heading level; anything past four is styled as four.
+        content: What to show in place of ``text``, such as text with inline
+            code in it.
+
+    Returns:
+        The component.
+    """
+    heading, mt, class_name = HEADING_STYLES[min(level, 4)]
+    return h_comp_common(
+        text=text, heading=heading, mt=mt, class_name=class_name, content=content
+    )
 
 
 @rx.memo
@@ -150,11 +192,7 @@ def h1_comp(text: rx.Var[str]) -> rx.Component:
     Returns:
         The component.
     """
-    return h_comp_common(
-        text=text,
-        heading="h1",
-        class_name="lg:text-4xl text-3xl font-semibold",
-    )
+    return heading_comp(text, 1)
 
 
 @rx.memo
@@ -164,11 +202,7 @@ def h1_comp_xd(text: rx.Var[str]) -> rx.Component:
     Returns:
         The component.
     """
-    return h_comp_common(
-        text=text,
-        heading="h1",
-        class_name="lg:text-4xl text-3xl font-semibold",
-    )
+    return heading_comp(text, 1)
 
 
 @rx.memo
@@ -178,12 +212,7 @@ def h2_comp(text: rx.Var[str]) -> rx.Component:
     Returns:
         The component.
     """
-    return h_comp_common(
-        text=text,
-        heading="h2",
-        mt="8",
-        class_name="lg:text-3xl text-2xl font-semibold",
-    )
+    return heading_comp(text, 2)
 
 
 @rx.memo
@@ -193,12 +222,7 @@ def h2_comp_xd(text: rx.Var[str]) -> rx.Component:
     Returns:
         The component.
     """
-    return h_comp_common(
-        text=text,
-        heading="h2",
-        mt="8",
-        class_name="lg:text-2xl text-xl font-semibold",
-    )
+    return heading_comp(text, 2)
 
 
 @rx.memo
@@ -208,12 +232,7 @@ def h3_comp(text: rx.Var[str]) -> rx.Component:
     Returns:
         The component.
     """
-    return h_comp_common(
-        text=text,
-        heading="h3",
-        mt="4",
-        class_name="lg:text-xl text-lg font-semibold",
-    )
+    return heading_comp(text, 3)
 
 
 @rx.memo
@@ -223,12 +242,7 @@ def h3_comp_xd(text: rx.Var[str]) -> rx.Component:
     Returns:
         The component.
     """
-    return h_comp_common(
-        text=text,
-        heading="h3",
-        mt="4",
-        class_name="lg:text-xl text-lg font-semibold",
-    )
+    return heading_comp(text, 3)
 
 
 @rx.memo
@@ -238,12 +252,7 @@ def h4_comp(text: rx.Var[str]) -> rx.Component:
     Returns:
         The component.
     """
-    return h_comp_common(
-        text=text,
-        heading="h4",
-        mt="2",
-        class_name="lg:text-base text-base font-semibold",
-    )
+    return heading_comp(text, 4)
 
 
 @rx.memo
@@ -253,12 +262,7 @@ def h4_comp_xd(text: rx.Var[str]) -> rx.Component:
     Returns:
         The component.
     """
-    return h_comp_common(
-        text=text,
-        heading="h4",
-        mt="2",
-        class_name="lg:text-base text-base font-semibold",
-    )
+    return heading_comp(text, 4)
 
 
 @rx.memo
@@ -271,5 +275,5 @@ def img_comp_xd(src: rx.Var[str]) -> rx.Component:
     return rx.image(
         src=src,
         alt="Documentation image",
-        class_name="rounded-lg border border-secondary-a4 mb-2",
+        class_name="rounded-lg border border-border-subtle mb-2",
     )

@@ -240,6 +240,9 @@ State mixins are particularly useful for:
 - **Data Formatting**: Consistent data presentation across components
 
 ```python demo exec
+import asyncio
+
+
 class ValidationMixin(rx.State, mixin=True):
     errors: dict[str, str] = {}
     is_loading: bool = False
@@ -280,7 +283,7 @@ class ContactFormState(ValidationMixin, rx.State):
         self.message = value
 
     @rx.event
-    def submit_form(self):
+    async def submit_form(self):
         self.clear_errors()
         valid_name = self.validate_required("name", self.name)
         valid_email = self.validate_email(self.email)
@@ -288,7 +291,8 @@ class ContactFormState(ValidationMixin, rx.State):
 
         if valid_name and valid_email and valid_message:
             self.is_loading = True
-            yield rx.sleep(1)
+            yield
+            await asyncio.sleep(1)
             self.is_loading = False
             self.name = ""
             self.email = ""

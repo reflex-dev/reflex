@@ -2,7 +2,7 @@
 
 import asyncio
 import contextlib
-from enum import StrEnum
+from enum import Enum
 
 import httpx
 
@@ -15,7 +15,7 @@ from reflex_site_shared.constants import (
 )
 
 
-class ServiceStatus(StrEnum):
+class ServiceStatus(str, Enum):
     """Supported service health states exposed in the UI."""
 
     SUCCESS = "Success"

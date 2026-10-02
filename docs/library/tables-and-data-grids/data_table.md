@@ -17,7 +17,7 @@ In this example we will read data from a csv file, convert it to a pandas datafr
 
 We will also add a search, pagination, sorting to the data_table to make it more accessible.
 
-If you want to [add, edit or remove data](/docs/library/tables-and-data-grids/table) in your app or deal with anything but static data then the [`rx.table`](/docs/library/tables-and-data-grids/table) might be a better fit for your use case.
+If you want to [add, edit or remove data](/docs/library/tables-and-data-grids/table/) in your app or deal with anything but static data then the [`rx.table`](/docs/library/tables-and-data-grids/table/) might be a better fit for your use case.
 
 ```python demo box
 rx.data_table(
@@ -74,6 +74,6 @@ def index():
 
 Explore the other ways to work with tabular data in Reflex, all in pure Python:
 
-- [Table](/docs/library/tables-and-data-grids/table)
-- [Data Editor](/docs/library/tables-and-data-grids/data-editor)
+- [Table](/docs/library/tables-and-data-grids/table/)
+- [Data Editor](/docs/library/tables-and-data-grids/data-editor/)
 - [Tables and Data Grids](/docs/library/tables-and-data-grids/)

@@ -1,0 +1,166 @@
+@@HEADER@@
+name: Release from changelog
+
+# The CHANGELOG.md files are the source of truth for publishing. On every push
+# to @@MAIN_BRANCH@@ or a release branch, this workflow compares the newest
+# version heading in each package's CHANGELOG.md against the repo's git tags
+# and runs the publish workflow for any version that has no tag yet.
+# Publishing itself is gated by the `pypi` environment's required reviewers —
+# detection and builds are automatic, uploads are not.
+#
+# Tags are only pushed after a successful publish (see publish.yml), so a
+# failed build/publish is retried by pushing a fix on top of the changelog
+# bump — no tag or release cleanup required.
+#
+# Branch policy (enforced again at publish time): final versions only from
+# @@MAIN_BRANCH@@ or @@HOTFIX_PREFIX@@**; prereleases only from
+# @@PRERELEASE_PREFIX@@* or @@HOTFIX_PREFIX@@** (the Dispatch release workflow
+# materializes alphas on @@PRERELEASE_PREFIX@@* branches).
+#
+# Lockstep packages that pin their siblings exactly publish strictly after
+# every other package in the batch; detect fails closed if a lockstep
+# invariant is broken.
+#
+# workflow_dispatch exists so the Dispatch release workflow can trigger a
+# check on a branch it just pushed (pushes made with GITHUB_TOKEN do not fire
+# on-push workflows) and for manual re-checks; it runs against the branch it
+# is dispatched on.
+
+on:
+  push:
+    branches: ["@@MAIN_BRANCH@@", "@@PRERELEASE_PREFIX@@**", "@@HOTFIX_PREFIX@@**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-from-changelog-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      packages: ${{ steps.detect.outputs.packages }}
+      any: ${{ steps.detect.outputs.any }}
+      last_packages: ${{ steps.detect.outputs.last_packages }}
+      any_last: ${{ steps.detect.outputs.any_last }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+@@UV_SETUP_WITH@@
+      - id: detect
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        shell: bash
+        run: @@CLI@@ detect
+
+  publish:
+    needs: detect
+    if: needs.detect.outputs.any == 'true'
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.detect.outputs.packages) }}
+      fail-fast: false
+    # Serializes the entire publish (build, approval, upload, tag) per package,
+    # so a second push while a publish is in flight waits and then no-ops on
+    # the already-created tag.
+    concurrency:
+      group: publish-${{ matrix.package }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      id-token: write
+      actions: @@ACTIONS_PERMISSION@@
+    uses: ./.github/workflows/publish.yml
+    with:
+      package: ${{ matrix.package }}
+      version: ${{ matrix.version }}
+
+  # A package that pins its lockstep siblings exactly publishes only after
+  # every other package in the batch has fully published and tagged. If any
+  # sibling failed, it is held back — fail closed rather than ship an
+  # uninstallable pin.
+  publish-last:
+    needs: [detect, publish]
+    if: >-
+      always() && needs.detect.result == 'success' &&
+      needs.detect.outputs.any_last == 'true' &&
+      (needs.publish.result == 'success' || needs.publish.result == 'skipped')
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.detect.outputs.last_packages) }}
+      fail-fast: false
+    concurrency:
+      group: publish-${{ matrix.package }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      id-token: write
+      actions: @@ACTIONS_PERMISSION@@
+    uses: ./.github/workflows/publish.yml
+    with:
+      package: ${{ matrix.package }}
+      version: ${{ matrix.version }}
+
+  # One loud, canonical failure signal for partial releases: red whenever any
+  # leg of the batch failed or a package was held back.
+  report:
+    needs: [detect, publish, publish-last]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Report release batch outcome
+        env:
+          DETECT: ${{ needs.detect.result }}
+          PUBLISH: ${{ needs.publish.result }}
+          PUBLISH_LAST: ${{ needs.publish-last.result }}
+          ANY: ${{ needs.detect.outputs.any }}
+          ANY_LAST: ${{ needs.detect.outputs.any_last }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "detect: $DETECT, publish: $PUBLISH, publish-last: $PUBLISH_LAST"
+          failed=0
+          # A leg is healthy only in the state detect's findings call for:
+          # 'success' when it had packages to publish, 'skipped' only when it
+          # had none. Accepting every 'skipped' would report green on a leg
+          # GitHub skipped despite having work — a skipped job is neither
+          # failed nor cancelled, so nothing else here would catch it.
+          check_leg() {
+            local name=$1 result=$2 had_work=$3
+            if [[ "$result" == "success" ]]; then
+              return 0
+            fi
+            if [[ "$result" == "skipped" ]]; then
+              if [[ "$had_work" != "true" ]]; then
+                return 0
+              fi
+              echo "::error::release leg '$name' was skipped even though there were packages to publish."
+            else
+              # failure, cancelled, timed_out, a rejected environment approval...
+              echo "::error::release leg '$name' ended '$result'."
+            fi
+            failed=1
+          }
+          check_leg detect "$DETECT" true
+          check_leg publish "$PUBLISH" "$ANY"
+          check_leg publish-last "$PUBLISH_LAST" "$ANY_LAST"
+          if [[ "$failed" -eq 1 ]]; then
+            if [[ "$DETECT" != "success" ]]; then
+              echo "::error::Changelog detection did not complete (check for a lockstep violation) — no packages were published."
+            fi
+            if [[ "$ANY_LAST" == "true" && "$PUBLISH_LAST" != "success" ]]; then
+              echo "::error::A lockstep package that publishes last did not publish (held back or failed)."
+            fi
+            echo "::error::Fix the problem on top of the changelog bump; the next push retries the unpublished versions."
+          fi
+          exit "$failed"

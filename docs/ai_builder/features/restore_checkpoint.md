@@ -1,6 +1,6 @@
 # Restore Checkpoint
 
-The **Restore Checkpoint** feature allows you to roll back your app to any previous state during your AI Builder conversation. This is useful when you want to undo recent changes and return to an earlier version of your app.
+Restore a checkpoint to return the app source to the state produced by an earlier agent message.
 
 ```python exec
 import reflex as rx
@@ -9,41 +9,35 @@ import reflex as rx
 ```python eval
 rx.el.div(
     rx.image(
-        src="https://web.reflex-assets.dev/ai_builder/features/restore_light.avif",
-        alt="Restoring a checkpoint in Reflex AI Builder",
-        class_name="rounded-md h-auto",
+        src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/restore_checkpoint.webp",
+        alt="The Revert to this version action on an agent checkpoint",
+        class_name="rounded-md h-auto mb-4",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),
     class_name="w-full flex flex-col rounded-md",
 )
 ```
 
-## How It Works
+## Restore an earlier state
 
-Every time the AI agent makes changes to your app, a checkpoint is automatically created. You can restore to any of these checkpoints at any time, effectively undoing all changes made after that point.
+Agent messages that change the app create checkpoints:
 
-## Using Restore Checkpoint
+1. Find the message that produced the state you want.
+2. Select its restore icon.
+3. Confirm the restore.
+4. Check the result in **Preview** before continuing.
 
-1. **Locate the Restore Icon**: At the end of each AI agent message that made changes to your app, you'll see a circular arrow icon (↻).
+The conversation remains visible, but the app source returns to the selected checkpoint. Later code changes are removed from the current app state.
 
-2. **Click to Restore**: Click the circular arrow icon next to the message you want to restore to.
+```md alert warning
+# Check the restore point before confirming
+A checkpoint restore cannot be undone from the restore dialog. Copy the app or save important work to Git before restoring when you may need the current state later.
+```
 
-3. **Confirm the Action**: The app will restore to the exact state it was in after that specific message was processed.
+## When to use a checkpoint
 
-4. **Continue Building**: After restoring, you can continue the conversation and make new changes from that point.
+- Return to the last working version after a generation breaks a workflow.
+- Try a different implementation from a known state.
+- Remove a group of recent changes without reverting files one by one.
 
-## When to Use Restore Checkpoint
-
-- **Undo Unwanted Changes**: When the AI made changes you don't like
-- **Try Different Approaches**: Restore and ask the AI to implement a feature differently
-- **Fix Broken Functionality**: Roll back when new changes break existing features
-- **Experiment Safely**: Test different solutions knowing you can always restore to a checkpoint
-
-## Important Notes
-
-- Restoring will **permanently delete** all changes made after the selected message
-- You cannot undo a restore operation - choose your restore point carefully
-- The conversation history remains intact, but code changes after the restore point are lost
-- Restore checkpoint only affects your current building session
-
-> **Tip:** Before making major changes, note which message represents your last stable checkpoint so you can easily restore if needed.
+For version history shared outside the Builder conversation, connect the app to [GitHub](/docs/ai/features/connect-to-github/).

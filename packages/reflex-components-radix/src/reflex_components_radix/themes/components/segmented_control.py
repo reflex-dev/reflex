@@ -48,7 +48,7 @@ def _collect_item_values(children: Sequence[Any]) -> ArrayVar | None:
     if len(children) == 1 and isinstance(children[0], Foreach):
         foreach = children[0]
         iterable = cast("ArrayVar", foreach.iterable)
-        return iterable.foreach(
+        return iterable.map(
             lambda element: (
                 cast("SegmentedControlItem", foreach.render_fn(element)).value
             )
@@ -73,7 +73,7 @@ def _array_index_of_operation(
         Var yielding the 0-based index, or -1.
     """
     return CustomVarOperationReturn.create(
-        js_expression=f"({haystack}.indexOf({needle}))",
+        js_expression=f"({haystack!s}.indexOf({needle!s}))",
         _var_type=int,
     )
 

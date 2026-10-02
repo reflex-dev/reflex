@@ -38,6 +38,7 @@ def get_sidebar_items_recipes():
                 recipes.others.chips,
                 recipes.others.speed_dial,
                 recipes.others.dark_mode_toggle,
+                recipes.others.chat,
             ],
         ),
     ]

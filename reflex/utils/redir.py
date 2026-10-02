@@ -1,6 +1,9 @@
 """Utilities to handle redirection to browser UI."""
 
+import logging
 from typing import TYPE_CHECKING
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from urllib.parse import SplitResult
@@ -14,15 +17,13 @@ def open_browser(target_url: "SplitResult") -> None:
     """
     import webbrowser
 
-    from reflex_base.utils import console
-
     if not webbrowser.open(target_url.geturl()):
-        console.warn(
+        logger.warning(
             f"Unable to automatically open the browser. Please navigate to {target_url} in your browser."
         )
     else:
         simplified_url = target_url._replace(path="", query="", fragment="").geturl()
-        console.info(f"Opened browser to {simplified_url}")
+        logger.info(f"Opened browser to {simplified_url}")
 
 
 def reflex_build_redirect() -> None:

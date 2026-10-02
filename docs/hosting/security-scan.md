@@ -1,10 +1,8 @@
-```python exec
-import reflex as rx
-```
-
 # Security Scan
 
 The `reflex cloud scan` command runs a Reflex-aware security review over your app source. It uploads your project to Reflex Cloud, checks it for security and logic flaws, and reports findings by severity.
+
+The **Security Scanner** page in the project sidebar shows the command and the categories checked before deployment.
 
 ```md alert info
 # CLI Command to scan an app
@@ -90,4 +88,4 @@ jobs:
 
 ## Options
 
-See the [CLI reference](/docs/hosting/cli/scan/) for the full list of options.
+Run `reflex cloud scan --help` for the current options and defaults.

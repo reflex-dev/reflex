@@ -1,0 +1,71 @@
+{
+  "name": "main required checks",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["~DEFAULT_BRANCH"],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": false,
+        "do_not_enforce_on_create": false,
+        "required_status_checks": [
+          {
+            "context": "build-packages-gate",
+            "integration_id": 15368
+          },
+          {
+            "context": "changelog",
+            "integration_id": 15368
+          },
+          {
+            "context": "codeql-gate",
+            "integration_id": 15368
+          },
+          {
+            "context": "cubic · AI code reviewer",
+            "integration_id": 1082092
+          },
+          {
+            "context": "docs-tests-gate",
+            "integration_id": 15368
+          },
+          {
+            "context": "Greptile Review",
+            "integration_id": 867647
+          },
+          {
+            "context": "integration-app-harness-gate",
+            "integration_id": 15368
+          },
+          {
+            "context": "integration-tests-gate",
+            "integration_id": 15368
+          },
+          {
+            "context": "performance-tests-gate",
+            "integration_id": 15368
+          },
+          {
+            "context": "pre-commit",
+            "integration_id": 15368
+          },
+          {
+            "context": "reflex-init-in-docker-test-gate",
+            "integration_id": 15368
+          },
+          {
+            "context": "unit-tests-gate",
+            "integration_id": 15368
+          }
+        ]
+      }
+    }
+  ],
+  "bypass_actors": []
+}

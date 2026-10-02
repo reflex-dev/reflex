@@ -89,8 +89,8 @@ cp AGENTS.md /path/to/your/reflex-project/AGENTS.md
 
 ## Combining With Skills and MCP
 
-`AGENTS.md` and `CLAUDE.md` anchor the assistant in your project. Pair them with the other onboarding tools for deeper Reflex knowledge:
+`AGENTS.md` and `CLAUDE.md` anchor the assistant in your project. Pair them with the Agent Toolkit resources for deeper Reflex knowledge:
 
 - [Reflex Agent Skills](/docs/ai/integrations/skills/) provide reusable workflows that the file references by name.
 - [Reflex MCP](/docs/ai/integrations/mcp-overview/) provides structured documentation lookup at runtime.
-- The [llms.txt index](/llms.txt) gives a broad map of the documentation in one file.
+- The [llms.txt index](https://reflex.dev/docs/llms.txt) gives a broad map of the documentation in one file.

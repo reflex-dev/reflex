@@ -1,11 +1,13 @@
 """Base class for all plugins."""
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, Protocol, TypedDict
+from typing import TYPE_CHECKING, Any, ClassVar, ParamSpec, Protocol, TypedDict, TypeVar
 
 from typing_extensions import Unpack
+
+from reflex_base.utils.exceptions import ConfigError
 
 
 class HookOrder(str, Enum):
@@ -18,8 +20,10 @@ class HookOrder(str, Enum):
 
 if TYPE_CHECKING:
     from reflex.app import App, UnevaluatedPage
-    from reflex_base.components.component import BaseComponent
+    from reflex_base.components.component import BaseComponent, Component
+    from reflex_base.event import EventType
     from reflex_base.plugins.compiler import ComponentAndChildren, PageContext
+    from reflex_base.vars.base import Var
 
 
 class CommonContext(TypedDict):
@@ -55,6 +59,51 @@ class PreCompileContext(CommonContext):
     add_modify_task: Callable[[str, Callable[[str], str]], None]
     radix_themes_plugin: Any
     unevaluated_pages: Sequence["UnevaluatedPage"]
+
+
+class AddPageProtocol(Protocol):
+    """Protocol for staging a page contribution during route registration.
+
+    Mirrors the keyword surface of ``App.add_page``; page options are
+    keyword-only. Concrete ``App`` subclasses may accept extra keywords, which
+    are forwarded to their ``_prepare_page`` extension.
+    """
+
+    def __call__(
+        self,
+        component: "Component | Callable[[], Any] | None" = None,
+        route: str | None = None,
+        *,
+        title: "str | Var | None" = None,
+        description: "str | Var | None" = None,
+        image: str = ...,
+        on_load: "EventType[()] | None" = None,
+        meta: Sequence["Mapping[str, Any] | Component"] = ...,
+        context: dict[str, Any] | None = None,
+        **extra_page_args: Any,
+    ) -> None:
+        """Stage a page contribution owned by the calling plugin.
+
+        Args:
+            component: The component or component callable to display.
+            route: The route to display the component at.
+            title: The title of the page.
+            description: The description of the page.
+            image: The image to display on the page.
+            on_load: The event handler(s) called each time the page loads.
+            meta: The metadata of the page.
+            context: Values passed to the page for custom page-specific logic.
+            extra_page_args: Keyword arguments added by concrete ``App``
+                subclasses that extend page registration.
+        """
+
+
+class RegisterRouteContext(CommonContext):
+    """Context for the ``register_route`` hook."""
+
+    app_type: type["App"]
+    add_page: AddPageProtocol
+    has_app_page: Callable[[str], bool]
 
 
 class PostCompileContext(CommonContext):
@@ -128,6 +177,22 @@ class Plugin:
             A list of paths to the stylesheets required by the plugin.
         """
         return []
+
+    def register_route(self, **context: Unpack[RegisterRouteContext]) -> None:
+        """Contribute pages before the app's first compilation.
+
+        The hook runs once per app, after app-defined pages are collected and
+        before any page is evaluated. Calls to ``context["add_page"]`` are
+        prepared without mutating app route state, then committed after every
+        plugin hook succeeds. ``context["app_type"]`` supports concrete-app
+        compatibility checks without exposing the mutable app. Use
+        ``context["has_app_page"]`` to let an app-defined page override an
+        optional plugin page; it intentionally ignores other plugins so
+        plugin-versus-plugin route conflicts cannot be hidden by ordering.
+
+        Args:
+            context: The route registration context.
+        """
 
     def pre_compile(self, **context: Unpack[PreCompileContext]) -> None:
         """Called before the compilation of the plugin.
@@ -263,3 +328,35 @@ class Plugin:
             A string representation of the plugin.
         """
         return f"{self.__class__.__name__}()"
+
+
+_PluginT = TypeVar("_PluginT", bound=Plugin)
+
+
+def get_plugin(plugin_cls: type[_PluginT]) -> _PluginT | None:
+    """Return the configured plugin instance of the given type, if any.
+
+    Args:
+        plugin_cls: The plugin type (or base type) to look up.
+
+    Returns:
+        The configured plugin that is an instance of ``plugin_cls``, or
+        ``None`` when no such plugin is configured.
+
+    Raises:
+        ConfigError: When more than one configured plugin matches — behavior
+            must not silently depend on the configuration order.
+    """
+    # Inline import: reflex_base.config imports this module for the Plugin type.
+    from reflex_base.config import get_config
+
+    matches = (p for p in get_config().plugins if isinstance(p, plugin_cls))
+    match = next(matches, None)
+    if next(matches, None) is not None:
+        msg = (
+            f"Multiple {plugin_cls.__name__} instances are configured, but "
+            "get_plugin() requires an unambiguous match. Request a more specific "
+            "type or remove duplicate entries from the rxconfig plugins list."
+        )
+        raise ConfigError(msg)
+    return match

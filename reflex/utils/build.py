@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import zipfile
-from pathlib import Path, PosixPath
+from pathlib import Path, PurePosixPath
 
 from reflex_base import constants
 from reflex_base.config import get_config
-from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 
 from reflex.utils import console, js_runtimes, path_ops, prerequisites, processes
-from reflex.utils.exec import is_in_app_harness
+from reflex.utils.exec import frontend_env, is_in_app_harness
+
+logger = logging.getLogger(__name__)
 
 
 def set_env_json():
@@ -107,18 +109,14 @@ def _zip(
                 if file.name not in files_to_exclude
             ]
     # Create a progress bar for zipping the component.
-    progress = Progress(
-        *Progress.get_default_columns()[:-1],
-        MofNCompleteColumn(),
-        TimeElapsedColumn(),
-    )
+    progress = console.progress()
     task = progress.add_task(
         f"Zipping {component_name.value}:", total=len(files_to_zip)
     )
 
     with progress, zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as zipf:
         for file in files_to_zip:
-            console.debug(f"{target}: {file}", progress=progress)
+            logger.debug(f"{target}: {file}", extra={"progress": progress})
             progress.advance(task)
             zipf.write(file, Path(file).relative_to(root_directory))
 
@@ -185,10 +183,10 @@ def _duplicate_index_html_to_parent_directory(directory: Path):
             if index_html.exists():
                 target = directory / (child.name + ".html")
                 if not target.exists():
-                    console.debug(f"Copying {index_html} to {target}")
+                    logger.debug(f"Copying {index_html} to {target}")
                     path_ops.cp(index_html, target)
                 else:
-                    console.debug(f"Skipping {index_html}, already exists at {target}")
+                    logger.debug(f"Skipping {index_html}, already exists at {target}")
             # Recursively call this function for the child directory.
             _duplicate_index_html_to_parent_directory(child)
 
@@ -209,7 +207,7 @@ def _compress_static_output(directory: Path, formats: tuple[str, ...]) -> None:
     web_dir = prerequisites.get_web_dir().resolve()
     runtime = path_ops.get_node_path() or path_ops.get_bun_path()
     if runtime is None:
-        console.error("Node.js or Bun is required to compress the exported frontend.")
+        logger.error("Node.js or Bun is required to compress the exported frontend.")
         raise SystemExit(1)
 
     result = processes.new_process(
@@ -224,10 +222,28 @@ def _compress_static_output(directory: Path, formats: tuple[str, ...]) -> None:
         run=True,
     )
     if result.returncode != 0:
-        console.error(
+        logger.error(
             "Failed to compress the exported frontend. Please run with --loglevel debug for more information."
         )
         raise SystemExit(1)
+
+
+def _merge_static_output(source: Path, destination: Path) -> None:
+    """Move assets into a route tree without overwriting prerendered pages.
+
+    Args:
+        source: An asset file or directory emitted outside the frontend prefix.
+        destination: Its location in the final static output.
+    """
+    if source.is_dir() and destination.is_dir():
+        for child in source.iterdir():
+            _merge_static_output(child, destination / child.name)
+        source.rmdir()
+    elif destination.exists():
+        # In particular, the root SPA shell must not replace the rendered index.
+        path_ops.rm(source)
+    else:
+        source.rename(destination)
 
 
 def build():
@@ -257,15 +273,12 @@ def build():
         ],
         cwd=wdir,
         shell=constants.IS_WINDOWS,
-        env={
-            **os.environ,
-            "NO_COLOR": "1",
-        },
+        env=frontend_env(os.environ),
     )
     processes.show_progress("Creating Production Build", process, checkpoints)
     process.wait()
     if process.returncode != 0:
-        console.error(
+        logger.error(
             "Failed to build the frontend. Please run with --loglevel debug for more information.",
         )
         raise SystemExit(1)
@@ -284,22 +297,22 @@ def build():
     if spa_fallback.exists():
         path_ops.cp(spa_fallback, static_dir / "404.html")
 
+    if frontend_path := config.frontend_path.strip("/"):
+        # Create a subdirectory that matches the configured frontend_path.
+        frontend_path = PurePosixPath(frontend_path)
+        first_part = frontend_path.parts[0]
+        prefix_dir = static_dir / frontend_path
+        # Prerendering emits this directory; with prerendering off nothing does.
+        path_ops.mkdir(prefix_dir)
+        for child in list(static_dir.iterdir()):
+            if child.is_dir() and child.name == first_part:
+                continue
+            _merge_static_output(child, prefix_dir / child.name)
+
     _compress_static_output(
         static_dir,
         tuple(config.frontend_compression_formats),
     )
-
-    if frontend_path := config.frontend_path.strip("/"):
-        # Create a subdirectory that matches the configured frontend_path.
-        frontend_path = PosixPath(frontend_path)
-        first_part = frontend_path.parts[0]
-        for child in list(static_dir.iterdir()):
-            if child.is_dir() and child.name == first_part:
-                continue
-            path_ops.mv(
-                child,
-                static_dir / frontend_path / child.name,
-            )
 
 
 def setup_frontend(

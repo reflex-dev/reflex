@@ -9,14 +9,14 @@ description: Connect Reflex Build to GitHub to version your app, sync code local
 import reflex as rx
 ```
 
-Connecting your app to GitHub gives it a version history and lets you edit the code locally. Each sync is a commit in an ordinary Git repository.
+Use this workflow to create and synchronize a GitHub repository for an individual Builder app through the `reflex-build` GitHub App. It gives the app a version history, lets you edit the code locally, and records each push as an ordinary Git commit.
 
 ```python eval
 rx.el.div(
     rx.image(
-        src="https://web.reflex-assets.dev/ai_builder/connecting_to_github.avif",
-        alt="Connecting a Reflex AI Builder app to GitHub",
-        class_name="rounded-md h-auto",
+        src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/git_integration_connect.webp",
+        alt="Connecting a Reflex Build app to GitHub",
+        class_name="rounded-md h-auto mb-4",
         border=f"0.81px solid {rx.color('slate', 5)}",
     ),
 )
@@ -62,22 +62,18 @@ The GitHub popover in the editor syncs in both directions:
 
 You can also clone the repository, edit it locally, and push your changes back.
 
+Before switching branches or pulling remote work:
+
+1. Finish or review the active generation.
+2. Save any manual edits.
+3. Check the current branch and pending changes in the Git controls.
+4. Pull the latest remote changes before starting another overlapping task.
+
+If a teammate is changing the same app, coordinate the affected work and avoid overlapping generations. See [Generation Controls & Collaboration](/docs/ai/features/generation-controls/).
+
 ## GitHub Commit History
 
-The commit history is a great way to see the changes that you have made to your app. You can also revert to previous versions of your app from here.
-
-```python eval
-rx.el.div(
-    rx.image(
-        src="https://web.reflex-assets.dev/ai_builder/github_commit_history.avif",
-        alt="GitHub commit history for a Reflex AI Builder app",
-        class_name="rounded-md h-auto",
-        border=f"0.81px solid {rx.color('slate', 5)}",
-    ),
-)
-```
-
-Reverting resets your app's files to an earlier commit.
+Use commit history to review changes and return the app to an earlier version when needed. Check the affected files before reverting so you do not discard newer work that should be preserved.
 
 ## Other Git Providers
 

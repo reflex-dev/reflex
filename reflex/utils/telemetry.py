@@ -1,30 +1,32 @@
 """Anonymous telemetry for Reflex."""
 
-import asyncio
 import dataclasses
 import importlib.metadata
 import json
+import logging
 import multiprocessing
 import os
 import platform
 import sys
+import threading
+import urllib.request
 import uuid
-import warnings
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, TypedDict, cast
 
-from packaging.requirements import Requirement
-from packaging.utils import canonicalize_name
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import environment
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.decorator import once, once_unless_none
 from reflex_base.utils.exceptions import ReflexError
 from typing_extensions import NotRequired
 
-from reflex.utils import console, processes
+from reflex.utils import processes
 from reflex.utils.js_runtimes import get_bun_version, get_node_version
 from reflex.utils.prerequisites import (
     ensure_reflex_installation_id,
@@ -32,6 +34,8 @@ from reflex.utils.prerequisites import (
     has_uuid_distinct_id_semantics,
     mark_uuid_distinct_id_semantics,
 )
+
+logger = logging.getLogger(__name__)
 
 UTC = timezone.utc
 POSTHOG_API_URL: str = "https://app.posthog.com/capture/"
@@ -79,7 +83,8 @@ def _retrieve_cpu_info() -> CpuInfo | None:
                 cpuinfo["manufacturer_id"] = cpu_data["Manufacturer"]
                 cpuinfo["model_name"] = cpu_data["Name"]
         elif platform_os == "Linux":
-            output = processes.execute_command_and_return_output("lscpu")
+            # Force the C locale so the field names below aren't translated.
+            output = processes.execute_command_and_return_output("LC_ALL=C lscpu")
             if output:
                 lines = output.split("\n")
                 for line in lines:
@@ -102,7 +107,7 @@ def _retrieve_cpu_info() -> CpuInfo | None:
                 "uname -m"
             )
     except Exception as err:
-        console.error(f"Failed to retrieve CPU info. {err}")
+        logger.error(f"Failed to retrieve CPU info. {err}")
         return None
 
     return (
@@ -236,6 +241,9 @@ def get_reflex_package_versions() -> dict[str, str]:
     Returns:
         A mapping of Reflex subpackage name to installed version, sorted by name.
     """
+    from packaging.requirements import Requirement
+    from packaging.utils import canonicalize_name
+
     try:
         requirements = importlib.metadata.requires("reflex") or ()
     except importlib.metadata.PackageNotFoundError:
@@ -328,7 +336,7 @@ def _get_event_defaults() -> _DefaultEvent | None:
         The default event data.
     """
     if (installation_id := ensure_reflex_installation_id()) is None:
-        console.debug("Could not get installation_id")
+        logger.debug("Could not get installation_id")
         return None
     cpuinfo = get_cpu_info()
     properties: _Properties = {
@@ -430,10 +438,15 @@ def _prepare_event(
 
 
 def _send_event(event_data: _Event) -> bool:
-    import httpx
-
+    # urllib keeps httpx and its import cost out of the backend workers, which
+    # only ever send from here.
+    request = urllib.request.Request(
+        POSTHOG_API_URL,
+        data=json.dumps(event_data).encode(),
+        headers={"Content-Type": "application/json"},
+    )
     try:
-        httpx.post(POSTHOG_API_URL, json=event_data)
+        urllib.request.urlopen(request, timeout=5).close()
     except Exception:
         return False
     else:
@@ -463,7 +476,133 @@ def _send(
     return False
 
 
-background_tasks = set()
+_executor_lock = threading.Lock()
+_executor: ThreadPoolExecutor | None = None
+
+
+def _get_telemetry_executor() -> ThreadPoolExecutor:
+    """Return the process-wide, lazily-created telemetry executor.
+
+    A single-worker thread pool runs all telemetry collection and delivery off
+    the caller's thread — in particular the asyncio event loop, which the
+    blocking syscalls, subprocess calls and synchronous HTTP request used to
+    gather and post an event would otherwise stall. The pool's queue serializes
+    events through the one worker, and the interpreter drains it at exit via
+    ``concurrent.futures``' atexit handler.
+
+    Returns:
+        The shared single-worker telemetry executor.
+    """
+    global _executor
+    if _executor is None:
+        with _executor_lock:
+            if _executor is None:
+                _executor = ThreadPoolExecutor(
+                    max_workers=1, thread_name_prefix="reflex-telemetry"
+                )
+    return _executor
+
+
+def _current_registration_context() -> RegistrationContext | None:
+    """Return the caller's RegistrationContext, or None if none is attached.
+
+    Unlike ``ensure_context()`` this never attaches a context to the caller: a
+    thread that has none keeps none.
+
+    Returns:
+        The attached RegistrationContext, or None.
+    """
+    try:
+        return RegistrationContext.get()
+    except LookupError:
+        return None
+
+
+def _run_suppressed(
+    registration_context: RegistrationContext | None,
+    fn: Callable[..., Any],
+    /,
+    *args,
+    **kwargs,
+) -> None:
+    """Run ``fn`` in the worker thread, never letting a failure escape.
+
+    The submitting thread's RegistrationContext is attached for the duration of
+    the call, so the config the app already loaded is reused instead of the
+    worker importing ``rxconfig.py`` again into a context of its own.
+
+    Telemetry must never break the app, so any error (including a failed send)
+    is reported at debug level and otherwise discarded.
+
+    Caveat: a job submitted before any context exists runs without one, so a
+    config lookup inside it attaches a context of the worker's own that later
+    context-less jobs then reuse. Harmless for a Reflex app (one app, one config
+    per process), and once the app's context has loaded its config, every
+    subsequent send carries that context in and overrides the worker's.
+
+    Args:
+        registration_context: The submitter's RegistrationContext, or None when
+            it had none attached.
+        fn: The callable to run.
+        args: Positional arguments forwarded to ``fn``.
+        kwargs: Keyword arguments forwarded to ``fn``.
+    """
+    token = (
+        None
+        if registration_context is None
+        else RegistrationContext.set(registration_context)
+    )
+    try:
+        fn(*args, **kwargs)
+    except Exception as err:
+        logger.debug(f"Failed to process telemetry event: {err}")
+    finally:
+        if token is not None:
+            RegistrationContext.reset(token)
+
+
+def _submit(fn: Callable[..., Any], /, *args, **kwargs) -> None:
+    """Queue telemetry work on the background executor, swallowing all errors.
+
+    The caller's RegistrationContext travels with the job so event collection
+    sees the same config (and registrations) the caller does.
+
+    Args:
+        fn: The callable to run in the telemetry worker thread.
+        args: Positional arguments forwarded to ``fn``.
+        kwargs: Keyword arguments forwarded to ``fn``.
+    """
+    registration_context = _current_registration_context()
+    with suppress(Exception):
+        _get_telemetry_executor().submit(
+            _run_suppressed, registration_context, fn, *args, **kwargs
+        )
+
+
+def _flush(timeout: float | None = None) -> bool:
+    """Block until telemetry queued before this call has been processed.
+
+    The executor has a single worker draining a FIFO queue, so waiting on a
+    sentinel submitted now guarantees every previously-queued event has been
+    handled. Intended for tests and best-effort shutdown; ordinary call sites
+    fire and forget.
+
+    Args:
+        timeout: Maximum number of seconds to wait, or ``None`` to wait
+            indefinitely.
+
+    Returns:
+        ``True`` if the queue drained (or no worker was ever started),
+        ``False`` if the wait timed out before the queue emptied.
+    """
+    if _executor is None:
+        return True
+    try:
+        _executor.submit(lambda: None).result(timeout)
+    except Exception:
+        return False
+    return True
+
 
 _legacy_alias_attempted = False
 
@@ -527,6 +666,12 @@ def send(
 ):
     """Send anonymous telemetry for Reflex.
 
+    The event is collected and delivered on a dedicated single-worker thread
+    pool, so neither the data gathering (blocking syscalls and subprocess calls)
+    nor the synchronous HTTP request blocks the caller — in particular the
+    asyncio event loop serving a running app. Delivery is best-effort: any
+    failure is suppressed and never surfaces to the caller.
+
     Args:
         event: The event name.
         telemetry_enabled: Whether to send the telemetry (If None, get from config).
@@ -534,28 +679,37 @@ def send(
             properties. Preferred over ``kwargs`` for new events.
         kwargs: Additional data to send with the event.
     """
+    with suppress(Exception):
+        if telemetry_enabled is None:
+            telemetry_enabled = get_config().telemetry_enabled
+        # Only spin up the worker pool when there is actually something to send.
+        if telemetry_enabled:
+            _submit(
+                _process_event,
+                event,
+                telemetry_enabled,
+                properties=properties,
+                **kwargs,
+            )
+
+
+def _process_event(
+    event: str,
+    telemetry_enabled: bool,
+    *,
+    properties: dict[str, Any] | None = None,
+    **kwargs,
+) -> None:
+    """Collect and deliver a single telemetry event from the worker thread.
+
+    Args:
+        event: The event name.
+        telemetry_enabled: Whether telemetry is enabled.
+        properties: Structured payload merged into the event properties.
+        kwargs: Additional allow-listed event data.
+    """
     _maybe_alias_legacy_distinct_id(telemetry_enabled)
-
-    async def async_send(  # noqa: RUF029
-        event: str,
-        telemetry_enabled: bool | None,
-        properties: dict[str, Any] | None,
-        **kwargs,
-    ):
-        return _send(event, telemetry_enabled, properties=properties, **kwargs)
-
-    try:
-        # Within an event loop context, send the event asynchronously.
-        task = asyncio.create_task(
-            async_send(event, telemetry_enabled, properties, **kwargs),
-            name=f"reflex_send_telemetry_event|{event}",
-        )
-        background_tasks.add(task)
-        task.add_done_callback(background_tasks.discard)
-    except RuntimeError:
-        # If there is no event loop, send the event synchronously.
-        warnings.filterwarnings("ignore", category=RuntimeWarning)
-        _send(event, telemetry_enabled, properties=properties, **kwargs)
+    _send(event, telemetry_enabled, properties=properties, **kwargs)
 
 
 def send_error(error: Exception, context: str):

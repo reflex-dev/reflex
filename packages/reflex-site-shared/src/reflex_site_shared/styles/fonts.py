@@ -1,7 +1,7 @@
 """Fonts module."""
 # FONT STYLES
 
-font_family = "Instrument Sans"
+font_family = "var(--font-instrument-sans)"
 
 small = {
     "font-family": font_family,
@@ -86,7 +86,7 @@ xx_large = {
 }
 
 code = {
-    "font-family": "JetBrains Mono",
+    "font-family": "var(--font-jetbrains)",
     "font-size": "14px",
     "font-style": "normal",
     "font-weight": "400",

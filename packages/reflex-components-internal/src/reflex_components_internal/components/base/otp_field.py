@@ -32,7 +32,7 @@ class OTPFieldBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the OTP field component."""
+        """The import variable for the OTP field component."""
         return ImportVar(tag="OTPField", package_path="", install=False)
 
 
