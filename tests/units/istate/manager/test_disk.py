@@ -207,48 +207,6 @@ async def test_load_state_logs_warning_for_corrupted_file(
 
 
 @pytest.mark.asyncio
-async def test_load_state_logs_sanitized_exception_details(
-    tmp_path, monkeypatch, caplog
-):
-    """Test that load errors keep diagnostic details without logging the token.
-
-    Args:
-        tmp_path: A temporary directory.
-        monkeypatch: The pytest monkeypatch fixture.
-        caplog: The pytest caplog fixture.
-    """
-    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
-    state_manager = StateManagerDisk(_write_debounce_seconds=0)
-    token = StateToken(ident="private  session\ttoken", cls=dict)
-    token_path = state_manager.token_path(token)
-    token_path.parent.mkdir(parents=True, exist_ok=True)
-    token_path.write_bytes(b"existing state")
-
-    def fail_to_deserialize(cls, data=None, fp=None):
-        """Raise a representative missing-module error during state loading."""
-        module_name = "missing_state_module"
-        error_message = f"No module named '{module_name}' while loading {token.ident}"
-        raise ModuleNotFoundError(error_message)
-
-    monkeypatch.setattr(StateToken, "deserialize", classmethod(fail_to_deserialize))
-
-    assert await state_manager.load_state(token) is None
-
-    warning_logs = disk_warning_logs(caplog)
-    assert len(warning_logs) == 1
-    assert warning_logs[0].levelno == logging.WARNING
-    assert "ModuleNotFoundError" in warning_logs[0].message
-    assert "missing_state_module" in warning_logs[0].message
-    assert token.ident not in warning_logs[0].message
-    assert str(token) not in warning_logs[0].message
-    assert " ".join(token.ident.split()) not in warning_logs[0].message
-    assert token_path.name in warning_logs[0].message
-    assert "falling back to a default state" in warning_logs[0].message
-
-    await state_manager.close()
-
-
-@pytest.mark.asyncio
 async def test_load_state_returns_none_for_missing_file(tmp_path, monkeypatch, caplog):
     """Test that load_state returns None without logging a warning for missing files.
 

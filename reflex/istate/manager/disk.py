@@ -161,17 +161,10 @@ class StateManagerDisk(StateManager):
             except StateSchemaMismatchError:
                 return None
             except Exception as e:
-                exception_detail = str(e)
-                for secret in (str(token), token.ident):
-                    if secret:
-                        exception_detail = exception_detail.replace(
-                            secret, "[redacted]"
-                        )
                 logger.warning(
-                    "Failed to load state file %s, falling back to a default state: %s(%r)",
+                    "Failed to load state file %s, falling back to a default state: %r",
                     token_path.name,
-                    type(e).__name__,
-                    exception_detail,
+                    e,
                 )
         return None
 
