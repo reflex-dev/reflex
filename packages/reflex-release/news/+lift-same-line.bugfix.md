@@ -1,1 +1,0 @@
-Lifting a `*.dev` dependency floor at release time now only considers releases tagged in the history of the branch being released, so a floor on `main` is no longer lifted to a hotfix release (or a hotfix floor to a newer `main` release) that lacks the change it waits for.

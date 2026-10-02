@@ -164,53 +164,6 @@ def test_pin_upgrades_holds_back_an_unreleased_dev_pin(repo: Path) -> None:
     assert "newest tagged: 0.1.9" in upgrade.reason
 
 
-def tag_on_side_branch(repo: Path, branch: str, tag: str) -> None:
-    """Tag a commit that the current branch's history does not contain.
-
-    Args:
-        repo: The repository root.
-        branch: The side branch to create from ``HEAD`` and commit on.
-        tag: The tag to put on the side branch's commit.
-    """
-    git(repo, "switch", "-q", "-c", branch)
-    git(repo, "commit", "-q", "--allow-empty", "-m", f"release on {branch}")
-    git(repo, "tag", tag)
-    git(repo, "switch", "-q", "-")
-
-
-def test_pin_upgrades_skips_a_release_from_another_line(repo: Path) -> None:
-    """A release tagged off this branch's history need not hold the change."""
-    reloaded = set_root_dependency(repo, "widget-core >= 0.2.0.dev1")
-    git(repo, "tag", "widget-core-v0.1.9")
-    tag_on_side_branch(repo, "r/hotfix/0.1", "widget-core-v0.2.0")
-    (upgrade,) = pin_upgrades(reloaded, "mypkg", allow_prereleases=False)
-    assert upgrade.resolved is None
-    assert "newest tagged: 0.1.9" in upgrade.reason
-    assert "0.2.0 satisfies it but is not in this branch's history" in upgrade.reason
-
-    git(repo, "commit", "-q", "--allow-empty", "-m", "release on main")
-    git(repo, "tag", "widget-core-v0.2.1")
-    (upgrade,) = pin_upgrades(reloaded, "mypkg", allow_prereleases=False)
-    assert upgrade.resolved == Version("0.2.1")
-
-
-def test_pin_upgrades_on_a_hotfix_branch_ignores_mainline_releases(
-    repo: Path,
-) -> None:
-    """A newer mainline release satisfies a hotfix floor without the hotfix."""
-    git(repo, "tag", "widget-core-v0.1.3")
-    tag_on_side_branch(repo, "main-ahead", "widget-core-v0.2.0")
-    git(repo, "switch", "-q", "-c", "r/hotfix/0.1")
-    reloaded = set_root_dependency(repo, "widget-core >= 0.1.4.dev0")
-    (upgrade,) = pin_upgrades(reloaded, "mypkg", allow_prereleases=False)
-    assert upgrade.resolved is None
-
-    git(repo, "commit", "-q", "--allow-empty", "-m", "hotfix release")
-    git(repo, "tag", "widget-core-v0.1.4")
-    (upgrade,) = pin_upgrades(reloaded, "mypkg", allow_prereleases=False)
-    assert upgrade.resolved == Version("0.1.4")
-
-
 def test_pin_upgrades_only_takes_a_prerelease_for_a_prerelease(repo: Path) -> None:
     """An alpha may depend on a sibling's alpha; a final version may not."""
     reloaded = set_root_dependency(repo, "widget-core >= 0.2.0.dev1")
