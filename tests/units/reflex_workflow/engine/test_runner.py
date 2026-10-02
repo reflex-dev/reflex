@@ -869,6 +869,15 @@ class Resting(Base, Workflow):
             wake_in(Resting.rest(), datetime.timedelta(hours=hours)) if hours else None
         )
 
+    @step
+    async def hop(self):
+        """Go straight on to resting.
+
+        Returns:
+            The step to run now.
+        """
+        return Resting.rest()
+
 
 class Crowded(Base, Workflow):
     """A workflow one customer may run only one of, to see what a pass considers."""
@@ -3636,9 +3645,7 @@ async def test_wake_settles_once_the_worker_has_nothing_left_to_take(
     assert left is None
 
 
-async def test_wake_does_not_settle_while_a_step_it_started_is_running(
-    session_factory, monkeypatch
-):
+async def test_wake_waits_for_the_steps_it_took_to_finish(session_factory, monkeypatch):
     await Resting.by().cancel()
     key = uuid.uuid4().hex
     async with session_factory() as session, session.begin():
@@ -3651,27 +3658,55 @@ async def test_wake_does_not_settle_while_a_step_it_started_is_running(
                 wf_version=0,
             )
         )
-    started, release = asyncio.Event(), asyncio.Event()
-    rest = Resting.rest.fn
+    running = asyncio.Event()
+    release = asyncio.Event()
+    real = runner.execute
 
-    async def slow_rest(self, hours: int = 0):
-        started.set()
+    async def held(*args, **kwargs):
+        """Run the step only once the test lets it, the way a slow one would.
+
+        Args:
+            *args: Passed on to execute.
+            **kwargs: Passed on to execute.
+
+        Returns:
+            What execute returns.
+        """
+        running.set()
         await release.wait()
-        return await rest(self, hours)
+        return await real(*args, **kwargs)
 
-    monkeypatch.setattr(Resting.rest, "fn", slow_rest)
-    async with only_worker(session_factory):
-        await asyncio.wait_for(started.wait(), 30)
-        try:
-            # Nothing is left to claim, but the step it claimed is still
-            # running: a host that suspended on the word of this call would cut
-            # it off.
-            assert not await runner.wake(datetime.timedelta(milliseconds=500))
-        finally:
-            # Released either way, so a failure here does not leave the step
-            # blocked past the worker that started it.
-            release.set()
-        assert await runner.wake(datetime.timedelta(seconds=30))
+    asked = asyncio.Event()
+    ask = runner.Runner.until_something_is_due
+
+    async def told(self: runner.Runner) -> float:
+        """Ask as the worker would, then say a pass that took nothing got here.
+
+        Args:
+            self: The worker.
+
+        Returns:
+            Seconds to wait.
+        """
+        seconds = await ask(self)
+        asked.set()
+        return seconds
+
+    monkeypatch.setattr(runner, "execute", held)
+    monkeypatch.setattr(runner.Runner, "until_something_is_due", told)
+    async with only_worker(session_factory) as worker:
+        passes = worker.runtime.settled.passes
+        waiting = asyncio.create_task(runner.wake(datetime.timedelta(seconds=30)))
+        await asyncio.wait_for(running.wait(), 10)
+        # The pass after the claim takes nothing, the run being leased, but the
+        # step is still running: a host suspending now would stop it midway.
+        # Counting that pass happens before the worker next yields, so it has
+        # been decided by the time this resumes.
+        await asyncio.wait_for(asked.wait(), 10)
+        assert worker.runtime.settled.passes == passes
+        assert not waiting.done()
+        release.set()
+        assert await waiting
         async with session_factory() as session:
             left = (
                 await session.execute(
@@ -3681,23 +3716,36 @@ async def test_wake_does_not_settle_while_a_step_it_started_is_running(
     assert left is None
 
 
-async def test_wake_does_not_settle_on_a_pass_that_new_work_arrived_during(
-    session_factory, monkeypatch
-):
+async def test_wake_waits_for_what_the_last_step_left_due(session_factory, monkeypatch):
     await Resting.by().cancel()
     key = uuid.uuid4().hex
-    async with only_worker(session_factory) as worker:
-        due = worker.until_something_is_due
-        arrived = []
+    async with session_factory() as session, session.begin():
+        await session.execute(
+            insert(Resting).values(
+                key=key,
+                next_step="hop",
+                wake_at=func.now(),
+                attempts=0,
+                wf_version=0,
+            )
+        )
+    ask = runner.Runner.until_something_is_due
 
-        async def arriving_meanwhile() -> float:
-            # A run is started after this pass has looked for work and before
-            # it is counted: the pass took nothing, but it is not caught up.
-            if not arrived:
-                arrived.append(await Resting(key=key).start(Resting.rest()))
-            return await due()
+    async def late(self: runner.Runner) -> float:
+        """Let the steps in flight finish while the worker is asking.
 
-        monkeypatch.setattr(worker, "until_something_is_due", arriving_meanwhile)
+        Args:
+            self: The worker.
+
+        Returns:
+            Seconds to wait.
+        """
+        if self.inflight:
+            await asyncio.wait(set(self.inflight))
+        return await ask(self)
+
+    monkeypatch.setattr(runner.Runner, "until_something_is_due", late)
+    async with only_worker(session_factory):
         assert await runner.wake(datetime.timedelta(seconds=30))
         async with session_factory() as session:
             left = (
@@ -3705,7 +3753,8 @@ async def test_wake_does_not_settle_on_a_pass_that_new_work_arrived_during(
                     select(Resting.next_step).where(Resting.key == key)
                 )
             ).scalar_one()
-    assert arrived == [True]
+    # The hop left its rest due now, and nothing is in flight once it is done,
+    # but the pass that saw that was asked before the rest existed.
     assert left is None
 
 
