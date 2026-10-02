@@ -102,8 +102,9 @@ def test_axis_tick_formatter_function_string_var(axis):
     axis_component = axis.create(tick_formatter=formatter)
 
     assert axis_component.tick_formatter is formatter
-    assert "tickFormatter:((value) => value.toFixed(2))" in (
-        axis_component.render()["props"]
+    assert (
+        "tickFormatter:((value) => value.toFixed(2))"
+        in (axis_component.render()["props"])
     )
     assert axis_component.tick_formatter._get_all_var_data() == var_data
 
