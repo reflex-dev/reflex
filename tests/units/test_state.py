@@ -6324,6 +6324,91 @@ def test_redeclared_var_is_independent_of_the_inherited_one() -> None:
     }
 
 
+def test_base_var_shadowing_parent_before_mixin_does_not_raise() -> None:
+    """A mixin after the parent cannot shadow the parent's class attribute lookup."""
+
+    class ShadowParent(BaseState):
+        shadowed_value: int = 1
+
+    class ShadowMixin(BaseState, mixin=True):
+        shadowed_value: str = "ninety-nine"
+
+    class ShadowChild(ShadowParent, ShadowMixin):  # pyright: ignore[reportIncompatibleVariableOverride]
+        pass
+
+    assert isinstance(ShadowChild.shadowed_value, Var)
+    assert ShadowChild.get_fields()["shadowed_value"]._owner is ShadowParent
+
+
+def test_base_var_related_mixins_can_override() -> None:
+    """A mixin subclass may intentionally override its base mixin's var."""
+
+    class BaseMixin(BaseState, mixin=True):
+        value: int = 1
+
+    class ExtendedMixin(BaseMixin, mixin=True):
+        value: int = 2
+
+    class CombinedState(ExtendedMixin, State):
+        pass
+
+    assert isinstance(CombinedState.value, Var)
+    assert CombinedState.get_fields()["value"].default == 2
+
+
+def test_base_var_annotation_only_mixin_does_not_raise() -> None:
+    """An annotation-only mixin declaration does not shadow the parent var."""
+
+    class ShadowParent(BaseState):
+        shadowed_value: int = 1
+
+    class AnnotationOnlyMixin(BaseState, mixin=True):
+        shadowed_value: int
+
+    class ShadowChild(AnnotationOnlyMixin, ShadowParent):
+        pass
+
+    assert isinstance(ShadowChild.shadowed_value, Var)
+    assert ShadowChild.get_fields()["shadowed_value"]._owner is ShadowParent
+    assert (
+        cast("Var", ShadowChild.shadowed_value)._js_expr
+        == cast("Var", ShadowParent.shadowed_value)._js_expr
+    )
+
+
+def test_base_var_annotation_only_mixin_keeps_var_of_parents_mixin() -> None:
+    """The parent's var is kept when the parent got it from a mixin of its own."""
+
+    class ValueMixin(BaseState, mixin=True):
+        shadowed_value: int = 1
+
+    class ShadowParent(ValueMixin, BaseState):
+        pass
+
+    class AnnotationOnlyMixin(BaseState, mixin=True):
+        shadowed_value: int
+
+    class ShadowChild(AnnotationOnlyMixin, ShadowParent):
+        pass
+
+    assert ShadowChild.get_fields()["shadowed_value"]._owner is ShadowParent
+
+
+def test_base_var_reannotating_annotation_only_mixin_var_keeps_parent_var() -> None:
+    """Re-annotating a var that a mixin only annotates keeps the parent's var."""
+
+    class ShadowParent(BaseState):
+        shadowed_value: int = 1
+
+    class AnnotationOnlyMixin(BaseState, mixin=True):
+        shadowed_value: int
+
+    class ShadowChild(AnnotationOnlyMixin, ShadowParent):
+        shadowed_value: int
+
+    assert ShadowChild.get_fields()["shadowed_value"]._owner is ShadowParent
+
+
 def test_base_var_shadowing_non_state_descriptor_does_not_raise() -> None:
     """Re-annotating to win over a descriptor from a non-state base is not a shadow."""
     from reflex_base.vars.hybrid_property import hybrid_property
