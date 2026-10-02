@@ -3634,6 +3634,46 @@ async def test_wake_settles_once_the_worker_has_nothing_left_to_take(
     assert left is None
 
 
+async def test_wake_does_not_settle_while_a_step_it_started_is_running(
+    session_factory, monkeypatch
+):
+    await Resting.by().cancel()
+    key = uuid.uuid4().hex
+    async with session_factory() as session, session.begin():
+        await session.execute(
+            insert(Resting).values(
+                key=key,
+                next_step="rest",
+                wake_at=func.now(),
+                attempts=0,
+                wf_version=0,
+            )
+        )
+    started, release = asyncio.Event(), asyncio.Event()
+    rest = Resting.rest.fn
+
+    async def slow_rest(self, hours: int = 0):
+        started.set()
+        await release.wait()
+        return await rest(self, hours)
+
+    monkeypatch.setattr(Resting.rest, "fn", slow_rest)
+    async with only_worker(session_factory):
+        await asyncio.wait_for(started.wait(), 30)
+        # Nothing is left to claim, but the step it claimed is still running: a
+        # host that suspended on the word of this call would cut it off.
+        assert not await runner.wake(datetime.timedelta(milliseconds=500))
+        release.set()
+        assert await runner.wake(datetime.timedelta(seconds=30))
+        async with session_factory() as session:
+            left = (
+                await session.execute(
+                    select(Resting.next_step).where(Resting.key == key)
+                )
+            ).scalar_one()
+    assert left is None
+
+
 async def test_wake_waits_for_the_next_wake_up_to_have_been_registered(
     session_factory,
 ):

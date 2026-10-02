@@ -194,7 +194,11 @@ class Runner:
             # returns, and it must not do that until whatever wakes the machine
             # again has been told when to.
             seconds = await self.until_something_is_due()
-            await self.runtime.settled.record()
+            # Not while a step it started is still running: suspended now, the
+            # machine would cut that step off. The step wakes the loop when it
+            # is done, and the pass after it is counted instead.
+            if not self.inflight:
+                await self.runtime.settled.record()
             # Against the wall clock rather than one timeout of that length: a
             # machine that suspends leaves asyncio's monotonic clock where it
             # found it, so a timer set before the suspend has as long left after
@@ -528,9 +532,10 @@ async def wake(timeout: datetime.timedelta) -> bool:
     there is nothing to take. Holding it open is the point on hosts that only
     give an instance CPU while it is answering a request.
 
-    Caught up means a pass that claimed nothing, which is the worker saying
-    there is nothing it can take: either nothing is due, or what is due is held
-    back by a limit and waiting longer would not help.
+    Caught up means a pass that claimed nothing while no step it started was
+    still running, which is the worker saying there is nothing it can take and
+    nothing left to finish: either nothing is due, or what is due is held back
+    by a limit and waiting longer would not help.
 
     Safe to call from anywhere, as often as anyone likes: it asks the worker to
     look, which it would do anyway. Past ``WAITERS`` callers at once the rest
