@@ -44,6 +44,7 @@ from typing_extensions import LiteralString, dataclass_transform, override
 from reflex_base import constants
 from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.environment import _on_env_var_set, environment
 from reflex_base.utils import exceptions, imports, serializers, types
 from reflex_base.utils.compat import MISSING_TYPE, annotations_from_namespace
 from reflex_base.utils.decorator import once
@@ -2481,6 +2482,24 @@ def _delta_value_key(value: Any) -> Any:
         return _UNKEYABLE_VALUE
 
 
+@functools.cache
+def _type_check_depth() -> int:
+    """Get how many container levels state var type checks look into.
+
+    The checks only log an error, so production mode checks just the outer type
+    instead of walking every element. Reading the environment costs more than
+    the check it would skip, so the mode is resolved once and re-resolved when
+    ``environment.REFLEX_ENV_MODE.set`` changes it.
+
+    Returns:
+        The ``nested`` depth to pass to ``_isinstance``.
+    """
+    return 0 if environment.REFLEX_ENV_MODE.get() == constants.Env.PROD else 1
+
+
+_on_env_var_set(environment.REFLEX_ENV_MODE.name, _type_check_depth.cache_clear)
+
+
 def is_computed_var(obj: Any) -> TypeGuard[ComputedVar]:
     """Check if the object is a ComputedVar.
 
@@ -2877,19 +2896,19 @@ class ComputedVar(Var[RETURN_TYPE]):
         instance = self._owner_instance(instance)
         if not self._cache:
             value = self.fget(instance)
-        else:
-            # handle caching
-            if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
-                # Set cache attr on state instance.
-                setattr(instance, self._cache_attr, self.fget(instance))
-                # Ensure the computed var gets serialized to redis.
-                instance._was_touched = True
-                # Set the last updated timestamp on the state instance.
-                setattr(instance, self._last_updated_attr, datetime.datetime.now())
-            value = getattr(instance, self._cache_attr)
-
+            self._check_deprecated_return_type(instance, value)
+            return value
+        # handle caching
+        if hasattr(instance, self._cache_attr) and not self.needs_update(instance):
+            return getattr(instance, self._cache_attr)
+        value = self.fget(instance)
+        # Set cache attr on state instance.
+        setattr(instance, self._cache_attr, value)
+        # Ensure the computed var gets serialized to redis.
+        instance._was_touched = True
+        # Set the last updated timestamp on the state instance.
+        setattr(instance, self._last_updated_attr, datetime.datetime.now())
         self._check_deprecated_return_type(instance, value)
-
         return value
 
     def __set_name__(self, owner: type[BaseState], name: str) -> None:
@@ -2916,7 +2935,9 @@ class ComputedVar(Var[RETURN_TYPE]):
         return _owner_state(instance, owner)
 
     def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
-        if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
+        if not _isinstance(
+            value, self._var_type, nested=_type_check_depth(), treat_var_as_type=False
+        ):
             logger.error(
                 f"Computed var '{type(instance).__name__}.{self._name}' must return"
                 f" a value of type '{self._var_type}', got '{value!s}' of type {type(value)}."
@@ -3171,14 +3192,15 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
 
         # handle caching
         async def _awaitable_result(instance: BaseState = instance) -> RETURN_TYPE:
-            if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
-                # Set cache attr on state instance.
-                setattr(instance, self._cache_attr, await self.fget(instance))
-                # Ensure the computed var gets serialized to redis.
-                instance._was_touched = True
-                # Set the last updated timestamp on the state instance.
-                setattr(instance, self._last_updated_attr, datetime.datetime.now())
-            value = getattr(instance, self._cache_attr)
+            if hasattr(instance, self._cache_attr) and not self.needs_update(instance):
+                return getattr(instance, self._cache_attr)
+            value = await self.fget(instance)
+            # Set cache attr on state instance.
+            setattr(instance, self._cache_attr, value)
+            # Ensure the computed var gets serialized to redis.
+            instance._was_touched = True
+            # Set the last updated timestamp on the state instance.
+            setattr(instance, self._last_updated_attr, datetime.datetime.now())
             self._check_deprecated_return_type(instance, value)
             return value
 
@@ -4023,7 +4045,10 @@ class Field(Generic[FIELD_TYPE]):
             not self._backend
             and type(value) not in self._plain_types
             and not _isinstance(
-                value, self.outer_type_, nested=1, treat_var_as_type=False
+                value,
+                self.outer_type_,
+                nested=_type_check_depth(),
+                treat_var_as_type=False,
             )
         ):
             logger.error(
