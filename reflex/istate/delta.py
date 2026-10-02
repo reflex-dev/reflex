@@ -10,7 +10,7 @@ from collections.abc import Coroutine, Iterator, Mapping
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
-from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.utils.format import format_var_key
 
 if TYPE_CHECKING:
     from reflex_base.vars.base import ComputedVar
@@ -232,10 +232,11 @@ def build_delta(state: BaseState) -> Delta:
     # Token of the client this delta is for, used to know which values it has.
     token = state.router.session.client_token if pending is not None else ""
     full_name = state.get_full_name()
+    state_cls = type(state)
     subdelta: dict[str, Any] = {}
     for prop in delta_vars:
         value = state.get_value(prop)
-        key = prop + FIELD_MARKER
+        key = format_var_key(state_cls, prop)
         if pending is not None and prop in always_dirty_computed_vars:
             # Uncached computed vars are recomputed for every delta; only
             # send them when the recomputed value actually changed. Nothing
@@ -269,7 +270,12 @@ def build_delta(state: BaseState) -> Delta:
         delta[full_name] = subdelta
 
     substates = state.substates
-    for substate in state.dirty_substates.union(state._always_dirty_substates):
+    dirty_substates = state.dirty_substates
+    if always_dirty_substates := state._always_dirty_substates:
+        dirty_substates = dirty_substates.union(
+            substate_cls.get_name() for substate_cls in always_dirty_substates
+        )
+    for substate in dirty_substates:
         delta.update(substates[substate].get_delta())
     return delta
 

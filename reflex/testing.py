@@ -40,7 +40,7 @@ import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.istate.shared import SharedState as SharedState  # To register it.
-from reflex.state import reload_state_module
+from reflex.state import State, reload_state_module
 from reflex.utils import js_runtimes
 from reflex.utils.exec import _with_development_condition
 from reflex.utils.export import export
@@ -215,9 +215,10 @@ class AppHarness:
         Returns:
             The full state name
         """
-        # NOTE: using State.get_name() somehow causes trouble here
-        # path = [State.get_name()] + [self.get_state_name(p) for p in path] # noqa: ERA001
-        path = ["reflex___state____state"] + [self.get_state_name(p) for p in path]
+        # Default scheme like get_state_name; get_name() would apply the resolver.
+        path = [RegistrationContext.default_state_name(State)] + [
+            self.get_state_name(p) for p in path
+        ]
         return ".".join(path)
 
     def _get_globals_from_signature(self, func: Any) -> dict[str, Any]:
@@ -506,7 +507,13 @@ class AppHarness:
 
         self._reload_state_module()
         if self._registry_token is not None:
+            app_resolver = RegistrationContext.get().name_resolver
             RegistrationContext.reset(self._registry_token)
+            restored = RegistrationContext.ensure_context()
+            # Names are cached on the state classes the contexts share, so
+            # an app that ran under another resolver leaves them renamed.
+            if restored.name_resolver is not app_resolver:
+                restored.set_name_resolver(restored.name_resolver)
 
         if self.backend is not None:
             self.backend.should_exit = True

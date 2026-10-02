@@ -247,3 +247,63 @@ def test_document_root_controls_preserve_no_id_and_page_refs():
 
     assert not document_root._get_all_hooks()
     assert page_script._get_all_hooks()
+
+
+def test_client_storage_keys_follow_the_wire_but_storage_names_do_not(
+    temp_minify_json, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Browser storage keeps the name a var has without minification.
+
+    The key must match the var's delta key, which minification rewrites, but
+    the name a value is stored under in the browser must not move, or enabling
+    minification or editing minify.json would orphan every stored value.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    import reflex as rx
+    from reflex.minify import StateEntry, get_state_full_path
+    from reflex.state import BaseState
+    from tests.units.minify_helpers import install_config, set_minify_modes
+
+    class StorageRoot(BaseState):
+        token: str = rx.Cookie("")
+        theme: str = rx.Cookie("light", name="theme")
+        note: str = rx.LocalStorage("")
+        draft: str = rx.SessionStorage("")
+
+    default_prefix = StorageRoot._get_default_full_name()
+    unminified = utils.compile_client_storage(StorageRoot)
+    assert unminified["cookies"] == {
+        f"{default_prefix}.token{FIELD_MARKER}": {"path": "/", "sameSite": "lax"},
+        f"{default_prefix}.theme{FIELD_MARKER}": {
+            "name": "theme",
+            "path": "/",
+            "sameSite": "lax",
+        },
+    }
+
+    path = get_state_full_path(StorageRoot)
+    set_minify_modes(monkeypatch, states=True, vars=True)
+    install_config(
+        states={path: StateEntry(id="s", parent=None)},
+        vars={path: {"token": "t", "theme": "h", "note": "n"}},
+    )
+    minified = utils.compile_client_storage(StorageRoot)
+    assert minified["cookies"] == {
+        "s.t": {
+            "path": "/",
+            "sameSite": "lax",
+            "name": f"{default_prefix}.token{FIELD_MARKER}",
+        },
+        # An explicit name is the user's to keep.
+        "s.h": {"name": "theme", "path": "/", "sameSite": "lax"},
+    }
+    assert minified["local_storage"] == {
+        "s.n": {"sync": False, "name": f"{default_prefix}.note{FIELD_MARKER}"}
+    }
+    # A var without an id keeps its key but is still under a renamed state.
+    assert minified["session_storage"] == {
+        f"s.draft{FIELD_MARKER}": {"name": f"{default_prefix}.draft{FIELD_MARKER}"}
+    }

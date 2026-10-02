@@ -1,8 +1,9 @@
+import copy
 import json
 import shutil
 import subprocess
 from collections.abc import Callable
-from typing import Any, cast
+from typing import Any, cast, get_type_hints
 
 import pytest
 from reflex_base.constants import LogLevel
@@ -33,6 +34,7 @@ from typing_extensions import TypeAliasType
 
 import reflex as rx
 from reflex.state import BaseState
+from tests.units.name_resolvers import stub_resolver, temporary_resolver
 
 
 def make_var(value) -> Var:
@@ -1447,6 +1449,18 @@ def test_arg_mismatch_warning_renders_brackets_verbatim(capsys, monkeypatch):
     assert "\\" not in out
 
 
+def test_typing_event_helper_is_not_public():
+    """The pyright-only handler marker is not part of the ``rx.event`` namespace.
+
+    It lives in ``reflex.state`` as ``_typing_event``; both the name it used to
+    be attached under and the current one are checked.
+    """
+    import reflex as rx
+
+    assert not hasattr(rx.event, "typing_event")
+    assert not hasattr(rx.event, "_typing_event")
+
+
 def test_event_chain_cache_lives_on_the_registration_context(
     forked_registration_context: RegistrationContext,
 ):
@@ -1532,3 +1546,51 @@ def test_event_chain_create_shares_chains_bound_from_one_handler():
         EventChain.create([ChainState.handler], args_spec=args_spec, key="on_click")
         is not chain
     )
+
+
+class CopiedHandlerState(BaseState):
+    """A state whose handler is copied before a resolver switch."""
+
+    def handle(self):
+        """A handler."""
+
+
+@pytest.mark.parametrize(
+    "derive",
+    [
+        copy.copy,
+        copy.deepcopy,
+        lambda handler: handler.stop_propagation,
+    ],
+    ids=["copy", "deepcopy", "stop_propagation"],
+)
+def test_derived_handler_is_not_named_by_a_previous_resolver(
+    derive: Callable[[Any], Any],
+):
+    """A handler copied or derived before a resolver switch gets the new name.
+
+    Args:
+        derive: Builds the handler to format from the registered one.
+    """
+    handler = CopiedHandlerState.event_handlers["handle"]
+    derived = derive(handler)
+    format.format_event_handler(derived)
+    with temporary_resolver(stub_resolver(handler_prefix="h_")):
+        assert format.format_event_handler(derived).endswith(".h_handle")
+    assert format.format_event_handler(derived).endswith(".handle")
+
+
+def test_copied_handler_leaves_the_cached_resolver_behind():
+    """Copies drop the cached name, so deepcopy never copies the resolver."""
+    handler = CopiedHandlerState.event_handlers["handle"]
+    format.format_event_handler(handler)
+    assert handler._formatted_name is not None
+    for clone in (copy.copy, copy.deepcopy):
+        copied = clone(handler)
+        assert copied._formatted_name is None
+        assert copied == handler
+
+
+def test_event_handler_type_hints_resolve():
+    """Every ``EventHandler`` field annotation resolves at runtime, as docgen needs."""
+    assert "_formatted_name" in get_type_hints(EventHandler, include_extras=True)

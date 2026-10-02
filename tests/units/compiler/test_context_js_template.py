@@ -88,7 +88,6 @@ def _event_loop_provider_body() -> str:
         is_dev_mode=False,
         default_color_mode="light",
         initial_state={"state": {}},
-        state_name="state",
     )
     start = rendered.index("export function EventLoopProvider")
     end = rendered.index("const useIsomorphicLayoutEffect", start)
@@ -146,7 +145,6 @@ def test_server_state_provider_renders_one_context_per_substate(tmp_path: Path):
         is_dev_mode=True,
         default_color_mode='"light"',
         initial_state={name: {"n": i} for i, name in enumerate(names)},
-        state_name=names[0],
     )
     for specifier, source in _STUB_MODULES.items():
         stub = tmp_path / (specifier.replace("/", "_").replace("$", "") + ".mjs")

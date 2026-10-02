@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import builtins
-import contextlib
 import copy
 import dataclasses
 import functools
@@ -29,7 +28,6 @@ from typing import (
 )
 
 from reflex_base import constants
-from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import PerformanceMode, auto_reload_cooldown, environment
 from reflex_base.event import (
     EVENT_ACTIONS_MARKER,
@@ -94,6 +92,11 @@ from reflex.istate.delta import (
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
 from reflex.istate.proxy import MutableProxy
 from reflex.istate.storage import ClientStorageBase
+from reflex.minify import (
+    MINIFY_JSON,
+    ensure_minify_resolver_for_active_context,
+    get_state_full_path,
+)
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
 
@@ -134,6 +137,31 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
+
+# As early as possible, so that Vars modules build from state Vars at import
+# already use the configured names (e.g. granian prod workers import the app
+# module directly, bypassing get_app); a later install only rebuilds the Vars
+# each state holds.
+ensure_minify_resolver_for_active_context()
+
+
+if TYPE_CHECKING:
+
+    def _typing_event(fn: Callable[..., Any]) -> EventHandler:
+        """Type a state method as the ``EventHandler`` it becomes. No-op at runtime.
+
+        Args:
+            fn: The method to mark.
+
+        Returns:
+            ``fn`` typed as an ``EventHandler``.
+        """
+        ...
+
+else:
+
+    def _typing_event(fn: Callable[..., Any]) -> Callable[..., Any]:
+        return fn
 
 
 var = computed_var
@@ -270,12 +298,8 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
     Returns:
         The Var instance.
     """
-    field_name = (
-        format.format_state_name(cls.get_full_name()) + "." + name + FIELD_MARKER
-    )
-
     return dispatch(
-        field_name=field_name,
+        field_name=format.format_state_var(cls, name),
         var_data=VarData.from_state(cls, name),
         result_var_type=f.outer_type_,
     )
@@ -389,10 +413,10 @@ def _get_router_var(cls: type[BaseState]) -> RouterDataVar:
             # and hands back the composed RouterData, as it does on a state
             # with a single `router` base var.
             _var_data=VarData(
-                state=root_cls.get_full_name(), field_name=constants.ROUTER
+                state=root_cls._get_default_full_name(), field_name=constants.ROUTER
             ),
         )
-        setattr(root_cls, "_reflex_router_var", router_var)  # noqa: B010
+        root_cls._reflex_router_var = router_var
     return router_var
 
 
@@ -474,26 +498,35 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
     # The event handlers.
     event_handlers: ClassVar[builtins.dict[str, EventHandler]] = {}
 
-    # Mapping of var name to set of (state_full_name, var_name) that depend on it.
-    _var_dependencies: ClassVar[builtins.dict[str, set[tuple[str, str]]]] = {}
+    # Mapping of var name to set of (state class, computed var name) that depend on it.
+    _var_dependencies: ClassVar[
+        builtins.dict[str, set[tuple[type[BaseState], str]]]
+    ] = {}
 
     # Set of vars which always need to be recomputed
     _always_dirty_computed_vars: ClassVar[set[str]] = set()
 
     # Set of substates which always need to be recomputed
-    _always_dirty_substates: ClassVar[set[str]] = set()
+    _always_dirty_substates: ClassVar[set[type[BaseState]]] = set()
 
     # The names the dev-mode __setattr__ has found declared, per state class.
     _settable_names: ClassVar[set[str]] = set()
 
     # Set of states which might need to be recomputed if vars in this state change.
-    _potentially_dirty_states: ClassVar[set[str]] = set()
+    _potentially_dirty_states: ClassVar[set[type[BaseState]]] = set()
+
+    # Set once __init_subclass__ has registered this exact class. Checked via
+    # ``cls.__dict__`` so a subclass never inherits its parent's flag, and kept
+    # name-independent so swapping the NameResolver can't invalidate it.
+    _is_registered: ClassVar[bool] = False
 
     # Vars on this class sent to the client, and computed vars that expire on
     # an interval; recomputed with the dependency dicts, i.e. at class creation
     # and after any var is added.
     _frontend_var_names: ClassVar[frozenset[str]] = frozenset()
     _interval_computed_var_names: ClassVar[frozenset[str]] = frozenset()
+    # The frontend vars by the key they go by on the wire.
+    _var_names_by_key: ClassVar[builtins.dict[str, str]] = {}
 
     # Instance bookkeeping, kept out of `__dict__`: never a field, never pickled.
     __slots__ = (
@@ -551,6 +584,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
     # A special event handler for setting base vars.
     setvar: ClassVar[EventHandler]
+
+    # The `router` switchboard, built on first access and cached on the root.
+    _reflex_router_var: ClassVar[RouterDataVar | None] = None
 
     # Held the backend vars in pickles of previous releases: reserved, so that
     # loading one of those cannot clash with a field.
@@ -671,37 +707,28 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         if parent_state is not None and cls.get_name() in {
             c.get_name() for c in parent_state.get_substates()
         }:
-            # This should not happen, since we have added module prefix to state names in #3214
-            msg = (
-                f"The substate class '{cls.get_name()}' has been defined multiple times. "
-                "Shadowing substate classes is not allowed."
-            )
+            if (
+                RegistrationContext.get().name_resolver.resolve_state_name(cls)
+                is not None
+            ):
+                msg = (
+                    f"'{get_state_full_path(cls)}' resolves to the name "
+                    f"'{cls.get_name()}', which a sibling under "
+                    f"'{get_state_full_path(parent_state)}' already uses. Fix the "
+                    f"duplicate id in {MINIFY_JSON}; 'reflex minify validate' "
+                    "reports it."
+                )
+            else:
+                # Module prefixes make this unreachable for distinct classes.
+                msg = (
+                    f"The substate class '{cls.get_name()}' has been defined multiple times. "
+                    "Shadowing substate classes is not allowed."
+                )
             raise StateValueError(msg)
 
         cls._bind_fields()
         cls._bind_mixin_members()
-
-        # Set the base and computed vars.
-        cls.base_vars = {
-            name: get_var_for_field(cls, name, f)
-            for name, f in cls.__fields__.items()
-            if f._owner is cls and not f._backend
-        }
-        cls.computed_vars = {
-            name: v._replace(merge_var_data=VarData.from_state(cls))
-            for name, v in cls.__dict__.items()
-            if is_computed_var(v)
-        }
-        cls.vars = {
-            **(parent_state.vars if parent_state is not None else {}),
-            **cls.base_vars,
-            **cls.computed_vars,
-            # `router` is a switchboard over the per-field router vars rather
-            # than a field of its own, but it is usable as a Var everywhere one
-            # is accepted, so it is listed here (and thus inherited by
-            # substates). It has no backing field, so it never reaches a delta.
-            constants.ROUTER: _get_router_var(cls),
-        }
+        cls._init_vars()
         cls.event_handlers = {}
 
         # Setup the base vars at the class level.
@@ -724,7 +751,51 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
 
-        all_base_state_classes[cls.get_full_name()] = None
+        all_base_state_classes[cls._get_default_full_name()] = None
+        cls._is_registered = True
+
+    @classmethod
+    def _init_vars(cls) -> None:
+        """Build the Vars standing for the fields and computed vars of this class.
+
+        They name the state the way the active name resolver does, so
+        installing another resolver builds them again, parents first.
+        """
+        parent_state = cls.get_parent_state()
+        cls.base_vars = {
+            name: get_var_for_field(cls, name, f)
+            for name, f in cls.__fields__.items()
+            if f._owner is cls and not f._backend
+        }
+        cls.computed_vars = {
+            name: v._replace(_var_data=VarData.from_state(cls, name))
+            for name, v in cls.__dict__.items()
+            if is_computed_var(v)
+        }
+        cls.vars = {
+            **(parent_state.vars if parent_state is not None else {}),
+            **cls.base_vars,
+            **cls.computed_vars,
+            # `router` is a switchboard over the per-field router vars rather
+            # than a field of its own, but it is usable as a Var everywhere one
+            # is accepted, so it is listed here (and thus inherited by
+            # substates). It has no backing field, so it never reaches a delta.
+            constants.ROUTER: _get_router_var(cls),
+        }
+        for name, prop in cls.base_vars.items():
+            cls._bind_var(name, prop)
+
+    @classmethod
+    def _rebuild_vars(cls) -> None:
+        """Rename this state's Vars after a name resolver was installed.
+
+        Called for every registered state, parents first. Dependency tracking
+        keys on classes and default names, so only the Vars need rebuilding.
+        """
+        if "_reflex_router_var" in cls.__dict__:
+            cls._reflex_router_var = None
+        cls._init_vars()
+        cls._init_frontend_var_names()
 
     @classmethod
     def _bind_fields(cls) -> None:
@@ -784,17 +855,21 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         cls,
         name: str,
         fn: Callable,
-    ):
+    ) -> EventHandler:
         """Add an event handler dynamically to the state.
 
         Args:
             name: The name of the event handler.
             fn: The function to call when the event is triggered.
+
+        Returns:
+            The created EventHandler instance.
         """
         _validate_state_name(cls._reflex_state_root, name)
         handler = cls._create_event_handler(fn)
         cls.event_handlers[name] = handler
         setattr(cls, name, handler)
+        return handler
 
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
@@ -951,9 +1026,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Additional updates tracking dicts for vars and substates that always
         need to be recomputed.
         """
-        cls._frontend_var_names = frozenset(cls.base_vars).union(
-            name for name, cvar in cls.computed_vars.items() if not cvar._backend
-        )
+        cls._init_frontend_var_names()
         cls._interval_computed_var_names = frozenset(
             name
             for name, cvar in cls.computed_vars.items()
@@ -981,23 +1054,11 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                     dvar_set = (dvar_set - {constants.ROUTER}) | set(
                         constants.ROUTER_VARS
                     )
-                state_cls = cls.get_root_state().get_class_substate(state_name)
+                state_cls = RegistrationContext.get()._get_state_by_default_name(
+                    state_name
+                )
                 for dvar in dvar_set:
-                    # The var is tracked on the state its descriptor is bound to.
-                    desc = _inherited_value(state_cls.__mro__, dvar)
-                    owner = (
-                        desc._owner
-                        if isinstance(desc, Field) or is_computed_var(desc)
-                        else None
-                    )
-                    defining_state_cls = owner or state_cls
-                    defining_state_cls._var_dependencies.setdefault(dvar, set()).add((
-                        cls.get_full_name(),
-                        cvar_name,
-                    ))
-                    defining_state_cls._potentially_dirty_states.add(
-                        cls.get_full_name()
-                    )
+                    cls._register_var_dependency(state_cls, dvar, cvar_name)
 
         # ComputedVar with cache=False always need to be recomputed
         cls._always_dirty_computed_vars = {
@@ -1009,17 +1070,46 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         # Any substate containing a ComputedVar with cache=False always needs to be recomputed
         if cls._always_dirty_computed_vars:
             # Tell parent classes that this substate has always dirty computed vars
-            state_name = cls.get_name()
-            parent_state = cls.get_parent_state()
+            state_cls, parent_state = cls, cls.get_parent_state()
             while parent_state is not None:
-                parent_state._always_dirty_substates.add(state_name)
-                state_name, parent_state = (
-                    parent_state.get_name(),
-                    parent_state.get_parent_state(),
-                )
+                parent_state._always_dirty_substates.add(state_cls)
+                state_cls, parent_state = parent_state, parent_state.get_parent_state()
 
         # Reset cached schema value
         cls._to_schema.cache_clear()
+
+    @classmethod
+    def _init_frontend_var_names(cls) -> None:
+        """Collect the vars of this class sent to the client, and their wire keys."""
+        cls._frontend_var_names = frozenset(cls.base_vars).union(
+            name for name, cvar in cls.computed_vars.items() if not cvar._backend
+        )
+        cls._var_names_by_key = {
+            format.format_var_key(cls, name): name for name in cls._frontend_var_names
+        }
+
+    @classmethod
+    def _register_var_dependency(
+        cls, state_cls: type[BaseState], var_name: str, cvar_name: str
+    ) -> None:
+        """Mark a computed var of this class dirty whenever a var of a state changes.
+
+        Args:
+            state_cls: The state the var is read from.
+            var_name: The name of the var the computed var depends on.
+            cvar_name: The name of the computed var on this class.
+        """
+        # The var is tracked on the state its descriptor is bound to.
+        desc = _inherited_value(state_cls.__mro__, var_name)
+        owner = (
+            desc._owner if isinstance(desc, Field) or is_computed_var(desc) else None
+        )
+        defining_state_cls = owner or state_cls
+        defining_state_cls._var_dependencies.setdefault(var_name, set()).add((
+            cls,
+            cvar_name,
+        ))
+        defining_state_cls._potentially_dirty_states.add(cls)
 
     @classmethod
     def _iter_functions(cls) -> Iterator[tuple[str, FunctionType]]:
@@ -1093,19 +1183,31 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         """
         return RegistrationContext.get().get_substates(cls)
 
+    # Unbounded on purpose: the resolved name depends on the active resolver,
+    # which lives in a ContextVar, so an evicted entry can be recomputed from a
+    # scope that has no context and pin the default name process-wide. One
+    # entry per state class is already bounded by the registry.
     @classmethod
-    @functools.lru_cache
+    @functools.cache
     def get_name(cls) -> str:
-        """Get the name of the state.
+        """Get the user-visible name of the state.
+
+        Defers to the active :class:`~reflex_base.registry.NameResolver`
+        (e.g. ``minify.json`` rewrites), falling back to the built-in
+        snake-cased ``module___ClassName`` when no context is attached.
 
         Returns:
-            The name of the state.
+            The resolved name of the state.
         """
-        module = cls.__module__.replace(".", "___")
-        return format.to_snake_case(f"{module}___{cls.__name__}")
+        from reflex_base.registry import RegistrationContext
+
+        ctx = RegistrationContext.try_get()
+        if ctx is None:
+            return RegistrationContext.default_state_name(cls)
+        return ctx.get_state_name(cls)
 
     @classmethod
-    @functools.lru_cache
+    @functools.cache
     def get_full_name(cls) -> str:
         """Get the full name of the state.
 
@@ -1119,12 +1221,55 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         return name
 
     @classmethod
+    @functools.cache
+    def _get_default_full_name(cls) -> str:
+        """Get the full name of the state under the built-in names.
+
+        Unlike :meth:`get_full_name`, it never depends on the name resolver, so
+        it keys what must survive a resolver change: persisted state, shared
+        state links, browser storage and the backend's dependency tracking.
+
+        Returns:
+            The dotted path of built-in ``module___ClassName`` names.
+        """
+        name = RegistrationContext.default_state_name(cls)
+        parent_state = cls.get_parent_state()
+        if parent_state is not None:
+            name = parent_state._get_default_full_name() + "." + name
+        return name
+
+    @classmethod
+    def _get_source_module(cls) -> str:
+        """Get the module whose code defines the state, wherever its class was put.
+
+        States defined inside a function and the ones ``ComponentState.create()``
+        builds live in ``reflex.istate.dynamic``, for pickling.
+
+        Returns:
+            The name of the defining module.
+        """
+        # Its own attribute: a subclass would inherit a locally defined parent's.
+        if (original_module := cls.__dict__.get("__original_module__")) is not None:
+            return original_module
+        if cls.__module__ == reflex.istate.dynamic.__name__ and issubclass(
+            cls, ComponentState
+        ):
+            # Built from the component class, its first base.
+            return cls.__bases__[0].__module__
+        return cls.__module__
+
+    @classmethod
     @functools.lru_cache
-    def get_class_substate(cls, path: Sequence[str] | str) -> type[BaseState]:
+    def get_class_substate(
+        cls, path: Sequence[str] | str, _skip_self: bool = True
+    ) -> type[BaseState]:
         """Get the class substate.
 
         Args:
             path: The path to the substate.
+            _skip_self: Internal recursion flag; leave at the default. Allows
+                ``"a.b.b"`` to resolve to a child that shares its parent's
+                minified name.
 
         Returns:
             The class substate.
@@ -1137,13 +1282,13 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         if len(path) == 0:
             return cls
-        if path[0] == cls.get_name():
+        if _skip_self and path[0] == cls.get_name():
             if len(path) == 1:
                 return cls
             path = path[1:]
         for substate in cls.get_substates():
             if path[0] == substate.get_name():
-                return substate.get_class_substate(path[1:])
+                return substate.get_class_substate(path[1:], _skip_self=False)
         msg = f"Invalid path: {path}"
         raise ValueError(msg)
 
@@ -1181,7 +1326,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
     @classmethod
     def _init_var(cls, name: str, prop: Var):
-        """Initialize a variable.
+        """Validate the type of a base var and give it a setter.
 
         Args:
             name: The name of the variable
@@ -1201,9 +1346,18 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                 f'Found var "{prop._js_expr}" with type {prop._var_type}.'
             )
             raise VarTypeError(msg)
-        cls.__fields__[name]._var = prop
         if cls.is_user_defined() and get_state_auto_setters() is True:
             cls._create_setter(name, prop)
+
+    @classmethod
+    def _bind_var(cls, name: str, prop: Var):
+        """Make a Var the one its field returns on class access.
+
+        Args:
+            name: The name of the field.
+            prop: The Var standing for the field.
+        """
+        cls.__fields__[name]._var = prop
         cls._set_default_value(name, prop)
 
     @classmethod
@@ -1239,10 +1393,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         # create the variable based on name and type
         var = Var(
-            _js_expr=format.format_state_name(cls.get_full_name())
-            + "."
-            + name
-            + FIELD_MARKER,
+            _js_expr=format.format_state_var(cls, name),
             _var_type=type_,
             _var_data=VarData.from_state(cls, name),
         ).guess_type()
@@ -1250,6 +1401,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         # add the field dynamically (must be done before _init_var)
         cls.add_field(name, var, default_value)
 
+        cls._bind_var(name, var)
         cls._init_var(name, var)
 
         cls.base_vars[name] = var
@@ -1273,7 +1425,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         event_actions = getattr(fn, EVENT_ACTIONS_MARKER, {})
 
         handler = event_handler_cls(fn=fn, state=cls, event_actions=event_actions)
-        if cls.get_full_name() in all_base_state_classes:
+        if cls.__dict__.get("_is_registered", False):
             # Register handlers created after the class was registered.
             reg_ctx = RegistrationContext.get()
             reg_ctx.register_event_handler(handler, states=(cls,))
@@ -1282,7 +1434,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
     @classmethod
     def _create_setvar(cls):
         """Create the setvar method for the state."""
-        cls.setvar = cls.event_handlers["setvar"] = EventHandlerSetVar(state_cls=cls)
+        cls.setvar = cls.event_handlers[constants.event.SETVAR] = EventHandlerSetVar(
+            state_cls=cls
+        )
 
     @classmethod
     def _create_setter(cls, name: str, prop: Var):
@@ -1577,11 +1731,14 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         for substate in self.substates.values():
             substate._reset_client_storage()
 
-    def get_substate(self, path: Sequence[str]) -> BaseState:
+    def get_substate(self, path: Sequence[str], _skip_self: bool = True) -> BaseState:
         """Get the substate.
 
         Args:
             path: The path to the substate.
+            _skip_self: Internal recursion flag; leave at the default. Allows
+                ``"a.b.b"`` to resolve to a child that shares its parent's
+                minified name.
 
         Returns:
             The substate.
@@ -1591,14 +1748,14 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         """
         if len(path) == 0:
             return self
-        if path[0] == self.get_name():
+        if _skip_self and path[0] == self.get_name():
             if len(path) == 1:
                 return self
             path = path[1:]
         if path[0] not in self.substates:
             msg = f"Invalid path: {path}"
             raise ValueError(msg)
-        return self.substates[path[0]].get_substate(path[1:])
+        return self.substates[path[0]].get_substate(path[1:], _skip_self=False)
 
     @classmethod
     def _get_potentially_dirty_states(cls) -> set[type[BaseState]]:
@@ -1607,13 +1764,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Returns:
             The set of potentially dirty substate classes.
         """
-        return {
-            cls.get_class_substate(substate_name)
-            for substate_name in cls._always_dirty_substates
-        }.union({
-            cls.get_root_state().get_class_substate(substate_name)
-            for substate_name in cls._potentially_dirty_states
-        })
+        return cls._always_dirty_substates | cls._potentially_dirty_states
 
     def _get_root_state(self) -> BaseState:
         """Get the root state of the state tree.
@@ -1746,7 +1897,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             msg = f"Unable to retrieve value for {var._js_expr}: not associated with any state."
             raise UnretrievableVarValueError(msg)
         # Fastish case: this var belongs to this state
-        if var_data.state == self.get_full_name():
+        if var_data.state == self._get_default_full_name():
             value = getattr(self, var_data.field_name)
             if inspect.isawaitable(value):
                 return await value
@@ -1754,7 +1905,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         # Slow case: this var belongs to another state
         other_state = await self.get_state(
-            self._get_root_state().get_class_substate(var_data.state)
+            RegistrationContext.get()._get_state_by_default_name(var_data.state)
         )
         value = getattr(other_state, var_data.field_name)
         if inspect.isawaitable(value):
@@ -1781,18 +1932,21 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             (self, name)
             for name in (self.dirty_vars if var_names is None else var_names)
         ]
-        seen: set[tuple[str, str]] = set()
+        seen: set[tuple[type[BaseState], str]] = set()
         while pending:
             state, name = pending.pop()
             for dependent in state._var_dependencies.get(name, ()):
                 if dependent in seen:
                     continue
                 seen.add(dependent)
-                state_name, cvar_name = dependent
-                if state_name == state.get_full_name():
+                state_cls, cvar_name = dependent
+                # The class of the state, also when `state` is a StateProxy.
+                if state_cls is state.__class__:
                     target = state
                 else:
-                    target = state._get_root_state().get_substate(state_name.split("."))
+                    target = state._get_root_state().get_substate(
+                        state_cls.get_full_name().split(".")
+                    )
                     target._mark_ancestors_dirty()
                 target.computed_vars[cvar_name].mark_dirty(instance=target)
                 target.dirty_vars.add(cvar_name)
@@ -1920,9 +2074,11 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         else:
             computed_vars = {}
         variables = {**base_vars, **computed_vars}
+        state_cls = type(self)
         d = {
             self.get_full_name(): {
-                k + FIELD_MARKER: variables[k] for k in sorted(variables)
+                format.format_var_key(state_cls, k): variables[k]
+                for k in sorted(variables)
             },
         }
         for substate_d in [
@@ -2192,7 +2348,7 @@ class State(BaseState):
             self._reflex_internal_links
             and (
                 linked_token := self._reflex_internal_links.get(
-                    state_cls.get_full_name()
+                    state_cls._get_default_full_name()
                 )
             )
             is not None
@@ -2298,7 +2454,7 @@ class FrontendEventExceptionState(State):
         ),
     ]
 
-    @event
+    @_typing_event
     def handle_frontend_exception(
         self, info: str, component_stack: str
     ) -> Iterator[EventSpec]:
@@ -2339,11 +2495,13 @@ class FrontendEventExceptionState(State):
 class UpdateVarsInternalState(State):
     """Substate for handling internal state var updates."""
 
+    @_typing_event
     async def update_vars_internal(self, vars: dict[str, Any]) -> None:
         """Apply updates to fully qualified state vars.
 
-        The keys in `vars` should be in the form of `{state.get_full_name()}.{var_name}`,
-        and each value will be set on the appropriate substate instance.
+        The keys in `vars` should be in the form of `{state.get_full_name()}.{var_key}`,
+        where `var_key` is the key the var goes by on the wire, and each value
+        will be set on the appropriate substate instance.
 
         This function is primarily used to apply cookie and local storage
         updates from the frontend to the appropriate substate.
@@ -2352,10 +2510,10 @@ class UpdateVarsInternalState(State):
             vars: The fully qualified vars and values to update.
         """
         for var, value in vars.items():
-            state_name, _, var_name = var.rpartition(".")
-            var_name = var_name.removesuffix(FIELD_MARKER)
+            state_name, _, var_key = var.rpartition(".")
             var_state_cls = State.get_class_substate(state_name)
-            if var_state_cls._is_client_storage(var_name):
+            var_name = var_state_cls._var_names_by_key.get(var_key)
+            if var_name is not None and var_state_cls._is_client_storage(var_name):
                 var_state = await self.get_state(var_state_cls)
                 setattr(var_state, var_name, value)
 
@@ -2475,20 +2633,59 @@ class ComponentState(State, mixin=True):
         raise NotImplementedError(msg)
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(cls, *children, _state_key: str | None = None, **props) -> Component:
         """Create a new instance of the Component.
 
         Args:
             children: The children of the component.
+            _state_key: Names this instance's state. Must be a valid Python
+                identifier and unique among the keyed instances of components
+                with this class name. Unkeyed instances are named by creation
+                order instead.
             props: The props of the component.
 
         Returns:
             A new instance of the Component with an independent copy of the State.
+
+        Raises:
+            ValueError: If ``_state_key`` is not a string usable as a name segment.
+            StateValueError: If ``_state_key`` is already used by another instance.
         """
+        from reflex_base.utils.exceptions import StateValueError
+
         from reflex.compiler.compiler import into_component
 
-        cls._per_component_state_instance_count += 1
-        state_cls_name = f"{cls.__name__}_n{cls._per_component_state_instance_count}"
+        if _state_key is not None:
+            # It becomes part of a class name, so anything that is not an
+            # identifier string is rejected here rather than further in.
+            if not isinstance(_state_key, str) or not _state_key.isidentifier():
+                msg = (
+                    "_state_key must be a string that is a valid Python identifier, "
+                    f"got {_state_key!r}."
+                )
+                raise ValueError(msg)
+            # Doubled separator: an unkeyed name is always ``_n`` followed by
+            # digits, so no key can produce one.
+            state_cls_name = f"{cls.__name__}__{_state_key}"
+            # Report the key rather than letting the generated class name reach
+            # the sibling-shadowing guard, whose message names neither.
+            existing = getattr(reflex.istate.dynamic, state_cls_name, None)
+            if existing is not None:
+                owner = existing.__mro__[1]
+                msg = (
+                    f"_state_key={_state_key!r} is already used by a "
+                    f"{owner.__module__}.{owner.__qualname__} instance. A key names "
+                    "one state per component: create the component once and reuse "
+                    "that instance on every page that renders it, or pick another key."
+                )
+                raise StateValueError(msg)
+        else:
+            # Keyed instances do not advance the counter, so adding one leaves
+            # the unkeyed names alone.
+            cls._per_component_state_instance_count += 1
+            state_cls_name = (
+                f"{cls.__name__}_n{cls._per_component_state_instance_count}"
+            )
         component_state = type(
             state_cls_name,
             (cls, State),
@@ -2574,21 +2771,24 @@ def reload_state_module(
 
     """
     # Clean out all potentially dirty states of reloaded modules.
-    for pd_state in tuple(state._potentially_dirty_states):
-        with contextlib.suppress(ValueError):
-            if (
-                state.get_root_state().get_class_substate(pd_state).__module__ == module
-                and module is not None
-            ):
-                state._potentially_dirty_states.remove(pd_state)
+    if module is not None:
+        state._potentially_dirty_states = {
+            pd_state
+            for pd_state in state._potentially_dirty_states
+            if pd_state._get_source_module() != module
+        }
     reg_ctx = RegistrationContext.get()
     substates = reg_ctx.get_substates(state)
     for subclass in tuple(substates):
         reload_state_module(module=module, state=subclass)
-        if subclass.__module__ == module and module is not None:
-            all_base_state_classes.pop(subclass.get_full_name(), None)
+        if subclass._get_source_module() == module and module is not None:
+            all_base_state_classes.pop(subclass._get_default_full_name(), None)
+            subclass._is_registered = False
             substates.remove(subclass)
-            state._always_dirty_substates.discard(subclass.get_name())
+            # Free its name there, or the reloaded module cannot build it again.
+            if vars(reflex.istate.dynamic).get(subclass.__name__) is subclass:
+                delattr(reflex.istate.dynamic, subclass.__name__)
+            state._always_dirty_substates.discard(subclass)
             state._var_dependencies = {}
             state._init_var_dependency_dicts()
     state.get_class_substate.cache_clear()

@@ -350,14 +350,21 @@ def _compile_client_storage_recursive(
     local_storage: dict[str, dict[str, Any]] = {}
     session_storage: dict[str, dict[str, Any]] = {}
     state_name = state.get_full_name()
+    default_state_name = state._get_default_full_name()
     for name, field in state.__fields__.items():
         if field._owner is not state:
             # only include vars defined in this state
             continue
-        state_key = f"{state_name}.{name}" + FIELD_MARKER
         field_type, options = _compile_client_storage_field(field)
         if field_type is None or options is None:
             continue
+        # Keyed like the var in deltas, but stored in the browser under the
+        # key it has without minification, so enabling it or editing
+        # minify.json never orphans a stored value.
+        state_key = f"{state_name}.{format.format_var_key(state, name)}"
+        default_key = f"{default_state_name}.{name}{FIELD_MARKER}"
+        if state_key != default_key:
+            options.setdefault("name", default_key)
         if field_type is Cookie:
             cookies[state_key] = options
         elif field_type is LocalStorage:

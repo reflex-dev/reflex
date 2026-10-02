@@ -880,6 +880,18 @@ class EnvironmentVariables:
     # Deprecated in favour of REFLEX_OPLOCK_HOLD_TIME.
     REFLEX_OPLOCK_HOLD_TIME_MS: EnvVar[int] = env_var(0)
 
+    # Whether to enable state ID minification (requires minify.json).
+    REFLEX_MINIFY_STATES: EnvVar[bool] = env_var(False)
+
+    # Whether to enable event ID minification (requires minify.json).
+    REFLEX_MINIFY_EVENTS: EnvVar[bool] = env_var(False)
+
+    # Whether to enable state var ID minification (requires minify.json).
+    REFLEX_MINIFY_VARS: EnvVar[bool] = env_var(False)
+
+    # The minify.json to use instead of the one in the app's directory.
+    REFLEX_MINIFY_CONFIG: EnvVar[Path | None] = env_var(None)
+
     # Extra plugins to append to the config's plugins list.
     REFLEX_EXTRA_PLUGINS: EnvVar[list[type[Plugin]]] = env_var([])
 

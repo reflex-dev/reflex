@@ -11,6 +11,7 @@ from reflex_base.components.tags import CommonTag
 from reflex_base.components.tags.tagless import Tagless
 from reflex_base.environment import PerformanceMode, environment
 from reflex_base.utils.decorator import once
+from reflex_base.utils.format import STATE_MEMBER_READ, issued_states, issued_var_keys
 from reflex_base.utils.imports import ParsedImportDict
 from reflex_base.vars import BooleanVar, ObjectVar, Var
 from reflex_base.vars.base import GLOBAL_CACHE, VarData
@@ -39,7 +40,15 @@ def validate_str(value: str):
         ValueError: If the value is a Var and the performance mode is set to raise.
     """
     perf_mode = get_performance_mode()
-    if perf_mode != PerformanceMode.OFF and value.startswith("reflex___state"):
+    if (
+        perf_mode != PerformanceMode.OFF
+        # A stringified state Var opens with its state's local and the var's
+        # key, both of which minify.json may rewrite, so they are told by
+        # having been handed out.
+        and (match := STATE_MEMBER_READ.match(value)) is not None
+        and match[2] is not None
+        and any(match[2] in issued_var_keys(s) for s in issued_states(match[1]))
+    ):
         if perf_mode == PerformanceMode.WARN:
             logger.warning(
                 f"Output includes {value!s} which will be displayed as a string. If you are calling `str` on a Var, consider using .to_string() instead."

@@ -1734,6 +1734,58 @@ def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
     assert "captureOwnerStack" in rendered
 
 
+def test_context_template_renders_internal_names():
+    """The generated module carries the resolved framework names."""
+    from reflex_base.compiler.templates import InternalNames, context_template
+
+    rendered = context_template(
+        is_dev_mode=True,
+        default_color_mode='"light"',
+        initial_state={"reflex___state____state": {}},
+        internal_names=InternalNames(
+            main_state_name="reflex___state____state",
+            is_hydrated_key="h",
+            hydrate="reflex___state____state.g",
+            on_load_internal="reflex___state____state.a.b",
+            update_vars_internal="reflex___state____state.c.d",
+            handle_frontend_exception="reflex___state____state.e.f",
+        ),
+    )
+    assert "ReflexEvent('reflex___state____state.g')" in rendered
+    assert "ReflexEvent('reflex___state____state.a.b')" in rendered
+    assert "'reflex___state____state.c.d'" in rendered
+    assert 'handle_frontend_exception = "reflex___state____state.e.f"' in rendered
+    assert 'is_hydrated_key = "h"' in rendered
+    # The static runtime reads the names through the registry.
+    registered = rendered[rendered.index("registerApp({") :]
+    for name in (
+        "main_state_name",
+        "is_hydrated_key",
+        "update_vars_internal",
+        "handle_frontend_exception",
+    ):
+        assert f"  {name},\n" in registered
+    # One name for the framework root; a second export would drift from it.
+    assert "export const state_name" not in rendered
+    assert "  state_name,\n" not in registered
+
+
+def test_context_template_carries_the_scheme_digest():
+    """The bundle advertises the wire-name scheme it was built against."""
+    from reflex_base.compiler.templates import context_template
+
+    rendered = context_template(
+        is_dev_mode=True,
+        default_color_mode='"light"',
+        scheme_digest="abc123",
+    )
+
+    assert 'export const schemeDigest = "abc123"' in rendered
+    # The static runtime reads it through the registry to send it on connect.
+    registered = rendered[rendered.index("registerApp({") :]
+    assert "  schemeDigest,\n" in registered
+
+
 def _render_two_substate_context() -> str:
     """Render the context template for a state with one substate.
 
@@ -1749,7 +1801,6 @@ def _render_two_substate_context() -> str:
             "reflex___state____state": {},
             "reflex___state____state__sub": {},
         },
-        state_name="reflex___state____state",
     )
 
 

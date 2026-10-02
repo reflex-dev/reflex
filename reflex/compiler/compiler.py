@@ -32,11 +32,16 @@ from reflex_base.config import get_config
 from reflex_base.constants.compiler import PageNames, ResetStylesheet
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
+from reflex_base.event import get_hydrate_event_name
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
-from reflex_base.registry import RegistrationContext, _default_bundled_libraries
+from reflex_base.registry import (
+    RegistrationContext,
+    _default_bundled_libraries,
+    scheme_digest,
+)
 from reflex_base.utils import log, memo_paths
 from reflex_base.utils.exceptions import ReflexError
-from reflex_base.utils.format import to_title_case
+from reflex_base.utils.format import format_event_handler, format_var_key, to_title_case
 from reflex_base.utils.imports import (
     ABSOLUTE_IMPORT_PREFIXES,
     ImportVar,
@@ -52,7 +57,15 @@ from rich.progress import Progress
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
-from reflex.state import BaseState, code_uses_state_contexts
+from reflex.minify import raise_for_stale_names, warn_if_config_stale
+from reflex.state import (
+    BaseState,
+    FrontendEventExceptionState,
+    OnLoadInternalState,
+    State,
+    UpdateVarsInternalState,
+    code_uses_state_contexts,
+)
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
 from reflex.utils.exec import get_compile_context, is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
@@ -241,6 +254,39 @@ def _resolve_default_color_mode(theme: Component | None) -> str:
     return get_config().default_color_mode
 
 
+def _event_name(state_cls: type[BaseState], handler_name: str) -> str:
+    """Resolve the wire name of a handler defined on a state class.
+
+    Args:
+        state_cls: The state class declaring the handler.
+        handler_name: The handler's Python name.
+
+    Returns:
+        The event name under the active name resolver.
+    """
+    return format_event_handler(state_cls.event_handlers[handler_name])
+
+
+def _internal_names() -> templates.InternalNames:
+    """Resolve the framework names the context module reads and dispatches.
+
+    Returns:
+        The names under the active name resolver.
+    """
+    return templates.InternalNames(
+        main_state_name=State.get_name(),
+        is_hydrated_key=format_var_key(State, constants.CompileVars.IS_HYDRATED),
+        hydrate=get_hydrate_event_name(),
+        on_load_internal=_event_name(OnLoadInternalState, "on_load_internal"),
+        update_vars_internal=_event_name(
+            UpdateVarsInternalState, "update_vars_internal"
+        ),
+        handle_frontend_exception=_event_name(
+            FrontendEventExceptionState, "handle_frontend_exception"
+        ),
+    )
+
+
 def _compile_contexts(
     state: type[BaseState] | None,
     theme: Component | None,
@@ -271,11 +317,12 @@ def _compile_contexts(
         templates.context_template(
             initial_state=initial_state,
             initial_state_json=initial_state_json,
-            state_name=state.get_name(),
+            internal_names=_internal_names(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
             disable_react_owner_stacks=disable_react_owner_stacks,
+            scheme_digest=scheme_digest(),
         )
         if state
         else templates.context_template(
@@ -776,6 +823,8 @@ def compile_contexts(
     Returns:
         The path and code of the compiled context.
     """
+    warn_if_config_stale()
+
     # Get the path for the output file.
     output_path = utils.get_context_path()
 
@@ -1489,18 +1538,22 @@ def compile_app(
             compile_results.append(result)
         progress.advance(task)
 
-    compile_results.extend([
-        compile_contexts(
-            app._state,
-            radix_themes_plugin.get_theme(),
-            component_imports=all_imports,
-        ),
-        utils._compile_bundled_libraries(),
-    ])
+    context_output = compile_contexts(
+        app._state,
+        radix_themes_plugin.get_theme(),
+        component_imports=all_imports,
+    )
+    compile_results.extend([context_output, utils._compile_bundled_libraries()])
     progress.advance(task)
 
     compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
     progress.advance(task)
+
+    # The context module is rendered from the live names and names browser
+    # storage by the default ones on purpose, so it is the one output exempt.
+    raise_for_stale_names(
+        output for output in compile_results if output is not context_output
+    )
 
     progress.stop()
 

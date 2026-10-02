@@ -1746,6 +1746,84 @@ async def test_event_spans_chain_parent_child(token: str, otel_exporter):
     assert child.attributes[otel.ATTR_SESSION_ID] == otel._session_id(token)
 
 
+async def test_unregistered_event_reaches_the_exception_handler(token: str):
+    """An event with no handler is reported, not just logged.
+
+    Such an event produces no update, so without this the page would stall
+    with nothing but a server-side traceback to explain it.
+
+    Args:
+        token: The client token.
+    """
+    seen: list[Exception] = []
+    processor = EventProcessor(
+        backend_exception_handler=seen.append, graceful_shutdown_timeout=2
+    )
+    processor.configure()
+
+    async with processor as ep:
+        await ep.enqueue(token, Event(name="no.such.handler"))
+
+    assert len(seen) == 1
+    assert isinstance(seen[0], KeyError)
+    assert "no.such.handler" in str(seen[0])
+
+
+async def test_raising_exception_handler_does_not_stop_the_queue(token: str):
+    """A handler that raises must not take the remaining events down with it.
+
+    ``_process_queue`` is the sole consumer, so an escaping exception would
+    leave later events queued forever.
+
+    Args:
+        token: The client token.
+    """
+    _CALL_LOG.clear()
+
+    def explode(ex: Exception) -> None:
+        msg = "handler is broken"
+        raise RuntimeError(msg)
+
+    processor = EventProcessor(
+        backend_exception_handler=explode, graceful_shutdown_timeout=2
+    )
+    processor.configure()
+
+    async with processor as ep:
+        await ep.enqueue(token, Event(name="no.such.handler"))
+        current = await ep.enqueue(
+            token, Event.from_event_type(logging_event("after_failure"))[0]
+        )
+        await asyncio.wait_for(current.wait_all(), timeout=2)
+
+    assert _CALL_LOG == [{"value": "after_failure"}], (
+        "the event queued after the handler failure never ran"
+    )
+
+
+async def test_cancelled_spawned_exception_handler_task_is_untracked(token: str):
+    """An exception handler task cancelled before it starts leaves no ``_tasks`` entry.
+
+    Args:
+        token: The client token.
+    """
+    seen: list[Exception] = []
+    processor = EventProcessor(
+        backend_exception_handler=seen.append, graceful_shutdown_timeout=2
+    )
+    processor.configure()
+    async with processor as ep:
+        assert ep._root_context is not None
+        ev_ctx = ep._root_context.fork(token=token)
+        ep._spawn_backend_exception_handler(RuntimeError("boom"), ev_ctx, "test")
+        task = ep._tasks[ev_ctx.txid]
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+        assert ev_ctx.txid not in ep._tasks
+    assert seen == []
+
+
 async def test_top_level_event_under_local_span_names_no_parent_event(
     token: str, otel_exporter
 ):

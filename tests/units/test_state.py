@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import copy
 import dataclasses
 import datetime
@@ -33,6 +34,7 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event, EventHandler
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import (
     InvalidLockWarningThresholdError,
@@ -49,6 +51,7 @@ from reflex_base.vars.base import Field, Var, computed_var, field
 from typing_extensions import TypeAliasType
 
 import reflex as rx
+import reflex.istate.dynamic
 from reflex.app import App
 from reflex.environment import environment
 from reflex.istate.data import (
@@ -66,15 +69,22 @@ from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import MutableProxy, StateProxy
+from reflex.minify import StateEntry, get_state_full_path
 from reflex.state import (
     BaseState,
     Delta,
     ImmutableStateError,
     OnLoadInternalState,
     State,
+    all_base_state_classes,
 )
 from reflex.testing import chdir
 from reflex.utils import prerequisites
+from tests.units.minify_helpers import (
+    install_config,
+    resolved_event_id,
+    set_minify_modes,
+)
 from tests.units.mock_redis import mock_redis
 
 from .states import GenState
@@ -1340,9 +1350,7 @@ def test_conditional_computed_vars():
             return self.t2
 
     for name in ("flag", "t1", "t2"):
-        assert MainState._var_dependencies[name] == {
-            (MainState.get_full_name(), "rendered_var")
-        }
+        assert MainState._var_dependencies[name] == {(MainState, "rendered_var")}
     assert MainState.computed_vars["rendered_var"]._deps(objclass=MainState) == {
         MainState.get_full_name(): {"flag", "t1", "t2"}
     }
@@ -2034,10 +2042,7 @@ def test_cached_var_depends_on_event_handler(use_partial: bool):
         assert isinstance(HandlerState.handler, EventHandler)
 
     s = HandlerState()
-    assert (
-        HandlerState.get_full_name(),
-        "cached_x_side_effect",
-    ) in s._var_dependencies["x"]
+    assert (HandlerState, "cached_x_side_effect") in s._var_dependencies["x"]
     assert s.cached_x_side_effect == 1
     assert s.x == 43
     s.handler()
@@ -2128,14 +2133,14 @@ def test_computed_var_dependencies():
 
     cs = ComputedState()
     assert cs._var_dependencies["v"] == {
-        (ComputedState.get_full_name(), "comp_v"),
-        (ComputedState.get_full_name(), "comp_v_backend"),
-        (ComputedState.get_full_name(), "comp_v_via_property"),
+        (ComputedState, "comp_v"),
+        (ComputedState, "comp_v_backend"),
+        (ComputedState, "comp_v_via_property"),
     }
-    assert cs._var_dependencies["w"] == {(ComputedState.get_full_name(), "comp_w")}
-    assert cs._var_dependencies["x"] == {(ComputedState.get_full_name(), "comp_x")}
-    assert cs._var_dependencies["y"] == {(ComputedState.get_full_name(), "comp_y")}
-    assert cs._var_dependencies["_z"] == {(ComputedState.get_full_name(), "comp_z")}
+    assert cs._var_dependencies["w"] == {(ComputedState, "comp_w")}
+    assert cs._var_dependencies["x"] == {(ComputedState, "comp_x")}
+    assert cs._var_dependencies["y"] == {(ComputedState, "comp_y")}
+    assert cs._var_dependencies["_z"] == {(ComputedState, "comp_z")}
 
 
 def test_backend_method():
@@ -4246,9 +4251,7 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
         RouterVarDepState.get_full_name(): set(constants.ROUTER_VARS)
     }
     for router_var in constants.ROUTER_VARS:
-        assert (RouterVarDepState.get_full_name(), "foo") in State._var_dependencies[
-            router_var
-        ]
+        assert (RouterVarDepState, "foo") in State._var_dependencies[router_var]
 
     # Get state from state manager.
     rx_state = await state_manager.get_state(BaseStateToken(ident=token, cls=State))
@@ -4271,9 +4274,9 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
     # entry and raises on the missing substate. Drop them.
     for dep_set in State._var_dependencies.values():
         dep_set.difference_update({
-            (RouterVarDepState.get_full_name(), "foo"),
+            (RouterVarDepState, "foo"),
         })
-    State._potentially_dirty_states.discard(RouterVarDepState.get_full_name())
+    State._potentially_dirty_states.discard(RouterVarDepState)
 
 
 @pytest.mark.parametrize("name", constants.ROUTER_VARS)
@@ -4306,17 +4309,14 @@ def test_router_var_dep_legacy_string() -> None:
             return self.router.url.path
 
     for router_var in constants.ROUTER_VARS:
-        assert (
-            LegacyRouterDepState.get_full_name(),
-            "foo",
-        ) in State._var_dependencies[router_var]
+        assert (LegacyRouterDepState, "foo") in State._var_dependencies[router_var]
     assert "router" not in State._var_dependencies
 
     # Drop the class-level registrations this locally-defined state made; see
     # the note in test_router_var_dep.
     for dep_set in State._var_dependencies.values():
-        dep_set.discard((LegacyRouterDepState.get_full_name(), "foo"))
-    State._potentially_dirty_states.discard(LegacyRouterDepState.get_full_name())
+        dep_set.discard((LegacyRouterDepState, "foo"))
+    State._potentially_dirty_states.discard(LegacyRouterDepState)
 
 
 def test_router_var_dep_legacy_string_still_compiles() -> None:
@@ -4339,8 +4339,8 @@ def test_router_var_dep_legacy_string_still_compiles() -> None:
     App()._validate_var_dependencies()
 
     for dep_set in State._var_dependencies.values():
-        dep_set.discard((LegacyRouterCompileState.get_full_name(), "foo"))
-    State._potentially_dirty_states.discard(LegacyRouterCompileState.get_full_name())
+        dep_set.discard((LegacyRouterCompileState, "foo"))
+    State._potentially_dirty_states.discard(LegacyRouterCompileState)
 
 
 @pytest.mark.asyncio
@@ -4406,10 +4406,10 @@ def test_router_var_dep_does_not_warn_for_the_var_form(
     assert "StringFormRouterDepState.from_string" in deprecations[0]
 
     for dep_set in State._var_dependencies.values():
-        dep_set.discard((VarFormRouterDepState.get_full_name(), "from_var"))
-        dep_set.discard((StringFormRouterDepState.get_full_name(), "from_string"))
-    State._potentially_dirty_states.discard(VarFormRouterDepState.get_full_name())
-    State._potentially_dirty_states.discard(StringFormRouterDepState.get_full_name())
+        dep_set.discard((VarFormRouterDepState, "from_var"))
+        dep_set.discard((StringFormRouterDepState, "from_string"))
+    State._potentially_dirty_states.discard(VarFormRouterDepState)
+    State._potentially_dirty_states.discard(StringFormRouterDepState)
 
 
 def test_router_var_dep_whole_router() -> None:
@@ -4435,21 +4435,17 @@ def test_router_var_dep_whole_router() -> None:
         State.get_full_name(): {constants.ROUTER, *constants.ROUTER_VARS}
     }
     for router_var in constants.ROUTER_VARS:
-        assert (
-            WholeRouterDepState.get_full_name(),
-            "summary",
-        ) in State._var_dependencies[router_var]
+        assert (WholeRouterDepState, "summary") in State._var_dependencies[router_var]
     # `router` has no backing field, so nothing may be registered against it --
     # it would never be dirtied and the dependent var would go stale.
-    assert (
-        WholeRouterDepState.get_full_name(),
-        "summary",
-    ) not in State._var_dependencies.get(constants.ROUTER, set())
+    assert (WholeRouterDepState, "summary") not in State._var_dependencies.get(
+        constants.ROUTER, set()
+    )
 
     # Drop the class-level registrations; see the note in test_router_var_dep.
     for dep_set in State._var_dependencies.values():
-        dep_set.discard((WholeRouterDepState.get_full_name(), "summary"))
-    State._potentially_dirty_states.discard(WholeRouterDepState.get_full_name())
+        dep_set.discard((WholeRouterDepState, "summary"))
+    State._potentially_dirty_states.discard(WholeRouterDepState)
 
 
 def test_router_is_listed_as_a_var_and_inherited_by_substates() -> None:
@@ -6119,7 +6115,7 @@ def test_descriptor_attribute_is_not_a_field():
 
     # A computed var depending on the descriptor must register the dependency.
     deps = DescriptorState._var_dependencies.get("_desc_value", set())
-    assert (DescriptorState.get_full_name(), "doubled") in deps
+    assert (DescriptorState, "doubled") in deps
 
 
 def test_descriptor_overrides_inherited_descriptor():
@@ -6160,8 +6156,8 @@ def test_descriptor_overrides_inherited_descriptor():
     # Child's computed var depends on child's _shared, parent's stays at parent.
     child_deps = ChildDescState._var_dependencies.get("_shared", set())
     parent_deps = ParentDescState._var_dependencies.get("_shared", set())
-    assert (ChildDescState.get_full_name(), "child_view") in child_deps
-    assert (ParentDescState.get_full_name(), "parent_view") in parent_deps
+    assert (ChildDescState, "child_view") in child_deps
+    assert (ParentDescState, "parent_view") in parent_deps
 
 
 class OnLoadCancelState(State):
@@ -6294,6 +6290,487 @@ def test_setattr_alias_annotated_var(mocker: MockerFixture):
     error_mock.assert_called_once()
 
 
+class KeyedCounter(rx.ComponentState):
+    """A component state used to check how its instances are named."""
+
+    count: int = 0
+
+    @classmethod
+    def get_component(cls, **props) -> rx.Component:
+        """Render the counter.
+
+        Args:
+            props: The component props.
+
+        Returns:
+            The component.
+        """
+        return rx.text(cls.count, **props)
+
+
+def test_component_state_key_names_the_state():
+    """``_state_key`` names the instance; an unkeyed one is numbered."""
+    keyed = KeyedCounter.create(_state_key="cart").State
+    unkeyed = KeyedCounter.create().State
+
+    assert keyed is not None
+    assert unkeyed is not None
+    assert keyed.__name__ == "KeyedCounter__cart"
+    assert unkeyed.__name__.startswith("KeyedCounter_n")
+
+
+def test_component_state_key_is_independent_of_creation_order():
+    """A keyed name is fixed; unkeyed names follow the order they are made in."""
+    keyed = KeyedCounter.create(_state_key="stable").State
+    unkeyed_before = KeyedCounter.create().State
+    KeyedCounter.create(_state_key="stable2")
+    unkeyed_after = KeyedCounter.create().State
+
+    assert keyed is not None
+    assert unkeyed_before is not None
+    assert unkeyed_after is not None
+    assert keyed.__name__ == "KeyedCounter__stable"
+    assert unkeyed_before.__name__ != unkeyed_after.__name__
+
+
+class KeyedFirstCounter(rx.ComponentState):
+    """Names a keyed instance before an unkeyed one."""
+
+    count: int = 0
+
+    @classmethod
+    def get_component(cls, **props) -> rx.Component:
+        """Render the counter.
+
+        Args:
+            props: The component props.
+
+        Returns:
+            The component.
+        """
+        return rx.text(cls.count, **props)
+
+
+class UnkeyedFirstCounter(rx.ComponentState):
+    """Names an unkeyed instance before a keyed one."""
+
+    count: int = 0
+
+    @classmethod
+    def get_component(cls, **props) -> rx.Component:
+        """Render the counter.
+
+        Args:
+            props: The component props.
+
+        Returns:
+            The component.
+        """
+        return rx.text(cls.count, **props)
+
+
+def test_keyed_name_does_not_collide_when_keyed_is_created_first():
+    """A key shaped like a generated name stays in its own namespace."""
+    keyed = KeyedFirstCounter.create(_state_key="n1").State
+    unkeyed = KeyedFirstCounter.create().State
+
+    assert keyed is not None
+    assert unkeyed is not None
+    assert keyed.__name__ == "KeyedFirstCounter__n1"
+    assert unkeyed.__name__ == "KeyedFirstCounter_n1"
+
+
+def test_keyed_name_does_not_collide_when_unkeyed_is_created_first():
+    """The namespaces stay separate whichever instance is created first."""
+    unkeyed = UnkeyedFirstCounter.create().State
+    keyed = UnkeyedFirstCounter.create(_state_key="n1").State
+
+    assert keyed is not None
+    assert unkeyed is not None
+    assert unkeyed.__name__ == "UnkeyedFirstCounter_n1"
+    assert keyed.__name__ == "UnkeyedFirstCounter__n1"
+
+
+@pytest.mark.parametrize(
+    "bad_key",
+    ["not an identifier", "1leading_digit", "", 1, ("a",)],
+    ids=["spaces", "digit", "empty", "int", "tuple"],
+)
+def test_component_state_rejects_an_unusable_key(bad_key):
+    """A key becomes part of a class name, so it has to be an identifier string.
+
+    Args:
+        bad_key: A key that cannot name a class.
+    """
+    with pytest.raises(ValueError, match="valid Python identifier"):
+        KeyedCounter.create(_state_key=bad_key)
+
+
+def test_component_state_rejects_a_duplicate_key():
+    """A key is unique among the instances of a component."""
+    KeyedCounter.create(_state_key="only_once")
+
+    with pytest.raises(
+        StateValueError,
+        match=r"_state_key='only_once' is already used by .*KeyedCounter",
+    ):
+        KeyedCounter.create(_state_key="only_once")
+
+
+@pytest.mark.parametrize(
+    ("mode", "expect_minified"),
+    [(None, False), (True, True), (False, False)],
+)
+def test_state_name_resolution(temp_minify_json, monkeypatch, mode, expect_minified):
+    """Minified name only when env is ENABLED and config has the entry."""
+    if mode is not None:
+        set_minify_modes(monkeypatch, states=mode)
+
+    class TestState(BaseState):
+        pass
+
+    if mode is not None:
+        install_config(states={get_state_full_path(TestState): "f"})
+
+    name = TestState.get_name()
+    assert (name == "f") is expect_minified
+    if not expect_minified:
+        assert "test_state" in name.lower()
+
+
+@pytest.mark.parametrize(
+    ("mode", "expected"),
+    [(None, "my_handler"), (True, "d"), (False, "my_handler")],
+)
+def test_event_name_resolution(temp_minify_json, monkeypatch, mode, expected):
+    """Minified handler name only when env is ENABLED and config has the entry."""
+    import reflex as rx
+    from reflex.utils.format import get_event_handler_parts
+
+    class EventNameState(State):
+        @rx.event
+        def my_handler(self):
+            pass
+
+    if mode is not None:
+        set_minify_modes(monkeypatch, events=mode)
+        install_config(
+            events={get_state_full_path(EventNameState): {"my_handler": "d"}}
+        )
+
+    _, name = get_event_handler_parts(EventNameState.event_handlers["my_handler"])
+    assert name == expected
+
+
+def test_setvar_registered_with_config(temp_minify_json, monkeypatch):
+    """Test that ``setvar`` is resolvable to its minified name."""
+    set_minify_modes(monkeypatch, events=True)
+    state_path = f"{__name__}.State.TestStateWithSetvar"
+    install_config(
+        states={state_path: "b"},
+        events={state_path: {"setvar": "s"}},
+        include_state_root=True,
+    )
+
+    class TestStateWithSetvar(State):
+        pass
+
+    assert resolved_event_id(TestStateWithSetvar, "setvar") == "s"
+
+
+def test_auto_setter_registered_with_config(temp_minify_json, monkeypatch):
+    """Test that auto-setters (set_*) are resolvable to their minified name."""
+    set_minify_modes(monkeypatch, events=True)
+    # `_init_var` reads the cached flag, which defaults to off.
+    monkeypatch.setattr(reflex_base.config, "_state_auto_setters", True)
+    state_path = f"{__name__}.State.TestStateWithAutoSetter"
+    install_config(
+        states={state_path: "b"},
+        events={state_path: {"set_count": "c", "setvar": "v"}},
+        include_state_root=True,
+    )
+
+    class TestStateWithAutoSetter(State):
+        count: int = 0
+
+    assert "set_count" in TestStateWithAutoSetter.event_handlers
+    assert resolved_event_id(TestStateWithAutoSetter, "set_count") == "c"
+
+
+def test_dynamic_handlers_not_registered_without_config(temp_minify_json):
+    """Test that dynamic handlers have no resolved minified name without config."""
+
+    class TestStateNoConfig(State):
+        count: int = 0
+
+    for handler_name in TestStateNoConfig.event_handlers:
+        assert resolved_event_id(TestStateNoConfig, handler_name) is None
+
+
+def test_add_event_handler_registered_with_config(temp_minify_json, monkeypatch):
+    """Test that dynamically added event handlers via _add_event_handler are registered."""
+    import reflex as rx
+
+    set_minify_modes(monkeypatch, events=True)
+    state_path = f"{__name__}.State.TestStateWithDynamicHandler"
+    install_config(
+        states={state_path: "b"},
+        events={state_path: {"dynamic_handler": "d", "setvar": "v"}},
+        include_state_root=True,
+    )
+
+    class TestStateWithDynamicHandler(State):
+        pass
+
+    @rx.event
+    def dynamic_handler(self):
+        pass
+
+    TestStateWithDynamicHandler._add_event_handler("dynamic_handler", dynamic_handler)
+
+    assert resolved_event_id(TestStateWithDynamicHandler, "dynamic_handler") == "d"
+
+
+def test_component_state_picks_up_minified_name(temp_minify_json, monkeypatch):
+    """``ComponentState.create()`` instances are real state classes too.
+
+    They register via ``__init_subclass__`` like any other state, so as
+    long as the minify resolver is installed before ``create()`` runs,
+    the resulting class gets the minified name from ``minify.json``.
+    """
+    import reflex as rx
+
+    set_minify_modes(monkeypatch, states=True, events=True)
+    # ComponentState.create() names the class it builds with a ``_n<count>``
+    # suffix and keys it under the component's module, so the path under
+    # which the resolver will look it up is fully determined ahead of time.
+    instance_count = rx.ComponentState._per_component_state_instance_count + 1
+    instance_path = f"{__name__}.State.ComponentStateMinifyExample_n{instance_count}"
+    install_config(
+        states={instance_path: "z"},
+        events={instance_path: {"increment": "i", "setvar": "s"}},
+        include_state_root=True,
+    )
+
+    class ComponentStateMinifyExample(rx.ComponentState):
+        count: int = 0
+
+        @rx.event
+        def increment(self):
+            self.count += 1
+
+        @classmethod
+        def get_component(cls, **props):
+            return rx.fragment()
+
+    ComponentStateMinifyExample.create()
+    instance_cls = next(
+        cls
+        for cls in RegistrationContext.get().base_states.values()
+        if cls.__name__ == f"ComponentStateMinifyExample_n{instance_count}"
+    )
+
+    assert instance_cls.get_name() == "z"
+    assert resolved_event_id(instance_cls, "increment") == "i"
+
+
+def test_state_created_after_resolver_install_uses_minified_name(
+    temp_minify_json, monkeypatch
+):
+    """A state class created after the resolver is installed gets its
+    minified name at registration time — no later refresh needed.
+
+    This is the path exercised by ``ComponentState.create()`` and any
+    locally-defined state inside a page function: the class doesn't
+    exist when ``minify.json`` is loaded, so the resolver must be
+    consulted lazily on first lookup.
+    """
+    set_minify_modes(monkeypatch, states=True)
+    late_path = f"{__name__}.State.LateBornState"
+    install_config(states={late_path: "lb"})
+
+    class LateBornState(State):
+        pass
+
+    ctx = RegistrationContext.get()
+    assert LateBornState.get_name() == "lb"
+    # State stays un-minified, so the parent prefix is its default snake form.
+    assert ctx.base_states.get(f"{State.get_full_name()}.lb") is LateBornState
+
+
+def test_add_event_handler_registered_after_resolver_swap(
+    temp_minify_json, monkeypatch
+):
+    """Handlers added to a state that predates the resolver swap still register.
+
+    Swapping the resolver renames already-registered states, so the
+    "is this class registered?" check must not depend on the resolved name.
+    """
+    import reflex as rx
+
+    set_minify_modes(monkeypatch, states=True, events=True)
+
+    # The class exists *before* the config is installed.
+    class PreSwapState(State):
+        pass
+
+    state_path = get_state_full_path(PreSwapState)
+    install_config(
+        states={state_path: "b"},
+        events={state_path: {"post_swap_handler": "d"}},
+        include_state_root=True,
+    )
+    assert PreSwapState.get_name() == "b"
+
+    @rx.event
+    def post_swap_handler(self):
+        pass
+
+    PreSwapState._add_event_handler("post_swap_handler", post_swap_handler)
+
+    handlers = RegistrationContext.get().event_handlers
+    assert f"{PreSwapState.get_full_name()}.d" in handlers
+
+
+def test_get_class_substate_with_parent_child_name_collision(
+    temp_minify_json, monkeypatch
+):
+    """Test that get_class_substate resolves correctly when parent and child
+    share the same minified name (IDs are only sibling-unique).
+    """
+    set_minify_modes(monkeypatch, states=True)
+
+    # Build State -> ParentClassSubstateCollision -> ChildClassSubstateCollision
+    # where both children minify to "b". Class names are deliberately unique
+    # so ``_handle_local_def`` doesn't append a numeric suffix.
+    class ParentClassSubstateCollision(State):
+        pass
+
+    class ChildClassSubstateCollision(ParentClassSubstateCollision):
+        pass
+
+    install_config(
+        states={
+            get_state_full_path(ParentClassSubstateCollision): "b",
+            get_state_full_path(ChildClassSubstateCollision): "b",
+        }
+    )
+
+    assert ParentClassSubstateCollision.get_name() == "b"
+    assert ChildClassSubstateCollision.get_name() == "b"
+
+    state_prefix = State.get_full_name()
+    assert ChildClassSubstateCollision.get_full_name() == f"{state_prefix}.b.b"
+
+    resolved = State.get_class_substate(f"{state_prefix}.b.b")
+    assert resolved is ChildClassSubstateCollision
+
+
+def test_get_substate_with_parent_child_name_collision(temp_minify_json, monkeypatch):
+    """Test that get_substate (instance method) resolves correctly when parent
+    and child share the same minified name.
+    """
+    import reflex as rx
+
+    set_minify_modes(monkeypatch, states=True)
+
+    class ParentInstanceSubstateCollision(State):
+        pass
+
+    class ChildInstanceSubstateCollision(ParentInstanceSubstateCollision):
+        @rx.event
+        def my_handler(self):
+            pass
+
+    install_config(
+        states={
+            get_state_full_path(ParentInstanceSubstateCollision): "b",
+            get_state_full_path(ChildInstanceSubstateCollision): "b",
+        }
+    )
+
+    root = State(_reflex_internal_init=True)  # type: ignore[call-arg]
+
+    resolved = root.get_substate([State.get_name(), "b", "b"])
+    assert type(resolved) is ChildInstanceSubstateCollision
+
+
+def test_first_substate_is_not_mistaken_for_its_parent(temp_minify_json, monkeypatch):
+    """A minified substate resolves to itself, not to the state it hangs off.
+
+    The parent resolves the always-dirty child by class, so its minified name
+    never has to match one recorded when the child was created.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    set_minify_modes(monkeypatch, states=True)
+    parent_path = f"{__name__}.State.DirtyParent"
+    install_config(
+        states={parent_path: "b", f"{parent_path}.DirtyChild": "c"},
+    )
+
+    class DirtyParent(State):
+        pass
+
+    class DirtyChild(DirtyParent):
+        @rx.var(cache=False)
+        def always_dirty(self) -> int:
+            return 1
+
+    try:
+        assert DirtyParent.get_name() == "b"
+        assert DirtyChild.get_name() == "c"
+        assert DirtyParent.get_class_substate(DirtyChild.get_name()) is DirtyChild
+        assert DirtyChild in DirtyParent._get_potentially_dirty_states()
+    finally:
+        # The forked registry forgets these states; State's class-level set
+        # outlives the test and would send later deltas looking for them.
+        State._always_dirty_substates.discard(DirtyParent)
+
+
+def test_resolved_name_survives_cache_pressure(temp_minify_json, monkeypatch):
+    """A resolved name is never recomputed from a scope with no context.
+
+    The name caches are keyed only by the class but the resolver lives in a
+    ContextVar, so a bounded cache would evict a name and let any later caller
+    without a registration context pin the default name process-wide.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    set_minify_modes(monkeypatch, states=True)
+    parent_path = f"{__name__}.State.PressureState"
+    install_config(states={parent_path: "b"})
+
+    class PressureState(State):
+        pass
+
+    assert PressureState.get_name() == "b"
+
+    # More distinct classes than a default lru_cache would hold.
+    fillers = [
+        type(f"Filler{index}", (BaseState,), {"__module__": __name__})
+        for index in range(150)
+    ]
+    try:
+        for filler in fillers:
+            filler.get_name()
+
+        def resolve_without_context() -> tuple[RegistrationContext | None, str]:
+            return RegistrationContext.try_get(), PressureState.get_name()
+
+        ctx, name = contextvars.Context().run(resolve_without_context)
+        assert ctx is None
+        assert name == "b", "name was re-resolved without a registration context"
+        assert PressureState.get_name() == "b"
+    finally:
+        State.get_name.cache_clear()
+        State.get_full_name.cache_clear()
+
+
 def test_redeclared_var_is_independent_of_the_inherited_one() -> None:
     """A substate redeclaring an inherited var gets its own var, stored on the substate."""
 
@@ -6421,11 +6898,10 @@ def test_composite_var_dep_tracks_fields_in_every_state():
     # dependency maps, which outlive this test. Left behind, a later test that
     # dirties a_field or b_field resolves the stale entry and raises on the
     # missing substate. Drop them.
-    consumer_name = _CompositeDepConsumer.get_full_name()
     for state_cls in (_CompositeDepStateA, _CompositeDepStateB):
         for dep_set in state_cls._var_dependencies.values():
-            dep_set.difference_update({(consumer_name, "combined")})
-        state_cls._potentially_dirty_states.discard(consumer_name)
+            dep_set.difference_update({(_CompositeDepConsumer, "combined")})
+        state_cls._potentially_dirty_states.discard(_CompositeDepConsumer)
 
 
 def test_setstate_migrates_older_pickles():
@@ -6557,3 +7033,331 @@ def test_previous_release_pickle_keys_are_reserved():
 
         class ClashingState(BaseState):
             _backend_vars: dict = {}  # pyright: ignore[reportIncompatibleVariableOverride]
+
+
+def test_default_full_name_ignores_the_resolver(temp_minify_json, monkeypatch):
+    """The name persisted keys use stays put when the state is renamed.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class DefaultNamedRoot(BaseState):
+        pass
+
+    class DefaultNamedChild(DefaultNamedRoot):
+        pass
+
+    default_name = DefaultNamedChild._get_default_full_name()
+    assert default_name == DefaultNamedChild.get_full_name()
+
+    root_path = get_state_full_path(DefaultNamedRoot)
+    set_minify_modes(monkeypatch, states=True)
+    install_config(
+        states={
+            root_path: StateEntry(id="r", parent=None),
+            get_state_full_path(DefaultNamedChild): StateEntry(
+                id="c", parent=root_path
+            ),
+        }
+    )
+    assert DefaultNamedChild.get_full_name() == "r.c"
+    assert DefaultNamedChild._get_default_full_name() == default_name
+
+
+def test_minified_vars_reach_the_wire(temp_minify_json, monkeypatch):
+    """Vars with an id go by it in Var expressions, deltas and full state dicts.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    set_minify_modes(monkeypatch, states=True, vars=True)
+    root_path = f"{__name__}.WireVarRoot"
+    path = f"{root_path}.WireVarState"
+    install_config(
+        states={
+            root_path: StateEntry(id="r", parent=None),
+            path: StateEntry(id="w", parent=root_path),
+        },
+        vars={path: {"count": "c", "doubled": "d"}},
+    )
+
+    class WireVarRoot(BaseState):
+        pass
+
+    class WireVarState(WireVarRoot):
+        count: int = 0
+        label: str = ""
+
+        @rx.var
+        def doubled(self) -> int:
+            return self.count * 2
+
+    assert str(WireVarState.count) == "$rx_r__w.c"
+    assert str(WireVarState.doubled) == "$rx_r__w.d"
+    # A var without an id keeps its key, marker and all.
+    assert str(WireVarState.label) == f"$rx_r__w.label{FIELD_MARKER}"
+    assert WireVarState._var_names_by_key == {
+        "c": "count",
+        "d": "doubled",
+        f"label{FIELD_MARKER}": "label",
+    }
+
+    state = WireVarState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert state.dict() == {"r.w": {"c": 0, "d": 0, f"label{FIELD_MARKER}": ""}}
+    state.count = 2
+    assert state.get_delta() == {"r.w": {"c": 2, "d": 4}}
+
+
+def test_minified_names_rebuilt_for_existing_states(temp_minify_json, monkeypatch):
+    """Installing a config after the states exist renames what they send.
+
+    Dependency tracking and always-dirty substates are keyed by class, so they
+    keep working under the new names.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class LateRoot(BaseState):
+        count: int = 0
+
+    class LateChild(LateRoot):
+        @rx.var
+        def doubled(self) -> int:
+            return self.count * 2
+
+        @rx.var(cache=False)
+        def mirrored(self) -> int:
+            return self.count
+
+    root_path = get_state_full_path(LateRoot)
+    child_path = get_state_full_path(LateChild)
+    set_minify_modes(monkeypatch, states=True, vars=True)
+    install_config(
+        states={
+            root_path: StateEntry(id="r", parent=None),
+            child_path: StateEntry(id="k", parent=root_path),
+        },
+        vars={root_path: {"count": "c"}, child_path: {"doubled": "d", "mirrored": "m"}},
+    )
+
+    assert str(LateRoot.count) == "$rx_r.c"
+    assert str(LateChild.doubled) == "$rx_r__k.d"
+    assert LateChild.vars["count"] is LateRoot.base_vars["count"]
+
+    root = LateRoot(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    root.count = 3
+    assert root.get_delta() == {"r": {"c": 3}, "r.k": {"d": 6, "m": 3}}
+
+
+def test_inherited_var_goes_by_its_owners_key(temp_minify_json, monkeypatch):
+    """A var is keyed where it is declared, however it is reached.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class KeyOwner(BaseState):
+        count: int = 0
+
+    class KeyHeir(KeyOwner):
+        pass
+
+    set_minify_modes(monkeypatch, vars=True)
+    install_config(vars={get_state_full_path(KeyOwner): {"count": "c"}})
+
+    assert str(KeyHeir.count) == str(KeyOwner.count)
+    assert str(KeyOwner.count).endswith(".c")
+    assert "c" not in KeyHeir._var_names_by_key
+
+
+@pytest.mark.asyncio
+async def test_update_vars_internal_resolves_wire_keys(temp_minify_json, monkeypatch):
+    """Client storage values sent under minified keys land on their vars.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    from reflex.state import UpdateVarsInternalState
+
+    set_minify_modes(monkeypatch, states=True, vars=True)
+    path = f"{__name__}.State.StorageKeyState"
+    install_config(
+        states={path: StateEntry(id="s", parent="reflex.state.State")},
+        vars={path: {"token": "t", "plain": "p"}},
+        include_state_root=True,
+    )
+
+    class StorageKeyState(State):
+        token: str = rx.Cookie("")
+        plain: str = ""
+
+    storage = StorageKeyState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+
+    class _Caller:
+        async def get_state(self, state_cls: type[BaseState]) -> BaseState:
+            assert state_cls is StorageKeyState
+            return storage
+
+    await UpdateVarsInternalState.update_vars_internal.fn(
+        _Caller(), {"a.s.t": "tok", "a.s.p": "not storage", "a.s.gone": "x"}
+    )
+    assert storage.token == "tok"
+    # Only client storage vars are writable this way.
+    assert storage.plain == ""
+
+
+def test_minified_state_reads_its_context_into_a_prefixed_local(
+    temp_minify_json, monkeypatch
+):
+    """A short minified name must not become a bare local JS variable.
+
+    Components read a state's context into a local named after the state, so
+    ``const a = ...`` would clash with any ``a`` a user hook declares or reads.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    set_minify_modes(monkeypatch, states=True)
+    path = f"{__name__}.State.LocalNameState"
+    install_config(states={path: "b"}, include_state_root=True)
+
+    class LocalNameState(State):
+        count: int = 0
+
+        @rx.var
+        def doubled(self) -> int:
+            return self.count * 2
+
+    for var, key in (
+        (LocalNameState.base_vars["count"], "count"),
+        (LocalNameState.doubled, "doubled"),
+    ):
+        assert str(var) == f"$rx_a__b.{key}{FIELD_MARKER}"
+        var_data = var._get_all_var_data()
+        assert var_data is not None
+        assert var_data.hooks == ("const $rx_a__b = useContext(StateContexts.a__b)",)
+
+
+def test_unminified_state_keeps_its_context_local(temp_minify_json):
+    """Built-in names cannot clash, so they are left as they are.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+    """
+
+    class PlainLocalState(State):
+        count: int = 0
+
+    local = format.format_state_name(PlainLocalState.get_full_name())
+    assert str(PlainLocalState.count) == f"{local}.count{FIELD_MARKER}"
+
+
+def test_state_count_keys_on_names_minification_cannot_share(
+    temp_minify_json, monkeypatch
+):
+    """Stateful page detection counts states by a name no resolver shortens.
+
+    Minified full names like ``a.b`` repeat across states that never meet in one
+    tree, so a new state keyed by one would not grow the count.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    set_minify_modes(monkeypatch, states=True)
+    path = f"{__name__}.State.CountedState"
+    install_config(states={path: "b"}, include_state_root=True)
+
+    class CountedState(State):
+        pass
+
+    assert CountedState.get_full_name() == "a.b"
+    assert CountedState._get_default_full_name() in all_base_state_classes
+    assert "a.b" not in all_base_state_classes
+
+
+def test_reload_retires_component_states_of_the_reloaded_module(
+    temp_minify_json, monkeypatch
+):
+    """Re-running a reloaded module's ``create()`` calls builds fresh states.
+
+    Their states live in ``reflex.istate.dynamic``, not the module, so the
+    reload has to recognize them by the component class they come from, or
+    the re-run collides with them: a keyed one by its key, an unkeyed one by
+    its restarted counter.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    from reflex.state import reload_state_module
+
+    # A reload rebuilds the dependency tracking of the states it prunes.
+    monkeypatch.setattr(State, "_var_dependencies", dict(State._var_dependencies))
+    monkeypatch.setattr(
+        State, "_potentially_dirty_states", set(State._potentially_dirty_states)
+    )
+    module = "reloaded_component_module"
+
+    def get_component(cls: Any) -> rx.Component:
+        return rx.text(cls.value)
+
+    def define_and_create() -> tuple[type[State], type[State]]:
+        counter = type(
+            "ReloadCounter",
+            (rx.ComponentState,),
+            {
+                "__module__": module,
+                "__annotations__": {"value": int},
+                "value": 0,
+                "get_component": classmethod(get_component),
+            },
+        )
+        keyed = counter.create(_state_key="cart").State
+        unkeyed = counter.create().State
+        assert keyed is not None
+        assert unkeyed is not None
+        return keyed, unkeyed
+
+    old_keyed, old_unkeyed = define_and_create()
+    try:
+        reload_state_module(module=module)
+        assert old_keyed not in State.get_substates()
+        assert old_unkeyed not in State.get_substates()
+
+        new_keyed, new_unkeyed = define_and_create()
+        assert new_keyed.get_name() == old_keyed.get_name()
+        assert new_unkeyed.get_name() == old_unkeyed.get_name()
+        assert getattr(reflex.istate.dynamic, new_keyed.__name__) is new_keyed
+    finally:
+        # Frees the generated classes' names in reflex.istate.dynamic.
+        reload_state_module(module=module)
+    assert not hasattr(reflex.istate.dynamic, old_keyed.__name__)
+
+
+def test_reload_attributes_a_state_to_its_own_module(temp_minify_json, monkeypatch):
+    """A state is not claimed by the module of a locally defined parent.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    def make_local_parent() -> type[State]:
+        class LocalReloadParent(State):
+            pass
+
+        return LocalReloadParent
+
+    parent = make_local_parent()
+    child = type("ModuleReloadChild", (parent,), {"__module__": "reload_module_b"})
+    assert parent._get_source_module() == __name__
+    assert child._get_source_module() == "reload_module_b"

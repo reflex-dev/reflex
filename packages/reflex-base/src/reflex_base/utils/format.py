@@ -6,16 +6,19 @@ import inspect
 import json
 import os
 import re
-from collections.abc import Callable
-from functools import lru_cache
+import weakref
+from collections.abc import Callable, Collection, Mapping
+from functools import cache, lru_cache
 from typing import TYPE_CHECKING, Any
 
 from rich.markup import escape as escape_markup
 
 from reflex_base import constants
+from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils import exceptions
 
 if TYPE_CHECKING:
+    from reflex.state import BaseState
     from reflex_base.components.component import ComponentStyle
     from reflex_base.event import EventChain, EventHandler, EventSpec, EventType
     from reflex_base.utils.types import ArgsSpec
@@ -445,32 +448,38 @@ def format_props(*single_props, **key_value_props) -> list[str]:
 
 
 def get_event_handler_parts(handler: EventHandler) -> tuple[str, str]:
-    """Get the state and function name of an event handler.
+    """Get the (state, function) name pair for an event handler.
+
+    Both names pass through the active
+    :class:`~reflex_base.registry.NameResolver`, so any installed rewrite
+    (minification, prefixing, etc.) is applied transparently.
 
     Args:
-        handler: The event handler to get the parts of.
+        handler: The event handler.
 
     Returns:
-        The state and function name.
+        ``(state_full_name, handler_name)`` — both resolved.
     """
-    # Get the name of the event function.
+    from reflex_base.registry import DefaultNameResolver, RegistrationContext
+
     name = handler.fn.__qualname__
-
-    # Get the state full name
-    state_full_name = handler.state.get_full_name() if handler.state else ""
-
-    # If there's no enclosing state, just return the full name.
     if handler.state is None:
         return ("", name)
 
-    # Get the event name inside the state.
+    state_full_name = handler.state.get_full_name()
     func_name = name.rpartition(".")[2]
-
-    return (state_full_name, func_name)
+    ctx = RegistrationContext.try_get()
+    if ctx is None or type(ctx.name_resolver) is DefaultNameResolver:
+        return (state_full_name, func_name)
+    return (state_full_name, ctx.get_handler_name(handler.state, func_name))
 
 
 def format_event_handler(handler: EventHandler) -> str:
     """Format an event handler.
+
+    Cached on the handler instance under ``_formatted_name`` with the resolver
+    it was formatted under, to skip the registry/resolver dispatch on every
+    event while any copy of the handler still follows a resolver change.
 
     Args:
         handler: The event handler to format.
@@ -478,10 +487,17 @@ def format_event_handler(handler: EventHandler) -> str:
     Returns:
         The formatted function.
     """
+    from reflex_base.registry import RegistrationContext
+
+    ctx = RegistrationContext.try_get()
+    resolver = None if ctx is None else ctx.name_resolver
+    cached = handler._formatted_name
+    if cached is not None and cached[0] is resolver:
+        return cached[1]
     state, name = get_event_handler_parts(handler)
-    if state == "":
-        return name
-    return f"{state}.{name}"
+    full = name if state == "" else f"{state}.{name}"
+    object.__setattr__(handler, "_formatted_name", (resolver, full))
+    return full
 
 
 def format_event(event_spec: EventSpec) -> str:
@@ -646,6 +662,110 @@ def format_state_name(state_name: str) -> str:
         The formatted state name.
     """
     return state_name.replace(".", "__")
+
+
+# Every state local and var key handed out under any resolver installed so
+# far, so code built under an earlier one can be told from look-alike text.
+_issued_state_locals: dict[str, weakref.WeakSet[type[BaseState]]] = {}
+_issued_var_keys: weakref.WeakKeyDictionary[type[BaseState], dict[str, str]] = (
+    weakref.WeakKeyDictionary()
+)
+
+
+# The prefix of a renamed state's local; see ``format_state_local``.
+_RENAMED_STATE_LOCAL_PREFIX = "$rx_"
+
+# A state's local, in either shape ``format_state_local`` gives it, and the
+# member read off it; a built-in ``module___ClassName`` name has the ``___``.
+STATE_MEMBER_READ = re.compile(
+    rf"(?<![\w$.])({re.escape(_RENAMED_STATE_LOCAL_PREFIX)}[\w$]+|[\w$]*___[\w$]*)"
+    r"(?:\.([\w$]+))?"
+)
+
+
+def issued_states(local: str) -> Collection[type[BaseState]]:
+    """Get every state a local was handed out for, under any resolver.
+
+    Args:
+        local: The local, as :func:`format_state_local` returns it.
+
+    Returns:
+        The states, none if the local was never handed out.
+    """
+    return _issued_state_locals.get(local, ())
+
+
+def issued_var_keys(state_cls: type[BaseState]) -> Mapping[str, str]:
+    """Get every key a state's vars were handed out under, by any resolver.
+
+    Args:
+        state_cls: The state.
+
+    Returns:
+        ``{key: var name}``, the name the key was last handed out for.
+    """
+    return _issued_var_keys.get(state_cls, {})
+
+
+@cache
+def format_state_local(state_cls: type[BaseState]) -> str:
+    """Get the local JavaScript variable a component reads a state's context into.
+
+    A resolver's names (e.g. minified ``a``) are short enough to clash with
+    other identifiers in the component, so they get a prefix; the built-in
+    ``module___ClassName`` names cannot clash and are used as they are.
+    Cleared by :meth:`reflex_base.registry.RegistrationContext.set_name_resolver`.
+
+    Args:
+        state_cls: The state.
+
+    Returns:
+        The name of the local variable.
+    """
+    full_name = state_cls.get_full_name()
+    local = format_state_name(full_name)
+    if full_name != state_cls._get_default_full_name():
+        local = f"{_RENAMED_STATE_LOCAL_PREFIX}{local}"
+    _issued_state_locals.setdefault(local, weakref.WeakSet()).add(state_cls)
+    return local
+
+
+@cache
+def format_var_key(state_cls: type[BaseState], var_name: str) -> str:
+    """Get the key a state var goes by in deltas and in the compiled frontend.
+
+    The one place a var's wire key is built. Cleared by
+    :meth:`reflex_base.registry.RegistrationContext.set_name_resolver`.
+
+    Args:
+        state_cls: The state the var belongs to.
+        var_name: The var's Python name.
+
+    Returns:
+        The var's resolved name, else ``var_name`` with the field marker.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    ctx = RegistrationContext.try_get()
+    resolved = (
+        None if ctx is None else ctx.name_resolver.resolve_var_name(state_cls, var_name)
+    )
+    key = var_name + FIELD_MARKER if resolved is None else resolved
+    _issued_var_keys.setdefault(state_cls, {})[key] = var_name
+    return key
+
+
+def format_state_var(state_cls: type[BaseState], var_name: str) -> str:
+    """Get the JavaScript expression reading a state var in the compiled frontend.
+
+    Args:
+        state_cls: The state the var belongs to.
+        var_name: The var's Python name.
+
+    Returns:
+        The var's key on the local its state's context value is read into.
+    """
+    return f"{format_state_local(state_cls)}.{format_var_key(state_cls, var_name)}"
 
 
 def format_ref(ref: str) -> str:
