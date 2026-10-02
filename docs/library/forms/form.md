@@ -210,8 +210,9 @@ when only one was submitted. This holds for `rx.form.FormData`
 
 A `TypedDict` instead lets you declare the field without brackets: a list field
 `range: list[str]` collects the values submitted as `range[]`, unless the
-`TypedDict` also declares a `range[]` field. A declared `name[]` field annotated
-with a type other than `list` gets its last value.
+`TypedDict` also declares a `range[]` field. A declared `name[]` field of any
+other type is filled like any other field: a `bool` field is `True` when a
+non-empty value was submitted, and other types get the last value.
 ```
 
 ## Validating Form Data with a TypedDict

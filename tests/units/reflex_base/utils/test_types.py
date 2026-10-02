@@ -5,7 +5,7 @@ import json
 import subprocess
 import sys
 import typing
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Annotated, Generic, Literal, TypeVar
 
 import pytest
@@ -24,6 +24,7 @@ from reflex_base.utils.types import (
 from typing_extensions import (
     NotRequired,
     ParamSpec,
+    ReadOnly,
     Required,
     TypeAliasType,
     TypedDict,
@@ -324,3 +325,31 @@ def test_get_typed_dict_field_types_through_generic_bases():
         "name": str,
     }
     assert get_typed_dict_field_types(_GenericMiddle[int])["value"] == list[int]
+
+
+class _PlainSubclass(_Concrete):
+    pass
+
+
+def test_get_typed_dict_field_types_through_plain_subclass():
+    """A subclass without type arguments keeps its bases' specialized fields."""
+    assert get_typed_dict_field_types(_PlainSubclass) == get_typed_dict_field_types(
+        _Concrete
+    )
+
+
+class _ReadOnlyBase(TypedDict, Generic[_FieldT]):
+    value: ReadOnly[_FieldT]
+    other: ReadOnly[_FieldT]
+
+
+class _Narrowed(_ReadOnlyBase[Sequence[str]]):
+    value: ReadOnly[list[str]]
+
+
+def test_get_typed_dict_field_types_keeps_redeclared_fields():
+    """A field a subclass redeclares keeps its own type over the base's."""
+    assert get_typed_dict_field_types(_Narrowed) == {
+        "value": list[str],
+        "other": Sequence[str],
+    }
