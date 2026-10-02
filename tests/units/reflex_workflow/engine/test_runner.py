@@ -2758,7 +2758,9 @@ async def test_a_fan_out_announces_its_children(session_factory):
 
 
 async def test_a_wake_during_a_pass_is_not_lost(session_factory, monkeypatch):
-    rt = runtime.current()
+    # A runtime of its own: the module's worker shares the current one, and a
+    # pass of that worker clears the very wake this test is counting on.
+    rt = runtime.Runtime(session_factory, asyncio.Event(), LEASE)
     passes: list[float] = []
     real_claim = runner.claim
 
