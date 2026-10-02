@@ -155,7 +155,7 @@ async def wake_workflows() -> Response:
 app = rx.App(api_transformer=api)
 ```
 
-Holding the request open matters on hosts that only give an app CPU time while it answers a request. `wake` returns `True` once the worker has nothing left that it can take and has reported its next due time to `on_idle`, so the platform can safely suspend the app. It returns `False` if the timeout passes first, so the platform knows to call again.
+Holding the request open matters on hosts that only give an app CPU time while it answers a request. `wake` returns `True` once the worker has nothing left that it can take, every step it started has finished, and it has reported its next due time to `on_idle`, so the platform can safely suspend the app. It returns `False` if the timeout passes first, so the platform knows to call again.
 
 You can call `wake` as often as you like. At most eight callers wait at once; any more wake the worker and return `False` immediately.
 

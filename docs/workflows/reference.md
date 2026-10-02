@@ -178,7 +178,7 @@ Lets this process start, find, and steer runs without running any steps. See [Pr
 async def wake(timeout: timedelta) -> bool
 ```
 
-Wakes the worker in this process and waits up to `timeout` for it to take all the work it can. Returns `True` once the worker has nothing left to take and has reported its next due time to `on_idle`, or `False` on timeout. If eight callers are already waiting, wakes the worker and returns `False` immediately. See [Hosts that suspend when idle](/docs/workflows/workers/#hosts-that-suspend-when-idle).
+Wakes the worker in this process and waits up to `timeout` for it to take all the work it can. Returns `True` once the worker has nothing left to take, every step it started has finished, and it has reported its next due time to `on_idle`, or `False` on timeout. If eight callers are already waiting, wakes the worker and returns `False` immediately. See [Hosts that suspend when idle](/docs/workflows/workers/#hosts-that-suspend-when-idle).
 
 ## OnIdle
 
