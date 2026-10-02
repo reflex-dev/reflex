@@ -22,6 +22,9 @@ __all__ = [
 # ``FORM_DATA_ENTRIES_KEY`` in ``state.js``.
 FORM_DATA_ENTRIES_KEY = "__reflex_form_data__"
 
+# Suffix of field names that submit a list, like the ``range[]`` of a slider.
+_LIST_KEY_SUFFIX = "[]"
+
 _K = TypeVar("_K")
 _V_co = TypeVar("_V_co", covariant=True)
 
@@ -35,7 +38,7 @@ def _is_list_key(key: object) -> bool:
     Returns:
         Whether the name ends in ``[]``.
     """
-    return isinstance(key, str) and key.endswith("[]")
+    return isinstance(key, str) and key.endswith(_LIST_KEY_SUFFIX)
 
 
 class FormData(Mapping[_K, _V_co]):
@@ -230,7 +233,7 @@ def _typed_dict_form_fields(typed_dict: Any) -> tuple[_CoercedFormField, ...]:
         names = (name,)
         if (get_origin(field_type) or field_type) is list:
             kind = "list"
-            if (bracketed := f"{name}[]") not in field_types:
+            if (bracketed := f"{name}{_LIST_KEY_SUFFIX}") not in field_types:
                 names = (name, bracketed)
         elif field_type is bool:
             kind = "bool"
