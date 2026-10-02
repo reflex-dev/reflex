@@ -7,14 +7,17 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
+import reflex as rx
 from reflex.istate.shared import (
     DISCONNECT_REAP_TASKS,
     SharedState,
+    SharedStateBaseInternal,
     _do_update_other_tokens,
+    _patch_state,
     _reap_disconnected_client,
     schedule_disconnect_reap,
 )
-from reflex.state import State
+from reflex.state import BaseState, State
 from reflex.utils.token_manager import (
     LocalTokenManager,
     RedisTokenManager,
@@ -214,3 +217,62 @@ async def test_schedule_disconnect_reap_restarts_grace(monkeypatch):
         await second
     assert not DISCONNECT_REAP_TASKS
     assert modified_tokens == []
+
+
+async def test_no_fan_out_without_linked_clients():
+    """An event with nothing linked does not reach for the registered App.
+
+    Defining any ``SharedState`` subclass routes every event in the process
+    through ``_modify_linked_states``. Apps that never link pay that path on
+    each event with no client to fan out to, so it must not do the work -- nor
+    require an App to be registered -- when there is nothing to propagate.
+    """
+    root_state = State.get_root_state()(_reflex_internal_init=True)
+    root_state._reflex_internal_links = {}
+    shared_base = root_state.substates[SharedStateBaseInternal.get_name()]
+    assert isinstance(shared_base, SharedStateBaseInternal)
+
+    with patch("reflex.istate.shared._do_update_other_tokens") as do_update:
+        async with shared_base._modify_linked_states():
+            pass
+
+    do_update.assert_not_called()
+
+
+class PatchRoot(BaseState):
+    """The root of a tree a state is patched into."""
+
+
+class PatchSource(PatchRoot):
+    """A state swapped for another instance while patched."""
+
+    who: str = "private"
+
+
+class PatchReader(PatchRoot):
+    """A state with a computed var reading the patched state."""
+
+    @rx.var
+    async def greeting(self) -> str:
+        """Read the patched state.
+
+        Returns:
+            Its value.
+        """
+        return (await self.get_state(PatchSource)).who
+
+
+@pytest.mark.asyncio
+async def test_patch_state_recomputes_readers_after_restoring():
+    """Computed vars read from a patched state are recomputed once it is swapped back."""
+    root = PatchRoot(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    original = root.get_substate([PatchSource.get_name()])
+    reader = root.get_substate([PatchReader.get_name()])
+    # The state of another client, in a tree of its own.
+    linked_root = PatchRoot(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    linked = linked_root.get_substate([PatchSource.get_name()])
+    linked.who = "linked"  # pyright: ignore[reportAttributeAccessIssue]
+
+    async with _patch_state(original_state=original, linked_state=linked):
+        assert await reader.greeting == "linked"  # pyright: ignore[reportAttributeAccessIssue]
+    assert await reader.greeting == "private"  # pyright: ignore[reportAttributeAccessIssue]

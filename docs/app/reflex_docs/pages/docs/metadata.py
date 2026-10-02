@@ -5,7 +5,6 @@ GENERIC_DESCRIPTION_TEMPLATE = "{subject}: documentation, examples, and referenc
 # Summaries for generated catalogs, reference pages, and pages without usable prose.
 PAGE_DESCRIPTIONS = {
     "library": "Browse Reflex UI components for forms, layouts, data display, charts, and media, with Python examples and prop references.",
-    "custom-components": "Explore community-built Reflex components and discover reusable Python interfaces for React libraries and custom UI elements.",
     "recipes": "Find reusable Reflex recipes for page layouts, content, and authentication, with examples you can adapt for your Python app.",
     "api-reference/app": "Configure rx.App, register pages, and customize application behavior with the App class attributes and methods reference.",
     "api-reference/component": "Explore the Component API for creating Reflex UI elements, managing props, and customizing component rendering and behavior.",
