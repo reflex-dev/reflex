@@ -54,6 +54,18 @@ def _report_task_result(task: asyncio.Task) -> None:
     task.result()
 
 
+def _log_cleanup_error(task: asyncio.Task) -> None:
+    """Log an error a lifespan task raised while handling its cleanup cancellation.
+
+    Args:
+        task: The finished lifespan task.
+    """
+    if not task.cancelled() and (exc := task.exception()) is not None:
+        logger.error(
+            f"Lifespan task {task.get_name()} failed during cleanup.", exc_info=exc
+        )
+
+
 @dataclasses.dataclass
 class LifespanMixin(AppMixin):
     """A Mixin that allow tasks to run during the whole app lifespan.
@@ -143,9 +155,10 @@ class LifespanMixin(AppMixin):
                 logger.debug(f"Canceling lifespan task: {task}")
                 # Cancellation by cleanup is expected, so it is not reported.
                 task.remove_done_callback(_report_task_result)
+                task.add_done_callback(_log_cleanup_error)
                 task.cancel(msg="lifespan_cleanup")
             if cancelled := [task for task in running_tasks if not task.done()]:
-                done, pending = await asyncio.wait(
+                _, pending = await asyncio.wait(
                     cancelled, timeout=_LIFESPAN_TASK_CANCEL_TIMEOUT
                 )
                 for task in pending:
@@ -153,12 +166,6 @@ class LifespanMixin(AppMixin):
                         f"Lifespan task {task.get_name()} did not stop within "
                         f"{_LIFESPAN_TASK_CANCEL_TIMEOUT} seconds of cancellation."
                     )
-                for task in done:
-                    if not task.cancelled() and (exc := task.exception()) is not None:
-                        logger.error(
-                            f"Lifespan task {task.get_name()} failed during cleanup.",
-                            exc_info=exc,
-                        )
         # Disassociate sid / token pairings so they can be reconnected properly.
         try:
             event_namespace = self.event_namespace  # pyright: ignore[reportAttributeAccessIssue]

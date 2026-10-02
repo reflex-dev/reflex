@@ -316,3 +316,42 @@ async def test_lifespan_task_cleanup_error_is_logged_and_shutdown_continues(
         isinstance(record.exc_info and record.exc_info[1], RuntimeError)
         for record in caplog.records
     )
+
+
+@pytest.mark.asyncio
+async def test_lifespan_cleanup_error_is_logged_while_another_task_is_stuck(caplog):
+    """A cleanup error is logged when that task ends, not when shutdown's wait ends."""
+    release = asyncio.Event()
+
+    async def ignore_cancel():
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            await release.wait()
+
+    async def fail_on_cancel():
+        try:
+            await asyncio.Event().wait()
+        finally:
+            msg = "cleanup failed"
+            raise RuntimeError(msg)
+
+    mixin = LifespanMixin()
+    mixin.register_lifespan_task(ignore_cancel)
+    mixin.register_lifespan_task(fail_on_cancel)
+
+    async def run():
+        async with mixin._run_lifespan_tasks(Starlette()):
+            await asyncio.sleep(0)
+
+    shutdown = asyncio.create_task(run())
+    try:
+        await asyncio.sleep(0.05)
+        assert not shutdown.done()
+        assert any(
+            isinstance(record.exc_info and record.exc_info[1], RuntimeError)
+            for record in caplog.records
+        )
+    finally:
+        release.set()
+        await shutdown
