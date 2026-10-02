@@ -6,7 +6,7 @@ import subprocess
 import sys
 import typing
 from collections.abc import Callable
-from typing import Annotated, Literal, TypeVar
+from typing import Annotated, Generic, Literal, TypeVar
 
 import pytest
 from reflex_base.utils.types import (
@@ -17,6 +17,7 @@ from reflex_base.utils.types import (
     Send,
     _isinstance,
     get_required_typed_dict_keys,
+    get_typed_dict_field_types,
     resolve_type_alias,
     typehint_issubclass,
 )
@@ -295,3 +296,31 @@ def test_get_required_typed_dict_keys_with_postponed_annotations(tmp_path, monke
         assert get_required_typed_dict_keys(module.Partial) == {"email", "phone"}
     finally:
         del sys.modules["postponed_typed_dicts"]
+
+
+_FieldT = TypeVar("_FieldT")
+_ItemT = TypeVar("_ItemT")
+
+
+class _GenericBase(TypedDict, Generic[_FieldT]):
+    value: _FieldT
+    maybe: _FieldT | None
+
+
+class _GenericMiddle(_GenericBase[list[_ItemT]], Generic[_ItemT]):
+    flag: bool
+
+
+class _Concrete(_GenericMiddle[str]):
+    name: str
+
+
+def test_get_typed_dict_field_types_through_generic_bases():
+    """Inherited fields resolve through every specialized generic base."""
+    assert get_typed_dict_field_types(_Concrete) == {
+        "value": list[str],
+        "maybe": list[str] | None,
+        "flag": bool,
+        "name": str,
+    }
+    assert get_typed_dict_field_types(_GenericMiddle[int])["value"] == list[int]

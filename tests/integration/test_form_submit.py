@@ -61,6 +61,8 @@ def FormSubmitName(form_component):
                     rx.checkbox(name="bool_input3"),
                     rx.switch(name="bool_input4"),
                     rx.slider(name="slider_input", default_value=[50], width="100%"),
+                    # Two thumbs submit their values as "range_input[]".
+                    rx.slider(name="range_input", default_value=[20, 80], width="100%"),
                     rx.radio(FormState.options, name="radio_input"),
                     rx.select(
                         FormState.options,
@@ -195,6 +197,7 @@ async def test_submit(driver, form_submit: AppHarness):
     assert not form_data.get("bool_input4", False)
 
     assert form_data["slider_input"] == "50"
+    assert form_data["range_input[]"] == ["20", "80"]
     assert form_data["radio_input"] == "option2"
     assert form_data["select_input"] == "option1"
     assert form_data["text_area_input"] == "Some\nText"

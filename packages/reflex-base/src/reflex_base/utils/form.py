@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import functools
 from collections.abc import Iterable, Iterator, Mapping
-from typing import Any, TypeVar, get_origin
+from typing import Any, Literal, TypeVar, get_origin
 
 from typing_extensions import is_typeddict
 
@@ -26,19 +26,33 @@ _K = TypeVar("_K")
 _V_co = TypeVar("_V_co", covariant=True)
 
 
+def _is_list_key(key: object) -> bool:
+    """Check whether a form field name holds a list, as names ending in ``[]`` do.
+
+    Args:
+        key: The field name.
+
+    Returns:
+        Whether the name ends in ``[]``.
+    """
+    return isinstance(key, str) and key.endswith("[]")
+
+
 class FormData(Mapping[_K, _V_co]):
     """The fields of a submitted form: an immutable mapping keeping every value.
 
     Indexing, iteration and ``len`` see each name once with its last value, so
-    FormData reads like the dict built from the same items. ``getlist`` (or its
+    FormData reads like the dict built from the same items, except that a name
+    ending in ``[]`` reads as the list of all its values. ``getlist`` (or its
     alias ``getAll``, as in the browser's ``FormData``) and ``multi_items``
     expose every value of fields that share a name, in submission order.
     """
 
-    __slots__ = ("_dict", "_items")
+    __slots__ = ("_dict", "_items", "_list_keys")
 
     _dict: dict[_K, _V_co]
     _items: tuple[tuple[_K, _V_co], ...]
+    _list_keys: frozenset[_K]
 
     def __init__(
         self,
@@ -47,17 +61,28 @@ class FormData(Mapping[_K, _V_co]):
         """Build a FormData.
 
         Args:
-            items: ``(key, value)`` pairs, or a mapping; another FormData keeps
-                every item.
+            items: ``(key, value)`` pairs, or a mapping, whose list value for a
+                name ending in ``[]`` holds that name's values; another FormData
+                keeps every item.
         """
         if isinstance(items, FormData):
             pairs = items._items
         elif isinstance(items, Mapping):
-            pairs = tuple(items.items())
+            pairs = tuple(
+                (key, item)
+                for key, value in items.items()
+                for item in (
+                    value if _is_list_key(key) and isinstance(value, list) else (value,)
+                )
+            )
         else:
             pairs = tuple((key, value) for key, value in items)
+        last_values = dict(pairs)
         object.__setattr__(self, "_items", pairs)
-        object.__setattr__(self, "_dict", dict(pairs))
+        object.__setattr__(self, "_dict", last_values)
+        object.__setattr__(
+            self, "_list_keys", frozenset(filter(_is_list_key, last_values))
+        )
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Reject attribute assignment.
@@ -73,14 +98,17 @@ class FormData(Mapping[_K, _V_co]):
         raise AttributeError(msg)
 
     def __getitem__(self, key: _K) -> _V_co:
-        """Get the last value of a key.
+        """Get the last value of a key, or every value of a name ending in ``[]``.
 
         Args:
             key: The key.
 
         Returns:
-            The key's last value.
+            The key's last value, or a new list of its values for a name ending
+            in ``[]``.
         """
+        if key in self._list_keys:
+            return self.getlist(key)  # pyright: ignore[reportReturnType]
         return self._dict[key]
 
     def __iter__(self) -> Iterator[_K]:
@@ -169,12 +197,11 @@ class _CoercedFormField:
     """A TypedDict field that submitted form data is coerced into."""
 
     name: str
-    # The names whose values fill the field: a list field also collects the
-    # ``name[]`` entries of multi-value controls such as a range slider.
-    names: tuple[str, ...]
-    is_list: bool
-    # An unsubmitted field is left out unless it is required: then it is None
-    # when its type allows None, otherwise an empty list or False.
+    # "list" takes every value, "bool" whether the last value is truthy, and
+    # "last" the last value of a ``name[]`` field that is not a list.
+    kind: Literal["list", "bool", "last"]
+    # An unsubmitted list or bool field is left out unless it is required: then
+    # it is None when its type allows None, otherwise an empty list or False.
     optional: bool
     required: bool
 
@@ -188,20 +215,25 @@ def _typed_dict_form_fields(typed_dict: Any) -> tuple[_CoercedFormField, ...]:
             of a generic one.
 
     Returns:
-        The ``list`` and ``bool`` fields, optional or not.
+        The ``list`` and ``bool`` fields, optional or not, and the ``name[]``
+        fields of other types.
     """
     required = types.get_required_typed_dict_keys(typed_dict)
     fields = []
     for name, hint in types.get_typed_dict_field_types(typed_dict).items():
         field_type = types.value_inside_optional(hint)
-        is_list = (get_origin(field_type) or field_type) is list
-        if not is_list and field_type is not bool:
+        if (get_origin(field_type) or field_type) is list:
+            kind = "list"
+        elif field_type is bool:
+            kind = "bool"
+        elif _is_list_key(name):
+            kind = "last"
+        else:
             continue
         fields.append(
             _CoercedFormField(
                 name=name,
-                names=(name, f"{name}[]") if is_list else (name,),
-                is_list=is_list,
+                kind=kind,
                 optional=field_type is not hint,
                 required=name in required,
             )
@@ -217,27 +249,27 @@ def _form_data_as_typed_dict(form_data: FormData, typed_dict: Any) -> dict[str, 
         typed_dict: The TypedDict annotating the argument.
 
     Returns:
-        A dict of each field's last value, where ``list`` fields hold every
-        value submitted under ``name`` or ``name[]`` and ``bool`` fields whether
-        a truthy value was submitted. An unsubmitted field is left out when it
-        is not required, and otherwise is None when its type allows None, else
-        an empty list or False.
+        A dict of each field's value as FormData reads it, where ``list``
+        fields hold every value submitted under their name, ``bool`` fields
+        whether a truthy value was submitted, and ``name[]`` fields of other
+        types their last value. An unsubmitted list or bool field is left out
+        when it is not required, and otherwise is None when its type allows
+        None, else an empty list or False.
     """
     result = dict(form_data)
     for field in _typed_dict_form_fields(typed_dict):
-        if not any(name in form_data for name in field.names):
-            if not field.required:
+        if field.name not in form_data:
+            if not field.required or field.kind == "last":
                 continue
             if field.optional:
                 result[field.name] = None
                 continue
-        if field.is_list:
-            result[field.name] = [
-                value for name, value in form_data.multi_items() if name in field.names
-            ]
-            result.pop(field.names[1], None)
+        if field.kind == "list":
+            result[field.name] = form_data.getlist(field.name)
+        elif field.kind == "bool":
+            result[field.name] = bool(form_data._dict.get(field.name))
         else:
-            result[field.name] = bool(form_data.get(field.name))
+            result[field.name] = form_data._dict[field.name]
     return result
 
 
@@ -289,8 +321,8 @@ def form_data_as_dict(value: Any) -> Any:
         value: The event argument.
 
     Returns:
-        A dict of each name's last value for submitted form data, otherwise the
-        value unchanged.
+        A dict of each name's last value, or every value of a name ending in
+        ``[]``, for submitted form data, otherwise the value unchanged.
     """
     entries = _form_data_entries(value)
-    return value if entries is None else dict(entries)
+    return value if entries is None else dict(FormData(entries))

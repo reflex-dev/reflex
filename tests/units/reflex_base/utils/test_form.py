@@ -324,8 +324,8 @@ class _RangeData(TypedDict):
     name: str
 
 
-def test_transform_form_data_collects_bracketed_names_into_list_fields():
-    """A list field collects the ``name[]`` entries a multi-value control submits."""
+def test_transform_form_data_keeps_bracketed_names_separate():
+    """``name[]`` entries keep their own key and never fill a ``name`` list field."""
     form_data = _transform(
         _RangeData,
         {
@@ -336,20 +336,153 @@ def test_transform_form_data_collects_bracketed_names_into_list_fields():
             ]
         },
     )
-    assert form_data == {"bounds": ["20", "80"], "name": "x"}
+    assert form_data == {"bounds[]": ["20", "80"], "name": "x", "bounds": []}
 
 
-def test_transform_form_data_keeps_order_across_plain_and_bracketed_names():
-    """A list field keeps submission order when ``name`` and ``name[]`` interleave."""
+_LiteralBrackets = TypedDict("_LiteralBrackets", {"tags": list[str], "tags[]": str})
+_BracketListsFirst = TypedDict(
+    "_BracketListsFirst", {"tags[]": list[str], "tags": list[str]}
+)
+_PlainListsFirst = TypedDict(
+    "_PlainListsFirst", {"tags": list[str], "tags[]": list[str]}
+)
+_PLAIN_AND_BRACKETED = {
+    FORM_DATA_ENTRIES_KEY: [["tags", "plain"], ["tags[]", "bracket"]]
+}
+
+
+def test_transform_form_data_keeps_declared_bracketed_field():
+    """A declared ``name[]`` field keeps its own value instead of joining ``name``."""
+    assert _transform(_LiteralBrackets, _PLAIN_AND_BRACKETED) == {
+        "tags": ["plain"],
+        "tags[]": "bracket",
+    }
+
+
+@pytest.mark.parametrize("typed_dict", [_BracketListsFirst, _PlainListsFirst])
+def test_transform_form_data_declared_bracketed_list_ignores_field_order(typed_dict):
+    """Declared ``name`` and ``name[]`` list fields each keep their own values."""
+    assert _transform(typed_dict, _PLAIN_AND_BRACKETED) == {
+        "tags": ["plain"],
+        "tags[]": ["bracket"],
+    }
+
+
+_U = TypeVar("_U")
+
+
+class _GenericBaseFields(typing_extensions.TypedDict, Generic[_T]):
+    tags: _T
+    maybe: _T | None
+
+
+class _InheritedFields(_GenericBaseFields[list[str]]):
+    agree: bool
+
+
+class _InheritedFlags(_GenericBaseFields[bool]):
+    pass
+
+
+class _MiddleFields(_GenericBaseFields[list[_U]], Generic[_U]):
+    pass
+
+
+class _ConcreteFields(_MiddleFields[str]):
+    pass
+
+
+@pytest.mark.parametrize(
+    "typed_dict", [_InheritedFields, _ConcreteFields, _MiddleFields[str]]
+)
+def test_transform_form_data_resolves_inherited_generic_list_fields(typed_dict):
+    """Fields inherited from a specialized generic base take its type arguments."""
     form_data = _transform(
-        _RangeData,
+        typed_dict, {FORM_DATA_ENTRIES_KEY: [["tags", "first"], ["tags", "second"]]}
+    )
+    assert form_data["tags"] == ["first", "second"]
+    assert form_data["maybe"] is None
+
+
+def test_transform_form_data_resolves_inherited_generic_bool_fields():
+    """An inherited bool specialization is coerced like a declared bool field."""
+    assert _transform(_InheritedFlags, {FORM_DATA_ENTRIES_KEY: []}) == {
+        "tags": False,
+        "maybe": None,
+    }
+
+
+_BRACKETED_ITEMS = [("range[]", "20"), ("name", "x"), ("range[]", "80"), ("one[]", "a")]
+
+
+def test_form_data_resolves_bracketed_names_as_lists():
+    """A ``name[]`` key reads as the list of its values, even a single one."""
+    form_data = FormData(_BRACKETED_ITEMS)
+    assert form_data["range[]"] == ["20", "80"]
+    assert form_data["one[]"] == ["a"]
+    assert form_data.get("range[]") == ["20", "80"]
+    assert form_data["name"] == "x"
+    assert dict(form_data) == {"range[]": ["20", "80"], "name": "x", "one[]": ["a"]}
+    assert form_data.getlist("range[]") == ["20", "80"]
+    assert form_data.multi_items() == _BRACKETED_ITEMS
+
+
+def test_form_data_bracketed_lists_are_copies():
+    """Changing a returned list leaves the FormData unchanged."""
+    form_data: FormData[str, Any] = FormData(_BRACKETED_ITEMS)
+    form_data["range[]"].append("90")
+    assert form_data["range[]"] == ["20", "80"]
+
+
+def test_form_data_from_mapping_expands_bracketed_lists():
+    """A dict of a FormData rebuilds the same values per name."""
+    form_data = FormData(dict(FormData(_BRACKETED_ITEMS)))
+    assert form_data.getlist("range[]") == ["20", "80"]
+    assert form_data.getlist("one[]") == ["a"]
+    assert dict(form_data) == {"range[]": ["20", "80"], "name": "x", "one[]": ["a"]}
+
+
+@pytest.mark.parametrize("hint", [Any, dict, dict[str, Any]])
+def test_transform_form_data_bracketed_names_to_dict(hint: Any):
+    """A dict of submitted form data holds ``name[]`` values as lists."""
+    assert _transform(
+        hint, {FORM_DATA_ENTRIES_KEY: [["one[]", "a"], ["name", "x"]]}
+    ) == {
+        "one[]": ["a"],
+        "name": "x",
+    }
+
+
+def test_form_data_as_dict_bracketed_names():
+    """The fallback dict also holds ``name[]`` values as lists."""
+    assert form_data_as_dict({FORM_DATA_ENTRIES_KEY: [["one[]", "a"]]}) == {
+        "one[]": ["a"]
+    }
+
+
+_BracketedScalars = TypedDict(
+    "_BracketedScalars",
+    {"pick[]": str, "agree[]": bool, "missing[]": str, "picks[]": list[str]},
+)
+
+
+def test_transform_form_data_bracketed_typed_dict_fields_follow_their_type():
+    """A declared ``name[]`` field that is not a list gets its last value."""
+    form_data = _transform(
+        _BracketedScalars,
         {
             FORM_DATA_ENTRIES_KEY: [
-                ["bounds[]", "20"],
-                ["bounds", "50"],
-                ["bounds[]", "80"],
-                ["name", "x"],
+                ["pick[]", "a"],
+                ["pick[]", "b"],
+                ["agree[]", ""],
+                ["picks[]", "c"],
+                ["other[]", "d"],
             ]
         },
     )
-    assert form_data == {"bounds": ["20", "50", "80"], "name": "x"}
+    assert form_data == {
+        "pick[]": "b",
+        "agree[]": False,
+        "picks[]": ["c"],
+        "other[]": ["d"],
+    }

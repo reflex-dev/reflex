@@ -200,6 +200,16 @@ def toppings_form():
 [TypedDict](#validating-form-data-with-a-typeddict) can also collect repeated
 names with a `list[str]` field.
 
+```md alert info
+# Names ending in `[]` hold lists.
+
+A field name ending in `[]`, such as the `range[]` that a two-thumb
+`rx.slider(name="range")` submits, always reads as a list of its values, even
+when only one was submitted. This holds for `rx.form.FormData`
+(`form_data["range[]"]`) and for a `dict` annotation alike. In a `TypedDict`,
+a `name[]` field annotated with a type other than `list` gets its last value.
+```
+
 ## Validating Form Data with a TypedDict
 
 The `on_submit` handler usually receives the form data as a plain `dict`, which
@@ -281,8 +291,7 @@ Two kinds of `TypedDict` fields are filled in even when the form submits no
 value for them:
 
 - A `list[str]` field holds every value submitted under its name, in order, or
-  an empty list when there are none. Values submitted as `name[]`, as a
-  two-thumb `rx.slider` does, are included too.
+  an empty list when there are none.
 - A `bool` field is `True` when a non-empty value was submitted under its name
   and `False` otherwise, so an unchecked checkbox or switch reads as `False`
   instead of a missing key.

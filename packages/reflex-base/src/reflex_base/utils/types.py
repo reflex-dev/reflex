@@ -331,8 +331,9 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
     """Resolve the field types of a TypedDict.
 
     Qualifiers and ``Annotated`` metadata are stripped, type aliases resolved,
-    and for a specialization of a generic TypedDict (``Data[str]``) its type
-    arguments substituted.
+    and type arguments substituted: those of a specialization (``Data[str]``)
+    and those of the specialized generic bases fields are inherited through
+    (``class Data(Base[str])``).
 
     Args:
         typed_dict: The TypedDict class, or a specialization of a generic one.
@@ -341,12 +342,16 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
         The type of each field.
     """
     origin = get_origin_og(typed_dict) or typed_dict
+    # typing_extensions strips its own qualifiers, which typing does not on 3.10.
+    field_types = typing_extensions.get_type_hints(origin)
+    # Hints of inherited fields still name the generic base's type parameters.
+    for base in typing_extensions.get_original_bases(origin):
+        if get_args(base) and typing_extensions.is_typeddict(get_origin_og(base)):
+            field_types.update(get_typed_dict_field_types(base))
     substitution = _match_type_args(
         getattr(origin, "__parameters__", ()), get_args(typed_dict)
     )
-    field_types = {}
-    # typing_extensions strips its own qualifiers, which typing does not on 3.10.
-    for name, hint in typing_extensions.get_type_hints(origin).items():
+    for name, hint in field_types.items():
         if hint in substitution:
             hint = substitution[hint]
         elif substitution and (params := getattr(hint, "__parameters__", ())):
