@@ -136,9 +136,11 @@ merge waits on it.
 
 User-facing changes need a news fragment in the `news/` directory of each
 package they touch (the repo root's `news/` for `reflex`), named
-`<PR number>.<type>.md`, or `+<slug>.<type>.md` before the PR number is known.
-Types: `breaking`, `deprecation`, `feature`, `bugfix`, `performance`, `docs`,
-`misc`.
+`+<slug>.<type>.md`. Putting the PR number in the name (`<PR number>.<type>.md`)
+is optional: the release process renames each orphan `+` fragment after the PR
+that merged it, so its entry still links to the PR. Don't push a commit just to
+rename one. Types: `breaking`, `deprecation`, `feature`, `bugfix`,
+`performance`, `docs`, `misc`.
 
 Write for external downstream users, not for reviewers. Every entry links to
 its PR, so motivation, narrative, and implementation details belong in the PR

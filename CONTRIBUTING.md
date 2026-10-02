@@ -62,7 +62,7 @@ Each PR that changes the source of a published package must add a news fragment 
 
 **Where:** add the fragment under the affected package's `news/` directory. For the main `reflex` package, that's the repo-root `news/`. For sub-packages it's `packages/<name>/news/`.
 
-**Filename:** `<pr-or-issue-number>.<type>.md`, where `<type>` is one of:
+**Filename:** `+<slug>.<type>.md` (an [orphan fragment](https://towncrier.readthedocs.io/en/stable/cli.html#towncrier-create)), or `<pr-number>.<type>.md` if you prefer, where `<type>` is one of:
 
 | Type | When to use |
 | --- | --- |
@@ -79,12 +79,12 @@ Each PR that changes the source of a published package must add a news fragment 
 **Create a fragment from the CLI:**
 
 ```bash
-uv run reflex-release create --package reflex-components-lucide 1234.feature.md
+uv run reflex-release create --package reflex-components-lucide +lucide-icons.feature.md
 ```
 
 Drop `--package` for a fragment against the main `reflex` package.
 
-If you don't yet know the PR number, use an [orphan fragment](https://towncrier.readthedocs.io/en/stable/cli.html#towncrier-create) (`+.feature.md`). Renaming it after opening the PR is nice, but not required: the release workflow renames any orphan fragment that made it to `main` after the PR that merged it, so the changelog entry still links to it.
+**The PR number is optional.** You don't need to know it, or rename the fragment after opening the PR: the release workflow renames every orphan fragment that made it to `main` after the PR that merged it, so the changelog entry still links to it.
 
 **Skipping the fragment check:** for PRs that are genuinely not user-facing (CI-only tweaks, script fixes, test-only changes), apply the `skip-changelog` label on the PR to bypass the changelog CI check.
 
