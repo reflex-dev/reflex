@@ -29,6 +29,11 @@ This also applies to mutable values nested inside `self.router`, including legac
 `self.router.page.params`. A reference obtained inside the context block cannot
 be mutated after leaving it.
 
+The same holds for any state kept past the event that loaded it, like one
+captured by a callback, or one returned by `get_state` in a background task
+outside of the block: it can be read, but it is read-only until entered with
+`async with`, which reloads it and holds the lock for the event it belongs to.
+
 In the following example, the `my_task` event handler is decorated with
 `@rx.event(background=True)` and increments the `counter` variable every half second, as
 long as certain conditions are met. While it is running, the UI remains

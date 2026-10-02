@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, TypeVar
 
 from reflex_base.constants import ROUTER_DATA, ROUTER_VARS
 from reflex_base.event import Event, get_hydrate_event
+from reflex_base.event.context import EventContext
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_base.vars.base import _owner_state
@@ -326,40 +327,36 @@ class SharedStateBaseInternal(State):
         Returns:
             The state that was linked into the tree.
         """
-        from reflex.istate.manager import get_state_manager
-
         holder = self._linked_locks_holder()
         if holder._exit_stack is None or holder._held_locks is None:
             msg = "Cannot link shared state outside of _modify_linked_states context."
             raise ReflexRuntimeError(msg)
 
-        linked_root_state = None
-
+        ctx = EventContext.get()
         # Get the newly linked state and update pointers/delta for subsequent events.
         if token not in holder._held_locks:
             async with holder._held_locks_lock:
                 if token not in holder._held_locks:
-                    linked_root_state = await holder._exit_stack.enter_async_context(
-                        get_state_manager().modify_state(
-                            BaseStateToken(ident=token, cls=type(self))
+                    locked_root: BaseState = (
+                        await holder._exit_stack.enter_async_context(
+                            ctx.modify_state(
+                                BaseStateToken(ident=token, cls=type(self)),
+                                with_links=False,
+                            )
                         )
                     )
                     holder._held_locks.setdefault(token, {})
                     # Set client_token on the linked root so that subsequent get_state
                     # calls when directly modifying a linked token will load the
                     # associated instance.
-                    if (
-                        session := linked_root_state.rx_router_session
-                    ).client_token != token:
+                    if (session := locked_root.rx_router_session).client_token != token:
                         import dataclasses as dc
 
-                        linked_root_state.rx_router_session = dc.replace(
+                        locked_root.rx_router_session = dc.replace(
                             session, client_token=token
                         )
-        if linked_root_state is None:
-            linked_root_state = await get_state_manager().get_state(
-                BaseStateToken(ident=token, cls=type(self))
-            )
+        # Locked in this event, now or earlier.
+        linked_root_state: BaseState = ctx.state_locks.held[token][0]
         linked_state = await linked_root_state.get_state(type(self))
         if not isinstance(linked_state, SharedState):
             msg = f"Linked state for token {token} is not a SharedState."

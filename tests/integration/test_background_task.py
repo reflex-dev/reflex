@@ -373,7 +373,7 @@ def test_get_state(
     driver: WebDriver,
     token: str,
 ):
-    """Test that get_state returns a state bound to the correct StateProxy.
+    """Test that get_state in a background task returns a state of the same event.
 
     Args:
         background_task: harness for BackgroundTask app.

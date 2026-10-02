@@ -2,28 +2,30 @@
 
 from typing import Any
 
-from reflex.istate.manager import get_state_manager
+from reflex_base.event.context import EventContext
+
 from reflex.istate.manager.token import BaseStateToken
-from reflex.istate.proxy import ReadOnlyStateProxy
-from reflex.state import State, _split_substate_key
+from reflex.state import BaseState, State, _split_substate_key
 
 
-async def get_state(token: str, state_cls: Any | None = None) -> ReadOnlyStateProxy:
-    """Get the instance of a state for a token.
+async def get_state(token: str, state_cls: Any | None = None) -> BaseState:
+    """Get the instance of a state for a token, read-only outside of `async with` it.
 
     Args:
         token: The token for the state.
         state_cls: The class of the state.
 
     Returns:
-        A read-only proxy of the state instance.
+        The state instance.
     """
-    mng = get_state_manager()
+    ctx = EventContext.get()
+    mng = ctx.state_manager
     if state_cls is not None:
         root_state = await mng.get_state(BaseStateToken(ident=token, cls=state_cls))
     else:
         root_state = await mng.get_state(BaseStateToken(ident=token, cls=State))
         _, state_path = _split_substate_key(token)
         state_cls = root_state.get_class_substate(tuple(state_path.split(".")))
-    instance = await root_state.get_state(state_cls)
-    return ReadOnlyStateProxy(instance)
+    # Loaded without the lock: read-only until entered, which locks its token.
+    root_state._event_context = ctx if token == ctx.token else ctx.fork(token=token)
+    return await root_state.get_state(state_cls)
