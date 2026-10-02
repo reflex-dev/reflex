@@ -81,6 +81,27 @@ CHANGES_STEPS = [
     if step.get("uses") == "./.github/actions/changed_paths"
 ]
 
+# Every path filter in the workflows that check pull requests, trigger-level or in
+# a `changes` job, as the keyword arguments changed_paths.triggers takes.
+PATH_FILTERS = [
+    (name, f"on.{event}", {key.replace("-", "_"): trigger[key]})
+    for name in PR_WORKFLOWS
+    for event, trigger in workflow_triggers(WORKFLOWS[name]).items()
+    if isinstance(trigger, dict)
+    for key in ("paths", "paths-ignore")
+    if key in trigger
+] + [
+    (
+        name,
+        f"step {step.get('id', 'changes')}",
+        {key.replace("-", "_"): changed_paths.lines(step["with"][key])},
+    )
+    for name, step in CHANGES_STEPS
+    if name in PR_WORKFLOWS
+    for key in ("paths", "paths-ignore")
+    if step.get("with", {}).get(key, "").strip()
+]
+
 
 def gate_id(name: str) -> str:
     """Return the gate job's id for a workflow known to have one."""
@@ -191,6 +212,32 @@ def test_changes_filter_compiles(name, step):
     # A pattern the evaluator rejects fails the `changes` job at run time, and with
     # it the gate on every pull request; catch it here instead.
     changed_paths.compile_filters(changed_paths.lines(inputs[given[0]]))
+
+
+@pytest.mark.parametrize(
+    ("name", "where", "path_filter"),
+    PATH_FILTERS,
+    ids=[f"{name} {where}" for name, where, _ in PATH_FILTERS],
+)
+def test_path_filter_runs_on_its_own_workflow_changes(name, where, path_filter):
+    # A change to a workflow, or to a local action it uses, is only tested by
+    # running that workflow, so no filter may skip it.
+    actions = {
+        step["uses"].removeprefix("./")
+        for job in WORKFLOWS[name].get("jobs", {}).values()
+        for step in job.get("steps", [])
+        if step.get("uses", "").startswith("./.github/actions/")
+    }
+    own = [f".github/workflows/{name}"] + [
+        f"{action}/action.yml" for action in sorted(actions)
+    ]
+    skipped = [
+        path for path in own if not changed_paths.triggers([path], **path_filter)
+    ]
+    assert not skipped, (
+        f"{name}: the filter on {where} skips a change to {skipped}, which this "
+        "workflow is the only test of."
+    )
 
 
 @pytest.mark.parametrize("name", GATED_WORKFLOWS)

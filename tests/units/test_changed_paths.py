@@ -9,7 +9,16 @@ from scripts import changed_paths
 
 # Fixtures modeled on the filters the workflows' `changes` jobs carry. They pin the
 # matching semantics; test_workflow_gates.py checks that the live filters compile.
-MARKDOWN_IGNORE = ["**/*.md"]
+DOCS_ONLY_IGNORE = [
+    "**/*.md",
+    "docs/**",
+    "docker-examples/**",
+    ".github/**",
+    ".devcontainer/**",
+    ".claude/**",
+    "!.github/workflows/unit_tests.yml",
+    "!.github/actions/setup_build_env/**",
+]
 DOCS_PATHS = [
     "docs/**",
     "packages/reflex-components-core/src/reflex_components_core/core/upload.py",
@@ -26,15 +35,31 @@ DOCS_PATHS = [
         (["docs/guide.md"], False),
         (["docs/a/b/c.md"], False),
         (["README.md", "docs/guide.md"], False),
+        (["packages/reflex-base/news/+fix.bugfix.md"], False),
+        (["docs/app/reflex_docs/whitelist.py"], False),
+        (["docker-examples/simple/Dockerfile"], False),
+        (["docs/app/app.py", ".github/workflows/docs_tests.yml"], False),
+        ([".github/actions/ci_gate/action.yml"], False),
+        ([".devcontainer/devcontainer.json"], False),
+        ([".claude/settings.json"], False),
         (["reflex/app.py"], True),
         (["README.md", "reflex/app.py"], True),
+        (["docs/app/app.py", "pyproject.toml"], True),
+        # A negation puts the workflow's own files back under test.
+        ([".github/workflows/unit_tests.yml"], True),
+        ([".github/actions/setup_build_env/action.yml"], True),
+        (["docs/guide.md", ".github/workflows/unit_tests.yml"], True),
         # Only the .md suffix is ignored; a similarly named file still runs.
-        (["docs/guide.mdx"], True),
+        (["reflex/guide.mdx"], True),
         (["notes.md.py"], True),
+        # The directories are anchored at the repo root.
+        (["packages/reflex-base/docs/api.py"], True),
+        (["tests/.github/fixture.yml"], True),
+        (["docs.py"], True),
     ],
 )
-def test_markdown_ignore(changed, expected):
-    assert changed_paths.triggers(changed, paths_ignore=MARKDOWN_IGNORE) is expected
+def test_docs_only_ignore(changed, expected):
+    assert changed_paths.triggers(changed, paths_ignore=DOCS_ONLY_IGNORE) is expected
 
 
 @pytest.mark.parametrize(
@@ -117,7 +142,7 @@ def test_unsupported_character_range_is_rejected():
 
 
 def test_empty_change_set_runs_the_jobs():
-    assert changed_paths.triggers([], paths_ignore=MARKDOWN_IGNORE) is True
+    assert changed_paths.triggers([], paths_ignore=DOCS_ONLY_IGNORE) is True
     assert changed_paths.triggers([], paths=DOCS_PATHS) is True
 
 
@@ -139,13 +164,19 @@ def test_changed_files_counts_both_names_of_a_rename():
         # A code file renamed to Markdown still removes code: the jobs must run.
         (
             ("docs/example.md", "scripts/example.py"),
-            {"paths_ignore": MARKDOWN_IGNORE},
+            {"paths_ignore": DOCS_ONLY_IGNORE},
             True,
         ),
         # Moving a file out of docs/ changes docs/ as much as editing it does.
         (("reflex/example.py", "docs/example.py"), {"paths": DOCS_PATHS}, True),
+        # Moving code into docs/ removes it from where it was: the jobs must run.
+        (
+            ("docs/app/example.py", "reflex/example.py"),
+            {"paths_ignore": DOCS_ONLY_IGNORE},
+            True,
+        ),
         # A rename that stays within ignored paths is still ignored.
-        (("docs/new.md", "docs/old.md"), {"paths_ignore": MARKDOWN_IGNORE}, False),
+        (("docs/new.md", "docs/old.md"), {"paths_ignore": DOCS_ONLY_IGNORE}, False),
     ],
 )
 def test_renames_are_filtered_on_both_names(renamed, filter_kwargs, expected):

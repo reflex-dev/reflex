@@ -19,9 +19,42 @@ defaults:
     shell: bash
 
 jobs:
+  # This filter cannot live on the pull_request trigger: a workflow that a path
+  # filter skips never reports its checks at all, so a branch rule requiring
+  # them blocks the merge forever. Filtered out here, the jobs below skip
+  # instead, and a skipped job reports as a pass.
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      run: ${{ steps.filter.outputs.changed }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/changed_paths
+        id: filter
+        with:
+          paths-ignore: |
+            **/*.md
+            docs/**
+            docker-examples/**
+            .github/**
+            .devcontainer/**
+            .claude/**
+            !.github/workflows/build_packages.yml
+            !.github/actions/changed_paths/**
+            !.github/actions/ci_gate/**
+            !.github/actions/setup_build_env/**
+
   # Single-source both matrices: the packages to build, and the subset of them
   # check_min_deps.py can validate. Both stay in sync as packages are added.
+  # The jobs below need this one, so they skip along with it.
   discover:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-latest
     outputs:
       builds: ${{ steps.discover.outputs.builds }}
@@ -116,7 +149,7 @@ jobs:
   # jobs above directly does not survive: check names follow the matrix and the
   # display names, and a job that a filter skips must not block the merge.
   build-packages-gate:
-    needs: [discover, build, check-min-deps]
+    needs: [changes, discover, build, check-min-deps]
     if: always()
     runs-on: ubuntu-latest
     steps:

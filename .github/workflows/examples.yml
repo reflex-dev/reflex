@@ -17,6 +17,7 @@ on:
       - "packages/**"
       - "pyproject.toml"
       - "uv.lock"
+      - "!**/*.md"
   push:
     branches: ["main"]
     paths:
@@ -28,6 +29,7 @@ on:
       - "packages/**"
       - "pyproject.toml"
       - "uv.lock"
+      - "!**/*.md"
 
 env:
   REFLEX_TELEMETRY_ENABLED: false

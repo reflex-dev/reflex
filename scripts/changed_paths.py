@@ -7,9 +7,9 @@ reports those checks as skipped, which counts as a pass. This script evaluates
 the filter that used to sit on the trigger, so the jobs skip on exactly the pull
 requests the trigger used to drop.
 
-Reads the pull request's changed files from stdin, one JSON object per line
-carrying the ``filename`` and ``previous_filename`` fields of the pulls files
-API, and writes ``true`` or ``false`` to stdout. The filter comes from whichever
+Reads a pull request's or push's changed files from stdin, one JSON object per
+line carrying the ``filename`` and ``previous_filename`` fields of the pulls
+files or compare API, and writes ``true`` or ``false`` to stdout. The filter comes from whichever
 of ``FILTER_PATHS`` or ``FILTER_PATHS_IGNORE`` is set, as a newline-separated
 pattern list using GitHub's filter pattern syntax.
 """
