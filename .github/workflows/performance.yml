@@ -6,13 +6,6 @@ on:
   push:
     branches:
       - "main" # or "master"
-    paths-ignore:
-      - "**/*.md"
-      - "docs/**"
-      - "docker-examples/**"
-      - ".github/**"
-      - ".devcontainer/**"
-      - ".claude/**"
   pull_request:
   workflow_dispatch:
 
@@ -51,6 +44,10 @@ jobs:
             .github/**
             .devcontainer/**
             .claude/**
+            !.github/workflows/performance.yml
+            !.github/actions/changed_paths/**
+            !.github/actions/ci_gate/**
+            !.github/actions/setup_build_env/**
 
   benchmarks:
     name: Run benchmarks

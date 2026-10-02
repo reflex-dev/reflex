@@ -17,6 +17,8 @@ on:
       - "examples/playground/**"
       - "pyproject.toml"
       - "uv.lock"
+      - ".github/workflows/size_budgets.yml"
+      - ".github/actions/setup_build_env/**"
       - "!**/*.md"
   push:
     branches: ["main"]
@@ -26,6 +28,8 @@ on:
       - "examples/playground/**"
       - "pyproject.toml"
       - "uv.lock"
+      - ".github/workflows/size_budgets.yml"
+      - ".github/actions/setup_build_env/**"
       - "!**/*.md"
 
 env:

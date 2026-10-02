@@ -81,6 +81,27 @@ CHANGES_STEPS = [
     if step.get("uses") == "./.github/actions/changed_paths"
 ]
 
+# Every path filter in the workflows that check pull requests, trigger-level or in
+# a `changes` job, as the keyword arguments changed_paths.triggers takes.
+PATH_FILTERS = [
+    (name, f"on.{event}", {key.replace("-", "_"): trigger[key]})
+    for name in PR_WORKFLOWS
+    for event, trigger in workflow_triggers(WORKFLOWS[name]).items()
+    if isinstance(trigger, dict)
+    for key in ("paths", "paths-ignore")
+    if key in trigger
+] + [
+    (
+        name,
+        f"step {step.get('id', 'changes')}",
+        {key.replace("-", "_"): changed_paths.lines(step["with"][key])},
+    )
+    for name, step in CHANGES_STEPS
+    if name in PR_WORKFLOWS
+    for key in ("paths", "paths-ignore")
+    if step.get("with", {}).get(key, "").strip()
+]
+
 
 def gate_id(name: str) -> str:
     """Return the gate job's id for a workflow known to have one."""
@@ -193,26 +214,29 @@ def test_changes_filter_compiles(name, step):
     changed_paths.compile_filters(changed_paths.lines(inputs[given[0]]))
 
 
-def test_paths_ignore_filters_agree():
-    # Every paths-ignore in the workflows names the same docs-only change set, and
-    # each workflow repeats it on its push trigger and in its `changes` job. A
-    # copy that drifts runs a workflow on main for a change its pull request
-    # skipped, or skips one on main that its pull request ran.
-    found = [
-        (tuple(trigger["paths-ignore"]), f"{name} on.{event}")
-        for name, doc in WORKFLOWS.items()
-        for event, trigger in workflow_triggers(doc).items()
-        if isinstance(trigger, dict) and "paths-ignore" in trigger
-    ] + [
-        (tuple(changed_paths.lines(step["with"]["paths-ignore"])), f"{name} changes")
-        for name, step in CHANGES_STEPS
-        if "paths-ignore" in step.get("with", {})
+@pytest.mark.parametrize(
+    ("name", "where", "path_filter"),
+    PATH_FILTERS,
+    ids=[f"{name} {where}" for name, where, _ in PATH_FILTERS],
+)
+def test_path_filter_runs_on_its_own_workflow_changes(name, where, path_filter):
+    # A change to a workflow, or to a local action it uses, is only tested by
+    # running that workflow, so no filter may skip it.
+    actions = {
+        step["uses"].removeprefix("./")
+        for job in WORKFLOWS[name].get("jobs", {}).values()
+        for step in job.get("steps", [])
+        if step.get("uses", "").startswith("./.github/actions/")
+    }
+    own = [f".github/workflows/{name}"] + [
+        f"{action}/action.yml" for action in sorted(actions)
     ]
-    filters: dict[tuple[str, ...], list[str]] = {}
-    for value, where in found:
-        filters.setdefault(value, []).append(where)
-    assert len(filters) <= 1, "the workflows' paths-ignore filters disagree:\n" + (
-        "\n".join(f"{list(value)} in {where}" for value, where in filters.items())
+    skipped = [
+        path for path in own if not changed_paths.triggers([path], **path_filter)
+    ]
+    assert not skipped, (
+        f"{name}: the filter on {where} skips a change to {skipped}, which this "
+        "workflow is the only test of."
     )
 
 

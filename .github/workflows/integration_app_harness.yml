@@ -7,13 +7,6 @@ concurrency:
 on:
   push:
     branches: ["main"]
-    paths-ignore:
-      - "**/*.md"
-      - "docs/**"
-      - "docker-examples/**"
-      - ".github/**"
-      - ".devcontainer/**"
-      - ".claude/**"
   pull_request:
     branches: ["main"]
 env:
@@ -49,6 +42,10 @@ jobs:
             .github/**
             .devcontainer/**
             .claude/**
+            !.github/workflows/integration_app_harness.yml
+            !.github/actions/changed_paths/**
+            !.github/actions/ci_gate/**
+            !.github/actions/setup_build_env/**
 
   integration-app-harness:
     needs: changes

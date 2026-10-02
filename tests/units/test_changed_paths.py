@@ -16,6 +16,8 @@ DOCS_ONLY_IGNORE = [
     ".github/**",
     ".devcontainer/**",
     ".claude/**",
+    "!.github/workflows/unit_tests.yml",
+    "!.github/actions/setup_build_env/**",
 ]
 DOCS_PATHS = [
     "docs/**",
@@ -36,13 +38,17 @@ DOCS_PATHS = [
         (["packages/reflex-base/news/+fix.bugfix.md"], False),
         (["docs/app/reflex_docs/whitelist.py"], False),
         (["docker-examples/simple/Dockerfile"], False),
-        (["docs/app/app.py", ".github/workflows/unit_tests.yml"], False),
-        ([".github/actions/setup_build_env/action.yml"], False),
+        (["docs/app/app.py", ".github/workflows/docs_tests.yml"], False),
+        ([".github/actions/ci_gate/action.yml"], False),
         ([".devcontainer/devcontainer.json"], False),
         ([".claude/settings.json"], False),
         (["reflex/app.py"], True),
         (["README.md", "reflex/app.py"], True),
         (["docs/app/app.py", "pyproject.toml"], True),
+        # A negation puts the workflow's own files back under test.
+        ([".github/workflows/unit_tests.yml"], True),
+        ([".github/actions/setup_build_env/action.yml"], True),
+        (["docs/guide.md", ".github/workflows/unit_tests.yml"], True),
         # Only the .md suffix is ignored; a similarly named file still runs.
         (["reflex/guide.mdx"], True),
         (["notes.md.py"], True),

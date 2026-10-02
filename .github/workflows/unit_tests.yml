@@ -7,13 +7,6 @@ concurrency:
 on:
   push:
     branches: ["main"]
-    paths-ignore:
-      - "**/*.md"
-      - "docs/**"
-      - "docker-examples/**"
-      - ".github/**"
-      - ".devcontainer/**"
-      - ".claude/**"
   pull_request:
     branches: ["main"]
 
@@ -50,6 +43,10 @@ jobs:
             .github/**
             .devcontainer/**
             .claude/**
+            !.github/workflows/unit_tests.yml
+            !.github/actions/changed_paths/**
+            !.github/actions/ci_gate/**
+            !.github/actions/setup_build_env/**
 
   unit-tests:
     needs: changes
@@ -140,7 +137,8 @@ jobs:
 
   unit-tests-macos:
     timeout-minutes: 30
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: changes
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.run == 'true'
     strategy:
       fail-fast: false
       matrix:
