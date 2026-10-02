@@ -148,6 +148,7 @@ source = "uv-dynamic-versioning"
 
 [tool.uv-dynamic-versioning]
 fallback-version = "0.0.0dev0"
+bump = true
 
 [tool.hatch.build]
 # Leading slashes anchor to the repo root; unanchored patterns match nested

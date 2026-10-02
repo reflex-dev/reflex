@@ -156,6 +156,22 @@ documentation — write it under `docs/` and let the fragment link there.
 CI requires a fragment for every package whose source the PR touches; the
 `skip-changelog` label waives it for changes that are genuinely not user-facing.
 
+## Sibling dependency floors
+
+When a package needs an unreleased change in a workspace sibling, raise its
+floor on that sibling to the `.dev0` of the sibling's next version. Every
+package derives its version with `bump = true`, so each commit after its newest
+tag builds as a dev release of that next version:
+
+- after `reflex-base-v0.9.12`: `reflex-base >= 0.9.13.dev0`
+- after `reflex-components-core-v0.9.10.post1`: `reflex-components-core >= 0.9.10.post2.dev0`
+
+Such a floor excludes every published release and is met by any workspace
+build, so check-min-deps passes. Releasing the dependent lifts it to the first
+published version that satisfies it (see `packages/reflex-release/README.md`,
+"Dependency pins across a release"). A floor the workspace can't meet fails
+check-min-deps with "builds as ... here".
+
 ## Breaking changes and deprecation
 
 Reflex has downstream users — don't break them. Provide a fallback path during deprecation.

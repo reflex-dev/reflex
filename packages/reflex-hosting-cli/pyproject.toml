@@ -23,8 +23,10 @@ dependencies = [
     # The SDK ships no HTTP library of its own; [httpx] points it at the one
     # `check_version` already pulls in, so the extra costs nothing to install.
     # The SDK is pre-1.0, so every release may break its API: cap at the patch
-    # and raise both bounds when adopting a new one.
-    "reflex-build-sdk[httpx] >=0.0.5,<0.0.6",
+    # and raise both bounds when adopting a new one. The cap admits the next
+    # patch because that is what the workspace builds the SDK as
+    # (``0.0.6.devN``), so it is the version this package is tested against.
+    "reflex-build-sdk[httpx] >=0.0.5,<0.0.7",
     "rich >=13,<16",
 ]
 
@@ -34,6 +36,7 @@ source = "uv-dynamic-versioning"
 [tool.uv-dynamic-versioning]
 pattern-prefix = "reflex-hosting-cli-"
 fallback-version = "0.0.0dev0"
+bump = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/reflex_cli"]
