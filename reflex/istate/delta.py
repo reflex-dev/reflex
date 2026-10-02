@@ -232,9 +232,13 @@ def build_delta(state: BaseState) -> Delta:
     # Token of the client this delta is for, used to know which values it has.
     token = state.router.session.client_token if pending is not None else ""
     full_name = state.get_full_name()
+    # Owned base vars live in the instance dict: reading them there skips the
+    # MutableProxy `get_value` would wrap and unwrap. Computed vars and
+    # not yet materialized defaults go through `get_value`.
+    values = state.__dict__
     subdelta: dict[str, Any] = {}
     for prop in delta_vars:
-        value = state.get_value(prop)
+        value = values[prop] if prop in values else state.get_value(prop)
         key = prop + FIELD_MARKER
         if pending is not None and prop in always_dirty_computed_vars:
             # Uncached computed vars are recomputed for every delta; only
