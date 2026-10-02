@@ -230,12 +230,18 @@ async def test_lifespan_shutdown_waits_for_cancelled_tasks():
 async def test_lifespan_shutdown_cancels_all_tasks_before_waiting():
     """A task whose cleanup waits on a later task does not deadlock shutdown."""
     second_stopped = asyncio.Event()
+    second_stopped_first = []
 
     async def first():
         try:
             await asyncio.Event().wait()
         finally:
-            await second_stopped.wait()
+            try:
+                await asyncio.wait_for(second_stopped.wait(), timeout=1)
+            except asyncio.TimeoutError:
+                second_stopped_first.append(False)
+            else:
+                second_stopped_first.append(True)
 
     async def second():
         try:
@@ -246,15 +252,10 @@ async def test_lifespan_shutdown_cancels_all_tasks_before_waiting():
     mixin = LifespanMixin()
     mixin.register_lifespan_task(first)
     mixin.register_lifespan_task(second)
+    async with mixin._run_lifespan_tasks(Starlette()):
+        await asyncio.sleep(0)
 
-    async def run():
-        async with mixin._run_lifespan_tasks(Starlette()):
-            await asyncio.sleep(0)
-
-    loop = asyncio.get_running_loop()
-    start = loop.time()
-    await asyncio.wait_for(run(), timeout=1)
-    assert loop.time() - start < 0.5
+    assert second_stopped_first == [True]
 
 
 @pytest.mark.asyncio
