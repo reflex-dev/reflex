@@ -1555,6 +1555,36 @@ def test_app_logs_json_output(mocker: MockFixture):
     assert document["error"] is None
 
 
+@pytest.mark.parametrize(
+    ("log_level", "level_label"),
+    [("warning", "WARNING"), ("debug", "DEBUG")],
+)
+def test_app_logs_human_output_formats_log_fields(
+    mocker: MockFixture, log_level: str, level_label: str
+):
+    """Human output shows the timestamp and message instead of a record dict."""
+    client = _authed(mocker)
+    client.api.apps.logs.return_value = [
+        LogRecord(
+            ns=0,
+            timestamp="2024-11-29T12:00:00Z",
+            name="app",
+            message='service said "ready"',
+            details="connection established",
+            log_level=log_level,
+            region="sjc",
+            deployment_id=None,
+        )
+    ]
+
+    result = runner.invoke(apps_cli, ["logs", "app123", "--loglevel", "info"])
+
+    assert result.exit_code == 0, result.output
+    assert f'2024-11-29T12:00:00Z [{level_label}] service said "ready"' in result.output
+    assert "  connection established" in result.output
+    assert "'timestamp':" not in result.output
+
+
 def test_app_logs_json_output_never_follows(mocker: MockFixture):
     """--follow cannot page a document that is only complete once."""
     client = _authed(mocker)
