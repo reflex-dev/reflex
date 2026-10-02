@@ -133,20 +133,11 @@ class LifespanMixin(AppMixin):
                             logger.debug(run_msg.format(type="function"))
                 yield
         finally:
-            # Tasks that already finished were reported by their done callback.
-            running_tasks = [task for task in running_tasks if not task.done()]
             for task in running_tasks:
                 logger.debug(f"Canceling lifespan task: {task}")
                 # Cancellation by cleanup is expected, so it is not reported.
                 task.remove_done_callback(_report_task_result)
                 task.cancel(msg="lifespan_cleanup")
-            # Wait for cleanup; the expected CancelledError is returned, not raised.
-            results = await asyncio.gather(*running_tasks, return_exceptions=True)
-            for task, result in zip(running_tasks, results, strict=True):
-                if isinstance(result, Exception):
-                    logger.error(
-                        f"Lifespan task {task.get_name()} failed", exc_info=result
-                    )
         # Disassociate sid / token pairings so they can be reconnected properly.
         try:
             event_namespace = self.event_namespace  # pyright: ignore[reportAttributeAccessIssue]
