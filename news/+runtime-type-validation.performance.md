@@ -1,0 +1,1 @@
+Runtime type checks on state var assignments and computed var results now run in pydantic-core, and state deltas are encoded with orjson, cutting per-event overhead for large lists and dicts by an order of magnitude.

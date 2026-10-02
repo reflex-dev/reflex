@@ -52,7 +52,7 @@ from reflex_base.utils.exceptions import (
 )
 from reflex_base.utils.exceptions import ImmutableStateError as ImmutableStateError
 from reflex_base.utils.serializers import serializer
-from reflex_base.utils.types import _isinstance
+from reflex_base.utils.types import runtime_isinstance
 from reflex_base.vars import Field, VarData, field
 from reflex_base.vars.base import (
     ComputedVar,
@@ -868,7 +868,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         def computed_var_func(state: Self):
             result = f(state)
 
-            if not _isinstance(result, of_type, nested=1, treat_var_as_type=False):
+            if not runtime_isinstance(result, of_type):
                 logger.warning(
                     f"Inline ComputedVar {f} expected type {of_type}, got {type(result)}. "
                     "You can specify expected type with `of_type` argument."

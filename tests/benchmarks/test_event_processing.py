@@ -20,7 +20,7 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
-from reflex_base.utils.format import format_event_handler, json_dumps
+from reflex_base.utils.format import format_event_handler, json_dumps_compact
 
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.token import BaseStateToken
@@ -248,7 +248,7 @@ def _encode_delta(delta: Mapping[str, Mapping[str, Any]]) -> str:
     Returns:
         The delta encoded as a StateUpdate envelope.
     """
-    return json_dumps(StateUpdate(delta=delta), separators=(",", ":"))
+    return json_dumps_compact(StateUpdate(delta=delta))
 
 
 def _events(handler_name: str, payloads: list[dict[str, Any]]) -> list[Event]:

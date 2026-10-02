@@ -2052,12 +2052,13 @@ def _sio_dumps(obj: Any, **kwargs: Any) -> str:
 
     Args:
         obj: The packet payload.
-        **kwargs: Options forwarded to the JSON encoder.
+        **kwargs: Encoder options from python-socketio, at most the compact
+            ``separators`` that the compact encoder already emits.
 
     Returns:
         The JSON string.
     """
-    data = format.json_dumps(obj, **kwargs)
+    data = format.json_dumps_compact(obj)
     if otel.enabled:
         otel.record_message_size(_utf8_size(data), "transmit")
     return data

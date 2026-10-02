@@ -16,6 +16,8 @@ from reflex_base import constants
 from reflex_base.utils import exceptions
 
 if TYPE_CHECKING:
+    from types import ModuleType
+
     from reflex_base.components.component import ComponentStyle
     from reflex_base.event import EventChain, EventHandler, EventSpec, EventType
     from reflex_base.utils.types import ArgsSpec
@@ -718,6 +720,52 @@ def _get_serialize() -> Callable[[Any], Any]:
     return _serialize
 
 
+_serializers: ModuleType | None = None
+
+
+def _get_serializers() -> ModuleType:
+    """Get the ``serializers`` module, importing it on first use.
+
+    Cached for the same reason as ``_get_serialize``.
+
+    Returns:
+        The ``reflex_base.utils.serializers`` module.
+    """
+    global _serializers
+    if _serializers is None:
+        from reflex_base.utils import serializers
+
+        _serializers = serializers
+    return _serializers
+
+
+_orjson_dumps: Callable[..., bytes] | None = None
+_orjson_options = 0
+
+
+def _load_orjson() -> Callable[..., bytes]:
+    """Import orjson on first use and cache its encoder and options.
+
+    Only ``json_dumps_compact`` needs it, and most processes that import this
+    module (the CLI, compile workers) never encode a state update.
+
+    Returns:
+        ``orjson.dumps``.
+    """
+    global _orjson_dumps, _orjson_options
+    import orjson
+
+    # Dataclasses and datetimes keep going through the reflex serializers so their
+    # output matches ``json_dumps``; orjson's own rendering of both differs.
+    _orjson_options = (
+        orjson.OPT_NON_STR_KEYS
+        | orjson.OPT_PASSTHROUGH_DATACLASS
+        | orjson.OPT_PASSTHROUGH_DATETIME
+    )
+    _orjson_dumps = orjson.dumps
+    return _orjson_dumps
+
+
 def json_dumps(obj: Any, **kwargs) -> str:
     """Takes an object and returns a jsonified string.
 
@@ -732,6 +780,40 @@ def json_dumps(obj: Any, **kwargs) -> str:
     kwargs.setdefault("default", _get_serialize())
 
     return json.dumps(obj, **kwargs)
+
+
+def json_dumps_compact(obj: Any) -> str:
+    """Serialize an object to compact JSON for the wire.
+
+    Produces the same output as ``json_dumps`` with compact separators (reflex
+    serializers handle non-JSON types), encoded by orjson whenever the payload
+    lets it. State deltas and streamed updates go through here.
+
+    Args:
+        obj: The object to be serialized.
+
+    Returns:
+        The JSON string.
+    """
+    serializers = _get_serializers()
+    if not serializers.overrides_native_json_type():
+        dumps = _orjson_dumps
+        if dumps is None:
+            dumps = _load_orjson()
+        try:
+            encoded = dumps(obj, default=serializers.serialize, option=_orjson_options)
+        except TypeError:
+            # orjson rejects integers beyond 64 bits, which json accepts.
+            pass
+        else:
+            # orjson collapses NaN and +/-Infinity to null, but the frontend
+            # expects the bare tokens json emits. A null in the output is
+            # either a None or such a float; only then take the slow path.
+            if b"null" not in encoded:
+                return encoded.decode()
+    return json.dumps(
+        obj, ensure_ascii=False, separators=(",", ":"), default=serializers.serialize
+    )
 
 
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:

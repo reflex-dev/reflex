@@ -154,6 +154,10 @@ def serializer(
         SERIALIZERS[type_] = fn
         get_serializer.cache_clear()
 
+        global _overrides_native_json_type
+        if types.safe_issubclass(type_, _NATIVE_JSON_TYPES):
+            _overrides_native_json_type = True
+
         # Return the function.
         return fn
 
@@ -194,7 +198,10 @@ def serialize(
     # If there is no serializer, return None.
     if serializer is None:
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
-            return {k.name: getattr(value, k.name) for k in dataclasses.fields(value)}
+            return {
+                name: getattr(value, name)
+                for name in _dataclass_field_names(type(value))
+            }
 
         if get_type:
             return None, None
@@ -207,6 +214,37 @@ def serialize(
     if get_type:
         return serialized, get_serializer_type(type(value))
     return serialized
+
+
+# Bounded like ``is_mutable_type``'s cache: large enough that an app never
+# rescans a class in practice, without retaining dynamically created ones forever.
+@functools.lru_cache(maxsize=1024)
+def _dataclass_field_names(cls: type) -> tuple[str, ...]:
+    """Get the field names of a dataclass, memoized per class.
+
+    Args:
+        cls: The dataclass type.
+
+    Returns:
+        The names of the dataclass fields, in definition order.
+    """
+    return tuple(field.name for field in dataclasses.fields(cls))
+
+
+# Types orjson encodes itself, matching the serializers below; a serializer an
+# app registers for them or a subclass would be bypassed on the wire, so
+# ``json_dumps_compact`` checks this flag.
+_NATIVE_JSON_TYPES = (Enum, UUID)
+_overrides_native_json_type = False
+
+
+def overrides_native_json_type() -> bool:
+    """Whether an app registered a serializer for Enum, UUID, or a subclass.
+
+    Returns:
+        True if such a serializer exists.
+    """
+    return _overrides_native_json_type
 
 
 def _find_optional_base(
@@ -648,3 +686,7 @@ _OPTIONAL_SERIALIZER_ORDER = {
     name: len(_INITIAL_SERIALIZER_TYPES) + index
     for index, name in enumerate(_OPTIONAL_SERIALIZERS)
 }
+
+# The built-in Enum and UUID serializers above render exactly as orjson does;
+# only registrations made after this point count as overrides.
+_overrides_native_json_type = False

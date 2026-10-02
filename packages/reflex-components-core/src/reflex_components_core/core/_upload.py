@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Any, BinaryIO, cast
 from python_multipart.multipart import MultipartParser, parse_options_header
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import exceptions
-from reflex_base.utils.format import json_dumps
+from reflex_base.utils.format import json_dumps_compact
 from reflex_base.utils.streaming_response import DisconnectAwareStreamingResponse
 from starlette.datastructures import FormData, Headers
 from starlette.datastructures import UploadFile as StarletteUploadFile
@@ -669,7 +669,7 @@ async def _upload_buffered_file(
             return
         # Enqueue the task on the main event loop, but emit deltas to the local queue.
         async for delta in app.event_processor.enqueue_stream_delta(token, event):
-            yield json_dumps(StateUpdate(delta=delta)) + "\n"
+            yield json_dumps_compact(StateUpdate(delta=delta)) + "\n"
 
     return DisconnectAwareStreamingResponse(
         _ndjson_updates(),

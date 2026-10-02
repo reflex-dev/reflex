@@ -69,10 +69,10 @@ from reflex_base.utils.imports import (
 from reflex_base.utils.types import (
     GenericType,
     Self,
-    _isinstance,
     get_origin,
     has_args,
     is_mutable_type,
+    runtime_isinstance,
     safe_issubclass,
     unionize,
 )
@@ -2916,7 +2916,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         return _owner_state(instance, owner)
 
     def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
-        if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
+        if not runtime_isinstance(value, self._var_type):
             logger.error(
                 f"Computed var '{type(instance).__name__}.{self._name}' must return"
                 f" a value of type '{self._var_type}', got '{value!s}' of type {type(value)}."
@@ -4022,9 +4022,7 @@ class Field(Generic[FIELD_TYPE]):
             # Only values sent to the client are type checked.
             not self._backend
             and type(value) not in self._plain_types
-            and not _isinstance(
-                value, self.outer_type_, nested=1, treat_var_as_type=False
-            )
+            and not runtime_isinstance(value, self.outer_type_)
         ):
             logger.error(
                 f"Expected field '{type(state).__name__}.{self._name}' to receive type"
