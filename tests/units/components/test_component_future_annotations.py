@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from reflex.components.component import Component
-from reflex.event import EventHandler, input_event, no_args_event_spec
+from reflex_base.components.component import Component
+from reflex_base.event import EventHandler, input_event, no_args_event_spec
 
 
 # This is a repeat of its namesake in test_component.py.

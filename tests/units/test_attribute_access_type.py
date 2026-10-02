@@ -1,18 +1,19 @@
 from __future__ import annotations
 
+import sys
 from typing import List  # noqa: UP035
 
 import attrs
 import pytest
+from reflex_base.utils.types import GenericType, get_attribute_access_type
 
 import reflex as rx
-from reflex.utils.types import GenericType, get_attribute_access_type
 
 pytest.importorskip("sqlalchemy")
 pytest.importorskip("sqlmodel")
 pytest.importorskip("pydantic")
 
-import pydantic.v1
+import pydantic
 import sqlalchemy
 import sqlmodel
 from sqlalchemy import JSON, TypeDecorator
@@ -217,19 +218,21 @@ class ModelClass(rx.Model):
         return self.labels[0] if self.labels else None
 
 
-class BaseClass(rx.Base):
-    """Test rx.Base class."""
+class BaseClass(pydantic.BaseModel):
+    """Test pydantic BaseModel class."""
 
-    no_default: int | None = pydantic.v1.Field(required=False)
-    count: int = 0
-    name: str = "test"
-    int_list: list[int] = []
-    str_list: list[str] = []
-    optional_int: int | None = None
-    sqla_tag: SQLATag | None = None
-    labels: list[SQLALabel] = []
-    dict_str_str: dict[str, str] = {}
-    default_factory: list[int] = pydantic.v1.Field(default_factory=list)
+    model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
+
+    no_default: int | None = pydantic.Field(default=None)
+    count: int = pydantic.Field(default=0)
+    name: str = pydantic.Field(default="test")
+    int_list: list[int] = pydantic.Field(default_factory=list)
+    str_list: list[str] = pydantic.Field(default_factory=list)
+    optional_int: int | None = pydantic.Field(default=None)
+    sqla_tag: SQLATag | None = pydantic.Field(default=None)
+    labels: list[SQLALabel] = pydantic.Field(default_factory=list)
+    dict_str_str: dict[str, str] = pydantic.Field(default_factory=dict)
+    default_factory: list[int] = pydantic.Field(default_factory=list)
 
     @property
     def str_property(self) -> str:
@@ -418,3 +421,60 @@ def test_get_attribute_access_type_no_default(cls: type) -> None:
         cls: Class to test.
     """
     assert get_attribute_access_type(cls, "no_default") == int | None
+
+
+class UnresolvableRefClass:
+    """Class with an unresolvable forward-ref annotation."""
+
+    broken: UndefinedElsewhere  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
+    count: int = 0
+
+
+def test_get_attribute_access_type_unannotated_name_skips_hint_resolution(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """An unannotated name resolves to None without ForwardRef warnings."""
+    assert get_attribute_access_type(UnresolvableRefClass, "_is_coroutine_marker") is (
+        None
+    )
+    assert not [
+        r for r in caplog.records if "Failed to resolve ForwardRefs" in r.message
+    ]
+
+
+def test_get_attribute_access_type_unresolvable_annotation_warns(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """An annotated name whose hints cannot be resolved still warns and returns None."""
+    assert get_attribute_access_type(UnresolvableRefClass, "broken") is None
+    assert [r for r in caplog.records if "Failed to resolve ForwardRefs" in r.message]
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 14), reason="PEP 649 lazy annotations require 3.14+"
+)
+def test_get_attribute_access_type_probe_on_lazy_annotations(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Probing a class with lazy (PEP 649) annotations must not raise.
+
+    Compiled with ``dont_inherit=True``: ``exec`` inherits this module's
+    ``from __future__ import annotations`` flag by default, which would
+    stringify the annotations instead of leaving them lazily evaluated.
+    """
+    code = compile(
+        "class Lazy:\n    broken: UndefinedElsewhere\n    count: int = 0",
+        "<lazy>",
+        "exec",
+        dont_inherit=True,
+    )
+    ns: dict[str, object] = {}
+    exec(code, ns)
+    lazy_cls = ns["Lazy"]
+    assert isinstance(lazy_cls, type)
+    with pytest.raises(NameError):
+        lazy_cls.__annotations__  # prove annotations are genuinely lazy
+    assert get_attribute_access_type(lazy_cls, "_is_coroutine_marker") is None
+    assert not [
+        r for r in caplog.records if "Failed to resolve ForwardRefs" in r.message
+    ]

@@ -49,6 +49,7 @@ def ServerSideEvent():
             rx.input(default_value="a", id="a"),
             rx.input(default_value="b", id="b"),
             rx.input(default_value="c", id="c"),
+            rx.el.input(name="name", id="focus_target"),
             rx.button(
                 "Clear Immediate",
                 id="clear_immediate",
@@ -77,6 +78,11 @@ def ServerSideEvent():
                 "Clear C Return",
                 id="clear_return_c",
                 on_click=SSState.set_value_return_c,
+            ),
+            rx.el.button(
+                "Focus input",
+                id="focus_input",
+                on_click=rx.set_focus("focus_target"),
             ),
         )
 
@@ -183,3 +189,24 @@ def test_set_value_return_c(driver):
     assert input_a.get_attribute("value") == "a"
     assert input_b.get_attribute("value") == "b"
     assert input_c.get_attribute("value") == ""
+
+
+def test_set_focus(driver):
+    """Call set_focus and verify the target input becomes active.
+
+    Args:
+        driver: selenium WebDriver open to the app
+    """
+    input_target = driver.find_element(By.ID, "focus_target")
+    btn = driver.find_element(By.ID, "focus_input")
+
+    assert input_target
+    assert btn
+
+    btn.click()
+
+    assert AppHarness.poll_for_or_raise_timeout(
+        lambda: (
+            driver.execute_script("return document.activeElement?.id") == "focus_target"
+        )
+    )

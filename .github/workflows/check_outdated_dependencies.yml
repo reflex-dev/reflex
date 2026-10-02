@@ -14,77 +14,52 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
       - uses: ./.github/actions/setup_build_env
         with:
-          python-version: 3.13
+          python-version: "3.13"
           run-uv-sync: true
 
       - name: Check outdated backend dependencies
-        run: |
-          outdated=$(uv pip list --outdated)
-          echo "Outdated:"
-          echo "$outdated"
-
-          filtered_outdated=$(echo "$outdated" | grep -vE 'pyright|ruff' || true)
-
-          if [ ! -z "$filtered_outdated" ]; then
-            echo "Outdated dependencies found:"
-            echo "$filtered_outdated"
-            exit 1
-          else
-            echo "All dependencies are up to date. (pyright and ruff are ignored)"
-          fi
+        # Not `--script`: that resolves an isolated env, and `uv pip list` would then
+        # inspect it instead of the project's synced environment.
+        run: uv run python scripts/check_outdated_deps.py backend
 
   frontend:
     runs-on: ubuntu-latest
+    env:
+      # reflex-enterprise restricts `reflex run --env prod` to paid tiers but
+      # exempts reflex's own integration tests via the app harness flag.
+      APP_HARNESS_FLAG: "true"
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
+
       - uses: ./.github/actions/setup_build_env
         with:
-          python-version: 3.13
-          run-uv-sync: true
+          python-version: "3.13"
+      - name: Install Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
 
-      - name: Clone Reflex Website Repo
-        uses: actions/checkout@v4
-        with:
-          repository: reflex-dev/reflex-web
-          ref: main
-          path: reflex-web
-      - name: Compile pyproject.toml into requirements.txt
-        working-directory: ./reflex-web
-        run: |
-          uv pip compile pyproject.toml --no-annotate --no-header --no-deps --output-file requirements.txt
-          grep -ivE "reflex " requirements.txt > requirements.txt.tmp && mv requirements.txt.tmp requirements.txt
-      - name: Install Requirements for reflex-web
-        working-directory: ./reflex-web
-        run: uv pip install -r requirements.txt
-      - name: Init Website for reflex-web
-        working-directory: ./reflex-web
-        run: uv run reflex init
+      - name: Install Requirements for reflex-docs
+        working-directory: ./docs/app
+        run: uv sync
+      - name: Init Website for reflex-docs
+        working-directory: ./docs/app
+        run: uv run --active --no-sync reflex init
       - name: Run Website and Check for errors
         run: |
-          uv run bash scripts/integration.sh ./reflex-web dev
+          uv run --active --no-sync bash scripts/integration.sh ./docs/app prod
       - name: Check outdated frontend dependencies
-        working-directory: ./reflex-web/.web
-        run: |
-          raw_outdated=$(/home/runner/.local/share/reflex/bun/bin/bun outdated)
-          outdated=$(echo "$raw_outdated" | grep -vE '\|\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\|' || true)
-          echo "Outdated:"
-          echo "$outdated"
-
-          # Ignore 3rd party dependencies that are not updated.
-          filtered_outdated=$(echo "$outdated" | grep -vE 'Package|@chakra-ui|lucide-react|@splinetool/runtime|ag-grid-react|framer-motion|ag-grid' || true)
-          no_extra=$(echo "$filtered_outdated" | grep -vE '\|\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-' || true)
-
-
-          if [ ! -z "$no_extra" ]; then
-            echo "Outdated dependencies found:"
-            echo "$filtered_outdated"
-            exit 1
-          else
-            echo "All dependencies are up to date. (3rd party packages are ignored)"
-          fi
+        # `--script` here: this job only syncs docs/app, and the frontend check reads
+        # bun and package.json rather than the Python environment.
+        run: uv run --script scripts/check_outdated_deps.py frontend --web-dir ./docs/app/.web

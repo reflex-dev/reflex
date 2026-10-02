@@ -1,8 +1,7 @@
 """Test that element script renders correctly."""
 
 import pytest
-
-from reflex.components.base.script import Script
+from reflex_components_core.base.script import Script
 
 
 def test_script_inline():
@@ -27,3 +26,16 @@ def test_script_neither():
     """Specifying neither children nor src is a ValueError."""
     with pytest.raises(ValueError):
         Script.create()
+
+
+def test_script_helmet_flushes_synchronously():
+    """The Helmet wrapper must not defer head updates.
+
+    react-helmet's default rAF-batched flush can be lost around hydration,
+    leaving the script tags out of the document entirely (flaky
+    "scripts not loaded" in test_call_script).
+    """
+    component = Script.create("let x = 42")
+    render_dict = component.render()
+    assert render_dict["name"] == "Helmet"
+    assert "defer:false" in render_dict["props"]

@@ -1,17 +1,23 @@
 import pytest
-
-from reflex.components.datadisplay.shiki_code_block import (
+from reflex_base.style import Style
+from reflex_base.vars import Var
+from reflex_base.vars.base import LiteralVar
+from reflex_components_code.shiki_code_block import (
     ShikiBaseTransformers,
     ShikiCodeBlock,
     ShikiHighLevelCodeBlock,
     ShikiJsTransformer,
 )
-from reflex.components.el.elements.forms import Button
-from reflex.components.lucide.icon import Icon
-from reflex.components.radix.themes.layout.box import Box
-from reflex.style import Style
-from reflex.vars import Var
-from reflex.vars.base import LiteralVar
+from reflex_components_core.el.elements.forms import Button
+from reflex_components_lucide.icon import Icon
+from reflex_components_radix.themes.layout.box import Box
+
+
+def test_default_shiki_copy_button_has_an_accessible_name():
+    """Icon-only Shiki copy controls must announce their action."""
+    assert '"aria-label":"Copy code"' in str(
+        ShikiHighLevelCodeBlock.create("print('Hello')", can_copy=True)
+    )
 
 
 @pytest.mark.parametrize(

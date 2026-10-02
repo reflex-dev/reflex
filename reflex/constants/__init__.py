@@ -43,9 +43,9 @@ from .config import (
     GitIgnore,
     PyprojectToml,
     RequirementsTxt,
+    UvLock,
 )
-from .custom_components import CustomComponents
-from .event import Endpoint, EventTriggers, SocketEvent
+from .event import ClientErrorType, Endpoint, EventTriggers, SocketEvent
 from .installer import Bun, Node, PackageJson
 from .route import (
     ROUTE_NOT_FOUND,
@@ -80,12 +80,12 @@ __all__ = [
     "SESSION_STORAGE",
     "SETTER_PREFIX",
     "Bun",
+    "ClientErrorType",
     "ColorMode",
     "CompileContext",
     "CompileVars",
     "ComponentName",
     "Config",
-    "CustomComponents",
     "DefaultPage",
     "DefaultPorts",
     "Dirs",
@@ -108,6 +108,7 @@ __all__ = [
     "PyprojectToml",
     "ReactRouter",
     "Reflex",
+    "ReflexHostingCLI",
     "RequirementsTxt",
     "RouteArgType",
     "RouteRegex",
@@ -115,4 +116,5 @@ __all__ = [
     "SocketEvent",
     "StateManagerMode",
     "Templates",
+    "UvLock",
 ]

@@ -2,8 +2,10 @@
 
 from typing import Any
 
+from reflex.istate.manager import get_state_manager
+from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import ReadOnlyStateProxy
-from reflex.state import _split_substate_key, _substate_key, get_state_manager
+from reflex.state import State, _split_substate_key
 
 
 async def get_state(token: str, state_cls: Any | None = None) -> ReadOnlyStateProxy:
@@ -18,9 +20,9 @@ async def get_state(token: str, state_cls: Any | None = None) -> ReadOnlyStatePr
     """
     mng = get_state_manager()
     if state_cls is not None:
-        root_state = await mng.get_state(_substate_key(token, state_cls))
+        root_state = await mng.get_state(BaseStateToken(ident=token, cls=state_cls))
     else:
-        root_state = await mng.get_state(token)
+        root_state = await mng.get_state(BaseStateToken(ident=token, cls=State))
         _, state_path = _split_substate_key(token)
         state_cls = root_state.get_class_substate(tuple(state_path.split(".")))
     instance = await root_state.get_state(state_cls)

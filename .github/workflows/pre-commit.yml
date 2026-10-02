@@ -3,7 +3,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.id }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id || github.sha }}
   cancel-in-progress: true
 
 on:
@@ -20,12 +20,26 @@ jobs:
     timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
       - uses: ./.github/actions/setup_build_env
         with:
-          python-version: 3.14
+          python-version: "3.14"
           run-uv-sync: true
-      - uses: actions/checkout@v4
+      # `uv sync` mutates tracked files (e.g. pyi_hashes.json), which would
+      # cause pre-commit to flag changes that aren't from the PR. Re-checkout
+      # with clean: false to restore source files while keeping the .venv.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           clean: false
+          fetch-tags: true
+          fetch-depth: 0
+          persist-credentials: false
       - run: uv run pre-commit run --all-files --show-diff-on-failure
+      # Partial/explicit-target generator runs merge into pyi_hashes.json rather
+      # than pruning, so a deleted component can leave a stale entry behind. Fail
+      # the build if any entry references a .py source that no longer exists.
+      - run: uv run --no-sync python scripts/make_pyi.py --check

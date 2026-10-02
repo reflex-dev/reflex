@@ -24,14 +24,15 @@ function do_export () {
 }
 
 echo "Preparing test project dir"
-python3 -m venv ~/venv
-source ~/venv/bin/activate
-pip install -U pip
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source "$HOME/.local/bin/env"
 
 echo "Installing reflex from local repo code"
 cp -r /reflex-repo ~/reflex-repo
-pip install ~/reflex-repo
-pip install psutil
+uv venv ~/venv
+source ~/venv/bin/activate
+uv pip install ~/reflex-repo
+uv pip install psutil
 
 redis-server &
 
