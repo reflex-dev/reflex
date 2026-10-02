@@ -67,9 +67,9 @@ class FormData(Mapping[_K, _V_co]):
         """
         if isinstance(items, FormData):
             pairs = items._items
+        elif isinstance(items, Mapping):
+            pairs = tuple(items.items())
         else:
-            if isinstance(items, Mapping):
-                items = items.items()
             pairs = tuple((key, value) for key, value in items)
         object.__setattr__(self, "_items", pairs)
         object.__setattr__(self, "_dict", dict(pairs))
