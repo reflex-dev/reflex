@@ -358,8 +358,16 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
             if base is base_origin and (
                 params := getattr(base_origin, "__parameters__", ())
             ):
-                # An unsubscripted generic base has Any for its type parameters.
-                base = base_origin[(Any,) * len(params)]
+                # An unsubscripted generic base takes its type parameters'
+                # defaults, or Any; a TypeVar has no has_default before 3.13.
+                base = base_origin[
+                    tuple(
+                        param.__default__
+                        if getattr(param, "has_default", bool)()
+                        else Any
+                        for param in params
+                    )
+                ]
             base_annotations = base_origin.__annotations__
             field_types.update(
                 (name, hint)

@@ -9,6 +9,7 @@ from collections.abc import Callable, Sequence
 from typing import Annotated, Any, Generic, Literal, TypeVar
 
 import pytest
+import typing_extensions
 from reflex_base.utils.types import (
     ASGIApp,
     Message,
@@ -383,10 +384,26 @@ class _BareGenericGrandchild(_BareGenericChild):
 
 
 def test_get_typed_dict_field_types_through_unsubscripted_generic_base():
-    """An unsubscripted generic base has Any for its type parameters."""
+    """An unsubscripted generic base has Any for type parameters without defaults."""
     expected = {"value": Any, "maybe": Any | None, "name": str}
     assert get_typed_dict_field_types(_BareGenericChild) == expected
     assert get_typed_dict_field_types(_BareGenericGrandchild) == expected
+
+
+_DefaultT = typing_extensions.TypeVar("_DefaultT", default=bool)
+
+
+class _DefaultBase(TypedDict, Generic[_DefaultT]):
+    flag: _DefaultT
+
+
+class _DefaultChild(_DefaultBase):
+    pass
+
+
+def test_get_typed_dict_field_types_unsubscripted_base_uses_defaults():
+    """An unsubscripted generic base takes its type parameters' defaults."""
+    assert get_typed_dict_field_types(_DefaultChild) == {"flag": bool}
 
 
 class _ReadOnlyBase(TypedDict, Generic[_FieldT]):
