@@ -162,6 +162,12 @@ class PackageJson(SimpleNamespace):
         "@react-router/fs-routes": _react_router_version,
         "vite": "8.2.2",
     }
+
+    REACT_COMPILER_DEV_DEPENDENCIES = {
+        "@babel/core": "7.29.7",
+        "babel-plugin-react-compiler": "1.0.0",
+    }
+
     # Force specific transitive npm deps to a single resolved version when
     # needed. Prefer a `DEV_DEPENDENCIES`/`DEPENDENCIES` pin when the package is
     # one we depend on directly: a top-level pin already satisfies and dedupes

@@ -734,6 +734,7 @@ def vite_config_template(
     allowed_hosts: bool | list[str] = False,
     prod_react: bool = False,
     warmup_routes: bool = False,
+    react_compiler: bool = False,
 ):
     """Template for vite.config.js.
 
@@ -749,6 +750,7 @@ def vite_config_template(
             (dev server only; see REFLEX_DEV_PROD_REACT).
         warmup_routes: Pre-transform every route module when the dev server
             starts, so the first visit to a page does not wait on Vite.
+        react_compiler: Enable React Compiler for generated components.
 
     Returns:
         Rendered vite.config.js content as string.
@@ -845,11 +847,17 @@ function prodReactPrebundle() {
         if warmup_routes
         else ""
     )
+    react_compiler_import = (
+        'import reactCompiler from "./vite-plugin-react-compiler.js";\n'
+        if react_compiler
+        else ""
+    )
+    react_compiler_plugin = "    reactCompiler(),\n" if react_compiler else ""
     return rf"""import {{ fileURLToPath, URL }} from "url";
 import {{ reactRouter }} from "@react-router/dev/vite";
 import {{ defineConfig }} from "vite";
 import safariCacheBustPlugin from "./vite-plugin-safari-cachebust.js";
-
+{react_compiler_import}
 // Ensure that bun always uses the react-dom/server.node functions.
 function alwaysUseReactDomServerNode() {{
   return {{
@@ -916,7 +924,7 @@ export default defineConfig((config) => ({{
   base: "{base}",
   plugins: [
     alwaysUseReactDomServerNode(),
-    reactRouter(),
+{react_compiler_plugin}    reactRouter(),
     patchReactRouterHmrRuntime(),
     safariCacheBustPlugin(),
   ].concat({"[fullReload()]" if force_full_reload else "[]"}),
