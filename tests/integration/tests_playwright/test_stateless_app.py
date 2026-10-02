@@ -48,7 +48,7 @@ def test_statelessness(stateless_app: AppHarness, page: Page):
     """
     assert stateless_app.frontend_url is not None
     assert stateless_app.backend is not None
-    assert stateless_app.backend.started
+    assert stateless_app.backend.is_listening()
 
     config = get_config()
     res = httpx.get(config.api_url + config.prepend_backend_path(str(Endpoint.EVENT)))

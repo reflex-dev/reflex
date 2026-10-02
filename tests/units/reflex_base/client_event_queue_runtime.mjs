@@ -24,7 +24,6 @@ export async function createQueueRuntime(
       localStorage: { clear() {}, removeItem() {} },
       sessionStorage: { clear() {}, removeItem() {} },
     },
-    "socket.io-client": { default: unused },
     mergician: { mergician: unused },
     "$/env.json": { default: {} },
     "$/reflex.json": { default: {} },
@@ -51,10 +50,16 @@ export async function createQueueRuntime(
       eventLoop: { addEvents: unused },
     },
     "$/utils/helpers/debounce": { default: unused },
-    "$/utils/helpers/json": { parseJson: unused },
     "$/utils/helpers/throttle": { default: throttle ?? unused },
     "$/utils/helpers/upload": {
       uploadFiles: uploadFiles ?? unused,
+    },
+    "$/utils/helpers/websocket": {
+      ReflexWebSocket: unused,
+      disableChannels: unused,
+      getChannel: unused,
+      parseJsonLenient: unused,
+      undefinedToNull: unused,
     },
   };
   // Let Node parse the unchanged module; only expose private state to tests.

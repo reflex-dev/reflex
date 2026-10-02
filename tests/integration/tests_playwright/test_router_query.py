@@ -19,13 +19,13 @@ Covers dev and prod modes via ``app_harness_env`` parametrisation.
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import Generator
 
 import pytest
 from playwright.sync_api import Page, expect
 from reflex_base.constants.state import FIELD_MARKER
-from socketio.packet import Packet
 
 from reflex.testing import AppHarness
 
@@ -228,14 +228,15 @@ def test_initial_connection_dispatches_both_substates(
     _load(router_query_app, page)
     expect(page.locator("#connected-count")).to_have_value("1")
 
-    # Socket.IO event packets use the Engine.IO message and event prefixes, 42.
+    # Frames on the default transport are JSON arrays, [event_name, payload].
     for frame in frames:
-        if not isinstance(frame, str) or not frame.startswith("42"):
+        if not isinstance(frame, str):
             continue
-        packet = Packet(encoded_packet=frame[1:])
-        assert packet.data is not None
-        event, update = packet.data
-        if event != "event":
+        message = json.loads(frame)
+        if not isinstance(message, list) or len(message) != 2:
+            continue
+        event, update = message
+        if event != "event" or not isinstance(update, dict):
             continue
         updated_substates = sum(
             fields.get("load_count" + FIELD_MARKER) == 1

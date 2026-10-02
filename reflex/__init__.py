@@ -241,6 +241,7 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
 _SUBMODULES: set[str] = {
     "components",
     "app",
+    "channels",
     "style",
     "admin",
     "base",
