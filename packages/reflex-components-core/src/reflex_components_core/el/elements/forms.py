@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import sys
 from collections.abc import Iterator
 from functools import partial
 from hashlib import md5
-from typing import Any, ClassVar, Literal, get_origin, get_type_hints
+from typing import Any, ClassVar, Literal, get_type_hints
 
 from reflex_base.components.component import BaseComponent, Component, field
 from reflex_base.components.tags.tag import CommonTag
@@ -29,10 +28,14 @@ from reflex_base.event import (
 )
 from reflex_base.utils.exceptions import EventHandlerValueError
 from reflex_base.utils.imports import ImportDict
+from reflex_base.utils.types import (
+    get_required_typed_dict_keys,
+    get_typed_dict_field_types,
+)
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.number import ternary_operation
-from typing_extensions import NotRequired, is_typeddict
+from typing_extensions import is_typeddict
 
 from reflex_components_core.el.element import Element
 
@@ -44,7 +47,6 @@ _DYNAMIC_FORM_FIELD = object()
 def _handle_submit_js_template(
     handle_submit_unique_name: str,
     form_data: str,
-    field_ref_mapping: str,
     on_submit_event_chain: str,
     reset_on_submit: str,
 ) -> str:
@@ -53,7 +55,6 @@ def _handle_submit_js_template(
     Args:
         handle_submit_unique_name: Unique name for the handle submit function.
         form_data: Name of the form data variable.
-        field_ref_mapping: JSON string of field reference mappings.
         on_submit_event_chain: Event chain for the submit handler.
         reset_on_submit: Boolean string indicating if form should reset after submit.
 
@@ -64,7 +65,7 @@ def _handle_submit_js_template(
     const handleSubmit_{handle_submit_unique_name} = useCallback((ev) => {{
         const $form = ev.target
         ev.preventDefault()
-        const {form_data} = {{...Object.fromEntries(new FormData($form).entries()), ...{field_ref_mapping}}};
+        const {form_data} = getFormData($form);
 
         ({on_submit_event_chain}(ev));
 
@@ -133,37 +134,6 @@ def _get_static_string_prop(
     if isinstance(value, Var):
         return _DYNAMIC_FORM_FIELD
     return None
-
-
-def _get_required_typed_dict_fields(typed_dict_type: type[Any]) -> frozenset[str]:
-    """Resolve required TypedDict keys across Python versions.
-
-    On Python 3.11+ ``__required_keys__`` is reliable.  On 3.10,
-    ``typing.TypedDict`` combined with ``typing_extensions.NotRequired``
-    fails to populate ``__required_keys__``, so we patch the result by
-    subtracting fields whose annotation is wrapped with ``NotRequired``.
-
-    Args:
-        typed_dict_type: The TypedDict class to inspect.
-
-    Returns:
-        The required field names for the TypedDict.
-    """
-    required = frozenset(getattr(typed_dict_type, "__required_keys__", frozenset()))
-    if sys.version_info >= (3, 11):
-        return required
-
-    # On 3.10, __required_keys__ ignores NotRequired from typing_extensions.
-    # Subtract any field explicitly marked NotRequired.
-    try:
-        hints = get_type_hints(typed_dict_type, include_extras=True)
-    except Exception:
-        return required
-
-    not_required = frozenset(
-        name for name, hint in hints.items() if get_origin(hint) is NotRequired
-    )
-    return required - not_required
 
 
 def _format_field_list(fields: tuple[str, ...]) -> str:
@@ -324,7 +294,7 @@ class Form(BaseHTML):
         """
         return {
             "react": "useCallback",
-            f"$/{Dirs.STATE_PATH}": ["getRefValue", "getRefValues"],
+            f"$/{Dirs.STATE_PATH}": "getFormData",
         }
 
     def add_hooks(self) -> list[str]:
@@ -339,7 +309,6 @@ class Form(BaseHTML):
             _handle_submit_js_template(
                 handle_submit_unique_name=str(self.handle_submit_unique_name),
                 form_data=str(FORM_DATA),
-                field_ref_mapping=str(LiteralVar.create(self._get_form_refs())),
                 on_submit_event_chain=str(
                     LiteralVar.create(self.event_triggers[EventTriggers.ON_SUBMIT])
                 ),
@@ -358,34 +327,14 @@ class Form(BaseHTML):
             })
         return render_tag
 
-    def _get_form_refs(self) -> dict[str, Any]:
-        # Send all the input refs to the handler.
-        form_refs = {}
-        for ref in self._get_all_refs():
-            # when ref start with refs_ it's an array of refs, so we need different method
-            # to collect data
-            if ref.startswith("refs_"):
-                ref_var = Var(_js_expr=ref[:-3])._as_ref()
-                form_refs[ref[len("refs_") : -3]] = Var(
-                    _js_expr=f"getRefValues({ref_var!s})",
-                    _var_data=VarData.merge(ref_var._get_all_var_data()),
-                )
-            else:
-                ref_var = Var(_js_expr=ref)._as_ref()
-                form_refs[ref[4:]] = Var(
-                    _js_expr=f"getRefValue({ref_var!s})",
-                    _var_data=VarData.merge(ref_var._get_all_var_data()),
-                )
-        return form_refs
-
-    def _get_static_form_field_keys(self) -> tuple[set[str], bool]:
+    def _get_static_form_field_names(self) -> tuple[set[str], bool]:
         """Collect statically known form-data keys and whether any are dynamic.
 
         Returns:
-            The known keys and whether any name/id identifiers are dynamic.
+            The known field names and whether any names are dynamic.
         """
-        form_keys = set(self._get_form_refs())
-        has_dynamic_identifiers = False
+        form_keys: set[str] = set()
+        has_dynamic_names = False
 
         for component in _iter_form_components(self):
             if component is self or not getattr(component, "_is_form_control", False):
@@ -393,20 +342,18 @@ class Form(BaseHTML):
 
             name = _get_static_string_prop(component, "name")
             if name is _DYNAMIC_FORM_FIELD:
-                has_dynamic_identifiers = True
+                has_dynamic_names = True
             elif isinstance(name, str):
                 form_keys.add(name)
 
-            if _get_static_string_prop(component, "id") is _DYNAMIC_FORM_FIELD:
-                has_dynamic_identifiers = True
-
-        return form_keys, has_dynamic_identifiers
+        return form_keys, has_dynamic_names
 
     def _validate_on_submit_typed_dict_fields(self) -> None:
         """Validate statically knowable form fields against TypedDict submit handlers.
 
         Raises:
-            EventHandlerValueError: If a required TypedDict field is missing.
+            EventHandlerValueError: If a required TypedDict field is missing, or
+                a TypedDict's field types cannot be resolved.
         """
         on_submit = self.event_triggers.get(EventTriggers.ON_SUBMIT)
         if not isinstance(on_submit, EventChain):
@@ -445,7 +392,14 @@ class Form(BaseHTML):
             if not is_typeddict(annotation):
                 continue
 
-            required_fields = _get_required_typed_dict_fields(annotation)
+            # Fail at compile time rather than coerce submissions wrongly.
+            try:
+                get_typed_dict_field_types(annotation)
+            except TypeError as err:
+                msg = f"Cannot submit form data to on_submit handler `{func.__qualname__}`: {err}"
+                raise EventHandlerValueError(msg) from err
+
+            required_fields = get_required_typed_dict_keys(annotation)
             typed_dict_contracts.append((
                 func.__qualname__,
                 annotation,
@@ -460,7 +414,7 @@ class Form(BaseHTML):
         if _get_static_string_prop(self, "id") is not None:
             return
 
-        form_keys, has_dynamic_identifiers = self._get_static_form_field_keys()
+        form_keys, has_dynamic_names = self._get_static_form_field_names()
 
         for handler_name, typed_dict_type, required_fields in typed_dict_contracts:
             required_field_names = tuple(sorted(required_fields))
@@ -470,7 +424,7 @@ class Form(BaseHTML):
             missing_fields = tuple(
                 field for field in required_field_names if field not in form_keys
             )
-            if not missing_fields or has_dynamic_identifiers:
+            if not missing_fields or has_dynamic_names:
                 continue
 
             present_fields = tuple(
@@ -485,18 +439,10 @@ class Form(BaseHTML):
                 f"{_format_field_list(missing_fields)}\n\n"
                 "Matching fields present in the form:\n"
                 f"{_format_field_list(present_fields)}\n\n"
-                "Hint: Add controls with matching static `name` or `id` values, or "
+                "Hint: Add controls with matching static `name` values, or "
                 "make the TypedDict fields optional."
             )
             raise EventHandlerValueError(msg)
-
-    def _get_vars(
-        self, include_children: bool = True, ignore_ids: set[int] | None = None
-    ) -> Iterator[Var]:
-        yield from super()._get_vars(
-            include_children=include_children, ignore_ids=ignore_ids
-        )
-        yield from self._get_form_refs().values()
 
     def _exclude_props(self) -> list[str]:
         return [

@@ -13,65 +13,6 @@ from selenium.webdriver.common.keys import Keys
 from reflex.testing import AppHarness
 
 
-def FormSubmit(form_component):
-    """App with a form using on_submit.
-
-    Args:
-        form_component: The str name of the form component to use.
-    """
-    import reflex as rx
-
-    class FormState(rx.State):
-        form_data: rx.Field[dict] = rx.field(default_factory=dict)
-
-        var_options: list[str] = ["option3", "option4"]
-
-        def form_submit(self, form_data: dict):
-            self.form_data = form_data
-
-    app = rx.App()
-
-    @app.add_page
-    def index():
-        return rx.vstack(
-            rx.input(
-                value=FormState.router.session.client_token,
-                is_read_only=True,
-                id="token",
-            ),
-            eval(form_component)(
-                rx.vstack(
-                    rx.input(id="name_input"),
-                    rx.checkbox(id="bool_input"),
-                    rx.switch(id="bool_input2"),
-                    rx.checkbox(id="bool_input3"),
-                    rx.switch(id="bool_input4"),
-                    rx.slider(id="slider_input", default_value=[50], width="100%"),
-                    rx.radio(["option1", "option2"], id="radio_input"),
-                    rx.radio(FormState.var_options, id="radio_input_var"),
-                    rx.select(
-                        ["option1", "option2"],
-                        name="select_input",
-                        default_value="option1",
-                    ),
-                    rx.select(FormState.var_options, id="select_input_var"),
-                    rx.text_area(id="text_area_input"),
-                    rx.input(
-                        id="debounce_input",
-                        debounce_timeout=0,
-                        on_change=rx.console_log,
-                    ),
-                    rx.button("Submit", type_="submit"),
-                ),
-                on_submit=FormState.form_submit,
-                custom_attrs={"action": "/invalid"},
-            ),
-            rx.text(FormState.form_data.to_string(), id="form-data"),
-            rx.spacer(),
-            height="100vh",
-        )
-
-
 def FormSubmitName(form_component):
     """App with a form using on_submit.
 
@@ -82,11 +23,20 @@ def FormSubmitName(form_component):
 
     class FormState(rx.State):
         form_data: rx.Field[dict] = rx.field(default_factory=dict)
+        tags: rx.Field[list[str]] = rx.field(default_factory=list)
         val: str = "foo"
         options: list[str] = ["option1", "option2"]
 
+        @rx.event
         def form_submit(self, form_data: dict):
-            self.form_data = form_data
+            # A file input submits its contents as bytes.
+            self.form_data = {
+                name: value for name, value in form_data.items() if name != "attachment"
+            }
+
+        @rx.event
+        def form_submit_all(self, form_data: rx.form.FormData[str, str]):
+            self.tags = form_data.getlist("tag")
 
     app = rx.App()
 
@@ -101,11 +51,18 @@ def FormSubmitName(form_component):
             eval(form_component)(
                 rx.vstack(
                     rx.input(name="name_input"),
+                    rx.input(id="id_only_input", default_value="unsubmitted"),
+                    rx.el.input(type="hidden", name="tag", value="a"),
+                    rx.el.input(type="hidden", name="tag", value="b"),
+                    # Its File makes Socket.IO send the event as a binary packet.
+                    rx.el.input(type="file", name="attachment"),
                     rx.checkbox(name="bool_input"),
                     rx.switch(name="bool_input2"),
                     rx.checkbox(name="bool_input3"),
                     rx.switch(name="bool_input4"),
                     rx.slider(name="slider_input", default_value=[50], width="100%"),
+                    # Two thumbs submit their values as "range_input[]".
+                    rx.slider(name="range_input", default_value=[20, 80], width="100%"),
                     rx.radio(FormState.options, name="radio_input"),
                     rx.select(
                         FormState.options,
@@ -121,10 +78,11 @@ def FormSubmitName(form_component):
                     rx.button("Submit", type_="submit"),
                     rx.icon_button(rx.icon(tag="plus")),
                 ),
-                on_submit=FormState.form_submit,
+                on_submit=[FormState.form_submit, FormState.form_submit_all],
                 custom_attrs={"action": "/invalid"},
             ),
             rx.text(FormState.form_data.to_string(), id="form-data"),
+            rx.text(FormState.tags.to_string(), id="tags"),
             rx.spacer(),
             height="100vh",
         )
@@ -133,15 +91,11 @@ def FormSubmitName(form_component):
 @pytest.fixture(
     scope="module",
     params=[
-        functools.partial(FormSubmit, form_component="rx.form.root"),
         functools.partial(FormSubmitName, form_component="rx.form.root"),
-        functools.partial(FormSubmit, form_component="rx.el.form"),
         functools.partial(FormSubmitName, form_component="rx.el.form"),
     ],
     ids=[
-        "id-radix",
         "name-radix",
-        "id-html",
         "name-html",
     ],
 )
@@ -192,8 +146,6 @@ async def test_submit(driver, form_submit: AppHarness):
         form_submit: harness for FormSubmit app
     """
     assert form_submit.app_instance is not None, "app is not running"
-    by = By.ID if form_submit.app_source is FormSubmit else By.NAME
-
     # get a reference to the connected client
     token_input = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "token")
@@ -203,7 +155,7 @@ async def test_submit(driver, form_submit: AppHarness):
     token = form_submit.poll_for_value(token_input)
     assert token
 
-    name_input = driver.find_element(by, "name_input")
+    name_input = driver.find_element(By.NAME, "name_input")
     name_input.send_keys("foo")
 
     checkbox_input = driver.find_element(By.XPATH, "//button[@role='checkbox']")
@@ -218,7 +170,7 @@ async def test_submit(driver, form_submit: AppHarness):
     textarea_input = driver.find_element(By.TAG_NAME, "textarea")
     textarea_input.send_keys("Some", Keys.ENTER, "Text")
 
-    debounce_input = driver.find_element(by, "debounce_input")
+    debounce_input = driver.find_element(By.NAME, "debounce_input")
     debounce_input.send_keys("bar baz")
 
     await asyncio.sleep(1)
@@ -245,10 +197,19 @@ async def test_submit(driver, form_submit: AppHarness):
     assert not form_data.get("bool_input4", False)
 
     assert form_data["slider_input"] == "50"
+    assert form_data["range_input[]"] == ["20", "80"]
     assert form_data["radio_input"] == "option2"
     assert form_data["select_input"] == "option1"
     assert form_data["text_area_input"] == "Some\nText"
     assert form_data["debounce_input"] == "bar baz"
+    # Only named controls are submitted; an id alone does not add a field.
+    assert "id_only_input" not in form_data
+    # A dict keeps the last value of a repeated name; FormData keeps them all.
+    assert form_data["tag"] == "b"
+    tags = form_submit.poll_for_content(
+        driver.find_element(By.ID, "tags"), exp_not_equal="[]"
+    )
+    assert json.loads(tags) == ["a", "b"]
 
     # submitting the form should NOT change the url (preventDefault on_submit event)
     assert driver.current_url == prev_url

@@ -1,8 +1,13 @@
-from typing import TypedDict
+import logging
+from typing import Any, TypedDict, TypeVar
 
 import pytest
 from reflex_base.event import EventChain, prevent_default
-from reflex_base.utils.exceptions import EventHandlerValueError
+from reflex_base.utils.exceptions import (
+    EventHandlerArgTypeMismatchError,
+    EventHandlerValueError,
+)
+from reflex_base.utils.form import FormData
 from reflex_base.vars.base import Var
 from reflex_components_core.el.elements.forms import (
     AUTO_HEIGHT_JS,
@@ -16,6 +21,8 @@ from typing_extensions import NotRequired
 
 import reflex as rx
 from reflex.compiler.utils import _root_only_custom_code
+
+_T = TypeVar("_T")
 
 
 def test_render_on_submit():
@@ -59,8 +66,8 @@ def test_on_submit_accepts_typed_dict_form_data(form_factory):
     assert isinstance(form.event_triggers["on_submit"], EventChain)
 
 
-def test_on_submit_accepts_id_backed_typed_dict_form_data():
-    """Static ids that are mirrored into form_data should satisfy TypedDict keys."""
+def test_on_submit_rejects_id_backed_typed_dict_form_data():
+    """Static ids are not submitted, so they cannot satisfy TypedDict keys."""
 
     class SignupData(TypedDict):
         email_input: str
@@ -70,12 +77,61 @@ def test_on_submit_accepts_id_backed_typed_dict_form_data():
         def on_submit(self, form_data: SignupData):
             pass
 
-    form = HTMLForm.create(
-        Input.create(id="email_input"),
-        on_submit=SignupState.on_submit,
-    )
+    with pytest.raises(EventHandlerValueError, match="email_input"):
+        HTMLForm.create(
+            Input.create(id="email_input"),
+            on_submit=SignupState.on_submit,
+        )
 
-    assert isinstance(form.event_triggers["on_submit"], EventChain)
+
+def test_on_submit_rejects_typed_dict_with_unresolved_field_types():
+    """A TypedDict whose field types cannot be resolved fails at compile time."""
+
+    class LooseData(TypedDict):
+        tags: _T  # pyright: ignore[reportGeneralTypeIssues]
+
+    class LooseState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: LooseData):
+            pass
+
+    with pytest.raises(EventHandlerValueError, match=r"typing_extensions\.TypedDict"):
+        HTMLForm.create(
+            Input.create(name="tags"),
+            id="loose",
+            on_submit=LooseState.on_submit,
+        )
+
+
+def test_on_submit_typed_dict_ignores_dynamic_ids():
+    """A dynamic id cannot contribute a form_data key, so validation still runs."""
+
+    class SignupData(TypedDict):
+        email: str
+
+    class SignupState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: SignupData):
+            pass
+
+    with pytest.raises(EventHandlerValueError):
+        HTMLForm.create(
+            Input.create(id=Var(_js_expr="dynamic_id", _var_type=str)),
+            on_submit=SignupState.on_submit,
+        )
+
+
+@pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
+def test_on_submit_collects_form_data_by_name_only(form_factory):
+    """The submit handler reads FormData by name and never reads id refs."""
+    form = form_factory(
+        Input.create(id="email_input", name="email"),
+        on_submit=Var(_js_expr="submit_it", _var_type=EventChain),
+    )
+    (hook,) = form.add_hooks()
+    assert "const form_data = getFormData($form);" in hook
+    assert "ref_email_input" not in hook
+    assert "getRefValue" not in hook
 
 
 def test_on_submit_accepts_typed_dict_with_optional_fields():
@@ -212,6 +268,69 @@ def test_on_submit_accepts_typed_dict_with_inherited_optional_fields():
         on_submit=SignupState.on_submit,
     )
     assert isinstance(form_with_both.event_triggers["on_submit"], EventChain)
+
+
+@pytest.mark.parametrize(
+    "annotation",
+    [FormData, FormData[str, Any], FormData[str, str], rx.form.FormData],
+)
+@pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
+def test_on_submit_accepts_form_data_annotation(form_factory, annotation, caplog):
+    """FormData-annotated submit handlers are accepted without a mismatch warning."""
+
+    class TagsState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: annotation):  # pyright: ignore[reportInvalidTypeForm]
+            pass
+
+    with caplog.at_level(logging.WARNING):
+        form = form_factory(
+            Input.create(name="tag"),
+            on_submit=TagsState.on_submit,
+        )
+
+    assert isinstance(form.event_triggers["on_submit"], EventChain)
+    assert "intentionally ignored" not in caplog.text
+
+
+@pytest.mark.parametrize(
+    "control",
+    [
+        lambda: rx.checkbox("Subscribe", name="subscribe"),
+        lambda: rx.switch(name="subscribe"),
+        lambda: Input.create(type="checkbox", name="subscribe"),
+    ],
+)
+def test_on_submit_typed_dict_bool_field_accepts_toggle_controls(control):
+    """Checkboxes and switches satisfy a required TypedDict bool field."""
+
+    class PrefsData(TypedDict):
+        subscribe: bool
+
+    class PrefsState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: PrefsData):
+            pass
+
+    form = HTMLForm.create(control(), on_submit=PrefsState.on_submit)
+    assert isinstance(form.event_triggers["on_submit"], EventChain)
+
+
+def test_form_data_is_exported_on_the_form_namespace():
+    """Apps annotate form data with rx.form.FormData."""
+    assert rx.form.FormData is FormData
+
+
+def test_on_submit_rejects_non_mapping_form_data():
+    """A non-mapping annotation is a type mismatch, not a failed comparison."""
+
+    class TagsState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: list[str]):
+            pass
+
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        HTMLForm.create(on_submit=TagsState.on_submit)  # pyright: ignore[reportArgumentType]
 
 
 def test_on_submit_accepts_controls_associated_via_form_attribute():

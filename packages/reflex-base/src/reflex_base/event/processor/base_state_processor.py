@@ -7,7 +7,7 @@ import functools
 import inspect
 import logging
 import warnings
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from enum import Enum
 from importlib.util import find_spec
 from time import perf_counter
@@ -22,6 +22,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegisteredEventHandler
+from reflex_base.utils.form import form_data_as_dict, transform_form_data
 from reflex_base.utils.format import format_event_handler
 
 logger = logging.getLogger(__name__)
@@ -124,6 +125,7 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
     from reflex.model import Model
     from reflex.utils.serializers import deserializers
 
+    value = transform_form_data(value, hinted_args)
     if hinted_args is Any:
         return value
     if types.is_union(hinted_args):
@@ -189,6 +191,28 @@ def _transform_event_payload(
             msg = f"Error transforming event argument '{arg}' with value '{value}' and type hint '{hinted_args}'"
             raise ValueError(msg) from ex
     return transformed
+
+
+def _prepare_event_payload(
+    fn: Callable[..., Any], payload: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Transform an event payload for a handler's annotations.
+
+    Args:
+        fn: The handler function.
+        payload: The event payload.
+
+    Returns:
+        The transformed payload or, when it cannot be transformed, the original
+        payload with any form data as a dict of each name's last value.
+    """
+    try:
+        return _transform_event_payload(payload, types.get_type_hints(fn))
+    except Exception as ex:
+        logger.warning(
+            f"Error transforming event payload for handler {fn.__qualname__}: {ex}"
+        )
+        return {arg: form_data_as_dict(value) for arg, value in payload.items()}
 
 
 async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
@@ -309,15 +333,7 @@ async def process_event(
 
     # Get the function to process the event.
     fn = functools.partial(handler.fn, state)
-
-    try:
-        type_hints = types.get_type_hints(handler.fn)
-        payload = _transform_event_payload(payload, type_hints)
-    except Exception as ex:
-        # No transformation was possible, continue with the original payload
-        logger.warning(
-            f"Error transforming event payload for handler {handler_name}: {ex}"
-        )
+    payload = _prepare_event_payload(handler.fn, payload)
 
     # Handle async functions.
     if inspect.iscoroutinefunction(fn.func):

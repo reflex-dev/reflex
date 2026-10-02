@@ -1,8 +1,8 @@
 import json
 import shutil
 import subprocess
-from collections.abc import Callable
-from typing import Any, cast
+from collections.abc import Callable, Mapping
+from typing import Any, TypeVar, cast
 
 import pytest
 from reflex_base.constants import LogLevel
@@ -15,6 +15,7 @@ from reflex_base.event import (
     EventHandler,
     EventSpec,
     LambdaEventCallback,
+    _check_event_args_subclass_of_callback,
     call_event_handler,
     event,
     fix_events,
@@ -1532,3 +1533,32 @@ def test_event_chain_create_shares_chains_bound_from_one_handler():
         EventChain.create([ChainState.handler], args_spec=args_spec, key="on_click")
         is not chain
     )
+
+
+_BOUNDED_SPEC_ARG = TypeVar("_BOUNDED_SPEC_ARG", bound=Mapping[str, Any])
+_CONSTRAINED_SPEC_ARG = TypeVar("_CONSTRAINED_SPEC_ARG", int, str)
+
+
+@pytest.mark.parametrize(
+    ("spec_arg", "annotation", "accepted"),
+    [
+        (_BOUNDED_SPEC_ARG, dict[str, str], True),
+        (_BOUNDED_SPEC_ARG, list[str], False),
+        (_CONSTRAINED_SPEC_ARG, int, True),
+        (_CONSTRAINED_SPEC_ARG, str, True),
+        (_CONSTRAINED_SPEC_ARG, float, False),
+    ],
+)
+def test_generic_event_spec_arg_admits_callback_types(spec_arg, annotation, accepted):
+    """A TypeVar spec arg accepts callback types within its bound or constraints."""
+
+    def check():
+        _check_event_args_subclass_of_callback(
+            ["value"], [tuple[Var[spec_arg]]], {"value": annotation}
+        )
+
+    if accepted:
+        check()
+    else:
+        with pytest.raises(EventHandlerArgTypeMismatchError):
+            check()
