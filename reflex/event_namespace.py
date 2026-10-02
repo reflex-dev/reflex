@@ -11,7 +11,7 @@ import time
 import urllib.parse
 import uuid
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, MutableMapping, Sequence
+from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 from reflex_base import constants, otel
@@ -64,6 +64,18 @@ _PING_FRAME = json.dumps([PING_MESSAGE])
 _STATIC_ROUTER_DATA = "_reflex_static_router_data"
 
 
+def _decode_asgi_headers(headers: Iterable[tuple[bytes, bytes]]) -> dict[str, str]:
+    """Decode raw ASGI scope header pairs into a str-keyed dict.
+
+    Args:
+        headers: Raw (name, value) byte pairs from the ASGI scope.
+
+    Returns:
+        A dict mapping decoded header names to decoded values.
+    """
+    return {k.decode("utf-8"): v.decode("utf-8") for (k, v) in headers}
+
+
 def build_static_router_data(sid: str, asgi_scope: Mapping[str, Any]) -> dict[str, Any]:
     """Build the router_data entries that are constant for a connection.
 
@@ -74,7 +86,7 @@ def build_static_router_data(sid: str, asgi_scope: Mapping[str, Any]) -> dict[st
     Returns:
         The connection-scoped router_data entries.
     """
-    headers = {k.decode("utf-8"): v.decode("utf-8") for (k, v) in asgi_scope["headers"]}
+    headers = _decode_asgi_headers(asgi_scope["headers"])
 
     # Get the client IP.
     if client := asgi_scope.get("client"):
@@ -1093,8 +1105,8 @@ class WebsocketEventNamespace(BaseEventNamespace):
         await websocket.accept(subprotocol=subprotocols[0] if subprotocols else None)
 
         sid = str(uuid.uuid4())
-        ping_interval = environment.REFLEX_SOCKET_INTERVAL.get()
-        ping_timeout = environment.REFLEX_SOCKET_TIMEOUT.get()
+        ping_interval = environment.REFLEX_SOCKET_INTERVAL.get().total_seconds()
+        ping_timeout = environment.REFLEX_SOCKET_TIMEOUT.get().total_seconds()
         max_message_size = environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get()
         self._sockets[sid] = websocket
         last_received = time.monotonic()

@@ -119,11 +119,13 @@ dev = [
   "python-dotenv",
   "python-socketio",
   "pyyaml",
+  "reflex-bench",
   "reflex-docgen",
   "reflex-otel",
   "reflex-release",
-  "reflex-build-sdk",
+  "reflex-build-sdk[aiohttp,httpx,httpx2]",
   "reflex-site-shared",
+  "reflex-workflow",
   "ruff",
   "selenium",
   "sqlalchemy",
@@ -134,7 +136,12 @@ dev = [
   "ty",
   "typer",
   "uvicorn",
+  "cronsim",
+  "croniter",
 ]
+# The benchmark CI jobs: the harness without the dev group (libsass builds from
+# source on arm64).
+bench = ["reflex-bench"]
 
 
 [build-system]
@@ -146,6 +153,7 @@ source = "uv-dynamic-versioning"
 
 [tool.uv-dynamic-versioning]
 fallback-version = "0.0.0dev0"
+bump = true
 
 [tool.hatch.build]
 # Leading slashes anchor to the repo root; unanchored patterns match nested
@@ -163,6 +171,7 @@ require-runtime-dependencies = true
 
 [tool.pyright]
 extraPaths = [
+  "packages/reflex-bench/src",
   "packages/reflex-code/src",
   "packages/reflex-components/src",
   "packages/reflex-dataeditor/src",
@@ -181,6 +190,9 @@ extraPaths = [
   "packages/reflex-otel/src",
   "packages/reflex-build-sdk/src",
   "packages/reflex-site-shared/src",
+  "packages/reflex-workflow/src",
+  # The workflow examples are read from the repository rather than installed.
+  "packages/reflex-workflow",
   "packages/integrations-docs/src",
 ]
 exclude = [
@@ -270,6 +282,8 @@ preview = true
   "N",
 ]
 "benchmarks/*.py" = ["ANN001", "D100", "D103", "D104", "B018", "PERF", "T", "N"]
+# A benchmark is a script: it prints its results and is run, not imported.
+"packages/*/benchmarks/*.py" = ["INP", "PERF", "T", "ASYNC240"]
 "*/.templates/*.py" = ["D100", "D103", "D104"]
 "*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]
 "pyi_generator.py" = ["N802"]
@@ -290,8 +304,10 @@ preview = true
 "*/blank.py" = ["I001"]
 "docs/package/scripts/*.py" = ["INP001"]
 "packages/reflex-build-sdk/scripts/*.py" = ["INP001", "T201"]
+"scripts/changed_paths.py" = ["T201"]
 "scripts/check_min_deps.py" = ["T201"]
 "scripts/check_outdated_deps.py" = ["T201"]
+"scripts/hash_examples.py" = ["T201"]
 "scripts/verify_pyi.py" = ["T201"]
 # Skill helper scripts are CLIs whose whole job is printing a report.
 ".claude/skills/*/scripts/*.py" = ["T201"]
@@ -300,6 +316,9 @@ preview = true
 filterwarnings = "ignore:fields may not start with an underscore:RuntimeWarning"
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
+markers = [
+  "performance: scheduled wall-time, service, memory, lifecycle, or browser benchmark",
+]
 
 [tool.codespell]
 skip = "*.html, examples, *.pyi, */nba.csv, */olympic-winners.json, packages/reflex-build-sdk/openapi.json, uv.lock, */bun.lock, node_modules"
@@ -329,6 +348,8 @@ source = [
   "reflex_site_shared",
   "reflex_components_internal",
   "reflex_integrations_docs",
+  "reflex_bench",
+  "reflex_workflow",
 ]
 branch = true
 omit = [
@@ -385,9 +406,10 @@ release-timezone = "America/Los_Angeles"
 # No changelog, no news fragments: patch-released on every push to main that
 # touches them.
 internal-packages = ["reflex-components-internal", "reflex-site-shared"]
-# Built for the docs site rather than published to PyPI: no release checkbox, no
+# Built for the docs site (integrations-docs) or used only inside this repository
+# (reflex-bench) rather than published to PyPI: no release checkbox, no
 # changelog detection, no news fragment, and publish refuses it.
-never-publish-packages = ["integrations-docs"]
+never-publish-packages = ["integrations-docs", "reflex-bench"]
 
 # reflex's metadata pins reflex-base exactly, so the two always release together
 # at one version and reflex uploads only after reflex-base is on PyPI.
@@ -495,7 +517,12 @@ frontend_pinned = [
 ]
 
 [tool.uv]
-required-version = ">=0.9.17"
+# 0.11.8 is the first release that resolves a URL dependency reached through a
+# URL build requirement. reflex's build hook sets require-runtime-dependencies,
+# so every workspace package it depends on is a file:// build requirement, and
+# reflex-hosting-cli reaches reflex-build-sdk the same way. Older uv refuses the
+# second hop and `uv sync` cannot build reflex at all.
+required-version = ">=0.11.8"
 exclude-newer = "7 days"
 
 # Internal Reflex packages release in lockstep and are routinely pinned (>=) at a version
@@ -507,6 +534,7 @@ exclude-newer = "7 days"
 hatch-reflex-pyi = false
 reflex = false
 reflex-base = false
+reflex-build-sdk = false
 reflex-components-code = false
 reflex-components-core = false
 reflex-components-dataeditor = false
@@ -526,6 +554,7 @@ reflex-hosting-cli = false
 [tool.uv.sources]
 hatch-reflex-pyi.workspace = true
 reflex-base.workspace = true
+reflex-bench.workspace = true
 reflex-components-code.workspace = true
 reflex-components-core.workspace = true
 reflex-components-dataeditor.workspace = true
@@ -545,6 +574,7 @@ reflex-otel.workspace = true
 reflex-build-sdk.workspace = true
 reflex-components-internal.workspace = true
 reflex-site-shared.workspace = true
+reflex-workflow.workspace = true
 reflex-integrations-docs.workspace = true
 reflex.workspace = true
 

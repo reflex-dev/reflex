@@ -32,7 +32,6 @@ from reflex_docs.whitelist import _check_whitelisted_path
 from .apiref import pages as apiref_pages
 from .cloud import pages as cloud_pages
 from .cloud_cliref import pages as cloud_cliref_pages
-from .custom_components import custom_components
 from .library import library
 from .recipes_overview import overview
 
@@ -74,8 +73,8 @@ def build_nested_namespace(
     return parent_namespace
 
 
-# Leading YAML frontmatter block, mirroring reflex_docgen's parser.
-_FRONTMATTER_BLOCK_RE = re.compile(r"\A---\n.*?\n---\n", re.DOTALL)
+# Share the accepted frontmatter boundary across all page metadata.
+_FRONTMATTER_BLOCK_RE = re.compile(r"\A\ufeff?\s*---\r?\n(.*?)\r?\n---\r?\n", re.DOTALL)
 
 
 @lru_cache(maxsize=None)
@@ -182,8 +181,6 @@ manual_titles = {
     "docs/ai_builder/apis.md": "APIs",
     "docs/ai_builder/urls.md": "URLs",
     "docs/database/overview.md": "Database Overview",
-    "docs/custom-components/overview.md": "Custom Components Overview",
-    "docs/custom-components/command-reference.md": "Custom Component CLI Reference",
     "docs/api-routes/overview.md": "API Routes Overview",
     "docs/client_storage/overview.md": "Client Storage Overview",
     "docs/state_structure/overview.md": "State Structure Overview",
@@ -286,7 +283,7 @@ def extract_doc_description(
         # description only when it's already long enough; otherwise strip the
         # block and fall through to the body prose, which is usually richer than
         # a short frontmatter field.
-        frontmatter = re.match(r"﻿?\s*---\r?\n(.*?)\r?\n---\r?\n", text, flags=re.DOTALL)
+        frontmatter = _FRONTMATTER_BLOCK_RE.match(text)
         if frontmatter:
             for fm_line in frontmatter.group(1).splitlines():
                 key_value = re.match(
@@ -488,9 +485,12 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
 
     description = extract_doc_description(doc_text)
     image = get_image_from_frontmatter(actual_path)
+    frontmatter = _frontmatter_for(actual_path)
     return make_docpage(
         resolved.route,
-        resolved.display_title,
+        frontmatter.title
+        if frontmatter and frontmatter.title
+        else resolved.display_title,
         virtual_doc,
         comp,
         actual_path,
@@ -536,7 +536,6 @@ for _virtual, _actual in all_docs.items():
 
 doc_routes = [
     library,
-    custom_components,
     overview,
     *components_previews_pages,
     *apiref_pages,

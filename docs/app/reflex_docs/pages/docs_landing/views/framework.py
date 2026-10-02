@@ -46,6 +46,12 @@ def links_section() -> rx.Component:
     return rx.el.div(
         docs_item(
             "SourceCodeSquareIcon",
+            "What You Can Build",
+            "Start with working Python examples for linked charts, AI chat, model interfaces, and internal tools.",
+            getting_started.what_you_can_build.path,
+        ),
+        docs_item(
+            "SourceCodeSquareIcon",
             "How It Works",
             "Learn the basics of how Reflex works behind the scenes and how its architecture enables flexible, advanced usage.",
             getting_started.introduction.path,

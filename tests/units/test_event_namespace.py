@@ -36,6 +36,7 @@ from reflex.event_namespace import (
     PONG_MESSAGE,
     PROTOCOL_VERSION,
     WebsocketEventNamespace,
+    _decode_asgi_headers,
     decode_channel_frame,
     encode_channel_frame,
 )
@@ -1610,3 +1611,22 @@ async def test_a_failing_channel_hook_cannot_flood_the_logs(
     # The connection is still serving: a channel bug is not the client's fault.
     assert websocket.close_code is None
     assert ["ping", "pong"] in websocket.sent
+
+
+def test_decode_asgi_headers():
+    """_decode_asgi_headers decodes raw ASGI header pairs into a str dict."""
+    assert _decode_asgi_headers([]) == {}
+    assert _decode_asgi_headers([
+        (b"host", b"example.com"),
+        (b"x-forwarded-for", b"10.0.0.1, 10.0.0.2"),
+    ]) == {
+        "host": "example.com",
+        "x-forwarded-for": "10.0.0.1, 10.0.0.2",
+    }
+    # Later duplicates win, matching dict comprehension semantics.
+    assert _decode_asgi_headers([
+        (b"cookie", b"a=1"),
+        (b"cookie", b"b=2"),
+    ]) == {"cookie": "b=2"}
+    # Names and values are decoded as UTF-8.
+    assert _decode_asgi_headers([(b"x-name", "café".encode())]) == {"x-name": "café"}
