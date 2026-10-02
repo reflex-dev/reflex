@@ -168,26 +168,42 @@ def _exec_code(content: str, env: dict, filename: str) -> None:
     _executed_blocks.add(key)
 
 
-def _render_spans(spans: tuple[Span, ...]) -> list[rx.Component | str]:
-    """Convert a sequence of spans into a list of Reflex children."""
+def _render_spans(
+    spans: tuple[Span, ...], links: bool = True
+) -> list[rx.Component | str]:
+    """Convert a sequence of spans into a list of Reflex children.
+
+    Args:
+        spans: The spans to render.
+        links: Whether links render as anchors. Where the spans are already
+            inside an anchor, such as a heading's link to itself, a link
+            renders as its text instead, since anchors cannot nest.
+
+    Returns:
+        The rendered children.
+    """
     out: list[rx.Component | str] = []
     for span in spans:
         match span:
             case TextSpan(text=text):
                 out.append(text)
             case BoldSpan(children=children):
-                out.append(rx.el.strong(*_render_spans(children)))
+                out.append(rx.el.strong(*_render_spans(children, links)))
             case ItalicSpan(children=children):
-                out.append(rx.el.em(*_render_spans(children)))
+                out.append(rx.el.em(*_render_spans(children, links)))
             case StrikethroughSpan(children=children):
                 inner = "".join(
-                    c if isinstance(c, str) else "" for c in _render_spans(children)
+                    c if isinstance(c, str) else ""
+                    for c in _render_spans(children, links)
                 )
                 out.append(rx.text("~" + inner + "~", as_="span"))
             case CodeSpan(code=code):
                 out.append(code_comp(text=code))
             case LinkSpan(children=children, target=target):
-                out.append(_render_link(children, target))
+                if links:
+                    out.append(_render_link(children, target))
+                else:
+                    out.extend(_render_spans(children, links))
             case ImageSpan(src=src):
                 out.append(img_comp_xd(src=src))
             case LineBreakSpan(soft=soft):
@@ -277,8 +293,9 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         text = _spans_to_plaintext(block.children)
         if not all(isinstance(span, TextSpan) for span in block.children):
             # Shown with its markup, and anchored on the same plain text, so a
-            # link to the heading does not change.
-            content = rx.fragment(*_render_spans(block.children))
+            # link to the heading does not change. The heading is itself a
+            # link to that anchor, so a link inside it shows as its text.
+            content = rx.fragment(*_render_spans(block.children, links=False))
             return heading_comp(text, block.level, content)
         match block.level:
             case 1:

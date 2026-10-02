@@ -291,11 +291,23 @@ def test_heading_keeps_inline_code_and_its_plain_anchor(level: int) -> None:
     """A heading shows its code as code, and its anchor is the plain text's."""
     marks = "#" * level
     rendered = str(render_markdown(f"{marks} Using `rx.cond` here"))
+    assert f'as:"h{level}"' in rendered
     assert 'text:"rx.cond"' in rendered
     assert 'slugifyMixedTextHastNode("Using rx.cond here")' in rendered
     # A plain heading compiles exactly as it did.
     plain = str(render_markdown(f"{marks} Using rx.cond here"))
     assert 'text:"Using rx.cond here"' in plain
+
+
+def test_heading_shows_a_link_as_text_inside_its_own_anchor() -> None:
+    """A link in a heading keeps its text and markup but nests no second anchor."""
+    heading = render_markdown("## Use [the `match` component](/docs/match/) here")
+    rendered = str(heading)
+    assert list(_anchors(heading)) == []
+    assert 'href:"/docs/match/"' not in rendered
+    assert '"the "' in rendered
+    assert 'text:"match"' in rendered
+    assert 'slugifyMixedTextHastNode("Use the match component here")' in rendered
 
 
 def test_render_docgen_document_extracts_faq_jsonld(tmp_path: Path) -> None:
