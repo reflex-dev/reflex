@@ -261,6 +261,18 @@ def test_link_text_keeps_its_inline_markup(
     assert inner in link
 
 
+@pytest.mark.parametrize("level", [1, 2, 3, 4])
+def test_heading_keeps_inline_code_and_its_plain_anchor(level: int) -> None:
+    """A heading shows its code as code, and its anchor is the plain text's."""
+    marks = "#" * level
+    rendered = str(render_markdown(f"{marks} Using `rx.cond` here"))
+    assert 'text:"rx.cond"' in rendered
+    assert 'slugifyMixedTextHastNode("Using rx.cond here")' in rendered
+    # A plain heading compiles exactly as it did.
+    plain = str(render_markdown(f"{marks} Using rx.cond here"))
+    assert 'text:"Using rx.cond here"' in plain
+
+
 def test_render_docgen_document_extracts_faq_jsonld(tmp_path: Path) -> None:
     """Strip the FAQ block into JSON-LD and keep it out of the visible body."""
     doc = tmp_path / "faq.md"

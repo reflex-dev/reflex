@@ -55,6 +55,7 @@ from reflex_site_shared.components.blocks.headings import (
     h2_comp_xd,
     h3_comp_xd,
     h4_comp_xd,
+    heading_comp,
     img_comp_xd,
 )
 from reflex_site_shared.components.blocks.typography import (
@@ -266,6 +267,11 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
     def heading(self, block: HeadingBlock) -> rx.Component:
         text = _spans_to_plaintext(block.children)
+        if not all(isinstance(span, TextSpan) for span in block.children):
+            # Shown with its markup, and anchored on the same plain text, so a
+            # link to the heading does not change.
+            content = rx.fragment(*_render_spans(block.children))
+            return heading_comp(text, block.level, content)
         match block.level:
             case 1:
                 return h1_comp_xd(text=text)
