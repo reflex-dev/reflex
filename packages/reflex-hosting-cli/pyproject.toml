@@ -26,7 +26,7 @@ dependencies = [
     # and raise all three bounds when adopting a new one. The workspace builds
     # the SDK as a dev release of the next patch (``0.0.6.devN``), which
     # ``<0.0.6`` would exclude; ``!=0.0.6`` keeps that release itself out.
-    "reflex-build-sdk[httpx] >=0.0.5,<0.0.7,!=0.0.6",
+    "reflex-build-sdk[httpx] >=0.0.5,<0.0.6.post,!=0.0.6",
     "rich >=13,<16",
 ]
 
