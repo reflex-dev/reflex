@@ -65,7 +65,9 @@ class HttpxTransport:
                 Defaults to a client the transport creates and closes.
         """
         self._owns_client = client is None
-        self._client = client or httpx.Client(timeout=_default_timeout())
+        self._client = (
+            httpx.Client(timeout=_default_timeout()) if client is None else client
+        )
 
     def send(self, request: Request) -> Response:
         """Send a request and read the whole response.
@@ -103,7 +105,9 @@ class AsyncHttpxTransport:
                 Defaults to a client the transport creates and closes.
         """
         self._owns_client = client is None
-        self._client = client or httpx.AsyncClient(timeout=_default_timeout())
+        self._client = (
+            httpx.AsyncClient(timeout=_default_timeout()) if client is None else client
+        )
 
     async def send(self, request: Request) -> Response:
         """Send a request and read the whole response.

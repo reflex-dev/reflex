@@ -11,6 +11,7 @@ from reflex_base import constants
 from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
 from reflex_base.constants.base import LiteralColorMode
 from reflex_base.constants.compiler import PageNames
+from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
     DynamicRouteArgShadowsStateVarError,
@@ -761,6 +762,17 @@ def test_compile_nonexistent_stylesheet(tmp_path, mocker: MockerFixture):
         compiler.compile_root_stylesheet(stylesheets)
 
 
+@pytest.fixture
+def dev_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pin dev mode, whose document head omits the stylesheet preload.
+
+    Args:
+        monkeypatch: Selects dev mode and restores the previous mode afterwards.
+    """
+    monkeypatch.setenv("REFLEX_ENV_MODE", constants.Env.DEV.value)
+
+
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root():
     """Test that the document root is created correctly."""
     # Test with no components.
@@ -773,7 +785,7 @@ def test_create_document_root():
     assert isinstance(lang, LiteralStringVar)
     assert lang.equals(Var.create("en"))
     # No children in head.
-    assert len(root.children[0].children) == 7
+    assert len(root.children[0].children) == 6
     assert isinstance(root.children[0].children[1], Meta)
     char_set = root.children[0].children[1].char_set  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(char_set, LiteralStringVar)
@@ -784,8 +796,7 @@ def test_create_document_root():
     assert name.equals(Var.create("viewport"))
     assert isinstance(root.children[0].children[3], document.Meta)
     assert isinstance(root.children[0].children[4], Link)
-    assert isinstance(root.children[0].children[5], Link)
-    assert isinstance(root.children[0].children[6], Links)
+    assert isinstance(root.children[0].children[5], Links)
 
 
 def test_add_meta_accepts_dynamic_description():
@@ -822,6 +833,7 @@ def test_add_meta_drops_empty_description():
     assert not any(isinstance(child, Description) for child in page.children)
 
 
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root_with_scripts():
     # Test with components.
     comps = [
@@ -834,7 +846,7 @@ def test_create_document_root_with_scripts():
         html_custom_attrs={"project": "reflex"},
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 9
+    assert len(root.children[0].children) == 8
     names = [c.tag for c in root.children[0].children]
     assert names == [
         "script",
@@ -843,7 +855,6 @@ def test_create_document_root_with_scripts():
         "meta",
         "meta",
         "Meta",
-        "link",
         "link",
         "Links",
     ]
@@ -854,6 +865,7 @@ def test_create_document_root_with_scripts():
     assert root.custom_attrs == {"project": "reflex"}
 
 
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root_with_meta_char_set():
     # Test with components.
     comps = [
@@ -863,12 +875,13 @@ def test_create_document_root_with_meta_char_set():
         head_components=comps,
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 7
+    assert len(root.children[0].children) == 6
     names = [c.tag for c in root.children[0].children]
-    assert names == ["script", "meta", "meta", "Meta", "link", "link", "Links"]
+    assert names == ["script", "meta", "meta", "Meta", "link", "Links"]
     assert str(root.children[0].children[1].char_set) == '"cp1252"'  # pyright: ignore [reportAttributeAccessIssue]
 
 
+@pytest.mark.usefixtures("dev_mode")
 def test_create_document_root_with_meta_viewport():
     # Test with components.
     comps = [
@@ -879,9 +892,9 @@ def test_create_document_root_with_meta_viewport():
         head_components=comps,
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 8
+    assert len(root.children[0].children) == 7
     names = [c.tag for c in root.children[0].children]
-    assert names == ["script", "meta", "meta", "meta", "Meta", "link", "link", "Links"]
+    assert names == ["script", "meta", "meta", "meta", "Meta", "link", "Links"]
     assert str(root.children[0].children[1].http_equiv) == '"refresh"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].name) == '"viewport"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].content) == '"foo"'  # pyright: ignore [reportAttributeAccessIssue]
@@ -1721,16 +1734,15 @@ def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
     assert "captureOwnerStack" in rendered
 
 
-def test_context_template_one_provider_per_substate():
-    """Each substate gets its own provider so one delta re-renders one context.
+def _render_two_substate_context() -> str:
+    """Render the context template for a state with one substate.
 
-    A single provider owning every reducer means any delta recreates every
-    ``StateContexts`` element; nesting one ``SubstateProvider`` per substate
-    keeps the untouched providers memoized.
+    Returns:
+        The rendered context module source.
     """
     from reflex_base.compiler.templates import context_template
 
-    rendered = context_template(
+    return context_template(
         is_dev_mode=True,
         default_color_mode='"light"',
         initial_state={
@@ -1740,18 +1752,56 @@ def test_context_template_one_provider_per_substate():
         state_name="reflex___state____state",
     )
 
+
+def test_context_template_one_provider_per_substate():
+    """Each substate gets its own provider so one delta re-renders one context.
+
+    A single provider owning every reducer means any delta recreates every
+    ``StateContexts`` element; nesting one ``SubstateProvider`` per substate
+    keeps the untouched providers memoized.
+    """
+    rendered = _render_two_substate_context()
+
     assert (
-        "createElement(SubstateProvider, {substateName: 'reflex___state____state', "
-        "contextName: 'reflex___state____state'}," in rendered
+        "const SUBSTATES = [\n"
+        "  ['reflex___state____state', 'reflex___state____state'],\n"
+        "  ['reflex___state____state__sub', 'reflex___state____state__sub'],\n"
+        "];" in rendered
     )
+    # The reducers live in SubstateProvider; the client provider only composes.
+    client = rendered[
+        rendered.index("function ClientStateProvider") : rendered.index(
+            "function ServerStateProvider"
+        )
+    ]
+    assert "useReducer" not in client
+    assert "createElement(SubstateProvider, { substateName, contextName }, tree)" in (
+        client
+    )
+    assert "createElement(DispatchProvider, {}, tree)" in client
+
+
+def test_context_template_server_state_provider_is_flat():
+    """The server provides initial state without a component per substate.
+
+    Server rendering recurses once per element level, so a ``SubstateProvider``
+    around every context doubled the depth of every page render and overflowed
+    the stack of apps with many substates.
+    """
+    rendered = _render_two_substate_context()
+
+    server = rendered[rendered.index("function ServerStateProvider") :]
+    assert "SubstateProvider" not in server
+    assert "DispatchProvider" not in server
+    assert "useReducer" not in server
     assert (
-        "createElement(SubstateProvider, {substateName: 'reflex___state____state__sub', "
-        "contextName: 'reflex___state____state__sub'}," in rendered
+        "StateContexts[contextName],\n"
+        "      { value: initialState[substateName] }," in server
     )
-    # The reducers moved into SubstateProvider; StateProvider only composes.
-    provider_body = rendered[rendered.index("export function StateProvider") :]
-    assert "useReducer" not in provider_body
-    assert "createElement(DispatchProvider, {}," in provider_body
+    assert rendered.rstrip().endswith(
+        "export const StateProvider =\n"
+        '  typeof document === "undefined" ? ServerStateProvider : ClientStateProvider;'
+    )
 
 
 def test_context_template_client_side_component_is_named():
@@ -1876,3 +1926,64 @@ def test_compile_app_drops_event_caches_from_earlier_compiles(
 
         assert (0, 0, None) not in context._bound_event_chains
         assert ("on_click", 0) not in context._memoized_event_triggers
+
+
+@pytest.mark.parametrize(
+    ("compile_context", "tier", "configured", "expected"),
+    [
+        # A deploy keeps an explicit setting whatever the stored login's tier:
+        # the hosting CLI enforces the badge from the tier of the deploy token.
+        (constants.CompileContext.DEPLOY, "free", False, False),
+        (constants.CompileContext.DEPLOY, "team", True, True),
+        # An unset setting follows the stored login's tier.
+        (constants.CompileContext.DEPLOY, "free", None, True),
+        (constants.CompileContext.DEPLOY, "pro", None, False),
+        (constants.CompileContext.DEPLOY, "anonymous", None, True),
+        # Outside of deploys the badge shows unless the app opts out.
+        (constants.CompileContext.EXPORT, "free", None, True),
+        (constants.CompileContext.EXPORT, "free", False, False),
+        (constants.CompileContext.RUN, "pro", True, True),
+    ],
+)
+def test_compile_app_resolves_show_built_with_reflex(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    compile_context: constants.CompileContext,
+    tier: str,
+    configured: bool | None,
+    expected: bool,
+):
+    """A production compile installs the badge according to the app's setting.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory and compile context.
+        mocker: Fixture for configuring the test app, the user's tier and prod mode.
+        compile_context: The context the app is compiled in.
+        tier: The tier of the deploying user.
+        configured: The app's own show_built_with_reflex setting.
+        expected: The setting the compile should resolve to.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv(environment.REFLEX_COMPILE_CONTEXT.name, compile_context.value)
+    get_user_tier = mocker.patch(
+        "reflex.utils.prerequisites.get_user_tier", return_value=tier
+    )
+    mocker.patch("reflex.compiler.compiler.is_prod_mode", return_value=True)
+    with RegistrationContext():
+        config = rx.Config(
+            app_name="badge_test", plugins=[], show_built_with_reflex=configured
+        )
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+        app = rx.App()
+        app.add_page(lambda: rx.el.div("hello"), route="/")
+
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+        assert config.show_built_with_reflex is expected
+        assert ((0, "StickyBadge") in app.app_wraps) is expected
+    # Only an unset setting on a deploy needs the tier.
+    assert get_user_tier.called is (
+        compile_context == constants.CompileContext.DEPLOY and configured is None
+    )

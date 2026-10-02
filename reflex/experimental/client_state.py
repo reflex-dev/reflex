@@ -184,7 +184,7 @@ class ClientStateVar(Var):
             _global_ref=global_ref,
             _var_type=default_var._var_type,
             _var_data=VarData.merge(
-                default_var._var_data,
+                default_var._get_all_var_data(),
                 VarData(
                     hooks=hooks,
                     imports=imports,
@@ -223,8 +223,12 @@ class ClientStateVar(Var):
         Returns:
             A special EventChain Var which will set the value when triggered.
         """
+        # A global setter carries the useState/refs hooks so a component that only
+        # sets the value (e.g. a sibling of the one rendering it) still initializes
+        # the shared state. A local setter must not: it would silently update a
+        # private copy of the state that no reader sees.
         setter = (
-            _client_state_ref(self._setter_name)
+            _client_state_ref(self._setter_name)._replace(merge_var_data=self._var_data)
             if self._global_ref
             else Var(self._setter_name)
         ).to(FunctionVar)

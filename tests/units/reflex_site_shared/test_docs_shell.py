@@ -4,7 +4,9 @@ from pathlib import Path
 from typing import cast
 
 import pytest
+from reflex_site_shared.components import docs_shell
 from reflex_site_shared.components.docs_shell import (
+    DocsFeedbackState,
     _docs_external_page_footer_memo,
     docs_feedback_button,
     docs_feedback_button_toc,
@@ -20,6 +22,7 @@ from reflex_site_shared.docs.models import DocsLayoutConfig, DocsPage, Navigatio
 from reflex_site_shared.templates.docs import docs_layout
 
 import reflex as rx
+from reflex.istate.data import ReflexURL, RouterData
 
 
 def test_sidebar_active_marker_aligns_with_section_guide() -> None:
@@ -51,7 +54,41 @@ def test_shared_feedback_preserves_the_official_form_structure() -> None:
     assert "w-full gap-4 flex flex-col" in rendered
     assert "flex flex-col gap-4 w-full" in rendered
     assert '"aria-label":"Clear input"' in rendered
-    assert 'jsx(Popover.Close,{"data-slot":"popover-close",render:' in rendered
+    assert "Popover.Close" not in rendered
+    assert "docs_feedback_state.form_version" in rendered
+    assert (
+        'docs_feedback_state.open_popover_rx_state_?.valueOf?.() === "toc"' in rendered
+    )
+
+
+FOOTER = docs_shell._FOOTER_FEEDBACK_POPOVER
+TOC = docs_shell._TOC_FEEDBACK_POPOVER
+
+
+def test_feedback_popovers_open_one_at_a_time() -> None:
+    """Track which feedback popover is open, ignoring closes from the other one."""
+    state = _feedback_state()
+
+    state.set_popover_open(FOOTER, True)
+    assert state.open_popover == FOOTER
+    state.set_popover_open(TOC, True)
+    assert state.open_popover == TOC
+    state.set_popover_open(FOOTER, False)
+    assert state.open_popover == TOC
+    state.set_popover_open(TOC, False)
+    assert state.open_popover == ""
+
+
+def test_feedback_popovers_stay_put_while_sending() -> None:
+    """Keep the submitting popover open until its post finishes."""
+    state = _feedback_state()
+    state.open_popover = TOC
+    state.sending = True
+
+    state.set_popover_open(TOC, False)
+    state.set_popover_open(FOOTER, True)
+
+    assert state.open_popover == TOC
 
 
 def test_docs_layout_rejects_conflicting_footer_factories() -> None:
@@ -273,3 +310,157 @@ def test_docs_layout_supports_a_sidebar_aware_breadcrumb() -> None:
     assert received[0][0] == Path("guide/index.md")
     assert "Documentation navigation" in str(received[0][1])
     assert "Mobile page drawer" in rendered
+
+
+def _mock_slack(monkeypatch, delivered: bool) -> list[tuple[str, str]]:
+    """Replace the Slack post with a stub that reports a fixed outcome.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        delivered: Whether the stub reports the post as delivered.
+
+    Returns:
+        The posted ``(text, channel)`` pairs, in send order.
+    """
+    posts: list[tuple[str, str]] = []
+
+    async def post_to_slack(text: str, channel: str) -> bool:  # noqa: RUF029
+        posts.append((text, channel))
+        return delivered
+
+    monkeypatch.setattr(docs_shell, "post_to_slack", post_to_slack)
+    monkeypatch.setattr(docs_shell, "SLACK_DOCS_FEEDBACK_CHANNEL", "docs-feedback")
+    return posts
+
+
+def _feedback_state() -> DocsFeedbackState:
+    """Create a feedback state.
+
+    Returns:
+        The feedback state.
+    """
+    root = rx.State(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    return cast(DocsFeedbackState, root.get_substate([DocsFeedbackState.get_name()]))
+
+
+def _submitted_state(score: int = 0) -> DocsFeedbackState:
+    """Create a feedback state whose TOC popover has submitted a comment.
+
+    Args:
+        score: The selected feedback score.
+
+    Returns:
+        The feedback state, with the message queued and sending.
+    """
+    state = _feedback_state()
+    state.router = RouterData(url=ReflexURL("https://reflex.dev/docs/guide/"))
+    state.score = score
+    state.open_popover = TOC
+    DocsFeedbackState.handle_submit.fn(
+        state,
+        {"feedback": "  Outdated <!channel> example.\n", "email": "dev@example.com"},
+    )
+    return state
+
+
+def test_feedback_submission_queues_the_escaped_message() -> None:
+    """Queue the trimmed, escaped comment with the score and page, then post it."""
+    state = _feedback_state()
+    state.router = RouterData(url=ReflexURL("https://reflex.dev/docs/guide/"))
+    state.score = 0
+
+    event = DocsFeedbackState.handle_submit.fn(
+        state,
+        {"feedback": "  Outdated <!channel> example.\n", "email": "dev@example.com"},
+    )
+
+    assert event is not None
+    assert event.handler.fn is DocsFeedbackState.post_feedback.fn
+    assert event.args == ()
+    assert state.sending
+    assert state._pending_message == (
+        "Contact: dev@example.com\n"
+        "Page: https://reflex.dev/docs/guide/\n"
+        "Score: 👎\n"
+        "Feedback: Outdated &lt;!channel&gt; example."
+    )
+
+
+def test_feedback_submission_is_ignored_while_sending() -> None:
+    """Drop a second submission while the first is still being posted."""
+    state = _feedback_state()
+    state.sending = True
+
+    assert (
+        DocsFeedbackState.handle_submit.fn(state, {"feedback": "Great page, thanks!"})
+        is None
+    )
+    assert state._pending_message == ""
+
+
+@pytest.mark.parametrize("feedback", ["too short", " " * 10, "x" * 501])
+def test_feedback_submission_rejects_invalid_length(feedback: str) -> None:
+    """Warn about comments outside the accepted length without posting them."""
+    state = _feedback_state()
+
+    toast = DocsFeedbackState.handle_submit.fn(state, {"feedback": feedback})
+
+    assert "Between 10 and 500 characters" in str(toast)
+    assert not state.sending
+    assert state._pending_message == ""
+
+
+async def test_feedback_is_posted_to_slack(monkeypatch) -> None:
+    """Post the queued message to the feedback channel, then close the form."""
+    posts = _mock_slack(monkeypatch, delivered=True)
+    state = _submitted_state()
+    message = state._pending_message
+
+    toast = await DocsFeedbackState.post_feedback.fn(state)
+
+    assert posts == [(message, "docs-feedback")]
+    assert "Thank you for your feedback!" in str(toast)
+    assert not state.sending
+    assert state._pending_message == ""
+    assert state.open_popover == ""
+    assert state.form_version == 1
+
+
+async def test_feedback_post_reports_undelivered_posts(monkeypatch) -> None:
+    """Tell the reader when their feedback could not be delivered."""
+    posts = _mock_slack(monkeypatch, delivered=False)
+    state = _submitted_state(score=1)
+
+    toast = await DocsFeedbackState.post_feedback.fn(state)
+
+    assert len(posts) == 1
+    assert "An error occurred while submitting your feedback" in str(toast)
+    # The popover stays open with the draft so the reader can retry.
+    assert not state.sending
+    assert state.open_popover == TOC
+    assert state.form_version == 0
+
+
+async def test_feedback_post_without_a_submission_sends_nothing(monkeypatch) -> None:
+    """Ignore a direct post_feedback call that skipped handle_submit's validation."""
+    posts = _mock_slack(monkeypatch, delivered=True)
+
+    assert await DocsFeedbackState.post_feedback.fn(_feedback_state()) is None
+    assert posts == []
+
+
+async def test_feedback_post_clears_sending_when_posting_raises(monkeypatch) -> None:
+    """Never leave the form locked, even if the Slack post raises."""
+
+    async def post_to_slack(text: str, channel: str) -> bool:  # noqa: RUF029
+        msg = "unexpected"
+        raise RuntimeError(msg)
+
+    monkeypatch.setattr(docs_shell, "post_to_slack", post_to_slack)
+    state = _submitted_state()
+
+    with pytest.raises(RuntimeError):
+        await DocsFeedbackState.post_feedback.fn(state)
+
+    assert not state.sending
+    assert state.open_popover == TOC

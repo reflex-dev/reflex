@@ -157,11 +157,11 @@ def doclink(text: str, href: str, **props) -> rx.Component:
     )
 
 
-def doclink2(text: str, **props) -> rx.Component:
+def doclink2(text: str | rx.Component, **props) -> rx.Component:
     """Create a styled link for doc pages.
 
     Args:
-        text: The text to display.
+        text: The text to display, or a component holding formatted text.
         href: The link to go to.
         props: Props to apply to the link.
 

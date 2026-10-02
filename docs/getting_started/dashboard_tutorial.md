@@ -1,4 +1,5 @@
 ---
+title: Build a Python Analytics Dashboard with Reflex
 meta_description: Build a Python analytics dashboard and internal tool with Reflex. Add a data table, an input form, and a bar chart that updates when users add data.
 ---
 
@@ -22,6 +23,8 @@ Build a Python analytics dashboard with a live table, an add-data form, and a ch
 - Extend the example with database queries or API calls to build an internal business tool using your own data.
 
 ## What you'll learn
+
+For chart selections that filter other views, follow the [linked charts and cross-filtering tutorial](/docs/getting-started/linked-charts-tutorial/). For database-backed editing and refresh strategies, see [dashboards and internal tools](/docs/guides/dashboards-and-internal-tools/).
 
 This tutorial is divided into several sections:
 
