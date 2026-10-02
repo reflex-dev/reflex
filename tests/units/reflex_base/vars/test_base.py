@@ -128,6 +128,91 @@ def test_custom_attr_is_carried_by_reference():
     assert rebuilt._check is check  # pyright: ignore[reportAttributeAccessIssue]
 
 
+def test_dataclasses_field_default_factory_is_unpacked():
+    """A dataclasses.field(default_factory=...) default acts like rx.field(...).
+
+    Keeping the Field object itself as the default crashed state init with
+    ``TypeError: cannot pickle 'mappingproxy' object``: deep-copying it fails
+    on its metadata mappingproxy.
+    """
+
+    @dataclasses.dataclass
+    class Item:
+        tag: str = "a"
+
+    class MyState(EvenMoreBasicBaseState):
+        item: Item = dataclasses.field(default_factory=Item)  # pyright: ignore[reportAssignmentType]
+
+    first = MyState()
+    second = MyState()
+    assert first.item == Item()
+    assert second.item == Item()
+    assert first.item is not second.item
+    rebuilt = MyState.get_fields()["item"]
+    assert rebuilt.annotated_type is Item
+    assert isinstance(MyState.__dict__["item"], Field)
+
+
+def test_dataclasses_field_default_is_unpacked():
+    """A dataclasses.field(default=...) default supplies its value."""
+
+    class MyState(EvenMoreBasicBaseState):
+        n: int = dataclasses.field(default=5)  # pyright: ignore[reportAssignmentType]
+
+    assert MyState().n == 5
+    assert MyState.get_fields()["n"].default == 5
+
+
+@pytest.mark.parametrize("default", [[[]], {"nested": []}, {1}])
+def test_unannotated_dataclasses_mutable_default_is_copied(default):
+    """Mutable dataclass defaults are deeply copied for each plain model.
+
+    Args:
+        default: A mutable default, including nested containers.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        items = dataclasses.field(default=default)
+
+    first, second = Model(), Model()
+    assert first.items == second.items == default
+    assert first.items is not second.items
+    assert first.items is not default
+    if isinstance(default, list):
+        first.items[0].append("changed")
+    elif isinstance(default, dict):
+        first.items["nested"].append("changed")
+    else:
+        first.items.add(2)
+    assert first.items != default
+    assert second.items == default
+
+
+def test_dataclasses_field_custom_factory_allowed_on_plain_model():
+    """A plain model is not serialized, so a custom factory needs no annotation."""
+
+    def make_items() -> list:
+        return []
+
+    class MyModel(EvenMoreBasicBaseState):
+        items = dataclasses.field(default_factory=make_items)
+
+    first = MyModel()
+    second = MyModel()
+    assert first.items == []
+    assert first.items is not second.items
+    assert MyModel.get_fields()["items"].annotated_type is Any
+
+
+def test_dataclasses_field_without_default_uses_type_default():
+    """A bare dataclasses.field() falls back to the annotation's default."""
+
+    class MyState(EvenMoreBasicBaseState):
+        n: int = dataclasses.field()  # pyright: ignore[reportAssignmentType]
+
+    assert MyState().n == 0
+
+
 def _type_alias_types() -> list[type]:
     native = getattr(typing, "TypeAliasType", None)
     return (
