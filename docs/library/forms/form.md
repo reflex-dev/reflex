@@ -203,10 +203,11 @@ names with a `list[str]` field.
 ```md alert info
 # Names ending in `[]` hold lists.
 
-A field name ending in `[]`, such as the `range[]` that a two-thumb
-`rx.slider(name="range")` submits, always reads as a list of its values, even
-when only one was submitted. This holds for `rx.form.FormData`
-(`form_data["range[]"]`) and for a `dict` annotation alike.
+With a `dict` annotation, a field name ending in `[]`, such as the `range[]`
+that a two-thumb `rx.slider(name="range")` submits, reads as a list of its
+values, even when only one was submitted. `rx.form.FormData` treats it like any
+other name: `form_data["range[]"]` is the last value and
+`form_data.getlist("range[]")` gives them all.
 
 A `TypedDict` instead lets you declare the field without brackets: a list field
 `range: list[str]` collects the values submitted as `range[]`, unless the
@@ -333,6 +334,11 @@ def preferences_form():
 ```
 
 Other fields keep the last value submitted for their name.
+
+Generic `TypedDict`s work too, such as `class Data(Base[list[str]])`. On
+Python 3.11, a further `typing.TypedDict` subclass of `Data` loses those type
+arguments and Reflex rejects the form when it compiles, so define these
+`TypedDict`s with `typing_extensions.TypedDict` instead.
 
 If a required field is missing, creating the form fails fast with a message that
 lists the expected, missing, and matching fields:

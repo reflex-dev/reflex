@@ -443,42 +443,41 @@ def test_transform_form_data_resolves_inherited_generic_bool_fields():
 _BRACKETED_ITEMS = [("range[]", "20"), ("name", "x"), ("range[]", "80"), ("one[]", "a")]
 
 
-def test_form_data_resolves_bracketed_names_as_lists():
-    """A ``name[]`` key reads as the list of its values, even a single one."""
-    form_data = FormData(_BRACKETED_ITEMS)
-    assert form_data["range[]"] == ["20", "80"]
-    assert form_data["one[]"] == ["a"]
-    assert form_data.get("range[]") == ["20", "80"]
-    assert form_data["name"] == "x"
-    assert dict(form_data) == {"range[]": ["20", "80"], "name": "x", "one[]": ["a"]}
+def test_form_data_bracketed_names_read_like_other_names():
+    """A ``name[]`` key reads its last value; ``getlist`` gives them all."""
+    form_data: FormData[str, str] = FormData(_BRACKETED_ITEMS)
+    assert form_data["range[]"] == "80"
+    assert form_data["range[]"].upper() == "80"
+    assert form_data.get("range[]") == "80"
+    assert form_data["one[]"] == "a"
+    assert dict(form_data) == {"range[]": "80", "name": "x", "one[]": "a"}
     assert form_data.getlist("range[]") == ["20", "80"]
+    assert form_data.getAll("range[]") == ["20", "80"]
     assert form_data.multi_items() == _BRACKETED_ITEMS
 
 
-def test_form_data_bracketed_lists_are_copies():
-    """Changing a returned list leaves the FormData unchanged."""
-    form_data: FormData[str, Any] = FormData(_BRACKETED_ITEMS)
-    form_data["range[]"].append("90")
-    assert form_data["range[]"] == ["20", "80"]
+def test_form_data_from_mapping_keeps_list_values():
+    """A mapping's list value is one item, whatever its key."""
+    form_data = FormData({"range[]": ["20", "80"]})
+    assert form_data.multi_items() == [("range[]", ["20", "80"])]
 
 
-def test_form_data_from_mapping_expands_bracketed_lists():
-    """A dict of a FormData rebuilds the same values per name."""
-    form_data = FormData(dict(FormData(_BRACKETED_ITEMS)))
+@pytest.mark.parametrize("hint", [FormData, FormData[str, str]])
+def test_transform_form_data_bracketed_names_to_form_data(hint: Any):
+    """A FormData annotation keeps ``name[]`` entries as ordinary items."""
+    form_data = _transform(
+        hint, {FORM_DATA_ENTRIES_KEY: [list(item) for item in _BRACKETED_ITEMS]}
+    )
+    assert form_data["range[]"] == "80"
     assert form_data.getlist("range[]") == ["20", "80"]
-    assert form_data.getlist("one[]") == ["a"]
-    assert dict(form_data) == {"range[]": ["20", "80"], "name": "x", "one[]": ["a"]}
 
 
 @pytest.mark.parametrize("hint", [Any, dict, dict[str, Any]])
 def test_transform_form_data_bracketed_names_to_dict(hint: Any):
     """A dict of submitted form data holds ``name[]`` values as lists."""
     assert _transform(
-        hint, {FORM_DATA_ENTRIES_KEY: [["one[]", "a"], ["name", "x"]]}
-    ) == {
-        "one[]": ["a"],
-        "name": "x",
-    }
+        hint, {FORM_DATA_ENTRIES_KEY: [list(item) for item in _BRACKETED_ITEMS]}
+    ) == {"range[]": ["20", "80"], "name": "x", "one[]": ["a"]}
 
 
 def test_form_data_as_dict_bracketed_names():

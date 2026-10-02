@@ -28,7 +28,10 @@ from reflex_base.event import (
 )
 from reflex_base.utils.exceptions import EventHandlerValueError
 from reflex_base.utils.imports import ImportDict
-from reflex_base.utils.types import get_required_typed_dict_keys
+from reflex_base.utils.types import (
+    get_required_typed_dict_keys,
+    get_typed_dict_field_types,
+)
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.number import ternary_operation
@@ -349,7 +352,8 @@ class Form(BaseHTML):
         """Validate statically knowable form fields against TypedDict submit handlers.
 
         Raises:
-            EventHandlerValueError: If a required TypedDict field is missing.
+            EventHandlerValueError: If a required TypedDict field is missing, or
+                a TypedDict's field types cannot be resolved.
         """
         on_submit = self.event_triggers.get(EventTriggers.ON_SUBMIT)
         if not isinstance(on_submit, EventChain):
@@ -387,6 +391,13 @@ class Form(BaseHTML):
             annotation = unwrap_var_annotation(annotation)
             if not is_typeddict(annotation):
                 continue
+
+            # Fail at compile time rather than coerce submissions wrongly.
+            try:
+                get_typed_dict_field_types(annotation)
+            except TypeError as err:
+                msg = f"Cannot submit form data to on_submit handler `{func.__qualname__}`: {err}"
+                raise EventHandlerValueError(msg) from err
 
             required_fields = get_required_typed_dict_keys(annotation)
             typed_dict_contracts.append((

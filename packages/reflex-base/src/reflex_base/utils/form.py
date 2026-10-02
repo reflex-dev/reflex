@@ -45,17 +45,15 @@ class FormData(Mapping[_K, _V_co]):
     """The fields of a submitted form: an immutable mapping keeping every value.
 
     Indexing, iteration and ``len`` see each name once with its last value, so
-    FormData reads like the dict built from the same items, except that a name
-    ending in ``[]`` reads as the list of all its values. ``getlist`` (or its
+    FormData reads like the dict built from the same items. ``getlist`` (or its
     alias ``getAll``, as in the browser's ``FormData``) and ``multi_items``
     expose every value of fields that share a name, in submission order.
     """
 
-    __slots__ = ("_dict", "_items", "_list_keys")
+    __slots__ = ("_dict", "_items")
 
     _dict: dict[_K, _V_co]
     _items: tuple[tuple[_K, _V_co], ...]
-    _list_keys: frozenset[_K]
 
     def __init__(
         self,
@@ -64,28 +62,17 @@ class FormData(Mapping[_K, _V_co]):
         """Build a FormData.
 
         Args:
-            items: ``(key, value)`` pairs, or a mapping, whose list value for a
-                name ending in ``[]`` holds that name's values; another FormData
-                keeps every item.
+            items: ``(key, value)`` pairs or a mapping; another FormData keeps
+                every item.
         """
         if isinstance(items, FormData):
             pairs = items._items
-        elif isinstance(items, Mapping):
-            pairs = tuple(
-                (key, item)
-                for key, value in items.items()
-                for item in (
-                    value if _is_list_key(key) and isinstance(value, list) else (value,)
-                )
-            )
         else:
+            if isinstance(items, Mapping):
+                items = items.items()
             pairs = tuple((key, value) for key, value in items)
-        last_values = dict(pairs)
         object.__setattr__(self, "_items", pairs)
-        object.__setattr__(self, "_dict", last_values)
-        object.__setattr__(
-            self, "_list_keys", frozenset(filter(_is_list_key, last_values))
-        )
+        object.__setattr__(self, "_dict", dict(pairs))
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Reject attribute assignment.
@@ -101,17 +88,14 @@ class FormData(Mapping[_K, _V_co]):
         raise AttributeError(msg)
 
     def __getitem__(self, key: _K) -> _V_co:
-        """Get the last value of a key, or every value of a name ending in ``[]``.
+        """Get the last value of a key.
 
         Args:
             key: The key.
 
         Returns:
-            The key's last value, or a new list of its values for a name ending
-            in ``[]``.
+            The key's last value.
         """
-        if key in self._list_keys:
-            return self.getlist(key)  # pyright: ignore[reportReturnType]
         return self._dict[key]
 
     def __iter__(self) -> Iterator[_K]:
@@ -253,6 +237,25 @@ def _typed_dict_form_fields(typed_dict: Any) -> tuple[_CoercedFormField, ...]:
     return tuple(fields)
 
 
+def _form_data_dict(entries: Iterable[tuple[str, Any]]) -> dict[str, Any]:
+    """Build the dict of submitted form data for a handler without FormData.
+
+    Args:
+        entries: The form's ``(name, value)`` entries, in submission order.
+
+    Returns:
+        Each name's last value, or the list of every value of a name ending in
+        ``[]``, as a two-thumb slider submits.
+    """
+    result = {}
+    for name, value in entries:
+        if _is_list_key(name):
+            result.setdefault(name, []).append(value)
+        else:
+            result[name] = value
+    return result
+
+
 def _form_data_as_typed_dict(form_data: FormData, typed_dict: Any) -> dict[str, Any]:
     """Build the dict for a TypedDict-annotated form data argument.
 
@@ -261,15 +264,14 @@ def _form_data_as_typed_dict(form_data: FormData, typed_dict: Any) -> dict[str, 
         typed_dict: The TypedDict annotating the argument.
 
     Returns:
-        A dict of each field's value as FormData reads it, where ``list``
-        fields hold every value submitted under their name (or as ``name[]``
-        when that is not a field of its own), ``bool`` fields
-        whether a truthy value was submitted, and ``name[]`` fields of other
-        types their last value. An unsubmitted list or bool field is left out
-        when it is not required, and otherwise is None when its type allows
-        None, else an empty list or False.
+        The dict of the form data, where ``list`` fields hold every value
+        submitted under their name (or as ``name[]`` when that is not a field
+        of its own), ``bool`` fields whether a truthy value was submitted, and
+        ``name[]`` fields of other types their last value. An unsubmitted list
+        or bool field is left out when it is not required, and otherwise is
+        None when its type allows None, else an empty list or False.
     """
-    result = dict(form_data)
+    result = _form_data_dict(form_data._items)
     for field in _typed_dict_form_fields(typed_dict):
         if not any(name in form_data for name in field.names):
             if not field.required or field.kind == "last":
@@ -279,15 +281,15 @@ def _form_data_as_typed_dict(form_data: FormData, typed_dict: Any) -> dict[str, 
                 continue
         if len(field.names) > 1:
             result[field.name] = [
-                value for name, value in form_data.multi_items() if name in field.names
+                value for name, value in form_data._items if name in field.names
             ]
             result.pop(field.names[1], None)
         elif field.kind == "list":
             result[field.name] = form_data.getlist(field.name)
         elif field.kind == "bool":
-            result[field.name] = bool(form_data._dict.get(field.name))
+            result[field.name] = bool(form_data.get(field.name))
         else:
-            result[field.name] = form_data._dict[field.name]
+            result[field.name] = form_data[field.name]
     return result
 
 
@@ -313,23 +315,26 @@ def transform_form_data(value: Any, hinted_args: Any) -> Any:
     Returns:
         For a FormData annotation, a FormData of every entry (also built from a
         plain mapping); for a TypedDict annotation of form data, its coerced
-        dict; for other form data, a dict of each name's last value; otherwise
-        the value unchanged.
+        dict; for other form data, its dict; otherwise the value unchanged.
     """
     entries = _form_data_entries(value)
-    if entries is not None:
-        value = FormData(entries)
-    elif not isinstance(value, Mapping):
+    if entries is None and not isinstance(value, Mapping):
         return value
     hinted_args = types.resolve_type_alias(hinted_args)
     if types.is_union(hinted_args):
         hinted_args = types.value_inside_optional(hinted_args)
     hinted_type = get_origin(hinted_args) or hinted_args
     if isinstance(hinted_type, type) and issubclass(hinted_type, FormData):
-        return value if isinstance(value, hinted_type) else hinted_type(value)
-    if isinstance(value, FormData) and is_typeddict(hinted_type):
-        return _form_data_as_typed_dict(value, hinted_args)
-    return value if entries is None else dict(value)
+        if isinstance(value, hinted_type):
+            return value
+        return hinted_type(value if entries is None else entries)
+    if entries is None:
+        if isinstance(value, FormData) and is_typeddict(hinted_type):
+            return _form_data_as_typed_dict(value, hinted_args)
+        return value
+    if is_typeddict(hinted_type):
+        return _form_data_as_typed_dict(FormData(entries), hinted_args)
+    return _form_data_dict(entries)
 
 
 def form_data_as_dict(value: Any) -> Any:
@@ -339,8 +344,7 @@ def form_data_as_dict(value: Any) -> Any:
         value: The event argument.
 
     Returns:
-        A dict of each name's last value, or every value of a name ending in
-        ``[]``, for submitted form data, otherwise the value unchanged.
+        The dict of submitted form data, otherwise the value unchanged.
     """
     entries = _form_data_entries(value)
-    return value if entries is None else dict(FormData(entries))
+    return value if entries is None else _form_data_dict(entries)

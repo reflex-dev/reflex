@@ -6,7 +6,7 @@ import subprocess
 import sys
 import typing
 from collections.abc import Callable, Sequence
-from typing import Annotated, Generic, Literal, TypeVar
+from typing import Annotated, Any, Generic, Literal, TypeVar
 
 import pytest
 from reflex_base.utils.types import (
@@ -336,6 +336,57 @@ def test_get_typed_dict_field_types_through_plain_subclass():
     assert get_typed_dict_field_types(_PlainSubclass) == get_typed_dict_field_types(
         _Concrete
     )
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="typing.TypedDict is generic from Python 3.11"
+)
+def test_get_typed_dict_field_types_through_stdlib_plain_subclass():
+    """A plain subclass of a specialized typing.TypedDict resolves, or fails loudly.
+
+    Python 3.11 keeps no trace of the specialized base on such a subclass.
+    """
+
+    class Base(typing.TypedDict, Generic[_FieldT]):
+        value: _FieldT
+
+    class Concrete(Base[list[str]]):
+        pass
+
+    class Plain(Concrete):
+        pass
+
+    if sys.version_info >= (3, 12):
+        assert get_typed_dict_field_types(Plain) == {"value": list[str]}
+    else:
+        with pytest.raises(TypeError, match=r"typing_extensions\.TypedDict"):
+            get_typed_dict_field_types(Plain)
+
+
+class _Unresolved(TypedDict):
+    value: _FieldT  # pyright: ignore[reportGeneralTypeIssues]
+
+
+def test_get_typed_dict_field_types_rejects_unresolved_type_variables():
+    """A field typed by a type variable its class does not declare is an error."""
+    with pytest.raises(TypeError, match="_Unresolved"):
+        get_typed_dict_field_types(_Unresolved)
+    assert get_typed_dict_field_types(_GenericBase)["value"] is _FieldT
+
+
+class _BareGenericChild(_GenericBase):
+    name: str
+
+
+class _BareGenericGrandchild(_BareGenericChild):
+    pass
+
+
+def test_get_typed_dict_field_types_through_unsubscripted_generic_base():
+    """An unsubscripted generic base has Any for its type parameters."""
+    expected = {"value": Any, "maybe": Any | None, "name": str}
+    assert get_typed_dict_field_types(_BareGenericChild) == expected
+    assert get_typed_dict_field_types(_BareGenericGrandchild) == expected
 
 
 class _ReadOnlyBase(TypedDict, Generic[_FieldT]):

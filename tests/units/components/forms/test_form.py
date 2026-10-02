@@ -1,5 +1,5 @@
 import logging
-from typing import Any, TypedDict
+from typing import Any, TypedDict, TypeVar
 
 import pytest
 from reflex_base.event import EventChain, prevent_default
@@ -21,6 +21,8 @@ from typing_extensions import NotRequired
 
 import reflex as rx
 from reflex.compiler.utils import _root_only_custom_code
+
+_T = TypeVar("_T")
 
 
 def test_render_on_submit():
@@ -79,6 +81,25 @@ def test_on_submit_rejects_id_backed_typed_dict_form_data():
         HTMLForm.create(
             Input.create(id="email_input"),
             on_submit=SignupState.on_submit,
+        )
+
+
+def test_on_submit_rejects_typed_dict_with_unresolved_field_types():
+    """A TypedDict whose field types cannot be resolved fails at compile time."""
+
+    class LooseData(TypedDict):
+        tags: _T  # pyright: ignore[reportGeneralTypeIssues]
+
+    class LooseState(rx.State):
+        @rx.event
+        def on_submit(self, form_data: LooseData):
+            pass
+
+    with pytest.raises(EventHandlerValueError, match=r"typing_extensions\.TypedDict"):
+        HTMLForm.create(
+            Input.create(name="tags"),
+            id="loose",
+            on_submit=LooseState.on_submit,
         )
 
 

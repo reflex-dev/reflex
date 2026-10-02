@@ -340,6 +340,11 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
 
     Returns:
         The type of each field.
+
+    Raises:
+        TypeError: If a field's type has a type variable the TypedDict does not
+            declare, as when Python 3.11 drops the type arguments of a
+            ``typing.TypedDict`` subclass of a specialized generic TypedDict.
     """
     origin = get_origin_og(typed_dict) or typed_dict
     # typing_extensions strips its own qualifiers, which typing does not on 3.10.
@@ -350,6 +355,11 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
     for base in typing_extensions.get_original_bases(origin):
         base_origin = get_origin_og(base) or base
         if typing_extensions.is_typeddict(base_origin):
+            if base is base_origin and (
+                params := getattr(base_origin, "__parameters__", ())
+            ):
+                # An unsubscripted generic base has Any for its type parameters.
+                base = base_origin[(Any,) * len(params)]
             base_annotations = base_origin.__annotations__
             field_types.update(
                 (name, hint)
@@ -359,12 +369,28 @@ def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
     substitution = _match_type_args(
         getattr(origin, "__parameters__", ()), get_args(typed_dict)
     )
+    declared = getattr(typed_dict, "__parameters__", ())
     for name, hint in field_types.items():
         if hint in substitution:
             hint = substitution[hint]
         elif substitution and (params := getattr(hint, "__parameters__", ())):
             hint = _apply_type_params(hint, params, substitution)
-        field_types[name] = resolve_type_alias(hint)
+        hint = resolve_type_alias(hint)
+        params = (
+            (hint,)
+            if isinstance(hint, TypeVar)
+            else getattr(hint, "__parameters__", ())
+        )
+        if undeclared := [param for param in params if param not in declared]:
+            msg = (
+                f"Field {name!r} of TypedDict {origin.__qualname__} has type {hint}, "
+                f"but the TypedDict does not declare {', '.join(map(str, undeclared))}. "
+                "On Python 3.11, a typing.TypedDict subclass drops the type "
+                "arguments of its generic bases: define these TypedDicts with "
+                "typing_extensions.TypedDict instead."
+            )
+            raise TypeError(msg)
+        field_types[name] = hint
     return field_types
 
 
