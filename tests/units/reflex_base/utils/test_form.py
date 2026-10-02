@@ -337,3 +337,19 @@ def test_transform_form_data_collects_bracketed_names_into_list_fields():
         },
     )
     assert form_data == {"bounds": ["20", "80"], "name": "x"}
+
+
+def test_transform_form_data_keeps_order_across_plain_and_bracketed_names():
+    """A list field keeps submission order when ``name`` and ``name[]`` interleave."""
+    form_data = _transform(
+        _RangeData,
+        {
+            FORM_DATA_ENTRIES_KEY: [
+                ["bounds[]", "20"],
+                ["bounds", "50"],
+                ["bounds[]", "80"],
+                ["name", "x"],
+            ]
+        },
+    )
+    assert form_data == {"bounds": ["20", "50", "80"], "name": "x"}

@@ -233,7 +233,7 @@ def _form_data_as_typed_dict(form_data: FormData, typed_dict: Any) -> dict[str, 
                 continue
         if field.is_list:
             result[field.name] = [
-                value for name in field.names for value in form_data.getlist(name)
+                value for name, value in form_data.multi_items() if name in field.names
             ]
             result.pop(field.names[1], None)
         else:
