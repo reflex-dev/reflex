@@ -1,6 +1,7 @@
 """Unit tests for shared state fan-out to other linked clients."""
 
 import asyncio
+import datetime
 import pickle
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, Mock, patch
@@ -400,6 +401,46 @@ async def test_linked_state_patch_preserves_interval_computed_refresh():
 
     assert _PATCH_INTERVAL_VALUE_VAR in linked_state.dirty_vars
     assert private_tree.dirty_substates == {linked_state.get_name()}
+    assert (
+        _PATCH_INTERVAL_VALUE_VAR + FIELD_MARKER
+        in interval_delta[linked_state.get_full_name()]
+    )
+
+
+@pytest.mark.asyncio
+async def test_linked_state_patch_preserves_interval_refresh_during_async_router_var():
+    """An interval var refreshed during async resolution must be emitted."""
+    private_tree = _LinkedStatePatchIntervalRoot()
+    linked_tree = _LinkedStatePatchIntervalRoot()
+    shared_state_name = _LinkedStatePatchIntervalShared.get_name()
+    private_state = private_tree.substates[shared_state_name]
+    linked_state = linked_tree.substates[shared_state_name]
+
+    assert linked_state.interval_value == linked_state.value
+    private_tree._clean()
+
+    resolve_delta = private_tree._get_resolved_delta
+
+    async def resolve_after_async_router_computation():
+        await asyncio.sleep(0)
+        object.__setattr__(linked_state, "value", 1)
+        interval_var = _LinkedStatePatchIntervalShared.computed_vars[
+            _PATCH_INTERVAL_VALUE_VAR
+        ]
+        setattr(linked_state, interval_var._last_updated_attr, datetime.datetime.min)
+        assert linked_state.interval_value == 1
+        return await resolve_delta()
+
+    object.__setattr__(
+        private_tree,
+        "_get_resolved_delta",
+        resolve_after_async_router_computation,
+    )
+
+    async with _patch_state(private_state, linked_state, full_delta=False):
+        interval_delta = private_tree.get_delta()
+
+    assert _PATCH_INTERVAL_VALUE_VAR in linked_state.dirty_vars
     assert (
         _PATCH_INTERVAL_VALUE_VAR + FIELD_MARKER
         in interval_delta[linked_state.get_full_name()]

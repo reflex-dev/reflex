@@ -125,10 +125,10 @@ async def _patch_state(
                 set[str],
                 set[str],
                 set[str],
-                dict[str, tuple[bool, Any, bool, Any]],
                 bool,
             ]
         ] = []
+        states_by_name: dict[str, BaseState] = {}
         if not full_delta:
             states_to_snapshot = [root_state]
             while states_to_snapshot:
@@ -138,25 +138,82 @@ async def _patch_state(
                 computed_vars_to_preserve = state._expired_computed_vars().union(
                     state._always_dirty_computed_vars
                 )
-                computed_var_snapshots: dict[str, tuple[bool, Any, bool, Any]] = {}
-                for name, computed_var in state.computed_vars.items():
-                    had_cache = hasattr(state, computed_var._cache_attr)
-                    cached_value = getattr(state, computed_var._cache_attr, None)
-                    computed_var_snapshots[name] = (
-                        had_cache,
-                        cached_value,
-                        hasattr(state, computed_var._last_updated_attr),
-                        getattr(state, computed_var._last_updated_attr, None),
-                    )
+                states_by_name[state.get_full_name()] = state
                 dirty_state_snapshots.append((
                     state,
                     set(state.dirty_vars),
                     set(state.dirty_substates),
                     computed_vars_to_preserve,
-                    computed_var_snapshots,
                     state._was_touched,
                 ))
                 states_to_snapshot.extend(state.substates.values())
+            computed_vars_to_snapshot = {
+                state.get_full_name(): (
+                    dirty_vars.intersection(state.computed_vars)
+                    | computed_vars_to_preserve
+                    | state._interval_computed_var_names
+                )
+                for (
+                    state,
+                    dirty_vars,
+                    _,
+                    computed_vars_to_preserve,
+                    _,
+                ) in dirty_state_snapshots
+            }
+            # Track only caches that dirty propagation can invalidate, before
+            # marking router vars deletes those cached values.
+            pending_dependencies = [
+                (state, name)
+                for (
+                    state,
+                    dirty_vars,
+                    _,
+                    computed_vars_to_preserve,
+                    _,
+                ) in dirty_state_snapshots
+                for name in dirty_vars | computed_vars_to_preserve
+            ]
+            pending_dependencies.extend((root_state, name) for name in ROUTER_VARS)
+            pending_dependencies.append((root_state, ROUTER_DATA))
+            seen_dependencies: set[tuple[str, str]] = set()
+            while pending_dependencies:
+                state, name = pending_dependencies.pop()
+                dependency = (state.get_full_name(), name)
+                if dependency in seen_dependencies:
+                    continue
+                seen_dependencies.add(dependency)
+                for target_name, computed_var_name in state._var_dependencies.get(
+                    name, ()
+                ):
+                    target_state = states_by_name.get(target_name)
+                    if target_state is None:
+                        continue
+                    target_vars = computed_vars_to_snapshot[target_name]
+                    if computed_var_name not in target_vars:
+                        target_vars.add(computed_var_name)
+                        pending_dependencies.append((target_state, computed_var_name))
+            computed_var_cache_snapshots: dict[
+                str, dict[str, tuple[bool, Any, bool, Any]]
+            ] = {}
+            for (
+                state,
+                _,
+                _,
+                _,
+                _,
+            ) in dirty_state_snapshots:
+                computed_var_cache_snapshots[state.get_full_name()] = {
+                    name: (
+                        hasattr(state, state.computed_vars[name]._cache_attr),
+                        getattr(state, state.computed_vars[name]._cache_attr, None),
+                        hasattr(state, state.computed_vars[name]._last_updated_attr),
+                        getattr(
+                            state, state.computed_vars[name]._last_updated_attr, None
+                        ),
+                    )
+                    for name in computed_vars_to_snapshot[state.get_full_name()]
+                }
         root_state.dirty_vars.update(ROUTER_VARS)
         root_state.dirty_vars.add(ROUTER_DATA)
         root_state._mark_dirty()
@@ -169,6 +226,7 @@ async def _patch_state(
                 set[str],
                 set[str],
                 dict[str, tuple[bool, Any]],
+                dict[str, tuple[bool, Any, bool, Any]],
             ]
         ] = []
         if not full_delta:
@@ -177,9 +235,11 @@ async def _patch_state(
                 dirty_vars,
                 dirty_substates,
                 computed_vars_to_preserve,
-                computed_var_snapshots,
                 _,
             ) in dirty_state_snapshots:
+                computed_var_snapshots = computed_var_cache_snapshots[
+                    state.get_full_name()
+                ]
                 router_dirty_vars = (
                     state.dirty_vars - dirty_vars - computed_vars_to_preserve
                 )
@@ -190,7 +250,7 @@ async def _patch_state(
                         if computed_var_snapshots[name][0]
                         else None,
                     )
-                    for name in router_dirty_vars.intersection(state.computed_vars)
+                    for name in router_dirty_vars.intersection(computed_var_snapshots)
                 }
                 router_dirty_snapshots.append((
                     state,
@@ -200,6 +260,7 @@ async def _patch_state(
                     state.dirty_substates - dirty_substates,
                     computed_vars_to_preserve,
                     router_computed_snapshots,
+                    computed_var_snapshots,
                 ))
         try:
             # The delta is discarded: it is only resolved to refresh computed vars,
@@ -213,19 +274,21 @@ async def _patch_state(
                     dirty_vars,
                     dirty_substates,
                     _,
-                    computed_var_snapshots,
                     was_touched,
                 ) in dirty_state_snapshots:
+                    computed_var_snapshots = computed_var_cache_snapshots[
+                        state.get_full_name()
+                    ]
                     state.dirty_vars = dirty_vars
                     state.dirty_substates = dirty_substates
                     state._was_touched = was_touched
-                    for name, computed_var in state.computed_vars.items():
-                        (
-                            had_cache,
-                            cached_value,
-                            had_last_updated,
-                            last_updated,
-                        ) = computed_var_snapshots[name]
+                    for name, (
+                        had_cache,
+                        cached_value,
+                        had_last_updated,
+                        last_updated,
+                    ) in computed_var_snapshots.items():
+                        computed_var = state.computed_vars[name]
                         if had_cache:
                             setattr(state, computed_var._cache_attr, cached_value)
                         else:
@@ -252,10 +315,28 @@ async def _patch_state(
                     _,
                     computed_vars_to_preserve,
                     router_computed_snapshots,
+                    computed_var_snapshots,
                 ) in router_dirty_snapshots:
                     computed_vars_refreshed = set(computed_vars_to_preserve) | (
                         state.dirty_vars - router_dirty_vars
                     ).intersection(state.computed_vars)
+                    computed_vars_refreshed.update(
+                        name
+                        for name in state._interval_computed_var_names
+                        if (
+                            computed_var_snapshots[name][2]
+                            != hasattr(
+                                state,
+                                state.computed_vars[name]._last_updated_attr,
+                            )
+                            or computed_var_snapshots[name][3]
+                            != getattr(
+                                state,
+                                state.computed_vars[name]._last_updated_attr,
+                                None,
+                            )
+                        )
+                    )
                     computed_vars_refreshed.update(
                         name
                         for name, (
