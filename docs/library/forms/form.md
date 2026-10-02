@@ -206,8 +206,12 @@ names with a `list[str]` field.
 A field name ending in `[]`, such as the `range[]` that a two-thumb
 `rx.slider(name="range")` submits, always reads as a list of its values, even
 when only one was submitted. This holds for `rx.form.FormData`
-(`form_data["range[]"]`) and for a `dict` annotation alike. In a `TypedDict`,
-a `name[]` field annotated with a type other than `list` gets its last value.
+(`form_data["range[]"]`) and for a `dict` annotation alike.
+
+A `TypedDict` instead lets you declare the field without brackets: a list field
+`range: list[str]` collects the values submitted as `range[]`, unless the
+`TypedDict` also declares a `range[]` field. A declared `name[]` field annotated
+with a type other than `list` gets its last value.
 ```
 
 ## Validating Form Data with a TypedDict

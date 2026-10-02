@@ -324,8 +324,8 @@ class _RangeData(TypedDict):
     name: str
 
 
-def test_transform_form_data_keeps_bracketed_names_separate():
-    """``name[]`` entries keep their own key and never fill a ``name`` list field."""
+def test_transform_form_data_collects_bracketed_names_into_list_fields():
+    """A TypedDict list field takes the ``name[]`` entries a two-thumb slider submits."""
     form_data = _transform(
         _RangeData,
         {
@@ -336,7 +336,35 @@ def test_transform_form_data_keeps_bracketed_names_separate():
             ]
         },
     )
-    assert form_data == {"bounds[]": ["20", "80"], "name": "x", "bounds": []}
+    assert form_data == {"bounds": ["20", "80"], "name": "x"}
+
+
+def test_transform_form_data_keeps_order_across_plain_and_bracketed_names():
+    """A list field keeps submission order when ``name`` and ``name[]`` interleave."""
+    form_data = _transform(
+        _RangeData,
+        {
+            FORM_DATA_ENTRIES_KEY: [
+                ["bounds[]", "20"],
+                ["bounds", "50"],
+                ["bounds[]", "80"],
+                ["name", "x"],
+            ]
+        },
+    )
+    assert form_data == {"bounds": ["20", "50", "80"], "name": "x"}
+
+
+class _ScalarData(TypedDict):
+    pick: str
+
+
+def test_transform_form_data_maps_bracketed_names_only_into_list_fields():
+    """A non-list field does not take ``name[]`` entries, which stay a list."""
+    form_data = _transform(
+        _ScalarData, {FORM_DATA_ENTRIES_KEY: [["pick[]", "a"], ["pick[]", "b"]]}
+    )
+    assert form_data == {"pick[]": ["a", "b"]}
 
 
 _LiteralBrackets = TypedDict("_LiteralBrackets", {"tags": list[str], "tags[]": str})

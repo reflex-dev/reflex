@@ -197,6 +197,10 @@ class _CoercedFormField:
     """A TypedDict field that submitted form data is coerced into."""
 
     name: str
+    # The names whose values fill the field: a list field also takes the
+    # ``name[]`` entries a multi-value control such as a two-thumb slider
+    # submits, unless ``name[]`` is a field of its own.
+    names: tuple[str, ...]
     # "list" takes every value, "bool" whether the last value is truthy, and
     # "last" the last value of a ``name[]`` field that is not a list.
     kind: Literal["list", "bool", "last"]
@@ -219,11 +223,15 @@ def _typed_dict_form_fields(typed_dict: Any) -> tuple[_CoercedFormField, ...]:
         fields of other types.
     """
     required = types.get_required_typed_dict_keys(typed_dict)
+    field_types = types.get_typed_dict_field_types(typed_dict)
     fields = []
-    for name, hint in types.get_typed_dict_field_types(typed_dict).items():
+    for name, hint in field_types.items():
         field_type = types.value_inside_optional(hint)
+        names = (name,)
         if (get_origin(field_type) or field_type) is list:
             kind = "list"
+            if (bracketed := f"{name}[]") not in field_types:
+                names = (name, bracketed)
         elif field_type is bool:
             kind = "bool"
         elif _is_list_key(name):
@@ -233,6 +241,7 @@ def _typed_dict_form_fields(typed_dict: Any) -> tuple[_CoercedFormField, ...]:
         fields.append(
             _CoercedFormField(
                 name=name,
+                names=names,
                 kind=kind,
                 optional=field_type is not hint,
                 required=name in required,
@@ -250,7 +259,8 @@ def _form_data_as_typed_dict(form_data: FormData, typed_dict: Any) -> dict[str, 
 
     Returns:
         A dict of each field's value as FormData reads it, where ``list``
-        fields hold every value submitted under their name, ``bool`` fields
+        fields hold every value submitted under their name (or as ``name[]``
+        when that is not a field of its own), ``bool`` fields
         whether a truthy value was submitted, and ``name[]`` fields of other
         types their last value. An unsubmitted list or bool field is left out
         when it is not required, and otherwise is None when its type allows
@@ -258,13 +268,18 @@ def _form_data_as_typed_dict(form_data: FormData, typed_dict: Any) -> dict[str, 
     """
     result = dict(form_data)
     for field in _typed_dict_form_fields(typed_dict):
-        if field.name not in form_data:
+        if not any(name in form_data for name in field.names):
             if not field.required or field.kind == "last":
                 continue
             if field.optional:
                 result[field.name] = None
                 continue
-        if field.kind == "list":
+        if len(field.names) > 1:
+            result[field.name] = [
+                value for name, value in form_data.multi_items() if name in field.names
+            ]
+            result.pop(field.names[1], None)
+        elif field.kind == "list":
             result[field.name] = form_data.getlist(field.name)
         elif field.kind == "bool":
             result[field.name] = bool(form_data._dict.get(field.name))
