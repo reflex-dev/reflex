@@ -11,7 +11,7 @@ from reflex_base.constants import ROUTER_DATA, ROUTER_VARS
 from reflex_base.event import Event, get_hydrate_event
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import ReflexRuntimeError
-from reflex_base.vars.base import _owner_state
+from reflex_base.vars.base import _delta_value_key, _owner_state
 from typing_extensions import Self
 
 from reflex.istate.delta import _suppress_delta_recording
@@ -125,7 +125,7 @@ async def _patch_state(
                 set[str],
                 set[str],
                 set[str],
-                dict[str, tuple[bool, Any, bool, Any]],
+                dict[str, tuple[bool, Any, bool, Any, Any]],
                 bool,
             ]
         ] = []
@@ -138,15 +138,17 @@ async def _patch_state(
                 computed_vars_to_preserve = state._expired_computed_vars().union(
                     state._always_dirty_computed_vars
                 )
-                computed_var_snapshots = {
-                    name: (
-                        hasattr(state, computed_var._cache_attr),
-                        getattr(state, computed_var._cache_attr, None),
+                computed_var_snapshots: dict[str, tuple[bool, Any, bool, Any, Any]] = {}
+                for name, computed_var in state.computed_vars.items():
+                    had_cache = hasattr(state, computed_var._cache_attr)
+                    cached_value = getattr(state, computed_var._cache_attr, None)
+                    computed_var_snapshots[name] = (
+                        had_cache,
+                        cached_value,
                         hasattr(state, computed_var._last_updated_attr),
                         getattr(state, computed_var._last_updated_attr, None),
+                        _delta_value_key(cached_value) if had_cache else None,
                     )
-                    for name, computed_var in state.computed_vars.items()
-                }
                 dirty_state_snapshots.append((
                     state,
                     set(state.dirty_vars),
@@ -167,7 +169,7 @@ async def _patch_state(
                 set[str],
                 set[str],
                 set[str],
-                dict[str, tuple[bool, Any, bool, Any]],
+                dict[str, tuple[bool, Any, bool, Any, Any]],
             ]
         ] = []
         if not full_delta:
@@ -212,6 +214,7 @@ async def _patch_state(
                             cached_value,
                             had_last_updated,
                             last_updated,
+                            _,
                         ) = computed_var_snapshots[name]
                         if had_cache:
                             setattr(state, computed_var._cache_attr, cached_value)
@@ -246,17 +249,14 @@ async def _patch_state(
                     computed_vars_refreshed.update(
                         name
                         for name, computed_var in state.computed_vars.items()
-                        if (
-                            computed_var_snapshots[name][0],
-                            computed_var_snapshots[name][2],
-                            computed_var_snapshots[name][3],
+                        if hasattr(state, computed_var._cache_attr)
+                        and (
+                            not computed_var_snapshots[name][0]
+                            or computed_var_snapshots[name][4]
+                            != _delta_value_key(
+                                getattr(state, computed_var._cache_attr)
+                            )
                         )
-                        != (
-                            hasattr(state, computed_var._cache_attr),
-                            hasattr(state, computed_var._last_updated_attr),
-                            getattr(state, computed_var._last_updated_attr, None),
-                        )
-                        and hasattr(state, computed_var._cache_attr)
                     )
                     if computed_vars_refreshed:
                         computed_refresh_states.append(state)
