@@ -44,6 +44,7 @@ from typing_extensions import LiteralString, dataclass_transform, override
 from reflex_base import constants
 from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.environment import _on_env_var_set, environment
 from reflex_base.utils import exceptions, imports, serializers, types
 from reflex_base.utils.compat import MISSING_TYPE, annotations_from_namespace
 from reflex_base.utils.decorator import once
@@ -2534,6 +2535,24 @@ def _delta_value_key(value: Any) -> Any:
         return _UNKEYABLE_VALUE
 
 
+@functools.cache
+def _type_check_depth() -> int:
+    """Get how many container levels state var type checks look into.
+
+    The checks only log an error, so production mode checks just the outer type
+    instead of walking every element. Reading the environment costs more than
+    the check it would skip, so the mode is resolved once and re-resolved when
+    ``environment.REFLEX_ENV_MODE.set`` changes it.
+
+    Returns:
+        The ``nested`` depth to pass to ``_isinstance``.
+    """
+    return 0 if environment.REFLEX_ENV_MODE.get() == constants.Env.PROD else 1
+
+
+_on_env_var_set(environment.REFLEX_ENV_MODE.name, _type_check_depth.cache_clear)
+
+
 def is_computed_var(obj: Any) -> TypeGuard[ComputedVar]:
     """Check if the object is a ComputedVar.
 
@@ -2992,7 +3011,7 @@ class ComputedVar(Var[RETURN_TYPE]):
             value: The computed value.
         """
         if type(value) not in self._plain_types and not _isinstance(
-            value, self._var_type, nested=1, treat_var_as_type=False
+            value, self._var_type, nested=_type_check_depth(), treat_var_as_type=False
         ):
             logger.error(
                 f"Computed var '{type(instance).__name__}.{self._name}' must return"
@@ -4139,7 +4158,10 @@ class Field(Generic[FIELD_TYPE]):
             not self._backend
             and type(value) not in self._plain_types
             and not _isinstance(
-                value, self.outer_type_, nested=1, treat_var_as_type=False
+                value,
+                self.outer_type_,
+                nested=_type_check_depth(),
+                treat_var_as_type=False,
             )
         ):
             logger.error(
