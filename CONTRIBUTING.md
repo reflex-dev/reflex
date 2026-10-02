@@ -62,7 +62,7 @@ Each PR that changes the source of a published package must add a news fragment 
 
 **Where:** add the fragment under the affected package's `news/` directory. For the main `reflex` package, that's the repo-root `news/`. For sub-packages it's `packages/<name>/news/`.
 
-**Filename:** `+<slug>.<type>.md` (an [orphan fragment](https://towncrier.readthedocs.io/en/stable/cli.html#towncrier-create)), or `<pr-number>.<type>.md` if you prefer, where `<type>` is one of:
+**Filename:** `+<slug>.<type>.md` (an [orphan fragment](https://towncrier.readthedocs.io/en/stable/cli.html#towncrier-create)), or `<pr-or-issue-number>.<type>.md` if you prefer, where `<type>` is one of:
 
 | Type | When to use |
 | --- | --- |

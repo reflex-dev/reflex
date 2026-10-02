@@ -137,8 +137,8 @@ merge waits on it.
 User-facing changes need a news fragment in the `news/` directory of each
 package they touch (the repo root's `news/` for `reflex`), named
 `+<slug>.<type>.md`. Putting the PR number in the name (`<PR number>.<type>.md`)
-is optional: the release process renames each orphan `+` fragment after the PR
-that merged it, so its entry still links to the PR. Don't push a commit just to
+is optional: the release process renames an orphan fragment when it can identify
+the PR that added it, so its entry links to that PR. Don't push a commit just to
 rename one. Types: `breaking`, `deprecation`, `feature`, `bugfix`,
 `performance`, `docs`, `misc`.
 
