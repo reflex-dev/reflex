@@ -515,13 +515,28 @@ def update_react_router_config(prerender_routes: bool = False):
     )
 
 
+def copy_ssr_scripts():
+    """Copy SSR-related scripts from the web template to the .web directory.
+
+    Copies ssr-serve.js (production server) and generate-shell.mjs
+    (post-build static shell generator) when runtime_ssr is enabled.
+    """
+    import shutil
+
+    web_dir = get_web_dir()
+    for filename in ("ssr-serve.js", "generate-shell.mjs"):
+        src = constants.Templates.Dirs.WEB_TEMPLATE / filename
+        if src.exists():
+            shutil.copy2(str(src), str(web_dir / filename))
+
+
 def _update_react_router_config(config: Config, prerender_routes: bool = False):
     react_router_config = {
         "basename": config.prepend_frontend_path("/"),
         "future": {
             "unstable_optimizeDeps": True,
         },
-        "ssr": False,
+        "ssr": config.runtime_ssr,
     }
 
     if prerender_routes:
@@ -558,6 +573,8 @@ def _compile_package_json():
         "dev": constants.PackageJson.Commands.DEV,
         "export": constants.PackageJson.Commands.EXPORT,
     }
+    if get_config().runtime_ssr:
+        scripts["prod"] = constants.PackageJson.Commands.PROD_SSR
     return templates.package_json_template(
         scripts=scripts,
         dependencies=persisted.pop("dependencies", None) or {},

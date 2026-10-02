@@ -145,13 +145,34 @@ def zip_app(
     }
 
     if frontend:
-        _zip(
-            component_name=constants.ComponentName.FRONTEND,
-            target=zip_dest_dir / constants.ComponentName.FRONTEND.zip(),
-            root_directory=prerequisites.get_web_dir() / constants.Dirs.STATIC,
-            files_to_exclude=files_to_exclude,
-            exclude_venv_directories=False,
-        )
+        web_dir = prerequisites.get_web_dir()
+        if get_config().runtime_ssr:
+            # SSR mode: zip build/ (client + server) + ssr-serve.js + package.json.
+            # Use build/ as root and include the extra files via globs from web_dir.
+            _zip(
+                component_name=constants.ComponentName.FRONTEND,
+                target=zip_dest_dir / constants.ComponentName.FRONTEND.zip(),
+                root_directory=web_dir,
+                files_to_exclude=files_to_exclude,
+                exclude_venv_directories=False,
+                directory_names_to_exclude={
+                    "node_modules",
+                    "app",
+                    "utils",
+                    "styles",
+                    "components",
+                    "backend",
+                    "public",
+                },
+            )
+        else:
+            _zip(
+                component_name=constants.ComponentName.FRONTEND,
+                target=zip_dest_dir / constants.ComponentName.FRONTEND.zip(),
+                root_directory=web_dir / constants.Dirs.STATIC,
+                files_to_exclude=files_to_exclude,
+                exclude_venv_directories=False,
+            )
 
     if backend:
         _zip(
@@ -246,6 +267,38 @@ def _merge_static_output(source: Path, destination: Path) -> None:
         source.rename(destination)
 
 
+def _generate_ssr_shell(wdir: Path):
+    """Generate a static SPA shell (build/client/index.html) after SSR build.
+
+    Runs the generate-shell.mjs script which renders the app with a normal
+    user-agent (so the loader returns empty state) and writes the resulting
+    HTML to build/client/index.html.  The production server (ssr-serve.js)
+    serves this file to non-bot users for zero SSR overhead.
+
+    Args:
+        wdir: The web directory (.web/).
+    """
+    shell_script = wdir / "generate-shell.mjs"
+    if not shell_script.exists():
+        logger.warning("generate-shell.mjs not found, skipping SPA shell generation.")
+        return
+
+    logger.info("Generating SPA shell for non-bot users...")
+    node_path = str(path_ops.get_node_path() or "node")
+    shell_process = processes.new_process(
+        [node_path, "generate-shell.mjs"],
+        cwd=wdir,
+        shell=constants.IS_WINDOWS,
+    )
+    shell_process.wait()
+    if shell_process.returncode != 0:
+        logger.warning(
+            "SPA shell generation failed.  Non-bot users will fall back to SSR."
+        )
+    else:
+        logger.info("SPA shell generated successfully.")
+
+
 def build():
     """Build the app for deployment.
 
@@ -284,6 +337,10 @@ def build():
         raise SystemExit(1)
     config = get_config()
     static_dir = wdir / constants.Dirs.STATIC
+
+    # When runtime SSR is enabled, generate a static SPA shell for non-bot users.
+    if config.runtime_ssr:
+        _generate_ssr_shell(wdir)
 
     _duplicate_index_html_to_parent_directory(static_dir)
 

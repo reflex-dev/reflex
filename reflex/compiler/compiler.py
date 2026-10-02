@@ -167,7 +167,9 @@ def _get_window_libraries() -> list[tuple[str, str]]:
 
 
 def _compile_app(
-    app_root: Component, hydrate_fallback_export: str | None = None
+    app_root: Component,
+    hydrate_fallback_export: str | None = None,
+    runtime_ssr: bool = False,
 ) -> str:
     """Compile the app template component.
 
@@ -175,6 +177,7 @@ def _compile_app(
         app_root: The app root to compile.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo
             component to re-export as ``HydrateFallback``, or None for no fallback.
+        runtime_ssr: Whether runtime SSR is enabled.
 
     Returns:
         The compiled app.
@@ -202,6 +205,7 @@ def _compile_app(
         render=app_root.render(),
         dynamic_imports=app_root._get_all_dynamic_imports(),
         hydrate_fallback_export=hydrate_fallback_export,
+        runtime_ssr=runtime_ssr,
     )
 
 
@@ -246,6 +250,7 @@ def _compile_contexts(
     theme: Component | None,
     *,
     component_imports: ParsedImportDict | None = None,
+    runtime_ssr: bool = False,
 ) -> str:
     """Compile the initial state and contexts.
 
@@ -253,6 +258,7 @@ def _compile_contexts(
         state: The app state.
         theme: The top-level app theme.
         component_imports: Optional accumulator for initial component dependencies.
+        runtime_ssr: Whether runtime SSR is enabled.
 
     Returns:
         The compiled context file.
@@ -276,12 +282,14 @@ def _compile_contexts(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
             disable_react_owner_stacks=disable_react_owner_stacks,
+            runtime_ssr=runtime_ssr,
         )
         if state
         else templates.context_template(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
             disable_react_owner_stacks=disable_react_owner_stacks,
+            runtime_ssr=runtime_ssr,
         )
     )
 
@@ -719,7 +727,9 @@ def compile_document_root(
 
 
 def compile_app_root(
-    app_root: Component, hydrate_fallback_export: str | None = None
+    app_root: Component,
+    hydrate_fallback_export: str | None = None,
+    runtime_ssr: bool = False,
 ) -> tuple[str, str]:
     """Compile the app root.
 
@@ -727,6 +737,7 @@ def compile_app_root(
         app_root: The app root component to compile.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo
             component to re-export as ``HydrateFallback``, or None for no fallback.
+        runtime_ssr: Whether runtime SSR is enabled.
 
     Returns:
         The path and code of the compiled app wrapper.
@@ -737,7 +748,7 @@ def compile_app_root(
     )
 
     # Compile the document root.
-    code = _compile_app(app_root, hydrate_fallback_export)
+    code = _compile_app(app_root, hydrate_fallback_export, runtime_ssr=runtime_ssr)
     return output_path, code
 
 
@@ -765,6 +776,7 @@ def compile_contexts(
     theme: Component | None,
     *,
     component_imports: ParsedImportDict | None = None,
+    runtime_ssr: bool = False,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
 
@@ -772,6 +784,7 @@ def compile_contexts(
         state: The app state.
         theme: The top-level app theme.
         component_imports: Optional accumulator for initial component dependencies.
+        runtime_ssr: Whether runtime SSR is enabled.
 
     Returns:
         The path and code of the compiled context.
@@ -780,7 +793,7 @@ def compile_contexts(
     output_path = utils.get_context_path()
 
     return output_path, _compile_contexts(
-        state, theme, component_imports=component_imports
+        state, theme, component_imports=component_imports, runtime_ssr=runtime_ssr
     )
 
 
@@ -1494,12 +1507,17 @@ def compile_app(
             app._state,
             radix_themes_plugin.get_theme(),
             component_imports=all_imports,
+            runtime_ssr=config.runtime_ssr,
         ),
         utils._compile_bundled_libraries(),
     ])
     progress.advance(task)
 
-    compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
+    compile_results.append(
+        compile_app_root(
+            app_root, hydrate_fallback_export, runtime_ssr=config.runtime_ssr
+        )
+    )
     progress.advance(task)
 
     progress.stop()
@@ -1523,6 +1541,10 @@ def compile_app(
     frontend_skeleton.update_react_router_config(
         prerender_routes=prerender_routes,
     )
+
+    # Copy SSR scripts when runtime SSR is enabled.
+    if config.runtime_ssr:
+        frontend_skeleton.copy_ssr_scripts()
 
     # Persist the route table so the standalone prod static server can serve
     # routable SPA paths with 200 and reserve 404 for unknown ones.

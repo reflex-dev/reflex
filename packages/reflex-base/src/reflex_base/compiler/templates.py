@@ -174,6 +174,7 @@ def app_root_template(
     dynamic_imports: set[str],
     hydrate_fallback_export: str | None = None,
     lazy_window_libraries: list[tuple[str, str]] | None = None,
+    runtime_ssr: bool = False,
 ):
     """Template for the App root.
 
@@ -186,6 +187,7 @@ def app_root_template(
         dynamic_imports: The set of dynamic imports.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo module to re-export as ``HydrateFallback``, or None for no fallback.
         lazy_window_libraries: Optional libraries loaded before evaluating a dynamic component.
+        runtime_ssr: Whether runtime SSR is enabled.
 
     Returns:
         Rendered App root component as string.
@@ -249,17 +251,59 @@ if (typeof window !== "undefined") {{
 }}
 """
 
+    if runtime_ssr:
+        ssr_imports = (
+            '\nimport { getBackendURL } from "$/utils/state";'
+            '\nimport env from "$/env.json";'
+        )
+        ssr_loader = """
+export async function loader({ request }) {
+  // Short-circuit during static shell generation (no backend available).
+  if (request.headers.get("x-reflex-shell-gen") === "1") {
+    return { state: null };
+  }
+  // Fetch state data from the Python backend.  This loader runs in two cases:
+  // (a) Full SSR render for bots — ssr-serve.js routes bot requests here.
+  // (b) .data requests for client-side navigation — React Router calls the
+  //     loader to fetch route data as JSON for the next page.
+  // Both cases need real state data from the backend.
+  const backendUrl = getBackendURL(env.SSR_DATA);
+  try {
+    const res = await fetch(backendUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(request.headers.get("cookie") ? { "Cookie": request.headers.get("cookie") } : {}),
+      },
+      body: JSON.stringify({
+        path: new URL(request.url).pathname,
+        headers: Object.fromEntries(request.headers),
+      }),
+    });
+    if (res.ok) {
+      return res.json();
+    }
+  } catch (e) {
+    console.error("SSR data fetch failed:", e);
+  }
+  return { state: null };
+}
+"""
+    else:
+        ssr_imports = ""
+        ssr_loader = ""
+
     return f"""
 {imports_str}
 {dynamic_imports_str}
 import {{ defaultColorMode }} from "$/utils/context";
 import {{ ThemeProvider }} from '$/utils/react-theme';
 import {{ Layout as AppLayout }} from './_document';
-import {{ Outlet }} from 'react-router';
+import {{ Outlet }} from 'react-router';{ssr_imports}
 {import_window_libraries}
 {lazy_imports_setup}
 
-{custom_code_str}
+{custom_code_str}{ssr_loader}
 
 function ReflexProviders({{children}}) {{
   {window_imports_effect}
@@ -314,6 +358,7 @@ def context_template(
     state_name: str | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
     disable_react_owner_stacks: bool = False,
+    runtime_ssr: bool = False,
 ):
     """Template for the context file.
 
@@ -327,6 +372,7 @@ def context_template(
         disable_react_owner_stacks: Whether to emit the snippet that disables
             React's dev-build owner-stack capture (an Error() constructed per
             created element, whose cost grows with render depth).
+        runtime_ssr: Whether runtime SSR is enabled.
 
     Returns:
         Rendered context file content as string.
@@ -421,11 +467,31 @@ if (typeof window !== "undefined") {
         else ""
     )
 
+    if runtime_ssr:
+        ssr_import_str = '\nimport { useRouteLoaderData } from "react-router"'
+        ssr_hook_str = """
+// State the backend rendered for this request (see the root loader), or null
+// when the static SPA shell was served.
+const useSSRState = () => useRouteLoaderData("root")?.state ?? null;
+"""
+        ssr_hydrated_str = "\n  const ssrHydrated = useSSRState() !== null"
+        ssr_hydrated_arg = "\n    ssrHydrated,"
+        ssr_state_prop = ", ssrState"
+        initial_substate = "ssrState?.[substateName] ?? initialState[substateName]"
+        # The reducers only read it on mount, so loader revalidations on later
+        # navigations must not rebuild the provider tree.
+        client_ssr_state = "\n  const ssrState = useRef(useSSRState()).current;"
+        server_ssr_state = "\n  const ssrState = useSSRState();"
+    else:
+        ssr_import_str = ssr_hook_str = ssr_hydrated_str = ssr_hydrated_arg = ""
+        ssr_state_prop = client_ssr_state = server_ssr_state = ""
+        initial_substate = "initialState[substateName]"
+
     return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useReducer, useRef, useState, createElement, useEffect, useLayoutEffect }} from "react"
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
 import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, getStateContext, registerApp, eventLoop }} from "$/utils/context-registry"
-import {{ jsx }} from "@emotion/react";
-{disable_owner_stacks_str}
+import {{ jsx }} from "@emotion/react";{ssr_import_str}
+{disable_owner_stacks_str}{ssr_hook_str}
 export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext }};
 export const initialState = {initial_state_json}
 
@@ -491,11 +557,11 @@ export function ClientSide(component, name) {{
 }}
 
 export function EventLoopProvider({{ children }}) {{
-  const dispatch = useContext(DispatchContext)
+  const dispatch = useContext(DispatchContext){ssr_hydrated_str}
   const [addEventsLocal, connectErrors] = useEventLoop(
     dispatch,
     initialEvents,
-    clientStorage,
+    clientStorage,{ssr_hydrated_arg}
   )
   // Publish the dispatchers so JSX literals constructed outside the
   // React-tree path (e.g. ``ErrorBoundary.onError``) can call ``addEvents``.
@@ -532,11 +598,11 @@ const DispatchProvider = ({{ children }}) => {{
 
 // One provider per substate: each owns its own reducer, so a delta for one
 // substate only re-renders its provider instead of recreating every provider.
-const SubstateProvider = ({{ children, substateName, contextName }}) => {{
+const SubstateProvider = ({{ children, substateName, contextName{ssr_state_prop} }}) => {{
   const dispatchers = useContext(DispatchContext);
   const [state, dispatchSubstate] = useReducer(
     applyDelta,
-    initialState[substateName],
+    {initial_substate},
   );
   // A layout effect, not a passive one: layout effects for the whole commit
   // run before any passive effect, so every dispatcher is registered before
@@ -558,12 +624,12 @@ const SubstateProvider = ({{ children, substateName, contextName }}) => {{
 const SUBSTATES = [{substates_str}
 ];
 
-function ClientStateProvider({{ children }}) {{
+function ClientStateProvider({{ children }}) {{{client_ssr_state}
   return useMemo(() => {{
     let tree = children;
     for (let i = SUBSTATES.length - 1; i >= 0; i--) {{
       const [substateName, contextName] = SUBSTATES[i];
-      tree = createElement(SubstateProvider, {{ substateName, contextName }}, tree);
+      tree = createElement(SubstateProvider, {{ substateName, contextName{ssr_state_prop} }}, tree);
     }}
     return createElement(DispatchProvider, {{}}, tree);
   }}, [children]);
@@ -573,13 +639,13 @@ function ClientStateProvider({{ children }}) {{
 // initial state through bare context providers. ``SubstateProvider`` would add
 // a second render level per substate, and the server renderer recurses once per
 // level, so with many substates rendering a page can exhaust the stack.
-function ServerStateProvider({{ children }}) {{
+function ServerStateProvider({{ children }}) {{{server_ssr_state}
   let tree = children;
   for (let i = SUBSTATES.length - 1; i >= 0; i--) {{
     const [substateName, contextName] = SUBSTATES[i];
     tree = createElement(
       StateContexts[contextName],
-      {{ value: initialState[substateName] }},
+      {{ value: {initial_substate} }},
       tree,
     );
   }}

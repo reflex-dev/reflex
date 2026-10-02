@@ -192,6 +192,7 @@ class BaseConfig:
         plugins: List of plugins to use in the app.
         disable_plugins: List of plugin types to disable in the app.
         transport: The transport method for client-server communication.
+        runtime_ssr: Enable runtime server-side rendering for search engine crawlers on dynamic routes.
     """
 
     app_name: str
@@ -278,6 +279,8 @@ class BaseConfig:
     disable_plugins: list[type[Plugin]] = dataclasses.field(default_factory=list)
 
     transport: Literal["websocket", "polling"] = "websocket"
+
+    runtime_ssr: bool = False
 
     # Whether to skip plugin checks.
     _skip_plugins_checks: bool = dataclasses.field(default=False, repr=False)
