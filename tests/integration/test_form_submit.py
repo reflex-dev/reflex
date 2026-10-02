@@ -32,7 +32,7 @@ def FormSubmitName(form_component):
             self.form_data = form_data
 
         @rx.event
-        def form_submit_all(self, form_data: rx.FormData[str, str]):
+        def form_submit_all(self, form_data: rx.form.FormData[str, str]):
             self.tags = form_data.getlist("tag")
 
     app = rx.App()

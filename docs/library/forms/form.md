@@ -173,7 +173,7 @@ Only controls with a `name` are included in the form data; the `id` attribute do
 Several controls can share a `name`, such as a group of checkboxes. A `dict`
 annotation keeps only the last value submitted for each name. To receive every
 value in the order the form submitted them, annotate the handler's parameter
-with `rx.FormData` and read them with `getlist` (or its alias `getAll`, as in
+with `rx.form.FormData` and read them with `getlist` (or its alias `getAll`, as in
 the browser's `FormData`):
 
 ```python
@@ -181,7 +181,7 @@ class ToppingsState(rx.State):
     toppings: list[str] = []
 
     @rx.event
-    def handle_submit(self, form_data: rx.FormData[str, str]):
+    def handle_submit(self, form_data: rx.form.FormData[str, str]):
         self.toppings = form_data.getlist("topping")
 
 
@@ -194,7 +194,7 @@ def toppings_form():
     )
 ```
 
-`rx.FormData` is a read-only mapping: indexing it with
+`rx.form.FormData` is a read-only mapping: indexing it with
 `form_data["topping"]` returns the last value, the same as a `dict`, and
 `form_data.multi_items()` returns every `(name, value)` pair. A
 [TypedDict](#validating-form-data-with-a-typeddict) can also collect repeated

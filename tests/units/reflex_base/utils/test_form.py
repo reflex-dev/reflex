@@ -13,8 +13,6 @@ from reflex_base.utils.form import (
 )
 from typing_extensions import NotRequired
 
-import reflex as rx
-
 ITEMS = [("tag", "a"), ("name", "x"), ("tag", "b")]
 
 
@@ -87,11 +85,6 @@ def test_form_data_repr_and_pickle():
     form_data = FormData(ITEMS)
     assert repr(form_data) == f"FormData({ITEMS!r})"
     assert pickle.loads(pickle.dumps(form_data)).multi_items() == ITEMS
-
-
-def test_form_data_is_exported_from_reflex():
-    """Apps annotate form data with rx.FormData."""
-    assert rx.FormData is FormData
 
 
 _FORM_DATA_ENTRIES = [["tag", "a"], ["name", "x"], ["tag", "b"]]

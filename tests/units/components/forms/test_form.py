@@ -251,7 +251,7 @@ def test_on_submit_accepts_typed_dict_with_inherited_optional_fields():
 
 @pytest.mark.parametrize(
     "annotation",
-    [FormData, FormData[str, Any], FormData[str, str], rx.FormData],
+    [FormData, FormData[str, Any], FormData[str, str], rx.form.FormData],
 )
 @pytest.mark.parametrize("form_factory", [HTMLForm.create, Form.create])
 def test_on_submit_accepts_form_data_annotation(form_factory, annotation, caplog):
@@ -293,6 +293,11 @@ def test_on_submit_typed_dict_bool_field_accepts_toggle_controls(control):
 
     form = HTMLForm.create(control(), on_submit=PrefsState.on_submit)
     assert isinstance(form.event_triggers["on_submit"], EventChain)
+
+
+def test_form_data_is_exported_on_the_form_namespace():
+    """Apps annotate form data with rx.form.FormData."""
+    assert rx.form.FormData is FormData
 
 
 def test_on_submit_rejects_non_mapping_form_data():
