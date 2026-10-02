@@ -3662,10 +3662,15 @@ async def test_wake_does_not_settle_while_a_step_it_started_is_running(
     monkeypatch.setattr(Resting.rest, "fn", slow_rest)
     async with only_worker(session_factory):
         await asyncio.wait_for(started.wait(), 30)
-        # Nothing is left to claim, but the step it claimed is still running: a
-        # host that suspended on the word of this call would cut it off.
-        assert not await runner.wake(datetime.timedelta(milliseconds=500))
-        release.set()
+        try:
+            # Nothing is left to claim, but the step it claimed is still
+            # running: a host that suspended on the word of this call would cut
+            # it off.
+            assert not await runner.wake(datetime.timedelta(milliseconds=500))
+        finally:
+            # Released either way, so a failure here does not leave the step
+            # blocked past the worker that started it.
+            release.set()
         assert await runner.wake(datetime.timedelta(seconds=30))
         async with session_factory() as session:
             left = (
