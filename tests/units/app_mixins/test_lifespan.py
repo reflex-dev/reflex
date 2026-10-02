@@ -160,9 +160,10 @@ async def _run_coroutine_lifespan_task(task) -> list[dict]:
                 for t in asyncio.all_tasks()
                 if t.get_name().startswith("reflex_lifespan_task|")
             ]
-            # Let tasks that end on their own finish before shutdown starts.
-            await asyncio.wait(lifespan_tasks, timeout=0.01)
+            # Shutdown starts before done callbacks of tasks that already ended run.
+            await asyncio.sleep(0)
         await asyncio.gather(*lifespan_tasks, return_exceptions=True)
+        await asyncio.sleep(0)
     finally:
         loop.set_exception_handler(previous_handler)
     return reported

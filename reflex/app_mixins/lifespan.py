@@ -42,6 +42,15 @@ def _get_task_name(task: asyncio.Task | Callable) -> str:
     return task.__name__  # pyright: ignore[reportAttributeAccessIssue]
 
 
+def _report_task_result(task: asyncio.Task) -> None:
+    """Re-raise the outcome of a finished lifespan task so the event loop reports it.
+
+    Args:
+        task: The finished lifespan task.
+    """
+    task.result()
+
+
 @dataclasses.dataclass
 class LifespanMixin(AppMixin):
     """A Mixin that allow tasks to run during the whole app lifespan.
@@ -95,7 +104,6 @@ class LifespanMixin(AppMixin):
     async def _run_lifespan_tasks(self, starlette_app: Starlette):
         self._lifespan_tasks_started = True
         running_tasks = []
-        cleanup_started = False
         try:
             async with contextlib.AsyncExitStack() as stack:
                 for task in self._lifespan_tasks:
@@ -118,20 +126,17 @@ class LifespanMixin(AppMixin):
                                 t_,
                                 name=f"reflex_lifespan_task|{task_name}|{time.time()}",
                             )
-                            task_.add_done_callback(
-                                lambda t: (
-                                    (cleanup_started and t.cancelled()) or t.result()
-                                )
-                            )
+                            task_.add_done_callback(_report_task_result)
                             running_tasks.append(task_)
                             logger.debug(run_msg.format(type="coroutine"))
                         else:
                             logger.debug(run_msg.format(type="function"))
                 yield
         finally:
-            cleanup_started = True
             for task in running_tasks:
                 logger.debug(f"Canceling lifespan task: {task}")
+                # Cancellation by cleanup is expected, so it is not reported.
+                task.remove_done_callback(_report_task_result)
                 task.cancel(msg="lifespan_cleanup")
         # Disassociate sid / token pairings so they can be reconnected properly.
         try:
