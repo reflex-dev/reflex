@@ -2085,9 +2085,12 @@ def _check_event_args_subclass_of_callback(
             provided_type = args_types_without_vars[i]
             try:
                 if isinstance(provided_type, TypeVar):
-                    # A generic spec arg takes on the callback's type within its bound.
-                    compare_result = typehint_issubclass(
-                        callback_param_type, provided_type.__bound__ or Any
+                    # A generic spec arg takes on the callback's type within its
+                    # bound, or as one of its constraints.
+                    compare_result = any(
+                        typehint_issubclass(callback_param_type, admitted)
+                        for admitted in provided_type.__constraints__
+                        or (provided_type.__bound__ or Any,)
                     )
                 else:
                     compare_result = typehint_issubclass(

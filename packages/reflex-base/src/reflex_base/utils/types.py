@@ -276,11 +276,12 @@ def get_type_hints(obj: Any) -> dict[str, Any]:
 
 
 def get_required_typed_dict_keys(typed_dict: type) -> frozenset[str]:
-    """Resolve the required keys of a TypedDict across Python versions.
+    """Resolve the required keys of a TypedDict.
 
-    On Python 3.11+ ``__required_keys__`` is reliable. On 3.10,
-    ``typing.TypedDict`` combined with ``typing_extensions.NotRequired`` does
-    not populate it, so fields wrapped with ``NotRequired`` are subtracted.
+    ``__required_keys__`` misses ``Required``/``NotRequired`` qualifiers it
+    cannot see at class creation: those written as strings under postponed
+    annotations, and ``typing_extensions`` qualifiers on a ``typing.TypedDict``
+    on Python 3.10. The resolved type hints correct it.
 
     Args:
         typed_dict: The TypedDict class to inspect.
@@ -289,17 +290,23 @@ def get_required_typed_dict_keys(typed_dict: type) -> frozenset[str]:
         The names of the required keys.
     """
     required = frozenset(getattr(typed_dict, "__required_keys__", frozenset()))
-    if sys.version_info >= (3, 11):
-        return required
     try:
         hints = get_type_hints_og(typed_dict, include_extras=True)
     except Exception:
         return required
-    return required - frozenset(
+    qualifiers = {name: get_origin_og(hint) for name, hint in hints.items()}
+    return (
+        required
+        | {
+            name
+            for name, origin in qualifiers.items()
+            if origin is typing_extensions.Required
+        }
+    ) - {
         name
-        for name, hint in hints.items()
-        if get_origin_og(hint) is typing_extensions.NotRequired
-    )
+        for name, origin in qualifiers.items()
+        if origin is typing_extensions.NotRequired
+    }
 
 
 def _unionize(args: list[GenericType]) -> GenericType:

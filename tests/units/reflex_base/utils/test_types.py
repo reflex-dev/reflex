@@ -1,5 +1,6 @@
 """Tests for reflex_base.utils.types."""
 
+import importlib
 import json
 import subprocess
 import sys
@@ -270,3 +271,25 @@ class _SignupData(_OptionalBase):
 def test_get_required_typed_dict_keys():
     """Required keys honor NotRequired, Required and inherited totality."""
     assert get_required_typed_dict_keys(_SignupData) == {"name", "email"}
+
+
+def test_get_required_typed_dict_keys_with_postponed_annotations(tmp_path, monkeypatch):
+    """Qualifiers written as strings under postponed annotations still count."""
+    (tmp_path / "postponed_typed_dicts.py").write_text(
+        "from __future__ import annotations\n"
+        "from typing import TypedDict\n"
+        "from typing_extensions import NotRequired, Required\n"
+        "class Data(TypedDict):\n"
+        "    name: str\n"
+        "    message: NotRequired[str]\n"
+        "class Partial(TypedDict, total=False):\n"
+        "    email: Required[str]\n"
+        "    nickname: str\n"
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    module = importlib.import_module("postponed_typed_dicts")
+    try:
+        assert get_required_typed_dict_keys(module.Data) == {"name"}
+        assert get_required_typed_dict_keys(module.Partial) == {"email"}
+    finally:
+        del sys.modules["postponed_typed_dicts"]
