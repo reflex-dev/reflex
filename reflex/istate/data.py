@@ -19,7 +19,7 @@ from reflex_base.vars.base import (
     cached_property_no_lock,
 )
 from reflex_base.vars.object import ObjectItemOperation, ObjectVar
-from reflex_base.vars.sequence import StringVar
+from reflex_base.vars.sequence import LiteralStringVar, StringVar
 
 
 @dataclasses.dataclass(frozen=True, init=False)
@@ -109,7 +109,42 @@ class HeaderData(_HeaderData):
 
 @serializer(to=dict)
 def _serialize_header_data(obj: HeaderData) -> dict:
-    return {k.name: getattr(obj, k.name) for k in dataclasses.fields(obj)}
+    """Serialize request headers without exposing cookies to the frontend.
+
+    Args:
+        obj: The headers to serialize.
+
+    Returns:
+        The headers with cookies omitted from both representations.
+    """
+    headers = {
+        field.name: getattr(obj, field.name)
+        for field in dataclasses.fields(obj)
+        if field.name != "cookie"
+    }
+    headers["raw_headers"] = {
+        key: value for key, value in obj.raw_headers.items() if key.lower() != "cookie"
+    }
+    return headers
+
+
+class _HeaderDataVar(ObjectVar[HeaderData], python_types=HeaderData):
+    """Frontend headers with deprecated cookie access."""
+
+    @property
+    def cookie(self) -> StringVar:
+        """Keep deprecated frontend cookie access safe to render.
+
+        Returns:
+            An empty string; request cookies are available only on the server.
+        """
+        console.deprecate(
+            feature_name="State.router.headers.cookie",
+            reason="Request cookies are no longer sent to the frontend. Use rx.Cookie for client-side cookies instead.",
+            deprecation_version="0.9.13",
+            removal_version="1.0",
+        )
+        return LiteralStringVar.create("")
 
 
 @serializer(to=dict)
@@ -717,7 +752,7 @@ class RouterDataVar(CachedVarOperation, ObjectVar[RouterData]):
         Returns:
             ObjectVar for the ``rx_router_headers`` base var.
         """
-        return self._headers_var.to(ObjectVar, HeaderData)
+        return self._headers_var.to(_HeaderDataVar, HeaderData)
 
     @property
     def page(self) -> ObjectVar[PageData]:
