@@ -29,10 +29,13 @@ from typing import (
 )
 
 from reflex_base import constants
+from reflex_base.config import get_state_auto_setters, get_state_explicit_event_handlers
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import PerformanceMode, auto_reload_cooldown, environment
 from reflex_base.event import (
     EVENT_ACTIONS_MARKER,
+    EVENT_MARKER,
+    UNDECORATED_STATE_METHOD_MARKER,
     Event,
     EventHandler,
     EventSpec,
@@ -678,8 +681,11 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             )
             raise StateValueError(msg)
 
+        explicit = cls.is_user_defined() and get_state_explicit_event_handlers()
         cls._bind_fields()
-        cls._bind_mixin_members()
+        cls._bind_mixin_members(explicit)
+        if explicit:
+            cls._mark_undecorated_methods()
 
         # Set the base and computed vars.
         cls.base_vars = {
@@ -713,7 +719,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         # Set up the event handlers.
         for name, fn in list(cls.__dict__.items()):
-            if cls._item_is_event_handler(name, fn):
+            if cls._item_is_event_handler(name, fn, explicit):
                 handler = cls._create_event_handler(fn)
                 cls.event_handlers[name] = handler
                 setattr(cls, name, handler)
@@ -755,11 +761,14 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             fields[name] = f
 
     @classmethod
-    def _bind_mixin_members(cls) -> None:
+    def _bind_mixin_members(cls, explicit: bool) -> None:
         """Copy the computed vars and event handler functions of mixins onto this class.
 
         A member is copied only where this class resolves the name to the mixin's
         member, so this class or an earlier base overrides it as usual.
+
+        Args:
+            explicit: Only copy event handler functions decorated with `@rx.event`.
         """
         for mixin_cls in cls._mixins():
             for name, value in mixin_cls.__dict__.items():
@@ -774,7 +783,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                             _var_data=VarData.from_state(cls),
                         ),
                     )
-                elif cls._item_is_event_handler(name, value):
+                elif cls._item_is_event_handler(name, value, explicit):
                     fn = cls._copy_fn(value)
                     fn.__qualname__ = f"{cls.__name__}.{name}"
                     setattr(cls, name, fn)
@@ -819,12 +828,13 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         return newfn
 
     @staticmethod
-    def _item_is_event_handler(name: str, value: Any) -> bool:
+    def _item_is_event_handler(name: str, value: Any, explicit: bool = False) -> bool:
         """Check if the item is an event handler.
 
         Args:
             name: The name of the item.
             value: The value of the item.
+            explicit: Only count functions decorated with `@rx.event`.
 
         Returns:
             Whether the item is an event handler.
@@ -835,7 +845,26 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             and not isinstance(value, EventHandler)
             and not getattr(value, "__override_base_method__", False)
             and hasattr(value, "__code__")
+            and (not explicit or getattr(value, EVENT_MARKER, False))
         )
+
+    @classmethod
+    def _mark_undecorated_methods(cls) -> None:
+        """Mark the undecorated methods of this class and its mixins.
+
+        Wiring a marked method to an event trigger raises a targeted error. Only
+        methods defined in the class body are marked: a callback defined
+        elsewhere may be shared.
+        """
+        for owner in (cls, *cls._mixins()):
+            prefix = owner.__dict__.get("__original_qualname__", owner.__qualname__)
+            for name, value in owner.__dict__.items():
+                if (
+                    cls._item_is_event_handler(name, value)
+                    and not getattr(value, EVENT_MARKER, False)
+                    and value.__qualname__ == f"{prefix}.{name}"
+                ):
+                    setattr(value, UNDECORATED_STATE_METHOD_MARKER, True)
 
     @classmethod
     def _evaluate(cls, f: Callable[[Self], Any], of_type: type | None = None) -> Var:
@@ -918,6 +947,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             proposed_name = f"{cls.__name__}_{ix}"
         setattr(reflex.istate.dynamic, proposed_name, cls)
         cls.__original_name__ = cls.__name__
+        cls.__original_qualname__ = cls.__qualname__
         cls.__original_module__ = cls.__module__
         cls.__name__ = cls.__qualname__ = proposed_name
         cls.__module__ = reflex.istate.dynamic.__name__
@@ -1190,7 +1220,6 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         Raises:
             VarTypeError: if the variable has an incorrect type
         """
-        from reflex_base.config import get_state_auto_setters
         from reflex_base.utils.exceptions import VarTypeError
 
         if not types.is_valid_var_type(prop._var_type):
