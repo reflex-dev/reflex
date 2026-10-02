@@ -2207,6 +2207,36 @@ async def test_a_row_holding_an_event_for_a_laned_step_waits_for_that_lane(
     assert EVENTS.count(f"collect:{key}") == 1
 
 
+async def test_a_held_event_beats_a_due_timeout_in_another_lane(session_factory):
+    key = uuid.uuid4().hex
+    # Waiting on a gpu step with its event in hand, and the timeout, a step in
+    # the default lane, due as well: the default worker may run neither.
+    async with session_factory() as session, session.begin():
+        await session.execute(
+            insert(Rendered).values(
+                key=key,
+                status="rendered",
+                next_step="prepare",
+                next_args={"args": [], "kwargs": {}},
+                wake_at=func.now(),
+                waiting_for="collect",
+                pending_event={"step": "collect", "args": {"args": [], "kwargs": {}}},
+                attempts=0,
+                wf_version=0,
+            )
+        )
+
+    async with lane_workers(["default"]):
+        await asyncio.sleep(0.5)
+        assert f"collect:{key}" not in EVENTS
+        assert f"prepare:{key}" not in EVENTS
+
+    async with lane_workers(["gpu"]):
+        await wait_until(status_is(Rendered, key, "collected"))
+    assert EVENTS.count(f"collect:{key}") == 1
+    assert f"prepare:{key}" not in EVENTS
+
+
 async def test_a_worker_serving_both_lanes_runs_the_whole_thing(session_factory):
     key = uuid.uuid4().hex
     async with lane_workers(["default", "gpu"]):
@@ -3020,6 +3050,36 @@ async def test_an_event_delivered_while_the_held_one_runs_is_held_for_the_next_w
     assert row is not None
     assert row.recent_event_keys == ["second", "first"]
     assert await handle.deliver(RaceReview.decide("reject"), key="second") == 0
+
+
+async def test_an_event_taken_but_moved_past_before_it_ran_can_be_sent_again(
+    session_factory,
+):
+    key = uuid.uuid4().hex
+    await RaceReview(key=key).start(RaceReview.submit())
+    handle = RaceReview.by(RaceReview.key == key)
+    assert await handle.deliver(RaceReview.decide("approve"), key="first") == 1
+    pk = await arm_wait(key)
+
+    # A worker takes the held event to run it.
+    taken = await claim_row(RaceReview, pk)
+    # While its step has yet to commit, a resend is a repeat, and refused.
+    assert await handle.deliver(RaceReview.decide("approve"), key="first") == 0
+
+    # The run is sent back to the start before that step runs, so the event
+    # never ran: its sender has to be able to send it again.
+    assert await handle.run(RaceReview.submit()) == 1
+    assert (
+        await execute.execute(
+            runtime.current(), RaceReview, pk, taken.version, execute.Lease(taken.until)
+        )
+        == "stale"
+    )
+    assert await step_row(RaceReview, pk) == "ok"
+    assert await handle.deliver(RaceReview.decide("approve"), key="first") == 1
+    assert await step_row(RaceReview, pk) == "ok"
+    assert await status_is(RaceReview, key, "decided:approve:manager")()
+    assert EVENTS.count(f"decide:{key}") == 1
 
 
 async def test_a_child_run_again_does_not_release_its_parent_while_siblings_work(

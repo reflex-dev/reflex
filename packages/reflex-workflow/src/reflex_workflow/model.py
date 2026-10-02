@@ -83,6 +83,10 @@ PARENT_FAN_OUT = "fan_out"
 # How many delivered event keys a row remembers, to refuse repeats of them.
 EVENT_KEY_HISTORY = 16
 
+# Where a claim keeps the key of the held event it took, among the arguments of
+# the step it scheduled, until that step's attempt commits and remembers it.
+TAKEN_KEY = "event_key"
+
 # Workflow classes by table name, filled in as classes are defined.
 REGISTRY: dict[str, type[Workflow]] = {}
 
@@ -312,12 +316,12 @@ def as_call(ref: StepRef[W]) -> Call[W]:
     return Call(ref, (), {})
 
 
-def remember(cls: type[Workflow], key: str | ColumnElement[str]) -> ColumnElement[Any]:
+def remember(cls: type[Workflow], key: str) -> ColumnElement[Any]:
     """Add an event key to a row's recent keys, dropping the oldest.
 
     Args:
         cls: The workflow class.
-        key: The key to remember, or an expression that reads it from the row.
+        key: The key to remember.
 
     Returns:
         The new value for ``recent_event_keys``, newest first.

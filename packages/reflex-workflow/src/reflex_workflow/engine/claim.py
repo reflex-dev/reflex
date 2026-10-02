@@ -63,12 +63,18 @@ def claimable(
     Returns:
         The conditions: due or holding an event, runnable here, and not leased.
     """
-    due_now = and_(cls.next_step.is_not(None), cls.wake_at <= func.now())
     # A row waiting for an event is due as soon as one is buffered for it, and
     # what it will run then is the step it waits on, not the one in next_step.
-    event_ready = and_(
-        cls.waiting_for.is_not(None),
-        cls.pending_event["step"].astext == cls.waiting_for,
+    event_ready = holding(cls)
+    # Not claimable for next_step while it holds one: that is the timeout, which
+    # the event beats, and it may be in another lane than the event's step.
+    due_now = and_(
+        cls.next_step.is_not(None),
+        cls.wake_at <= func.now(),
+        or_(
+            cls.waiting_for.is_(None),
+            cls.pending_event["step"].astext.is_distinct_from(cls.waiting_for),
+        ),
     )
     if steps is not None:
         due_now = and_(due_now, cls.next_step.in_(steps))
@@ -99,12 +105,29 @@ def due(cls: type[Workflow], limit: int, steps: Collection[str] | None):
     )
 
 
+def holding(cls: type[Workflow]) -> ColumnElement[bool]:
+    """Build the condition that a row holds an event for the wait it is in.
+
+    Args:
+        cls: The workflow class.
+
+    Returns:
+        The condition.
+    """
+    return and_(
+        cls.waiting_for.is_not(None),
+        cls.pending_event["step"].astext == cls.waiting_for,
+    )
+
+
 def taking(cls: type[Workflow], lease_for: datetime.timedelta) -> dict[str, Any]:
     """Build the columns a claim writes on the rows it takes.
 
     Besides the lease, a claim takes the event a row holds for its wait: the
-    event's step and arguments become the row's next step, the wait is over, and
-    the event's key is remembered. Left held while its step ran instead, it
+    event's step and arguments become the row's next step and the wait is over.
+    The event's key goes with the arguments, and is remembered when that step's
+    attempt commits rather than now, so a run moved on before the step ran
+    still takes a resend of the event. Left held while its step ran instead, it
     would refuse every delivery that arrived meanwhile, when those are for the
     wait the step goes on to arm and nothing else would deliver them again. An
     event for a wait whose answer has not been taken yet is still refused, so a
@@ -117,25 +140,20 @@ def taking(cls: type[Workflow], lease_for: datetime.timedelta) -> dict[str, Any]
     Returns:
         The values for the claiming update.
     """
-    held = and_(
-        cls.waiting_for.is_not(None),
-        cls.pending_event["step"].astext == cls.waiting_for,
+    held = holding(cls)
+    taken = cls.pending_event["args"].op("||")(
+        func.jsonb_build_object(model.TAKEN_KEY, cls.pending_event["key"])
     )
-    key = cls.pending_event["key"].astext
     return {
         "claimed_until": func.now() + lease_for,
         "wf_version": cls.wf_version + 1,
         "next_step": case((held, cls.waiting_for), else_=cls.next_step),
-        "next_args": case((held, cls.pending_event["args"]), else_=cls.next_args),
+        "next_args": case((held, taken), else_=cls.next_args),
         # Due now, so a worker that dies mid-step leaves the row to be claimed
         # again once its lease is up, rather than at the wait's deadline.
         "wake_at": case((held, func.now()), else_=cls.wake_at),
         "waiting_for": case((held, null()), else_=cls.waiting_for),
         "pending_event": case((held, null()), else_=cls.pending_event),
-        "recent_event_keys": case(
-            (and_(held, key.is_not(None)), model.remember(cls, key)),
-            else_=cls.recent_event_keys,
-        ),
     }
 
 

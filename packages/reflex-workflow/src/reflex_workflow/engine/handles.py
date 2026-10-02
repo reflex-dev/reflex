@@ -14,6 +14,7 @@ from reflex_workflow.engine.runtime import current
 from reflex_workflow.model import (
     PARENT_FAN_OUT,
     PARENT_TABLE,
+    TAKEN_KEY,
     WORKFLOW_COLUMNS,
     Call,
     StepRef,
@@ -225,6 +226,8 @@ class RunHandle(Generic[W]):
                     cls.pending_event.is_(None),
                     cls.pending_event["key"].astext.is_distinct_from(key),
                 ),
+                # As does one a claim took, while its step has yet to commit.
+                cls.next_args[TAKEN_KEY].astext.is_distinct_from(key),
             )
             if key is not None
             else sqlalchemy_true()

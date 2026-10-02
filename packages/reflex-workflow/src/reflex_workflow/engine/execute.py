@@ -24,6 +24,7 @@ from reflex_workflow.model import (
     PARENT_KEY,
     PARENT_TABLE,
     REGISTRY,
+    TAKEN_KEY,
     Call,
     Child,
     Every,
@@ -35,6 +36,7 @@ from reflex_workflow.model import (
     Workflow,
     as_call,
     check_call,
+    remember,
 )
 
 if TYPE_CHECKING:
@@ -260,6 +262,7 @@ def after_failure(
 def settle_event(
     cls: type[Workflow],
     values: dict[str, Any],
+    taken: str | None = None,
     repeating: bool = False,
 ) -> None:
     """Decide what becomes of an event held for a wait, as the commit finds it.
@@ -276,11 +279,18 @@ def settle_event(
     it. Such a run keeps no event, so a caller told the delivery was refused can
     send it again.
 
+    The key of the event this attempt ran, if its claim took one, is remembered
+    here, as this attempt commits: an event moved past before its step ran was
+    never taken, and a resend of it has to be allowed.
+
     Args:
         cls: The workflow class.
         values: The columns being written, which this adds ``pending_event`` to.
+        taken: The key of the event this attempt ran, if it ran one with a key.
         repeating: Whether the step asked to run again on a schedule.
     """
+    if taken is not None:
+        values["recent_event_keys"] = remember(cls, taken)
     waiting = values["waiting_for"]
     if waiting is None and (values["next_step"] is None or repeating):
         values["pending_event"] = null()
@@ -591,6 +601,7 @@ async def abandon(
     stored: dict[str, Any] | None,
     attempts: int,
     parent: dict[str, Any] | None,
+    taken: str | None,
     began: float,
     err: Exception,
 ) -> str:
@@ -615,6 +626,7 @@ async def abandon(
         stored: The arguments it was called with.
         attempts: How many attempts had failed before this one.
         parent: The run this one was fanned out by, when it was.
+        taken: The key of the event this attempt ran, if it ran one with a key.
         began: When the attempt started, on the monotonic clock.
         err: What stopped the commit.
 
@@ -625,7 +637,7 @@ async def abandon(
     error = f"{type(err).__name__}: {err}"[:2000]
     values, outcome = after_failure(spec, current, stored, attempts)
     values |= {"attempts": attempts, "last_error": error}
-    settle_event(cls, values)
+    settle_event(cls, values, taken)
     joining = parent is not None and parent.get(PARENT_FAN_OUT) is not None
     done = is_finished(values)
     if joining and done:
@@ -708,7 +720,13 @@ async def execute(
     current = row.next_step
     if current is None:
         return "stale"
+    # A claim that took a held event left its key among the arguments; it is not
+    # one of the step's, and a retry of the step does not take the event again.
     stored = row.next_args
+    taken = None
+    if stored is not None and TAKEN_KEY in stored:
+        stored = dict(stored)
+        taken = stored.pop(TAKEN_KEY)
     claimed = attempts = row.attempts
     spec = cls.__workflow_steps__.get(current)
     repeat: Schedule | None = None
@@ -743,7 +761,7 @@ async def execute(
         with contextlib.suppress(asyncio.CancelledError):
             await lease
 
-    settle_event(cls, values, repeating=repeat is not None)
+    settle_event(cls, values, taken, repeating=repeat is not None)
     parent = row.parent
     joining = parent is not None and parent.get(PARENT_FAN_OUT) is not None
     try:
@@ -812,6 +830,7 @@ async def execute(
             stored,
             claimed,
             parent,
+            taken,
             began=began,
             err=err,
         )
