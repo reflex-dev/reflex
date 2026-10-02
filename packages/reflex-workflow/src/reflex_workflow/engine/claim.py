@@ -8,7 +8,7 @@ import logging
 from collections.abc import Collection
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-from sqlalchemy import and_, func, or_, select, update
+from sqlalchemy import and_, case, func, null, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
@@ -99,6 +99,46 @@ def due(cls: type[Workflow], limit: int, steps: Collection[str] | None):
     )
 
 
+def taking(cls: type[Workflow], lease_for: datetime.timedelta) -> dict[str, Any]:
+    """Build the columns a claim writes on the rows it takes.
+
+    Besides the lease, a claim takes the event a row holds for its wait: the
+    event's step and arguments become the row's next step, the wait is over, and
+    the event's key is remembered. Left held while its step ran instead, it
+    would refuse every delivery that arrived meanwhile, when those are for the
+    wait the step goes on to arm and nothing else would deliver them again. An
+    event for a wait whose answer has not been taken yet is still refused, so a
+    wait still ends once.
+
+    Args:
+        cls: The workflow class.
+        lease_for: How long the claim lasts.
+
+    Returns:
+        The values for the claiming update.
+    """
+    held = and_(
+        cls.waiting_for.is_not(None),
+        cls.pending_event["step"].astext == cls.waiting_for,
+    )
+    key = cls.pending_event["key"].astext
+    return {
+        "claimed_until": func.now() + lease_for,
+        "wf_version": cls.wf_version + 1,
+        "next_step": case((held, cls.waiting_for), else_=cls.next_step),
+        "next_args": case((held, cls.pending_event["args"]), else_=cls.next_args),
+        # Due now, so a worker that dies mid-step leaves the row to be claimed
+        # again once its lease is up, rather than at the wait's deadline.
+        "wake_at": case((held, func.now()), else_=cls.wake_at),
+        "waiting_for": case((held, null()), else_=cls.waiting_for),
+        "pending_event": case((held, null()), else_=cls.pending_event),
+        "recent_event_keys": case(
+            (and_(held, key.is_not(None)), model.remember(cls, key)),
+            else_=cls.recent_event_keys,
+        ),
+    }
+
+
 def lease(
     runtime: Runtime,
     cls: type[Workflow],
@@ -130,10 +170,7 @@ def lease(
             *(column == chosen.c[column.key] for column in pk_cols),
             *claimable(cls, steps),
         )
-        .values(
-            claimed_until=func.now() + runtime.lease,
-            wf_version=cls.wf_version + 1,
-        )
+        .values(taking(cls, runtime.lease))
         .returning(*pk_cols, cls.wf_version, cls.claimed_until)
         .execution_options(synchronize_session=False)
     )

@@ -1498,7 +1498,7 @@ async def claim_row(
     stmt = (
         update(cls)
         .where(cls.id == pk[0])
-        .values(claimed_until=func.now() + LEASE, wf_version=cls.wf_version + 1)
+        .values(claim.taking(cls, LEASE))
         .returning(cls.wf_version, cls.claimed_until)
         .execution_options(synchronize_session=False)
     )
@@ -2986,6 +2986,40 @@ async def test_a_second_event_cannot_take_a_wait_that_already_holds_one(
     assert await step_row(RaceReview, pk) == "ok"
     assert await status_is(RaceReview, key, "decided:approve:manager")()
     assert EVENTS.count(f"decide:{key}") == 1
+
+
+async def test_an_event_delivered_while_the_held_one_runs_is_held_for_the_next_wait(
+    session_factory, monkeypatch
+):
+    key = uuid.uuid4().hex
+    await RaceReview(key=key).start(RaceReview.submit())
+    handle = RaceReview.by(RaceReview.key == key)
+    # Held before the wait is armed, then taken as the wait arms.
+    assert await handle.deliver(RaceReview.decide("again"), key="first") == 1
+    pk = await arm_wait(key)
+
+    decide = RaceReview.decide.fn
+    accepted: list[int] = []
+
+    async def deciding(self, decision: str, *, by: str = "manager"):
+        if self.key == key and decision == "again":
+            # The held answer is being run, and it waits again: this one is for
+            # that next wait, and refusing it would lose it.
+            accepted.append(
+                await handle.deliver(RaceReview.decide("approve"), key="second")
+            )
+        return await decide(self, decision, by=by)
+
+    monkeypatch.setattr(RaceReview.decide, "fn", deciding)
+    assert await step_row(RaceReview, pk) == "ok"
+    assert accepted == [1]
+    assert await step_row(RaceReview, pk) == "ok"
+    assert await status_is(RaceReview, key, "decided:approve:manager")()
+    # Each was taken once, and both are remembered.
+    row = await handle.get()
+    assert row is not None
+    assert row.recent_event_keys == ["second", "first"]
+    assert await handle.deliver(RaceReview.decide("reject"), key="second") == 0
 
 
 async def test_a_child_run_again_does_not_release_its_parent_while_siblings_work(

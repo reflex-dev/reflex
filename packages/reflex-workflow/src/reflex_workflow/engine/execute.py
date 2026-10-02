@@ -35,7 +35,6 @@ from reflex_workflow.model import (
     Workflow,
     as_call,
     check_call,
-    remember,
 )
 
 if TYPE_CHECKING:
@@ -261,36 +260,29 @@ def after_failure(
 def settle_event(
     cls: type[Workflow],
     values: dict[str, Any],
-    event: dict[str, Any] | None,
     repeating: bool = False,
 ) -> None:
     """Decide what becomes of an event held for a wait, as the commit finds it.
 
-    An unconsumed event stays only while the row can still take it: it is for the
-    wait this step just armed, or the row is still stepping toward one. Judged
-    against the column rather than what was read, since a delivery may have
-    landed while the step ran.
+    The event a step was run for left the column when its claim took it, so
+    whatever the column holds now arrived while the step ran, for the run's next
+    wait. It stays only while the row can still take it: it is for the wait this
+    step just armed, or the row is still stepping toward one. Judged against the
+    column rather than what was read, since a delivery may have landed while the
+    step ran.
 
     A run going round a schedule is not stepping toward a wait, and an event left
     held on one is held for good: it never runs, and it refuses every event after
     it. Such a run keeps no event, so a caller told the delivery was refused can
     send it again.
 
-    An event this attempt took is remembered by key, which is where a key given
-    to ``deliver`` is remembered at all: an event discarded here was never taken,
-    and a resend of it has to be allowed.
-
     Args:
         cls: The workflow class.
         values: The columns being written, which this adds ``pending_event`` to.
-        event: The held event this attempt ran, if it ran one.
         repeating: Whether the step asked to run again on a schedule.
     """
     waiting = values["waiting_for"]
-    took = event is not None
-    if took and (key := event.get("key")) is not None:
-        values["recent_event_keys"] = remember(cls, key)
-    if took or (waiting is None and (values["next_step"] is None or repeating)):
+    if waiting is None and (values["next_step"] is None or repeating):
         values["pending_event"] = null()
     elif waiting is not None:
         values["pending_event"] = case(
@@ -599,7 +591,6 @@ async def abandon(
     stored: dict[str, Any] | None,
     attempts: int,
     parent: dict[str, Any] | None,
-    event: dict[str, Any] | None,
     began: float,
     err: Exception,
 ) -> str:
@@ -624,7 +615,6 @@ async def abandon(
         stored: The arguments it was called with.
         attempts: How many attempts had failed before this one.
         parent: The run this one was fanned out by, when it was.
-        event: The held event this attempt ran, if it ran one.
         began: When the attempt started, on the monotonic clock.
         err: What stopped the commit.
 
@@ -635,7 +625,7 @@ async def abandon(
     error = f"{type(err).__name__}: {err}"[:2000]
     values, outcome = after_failure(spec, current, stored, attempts)
     values |= {"attempts": attempts, "last_error": error}
-    settle_event(cls, values, event)
+    settle_event(cls, values)
     joining = parent is not None and parent.get(PARENT_FAN_OUT) is not None
     done = is_finished(values)
     if joining and done:
@@ -714,20 +704,11 @@ async def execute(
             await release(runtime, cls, pk, held)
         return "stale"
 
-    # A buffered event for the step the row waits on takes precedence over its
-    # timeout, which is what ``next_step`` holds while waiting.
-    waiting_for, pending = row.waiting_for, row.pending_event
-    event = (
-        pending
-        if waiting_for is not None
-        and pending is not None
-        and pending.get("step") == waiting_for
-        else None
-    )
-    current = waiting_for if event is not None else row.next_step
+    # An event held for the row's wait was moved into next_step by the claim.
+    current = row.next_step
     if current is None:
         return "stale"
-    stored = event["args"] if event is not None else row.next_args
+    stored = row.next_args
     claimed = attempts = row.attempts
     spec = cls.__workflow_steps__.get(current)
     repeat: Schedule | None = None
@@ -762,7 +743,7 @@ async def execute(
         with contextlib.suppress(asyncio.CancelledError):
             await lease
 
-    settle_event(cls, values, event, repeating=repeat is not None)
+    settle_event(cls, values, repeating=repeat is not None)
     parent = row.parent
     joining = parent is not None and parent.get(PARENT_FAN_OUT) is not None
     try:
@@ -831,7 +812,6 @@ async def execute(
             stored,
             claimed,
             parent,
-            event=event,
             began=began,
             err=err,
         )

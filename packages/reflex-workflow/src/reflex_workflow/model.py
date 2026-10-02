@@ -312,12 +312,12 @@ def as_call(ref: StepRef[W]) -> Call[W]:
     return Call(ref, (), {})
 
 
-def remember(cls: type[Workflow], key: str) -> ColumnElement[Any]:
+def remember(cls: type[Workflow], key: str | ColumnElement[str]) -> ColumnElement[Any]:
     """Add an event key to a row's recent keys, dropping the oldest.
 
     Args:
         cls: The workflow class.
-        key: The key to remember.
+        key: The key to remember, or an expression that reads it from the row.
 
     Returns:
         The new value for ``recent_event_keys``, newest first.

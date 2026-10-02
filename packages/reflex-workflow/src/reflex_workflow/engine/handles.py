@@ -185,15 +185,18 @@ class RunHandle(Generic[W]):
     ) -> int:
         """Deliver an event to matching runs.
 
-        A run waiting for this step runs it now with the delivered arguments. A run
-        that has not reached its wait yet keeps the event and applies it when the
-        wait arms; if it ends up waiting for something else, or stops, the event is
-        discarded. A wait given a deadline stops accepting events once that
-        deadline has passed, even where no worker has run the timeout step yet: a
-        deadline is a promise about the clock rather than a race with the
-        workers. Judged as this reaches the row rather than as it commits, so a
-        delivery held up on a lock across the deadline is taken. A repeat of a ``key`` the run has already taken changes nothing,
-        so a resent reply records one decision.
+        A run waiting for this step runs it now with the delivered arguments. A run that
+        has not reached its wait yet keeps the event and applies it when the wait arms;
+        if it ends up waiting for something else, or stops, the event is discarded. A
+        run holds one event at a time: while it holds one its wait has not taken yet, a
+        second is refused rather than replacing that answer. Once a worker takes the
+        held event to run it, the next one is held again, for the wait that step arms
+        next. A wait given a deadline stops accepting events once that deadline has
+        passed, even where no worker has run the timeout step yet: a deadline is a
+        promise about the clock rather than a race with the workers. Judged as this
+        reaches the row rather than as it commits, so a delivery held up on a lock
+        across the deadline is taken. A repeat of a ``key`` the run has already taken
+        changes nothing, so a resent reply records one decision.
 
         Args:
             call: The step call the event carries, e.g. ``Expense.decide("approve")``.
@@ -258,7 +261,8 @@ class RunHandle(Generic[W]):
                 cls.waiting_for == call.step.name,
                 # A wait ends once. An event already held for this one is on its
                 # way to being run, so a second is neither applied over it nor
-                # buffered behind it: the wait has its answer.
+                # buffered behind it: the wait has its answer. Only until a
+                # worker takes it, which clears the wait along with the event.
                 cls.pending_event.is_(None),
                 # And a deadline that has passed has ended it, whether or not a
                 # worker has reached the timeout step yet. Taken here instead,
