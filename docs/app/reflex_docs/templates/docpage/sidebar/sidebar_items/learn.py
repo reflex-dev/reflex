@@ -52,7 +52,6 @@ def get_sidebar_items_frontend():
     from reflex_docs.pages.docs import (
         assets,
         components,
-        custom_components,
         library_,
         pages,
         styling,
@@ -115,14 +114,6 @@ def get_sidebar_items_frontend():
                 wrapping_react.serializers,
                 wrapping_react.example,
                 wrapping_react.more_wrapping_examples,
-            ],
-        ),
-        create_item(
-            "Custom Components",
-            children=[
-                custom_components.overview,
-                custom_components.prerequisites_for_publishing,
-                custom_components.command_reference,
             ],
         ),
     ]

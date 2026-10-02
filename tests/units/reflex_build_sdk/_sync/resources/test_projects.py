@@ -13,6 +13,8 @@ from reflex_build_sdk.types import (
     AuditLogEntry,
     PendingTeamChange,
     Project,
+    ProjectApp,
+    ProjectAppDeployment,
     ProjectMember,
     ProjectRef,
     ProjectSummary,
@@ -23,6 +25,7 @@ from reflex_build_sdk.types import (
     RoleUpdatePreview,
     TeamGrant,
     TeamGrants,
+    User,
 )
 
 from tests.units.reflex_build_sdk.conftest import (
@@ -33,6 +36,8 @@ from tests.units.reflex_build_sdk.conftest import (
 )
 
 PROJECT_ID = "b3c1e3f2-2d0a-4d8e-9a0e-7f7a1c2d3e4f"
+APP_ID = "5f0c5e0e-8f6a-4d57-9a55-3c1c1d7b6a01"
+DEPLOYMENT_ID = "0e7b9d2c-5a4f-4c3b-8e1d-6f2a9b8c7d10"
 ROLE_ID = "3a9d7c1e-0b4f-4e2a-9c8d-1f2e3d4c5b6a"
 USER_ID = "8b0f4a52-3a8a-4c43-9d7e-2f0c7d2a4b11"
 TEAM_ID = "4d5e6f70-8192-4a3b-9c4d-5e6f708192a3"
@@ -120,27 +125,83 @@ def test_get(client: ReflexBuild, mock_api: MockAPI):
         "project_owner": USER_ID,
         "project_owner_email": "dev@example.com",
         "project_seats": 2,
+        "org_cpu_usage": 1.0,
+        "org_ram_usage": 2.0,
+        "org_running_deployments": 1,
         "total_cpu_usage": 1.0,
         "total_ram_usage": 2.0,
         "total_running_deployments": 1,
         "apps": [
             {
-                "id": ROLE_ID,
+                "id": APP_ID,
                 "name": "dashboard",
                 "description": "",
-                "build": False,
+                "build": True,
                 "current_deployment": None,
-                "latest_deployment": None,
+                "latest_deployment": {
+                    "id": DEPLOYMENT_ID,
+                    "hostname": "dashboard.reflex.run",
+                    "url": "https://dashboard.reflex.run",
+                    "backend_url": "https://dashboard-api.reflex.run",
+                    "status": "Running",
+                    "pause_reason": None,
+                    "reflex_version": "0.9.11",
+                    "python_version": "3.13",
+                    "timestamp": "2026-09-16T10:00:00Z",
+                    "vm_type_name": "c1m1",
+                    "vm_type_cpu": 1.0,
+                    "vm_type_ram": 1.0,
+                    "deployment_user": {"id": USER_ID, "username": "dev"},
+                    "last_updated": "2026-09-16T11:00:00Z",
+                    "last_updated_by": {"id": USER_ID, "username": "dev"},
+                },
             }
         ],
     }
     mock_api.add("GET", PROJECT_PATH, reply(200, json=info))
-    project = client.projects.get(PROJECT_ID)
-    assert isinstance(project, Project)
-    assert project.owner_id == uuid.UUID(USER_ID)
-    assert project.owner_email == "dev@example.com"
-    assert project.seats == 2
-    assert [app.name for app in project.apps] == ["dashboard"]
+    user = User(id=uuid.UUID(USER_ID), username="dev")
+    assert client.projects.get(PROJECT_ID) == Project(
+        id=uuid.UUID(PROJECT_ID),
+        name="default",
+        tier=ProjectTier(
+            name="pro", cpu_quota=8.0, ram_quota=16.0, deployment_quota=10
+        ),
+        owner_id=uuid.UUID(USER_ID),
+        owner_email="dev@example.com",
+        seats=2,
+        org_cpu_usage=1.0,
+        org_ram_usage=2.0,
+        org_running_deployments=1,
+        apps=[
+            ProjectApp(
+                id=uuid.UUID(APP_ID),
+                name="dashboard",
+                description="",
+                from_builder=True,
+                current_deployment=None,
+                latest_deployment=ProjectAppDeployment(
+                    id=uuid.UUID(DEPLOYMENT_ID),
+                    url="https://dashboard.reflex.run",
+                    backend_url="https://dashboard-api.reflex.run",
+                    status="Running",
+                    pause_reason=None,
+                    reflex_version="0.9.11",
+                    python_version="3.13",
+                    created_at=datetime.datetime(
+                        2026, 9, 16, 10, tzinfo=datetime.timezone.utc
+                    ),
+                    vm_type_name="c1m1",
+                    vm_type_cpu=1.0,
+                    vm_type_ram=1.0,
+                    deployed_by=user,
+                    updated_at=datetime.datetime(
+                        2026, 9, 16, 11, tzinfo=datetime.timezone.utc
+                    ),
+                    updated_by=user,
+                ),
+            )
+        ],
+    )
 
 
 def test_create(client: ReflexBuild, mock_api: MockAPI):
@@ -212,6 +273,7 @@ def test_members_list(client: ReflexBuild, mock_api: MockAPI):
             email="dev@example.com",
             role="Editor",
             base_tier="editor",
+            role_permissions=["can_deploy"],
             permissions=["can_deploy", "can_view"],
             is_service_account=False,
         )
