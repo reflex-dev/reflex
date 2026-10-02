@@ -224,3 +224,94 @@ async def test_lifespan_shutdown_waits_for_cancelled_tasks():
         await asyncio.sleep(0)
 
     assert cleaned_up == [True]
+
+
+@pytest.mark.asyncio
+async def test_lifespan_shutdown_cancels_all_tasks_before_waiting():
+    """A task whose cleanup waits on a later task does not deadlock shutdown."""
+    second_stopped = asyncio.Event()
+
+    async def first():
+        try:
+            await asyncio.Event().wait()
+        finally:
+            await second_stopped.wait()
+
+    async def second():
+        try:
+            await asyncio.Event().wait()
+        finally:
+            second_stopped.set()
+
+    mixin = LifespanMixin()
+    mixin.register_lifespan_task(first)
+    mixin.register_lifespan_task(second)
+
+    async def run():
+        async with mixin._run_lifespan_tasks(Starlette()):
+            await asyncio.sleep(0)
+
+    loop = asyncio.get_running_loop()
+    start = loop.time()
+    await asyncio.wait_for(run(), timeout=1)
+    assert loop.time() - start < 0.5
+
+
+@pytest.mark.asyncio
+async def test_lifespan_shutdown_does_not_wait_forever_for_a_stuck_task(mocker, caplog):
+    """A task that ignores cancellation is logged and shutdown continues after the timeout."""
+    mocker.patch("reflex.app_mixins.lifespan._LIFESPAN_TASK_CANCEL_TIMEOUT", 0.05)
+    close = mocker.patch(
+        "reflex.utils.prerequisites.close_health_redis", new_callable=mocker.AsyncMock
+    )
+    release = asyncio.Event()
+
+    async def ignore_cancel():
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            await release.wait()
+
+    mixin = LifespanMixin()
+    mixin.register_lifespan_task(ignore_cancel)
+
+    async def run():
+        async with mixin._run_lifespan_tasks(Starlette()):
+            await asyncio.sleep(0)
+
+    try:
+        await asyncio.wait_for(run(), timeout=1)
+    finally:
+        release.set()
+        await asyncio.sleep(0)
+
+    close.assert_awaited_once()
+    assert any("ignore_cancel" in record.getMessage() for record in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_lifespan_task_cleanup_error_is_logged_and_shutdown_continues(
+    mocker, caplog
+):
+    """An error raised while a lifespan task handles cancellation does not stop shutdown."""
+    close = mocker.patch(
+        "reflex.utils.prerequisites.close_health_redis", new_callable=mocker.AsyncMock
+    )
+
+    async def fail_on_cancel():
+        try:
+            await asyncio.Event().wait()
+        finally:
+            msg = "cleanup failed"
+            raise RuntimeError(msg)
+
+    mixin = LifespanMixin()
+    mixin.register_lifespan_task(fail_on_cancel)
+    async with mixin._run_lifespan_tasks(Starlette()):
+        await asyncio.sleep(0)
+
+    close.assert_awaited_once()
+    assert any(
+        isinstance(record.exc_info and record.exc_info[1], RuntimeError)
+        for record in caplog.records
+    )
