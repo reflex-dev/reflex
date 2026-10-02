@@ -40,7 +40,7 @@ target because build environments (a package whose build backend sets
 separately from the install targets and would otherwise not see the sibling at all.
 
 An index alone is not enough at ``latest``. A workspace build carries a development version
-(``0.9.12.post1.dev0+<sha>``), and a resolver only considers pre-releases for a requirement
+(``0.9.13.dev1+<sha>``), and a resolver only considers pre-releases for a requirement
 that names one — so a plain floor such as ``reflex-base >= 0.9.12`` would quietly prefer the
 published release. The baseline therefore pins each sibling to the exact version built from
 the workspace, which is that opt-in. The minimum resolution is otherwise left unpinned, where
@@ -646,7 +646,10 @@ def build_wheelhouse(
             + "\n".join(unusable)
             + "\n\nA sibling that is absent means this check and the build jobs that "
             "produce these wheels have drifted; drop --wheelhouse to build it here "
-            "instead.\nA sibling this checkout cannot number high enough means a floor was "
+            "instead.\nA sibling this checkout cannot number high enough means a *.dev "
+            "floor above what it derives, which is a development release of the version "
+            "after its newest tag here (X.Y.(Z+1).devN after vX.Y.Z, X.Y.Z.post(K+1).devN "
+            "after vX.Y.Z.postK): floor it at that version's .dev0. Otherwise a floor was "
             "raised to a release whose tag is not on this branch, so no revision of it can "
             "satisfy that floor. Tag the commit here whose source matches that release:\n"
             "  git tag <package>-v<version>.post1 <commit> && git push origin "
@@ -660,7 +663,7 @@ def _workspace_pins(
 ) -> tuple[list[str], list[str]]:
     """Pin a package's own siblings to the wheels built from their local checkouts.
 
-    A workspace build carries a development version (``0.9.12.post1.dev0+<sha>``), and a
+    A workspace build carries a development version (``0.9.13.dev1+<sha>``), and a
     resolver only considers pre-releases for a requirement that names one, so a plain floor
     such as ``reflex-base >= 0.9.12`` would skip the wheel and take the published release.
     Naming the exact version is that opt-in, and it makes the baseline independent of how

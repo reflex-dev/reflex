@@ -10,10 +10,11 @@ from collections import Counter
 from collections.abc import AsyncGenerator
 from types import ModuleType
 from typing import Any
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
-from reflex_base.utils.exceptions import EnvironmentVarValueError, LockExpiredError
+from reflex_base.utils.exceptions import EnvironmentVarValueError
 
 from reflex.istate.manager.redis import (
     StateManagerRedis,
@@ -62,6 +63,52 @@ class RedisAppObjectState(BaseState):
     """A root state holding an instance of an app-defined class."""
 
     _value: Any = None
+
+
+@pytest.mark.asyncio
+async def test_get_state_reads_tree_in_one_command():
+    """Read persisted and missing states together, preserving their tree positions."""
+    redis = mock_redis()
+    manager = StateManagerRedis(redis=redis)
+    token = BaseStateToken(ident="batched-read", cls=RedisTestState)
+    persisted = RedisTestState()
+    persisted.foo = "persisted"
+    classes = sorted(
+        manager._get_required_state_classes(RedisTestState, subclasses=True),
+        key=lambda cls: cls.get_full_name(),
+    )
+    redis.mget = AsyncMock(
+        return_value=[
+            persisted._serialize() if cls is RedisTestState else None for cls in classes
+        ]
+    )
+
+    state = await manager.get_state(token)
+
+    assert isinstance(state, RedisTestState)
+    assert state.foo == "persisted"
+    assert state.count == 0
+    assert set(state.substates) == {SubState1.get_name(), SubState2.get_name()}
+    assert all(child.parent_state is state for child in state.substates.values())
+    redis.mget.assert_awaited_once_with([str(token.with_cls(cls)) for cls in classes])
+    await manager.close()
+
+
+@pytest.mark.asyncio
+async def test_get_state_reuses_populated_tree_without_reading():
+    """Fetching an already attached state must not contact Redis or replace it."""
+    redis = mock_redis()
+    manager = StateManagerRedis(redis=redis)
+    token = BaseStateToken(ident="populated-read", cls=SubState1)
+    state = RedisTestState()
+    redis.mget = AsyncMock(return_value=[])
+    redis.pipeline = Mock(side_effect=AssertionError("Unexpected Redis read"))
+
+    child = await manager.get_state(token, top_level=False, for_state_instance=state)
+
+    assert child is state.substates[SubState1.get_name()]
+    redis.mget.assert_not_awaited()
+    await manager.close()
 
 
 @pytest.fixture
@@ -903,6 +950,73 @@ async def test_oplock_hold_oplock_after_cancel(
     assert final_state.count == 2
 
 
+async def test_set_state_saves_tree_in_one_round_trip(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+):
+    """Saving a state tree checks the lock and writes every touched state in one command.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+    """
+    state_manager_redis._oplock_enabled = False
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    redis = state_manager_redis.redis
+    real_eval = redis.eval
+    evals: list[tuple[Any, ...]] = []
+
+    def counting_eval(script, numkeys, *keys_and_args):
+        evals.append(keys_and_args)
+        return real_eval(script, numkeys, *keys_and_args)
+
+    async with state_manager_redis.modify_state(token) as state:
+        assert len(state.substates) == 2
+        state.count = 1
+        redis.eval = counting_eval  # pyright: ignore[reportAttributeAccessIssue]
+        try:
+            await state_manager_redis.set_state(
+                token,
+                state,
+                lock_id=await redis.get(state_manager_redis._lock_key(token)),
+            )
+        finally:
+            redis.eval = real_eval  # pyright: ignore[reportAttributeAccessIssue]
+
+    # One command for a tree of three states, all of them touched by the load.
+    assert len(evals) == 1
+    assert str(token) in evals[0]
+    saved = await state_manager_redis.get_state(token)
+    assert isinstance(saved, root_state)
+    assert saved.count == 1
+
+
+async def test_set_state_discards_writes_when_lock_changes_hands(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+):
+    """A save whose lock expired or was re-acquired before the write is discarded.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+    """
+    from reflex_base.utils.exceptions import LockExpiredError
+
+    state_manager_redis._oplock_enabled = False
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    lock_key = state_manager_redis._lock_key(token)
+
+    with pytest.raises(LockExpiredError):
+        async with state_manager_redis.modify_state(token) as state:
+            state.count = 5
+            # Another worker takes over the lock before this save lands.
+            await state_manager_redis.redis.set(lock_key, b"someone-else")
+    saved = await state_manager_redis.get_state(token)
+    assert isinstance(saved, root_state)
+    assert saved.count == 0
+
+
 def test_oplock_hold_time_below_one_millisecond(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -976,33 +1090,6 @@ async def _stored_tree_states(
     }
 
 
-async def test_set_state_checks_the_lock_once_per_tree(
-    state_manager_redis: StateManagerRedis,
-):
-    """Persisting a tree costs one lock check, not one per state.
-
-    Args:
-        state_manager_redis: The StateManagerRedis to test.
-    """
-    state_manager_redis._oplock_enabled = False
-    token = BaseStateToken(ident=str(uuid.uuid4()), cls=TreeRoot)
-    redis = state_manager_redis.redis
-    state = await state_manager_redis.get_state(token)
-    assert len(state.substates) == 2
-
-    lock_id = b"test-lock-id"
-    await redis.set(
-        state_manager_redis._lock_key(token),
-        lock_id,
-        px=state_manager_redis.lock_expiration,
-    )
-    calls = _count_redis_calls(redis, "get", "pttl")
-    await state_manager_redis.set_state(token, state, lock_id=lock_id)
-
-    assert calls == {"get": 1, "pttl": 1}
-    await redis.delete(state_manager_redis._lock_key(token))
-
-
 async def test_set_state_persists_the_touched_states_in_one_round_trip(
     state_manager_redis: StateManagerRedis,
 ):
@@ -1059,11 +1146,11 @@ async def test_set_state_writes_nothing_when_no_state_was_touched(
     assert not await _stored_tree_states(state_manager_redis, token)
 
 
-async def test_set_state_writes_the_touched_states_in_one_lock_checked_call(
+async def test_set_state_writes_the_touched_states_in_one_fenced_save(
     state_manager_redis: StateManagerRedis,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    """With the lock held, the touched states are written by one lock-checked script.
+    """With the lock held, only the touched states are written, by one lock-checked command.
 
     Args:
         state_manager_redis: The StateManagerRedis to test.
@@ -1080,64 +1167,26 @@ async def test_set_state_writes_the_touched_states_in_one_lock_checked_call(
 
     lock_id = b"test-lock-id"
     await redis.set(lock_key, lock_id, px=state_manager_redis.lock_expiration)
-    script = state_manager_redis._set_states_if_locked
-    script_keys: list[list[Any]] = []
+    real_eval = redis.eval
+    saved_keys: list[tuple[Any, ...]] = []
 
-    async def recording_script(keys: list[Any], args: list[Any]) -> Any:
-        script_keys.append(keys)
-        return await script(keys=keys, args=args)
+    def recording_eval(script: str, numkeys: int, *keys_and_args: Any) -> Any:
+        saved_keys.append(keys_and_args[:numkeys])
+        return real_eval(script, numkeys, *keys_and_args)
 
-    monkeypatch.setattr(state_manager_redis, "_set_states_if_locked", recording_script)
-    calls = _count_redis_calls(redis, "pipeline", "set")
+    monkeypatch.setattr(redis, "eval", recording_eval)
+    calls = _count_redis_calls(redis, "pipeline")
     await state_manager_redis.set_state(token, state, lock_id=lock_id)
 
     assert not calls
-    assert script_keys == [[lock_key, token._state_key(TreeFirst)]]
+    assert saved_keys == [(lock_key, token._state_key(TreeFirst))]
     assert await _stored_tree_states(state_manager_redis, token) == {TreeFirst}
     await redis.delete(lock_key)
 
 
-async def test_set_state_keeps_the_writes_of_the_next_lock_holder(
-    state_manager_redis: StateManagerRedis,
-    monkeypatch: pytest.MonkeyPatch,
-):
-    """A tree whose lock changed hands before it was written does not overwrite the newer state.
-
-    Args:
-        state_manager_redis: The StateManagerRedis to test.
-        monkeypatch: The pytest monkeypatch fixture.
-    """
-    state_manager_redis._oplock_enabled = False
-    token = BaseStateToken(ident=str(uuid.uuid4()), cls=TreeRoot)
-    redis = state_manager_redis.redis
-    lock_key = state_manager_redis._lock_key(token)
-    stale = await state_manager_redis.get_state(token)
-    stale_first = stale.substates[TreeFirst.get_name()]
-    assert isinstance(stale_first, TreeFirst)
-    stale_first.first_value = 5
-    newer = await state_manager_redis.get_state(token)
-    newer_first = newer.substates[TreeFirst.get_name()]
-    assert isinstance(newer_first, TreeFirst)
-    newer_first.first_value = 7
-
-    await redis.set(lock_key, b"stale-lock-id", px=state_manager_redis.lock_expiration)
-    pttl = redis.pttl
-
-    async def take_over_the_lock(key: Any) -> Any:
-        # After the ownership check, the lock expires and the next holder takes
-        # it and persists its own changes before this tree is written.
-        await redis.set(
-            lock_key, b"newer-lock-id", px=state_manager_redis.lock_expiration
-        )
-        await state_manager_redis.set_state(token, newer)
-        return await pttl(key)
-
-    monkeypatch.setattr(redis, "pttl", take_over_the_lock)
-    with pytest.raises(LockExpiredError, match="newer-lock-id"):
-        await state_manager_redis.set_state(token, stale, lock_id=b"stale-lock-id")
-
-    persisted = await state_manager_redis.get_state(token)
-    persisted_first = persisted.substates[TreeFirst.get_name()]
-    assert isinstance(persisted_first, TreeFirst)
-    assert persisted_first.first_value == 7
-    await redis.delete(lock_key)
+async def test_mock_redis_eval_only_emulates_the_fenced_save_script():
+    """The mock refuses any script it does not emulate, instead of mis-running it."""
+    # redis-py types eval as possibly synchronous; the mock is always async.
+    eval_script: Any = mock_redis().eval
+    with pytest.raises(NotImplementedError):
+        await eval_script("return 1", 0)

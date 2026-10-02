@@ -73,6 +73,7 @@ from reflex.state import (
     ImmutableStateError,
     OnLoadInternalState,
     State,
+    state_snapshot_hashes,
 )
 from reflex.testing import chdir
 from reflex.utils import prerequisites
@@ -535,6 +536,41 @@ def test_get_parent_state():
     assert ChildState.get_parent_state() == TestState
     assert ChildState2.get_parent_state() == TestState
     assert GrandchildState.get_parent_state() == ChildState
+
+
+def test_state_names_remain_cached_for_large_apps(mocker: MockerFixture):
+    """Walking more than 128 states must not evict their immutable class names.
+
+    Args:
+        mocker: The mock fixture.
+    """
+    states = [
+        type(f"CachedNameState{i}", (BaseState,), {"__module__": __name__})
+        for i in range(200)
+    ]
+    names = [state.get_full_name() for state in states]
+    snake_case = mocker.patch(
+        "reflex.state.format.to_snake_case", wraps=format.to_snake_case
+    )
+
+    assert [state.get_full_name() for state in states] == names
+    snake_case.assert_not_called()
+
+
+def test_substate_does_not_read_metadata_its_parent_cached():
+    """A substate defined after its parent cached its metadata computes its own."""
+    parent = type("CachedMetaParentState", (BaseState,), {"__module__": __name__})
+    parent_name = parent.get_name()
+    parent_full_name = parent.get_full_name()
+    assert parent.get_parent_state() is None
+    assert parent.get_root_state() is parent
+
+    child = type("CachedMetaChildState", (parent,), {"__module__": __name__})
+
+    assert child.get_name() != parent_name
+    assert child.get_full_name() == f"{parent_full_name}.{child.get_name()}"
+    assert child.get_parent_state() is parent
+    assert child.get_root_state() is parent
 
 
 def test_get_substates():
@@ -2703,7 +2739,7 @@ async def test_state_manager_lock_warning_threshold_contend(
         # When Oplock is enabled, we don't warn when lock is held too long.
         assert not lock_warnings
     else:
-        # One warning for the whole tree, not one per state.
+        # One warning per state-tree save, not one per substate.
         assert len(lock_warnings) == 1
 
 
@@ -6264,6 +6300,8 @@ async def test_on_load_internal_supersedes_previous_navigation(
     """
     assert OnLoadInternalState.event_handlers["on_load_internal"].supersedes
     assert not State.event_handlers["hydrate"].supersedes
+    # A navigation must not cancel the snapshot of a pending hydrate.
+    assert not State.event_handlers["hydrate_and_load"].supersedes
 
     app = app_module_mock.app = App(_state=State)
     app._state_manager = mock_root_event_context.state_manager
@@ -6312,6 +6350,19 @@ async def test_on_load_internal_supersedes_previous_navigation(
         # The fresh navigation completes without waiting behind the stale chain.
         await asyncio.wait_for(current.wait_all(), timeout=5)
         assert stale.done()
+
+
+def test_state_snapshot_hashes_keep_dict_key_order():
+    """Defaults that differ only in dict key order render differently, so hash differently."""
+    var_name = f"ordered{FIELD_MARKER}"
+    names_digest, ordered_hash = state_snapshot_hashes({
+        "state": {var_name: {"alpha": 1, "beta": 2}}
+    })
+    reordered_names_digest, reordered_hash = state_snapshot_hashes({
+        "state": {var_name: {"beta": 2, "alpha": 1}}
+    })
+    assert reordered_names_digest == names_digest
+    assert reordered_hash != ordered_hash
 
 
 _ALIAS_ITEM = TypeVar("_ALIAS_ITEM")

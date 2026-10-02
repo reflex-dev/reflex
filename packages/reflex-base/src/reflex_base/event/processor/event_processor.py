@@ -640,13 +640,7 @@ class EventProcessor:
                 tracked.cancel()
                 return False
             if tracked.root_gen > current_gen:
-                logger.debug(
-                    f"Cancelling the previous unfinished {event.name} chain for "
-                    f"token {token}, superseded by a newer invocation."
-                )
-                for previous in slot.values():
-                    previous.cancel()
-                slot.clear()
+                self._cancel_older_chains(key, tracked.root_gen)
             elif key in tracked.covered_supersede_keys:
                 # Same chain, and an ancestor invocation is already
                 # registered: cancelling that ancestor cascades here, so
@@ -658,6 +652,27 @@ class EventProcessor:
         tracked.supersede_key = key
         tracked.covered_supersede_keys |= {key}
         return True
+
+    def _cancel_older_chains(self, key: tuple[str, str], root_gen: int) -> None:
+        """Cancel the unfinished superseding chains registered under ``key``.
+
+        Only chains from a root generation older than ``root_gen`` are
+        cancelled; the slot is left alone when its chains are at least as new.
+
+        Args:
+            key: The (event name, token) the chains are registered under.
+            root_gen: The root generation of the chain superseding them.
+        """
+        slot = self._superseded.get(key)
+        if not slot or root_gen <= next(iter(slot.values())).root_gen:
+            return
+        logger.debug(
+            f"Cancelling the previous unfinished {key[0]} chain for token "
+            f"{key[1]}, superseded by a newer invocation."
+        )
+        for previous in slot.values():
+            previous.cancel()
+        slot.clear()
 
     def _on_future_done(self, future: EventFuture) -> None:  # type: ignore[override]
         """Callback invoked when an enqueued future completes.

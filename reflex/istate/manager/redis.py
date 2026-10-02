@@ -3,20 +3,18 @@
 import asyncio
 import contextlib
 import dataclasses
-import functools
 import inspect
 import logging
 import os
 import sys
 import time
 import uuid
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from datetime import timedelta
 from typing import Any, TypedDict, cast
 
 from redis import ResponseError
 from redis.asyncio import Redis
-from redis.commands.core import AsyncScript
 from reflex_base.config import get_config
 from reflex_base.environment import environment, oplock_hold_time
 from reflex_base.utils.exceptions import (
@@ -130,36 +128,19 @@ class OplockFound(Exception):  # noqa: N818
     """Indicates that an opportunistic lock was found."""
 
 
-# Writes the states of a tree only while their lock is held with the given id,
-# checked atomically with the writes, and replies with the id the lock is held
-# with. KEYS: the lock key, then the state keys. ARGV: the lock id, the
-# expiration (s), then the payload of each state key.
-_SET_STATES_IF_LOCKED_SCRIPT = """
-local lock_id = redis.call('GET', KEYS[1])
-if lock_id == ARGV[1] then
-    for i = 2, #KEYS do
-        redis.call('SET', KEYS[i], ARGV[i + 1], 'EX', ARGV[2])
-    end
+# KEYS: the lock key, then the state keys. ARGV: the lock id, the state
+# expiration in seconds, then the serialized states in KEYS order. Writes only
+# while the lock is held by ARGV[1], and returns the lock's remaining PTTL, or
+# nil when the lock changed hands or expired and nothing was written.
+_FENCED_SAVE_SCRIPT = """
+if redis.call('GET', KEYS[1]) ~= ARGV[1] then
+    return nil
 end
-return lock_id
+for i = 2, #KEYS do
+    redis.call('SET', KEYS[i], ARGV[i + 1], 'EX', ARGV[2])
+end
+return redis.call('PTTL', KEYS[1])
 """
-
-
-def _touched_states(state: BaseState) -> Iterator[BaseState]:
-    """Iterate over the states of a tree that were touched since they were loaded.
-
-    Args:
-        state: The root of the tree to search.
-
-    Yields:
-        Each touched state, after the state it is a substate of.
-    """
-    pending = [state]
-    while pending:
-        current = pending.pop()
-        pending.extend(current.substates.values())
-        if current._was_touched:
-            yield current
 
 
 @dataclasses.dataclass
@@ -377,14 +358,20 @@ class StateManagerRedis(StateManager):
             key=lambda x: x.get_full_name(),
         )
 
-        redis_pipeline = self.redis.pipeline()
-        for state_cls in required_state_classes:
-            redis_pipeline.get(token._state_key(state_cls))
+        # Read the tree atomically with one command instead of a transaction
+        # containing a GET for each state. An already populated tree needs no IO.
+        redis_states = (
+            await self.redis.mget([
+                token._state_key(state_cls) for state_cls in required_state_classes
+            ])
+            if required_state_classes
+            else []
+        )
 
         for state_cls, redis_state in zip(
             required_state_classes,
-            await redis_pipeline.execute(),
-            strict=False,
+            redis_states,
+            strict=True,
         ):
             state = None
 
@@ -444,33 +431,61 @@ class StateManagerRedis(StateManager):
             RuntimeError: If the state instance doesn't match the state name in the token.
         """
         token = self._coerce_token(token)
-        # Check that we're holding the lock.
-        if (
-            lock_id is not None
-            and (existing_lock_id := await self.redis.get(self._lock_key(token)))
-            != lock_id
-        ):
-            raise self._lock_expired_error(token, existing_lock_id, lock_id, context)
-
-        if not isinstance(token, BaseStateToken):
+        if isinstance(token, BaseStateToken):
+            # Serialize the touched states up front so they go out in one write.
+            writes = self._collect_state_writes(token, cast(BaseState, state))
+        else:
             # Non-BaseState token: simple single-key write.
             pickle_state = token.serialize(state)
-            if pickle_state:
-                await self.redis.set(str(token), pickle_state, ex=self.token_expiration)
+            writes = [(str(token), pickle_state)] if pickle_state else []
+
+        if lock_id is None:
+            if writes:
+                pipeline = self.redis.pipeline(transaction=False)
+                for key, pickle_state in writes:
+                    pipeline.set(key, pickle_state, ex=self.token_expiration)
+                await pipeline.execute()
             return
 
-        lock_key = token.lock_key
-
-        if lock_id is not None and lock_key not in self._local_leases:
-            time_taken = (
-                self.lock_expiration - (await self.redis.pttl(self._lock_key(token)))
-            ) / 1000
+        event_suffix = (
+            f" Happened in event: {event.name}"
+            if (event := context.get("event")) is not None
+            else ""
+        )
+        lock_key = self._lock_key(token)
+        # One round trip: the script checks the lock and writes atomically on
+        # the server, so an expired or re-acquired lock discards every write,
+        # and a retried command re-checks the lock instead of bypassing it.
+        # redis-py types EVAL arguments as str and its reply as str; both keys
+        # and payloads are bytes here and the script replies with an int or nil.
+        fenced_save = cast("Callable[..., Awaitable[int | None]]", self.redis.eval)
+        pttl = await fenced_save(
+            _FENCED_SAVE_SCRIPT,
+            1 + len(writes),
+            lock_key,
+            *(key for key, _ in writes),
+            lock_id,
+            self.token_expiration,
+            *(pickle_state for _, pickle_state in writes),
+        )
+        if pttl is None:
+            existing_lock_id = await self.redis.get(lock_key)
+            msg = (
+                f"Lock expired for token {token} while processing. Consider increasing "
+                f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
+                "or use `@rx.event(background=True)` decorator for long-running tasks. "
+                f"Current lock id: {existing_lock_id!r}, expected lock id: {lock_id!r}."
+                + event_suffix
+            )
+            raise LockExpiredError(msg)
+        if (
+            isinstance(token, BaseStateToken)
+            and token.lock_key not in self._local_leases
+        ):
+            # lock_expiration, the PTTL and the threshold are milliseconds; the
+            # warning reports the time held in seconds.
+            time_taken = (self.lock_expiration - pttl) / 1000
             if time_taken > self.lock_warning_threshold / 1000:
-                event_suffix = (
-                    f" Happened in event: {event.name}"
-                    if (event := context.get("event")) is not None
-                    else ""
-                )
                 logger.warning(
                     f"Lock for token {token} was held too long {time_taken=}s, "
                     "use `@rx.event(background=True)` decorator for long-running "
@@ -478,71 +493,28 @@ class StateManagerRedis(StateManager):
                     extra={"dedupe": True},
                 )
 
-        # Persist each touched state of the tree on its own (BaseState.__getstate__
-        # excludes parents and substates), all in a single round trip.
-        writes = {
-            token._state_key(type(touched)): touched._serialize()
-            for touched in _touched_states(cast(BaseState, state))
-        }
-        if not writes:
-            return
-        if lock_id is None:
-            pipeline = self.redis.pipeline()
-            for key, payload in writes.items():
-                pipeline.set(key, payload, ex=self.token_expiration)
-            await pipeline.execute()
-            return
-        # Serializing the tree can outlast the lock, so its ownership is checked
-        # again, atomically with the writes.
-        existing_lock_id = cast(
-            "bytes | None",
-            await self._set_states_if_locked(
-                keys=[self._lock_key(token), *writes],
-                args=[lock_id, self.token_expiration, *writes.values()],
-            ),
-        )
-        if existing_lock_id != lock_id:
-            raise self._lock_expired_error(token, existing_lock_id, lock_id, context)
-
-    @functools.cached_property
-    def _set_states_if_locked(self) -> AsyncScript:
-        """The script writing the states of a tree while their lock is held.
-
-        Returns:
-            The script, registered with the redis client.
-        """
-        return self.redis.register_script(_SET_STATES_IF_LOCKED_SCRIPT)
-
-    def _lock_expired_error(
-        self,
-        token: StateToken,
-        existing_lock_id: bytes | None,
-        lock_id: bytes,
-        context: StateModificationContext,
-    ) -> LockExpiredError:
-        """Build the error for a lock that expired while its holder was processing.
+    def _collect_state_writes(
+        self, token: BaseStateToken, base_state: BaseState
+    ) -> list[tuple[str, bytes]]:
+        """Serialize a state and every substate attached to it that was touched.
 
         Args:
-            token: The token the lock is for.
-            existing_lock_id: The id the lock is held with now, if any.
-            lock_id: The id the lock was expected to be held with.
-            context: The state modification context.
+            token: The token (any state class) identifying the client.
+            base_state: The state instance whose tree to persist.
 
         Returns:
-            The error to raise.
+            The redis keys and pickled payloads to write.
         """
-        msg = (
-            f"Lock expired for token {token} while processing. Consider increasing "
-            f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
-            "or use `@rx.event(background=True)` decorator for long-running tasks. "
-            f"Current lock id: {existing_lock_id!r}, expected lock id: {lock_id!r}."
-            + (
-                f" Happened in event: {event.name}"
-                if (event := context.get("event")) is not None
-                else ""
-            )
-        )
-        return LockExpiredError(msg)
+        writes: list[tuple[str, bytes]] = []
+        stack = [base_state]
+        while stack:
+            state = stack.pop()
+            # Persist only the given state (parents or substates are excluded by
+            # BaseState.__getstate__).
+            if state._was_touched and (pickle_state := state._serialize()):
+                writes.append((token._state_key(type(state)), pickle_state))
+            stack.extend(state.substates.values())
+        return writes
 
     @contextlib.asynccontextmanager
     async def _try_modify_state(
