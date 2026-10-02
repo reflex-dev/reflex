@@ -758,10 +758,21 @@ def app_logs(
                 if isinstance(log_message, dict):
                     log_message = json.dumps(log_message, ensure_ascii=False)
                 prefix = f"{timestamp} [{level}]" if timestamp else f"[{level}]"
-                message = f"{prefix} {log_message}"
-                if details := entry.get("details"):
-                    message += "\n" + indent(str(details), "  ")
-            console.print(message, markup=False, soft_wrap=True)
+                message_lines = (
+                    str(log_message)
+                    .replace("\r\n", "\n")
+                    .replace("\r", "\n")
+                    .split("\n")
+                )
+                message = f"{prefix} {message_lines[0]}"
+                if len(message_lines) > 1:
+                    message += "\n" + indent(
+                        "\n".join(message_lines[1:]), "  ", lambda _: True
+                    )
+                if (details := entry.get("details")) is not None:
+                    details = str(details).replace("\r\n", "\n").replace("\r", "\n")
+                    message += "\n" + indent(details, "  ", lambda _: True)
+            logger.info(message)
             printed += 1
             if printed % _LOGS_PAGE_SIZE:
                 continue
