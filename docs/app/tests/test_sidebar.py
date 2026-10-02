@@ -122,6 +122,7 @@ def test_api_reference_groups_related_symbols():
         "ImportVar",
         "Var System",
         "CLI",
+        "Minification",
         "Browser Storage",
         "Browser Javascript",
         "Plugins",

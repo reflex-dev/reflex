@@ -47,7 +47,7 @@ from reflex_base.event import (
 )
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
-from reflex_base.registry import RegistrationContext
+from reflex_base.registry import RegistrationContext, scheme_digest
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
 from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
@@ -2124,6 +2124,9 @@ class EventNamespace(AsyncNamespace):
         # Number of client_error reports logged per SID, for rate limiting.
         self._client_error_counts: dict[str, int] = {}
 
+        # SIDs whose bundle resolves names with a different scheme than ours.
+        self._scheme_mismatch_sids: set[str] = set()
+
         # Connection-scoped router_data entries per SID, computed once at
         # connect time instead of for every event on the connection.
         self._static_router_data: dict[str, dict[str, Any]] = {}
@@ -2165,6 +2168,24 @@ class EventNamespace(AsyncNamespace):
             # Make sure this instance is watching for updates from other instances.
             self._token_manager.ensure_lost_and_found_task(self.emit_update)
         query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
+        # Per-SID state goes in before the first await: a disconnect landing
+        # during one would otherwise clean up first and leave it behind. A
+        # connect that raises keeps its socket, so on_disconnect still runs.
+        if otel.enabled:
+            # on_disconnect decrements unconditionally.
+            otel.record_connection(1)
+        # Headers, client IP, and session id cannot change for the lifetime of
+        # the connection; compute them once instead of on every event.
+        self._static_router_data[sid] = self._build_static_router_data(sid, environ)
+        client_scheme = next(iter(query_params.get("scheme", [])), "")
+        server_scheme = scheme_digest()
+        if scheme_mismatch := client_scheme != server_scheme:
+            # The client queues its initial events as soon as it sees CONNECT,
+            # and only learns of the mismatch a tick later, so drop whatever it
+            # sends meanwhile: a name from the other scheme could resolve to a
+            # real -- but wrong -- handler here.
+            self._scheme_mismatch_sids.add(sid)
+
         token_list = query_params.get("token", [])
         if token_list:
             await self.link_token_to_sid(sid, token_list[0])
@@ -2176,12 +2197,19 @@ class EventNamespace(AsyncNamespace):
             logger.warning(
                 f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
-        if otel.enabled:
-            otel.record_connection(1)
 
-        # Headers, client IP, and session id cannot change for the lifetime of
-        # the connection; compute them once instead of on every event.
-        self._static_router_data[sid] = self._build_static_router_data(sid, environ)
+        # Unlike the version check above, a scheme mismatch is fatal: every name
+        # the client sends would resolve to the wrong handler, or to none.
+        if scheme_mismatch:
+            logger.warning(
+                f"Frontend minification scheme {client_scheme!r} for session {sid} "
+                f"does not match the backend scheme {server_scheme!r}."
+            )
+            await self.emit(
+                str(constants.SocketEvent.SCHEME_MISMATCH),
+                {"frontend": client_scheme, "backend": server_scheme},
+                to=sid,
+            )
 
     def _build_static_router_data(self, sid: str, environ: dict) -> dict[str, Any]:
         """Build the connection-scoped router_data entries for a socket.
@@ -2233,6 +2261,7 @@ class EventNamespace(AsyncNamespace):
         if otel.enabled:
             otel.record_connection(-1)
         self._client_error_counts.pop(sid, None)
+        self._scheme_mismatch_sids.discard(sid)
         self._static_router_data.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
@@ -2295,6 +2324,11 @@ class EventNamespace(AsyncNamespace):
             RuntimeError: If the Socket.IO is badly initialized.
             EventDeserializationError: If the event data is not a dictionary.
         """
+        if sid in self._scheme_mismatch_sids:
+            # Its names mean something else here; the client stops on its own
+            # once it processes the notice sent at connect.
+            return
+
         # Determine the token for this SID
         if (token := self.sid_to_token.get(sid)) is None:
             logger.warning(

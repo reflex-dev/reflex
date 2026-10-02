@@ -50,7 +50,9 @@ from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
 from typing_extensions import Self, TypeAliasType, TypeVarTuple, Unpack
 
+from reflex.minify import StateEntry, get_state_full_path
 from reflex.state import BaseState, State, _override_base_method
+from tests.units.minify_helpers import install_config, set_minify_modes
 
 _MARKER_ATTR = "_marker"
 
@@ -1230,6 +1232,59 @@ def test_classvar_over_inherited_field_is_not_a_field():
 
     assert Child.get_fields()["count"] is Parent.get_fields()["count"]
     assert "count" not in Child.base_vars
+
+
+@pytest.mark.parametrize("spelling", ["resolved", "default"])
+def test_state_named_by_string_reads_like_the_class(
+    temp_minify_json, monkeypatch, spelling
+):
+    """A registered state named by either full name resolves to the class.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+        spelling: Which of the state's full names the caller passes.
+    """
+
+    class NamedByStringState(State):
+        count: int = 0
+
+    set_minify_modes(monkeypatch, states=True)
+    install_config(
+        states={
+            get_state_full_path(NamedByStringState): StateEntry(
+                id="z", parent="reflex.state.State"
+            )
+        },
+        include_state_root=True,
+    )
+    resolved = NamedByStringState.get_full_name()
+    default = NamedByStringState._get_default_full_name()
+    assert resolved != default
+    name = resolved if spelling == "resolved" else default
+
+    by_class = VarData.from_state(NamedByStringState, "count")
+    by_name = VarData.from_state(name, "count")
+    assert by_name.hooks == by_class.hooks
+    assert by_name.field_dependencies == by_class.field_dependencies
+
+    var = Var(_js_expr="count")
+    by_class_var = var._var_set_state(NamedByStringState)
+    by_name_var = var._var_set_state(name)
+    assert str(by_name_var) == str(by_class_var)
+    assert by_name_var._get_all_var_data() == by_class_var._get_all_var_data()
+
+
+def test_unregistered_state_name_is_taken_as_given():
+    """A string naming no registered state keeps meaning what it says."""
+    var_data = VarData.from_state("not_a_state", "field")
+    assert var_data.state == "not_a_state"
+    assert var_data.hooks == (
+        "const not_a_state = useContext(StateContexts.not_a_state)",
+    )
+    assert str(Var(_js_expr="field")._var_set_state("not_a_state")) == (
+        "not_a_state.field"
+    )
 
 
 def test_cached_computed_var_checks_return_type_on_recompute_only(

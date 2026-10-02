@@ -257,7 +257,7 @@ class SharedStateBaseInternal(State):
             raise ReflexRuntimeError(msg)
 
         # Associate substate with the given link token.
-        state_name = self.get_full_name()
+        state_name = self._get_default_full_name()
         if self._reflex_internal_links is None:
             self._reflex_internal_links = {}
         self._reflex_internal_links[state_name] = token
@@ -275,12 +275,12 @@ class SharedStateBaseInternal(State):
             msg = "Can only unlink SharedState instances."
             raise ReflexRuntimeError(msg)
 
-        state_name = self.get_full_name()
+        state_name = self._get_default_full_name()
         if (
             not self._reflex_internal_links
             or state_name not in self._reflex_internal_links
         ):
-            msg = f"State {state_name} is not linked and cannot be unlinked."
+            msg = f"State {self.get_full_name()} is not linked and cannot be unlinked."
             raise ReflexRuntimeError(msg)
 
         # Break the linkage for future events.
@@ -407,7 +407,8 @@ class SharedStateBaseInternal(State):
 
         Args:
             previous_dirty_vars: When apply linked state changes to other
-                tokens, provide mapping of state full_name to set of dirty vars.
+                tokens, provide mapping of state default full name (the key of
+                ``_reflex_internal_links``) to set of dirty vars.
 
         Yields:
             None.
@@ -427,7 +428,7 @@ class SharedStateBaseInternal(State):
             # Go through all linked states and patch them in if they are present in the tree
             for linked_state_name, linked_token in self._reflex_internal_links.items():
                 linked_state_cls: type[SharedState] = (
-                    self.get_root_state().get_class_substate(  # pyright: ignore[reportAssignmentType]
+                    RegistrationContext.get()._get_state_by_default_name(  # pyright: ignore[reportAssignmentType]
                         linked_state_name
                     )
                 )
@@ -450,7 +451,7 @@ class SharedStateBaseInternal(State):
                 # Collect dirty vars and other affected clients that need to be updated.
                 for linked_state in self._held_locks_linked_states():
                     if linked_state._previous_dirty_vars is not None:
-                        current_dirty_vars[linked_state.get_full_name()] = set(
+                        current_dirty_vars[linked_state._get_default_full_name()] = set(
                             linked_state._previous_dirty_vars
                         )
                     if (
@@ -506,14 +507,14 @@ class SharedStateBaseInternal(State):
 
         Args:
             affected_tokens: Set to update with client tokens that need notification.
-            current_dirty_vars: Dict to update with dirty var mappings per state.
+            current_dirty_vars: Dict to update with dirty vars by state default full name.
         """
         for substate in self.substates.values():
             if not isinstance(substate, SharedState):
                 continue
             if substate._linked_from:
                 if substate._previous_dirty_vars:
-                    current_dirty_vars[substate.get_full_name()] = set(
+                    current_dirty_vars[substate._get_default_full_name()] = set(
                         substate._previous_dirty_vars
                     )
                 if substate._was_touched or substate._previous_dirty_vars:

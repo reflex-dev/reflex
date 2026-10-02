@@ -8,6 +8,7 @@ import sys
 import traceback
 import uuid
 from collections.abc import AsyncGenerator, Generator, Mapping
+from pathlib import Path
 from types import ModuleType
 from typing import Any
 from unittest import mock
@@ -547,6 +548,41 @@ def clean_registration_context() -> Generator[RegistrationContext, None, None]:
     """
     with RegistrationContext() as ctx:
         yield ctx
+
+
+@pytest.fixture
+def temp_minify_json(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> Generator[Path, None, None]:
+    """Run the test against a fresh ``minify.json`` location.
+
+    Runs inside a forked registration context so State subclasses defined in
+    the test never reach the shared substate tree. Teardown undoes monkeypatch
+    *before* clearing the cache so the registry is rebuilt under unmodified
+    env/cwd — otherwise other tests would inherit minified names.
+
+    Args:
+        tmp_path: The pytest temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Yields:
+        The temporary directory path.
+    """
+    from reflex.minify import clear_config_cache
+    from reflex.state import all_base_state_classes
+
+    monkeypatch.chdir(tmp_path)
+    # Forking isolates the registry but not this module-level map.
+    registered_states = dict(all_base_state_classes)
+    try:
+        with RegistrationContext.get().fork():
+            clear_config_cache()
+            yield tmp_path
+    finally:
+        monkeypatch.undo()
+        clear_config_cache()
+        all_base_state_classes.clear()
+        all_base_state_classes.update(registered_states)
 
 
 @pytest.fixture

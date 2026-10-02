@@ -27,6 +27,25 @@ from reflex_base.registry import RegisteredEventHandler, RegistrationContext
 
 logger = logging.getLogger(__name__)
 
+# Names every task running the backend exception handler, so a failure of the
+# handler itself is logged instead of handled again.
+_EXCEPTION_HANDLER_TASK_PREFIX = "reflex_backend_exception_handler|"
+
+
+def _fail_future(future: asyncio.Future | None, ex: BaseException) -> None:
+    """Fail ``future`` with ``ex`` unless it is already done.
+
+    Args:
+        future: The future, if any.
+        ex: The exception to fail it with.
+    """
+    if future is not None and not future.done():
+        future.set_exception(ex)
+        with contextlib.suppress(BaseException):
+            # Retrieve it so a future nobody awaits doesn't warn.
+            future.result()
+
+
 if TYPE_CHECKING:
     from reflex.app import EventNamespace
     from reflex.event import Event, EventSpec
@@ -850,14 +869,53 @@ class EventProcessor:
                         self._enqueue_for_token(
                             entry=entry, registered_handler=registered_handler
                         )
-                except Exception:
+                except Exception as ex:
                     # Log the error and continue processing the next events.
                     logger.exception(
                         f"Error processing event queue entry for {entry.event} [txid={entry.ctx.txid}]:"
                     )
+                    # Fail the future before anything else can raise: a caller
+                    # awaiting this entry would otherwise wait forever.
+                    _fail_future(future, ex)
+                    # Surface it client-side too: an event that never reaches a
+                    # handler produces no update, so the page would just stall.
+                    # Spawned rather than awaited: the handler emits over the
+                    # socket, and this is the only consumer draining the queue
+                    # for every token.
+                    self._spawn_backend_exception_handler(
+                        ex, entry.ctx, f"queue={entry.ctx.txid}"
+                    )
                 queue.task_done()
         if self._queue_task is asyncio.current_task():
             self._queue_task = None
+
+    def _spawn_backend_exception_handler(
+        self, ex: Exception, ev_ctx: EventContext, origin: str
+    ) -> bool:
+        """Report ``ex`` to the backend exception handler in its own task.
+
+        Args:
+            ex: The exception to report.
+            ev_ctx: The event context the exception was raised under.
+            origin: What raised it, for the task name.
+
+        Returns:
+            Whether there is a handler, and so a task now owns the event.
+        """
+        if self.backend_exception_handler is None:
+            return False
+        # Seeded with ev_ctx so _finish_task finds it even if cancelled unstarted.
+        task_context = copy_context()
+        task_context.run(EventContext.set, ev_ctx)
+        task = self._tasks[ev_ctx.txid] = task_context.run(
+            asyncio.create_task,
+            self._handle_backend_exception(ex, ev_ctx=ev_ctx),
+            name=f"{_EXCEPTION_HANDLER_TASK_PREFIX}{origin}|{time.time()}",
+        )
+        if sys.version_info < (3, 12):
+            task._event_ctx = ev_ctx  # pyright: ignore[reportAttributeAccessIssue]
+        task.add_done_callback(self._finish_task)
+        return True
 
     async def _handle_backend_exception(
         self, ex: Exception, ev_ctx: EventContext | None = None
@@ -927,24 +985,12 @@ class EventProcessor:
             if future is not None and not future.done():
                 future.cancel()
         except Exception as ex:
-            if future is not None and not future.done():
-                future.set_exception(ex)
-                with contextlib.suppress(BaseException):
-                    # Trigger the future to avoid warnings if the caller didn't wait.
-                    future.result()
+            _fail_future(future, ex)
             telemetry.send_error(ex, context="backend")
-            if (
-                not task.get_name().startswith("reflex_backend_exception_handler|")
-                and self.backend_exception_handler is not None
+            is_handler_task = task.get_name().startswith(_EXCEPTION_HANDLER_TASK_PREFIX)
+            if not is_handler_task and self._spawn_backend_exception_handler(
+                ex, task_ctx, f"task=[{task.get_name()}]"
             ):
-                # Create a new task in the same context to invoke the exception handler.
-                t = self._tasks[task_ctx.txid] = asyncio.create_task(
-                    self._handle_backend_exception(ex, ev_ctx=task_ctx),
-                    name=f"reflex_backend_exception_handler|task=[{task.get_name()}]|{time.time()}",
-                )
-                if sys.version_info < (3, 12):
-                    t._event_ctx = task_ctx  # pyright: ignore[reportAttributeAccessIssue]
-                t.add_done_callback(self._finish_task)
                 return True
             logger.exception(f"Error in {task.get_name()} [txid={task_ctx.txid}]:")
         else:

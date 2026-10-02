@@ -18,7 +18,7 @@ from pathlib import Path, PureWindowsPath
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
 
 from python_multipart.multipart import MultipartParser, parse_options_header
-from reflex_base.registry import RegistrationContext
+from reflex_base.registry import RegistrationContext, scheme_digest
 from reflex_base.utils import exceptions
 from reflex_base.utils.format import json_dumps
 from reflex_base.utils.streaming_response import DisconnectAwareStreamingResponse
@@ -503,7 +503,7 @@ class _UploadChunkMultipartParser:
 
 
 def _require_upload_headers(request: Request) -> tuple[str, str]:
-    """Extract the required upload headers from a request.
+    """Extract and validate the required upload headers from a request.
 
     Args:
         request: The incoming request.
@@ -512,7 +512,8 @@ def _require_upload_headers(request: Request) -> tuple[str, str]:
         The client token and event handler name.
 
     Raises:
-        HTTPException: If the upload headers are missing.
+        HTTPException: If the upload headers are missing, or the caller was
+            built against a different wire-name scheme.
     """
     token = request.headers.get("reflex-client-token")
     handler = request.headers.get("reflex-event-handler")
@@ -521,6 +522,20 @@ def _require_upload_headers(request: Request) -> tuple[str, str]:
         raise HTTPException(
             status_code=400,
             detail="Missing reflex-client-token or reflex-event-handler header.",
+        )
+
+    # Uploads bypass the socket handshake, and the handler name is resolved
+    # against this backend's scheme, so a name minted by another one can pick
+    # out a real -- but wrong -- handler here.
+    client_scheme = request.headers.get("reflex-scheme", "")
+    server_scheme = scheme_digest()
+    if client_scheme != server_scheme:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"Frontend minification scheme {client_scheme!r} does not match "
+                f"the backend scheme {server_scheme!r}."
+            ),
         )
 
     return token, handler
@@ -836,7 +851,8 @@ def upload(app: App):
             UploadValueError: If the handler does not have a supported annotation.
             UploadTypeError: If a non-streaming upload is wired to a background task.
             HTTPException: when the request does not include token / handler headers,
-                or when the handler header does not name a registered event handler.
+                when the handler header does not name a registered event handler,
+                or when the caller was built against a different wire-name scheme.
         """
         from reflex_base.event import (
             resolve_upload_chunk_handler_param,

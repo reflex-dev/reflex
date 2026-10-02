@@ -98,6 +98,7 @@ from reflex.utils import exec as exec_utils
 from reflex.utils.token_manager import RedisTokenManager, SocketRecord
 
 from .conftest import active_tracer, chdir, metric_points
+from .name_resolvers import stub_resolver, temporary_resolver
 from .states import GenState
 from .states.upload import (
     ChildFileUploadState,
@@ -1650,6 +1651,39 @@ async def test_upload_file_unknown_handler_returns_400(
 
 
 @pytest.mark.asyncio
+async def test_upload_file_scheme_mismatch_returns_409(
+    token: str,
+):
+    """An upload from a bundle built against another scheme is rejected.
+
+    Uploads bypass the socket handshake, and the handler header is resolved
+    against this backend's scheme, so a name from another scheme can pick out
+    a real -- but wrong -- upload handler.
+
+    Args:
+        token: a Token.
+    """
+    app = App(_state=State)
+
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": f"{FileUploadState.get_full_name()}.multi_handle_upload",
+        "reflex-scheme": "stale-bundle-digest",
+    }
+
+    with (
+        temporary_resolver(stub_resolver(digest="backend-digest")),
+        pytest.raises(HTTPException) as err,
+    ):
+        await upload(app)(request_mock)
+    assert err.value.status_code == 409
+    # Rejected before the body is touched.
+    request_mock.form.assert_not_called()
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "state",
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
@@ -2103,7 +2137,9 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     prev_exp_val = ""
     for exp_index, exp_val in enumerate(exp_vals):
         on_load_internal = _event(
-            name=f"{OnLoadInternalState.get_full_name()}.{constants.CompileVars.ON_LOAD_INTERNAL.rpartition('.')[2]}",
+            name=format.format_event_handler(
+                OnLoadInternalState.event_handlers["on_load_internal"]
+            ),
             val=exp_val,
         )
         exp_router = RouterData.from_router_data(on_load_internal.router_data)
@@ -5234,6 +5270,57 @@ async def test_connect_disconnect_counts_connections(otel_metrics):
     (point,) = metric_points(otel_metrics, otel.METRIC_WEBSOCKET_CONNECTIONS)
     assert point.value == 1
     # Release t2 so a shared token store (redis) does not leak into other tests.
+    await ns._token_manager.disconnect_all()
+
+
+@pytest.mark.asyncio
+async def test_disconnect_during_scheme_mismatch_notice_leaves_no_sid_state():
+    """A disconnect landing while the mismatch notice is emitted leaves nothing behind."""
+    mock_app = unittest.mock.Mock()
+    mock_app._state = None
+    ns = EventNamespace(namespace="/", app=mock_app)
+
+    async def emit(*args, **kwargs):
+        # socketio's emit awaits its send tasks, letting a disconnect run here.
+        if task := ns.on_disconnect("sid1"):
+            await task
+
+    ns.emit = unittest.mock.AsyncMock(side_effect=emit)
+    await ns.on_connect("sid1", {"QUERY_STRING": "token=t1&scheme=stale"})
+    ns.emit.assert_awaited_once()
+    assert "sid1" not in ns._scheme_mismatch_sids
+    assert "sid1" not in ns._static_router_data
+    await ns._token_manager.disconnect_all()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("fail_at", ["link", "notice"])
+async def test_failed_connect_is_undone_by_disconnect(otel_metrics, fail_at):
+    """A connect that raises is undone by the disconnect socketio still sends.
+
+    Args:
+        otel_metrics: The in-memory OpenTelemetry metric reader.
+        fail_at: The await that raises.
+    """
+    mock_app = unittest.mock.Mock()
+    mock_app._state = None
+    ns = EventNamespace(namespace="/", app=mock_app)
+    ns.emit = unittest.mock.AsyncMock(
+        side_effect=RuntimeError("boom") if fail_at == "notice" else None
+    )
+    if fail_at == "link":
+        ns.link_token_to_sid = unittest.mock.AsyncMock(side_effect=RuntimeError("boom"))
+
+    with pytest.raises(RuntimeError, match="boom"):
+        await ns.on_connect("sid1", {"QUERY_STRING": "token=t1&scheme=stale"})
+    # The sid stays connected in socketio's manager until its socket closes.
+    if task := ns.on_disconnect("sid1"):
+        await task
+
+    assert "sid1" not in ns._scheme_mismatch_sids
+    assert "sid1" not in ns._static_router_data
+    (point,) = metric_points(otel_metrics, otel.METRIC_WEBSOCKET_CONNECTIONS)
+    assert point.value == 0
     await ns._token_manager.disconnect_all()
 
 

@@ -153,11 +153,14 @@ class BaseStateToken(StateToken["BaseState"]):
     def __str__(self) -> str:
         """The key used in the underlying StateManager store.
 
+        Keyed by the resolver-independent name, so enabling minification or
+        editing ``minify.json`` keeps every stored session.
+
         Returns:
             A string representation of the token, which is a combination of the ident and cls name.
         """
         # urlencode the redis token to escape the slash delimiter.
-        return f"{self.ident}_{self.cls.get_full_name()}"
+        return f"{self.ident}_{self.cls._get_default_full_name()}"
 
     @classmethod
     def serialize(cls, state: BaseState) -> bytes:
