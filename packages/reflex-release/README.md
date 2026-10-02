@@ -212,11 +212,23 @@ This gives you, for free:
 ### Dependency pins across a release
 
 A package that depends on a sibling it is waiting for pins the unreleased
-version — `widget-core >= 0.2.0.dev1` — so the workspace resolves while the
-sibling is still unpublished. That pin cannot be published: `*.dev` versions
-never reach PyPI, so the metadata would be uninstallable. `check-dev-pins`
-rejects it at build time, which means someone has to remember to lift it once
-the sibling is out.
+version — `widget-core >= 0.1.4.dev0` — so the workspace resolves while the
+sibling is still unpublished. Floor it at the `.dev0` of the version the
+sibling's branch is working towards, which with
+[`bump = true`](#tag-derived-versions) is what every commit after the sibling's
+newest tag builds as: `>= 0.1.4.dev0` after `widget-core-v0.1.3`, and
+`>= 0.1.3.post2.dev0` after `widget-core-v0.1.3.post1`. That floor excludes
+every release up to the sibling's newest tag on the branch, none of which has
+the change, and every later commit of the branch meets it. It cannot tell
+releases made on another line apart: `0.2.0` from `main` satisfies a floor
+written on a `0.1` hotfix branch without containing the hotfix. And a post
+release of the sibling cut after the floor was written leaves the branch
+building `0.1.3.post2.devN`, below `>= 0.1.4.dev0`; re-floor it at that post
+release, which contains the change.
+
+The pin cannot be published: `*.dev` versions never reach PyPI, so the metadata
+would be uninstallable. `check-dev-pins` rejects it at build time, which means
+someone has to remember to lift it once the sibling is out.
 
 Materialization does it instead. When *Dispatch release* plans a release, each
 selected package's published dependencies are checked for a floor the release
@@ -226,6 +238,7 @@ satisfies the whole requirement**:
 | Floor | Materializing a prerelease | Materializing a final version |
 | --- | --- | --- |
 | `>= 0.2.0.dev1` | earliest published `0.2.0a1`, `0.2.0`, … | earliest published *final* `0.2.0`, … |
+| `>= 0.1.3.post2.dev0` | earliest published `0.1.3.post2`, `0.1.4a1`, … | earliest published *final* `0.1.3.post2`, `0.1.4`, … |
 | `>= 0.2.0a1` | left alone — an alpha may ship it | lifted to the earliest published final |
 | `>= 0.2.0` | left alone | left alone |
 
@@ -370,6 +383,7 @@ source = "uv-dynamic-versioning"
 
 [tool.uv-dynamic-versioning]
 fallback-version = "0.0.0dev0"
+bump = true
 ```
 
 ```toml
@@ -377,7 +391,17 @@ fallback-version = "0.0.0dev0"
 [tool.uv-dynamic-versioning]
 pattern-prefix = "widget-core-"
 fallback-version = "0.0.0dev0"
+bump = true
 ```
+
+`bump = true` numbers every commit after a tag as a development release of the
+*next* version: `1.2.4.dev5` after `v1.2.3`, and `1.2.3.post2.dev5` after a
+`release-post` tag `v1.2.3.post1`. Without it, the commits after a post release
+derive `1.2.3.post1.dev5` — a development release *of* the published
+`1.2.3.post1`, which sorts below it — so no
+[dependency floor](#dependency-pins-across-a-release) can both exclude the post
+release and be met by a build of the branch it was tagged on. The tagged commit
+itself (distance zero) builds as exactly the tag either way.
 
 Any backend works as long as the tag prefixes match; `hatch-vcs` and
 `setuptools-scm` need their `tag_regex`/`git_describe_command` pointed at the
