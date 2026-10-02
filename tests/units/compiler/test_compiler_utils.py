@@ -16,7 +16,7 @@ from reflex.compiler import utils
 from reflex.compiler.utils import compile_state, create_document_root
 from reflex.compiler.utils import write_file as compiler_write_file
 from reflex.constants.state import FIELD_MARKER
-from reflex.state import State
+from reflex.state import State, state_snapshot_hashes
 from reflex.utils.path_ops import write_file
 from reflex.vars.base import computed_var
 
@@ -209,6 +209,25 @@ async def test_compile_state_resolves_async_computed_vars_with_running_event_loo
     assert values[f"a{FIELD_MARKER}"] == 1
     assert values[f"b{FIELD_MARKER}"] == 2
     assert values[f"async_value{FIELD_MARKER}"] == "resolved"
+
+
+def test_compile_state_hashes_dict_with_mixed_key_types(
+    forked_registration_context: RegistrationContext,
+):
+    """A dict default mixing int and str keys compiles and hashes without comparing keys.
+
+    Args:
+        forked_registration_context: Keeps the test's state out of other tests.
+    """
+
+    class MixedKeyState(State):
+        mapping: dict[str | int, str] = {1: "one", "two": "two"}
+
+    compiled = compile_state(MixedKeyState)
+    assert _get_state_values(compiled, MixedKeyState) == {
+        f"mapping{FIELD_MARKER}": {1: "one", "two": "two"}
+    }
+    assert len(state_snapshot_hashes(compiled)) == len(compiled) + 1
 
 
 def test_document_root_allows_static_id_on_head_script():
