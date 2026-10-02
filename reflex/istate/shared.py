@@ -129,6 +129,9 @@ async def _patch_state(
             ]
         ] = []
         states_by_name: dict[str, BaseState] = {}
+        computed_var_cache_snapshots: dict[
+            str, dict[str, tuple[bool, Any, bool, Any]]
+        ] = {}
         if not full_delta:
             states_to_snapshot = [root_state]
             while states_to_snapshot:
@@ -190,12 +193,8 @@ async def _patch_state(
                     if target_state is None:
                         continue
                     target_vars = computed_vars_to_snapshot[target_name]
-                    if computed_var_name not in target_vars:
-                        target_vars.add(computed_var_name)
-                        pending_dependencies.append((target_state, computed_var_name))
-            computed_var_cache_snapshots: dict[
-                str, dict[str, tuple[bool, Any, bool, Any]]
-            ] = {}
+                    target_vars.add(computed_var_name)
+                    pending_dependencies.append((target_state, computed_var_name))
             for (
                 state,
                 _,

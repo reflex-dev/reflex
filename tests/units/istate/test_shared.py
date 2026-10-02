@@ -4,6 +4,7 @@ import asyncio
 import datetime
 import pickle
 from contextlib import asynccontextmanager
+from typing import cast
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -11,6 +12,7 @@ from reflex_base import constants
 from reflex_base.constants.state import FIELD_MARKER
 
 import reflex as rx
+from reflex.istate.data import RouterData, SessionData
 from reflex.istate.shared import _do_update_other_tokens, _patch_state
 from reflex.state import BaseState, State
 from reflex.utils.token_manager import (
@@ -156,6 +158,8 @@ async def test_patch_state_recomputes_readers_after_restoring():
 
 _PATCH_TEMPORARY_VAR = "temporary"
 _PATCH_INTERVAL_VALUE_VAR = "interval_value"
+_PATCH_ROUTER_INTERVAL_VALUE_VAR = "router_interval_value"
+_PATCH_ROUTER_INTERVAL_DEPENDENT_VAR = "router_interval_dependent_value"
 _PATCH_ROOT_VALUE_VAR = "root_value"
 _PATCH_ROUTER_VALUE_VAR = "router_client_token"
 _PATCH_EXISTING_SUBSTATE = "existing"
@@ -191,6 +195,14 @@ class _LinkedStatePatchIntervalShared(_LinkedStatePatchIntervalRoot):
     @rx.var(interval=60)
     def interval_value(self) -> int:
         return self.value
+
+    @rx.var(interval=60)
+    def router_interval_value(self) -> str:
+        return self.router.session.client_token
+
+    @rx.var
+    def router_interval_dependent_value(self) -> str:
+        return self.router_interval_value + "-dependent"
 
 
 class _LinkedStatePatchRouterRoot(BaseState):
@@ -413,8 +425,12 @@ async def test_linked_state_patch_preserves_interval_refresh_during_async_router
     private_tree = _LinkedStatePatchIntervalRoot()
     linked_tree = _LinkedStatePatchIntervalRoot()
     shared_state_name = _LinkedStatePatchIntervalShared.get_name()
-    private_state = private_tree.substates[shared_state_name]
-    linked_state = linked_tree.substates[shared_state_name]
+    private_state = cast(
+        _LinkedStatePatchIntervalShared, private_tree.substates[shared_state_name]
+    )
+    linked_state = cast(
+        _LinkedStatePatchIntervalShared, linked_tree.substates[shared_state_name]
+    )
 
     assert linked_state.interval_value == linked_state.value
     private_tree._clean()
@@ -443,6 +459,52 @@ async def test_linked_state_patch_preserves_interval_refresh_during_async_router
     assert _PATCH_INTERVAL_VALUE_VAR in linked_state.dirty_vars
     assert (
         _PATCH_INTERVAL_VALUE_VAR + FIELD_MARKER
+        in interval_delta[linked_state.get_full_name()]
+    )
+
+
+@pytest.mark.asyncio
+async def test_linked_state_patch_preserves_downstream_of_refreshed_interval_var():
+    """A downstream computed var of a refreshed interval var must be emitted."""
+    private_tree = _LinkedStatePatchIntervalRoot()
+    linked_tree = _LinkedStatePatchIntervalRoot()
+    private_tree.router = RouterData(session=SessionData(client_token="before"))
+    linked_tree.router = RouterData(session=SessionData(client_token="before"))
+    shared_state_name = _LinkedStatePatchIntervalShared.get_name()
+    private_state = cast(
+        _LinkedStatePatchIntervalShared, private_tree.substates[shared_state_name]
+    )
+    linked_state = cast(
+        _LinkedStatePatchIntervalShared, linked_tree.substates[shared_state_name]
+    )
+
+    assert linked_state.router_interval_dependent_value == "before-dependent"
+    private_tree._clean()
+
+    resolve_delta = private_tree._get_resolved_delta
+
+    async def resolve_after_router_computation():
+        await asyncio.sleep(0)
+        private_tree.router = RouterData(session=SessionData(client_token="after"))
+        interval_var = _LinkedStatePatchIntervalShared.computed_vars[
+            _PATCH_ROUTER_INTERVAL_VALUE_VAR
+        ]
+        setattr(linked_state, interval_var._last_updated_attr, datetime.datetime.min)
+        assert linked_state.router_interval_dependent_value == "after-dependent"
+        return await resolve_delta()
+
+    object.__setattr__(
+        private_tree,
+        "_get_resolved_delta",
+        resolve_after_router_computation,
+    )
+
+    async with _patch_state(private_state, linked_state, full_delta=False):
+        interval_delta = private_tree.get_delta()
+
+    assert _PATCH_ROUTER_INTERVAL_DEPENDENT_VAR in linked_state.dirty_vars
+    assert (
+        _PATCH_ROUTER_INTERVAL_DEPENDENT_VAR + FIELD_MARKER
         in interval_delta[linked_state.get_full_name()]
     )
 
