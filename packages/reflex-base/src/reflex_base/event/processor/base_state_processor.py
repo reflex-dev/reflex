@@ -20,6 +20,7 @@ from reflex_base import otel
 from reflex_base.constants import CompileVars
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
+from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegisteredEventHandler
 from reflex_base.utils.format import format_event_handler
 
@@ -44,6 +45,21 @@ def _hydrate_event_names() -> frozenset[str]:
     return frozenset(
         format_event_handler(State.event_handlers[name])
         for name in (CompileVars.HYDRATE, CompileVars.HYDRATE_AND_LOAD)
+    )
+
+
+@functools.lru_cache(maxsize=1)
+def _connect_supersedes() -> tuple[str, str]:
+    """The (re)connect event and the page-load event whose chain it cancels.
+
+    Returns:
+        The full event names of ``hydrate_and_load`` and ``on_load_internal``.
+    """
+    from reflex.state import OnLoadInternalState, State
+
+    return (
+        format_event_handler(State.event_handlers[CompileVars.HYDRATE_AND_LOAD]),
+        format_event_handler(OnLoadInternalState.event_handlers["on_load_internal"]),
     )
 
 
@@ -399,6 +415,30 @@ class BaseStateEventProcessor(EventProcessor):
             state=await root_state.get_state(OnLoadInternalState),
             root_state=root_state,
         )
+
+    def _supersede_previous(
+        self, *, token: str, event: Event, tracked: EventFuture
+    ) -> bool:
+        """Apply supersession, with a (re)connect obsoleting the pending page load.
+
+        Enqueuing ``hydrate_and_load`` cancels the token's unfinished
+        ``on_load_internal`` chain the way a navigation does, before the
+        hydrate waits for the state lock that chain may hold. The hydrate is
+        not registered as superseding itself: a navigation enqueued while it
+        waits must not cancel the state snapshot it is about to send.
+
+        Args:
+            token: The client token associated with the event.
+            event: The event being enqueued.
+            tracked: The future of the event being enqueued.
+
+        Returns:
+            True if the event should be queued, False if it was dropped.
+        """
+        boot_name, on_load_name = _connect_supersedes()
+        if event.name == boot_name:
+            self._cancel_older_chains((on_load_name, token), tracked.root_gen)
+        return super()._supersede_previous(token=token, event=event, tracked=tracked)
 
     async def _execute_event(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler

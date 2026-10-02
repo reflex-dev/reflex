@@ -2325,7 +2325,9 @@ class State(BaseState):
             self.is_hydrated = True
             return None
         # A separate superseding event, so a navigation can cancel the page's
-        # stale on_load work without cancelling this snapshot.
+        # stale on_load work without cancelling this snapshot. The previous
+        # page's unfinished on_load chain was already cancelled when this
+        # event was enqueued (see BaseStateEventProcessor._supersede_previous).
         return [OnLoadInternalState.on_load_internal]
 
 
@@ -2647,8 +2649,9 @@ class OnLoadInternalState(State):
     This is a separate substate to avoid deserializing the entire state tree for every page navigation.
     """
 
-    # A newer navigation or reconnect supersedes the previous unfinished
-    # on_load chain for the same client token, cancelling its stale work (#6593).
+    # A newer navigation supersedes the previous unfinished on_load chain for
+    # the same client token, cancelling its stale work (#6593); so does a
+    # reconnect's hydrate_and_load, through the event processor.
     @event(supersedes=True)
     def on_load_internal(self) -> list[Event | EventSpec | event.EventCallback] | None:
         """Queue on_load handlers for the current page.

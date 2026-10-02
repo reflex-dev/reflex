@@ -1742,3 +1742,66 @@ async def test_navigation_does_not_cancel_the_hydrate_snapshot(
         # work is dropped in favor of the navigation.
         assert (await root.get_state(CounterState)).loads == ["a", "b"]
         assert (await root.get_state(State)).is_hydrated is True
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_reconnect_cancels_stale_on_load_without_load_events(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A reconnect on a page without on_load handlers still cancels the stale on_load chain.
+
+    Reloading onto a page with no on_load handlers while the previous page's
+    on_load chain is still running must cancel that chain, as a navigation
+    does, so its stale work cannot change the session after the reload is
+    hydrated.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    started = asyncio.Event()
+    cancelled = asyncio.Event()
+
+    class SlowLoadState(State):
+        seen: str = ""
+
+        @event
+        async def slow_load(self):
+            self.seen = "started"
+            yield
+            # The state lock stays held through the sleep, so the reconnect's
+            # hydrate can only get past it by cancelling this chain on enqueue.
+            started.set()
+            try:
+                await asyncio.sleep(10)
+            except asyncio.CancelledError:
+                cancelled.set()
+                raise
+            self.seen = "stale-finished"
+
+    wired_app.add_page(
+        lambda: rx.text("slow"), route="/", on_load=SlowLoadState.slow_load
+    )
+    wired_app.add_page(lambda: rx.text("plain"), route="/plain")
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+
+    async with real_base_state_processor as processor:
+        stale = await processor.enqueue(
+            token, _client_event(OnLoadInternalState.on_load_internal(), _view("/"))
+        )
+        await asyncio.wait_for(started.wait(), timeout=5)
+        reconnect = await processor.enqueue(
+            token, Event(name=boot_name, payload={}, router_data=_view("/plain"))
+        )
+        await asyncio.wait_for(cancelled.wait(), timeout=5)
+        await asyncio.wait_for(reconnect.wait_all(), timeout=10)
+        assert stale.done()
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(SlowLoadState)).seen != "stale-finished"
+        assert (await root.get_state(State)).is_hydrated is True
