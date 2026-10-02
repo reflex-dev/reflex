@@ -123,6 +123,7 @@ dev = [
   "reflex-release",
   "reflex-build-sdk[aiohttp,httpx,httpx2]",
   "reflex-site-shared",
+  "reflex-workflow",
   "ruff",
   "selenium",
   "sqlalchemy",
@@ -133,7 +134,12 @@ dev = [
   "ty",
   "typer",
   "uvicorn",
+  "cronsim",
+  "croniter",
 ]
+# The benchmark CI jobs: the harness without the dev group (libsass builds from
+# source on arm64).
+bench = ["reflex-bench"]
 
 
 [build-system]
@@ -145,6 +151,7 @@ source = "uv-dynamic-versioning"
 
 [tool.uv-dynamic-versioning]
 fallback-version = "0.0.0dev0"
+bump = true
 
 [tool.hatch.build]
 # Leading slashes anchor to the repo root; unanchored patterns match nested
@@ -181,6 +188,9 @@ extraPaths = [
   "packages/reflex-otel/src",
   "packages/reflex-build-sdk/src",
   "packages/reflex-site-shared/src",
+  "packages/reflex-workflow/src",
+  # The workflow examples are read from the repository rather than installed.
+  "packages/reflex-workflow",
   "packages/integrations-docs/src",
 ]
 exclude = [
@@ -270,6 +280,8 @@ preview = true
   "N",
 ]
 "benchmarks/*.py" = ["ANN001", "D100", "D103", "D104", "B018", "PERF", "T", "N"]
+# A benchmark is a script: it prints its results and is run, not imported.
+"packages/*/benchmarks/*.py" = ["INP", "PERF", "T", "ASYNC240"]
 "*/.templates/*.py" = ["D100", "D103", "D104"]
 "*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]
 "pyi_generator.py" = ["N802"]
@@ -335,6 +347,7 @@ source = [
   "reflex_components_internal",
   "reflex_integrations_docs",
   "reflex_bench",
+  "reflex_workflow",
 ]
 branch = true
 omit = [
@@ -559,6 +572,7 @@ reflex-otel.workspace = true
 reflex-build-sdk.workspace = true
 reflex-components-internal.workspace = true
 reflex-site-shared.workspace = true
+reflex-workflow.workspace = true
 reflex-integrations-docs.workspace = true
 reflex.workspace = true
 

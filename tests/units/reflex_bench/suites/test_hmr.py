@@ -70,9 +70,9 @@ LEAF = "playground/components/marker.py"
 def test_registrations():
     found = registry.discover()
     dev = {
-        "hmr.render.leaf": ("pr", "daily"),
+        "hmr.render.leaf": ("pr", "daily", "macro"),
         "hmr.render.root": ("pr", "daily"),
-        "hmr.handler": ("pr", "daily"),
+        "hmr.handler": ("pr", "daily", "macro"),
         "hmr.css": ("daily",),
         "hmr.asset": ("daily",),
         "hmr.reconnect": ("daily",),
@@ -187,22 +187,38 @@ def test_conclude_restores_after_a_failed_sample(ctx: Context):
 def test_a_change_the_page_never_shows_fails_clearly(
     ctx: Context, monkeypatch: pytest.MonkeyPatch
 ):
+    """Report a missed update using a fake clock, then restore the source."""
     # hmr.css in dev: no hot update, no reload.
-    monkeypatch.setattr(hmr, "WAIT_S", 0.3)
     bench = hmr.Css()
     original = _file(ctx, "assets/playground.css")
     bench.setup(ctx)
     bench.prepare(ctx)
     tab = _tab(bench)
-    tab.misses = 10**9
-    with pytest.raises(TimeoutError) as info:
-        bench.sample(ctx)
+    elapsed = 0.0
+
+    def miss(id: str, timeout: float) -> None:
+        """Advance the clock without showing the watched value.
+
+        Args:
+            id: The mark id.
+            timeout: The seconds spent waiting for it.
+        """
+        nonlocal elapsed
+        tab.calls.append(("poll_mark", id))
+        elapsed += timeout
+
+    with monkeypatch.context() as clock:
+        clock.setattr(hmr, "WAIT_S", 0.3)
+        clock.setattr(hmr.time, "monotonic", lambda: elapsed)
+        clock.setattr(tab, "poll_mark", miss)
+        with pytest.raises(TimeoutError) as info:
+            bench.sample(ctx)
+    assert elapsed == pytest.approx(0.3)
     assert str(info.value) == (
         "the page did not show the edit (style:font-size of .bench-hooks)"
         " within the hook's 0.3 s: granian printed no reload line, no [timing]"
         " line followed, the page did not reload; the page shows '12px'"
     )
-    tab.misses = 0
     bench.conclude(ctx)
     assert _file(ctx, "assets/playground.css") == original
     bench.cleanup(ctx)

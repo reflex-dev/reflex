@@ -388,8 +388,8 @@ export const initialEvents = () => []
 """
     )
 
-    create_state_contexts_str = "\n".join(
-        rf"createElement(SubstateProvider, {{substateName: '{state_name}', contextName: '{format_state_name(state_name)}'}},"
+    substates_str = "".join(
+        f"\n  ['{state_name}', '{format_state_name(state_name)}'],"
         for state_name in initial_state
     )
 
@@ -554,16 +554,40 @@ const SubstateProvider = ({{ children, substateName, contextName }}) => {{
   );
 }};
 
-export function StateProvider({{ children }}) {{
-  return useMemo(
-    () => (
-    createElement(DispatchProvider, {{}},
-    {create_state_contexts_str}children
-    {")" * len(initial_state)}
-  )),
-    [children],
-  );
-}}"""
+// ``[substateName, contextName]`` for every substate, outermost first.
+const SUBSTATES = [{substates_str}
+];
+
+function ClientStateProvider({{ children }}) {{
+  return useMemo(() => {{
+    let tree = children;
+    for (let i = SUBSTATES.length - 1; i >= 0; i--) {{
+      const [substateName, contextName] = SUBSTATES[i];
+      tree = createElement(SubstateProvider, {{ substateName, contextName }}, tree);
+    }}
+    return createElement(DispatchProvider, {{}}, tree);
+  }}, [children]);
+}}
+
+// The server renders once and never applies a delta, so it provides the
+// initial state through bare context providers. ``SubstateProvider`` would add
+// a second render level per substate, and the server renderer recurses once per
+// level, so with many substates rendering a page can exhaust the stack.
+function ServerStateProvider({{ children }}) {{
+  let tree = children;
+  for (let i = SUBSTATES.length - 1; i >= 0; i--) {{
+    const [substateName, contextName] = SUBSTATES[i];
+    tree = createElement(
+      StateContexts[contextName],
+      {{ value: initialState[substateName] }},
+      tree,
+    );
+  }}
+  return createElement(DispatchContext, {{ value: {{}} }}, tree);
+}}
+
+export const StateProvider =
+  typeof document === "undefined" ? ServerStateProvider : ClientStateProvider;"""
 
 
 def component_template(component: Component):
