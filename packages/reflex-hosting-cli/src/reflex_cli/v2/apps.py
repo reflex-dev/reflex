@@ -772,7 +772,7 @@ def app_logs(
                 if (details := entry.get("details")) is not None:
                     details = str(details).replace("\r\n", "\n").replace("\r", "\n")
                     message += "\n" + indent(details, "  ", lambda _: True)
-            logger.info(message)
+            console.print(message, markup=False, soft_wrap=True)
             printed += 1
             if printed % _LOGS_PAGE_SIZE:
                 continue

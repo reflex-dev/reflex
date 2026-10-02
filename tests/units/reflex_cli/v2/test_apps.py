@@ -861,7 +861,12 @@ def test_app_logs_success(mocker: MockFixture):
     window = client.api.apps.logs.call_args.kwargs
     assert window["start"] is None
     assert window["end"] is None
-    assert all(f"[INFO] log{n}" in result.output for n in range(1, 4))
+    log_lines = [line for line in result.output.splitlines() if "[INFO] log" in line]
+    assert len(log_lines) == 3
+    assert all(
+        sum(f"[INFO] log{n}" in line for line in log_lines) == 1
+        for n in range(1, 4)
+    )
 
 
 def test_app_logs_offset_sends_that_window(mocker: MockFixture):
@@ -1595,7 +1600,7 @@ def test_app_logs_human_output_formats_log_fields(
         )
     ]
 
-    result = runner.invoke(apps_cli, ["logs", "app123", "--loglevel", "info"])
+    result = runner.invoke(apps_cli, ["logs", "app123", "--loglevel", "warning"])
 
     assert result.exit_code == 0, result.output
     assert f"2024-11-29T12:00:00Z [{level_label}] {expected_message}" in result.output
@@ -1620,12 +1625,12 @@ def test_app_logs_human_output_preserves_empty_details(mocker: MockFixture):
             deployment_id=None,
         )
     ]
-    log_info = mocker.patch("reflex_cli.v2.apps.logger.info")
+    console_print = mocker.patch("reflex_cli.v2.apps.console.print")
 
     result = runner.invoke(apps_cli, ["logs", "app123"])
 
     assert result.exit_code == 0, result.output
-    assert log_info.call_args.args[0].endswith("\n")
+    assert console_print.call_args.args[0].endswith("\n")
 
 
 def test_app_logs_json_output_never_follows(mocker: MockFixture):
