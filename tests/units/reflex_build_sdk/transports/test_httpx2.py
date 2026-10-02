@@ -72,7 +72,7 @@ def _upload(content: object) -> Request:
         method="PUT",
         url="https://storage.example.com/bucket/backend.zip?signature=x",
         headers={"Content-Length": "6"},
-        content=content,  # pyright: ignore[reportArgumentType]
+        content=content,  # ty:ignore[invalid-argument-type]
     )
 
 

@@ -299,7 +299,7 @@ class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
         Returns:
             The number negation operation.
         """
-        return number_negate_operation(self)  # pyright: ignore [reportReturnType]
+        return number_negate_operation(self)
 
     def __invert__(self):
         """Boolean NOT the number.
@@ -528,7 +528,7 @@ def binary_number_operation(
         Returns:
             The binary number operation.
         """
-        return operation(lhs, rhs)  # pyright: ignore [reportReturnType, reportArgumentType]
+        return operation(lhs, rhs)
 
     return wrapper
 
@@ -1128,7 +1128,7 @@ def ternary_operation(
     Returns:
         The ternary operation.
     """
-    type_value: type[T] | type[U] = unionize(if_true._var_type, if_false._var_type)
+    type_value: type[T] | type[U] = unionize(if_true._var_type, if_false._var_type)  # ty:ignore[invalid-assignment]
     value: CustomVarOperationReturn[T | U] = var_operation_return(
         js_expression=f"({condition!s} ? {if_true!s} : {if_false!s})",
         var_type=type_value,

@@ -69,7 +69,7 @@ def app_summary(name: str = "fake-app", **fields) -> AppSummary:
     Returns:
         The app.
     """
-    return AppSummary(**{
+    return AppSummary(**{  # ty:ignore[invalid-argument-type]
         "id": _APP_ID,
         "name": name,
         "description": "",
@@ -90,7 +90,7 @@ def app(name: str = "fake-app", **fields) -> App:
     Returns:
         The app.
     """
-    return App(**{
+    return App(**{  # ty:ignore[invalid-argument-type]
         "id": _APP_ID,
         "name": name,
         "description": "",
@@ -125,7 +125,7 @@ def project(name: str = "fake-project", **fields) -> Project:
     Returns:
         The project.
     """
-    return Project(**{
+    return Project(**{  # ty:ignore[invalid-argument-type]
         "id": _PROJECT_ID,
         "name": name,
         "tier": ProjectTier(name="Pro", cpu_quota=4, ram_quota=8, deployment_quota=10),

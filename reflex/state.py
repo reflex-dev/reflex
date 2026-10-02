@@ -12,7 +12,7 @@ import logging
 import pickle
 import re
 import sys
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from datetime import timedelta
 from hashlib import md5
 from types import FunctionType
@@ -58,6 +58,7 @@ from reflex_base.vars.base import (
     ComputedVar,
     DynamicRouteVar,
     EvenMoreBasicBaseState,
+    LiteralVar,
     ToOperation,
     Var,
     _inherited_value,
@@ -294,7 +295,7 @@ def _override_base_method(fn: Callable[PARAMS, RETURN]) -> Callable[PARAMS, RETU
     Returns:
         The marked function.
     """
-    fn.__override_base_method__ = True  # pyright: ignore[reportFunctionMemberAccess]
+    fn.__override_base_method__ = True  # ty:ignore[unresolved-attribute]
     return fn
 
 
@@ -766,11 +767,14 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                 if _inherited_value(cls.__mro__, name) is not value:
                     continue
                 if is_computed_var(value):
+                    fget = value.fget
+                    if not isinstance(fget, FunctionType):
+                        continue
                     _bind_attr(
                         cls,
                         name,
                         value._replace(
-                            fget=cls._copy_fn(value.fget),
+                            fget=cls._copy_fn(fget),
                             _var_data=VarData.from_state(cls),
                         ),
                     )
@@ -797,7 +801,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         setattr(cls, name, handler)
 
     @staticmethod
-    def _copy_fn(fn: Callable) -> Callable:
+    def _copy_fn(fn: FunctionType) -> FunctionType:
         """Copy a function. Used to copy ComputedVars and EventHandlers from mixins.
 
         Args:
@@ -838,7 +842,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         )
 
     @classmethod
-    def _evaluate(cls, f: Callable[[Self], Any], of_type: type | None = None) -> Var:
+    def _evaluate(cls, f: FunctionType, of_type: type | None = None) -> Var:
         """Evaluate a function to a ComputedVar. Experimental.
 
         Args:
@@ -1318,7 +1322,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             object.__setattr__(prop, "_var_type", prop._var_type | None)
 
     @classmethod
-    def _update_substate_vars(cls, vars_to_add: builtins.dict[str, Var]):
+    def _update_substate_vars(cls, vars_to_add: Mapping[str, Var]):
         """Update the inherited vars of substates recursively when new vars are added.
 
         Also updates the var dependency tracking dicts after adding vars.
@@ -1723,13 +1727,9 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         if not isinstance(var, Var):
             return var
 
-        unset = object()
-
         # Fast case: this is a literal var and the value is known.
-        if (
-            var_value := getattr(var, "_var_value", unset)
-        ) is not unset and not isinstance(var_value, Var):
-            return var_value  # pyright: ignore [reportReturnType]
+        if isinstance(var, LiteralVar) and not isinstance(var._var_value, Var):
+            return var._var_value
 
         # Unwrap any cast wrappers and resolve via the underlying var's *own*
         # var data, not the recursive _get_all_var_data(). For an operation or
@@ -2200,7 +2200,7 @@ class State(BaseState):
             from reflex.istate.shared import SharedStateBaseInternal
 
             shared_base = await self.get_state(SharedStateBaseInternal)
-            return await shared_base._resolve_linked_state(state_cls, linked_token)  # type: ignore[return-value]
+            return await shared_base._resolve_linked_state(state_cls, linked_token)  # ty:ignore[invalid-return-type]
         return await super()._get_state_from_redis(state_cls)
 
     @event

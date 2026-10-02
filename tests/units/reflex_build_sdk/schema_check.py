@@ -175,7 +175,7 @@ def model_problems(
     hints = typing.get_type_hints(model)
     properties = component.get("properties", {})
     required = set(component.get("required", []))
-    fields = dataclasses.fields(model)
+    fields = dataclasses.fields(model)  # ty:ignore[invalid-argument-type]
     mapped = {json_key(field) for field in fields}
     problems = [
         f"{model.__name__}: no field for {key!r}"

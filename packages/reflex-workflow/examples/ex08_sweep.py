@@ -115,7 +115,7 @@ class Sweep(Base, Workflow):
                     .with_for_update(skip_locked=True)
                 )
             ).scalars()
-            taken = [
+            taken: list[dict[str, Any]] = [
                 {
                     "item": watch.item,
                     "due_at": watch.due_at,

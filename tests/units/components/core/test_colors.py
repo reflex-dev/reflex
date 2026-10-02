@@ -24,7 +24,7 @@ def create_color_var(color):
 
 
 color_with_fstring = rx.color(
-    f"{ColorState.color}",  # pyright: ignore [reportArgumentType]
+    f"{ColorState.color}",  # ty:ignore[invalid-argument-type]
     ColorState.shade,
 )
 
@@ -55,7 +55,7 @@ color_with_fstring = rx.color(
         (
             create_color_var(
                 rx.color(
-                    f"{ColorState.color_part}ato",  # pyright: ignore [reportArgumentType]
+                    f"{ColorState.color_part}ato",  # ty:ignore[invalid-argument-type]
                     ColorState.shade,
                 )
             ),
@@ -143,4 +143,4 @@ def test_radix_color(color, expected):
         expected (str): The expected custom_style string, radix or literal
     """
     code_block = CodeBlock.create("Hello World", background_color=color)
-    assert str(code_block.custom_style["backgroundColor"]) == expected  # pyright: ignore [reportAttributeAccessIssue]
+    assert str(code_block.custom_style["backgroundColor"]) == expected  # ty:ignore[unresolved-attribute]

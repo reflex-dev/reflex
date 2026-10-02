@@ -64,7 +64,7 @@ def test_register_route_default_is_noop():
     """The base route hook accepts the staged context and contributes nothing."""
     assert (
         Plugin().register_route(
-            app_type=object,  # pyright: ignore[reportArgumentType]
+            app_type=object,  # ty:ignore[invalid-argument-type]
             add_page=lambda *args, **kwargs: None,
             has_app_page=lambda route: False,
         )

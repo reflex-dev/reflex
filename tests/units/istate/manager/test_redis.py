@@ -104,7 +104,7 @@ def event_log(state_manager_redis: StateManagerRedis) -> list[dict[str, Any]]:
     Returns:
         The redis event log.
     """
-    return state_manager_redis.redis._internals["event_log"]  # pyright: ignore[reportAttributeAccessIssue]
+    return state_manager_redis.redis._internals["event_log"]  # ty:ignore[unresolved-attribute]
 
 
 @pytest.fixture
@@ -120,7 +120,7 @@ def event_log_on_update(state_manager_redis: StateManagerRedis) -> asyncio.Event
     Returns:
         The event that is set when new events are added to the redis event log.
     """
-    return state_manager_redis.redis._internals["event_log_on_update"]  # pyright: ignore[reportAttributeAccessIssue]
+    return state_manager_redis.redis._internals["event_log_on_update"]  # ty:ignore[unresolved-attribute]
 
 
 @pytest.mark.asyncio

@@ -29,7 +29,7 @@ def cached_rxconfig() -> Iterator[None]:
     module_name = constants.Config.MODULE
     saved = sys.modules.get(module_name)
     stub = types.ModuleType(module_name)
-    stub.config = get_config()  # pyright: ignore [reportAttributeAccessIssue]
+    stub.config = get_config()  # ty:ignore[unresolved-attribute]
     sys.modules[module_name] = stub
     try:
         yield

@@ -143,7 +143,7 @@ def test_duplicate_ids_are_an_error(fresh_registry):
 def test_invalid_declarations(kwargs, message):
     arguments = {"id": "t.x", "metrics": {"wall": WALL}, **kwargs}
     with pytest.raises(ValueError, match=message):
-        Benchmark.define(_Sampler, **arguments)
+        Benchmark.define(_Sampler, **arguments)  # ty:ignore[invalid-argument-type]
 
 
 def test_class_without_sample_is_rejected():
@@ -156,9 +156,9 @@ def test_class_without_sample_is_rejected():
 
 def test_metric_validation():
     with pytest.raises(ValueError, match="direction"):
-        Metric(unit="s", direction="up")  # pyright: ignore[reportArgumentType]
+        Metric(unit="s", direction="up")  # ty:ignore[invalid-argument-type]
     with pytest.raises(ValueError, match="assume"):
-        Metric(unit="s", direction="lower", assume="maybe")  # pyright: ignore[reportArgumentType]
+        Metric(unit="s", direction="lower", assume="maybe")  # ty:ignore[invalid-argument-type]
     with pytest.raises(ValueError, match="unit"):
         Metric(unit="", direction="lower")
     assert Metric(unit="ev/s", direction="higher").family == "rate"
@@ -288,7 +288,7 @@ def test_normalize_rejects_bad_return_types_and_extra(two_metrics):
     with pytest.raises(TypeError, match="must return None, a dict"):
         two_metrics.normalize([1, 2], 0.1)
     with pytest.raises(TypeError, match="extra must be a dict"):
-        two_metrics.normalize(SampleResult({"bytes": 1}, [1]), 0.1)  # pyright: ignore[reportArgumentType]
+        two_metrics.normalize(SampleResult({"bytes": 1}, [1]), 0.1)  # ty:ignore[invalid-argument-type]
     with pytest.raises(ValueError, match="JSON-serializable"):
         two_metrics.normalize(SampleResult({"bytes": 1}, {"x": object()}), 0.1)
 

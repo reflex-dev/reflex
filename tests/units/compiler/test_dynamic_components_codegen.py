@@ -389,7 +389,7 @@ def test_dynamic_component_bundled_subpath_import_forms(
 
 def test_dynamic_component_codegen_wires_event_handlers() -> None:
     """Dynamic component codegen should preserve backend event handlers."""
-    state = State(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    state = State(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
     component = rx.el.div(
         rx.el.button("hydrate", on_click=State.set_is_hydrated(True)),
         rx.el.span(state.is_hydrated),
@@ -457,7 +457,7 @@ def test_dynamic_component_codegen_wires_state_var_counter_events() -> None:
                 justify="center",
             )
 
-    state = DynamicCounterCodegenState(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    state = DynamicCounterCodegenState(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
     code = serializers.serialize(state.counter_ui)
 
     assert isinstance(code, str)

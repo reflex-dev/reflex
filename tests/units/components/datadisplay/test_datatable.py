@@ -16,7 +16,7 @@ from reflex.utils import types
             {
                 "data": pd.DataFrame(
                     [["foo", "bar"], ["foo1", "bar1"]],
-                    columns=["column1", "column2"],  # pyright: ignore [reportArgumentType]
+                    columns=["column1", "column2"],
                 )
             },
             "data",
@@ -34,13 +34,13 @@ def test_validate_data_table(data_table_state: rx.State, expected):
         expected: expected var name.
 
     """
-    if not types.is_dataframe(data_table_state.data._var_type):  # pyright: ignore[reportAttributeAccessIssue]
+    if not types.is_dataframe(data_table_state.data._var_type):  # ty:ignore[unresolved-attribute]
         data_table_component = DataTable.create(
-            data=data_table_state.data,  # pyright: ignore[reportAttributeAccessIssue]
-            columns=data_table_state.columns,  # pyright: ignore[reportAttributeAccessIssue]
+            data=data_table_state.data,  # ty:ignore[unresolved-attribute]
+            columns=data_table_state.columns,  # ty:ignore[unresolved-attribute]
         )
     else:
-        data_table_component = DataTable.create(data=data_table_state.data)  # pyright: ignore[reportAttributeAccessIssue]
+        data_table_component = DataTable.create(data=data_table_state.data)  # ty:ignore[unresolved-attribute]
 
     data_table_dict = data_table_component.render()
 
@@ -127,7 +127,7 @@ def test_serialize_dataframe():
     """Test if dataframe is serialized correctly."""
     simple_dataframe = pd.DataFrame(
         [["foo", "bar"], ["foo1", "bar1"]],
-        columns=["column1", "column2"],  # pyright: ignore [reportArgumentType]
+        columns=["column1", "column2"],
     )
     value = serialize(simple_dataframe)
     assert value == serialize_dataframe(simple_dataframe)

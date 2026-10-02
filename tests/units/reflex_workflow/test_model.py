@@ -161,7 +161,7 @@ class Second(Base, Shared):
 
 def test_step_calls_are_typed_by_their_workflow():
     assert_type(Expense.decide("approve"), Call[Expense])
-    assert_type(
+    assert_type(  # ty:ignore[type-assertion-failure]
         wake_in(Expense.escalate(), datetime.timedelta(hours=1)), WakeIn[Expense]
     )
     assert_type(Expense.by(Expense.id == 1), RunHandle[Expense])
@@ -193,18 +193,18 @@ def test_steps_defined_on_a_shared_base_belong_to_each_table():
 
 
 def test_step_arguments_are_checked():
-    Expense.decide("maybe")  # pyright: ignore[reportArgumentType]
-    Expense.decide("approve", by=1)  # pyright: ignore[reportArgumentType]
-    Expense.decide()  # pyright: ignore[reportCallIssue]
-    Expense.escalate("now")  # pyright: ignore[reportCallIssue]
+    Expense.decide("maybe")  # ty:ignore[invalid-argument-type]
+    Expense.decide("approve", by=1)  # ty:ignore[invalid-argument-type]
+    Expense.decide()  # ty:ignore[missing-argument]
+    Expense.escalate("now")  # ty:ignore[too-many-positional-arguments]
 
 
 async def _never_called() -> None:
     """Hold calls that must not type-check; never run."""
-    await Expense().start(Other.go())  # pyright: ignore[reportArgumentType]
-    await Expense().start(Expense.decide)  # pyright: ignore[reportArgumentType]
-    await Expense.by(Expense.id == 1).run(Other.go())  # pyright: ignore[reportArgumentType]
-    await Expense.by(Expense.id == 1).deliver(Other.go())  # pyright: ignore[reportArgumentType]
+    await Expense().start(Other.go())  # ty:ignore[invalid-argument-type]
+    await Expense().start(Expense.decide)  # ty:ignore[invalid-argument-type]
+    await Expense.by(Expense.id == 1).run(Other.go())  # ty:ignore[invalid-argument-type]
+    await Expense.by(Expense.id == 1).deliver(Other.go())  # ty:ignore[invalid-argument-type]
     # A step of a shared base is a step of every table that inherits it.
     await First().start(Shared.begin)
     await Second.by(Second.id == 1).run(Shared.begin())
@@ -222,7 +222,7 @@ def test_a_call_keeps_its_arguments_as_json():
 
 
 def test_arguments_that_are_not_json_are_rejected():
-    call = Expense.decide(datetime.date(2026, 1, 1))  # pyright: ignore[reportArgumentType]
+    call = Expense.decide(datetime.date(2026, 1, 1))  # ty:ignore[invalid-argument-type]
     with pytest.raises(TypeError, match="JSON-serializable"):
         call.encode()
 
@@ -232,7 +232,7 @@ def test_arguments_json_cannot_hold_are_rejected(value: object):
     if value == "circular":
         value = []
         value.append(value)
-    call = Expense.decide(value)  # pyright: ignore[reportArgumentType]
+    call = Expense.decide(value)  # ty:ignore[invalid-argument-type]
     with pytest.raises(TypeError, match="JSON-serializable"):
         call.encode()
 
@@ -249,7 +249,7 @@ def test_a_bare_step_is_a_call_without_arguments():
 
 def test_a_bare_step_that_needs_arguments_is_rejected():
     with pytest.raises(TypeError, match="takes arguments"):
-        wake_in(Expense.decide, datetime.timedelta(days=1))  # pyright: ignore[reportArgumentType]
+        wake_in(Expense.decide, datetime.timedelta(days=1))  # ty:ignore[invalid-argument-type]
 
 
 def test_another_workflows_step_is_rejected_at_runtime():
@@ -304,7 +304,7 @@ def test_a_limit_has_to_cap_something():
 )
 def test_a_limit_has_to_be_positive(caps: dict[str, object]):
     with pytest.raises(ValueError, match="must be positive"):
-        Limit(by="customer", **caps)  # pyright: ignore[reportArgumentType]
+        Limit(by="customer", **caps)  # ty:ignore[invalid-argument-type]
 
 
 def test_a_rate_needs_the_period_it_is_counted_over():
@@ -320,7 +320,7 @@ async def test_a_rate_without_a_bucket_table_says_so(monkeypatch):
     spec = Metered.__workflow_limit__
     assert spec is not None
     with pytest.raises(TypeError, match="rate bucket table must be mapped"):
-        await claim.take_tokens(None, Metered, spec, "stripe", 1)  # pyright: ignore[reportArgumentType]
+        await claim.take_tokens(None, Metered, spec, "stripe", 1)  # ty:ignore[invalid-argument-type]
 
 
 def test_only_one_bucket_table_may_be_mapped(monkeypatch):
@@ -341,9 +341,9 @@ def test_arguments_a_step_cannot_take_are_rejected_where_the_call_is_made():
     # A webhook body that does not fit the step it addresses is refused while
     # there is still a caller to tell.
     with pytest.raises(TypeError, match="cannot take those arguments"):
-        check_call(Expense, Expense.decide(verdikt="approve"))  # pyright: ignore[reportCallIssue]
+        check_call(Expense, Expense.decide(verdikt="approve"))  # ty:ignore[missing-argument, unknown-argument]
     with pytest.raises(TypeError, match="cannot take those arguments"):
-        check_call(Expense, Expense.decide("approve", "again"))  # pyright: ignore[reportCallIssue]
+        check_call(Expense, Expense.decide("approve", "again"))  # ty:ignore[too-many-positional-arguments]
     check_call(Expense, Expense.decide("approve"))
 
 
@@ -358,7 +358,7 @@ def engine_index(cls: type[Workflow], suffix: str) -> Index | None:
         The index, or None.
     """
     name = f"ix_{cls.__tablename__}_{suffix}"
-    table = cls.__table__  # pyright: ignore[reportAttributeAccessIssue]
+    table = cls.__table__  # ty:ignore[unresolved-attribute]
     return next((index for index in table.indexes if index.name == name), None)
 
 

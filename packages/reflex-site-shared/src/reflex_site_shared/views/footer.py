@@ -57,7 +57,7 @@ def tab_item(mode: str, icon: str) -> rx.Component:
     )
     return rx.el.button(
         get_icon(icon, class_name="shrink-0"),
-        on_click=set_color_mode(mode),  # type: ignore[reportArgumentType]
+        on_click=set_color_mode(mode),
         class_name=ui.cn(
             "flex items-center cursor-pointer justify-center rounded-full border shadow-none transition-colors size-7 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ",
             rx.cond(mode == color_mode, active_cn, unactive_cn),

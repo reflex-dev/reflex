@@ -169,7 +169,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
 
     # NoReturn is used here to catch when key value is Any
     @overload
-    def __getitem__(  # pyright: ignore [reportOverlappingOverload]
+    def __getitem__(
         self: ObjectVar[Mapping[Any, NoReturn]],
         key: Var | Any,
     ) -> Var: ...
@@ -254,9 +254,9 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
         if default is None:
             default = Var.create(None)
 
-        value = self.__getitem__(key)  # pyright: ignore[reportUnknownVariableType,reportAttributeAccessIssue,reportUnknownMemberType]
+        value = self.__getitem__(key)  # ty:ignore[no-matching-overload]
 
-        return cond(  # pyright: ignore[reportUnknownVariableType]
+        return cond(
             value,
             value,
             default,
@@ -264,7 +264,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
 
     # NoReturn is used here to catch when key value is Any
     @overload
-    def __getattr__(  # pyright: ignore [reportOverlappingOverload]
+    def __getattr__(
         self: ObjectVar[Mapping[Any, NoReturn]],
         name: str,
     ) -> Var: ...
@@ -417,7 +417,7 @@ class LiteralObjectVar(
             The type of the keys of the object.
         """
         args_list = typing.get_args(self._var_type)
-        return args_list[0] if args_list else Any  # pyright: ignore [reportReturnType]
+        return args_list[0] if args_list else Any
 
     def _value_type(self) -> type:
         """Get the type of the values of the object.
@@ -426,7 +426,7 @@ class LiteralObjectVar(
             The type of the values of the object.
         """
         args_list = typing.get_args(self._var_type)
-        return args_list[1] if args_list else Any  # pyright: ignore [reportReturnType]
+        return args_list[1] if args_list else Any
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
@@ -567,7 +567,7 @@ def object_values_operation(value: ObjectVar):
     """
     return var_operation_return(
         js_expression=f"Object.values({value!s} ?? {{}})",
-        var_type=list[value._value_type()],
+        var_type=list[value._value_type()],  # ty:ignore[invalid-type-form]
     )
 
 
@@ -583,7 +583,7 @@ def object_entries_operation(value: ObjectVar):
     """
     return var_operation_return(
         js_expression=f"Object.entries({value!s} ?? {{}})",
-        var_type=list[tuple[str, value._value_type()]],
+        var_type=list[tuple[str, value._value_type()]],  # ty:ignore[invalid-type-form]
     )
 
 
@@ -601,8 +601,8 @@ def object_merge_operation(lhs: ObjectVar, rhs: ObjectVar):
     return var_operation_return(
         js_expression=f"({{...{lhs!s}, ...{rhs!s}}})",
         var_type=Mapping[
-            lhs._key_type() | rhs._key_type(),
-            lhs._value_type() | rhs._value_type(),
+            lhs._key_type() | rhs._key_type(),  # ty:ignore[invalid-type-form]
+            lhs._value_type() | rhs._value_type(),  # ty:ignore[invalid-type-form]
         ],
     )
 

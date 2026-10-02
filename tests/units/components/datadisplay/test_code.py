@@ -18,12 +18,12 @@ def test_default_code_copy_button_has_an_accessible_name():
 def test_code_light_dark_theme(theme, expected):
     code_block = CodeBlock.create(theme=theme)
 
-    assert code_block.theme._js_expr == expected  # pyright: ignore [reportAttributeAccessIssue]
+    assert code_block.theme._js_expr == expected  # ty:ignore[unresolved-attribute]
 
 
 def test_code_block_rejects_string_theme():
     with pytest.raises(TypeError, match=r"CodeBlock\.theme"):
-        CodeBlock.create("print('Hello')", theme="one_dark")  # pyright: ignore[reportArgumentType]
+        CodeBlock.create("print('Hello')", theme="one_dark")  # ty:ignore[invalid-argument-type]
 
 
 def test_code_block_collects_custom_style_state_vars():
@@ -35,9 +35,9 @@ def test_code_block_collects_custom_style_state_vars():
     )
 
     rendered = str(code_block.render())
-    assert CustomStyleState.color._js_expr in rendered  # pyright: ignore [reportAttributeAccessIssue]
+    assert CustomStyleState.color._js_expr in rendered  # ty:ignore[unresolved-attribute]
 
-    var_data = CustomStyleState.color._get_all_var_data()  # pyright: ignore [reportAttributeAccessIssue]
+    var_data = CustomStyleState.color._get_all_var_data()  # ty:ignore[unresolved-attribute]
     assert var_data is not None
     assert var_data.hooks
     collected_hooks = code_block._get_all_hooks()

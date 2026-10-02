@@ -366,7 +366,7 @@ def _build_dataclass(tp: type) -> Decoder:
                 field.default is dataclasses.MISSING
                 and field.default_factory is dataclasses.MISSING,
             )
-            for field in dataclasses.fields(tp)
+            for field in dataclasses.fields(tp)  # ty:ignore[invalid-argument-type]
             if field.init
         ]
 

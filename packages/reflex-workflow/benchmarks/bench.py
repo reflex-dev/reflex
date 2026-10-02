@@ -692,7 +692,7 @@ async def main() -> None:
     trials: dict[str, list[dict[str, Any]]] = collections.defaultdict(list)
     for trial in range(args.repeat):
         for name, scenario in scenarios:
-            trials[name].append(await measure(layout, **scenario))
+            trials[name].append(await measure(layout, **scenario))  # ty:ignore[invalid-argument-type]
             print(f"trial {trial + 1}: {name}: {json.dumps(trials[name][-1])}")
     results = [
         summarize(

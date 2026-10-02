@@ -39,7 +39,7 @@ from typing import Any
 if sys.version_info >= (3, 11):
     import tomllib
 else:
-    import tomli as tomllib  # pyright: ignore[reportMissingImports]
+    import tomli as tomllib  # ty:ignore[unresolved-import]
 
 #: The hatch build hook (packages/hatch-reflex-pyi) that a component package
 #: declares to have its stubs generated during the build.

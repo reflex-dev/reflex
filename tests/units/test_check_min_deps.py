@@ -67,53 +67,43 @@ def test_discover_packages_records_optional_extras():
     assert set(by_name["reflex-build-sdk"].extras) == {"aiohttp", "httpx", "httpx2"}
 
 
-def test_pyright_errors_keys_and_filters_severity():
-    report = {
-        "generalDiagnostics": [
-            {
-                "file": "/abs/foo.py",
-                "severity": "error",
-                "message": "boom",
-                "range": {"start": {"line": 9, "character": 4}},
-            },
-            {
-                "file": "/abs/foo.py",
-                "severity": "warning",
-                "message": "ignore me",
-                "range": {"start": {"line": 1, "character": 0}},
-            },
-        ]
-    }
-    errors = check_min_deps._pyright_errors(report)
+def test_ty_errors_keys_and_filters_severity():
+    output = (
+        "/abs/foo.py:10:5: error[unresolved-attribute] boom\n"
+        "/abs/foo.py:2:1: warning[unused-ignore-comment] ignore me\n"
+        "Found 2 diagnostics\n"
+    )
+    errors = check_min_deps._ty_errors(output)
 
-    assert list(errors) == [("/abs/foo.py", 9, 4, "boom")]
-    # Line/character are converted to 1-based in the display string.
-    assert errors["/abs/foo.py", 9, 4, "boom"] == "/abs/foo.py:10:5 - error: boom"
+    assert list(errors) == [("/abs/foo.py", 10, 5, "[unresolved-attribute] boom")]
+    assert errors["/abs/foo.py", 10, 5, "[unresolved-attribute] boom"] == (
+        "/abs/foo.py:10:5 - error: [unresolved-attribute] boom"
+    )
 
 
-def test_pyright_errors_delta_cancels_shared_noise():
-    def report(messages: list[tuple[str, int]]) -> dict:
-        return {
-            "generalDiagnostics": [
-                {
-                    "file": "/abs/foo.py",
-                    "severity": "error",
-                    "message": msg,
-                    "range": {"start": {"line": line, "character": 0}},
-                }
-                for msg, line in messages
-            ]
-        }
+def test_ty_errors_delta_cancels_shared_noise():
+    def output(messages: list[tuple[str, int]]) -> str:
+        return "".join(
+            f"/abs/foo.py:{line}:1: error[unresolved-import] {msg}\n"
+            for msg, line in messages
+        )
 
     # A shared, undeclared-import error appears in both resolutions; only the
     # minimum-version-specific error should remain in the delta.
-    baseline = check_min_deps._pyright_errors(report([("missing optional import", 1)]))
-    minimum = check_min_deps._pyright_errors(
-        report([("missing optional import", 1), ("model_dump is unknown", 50)])
+    baseline = check_min_deps._ty_errors(output([("missing optional import", 1)]))
+    minimum = check_min_deps._ty_errors(
+        output([("missing optional import", 1), ("model_dump is unknown", 50)])
     )
 
     new = minimum.keys() - baseline.keys()
-    assert new == {("/abs/foo.py", 50, 0, "model_dump is unknown")}
+    assert new == {("/abs/foo.py", 50, 1, "[unresolved-import] model_dump is unknown")}
+
+
+def test_ty_config_mirrors_root_rule_severities():
+    config = check_min_deps._ty_config()
+
+    assert config.startswith("[rules]\n")
+    assert 'invalid-method-override = "ignore"' in config
 
 
 @pytest.mark.parametrize(
@@ -360,9 +350,9 @@ def test_resolve_and_check_checks_modules_not_the_source_directory(
         lowest=False,
     )
 
-    pyright = fake_run.command_starting_with(["pyright"])
-    checked = pyright[pyright.index("--project") + 2 :]
-    assert str(check_min_deps.REPO_ROOT / "reflex") not in pyright
+    ty = fake_run.command_starting_with(["ty", "check"])
+    checked = ty[ty.index("--exit-zero") + 1 :]
+    assert str(check_min_deps.REPO_ROOT / "reflex") not in ty
     assert checked, "the package's modules are passed individually"
     assert all(module.endswith(".py") for module in checked)
     assert str(check_min_deps.REPO_ROOT / "reflex" / "app.py") in checked

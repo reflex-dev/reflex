@@ -256,7 +256,7 @@ class Step(Generic[W, P]):
             max_backoff: The longest a retry is put off.
         """
         self.fn = fn
-        self.name = fn.__name__
+        self.name = fn.__name__  # ty:ignore[unresolved-attribute]
         self.retries = retries
         self.backoff = backoff
         self.lane = lane

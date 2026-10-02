@@ -61,7 +61,7 @@ def test_custom_field_attr_survives_annotated_rebuild():
     setattr(f, _MARKER_ATTR, "tag")
 
     class MyState(EvenMoreBasicBaseState):
-        name: str = f  # pyright: ignore[reportAssignmentType]
+        name: str = f  # ty:ignore[invalid-assignment]
 
     rebuilt = MyState.get_fields()["name"]
     assert getattr(rebuilt, _MARKER_ATTR, None) == "tag"
@@ -101,10 +101,10 @@ def test_reserved_annotation_attr_not_copied():
     it would shadow the real class annotation.
     """
     f = field("x")
-    f.annotation = int  # pyright: ignore[reportAttributeAccessIssue]
+    f.annotation = int  # ty:ignore[unresolved-attribute]
 
     class MyState(EvenMoreBasicBaseState):
-        name: str = f  # pyright: ignore[reportAssignmentType]
+        name: str = f  # ty:ignore[invalid-assignment]
 
     rebuilt = MyState.get_fields()["name"]
     assert "annotation" not in rebuilt.__dict__
@@ -126,13 +126,13 @@ def test_custom_attr_is_carried_by_reference():
 
     check = Check()
     f = field("x")
-    f._check = check  # pyright: ignore[reportAttributeAccessIssue]
+    f._check = check  # ty:ignore[unresolved-attribute]
 
     class MyState(EvenMoreBasicBaseState):
-        name: str = f  # pyright: ignore[reportAssignmentType]
+        name: str = f  # ty:ignore[invalid-assignment]
 
     rebuilt = MyState.get_fields()["name"]
-    assert rebuilt._check is check  # pyright: ignore[reportAttributeAccessIssue]
+    assert rebuilt._check is check  # ty:ignore[unresolved-attribute]
 
 
 def _type_alias_types() -> list[type]:
@@ -352,7 +352,7 @@ def test_serializer_attribute_error_is_not_masked() -> None:
         pass
 
     def serialize_point(value: Point) -> str:
-        return value.label  # pyright: ignore[reportAttributeAccessIssue]
+        return value.label  # ty:ignore[unresolved-attribute]
 
     serializers.serializer(serialize_point)
     try:
@@ -1129,7 +1129,7 @@ def test_field_subclass_is_kept():
     """A field declared with a Field subclass stays one wherever it is copied."""
 
     class Parent(State):
-        annotated: int = TaggedField(default=1, tag="a")  # pyright: ignore[reportAssignmentType]
+        annotated: int = TaggedField(default=1, tag="a")  # ty:ignore[invalid-assignment]
         generic: TaggedField[int] = TaggedField(default=2, tag="g")
         unannotated = TaggedField(default="x", tag="u")
 
@@ -1140,7 +1140,7 @@ def test_field_subclass_is_kept():
         annotated: int = 5
 
     class Mixin(State, mixin=True):
-        mixed: int = TaggedField(default=4, tag="m")  # pyright: ignore[reportAssignmentType]
+        mixed: int = TaggedField(default=4, tag="m")  # ty:ignore[invalid-assignment]
 
     class UsesMixin(Mixin, State):
         pass
@@ -1212,9 +1212,9 @@ def test_backend_field_is_not_type_checked():
     T = TypeVar("T")
 
     class Model(EvenMoreBasicBaseState):
-        _value: T  # pyright: ignore[reportGeneralTypeIssues]
+        _value: T  # ty:ignore[unbound-type-variable]
 
-    model = Model()  # pyright: ignore[reportCallIssue]
+    model = Model()  # ty:ignore[missing-argument]
     model._value = 1
     assert model._value == 1
 
@@ -1226,7 +1226,7 @@ def test_classvar_over_inherited_field_is_not_a_field():
         count: int = 0
 
     class Child(Parent):
-        count: ClassVar[int] = 5  # pyright: ignore[reportIncompatibleVariableOverride]
+        count: ClassVar[int] = 5  # ty:ignore[invalid-attribute-override]
 
     assert Child.get_fields()["count"] is Parent.get_fields()["count"]
     assert "count" not in Child.base_vars
@@ -1332,13 +1332,13 @@ def test_state_var_type_check_depth_follows_env_mode(
 
         @computed_var
         def as_ints(self) -> list[int]:
-            return self.wrong_elements  # pyright: ignore[reportReturnType]
+            return self.wrong_elements  # ty:ignore[invalid-return-type]
 
     environment.REFLEX_ENV_MODE.set(env_mode)
     state = DepthState()
 
     with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
-        state.items = ["a"]  # pyright: ignore[reportAttributeAccessIssue]
+        state.items = ["a"]  # ty:ignore[invalid-assignment]
         state.wrong_elements = ["b"]
         _ = state.as_ints
     name = type(state).__name__
@@ -1348,7 +1348,7 @@ def test_state_var_type_check_depth_follows_env_mode(
 
     caplog.clear()
     with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
-        state.items = "not a list"  # pyright: ignore[reportAttributeAccessIssue]
+        state.items = "not a list"  # ty:ignore[invalid-assignment]
     assert any(f"{name}.items" in r.getMessage() for r in caplog.records)
 
 

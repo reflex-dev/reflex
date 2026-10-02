@@ -1,4 +1,3 @@
-# pyright: reportArgumentType=false, reportReturnType=false, reportOperatorIssue=false
 """Template for documentation pages."""
 
 from typing import ClassVar

@@ -205,7 +205,7 @@ def test_resolve_type_alias_unwraps_annotated(alias_cls: type) -> None:
     assert resolve_type_alias(Annotated[Annotated[int, "a"], "b"]) is int
     assert resolve_type_alias(Annotated[int | str, "meta"]) == int | str
     # An alias on either side of the annotation resolves through it.
-    assert resolve_type_alias(Annotated[alias_cls("Name", str), "meta"]) is str
+    assert resolve_type_alias(Annotated[alias_cls("Name", str), "meta"]) is str  # ty:ignore[invalid-type-form]
     assert resolve_type_alias(alias_cls("Meta", Annotated[str, "meta"])) is str
     # A union member keeps resolving.
     assert resolve_type_alias(Annotated[int, "meta"] | str) == int | str

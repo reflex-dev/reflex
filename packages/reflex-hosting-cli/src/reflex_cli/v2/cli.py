@@ -1010,9 +1010,7 @@ def deploy(
 
         if envfile:
             try:
-                from dotenv import (
-                    dotenv_values,  # pyright: ignore[reportMissingImports]
-                )
+                from dotenv import dotenv_values
 
                 # A bare `KEY` line with no `=` parses to None, which names
                 # no value to set; only assignments become secrets.
@@ -1049,7 +1047,7 @@ def deploy(
                     False,
                     True,
                     True,
-                )  # pyright: ignore[reportCallIssue]
+                )  # ty:ignore[missing-argument]
             else:
                 export_fn(
                     str(temporary_dir_path),
@@ -1058,7 +1056,7 @@ def deploy(
                     False,
                     True,
                     include_db,
-                    True,  # pyright: ignore[reportCallIssue]
+                    True,  # ty:ignore[too-many-positional-arguments]
                 )
         except Exception as ex:
             logger.error(f"Unable to export due to: {ex}")
@@ -1072,7 +1070,7 @@ def deploy(
             if rx_version.release < breaking_release:
                 export_fn(
                     str(temporary_dir_path), server_url, host_url, True, False, True
-                )  # pyright: ignore[reportCallIssue]
+                )  # ty:ignore[missing-argument]
             else:
                 export_fn(
                     str(temporary_dir_path),
@@ -1081,7 +1079,7 @@ def deploy(
                     True,
                     False,
                     include_db,
-                    True,  # pyright: ignore[reportCallIssue]
+                    True,  # ty:ignore[too-many-positional-arguments]
                 )
         except ImportError as ie:
             logger.error(
@@ -1142,7 +1140,7 @@ def deploy(
                             hostname=extract_domain(host_url) if hostname else None,
                             secrets=processed_envs,
                             packages=packages,
-                            strategy=strategy,  # pyright: ignore[reportArgumentType]
+                            strategy=strategy,  # ty:ignore[invalid-argument-type]
                             description=deployment_description,
                             on_upload_progress=lambda sent, total: progress.update(
                                 upload, completed=sent, total=total

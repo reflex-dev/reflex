@@ -170,8 +170,8 @@ def test_get_load_events_strips_frontend_path(
     conf = rx.Config(app_name="testing", frontend_path="/app")
     mocker.patch("reflex_base.config._get_config", return_value=conf)
     app = App()
-    app._unevaluated_pages = dict.fromkeys(["index", "app", "apple"])  # pyright: ignore[reportAttributeAccessIssue]
-    app._load_events = {  # pyright: ignore[reportAttributeAccessIssue]
+    app._unevaluated_pages = dict.fromkeys(["index", "app", "apple"])  # ty:ignore[invalid-assignment]
+    app._load_events = {  # ty:ignore[invalid-assignment]
         "index": ["index"],
         "app": ["app"],
         "apple": ["apple"],

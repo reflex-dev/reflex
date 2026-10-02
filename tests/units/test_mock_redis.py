@@ -24,7 +24,7 @@ async def test_pubsub_listen_yields_pmessage_for_pattern_without_handler():
         "data": b"set",
     }
     # The internal event log keeps its raw entries.
-    assert redis._internals["event_log"][-1] == {  # pyright: ignore[reportAttributeAccessIssue]
+    assert redis._internals["event_log"][-1] == {  # ty:ignore[unresolved-attribute]
         "channel": b"__keyspace@1__:foo1",
         "data": b"set",
     }

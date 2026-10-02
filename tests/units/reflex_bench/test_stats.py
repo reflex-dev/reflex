@@ -372,11 +372,11 @@ def test_verdict_too_few_samples_is_inconclusive_never_unchanged():
 
 def test_verdict_requires_significance_and_the_whole_ci_past_the_threshold():
     kwargs = {"direction": "lower", "threshold": 0.03, "alpha": 0.01}
-    assert stats.verdict(0.1, (0.05, 0.15), 0.001, **kwargs) == "regressed"
-    assert stats.verdict(0.1, (0.05, 0.15), 0.02, **kwargs) == "inconclusive"
-    assert stats.verdict(0.05, (0.01, 0.09), 0.001, **kwargs) == "inconclusive"
-    assert stats.verdict(-0.1, (-0.15, -0.05), 0.001, **kwargs) == "improved"
-    assert stats.verdict(0.0, (-0.02, 0.02), 0.9, **kwargs) == "unchanged"
+    assert stats.verdict(0.1, (0.05, 0.15), 0.001, **kwargs) == "regressed"  # ty:ignore[invalid-argument-type]
+    assert stats.verdict(0.1, (0.05, 0.15), 0.02, **kwargs) == "inconclusive"  # ty:ignore[invalid-argument-type]
+    assert stats.verdict(0.05, (0.01, 0.09), 0.001, **kwargs) == "inconclusive"  # ty:ignore[invalid-argument-type]
+    assert stats.verdict(-0.1, (-0.15, -0.05), 0.001, **kwargs) == "improved"  # ty:ignore[invalid-argument-type]
+    assert stats.verdict(0.0, (-0.02, 0.02), 0.9, **kwargs) == "unchanged"  # ty:ignore[invalid-argument-type]
 
 
 def test_exact_metrics_skip_the_tests():
@@ -418,10 +418,10 @@ def test_compare_samples_with_a_zero_base_median_compares_absolutely():
     assert comparison.p < 0.01
     # No relative threshold applies to an absolute difference.
     kwargs = {"direction": "lower", "threshold": 0.0, "alpha": 0.01}
-    assert stats.verdict(5.0, comparison.ci, comparison.p, **kwargs) == "regressed"
-    assert stats.verdict(-5.0, (-5.0, -5.0), comparison.p, **kwargs) == "improved"
-    assert stats.verdict(0.0, (0.0, 0.0), 1.0, **kwargs) == "unchanged"
-    assert stats.verdict(0.5, (-0.5, 1.0), 0.2, **kwargs) == "inconclusive"
+    assert stats.verdict(5.0, comparison.ci, comparison.p, **kwargs) == "regressed"  # ty:ignore[invalid-argument-type]
+    assert stats.verdict(-5.0, (-5.0, -5.0), comparison.p, **kwargs) == "improved"  # ty:ignore[invalid-argument-type]
+    assert stats.verdict(0.0, (0.0, 0.0), 1.0, **kwargs) == "unchanged"  # ty:ignore[invalid-argument-type]
+    assert stats.verdict(0.5, (-0.5, 1.0), 0.2, **kwargs) == "inconclusive"  # ty:ignore[invalid-argument-type]
     # Too few samples for a CI still give the absolute effect.
     few = stats.compare_samples([0.0] * 3, [5.0] * 3)
     assert (few.mode, few.effect, few.ci) == ("absolute", 5.0, None)
@@ -555,7 +555,7 @@ def _series(name: str) -> tuple[list[float], list[float]]:
     Returns:
         The x and y values.
     """
-    return {
+    return {  # ty:ignore[invalid-return-type]
         "N4": ([1, 2, 3, 4], [2.1, 3.9, 6.2, 7.8]),
         "N5": (
             [0, 1000, 2000, 3000, 4000],

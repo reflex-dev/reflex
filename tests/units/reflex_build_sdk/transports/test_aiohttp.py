@@ -191,7 +191,7 @@ async def test_timeouts_cover_each_operation():
             raise aiohttp.ClientPayloadError(msg)
 
     session = RecordingSession()
-    transport = AiohttpTransport(session)  # pyright: ignore[reportArgumentType]
+    transport = AiohttpTransport(session)  # ty:ignore[invalid-argument-type]
     with pytest.raises(TransportError):
         await transport.send(_request("http://127.0.0.1/echo/x", timeout=7.0))
     (timeout,) = session.timeouts
@@ -276,7 +276,7 @@ class _FailingSession:
     ],
 )
 async def test_errors(error: BaseException, sent: bool, timed_out: bool):
-    transport = AiohttpTransport(_FailingSession(error))  # pyright: ignore[reportArgumentType]
+    transport = AiohttpTransport(_FailingSession(error))  # ty:ignore[invalid-argument-type]
     request = _request("http://127.0.0.1/echo/x")
     with pytest.raises(TransportError) as exc_info:
         await transport.send(request)

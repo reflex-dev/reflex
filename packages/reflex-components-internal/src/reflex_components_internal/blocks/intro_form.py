@@ -310,7 +310,7 @@ def intro_form(
                 True,
                 PERSONAL_EMAIL_PROVIDERS,
                 id=email_id,
-                on_blur=IntroFormStateUI.validate_email(
+                on_blur=IntroFormStateUI.validate_email(  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/2870
                     rx.Var(get_element_value(email_id))
                 ),
             ),

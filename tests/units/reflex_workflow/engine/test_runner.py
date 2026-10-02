@@ -2815,7 +2815,7 @@ async def test_run_workflows_refuses_settings_that_cannot_work(
     session_factory, settings: dict[str, object]
 ):
     with pytest.raises(ValueError, match="must be"):
-        async with run_workflows(session_factory, workflows=[Parting], **settings):  # pyright: ignore[reportArgumentType]
+        async with run_workflows(session_factory, workflows=[Parting], **settings):  # ty:ignore[invalid-argument-type]
             pass
 
 

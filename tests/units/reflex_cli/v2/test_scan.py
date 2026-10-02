@@ -21,7 +21,7 @@ from reflex_cli.v2.scan import _POLL_INTERVAL_SECONDS, _POLL_TIMEOUT_SECONDS
 
 from .utils import api_error, as_click_command, fake_client
 
-hosting_cli = as_click_command(hosting_cli)
+hosting_cli = as_click_command(hosting_cli)  # ty:ignore[invalid-assignment]
 
 runner = CliRunner()
 

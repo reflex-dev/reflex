@@ -46,7 +46,7 @@ from .number import (
 if TYPE_CHECKING:
     from typing_extensions import deprecated
 
-    from .base import DATACLASS_TYPE, SQLA_TYPE
+    from .base import BASE_MODEL_TYPE, DATACLASS_TYPE, SQLA_TYPE
     from .function import FunctionVar
     from .object import ObjectVar
 
@@ -105,7 +105,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
         Returns:
             The reversed array.
         """
-        return array_reverse_operation(self)
+        return array_reverse_operation(self)  # ty:ignore[invalid-return-type]
 
     def __add__(self, other: ArrayVar[ARRAY_VAR_TYPE]) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Concatenate two arrays.
@@ -119,7 +119,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
         if not isinstance(other, ArrayVar):
             raise_unsupported_operand_types("+", (type(self), type(other)))
 
-        return array_concat_operation(self, other)
+        return array_concat_operation(self, other)  # ty:ignore[invalid-return-type]
 
     @overload
     def __getitem__(self, i: slice) -> ArrayVar[ARRAY_VAR_TYPE]: ...
@@ -150,7 +150,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
     ) -> NumberVar: ...
 
     @overload
-    def __getitem__(  # pyright: ignore [reportOverlappingOverload]
+    def __getitem__(
         self: ArrayVar[tuple[str, Any]], i: Literal[0, -2]
     ) -> StringVar: ...
 
@@ -205,6 +205,12 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
         self: ArrayVar[Sequence[DATACLASS_TYPE]],
         i: int | NumberVar,
     ) -> ObjectVar[DATACLASS_TYPE]: ...
+
+    @overload
+    def __getitem__(
+        self: ArrayVar[Sequence[BASE_MODEL_TYPE]],
+        i: int | NumberVar,
+    ) -> ObjectVar[BASE_MODEL_TYPE]: ...
 
     @overload
     def __getitem__(self, i: int | NumberVar) -> Var: ...
@@ -322,7 +328,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
         Returns:
             The array pluck operation.
         """
-        return array_pluck_operation(self, field)
+        return array_pluck_operation(self, field)  # ty:ignore[invalid-return-type]
 
     def __mul__(self, other: NumberVar | int) -> ArrayVar[ARRAY_VAR_TYPE]:
         """Multiply the sequence by a number or integer.
@@ -338,7 +344,7 @@ class ArrayVar(Var[ARRAY_VAR_TYPE], python_types=(Sequence, set)):
         ):
             raise_unsupported_operand_types("*", (type(self), type(other)))
 
-        return repeat_array_operation(self, other)
+        return repeat_array_operation(self, other)  # ty:ignore[invalid-return-type]
 
     __rmul__ = __mul__
 
@@ -995,7 +1001,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         return string_ge_operation(self, other)
 
     @overload
-    def replace(  # pyright: ignore [reportOverlappingOverload]
+    def replace(
         self, search_value: StringVar | str, new_value: StringVar | str
     ) -> StringVar: ...
 
@@ -1004,7 +1010,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         self, search_value: Any, new_value: Any
     ) -> CustomVarOperationReturn[StringVar]: ...
 
-    def replace(self, search_value: Any, new_value: Any) -> StringVar:  # pyright: ignore [reportInconsistentOverload]
+    def replace(self, search_value: Any, new_value: Any) -> StringVar:
         """Replace a string with a value.
 
         Args:

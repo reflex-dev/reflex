@@ -772,7 +772,7 @@ async def execute(
                 # against the database clock, so every time the engine writes
                 # comes from one.
                 if callable(repeat):
-                    refused = await wake_on_schedule(session, repeat, values)
+                    refused = await wake_on_schedule(session, repeat, values)  # ty:ignore[invalid-argument-type]
                     if refused is not None:
                         outcome, recorded = "failed", refused
                 # The children go in first so the row can record how many of them

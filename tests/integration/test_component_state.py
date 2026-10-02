@@ -29,23 +29,23 @@ def ComponentStateApp():
         @rx.event
         def increment(self):
             self.count += 1
-            self._be = self.count  # pyright: ignore [reportAttributeAccessIssue]
+            self._be = self.count  # ty:ignore[invalid-assignment]
 
         @rx.event
         def assert_be(self, value: E):
-            assert self._be == int(value)  # pyright: ignore [reportAttributeAccessIssue, reportArgumentType]
+            assert self._be == int(value)  # ty:ignore[invalid-argument-type]
 
         @rx.event
         def assert_be_none(self):
-            assert self._be is None  # pyright: ignore [reportAttributeAccessIssue]
+            assert self._be is None
 
         @rx.event
         def assert_be_int(self, value: int):
-            assert self._be_int == value  # pyright: ignore [reportAttributeAccessIssue]
+            assert self._be_int == value
 
         @rx.event
         def assert_be_str(self, value: str):
-            assert self._be_str == value  # pyright: ignore [reportAttributeAccessIssue]
+            assert self._be_str == value
 
         @classmethod
         def get_component(cls, *children, **props):
@@ -64,7 +64,7 @@ def ComponentStateApp():
                         "Assert _be",
                         id=f"{eid}-assert-be",
                     ),
-                    on_submit=lambda fd: cls.assert_be(fd.to(dict)["be_value"]),  # pyright: ignore [reportAttributeAccessIssue]
+                    on_submit=lambda fd: cls.assert_be(fd.to(dict)["be_value"]),  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/4098
                     reset_on_submit=True,
                 ),
                 rx.button(
@@ -129,7 +129,7 @@ def ComponentStateApp():
             mc_d,
             rx.button(
                 "Inc A",
-                on_click=mc_a.State.increment,  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
+                on_click=mc_a.State.increment,  # ty:ignore[unresolved-attribute]
                 id="inc-a",
             ),
             rx.text(

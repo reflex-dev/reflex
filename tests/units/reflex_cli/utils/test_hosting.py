@@ -979,7 +979,7 @@ def _report(**fields: object) -> DeploymentReport:
         "build_log_excerpt": None,
     }
     report.update(fields)
-    return DeploymentReport(**report)  # pyright: ignore[reportArgumentType]
+    return DeploymentReport(**report)  # ty:ignore[invalid-argument-type]
 
 
 def test_failure_report_prints_reason_and_build_log(

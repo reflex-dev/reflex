@@ -240,5 +240,5 @@ class BaseStateToken(StateToken["BaseState"]):
         )
 
         client_token, state_path = _split_substate_key(legacy_token)
-        state_cls = root_state.get_class_substate(tuple(state_path.split(".")))  # type: ignore[union-attr]
+        state_cls = root_state.get_class_substate(tuple(state_path.split(".")))
         return cls(ident=client_token, cls=state_cls)

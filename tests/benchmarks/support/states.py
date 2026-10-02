@@ -82,7 +82,7 @@ def initialized_state(size: int) -> PerformanceState:
         Initialized performance state.
     """
     state = PerformanceState(
-        _reflex_internal_init=True  # pyright: ignore [reportCallIssue]
+        _reflex_internal_init=True  # ty:ignore[unknown-argument]
     )
     state.numbers = list(range(size))
     state.mapping = {f"key_{index}": index for index in range(size)}

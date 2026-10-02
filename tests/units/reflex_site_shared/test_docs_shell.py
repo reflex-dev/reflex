@@ -339,7 +339,7 @@ def _feedback_state() -> DocsFeedbackState:
     Returns:
         The feedback state.
     """
-    root = rx.State(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    root = rx.State(_reflex_internal_init=True)  # ty:ignore[unknown-argument]
     return cast(DocsFeedbackState, root.get_substate([DocsFeedbackState.get_name()]))
 
 

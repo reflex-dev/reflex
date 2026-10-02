@@ -36,7 +36,7 @@ def test_valid_document_round_trips(tmp_path: Path, doc: schema.ResultDoc):
 def test_missing_profile_id_fails_validation_and_dump_refuses(
     tmp_path: Path, doc: schema.ResultDoc
 ):
-    del doc["machine"]["profile_id"]  # pyright: ignore[reportGeneralTypeIssues]
+    del doc["machine"]["profile_id"]  # ty:ignore[invalid-argument-type]
     assert "machine.profile_id: missing" in schema.validate(doc)
     path = tmp_path / "result.json"
     with pytest.raises(schema.SchemaError, match=r"machine\.profile_id: missing"):
@@ -74,14 +74,14 @@ def test_fixture_is_optional_and_nullable(doc: schema.ResultDoc):
 def test_interrupted_is_an_optional_boolean(doc: schema.ResultDoc):
     doc["interrupted"] = True
     assert schema.validate(doc) == []
-    doc["interrupted"] = "yes"  # pyright: ignore[reportGeneralTypeIssues]
+    doc["interrupted"] = "yes"  # ty:ignore[invalid-assignment]
     assert schema.validate(doc) == ["interrupted: expected a boolean"]
 
 
 def test_unknown_keys_are_allowed_for_forward_compatibility(doc: schema.ResultDoc):
     extended = copy.deepcopy(doc)
-    extended["future"] = {"anything": 1}  # pyright: ignore[reportGeneralTypeIssues]
-    extended["benchmarks"][0]["future_field"] = [1, 2]  # pyright: ignore[reportGeneralTypeIssues]
+    extended["future"] = {"anything": 1}  # ty:ignore[invalid-key]
+    extended["benchmarks"][0]["future_field"] = [1, 2]  # ty:ignore[invalid-key]
     assert schema.validate(extended) == []
 
 
@@ -93,8 +93,8 @@ def test_wrong_schema_id_is_rejected(doc: schema.ResultDoc):
 
 
 def test_enums_are_checked(doc: schema.ResultDoc):
-    doc["benchmarks"][0]["status"] = "crashed"  # pyright: ignore[reportGeneralTypeIssues]
-    doc["benchmarks"][0]["metrics"]["wall"]["direction"] = "up"  # pyright: ignore[reportGeneralTypeIssues]
+    doc["benchmarks"][0]["status"] = "crashed"  # ty:ignore[invalid-assignment]
+    doc["benchmarks"][0]["metrics"]["wall"]["direction"] = "up"  # ty:ignore[invalid-assignment]
     errors = schema.validate(doc)
     assert any(
         e.startswith("benchmarks[0].status: expected one of ok,") for e in errors
@@ -118,9 +118,9 @@ def test_empty_subjects_are_rejected(doc: schema.ResultDoc):
 
 
 def test_nested_required_keys_are_checked(doc: schema.ResultDoc):
-    del doc["benchmarks"][0]["metrics"]["wall"]["unit"]  # pyright: ignore[reportGeneralTypeIssues]
-    del doc["benchmarks"][0]["sample_meta"][0]["warmup"]  # pyright: ignore[reportGeneralTypeIssues]
-    doc["invocation"] = []  # pyright: ignore[reportGeneralTypeIssues]
+    del doc["benchmarks"][0]["metrics"]["wall"]["unit"]  # ty:ignore[invalid-argument-type]
+    del doc["benchmarks"][0]["sample_meta"][0]["warmup"]  # ty:ignore[invalid-argument-type]
+    doc["invocation"] = []  # ty:ignore[invalid-assignment]
     assert schema.validate(doc) == [
         "invocation: expected an object, got list",
         "benchmarks[0].sample_meta[0].warmup: missing",
@@ -162,7 +162,7 @@ def test_wrong_container_types_are_rejected(
 
 @pytest.mark.parametrize(("key", "value"), [("warmup", "false"), ("arm", ["A"])])
 def test_sample_meta_types_are_checked(doc: schema.ResultDoc, key: str, value: Any):
-    doc["benchmarks"][0]["sample_meta"][1][key] = value
+    doc["benchmarks"][0]["sample_meta"][1][key] = value  # ty:ignore[invalid-key]
     assert schema.validate(doc) == [
         "benchmarks[0].sample_meta[1]: arm must be a string, warmup a boolean"
     ]

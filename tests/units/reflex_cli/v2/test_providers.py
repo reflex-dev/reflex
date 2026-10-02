@@ -40,7 +40,7 @@ def _status(**fields) -> GcpStatus:
     Returns:
         The status.
     """
-    return GcpStatus(**{
+    return GcpStatus(**{  # ty:ignore[invalid-argument-type]
         "configured": True,
         "allowed": True,
         "project_id": None,

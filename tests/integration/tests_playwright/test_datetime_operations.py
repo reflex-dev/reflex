@@ -91,19 +91,19 @@ def DatetimeOperationsApp():
             rx.text(DtOperationsState.unset1 == DtOperationsState.date1, id="u1_eq_1"),
             rx.text(DtOperationsState.unset1 != DtOperationsState.date1, id="u1_neq_1"),
             rx.text(
-                DtOperationsState.unset1 < DtOperationsState.date1,  # pyright: ignore[reportOptionalOperand]
+                DtOperationsState.unset1 < DtOperationsState.date1,  # ty:ignore[unsupported-operator]
                 id="u1_lt_1",
             ),
             rx.text(
-                DtOperationsState.unset1 <= DtOperationsState.date1,  # pyright: ignore[reportOptionalOperand]
+                DtOperationsState.unset1 <= DtOperationsState.date1,  # ty:ignore[unsupported-operator]
                 id="u1_le_1",
             ),
             rx.text(
-                DtOperationsState.unset1 > DtOperationsState.date1,  # pyright: ignore[reportOptionalOperand]
+                DtOperationsState.unset1 > DtOperationsState.date1,  # ty:ignore[unsupported-operator]
                 id="u1_gt_1",
             ),
             rx.text(
-                DtOperationsState.unset1 >= DtOperationsState.date1,  # pyright: ignore[reportOptionalOperand]
+                DtOperationsState.unset1 >= DtOperationsState.date1,  # ty:ignore[unsupported-operator]
                 id="u1_ge_1",
             ),
             rx.text(

@@ -211,7 +211,7 @@ class StateManagerDisk(StateManager):
         if isinstance(token, BaseStateToken):
             # Find the root state
             root_state_cls = token.cls.get_root_state()
-            root_state = await self.load_state(token.with_cls(root_state_cls))
+            root_state = await self.load_state(token.with_cls(root_state_cls))  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/1824
             # Create a new root state tree with all substates instantiated.
             fresh_root_state = root_state_cls(_reflex_internal_init=True)
             if root_state is None:
@@ -230,7 +230,7 @@ class StateManagerDisk(StateManager):
         if state is None:
             state = token.cls()
         self.states[token.cache_key] = state
-        return cast(TOKEN_TYPE, state)
+        return state
 
     async def set_state_for_substate(
         self, token: StateToken[TOKEN_TYPE], substate: TOKEN_TYPE
@@ -254,7 +254,7 @@ class StateManagerDisk(StateManager):
 
         if isinstance(token, BaseStateToken) and isinstance(substate, BaseState):
             for substate_substate in substate.substates.values():
-                await self.set_state_for_substate(token, substate_substate)
+                await self.set_state_for_substate(token, substate_substate)  # ty:ignore[invalid-argument-type] https://github.com/astral-sh/ty/issues/1824
 
     def _is_locked(self, token: StateToken) -> bool:
         """Check whether a token's lock is currently held.

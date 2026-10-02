@@ -353,7 +353,7 @@ class FakeBrowser:
             FakeBrowser.configure(tab)
         self.tabs.append(tab)
         return Interactive(
-            tab=tab,  # pyright: ignore[reportArgumentType]
+            tab=tab,  # ty:ignore[invalid-argument-type]
             interactive_ready=3.0,
             nav_to_interactive_s=0.8,
             fcp_s=2.5,

@@ -142,7 +142,7 @@ class AttributionState(rx.State):
     async def thread_offload(self):
         """Move CPU work off the event-loop thread."""
         _record_state_stage("handler_started")
-        self.value += await asyncio.to_thread(sum, range(100_000))
+        self.value += await asyncio.to_thread(sum, range(100_000))  # ty:ignore[unsupported-operator]
         _record_state_stage("handler_finished")
         _record_state_stage("delta_started")
 

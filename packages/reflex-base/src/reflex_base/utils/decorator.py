@@ -6,6 +6,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import ParamSpec, TypeVar, cast
 
+from reflex_base.utils.format import callable_name
+
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
@@ -27,7 +29,7 @@ def once(f: Callable[[], T]) -> Callable[[], T]:
     def wrapper() -> T:
         nonlocal value
         value = f() if value is unset else value
-        return value  # pyright: ignore[reportReturnType]
+        return value  # ty:ignore[invalid-return-type]
 
     return wrapper
 
@@ -64,12 +66,13 @@ def debug(f: Callable[P, T]) -> Callable[P, T]:
     Returns:
         A function that prints the function name, arguments, and result.
     """
+    fn_name = callable_name(f)
 
     @functools.wraps(f)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         result = f(*args, **kwargs)
         print(  # noqa: T201
-            f"Calling {f.__name__} with args: {args} and kwargs: {kwargs}, result: {result}"
+            f"Calling {fn_name} with args: {args} and kwargs: {kwargs}, result: {result}"
         )
         return result
 
@@ -111,7 +114,9 @@ def cached_procedure(
         The decorated function.
     """
 
-    def _inner_decorator(func: Callable[P, Picklable]) -> Callable[P, Picklable]:
+    def _inner_decorator(func: Callable[P, Picklable]) -> Callable[P, Picklable]:  # ty:ignore[invalid-type-form]
+        fn_name = callable_name(func)
+
         def _inner(*args: P.args, **kwargs: P.kwargs) -> Picklable:
             cache_file = cache_file_path()
 
@@ -124,7 +129,7 @@ def cached_procedure(
                 return new_value
 
             logger.debug(
-                f"Using cached value for {func.__name__} with payload: {new_payload}"
+                f"Using cached value for {fn_name} with payload: {new_payload}"
             )
             return cast("Picklable", value)
 

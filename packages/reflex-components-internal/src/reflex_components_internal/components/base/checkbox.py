@@ -123,7 +123,7 @@ class HighLevelCheckbox(CheckboxRoot):
         """
         class_name = props.pop("class_name", "")
         if label := props.pop("label", None):
-            return Label.create(  # pyright: ignore[reportReturnType]
+            return Label.create(
                 CheckboxRoot.create(
                     CheckboxIndicator.create(),
                     *children,
@@ -131,7 +131,7 @@ class HighLevelCheckbox(CheckboxRoot):
                 ),
                 label,
                 class_name=cn(ClassNames.LABEL, class_name),
-            )
+            )  # ty:ignore[invalid-return-type]
         return CheckboxRoot.create(
             CheckboxIndicator.create(),
             *children,

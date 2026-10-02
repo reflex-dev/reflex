@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Protocol, TypeAlias, TypeVar, cast
 
 from reflex_base.components.component import BaseComponent, Component
 from reflex_base.context.base import BaseContext
+from reflex_base.utils.format import callable_name
 from reflex_base.utils.imports import ParsedImportDict, collapse_imports, merge_imports
 from reflex_base.vars import VarData
 
@@ -720,7 +721,7 @@ class CompileContext(BaseContext):
                 **kwargs,
             )
             if page_ctx is None:
-                page_name = getattr(page_fn, "__name__", repr(page_fn))
+                page_name = callable_name(page_fn)
                 msg = (
                     f"No compiler plugin was able to evaluate page {page.route!r} "
                     f"({page_name})."
