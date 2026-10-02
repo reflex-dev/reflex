@@ -12,6 +12,25 @@ STATE_JS_TEMPLATE = (
 )
 
 
+def test_socket_startup_lifecycle() -> None:
+    """Execute the frontend startup and reconnect tests against the real template."""
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js is required for the frontend runtime tests")
+    result = subprocess.run(
+        [
+            node,
+            "--experimental-vm-modules",
+            str(Path(__file__).with_name("state_js.test.mjs")),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
 def test_state_js_does_not_register_deprecated_unload_listener() -> None:
     """The template must not register the deprecated `unload` event listener.
 

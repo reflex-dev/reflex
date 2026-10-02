@@ -9,6 +9,7 @@ import uuid
 from collections.abc import AsyncGenerator
 from types import ModuleType
 from typing import Any
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
@@ -43,6 +44,52 @@ class RedisAppObjectState(BaseState):
     """A root state holding an instance of an app-defined class."""
 
     _value: Any = None
+
+
+@pytest.mark.asyncio
+async def test_get_state_reads_tree_in_one_command():
+    """Read persisted and missing states together, preserving their tree positions."""
+    redis = mock_redis()
+    manager = StateManagerRedis(redis=redis)
+    token = BaseStateToken(ident="batched-read", cls=RedisTestState)
+    persisted = RedisTestState()
+    persisted.foo = "persisted"
+    classes = sorted(
+        manager._get_required_state_classes(RedisTestState, subclasses=True),
+        key=lambda cls: cls.get_full_name(),
+    )
+    redis.mget = AsyncMock(
+        return_value=[
+            persisted._serialize() if cls is RedisTestState else None for cls in classes
+        ]
+    )
+
+    state = await manager.get_state(token)
+
+    assert isinstance(state, RedisTestState)
+    assert state.foo == "persisted"
+    assert state.count == 0
+    assert set(state.substates) == {SubState1.get_name(), SubState2.get_name()}
+    assert all(child.parent_state is state for child in state.substates.values())
+    redis.mget.assert_awaited_once_with([str(token.with_cls(cls)) for cls in classes])
+    await manager.close()
+
+
+@pytest.mark.asyncio
+async def test_get_state_reuses_populated_tree_without_reading():
+    """Fetching an already attached state must not contact Redis or replace it."""
+    redis = mock_redis()
+    manager = StateManagerRedis(redis=redis)
+    token = BaseStateToken(ident="populated-read", cls=SubState1)
+    state = RedisTestState()
+    redis.mget = AsyncMock(return_value=[])
+    redis.pipeline = Mock(side_effect=AssertionError("Unexpected Redis read"))
+
+    child = await manager.get_state(token, top_level=False, for_state_instance=state)
+
+    assert child is state.substates[SubState1.get_name()]
+    redis.mget.assert_not_awaited()
+    await manager.close()
 
 
 @pytest.fixture
@@ -884,6 +931,73 @@ async def test_oplock_hold_oplock_after_cancel(
     assert final_state.count == 2
 
 
+async def test_set_state_saves_tree_in_one_round_trip(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+):
+    """Saving a state tree checks the lock and writes every touched state in one command.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+    """
+    state_manager_redis._oplock_enabled = False
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    redis = state_manager_redis.redis
+    real_eval = redis.eval
+    evals: list[tuple[Any, ...]] = []
+
+    def counting_eval(script, numkeys, *keys_and_args):
+        evals.append(keys_and_args)
+        return real_eval(script, numkeys, *keys_and_args)
+
+    async with state_manager_redis.modify_state(token) as state:
+        assert len(state.substates) == 2
+        state.count = 1
+        redis.eval = counting_eval  # pyright: ignore[reportAttributeAccessIssue]
+        try:
+            await state_manager_redis.set_state(
+                token,
+                state,
+                lock_id=await redis.get(state_manager_redis._lock_key(token)),
+            )
+        finally:
+            redis.eval = real_eval  # pyright: ignore[reportAttributeAccessIssue]
+
+    # One command for a tree of three states, all of them touched by the load.
+    assert len(evals) == 1
+    assert str(token) in evals[0]
+    saved = await state_manager_redis.get_state(token)
+    assert isinstance(saved, root_state)
+    assert saved.count == 1
+
+
+async def test_set_state_discards_writes_when_lock_changes_hands(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+):
+    """A save whose lock expired or was re-acquired before the write is discarded.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+    """
+    from reflex_base.utils.exceptions import LockExpiredError
+
+    state_manager_redis._oplock_enabled = False
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    lock_key = state_manager_redis._lock_key(token)
+
+    with pytest.raises(LockExpiredError):
+        async with state_manager_redis.modify_state(token) as state:
+            state.count = 5
+            # Another worker takes over the lock before this save lands.
+            await state_manager_redis.redis.set(lock_key, b"someone-else")
+    saved = await state_manager_redis.get_state(token)
+    assert isinstance(saved, root_state)
+    assert saved.count == 0
+
+
 def test_oplock_hold_time_below_one_millisecond(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -912,3 +1026,11 @@ def test_oplock_hold_time_rejects_a_negative_duration(
     monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME", "-5s")
     with pytest.raises(EnvironmentVarValueError, match="must not be negative"):
         _default_oplock_hold_time_ms()
+
+
+async def test_mock_redis_eval_only_emulates_the_fenced_save_script():
+    """The mock refuses any script it does not emulate, instead of mis-running it."""
+    # redis-py types eval as possibly synchronous; the mock is always async.
+    eval_script: Any = mock_redis().eval
+    with pytest.raises(NotImplementedError):
+        await eval_script("return 1", 0)
