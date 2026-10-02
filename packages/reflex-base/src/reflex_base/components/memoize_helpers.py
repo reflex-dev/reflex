@@ -158,6 +158,29 @@ def get_memoized_event_triggers(
     return trigger_memo
 
 
+def _var_data_key(data: VarData | None) -> tuple | None:
+    """Identify compilation metadata without invoking JavaScript equality on Vars.
+
+    Args:
+        data: The metadata used to compile a component or event wrapper.
+
+    Returns:
+        A key preserving dependency and provider identity, or None.
+    """
+    if not data:
+        return None
+    return (
+        data.state,
+        data.field_name,
+        data.imports,
+        data.hooks,
+        tuple(id(dep) for dep in data.deps),
+        data.position,
+        tuple(id(component) for component in data.components),
+        tuple((priority, id(component)) for priority, component in data.app_wraps),
+    )
+
+
 def fix_event_triggers_for_memo(
     component: Component, page_context: PageContext
 ) -> Component:

@@ -12,9 +12,10 @@ from pytest_mock import MockerFixture, MockFixture
 from reflex_base.utils.log import SUCCESS
 from reflex_build_sdk.types import App, AppSummary, DeploymentRecord, LogRecord
 from reflex_cli.core.config import Config
-from reflex_cli.utils import hosting
+from reflex_cli.utils import console, hosting
 from reflex_cli.v2.apps import _resolve_app_id, apps_cli
 from reflex_cli.v2.deployments import hosting_cli
+from rich.console import Console
 
 from .utils import api_error, as_click_command, fake_client
 
@@ -179,6 +180,118 @@ def test_app_history_success(mocker: MockFixture):
     assert result.exit_code == 0, result.output
     client.api.apps.history.assert_called_once_with("test_app_id")
     mock_console_print_table.assert_called_once()
+
+
+# A common terminal width, and ids that do not fit a column squeezed into it.
+_NARROW = {"COLUMNS": "80"}
+_LONG_ID = uuid.UUID("7fb2de10-2e8d-48bd-9c79-a98b3f52e10f")
+_OTHER_LONG_ID = uuid.UUID("5d0f0e2c-9a3b-4e21-b1d4-6f0c7a9e8b33")
+_LONG_DESCRIPTION = "Internal analytics dashboard for the sales team"
+
+
+def _assert_on_one_line(output: str, *values: uuid.UUID | str):
+    """Assert each value is rendered whole on a single line, ready to copy.
+
+    Args:
+        output: The rendered command output.
+        values: The ids or names to find.
+    """
+    lines = output.splitlines()
+    for value in values:
+        assert any(str(value) in line for line in lines), output
+
+
+def test_app_history_keeps_ids_on_one_line(mocker: MockFixture):
+    """A deployment id stays copyable in a narrow terminal."""
+    client = _authed(mocker)
+    client.api.apps.history.return_value = [
+        deployment_record(id=_LONG_ID, description=_LONG_DESCRIPTION)
+    ]
+
+    result = runner.invoke(
+        hosting_cli, ["apps", "history", str(_OTHER_LONG_ID)], env=_NARROW
+    )
+
+    assert result.exit_code == 0, result.output
+    _assert_on_one_line(result.output, _LONG_ID)
+
+
+def test_list_apps_keeps_ids_and_names_on_one_line(mocker: MockFixture):
+    """App ids and names, which commands take as input, stay copyable."""
+    client = _authed(mocker)
+    client.api.apps.list.return_value = [
+        app_summary(
+            "customer-dashboard",
+            id=_LONG_ID,
+            project_id=_OTHER_LONG_ID,
+            description=_LONG_DESCRIPTION,
+        ),
+        app_summary("docs", id=_OTHER_LONG_ID),
+    ]
+
+    result = runner.invoke(
+        hosting_cli, ["apps", "list", "--project", "project123"], env=_NARROW
+    )
+
+    assert result.exit_code == 0, result.output
+    _assert_on_one_line(result.output, _LONG_ID, _OTHER_LONG_ID, "customer-dashboard")
+
+
+def test_list_apps_wide_terminal_prints_a_table(mocker: MockFixture):
+    """A terminal wide enough for the table prints one app per row."""
+    client = _authed(mocker)
+    client.api.apps.list.return_value = [
+        app_summary("customer-dashboard", id=_LONG_ID, description=_LONG_DESCRIPTION),
+    ]
+    mocker.patch.object(console, "_console", Console(width=120, highlight=False))
+
+    result = runner.invoke(hosting_cli, ["apps", "list", "--project", "project123"])
+
+    assert result.exit_code == 0, result.output
+    lines = result.output.splitlines()
+    assert ["id", "name", "description", "provider"] in [line.split() for line in lines]
+    assert any(
+        str(_LONG_ID) in line and "customer-dashboard" in line for line in lines
+    ), result.output
+
+
+def test_list_apps_too_narrow_for_a_table_cuts_nothing(mocker: MockFixture):
+    """Below the table's width, each app is printed as a block, whole."""
+    client = _authed(mocker)
+    client.api.apps.list.return_value = [
+        app_summary(
+            "customer-dashboard",
+            id=_LONG_ID,
+            provider="gcp-europe-west",
+            description=_LONG_DESCRIPTION,
+        ),
+    ]
+
+    result = runner.invoke(
+        hosting_cli, ["apps", "list", "--project", "project123"], env={"COLUMNS": "60"}
+    )
+
+    assert result.exit_code == 0, result.output
+    _assert_on_one_line(
+        result.output,
+        _LONG_ID,
+        "customer-dashboard",
+        "gcp-europe-west",
+        _LONG_DESCRIPTION,
+    )
+    assert "…" not in result.output
+
+
+def test_app_inspect_keeps_every_field_readable(mocker: MockFixture):
+    """Inspect lists one field per row, so no field is cut to fit the width."""
+    client = _authed(mocker)
+    client.api.apps.get.return_value = app(id=_LONG_ID, project_id=_OTHER_LONG_ID)
+
+    result = runner.invoke(hosting_cli, ["apps", "inspect", str(_LONG_ID)], env=_NARROW)
+
+    assert result.exit_code == 0, result.output
+    _assert_on_one_line(result.output, _LONG_ID, _OTHER_LONG_ID)
+    assert "any_environment_credit_paused" in result.output
 
 
 def test_app_history_as_json(mocker: MockFixture):
@@ -829,17 +942,12 @@ def test_list_apps_no_project(mocker: MockFixture):
     client.api.apps.list.assert_called_once_with(project_id="default_project")
     mock_print_table.assert_called_once_with(
         [
-            [str(_APP_ID), "App1", "", str(_PROJECT_ID), "fly", "False"],
-            [str(uuid.UUID(int=23)), "App2", "", str(_PROJECT_ID), "fly", "False"],
+            [str(_APP_ID), "App1", "", "fly"],
+            [str(uuid.UUID(int=23)), "App2", "", "fly"],
         ],
-        headers=[
-            "id",
-            "name",
-            "description",
-            "project_id",
-            "provider",
-            "disable_secrets",
-        ],
+        headers=("id", "name", "description", "provider"),
+        overflow="fold",
+        no_wrap=("id", "name"),
     )
 
 
@@ -854,15 +962,10 @@ def test_list_apps_with_project(mocker: MockFixture):
     assert result.exit_code == 0, result.output
     client.api.apps.list.assert_called_once_with(project_id="project123")
     mock_print_table.assert_called_once_with(
-        [[str(_APP_ID), "App1", "", str(_PROJECT_ID), "fly", "False"]],
-        headers=[
-            "id",
-            "name",
-            "description",
-            "project_id",
-            "provider",
-            "disable_secrets",
-        ],
+        [[str(_APP_ID), "App1", "", "fly"]],
+        headers=("id", "name", "description", "provider"),
+        overflow="fold",
+        no_wrap=("id", "name"),
     )
 
 

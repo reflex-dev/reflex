@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import functools
 import hashlib
 import importlib.util
 import json
@@ -14,7 +15,7 @@ import socket
 import subprocess
 import sys
 import threading
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
 
@@ -357,8 +358,59 @@ def notify_app_running():
     console.rule("[bold green]App Running")
 
 
-def get_frontend_mount():
+def _match_routable_page(router: Callable[[str], str | None], path: str) -> str | None:
+    """Match a path against the app routes, excluding paths the frontend renders as 404.
+
+    The compiler registers a synthetic ``404`` page, so a literal ``/404``
+    request would otherwise count as routable and lose its 404 status. The
+    router also aliases ``/index`` to the index page, which the frontend does
+    not route, so only the bare root path counts as the index page.
+
+    Args:
+        router: The app route matcher.
+        path: The request path.
+
+    Returns:
+        The matching route, or None when the path matches no route, only the
+        404 page, or the index page through its ``/index`` alias.
+    """
+    route = router(path)
+    if route == constants.Page404.SLUG or (
+        route == constants.PageNames.INDEX_ROUTE and path.strip("/")
+    ):
+        return None
+    return route
+
+
+def get_routes_manifest_router() -> Callable[[str], str | None] | None:
+    """Build a route matcher from the routes manifest written at compile time.
+
+    Returns:
+        A route matcher, or None when no manifest exists or it is not valid JSON.
+    """
+    from reflex.route import get_router
+
+    manifest = get_web_dir() / constants.Dirs.ROUTES_MANIFEST
+    try:
+        routes = json.loads(manifest.read_text())
+    except OSError:
+        return None
+    except ValueError as err:
+        logger.warning(
+            f"Ignoring invalid routes manifest {manifest} ({err}); dynamic routes "
+            "without a prerendered file will be served with status 404."
+        )
+        return None
+    return get_router(routes)
+
+
+def get_frontend_mount(router: Callable[[str], str | None] | None = None):
     """Get a Starlette Mount for the compiled frontend static files.
+
+    Args:
+        router: Optional route matcher (e.g. ``app.router``) used to serve
+            routable SPA paths with status 200 instead of 404. When None, a
+            matcher is built from the compiled routes manifest if present.
 
     Returns:
         A Mount serving the compiled frontend static files.
@@ -369,6 +421,13 @@ def get_frontend_mount():
     from reflex.utils.precompressed_staticfiles import PrecompressedStaticFiles
 
     config = get_config()
+
+    if router is None:
+        router = get_routes_manifest_router()
+    if router is not None:
+        # The mount strips the frontend path, and the router matches paths
+        # relative to it, so mount-relative request paths match as-is.
+        router = functools.partial(_match_routable_page, router)
 
     static_dir = (
         prerequisites.get_web_dir()
@@ -382,6 +441,7 @@ def get_frontend_mount():
             directory=static_dir,
             html=True,
             encodings=config.frontend_compression_formats,
+            router=router,
         ),
         name="frontend",
     )
@@ -771,10 +831,15 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
             with self._socket_lock:
                 if not self._shared_socket_is_open():
                     return
-                # Granian's SocketHolder does not own the descriptor, so
-                # closing the socket object is what frees the port. The closed
-                # object stays in place for granian to detach on shutdown.
-                self._sso.close()
+                # The socket object and granian's SocketHolder wrap the same
+                # handle, which must be closed exactly once: by dropping the
+                # holder on Windows, and by the socket object elsewhere, where
+                # the holder never closes it. The released object stays in
+                # place for granian to detach on shutdown.
+                if constants.IS_WINDOWS:
+                    self._sso.detach()
+                else:
+                    self._sso.close()
                 self._shd = self._sfd = None
 
         def _release_socket_unless_served(self, wrk: Any, spawn_count: int):
