@@ -1,1 +1,0 @@
-`type(rx.State)` is `reflex.vars.BaseStateMeta` again, so a state declared with its own metaclass derived from `BaseStateMeta` (`class MyState(rx.State, metaclass=MyMeta)`) no longer raises `TypeError: metaclass conflict`. The reserved-state-name validation is unchanged: it now runs from `BaseStateMeta` itself for every subclass of `rx.State`.

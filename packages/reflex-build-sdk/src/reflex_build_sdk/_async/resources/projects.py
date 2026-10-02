@@ -432,7 +432,7 @@ class AsyncProjects:
             The projects.
         """
         projects = await self._client._request(
-            "GET", "project/", builtins.list[ProjectSummary] | None
+            "GET", "project", builtins.list[ProjectSummary] | None
         )
         return projects or []
 

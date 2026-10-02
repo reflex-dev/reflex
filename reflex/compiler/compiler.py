@@ -1301,9 +1301,7 @@ def compile_app(
     reset_memo_component_classes()
     # Page evaluation rebuilds every chain that is not interned by handler, so
     # entries from an earlier compile can only retain dead chains.
-    context = RegistrationContext.ensure_context()
-    context._bound_event_chains.clear()
-    context._memoized_event_triggers.clear()
+    RegistrationContext.ensure_context()._reset_compile_caches()
     for plugin in compiler_plugins:
         for dependency in plugin.get_frontend_dependencies():
             _bundle_library(dependency)
@@ -1531,6 +1529,13 @@ def compile_app(
     frontend_skeleton.update_react_router_config(
         prerender_routes=prerender_routes,
     )
+
+    # Persist the route table so the standalone prod static server can serve
+    # routable SPA paths with 200 and reserve 404 for unknown ones.
+    compile_results.append((
+        constants.Dirs.ROUTES_MANIFEST,
+        json.dumps(app._page_routes),
+    ))
 
     if is_prod_mode():
         purge_web_pages_dir()

@@ -1,6 +1,44 @@
 """Unit tests for the frontmatter metadata helpers in reflex_docs.pages.docs."""
 
+import pytest
+
 from reflex_docs.pages.docs import _frontmatter_for, get_image_from_frontmatter
+
+
+@pytest.mark.parametrize("prefix", ["", "\ufeff", " \n\n", "\ufeff \n"])
+@pytest.mark.parametrize("newline", ["\n", "\r\n"])
+def test_authored_title_changes_search_title_without_changing_route(
+    tmp_path, prefix, newline
+):
+    """A descriptive authored title must reach the page head, not its URL."""
+    from reflex_docs.docgen_pipeline import get_docgen_toc, render_docgen_document
+    from reflex_docs.pages.docs import get_component_docgen, resolve_doc_route
+
+    doc = tmp_path / "example.md"
+    description = "Build a dashboard with linked charts and shared Python state."
+    doc.write_bytes(
+        (
+            prefix
+            + "---\ntitle: Build Linked Charts in Python\n"
+            + f"meta_description: {description}\n---\n\n# Linked charts\n"
+        )
+        .replace("\n", newline)
+        .encode("utf-8")
+    )
+    route = get_component_docgen("docs/getting_started/example.md", str(doc), "example")
+    assert route.title.startswith("Build Linked Charts in Python · ")
+    assert route.path == "/getting-started/example/"
+    assert route.description == description
+    assert (
+        resolve_doc_route("docs/getting_started/example.md", "example").display_title
+        == "Example"
+    )
+    body, _ = render_docgen_document("docs/getting_started/example.md", str(doc))
+    rendered = str(body)
+    assert "Linked charts" in rendered
+    assert "meta_description" not in rendered
+    assert "Build Linked Charts in Python" not in rendered
+    assert get_docgen_toc(doc) == [(1, "Linked charts")]
 
 
 def test_frontmatter_for_extracts_fields(tmp_path):
