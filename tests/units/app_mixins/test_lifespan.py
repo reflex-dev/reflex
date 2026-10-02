@@ -155,12 +155,14 @@ async def _run_coroutine_lifespan_task(task) -> list[dict]:
         mixin = LifespanMixin()
         mixin.register_lifespan_task(task)
         async with mixin._run_lifespan_tasks(Starlette()):
-            await asyncio.sleep(0)
-        await asyncio.gather(
-            *asyncio.all_tasks() - {asyncio.current_task()}, return_exceptions=True
-        )
-        # Drain done callbacks of tasks that finished before shutdown.
-        await asyncio.sleep(0)
+            lifespan_tasks = [
+                t
+                for t in asyncio.all_tasks()
+                if t.get_name().startswith("reflex_lifespan_task|")
+            ]
+            # Let tasks that end on their own finish before shutdown starts.
+            await asyncio.wait(lifespan_tasks, timeout=0.01)
+        await asyncio.gather(*lifespan_tasks, return_exceptions=True)
     finally:
         loop.set_exception_handler(previous_handler)
     return reported
@@ -187,3 +189,17 @@ async def test_lifespan_coroutine_task_exception_is_reported():
     reported = await _run_coroutine_lifespan_task(fail)
 
     assert [type(context["exception"]) for context in reported] == [ValueError]
+
+
+@pytest.mark.asyncio
+async def test_lifespan_task_self_cancellation_is_reported():
+    """A coroutine lifespan task cancelled before shutdown still reaches the loop handler."""
+
+    async def cancel_itself():  # noqa: RUF029
+        raise asyncio.CancelledError
+
+    reported = await _run_coroutine_lifespan_task(cancel_itself)
+
+    assert [type(context["exception"]) for context in reported] == [
+        asyncio.CancelledError
+    ]

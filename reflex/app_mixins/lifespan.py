@@ -95,6 +95,7 @@ class LifespanMixin(AppMixin):
     async def _run_lifespan_tasks(self, starlette_app: Starlette):
         self._lifespan_tasks_started = True
         running_tasks = []
+        cleanup_started = False
         try:
             async with contextlib.AsyncExitStack() as stack:
                 for task in self._lifespan_tasks:
@@ -118,7 +119,9 @@ class LifespanMixin(AppMixin):
                                 name=f"reflex_lifespan_task|{task_name}|{time.time()}",
                             )
                             task_.add_done_callback(
-                                lambda t: t.cancelled() or t.result()
+                                lambda t: (
+                                    (cleanup_started and t.cancelled()) or t.result()
+                                )
                             )
                             running_tasks.append(task_)
                             logger.debug(run_msg.format(type="coroutine"))
@@ -126,6 +129,7 @@ class LifespanMixin(AppMixin):
                             logger.debug(run_msg.format(type="function"))
                 yield
         finally:
+            cleanup_started = True
             for task in running_tasks:
                 logger.debug(f"Canceling lifespan task: {task}")
                 task.cancel(msg="lifespan_cleanup")
