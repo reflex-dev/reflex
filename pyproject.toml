@@ -137,6 +137,9 @@ dev = [
   "cronsim",
   "croniter",
 ]
+# The benchmark CI jobs: the harness without the dev group (libsass builds from
+# source on arm64).
+bench = ["reflex-bench"]
 
 
 [build-system]
