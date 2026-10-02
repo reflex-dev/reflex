@@ -11,23 +11,21 @@ on:
     paths:
       - "examples/**"
       - "scripts/hash_examples.py"
-      - ".github/workflows/examples.yml"
-      - ".github/actions/setup_build_env/**"
       - "reflex/**"
       - "packages/**"
       - "pyproject.toml"
       - "uv.lock"
+      - "!**/*.md"
   push:
     branches: ["main"]
     paths:
       - "examples/**"
       - "scripts/hash_examples.py"
-      - ".github/workflows/examples.yml"
-      - ".github/actions/setup_build_env/**"
       - "reflex/**"
       - "packages/**"
       - "pyproject.toml"
       - "uv.lock"
+      - "!**/*.md"
 
 env:
   REFLEX_TELEMETRY_ENABLED: false

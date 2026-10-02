@@ -5,6 +5,11 @@ on:
     branches: ["main"]
     paths-ignore:
       - "**/*.md"
+      - "docs/**"
+      - "docker-examples/**"
+      - ".github/**"
+      - ".devcontainer/**"
+      - ".claude/**"
   pull_request:
     branches: ["main"]
 
@@ -50,6 +55,11 @@ jobs:
         with:
           paths-ignore: |
             **/*.md
+            docs/**
+            docker-examples/**
+            .github/**
+            .devcontainer/**
+            .claude/**
 
   example-counter-and-nba-proxy:
     needs: changes

@@ -193,6 +193,29 @@ def test_changes_filter_compiles(name, step):
     changed_paths.compile_filters(changed_paths.lines(inputs[given[0]]))
 
 
+def test_paths_ignore_filters_agree():
+    # Every paths-ignore in the workflows names the same docs-only change set, and
+    # each workflow repeats it on its push trigger and in its `changes` job. A
+    # copy that drifts runs a workflow on main for a change its pull request
+    # skipped, or skips one on main that its pull request ran.
+    found = [
+        (tuple(trigger["paths-ignore"]), f"{name} on.{event}")
+        for name, doc in WORKFLOWS.items()
+        for event, trigger in workflow_triggers(doc).items()
+        if isinstance(trigger, dict) and "paths-ignore" in trigger
+    ] + [
+        (tuple(changed_paths.lines(step["with"]["paths-ignore"])), f"{name} changes")
+        for name, step in CHANGES_STEPS
+        if "paths-ignore" in step.get("with", {})
+    ]
+    filters: dict[tuple[str, ...], list[str]] = {}
+    for value, where in found:
+        filters.setdefault(value, []).append(where)
+    assert len(filters) <= 1, "the workflows' paths-ignore filters disagree:\n" + (
+        "\n".join(f"{list(value)} in {where}" for value, where in filters.items())
+    )
+
+
 @pytest.mark.parametrize("name", GATED_WORKFLOWS)
 def test_gated_jobs_do_not_continue_on_error(name):
     lenient = [

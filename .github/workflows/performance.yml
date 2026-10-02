@@ -8,6 +8,11 @@ on:
       - "main" # or "master"
     paths-ignore:
       - "**/*.md"
+      - "docs/**"
+      - "docker-examples/**"
+      - ".github/**"
+      - ".devcontainer/**"
+      - ".claude/**"
   pull_request:
   workflow_dispatch:
 
@@ -21,8 +26,36 @@ env:
   PYTHONHASHSEED: 0
 
 jobs:
+  # This filter cannot live on the pull_request trigger: a workflow that a path
+  # filter skips never reports its checks at all, so a branch rule requiring
+  # them blocks the merge forever. Filtered out here, the jobs below skip
+  # instead, and a skipped job reports as a pass.
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      run: ${{ steps.filter.outputs.changed }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/changed_paths
+        id: filter
+        with:
+          paths-ignore: |
+            **/*.md
+            docs/**
+            docker-examples/**
+            .github/**
+            .devcontainer/**
+            .claude/**
+
   benchmarks:
     name: Run benchmarks
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-latest
     env:
       REFLEX_CLI_BENCHMARK_TIMEOUT_SECONDS: "120"
@@ -75,6 +108,8 @@ jobs:
 
   browser-performance:
     name: Run browser performance smoke
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
@@ -111,6 +146,8 @@ jobs:
 
   lighthouse:
     name: Run Lighthouse benchmark
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
@@ -151,7 +188,7 @@ jobs:
   # jobs above directly does not survive: check names follow the matrix and the
   # display names, and a job that a filter skips must not block the merge.
   performance-tests-gate:
-    needs: [benchmarks, browser-performance, lighthouse]
+    needs: [changes, benchmarks, browser-performance, lighthouse]
     if: always()
     runs-on: ubuntu-latest
     steps:

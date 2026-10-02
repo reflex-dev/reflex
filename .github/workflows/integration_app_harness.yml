@@ -9,6 +9,11 @@ on:
     branches: ["main"]
     paths-ignore:
       - "**/*.md"
+      - "docs/**"
+      - "docker-examples/**"
+      - ".github/**"
+      - ".devcontainer/**"
+      - ".claude/**"
   pull_request:
     branches: ["main"]
 env:
@@ -39,6 +44,11 @@ jobs:
         with:
           paths-ignore: |
             **/*.md
+            docs/**
+            docker-examples/**
+            .github/**
+            .devcontainer/**
+            .claude/**
 
   integration-app-harness:
     needs: changes

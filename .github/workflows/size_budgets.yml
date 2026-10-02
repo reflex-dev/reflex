@@ -17,8 +17,7 @@ on:
       - "examples/playground/**"
       - "pyproject.toml"
       - "uv.lock"
-      - ".github/workflows/size_budgets.yml"
-      - ".github/actions/setup_build_env/**"
+      - "!**/*.md"
   push:
     branches: ["main"]
     paths:
@@ -27,8 +26,7 @@ on:
       - "examples/playground/**"
       - "pyproject.toml"
       - "uv.lock"
-      - ".github/workflows/size_budgets.yml"
-      - ".github/actions/setup_build_env/**"
+      - "!**/*.md"
 
 env:
   REFLEX_TELEMETRY_ENABLED: false
