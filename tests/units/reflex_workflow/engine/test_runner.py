@@ -3674,6 +3674,34 @@ async def test_wake_does_not_settle_while_a_step_it_started_is_running(
     assert left is None
 
 
+async def test_wake_does_not_settle_on_a_pass_that_new_work_arrived_during(
+    session_factory, monkeypatch
+):
+    await Resting.by().cancel()
+    key = uuid.uuid4().hex
+    async with only_worker(session_factory) as worker:
+        due = worker.until_something_is_due
+        arrived = []
+
+        async def arriving_meanwhile() -> float:
+            # A run is started after this pass has looked for work and before
+            # it is counted: the pass took nothing, but it is not caught up.
+            if not arrived:
+                arrived.append(await Resting(key=key).start(Resting.rest))
+            return await due()
+
+        monkeypatch.setattr(worker, "until_something_is_due", arriving_meanwhile)
+        assert await runner.wake(datetime.timedelta(seconds=30))
+        async with session_factory() as session:
+            left = (
+                await session.execute(
+                    select(Resting.next_step).where(Resting.key == key)
+                )
+            ).scalar_one()
+    assert arrived == [True]
+    assert left is None
+
+
 async def test_wake_waits_for_the_next_wake_up_to_have_been_registered(
     session_factory,
 ):

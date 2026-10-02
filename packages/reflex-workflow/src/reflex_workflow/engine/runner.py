@@ -195,9 +195,11 @@ class Runner:
             # again has been told when to.
             seconds = await self.until_something_is_due()
             # Not while a step it started is still running: suspended now, the
-            # machine would cut that step off. The step wakes the loop when it
-            # is done, and the pass after it is counted instead.
-            if not self.inflight:
+            # machine would cut that step off. Nor when the loop was woken
+            # during the pass, by a run started after it looked or a step that
+            # finished: there may be work it has not seen. Either way the loop
+            # looks again at once, and that pass is counted instead.
+            if not self.inflight and not wake.is_set():
                 await self.runtime.settled.record()
             # Against the wall clock rather than one timeout of that length: a
             # machine that suspends leaves asyncio's monotonic clock where it
