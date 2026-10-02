@@ -2,6 +2,8 @@
 name = "reflex-docs-app"
 dynamic = ["version"]
 readme = "README.md"
+# Keep the workspace resolvable for Reflex framework tests on Python 3.10.
+# Running this docs app requires Python 3.11+ for its XY demonstrations.
 requires-python = ">=3.10"
 dependencies = [
     "email-validator",
@@ -28,11 +30,13 @@ dependencies = [
     "ruff-format",
     "sqlalchemy",
     "sqlmodel",
+    "xy==0.0.7; python_version >= '3.11'",
     "griffelib>=2.0.1",
 ]
 
 [dependency-groups]
 dev = [
+    "pillow",
     "playwright",
     "pre-commit",
     "pytest-playwright",
@@ -51,6 +55,7 @@ source = "uv-dynamic-versioning"
 [tool.uv-dynamic-versioning]
 pattern-prefix = "reflex-docs-app-"
 fallback-version = "0.0.0dev0"
+bump = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["reflex_docs"]

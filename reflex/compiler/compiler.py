@@ -35,7 +35,7 @@ from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plug
 from reflex_base.registry import RegistrationContext, _default_bundled_libraries
 from reflex_base.utils import log, memo_paths
 from reflex_base.utils.exceptions import ReflexError
-from reflex_base.utils.format import orjson_loads, to_title_case
+from reflex_base.utils.format import orjson_dumps, orjson_loads, to_title_case
 from reflex_base.utils.imports import (
     ABSOLUTE_IMPORT_PREFIXES,
     ImportVar,
@@ -1299,9 +1299,7 @@ def compile_app(
     reset_memo_component_classes()
     # Page evaluation rebuilds every chain that is not interned by handler, so
     # entries from an earlier compile can only retain dead chains.
-    context = RegistrationContext.ensure_context()
-    context._bound_event_chains.clear()
-    context._memoized_event_triggers.clear()
+    RegistrationContext.ensure_context()._reset_compile_caches()
     for plugin in compiler_plugins:
         for dependency in plugin.get_frontend_dependencies():
             _bundle_library(dependency)
@@ -1524,6 +1522,13 @@ def compile_app(
     frontend_skeleton.update_react_router_config(
         prerender_routes=prerender_routes,
     )
+
+    # Persist the route table so the standalone prod static server can serve
+    # routable SPA paths with 200 and reserve 404 for unknown ones.
+    compile_results.append((
+        constants.Dirs.ROUTES_MANIFEST,
+        orjson_dumps(app._page_routes),
+    ))
 
     if is_prod_mode():
         purge_web_pages_dir()

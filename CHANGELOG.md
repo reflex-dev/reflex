@@ -1,3 +1,71 @@
+## v0.9.12 (2026-09-21)
+
+### Breaking Changes
+
+- The root state gained five base vars holding the router data: `rx_router_session`, `rx_router_headers`, `rx_router_page`, `rx_router_url` and `rx_router_route_id`. A substate that declares one of these names now raises `BaseVarShadowsInheritedVarError`, the same error any other shadowed inherited var raises, and must rename its field. `State.router` itself is unchanged. ([#7068](https://github.com/reflex-dev/reflex/issues/7068))
+- Declaring a substate var that shadows a var inherited from a parent state now raises `BaseVarShadowsInheritedVarError` at class creation. Such a declaration was silently ignored — reads and writes resolved to the parent's var and class-level access returned the raw default instead of a reactive `Var`. Rename the substate var to fix the error. ([#7077](https://github.com/reflex-dev/reflex/issues/7077))
+- State vars, event handlers, and dynamic route arguments now reject names reserved by framework methods and bookkeeping before registration. Rename conflicting members. ([#7136](https://github.com/reflex-dev/reflex/issues/7136))
+- `state.dict()` and the state deltas no longer carry a single `router` entry: the root state now serializes `rx_router_session`, `rx_router_headers`, `rx_router_page`, `rx_router_url` and `rx_router_route_id` instead (each with the usual field-marker suffix). Code that read or rewrote the `router` entry of a state dict or delta — for example to redact request headers before returning state over an API — must read those five entries instead. `State.router` itself is unchanged for app code. ([#7215](https://github.com/reflex-dev/reflex/issues/7215))
+
+### Deprecations
+
+- Declaring a computed var dependency on the `router` var (`deps=["router"]`) is deprecated; depend on the router Var instead, e.g. `deps=[State.router.url]` for a single field or `deps=[State.router]` to keep tracking all of them. ([#7068](https://github.com/reflex-dev/reflex/issues/7068))
+
+### Bug Fixes
+
+- Fix stateful inputs under `rx.form.control(..., as_child=True)` so they receive the parent form's attributes and their values appear in submitted form data. ([#6850](https://github.com/reflex-dev/reflex/issues/6850))
+- Allow State Vars for page titles and descriptions in `@rx.page` and compiled metadata. ([#6923](https://github.com/reflex-dev/reflex/issues/6923))
+- Stopping `reflex run` with SIGTERM no longer reports "Starting frontend failed with exit code 143" and now exits cleanly. ([#6981](https://github.com/reflex-dev/reflex/issues/6981))
+- Preserve relationship serialization and database usage accounting for apps that use SQLModel directly, without loading unused database integrations. ([#7049](https://github.com/reflex-dev/reflex/issues/7049))
+- Preserve prerendered pages when asset directories collide with routes under `frontend_path`, and compress the final merged output. ([#7078](https://github.com/reflex-dev/reflex/issues/7078))
+- Generated `.pyi` stubs now type a prop declared as a union — `content: Var[str] | Component`, say — as optional, matching the `None` default that `create()` gives every prop. Type checkers previously reported the generated signature itself as an error. ([#7080](https://github.com/reflex-dev/reflex/issues/7080))
+- Subclassing `rx.Model` (e.g. `class Item(rx.Model, table=True)`) without the `db` extra installed now raises the guided "pip install reflex[db]" `ImportError` instead of a bare `TypeError` from `__init_subclass__`. ([#7083](https://github.com/reflex-dev/reflex/issues/7083))
+- Backend-only development runs no longer leave a compile-skip marker that can cause the next full run to skip frontend compilation. ([#7089](https://github.com/reflex-dev/reflex/issues/7089))
+- Persist bundled-library metadata for backend-only workers so state hydration can serialize values that reference libraries included in the frontend build. ([#7096](https://github.com/reflex-dev/reflex/issues/7096))
+- Keep the development backend port open while hot reload restarts the worker, so requests made during a reload wait for the new worker instead of being refused. ([#7114](https://github.com/reflex-dev/reflex/issues/7114))
+- Fixed local package specifiers such as `@masenf/hello-react@../hello-react` and `@masenf/hello-react@../hello-react.tgz` being truncated at the first slash (to `@masenf/hello-react@..`) before reaching the package manager, so wrapping a React package from a local directory or archive now installs correctly. ([#7117](https://github.com/reflex-dev/reflex/issues/7117))
+- Switching between bun and npm (`REFLEX_USE_NPM`) no longer leaves `reflex.lock/` in a state that makes the next run fail with `bun install --frozen-lockfile: lockfile had changes`. Only the lockfile of the package manager that actually ran is kept. ([#7129](https://github.com/reflex-dev/reflex/issues/7129))
+- Keep saving state to disk and Redis when a state defines a var named `_get_was_touched`. ([#7132](https://github.com/reflex-dev/reflex/issues/7132))
+- Apps no longer crash at startup with `AttributeError: 'method' object attribute '__call__' is read-only` when ASGI instrumentation that wraps middleware is active, such as sentry-sdk's Starlette integration. ([#7139](https://github.com/reflex-dev/reflex/issues/7139))
+- Fix backend startup crashes from concurrent or truncated stateful-page marker writes. Markers are replaced atomically, remain readable by separate backend users, and are rebuilt when missing or corrupt; dry-run compilation leaves them unchanged. ([#7142](https://github.com/reflex-dev/reflex/issues/7142))
+- Match routes that start with the `frontend_path` text, such as `/apple` under `frontend_path="/app"`, instead of treating them as 404. ([#7153](https://github.com/reflex-dev/reflex/issues/7153))
+- Flush OpenTelemetry compile spans before the isolated initial development compile worker exits. ([#7155](https://github.com/reflex-dev/reflex/issues/7155))
+- Fixed `StateManagerDisk.set_state` to persist and cache state instances that were not obtained from `get_state`, and debounced writes now flush the latest supplied value instead of the first one queued. ([#7159](https://github.com/reflex-dev/reflex/issues/7159))
+- Fix `@rx.memo` components dropping the app wraps their body requires. Providers
+  requested by a nested child, or through var data as `rx.upload`'s
+  `UploadFilesProvider` is, now reach the app root — so a provider-backed
+  component behaves the same inside a memo as inlined into the page. ([#7176](https://github.com/reflex-dev/reflex/issues/7176))
+- Reuse one long-lived Redis client for the `/_health` endpoint instead of opening and closing a new TCP connection on every probe. ([#7187](https://github.com/reflex-dev/reflex/issues/7187))
+- Emit Granian lifecycle logs as JSON records when Reflex JSON logging is enabled, keeping `reflex run --json` stdout valid JSON lines. ([#7193](https://github.com/reflex-dev/reflex/issues/7193))
+- Avoid crash when node is not installed (`error: restartWithMergedOptions() was called, but the process has already been restarted.`). ([#7202](https://github.com/reflex-dev/reflex/issues/7202))
+- `type(rx.State)` is `reflex.vars.BaseStateMeta` again, so a state declared with its own metaclass derived from `BaseStateMeta` (`class MyState(rx.State, metaclass=MyMeta)`) no longer raises `TypeError: metaclass conflict`. The reserved-state-name validation is unchanged: it now runs from `BaseStateMeta` itself for every subclass of `rx.State`. ([#7215](https://github.com/reflex-dev/reflex/issues/7215))
+- An `@rx.var(cache=False)` value that a downstream `get_delta` override keeps out of the delta is now delivered as soon as the override stops withholding it, instead of being deduplicated away until the value changes again. Uncached var values only count as sent to the client once the delta that carries them is actually delivered. ([#7216](https://github.com/reflex-dev/reflex/issues/7216))
+- Release the development backend port again when no worker can serve it, so requests fail fast while the app module raises on import and after the server shuts down, instead of waiting in the accept backlog until the client times out. ([#7217](https://github.com/reflex-dev/reflex/issues/7217))
+- Keep app wraps registered below the "Built with Reflex" badge in the rendered
+  page. In production builds with the badge on, the badge swallowed every
+  lower-priority app wrap, so `rx.data_editor`'s `<div id="portal" />` never
+  reached the DOM and its overlay cell editors — including the new image preview —
+  could not open. ([#7218](https://github.com/reflex-dev/reflex/issues/7218))
+- Fix nested router mutations bypassing background-task locks and read-only state proxies. Writes through `self.router` now enforce the same mutation guards as direct state-field access. ([#7230](https://github.com/reflex-dev/reflex/issues/7230))
+
+### Performance
+
+- `@rx.var(cache=False)` vars now remember what they last sent to the frontend. They are still recomputed on every state update, but the value is only included in the delta when it actually changed, so an uncached var whose value stays the same no longer causes needless network traffic and re-renders. ([#6946](https://github.com/reflex-dev/reflex/issues/6946))
+- Reduce development startup and reload time and memory by deferring unused database, admin, and compiler imports in the backend launcher and state mutation tracking, and by avoiding redundant app preloads in spawned Granian supervisors. ([#7049](https://github.com/reflex-dev/reflex/issues/7049))
+- Store router data in separate base vars (session, headers, page, url, route_id) so a navigation delta only re-sends the fields that changed instead of the whole router, and gather the connection-scoped router data (headers, client IP, session id) once at connect time rather than on every event. `State.router` is unchanged for app code.
+
+  The page URL is also persisted as the URL itself rather than as its parsed pieces: `ReflexURL` and `URLData` re-split on the way out of the state store instead of writing scheme, netloc, origin, path, query, query parameters and fragment alongside the href on every state write. ([#7068](https://github.com/reflex-dev/reflex/issues/7068))
+- Preload the global stylesheet so browsers can discover render-blocking CSS alongside early resource hints. ([#7078](https://github.com/reflex-dev/reflex/issues/7078))
+- Honor `frontend_lazy_bundled_libraries` when compiling the app root so optional dynamic-component namespaces do not force their full exports into every page's initial bundle. ([#7078](https://github.com/reflex-dev/reflex/issues/7078))
+- Reduce `reflex run` and `reflex export` memory: the vite/react-router processes no longer keep their dependency pre-bundling arena resident (`MIMALLOC_ARENA_EAGER_COMMIT=0`, overridable from the environment), and error telemetry is sent through `urllib` so backend workers never import `httpx`. ([#7112](https://github.com/reflex-dev/reflex/issues/7112))
+- Speed up compilation by reading only the props a component sets, caching literal Var dispatch by value type, and trimming render and app-wrap bookkeeping. ([#7121](https://github.com/reflex-dev/reflex/issues/7121))
+- Share one event chain per handler and trigger across call sites, and reuse memoized event wrappers by chain identity during compilation. ([#7122](https://github.com/reflex-dev/reflex/issues/7122))
+
+### Documentation
+
+- Refresh the `docker-example` deployments for current Reflex and consolidate them into `production`, `production-compose`, and `app-platform-backend`, with smaller images, clean SIGTERM shutdown, and no build tooling at runtime. The two-port example is gone since prod mode now serves the frontend and backend on one port; the self-hosting docs are updated to match. ([#7140](https://github.com/reflex-dev/reflex/issues/7140))
+
+
 ## v0.9.11 (2026-09-11)
 
 ### Breaking Changes

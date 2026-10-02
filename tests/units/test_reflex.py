@@ -10,6 +10,7 @@ import sys
 import click
 import click.testing
 import pytest
+from pytest_mock import MockerFixture
 
 from reflex import reflex
 
@@ -25,7 +26,6 @@ _CLI_STARTUP_DENIED_MODULES = frozenset({
     "redis",
     "reflex.app",
     "reflex.compiler",
-    "reflex.custom_components.custom_components",
     "reflex.model",
     "reflex.state",
     "reflex.utils.frontend_skeleton",
@@ -37,9 +37,6 @@ _CLI_STARTUP_DENIED_MODULES = frozenset({
     "starlette",
     "uvicorn",
 })
-_COMPONENT_HELP_DENIED_MODULES = _CLI_STARTUP_DENIED_MODULES - {
-    "reflex.custom_components.custom_components"
-}
 
 
 def _run_cli_probe(probe: str) -> dict[str, object]:
@@ -72,7 +69,6 @@ def _run_cli_probe(probe: str) -> dict[str, object]:
         (["--help"], _CLI_STARTUP_DENIED_MODULES),
         (["--version"], _CLI_STARTUP_DENIED_MODULES),
         (["run", "--help"], _CLI_STARTUP_DENIED_MODULES),
-        (["component", "--help"], _COMPONENT_HELP_DENIED_MODULES),
         (
             ["deploy", "--help"],
             _CLI_STARTUP_DENIED_MODULES - {"reflex_cli.v2.deploy"},
@@ -86,7 +82,6 @@ def _run_cli_probe(probe: str) -> dict[str, object]:
         "help",
         "version",
         "run-help",
-        "component-help",
         "deploy-help",
         "cloud-help",
     ],
@@ -227,28 +222,33 @@ print(json.dumps({
     }
 
 
-def test_component_command_registered_lazily():
-    """The component command preserves its help while loading on demand."""
-    command = reflex.cli.commands["component"]
-
-    assert isinstance(command, reflex._LazyCommand)
-    result = click.testing.CliRunner().invoke(reflex.cli, ["component", "--help"])
-
-    assert result.exit_code == 0
-    resolved_command = command._resolved_command
-    assert resolved_command is not None
-    assert command.help == resolved_command.help
-    assert "CLI for creating custom components." in result.output
+def test_component_command_is_not_registered():
+    """The custom components CLI has been removed."""
+    assert "component" not in reflex.cli.commands
 
 
-def test_lazy_command_delegates_click_introspection():
+def test_lazy_command_delegates_click_introspection(monkeypatch: pytest.MonkeyPatch):
     """Click integrations inspecting a registered command see its real metadata."""
-    command = reflex._LazyCommand(
-        "component",
-        "reflex.custom_components.custom_components:custom_components_cli",
-        help="CLI for creating custom components.",
+
+    @click.group()
+    def implementation():
+        pass
+
+    @implementation.command()
+    def build():
+        pass
+
+    monkeypatch.setattr(
+        reflex,
+        "import_module",
+        lambda name: type("Commands", (), {"implementation": implementation}),
     )
-    context = click.Context(command, info_name="component")
+    command = reflex._LazyCommand(
+        "implementation",
+        "commands:implementation",
+        help="Test command.",
+    )
+    context = click.Context(command, info_name="implementation")
 
     help_text = command.get_help(context)
     params = command.get_params(context)
@@ -431,3 +431,91 @@ def test_init_records_version_check_after_frontend_setup(
     reflex._init("demo")
 
     assert events == ["frontend", "version"]
+
+
+@pytest.mark.parametrize(
+    ("argv", "supervised", "expected"),
+    [(["--json"], False, True), (["--json"], True, False), ([], False, False)],
+)
+def test_run_supervises_output_only_in_json_mode(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    argv: list[str],
+    supervised: bool,
+    expected: bool,
+):
+    """``reflex run --json`` runs itself again below an output supervisor.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        argv: Extra ``reflex run`` arguments.
+        supervised: Whether the process already runs under the supervisor.
+        expected: Whether the supervisor is expected to start.
+    """
+    from reflex_base.environment import environment
+    from reflex_base.utils import log
+
+    # Registered so teardown restores the variables the CLI callbacks set.
+    monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
+    monkeypatch.setenv(environment.REFLEX_LOG_JSON.name, "false")
+    monkeypatch.setenv(log._SUPERVISED_ENV_VAR, "1234" if supervised else "")
+    monkeypatch.setattr(sys, "argv", ["reflex", "run", *argv])
+    supervise = mocker.patch.object(log, "supervise_output", return_value=7)
+    run = mocker.patch.object(reflex, "_run")
+    mocker.patch("reflex.utils.prerequisites.check_running_mode")
+
+    try:
+        result = click.testing.CliRunner().invoke(reflex.cli, ["run", *argv])
+    finally:
+        log._reset()
+
+    if expected:
+        assert result.exit_code == 7
+        supervise.assert_called_once_with([
+            sys.executable,
+            "-m",
+            "reflex",
+            "run",
+            *argv,
+        ])
+        run.assert_not_called()
+    else:
+        assert result.exit_code == 0, result.output
+        supervise.assert_not_called()
+        run.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "args", [["init"], ["migrate"], ["makemigrations"], ["status"]]
+)
+def test_db_commands_without_db_extra_point_to_install(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, args: list[str]
+):
+    """Without the db extra, db commands print the install hint instead of a traceback."""
+    monkeypatch.setattr(reflex, "find_spec", lambda name: None)
+
+    result = click.testing.CliRunner().invoke(reflex.db_cli, args)
+
+    assert result.exit_code == 1
+    assert "pip install reflex[db]" in caplog.text
+    assert not isinstance(result.exception, ImportError)
+
+
+@pytest.mark.parametrize("missing", reflex._DB_PACKAGES)
+def test_db_commands_with_partial_db_install_point_to_install(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, missing: str
+):
+    """A partial install missing any one db package still gets the install hint."""
+    real_find_spec = reflex.find_spec
+    monkeypatch.setattr(
+        reflex,
+        "find_spec",
+        lambda name: None if name == missing else real_find_spec(name),
+    )
+
+    result = click.testing.CliRunner().invoke(reflex.db_cli, ["init"])
+
+    assert result.exit_code == 1
+    assert "pip install reflex[db]" in caplog.text
+    assert not isinstance(result.exception, ImportError)
