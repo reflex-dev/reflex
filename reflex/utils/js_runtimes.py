@@ -112,6 +112,20 @@ def _persisted_lockfile_implies_npm() -> bool:
     ).exists()
 
 
+@functools.cache
+def _log_implicit_npm_notice(root_dir: Path) -> None:
+    """Say once per lock directory why npm is preferred without REFLEX_USE_NPM.
+
+    Args:
+        root_dir: The ``reflex.lock/`` directory holding the npm lockfile.
+    """
+    logger.info(
+        f"Preferring npm because {root_dir.name}/ has {constants.Node.LOCKFILE_PATH} "
+        f"and no {constants.Bun.LOCKFILE_PATH}. "
+        "Run once with REFLEX_USE_NPM=0 to switch this project back to bun."
+    )
+
+
 def prefer_npm_over_bun() -> bool:
     """Check if npm should be preferred over bun.
 
@@ -129,7 +143,10 @@ def prefer_npm_over_bun() -> bool:
     explicit = environment.REFLEX_USE_NPM.getenv()
     if explicit is not None:
         return explicit
-    return _persisted_lockfile_implies_npm()
+    if _persisted_lockfile_implies_npm():
+        _log_implicit_npm_notice(Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR)
+        return True
+    return False
 
 
 def get_nodejs_compatible_package_managers(

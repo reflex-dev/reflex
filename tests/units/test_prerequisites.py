@@ -1,3 +1,4 @@
+import asyncio
 import importlib.metadata
 import json
 import shutil
@@ -10,6 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Protocol
+from unittest import mock
 
 import pytest
 from click.testing import CliRunner
@@ -18,6 +20,7 @@ from reflex_base.config import Config
 from reflex_base.environment import environment
 from reflex_base.utils import log
 from reflex_base.utils.decorator import cached_procedure
+from reflex_base.utils.exceptions import EnvironmentVarValueError
 
 from reflex.reflex import cli
 from reflex.testing import chdir
@@ -745,6 +748,55 @@ def test_install_frontend_packages_cache_respects_root_bun_lock(
     # sees no root lock so the web copy is removed before the run; the
     # initial `bun install` is then skipped, leaving 2 install invocations.
     assert install_runs == 2
+
+
+@pytest.mark.parametrize("package_manager", ["bun", "npm"])
+def test_install_frontend_packages_cache_ignores_package_json_formatting(
+    install_packages_env: InstallPackagesEnv, package_manager: str
+):
+    """Package manager formatting must not cause installs on subsequent compiles.
+
+    Args:
+        install_packages_env: The isolated frontend installation environment.
+        package_manager: The package manager used for installation.
+    """
+    env = install_packages_env
+    env.root_package_json.write_text("{}")
+    calls: list[list[str]] = []
+
+    def run_package_manager(args, **kwargs):
+        """Record the command and simulate a package manager rewriting its manifest.
+
+        Args:
+            args: Package manager command arguments.
+            **kwargs: Package manager invocation options.
+        """
+        calls.append(list(args))
+        package_json = json.loads(env.web_package_json.read_text())
+        package_json["dependencies"] = {"some-pkg": "1.0.0"}
+        env.web_package_json.write_text(
+            json.dumps(package_json, indent=2, sort_keys=True) + "\n"
+        )
+
+    env.patch_pm([package_manager], run_package_manager)
+    env.install({"some-pkg@1.0.0"})
+    assert len(calls) == 1
+    formatted = env.web_package_json.read_text()
+    cache_file = js_runtimes._frontend_packages_cache_path()
+    cache_mtime = cache_file.stat().st_mtime_ns
+
+    for _ in range(2):
+        env.install({"some-pkg@1.0.0"})
+        assert len(calls) == 1
+        assert env.web_package_json.read_text() == formatted
+        assert env.root_package_json.read_text() == formatted
+        assert cache_file.stat().st_mtime_ns == cache_mtime
+
+    package_json = json.loads(env.root_package_json.read_text())
+    package_json["dependencies"]["some-pkg"] = "2.0.0"
+    env.root_package_json.write_text(json.dumps(package_json))
+    env.install({"some-pkg@1.0.0"})
+    assert len(calls) == 2
 
 
 def test_install_frontend_packages_npm_does_not_create_bogus_bun_lock(
@@ -1857,6 +1909,44 @@ def test_prefer_npm_over_bun_implicit_from_npm_lock(tmp_path, monkeypatch):
         assert js_runtimes.prefer_npm_over_bun() is True
 
 
+def test_prefer_npm_over_bun_implicit_logs_notice_once(
+    tmp_path, monkeypatch, caplog: pytest.LogCaptureFixture
+):
+    """Implicit npm from a persisted lockfile says why and how to switch back."""
+    monkeypatch.delenv("REFLEX_USE_NPM", raising=False)
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    js_runtimes._log_implicit_npm_notice.cache_clear()
+    root_dir = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR
+    root_dir.mkdir(parents=True)
+    (root_dir / constants.Node.LOCKFILE_PATH).write_text("{}")
+
+    with chdir(tmp_path), caplog.at_level("INFO"):
+        assert js_runtimes.prefer_npm_over_bun() is True
+        assert js_runtimes.prefer_npm_over_bun() is True
+
+    notices = [m for m in caplog.messages if "REFLEX_USE_NPM=0" in m]
+    assert len(notices) == 1
+    assert constants.Node.LOCKFILE_PATH in notices[0]
+    assert "Preferring npm" in notices[0]
+
+
+def test_prefer_npm_over_bun_explicit_npm_logs_no_notice(
+    tmp_path, monkeypatch, caplog: pytest.LogCaptureFixture
+):
+    """An explicit REFLEX_USE_NPM=1 needs no lockfile notice."""
+    monkeypatch.setenv("REFLEX_USE_NPM", "1")
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    js_runtimes._log_implicit_npm_notice.cache_clear()
+    root_dir = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR
+    root_dir.mkdir(parents=True)
+    (root_dir / constants.Node.LOCKFILE_PATH).write_text("{}")
+
+    with chdir(tmp_path), caplog.at_level("INFO"):
+        assert js_runtimes.prefer_npm_over_bun() is True
+
+    assert not [m for m in caplog.messages if "REFLEX_USE_NPM=0" in m]
+
+
 def test_prefer_npm_over_bun_implicit_disabled_when_bun_lock_present(
     tmp_path, monkeypatch
 ):
@@ -2444,3 +2534,92 @@ def test_ensure_installation_id_keeps_legacy_install_unmarked(
 
     assert install_id == 12345
     assert prerequisites.has_uuid_distinct_id_semantics() is False
+
+
+@pytest.fixture
+def redis_url(monkeypatch: pytest.MonkeyPatch) -> str:
+    """Point get_redis at a redis url without a running server.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+
+    Returns:
+        The redis url.
+    """
+    url = "redis://localhost:6379"
+    monkeypatch.setattr(prerequisites, "parse_redis_url", lambda: url)
+    monkeypatch.delenv("REFLEX_REDIS_MAX_CONNECTIONS", raising=False)
+    monkeypatch.delenv("REFLEX_REDIS_POOL_TIMEOUT", raising=False)
+    return url
+
+
+def test_get_redis_pool_unbounded_by_default(redis_url: str):
+    """Without a cap, get_redis keeps redis-py's default pool."""
+    from redis.asyncio import BlockingConnectionPool
+
+    redis = prerequisites.get_redis()
+
+    assert redis is not None
+    assert not isinstance(redis.connection_pool, BlockingConnectionPool)
+
+
+def test_get_redis_max_connections(redis_url: str, monkeypatch: pytest.MonkeyPatch):
+    """REFLEX_REDIS_MAX_CONNECTIONS caps the pool and makes it wait instead of raise."""
+    from redis.asyncio import BlockingConnectionPool
+    from redis.exceptions import RedisError
+
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
+    monkeypatch.setenv("REFLEX_REDIS_POOL_TIMEOUT", "5")
+
+    redis = prerequisites.get_redis()
+
+    assert redis is not None
+    pool = redis.connection_pool
+    assert isinstance(pool, BlockingConnectionPool)
+    assert pool.max_connections == 3
+    assert pool.timeout == 5
+    assert pool.connection_kwargs["retry_on_error"] == [RedisError]
+    assert redis.auto_close_connection_pool
+
+
+@pytest.mark.parametrize("cap", ["0", "-1", "1", "2"])
+def test_get_redis_rejects_cap_without_command_headroom(
+    redis_url: str, monkeypatch: pytest.MonkeyPatch, cap: str
+):
+    """The two token pub/sub listeners cannot occupy every connection."""
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", cap)
+    with pytest.raises(EnvironmentVarValueError, match="at least 3"):
+        prerequisites.get_redis()
+
+
+@pytest.mark.parametrize("timeout", ["0", "10", "20"])
+def test_get_redis_rejects_pool_wait_outside_state_lock(
+    redis_url: str, monkeypatch: pytest.MonkeyPatch, timeout: str
+):
+    """A saturated pool must wait, but not past the state-lock lifetime."""
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
+    monkeypatch.setenv("REFLEX_REDIS_POOL_TIMEOUT", timeout)
+    with pytest.raises(EnvironmentVarValueError, match="greater than 0"):
+        prerequisites.get_redis()
+
+
+async def test_get_redis_max_connections_waits_for_release(
+    redis_url: str, monkeypatch: pytest.MonkeyPatch
+):
+    """At the cap, a caller waits for a free connection rather than failing."""
+    monkeypatch.setenv("REFLEX_REDIS_MAX_CONNECTIONS", "3")
+    redis = prerequisites.get_redis()
+    assert redis is not None
+    pool = redis.connection_pool
+    monkeypatch.setattr(pool, "ensure_connection", mock.AsyncMock())
+
+    connections = [await pool.get_connection() for _ in range(3)]
+    waiter = asyncio.create_task(pool.get_connection())
+    await asyncio.sleep(0.05)
+    assert not waiter.done()
+
+    await pool.release(connections[0])
+    assert await asyncio.wait_for(waiter, timeout=1) is connections[0]
+    for connection in connections[1:]:
+        await pool.release(connection)
+    await pool.disconnect()

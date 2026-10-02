@@ -44,6 +44,7 @@ from typing_extensions import LiteralString, dataclass_transform, override
 from reflex_base import constants
 from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.environment import _on_env_var_set, environment
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import exceptions, imports, serializers, types
 from reflex_base.utils.compat import MISSING_TYPE, annotations_from_namespace
@@ -974,12 +975,11 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if kwargs.get("_var_full_name_needs_state_prefix", False) is not False:
             msg = "The _var_full_name_needs_state_prefix argument is not supported for Var."
             raise TypeError(msg)
+        var_data = kwargs.pop("_var_data", self._var_data)
         value_with_replaced = dataclasses.replace(
             self,
             _var_type=_var_type or self._var_type,
-            _var_data=VarData.merge(
-                kwargs.get("_var_data", self._var_data), merge_var_data
-            ),
+            _var_data=VarData.merge(var_data, merge_var_data),
             **kwargs,
         )
 
@@ -1414,6 +1414,20 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         from .number import boolify
 
         return boolify(self)
+
+    def deep_equals(self, other: Var | Any) -> BooleanVar:
+        """Compare this var with another value by nested structure.
+
+        Unlike ``==``, which uses JavaScript identity equality for objects and
+        arrays, this operation compares nested arrays and objects recursively.
+
+        Args:
+            other: The value to compare with.
+
+        Returns:
+            A BooleanVar representing the structural equality check.
+        """
+        return deep_equal_operation(self, other)
 
     def is_none(self) -> BooleanVar:
         """Check if the var is None.
@@ -2339,6 +2353,29 @@ class CachedVarOperation:
         )
 
 
+_DEEP_EQUAL_IMPORT: ImportDict = {
+    "lodash.isequal@4.5.0": [ImportVar(tag="isEqual", is_default=True)],
+}
+
+
+@var_operation
+def deep_equal_operation(lhs: Var | Any, rhs: Var | Any):
+    """Compare two frontend values by nested structure.
+
+    Args:
+        lhs: The left-hand value.
+        rhs: The right-hand value.
+
+    Returns:
+        Whether the values are structurally equal.
+    """
+    return var_operation_return(
+        js_expression=f"isEqual({lhs!s}, {rhs!s})",
+        var_type=bool,
+        var_data=VarData(imports=_DEEP_EQUAL_IMPORT),
+    )
+
+
 _PY_AND_IMPORT: ImportDict = {
     f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="pyAnd")],
 }
@@ -2467,6 +2504,24 @@ def _delta_value_key(value: Any) -> Any:
         ).digest()
     except Exception:
         return _UNKEYABLE_VALUE
+
+
+@functools.cache
+def _type_check_depth() -> int:
+    """Get how many container levels state var type checks look into.
+
+    The checks only log an error, so production mode checks just the outer type
+    instead of walking every element. Reading the environment costs more than
+    the check it would skip, so the mode is resolved once and re-resolved when
+    ``environment.REFLEX_ENV_MODE.set`` changes it.
+
+    Returns:
+        The ``nested`` depth to pass to ``_isinstance``.
+    """
+    return 0 if environment.REFLEX_ENV_MODE.get() == constants.Env.PROD else 1
+
+
+_on_env_var_set(environment.REFLEX_ENV_MODE.name, _type_check_depth.cache_clear)
 
 
 def is_computed_var(obj: Any) -> TypeGuard[ComputedVar]:
@@ -2859,19 +2914,19 @@ class ComputedVar(Var[RETURN_TYPE]):
         instance = self._owner_instance(instance)
         if not self._cache:
             value = self.fget(instance)
-        else:
-            # handle caching
-            if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
-                # Set cache attr on state instance.
-                setattr(instance, self._cache_attr, self.fget(instance))
-                # Ensure the computed var gets serialized to redis.
-                instance._was_touched = True
-                # Set the last updated timestamp on the state instance.
-                setattr(instance, self._last_updated_attr, datetime.datetime.now())
-            value = getattr(instance, self._cache_attr)
-
+            self._check_deprecated_return_type(instance, value)
+            return value
+        # handle caching
+        if hasattr(instance, self._cache_attr) and not self.needs_update(instance):
+            return getattr(instance, self._cache_attr)
+        value = self.fget(instance)
+        # Set cache attr on state instance.
+        setattr(instance, self._cache_attr, value)
+        # Ensure the computed var gets serialized to redis.
+        instance._was_touched = True
+        # Set the last updated timestamp on the state instance.
+        setattr(instance, self._last_updated_attr, datetime.datetime.now())
         self._check_deprecated_return_type(instance, value)
-
         return value
 
     def __set_name__(self, owner: type[BaseState], name: str) -> None:
@@ -2898,7 +2953,9 @@ class ComputedVar(Var[RETURN_TYPE]):
         return _owner_state(instance, owner)
 
     def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
-        if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
+        if not _isinstance(
+            value, self._var_type, nested=_type_check_depth(), treat_var_as_type=False
+        ):
             logger.error(
                 f"Computed var '{type(instance).__name__}.{self._name}' must return"
                 f" a value of type '{self._var_type}', got '{value!s}' of type {type(value)}."
@@ -3148,14 +3205,15 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
 
         # handle caching
         async def _awaitable_result(instance: BaseState = instance) -> RETURN_TYPE:
-            if not hasattr(instance, self._cache_attr) or self.needs_update(instance):
-                # Set cache attr on state instance.
-                setattr(instance, self._cache_attr, await self.fget(instance))
-                # Ensure the computed var gets serialized to redis.
-                instance._was_touched = True
-                # Set the last updated timestamp on the state instance.
-                setattr(instance, self._last_updated_attr, datetime.datetime.now())
-            value = getattr(instance, self._cache_attr)
+            if hasattr(instance, self._cache_attr) and not self.needs_update(instance):
+                return getattr(instance, self._cache_attr)
+            value = await self.fget(instance)
+            # Set cache attr on state instance.
+            setattr(instance, self._cache_attr, value)
+            # Ensure the computed var gets serialized to redis.
+            instance._was_touched = True
+            # Set the last updated timestamp on the state instance.
+            setattr(instance, self._last_updated_attr, datetime.datetime.now())
             self._check_deprecated_return_type(instance, value)
             return value
 
@@ -4000,7 +4058,10 @@ class Field(Generic[FIELD_TYPE]):
             not self._backend
             and type(value) not in self._plain_types
             and not _isinstance(
-                value, self.outer_type_, nested=1, treat_var_as_type=False
+                value,
+                self.outer_type_,
+                nested=_type_check_depth(),
+                treat_var_as_type=False,
             )
         ):
             logger.error(
@@ -4232,6 +4293,9 @@ def _inherited_value(lookup_order: Sequence[type], name: str) -> Any:
 
 _FIELD_MAP_NAMES = frozenset({"__fields__", "__own_fields__", "__inherited_fields__"})
 
+# ``ABCMeta`` writes this onto every class it creates, so an ``ABC`` mixin carries its own.
+_ABC_BOOKKEEPING_NAME = "_abc_impl"
+
 
 @functools.cache
 def _reserved_state_members(root: BaseStateMeta) -> dict[str, Any]:
@@ -4297,8 +4361,10 @@ def _validate_inherited_members(
             _validate_state_name(root, member)
         seen.update(base.__own_fields__)
     for member, value in vars(base).items():
-        if member not in seen and not (
-            is_model and (member in _FIELD_MAP_NAMES or member == "_mixin")
+        if (
+            member not in seen
+            and member != _ABC_BOOKKEEPING_NAME
+            and not (is_model and (member in _FIELD_MAP_NAMES or member == "_mixin"))
         ):
             _validate_state_name(root, member, value)
 
