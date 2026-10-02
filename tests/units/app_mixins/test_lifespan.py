@@ -322,6 +322,7 @@ async def test_lifespan_task_cleanup_error_is_logged_and_shutdown_continues(
 async def test_lifespan_cleanup_error_is_logged_while_another_task_is_stuck(caplog):
     """A cleanup error is logged when that task ends, not when shutdown's wait ends."""
     release = asyncio.Event()
+    cleanup_reported = asyncio.Event()
 
     async def ignore_cancel():
         try:
@@ -333,6 +334,10 @@ async def test_lifespan_cleanup_error_is_logged_while_another_task_is_stuck(capl
         try:
             await asyncio.Event().wait()
         finally:
+            task = asyncio.current_task()
+            assert task is not None
+            # Shutdown has already registered its cleanup error callback.
+            task.add_done_callback(lambda _: cleanup_reported.set())
             msg = "cleanup failed"
             raise RuntimeError(msg)
 
@@ -346,7 +351,7 @@ async def test_lifespan_cleanup_error_is_logged_while_another_task_is_stuck(capl
 
     shutdown = asyncio.create_task(run())
     try:
-        await asyncio.sleep(0.05)
+        await asyncio.wait_for(cleanup_reported.wait(), timeout=1)
         assert not shutdown.done()
         assert any(
             isinstance(record.exc_info and record.exc_info[1], RuntimeError)
