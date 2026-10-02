@@ -204,3 +204,23 @@ async def test_lifespan_task_self_cancellation_is_reported():
     assert [type(context["exception"]) for context in reported] == [
         asyncio.CancelledError
     ]
+
+
+@pytest.mark.asyncio
+async def test_lifespan_shutdown_waits_for_cancelled_tasks():
+    """Shutdown waits until cancelled coroutine lifespan tasks finish their cleanup."""
+    cleaned_up = []
+
+    async def run_forever():
+        try:
+            await asyncio.Event().wait()
+        finally:
+            await asyncio.sleep(0)
+            cleaned_up.append(True)
+
+    mixin = LifespanMixin()
+    mixin.register_lifespan_task(run_forever)
+    async with mixin._run_lifespan_tasks(Starlette()):
+        await asyncio.sleep(0)
+
+    assert cleaned_up == [True]

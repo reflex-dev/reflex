@@ -134,10 +134,15 @@ class LifespanMixin(AppMixin):
                 yield
         finally:
             for task in running_tasks:
+                # A task that ended before cleanup was reported by its callback.
+                if task.done():
+                    continue
                 logger.debug(f"Canceling lifespan task: {task}")
                 # Cancellation by cleanup is expected, so it is not reported.
                 task.remove_done_callback(_report_task_result)
                 task.cancel(msg="lifespan_cleanup")
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
         # Disassociate sid / token pairings so they can be reconnected properly.
         try:
             event_namespace = self.event_namespace  # pyright: ignore[reportAttributeAccessIssue]
