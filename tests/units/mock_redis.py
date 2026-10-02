@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, Mock
 from redis.asyncio import Redis
 from redis.typing import EncodableT, KeyT
 
+from reflex.istate.manager.redis import _FENCED_SAVE_SCRIPT
 from reflex.utils import prerequisites
 
 WRONGTYPE_MESSAGE = "WRONGTYPE Operation against a key holding the wrong kind of value"
@@ -197,13 +198,19 @@ def mock_redis() -> Redis:
         the lock's PTTL, or None without writing when the lock is not held.
 
         Args:
-            script: The Lua source, unused.
+            script: The Lua source, which must be the fenced save script.
             numkeys: How many leading entries of keys_and_args are keys.
             keys_and_args: The keys followed by the arguments.
 
         Returns:
             The lock's PTTL after writing, or None when nothing was written.
+
+        Raises:
+            NotImplementedError: If the script is not the fenced save script.
         """
+        if script != _FENCED_SAVE_SCRIPT:
+            msg = "mock_redis only emulates the state manager's fenced save script."
+            raise NotImplementedError(msg)
         lock_key, *state_keys = keys_and_args[:numkeys]
         lock_id, expiration, *payloads = keys_and_args[numkeys:]
         if await redis_mock.get(lock_key) != lock_id:

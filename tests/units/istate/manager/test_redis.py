@@ -926,3 +926,11 @@ def test_oplock_hold_time_rejects_a_negative_duration(
     monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME", "-5s")
     with pytest.raises(EnvironmentVarValueError, match="must not be negative"):
         _default_oplock_hold_time_ms()
+
+
+async def test_mock_redis_eval_only_emulates_the_fenced_save_script():
+    """The mock refuses any script it does not emulate, instead of mis-running it."""
+    # redis-py types eval as possibly synchronous; the mock is always async.
+    eval_script: Any = mock_redis().eval
+    with pytest.raises(NotImplementedError):
+        await eval_script("return 1", 0)
