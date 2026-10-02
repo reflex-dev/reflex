@@ -35,11 +35,11 @@ from .recharts import (
 )
 
 _TICK_FORMATTER_DYNAMIC_VAR_ERROR = (
-    "tick_formatter must be a JavaScript function expression, not a "
+    "tick_formatter must be a JavaScript function, not a "
     "dynamic string Var. Use FunctionStringVar.create() instead."
 )
 _TICK_FORMATTER_TYPE_ERROR = (
-    "tick_formatter must be a FunctionVar or JavaScript string."
+    "tick_formatter must be a FunctionVar or JavaScript function expression."
 )
 
 
