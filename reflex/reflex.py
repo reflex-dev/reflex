@@ -362,6 +362,7 @@ def _compile_app(*, avoid_dirty_check: bool = True):
     if exec.should_use_granian() and avoid_dirty_check:
         import concurrent.futures
 
+        exec.set_dev_start_method()
         with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
             compile_future = executor.submit(
                 _compile_app_worker, app_task, args, kwargs
@@ -516,8 +517,12 @@ def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
 
     _skip_compile()
 
-    # Post a telemetry event.
-    telemetry.send("run-prod")
+    # Post the telemetry event once the workers are running, from a separate
+    # process: the server may fork its supervisor again to respawn workers, so
+    # it must never hold a telemetry thread.
+    def on_started():
+        """Send the run telemetry without a thread in the supervisor."""
+        telemetry._send_detached("run-prod")
 
     # Display custom message when there is a keyboard interrupt.
     atexit.register(processes.atexit_handler)
@@ -529,10 +534,14 @@ def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
     )
     if running_mode.has_backend():
         exec.run_backend_prod(
-            host, port, config.loglevel.subprocess_level(), running_mode.has_frontend()
+            host,
+            port,
+            config.loglevel.subprocess_level(),
+            running_mode.has_frontend(),
+            on_started=on_started,
         )
     else:
-        exec.run_frontend_prod(host, port)
+        exec.run_frontend_prod(host, port, on_started=on_started)
 
 
 def _run(
