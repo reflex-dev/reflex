@@ -10,11 +10,25 @@ from reflex.testing import AppHarness
 
 def CondMatchApp():
     """App exercising conditional rendering across state transitions."""
+    from copy import deepcopy
+
     import reflex as rx
 
     class CondMatchState(rx.State):
         val_a: str = "A"
         val_b: str = "B"
+        previous: rx.Field[dict[str, dict[str, str]]] = rx.field(
+            default_factory=lambda: {
+                "wall": {"color": "red", "finish": "matte"},
+                "roof": {"color": "gray"},
+            }
+        )
+        current: rx.Field[dict[str, dict[str, str]]] = rx.field(
+            default_factory=lambda: {
+                "roof": {"color": "gray"},
+                "wall": {"finish": "matte", "color": "red"},
+            }
+        )
 
         @rx.event
         def select_a(self):
@@ -28,7 +42,23 @@ def CondMatchApp():
         def select_c(self):
             self.val_a = "C"
 
+        @rx.event
+        def change_color(self):
+            """Change a nested value in the current form data."""
+            self.current["wall"]["color"] = "blue"
+
+        @rx.event
+        def reorder_keys(self):
+            """Reverse object key order without changing the form values."""
+            self.current = dict(reversed(tuple(self.current.items())))
+
+        @rx.event
+        def save(self):
+            """Save an independent snapshot of the current form data."""
+            self.previous = deepcopy(self.current)
+
     def index():
+        equal = CondMatchState.current.deep_equals(CondMatchState.previous)
         return rx.box(
             rx.hstack(
                 rx.button("A", on_click=CondMatchState.select_a, id="select-a"),
@@ -53,6 +83,26 @@ def CondMatchApp():
                 ),
                 id="match-container",
             ),
+            rx.text(rx.cond(equal, "clean", "dirty"), id="deep-status"),
+            rx.text(CondMatchState.current.to_string(), id="deep-current"),
+            rx.button("Change color", on_click=CondMatchState.change_color),
+            rx.button("Reorder keys", on_click=CondMatchState.reorder_keys),
+            rx.button("Save", on_click=CondMatchState.save, disabled=equal),
+            *[
+                rx.text(
+                    rx.Var.create(left).deep_equals(right).to_string(),
+                    id=f"deep-{name}",
+                )
+                for name, left, right in [
+                    ("key-order", {"a": 1, "b": 2}, {"b": 2, "a": 1}),
+                    (
+                        "nested-equal",
+                        {"a": {"b": [1, None, True], "c": "red"}},
+                        {"a": {"c": "red", "b": [1, None, True]}},
+                    ),
+                    ("bool-vs-number", True, 1),
+                ]
+            ],
         )
 
     app = rx.App()
@@ -61,18 +111,21 @@ def CondMatchApp():
 
 @pytest.fixture(scope="module")
 def cond_match_app(
+    app_harness_env: type[AppHarness],
     tmp_path_factory: pytest.TempPathFactory,
 ) -> Generator[AppHarness, None, None]:
-    """Create a harness for the cond/match regression app.
+    """Create a dev or prod harness for the cond/match regression app.
 
     Args:
+        app_harness_env: AppHarness (dev) or AppHarnessProd (prod).
         tmp_path_factory: Pytest fixture for creating temporary directories.
 
     Yields:
         Running AppHarness for the test app.
     """
-    with AppHarness.create(
+    with app_harness_env.create(
         root=tmp_path_factory.mktemp("cond_match_app"),
+        app_name=f"condmatchapp_{app_harness_env.__name__.lower()}",
         app_source=CondMatchApp,
     ) as harness:
         yield harness
@@ -112,3 +165,52 @@ def test_cond_and_match_render_only_selected_branch(
     expect(page.locator("#match-a")).to_have_count(0)
     expect(page.locator("#match-b")).to_have_count(0)
     expect(page.locator("#match-default")).to_have_text("No value selected")
+
+
+def test_deep_equals_literals(cond_match_app: AppHarness, page: Page):
+    """Check key-order independence, nested equality, and booleans versus numbers.
+
+    Args:
+        cond_match_app: Running harness for the comparison app.
+        page: Playwright page.
+    """
+    assert cond_match_app.frontend_url is not None
+    page.goto(cond_match_app.frontend_url)
+
+    for name, expected in [
+        ("key-order", "true"),
+        ("nested-equal", "true"),
+        ("bool-vs-number", "false"),
+    ]:
+        expect(page.locator(f"#deep-{name}")).to_have_text(expected)
+
+
+def test_deep_equals_state_updates(cond_match_app: AppHarness, page: Page):
+    """Track nested form edits and saved snapshots using frontend deep equality.
+
+    Args:
+        cond_match_app: Running harness for the comparison app.
+        page: Playwright page.
+    """
+    assert cond_match_app.frontend_url is not None
+    page.goto(cond_match_app.frontend_url)
+
+    status = page.locator("#deep-status")
+    save = page.get_by_role("button", name="Save", exact=True)
+    expect(status).to_have_text("clean")
+    expect(save).to_be_disabled()
+
+    page.get_by_role("button", name="Change color").click()
+    expect(status).to_have_text("dirty")
+    expect(save).to_be_enabled()
+
+    save.click()
+    expect(status).to_have_text("clean")
+    expect(save).to_be_disabled()
+
+    current = page.locator("#deep-current")
+    before_reorder = current.inner_text()
+    page.get_by_role("button", name="Reorder keys").click()
+    expect(current).not_to_have_text(before_reorder)
+    expect(status).to_have_text("clean")
+    expect(save).to_be_disabled()

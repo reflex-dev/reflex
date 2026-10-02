@@ -1,38 +1,76 @@
-"""Hosting service related utilities."""
+"""Hosting service related utilities.
+
+The Reflex Build API is reached through ``reflex-build-sdk``; what lives here is
+the part that is the CLI's own -- resolving names interactively, reading the
+config files, driving the browser login, and turning the SDK's typed results
+into what the commands print.
+"""
 
 from __future__ import annotations
 
 import contextlib
 import dataclasses
-import importlib.metadata
+import datetime
 import json
-import platform
+import logging
+import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 import uuid
 import webbrowser
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from enum import Enum
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, TypedDict
-from urllib.parse import urljoin
+from time import monotonic
+from typing import TYPE_CHECKING, Any, NoReturn, TypedDict
 
 import click
+from reflex_build_sdk import (
+    APIConnectionError,
+    APIError,
+    APIStatusError,
+    AuthenticationError,
+    DeploymentFailedError,
+    LoginDeniedError,
+    LoginTimeoutError,
+    MissingTokenError,
+    NotFoundError,
+    ReflexBuild,
+    ReflexBuildError,
+)
+from reflex_build_sdk._decode import json_key
+from reflex_build_sdk._deploy import status_message_outcome
+from reflex_build_sdk.types import DeploymentReport, LoginRequest, Me
 
 import reflex_cli.constants as constants
 from reflex_cli.core.config import Config, RegionOption
-from reflex_cli.utils import console, dependency
+from reflex_cli.utils import console, log
 from reflex_cli.utils.dependency import is_valid_url
 from reflex_cli.utils.exceptions import (
-    GetAppError,
-    NotAuthenticatedError,
     ResponseError,
     ScaleAppError,
     ScaleParamError,
+    TokenAccessDeniedError,
+    TokenValidationError,
 )
+
+if TYPE_CHECKING:
+    from reflex_build_sdk.types import AppSummary, GcpConnection, GcpStatus, ProjectRef
+
+logger = logging.getLogger(__name__)
+
+# The archives `reflex export` produces, which a deployment is built from.
+BACKEND_ARCHIVE = "backend.zip"
+FRONTEND_ARCHIVE = "frontend.zip"
+
+# Per socket operation on an upload, not per upload. A link that cannot move one
+# chunk in this long -- roughly 17 kbps -- cannot finish an upload inside the
+# window its signature was issued for either.
+UPLOAD_IO_TIMEOUT = datetime.timedelta(minutes=2)
 
 
 class ScaleType(str, Enum):
@@ -186,7 +224,7 @@ class ScaleParams:
             )
 
         if scale_type is not None and cli_args.is_valid:
-            console.warn(
+            logger.warning(
                 "using --scale-type with --regions or --vmtype will have no effect"
             )
 
@@ -209,99 +247,143 @@ class ScaleParams:
             )
         return self.set_type(ScaleType(scale_type) if scale_type else None)
 
-    def as_json(self) -> dict[str, Any]:
-        """Convert the object to a dictionary.
+    def as_scale_arguments(self) -> dict[str, Any]:
+        """Convert the parameters to the keyword arguments ``apps.scale`` takes.
 
         Returns:
-            dict: The object as a dictionary.
+            Either the machine size to run, or how many machines to run per region.
 
         """
         effective_type = self.type or ScaleType.REGION
-        return (
-            {
-                "type": str(effective_type.value),
-                "size": self.vm_type,
+        if effective_type == ScaleType.SIZE:
+            return {"vm_type": self.vm_type}
+        return {
+            "regions": {
+                region["name"]: region["number_of_machines"] for region in self.regions
             }
-            if effective_type == ScaleType.SIZE
-            else {
-                "type": str(effective_type.value),
-                "regions": {
-                    region["name"]: region["number_of_machines"]
-                    for region in self.regions
-                },
-            }
-        )
+        }
 
 
-@dataclasses.dataclass
-class UnAuthenticatedClient:
-    """A client that is not authenticated."""
+@dataclasses.dataclass(frozen=True)
+class AuthenticatedClient:
+    """A Reflex Build client, and the identity its access token authenticates as."""
 
-    @staticmethod
-    def authenticate() -> AuthenticatedClient:
-        """Authenticate the client.
+    api: ReflexBuild
+    me: Me
+
+    @property
+    def token(self) -> str:
+        """The access token the client sends.
 
         Returns:
-            An authenticated client.
+            The access token.
 
         """
-        access_token, validated_info = authenticate_on_browser()
-        return AuthenticatedClient(access_token, validated_info)
+        return self.api.token or ""
+
+    def close(self) -> None:
+        """Release the connections the client holds."""
+        self.api.close()
 
 
-@dataclasses.dataclass
-class AuthenticatedClient:
-    """A client that is authenticated."""
+def as_json_document(value: Any) -> Any:
+    """Render an SDK result as the plain data a ``--json`` document is made of.
 
-    token: str
-    validated_data: dict[str, Any]
-
-
-def get_authentication_client(
-    token: str | None = None,
-) -> AuthenticatedClient | UnAuthenticatedClient:
-    """Get an authentication client.
+    Dataclasses become objects under the API's own field names, and ids and
+    timestamps the strings it sent, so a document keeps the shape it had when
+    the CLI printed response bodies straight through.
 
     Args:
-        token: The authentication token.
+        value: The value to render.
 
     Returns:
-        An authenticated client if the token is valid, otherwise an unauthenticated client.
+        The value as lists, dicts and scalars.
 
     """
-    access_token = token or get_existing_access_token()
-    if access_token:
-        validated_info = validate_token_with_retries(access_token)
-        if validated_info:
-            return AuthenticatedClient(access_token, validated_info)
-    return UnAuthenticatedClient()
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+        return {
+            json_key(field): as_json_document(getattr(value, field.name))
+            for field in dataclasses.fields(value)
+        }
+    if isinstance(value, Mapping):
+        return {key: as_json_document(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [as_json_document(item) for item in value]
+    if isinstance(value, uuid.UUID):
+        return str(value)
+    if isinstance(value, datetime.datetime):
+        return value.isoformat()
+    if isinstance(value, Enum):
+        return value.value
+    return value
 
 
-def get_authenticated_client(
-    token: str | None = None, interactive: bool = True
-) -> AuthenticatedClient:
-    """Get an authenticated client.
+def error_message(error: Exception) -> str:
+    """Say what went wrong, the way the API put it where it said anything.
+
+    ``str`` on a status error prefixes the API's explanation with the status
+    line, which is noise in a message the user reads in place of an exception.
 
     Args:
-        token: The authentication token.
-        interactive: If running in interactive mode.
+        error: The error raised by the SDK.
 
     Returns:
-        An authenticated client.
+        The API's explanation, or the error itself.
+
+    """
+    if isinstance(error, APIStatusError) and isinstance(error.detail, str):
+        # A refusal the API sent no body with has nothing to say; its status
+        # line is what is left, and it beats an empty message.
+        return error.detail or str(error)
+    return str(error)
+
+
+@contextlib.contextmanager
+def reporting_api_errors() -> Iterator[None]:
+    """Report what the Reflex Build API refused, and exit, instead of raising.
+
+    A command's body is wrapped in this so a refusal reads as the sentence the
+    API wrote rather than a traceback, and so an expired or revoked token says
+    what to do about it wherever it turns up -- not only where the command
+    started by authenticating.
+
+    Yields:
+        To the command's body.
 
     Raises:
-        Exit: If no token is provided in non-interactive mode.
+        Exit: If the API refused, or could not be reached.
 
     """
-    env_token = get_existing_access_token() if not token else ""
-    if not token and not env_token and not interactive:
-        console.error("Token is required for non-interactive mode.")
-        raise click.exceptions.Exit(1)
+    try:
+        yield
+    except (AuthenticationError, MissingTokenError) as ex:
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
+        raise click.exceptions.Exit(1) from ex
+    except ReflexBuildError as ex:
+        logger.error(error_message(ex))
+        raise click.exceptions.Exit(1) from ex
 
-    client = get_authentication_client(token)
-    if isinstance(client, UnAuthenticatedClient):
-        return client.authenticate()
-    return client
+
+def exit_reporting(error: ReflexBuildError, message: str) -> NoReturn:
+    """Report a refused request in the caller's words, and exit.
+
+    A token that will not authenticate is reported as itself instead: it has
+    the same answer wherever it turns up, and the caller's wording -- "the
+    deployment failed", "set full deploy failed" -- buries it.
+
+    Args:
+        error: The error the SDK raised.
+        message: What to report for anything but an unusable token.
+
+    Raises:
+        Exit: Always.
+
+    """
+    if isinstance(error, (AuthenticationError, MissingTokenError)):
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
+    else:
+        logger.error(message)
+    raise click.exceptions.Exit(1) from error
 
 
 class SilentBackgroundBrowser(webbrowser.BackgroundBrowser):
@@ -342,6 +424,63 @@ class SilentBackgroundBrowser(webbrowser.BackgroundBrowser):
 webbrowser.BackgroundBrowser = SilentBackgroundBrowser
 
 
+class TokenSource(str, Enum):
+    """Where an access token was loaded from."""
+
+    CONFIG = "config file"
+    ENVIRONMENT = "REFLEX_ACCESS_TOKEN environment variable"
+    OPTION = "--token option"
+    NONE = "none"
+
+
+def get_existing_access_token_with_source() -> tuple[str, TokenSource]:
+    """Fetch the access token from the environment or existing config, and say where it came from.
+
+    ``REFLEX_ACCESS_TOKEN`` takes precedence: exporting it is an explicit
+    choice for this invocation, while the config file is ambient state left
+    behind by an earlier ``reflex login``.
+
+    Returns:
+        The access token and the source it was loaded from.
+        If not found, return empty string and ``TokenSource.NONE`` instead.
+
+    """
+    access_token = os.environ.get("REFLEX_ACCESS_TOKEN", "")
+    if access_token:
+        logger.debug("Using REFLEX_ACCESS_TOKEN from environment")
+        return access_token, TokenSource.ENVIRONMENT
+
+    logger.debug("Fetching token from existing config...")
+    try:
+        access_token = stored_access_token()
+    except (OSError, ValueError) as ex:
+        logger.debug(
+            f"Unable to fetch token from {constants.Hosting.HOSTING_JSON} due to: {ex}"
+        )
+        return "", TokenSource.NONE
+
+    if access_token:
+        return access_token, TokenSource.CONFIG
+
+    return "", TokenSource.NONE
+
+
+def rejected_token_message(source: TokenSource, err: TokenValidationError) -> str:
+    """Describe a token the control plane would not validate.
+
+    Args:
+        source: Where the token was loaded from.
+        err: The validation error.
+
+    Returns:
+        The message to report.
+    """
+    return (
+        f"The access token from the {source.value} was rejected: {err} "
+        f"(auth request id: {err.request_id})"
+    )
+
+
 def get_existing_access_token() -> str:
     """Fetch the access token from the existing config if applicable.
 
@@ -350,25 +489,7 @@ def get_existing_access_token() -> str:
         If not found, return empty string for it instead.
 
     """
-    import os
-
-    console.debug("Fetching token from existing config...")
-    access_token = ""
-    try:
-        with constants.Hosting.HOSTING_JSON.open() as config_file:
-            hosting_config = json.load(config_file)
-            access_token = hosting_config.get("access_token", "")
-    except Exception as ex:
-        console.debug(
-            f"Unable to fetch token from {constants.Hosting.HOSTING_JSON} due to: {ex}"
-        )
-
-    if not access_token:
-        access_token = os.environ.get("REFLEX_ACCESS_TOKEN", "")
-        if access_token:
-            console.debug("Using REFLEX_ACCESS_TOKEN from environment")
-
-    return access_token
+    return get_existing_access_token_with_source()[0]
 
 
 def is_reflex_enterprise_installed() -> bool:
@@ -389,69 +510,118 @@ def is_reflex_enterprise_installed() -> bool:
         return True
 
 
-def validate_token(token: str) -> dict[str, Any]:
-    """Validate the token with the control plane.
+_last_auth_request_id: str = ""
 
-    Args:
-        token: The access token to validate.
+
+def get_auth_request_id() -> str:
+    """Get the request id sent with the most recent token validation request.
+
+    The id is sent to the control plane as the ``X-Request-ID`` header, so it
+    can be quoted to support to correlate a failed authentication with the
+    server-side logs.
 
     Returns:
-        Information about the user associated with the token.
-
-    Raises:
-        ValueError: if access denied.
-        Exception: if runs into timeout, failed requests, unexpected errors. These should be tried again.
+        The request id of the last ``validate_token`` call, or an empty string
+        if no validation request has been made in this process.
 
     """
-    import httpx
+    return _last_auth_request_id
 
+
+def _read_hosting_config() -> dict[str, Any]:
+    """Read the hosting config file.
+
+    A config that exists but cannot be read is reported rather than treated as
+    empty, so callers do not overwrite entries they were unable to see.
+
+    Returns:
+        The stored config, or an empty dict if the file does not exist.
+
+    Raises:
+        OSError: If the config exists but cannot be read.
+        ValueError: If the config exists but does not hold a JSON object.
+
+    """
     try:
-        # Add reflex-enterprise detection flag as query parameter
-        params = {
-            "source": "reflex-enterprise"
-            if is_reflex_enterprise_installed()
-            else "reflex"
-        }
-
-        response = httpx.post(
-            urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/authenticate/me"),
-            headers=authorization_header(token),
-            params=params,
-            timeout=constants.Hosting.TIMEOUT,
-        )
-        response.raise_for_status()
-        return response.json()
-    except httpx.RequestError as re:
-        console.debug(f"Request to auth server failed due to {re}")
-        raise Exception(str(re)) from re
-    except httpx.HTTPError as ex:
-        console.debug(f"Unable to validate the token due to: {ex}")
-        raise Exception("server error") from ex
-    except ValueError as ve:
-        console.debug("Access denied")
-        raise ValueError("access denied") from ve
-    except Exception as ex:
-        console.debug(f"Unexpected error: {ex}")
-        raise Exception("internal errors") from ex
+        with constants.Hosting.HOSTING_JSON.open(encoding="utf-8") as config_file:
+            hosting_config = json.load(config_file)
+    except FileNotFoundError:
+        return {}
+    # Valid JSON is not necessarily the object every caller indexes into.
+    if not isinstance(hosting_config, dict):
+        msg = f"{constants.Hosting.HOSTING_JSON} does not hold a JSON object"
+        raise ValueError(msg)
+    return hosting_config
 
 
-def delete_token_from_config():
-    """Delete the invalid token from the config file if applicable."""
+def stored_access_token() -> str:
+    """Read the access token held in the config file.
+
+    Unlike ``get_existing_access_token`` this ignores ``REFLEX_ACCESS_TOKEN``
+    and reports read failures, so callers can tell "no token stored" apart from
+    "cannot tell what is stored".
+
+    Returns:
+        The stored token, or an empty string if the config holds none.
+
+    Raises:
+        OSError: If the config exists but cannot be read.
+        ValueError: If the config exists but does not hold valid JSON.
+
+    """
+    return _read_hosting_config().get("access_token", "")
+
+
+def _write_hosting_config(hosting_config: dict[str, Any]):
+    """Write the hosting config file atomically.
+
+    The config is written to a temporary file alongside the target and moved
+    into place, so a failed or interrupted write leaves the previous
+    credentials intact rather than truncating them.
+
+    Args:
+        hosting_config: The config to persist.
+
+    """
+    target = constants.Hosting.HOSTING_JSON
+    target.parent.mkdir(parents=True, exist_ok=True)
+    # Close the handle before replacing: Windows cannot rename an open file.
+    temp_fd, temp_name = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.")
+    temp_path = Path(temp_name)
+    try:
+        with os.fdopen(temp_fd, "w", encoding="utf-8") as config_file:
+            json.dump(hosting_config, config_file)
+            config_file.flush()
+            os.fsync(config_file.fileno())
+        temp_path.replace(target)
+    except BaseException:
+        temp_path.unlink(missing_ok=True)
+        raise
+
+
+def delete_token_from_config(token: str | None = None):
+    """Delete the token from the config file if it matches the expected token.
+
+    Args:
+        token: The token expected to be stored. If None, delete unconditionally.
+    """
     if constants.Hosting.HOSTING_JSON.exists():
         try:
-            with constants.Hosting.HOSTING_JSON.open("r") as config_file:
-                hosting_config = json.load(config_file)
-            hosting_config.pop("access_token", None)
-            with constants.Hosting.HOSTING_JSON.open("w") as config_file:
-                json.dump(hosting_config, config_file)
+            hosting_config = _read_hosting_config()
+            if token is None or hosting_config.get("access_token") == token:
+                hosting_config.pop("access_token", None)
+                _write_hosting_config(hosting_config)
         except Exception as ex:
             # Best efforts removing invalid token is OK
-            console.debug(
+            logger.debug(
                 f"Unable to delete the invalid token from config file, err: {ex}"
             )
-    # Delete the previous hosting service data if present.
-    if constants.Hosting.HOSTING_JSON_V0.exists():
-        constants.Hosting.HOSTING_JSON_V0.unlink()
+    # Delete the previous hosting service data if present. Best efforts, like
+    # the rest of this function: the legacy file holds no token the CLI reads.
+    try:
+        constants.Hosting.HOSTING_JSON_V0.unlink(missing_ok=True)
+    except OSError as ex:
+        logger.debug(f"Unable to remove {constants.Hosting.HOSTING_JSON_V0}: {ex}")
 
 
 def save_token_to_config(token: str):
@@ -462,60 +632,21 @@ def save_token_to_config(token: str):
 
     """
     try:
-        if not Path(constants.Reflex.DIR).exists():
-            Path(constants.Reflex.DIR).mkdir(parents=True, exist_ok=True)
-        hosting_config: dict[str, str] = {}
-        if constants.Hosting.HOSTING_JSON.exists():
-            try:
-                with constants.Hosting.HOSTING_JSON.open("r") as config_file:
-                    hosting_config = json.load(config_file)
-            except (OSError, ValueError):
-                hosting_config = {}
+        try:
+            hosting_config = _read_hosting_config()
+        except (OSError, ValueError) as ex:
+            # An unreadable config must not block re-authenticating; the token
+            # is what makes the file useful, so start over from an empty one.
+            logger.debug(
+                f"Discarding unreadable {constants.Hosting.HOSTING_JSON}: {ex}"
+            )
+            hosting_config = {}
         hosting_config["access_token"] = token
-        with constants.Hosting.HOSTING_JSON.open("w") as config_file:
-            json.dump(hosting_config, config_file)
+        _write_hosting_config(hosting_config)
     except Exception as ex:
-        console.warn(
+        logger.warning(
             f"Unable to save token to {constants.Hosting.HOSTING_JSON} due to: {ex}"
         )
-
-
-def create_token(
-    name: str,
-    expiration: int,
-    client: AuthenticatedClient,
-) -> str:
-    """Create a new access token.
-
-    Args:
-        name: The name of the token.
-        expiration: The expiration time in seconds. If None, the token does not expire.
-        client: The authenticated client
-
-    Returns:
-        The created access token.
-
-    Raises:
-        NotAuthenticatedError: If the client is not authenticated.
-        Exception: If the token creation fails.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    try:
-        response = httpx.post(
-            urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/user/token"),
-            json={"name": name, "expiration": expiration},
-            headers=authorization_header(client.token),
-            timeout=constants.Hosting.TIMEOUT,
-        )
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        raise Exception(f"Failed to create token: {ex.response.text}") from ex
-
-    return response.text
 
 
 def requires_access_token() -> str:
@@ -529,7 +660,7 @@ def requires_access_token() -> str:
 
     access_token = get_existing_access_token()
     if not access_token:
-        console.debug("No access token found from the existing config.")
+        logger.debug("No access token found from the existing config.")
 
     return access_token
 
@@ -554,19 +685,6 @@ def authenticated_token() -> tuple[str, dict[str, Any]]:
     return access_token, validated_info
 
 
-def authorization_header(token: str) -> dict[str, str]:
-    """Construct an authorization header with the specified token.
-
-    Args:
-        token: The access token to use.
-
-    Returns:
-        The authorization header in dict format.
-
-    """
-    return {"X-API-TOKEN": token}
-
-
 def requires_authenticated() -> str:
     """Check if the user is authenticated.
 
@@ -581,13 +699,250 @@ def requires_authenticated() -> str:
     return access_token
 
 
+def new_client(token: str | None = None) -> ReflexBuild:
+    """Build a Reflex Build client that talks to the CLI's control plane.
+
+    The URL is the CLI's own: the SDK reads ``REFLEX_BUILD_BACKEND_URL`` first,
+    which ``reflex deploy`` does not, and only the CLI honours the legacy
+    ``CP_BACKEND_URL``.
+
+    Args:
+        token: The access token to send, or None to use the one the environment
+            or the config file holds.
+
+    Returns:
+        The client.
+
+    """
+    return ReflexBuild(
+        token=token or get_existing_access_token() or None,
+        base_url=constants.Hosting.HOSTING_SERVICE,
+    )
+
+
+def _validate(token: str, api: ReflexBuild | None = None) -> Me:
+    """Ask the control plane who an access token authenticates as.
+
+    Args:
+        token: The access token to validate.
+        api: The client to ask with. Defaults to one built for the call.
+
+    Returns:
+        The identity behind the token.
+
+    Raises:
+        TokenAccessDeniedError: If the token was refused.
+        TokenValidationError: If the answer could not be had -- a timeout, a
+            failed request, a server error. These are worth trying again.
+
+    """
+    global _last_auth_request_id
+    source = "reflex-enterprise" if is_reflex_enterprise_installed() else "reflex"
+    with contextlib.ExitStack() as stack:
+        client = api if api is not None else stack.enter_context(new_client(token))
+        try:
+            return client.auth.me(source=source)
+        except APIStatusError as ex:
+            _last_auth_request_id = ex.request_id
+            if ex.status_code in (HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN):
+                logger.debug(f"Access denied (request id: {ex.request_id})")
+                raise TokenAccessDeniedError(
+                    "access denied", request_id=ex.request_id
+                ) from ex
+            logger.debug(
+                f"Unable to validate the token due to: {ex} (request id: {ex.request_id})"
+            )
+            raise TokenValidationError("server error", request_id=ex.request_id) from ex
+        except APIError as ex:
+            _last_auth_request_id = ex.request_id
+            logger.debug(
+                f"Request to auth server failed due to {ex} (request id: {ex.request_id})"
+            )
+            raise TokenValidationError(str(ex), request_id=ex.request_id) from ex
+
+
+def identity_as_dict(me: Me) -> dict[str, Any]:
+    """Render an identity the way the CLI and the framework have always read it.
+
+    ``reflex.utils.prerequisites`` and ``reflex.custom_components`` read this
+    out of ``authenticated_token`` across package versions, so it stays a
+    mapping of the fields the control plane used to return.
+
+    Args:
+        me: The identity the access token authenticates as.
+
+    Returns:
+        The identity as a dict.
+
+    """
+    return {
+        "user_id": str(me.user_id),
+        "org_id": str(me.org_id),
+        "email": me.email,
+        "tier": me.tier,
+        "is_service_account": me.is_service_account,
+    }
+
+
+def upload_client(client: AuthenticatedClient) -> ReflexBuild:
+    """Build a client whose timeouts suit pushing a build's archives.
+
+    The SDK's defaults are sized for API calls. An archive is not one: it is
+    minutes of writing on a link the CLI does not choose, and the reserved
+    signature it goes up under has its own window to finish inside.
+
+    Args:
+        client: The authenticated client the deploy is running under.
+
+    Returns:
+        A client to submit the deployment with. The caller closes it.
+
+    """
+    return ReflexBuild(
+        token=client.token,
+        base_url=constants.Hosting.HOSTING_SERVICE,
+        timeout=UPLOAD_IO_TIMEOUT.total_seconds(),
+    )
+
+
+def validate_token(token: str) -> dict[str, Any]:
+    """Validate the token with the control plane.
+
+    Args:
+        token: The access token to validate.
+
+    Returns:
+        Information about the user associated with the token.
+
+    """
+    return identity_as_dict(_validate(token))
+
+
+def _validate_with_retries(
+    access_token: str, api: ReflexBuild | None = None
+) -> Me | None:
+    """Validate an access token, reporting rather than raising when it does not.
+
+    Args:
+        access_token: The access token to validate.
+        api: The client to ask with. Defaults to one built for the call.
+
+    Returns:
+        The identity behind the token, or None if it could not be established.
+
+    """
+    with console.status("Validating access token ..."):
+        try:
+            return _validate(access_token, api)
+        except ValueError as ex:
+            # getattr: mocks/foreign ValueErrors don't carry a request id.
+            request_id = getattr(ex, "request_id", "") or get_auth_request_id()
+            logger.error(f"Access denied (auth request id: {request_id})")
+            delete_token_from_config(access_token)
+        except Exception as ex:
+            request_id = getattr(ex, "request_id", "") or get_auth_request_id()
+            logger.warning(
+                f"Unable to validate access token: {ex} (auth request id: {request_id})"
+            )
+    return None
+
+
+def validate_token_with_retries(access_token: str) -> dict[str, Any]:
+    """Validate the access token, reporting rather than raising when it does not.
+
+    Args:
+        access_token: The access token to validate.
+
+    Returns:
+        validated user info dict, empty if the token could not be validated.
+
+    """
+    me = _validate_with_retries(access_token)
+    return identity_as_dict(me) if me is not None else {}
+
+
+def get_authentication_client(token: str | None = None) -> AuthenticatedClient | None:
+    """Get an authenticated client for a token that validates.
+
+    Args:
+        token: The authentication token.
+
+    Returns:
+        An authenticated client, or None when there is no token that validates.
+
+    """
+    access_token = token or get_existing_access_token()
+    if not access_token:
+        return None
+    api = new_client(access_token)
+    me = _validate_with_retries(access_token, api)
+    if me is None:
+        api.close()
+        return None
+    return AuthenticatedClient(api, me)
+
+
+def get_authenticated_client(
+    token: str | None = None, interactive: bool = True
+) -> AuthenticatedClient:
+    """Get an authenticated client.
+
+    Args:
+        token: The authentication token.
+        interactive: If running in interactive mode.
+
+    Returns:
+        An authenticated client.
+
+    Raises:
+        Exit: If no token is provided in non-interactive mode, the token is
+            rejected in non-interactive mode, or the browser login did not
+            produce one.
+
+    """
+    if not interactive:
+        if token:
+            access_token, source = token, TokenSource.OPTION
+        else:
+            access_token, source = get_existing_access_token_with_source()
+        if not access_token:
+            logger.error("Token is required for non-interactive mode.")
+            raise click.exceptions.Exit(1)
+        api = new_client(access_token)
+        try:
+            with console.status("Validating access token ..."):
+                me = _validate(access_token, api)
+        except TokenAccessDeniedError as err:
+            api.close()
+            logger.error(rejected_token_message(source, err))
+            if source is TokenSource.CONFIG:
+                delete_token_from_config(access_token)
+            raise click.exceptions.Exit(1) from err
+        except TokenValidationError as err:
+            api.close()
+            logger.error(
+                f"Unable to validate the access token from the {source.value}: "
+                f"{err} (auth request id: {err.request_id})"
+            )
+            raise click.exceptions.Exit(1) from err
+        return AuthenticatedClient(api, me)
+
+    if (client := get_authentication_client(token)) is not None:
+        return client
+
+    access_token, me = _authenticate_on_browser()
+    if me is None:
+        raise click.exceptions.Exit(1)
+    return AuthenticatedClient(new_client(access_token), me)
+
+
 def interactive_resolve_project_or_app_name_conflicts(
-    items: list[dict],
+    items: list[Any],
     rows: list[list[str]],
     headers: list[str],
     conflict_warn_msg: str,
     conflict_ask_msg: str,
-) -> dict:
+) -> Any:
     """Interactively resolve conflicts when multiple projects or apps are found.
 
     Args:
@@ -598,10 +953,10 @@ def interactive_resolve_project_or_app_name_conflicts(
         conflict_ask_msg: The question to ask the user.
 
     Returns:
-        The selected item as a dictionary
+        The selected item.
 
     """
-    console.warn(conflict_warn_msg)
+    logger.warning(conflict_warn_msg)
     console.print_table(rows, headers=list(headers))
     option = console.ask(
         conflict_ask_msg,
@@ -615,7 +970,7 @@ def search_app(
     client: AuthenticatedClient,
     project_id: str | None,
     interactive: bool = False,
-) -> dict | None:
+) -> AppSummary | None:
     """Search for an application by name within a specific project.
 
     Args:
@@ -625,49 +980,35 @@ def search_app(
         interactive: Whether to interactively resolve conflicts.
 
     Returns:
-        list[dict]: The search results as a list of dicts.
+        The app, or None when no app has that name.
 
     Raises:
-        NotAuthenticatedError: If the token is not valid.
-        Exception: If the search request fails.
         Exit: If multiple apps are found and interactive is False.
 
     """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    params: dict[str, str] = {"app_name": app_name}
-    if project_id:
-        params["project_id"] = project_id
-    response = httpx.get(
-        urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/apps/search"),
-        params=params,
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        if response.status_code == HTTPStatus.NOT_FOUND:
-            return None
-        ex_details = ex.response.json().get("detail")
-        raise Exception(ex_details) from ex
-
-    apps = response.json()
+    apps = client.api.apps.search(app_name, project_id=project_id)
 
     if len(apps) > 1 and not interactive:
-        console.error(
+        logger.error(
             f"Multiple apps with the name {app_name!r} found. Please provide a unique name."
         )
         raise click.exceptions.Exit(1)
 
     if len(apps) > 1 and interactive:
+        project_names = {
+            project.id: project.name for project in client.api.projects.list()
+        }
         return interactive_resolve_project_or_app_name_conflicts(
             apps,
             rows=[
-                [f"({i})", x["id"], x["name"], x["project"]["name"], x["project_id"]]
-                for i, x in enumerate(apps)
+                [
+                    f"({i})",
+                    str(app.id),
+                    app.name,
+                    project_names.get(app.project_id, ""),
+                    str(app.project_id),
+                ]
+                for i, app in enumerate(apps)
             ],
             headers=["", "App ID", "Name", "Project name", "Project ID"],
             conflict_warn_msg="Found multiple apps with the same name. Select one to continue",
@@ -680,47 +1021,25 @@ def search_app(
 
 def search_project(
     project_name: str, client: AuthenticatedClient, interactive: bool = False
-) -> dict | None:
+) -> ProjectRef | None:
     """Search for a project by name.
 
     Args:
-        project_name: The name of the application to search for.
+        project_name: The name of the project to search for.
         client: The authenticated client
         interactive: Whether to interactively resolve conflicts.
 
     Returns:
-        list[dict]: The search results as a list of dict.
+        The project, or None when no project has that name.
 
     Raises:
-        NotAuthenticatedError: If the token is not valid.
-        Exception: If the search request fails.
         Exit: If multiple projects are found and interactive is False.
 
     """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-
-    response = httpx.get(
-        urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/project/search"),
-        params={"project_name": project_name},
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        if response.status_code == HTTPStatus.NOT_FOUND:
-            return None
-        ex_details = ex.response.json().get("detail")
-        raise Exception(f"project search failed: {ex_details}") from ex
-
-    projects = response.json()
+    projects = client.api.projects.search(project_name)
 
     if len(projects) > 1 and not interactive:
-        console.error(
+        logger.error(
             f"Multiple projects with the name {project_name!r} found. Please provide a unique name."
         )
         raise click.exceptions.Exit(1)
@@ -728,7 +1047,10 @@ def search_project(
     if len(projects) > 1 and interactive:
         return interactive_resolve_project_or_app_name_conflicts(
             projects,
-            rows=[[f"({i})", x["id"], x["name"]] for i, x in enumerate(projects)],
+            rows=[
+                [f"({i})", str(project.id), project.name]
+                for i, project in enumerate(projects)
+            ],
             headers=["", "Project ID", "Project name"],
             conflict_warn_msg="Found multiple projects with the same name. Select one to continue",
             conflict_ask_msg="Which project would you like to use?",
@@ -738,142 +1060,193 @@ def search_project(
     return None
 
 
-def get_app(app_id: str, client: AuthenticatedClient) -> dict:
-    """Retrieve details of a specific application by its ID.
+# Hosting provider identifiers understood by the backend. Reflex Cloud is the
+# managed platform (its backend wire value happens to be "fly", an
+# implementation detail kept out of user-facing names); "gcp" is a
+# customer-connected GCP Cloud Run target (bring-your-own-cloud, Enterprise tier).
+PROVIDER_REFLEX_CLOUD = "fly"
+PROVIDER_GCP = "gcp"
+
+# User-facing provider names accepted on the CLI, mapped to backend values. Only
+# provider-agnostic names are exposed -- the "fly" wire value is deliberately not
+# an alias so deploy scripts don't couple to how Reflex Cloud is hosted.
+PROVIDER_ALIASES = {
+    "reflex-cloud": PROVIDER_REFLEX_CLOUD,
+    "reflex": PROVIDER_REFLEX_CLOUD,
+    "cloud": PROVIDER_REFLEX_CLOUD,
+    "gcp": PROVIDER_GCP,
+    "google": PROVIDER_GCP,
+    "google-cloud": PROVIDER_GCP,
+}
+
+
+def normalize_provider(provider: str) -> str | None:
+    """Map a user-facing provider name to the backend provider value.
 
     Args:
-        app_id: The ID of the application to retrieve.
-        client: The authenticated client
+        provider: A provider name from the CLI (e.g. "reflex-cloud", "gcp").
 
     Returns:
-        dict: The application details as a dictionary.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-        GetAppError: If the request to get the app fails.
-        ValueError: If the app_id is not valid.
+        The backend provider value (``PROVIDER_REFLEX_CLOUD`` or
+        ``PROVIDER_GCP``), or None if unrecognized.
 
     """
-    import httpx
+    return PROVIDER_ALIASES.get(provider.strip().lower())
 
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    if not isinstance(app_id, str) or not app_id:
-        raise ValueError("app_id should be a string")
-    response = httpx.get(
-        urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app_id}"),
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
+
+def provider_display_name(provider: str | None) -> str:
+    """Return a human-facing label for a backend provider value.
+
+    Args:
+        provider: The backend provider value (``PROVIDER_GCP`` for GCP; anything
+            else, including None, is treated as Reflex Cloud).
+
+    Returns:
+        A display label, defaulting to "Reflex Cloud".
+
+    """
+    return "Google Cloud (GCP)" if provider == PROVIDER_GCP else "Reflex Cloud"
+
+
+def get_token_org_id(client: AuthenticatedClient) -> str | None:
+    """Return the organization id the caller's token is scoped to.
+
+    Args:
+        client: The authenticated client.
+
+    Returns:
+        The org id string, or None if unavailable.
+
+    """
+    return str(client.me.org_id) if client.me.org_id else None
+
+
+def get_token_tier(client: AuthenticatedClient) -> str | None:
+    """Return the subscription tier of the caller's token org.
+
+    Args:
+        client: The authenticated client.
+
+    Returns:
+        The tier name (e.g. "Enterprise"), or None if unavailable.
+
+    """
+    return client.me.tier or None
+
+
+def gcp_deploy_available(client: AuthenticatedClient) -> GcpStatus | None:
+    """Best-effort check of whether GCP is a usable deploy target for the caller.
+
+    Never raises: it decides whether to *offer* GCP in ``reflex deploy``, so a
+    lookup failure (older backend, permissions, network) simply falls back to
+    the Reflex Cloud default rather than aborting the deploy.
+
+    Args:
+        client: The authenticated client.
+
+    Returns:
+        The GCP status when GCP is both configured and allowed for the caller's
+        org, otherwise None.
+
+    """
+    org_id = get_token_org_id(client)
+    if not org_id:
+        return None
     try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        try:
-            raise GetAppError(ex.response.json().get("detail")) from ex
-        except json.JSONDecodeError:
-            raise GetAppError(ex.response.text) from ex
-    return response.json()
+        status = client.api.providers.gcp_status(org_id)
+    except Exception as ex:
+        logger.debug(f"Unable to determine GCP availability: {ex}")
+        return None
+    return status if status.configured and status.allowed else None
 
 
-def create_app(
-    app_name: str,
+def list_gcp_connections(
+    client: AuthenticatedClient, org_id: str | None = None
+) -> list[GcpConnection]:
+    """List the GCP connections an org can deploy through.
+
+    Read from the org's GCP status, which every member can see (the deploy
+    dialog reads the same thing) and which lists only connections that are
+    usable deploy targets. The provider-account listing is richer but is
+    limited to org admins.
+
+    Args:
+        client: The authenticated client.
+        org_id: The organization to query; defaults to the caller's token org.
+
+    Returns:
+        The usable connections, empty if no org id can be resolved.
+
+    """
+    org_id = org_id or get_token_org_id(client)
+    if not org_id:
+        return []
+    return list(client.api.providers.gcp_status(org_id).connections)
+
+
+def find_gcp_connection(
+    connections: list[GcpConnection], name: str
+) -> GcpConnection | None:
+    """Pick the connection a user named, by id or by name.
+
+    Args:
+        connections: The connections to search, as returned by
+            ``list_gcp_connections``.
+        name: The connection id or name the user asked for.
+
+    Returns:
+        The matching connection, or None if nothing matched.
+
+    """
+    wanted = name.strip()
+    for connection in connections:
+        if str(connection.id) == wanted:
+            return connection
+    lowered = wanted.lower()
+    for connection in connections:
+        if connection.name.strip().lower() == lowered:
+            return connection
+    return None
+
+
+def set_instance_bounds(
+    app_id: str,
     client: AuthenticatedClient,
-    description: str,
-    project_id: str | None,
-):
-    """Create a new application.
+    min_instances: int | None = None,
+    max_instances: int | None = None,
+) -> str | None:
+    """Set the autoscaling instance bounds on an app.
+
+    Only the bounds explicitly passed are changed: the endpoint replaces both,
+    so the app is read for the one that is not being set. The bounds are picked
+    up by the next deployment, so this must be called before submitting one for
+    it to take effect.
 
     Args:
-        app_name: The name of the application.
-        description: The description of the application.
-        project_id: The ID of the project to associate the application with.
-        client: The authenticated client
+        app_id: The id of the application.
+        client: The authenticated client.
+        min_instances: The minimum number of instances to keep running.
+        max_instances: The maximum number of instances to scale out to.
 
     Returns:
-        dict: The created application details as a dictionary.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-        ValueError: If forbidden.
+        None on success, or a ``"set instance bounds failed: ..."`` string on
+        error (validation, unsupported platform, or a scale already running).
 
     """
-    import httpx
-
-    if not isinstance(app_name, str) or not app_name:
-        raise ValueError("app_name should be a string")
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    response = httpx.post(
-        urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/apps/"),
-        json={"name": app_name, "description": description, "project": project_id},
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    if response.status_code == HTTPStatus.FORBIDDEN:
-        console.debug(f"Server responded with 403: {response.text}")
-        raise ValueError(f"{response.text}")
-    response.raise_for_status()
-    response_json = response.json()
-    return response_json
-
-
-def get_hostname(
-    app_id: str, app_name: str, client: AuthenticatedClient, hostname: str | None
-) -> dict:
-    """Retrieve or reserve a hostname for a specific application.
-
-    Args:
-        app_id: The ID of the application.
-        app_name: The name of the application.
-        hostname: The desired hostname. If None, a hostname will be generated.
-        client: The authenticated client
-
-    Returns:
-        dict: The hostname details as a dictionary.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-        Exception: If deployment fails or the hostname is invalid.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-
-    data = {"app_id": app_id, "app_name": app_name}
-    if hostname:
-        clean_hostname = extract_subdomain(hostname)
-        if clean_hostname is None:
-            raise Exception("bad hostname provided")
-        data["hostname"] = clean_hostname
-    response = httpx.post(
-        urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/apps/reserve"),
-        headers=authorization_header(client.token),
-        json=data,
-        timeout=constants.Hosting.TIMEOUT,
-    )
     try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        if ex.response.status_code == 413:
-            raise Exception(
-                "deployment failed: the deployment payload is too large (over 100MB). "
-                "Please reduce the size of your project by removing large files or "
-                "adding them to your .gitignore file."
-            ) from ex
-        try:
-            ex_details = ex.response.json().get("detail")
-            if ex_details == "hostname taken":
-                return {"error": "hostname taken"}
-            raise Exception(f"deployment failed: {ex_details}") from ex
-        except (ValueError, AttributeError):
-            # Response is not valid JSON or missing detail field
-            raise Exception(
-                f"deployment failed: HTTP {ex.response.status_code} - {ex.response.text}"
-            ) from ex
-    response_json = response.json()
-    return response_json
+        current = client.api.apps.get(app_id)
+        client.api.apps.set_instance_bounds(
+            app_id,
+            min_instances=current.min_instances
+            if min_instances is None
+            else min_instances,
+            max_instances=current.max_instances
+            if max_instances is None
+            else max_instances,
+        )
+    except ReflexBuildError as ex:
+        return f"set instance bounds failed: {error_message(ex)}"
+    return None
 
 
 def extract_subdomain(url: str):
@@ -904,154 +1277,25 @@ def extract_subdomain(url: str):
     return None
 
 
-def get_secrets(app_id: str, client: AuthenticatedClient) -> str:
-    """Retrieve secrets for a given application.
+def scale_app(app_id: str, scale_params: ScaleParams, client: AuthenticatedClient):
+    """Scale an application.
 
     Args:
         app_id: The ID of the application.
+        scale_params: The scaling parameters.
         client: The authenticated client
 
-    Returns:
-        The secrets as a dictionary.
-
     Raises:
-        NotAuthenticatedError: If the token is not valid.
+        ResponseError: If the request to scale the app fails.
 
     """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    response = httpx.get(
-        urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app_id}/secrets"),
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
     try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        try:
-            return ex.response.json().get("detail")
-        except json.JSONDecodeError:
-            return ex.response.text
-    return response.json()
-
-
-def update_secrets(
-    app_id: str,
-    secrets: dict,
-    client: AuthenticatedClient,
-    reboot: bool = False,
-):
-    """Update secrets for a given application.
-
-    Args:
-        app_id: The ID of the application.
-        secrets: The secrets to update.
-        reboot: Whether to reboot the application with the new secrets.
-        client: The authenticated client
-
-    Returns:
-        The updated secrets as a dictionary.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    response = httpx.post(
-        urljoin(
-            constants.Hosting.HOSTING_SERVICE,
-            f"/api/v1/apps/{app_id}/secrets?reboot={reboot}",
-        ),
-        headers=authorization_header(client.token),
-        json={"secrets": secrets},
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    response.raise_for_status()
-    response_json = response.json()
-    return response_json
-
-
-def delete_secret(
-    app_id: str, key: str, client: AuthenticatedClient, reboot: bool = False
-) -> str:
-    """Delete a secret for a given application.
-
-    Args:
-        app_id: The ID of the application.
-        key: The key of the secret to delete.
-        reboot: Whether to reboot the application with the updated secrets.
-        client: The authenticated client
-
-    Returns:
-        The response from the delete operation as a dictionary.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    response = httpx.delete(
-        urljoin(
-            constants.Hosting.HOSTING_SERVICE,
-            f"/api/v1/apps/{app_id}/secrets/{key}?reboot={reboot}",
-        ),
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        try:
-            return ex.response.json().get("detail")
-        except json.JSONDecodeError:
-            return ex.response.text
-    return response.json()
-
-
-def create_project(name: str, client: AuthenticatedClient) -> dict:
-    """Create a new project.
-
-    Args:
-        name: The name of the project.
-        client: The authenticated client
-
-    Returns:
-        dict: The created project details as a dictionary.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-        ValueError: If the request to create the project fails.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    response = httpx.post(
-        urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/project/create"),
-        json={"name": name},
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    response_json = response.json()
-    if response.status_code == HTTPStatus.BAD_REQUEST:
-        console.debug(f"Server responded with 400: {response_json.get('detail')}")
-        raise ValueError(f"{response_json.get('detail', 'bad request')}")
-    if response.status_code == HTTPStatus.CONFLICT:
-        console.debug(f"Duplicate project name: {response_json.get('detail')}")
-        raise ValueError(
-            f"A project named '{name}' already exists. Please use a different name."
-        )
-    response.raise_for_status()
-    return response_json
+        client.api.apps.scale(app_id, **scale_params.as_scale_arguments())
+    except (AuthenticationError, MissingTokenError):
+        # Answered by the command's own handler, which says how to fix it.
+        raise
+    except ReflexBuildError as ex:
+        raise ResponseError(f"scale app failed: {error_message(ex)}") from ex
 
 
 def select_project(project: str, token: str | None = None) -> str:
@@ -1062,15 +1306,13 @@ def select_project(project: str, token: str | None = None) -> str:
         token: The authentication token. If None, attempts to authenticate.
 
     Returns:
-        None
+        A message saying what was selected, or why nothing was.
 
     """
     try:
-        with constants.Hosting.HOSTING_JSON.open() as config_file:
-            hosting_config = json.load(config_file)
-        with constants.Hosting.HOSTING_JSON.open("w") as config_file:
-            hosting_config["project"] = project
-            json.dump(hosting_config, config_file)
+        hosting_config = _read_hosting_config()
+        hosting_config["project"] = project
+        _write_hosting_config(hosting_config)
     except Exception as ex:
         return (
             f"failed to fetch token from {constants.Hosting.HOSTING_JSON} due to: {ex}"
@@ -1079,17 +1321,20 @@ def select_project(project: str, token: str | None = None) -> str:
 
 
 def normalize_project_id(value: Any) -> str | None:
-    """Normalize a project ID value, treating empty/whitespace strings and non-strings as None.
+    """Normalize a project ID, canonicalizing valid UUIDs.
 
     Args:
         value: The raw project ID value from config, CLI args, or hosting.json.
 
     Returns:
-        The stripped project ID, or None if the value is missing or blank.
+        The canonical UUID, stripped non-UUID string, or None if missing or blank.
     """
-    if isinstance(value, str) and value.strip():
-        return value.strip()
-    return None
+    if not isinstance(value, str) or not (value := value.strip()):
+        return None
+    try:
+        return str(uuid.UUID(value))
+    except ValueError:
+        return value
 
 
 def get_selected_project() -> str | None:
@@ -1100,1050 +1345,12 @@ def get_selected_project() -> str | None:
 
     """
     try:
-        with constants.Hosting.HOSTING_JSON.open() as config_file:
-            hosting_config = json.load(config_file)
-            return normalize_project_id(hosting_config.get("project"))
+        return normalize_project_id(_read_hosting_config().get("project"))
     except Exception as ex:
-        console.debug(
+        logger.debug(
             f"Unable to read selected project from {constants.Hosting.HOSTING_JSON} due to: {ex}"
         )
     return None
-
-
-def get_projects(client: AuthenticatedClient) -> list[dict]:
-    """Retrieve a list of projects.
-
-    Args:
-        client: The authenticated client.
-
-    Returns:
-        The list of projects as a dictionary.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    response = httpx.get(
-        urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/project/"),
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    response.raise_for_status()
-    response_json = response.json()
-    return response_json
-
-
-def get_project(project_id: str, client: AuthenticatedClient):
-    """Retrieve a single project given the project ID.
-
-    Args:
-        project_id: The ID of the project.
-        client: The authenticated client
-
-    Returns:
-        The project details as a dictionary.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    response = httpx.get(
-        urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/project/{project_id}"),
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    response.raise_for_status()
-    response_json = response.json()
-    return response_json
-
-
-def get_project_roles(project_id: str, client: AuthenticatedClient):
-    """Retrieve the roles for a project.
-
-    Args:
-        project_id: The ID of the project.
-        client: The authenticated client
-
-    Returns:
-        The roles as a dictionary.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    response = httpx.get(
-        urljoin(
-            constants.Hosting.HOSTING_SERVICE, f"/api/v1/project/{project_id}/roles"
-        ),
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    response.raise_for_status()
-    response_json = response.json()
-    return response_json
-
-
-def get_project_role_permissions(
-    project_id: str, role_id: str, client: AuthenticatedClient
-):
-    """Retrieve the permissions for a specific role in a project.
-
-    Args:
-        project_id: The ID of the project.
-        role_id: The ID of the role.
-        client: The authenticated client
-
-    Returns:
-        The role permissions as a dictionary.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    response = httpx.get(
-        urljoin(
-            constants.Hosting.HOSTING_SERVICE,
-            f"/api/v1/project/{project_id}/role/{role_id}",
-        ),
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    response.raise_for_status()
-    response_json = response.json()
-    return response_json
-
-
-def get_project_role_users(project_id: str, client: AuthenticatedClient):
-    """Retrieve the users for a project.
-
-    Args:
-        project_id: The ID of the project.
-        client: The authenticated client
-
-    Returns:
-        The users as a dictionary.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    response = httpx.get(
-        urljoin(
-            constants.Hosting.HOSTING_SERVICE, f"/api/v1/project/{project_id}/users"
-        ),
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    response.raise_for_status()
-    response_json = response.json()
-    return response_json
-
-
-def invite_user_to_project(
-    role_id: str, user_id: str, client: AuthenticatedClient
-) -> str:
-    """Invite a user to a project with a specific role.
-
-    Args:
-        role_id: The ID of the role to assign to the user.
-        user_id: The ID of the user to invite.
-        client: The authenticated client
-
-    Returns:
-        The response from the invite operation as a dictionary.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    response = httpx.post(
-        urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/project/users/invite"),
-        headers=authorization_header(client.token),
-        json={"user_id": user_id, "role_id": role_id},
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        try:
-            return ex.response.json().get("detail")
-        except json.JSONDecodeError:
-            return ex.response.text
-    return response.json()
-
-
-def validate_deployment_args(
-    app_name: str,
-    app_id: str | None,
-    project_id: str | None,
-    regions: list[str] | None,
-    vmtype: str | None,
-    hostname: str | None,
-    client: AuthenticatedClient,
-) -> str:
-    """Validate the deployment arguments.
-
-    Args:
-        app_name: The name of the application.
-        app_id: The ID of the application.
-        project_id: The ID of the project to associate the deployment with.
-        regions: The list of regions for the deployment.
-        vmtype: The VM type for the deployment.
-        hostname: The hostname for the deployment.
-        client: The authenticated client.
-
-    Returns:
-        The validation result as a string -- "success" if all checks pass.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        return "not authenticated"
-
-    param_data = {
-        "app_name": app_name or "",
-        "app_id": app_id or "",
-        "project_id": project_id or "",
-        "regions": json.dumps(regions or []),
-        "vmtype": vmtype or "",
-        "hostname": hostname or "",
-    }
-    response = httpx.get(
-        urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/deployments/validate_cli"),
-        headers=authorization_header(client.token),
-        params=param_data,
-        timeout=15,
-    )
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        try:
-            ex_details = ex.response.json().get("detail")
-        except (httpx.RequestError, ValueError, KeyError):
-            return "deployment failed: internal server error"
-        else:
-            return f"deployment failed: {ex_details}"
-
-    return "success"
-
-
-def create_deployment(
-    zip_dir: Path,
-    client: AuthenticatedClient,
-    app_name: str | None,
-    project_id: str | None,
-    regions: list | None,
-    hostname: str | None,
-    vmtype: str | None,
-    secrets: dict | None,
-    packages: list | None,
-    strategy: str | None,
-    app_id: str | None,
-) -> str:
-    """Create a new deployment for an application.
-
-    Args:
-        app_name: The name of the application.
-        project_id: The ID of the project to associate the deployment with.
-        regions: The list of regions for the deployment.
-        zip_dir: The directory containing the zip files for the deployment.
-        hostname: The hostname for the deployment.
-        vmtype: The VM type for the deployment.
-        secrets: The secrets to use for the deployment.
-        client: The authenticated client
-        packages: The list of packages to install on the VM.
-        strategy: The deployment strategy to use.
-        app_id: The ID of the application.
-
-    Returns:
-        The deployment id.git c
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    cli_version = importlib.metadata.version("reflex-hosting-cli")
-    zips = [
-        (
-            "files",
-            (
-                "backend.zip",
-                (zip_dir / "backend.zip").open("rb"),
-            ),
-        ),
-        (
-            "files",
-            (
-                "frontend.zip",
-                (zip_dir / "frontend.zip").open("rb"),
-            ),
-        ),
-    ]
-    payload: dict[str, Any] = {
-        "app_id": app_id,
-        "app_name": app_name,
-        "reflex_hosting_cli_version": cli_version,
-        "reflex_version": dependency.get_reflex_version(),
-        "python_version": platform.python_version(),
-    }
-    if project_id:
-        payload["project_id"] = project_id
-    if regions:
-        regions = regions or []
-        payload["regions"] = json.dumps(regions)
-    if hostname:
-        payload["hostname"] = hostname
-    if vmtype:
-        payload["vm_type"] = vmtype
-    if secrets:
-        payload["secrets"] = json.dumps(secrets)
-    if packages:
-        payload["packages"] = json.dumps(packages)
-    if strategy:
-        payload["deployment_strategy"] = strategy
-
-    response = httpx.post(
-        urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/deployments"),
-        data=payload,
-        files=zips,
-        headers=authorization_header(client.token),
-        timeout=55,
-    )
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        if ex.response.status_code == 413:
-            return (
-                "deployment failed: the deployment payload is too large (over 100MB). "
-                "Please reduce the size of your project by removing large files or "
-                "adding them to your .gitignore file."
-            )
-        try:
-            ex_details = ex.response.json().get("detail")
-        except (httpx.RequestError, ValueError, KeyError):
-            return "deployment failed: internal server error"
-        else:
-            return f"deployment failed: {ex_details}"
-    return response.json()
-
-
-class SecurityReviewError(ResponseError):
-    """Raised when a security review request fails."""
-
-
-_SECURITY_REVIEW_PREFIX = "/api/v1/agents/security-review"
-
-
-def _security_review_detail(response: Any) -> str:
-    """Extract a human-readable ``detail`` from a failed review response.
-
-    Args:
-        response: The error response from the security review API.
-
-    Returns:
-        The server-provided detail, or a generic fallback if the body is not
-        a JSON object with a ``detail`` field.
-
-    """
-    try:
-        return str(response.json()["detail"])
-    except (ValueError, TypeError, KeyError):
-        return "internal server error"
-
-
-def submit_security_review(zip_bytes: bytes, client: AuthenticatedClient) -> str:
-    """Submit a zipped app for security review.
-
-    Uploads the archive straight to object storage via a presigned URL, then
-    submits the stored object for review.
-
-    Args:
-        zip_bytes: The zipped app source to review.
-        client: The authenticated client.
-
-    Returns:
-        The id of the submitted job, to be polled with ``get_security_review``.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-        SecurityReviewError: If any step of the submission fails.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-
-    auth = authorization_header(client.token)
-
-    # 1. Ask the API for a presigned URL to upload the archive directly.
-    upload_url_response = httpx.post(
-        urljoin(
-            constants.Hosting.HOSTING_SERVICE,
-            f"{_SECURITY_REVIEW_PREFIX}/jobs/upload-url",
-        ),
-        json={"content_length": len(zip_bytes), "content_type": "application/zip"},
-        headers=auth,
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    try:
-        upload_url_response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        raise SecurityReviewError(_security_review_detail(ex.response)) from ex
-    upload = upload_url_response.json()
-
-    # 2. Upload the bytes to storage. The presigned URL pins the content length
-    #    and type, so send the returned headers verbatim and let httpx derive
-    #    Content-Length from the body — setting it manually breaks the signature.
-    put_response = httpx.put(
-        upload["url"],
-        content=zip_bytes,
-        headers=upload.get("headers", {}),
-        timeout=120,
-    )
-    try:
-        put_response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        raise SecurityReviewError("failed to upload app source for review") from ex
-
-    # 3. Submit the uploaded object for review.
-    response = httpx.post(
-        urljoin(constants.Hosting.HOSTING_SERVICE, f"{_SECURITY_REVIEW_PREFIX}/jobs"),
-        json={"key": upload["key"]},
-        headers=auth,
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        raise SecurityReviewError(_security_review_detail(ex.response)) from ex
-    return response.json()["job_id"]
-
-
-def get_security_review(job_id: str, client: AuthenticatedClient) -> dict[str, Any]:
-    """Poll a previously submitted security review job.
-
-    Args:
-        job_id: The id returned by ``submit_security_review``.
-        client: The authenticated client.
-
-    Returns:
-        The job status payload: ``status`` is one of ``pending``, ``complete``
-        or ``error``; ``result`` holds the review once ``complete``.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-        SecurityReviewError: If the server returns an error.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-
-    response = httpx.get(
-        urljoin(
-            constants.Hosting.HOSTING_SERVICE,
-            f"{_SECURITY_REVIEW_PREFIX}/jobs/{job_id}",
-        ),
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        raise SecurityReviewError(_security_review_detail(ex.response)) from ex
-    return response.json()
-
-
-def stop_app(app_id: str, client: AuthenticatedClient):
-    """Stop a running application.
-
-    Args:
-        app_id: The ID of the application.
-        client: The authenticated client
-
-    Returns:
-        The response from the stop operation as a dictionary.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    response = httpx.post(
-        urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app_id}/stop"),
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        ex_details = ex.response.json().get("detail")
-        return f"stop app failed: {ex_details}"
-    return response.json()
-
-
-def start_app(app_id: str, client: AuthenticatedClient):
-    """Start a stopped application.
-
-    Args:
-        app_id: The ID of the application.
-        client: The authenticated client
-
-    Returns:
-        The response from the start operation as a dictionary.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    response = httpx.post(
-        urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app_id}/start"),
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        ex_details = ex.response.json().get("detail")
-        return f"start app failed: {ex_details}"
-    return response.json()
-
-
-def delete_app(app_id: str, client: AuthenticatedClient):
-    """Delete an application.
-
-    Args:
-        app_id: The ID of the application.
-        client: The authenticated client
-
-    Returns:
-        The response from the delete operation as a dictionary.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    app = get_app(app_id=app_id, client=client)
-    if not app:
-        console.warn("no app with given id found")
-        return None
-    response = httpx.delete(
-        urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app['id']}/delete"),
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        ex_details = ex.response.json().get("detail")
-        return f"delete app failed: {ex_details}"
-    return response.json()
-
-
-def get_app_logs(
-    app_id: str,
-    offset: int | None,
-    start: int | None,
-    end: int | None,
-    client: AuthenticatedClient,
-    cursor: str | None = None,
-):
-    """Retrieve logs for a given application.
-
-    Args:
-        app_id: The ID of the application.
-        offset: The offset in seconds from the current time.
-        start: The start time in Unix epoch format.
-        end: The end time in Unix epoch format.
-        client: The authenticated client
-        cursor: The cursor for pagination.
-
-    Returns:
-        The logs as a dictionary.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    try:
-        app = get_app(app_id=app_id, client=client)
-    except GetAppError:
-        console.warn(f"No application found with ID '{app_id}'")
-        return None
-    if not app:
-        console.warn("no app with given id found")
-        return None
-    params: dict[str, str | int | None] = (
-        {"offset": offset} if offset else {"start": start, "end": end}
-    )
-    if cursor:
-        params["cursor"] = cursor
-    try:
-        with console.status("Fetching application logs..."):
-            response = httpx.get(
-                urljoin(
-                    constants.Hosting.HOSTING_SERVICE,
-                    f"/api/v1/apps/{app['id']}/logsv2",
-                ),
-                params=params,
-                headers=authorization_header(client.token),
-                timeout=constants.Hosting.TIMEOUT,
-            )
-            response.raise_for_status()
-    except httpx.RequestError:
-        return []
-    except httpx.HTTPStatusError as ex:
-        try:
-            ex_details = ex.response.json().get("detail")
-        except json.JSONDecodeError:
-            return []
-        else:
-            return f"get app logs failed: {ex_details}"
-    else:
-        try:
-            return response.json()
-        except json.JSONDecodeError:
-            return []
-
-
-def list_apps(client: AuthenticatedClient, project: str | None = None) -> list[dict]:
-    """List all the hosted deployments of the authenticated user.
-
-    Args:
-        project: The project ID to filter deployments.
-        client: The authenticated client
-
-    Returns:
-        List[dict]: A list of deployments as dictionaries.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-        Exception: when listing apps fails.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-
-    url = urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/apps")
-    params = {"project": project} if project else None
-
-    response = httpx.get(
-        url,
-        params=params,
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        ex_details = ex.response.json().get("detail")
-        raise Exception(f"list app failed: {ex_details}") from ex
-    return response.json()
-
-
-def get_app_history(app_id: str, client: AuthenticatedClient) -> list:
-    """Retrieve the deployment history for a given application.
-
-    Args:
-        app_id: The ID of the application.
-        client: The authenticated client
-
-    Returns:
-        list: A list of deployment history entries as dictionaries.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    response = httpx.get(
-        urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app_id}/history"),
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-
-    response.raise_for_status()
-    response_json = response.json()
-    result = [
-        {
-            "id": deployment["id"],
-            "status": deployment["status"],
-            "hostname": deployment["hostname"],
-            "python version": deployment["python_version"],
-            "reflex version": deployment["reflex_version"],
-            "vm type": deployment["vm_type"],
-            "timestamp": deployment["timestamp"],
-        }
-        for deployment in response_json
-    ]
-    return result
-
-
-def get_app_status(app_id: str, client: AuthenticatedClient) -> str:
-    """Retrieve the status of a specific app.
-
-    Args:
-        app_id: The ID of the app.
-        client: The authenticated client
-
-    Returns:
-        str: The status of the app.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    try:
-        response = httpx.get(
-            urljoin(
-                constants.Hosting.HOSTING_SERVICE,
-                f"/api/v1/deployments/{app_id}/status",
-            ),
-            headers=authorization_header(client.token),
-            timeout=constants.Hosting.TIMEOUT,
-        )
-    except httpx.RequestError as e:
-        return "lost connection: trying again" + f"({e.__class__.__name__}: {e})"
-
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError:
-        return f"error: bad response: {response.status_code}. received a bad response from cloud service."
-    return response.json()
-
-
-def scale_app(app_id: str, scale_params: ScaleParams, client: AuthenticatedClient):
-    """Scale an application.
-
-    Args:
-        app_id: The ID of the application.
-        scale_params: The scaling parameters.
-        client: The authenticated client
-
-    Returns:
-        The response from the scale operation as a dictionary.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-        ResponseError: If the request to scale the app fails.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    response = httpx.post(
-        urljoin(constants.Hosting.HOSTING_SERVICE, f"/api/v1/apps/{app_id}/scale"),
-        headers=authorization_header(client.token),
-        json=scale_params.as_json(),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        ex_details = ex.response.json().get("detail")
-        raise ResponseError(f"scale app failed: {ex_details}") from ex
-    return response.json()
-
-
-def get_deployment_status(deployment_id: str, client: AuthenticatedClient) -> str:
-    """Retrieve the status of a specific deployment.
-
-    Args:
-        deployment_id: The ID of the deployment.
-        client: The authenticated client
-
-    Returns:
-        str: The status of the deployment.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    response = httpx.get(
-        urljoin(
-            constants.Hosting.HOSTING_SERVICE,
-            f"/api/v1/deployments/{deployment_id}/status",
-        ),
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        ex_details = ex.response.json().get("detail")
-        return f"get status failed: {ex_details}"
-    return response.json()
-
-
-def _get_deployment_status(deployment_id: str, token: str) -> str:
-    """Retrieve the status of a specific deployment with error handling.
-
-    Args:
-        deployment_id: The ID of the deployment.
-        token: The authentication token.
-
-    Returns:
-        str: The status of the deployment, or an error message if the request fails.
-
-    """
-    import httpx
-
-    try:
-        response = httpx.get(
-            urljoin(
-                constants.Hosting.HOSTING_SERVICE,
-                f"/api/v1/deployments/{deployment_id}/status",
-            ),
-            headers=authorization_header(token),
-            timeout=constants.Hosting.TIMEOUT,
-        )
-    except httpx.RequestError as e:
-        return "lost connection: trying again" + f"({e.__class__.__name__}: {e})"
-
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError:
-        return "bad response. received a bad response from cloud service."
-    return response.json()
-
-
-def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> bool:
-    """Continuously watch the status of a specific deployment.
-
-    Args:
-        deployment_id: The ID of the deployment.
-        client: The authenticated client
-
-    Returns:
-        True when the watching ends.
-        False when watching ends in fail.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-
-    """
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    with console.status("listening to status updates!"):
-        current_status = ""
-        while True:
-            status = _get_deployment_status(
-                deployment_id=deployment_id, token=client.token
-            )
-            if "completed successfully" in status:
-                console.success(status)
-                break
-            if "build error" in status:
-                console.warn(status)
-                console.warn(
-                    f"to see the build logs:\n reflex cloud apps build-logs {deployment_id}"
-                )
-                return False
-            if "unable to find status for given id" in status:
-                console.error(status)
-                return False
-            if "error" in status:
-                console.warn(status)
-                return False
-            if "bad response" in status:
-                console.warn(status)
-                return True
-            if status == current_status:
-                continue
-            current_status = status
-            console.info(status)
-            time.sleep(0.5)
-    return True
-
-
-def get_deployment_build_logs(deployment_id: str, client: AuthenticatedClient):
-    """Retrieve the build logs for a specific deployment.
-
-    Args:
-        deployment_id: The ID of the deployment.
-        client: The authenticated client
-
-    Returns:
-        dict: The build logs as a dictionary.
-
-    Raises:
-        NotAuthenticatedError: If the token is not valid.
-
-    """
-    import httpx
-
-    if not isinstance(client, AuthenticatedClient):
-        raise NotAuthenticatedError("not authenticated")
-    response = httpx.get(
-        urljoin(
-            constants.Hosting.HOSTING_SERVICE,
-            f"/api/v1/deployments/{deployment_id}/build/logs",
-        ),
-        headers=authorization_header(client.token),
-        timeout=constants.Hosting.TIMEOUT,
-    )
-
-    response.raise_for_status()
-    return response.json()
-
-
-def list_projects():
-    """List all projects.
-
-    This function is currently a placeholder and does not perform any operations.
-
-    Returns:
-        None
-
-    """
-    return
-
-
-def fetch_token(request_id: str) -> str:
-    """Fetch the access token for the request_id from Control Plane.
-
-    Args:
-        request_id: The request ID used when the user opens the browser for authentication.
-
-    Returns:
-        The access token if it exists, empty strings otherwise.
-
-    """
-    import httpx
-
-    token = ""
-    try:
-        resp = httpx.get(
-            urljoin(
-                constants.Hosting.HOSTING_SERVICE,
-                f"/api/v1/cli/token?request_id={request_id}",
-            ),
-            timeout=constants.Hosting.TIMEOUT,
-        )
-        resp.raise_for_status()
-        token = (resp_json := resp.json()).get("token_id", "")
-        project_id = resp_json.get("user_id", "")
-        select_project(project=project_id)
-    except httpx.RequestError as re:
-        console.debug(f"Unable to fetch token due to request error: {re}")
-    except httpx.HTTPError as he:
-        console.debug(f"Unable to fetch token due to {he}")
-    except json.JSONDecodeError as jde:
-        console.debug(f"Server did not respond with valid json: {jde}")
-    except KeyError as ke:
-        console.debug(f"Server response format unexpected: {ke}")
-    except Exception as ex:
-        console.debug(f"Unexpected errors: {ex}")
-
-    return token
-
-
-def authenticate_on_browser() -> tuple[str, dict[str, Any]]:
-    """Open the browser to authenticate the user.
-
-    Returns:
-        The access token if valid and user information dict otherwise ("", {}).
-
-    Raises:
-        Exit: when the hosting service URL is invalid.
-
-    """
-    request_id = uuid.uuid4().hex
-    auth_url = urljoin(
-        constants.Hosting.HOSTING_SERVICE_UI, f"/cli/login?request_id={request_id}"
-    )
-
-    if not is_valid_url(constants.Hosting.HOSTING_SERVICE_UI):
-        console.error(
-            f"Invalid hosting URL: {constants.Hosting.HOSTING_SERVICE_UI}. Ensure the URL is in the correct format and includes a valid scheme"
-        )
-        raise click.exceptions.Exit(1)
-
-    console.print(
-        f"Opening {auth_url} ... By connecting your account, you agree to "
-        "Reflex Cloud [Terms of Service] and [Privacy Policy].",
-        markup=False,
-    )
-
-    if not webbrowser.open(auth_url):
-        console.warn(
-            f"Unable to automatically open the browser. Please go to {auth_url} to authenticate."
-        )
-    validated_info = {}
-    access_token = ""
-    console.ask("please hit 'Enter' or 'Return' after login on website complete")
-    with console.status("Waiting for access token ..."):
-        for _ in range(constants.Hosting.AUTH_RETRY_LIMIT):
-            access_token = fetch_token(request_id)
-            if access_token:
-                break
-            time.sleep(1)
-
-    if access_token and (validated_info := validate_token_with_retries(access_token)):
-        save_token_to_config(access_token)
-    else:
-        access_token = ""
-    return access_token, validated_info
 
 
 def get_default_project(authenticated_client: AuthenticatedClient) -> str | None:
@@ -2155,28 +1362,372 @@ def get_default_project(authenticated_client: AuthenticatedClient) -> str | None
     Returns:
         The default project ID if available, None otherwise.
     """
-    return authenticated_client.validated_data.get("user_id")
+    return str(authenticated_client.me.user_id)
 
 
-def validate_token_with_retries(access_token: str) -> dict[str, Any]:
-    """Validate the access token without retries.
+# Terminal control sequences, which a build log is not entitled to emit into
+# somebody's terminal. Ordered so a full sequence is consumed before the bare
+# ESC that starts it: OSC first (it runs until its own terminator and is the
+# one that writes the clipboard and forges hyperlinks), then CSI, then the
+# two-character escapes, then anything left over.
+_TERMINAL_CONTROL_RE = re.compile(
+    r"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)"  # OSC 8 hyperlinks, OSC 52 clipboard
+    r"|\x1b\[[0-?]*[ -/]*[@-~]"  # CSI: colour, cursor moves, line erases
+    # Every other escape sequence, in the general ECMA-48 shape: optional
+    # intermediates then one final byte in 0x30-0x7E. Narrower classes leave
+    # the final byte behind once the catch-all below eats the ESC -- `\x1b7`
+    # (DECSC) printing a stray "7", `\x1bc` (full terminal reset) a stray "c".
+    r"|\x1b[ -/]*[0-~]"
+    r"|[\x00-\x08\x0b-\x1f\x7f-\x9f]"  # bare controls, keeping tab and newline
+)
+
+
+def _strip_terminal_controls(text: str) -> str:
+    """*text* with terminal control sequences removed.
+
+    A build log is the output of building the user's own app, dependencies
+    included, and this excerpt is printed without anyone asking for it -- on
+    any failed deploy, rather than only when `reflex cloud apps build-logs` is
+    run. Colour is not worth carrying for that: the same sequences let the
+    output erase the lines above it, forge a hyperlink, or write the
+    clipboard, and none of that should be reachable from a dependency's build
+    script. `markup=False` stops rich reading the text as its own markup and
+    does nothing about escape sequences.
 
     Args:
-        access_token: The access token to validate.
+        text: The text to strip.
 
     Returns:
-        validated user info dict.
+        The text with terminal control sequences removed.
 
     """
-    with console.status("Validating access token ..."):
+    return _TERMINAL_CONTROL_RE.sub("", text)
+
+
+# How long the watch waits out a dropped connection before looking again. The
+# deployment outlives the connection, so the watch does too.
+_WATCH_RETRY_SLEEP = datetime.timedelta(seconds=2)
+
+# How long the control plane may stay unreachable before the watch hands the
+# deployment back. Long enough to ride out a reconnecting VPN or a flapping
+# link, short enough that a real outage does not hang a CI job until it is
+# killed.
+_WATCH_UNREACHABLE_GRACE = datetime.timedelta(minutes=5)
+
+# "failed" is not one of the markers the SDK reads a status message for -- the
+# ones it documents cover the statuses the pipeline publishes -- and is kept
+# because it is what this predicate has always tested for. Dropping it could
+# only ever make the answer less strict.
+_STATUS_FAILED = "failed"
+
+
+def deployment_status_failed(status: str) -> bool:
+    """Check whether a deployment status reports a failure.
+
+    Args:
+        status: The status string the hosting service returned.
+
+    Returns:
+        True if the status says the deployment did not make it.
+
+    """
+    # A status the control plane could not produce says nothing about the
+    # deployment, and the watch loop treats it as such rather than a failure.
+    if "bad response" in status:
+        return False
+    if status_message_outcome(status) is not None:
+        return status_message_outcome(status) == "failed"
+    return _STATUS_FAILED in status
+
+
+def _report_deployment_failure(
+    deployment_id: str, report: DeploymentReport, fallback: str = ""
+) -> None:
+    """Tell the user why their deploy failed and what to do about it.
+
+    The build log is offered only where the control plane recorded one. A
+    failure in our pipeline reported as a build failure sends somebody hunting
+    for a bug in an app that does not have one, which is the more expensive of
+    the two mistakes.
+
+    Args:
+        deployment_id: The ID of the deployment.
+        report: The deployment's final report.
+        fallback: What to report when the report records no reason.
+
+    """
+    if reason := (report.reason or fallback):
+        logger.error(reason)
+    if report.guidance:
+        logger.warning(report.guidance)
+
+    if not report.build_log_excerpt:
+        # A log the server holds but could not read is not a build that
+        # produced none, and saying nothing here reads as the latter.
+        if report.build_log_unreadable:
+            logger.warning(
+                "the build log could not be read right now; try again with:\n"
+                f" reflex cloud apps build-logs {deployment_id}"
+            )
+        return
+    # Raw build output: paths, versions and tracebacks, all of which rich would
+    # read as markup given the chance, plus whatever escape sequences the
+    # build printed.
+    console.print("\nthe end of the build log:")
+    console.print(_strip_terminal_controls(report.build_log_excerpt), markup=False)
+    console.print(
+        f"\nfor the whole log:\n reflex cloud apps build-logs {deployment_id}"
+    )
+
+
+class WatchOutcome(str, Enum):
+    """How watching a deployment ended."""
+
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    # The deployment is still being worked on and the watching stopped: the
+    # control plane went away, or refused to say more. Neither of the other two
+    # is an honest answer for it.
+    UNFINISHED = "unfinished"
+
+
+@dataclasses.dataclass(frozen=True)
+class WatchResult:
+    """How watching a deployment ended, and the last thing it was told."""
+
+    outcome: WatchOutcome
+    # The last status message the watch saw, empty if it never saw one.
+    status: str
+
+    @property
+    def failed(self) -> bool:
+        """Whether the deployment is known not to have made it.
+
+        Returns:
+            True only for a deployment that ended without going live.
+
+        """
+        return self.outcome is WatchOutcome.FAILED
+
+
+def watch_deployment_status(
+    deployment_id: str, client: AuthenticatedClient
+) -> WatchResult:
+    """Continuously watch the status of a specific deployment.
+
+    Args:
+        deployment_id: The ID of the deployment.
+        client: The authenticated client
+
+    Returns:
+        How the watching ended, and the last status message it saw. A caller
+        that only wants to know whether to fail reads ``failed``: a watch that
+        stopped early is not a deployment that did.
+
+    """
+    try:
+        uuid.UUID(deployment_id)
+    except ValueError:
+        logger.error(f"{deployment_id!r} is not a deployment id.")
+        return WatchResult(WatchOutcome.FAILED, "")
+
+    last_status = ""
+
+    def note(message: str) -> None:
+        """Record and report a status the deployment reached.
+
+        Args:
+            message: The status message.
+
+        """
+        nonlocal last_status
+        last_status = message
+        logger.info(message)
+
+    def narrated(recorded: str) -> str:
+        """Choose between the narrated status and the deployment's recorded one.
+
+        Args:
+            recorded: The status from the deployment's report.
+
+        Returns:
+            The last message the API narrated, when that message settled the
+            deployment itself. A message the SDK could not read an outcome from
+            is why it asked for the report, and reporting it back would answer
+            with the stale line the report was fetched to get past.
+
+        """
+        return last_status if status_message_outcome(last_status) else recorded
+
+    def stopped_following(reason: str) -> WatchResult:
+        """Hand the deployment back to the user and stop watching it.
+
+        Args:
+            reason: Why the watching stopped.
+
+        Returns:
+            An unfinished watch: the build was submitted and is still being
+            worked on, so saying it succeeded would be a guess and saying it
+            failed would be a wrong one.
+
+        """
+        logger.warning(
+            f"stopped following the deployment: {reason}. It is still running; "
+            f"check it with:\n reflex cloud apps status {deployment_id} --watch"
+        )
+        return WatchResult(WatchOutcome.UNFINISHED, last_status)
+
+    with console.status("listening to status updates!"):
+        unreachable_since = None
+        while True:
+            try:
+                report = client.api.deployments.wait(deployment_id, on_status=note)
+            except DeploymentFailedError as ex:
+                _report_deployment_failure(deployment_id, ex.report, str(ex))
+                return WatchResult(WatchOutcome.FAILED, narrated(ex.report.status))
+            except NotFoundError:
+                # The id parses but names nothing, so there is no deployment to
+                # report on and nothing to wait for.
+                logger.error(f"no deployment with id {deployment_id}.")
+                return WatchResult(WatchOutcome.FAILED, last_status)
+            except APIConnectionError as ex:
+                # The deployment is still there; only this process's view of it
+                # went away, and waiting that out is what the watch is for. Not
+                # forever, though: a control plane that stays unreachable is a
+                # command that never returns, so the handoff below ends it.
+                now = monotonic()
+                if unreachable_since is None:
+                    unreachable_since = now
+                    logger.warning(
+                        "lost contact with the deployment service; still trying."
+                    )
+                if now - unreachable_since >= _WATCH_UNREACHABLE_GRACE.total_seconds():
+                    return stopped_following(error_message(ex))
+                time.sleep(_WATCH_RETRY_SLEEP.total_seconds())
+                continue
+            except ReflexBuildError as ex:
+                return stopped_following(error_message(ex))
+            break
+    if report.status == "AwaitingApproval":
+        logger.log(
+            log.SUCCESS,
+            "build submitted for approval; it will deploy automatically once an approver approves it.",
+        )
+    else:
+        logger.log(log.SUCCESS, "deployment completed successfully")
+    # The status the watch reports is the message the API narrated, the same
+    # string `apps status` without --watch reports, rather than the report's
+    # bare state -- one command should not name the same thing two ways.
+    return WatchResult(WatchOutcome.SUCCEEDED, narrated(report.status))
+
+
+def fetch_token(request_id: str, client: ReflexBuild | None = None) -> str:
+    """Fetch the access token for the request_id from Control Plane.
+
+    Args:
+        request_id: The request ID used when the user opens the browser for authentication.
+        client: The client to ask with. Defaults to one built for the call.
+
+    Returns:
+        The access token if it exists, empty strings otherwise.
+
+    Raises:
+        LoginDeniedError: If the user refused the login, which no amount of
+            waiting will turn into a token.
+
+    """
+    login = LoginRequest(request_id=request_id, url="")
+    with contextlib.ExitStack() as stack:
+        if client is None:
+            client = stack.enter_context(new_client())
         try:
-            return validate_token(access_token)
-        except ValueError:
-            console.error("Access denied")
-            delete_token_from_config()
+            # One check per call: the caller runs the waiting loop, and this
+            # one's own wait would sit silently under its status message.
+            return client.auth.finish_login(login, timeout=0.0, poll_interval=0.0)
+        except LoginTimeoutError:
+            # Not approved yet.
+            return ""
+        except LoginDeniedError:
+            raise
         except Exception as ex:
-            console.debug(f"Unable to validate token due to: {ex}")
-    return {}
+            logger.debug(f"Unable to fetch token due to: {ex}")
+            return ""
+    return ""
+
+
+def _authenticate_on_browser() -> tuple[str, Me | None]:
+    """Open the browser to authenticate the user.
+
+    Returns:
+        The access token and the identity behind it, or ``("", None)`` if the
+        login did not produce one.
+
+    Raises:
+        Exit: when the hosting service URL is invalid.
+
+    """
+    if not is_valid_url(constants.Hosting.HOSTING_SERVICE_UI):
+        logger.error(
+            f"Invalid hosting URL: {constants.Hosting.HOSTING_SERVICE_UI}. Ensure the URL is in the correct format and includes a valid scheme"
+        )
+        raise click.exceptions.Exit(1)
+
+    with new_client() as client:
+        login = client.auth.begin_login(ui_url=constants.Hosting.HOSTING_SERVICE_UI)
+
+        console.print(
+            f"Opening {login.url} ... By connecting your account, you agree to "
+            "Reflex Cloud [Terms of Service] and [Privacy Policy].",
+            markup=False,
+        )
+
+        if not webbrowser.open(login.url):
+            logger.warning(
+                f"Unable to automatically open the browser. Please go to {login.url} to authenticate."
+            )
+        console.ask("please hit 'Enter' or 'Return' after login on website complete")
+        access_token = ""
+        with console.status("Waiting for access token ..."):
+            for _ in range(constants.Hosting.AUTH_RETRY_LIMIT):
+                try:
+                    access_token = fetch_token(login.request_id, client)
+                except LoginDeniedError:
+                    logger.error("The login was denied.")
+                    return "", None
+                if access_token:
+                    break
+                time.sleep(1)
+
+    if not access_token:
+        return "", None
+    me = _validate_with_retries(access_token)
+    if me is None:
+        return "", None
+    save_token_to_config(access_token)
+    select_project(project=str(me.user_id))
+    return access_token, me
+
+
+def authenticate_on_browser() -> tuple[str, dict[str, Any]]:
+    """Open the browser to authenticate the user.
+
+    Returns:
+        The access token if valid and user information dict otherwise ("", {}).
+
+    """
+    access_token, me = _authenticate_on_browser()
+    return (access_token, identity_as_dict(me)) if me is not None else ("", {})
+
+
+def log_out_on_browser():
+    """Open the browser to log out the user."""
+    with contextlib.suppress(Exception):
+        delete_token_from_config()
+    console.print(f"Opening {constants.Hosting.HOSTING_SERVICE_UI} ...")
+    if not webbrowser.open(constants.Hosting.HOSTING_SERVICE_UI):
+        logger.warning(
+            f"Unable to open the browser automatically. Please go to {constants.Hosting.HOSTING_SERVICE_UI} to log out."
+        )
 
 
 def process_envs(envs: list[str]) -> dict[str, str]:
@@ -2185,14 +1736,11 @@ def process_envs(envs: list[str]) -> dict[str, str]:
     Args:
         envs: The environment variables expected in key=value format.
 
-    Raises:
-        SystemExit: If the envs are not in valid format.
-
     Returns:
         dict[str, str]: The processed environment variables in a dictionary.
 
     Raises:
-        SystemExit: If invalid format.
+        SystemExit: If the envs are not in valid format.
 
     """
     processed_envs = {}
@@ -2227,12 +1775,15 @@ def read_config(
     return Config.from_yaml_or_toml_or_none()
 
 
-def generate_config(interactive: bool = True, token: str | None = None):
+def generate_config(interactive: bool = True, token: str | None = None) -> Path | None:
     """Generate the config file with app-based prefilling.
 
     Args:
         interactive: Whether to use interactive mode for authentication and app selection.
         token: An existing authentication token to use instead of interactive auth.
+
+    Returns:
+        The path of the config file written, or None if none was.
 
     Raises:
         click.exceptions.Exit: If authentication fails or user cancels operation.
@@ -2240,19 +1791,20 @@ def generate_config(interactive: bool = True, token: str | None = None):
     try:
         import yaml
     except ImportError:
-        console.error("Please install PyYAML to use this command: pip install pyyaml")
-        return
+        logger.error("Please install PyYAML to use this command: pip install pyyaml")
+        return None
 
-    if Path("cloud.yml").exists():
-        console.error("cloud.yml already exists.")
-        return
+    config_path = Path("cloud.yml")
+    if config_path.exists():
+        logger.error("cloud.yml already exists.")
+        return None
 
     try:
         authenticated_client = get_authenticated_client(
             token=token, interactive=interactive
         )
     except click.exceptions.Exit:
-        console.error("Authentication required to generate prefilled config.")
+        logger.error("Authentication required to generate prefilled config.")
         raise
 
     current_dir_name = Path.cwd().name
@@ -2267,107 +1819,55 @@ def generate_config(interactive: bool = True, token: str | None = None):
     except click.exceptions.Exit:
         raise
     except Exception as ex:
-        console.warn(f"Could not search for apps: {ex}")
+        logger.warning(f"Could not search for apps: {ex}")
         app = None
 
     if app:
-        console.info(f"Found app '{app['name']}' - prefilling config with app data.")
-        default = {"name": app["name"]}
-
-        if app.get("id"):
-            default["appid"] = app["id"]
-        if app.get("description"):
-            default["description"] = app["description"]
-        if app.get("project_id"):
-            default["project"] = app["project_id"]
+        logger.info(f"Found app '{app.name}' - prefilling config with app data.")
+        default = {"name": app.name, "appid": str(app.id)}
+        if app.description:
+            default["description"] = app.description
+        default["project"] = str(app.project_id)
     else:
-        console.info(
+        logger.info(
             f"No app found with name '{current_dir_name}' - creating config with minimal defaults."
         )
         default = {"name": current_dir_name}
 
-    with Path("cloud.yml").open("w") as config_file:
+    with config_path.open("w") as config_file:
         yaml.dump(default, config_file, default_flow_style=False, sort_keys=False)
-    console.success("cloud.yml created successfully.")
-    console.info(
+    logger.log(log.SUCCESS, "cloud.yml created successfully.")
+    logger.info(
         "For more configuration options, see: https://reflex.dev/docs/hosting/config-file/"
     )
-    return
-
-
-def log_out_on_browser():
-    """Open the browser to log out the user."""
-    with contextlib.suppress(Exception):
-        delete_token_from_config()
-    console.print(f"Opening {constants.Hosting.HOSTING_SERVICE_UI} ...")
-    if not webbrowser.open(constants.Hosting.HOSTING_SERVICE_UI):
-        console.warn(
-            f"Unable to open the browser automatically. Please go to {constants.Hosting.HOSTING_SERVICE_UI} to log out."
-        )
+    return config_path
 
 
 def get_vm_types() -> list[dict]:
     """Retrieve the available VM types.
 
+    A refused or unreachable request raises rather than reading as an empty
+    listing: a caller cannot tell "there are none" from "we could not ask".
+
     Returns:
         list[dict]: A list of VM types as dictionaries.
 
     """
-    import httpx
-
-    try:
-        response = httpx.get(
-            urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/deployments/vm_types"),
-            timeout=10,
-        )
-        response.raise_for_status()
-        response_json = response.json()
-        if response_json is None or not isinstance(response_json, list):
-            console.error("Expect server to return a list ")
-            return []
-        if (
-            response_json
-            and response_json[0] is not None
-            and not isinstance(response_json[0], dict)
-        ):
-            console.error("Expect return values are dict's")
-            return []
-    except Exception as ex:
-        console.error(f"Unable to get vmtypes due to {ex}.")
-        return []
-    else:
-        return response_json
+    with new_client() as client:
+        vm_types = client.deployments.vm_types()
+    return [dataclasses.asdict(vm_type) for vm_type in vm_types]
 
 
 def get_regions() -> list[dict]:
     """Get the supported regions from the hosting server.
 
+    A refused or unreachable request raises rather than reading as an empty
+    listing: a caller cannot tell "there are none" from "we could not ask".
+
     Returns:
         list[dict]: A list of dict representation of the region information.
 
     """
-    import httpx
-
-    try:
-        response = httpx.get(
-            urljoin(constants.Hosting.HOSTING_SERVICE, "/api/v1/deployments/regions"),
-            timeout=10,
-        )
-        response.raise_for_status()
-        response_json = response.json()
-        if response_json is None or not isinstance(response_json, list):
-            console.error("Expect server to return a list ")
-            return []
-        if (
-            response_json
-            and response_json[0] is not None
-            and not isinstance(response_json[0], dict)
-        ):
-            console.error("Expect return values are dict's")
-            return []
-        return [
-            {"name": region["name"], "code": region["code"]} for region in response_json
-        ]
-    except Exception as ex:
-        console.error(f"Unable to get regions due to {ex}.")
-        return []
+    with new_client() as client:
+        regions = client.deployments.regions()
+    return [{"name": region.name, "code": region.code} for region in regions]

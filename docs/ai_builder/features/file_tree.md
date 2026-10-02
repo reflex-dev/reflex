@@ -1,29 +1,61 @@
-# File Tree
+---
+tags: DevTools
+description: Browse, compare, lock, and edit generated app files in the Code workspace.
+---
 
-The **File Tree** in Reflex Build lets you **view, organize, and manage all files and folders** in your project directly from the browser. It’s your central hub for navigating your app’s structure.
+# Code Workspace
 
-## Key Features
+```python exec
+import reflex as rx
+```
 
-### Creating Folders
-- Click the **New Folder** button to create a folder inside the currently selected directory.
-- Enter a name and press **Enter** to confirm.
-- Folders can be nested to organize your project hierarchically.
+Open **Code** in an app to work directly with its generated source. Use it when you need more detail than Preview or the agent's summary provides.
 
-### Creating Files
-- Click the **New File** button to create a file inside the current folder.
-- Enter a file name and extension (e.g., `main.py`) and press **Enter**.
-- Files are immediately visible in the tree and ready for editing in the code editor.
+## Find and inspect files
 
-### Renaming Files or Folders
-- Right-click on a file or folder and select **Rename**.
-- Type the new name and press **Enter** to confirm.
-- Renaming automatically updates references in your project where applicable.
+```python eval
+rx.image(
+    src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/code_workspace.webp",
+    alt="The searchable file tree in the Code workspace",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
+)
+```
 
-### Deleting Files or Folders
-- Right-click on a file or folder and select **Delete**.
-- Deleted items are permanently removed, so be careful when deleting important files.
+Use the file tree and search to find a path, then select it to open the editor. Changed-file indicators and diff counts show where a generation added, removed, or modified code. Open the diff view to compare the generated change before continuing.
 
-### Drag-and-Drop from System
-- Drag files or folders from your computer directly into the File Tree.
-- The editor will automatically import them into the selected folder.
-- This works for individual files or entire folder structures, making adding assets or scripts quick and easy.
+The **Terminal** and **Debug** panels help you inspect the running app and diagnose failures. Git controls show the connected repository workflow when the app uses one.
+
+## Edit files
+
+Manual code editing is available on paid plans and requires edit access to the app:
+
+1. Wait for the current generation to finish.
+2. Open a file and make the change.
+3. Select **Save**, or press `Cmd+S` on macOS or `Ctrl+S` on Windows and Linux.
+4. Return to **Preview** and test the affected workflow.
+
+Depending on your access, the file tree also lets you create, rename, delete, and upload files. These operations change the app source, so check the selected path before confirming them.
+
+## Lock files
+
+```python eval
+rx.image(
+    src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/file_locking.webp",
+    alt="The Lock file action in the Code workspace file tree",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
+)
+```
+
+Lock a file when the agent must preserve your manual implementation during later generations. The agent skips locked files until you unlock them.
+
+Use locks sparingly. A lock can prevent the agent from completing a change that depends on that file, so unlock it when the protected implementation no longer needs to be preserved.
+
+For work outside Builder, connect a [Git repository](/docs/ai/features/connect-to-git-providers/) or [download the app](/docs/ai/app-lifecycle/download-app/). Avoid editing the same files in two places at once.
+
+## Related
+
+- [Code and Review](/docs/ai/features/editor-modes/) — choose between source-level work and annotated visual feedback.
+- [Generation Controls & Collaboration](/docs/ai/features/generation-controls/) — understand app edit locks and concurrent work.
+- [Files](/docs/ai/files/) — attach documents and structured data to a prompt.

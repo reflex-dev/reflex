@@ -1,58 +1,52 @@
 # Bring Your Own Cloud
 
-Bring Your Own Cloud (BYOC) lets you deploy Reflex apps to your own **AWS**, **GCP**, or **Azure** account with the same `reflex cloud deploy` command you already use. Everything runs inside your account: the build runs on your cloud's builders, the image is pushed to your internal registry, and the app runs on your cloud's managed runtime. Reflex never holds standing credentials into your account, and nothing about the app or its data leaves your perimeter.
+Bring Your Own Cloud (BYOC) deploys a Reflex app to your own AWS, Google Cloud, or Azure account. The command uses your local cloud credentials to build the image, store it in your registry, and run it on the cloud's managed container service.
 
 ```md alert info
-# Enterprise tier only.
-
+# Enterprise tier only
 BYOC is part of the **Enterprise tier** of Reflex Cloud. Contact [sales@reflex.dev](mailto:sales@reflex.dev) to upgrade.
 ```
 
-## Why BYOC
+## Deployment targets
 
-Reflex Cloud takes you from a Python file to a live app in one command, but that app runs on Reflex's infrastructure — a non-starter for teams whose cloud is fixed by security review, procurement, or data-residency policy. If the deployment target isn't approved, the app doesn't ship.
+| Cloud | Command | Runtime |
+| --- | --- | --- |
+| AWS | `reflex cloud deploy --aws` | ECS |
+| Google Cloud | `reflex cloud deploy --gcp --gcp-project <GCP_PROJECT_ID>` | Cloud Run |
+| Azure | `reflex cloud deploy --azure` | Container Apps |
 
-The alternative is to build the deploy yourself on Cloud Run, ECS, or Container Apps: a Dockerfile, a build pipeline, a registry, runtime config, infrastructure-as-code, and ongoing maintenance. That's its own engineering project, and most of it has nothing to do with your app.
+## Before you deploy
 
-BYOC keeps the Reflex Cloud workflow your team already uses — app lifecycle, autoscaling, environment variables, and the deploy CLI all behave the way they always have. The only thing that changes is where the container ends up running.
+- Sign in to Reflex with `reflex login`.
+- Install the cloud provider's CLI: `aws`, `gcloud`, or `az`.
+- For Google Cloud, install Docker and Bash in addition to `gcloud`.
+- Sign in to the target cloud account with that CLI.
+- Confirm that the account can create builds, registry images, and managed container services.
 
-## Deploy targets
+## Run the deployment
 
-The same `reflex cloud deploy` command works against each cloud with a single flag:
+Run the command for your provider. The CLI:
+
+1. Checks the provider CLI and your current login.
+2. Loads the Reflex deployment configuration and validates the required command options.
+3. Shows the build and deploy commands for confirmation.
+4. Uses the provider's build service and registry, then deploys the container.
+5. Prints the deployed app URL.
+
+The deployment runs under your cloud identity. Review the displayed commands and selected account before confirming.
+
+For Google Cloud, pass the target project explicitly:
 
 ```bash
-reflex cloud deploy --aws
-reflex cloud deploy --gcp
-reflex cloud deploy --azure
+reflex cloud deploy --gcp --gcp-project <GCP_PROJECT_ID>
 ```
 
-| Cloud | Flag | Managed runtime |
-| --- | --- | --- |
-| AWS | `--aws` | ECS |
-| GCP | `--gcp` | Cloud Run |
-| Azure | `--azure` | Container Apps |
-
-## How the deploy command works
-
-Running `reflex cloud deploy --<cloud>` kicks off a short interactive flow:
-
-1. **Authenticate.** The CLI checks that your cloud's own CLI (`aws`, `gcloud`, or `az`) is installed and that you're logged in, and walks you through `aws configure`, `gcloud auth login`, or `az login` if you're not. From there everything runs under your credentials.
-2. **Configure.** It pulls the latest Reflex Cloud config for your app and prompts you for any flags it needs.
-3. **Review.** Before anything runs, it prints the exact build and deploy commands it's about to execute and asks for approval.
-4. **Deploy.** On approval, it builds the container image with your cloud's native builders, pushes it to your internal artifact registry, and deploys the app to the managed runtime.
-
-The final output is the URL of the live app, running in your own account. The whole flow takes about three minutes the first time, and under a minute on subsequent deploys.
-
-## What's in scope today
-
-BYOC is generally available on AWS, GCP, and Azure for Reflex Enterprise customers. It supports:
-
-- Reflex apps on Cloud Run, ECS, and Container Apps
-- Authentication through your existing cloud CLI
-- The standard set of Reflex Cloud configuration flags
+```md alert warning
+# Self-service and managed cloud connections are different
+This page covers self-service CLI deployments to AWS, Google Cloud, and Azure. An organization admin can also connect Google Cloud to Reflex for managed deployments with logs, history, rollback, and scaling in the Reflex dashboard. See [Cloud Providers](/docs/hosting/cloud-providers/).
+```
 
 ## Next steps
 
-- For a detailed walkthrough of the GCP target — prerequisites, options, the security model, and troubleshooting — see [Deploy to GCP Cloud Run](/docs/hosting/deploy-to-gcp/).
-- If you're on Reflex Enterprise, update the CLI and run `reflex cloud deploy --<cloud>`.
-- If you're not, see [reflex.dev/pricing](https://reflex.dev/pricing/) for the comparison and a demo link.
+- [Deploy to Google Cloud Run](/docs/hosting/deploy-to-gcp/) covers Google Cloud prerequisites, options, and troubleshooting.
+- [Cloud Providers](/docs/hosting/cloud-providers/) covers the managed Google Cloud connection.

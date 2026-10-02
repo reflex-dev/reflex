@@ -65,11 +65,7 @@ def test_trigger_stored_on_context():
 
 
 def test_distinct_contexts_use_identity_equality():
-    """Two ``TelemetryContext`` instances must not compare equal or share a hash.
-
-    ``BaseContext`` uses a class-level dict keyed by ``self`` to track attached
-    contexts, so identity-based equality is required for nested use to work.
-    """
+    """Two ``TelemetryContext`` instances must not compare equal or share a hash."""
     a = TelemetryContext()
     b = TelemetryContext()
     assert a != b

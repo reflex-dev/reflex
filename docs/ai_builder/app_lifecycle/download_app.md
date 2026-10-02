@@ -1,34 +1,28 @@
 # Download App
 
-You can download your Reflex Build project if you want to work on it locally or self-host it outside the AI Builder.
-
-**Tip:** The recommended workflow is to use the GitHub integration, which keeps your code version-controlled and in sync. Downloading is useful if GitHub integration isn’t available or you just want a one-time export.
-
-
 ```python exec
 import reflex as rx
-
-
-def render_image():
-    return rx.el.div(
-        rx.image(
-            src="https://web.reflex-assets.dev/ai_builder/app_lifecycle/download_light.avif",
-            alt="Downloading an app in Reflex AI Builder",
-            class_name="rounded-md h-auto",
-            border=f"0.81px solid {rx.color('slate', 5)}",
-        ),
-        class_name="w-full flex flex-col rounded-md",
-    )
 ```
+
+Download creates a one-time source export for local development or self-hosting.
+
+## Download the Source
+
+1. Open the menu next to **Deploy**.
+2. Select **Download**. The action is also available from app **Settings**.
+3. Save and extract the generated archive.
 
 ```python eval
-rx.el.div(render_image())
+rx.image(
+    src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/app_download_action.webp",
+    alt="The Download action in the menu next to Deploy",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
+)
 ```
 
-## How to Download
+The archive contains the app source, assets, dependency manifests, and Reflex configuration needed to continue development.
 
-1. In the AI Builder workspace, click on the arrow down icon next to the deploy button and click on the **Download** button. You can also do this in the Settings tab.
-2. A `.zip` file will be generated containing your entire Reflex app, including:
-   - Source code (`.py` files, components, state, etc.)
-   - `requirements.txt` with dependencies
-   - Config files (`rxconfig.py`, `.env`, etc.)
+Secrets, integration credentials, and other protected project values are not a portable part of the source export. Configure them separately in the destination environment and never commit them to source control.
+
+For ongoing source control, [connect this app to GitHub](/docs/ai/features/connect-to-github/) to push and pull its code. To start Reflex Build work from an existing GitHub, GitLab, Bitbucket, Azure DevOps, or other Git repository, connect a [Project Repository](/docs/ai/features/connect-to-git-providers/).

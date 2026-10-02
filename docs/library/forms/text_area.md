@@ -90,3 +90,75 @@ def feedback_form():
         ),
     )
 ```
+
+## Submitting on Enter
+
+By default, pressing Enter in a text area inserts a new line. Set the
+`enter_key_submit` prop to submit the enclosing form when Enter is pressed
+instead. Shift+Enter still inserts a new line, so multi-line input remains
+possible.
+
+```python demo exec
+class EnterSubmitState(rx.State):
+    submitted_text: str = ""
+
+    @rx.event
+    def handle_submit(self, form_data: dict):
+        self.submitted_text = form_data["message"]
+
+
+def enter_key_submit_example():
+    return rx.vstack(
+        rx.cond(
+            EnterSubmitState.submitted_text != "",
+            rx.text("Submitted: ", EnterSubmitState.submitted_text),
+            rx.text("Nothing submitted yet."),
+        ),
+        rx.form(
+            rx.text_area(
+                name="message",
+                placeholder="Type and press Enter to submit",
+                enter_key_submit=True,
+            ),
+            on_submit=EnterSubmitState.handle_submit,
+        ),
+        width="100%",
+    )
+```
+
+`enter_key_submit` accepts a Var, so it can be toggled dynamically — for
+example, disabling Enter-to-submit while a previous submission is still being
+processed: `enter_key_submit=~State.is_loading`.
+
+```md alert warning
+# `enter_key_submit` cannot be combined with `on_key_down`.
+
+The `enter_key_submit` prop is implemented with its own key down handler, so
+passing both to the same component raises an error. Note that a Python
+`on_key_down` handler receives only the key and modifier flags, not the raw
+event, so it cannot call `preventDefault()` to stop Enter from inserting a
+newline. Replicating Enter-to-submit alongside custom key handling therefore
+needs a client-side handler (e.g. via `rx.call_script`), not a plain
+`on_key_down` event handler.
+```
+
+## Auto-Expanding Height
+
+Set `auto_height=True` to make a text area grow to fit its content as the user
+types, instead of scrolling inside a fixed box. Pair it with `rows="1"` and
+`min_height="0"` so it starts at a single line and expands from there.
+
+```python demo exec
+def auto_height_example():
+    return rx.text_area(
+        placeholder="Type a few lines — the box grows to fit",
+        auto_height=True,
+        rows="1",
+        min_height="0",
+        width="100%",
+    )
+```
+
+`auto_height` attaches a client-side handler that resizes the element on every
+input, so its height always matches the content. Add a CSS `min_height` /
+`max_height` when you want to cap how small or tall it can get.

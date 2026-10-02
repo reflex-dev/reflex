@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import _MISSING_TYPE, MISSING
+from dataclasses import MISSING
 from typing import Annotated, Any, Generic, TypeVar, get_origin
 
 from reflex_base.utils import types
-from reflex_base.utils.compat import annotations_from_namespace
+from reflex_base.utils.compat import MISSING_TYPE, annotations_from_namespace
 
 FIELD_TYPE = TypeVar("FIELD_TYPE")
 
@@ -20,9 +20,9 @@ class BaseField(Generic[FIELD_TYPE]):
 
     def __init__(
         self,
-        default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+        default: FIELD_TYPE | MISSING_TYPE = MISSING,
         default_factory: Callable[[], FIELD_TYPE] | None = None,
-        annotated_type: type[Any] | _MISSING_TYPE = MISSING,
+        annotated_type: type[Any] | MISSING_TYPE = MISSING,
     ) -> None:
         """Initialize the field.
 

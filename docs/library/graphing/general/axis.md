@@ -95,6 +95,51 @@ def multi_axis():
     )
 ```
 
+## Styling Axis Ticks
+
+Axes can be styled for a cleaner, more minimal look. Setting `axis_line=False` and `tick_line=False` removes the axis and tick lines, leaving only the tick labels. The `tick_size` prop controls the gap between the axis and its tick labels, and `interval="preserveStartEnd"` ensures the first and last ticks are always shown even when labels are dropped to avoid overlap. Font styling that is not exposed as a prop, such as the tick font size, can be passed to the underlying Recharts axis with `custom_attrs`.
+
+```python demo graphing
+data = [
+    {"name": "Page A", "uv": 4000, "pv": 2400, "amt": 2400},
+    {"name": "Page B", "uv": 3000, "pv": 1398, "amt": 2210},
+    {"name": "Page C", "uv": 2000, "pv": 9800, "amt": 2290},
+    {"name": "Page D", "uv": 2780, "pv": 3908, "amt": 2000},
+    {"name": "Page E", "uv": 1890, "pv": 4800, "amt": 2181},
+    {"name": "Page F", "uv": 2390, "pv": 3800, "amt": 2500},
+    {"name": "Page G", "uv": 3490, "pv": 4300, "amt": 2100},
+]
+
+
+def axis_styled_ticks():
+    return rx.recharts.area_chart(
+        rx.recharts.area(
+            data_key="uv",
+            stroke=rx.color("accent", 9),
+            fill=rx.color("accent", 8),
+        ),
+        rx.recharts.x_axis(
+            data_key="name",
+            axis_line=False,
+            tick_line=False,
+            tick_size=10,
+            interval="preserveStartEnd",
+            custom_attrs={"fontSize": "12px"},
+        ),
+        rx.recharts.y_axis(
+            axis_line=False,
+            tick_line=False,
+            tick_size=10,
+            interval="preserveStartEnd",
+            custom_attrs={"fontSize": "12px"},
+        ),
+        data=data,
+        width="100%",
+        height=300,
+        margin={"left": 20, "right": 20, "top": 25},
+    )
+```
+
 ## Choosing Location of Labels for Axes
 
 The axes `label` can take several positions. The example below allows you to try out different locations for the x and y axis labels.

@@ -1,44 +1,24 @@
 # Fork App
 
-The **Fork App** feature lets you take an existing app and create your own version of it. This is perfect for **experimenting, customizing, or building on top of someone else’s work** without affecting the original app.
+Forking creates an independent app from a public app or template that you can view but do not own. Use **Copy** instead when the source app already belongs to you.
 
-```python exec
-import reflex as rx
-```
+## Fork a Public App
 
-```python eval
-rx.el.div(
-    rx.image(
-        src="https://web.reflex-assets.dev/ai_builder/overview/fork_template_light.avif",
-        alt="Forking an app in Reflex AI Builder",
-        class_name="rounded-md h-auto",
-        border=f"0.81px solid {rx.color('slate', 5)}",
-    ),
-    class_name="w-full flex flex-col rounded-md",
-)
-```
+Before you begin, sign in and select or create the project that should contain the new app. You need permission to create apps in that project.
 
+1. Open the public app or template you want to use.
+2. Select **Fork** in the upper-right corner.
+3. Enter a name for the new app.
+4. Choose its visibility when that option is available on your plan.
+5. Select **Fork App** and wait for the new app to open.
 
-## How to Fork an App
+The fork contains its own copy of the source files. Changes to it do not affect the original app, and changes to the original do not update the fork.
 
-1. Browse or open an app you’d like to use as a starting point.
-2. Click the **Fork** button in the app’s top right corner.
-3. The AI Builder will create a **copy of the app** in your workspace.
-4. You can now **edit, customize, and expand** your forked app independently of the original.
+Review integrations, secrets, repository connections, and visibility before continuing development or deploying. Access and credentials from the source app are not automatically available to every fork.
 
-## What Happens When You Fork
+## Fork or Copy
 
-- You get a **full copy** of the original app, including all pages, components, and configurations.
-- The forked app is **completely separate**, so changes you make do not affect the original.
-- You can **rename, deploy, or share** your forked app like any other app in your workspace.
+- Use **Fork** for another user's public app or for a template.
+- Use [**Copy**](/docs/ai/app-lifecycle/copy-app/) for an app you already own.
 
-## Common Use Cases
-
-- **Start From an Example**
-  Use a sample or shared app as a foundation to save time and learn best practices.
-
-- **Experiment Safely**
-  Try new ideas or features without risking changes to the original app.
-
-- **Collaborate and Customize**
-  Fork a teammate’s app to tailor it to your needs while keeping the original intact.
+Your plan can limit whether you may fork a public app that is not a template. If **Fork** is unavailable, check the app's visibility and your plan.

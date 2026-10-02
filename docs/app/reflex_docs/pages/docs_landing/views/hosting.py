@@ -9,11 +9,11 @@ def hosting_section() -> rx.Component:
         rx.el.div(
             rx.el.h2(
                 "Cloud",
-                class_name="text-secondary-12 text-3xl font-[575]",
+                class_name="text-foreground text-3xl font-medium",
             ),
             rx.el.p(
                 "Learn how to host your applications with Reflex Hosting.",
-                class_name="text-secondary-11 text-sm font-[475]",
+                class_name="text-muted-foreground text-sm font-[475]",
             ),
             class_name="flex flex-col gap-4",
         ),
@@ -45,7 +45,7 @@ def hosting_section() -> rx.Component:
                 hosting_page.deploy_quick_start.path,
                 has_padding_left=True,
             ),
-            class_name="grid grid-cols-1 lg:grid-cols-2 border-t border-secondary-4 relative",
+            class_name="grid grid-cols-1 lg:grid-cols-2 border-t border-border-subtle relative",
         ),
-        class_name="flex flex-col gap-10 max-lg:text-center relative max-w-(--landing-layout-max-width) mx-auto w-full justify-start max-xl:px-6 lg:mb-24 overflow-hidden",
+        class_name="flex flex-col gap-10 max-lg:text-center relative max-w-[90rem] px-4 min-[55rem]:px-8 lg:px-12 mx-auto w-full justify-start lg:mb-24 overflow-hidden",
     )

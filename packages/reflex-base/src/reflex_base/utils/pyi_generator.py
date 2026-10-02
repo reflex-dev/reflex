@@ -210,7 +210,8 @@ def _get_type_hint(
             for arg in value.__args__
         ]
         res_args.sort()
-        return f"{' | '.join(res_args)}"
+        res = f"{' | '.join(res_args)}"
+        return f"{res} | None" if is_optional else res
 
     if args:
         inner_container_type_args = (
@@ -257,11 +258,12 @@ def _get_type_hint(
             return _get_type_hint(ev, type_hint_globals, is_optional=False)
 
         if _is_union(ev):
-            res = [
+            res_args = [
                 _get_type_hint(arg, type_hint_globals, _is_optional(arg))
                 for arg in ev.__args__
             ]
-            return f"{' | '.join(res)}"
+            res = f"{' | '.join(res_args)}"
+            return f"{res} | None" if is_optional else res
         res = (
             _get_type_hint(ev, type_hint_globals, is_optional=False)
             if ev.__name__ == "Var"
@@ -274,6 +276,10 @@ def _get_type_hint(
         return f"[{', '.join(res)}]"
     elif (visible_name := _get_visible_type_name(value, type_hint_globals)) is not None:
         res = visible_name
+    elif value.__module__ in ("builtins", "__builtins__"):
+        # Builtins are always in scope, and generated stubs never import `builtins`,
+        # so they must stay unqualified even when a source module imports it.
+        res = value.__name__
     else:
         # Best effort to find a submodule path in the globals.
         for ix, part in enumerate(value.__module__.split(".")):

@@ -1,85 +1,49 @@
-# Editor Modes
-
-The AI Builder includes a powerful dual-mode editor that lets you view and edit your application code while tracking changes made by the AI. You can seamlessly switch between **Editor Mode** for manual code editing and **Diff Mode** for reviewing AI-generated changes.
-
+# Code and Review
 
 ```python exec
 import reflex as rx
-
-
-def render_image():
-    return rx.el.div(
-        rx.image(
-            src="https://web.reflex-assets.dev/ai_builder/features/diff_light.avif",
-            alt="Reflex AI Builder editor diff view",
-            class_name="rounded-md h-auto",
-            border=f"0.81px solid {rx.color('slate', 5)}",
-        ),
-        class_name="w-full flex flex-col rounded-md",
-    )
 ```
+
+Use **Review mode** to point out visual changes in the running app. Use **Code** to inspect or edit the generated source. After either workflow, return to **Preview** and test the affected behavior.
+
+## Annotate the app in Review mode
 
 ```python eval
-rx.el.div(render_image())
+rx.image(
+    src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/review_mode.webp",
+    alt="An annotation and comment ready to send from Review mode",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
+)
 ```
-## Modes: Editor vs Diff
 
-### Editor Mode
-The standard code editor where you can:
-- **Write and modify code** directly in the interface
-- **Navigate through files** using the file tree
-- **Make manual changes** to your application
-- **Save your modifications** which persist across sessions
+Review mode turns comments drawn on the preview into a prompt for the agent:
 
-### Diff Mode
-A specialized view that highlights changes from the last AI prompt:
-- **Green highlights** show code additions made by the AI
-- **Red highlights** show code deletions made by the AI
-- **Side-by-side comparison** of what changed
-- **Line-by-line tracking** of modifications
+1. At desktop width, let the current generation finish, then open the affected route in **Preview**.
+2. Select **Review mode** and wait for the captured page to load.
+3. Draw around the area you want to change and add a concise comment.
+4. Add more annotations on the same route, or switch routes and annotate those pages.
+5. Select **Send review** to send the annotations and marked screenshots to the agent.
 
-## Switching Between Modes
+Each comment should say what is wrong and what the result should be. Use a normal chat prompt instead when the feedback is not tied to a specific part of the interface.
 
-### Toggle Controls
-Located in the editor toolbar, you'll find:
-- **Editor** button - Switch to normal editing mode
-- **Diff** button - Switch to change tracking mode
+You need edit access to send a review. If another session is generating or holds the app's edit lock, wait until it finishes.
 
-### When to Use Each Mode
-- **Use Editor Mode when:**
-  - Making manual code changes
-  - Writing new functionality
-  - Debugging or fixing issues
-  - General code development
+## Inspect or edit the source in Code
 
-- **Use Diff Mode when:**
-  - Reviewing what the AI changed after a prompt
-  - Understanding modifications before accepting them
-  - Tracking the impact of AI suggestions
-  - Learning from AI-generated code patterns
+Open **Code** to browse and search the app's files, inspect generated diffs, or make a precise manual edit. The workspace also provides Git controls and **Terminal** and **Debug** panels.
 
-## Understanding Diff Visualizations
+Your plan and app access determine whether the editor is writable. See [Code Workspace](/docs/ai/features/file-tree/) for editing, file operations, diffs, and file locking.
 
-### Code Highlighting
-**Additions (Green):**
-- New code lines added by the AI
-- New functions, components, or logic
-- Enhanced features and improvements
+## Choose the right workflow
 
-**Deletions (Red):**
-- Code removed by the AI
-- Replaced or refactored sections
-- Deprecated functionality
+- Use **Review mode** for feedback such as spacing, alignment, missing states, or a change to one visible component.
+- Use **Code** when you need to understand the implementation, inspect a diff, or make a small source-level change.
+- Use **Preview** after every meaningful change to test the actual workflow, including loading, empty, error, validation, and responsive states.
 
-### File Tree Indicators
-The file tree shows change statistics for each modified file:
+## Related
 
-**Change Indicators:**
-- **`+5`** - 5 lines added to this file
-- **`-3`** - 3 lines removed from this file
-- **`+12 -8`** - 12 lines added, 8 lines removed
-- **No indicator** - File unchanged
-
-**Visual Cues:**
-- **Green `+` symbol** indicates files with additions
-- **Red `-` symbol** indicates files with deletions
+- [Generation Controls & Collaboration](/docs/ai/features/generation-controls/) — guide work without overlapping requests.
+- [Planning](/docs/ai/features/planning/) — review the intended work before and during generation.
+- [Testing](/docs/ai/features/automated-testing/) — verify the resulting behavior.
+- [Restore Checkpoint](/docs/ai/features/restore-checkpoint/) — return the app to an earlier generated state.

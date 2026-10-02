@@ -2,9 +2,9 @@
 
 import reflex as rx
 
-from .inkeep import inkeep
+from .algolia import algolia_search
 
 
 @rx.memo
 def search_bar() -> rx.Component:
-    return inkeep()
+    return algolia_search()

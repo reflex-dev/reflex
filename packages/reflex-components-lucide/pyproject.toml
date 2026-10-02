@@ -15,10 +15,11 @@ source = "uv-dynamic-versioning"
 [tool.uv-dynamic-versioning]
 pattern-prefix = "reflex-components-lucide-"
 fallback-version = "0.0.0dev0"
+bump = true
 
 [tool.hatch.build]
-targets.sdist.artifacts = ["*.pyi"]
-targets.wheel.artifacts = ["*.pyi"]
+# Include uncommitted pyi stubs generated for this package.
+artifacts = ["/src/**/*.pyi"]
 
 [tool.hatch.build.hooks.reflex-pyi]
 dependencies = ["ruff", "reflex-base"]

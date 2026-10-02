@@ -1,12 +1,23 @@
 """Helper functions for adding assets to the app."""
 
+import hashlib
 import inspect
+import logging
+import time
+import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING, overload
 
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import EnvironmentVariables
+
+logger = logging.getLogger(__name__)
+
+_HASH_CHUNK_SIZE = 1024 * 1024
+_MAX_HASH_ATTEMPTS = 3
+_MAX_LINK_ATTEMPTS = 3
+_LINK_RETRY_DELAY = 0.01
 
 if TYPE_CHECKING:
     from typing_extensions import Buffer
@@ -25,12 +36,20 @@ class AssetPathStr(str):
     construction time.
     """
 
-    __slots__ = ("importable_path",)
+    __slots__ = ("_raw_path", "importable_path")
 
+    _raw_path: str
     importable_path: str
 
     @overload
     def __new__(cls, object: object = "") -> "AssetPathStr": ...
+    @overload
+    def __new__(
+        cls,
+        object: object = "",
+        *,
+        importable_path: str | None = None,
+    ) -> "AssetPathStr": ...
     @overload
     def __new__(
         cls,
@@ -44,6 +63,8 @@ class AssetPathStr(str):
         object: object = "",
         encoding: str | None = None,
         errors: str | None = None,
+        *,
+        importable_path: str | None = None,
     ) -> "AssetPathStr":
         """Construct from an unprefixed, leading-slash asset path.
 
@@ -56,6 +77,7 @@ class AssetPathStr(str):
             object: The object to stringify (str, bytes, or any object).
             encoding: Encoding to decode ``object`` with when it is bytes-like.
             errors: Error handler for decoding.
+            importable_path: Optional unversioned path to use for build-time imports.
 
         Returns:
             A new ``AssetPathStr`` instance.
@@ -72,7 +94,8 @@ class AssetPathStr(str):
         instance = super().__new__(
             cls, get_config().prepend_frontend_path(relative_path)
         )
-        instance.importable_path = f"$/public{relative_path}"
+        instance._raw_path = relative_path
+        instance.importable_path = f"$/public{importable_path or relative_path}"
         return instance
 
     def __getnewargs__(self) -> tuple[str]:
@@ -87,7 +110,69 @@ class AssetPathStr(str):
         Returns:
             A one-tuple containing the unprefixed asset path.
         """
-        return (self.importable_path[len("$/public") :],)
+        return (self._raw_path,)
+
+    def __getnewargs_ex__(self) -> tuple[tuple[str], dict[str, str]]:
+        """Return constructor args and kwargs for pickle/copy reconstruction.
+
+        Returns:
+            Constructor args and kwargs preserving the unversioned import path.
+        """
+        return (
+            (self._raw_path,),
+            {"importable_path": self.importable_path[len("$/public") :]},
+        )
+
+
+def _short_content_hash(path: Path) -> str:
+    """Get a short content hash for an asset file.
+
+    Args:
+        path: The file to hash.
+
+    Returns:
+        The first 8 hex characters of the file's SHA-256 hash.
+    """
+    for _ in range(_MAX_HASH_ATTEMPTS):
+        digest = _content_digest(path)
+        if digest == _content_digest(path):
+            break
+    else:
+        logger.warning(
+            f"{path} was modified {_MAX_HASH_ATTEMPTS} times while calculating hash."
+        )
+        return str(time.time())
+    return digest[:8]
+
+
+def _content_digest(path: Path) -> str:
+    """Get the SHA-256 digest for the current file content.
+
+    Args:
+        path: The file to hash.
+
+    Returns:
+        The full SHA-256 digest for the file content.
+    """
+    digest = hashlib.sha256()
+    with path.open("rb") as file:
+        while chunk := file.read(_HASH_CHUNK_SIZE):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _versioned_asset_path(relative_path: str, source_file: Path) -> AssetPathStr:
+    """Create an asset URL with a content-hash query parameter.
+
+    Args:
+        relative_path: The unprefixed public asset path.
+        source_file: The source file used to calculate the content hash.
+
+    Returns:
+        A versioned asset URL that preserves an unversioned import path.
+    """
+    versioned_path = f"{relative_path}?v={_short_content_hash(source_file)}"
+    return AssetPathStr(versioned_path, importable_path=relative_path)
 
 
 def remove_stale_external_asset_symlinks():
@@ -117,6 +202,82 @@ def remove_stale_external_asset_symlinks():
     for dirpath in sorted(external_dir.rglob("*"), reverse=True):
         if dirpath.is_dir() and not dirpath.is_symlink() and not any(dirpath.iterdir()):
             dirpath.rmdir()
+
+
+def _links_to(dst_file: Path, src_file: Path) -> bool:
+    """Check whether dst_file is already a symlink to src_file.
+
+    Args:
+        dst_file: The path to inspect.
+        src_file: The asset the symlink should point at.
+
+    Returns:
+        Whether dst_file is a symlink resolving to src_file.
+    """
+    try:
+        if not dst_file.is_symlink():
+            return False
+        resolved = dst_file.resolve()
+    except (OSError, RuntimeError):
+        # An unresolvable destination, such as the symlink loop a crashed or
+        # racing writer can leave behind, which Python below 3.13 reports as
+        # RuntimeError. It is not the link we want either way, so replace it.
+        return False
+    # The source is the caller's to validate, so its errors are not caught
+    # here: replacing the destination on a bad source would destroy a good
+    # link on the way to failing anyway.
+    return resolved == src_file.resolve()
+
+
+def _link_shared_asset(dst_file: Path, src_file: Path) -> None:
+    """Point dst_file at src_file with a symlink, regardless of what is there.
+
+    Several processes routinely compile into the same assets/external/
+    directory at once: pytest-xdist workers, parallel builds, or containers
+    sharing a bind mount. Linking in place would be check-then-act, so the link
+    is built under a unique temporary name in the destination directory and
+    renamed over dst_file instead, which is one atomic replace on POSIX and
+    leaves no window to interleave with. Whichever process wins the race,
+    dst_file is a symlink to src_file once this returns.
+
+    Windows is the exception: replacing a destination that another process is
+    itself replacing is denied rather than serialised, so the rename is retried
+    there, conceding as soon as the other process turns out to have linked the
+    same asset.
+
+    Args:
+        dst_file: The symlink to create in the app's external assets directory.
+        src_file: The asset file the symlink should point at.
+
+    Raises:
+        PermissionError: If the destination could not be replaced.
+    """
+    if _links_to(dst_file, src_file):
+        # Already correct: leave it alone so file watchers see no change.
+        return
+
+    # The staged name deliberately does not derive from the asset name: that
+    # would have to be truncated to fit the filesystem's limit on a path
+    # component, and cutting a name to a byte budget without splitting a
+    # character is more machinery than a transient name is worth.
+    tmp_file = dst_file.with_name(f".{uuid.uuid4().hex}.tmp")
+    try:
+        tmp_file.symlink_to(src_file)
+        for attempt in range(_MAX_LINK_ATTEMPTS):
+            try:
+                tmp_file.replace(dst_file)
+            except PermissionError:  # noqa: PERF203  # bounded, and dwarfed by the syscall
+                if _links_to(dst_file, src_file):
+                    # The process that denied us wanted the same link.
+                    return
+                if attempt == _MAX_LINK_ATTEMPTS - 1:
+                    raise
+                time.sleep(_LINK_RETRY_DELAY * (attempt + 1))
+            else:
+                return
+    finally:
+        # A no-op once the rename succeeded, and the cleanup if it did not.
+        tmp_file.unlink(missing_ok=True)
 
 
 def asset(
@@ -176,7 +337,10 @@ def asset(
         if not backend_only and not src_file_local.exists():
             msg = f"File not found: {src_file_local}"
             raise FileNotFoundError(msg)
-        return AssetPathStr(f"/{path}")
+        relative_path = f"/{path}"
+        if backend_only and not src_file_local.exists():
+            return AssetPathStr(relative_path)
+        return _versioned_asset_path(relative_path, src_file_local)
 
     # Shared asset handling
     # Determine the file by which the asset is exposed.
@@ -200,16 +364,9 @@ def asset(
         asset_folder = Path.cwd() / assets / external / subfolder
         asset_folder.mkdir(parents=True, exist_ok=True)
 
-        dst_file = asset_folder / path
+        _link_shared_asset(asset_folder / path, src_file_shared)
 
-        if not dst_file.exists() and (
-            not dst_file.is_symlink() or dst_file.resolve() != src_file_shared.resolve()
-        ):
-            try:
-                dst_file.symlink_to(src_file_shared)
-            except FileExistsError:
-                # This happens when Simon builds the app on a bind mount in a docker container.
-                dst_file.unlink()
-                dst_file.symlink_to(src_file_shared)
-
-    return AssetPathStr(f"/{external}/{subfolder}/{path}")
+    return _versioned_asset_path(
+        f"/{external}/{subfolder}/{path}",
+        src_file_shared,
+    )

@@ -8,8 +8,6 @@ meta_description: "Use AG Grid in Python with Reflex. Build interactive, enterpr
 
 AG Grid (also written **ag-grid** or **aggrid**) is a powerful, feature-rich React data grid, and Reflex lets you use it entirely in Python — no JavaScript required. It brings enterprise-grade table functionality to your Reflex applications: with support for sorting, filtering, pagination, row selection, pivoting, and much more, AG Grid transforms how you display and interact with tabular data, whether it comes from a pandas DataFrame or your app's state.
 
-[Explore the full AG Grid showcase and examples](https://aggrid.reflex.run/)
-
 ## Your First Reflex AG Grid
 
 A basic Reflex AG Grid contains column definitions `column_defs`, which define the columns to be displayed in the grid, and `row_data`, which contains the data to be displayed in the grid.
@@ -170,6 +168,29 @@ def ag_grid_column_filter_types():
 
 📊 **Dataset source:** [GanttChart-updated.csv](https://raw.githubusercontent.com/plotly/datasets/master/GanttChart-updated.csv)
 
+To show an inline filter input below the column headers, set `floating_filter: True` in the column definition (or in `default_col_def` to apply it to every column).
+
+### Multi-Column Filter (Enterprise)
+
+The enterprise `agMultiColumnFilter` combines several filter types on a single column:
+
+```python
+column_defs = [
+    {
+        "field": "athlete",
+        "filter": "agMultiColumnFilter",
+        "filter_params": {
+            "filters": [
+                {"filter": "agTextColumnFilter"},
+                {"filter": "agSetColumnFilter"},
+            ],
+        },
+    },
+]
+```
+
+Enterprise filters may require loading their modules explicitly via the `enterprise_modules` prop — for example `SetFilterModule` for `agSetColumnFilter`, `MultiFilterModule` for `agMultiColumnFilter`, and `FiltersToolPanelModule` for the filter tool panel (shown with `side_bar=True`). See [Functionality you need is not available/working in Reflex](#functionality-you-need-is-not-available/working-in-reflex) below.
+
 ## Row Sorting
 
 By default, the rows can be sorted by any column by clicking on the column header. You can disable sorting of the rows for a column by setting the `sortable` key to `False` in the column definition.
@@ -234,6 +255,34 @@ def ag_grid_simple_row_selection():
 ```
 
 📊 **Dataset source:** [gapminder2007.csv](https://raw.githubusercontent.com/plotly/datasets/master/gapminder2007.csv)
+
+### Handling Selection Changes
+
+Use the `on_selection_changed` event trigger to react to selection changes. The event handler receives the selected rows directly as a `list[dict]` — not an event object, so don't try to read the rows from `event["rows"]` or through the grid API:
+
+```python
+class GridSelectionState(rx.State):
+    selected_rows: list[dict] = []
+
+    @rx.event
+    def handle_selection_changed(self, selected_rows: list[dict]):
+        self.selected_rows = selected_rows
+        return rx.toast(f"Selected {len(selected_rows)} rows")
+
+
+def grid_with_selection():
+    return rxe.ag_grid(
+        id="selection_grid",
+        row_data=df.to_dict("records"),
+        column_defs=column_defs,
+        row_selection={"mode": "multiRow"},
+        on_selection_changed=GridSelectionState.handle_selection_changed,
+        width="100%",
+        height="40vh",
+    )
+```
+
+An event handler annotated as `def handle(self, event: dict)` raises an `EventHandlerArgTypeMismatchError`, since the trigger passes a `list[dict]`.
 
 ## Editing
 
@@ -723,3 +772,7 @@ def ag_grid_api_argument():
 The react code for the `get_data_as_csv` method of the AG Grid API is `getDataAsCsv = (params?: CsvExportParams) => string  |  undefined;`. Here the function returns a `string` (or undefined).
 
 In Reflex to handle this returned value it is necessary to pass a `callback` as an argument to the `get_data_as_csv` method that will get the returned value. In this example the `handle_get_data` event handler is passed as the callback. This event handler will be called with the returned value from the `get_data_as_csv` method.
+
+## Migration notes
+
+The upcoming reflex-enterprise 0.9.7 release upgrades AG Grid to 36.2.0. Read the [migration guide for reflex-enterprise 0.9.7](/docs/enterprise/ag-grid/upgrading-to-36-2/) for changes to custom CSS, overlays, column definitions, and integrated charts.

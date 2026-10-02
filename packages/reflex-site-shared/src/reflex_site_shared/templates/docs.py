@@ -9,6 +9,7 @@ import reflex_components_internal as ui
 
 import reflex as rx
 from reflex.event import EventType
+from reflex_site_shared.components.algolia import algolia_search
 from reflex_site_shared.components.docs_shell import (
     docs_feedback_button,
     docs_feedback_button_toc,
@@ -20,7 +21,6 @@ from reflex_site_shared.components.docs_shell import (
     docs_sidebar_section,
 )
 from reflex_site_shared.components.icons import get_icon
-from reflex_site_shared.components.inkeep import inkeep
 from reflex_site_shared.components.marketing_button import button
 from reflex_site_shared.docs.markdown import get_markdown_toc, render_markdown
 from reflex_site_shared.docs.models import (
@@ -31,7 +31,6 @@ from reflex_site_shared.docs.models import (
 )
 from reflex_site_shared.docs.navigation import get_prev_next
 from reflex_site_shared.views.footer import dark_mode_toggle
-from reflex_site_shared.views.hosting_banner import HostingBannerState
 
 
 def render_markdown_page(page: DocsPage) -> rx.Component:
@@ -70,7 +69,7 @@ def docs_layout_shell(
     return rx.box(
         navbar,
         main,
-        class_name="flex flex-col justify-center bg-secondary-1 w-full relative",
+        class_name="flex flex-col justify-center bg-background w-full relative",
         on_mount=on_mount,
     )
 
@@ -173,7 +172,7 @@ def _default_navbar(
                     class_name=ui.cn(
                         "hidden h-full items-center justify-center md:flex",
                         (
-                            "shadow-[inset_0_-1px_0_0_var(--primary-10)] [&_div]:text-primary-10"
+                            "shadow-[inset_0_-1px_0_0_var(--primary-hover)] [&_div]:text-primary-hover"
                             if href == current_route
                             else ""
                         ),
@@ -206,7 +205,7 @@ def _default_navbar(
                 else ui.navigation_menu.item(rx.fragment(), unstyled=True)
             ),
             ui.navigation_menu.item(
-                config.search() if config.search is not None else inkeep(),
+                config.search() if config.search is not None else algolia_search(),
                 unstyled=True,
                 custom_attrs={"role": "menuitem"},
             ),
@@ -222,7 +221,7 @@ def _default_navbar(
                 rx.el.details(
                     rx.el.summary(
                         "Menu",
-                        class_name="cursor-pointer list-none rounded-lg border border-secondary-4 px-3 py-1.5 text-sm text-secondary-12",
+                        class_name="cursor-pointer list-none rounded-lg border border-border-subtle px-3 py-1.5 text-sm text-foreground",
                     ),
                     rx.el.nav(
                         rx.el.ul(
@@ -233,7 +232,7 @@ def _default_navbar(
                             class_name="flex list-none flex-col gap-1",
                         ),
                         custom_attrs={"aria-label": "Mobile documentation navigation"},
-                        class_name="absolute right-0 top-11 z-50 max-h-[70vh] w-[18rem] overflow-y-auto rounded-xl border border-secondary-4 bg-secondary-1 p-3 shadow-lg",
+                        class_name="absolute right-0 top-11 z-50 max-h-[70vh] w-[18rem] overflow-y-auto rounded-xl border border-border-subtle bg-background p-3 shadow-lg",
                     ),
                     class_name="relative md:hidden",
                 ),
@@ -253,11 +252,11 @@ def _default_navbar(
         else rx.fragment(
             rx.el.span(
                 config.site_title.upper(),
-                class_name="text-xl font-black tracking-[-0.04em] text-secondary-12",
+                class_name="text-xl font-black tracking-[-0.04em] text-foreground",
             ),
             rx.el.span(
                 "DOCS",
-                class_name="font-mono text-xl font-bold text-primary-10",
+                class_name="font-mono text-xl font-bold text-primary-hover",
             ),
         ),
         href="/",
@@ -306,11 +305,17 @@ def _pager_link(
     if item is None or item.route is None:
         return rx.fragment()
     return rx.el.a(
-        rx.el.span(label, class_name="text-xs text-secondary-9"),
-        rx.el.span(item.title, class_name="font-[525] text-secondary-12"),
+        rx.el.span(
+            label,
+            class_name="font-small text-subtle-foreground group-hover:text-foreground",
+        ),
+        rx.el.span(
+            item.title,
+            class_name="text-base font-[500] leading-6 tracking-[-0.015rem] text-foreground",
+        ),
         href=item.route,
         class_name=ui.cn(
-            "flex flex-col gap-1 rounded-lg p-3 no-underline hover:bg-secondary-2",
+            "group flex flex-col gap-1 rounded-lg p-3 no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
             "items-end text-right" if align_right else "items-start",
         ),
     )
@@ -337,7 +342,7 @@ def _breadcrumb(page: DocsPage) -> rx.Component:
             children.append(
                 ui.icon(
                     "ArrowRight01Icon",
-                    class_name="size-4 text-secondary-11",
+                    class_name="size-4 text-muted-foreground",
                 )
             )
         children.append(
@@ -346,9 +351,9 @@ def _breadcrumb(page: DocsPage) -> rx.Component:
                 class_name=ui.cn(
                     "text-sm font-[525]",
                     (
-                        "text-secondary-11"
+                        "text-muted-foreground"
                         if index == len(labels) - 1
-                        else "text-secondary-12"
+                        else "text-foreground"
                     ),
                 ),
             )
@@ -397,10 +402,10 @@ def _default_footer(config: DocsLayoutConfig, page: DocsPage) -> rx.Component:
     feedback = rx.box(
         rx.text(
             "Did you find this useful?",
-            class_name="whitespace-nowrap font-small text-secondary-11 lg:text-secondary-9",
+            class_name="whitespace-nowrap font-small text-muted-foreground lg:text-subtle-foreground",
         ),
         docs_feedback_button(),
-        class_name="flex w-full flex-col items-center gap-3 rounded-lg bg-secondary-3 p-4 lg:w-auto lg:flex-row lg:gap-4 lg:bg-transparent lg:p-0",
+        class_name="flex w-full flex-col items-center gap-3 rounded-lg bg-accent p-4 lg:w-auto lg:flex-row lg:gap-4 lg:bg-transparent lg:p-0",
     )
     actions = (
         rx.box(
@@ -408,7 +413,7 @@ def _default_footer(config: DocsLayoutConfig, page: DocsPage) -> rx.Component:
                 "Edit this page",
                 href=f"{config.github_url.rstrip('/')}/blob/main/docs/{page.relative_path.as_posix()}",
                 target="_blank",
-                class_name="hidden rounded-full border border-secondary-5 bg-secondary-1 px-3 py-0.5 font-small text-secondary-9 no-underline shadow-large hover:bg-secondary-3 lg:flex",
+                class_name="hidden rounded-full border border-border bg-background px-3 py-0.5 font-small text-subtle-foreground no-underline shadow-small hover:bg-accent lg:flex",
             ),
             class_name="hidden flex-row items-center gap-2 lg:flex",
         )
@@ -420,13 +425,13 @@ def _default_footer(config: DocsLayoutConfig, page: DocsPage) -> rx.Component:
         rx.box(
             rx.el.h4(
                 config.site_title,
-                class_name="text-sm font-semibold text-secondary-12",
+                class_name="text-xs font-book leading-5 text-muted-foreground",
             ),
             *(
                 rx.el.a(
                     label,
                     href=href,
-                    class_name="font-small text-secondary-9 no-underline hover:text-secondary-11",
+                    class_name="text-sm font-book leading-6 text-foreground no-underline hover:text-muted-foreground transition-colors",
                 )
                 for label, href in footer_links
             ),
@@ -441,7 +446,7 @@ def _default_footer(config: DocsLayoutConfig, page: DocsPage) -> rx.Component:
     copyright_status = rx.el.div(
         rx.text(
             f"Copyright © {datetime.now().year} {config.site_title}",
-            class_name="font-small text-secondary-9",
+            class_name="font-small text-subtle-foreground",
         ),
         class_name="flex w-full flex-row items-center justify-between gap-4",
     )
@@ -511,7 +516,7 @@ def docs_layout(
                     rx.spacer(),
                     _pager_link(next_, "Next", align_right=True),
                     custom_attrs={"aria-label": "Previous and next pages"},
-                    class_name="mt-10 flex border-t border-secondary-4 pt-6",
+                    class_name="mt-10 flex border-t border-border-subtle pt-6",
                 ),
                 (
                     layout_config.page_footer(page)
@@ -524,16 +529,11 @@ def docs_layout(
                 ),
                 class_name=ui.cn(
                     "mx-auto min-w-0 max-w-[64rem] flex-1 px-4 pb-10 lg:px-12",
-                    (
-                        rx.cond(
-                            HostingBannerState.is_banner_visible,
-                            "pt-[9.5rem]",
-                            "pt-[7.25rem]",
-                        )
-                        if layout_config.show_banner
-                        else "pt-[7.25rem]"
-                    ),
+                    "pt-[calc(var(--docs-header-height)+2rem)]",
                 ),
+                style={}
+                if layout_config.show_banner
+                else {"--docs-header-height": "4rem"},
             ),
             _right_sidebar(
                 page,

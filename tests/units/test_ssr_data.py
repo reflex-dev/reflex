@@ -141,9 +141,9 @@ async def test_ssr_data_dynamic_route_params():
     assert response.status_code == 200
     data = _parse_response(response)
     root_name = rx.State.get_full_name()
-    router = data["state"][root_name]["router_rx_state_"]
-    assert router["page"]["params"] == {"slug": "hello-world"}
-    assert router["page"]["raw_path"] == "/blog/hello-world"
+    page = data["state"][root_name]["rx_router_page_rx_state_"]
+    assert page["params"] == {"slug": "hello-world"}
+    assert page["raw_path"] == "/blog/hello-world"
 
 
 @pytest.mark.asyncio
@@ -253,8 +253,8 @@ async def test_ssr_data_headers_forwarded():
     assert response.status_code == 200
     data = _parse_response(response)
     root_name = rx.State.get_full_name()
-    router = data["state"][root_name]["router_rx_state_"]
-    assert router["headers"]["user_agent"] == "Googlebot"
+    headers = data["state"][root_name]["rx_router_headers_rx_state_"]
+    assert headers["user_agent"] == "Googlebot"
 
 
 @pytest.mark.asyncio
@@ -313,5 +313,5 @@ async def test_ssr_data_client_ip():
     assert response.status_code == 200
     data = _parse_response(response)
     root_name = rx.State.get_full_name()
-    router = data["state"][root_name]["router_rx_state_"]
-    assert router["session"]["client_ip"] == "10.0.0.42"
+    session = data["state"][root_name]["rx_router_session_rx_state_"]
+    assert session["client_ip"] == "10.0.0.42"
