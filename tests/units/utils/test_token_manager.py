@@ -19,6 +19,7 @@ from reflex.utils.token_manager import (
     SocketRecord,
     TokenManager,
 )
+from tests.units.mock_redis import mock_redis
 
 
 class TestTokenManager:
@@ -681,6 +682,51 @@ class TestRedisTokenManager:
         await manager.close()
 
         mock_redis.aclose.assert_awaited_once()
+
+
+async def test_socket_record_subscriber_restores_deleted_live_record():
+    """The keyspace subscriber restores a deleted record of a live local socket."""
+    redis = mock_redis()
+    manager = RedisTokenManager(redis)
+    token, sid = "token1", "sid1"
+    key = manager._get_redis_key(token)
+    record = manager.token_to_socket[token] = SocketRecord(
+        instance_id=manager.instance_id, sid=sid
+    )
+    manager.sid_to_token[sid] = token
+    await manager._store_socket_record(token, record)
+    event_log = redis._internals["event_log"]  # ty:ignore[unresolved-attribute]
+    on_update = redis._internals["event_log_on_update"]  # ty:ignore[unresolved-attribute]
+
+    async def logged(channel: bytes, data: bytes, start: int = 0):
+        """Wait until the mock redis logs an event.
+
+        Args:
+            channel: The channel of the event.
+            data: The data of the event.
+            start: The event log index to search from.
+        """
+        while {"channel": channel, "data": data} not in event_log[start:]:
+            on_update.clear()
+            await on_update.wait()
+
+    manager._ensure_socket_record_task()
+    try:
+        await asyncio.wait_for(
+            logged(
+                b"psubscribe", f"__keyspace@1__:{manager._get_redis_key('*')}".encode()
+            ),
+            timeout=1,
+        )
+        start = len(event_log)
+        await redis.delete(key)
+        # Shorter than the subscriber's retry delay, so a crashed listen fails.
+        await asyncio.wait_for(
+            logged(f"__keyspace@1__:{key}".encode(), b"set", start), timeout=0.5
+        )
+    finally:
+        await manager.close()
+    assert pickle.loads(await redis.get(key)) == record
 
 
 @pytest.fixture

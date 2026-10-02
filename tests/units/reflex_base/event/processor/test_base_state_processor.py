@@ -44,7 +44,6 @@ _STATE_REGISTRIES = (
     "_always_dirty_computed_vars",
     "_always_dirty_substates",
     "_interval_computed_var_names",
-    "_fast_attr_names",
 )
 
 
@@ -120,7 +119,6 @@ def _isolate_state_class_registries(clean_registration_context: RegistrationCont
             delattr(State, name)
         for cls in _state_tree(State):
             cls.vars.pop(name, None)
-            cls.inherited_vars.pop(name, None)
     for name, value in snapshot.items():
         _restore_registry(State, name, value)
 
@@ -1410,7 +1408,7 @@ async def test_no_op_partial_router_data_leaves_the_state_untouched(
         for _token, delta in emitted_deltas
         for key in delta.get(State.get_full_name(), {})
     )
-    assert not state._get_was_touched()
+    assert not state._was_touched
 
 
 async def test_navigation_delta_elides_connection_scoped_router_vars(

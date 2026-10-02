@@ -2,29 +2,42 @@
 
 import dataclasses
 import gc
+import logging
+import os
 import pickle
+import subprocess
+import sys
 import threading
 import traceback
 import typing
 import weakref
-from typing import Any, Literal, TypeVar
+from abc import ABC, abstractmethod
+from collections.abc import Iterator
+from pathlib import Path
+from typing import Any, ClassVar, Literal, TypeVar
 
 import pytest
+from reflex_base import constants
 from reflex_base.constants import RouteArgType
+from reflex_base.environment import _load_dotenv_from_files, environment
 from reflex_base.utils import serializers
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
 from reflex_base.vars.base import (
+    _ABC_BOOKKEEPING_NAME,
+    FIELD_TYPE,
     GLOBAL_CACHE,
     BaseStateMeta,
     CachedVarOperation,
     EvenMoreBasicBaseState,
+    Field,
     LiteralVar,
     Var,
     VarData,
     _global_vars,
     _linearize_bases,
+    _type_check_depth,
     cached_property,
     cached_property_no_lock,
     computed_var,
@@ -35,7 +48,7 @@ from reflex_base.vars.base import (
 from reflex_base.vars.number import NumberVar
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
-from typing_extensions import TypeAliasType, TypeVarTuple, Unpack
+from typing_extensions import Self, TypeAliasType, TypeVarTuple, Unpack
 
 from reflex.state import BaseState, State, _override_base_method
 
@@ -679,13 +692,13 @@ def test_var_operation_str_interpolation_matches_tagged_form() -> None:
 @pytest.mark.parametrize(
     "name",
     [
-        "_get_was_touched",
-        "_update_was_touched",
+        "_init_bookkeeping",
+        "_get_root_state",
         "_was_touched",
         "dirty_vars",
         "get_fields",
         "get_full_name",
-        "backend_vars",
+        "computed_vars",
         "__fields__",
         "setvar",
     ],
@@ -712,10 +725,10 @@ def test_reserved_annotation_only(clean_registration_context):
     Args:
         clean_registration_context: An isolated state registry.
     """
-    with pytest.raises(StateValueError, match="_get_was_touched"):
+    with pytest.raises(StateValueError, match="_init_bookkeeping"):
 
         class ShadowState(BaseState):
-            _get_was_touched: int
+            _init_bookkeeping: int
 
 
 @pytest.mark.parametrize("state_mixin", [False, True])
@@ -726,17 +739,106 @@ def test_reserved_mixin_var(state_mixin: bool, clean_registration_context):
         state_mixin: Whether the mixin subclasses BaseState.
         clean_registration_context: An isolated state registry.
     """
-    with pytest.raises(StateValueError, match="_update_was_touched"):
+    with pytest.raises(StateValueError, match="_get_root_state"):
         mixin = type(
             "Mixin",
             (BaseState,) if state_mixin else (),
-            {"__module__": __name__, "_update_was_touched": 7},
+            {"__module__": __name__, "_get_root_state": 7},
             **({"mixin": True} if state_mixin else {}),
         )
         type("MixedState", (mixin, BaseState), {"__module__": __name__})
 
 
-@pytest.mark.parametrize("name", ["_get_was_touched", "get_fields"])
+@pytest.mark.parametrize("state_mixin", [False, True])
+def test_abc_mixin(state_mixin: bool, clean_registration_context):
+    """Accept an ``ABC`` mixin, whose ``_abc_impl`` the metaclass owns, and keep it abstract.
+
+    Args:
+        state_mixin: Whether the abstract mixin subclasses BaseState.
+        clean_registration_context: An isolated state registry.
+    """
+
+    class Abstract(ABC):
+        @abstractmethod
+        def _value(self) -> int: ...
+
+    if state_mixin:
+
+        class Mixin(Abstract, BaseState, mixin=True):
+            pass
+
+        bases = (Mixin, BaseState)
+    else:
+        bases = (Abstract, BaseState)
+
+    abstract_state = type("AbstractState", bases, {"__module__": __name__})
+    with pytest.raises(TypeError, match="_value"):
+        abstract_state()
+
+    concrete_state = type(
+        "ConcreteState", bases, {"__module__": __name__, "_value": lambda self: 7}
+    )
+    assert concrete_state()._value() == 7
+
+
+@pytest.mark.parametrize("registration", ["declared", "var"])
+def test_reserved_abc_bookkeeping(registration: str, clean_registration_context):
+    """Keep rejecting a state's own ``_abc_impl``, which would clash with ABCMeta's.
+
+    Args:
+        registration: Whether the name is declared in the class body or added later.
+        clean_registration_context: An isolated state registry.
+    """
+    with pytest.raises(StateValueError, match=_ABC_BOOKKEEPING_NAME):
+        if registration == "declared":
+
+            class ShadowState(ABC, BaseState):
+                _abc_impl: int = 7
+
+        else:
+
+            class DynamicState(ABC, BaseState):
+                """State receiving a dynamic declaration."""
+
+            DynamicState.add_var(_ABC_BOOKKEEPING_NAME, int, 7)
+
+
+@pytest.mark.parametrize("slots", [("cache",), "cache"])
+@pytest.mark.parametrize("state_base", [False, True])
+def test_reserved_slot_of_base(
+    state_base: bool, slots: tuple[str, ...] | str, clean_registration_context
+):
+    """Reject a declaration using a slot name of a non-root base, and only those.
+
+    Args:
+        state_base: Whether the slotted base is a state or a Python mixin.
+        slots: The base's ``__slots__``; a single string declares one slot.
+        clean_registration_context: An isolated state registry.
+    """
+    slotted = type(
+        "Slotted",
+        (BaseState,) if state_base else (),
+        {"__module__": __name__, "__slots__": slots},
+    )
+    bases = (slotted,) if state_base else (slotted, BaseState)
+    with pytest.raises(StateValueError, match=r"\['cache'\] are reserved by Slotted"):
+        type(
+            "SlotShadowState",
+            bases,
+            {"__module__": __name__, "__annotations__": {"cache": int}, "cache": 0},
+        )
+    if state_base:
+        # A name that is only a substring of the slot name is not reserved; a
+        # slotted Python mixin cannot be combined with a state at all.
+        state = type(
+            "SubstringState",
+            bases,
+            {"__module__": __name__, "__annotations__": {"c": int}, "c": 0},
+        )
+        assert "c" in state.get_fields()
+
+
+@pytest.mark.parametrize("name", ["_init_bookkeeping", "get_fields"])
 def test_reserved_computed_var(name: str, clean_registration_context):
     """Reject computed vars that replace framework methods.
 
@@ -820,7 +922,7 @@ def test_non_state_models_keep_their_namespace():
     assert Model().get_state == 7
 
 
-@pytest.mark.parametrize("name", ["get_fields", "_get_was_touched"])
+@pytest.mark.parametrize("name", ["get_fields", "_init_bookkeeping"])
 @pytest.mark.parametrize("state_first", [False, True])
 def test_reserved_model_mixin(name: str, state_first: bool, clean_registration_context):
     """Reject inherited model fields before the field collector sees them.
@@ -964,3 +1066,325 @@ def test_state_roots_do_not_share_reserved_names():
 
         class ShadowA(RootA):
             alpha: int = 3
+
+
+def test_inherited_field_on_plain_model():
+    """An inherited field of a model without a state tree reads from the model itself."""
+
+    class Model(EvenMoreBasicBaseState):
+        x: int = 1
+
+    class SubModel(Model):
+        pass
+
+    model = SubModel()
+    assert model.x == 1
+    model.x = 2
+    assert model.x == 2
+
+
+def test_new_default_for_inherited_field_declares_a_field():
+    """Assigning a default to an inherited field redeclares it with that default."""
+
+    class Parent(State):
+        count: int = 0
+
+    class Child(Parent):
+        count = 5
+
+    child_field = Child.get_fields()["count"]
+    assert child_field is not Parent.get_fields()["count"]
+    assert child_field.default == 5
+    assert child_field.outer_type_ is int
+    assert "count" in Child.base_vars
+
+
+class TaggedField(Field[FIELD_TYPE]):
+    """A field subclass with an attribute of its own."""
+
+    def __init__(self, *args: Any, tag: str = "", **kwargs: Any):
+        """Initialize the field.
+
+        Args:
+            *args: The arguments of Field.
+            tag: The tag of the field.
+            **kwargs: The keyword arguments of Field.
+        """
+        super().__init__(*args, **kwargs)
+        self.tag = tag
+
+    def _replace(self, **kwargs: Any) -> Self:
+        """Derive a field, keeping the tag.
+
+        Args:
+            **kwargs: The arguments to replace.
+
+        Returns:
+            The new field.
+        """
+        return super()._replace(**{"tag": self.tag, **kwargs})
+
+
+def test_field_subclass_is_kept():
+    """A field declared with a Field subclass stays one wherever it is copied."""
+
+    class Parent(State):
+        annotated: int = TaggedField(default=1, tag="a")  # ty:ignore[invalid-assignment]
+        generic: TaggedField[int] = TaggedField(default=2, tag="g")
+        unannotated = TaggedField(default="x", tag="u")
+
+    class Child(Parent):
+        annotated = 3
+
+    class AnnotatedChild(Parent):
+        annotated: int = 5
+
+    class Mixin(State, mixin=True):
+        mixed: int = TaggedField(default=4, tag="m")  # ty:ignore[invalid-assignment]
+
+    class UsesMixin(Mixin, State):
+        pass
+
+    for cls, name, tag, default in (
+        (Parent, "annotated", "a", 1),
+        (Parent, "generic", "g", 2),
+        (Parent, "unannotated", "u", "x"),
+        (Child, "annotated", "a", 3),
+        (AnnotatedChild, "annotated", "a", 5),
+        (UsesMixin, "mixed", "m", 4),
+    ):
+        declared = cls.get_fields()[name]
+        assert type(declared) is TaggedField, (cls, name)
+        assert declared.tag == tag
+        assert declared.default_value() == default
+    assert Parent.get_fields()["generic"].outer_type_ is int
+    assert UsesMixin.get_fields()["mixed"] is not Mixin.get_fields()["mixed"]
+
+
+def test_plain_model_without_reflex():
+    """A plain model's fields work in a process that never imports reflex."""
+    code = """
+import sys
+from reflex_base.vars import EvenMoreBasicBaseState
+
+class Model(EvenMoreBasicBaseState):
+    count: int = 0
+
+model = Model(count=3)
+model.count = 4
+assert model.count == 4
+assert "reflex" not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_plain_model_unwraps_state_proxies():
+    """A plain model stores the value of a state's mutable var, not its proxy."""
+
+    class Items(State):
+        items: list[int] = [1]
+
+    class Model(EvenMoreBasicBaseState):
+        items: list[int] = []
+
+    model = Model()
+    model.items = Items().items
+    assert type(vars(model)["items"]) is list
+
+
+def test_slot_names_are_reserved():
+    """A state cannot declare a name a base keeps in a slot."""
+
+    class Root(EvenMoreBasicBaseState, state_root=True):
+        pass
+
+    class Base(Root):
+        __slots__ = ("_bookkeeping",)
+
+    with pytest.raises(StateValueError, match="_bookkeeping"):
+
+        class Shadow(Base):
+            _bookkeeping: int = 0
+
+
+def test_backend_field_is_not_type_checked():
+    """Setting a backend var skips the type check, like a generic one it cannot run."""
+    T = TypeVar("T")
+
+    class Model(EvenMoreBasicBaseState):
+        _value: T  # ty:ignore[unbound-type-variable]
+
+    model = Model()  # ty:ignore[missing-argument]
+    model._value = 1
+    assert model._value == 1
+
+
+def test_classvar_over_inherited_field_is_not_a_field():
+    """A ClassVar redeclaring an inherited field stays a class attribute."""
+
+    class Parent(State):
+        count: int = 0
+
+    class Child(Parent):
+        count: ClassVar[int] = 5  # ty:ignore[invalid-attribute-override]
+
+    assert Child.get_fields()["count"] is Parent.get_fields()["count"]
+    assert "count" not in Child.base_vars
+
+
+def test_cached_computed_var_checks_return_type_on_recompute_only(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A cached computed var validates its return type only when it recomputes."""
+
+    class CheckedState(BaseState):
+        items: list[int] = [1, 2, 3]
+
+        @computed_var
+        def doubled(self) -> list[int]:
+            return [i * 2 for i in self.items]
+
+    checked = []
+    original = CheckedState.computed_vars["doubled"]._check_deprecated_return_type
+    monkeypatch.setattr(
+        type(CheckedState.computed_vars["doubled"]),
+        "_check_deprecated_return_type",
+        lambda self, instance, value: (
+            checked.append(value) or original(instance, value)
+        ),
+    )
+    state = CheckedState()
+
+    assert state.doubled == [2, 4, 6]
+    assert state.doubled == [2, 4, 6]
+    assert checked == [[2, 4, 6]]
+
+    state.items = [5]
+    assert state.doubled == [10]
+    assert checked == [[2, 4, 6], [10]]
+
+
+@pytest.fixture
+def restore_env_mode() -> Iterator[None]:
+    """Restore REFLEX_ENV_MODE and the cached type check depth after a test.
+
+    Yields:
+        None.
+    """
+    original = os.environ.get(environment.REFLEX_ENV_MODE.name)
+    yield
+    if original is None:
+        os.environ.pop(environment.REFLEX_ENV_MODE.name, None)
+    else:
+        os.environ[environment.REFLEX_ENV_MODE.name] = original
+    _type_check_depth.cache_clear()
+
+
+@pytest.mark.usefixtures("restore_env_mode")
+def test_type_check_depth_follows_env_mode_set():
+    """Setting REFLEX_ENV_MODE re-resolves the cached type check depth."""
+    environment.REFLEX_ENV_MODE.set(constants.Env.DEV)
+    assert _type_check_depth() == 1
+    environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
+    assert _type_check_depth() == 0
+    environment.REFLEX_ENV_MODE.set(None)
+    assert _type_check_depth() == 1
+
+
+@pytest.mark.usefixtures("restore_env_mode")
+def test_type_check_depth_follows_env_mode_from_env_file(tmp_path: Path):
+    """Loading an env file that sets REFLEX_ENV_MODE re-resolves the depth.
+
+    Args:
+        tmp_path: Pytest temporary directory.
+    """
+    environment.REFLEX_ENV_MODE.set(constants.Env.DEV)
+    assert _type_check_depth() == 1
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        f"{environment.REFLEX_ENV_MODE.name}={constants.Env.PROD.value}\n"
+    )
+    _load_dotenv_from_files([env_file])
+    assert _type_check_depth() == 0
+
+
+@pytest.mark.usefixtures("restore_env_mode")
+@pytest.mark.parametrize(
+    ("env_mode", "element_error_logged"),
+    [(constants.Env.DEV, True), (constants.Env.PROD, False)],
+)
+def test_state_var_type_check_depth_follows_env_mode(
+    caplog: pytest.LogCaptureFixture,
+    env_mode: constants.Env,
+    element_error_logged: bool,
+):
+    """Prod mode checks only the outer type of assigned and computed values.
+
+    Args:
+        caplog: Pytest log capture fixture.
+        env_mode: The REFLEX_ENV_MODE value.
+        element_error_logged: Whether a wrong element type is reported.
+    """
+
+    class DepthState(BaseState):
+        items: list[int] = []
+        wrong_elements: list[str] = []
+
+        @computed_var
+        def as_ints(self) -> list[int]:
+            return self.wrong_elements  # ty:ignore[invalid-return-type]
+
+    environment.REFLEX_ENV_MODE.set(env_mode)
+    state = DepthState()
+
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        state.items = ["a"]  # ty:ignore[invalid-assignment]
+        state.wrong_elements = ["b"]
+        _ = state.as_ints
+    name = type(state).__name__
+    messages = [r.getMessage() for r in caplog.records]
+    assert any(f"{name}.items" in m for m in messages) is element_error_logged
+    assert any(f"{name}.as_ints" in m for m in messages) is element_error_logged
+
+    caplog.clear()
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        state.items = "not a list"  # ty:ignore[invalid-assignment]
+    assert any(f"{name}.items" in r.getMessage() for r in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_cached_async_computed_var_checks_return_type_on_recompute_only(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A cached async computed var validates its return type only when it recomputes.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+
+    class AsyncCheckedState(BaseState):
+        items: list[int] = [1, 2, 3]
+
+        @computed_var
+        async def doubled(self) -> list[int]:
+            return [i * 2 for i in self.items]
+
+    cvar = AsyncCheckedState.computed_vars["doubled"]
+    checked = []
+    original = cvar._check_deprecated_return_type
+    monkeypatch.setattr(
+        type(cvar),
+        "_check_deprecated_return_type",
+        lambda self, instance, value: (
+            checked.append(value) or original(instance, value)
+        ),
+    )
+    state = AsyncCheckedState()
+
+    assert await state.doubled == [2, 4, 6]
+    assert await state.doubled == [2, 4, 6]
+    assert checked == [[2, 4, 6]]
+
+    state.items = [5]
+    assert await state.doubled == [10]
+    assert checked == [[2, 4, 6], [10]]

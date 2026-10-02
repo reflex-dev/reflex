@@ -432,7 +432,7 @@ class AsyncProjects:
             The projects.
         """
         projects = await self._client._request(  # ty:ignore[no-matching-overload]
-            "GET", "project/", builtins.list[ProjectSummary] | None
+            "GET", "project", builtins.list[ProjectSummary] | None
         )
         return projects or []
 

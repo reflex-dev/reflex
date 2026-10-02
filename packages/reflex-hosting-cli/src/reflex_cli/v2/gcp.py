@@ -30,8 +30,9 @@ import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
+from http import HTTPStatus
 from pathlib import Path
-from urllib.parse import urljoin
+from typing import TYPE_CHECKING
 
 import click
 
@@ -39,9 +40,11 @@ from reflex_cli import constants
 from reflex_cli.utils import console, log
 from reflex_cli.utils.output import interactive_option, json_option, print_json
 
+if TYPE_CHECKING:
+    from reflex_cli.utils import hosting
+
 logger = logging.getLogger(__name__)
 
-GCP_MANIFEST_ENDPOINT = "/api/v1/cli/gcp-cloud-run-manifest"
 
 DOCKERFILE_NAME = "Dockerfile"
 
@@ -74,8 +77,6 @@ _BUILDS_SUBMIT_PATTERN = re.compile(
 )
 
 # Manifest response field names from Reflex.
-FIELD_DOCKERFILE = "dockerfile"
-FIELD_DEPLOY_COMMAND = "deploy_command"
 
 # Allowlist of host environment variables forwarded to the deploy script.
 # We deliberately exclude things like AWS_*/GITHUB_TOKEN/SSH agent sockets so a
@@ -334,7 +335,7 @@ def deploy_command(
         )
         raise click.exceptions.Exit(1)
 
-    dockerfile, deploy_script = _request_manifest(authenticated_client.token)
+    dockerfile, deploy_script = _request_manifest(authenticated_client)
 
     # If the user asks for a private service, abort when the fetched script
     # doesn't reference CLOUD_RUN_ALLOW_UNAUTHENTICATED. Without that backend
@@ -505,71 +506,49 @@ def _get_active_gcp_account(gcloud_path: str) -> str | None:
     return account[0] if account else None
 
 
-def _request_manifest(token: str) -> tuple[str, str]:
+def _request_manifest(client: hosting.AuthenticatedClient) -> tuple[str, str]:
     """Fetch the Dockerfile + deploy script from Reflex.
 
     Args:
-        token: The Reflex API token to authenticate with.
+        client: The authenticated client.
 
     Returns:
         A `(dockerfile, deploy_command)` tuple.
 
     Raises:
-        Exit: If the request fails or the response shape is invalid.
+        Exit: If the request fails.
 
     """
-    import httpx
+    from reflex_build_sdk import APIStatusError, ReflexBuildError
 
     from reflex_cli.utils import hosting
 
-    url = urljoin(constants.Hosting.HOSTING_SERVICE, GCP_MANIFEST_ENDPOINT)
     try:
-        response = httpx.get(
-            url,
-            headers=hosting.authorization_header(token),
-            timeout=constants.Hosting.TIMEOUT,
-        )
-        response.raise_for_status()
-    except httpx.HTTPStatusError as ex:
-        detail = ex.response.text
-        with contextlib.suppress(ValueError):
-            detail = ex.response.json().get("detail", detail)
-        if ex.response.status_code == 403:
+        manifest = client.api.providers.cloud_run_manifest()
+    except APIStatusError as ex:
+        if ex.status_code == HTTPStatus.FORBIDDEN:
             logger.error(
                 "Reflex denied the request (403). GCP Cloud Run deploys require an "
                 "Enterprise tier subscription."
             )
         else:
-            logger.error(f"Reflex rejected the manifest request: {detail}")
+            logger.error(
+                f"Reflex rejected the manifest request: {hosting.error_message(ex)}"
+            )
         raise click.exceptions.Exit(1) from ex
-    except httpx.HTTPError as ex:
-        logger.error(f"Failed to reach Reflex at {url}: {ex}")
-        raise click.exceptions.Exit(1) from ex
-
-    try:
-        body = response.json()
-    except ValueError as ex:
-        logger.error("Reflex returned a non-JSON response.")
+    except ReflexBuildError as ex:
+        logger.error(f"Failed to reach Reflex: {ex}")
         raise click.exceptions.Exit(1) from ex
 
-    if not isinstance(body, dict):
-        logger.error("Reflex returned an unexpected response shape.")
-        raise click.exceptions.Exit(1)
+    for field, value in (
+        ("dockerfile", manifest.dockerfile),
+        ("deploy_command", manifest.deploy_command),
+    ):
+        if not value.strip():
+            logger.error(f"Reflex returned an empty {field!r}.")
+            raise click.exceptions.Exit(1)
 
-    dockerfile = body.get(FIELD_DOCKERFILE)
-    deploy_command = body.get(FIELD_DEPLOY_COMMAND)
-    if not isinstance(dockerfile, str) or not dockerfile.strip():
-        logger.error(
-            f"Reflex response is missing a non-empty {FIELD_DOCKERFILE!r} field."
-        )
-        raise click.exceptions.Exit(1)
-    if not isinstance(deploy_command, str) or not deploy_command.strip():
-        logger.error(
-            f"Reflex response is missing a non-empty {FIELD_DEPLOY_COMMAND!r} field."
-        )
-        raise click.exceptions.Exit(1)
-
-    return dockerfile, deploy_command
+    return manifest.dockerfile, manifest.deploy_command
 
 
 def _build_cloudbuild_yaml(dockerfile_contents: str) -> str:

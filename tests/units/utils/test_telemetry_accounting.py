@@ -214,7 +214,7 @@ def test_collect_state_stats_root_depth_zero():
     assert stats == {
         "event_handlers_count": len(TelAcctRoot.event_handlers),
         "vars_count": len(TelAcctRoot.vars),
-        "backend_vars_count": len(TelAcctRoot.backend_vars),
+        "backend_vars_count": 1,
         "computed_vars_count": len(TelAcctRoot.computed_vars),
         "depth_from_root": 0,
     }

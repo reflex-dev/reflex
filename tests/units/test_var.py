@@ -3,6 +3,8 @@ import json
 import math
 import operator as op
 import re
+import shutil
+import subprocess
 import typing
 from collections.abc import Mapping, Sequence
 from datetime import date, datetime, timedelta, timezone
@@ -533,6 +535,16 @@ def test_dict_contains(var, expected):
     assert str(var.contains(other_var)) == f"{expected}.hasOwnProperty(other)"
 
 
+def test_var_replace_var_data():
+    original_var_data = VarData(imports={"react": [ImportVar(tag="useRef")]})
+    replacement_var_data = VarData(hooks={"const value = 1": None})
+    var = Var(_js_expr="value", _var_data=original_var_data)
+
+    replaced = var._replace(_var_data=replacement_var_data)
+
+    assert replaced._var_data == replacement_var_data
+
+
 @pytest.mark.parametrize(
     "var",
     [
@@ -1057,6 +1069,41 @@ def test_var_operation():
     assert isinstance(seven, NumberVar)
 
 
+def test_deep_equals_operation():
+    left = LiteralObjectVar.create({"a": 1, "nested": {"values": [1, 2]}})
+    right = LiteralObjectVar.create({"nested": {"values": [1, 2]}, "a": 1})
+
+    result = left.deep_equals(right)
+
+    assert isinstance(result, rx.vars.BooleanVar)
+    assert str(result) == (
+        'isEqual(({ ["a"] : 1, ["nested"] : ({ ["values"] : [1, 2] }) }), '
+        '({ ["nested"] : ({ ["values"] : [1, 2] }), ["a"] : 1 }))'
+    )
+    var_data = result._get_all_var_data()
+    assert var_data is not None
+    assert any(
+        import_var.tag == "isEqual" and import_var.is_default
+        for import_var in dict(var_data.imports).get("lodash.isequal@4.5.0", ())
+    )
+
+
+def test_deep_equals_accepts_python_values_and_preserves_var_data():
+    state_value = Var(
+        _js_expr="state.value",
+        _var_type=dict[str, object],
+        _var_data=VarData(state="state", field_name="value"),
+    )
+
+    result = state_value.deep_equals({"items": [1, None, True]})
+
+    assert isinstance(result, rx.vars.BooleanVar)
+    assert str(result) == ('isEqual(state.value, ({ ["items"] : [1, null, true] }))')
+    var_data = result._get_all_var_data()
+    assert var_data is not None
+    assert var_data.state == "state"
+
+
 def test_string_operations():
     basic_string = LiteralStringVar.create("Hello, World!")
 
@@ -1128,11 +1175,98 @@ def test_index_operation():
         == "[1, 2, 3, 4, 5].slice(1, 4).filter((_, i) => i % 2 === 0)"
     )
     assert (
-        str(array_var[::-1])
-        == "[1, 2, 3, 4, 5].slice(0, [1, 2, 3, 4, 5].length).slice().reverse().slice(undefined, undefined).filter((_, i) => i % 1 === 0)"
+        str(array_var[::-1]) == "[1, 2, 3, 4, 5].slice(undefined, undefined).reverse()"
     )
+    assert (
+        str(array_var[3::-2])
+        == "[1, 2, 3, 4, 5].slice(undefined, 4).reverse().filter((_, i) => i % 2 === 0)"
+    )
+    assert str(array_var[1:4:1]) == "[1, 2, 3, 4, 5].slice(1, 4)"
     assert str(array_var.reverse()) == "[1, 2, 3, 4, 5].slice().reverse()"
     assert str(array_var[0].to(NumberVar) + 9) == "([1, 2, 3, 4, 5]?.at?.(0) + 9)"
+
+
+_NEGATIVE_STEP_SLICES = [
+    slice(None, None, -1),
+    slice(-1, None, -1),
+    slice(-1, -4, -1),
+    slice(None, -1, -1),
+    slice(3, None, -1),
+    slice(4, 0, -2),
+    slice(-2, None, -1),
+    slice(None, -3, -1),
+    slice(-1, None, -2),
+]
+
+
+def test_slice_with_var_step():
+    """A Var step renders a parenthesized runtime branch instead of recursing."""
+    array_var = LiteralArrayVar.create([1, 2, 3, 4, 5])
+    step = Var(_js_expr="step", _var_type=int).guess_type()
+    assert str(array_var[1:4:step]) == (
+        "(step > 0 ? [1, 2, 3, 4, 5].slice(1, 4).filter((_, i) => i % step === 0)"
+        " : [1, 2, 3, 4, 5].slice(5, 2).reverse().filter((_, i) => i % -(step) === 0))"
+    )
+
+
+def _eval_js_lines(statements: list[str]) -> list:
+    """Evaluate JS blocks in Node, each printing one JSON value.
+
+    Args:
+        statements: JS blocks that each ``console.log`` one JSON value.
+
+    Returns:
+        The parsed value printed by each block.
+    """
+    result = subprocess.run(
+        ["node", "-e", "\n".join(statements)],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=30,
+    )
+    return [json.loads(line) for line in result.stdout.splitlines()]
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
+@pytest.mark.parametrize("bounds_var", [False, True])
+@pytest.mark.parametrize("step_var", [False, True])
+def test_negative_step_slices_match_python(step_var: bool, bounds_var: bool):
+    """Negative-step slices evaluate in JS to what Python returns.
+
+    Args:
+        step_var: Whether to pass the step as a Var instead of an int.
+        bounds_var: Whether to pass the start and stop as Vars instead of ints.
+    """
+    items = [1, 2, 3, 4, 5]
+    array_var = LiteralArrayVar.create(items)
+
+    def arg(name: str, value: int | None) -> Var | int | None:
+        if value is None or not (step_var if name == "step" else bounds_var):
+            return value
+        return Var(_js_expr=name, _var_type=int).guess_type()
+
+    statements = [
+        f"{{ const start = {json.dumps(s.start)}, stop = {json.dumps(s.stop)}, "
+        f"step = {s.step}; console.log(JSON.stringify("
+        f"{array_var[arg('start', s.start) : arg('stop', s.stop) : arg('step', s.step)]!s}"
+        ")); }"
+        for s in _NEGATIVE_STEP_SLICES
+    ]
+    assert _eval_js_lines(statements) == [items[s] for s in _NEGATIVE_STEP_SLICES]
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
+def test_var_step_slice_length_covers_both_branches():
+    """An operation applied to a Var-step slice applies to either step sign."""
+    array_var = LiteralArrayVar.create([1, 2, 3, 4, 5])
+    step = Var(_js_expr="step", _var_type=int).guess_type()
+    length = array_var[::step].length()
+    statements = [
+        f"{{ const step = {value}; console.log(JSON.stringify({length!s})); }}"
+        for value in (2, -2)
+    ]
+    assert _eval_js_lines(statements) == [3, 3]
 
 
 @pytest.mark.parametrize(
