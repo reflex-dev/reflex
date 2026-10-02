@@ -250,41 +250,19 @@ class Conversation(Base, Workflow):
         )
 
     @step(retries=RETRIES, backoff=BACKOFF)
-    async def turn(self) -> Call[Conversation]:
+    async def turn(self) -> Call[Conversation] | Wait[Conversation]:
         """Take every message that has arrived since the last turn.
 
         Returns:
-            The model's first call, or back to waiting when nothing is new: a
+            The model's first call, or the wait again when nothing is new: a
             wake whose messages an earlier turn already took.
         """
         async with current().session_factory() as session:
             newest = await unread(session, self.conversation, self.seen)
         if newest is None:
-            return Conversation.settle()
+            return self.waiting()
         self.since, self.seen = self.seen, newest
         return Conversation.think(0)
-
-    @step(retries=RETRIES, backoff=BACKOFF)
-    async def settle(self) -> Call[Conversation] | Wait[Conversation]:
-        """Wait for the customer, unless a message has arrived unanswered.
-
-        A run holds one event at a time, and a wake that arrives while it holds
-        one is refused. That loses nothing while the held wake is still to come,
-        since the turn it starts reads the transcript; but a turn that is running
-        the held wake has already read it, and a message arriving then would
-        wait for the reminder. So every wait is armed here, in a step of its
-        own, after reading the transcript again under the arrival lock: a
-        message that landed first is taken now, and one that lands after has
-        its wake held, or is read by the turn the wake already held starts.
-
-        Returns:
-            Another turn for a message that arrived unanswered, or the wait.
-        """
-        async with current().session_factory() as session, session.begin():
-            await session.execute(arrival_lock(self.conversation))
-            if await unread(session, self.conversation, self.seen) is not None:
-                return Conversation.turn()
-        return self.waiting()
 
     @step(retries=RETRIES, backoff=BACKOFF)
     async def think(self, calls: int) -> Call[Conversation]:
@@ -376,14 +354,22 @@ class Conversation(Base, Workflow):
         return Conversation.think(calls + 1)
 
     @step(retries=RETRIES, backoff=BACKOFF)
-    async def reply(self, text: str) -> Call[Conversation]:
-        """Send the agent's reply, then go back to waiting for the customer.
+    async def reply(self, text: str) -> Call[Conversation] | Wait[Conversation]:
+        """Send the agent's reply, then wait for the customer.
+
+        A message that arrived during the turn has usually asked for the next one
+        already, and the engine holds that request until this wait arms. Not
+        always: a run holds one event at a time, and while the turn ran one it
+        was holding, a wake for a message arriving after the turn read the
+        transcript was refused. So the transcript is read again here, under the
+        arrival lock: a message that landed first is taken now, and one that
+        lands after finds this run still stepping, so its wake is held.
 
         Args:
             text: What to say.
 
         Returns:
-            The step that waits.
+            Another turn for a message nothing woke the run for, or the wait.
         """
         await world.call(
             "chat.send",
@@ -392,8 +378,11 @@ class Conversation(Base, Workflow):
             text=text,
         )
         async with current().session_factory() as session, session.begin():
+            await session.execute(arrival_lock(self.conversation))
             await write(session, self.conversation, f"reply:{self.seen}", "agent", text)
-        return Conversation.settle()
+            if await unread(session, self.conversation, self.seen) is not None:
+                return Conversation.turn()
+        return self.waiting()
 
     @step(retries=RETRIES, backoff=BACKOFF)
     async def remind(self) -> Call[Conversation] | Wait[Conversation]:
@@ -516,7 +505,7 @@ async def wake(conversation: str, key: str) -> None:
     conversation that has already read the entry is left alone, so a repeat of
     a wake that did land, or a redelivered message, costs nothing. A wake
     refused because another is already held loses nothing either: the turn
-    reads the transcript, and ``settle`` reads it again before every wait.
+    reads the transcript, and ``reply`` reads it again before waiting.
 
     Args:
         conversation: The conversation.

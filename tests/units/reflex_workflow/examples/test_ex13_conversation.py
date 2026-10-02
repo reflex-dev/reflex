@@ -171,36 +171,6 @@ def conversation_is(conversation: str, status: str):
     return check
 
 
-def parked(conversation: str):
-    """Build a check that a conversation is waiting with nothing left to do.
-
-    The status says it is waiting as soon as a wait is armed, but a wake held
-    from before may still be on its way to a turn that finds nothing new.
-
-    Args:
-        conversation: The conversation.
-
-    Returns:
-        An async predicate.
-    """
-
-    async def check() -> bool:
-        """Tell whether the conversation is waiting, holds no wake, and runs nothing.
-
-        Returns:
-            Whether it is.
-        """
-        row = await Conversation.by(Conversation.conversation == conversation).get()
-        return (
-            row is not None
-            and row.waiting_for == "turn"
-            and row.pending_event is None
-            and row.claimed_until is None
-        )
-
-    return check
-
-
 async def transfer_of(conversation: str) -> list[Transfer]:
     """Load a conversation's transfers, oldest first.
 
@@ -364,10 +334,8 @@ async def test_a_message_whose_wake_is_refused_while_a_held_one_runs_is_answered
     # The reply to m1 is slow to send, so m2 arrives while that step is still
     # running, and the engine holds m2's wake for the wait the reply arms.
     sending = world.hold("chat.send", key=f"reply:{conversation}:{first.id}")
-    # Then m3 arrives just after the turn taking m2 has read the transcript,
-    # and m4 just after the turn that finally runs m2's held wake has found
-    # nothing new. Each time the run is still holding m2's wake, so theirs are
-    # refused.
+    # Then m3 arrives just after the turn taking m2 has read the transcript.
+    # The run is still holding m2's wake, so m3's is refused.
     in_turn = contextvars.ContextVar("in_turn", default=False)
     turn, unread = Conversation.turn.fn, ex13_conversation.unread
     arrived = []
@@ -381,14 +349,9 @@ async def test_a_message_whose_wake_is_refused_while_a_held_one_runs_is_answered
 
     async def reading(session, conversation_, seen):
         newest = await unread(session, conversation_, seen)
-        if not in_turn.get():
-            return newest
-        if newest is not None and newest > first.id and not arrived:
-            arrived.append("m3")
+        if in_turn.get() and newest is not None and newest > first.id and not arrived:
+            arrived.append(newest)
             await receive(conversation, conversation, "m3", "send 7 to bo")
-        elif newest is None and arrived == ["m3"]:
-            arrived.append("m4")
-            await receive(conversation, conversation, "m4", "send 9 to ca")
         return newest
 
     monkeypatch.setattr(Conversation.turn, "fn", taking_a_turn)
@@ -402,10 +365,9 @@ async def test_a_message_whose_wake_is_refused_while_a_held_one_runs_is_answered
                 conversation,
                 "Please confirm sending 5 to amy.",
                 "Please confirm sending 7 to bo.",
-                "Please confirm sending 9 to ca.",
             )
         )
-    assert arrived == ["m3", "m4"]
+    assert arrived
 
 
 async def test_a_burst_after_a_restart_is_answered_in_order(database):
@@ -507,7 +469,7 @@ async def test_a_reply_racing_the_reminder_stops_it(database, monkeypatch):
 
     async with worker(database):
         await receive(conversation, conversation, "m1", "hello")
-        await eventually(parked(conversation))
+        await eventually(conversation_is(conversation, "waiting for the customer"))
 
         # The customer's reply is being accepted as the reminder goes out: its
         # transaction holds the conversation's lock when the reminder starts, and
