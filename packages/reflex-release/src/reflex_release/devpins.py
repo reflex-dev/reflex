@@ -17,7 +17,9 @@ the release instead (see :func:`blocking_pins`) rather than materialized into a
 version that could never be published.
 
 "Published" means tagged: tags are created only after a successful upload, so
-the repository's own tags are the record of what is on PyPI. A dependency
+the repository's own tags are the record of what is on PyPI. Only tags in the
+history of the branch being released count, because a release cut on another
+line can satisfy a floor's number without the change it waits for. A dependency
 outside the repository has no such record here, which is why only a *dev* bound
 on one blocks a release — that pin is unpublishable whoever owns it — while a
 prerelease bound on an outside dependency is left alone.
@@ -344,38 +346,59 @@ def _pin_upgrades(
                 )
             )
             continue
+        # Only a release in this branch's history is known to contain the change
+        # the floor waits for. A newer release cut on another line — a hotfix
+        # branch, or main seen from one — satisfies the number without it.
         candidates = [
             version
-            for version in tag_versions(config, sibling)
+            for version in tag_versions(config, sibling, merged="HEAD")
             if allow_prereleases or is_final(version)
         ]
-        satisfying = [
-            version
-            for version in candidates
-            if parsed.specifier.contains(version, prereleases=True)
-        ]
+        satisfying = _satisfying(parsed, candidates)
         if satisfying:
             upgrades.append(
                 PinUpgrade(package, requirement, name, bounds, min(satisfying))
             )
             continue
         kind = "" if allow_prereleases else "final "
-        upgrades.append(
-            PinUpgrade(
-                package,
-                requirement,
-                name,
-                bounds,
-                None,
-                f"no {kind}release of {sibling} satisfies it "
-                + (
-                    f"(newest tagged: {max(candidates)})"
-                    if candidates
-                    else f"({sibling} has no {kind}releases yet)"
-                ),
-            )
+        reason = f"no {kind}release of {sibling} satisfies it " + (
+            f"(newest tagged: {max(candidates)})"
+            if candidates
+            else f"({sibling} has no {kind}releases yet)"
         )
+        elsewhere = _satisfying(
+            parsed,
+            [
+                version
+                for version in tag_versions(config, sibling)
+                if allow_prereleases or is_final(version)
+            ],
+        )
+        if elsewhere:
+            reason += (
+                f"; {min(elsewhere)} satisfies it but is not in this branch's "
+                "history, so it may not contain the change"
+            )
+        upgrades.append(PinUpgrade(package, requirement, name, bounds, None, reason))
     return upgrades
+
+
+def _satisfying(parsed: Requirement, versions: list[Version]) -> list[Version]:
+    """Return the versions a requirement's specifier admits.
+
+    Args:
+        parsed: The parsed requirement.
+        versions: The candidate versions.
+
+    Returns:
+        The admitted versions, prereleases included: whether a prerelease may
+        count is the caller's filter, not the specifier's.
+    """
+    return [
+        version
+        for version in versions
+        if parsed.specifier.contains(version, prereleases=True)
+    ]
 
 
 def pin_upgrades(

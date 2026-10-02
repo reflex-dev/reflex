@@ -219,9 +219,10 @@ sibling's branch is working towards, which with
 newest tag builds as: `>= 0.1.4.dev0` after `widget-core-v0.1.3`, and
 `>= 0.1.3.post2.dev0` after `widget-core-v0.1.3.post1`. That floor excludes
 every release up to the sibling's newest tag on the branch, none of which has
-the change, and every later commit of the branch meets it. It cannot tell
-releases made on another line apart: `0.2.0` from `main` satisfies a floor
-written on a `0.1` hotfix branch without containing the hotfix. And a post
+the change, and every later commit of the branch meets it. A release cut on
+another line can satisfy the same number without the change — `0.2.0` from
+`main` against a floor written on a `0.1` hotfix branch — so lifting the floor
+only counts releases in the branch's own history (below). And a post
 release of the sibling cut after the floor was written leaves the branch
 building `0.1.3.post2.devN`, below `>= 0.1.4.dev0`; re-floor it at that post
 release, which contains the change.
@@ -244,7 +245,13 @@ satisfies the whole requirement**:
 
 "Published" means **tagged**: tags are created only after a successful upload,
 so the repository's own tags are its record of what is on PyPI — which is why
-the release workflows check out with full history and tags. The rewritten
+the release workflows check out with full history and tags. Only tags in the
+history of the branch being released count: a release tagged on another line
+(a hotfix branch seen from `main`, or `main` seen from a hotfix branch or a
+prerelease train that has not merged it) satisfies a floor's number without
+necessarily containing the change behind it, so it never becomes the lifted
+floor. A package whose floor only such a release satisfies is held back, and
+the run summary names that release. The rewritten
 `pyproject.toml` files are part of the release commit, so they land through the
 same review as the changelog bump; a package's `pyproject.toml` is staged only
 when a pin in it actually moved, and only the copies of a requirement that are

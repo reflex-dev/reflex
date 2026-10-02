@@ -187,19 +187,26 @@ def changed_files(root: Path, base_ref: str) -> list[str]:
     ]
 
 
-def tag_versions(config: Config, package: str) -> list[Version]:
+def tag_versions(
+    config: Config, package: str, merged: str | None = None
+) -> list[Version]:
     """Return every PEP 440 version tagged for a package.
 
     Args:
         config: The repository configuration.
         package: The package name.
+        merged: Only count tags on commits this ref's history contains, or
+            None to count every tag.
 
     Returns:
         The parsed versions, unordered.
     """
     prefix = config.package_tag_prefix(package)
+    args = ["tag", "-l", f"{prefix}*"]
+    if merged is not None:
+        args.append(f"--merged={merged}")
     versions: list[Version] = []
-    for line in git(["tag", "-l", f"{prefix}*"], cwd=config.root).splitlines():
+    for line in git(args, cwd=config.root).splitlines():
         raw = line.removeprefix(prefix).strip()
         if not raw:
             continue
