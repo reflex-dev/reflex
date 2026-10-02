@@ -275,7 +275,24 @@ def get_type_hints(obj: Any) -> dict[str, Any]:
     return get_type_hints_og(obj)
 
 
-def get_required_typed_dict_keys(typed_dict: type) -> frozenset[str]:
+def _typed_dict_qualifier(hint: Any) -> Any:
+    """Get the ``Required``/``NotRequired`` qualifier of a TypedDict field hint.
+
+    Args:
+        hint: The field's hint, resolved with extras.
+
+    Returns:
+        The origin of the hint once ``Annotated`` and ``ReadOnly`` are unwrapped.
+    """
+    while (origin := get_origin_og(hint)) in (
+        typing_extensions.Annotated,
+        typing_extensions.ReadOnly,
+    ):
+        hint = get_args(hint)[0]
+    return origin
+
+
+def get_required_typed_dict_keys(typed_dict: Any) -> frozenset[str]:
     """Resolve the required keys of a TypedDict.
 
     ``__required_keys__`` misses ``Required``/``NotRequired`` qualifiers it
@@ -284,17 +301,18 @@ def get_required_typed_dict_keys(typed_dict: type) -> frozenset[str]:
     on Python 3.10. The resolved type hints correct it.
 
     Args:
-        typed_dict: The TypedDict class to inspect.
+        typed_dict: The TypedDict class, or a specialization of a generic one.
 
     Returns:
         The names of the required keys.
     """
+    typed_dict = get_origin_og(typed_dict) or typed_dict
     required = frozenset(getattr(typed_dict, "__required_keys__", frozenset()))
     try:
         hints = get_type_hints_og(typed_dict, include_extras=True)
     except Exception:
         return required
-    qualifiers = {name: get_origin_og(hint) for name, hint in hints.items()}
+    qualifiers = {name: _typed_dict_qualifier(hint) for name, hint in hints.items()}
     return (
         required
         | {
@@ -307,6 +325,34 @@ def get_required_typed_dict_keys(typed_dict: type) -> frozenset[str]:
         for name, origin in qualifiers.items()
         if origin is typing_extensions.NotRequired
     }
+
+
+def get_typed_dict_field_types(typed_dict: Any) -> dict[str, Any]:
+    """Resolve the field types of a TypedDict.
+
+    Qualifiers and ``Annotated`` metadata are stripped, type aliases resolved,
+    and for a specialization of a generic TypedDict (``Data[str]``) its type
+    arguments substituted.
+
+    Args:
+        typed_dict: The TypedDict class, or a specialization of a generic one.
+
+    Returns:
+        The type of each field.
+    """
+    origin = get_origin_og(typed_dict) or typed_dict
+    substitution = _match_type_args(
+        getattr(origin, "__parameters__", ()), get_args(typed_dict)
+    )
+    field_types = {}
+    # typing_extensions strips its own qualifiers, which typing does not on 3.10.
+    for name, hint in typing_extensions.get_type_hints(origin).items():
+        if hint in substitution:
+            hint = substitution[hint]
+        elif substitution and (params := getattr(hint, "__parameters__", ())):
+            hint = _apply_type_params(hint, params, substitution)
+        field_types[name] = resolve_type_alias(hint)
+    return field_types
 
 
 def _unionize(args: list[GenericType]) -> GenericType:

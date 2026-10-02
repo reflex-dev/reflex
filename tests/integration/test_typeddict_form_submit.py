@@ -30,6 +30,7 @@ def TypedDictFormSubmit(form_component):
         message: NotRequired[str]
         topics: list[str]
         subscribe: bool
+        bounds: list[str]
 
     class FormState(rx.State):
         form_data: rx.Field[dict] = rx.field(default_factory=dict)
@@ -55,6 +56,8 @@ def TypedDictFormSubmit(form_component):
                     rx.el.input(type="hidden", name="topics", value="news"),
                     rx.el.input(type="hidden", name="topics", value="events"),
                     rx.checkbox("Subscribe", name="subscribe"),
+                    # A two-thumb slider submits its values as "bounds[]".
+                    rx.slider(name="bounds", default_value=[20, 80]),
                     rx.button("Submit", type_="submit"),
                 ),
                 on_submit=FormState.form_submit,
@@ -124,6 +127,7 @@ _CONTACT_FIELDS = {
         # Every value of a list field, and False for an unchecked bool field.
         "topics": ["news", "events"],
         "subscribe": False,
+        "bounds": ["20", "80"],
     },
 }
 _INHERITED_FIELDS = {

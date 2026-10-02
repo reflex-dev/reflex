@@ -29,7 +29,10 @@ def FormSubmitName(form_component):
 
         @rx.event
         def form_submit(self, form_data: dict):
-            self.form_data = form_data
+            # A file input submits its contents as bytes.
+            self.form_data = {
+                name: value for name, value in form_data.items() if name != "attachment"
+            }
 
         @rx.event
         def form_submit_all(self, form_data: rx.form.FormData[str, str]):
@@ -51,6 +54,8 @@ def FormSubmitName(form_component):
                     rx.input(id="id_only_input", default_value="unsubmitted"),
                     rx.el.input(type="hidden", name="tag", value="a"),
                     rx.el.input(type="hidden", name="tag", value="b"),
+                    # Its File makes Socket.IO send the event as a binary packet.
+                    rx.el.input(type="file", name="attachment"),
                     rx.checkbox(name="bool_input"),
                     rx.switch(name="bool_input2"),
                     rx.checkbox(name="bool_input3"),

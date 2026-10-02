@@ -7,7 +7,7 @@ import functools
 from collections.abc import Iterable, Iterator, Mapping
 from typing import Any, TypeVar, get_origin
 
-from typing_extensions import get_type_hints, is_typeddict
+from typing_extensions import is_typeddict
 
 from reflex_base.utils import types
 
@@ -169,6 +169,9 @@ class _CoercedFormField:
     """A TypedDict field that submitted form data is coerced into."""
 
     name: str
+    # The names whose values fill the field: a list field also collects the
+    # ``name[]`` entries of multi-value controls such as a range slider.
+    names: tuple[str, ...]
     is_list: bool
     # An unsubmitted field is left out unless it is required: then it is None
     # when its type allows None, otherwise an empty list or False.
@@ -177,28 +180,28 @@ class _CoercedFormField:
 
 
 @functools.cache
-def _typed_dict_form_fields(typed_dict: type) -> tuple[_CoercedFormField, ...]:
+def _typed_dict_form_fields(typed_dict: Any) -> tuple[_CoercedFormField, ...]:
     """Find the TypedDict fields that form data is coerced into.
 
     Args:
-        typed_dict: The TypedDict annotating the form data.
+        typed_dict: The TypedDict annotating the form data, or a specialization
+            of a generic one.
 
     Returns:
         The ``list`` and ``bool`` fields, optional or not.
     """
     required = types.get_required_typed_dict_keys(typed_dict)
     fields = []
-    for name, hint in get_type_hints(typed_dict).items():
+    for name, hint in types.get_typed_dict_field_types(typed_dict).items():
         field_type = types.value_inside_optional(hint)
-        if (
-            field_type is not bool
-            and (get_origin(field_type) or field_type) is not list
-        ):
+        is_list = (get_origin(field_type) or field_type) is list
+        if not is_list and field_type is not bool:
             continue
         fields.append(
             _CoercedFormField(
                 name=name,
-                is_list=field_type is not bool,
+                names=(name, f"{name}[]") if is_list else (name,),
+                is_list=is_list,
                 optional=field_type is not hint,
                 required=name in required,
             )
@@ -206,7 +209,7 @@ def _typed_dict_form_fields(typed_dict: type) -> tuple[_CoercedFormField, ...]:
     return tuple(fields)
 
 
-def _form_data_as_typed_dict(form_data: FormData, typed_dict: type) -> dict[str, Any]:
+def _form_data_as_typed_dict(form_data: FormData, typed_dict: Any) -> dict[str, Any]:
     """Build the dict for a TypedDict-annotated form data argument.
 
     Args:
@@ -215,23 +218,26 @@ def _form_data_as_typed_dict(form_data: FormData, typed_dict: type) -> dict[str,
 
     Returns:
         A dict of each field's last value, where ``list`` fields hold every
-        value and ``bool`` fields whether a truthy value was submitted. An
-        unsubmitted field is left out when it is not required, and otherwise is
-        None when its type allows None, else an empty list or False.
+        value submitted under ``name`` or ``name[]`` and ``bool`` fields whether
+        a truthy value was submitted. An unsubmitted field is left out when it
+        is not required, and otherwise is None when its type allows None, else
+        an empty list or False.
     """
     result = dict(form_data)
     for field in _typed_dict_form_fields(typed_dict):
-        if field.name not in form_data:
+        if not any(name in form_data for name in field.names):
             if not field.required:
                 continue
             if field.optional:
                 result[field.name] = None
                 continue
-        result[field.name] = (
-            form_data.getlist(field.name)
-            if field.is_list
-            else bool(form_data.get(field.name))
-        )
+        if field.is_list:
+            result[field.name] = [
+                value for name in field.names for value in form_data.getlist(name)
+            ]
+            result.pop(field.names[1], None)
+        else:
+            result[field.name] = bool(form_data.get(field.name))
     return result
 
 
@@ -265,12 +271,13 @@ def transform_form_data(value: Any, hinted_args: Any) -> Any:
         value = FormData(entries)
     elif not isinstance(value, Mapping):
         return value
+    hinted_args = types.resolve_type_alias(hinted_args)
     if types.is_union(hinted_args):
         hinted_args = types.value_inside_optional(hinted_args)
     hinted_type = get_origin(hinted_args) or hinted_args
     if isinstance(hinted_type, type) and issubclass(hinted_type, FormData):
         return value if isinstance(value, hinted_type) else hinted_type(value)
-    if isinstance(value, FormData) and is_typeddict(hinted_args):
+    if isinstance(value, FormData) and is_typeddict(hinted_type):
         return _form_data_as_typed_dict(value, hinted_args)
     return value if entries is None else dict(value)
 

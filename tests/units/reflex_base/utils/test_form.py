@@ -2,16 +2,17 @@
 
 import pickle
 from collections.abc import Mapping
-from typing import Any, TypedDict
+from typing import Any, Generic, TypedDict, TypeVar
 
 import pytest
+import typing_extensions
 from reflex_base.utils.form import (
     FORM_DATA_ENTRIES_KEY,
     FormData,
     form_data_as_dict,
     transform_form_data,
 )
-from typing_extensions import NotRequired
+from typing_extensions import NotRequired, TypeAliasType
 
 ITEMS = [("tag", "a"), ("name", "x"), ("tag", "b")]
 
@@ -252,3 +253,87 @@ def test_form_data_as_dict():
     value = {"tag": "a"}
     assert form_data_as_dict(value) is value
     assert form_data_as_dict("text") == "text"
+
+
+_T = TypeVar("_T")
+
+
+class _GenericPreferences(typing_extensions.TypedDict, Generic[_T]):
+    tag: list[_T]
+    agree: bool
+
+
+class _GenericField(typing_extensions.TypedDict, Generic[_T]):
+    value: _T
+    maybe: _T | None
+
+
+def test_transform_form_data_to_specialized_generic_typed_dict():
+    """A specialized generic TypedDict is coerced like a plain one."""
+    assert _transform(_GenericPreferences[str]) == {
+        "tag": ["a", "b"],
+        "name": "x",
+        "agree": False,
+    }
+
+
+@pytest.mark.parametrize(
+    ("argument", "expected"),
+    [
+        (bool, {"name": "x", "value": False, "maybe": None}),
+        (list[str], {"name": "x", "value": [], "maybe": None}),
+        (str, {"name": "x"}),
+    ],
+)
+def test_transform_form_data_substitutes_typed_dict_type_parameters(argument, expected):
+    """A type parameter resolving to a list or bool field type is coerced."""
+    form_data = _transform(
+        _GenericField[argument], {FORM_DATA_ENTRIES_KEY: [["name", "x"]]}
+    )
+    assert form_data == expected
+
+
+_SubmittedFormData = TypeAliasType("_SubmittedFormData", FormData[str, str])
+_Tags = TypeAliasType("_Tags", list[str])
+_Agreement = TypeAliasType("_Agreement", bool)
+
+
+class _AliasedFields(TypedDict):
+    tag: _Tags
+    agree: _Agreement
+
+
+def test_transform_form_data_for_form_data_type_alias():
+    """An alias of FormData receives every submitted entry."""
+    form_data = _transform(_SubmittedFormData)
+    assert type(form_data) is FormData
+    assert form_data.getlist("tag") == ["a", "b"]
+
+
+def test_transform_form_data_resolves_typed_dict_field_aliases():
+    """Aliases of list and bool field types are coerced."""
+    assert _transform(_AliasedFields) == {
+        "tag": ["a", "b"],
+        "name": "x",
+        "agree": False,
+    }
+
+
+class _RangeData(TypedDict):
+    bounds: list[str]
+    name: str
+
+
+def test_transform_form_data_collects_bracketed_names_into_list_fields():
+    """A list field collects the ``name[]`` entries a multi-value control submits."""
+    form_data = _transform(
+        _RangeData,
+        {
+            FORM_DATA_ENTRIES_KEY: [
+                ["bounds[]", "20"],
+                ["name", "x"],
+                ["bounds[]", "80"],
+            ]
+        },
+    )
+    assert form_data == {"bounds": ["20", "80"], "name": "x"}

@@ -455,7 +455,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
   if (socket) {
     // Instrumentation hook (installed by reflex-otel): may add a traceparent.
     window.__reflex_otel?.onEventSend?.(event);
-    socket.emit("event", event);
+    socket.emit("event", encodeFormDataArgs(event));
   }
 };
 
@@ -608,7 +608,8 @@ export const connect = async (
     reconnection: false, // Reconnection will be handled manually.
   });
   socket.current.wait_connect = !socket.current.connected;
-  socket.current.io.encoder.replacer = encodeEventValue;
+  // Ensure undefined fields in events are sent as null instead of removed
+  socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
   socket.current.io.decoder.tryParse = (str) => {
     try {
       return parseJson(str);
@@ -1485,6 +1486,56 @@ export const mergeSlotProps = (injectedProps, ownProps, refProp) => {
   return merged;
 };
 
+// Kept for forms compiled by reflex-components-core releases that read field
+// values from refs.
+
+/**
+ * Get the value from a ref.
+ * @param ref The ref to get the value from.
+ * @returns The value.
+ */
+export const getRefValue = (ref) => {
+  if (!ref || !ref.current) {
+    return;
+  }
+  if (ref.current.type == "checkbox") {
+    return ref.current.checked; // chakra
+  } else if (
+    ref.current.className?.includes("rt-CheckboxRoot") ||
+    ref.current.className?.includes("rt-SwitchRoot")
+  ) {
+    return ref.current.ariaChecked == "true"; // radix
+  } else if (ref.current.className?.includes("rt-SliderRoot")) {
+    // find the actual slider
+    return ref.current.querySelector(".rt-SliderThumb")?.ariaValueNow;
+  } else {
+    //querySelector(":checked") is needed to get value from radio_group
+    return (
+      ref.current.value ||
+      (ref.current.querySelector &&
+        ref.current.querySelector(":checked") &&
+        ref.current.querySelector(":checked")?.value)
+    );
+  }
+};
+
+/**
+ * Get the values from a ref array.
+ * @param refs The refs to get the values from.
+ * @returns The values array.
+ */
+export const getRefValues = (refs) => {
+  if (!refs) {
+    return;
+  }
+  // getAttribute is used by RangeSlider because it doesn't assign value
+  return refs.map((ref) =>
+    ref.current
+      ? ref.current.value || ref.current.getAttribute("aria-valuenow")
+      : null,
+  );
+};
+
 /**
  * Spread two arrays or two objects.
  * @param first The first array or object.
@@ -1520,16 +1571,21 @@ export const getFormData = (form) => {
 };
 
 /**
- * JSON replacer for events sent to the backend.
- * @param key The key being serialized.
- * @param value The value being serialized.
- * @returns null for undefined (so the field is kept), the ordered entries of
- * form data from getFormData, otherwise the value unchanged.
+ * Wrap the form data among an event's arguments as its ordered entries.
+ *
+ * Done before the event reaches Socket.IO: its binary attachment handling (a
+ * form with a file input) copies objects without their symbol-keyed entries.
+ * @param event The event to send.
+ * @returns The event, copied with wrapped entries when it carries form data.
  */
-export const encodeEventValue = (key, value) => {
-  if (value === undefined) {
-    return null;
+export const encodeFormDataArgs = (event) => {
+  let payload;
+  for (const [name, value] of Object.entries(event.payload ?? {})) {
+    const entries = value?.[formDataEntries];
+    if (entries) {
+      payload ??= { ...event.payload };
+      payload[name] = { [FORM_DATA_ENTRIES_KEY]: entries };
+    }
   }
-  const entries = value?.[formDataEntries];
-  return entries ? { [FORM_DATA_ENTRIES_KEY]: entries } : value;
+  return payload ? { ...event, payload } : event;
 };
