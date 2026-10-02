@@ -117,7 +117,9 @@ class LifespanMixin(AppMixin):
                                 t_,
                                 name=f"reflex_lifespan_task|{task_name}|{time.time()}",
                             )
-                            task_.add_done_callback(lambda t: t.result())
+                            task_.add_done_callback(
+                                lambda t: t.cancelled() or t.result()
+                            )
                             running_tasks.append(task_)
                             logger.debug(run_msg.format(type="coroutine"))
                         else:

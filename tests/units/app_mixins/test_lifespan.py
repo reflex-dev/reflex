@@ -136,3 +136,54 @@ async def test_lifespan_shutdown_closes_health_redis(mocker):
         close.assert_not_awaited()
 
     close.assert_awaited_once()
+
+
+async def _run_coroutine_lifespan_task(task) -> list[dict]:
+    """Run a coroutine lifespan task through startup and shutdown.
+
+    Args:
+        task: The coroutine function to register as a lifespan task.
+
+    Returns:
+        The contexts passed to the event loop exception handler.
+    """
+    loop = asyncio.get_running_loop()
+    reported: list[dict] = []
+    previous_handler = loop.get_exception_handler()
+    loop.set_exception_handler(lambda _, context: reported.append(context))
+    try:
+        mixin = LifespanMixin()
+        mixin.register_lifespan_task(task)
+        async with mixin._run_lifespan_tasks(Starlette()):
+            await asyncio.sleep(0)
+        await asyncio.gather(
+            *asyncio.all_tasks() - {asyncio.current_task()}, return_exceptions=True
+        )
+        # Drain done callbacks of tasks that finished before shutdown.
+        await asyncio.sleep(0)
+    finally:
+        loop.set_exception_handler(previous_handler)
+    return reported
+
+
+@pytest.mark.asyncio
+async def test_lifespan_shutdown_cancellation_is_not_reported_as_error():
+    """Cancelling a running coroutine lifespan task at shutdown is not an error."""
+
+    async def run_forever():
+        await asyncio.Event().wait()
+
+    assert await _run_coroutine_lifespan_task(run_forever) == []
+
+
+@pytest.mark.asyncio
+async def test_lifespan_coroutine_task_exception_is_reported():
+    """An exception raised by a coroutine lifespan task reaches the loop handler."""
+
+    async def fail():  # noqa: RUF029
+        msg = "lifespan task failed"
+        raise ValueError(msg)
+
+    reported = await _run_coroutine_lifespan_task(fail)
+
+    assert [type(context["exception"]) for context in reported] == [ValueError]
