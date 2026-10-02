@@ -3687,7 +3687,7 @@ async def test_wake_does_not_settle_on_a_pass_that_new_work_arrived_during(
             # A run is started after this pass has looked for work and before
             # it is counted: the pass took nothing, but it is not caught up.
             if not arrived:
-                arrived.append(await Resting(key=key).start(Resting.rest))
+                arrived.append(await Resting(key=key).start(Resting.rest()))
             return await due()
 
         monkeypatch.setattr(worker, "until_something_is_due", arriving_meanwhile)
