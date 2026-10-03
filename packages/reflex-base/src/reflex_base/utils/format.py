@@ -552,6 +552,7 @@ def format_queue_events(
         call_event_fn,
         call_event_handler,
     )
+    from reflex_base.utils.types import is_non_string_sequence
     from reflex_base.vars import FunctionVar, Var, VarData
 
     if not events:
@@ -570,7 +571,7 @@ def format_queue_events(
         arg_def = "()"
 
     payloads = []
-    if not isinstance(events, list):
+    if not is_non_string_sequence(events):
         events = [events]
 
     # Process each event/spec/lambda (similar to Component._create_event_chain).

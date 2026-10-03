@@ -38,7 +38,7 @@ from typing import get_type_hints as get_type_hints_og
 
 import typing_extensions
 from typing_extensions import Self as Self
-from typing_extensions import TypeAliasType, TypeVarTuple
+from typing_extensions import TypeAliasType, TypeIs, TypeVarTuple
 from typing_extensions import override as override
 
 from reflex_base import constants
@@ -305,6 +305,18 @@ def is_none(cls: GenericType) -> bool:
         Whether the class is None.
     """
     return cls is type(None) or cls is None
+
+
+def is_non_string_sequence(value: object) -> TypeIs[Sequence[Any]]:
+    """Check if a value is a sequence other than a string, e.g. a list of events.
+
+    Args:
+        value: The value to check.
+
+    Returns:
+        Whether the value is a sequence and not a string.
+    """
+    return isinstance(value, Sequence) and not isinstance(value, str)
 
 
 def is_union(cls: GenericType) -> bool:
