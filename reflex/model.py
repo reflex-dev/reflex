@@ -63,7 +63,7 @@ class _ClassThatErrorsOnInit:
         _print_db_not_available(**kwargs)
 
 
-if find_spec("sqlalchemy"):
+if TYPE_CHECKING or find_spec("sqlalchemy"):
     import sqlalchemy
     import sqlalchemy.exc
     import sqlalchemy.ext.asyncio
@@ -276,7 +276,7 @@ else:
     sqla_session = _print_db_not_available
     ModelRegistry = _ClassThatErrorsOnInit  # pyright: ignore [reportAssignmentType]
 
-if find_spec("sqlalchemy") and find_spec("alembic"):
+if TYPE_CHECKING or (find_spec("sqlalchemy") and find_spec("alembic")):
     import alembic.autogenerate
     import alembic.command
     import alembic.config
@@ -522,7 +522,9 @@ else:
     alembic_autogenerate = _print_db_not_available
     migrate = _print_db_not_available
 
-if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
+if TYPE_CHECKING or (
+    find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic")
+):
     import sqlmodel
     from reflex_base.utils.serializers import serialize_sqlmodel as serialize_sqlmodel
     from sqlmodel.ext.asyncio.session import AsyncSession
