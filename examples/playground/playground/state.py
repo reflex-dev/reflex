@@ -1,10 +1,25 @@
 """State of the playground app, including the hooks the benchmarks drive."""
 
 import asyncio
+import hashlib
 
 import reflex as rx
 
 HANDLER_MARKER = "m-initial-handler"  # bench:hmr-target handler
+
+
+def guest_name(client_token: str) -> str:
+    """Name a visitor after its session, without showing the session's token.
+
+    The server derives the name, so no event can name another visitor.
+
+    Args:
+        client_token: The session's token.
+
+    Returns:
+        ``guest-`` and 8 hex digits of the token's SHA-256.
+    """
+    return f"guest-{hashlib.sha256(client_token.encode()).hexdigest()[:8]}"
 
 
 class PlaygroundState(rx.State):
@@ -115,6 +130,8 @@ class BoardState(rx.SharedState):
     count: int = 0
     last_seq: int = 0
     last_client: int = 0
+    # The names of the people in the room, in the order they came in.
+    members: rx.Field[list[str]] = rx.field(default_factory=list)
 
     @rx.event
     async def join(self, token: str):
@@ -124,6 +141,30 @@ class BoardState(rx.SharedState):
             token: The board's token.
         """
         await self._link_to(token)
+
+    @rx.event
+    async def enter_room(self, token: str):
+        """Link this session to a room's board and show its name to everyone there.
+
+        Args:
+            token: The room's token.
+        """
+        name = guest_name(self.router.session.client_token)
+        board = await self._link_to(token)
+        if name not in board.members:
+            board.members.append(name)
+
+    @rx.event
+    async def leave_room(self):
+        """Take this session's name off the room, then unlink it from the board.
+
+        Returns:
+            The events that rehydrate this session's own board.
+        """
+        name = guest_name(self.router.session.client_token)
+        if name in self.members:
+            self.members.remove(name)
+        return await self._unlink()
 
     @rx.event
     def increment(self):

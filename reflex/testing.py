@@ -321,8 +321,10 @@ class AppHarness:
             self.app_asgi = self.app_instance()
 
     def _reload_state_module(self):
-        """Reload the rx.State module to avoid conflict when reloading."""
-        reload_state_module(module=f"{self.app_name}.{self.app_name}")
+        """Forget the states of every module of the app's package, so they never reach the next app."""
+        package = f"{self.app_name}."
+        for module in [name for name in sys.modules if name.startswith(package)]:
+            reload_state_module(module=module)
 
     def _get_backend_shutdown_handler(self):
         if self.backend is None:

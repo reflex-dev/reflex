@@ -227,3 +227,34 @@ def test_app_harness_frontend_env_has_development_condition(
     )
     harness._start_frontend()
     assert "--conditions=development" in captured["env"]["NODE_OPTIONS"]
+
+
+def test_app_harness_reload_forgets_states_of_every_app_module(tmp_path, monkeypatch):
+    """Reloading drops the states of every module of the app's package.
+
+    A state defined outside the app module, with an always dirty var (as
+    ``rx.dynamic`` adds), must not reach the deltas of the next harness app.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        monkeypatch: pytest monkeypatch fixture
+    """
+    import reflex as rx
+
+    monkeypatch.setitem(sys.modules, "harnessapp", ModuleType("harnessapp"))
+    monkeypatch.setitem(
+        sys.modules, "harnessapp.states", ModuleType("harnessapp.states")
+    )
+    widget_state = type(
+        "HarnessWidgetState",
+        (rx.State,),
+        {"__module__": "harnessapp.states"},
+    )
+    widget_state._evaluate(lambda state: rx.text("widget"))
+    name = widget_state.get_name()
+    assert name in rx.State._always_dirty_substates
+
+    AppHarness.create(root=tmp_path, app_name="harnessapp")._reload_state_module()
+
+    assert name not in rx.State._always_dirty_substates
+    assert widget_state not in rx.State.get_substates()
