@@ -33,6 +33,10 @@ const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
 // Global variable to hold the token.
 let token;
 
+// A token generated for the transport warmed up before the app mounted. It is
+// saved to the session storage by getToken, once the mounted app connects.
+let unsavedToken;
+
 // Key for the token in the session storage.
 const TOKEN_KEY = "token";
 
@@ -91,12 +95,24 @@ export const getToken = () => {
   }
   if (typeof window !== "undefined") {
     if (!window.sessionStorage.getItem(TOKEN_KEY)) {
-      window.sessionStorage.setItem(TOKEN_KEY, generateUUID());
+      window.sessionStorage.setItem(TOKEN_KEY, unsavedToken ?? generateUUID());
     }
     token = window.sessionStorage.getItem(TOKEN_KEY);
   }
   return token;
 };
+
+/**
+ * Get the token for the current session without saving a new one.
+ *
+ * A new token only reaches the session storage when the mounted app
+ * connects, so anything waiting for it there sees the rendered page.
+ * @returns The saved token, or a new one that getToken saves later.
+ */
+const peekToken = () =>
+  token ||
+  window.sessionStorage.getItem(TOKEN_KEY) ||
+  (unsavedToken ??= generateUUID());
 
 /**
  * Get the URL for the backend server
@@ -141,6 +157,79 @@ export const isBackendDisabled = () => {
 };
 
 /**
+ * Create a socket without starting its namespace or hydration events.
+ * @param endpoint The backend URL.
+ * @param transports The configured transports.
+ * @param token The session token the backend links the connection to.
+ * @returns The disconnected socket.
+ */
+const createSocket = (endpoint, transports, token) =>
+  io(endpoint.href, {
+    path: endpoint.pathname,
+    transports,
+    protocols: [reflexEnvironment.version],
+    autoUnref: false,
+    autoConnect: false,
+    query: { token },
+    reconnection: false,
+  });
+
+let warmSocket = null;
+let cancelWarmup = () => {};
+let socketStarted = false;
+
+/** Close an unclaimed transport and remove its cleanup handlers. */
+const discardWarmSocket = () => {
+  const socket = warmSocket;
+  warmSocket = null;
+  cancelWarmup();
+  socket?.disconnect();
+};
+
+// Start only the transport while React is still preparing to mount. The
+// namespace stays disconnected until connect() installs all its handlers.
+// Defer past module evaluation because context.js imports this module too.
+if (typeof window !== "undefined") {
+  queueMicrotask(() => {
+    if (
+      socketStarted ||
+      Object.keys(app.initialState ?? {}).length <= 1 ||
+      isBackendDisabled() ||
+      document.visibilityState === "hidden"
+    ) {
+      return;
+    }
+    try {
+      warmSocket = createSocket(
+        getBackendURL(EVENTURL),
+        [env.TRANSPORT],
+        peekToken(),
+      );
+    } catch {
+      // Speculative setup may fail (for example, blocked session storage).
+      // The normal connection path will report failures when the app mounts.
+      return;
+    }
+    const timeout = setTimeout(discardWarmSocket, 10000);
+    window.addEventListener("pagehide", discardWarmSocket);
+    cancelWarmup = () => {
+      clearTimeout(timeout);
+      window.removeEventListener("pagehide", discardWarmSocket);
+    };
+    warmSocket.io.open((error) => {
+      if (error) discardWarmSocket();
+    });
+  });
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    socketStarted = true;
+    discardWarmSocket();
+  });
+}
+
+/**
  * Determine if any event in the event queue is stateful.
  *
  * @returns True if there's any event that requires state and False if none of them do.
@@ -149,7 +238,33 @@ export const isStateful = () => {
   if (event_queue.length === 0) {
     return false;
   }
-  return event_queue.some((event) => event.name.startsWith("reflex___state"));
+  return event_queue.some(
+    (event) =>
+      typeof event?.name === "string" &&
+      event.name.startsWith("reflex___state"),
+  );
+};
+
+/** Append nested events to an output array in depth-first order. */
+const appendEvents = (events, normalized) => {
+  for (const event of events) {
+    if (Array.isArray(event)) {
+      appendEvents(event, normalized);
+    } else if (event !== undefined && event !== null) {
+      normalized.push(event);
+    }
+  }
+};
+
+/**
+ * Flatten event lists and discard empty event values.
+ * @param events Events or nested event lists.
+ * @returns A flat array of events in depth-first order.
+ */
+const normalizeEvents = (events) => {
+  const normalized = [];
+  appendEvents(events, normalized);
+  return normalized;
 };
 
 /**
@@ -396,7 +511,22 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
-  // Update token and router data (if missing).
+  // Send the event to the server.
+  if (socket) {
+    const routed_event = withRouterData(event, params);
+    // Instrumentation hook (installed by reflex-otel): may add a traceparent.
+    window.__reflex_otel?.onEventSend?.(routed_event);
+    socket.emit("event", routed_event);
+  }
+};
+
+/**
+ * Fill in the event's router data from the current location, if missing.
+ * @param event The event to send.
+ * @param params The params object from useParams
+ * @returns The same event, with router_data populated.
+ */
+const withRouterData = (event, params) => {
   if (
     event.router_data === undefined ||
     Object.keys(event.router_data).length === 0
@@ -424,13 +554,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
       event.router_data.query = query;
     }
   }
-
-  // Send the event to the server.
-  if (socket) {
-    // Instrumentation hook (installed by reflex-otel): may add a traceparent.
-    window.__reflex_otel?.onEventSend?.(event);
-    socket.emit("event", event);
-  }
+  return event;
 };
 
 /**
@@ -489,10 +613,11 @@ export const queueEvents = async (
   navigate,
   params,
 ) => {
+  const normalized = normalizeEvents(events);
   if (prepend) {
-    event_queue.unshift(...events.filter((e) => e !== undefined && e !== null));
+    event_queue.unshift(...normalized);
   } else {
-    event_queue.push(...events.filter((e) => e !== undefined && e !== null));
+    event_queue.push(...normalized);
   }
   await processEvent(resolveSocket(socket), navigate, params);
 };
@@ -525,15 +650,18 @@ export const processEvent = async (socket, navigate, params) => {
   // Apply the next event in the queue.
   const event = event_queue.shift();
 
-  // Process events with handlers via REST and all others via websockets.
-  if (event.handler) {
-    await applyRestEvent(event, socket, navigate, params);
-  } else {
-    await applyEvent(event, socket, navigate, params);
-  }
-  // Process any remaining events.
-  if (event_queue.length > 0) {
-    await processEvent(socket, navigate, params);
+  try {
+    // Process events with handlers via REST and all others via websockets.
+    if (event.handler) {
+      await applyRestEvent(event, socket, navigate, params);
+    } else {
+      await applyEvent(event, socket, navigate, params);
+    }
+  } finally {
+    // Continue draining queued events even if this dispatch fails.
+    if (event_queue.length > 0) {
+      await processEvent(socket, navigate, params);
+    }
   }
 };
 
@@ -568,15 +696,36 @@ export const connect = async (
   const endpoint = getBackendURL(EVENTURL);
   const on_hydrated_queue = [];
 
-  // Create the socket.
-  socket.current = io(endpoint.href, {
-    path: endpoint["pathname"],
-    transports: transports,
-    protocols: [reflexEnvironment.version],
-    autoUnref: false,
-    query: { token: getToken() },
-    reconnection: false, // Reconnection will be handled manually.
-  });
+  // The hydrate event rides in the socket.io CONNECT packet, so the backend
+  // starts loading state as soon as the namespace connects instead of after
+  // an extra round trip for the connect acknowledgement. The key is read by
+  // the backend as CompileVars.CONNECT_AUTH_EVENT.
+  const bootAuth = (first) => {
+    const boot_event = withRouterData(app.initialEvents(first)[0], params);
+    // Instrumentation hook (installed by reflex-otel): may add a traceparent.
+    window.__reflex_otel?.onEventSend?.(boot_event);
+    return { event: boot_event };
+  };
+
+  // Create the socket. A new session's token is saved here, once the app has
+  // mounted, even when a transport warmed up with it earlier.
+  socketStarted = true;
+  const session_token = getToken();
+  if (
+    warmSocket &&
+    (warmSocket.io.opts.query.token !== session_token ||
+      warmSocket.io.opts.transports.length !== transports.length ||
+      transports.some(
+        (transport, i) => transport !== warmSocket.io.opts.transports[i],
+      ))
+  ) {
+    discardWarmSocket();
+  }
+  socket.current =
+    warmSocket ?? createSocket(endpoint, transports, session_token);
+  warmSocket = null;
+  cancelWarmup();
+  socket.current.auth = bootAuth(true);
   socket.current.wait_connect = !socket.current.connected;
   // Ensure undefined fields in events are sent as null instead of removed
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
@@ -595,8 +744,9 @@ export const connect = async (
       !socket.current.wait_connect
     ) {
       socket.current.wait_connect = true;
-      socket.current.rehydrate = true;
       socket.current.io.opts.query = { token: getToken() }; // Update token for reconnect.
+      // A reconnect rehydrates in full: the reducers no longer hold the defaults.
+      socket.current.auth = bootAuth(false);
       socket.current.connect();
     }
   };
@@ -648,10 +798,6 @@ export const connect = async (
     window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
-    if (socket.current.rehydrate) {
-      socket.current.rehydrate = false;
-      queueEvents(app.initialEvents(), socket, true, navigate, params);
-    }
     // Drain any initial events from the queue.
     while (event_queue.length > 0) {
       await processEvent(socket.current, navigate, params);
@@ -764,6 +910,7 @@ export const connect = async (
   });
 
   document.addEventListener("visibilitychange", checkVisibility);
+  socket.current.connect();
 };
 
 /**
@@ -1015,7 +1162,7 @@ export const useEventLoop = (
 
   // Function to add new events to the event queue.
   const addEvents = useCallback((events, args, event_actions) => {
-    const _events = events.filter((e) => e !== undefined && e !== null);
+    const _events = normalizeEvents(events);
 
     event_actions = _events.reduce(
       (acc, e) => ({ ...acc, ...e.event_actions }),
@@ -1034,14 +1181,6 @@ export const useEventLoop = (
       _events.map((e) => e.name).join("+++"),
       () => !!socket.current?.connected,
     );
-  }, []);
-
-  const sentHydrate = useRef(false); // Avoid double-hydrate due to React strict-mode
-  useEffect(() => {
-    if (!sentHydrate.current) {
-      queueEvents(initial_events(), socket, true, navigate, params);
-      sentHydrate.current = true;
-    }
   }, []);
 
   // Handle frontend errors and send them to the backend via websocket.

@@ -1,13 +1,15 @@
+import datetime
 import json
 import logging
 
-import httpx
 import pytest
 from click.testing import CliRunner
 from pytest_mock import MockerFixture, MockFixture
+from reflex_build_sdk.types import CreatedToken
+from reflex_cli.utils import log
 from reflex_cli.v2.deployments import hosting_cli
 
-from .utils import as_click_command
+from .utils import api_error, as_click_command, fake_client
 
 hosting_cli = as_click_command(hosting_cli)
 
@@ -90,36 +92,41 @@ def test_get_vm_types_invalid_response(mocker: MockFixture):
 
 
 def test_get_vm_types_http_error(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
-    """Test handling of an HTTP error.
+    """A failed read exits non-zero rather than reading as an empty listing.
 
     Args:
         mocker: Pytest mocker fixture.
         caplog: Pytest log capture fixture.
     """
-    mock_get = mocker.patch("httpx.get")
-    mock_response = mocker.Mock()
-    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-        "HTTP Error",
-        request=mocker.Mock(),
-        response=mocker.Mock(json=lambda: {"detail": "Invalid token"}),
-    )
-    mock_get.return_value = mock_response
-    mocker.patch(
-        "reflex_cli.utils.hosting.requires_authenticated", return_value="fake_token"
-    )
-    mocker.patch("reflex_cli.utils.hosting.get_app", return_value={"id": "fake_app_id"})
-    mocker.patch(
-        "reflex_cli.utils.hosting.authorization_header",
-        return_value={"X-API-TOKEN": "fake_token"},
-    )
+    client = mocker.MagicMock()
+    client.deployments.vm_types.side_effect = api_error(500, "Invalid token")
+    client.__enter__.return_value = client
+    mocker.patch("reflex_cli.utils.hosting.new_client", return_value=client)
 
     mock_console_print = mocker.patch("reflex_cli.utils.console.print")
     result = runner.invoke(hosting_cli, ["vmtypes"])
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == 1
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
-    assert errors == ["Unable to get vmtypes due to HTTP Error."]
-    mock_console_print.assert_called_once_with("[]")
+    assert errors == ["Invalid token"]
+    mock_console_print.assert_not_called()
+
+
+def test_get_vm_types_http_error_writes_no_json_document(mocker: MockFixture):
+    """A caller reading --json is not handed `[]` for a request that failed.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    client = mocker.MagicMock()
+    client.deployments.vm_types.side_effect = api_error(500, "Invalid token")
+    client.__enter__.return_value = client
+    mocker.patch("reflex_cli.utils.hosting.new_client", return_value=client)
+
+    result = runner.invoke(hosting_cli, ["vmtypes", "--json"])
+
+    assert result.exit_code == 1
+    assert result.stdout == ""
 
 
 def test_get_deployment_regions_success(mocker: MockerFixture):
@@ -185,46 +192,108 @@ def test_get_deployment_regions_http_error(
         mocker: Pytest mocker fixture.
         caplog: Pytest log capture fixture.
     """
-    mock_get = mocker.patch("httpx.get")
-    mock_response = mocker.Mock()
-    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-        "HTTP Error",
-        request=mocker.Mock(),
-        response=mocker.Mock(json=lambda: {"detail": "Invalid token"}),
-    )
-    mock_get.return_value = mock_response
-    mocker.patch(
-        "reflex_cli.utils.hosting.requires_authenticated", return_value="fake_token"
-    )
-    mocker.patch("reflex_cli.utils.hosting.get_app", return_value={"id": "fake_app_id"})
-    mocker.patch(
-        "reflex_cli.utils.hosting.authorization_header",
-        return_value={"X-API-TOKEN": "fake_token"},
-    )
+    client = mocker.MagicMock()
+    client.deployments.regions.side_effect = api_error(500, "Invalid token")
+    client.__enter__.return_value = client
+    mocker.patch("reflex_cli.utils.hosting.new_client", return_value=client)
 
     result = runner.invoke(hosting_cli, ["regions"])
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == 1
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
-    assert errors == ["Unable to get regions due to HTTP Error."]
+    assert errors == ["Invalid token"]
+
+
+def test_get_deployment_regions_http_error_writes_no_json_document(
+    mocker: MockerFixture,
+):
+    """A caller reading --json is not handed `[]` for a request that failed.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    client = mocker.MagicMock()
+    client.deployments.regions.side_effect = api_error(500, "Invalid token")
+    client.__enter__.return_value = client
+    mocker.patch("reflex_cli.utils.hosting.new_client", return_value=client)
+
+    result = runner.invoke(hosting_cli, ["regions", "--json"])
+
+    assert result.exit_code == 1
+    assert result.stdout == ""
 
 
 def test_create_token_json_output(mocker: MockFixture):
-    """Minting a token reports it as a field rather than in a log line."""
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=mocker.MagicMock(),
-    )
-    mocker.patch("reflex_cli.utils.hosting.create_token", return_value="tok-1")
+    """Minting a token reports the token the server issued, not the one asked for.
 
-    result = runner.invoke(hosting_cli, ["create-token", "ci", "--json"])
+    Args:
+        mocker: The pytest-mock fixture.
+    """
+    client = fake_client()
+    client.api.auth.tokens.create.return_value = CreatedToken(
+        token="tok-1",
+        name="ci",
+        expires_at=datetime.datetime(2025, 3, 1, tzinfo=datetime.timezone.utc),
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=client
+    )
+
+    result = runner.invoke(
+        hosting_cli, ["create-token", "ci", "--duration", "90", "--json"]
+    )
 
     assert result.exit_code == 0, result.output
     assert json.loads(result.stdout) == {
         "name": "ci",
         "token": "tok-1",
-        "expires_in_days": 90,
+        "expires_at": "2025-03-01T00:00:00+00:00",
     }
+
+
+def test_create_token_json_output_without_an_expiry(mocker: MockFixture):
+    """A token the server never expires reports a null expiry, not a missing key.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
+    client = fake_client()
+    client.api.auth.tokens.create.return_value = CreatedToken(
+        token="tok-1", name="ci", expires_at=None
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=client
+    )
+
+    result = runner.invoke(hosting_cli, ["create-token", "ci", "--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout)["expires_at"] is None
+
+
+def test_create_token_reports_the_value(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """The log line carries the token itself, not the result carrying it.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: Pytest log capture fixture.
+    """
+    client = fake_client()
+    client.api.auth.tokens.create.return_value = CreatedToken(
+        token="tok-1", name="ci", expires_at=None
+    )
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=client
+    )
+
+    result = runner.invoke(hosting_cli, ["create-token", "ci"])
+
+    assert result.exit_code == 0, result.output
+    assert [r.getMessage() for r in caplog.records if r.levelno == log.SUCCESS] == [
+        "Token: tok-1"
+    ]
 
 
 def test_generate_cloud_config_json_output(mocker: MockFixture, tmp_path):
