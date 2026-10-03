@@ -1595,9 +1595,6 @@ export const mergeSlotProps = (injectedProps, ownProps, refProp) => {
   return merged;
 };
 
-// Kept for forms compiled by reflex-components-core releases that read field
-// values from refs.
-
 /**
  * Spread two arrays or two objects.
  * @param first The first array or object.
