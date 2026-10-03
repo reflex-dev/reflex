@@ -2237,6 +2237,42 @@ async def test_a_held_event_beats_a_due_timeout_in_another_lane(session_factory)
     assert f"prepare:{key}" not in EVENTS
 
 
+async def test_a_worker_does_not_wait_on_a_held_event_another_lane_will_take(
+    session_factory,
+):
+    await Rendered.by().cancel()
+    key = uuid.uuid4().hex
+    # Waiting on a gpu step with its event in hand, and the timeout, a step in
+    # the default lane, overdue.
+    async with session_factory() as session, session.begin():
+        await session.execute(
+            insert(Rendered).values(
+                key=key,
+                status="rendered",
+                next_step="prepare",
+                next_args={"args": [], "kwargs": {}},
+                wake_at=func.now() - datetime.timedelta(minutes=5),
+                waiting_for="collect",
+                pending_event={"step": "collect", "args": {"args": [], "kwargs": {}}},
+                attempts=0,
+                wf_version=0,
+            )
+        )
+    rt = runtime.current()
+    lanes: dict[str, dict[type[Workflow], list[str] | None]] = {
+        lane: {Rendered: model.steps_in(Rendered, [lane])}
+        for lane in ("default", "gpu")
+    }
+    # The default worker can claim nothing here, so it has nothing to wait for:
+    # an overdue answer would have it look again every poll interval for good.
+    assert await claim.next_due(rt, [Rendered], lanes["default"]) is None
+    # The gpu worker can take the event now.
+    due = await claim.next_due(rt, [Rendered], lanes["gpu"])
+    assert due is not None
+    assert due.away <= datetime.timedelta()
+    await Rendered.by(Rendered.key == key).cancel()
+
+
 async def test_a_worker_serving_both_lanes_runs_the_whole_thing(session_factory):
     key = uuid.uuid4().hex
     async with lane_workers(["default", "gpu"]):

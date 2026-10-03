@@ -63,25 +63,54 @@ def claimable(
     Returns:
         The conditions: due or holding an event, runnable here, and not leased.
     """
-    # A row waiting for an event is due as soon as one is buffered for it, and
-    # what it will run then is the step it waits on, not the one in next_step.
-    event_ready = holding(cls)
-    # Not claimable for next_step while it holds one: that is the timeout, which
-    # the event beats, and it may be in another lane than the event's step.
-    due_now = and_(
+    return (
+        or_(and_(timed(cls, steps), cls.wake_at <= func.now()), answering(cls, steps)),
+        or_(cls.claimed_until.is_(None), cls.claimed_until < func.now()),
+    )
+
+
+def timed(
+    cls: type[Workflow], steps: Collection[str] | None = None
+) -> ColumnElement[bool]:
+    """Build the condition that a row's next_step is this worker's to run on time.
+
+    Not while the row holds an event for its wait: next_step is then the timeout,
+    which the event beats, and it may be in another lane than the event's step.
+
+    Args:
+        cls: The workflow class.
+        steps: The steps this worker may run, when it serves only some lanes.
+
+    Returns:
+        The condition, which says nothing about when.
+    """
+    condition = and_(
         cls.next_step.is_not(None),
-        cls.wake_at <= func.now(),
         or_(
             cls.waiting_for.is_(None),
             cls.pending_event["step"].astext.is_distinct_from(cls.waiting_for),
         ),
     )
-    if steps is not None:
-        due_now = and_(due_now, cls.next_step.in_(steps))
-        event_ready = and_(event_ready, cls.waiting_for.in_(steps))
+    return and_(condition, cls.next_step.in_(steps)) if steps is not None else condition
+
+
+def answering(
+    cls: type[Workflow], steps: Collection[str] | None = None
+) -> ColumnElement[bool]:
+    """Build the condition that a row holds an event this worker can run now.
+
+    What it runs then is the step it waits on, not the one in next_step.
+
+    Args:
+        cls: The workflow class.
+        steps: The steps this worker may run, when it serves only some lanes.
+
+    Returns:
+        The condition.
+    """
+    condition = holding(cls)
     return (
-        or_(due_now, event_ready),
-        or_(cls.claimed_until.is_(None), cls.claimed_until < func.now()),
+        and_(condition, cls.waiting_for.in_(steps)) if steps is not None else condition
     )
 
 
@@ -524,14 +553,10 @@ def soonest(cls: type[Workflow], steps: Collection[str] | None):
         A select of the instant and the wait, both null when the table has
         nothing scheduled.
     """
-    runnable = or_(
-        and_(cls.next_step.is_not(None), cls.next_step.in_(steps))
-        if steps is not None
-        else cls.next_step.is_not(None),
-        and_(cls.waiting_for.is_not(None), cls.waiting_for.in_(steps))
-        if steps is not None
-        else cls.waiting_for.is_not(None),
-    )
+    # The same conditions claimable() takes by, so this never names a time for a
+    # row this worker could not then claim.
+    on_time, answer = timed(cls, steps), answering(cls, steps)
+    runnable = or_(on_time, answer)
     held = or_(cls.claimed_until.is_(None), cls.claimed_until <= func.now())
     # Asked as three narrow questions rather than one min() over a case: each
     # of these reads an index and stops, where the case has to look at every
@@ -546,7 +571,7 @@ def soonest(cls: type[Workflow], steps: Collection[str] | None):
     # forever.
     scheduled = (
         select(func.min(cls.wake_at))
-        .where(runnable, cls.wake_at.is_not(None), held)
+        .where(on_time, cls.wake_at.is_not(None), held)
         .scalar_subquery()
     )
     # A leased row comes due when the lease runs out, whatever its wake_at says:
@@ -559,16 +584,7 @@ def soonest(cls: type[Workflow], steps: Collection[str] | None):
     # Holding the answer it was waiting for, which is claimable now however its
     # wake_at reads: what this says has to agree with what claimable() takes,
     # or a worker sleeps on a run it could already be running.
-    answered = (
-        select(func.now())
-        .where(
-            runnable,
-            held,
-            cls.pending_event["step"].astext == cls.waiting_for,
-        )
-        .limit(1)
-        .scalar_subquery()
-    )
+    answered = select(func.now()).where(answer, held).limit(1).scalar_subquery()
     # Both from one query, so the instant and the wait cannot disagree about
     # what "now" was.
     due = func.least(scheduled, expiring, answered)
