@@ -1,5 +1,6 @@
 """Inferred types for `reflex.vars` that are part of the public contract."""
 
+import dataclasses
 from typing import Any, Literal
 
 from typing_extensions import assert_type
@@ -11,6 +12,7 @@ from reflex.vars.number import (
     LiteralNumberVar,
     NumberVar,
 )
+from reflex.vars.object import LiteralObjectVar
 from reflex.vars.sequence import LiteralArrayVar, LiteralStringVar, StringVar
 
 # `Var.create` dispatches on the value type through a long overload set. Each of
@@ -38,3 +40,13 @@ _bool_var: Var[bool] = Var("expr")
 _str_var: Var[str] = Var("expr")
 assert_type(_bool_var.guess_type(), BooleanVar)
 assert_type(_str_var.guess_type(), StringVar[str])
+
+
+# `LiteralObjectVar.create` takes any value that serializes to a mapping, such
+# as a dataclass, not only a mapping.
+@dataclasses.dataclass
+class _Point:
+    x: int
+
+
+LiteralObjectVar.create(_Point(1))

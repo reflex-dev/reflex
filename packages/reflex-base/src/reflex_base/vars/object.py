@@ -499,14 +499,15 @@ class LiteralObjectVar(
     @classmethod
     def create(
         cls,
-        _var_value: Mapping,
+        _var_value: object,
         _var_type: type[OBJECT_TYPE] | None = None,
         _var_data: VarData | None = None,
     ) -> LiteralObjectVar[OBJECT_TYPE]:
         """Create the literal object var.
 
         Args:
-            _var_value: The value of the var.
+            _var_value: The value of the var: a mapping, or a value that serializes
+                to one, such as a dataclass.
             _var_type: The type of the var.
             _var_data: Additional hooks and imports associated with the Var.
 
