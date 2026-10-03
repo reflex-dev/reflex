@@ -45,7 +45,8 @@ def test_read_stateful_pages_marker_recovers_legacy_corruption(
 def test_read_stateful_pages_marker_recovers_undecodable_marker(tmp_path, mocker):
     """A marker that is not valid UTF-8 requests full page evaluation."""
     mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
-    (tmp_path / constants.Dirs.STATEFUL_PAGES).write_bytes(b"\xff\xfe garbage")
+    # No BOM: json.loads() would decode a UTF-16 one and raise JSONDecodeError.
+    (tmp_path / constants.Dirs.STATEFUL_PAGES).write_bytes(b"\xff garbage")
     assert compiler._read_stateful_pages_marker() is None
 
 
