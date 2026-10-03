@@ -26,6 +26,7 @@ def ClientStateApp():
     def index():
         return rx.box(
             rx.button("set", on_click=shared.set_value("clicked"), id="setter"),
+            rx.button("reset", on_click=shared.set_value("initial"), id="resetter"),
             rx.button("reveal", on_click=ClientStateAppState.reveal, id="reveal"),
             rx.cond(
                 ClientStateAppState.show,
@@ -128,6 +129,32 @@ def test_setter_works_before_reader_mounts(
     page.click("#setter")
     page.click("#reveal")
     expect(page.locator("#late-reader")).to_have_text("clicked")
+    assert errors == []
+
+
+def test_late_reader_follows_set_back_to_default(
+    client_state_app: AppHarness, page: Page
+) -> None:
+    """A reader that mounts after a set still follows setting the default again.
+
+    React skips a state update equal to the current state, so the late reader's
+    ``useState`` must start from the shared value rather than the default, or
+    setting the value back to the default leaves it showing the stale value.
+
+    Args:
+        client_state_app: Running app harness.
+        page: Playwright page.
+    """
+    assert client_state_app.frontend_url is not None
+    errors = _collect_page_errors(page)
+    page.goto(client_state_app.frontend_url)
+    expect(page.locator("#token")).not_to_be_empty()
+
+    page.click("#setter")
+    page.click("#reveal")
+    expect(page.locator("#late-reader")).to_have_text("clicked")
+    page.click("#resetter")
+    expect(page.locator("#late-reader")).to_have_text("initial")
     assert errors == []
 
 

@@ -5,7 +5,7 @@ from typing import cast
 import pytest
 from reflex_base.vars.base import Var
 
-from reflex.experimental.client_state import ClientStateVar
+from reflex.experimental.client_state import ClientStateVar, NoValue
 from reflex.state import BaseState
 
 
@@ -71,3 +71,40 @@ def test_setter_carries_backend_default_hooks() -> None:
         assert var_data is not None
         assert var_data.state == default_var_data.state
         assert set(default_var_data.hooks) <= set(var_data.hooks)
+
+
+@pytest.mark.parametrize(
+    ("default", "initial_value"),
+    [
+        (0, "refs['_client_state_seeded'] ?? (0)"),
+        ("a", "refs['_client_state_seeded'] ?? (\"a\")"),
+        (NoValue, "refs['_client_state_seeded']"),
+    ],
+)
+def test_global_use_state_starts_from_shared_value(
+    default: object, initial_value: str
+) -> None:
+    """A global client state's ``useState`` starts from the shared value.
+
+    A component that mounts after the value was set renders the shared value, so
+    its own state must match it: React skips a setter call equal to the current
+    state, which would otherwise swallow setting the value back to the default.
+
+    Args:
+        default: The default passed to ``create``.
+        initial_value: The expected ``useState`` argument.
+    """
+    cs = ClientStateVar.create("seeded", default=default)
+
+    var_data = cs._get_all_var_data()
+    assert var_data is not None
+    assert f"const [seeded, setSeeded] = useState({initial_value})" in var_data.hooks
+
+
+def test_local_use_state_starts_from_default() -> None:
+    """A local client state has no shared value, so ``useState`` takes the default."""
+    cs = ClientStateVar.create("local_seed", default=0, global_ref=False)
+
+    var_data = cs._get_all_var_data()
+    assert var_data is not None
+    assert "const [local_seed, setLocal_seed] = useState(0)" in var_data.hooks
