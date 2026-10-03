@@ -131,9 +131,18 @@ class ClientStateVar(Var):
         else:
             default_var = default
         setter_name = f"set{var_name.capitalize()}"
+        var_ref = _client_state_ref(var_name)
+        initial_value = str(default_var)
+        if global_ref:
+            # A component mounting after a set renders the shared value, and React
+            # skips a setter call equal to the current state, so starting from the
+            # default would swallow a later set back to the default.
+            initial_value = (
+                f"{var_ref!s} ?? ({initial_value})" if initial_value else str(var_ref)
+            )
         hooks: dict[str, VarData | None] = {
             f"const {id_name} = useId()": None,
-            f"const [{var_name}, {setter_name}] = useState({default_var!s})": None,
+            f"const [{var_name}, {setter_name}] = useState({initial_value})": None,
         }
         imports = {
             "react": [ImportVar(tag="useState"), ImportVar(tag="useId")],
@@ -141,7 +150,6 @@ class ClientStateVar(Var):
         if global_ref:
             arg_name = get_unique_variable_name()
             setter_ref = _client_state_ref(setter_name)
-            var_ref = _client_state_ref(var_name)
             var_dict_ref = _client_state_ref_dict(var_name)
             setter_dict_ref = _client_state_ref_dict(setter_name)
             func = ArgsFunctionOperationBuilder.create(
