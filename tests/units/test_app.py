@@ -5498,6 +5498,23 @@ def test_compile_dry_run_preserves_stateful_marker(compilable_app, mocker, exist
         assert marker.read_text() == '["previous"]'
 
 
+@pytest.mark.parametrize(
+    "content",
+    [
+        pytest.param(b'["index"', id="truncated"),
+        pytest.param(b"\xff\xfe garbage", id="not-utf-8"),
+    ],
+)
+def test_read_stateful_pages_marker_rejects_corrupt_marker(
+    tmp_path: Path, mocker: MockerFixture, content: bytes
+):
+    """A corrupt marker asks for a full page evaluation instead of raising."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    (tmp_path / constants.Dirs.STATEFUL_PAGES).write_bytes(content)
+
+    assert _read_stateful_pages_marker() is None
+
+
 def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
     tmp_path: Path, mocker: MockerFixture
 ):

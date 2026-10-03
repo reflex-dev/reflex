@@ -1210,7 +1210,7 @@ def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:
 def _read_stateful_pages_marker() -> list[str] | None:
     """Read the routes that create state classes from a previous compile.
 
-    A missing marker or one truncated by an older writer requires full page
+    A missing marker or one corrupted by an older writer requires full page
     evaluation. New writers replace the marker atomically.
 
     Returns:
@@ -1218,8 +1218,10 @@ def _read_stateful_pages_marker() -> list[str] | None:
     """
     marker = prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
     try:
-        return json.loads(marker.read_text())
-    except (FileNotFoundError, json.JSONDecodeError):
+        return json.loads(marker.read_bytes())
+    except (FileNotFoundError, ValueError):
+        # ValueError covers both JSONDecodeError and the UnicodeDecodeError of a
+        # marker that is not valid UTF-8.
         return None
     except PermissionError:
         if constants.IS_WINDOWS:
