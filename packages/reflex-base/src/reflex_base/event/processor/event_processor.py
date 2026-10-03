@@ -209,6 +209,8 @@ class EventProcessor:
 
         self._root_context = EventContext(
             token="",
+            # Belongs to no event: the events forked from it are top-level.
+            txid="",
             parent_txid=None,
             state_manager=state_manager,
             enqueue_impl=self.enqueue_many,
@@ -473,14 +475,15 @@ class EventProcessor:
         token: str,
         event: Event,
     ) -> AsyncGenerator[Mapping[str, Any]]:
-        """Enqueue an event to be processed and yield deltas emitted by the event handler.
+        """Enqueue an event and yield the deltas its chain emits for ``token``.
 
-        Events queued by this method will not emit deltas to their target token in the typical way, instead
-        they will be yielded from this generator until the event handler finishes processing.
-        Deltas emitted for other tokens will be handled normally.
-
-        Any frontend events or chained events are handled normally and deltas from chained events
-        will not be yielded by this method.
+        Until the event and every event it chains have finished, their deltas
+        for ``token`` are yielded from this generator in the order they are
+        emitted, instead of being sent to the client the usual way, so the
+        caller receives the whole chain's updates in order over one channel.
+        Deltas for other tokens, frontend events, and deltas emitted after the
+        stream ended (e.g. by events the backend exception handler chains after
+        a failure) are sent the usual way.
 
         If the consumer stops iterating early, the in-flight event future is
         cancelled so the handler chain does not continue running in the
@@ -491,46 +494,61 @@ class EventProcessor:
             event: The event to be enqueued.
 
         Yields:
-            Deltas emitted by the event handler for the specified token.
+            Deltas for the token emitted by the event handler and the events it chains.
         """
-        if self._root_context is None:
+        if (root := self._root_context) is None:
             msg = "Event processor is not configured, call .configure(...) first."
             raise RuntimeError(msg)
 
         deltas = asyncio.Queue()
+        # Cleared once the chain finishes or the consumer leaves: a later delta
+        # would land behind the end of the stream, where nothing reads it.
+        streaming = True
+        stream_token = token
 
         async def _emit_delta_impl(
-            delta_token: str, delta: Mapping[str, Mapping[str, Any]]
+            token: str, delta: Mapping[str, Mapping[str, Any]]
         ) -> None:
-            if (
-                delta_token != token
-                and self._root_context is not None
-                and self._root_context.emit_delta_impl is not None
-            ):
-                # Emit deltas for other tokens normally.
-                await self._root_context.emit_delta_impl(delta_token, delta)
-                return
-            await deltas.put(delta)
+            if streaming and token == stream_token:
+                await deltas.put(delta)
+            elif root.emit_delta_impl is not None:
+                # Other tokens' deltas, and any emitted after the stream ended,
+                # go to the client the usual way.
+                await root.emit_delta_impl(token, delta)
 
         task_future = await self.enqueue(
             token,
             event,
-            ev_ctx=dataclasses.replace(
-                self._root_context,
+            # A fresh context rather than a copy of the root, which has no txid:
+            # this event needs one of its own, so the events it chains find its
+            # future and concurrent streams stay apart. As a top-level event,
+            # it has no parent.
+            ev_ctx=type(root)(
                 token=token,
+                state_manager=root.state_manager,
+                enqueue_impl=root.enqueue_impl,
                 emit_delta_impl=_emit_delta_impl,
+                emit_event_impl=root.emit_event_impl,
                 # Like fork(): the handler span nests under the caller's span
                 # (the upload request, a custom route).
                 otel_context=otel.capture_context(),
             ),
         )
 
+        async def _wait_for_chain() -> None:
+            nonlocal streaming
+            try:
+                await task_future.wait_all()
+            finally:
+                streaming = False
+
         try:
             async for delta in _stream_queue_until_done(
-                queue=deltas, done_when=task_future.wait_all()
+                queue=deltas, done_when=_wait_for_chain()
             ):
                 yield delta
         finally:
+            streaming = False
             # Cancel the event chain if the streaming consumer exits early.
             if not task_future.done():
                 task_future.cancel()
@@ -618,13 +636,7 @@ class EventProcessor:
                 tracked.cancel()
                 return False
             if tracked.root_gen > current_gen:
-                logger.debug(
-                    f"Cancelling the previous unfinished {event.name} chain for "
-                    f"token {token}, superseded by a newer invocation."
-                )
-                for previous in slot.values():
-                    previous.cancel()
-                slot.clear()
+                self._cancel_older_chains(key, tracked.root_gen)
             elif key in tracked.covered_supersede_keys:
                 # Same chain, and an ancestor invocation is already
                 # registered: cancelling that ancestor cascades here, so
@@ -636,6 +648,27 @@ class EventProcessor:
         tracked.supersede_key = key
         tracked.covered_supersede_keys |= {key}
         return True
+
+    def _cancel_older_chains(self, key: tuple[str, str], root_gen: int) -> None:
+        """Cancel the unfinished superseding chains registered under ``key``.
+
+        Only chains from a root generation older than ``root_gen`` are
+        cancelled; the slot is left alone when its chains are at least as new.
+
+        Args:
+            key: The (event name, token) the chains are registered under.
+            root_gen: The root generation of the chain superseding them.
+        """
+        slot = self._superseded.get(key)
+        if not slot or root_gen <= next(iter(slot.values())).root_gen:
+            return
+        logger.debug(
+            f"Cancelling the previous unfinished {key[0]} chain for token "
+            f"{key[1]}, superseded by a newer invocation."
+        )
+        for previous in slot.values():
+            previous.cancel()
+        slot.clear()
 
     def _on_future_done(self, future: EventFuture) -> None:  # type: ignore[override]
         """Callback invoked when an enqueued future completes.
