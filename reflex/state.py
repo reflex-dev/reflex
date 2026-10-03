@@ -41,6 +41,7 @@ from reflex_base.event import (
 )
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
+    BaseVarShadowsInheritedVarError,
     DynamicComponentInvalidSignatureError,
     DynamicRouteArgShadowsStateVarError,
     ReflexRuntimeError,
@@ -728,6 +729,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
 
         cls._bind_fields()
         cls._bind_mixin_members()
+        cls._check_overridden_inherited_vars()
 
         # Set the base and computed vars.
         cls.base_vars = {
@@ -1092,6 +1094,35 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                     value = value.__func__
                 if isinstance(value, FunctionType):
                     yield name, value
+
+    @classmethod
+    def _check_overridden_inherited_vars(cls) -> None:
+        """Reject backend fields that shadow fields inherited from a state.
+
+        Raises:
+            BaseVarShadowsInheritedVarError: If a backend field is redeclared.
+        """
+        parent_state = cls.get_parent_state()
+        if parent_state is None:
+            return
+
+        parent_fields = parent_state.get_fields()
+        for name, state_field in cls.get_fields().items():
+            if (
+                not name.startswith("_")
+                or name not in cls.__dict__
+                or not state_field._backend
+            ):
+                continue
+            parent_field = parent_fields.get(name)
+            if parent_field is None or parent_field is state_field:
+                continue
+            msg = (
+                f"The var `{name}` in {cls.__module__}.{cls.__name__} shadows a var "
+                f"inherited from {parent_state.__module__}.{parent_state.__name__}; "
+                "use a different name instead"
+            )
+            raise BaseVarShadowsInheritedVarError(msg)
 
     @classmethod
     @_cache_per_class

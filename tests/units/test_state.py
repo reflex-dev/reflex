@@ -35,6 +35,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import (
+    BaseVarShadowsInheritedVarError,
     InvalidLockWarningThresholdError,
     LockExpiredError,
     ReflexRuntimeError,
@@ -6374,6 +6375,65 @@ def test_redeclared_var_is_independent_of_the_inherited_one() -> None:
         ShadowParent.get_full_name(): {"shadowed_value" + FIELD_MARKER: 2},
         ShadowChild.get_full_name(): {"shadowed_value" + FIELD_MARKER: "changed"},
     }
+
+
+def test_backend_var_shadowing_inherited_var_raises() -> None:
+    """A backend var shadowing an inherited backend var raises instead of being discarded."""
+
+    class ShadowParent(BaseState):
+        _shadowed_value: int = 1
+
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="_shadowed_value"):
+
+        class ShadowChild(ShadowParent):
+            _shadowed_value: str = "ninety-nine"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+
+def test_unannotated_backend_var_shadowing_inherited_var_raises() -> None:
+    """An unannotated backend var shadowing an inherited var also raises."""
+
+    class ShadowParent(BaseState):
+        _shadowed_value: int = 1
+
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="_shadowed_value"):
+
+        class ShadowChild(ShadowParent):
+            _shadowed_value = 2
+
+
+def test_backend_var_shadowing_with_supported_descriptors_is_allowed() -> None:
+    """Supported descriptors can replace an inherited backend var."""
+
+    class ShadowParent(BaseState):
+        _shadowed_value: int = 1
+
+    class PropertyChild(ShadowParent):
+        @property
+        def _shadowed_value(self) -> int:  # pyright: ignore[reportIncompatibleVariableOverride]
+            return 2
+
+    class CachedPropertyChild(ShadowParent):
+        @functools.cached_property
+        def _shadowed_value(self) -> int:  # pyright: ignore[reportIncompatibleVariableOverride]
+            return 2
+
+    class ClassMethodChild(ShadowParent):
+        @classmethod
+        def _shadowed_value(cls) -> int:  # pyright: ignore[reportIncompatibleVariableOverride]
+            return 2
+
+    assert PropertyChild()._shadowed_value == 2
+    assert CachedPropertyChild()._shadowed_value == 2
+    assert ClassMethodChild()._shadowed_value() == 2
+
+    class Descriptor:
+        def __get__(self, instance, owner=None) -> int:
+            return 3
+
+    class CustomDescriptorChild(ShadowParent):
+        _shadowed_value = Descriptor()  # pyright: ignore[reportAssignmentType]
+
+    assert CustomDescriptorChild()._shadowed_value == 3
 
 
 def test_base_var_shadowing_non_state_descriptor_does_not_raise() -> None:
