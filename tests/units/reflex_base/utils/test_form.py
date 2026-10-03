@@ -180,6 +180,7 @@ def test_transform_form_data_to_typed_dict_coerces_lists_and_bools():
             FORM_DATA_ENTRIES_KEY: [
                 *_FORM_DATA_ENTRIES,
                 ["subscribe", "on"],
+                ["subscribe", ""],
                 ["topics", "news"],
                 ["topics", "events"],
                 ["agree", ""],

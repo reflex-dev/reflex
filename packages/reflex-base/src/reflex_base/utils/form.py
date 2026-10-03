@@ -287,7 +287,7 @@ def _form_data_as_typed_dict(form_data: FormData, typed_dict: Any) -> dict[str, 
         elif field.kind == "list":
             result[field.name] = form_data.getlist(field.name)
         elif field.kind == "bool":
-            result[field.name] = bool(form_data.get(field.name))
+            result[field.name] = any(form_data.getlist(field.name))
         else:
             result[field.name] = form_data[field.name]
     return result
