@@ -2922,7 +2922,17 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
 class LambdaEventCallback(Protocol[Unpack[P]]):
     """A protocol for a lambda event callback."""
 
-    __code__: types.CodeType
+    @property
+    def __code__(self) -> types.CodeType:
+        """The code object of the callback.
+
+        Read-only, so a bound method, whose ``__code__`` is a read-only view of
+        its function's, satisfies the protocol as well as a function or lambda.
+
+        Returns:
+            The code object.
+        """
+        ...
 
     @overload
     def __call__(self: "LambdaEventCallback[()]") -> Any: ...
