@@ -864,8 +864,7 @@ def test_app_logs_success(mocker: MockFixture):
     log_lines = [line for line in result.output.splitlines() if "[INFO] log" in line]
     assert len(log_lines) == 3
     assert all(
-        sum(f"[INFO] log{n}" in line for line in log_lines) == 1
-        for n in range(1, 4)
+        sum(f"[INFO] log{n}" in line for line in log_lines) == 1 for n in range(1, 4)
     )
 
 
