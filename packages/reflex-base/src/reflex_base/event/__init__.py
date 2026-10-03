@@ -122,8 +122,14 @@ class Event:
         if events is None:
             return []
 
-        # If the handler returns a single event, wrap it in a list.
-        if not is_non_string_sequence(events):
+        # If the handler returns a single event, wrap it in a list. The single
+        # event kinds come first: they are the common case, and cheaper to check
+        # than the Sequence ABC.
+        if (
+            isinstance(events, (Event, EventSpec))
+            or callable(events)
+            or not is_non_string_sequence(events)
+        ):
             events = [events]
 
         # Fix the events created by the handler.
