@@ -621,7 +621,7 @@ def _hmr(
 PREVIEW_ESTIMATE_S = 30.0
 
 
-@_hmr("hmr.render.leaf", suites=("pr", "daily"))
+@_hmr("hmr.render.leaf", suites=("pr", "daily", "macro"))
 class RenderLeaf(_HotReload):
     """Rewrite the leaf marker, rendered by the index page only, until the page shows it."""
 
@@ -658,7 +658,7 @@ class RenderRootPreview(RenderRoot):
     mode = "preview"
 
 
-@_hmr("hmr.handler", suites=("pr", "daily"))
+@_hmr("hmr.handler", suites=("pr", "daily", "macro"))
 class Handler(_HotReload):
     """Rewrite what an event handler sets, clicking its button until the page shows it."""
 
