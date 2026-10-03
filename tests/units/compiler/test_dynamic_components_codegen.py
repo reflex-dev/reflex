@@ -49,6 +49,31 @@ def test_dynamic_component_codegen_rewrites_bundled_library_subpath() -> None:
     ) in app_root_code
 
 
+def test_lazy_dynamic_component_loads_only_its_bundled_libraries(mocker) -> None:
+    """Load only the modules required by a lazy dynamic component."""
+    mocker.patch(
+        "reflex_base.config._get_config",
+        return_value=rx.Config(
+            app_name="lazy_dynamic_component",
+            frontend_lazy_bundled_libraries=True,
+        ),
+    )
+    with RegistrationContext():
+        bundle_library("unused-library")
+        bundle_library("lucide-react")
+        code = serializers.serialize(rx.icon("apple"))
+        _, app_root_code = compiler.compile_app_root(rx.el.div())
+    assert isinstance(code, str)
+    assert code.startswith(
+        '//__reflex_evaluate:["$/utils/state", "@emotion/react", '
+        '"lucide-react/dist/esm/icons/apple.mjs", "react"]'
+    )
+    assert "await window.__reflex_load" not in code
+    assert "unused-library" not in code
+    assert "window.__reflex_load = (libraries = Object.keys(loaders))" in app_root_code
+    assert "Promise.all(Object.entries(loaders)" not in app_root_code
+
+
 @pytest.mark.parametrize("reactive", [False, True])
 @pytest.mark.parametrize("placement", ["direct", "nested", "libraryless", "prop"])
 def test_component_registration_bundles_subpaths_before_serialization(
