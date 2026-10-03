@@ -8,6 +8,7 @@ from typing import Any
 import reflex as rx
 from reflex.event import EventType, IndividualEventType
 from reflex.experimental.client_state import ClientStateVar
+from reflex.utils.types import is_non_string_sequence
 from reflex.vars.base import get_unique_variable_name
 from reflex_components_internal.blocks.telemetry.posthog import (
     track_intro_form_posthog_submission,
@@ -292,7 +293,11 @@ def intro_form(
     email_id = f"{prefix}_user_email"
 
     extra: list[IndividualEventType[dict[str, Any]]] = (
-        on_submit if isinstance(on_submit, list) else [on_submit] if on_submit else []
+        list(on_submit)
+        if is_non_string_sequence(on_submit)
+        else [on_submit]
+        if on_submit
+        else []
     )
 
     form = rx.el.form(
