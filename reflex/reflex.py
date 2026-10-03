@@ -949,7 +949,7 @@ def logout():
     logout(get_config().loglevel)
 
 
-_DB_PACKAGES = ("sqlalchemy", "alembic", "sqlmodel", "pydantic")
+_DB_PACKAGES = ("sqlalchemy", "alembic")
 
 
 @click.group
