@@ -307,6 +307,28 @@ def test_fix_events(arg1, arg2):
     assert event.payload == {"arg1": arg1, "arg2": arg2}
 
 
+def _handler_with_arg() -> EventHandler:
+    def fn_with_arg(arg):
+        pass
+
+    fn_with_arg.__qualname__ = "fn_with_arg"
+    return EventHandler(fn=fn_with_arg)
+
+
+def test_fix_events_accepts_a_tuple():
+    """A handler can return its events as a tuple as well as a list."""
+    handler = _handler_with_arg()
+    events = fix_events((handler(1), handler(2)))
+    assert [event.payload for event in events] == [{"arg": 1}, {"arg": 2}]
+
+
+def test_from_event_type_accepts_a_tuple():
+    """Events built from a tuple of event specs match those built from a list."""
+    handler = _handler_with_arg()
+    events = Event.from_event_type((handler(1), handler(2)))
+    assert [event.payload for event in events] == [{"arg": 1}, {"arg": 2}]
+
+
 class _ProxyPayloadState(BaseState):
     rows: list[dict[str, int]] = [{"a": 1}]
 
@@ -1204,6 +1226,16 @@ def test_event_chain_create_lambda_rejects_non_union_callable_var():
             cast(LambdaEventCallback[Any], return_plain_callable_var),
             args_spec=lambda e: [e],
         )
+
+
+def test_event_chain_create_accepts_a_tuple_of_events():
+    """A tuple of events binds into the same chain as a list of them."""
+    events = (_handler_with_arg()(1), rx.console_log("logged"))
+
+    from_tuple = EventChain.create(events, args_spec=lambda: ())
+    from_list = EventChain.create(list(events), args_spec=lambda: ())
+
+    assert str(LiteralVar.create(from_tuple)) == str(LiteralVar.create(from_list))
 
 
 def test_event_chain_create_wraps_plain_function_var_kwargs():
