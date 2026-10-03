@@ -1,12 +1,12 @@
 [project]
 name = "reflex-release"
 dynamic = ["version"]
-description = "Changelog-driven release automation: towncrier news fragments, GitHub Actions workflows and human-gated PyPI publishing for single-package repos and monorepos."
+description = "Changelog-driven releases: human-gated package publishing and application deployments with configurable GitHub Actions workflows."
 license.text = "Apache-2.0"
 readme = "README.md"
 authors = [{ name = "Reflex", email = "maintainers@reflex.dev" }]
 maintainers = [{ name = "Reflex", email = "maintainers@reflex.dev" }]
-keywords = ["release", "changelog", "towncrier", "github-actions", "pypi"]
+keywords = ["release", "changelog", "towncrier", "github-actions", "pypi", "gitops"]
 requires-python = ">=3.10"
 dependencies = [
   "packaging >=24.2,<27",

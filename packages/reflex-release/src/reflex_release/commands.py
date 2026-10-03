@@ -1348,7 +1348,9 @@ def cmd_create_release(
     """
     # The root package is the repository, so its tag already names the release
     # unambiguously; only a sub-package needs to say which package it is.
-    title = tag if package == config.root_package else f"{package}@{version}"
+    title = (
+        tag if config.app or package == config.root_package else f"{package}@{version}"
+    )
     existing = _release_view(config, tag)
     if existing is not None:
         _accept_existing_release(
