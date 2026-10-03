@@ -1,0 +1,1 @@
+An event handler stored outside a state, e.g. in a component or dataclass field, now type-checks as the handler instead of a bound function, and a handler read through a state instance is typed as a function returning `Any`.
