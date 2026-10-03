@@ -1,9 +1,13 @@
 import asyncio
 import importlib.metadata
 import json
+import os
 import sys
 import threading
+import time
 import uuid
+import warnings
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -30,6 +34,8 @@ def _drain_telemetry_executor():
     """
     yield
     telemetry._flush()
+    # A test that stops the pool for a fork must not silence the next test.
+    telemetry._paused = False
 
 
 @pytest.fixture
@@ -815,6 +821,410 @@ def test_flush_returns_false_when_worker_does_not_drain_in_time():
     finally:
         release.set()
         blocker.result(timeout=5)
+
+
+def test_executor_is_recreated_after_fork():
+    """A forked child drops the inherited pool, whose thread it does not own."""
+    inherited = telemetry._get_telemetry_executor()
+
+    telemetry._reset_executor_after_fork()
+
+    fresh = telemetry._get_telemetry_executor()
+    assert fresh is not inherited
+    assert fresh.submit(lambda: 1).result(timeout=5) == 1
+    # In this process the orphaned pool's thread is real; stop it.
+    inherited.shutdown()
+
+
+def test_executor_lock_is_recreated_after_fork():
+    """A lock held by another thread at fork time does not block the child."""
+    orphaned = telemetry._get_telemetry_executor()
+    held = telemetry._executor_lock
+    held.acquire()
+    try:
+        telemetry._reset_executor_after_fork()
+    finally:
+        held.release()
+        orphaned.shutdown()
+
+    assert telemetry._executor_lock is not held
+    assert not telemetry._executor_lock.locked()
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is POSIX-only")
+def test_forked_child_starts_with_fresh_executor_state():
+    """The at-fork hook is registered and runs in a real forked child."""
+    telemetry._get_telemetry_executor()
+    with warnings.catch_warnings():
+        # The telemetry worker thread is alive, which is the point of the test.
+        warnings.simplefilter("ignore", DeprecationWarning)
+        with telemetry._executor_lock:
+            pid = os.fork()
+            if pid == 0:
+                clean = (
+                    telemetry._executor is None
+                    and not telemetry._executor_lock.locked()
+                )
+                os._exit(0 if clean else 1)
+    _, status = os.waitpid(pid, 0)
+    assert os.waitstatus_to_exitcode(status) == 0
+
+
+def test_shutdown_executor_drains_queued_work_and_stops_the_thread():
+    """Queued events are delivered and no telemetry thread survives the call."""
+    done = threading.Event()
+    executor = telemetry._get_telemetry_executor()
+    executor.submit(done.set)
+    workers = list(executor._threads)
+
+    assert telemetry._shutdown_executor()
+
+    assert done.is_set()
+    assert telemetry._executor is None
+    assert workers
+    assert not any(worker.is_alive() for worker in workers)
+
+
+def test_shutdown_executor_keeps_the_pool_published_until_it_stops(
+    mocker: MockerFixture,
+):
+    """A send racing the shutdown cannot start a second pool before the fork."""
+    executor = telemetry._get_telemetry_executor()
+    seen = []
+    stop = executor.shutdown
+
+    def shutdown(*args, **kwargs):
+        # What a concurrent send() would submit to while the pool stops.
+        seen.append(telemetry._get_telemetry_executor())
+        stop(*args, **kwargs)
+
+    mocker.patch.object(executor, "shutdown", side_effect=shutdown)
+
+    telemetry._shutdown_executor()
+
+    assert seen == [executor]
+    assert telemetry._executor is None
+
+
+def test_shutdown_executor_gives_up_on_a_stalled_task():
+    """A send that hangs (e.g. on DNS) cannot block the fork past the timeout."""
+    running = threading.Event()
+    release = threading.Event()
+
+    def stall():
+        running.set()
+        release.wait(10)
+
+    executor = telemetry._get_telemetry_executor()
+    workers = list(executor._threads)
+    executor.submit(stall)
+    queued = executor.submit(lambda: None)
+    # Only a task the worker has picked up keeps it alive; a queued one would
+    # just be cancelled.
+    assert running.wait(5)
+    started = time.monotonic()
+    try:
+        # The stalled send's thread is still alive, so forking is unsafe.
+        assert not telemetry._shutdown_executor(timeout=0.05)
+        elapsed = time.monotonic() - started
+    finally:
+        release.set()
+        for worker in workers:
+            worker.join(5)
+
+    assert elapsed < 2
+    assert telemetry._executor is None
+    assert queued.cancelled()
+
+
+def test_send_after_pre_fork_shutdown_starts_no_thread(mocker: MockerFixture):
+    """Until the pending fork happens, a send cannot start a telemetry thread."""
+    job = mocker.Mock()
+    telemetry._get_telemetry_executor()
+    assert telemetry._shutdown_executor()
+
+    telemetry._submit(job)
+
+    assert telemetry._executor is None
+    job.assert_not_called()
+
+
+def test_stalled_shutdown_lifts_the_pause():
+    """A caller that will not fork may send in-process again."""
+    release = threading.Event()
+    running = threading.Event()
+    executor = telemetry._get_telemetry_executor()
+    workers = list(executor._threads)
+    executor.submit(lambda: running.set() or release.wait(10))
+    assert running.wait(5)
+    try:
+        assert not telemetry._shutdown_executor(timeout=0.05)
+    finally:
+        release.set()
+        for worker in workers:
+            worker.join(5)
+
+    assert not telemetry._paused
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is POSIX-only")
+def test_real_fork_keeps_the_parent_paused():
+    """A supervisor that may fork again never sends in-process; its child may."""
+    assert telemetry._shutdown_executor()
+    with warnings.catch_warnings():
+        # Other tests leave unrelated threads behind in this process.
+        warnings.simplefilter("ignore", DeprecationWarning)
+        pid = os.fork()
+    if pid == 0:
+        code = 1
+        try:
+            code = int(telemetry._paused)
+        finally:
+            os._exit(code)
+    _, status = os.waitpid(pid, 0)
+
+    assert os.waitstatus_to_exitcode(status) == 0
+    assert telemetry._paused
+    with pytest.raises(RuntimeError, match="paused"):
+        telemetry._get_telemetry_executor()
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is POSIX-only")
+def test_send_detached_hands_the_event_to_a_detached_process(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A supervisor paused to fork sends through a short-lived process."""
+    monkeypatch.setattr(telemetry, "_paused", True)
+    mocker.patch.object(
+        telemetry, "get_config", return_value=SimpleNamespace(telemetry_enabled=True)
+    )
+    popen = mocker.patch.object(telemetry.subprocess, "Popen")
+    mocker.patch.object(telemetry, "_reaps_orphans", return_value=False)
+
+    telemetry._send_detached("run-prod")
+
+    popen.assert_called_once_with(
+        [
+            sys.executable,
+            "-c",
+            telemetry._DETACH + telemetry._SEND_EVENT,
+            "run-prod",
+            "detach",
+        ],
+        stdin=telemetry.subprocess.DEVNULL,
+        stdout=telemetry.subprocess.DEVNULL,
+        stderr=telemetry.subprocess.DEVNULL,
+        close_fds=True,
+    )
+    # The direct child exits right after detaching, so it is reaped at once.
+    popen.return_value.wait.assert_called_once()
+    assert telemetry._executor is None
+
+
+def test_send_detached_sends_in_process_when_not_paused(mocker: MockerFixture):
+    """A process that does not fork (uvicorn, spawned granian) does not wait
+    on a child process: it sends in-process, as before.
+    """
+    send = mocker.patch.object(telemetry, "send")
+    popen = mocker.patch.object(telemetry.subprocess, "Popen")
+
+    telemetry._send_detached("run-prod")
+
+    send.assert_called_once_with("run-prod")
+    popen.assert_not_called()
+
+
+def test_send_detached_sends_in_process_without_fork(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """Where nothing forks (Windows) the event is sent in-process."""
+    monkeypatch.delattr(os, "fork", raising=False)
+    send = mocker.patch.object(telemetry, "send")
+    popen = mocker.patch.object(telemetry.subprocess, "Popen")
+
+    telemetry._send_detached("run-prod")
+
+    send.assert_called_once_with("run-prod")
+    popen.assert_not_called()
+
+
+def test_send_detached_starts_nothing_when_disabled(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """With telemetry disabled no process is started."""
+    monkeypatch.setattr(telemetry, "_paused", True)
+    mocker.patch.object(
+        telemetry, "get_config", return_value=SimpleNamespace(telemetry_enabled=False)
+    )
+    popen = mocker.patch.object(telemetry.subprocess, "Popen")
+
+    telemetry._send_detached("run-prod")
+
+    popen.assert_not_called()
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is POSIX-only")
+def test_detached_send_leaves_no_child_behind(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """The direct child exits after detaching, so no zombie is left to reap."""
+    monkeypatch.setattr(telemetry, "_paused", True)
+    mocker.patch.object(
+        telemetry, "get_config", return_value=SimpleNamespace(telemetry_enabled=True)
+    )
+    mocker.patch.object(telemetry, "_reaps_orphans", return_value=False)
+    # The real detaching prologue, but the sender exits instead of sending.
+    mocker.patch.object(telemetry, "_SEND_EVENT", "os._exit(0)\n")
+    popen = mocker.spy(telemetry.subprocess, "Popen")
+
+    telemetry._send_detached("run-prod")
+
+    assert popen.spy_return.returncode == 0
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is POSIX-only")
+def test_detached_send_kills_and_reaps_a_child_that_hangs(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A child that does not exit in time is killed and reaped, not leaked."""
+    monkeypatch.setattr(telemetry, "_paused", True)
+    monkeypatch.setattr(telemetry, "_DETACHED_TIMEOUT", 0.2)
+    mocker.patch.object(
+        telemetry, "get_config", return_value=SimpleNamespace(telemetry_enabled=True)
+    )
+    mocker.patch.object(telemetry, "_reaps_orphans", return_value=True)
+    mocker.patch.object(telemetry, "_SEND_EVENT", "import time\ntime.sleep(30)\n")
+    popen = mocker.spy(telemetry.subprocess, "Popen")
+
+    telemetry._send_detached("run-prod")
+
+    assert popen.spy_return.returncode == -9
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is POSIX-only")
+def test_detached_send_stays_attached_where_orphans_come_back(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+):
+    """As PID 1 or a subreaper the sender is not orphaned to this process.
+
+    Orphans would be reparented to the supervisor, which never reaps them,
+    so the single child sends and is waited for instead.
+    """
+    monkeypatch.setattr(telemetry, "_paused", True)
+    mocker.patch.object(
+        telemetry, "get_config", return_value=SimpleNamespace(telemetry_enabled=True)
+    )
+    mocker.patch.object(telemetry, "_reaps_orphans", return_value=True)
+    sent = tmp_path / "sent"
+    mocker.patch.object(
+        telemetry,
+        "_SEND_EVENT",
+        f"open({str(sent)!r}, 'w').write(str(os.getppid()))\n",
+    )
+    popen = mocker.spy(telemetry.subprocess, "Popen")
+
+    telemetry._send_detached("run-prod")
+
+    assert popen.spy_return.args[-1] == "attached"
+    assert popen.spy_return.returncode == 0
+    # The sender ran in the direct child, which was reaped before returning.
+    assert sent.read_text() == str(os.getpid())
+
+
+def test_reaps_orphans_as_pid_1(mocker: MockerFixture):
+    """PID 1 inherits every orphan."""
+    mocker.patch.object(telemetry.os, "getpid", return_value=1)
+
+    assert telemetry._reaps_orphans()
+
+
+def _fake_prctl(mocker: MockerFixture, subreaper: int):
+    """Make PR_GET_CHILD_SUBREAPER report the given flag.
+
+    Args:
+        mocker: The mocker fixture.
+        subreaper: The flag value prctl writes back.
+    """
+    import ctypes
+
+    def prctl(_option, flag, *_args):
+        flag._obj.value = subreaper
+        return 0
+
+    mocker.patch.object(ctypes, "CDLL", return_value=SimpleNamespace(prctl=prctl))
+
+
+@pytest.mark.parametrize(
+    ("supervised", "ppid", "expected"),
+    [
+        # `reflex run --json` as a container's PID 1: the output supervisor
+        # inherits the sender but only waits for its own child, the server.
+        (True, 1, True),
+        # A real init (e.g. systemd) as the parent reaps orphans.
+        (False, 1, False),
+        (True, 6, False),
+        (False, 6, False),
+    ],
+)
+def test_reaps_orphans_under_reflex_output_supervisor_as_pid_1(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    supervised: bool,
+    ppid: int,
+    expected: bool,
+):
+    """Only reflex's own output supervisor as PID 1 leaves orphans unreaped."""
+    if supervised:
+        monkeypatch.setenv("REFLEX_OUTPUT_SUPERVISED", "1")
+    else:
+        monkeypatch.delenv("REFLEX_OUTPUT_SUPERVISED", raising=False)
+    mocker.patch.object(telemetry.os, "getpid", return_value=7)
+    mocker.patch.object(telemetry.os, "getppid", return_value=ppid)
+    _fake_prctl(mocker, 0)
+
+    assert telemetry._reaps_orphans() is expected
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Linux-only prctl")
+def test_reaps_orphans_as_a_child_subreaper(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A child subreaper inherits its descendants' orphans."""
+    monkeypatch.delenv("REFLEX_OUTPUT_SUPERVISED", raising=False)
+    mocker.patch.object(telemetry.os, "getpid", return_value=7)
+    mocker.patch.object(telemetry.os, "getppid", return_value=6)
+    _fake_prctl(mocker, 1)
+
+    assert telemetry._reaps_orphans()
+
+
+@pytest.mark.skipif(not hasattr(os, "fork"), reason="os.fork is POSIX-only")
+def test_send_detached_stays_attached_under_a_pid_1_output_supervisor(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """Under reflex's output supervisor as PID 1 the sender stays attached."""
+    monkeypatch.setattr(telemetry, "_paused", True)
+    monkeypatch.setenv("REFLEX_OUTPUT_SUPERVISED", "1")
+    mocker.patch.object(
+        telemetry, "get_config", return_value=SimpleNamespace(telemetry_enabled=True)
+    )
+    mocker.patch.object(telemetry.os, "getpid", return_value=7)
+    mocker.patch.object(telemetry.os, "getppid", return_value=1)
+    popen = mocker.patch.object(telemetry.subprocess, "Popen")
+
+    telemetry._send_detached("run-prod")
+
+    assert popen.call_args.args[0][-1] == "attached"
+
+
+def test_shutdown_executor_without_executor_is_a_noop():
+    """Nothing to drain when no telemetry was ever sent."""
+    assert telemetry._shutdown_executor()
+    assert telemetry._shutdown_executor()
+
+    assert telemetry._executor is None
 
 
 def test_send_event_posts_json_without_httpx(mocker: MockerFixture):
