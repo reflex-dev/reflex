@@ -76,8 +76,11 @@ def test_setter_carries_backend_default_hooks() -> None:
 @pytest.mark.parametrize(
     ("default", "initial_value"),
     [
-        (0, "refs['_client_state_seeded'] ?? (0)"),
-        ("a", "refs['_client_state_seeded'] ?? (\"a\")"),
+        (0, "'_client_state_seeded' in refs ? refs['_client_state_seeded'] : (0)"),
+        (
+            "a",
+            "'_client_state_seeded' in refs ? refs['_client_state_seeded'] : (\"a\")",
+        ),
         (NoValue, "refs['_client_state_seeded']"),
     ],
 )

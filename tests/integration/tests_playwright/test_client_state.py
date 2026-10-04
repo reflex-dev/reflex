@@ -26,6 +26,10 @@ def ClientStateApp():
         def push_value(self):
             return pushed.push("pushed")
 
+        @rx.event
+        def push_none(self):
+            return pushed.push(None)
+
     shared = rx._x.client_state(default="initial")
     backend_default = rx._x.client_state(default=ClientStateAppState.default_text)
 
@@ -63,6 +67,9 @@ def ClientStateApp():
     def push_before_mount():
         return rx.box(
             rx.button("push", on_click=ClientStateAppState.push_value, id="pusher"),
+            rx.button(
+                "push none", on_click=ClientStateAppState.push_none, id="none-pusher"
+            ),
             rx.button("reveal", on_click=ClientStateAppState.reveal, id="reveal"),
             rx.cond(
                 ClientStateAppState.show,
@@ -218,6 +225,28 @@ def test_push_before_reader_mounts(client_state_app: AppHarness, page: Page) -> 
     page.click("#pusher")
     page.click("#reveal")
     expect(page.locator("#pushed-reader")).to_have_text("pushed")
+    assert errors == []
+    assert script_errors == []
+
+
+def test_push_none_before_reader_mounts(
+    client_state_app: AppHarness, page: Page
+) -> None:
+    """A ``None`` pushed before the reader mounts is kept, not replaced by the default.
+
+    Args:
+        client_state_app: Running app harness.
+        page: Playwright page.
+    """
+    assert client_state_app.frontend_url is not None
+    errors = _collect_page_errors(page)
+    script_errors = _collect_script_errors(page)
+    page.goto(client_state_app.frontend_url.removesuffix("/") + "/push-before-mount")
+    expect(page.locator("#token")).not_to_be_empty()
+
+    page.click("#none-pusher")
+    page.click("#reveal")
+    expect(page.locator("#pushed-reader")).to_have_text("")
     assert errors == []
     assert script_errors == []
 

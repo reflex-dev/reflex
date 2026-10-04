@@ -136,9 +136,12 @@ class ClientStateVar(Var):
         if global_ref:
             # A component mounting after a set renders the shared value, and React
             # skips a setter call equal to the current state, so starting from the
-            # default would swallow a later set back to the default.
+            # default would swallow a later set back to the default. A set or pushed
+            # null is a value too, so only a missing slot falls back to the default.
             initial_value = (
-                f"{var_ref!s} ?? ({initial_value})" if initial_value else str(var_ref)
+                f"'_client_state_{var_name}' in refs ? {var_ref!s} : ({initial_value})"
+                if initial_value
+                else str(var_ref)
             )
         hooks: dict[str, VarData | None] = {
             f"const {id_name} = useId()": None,

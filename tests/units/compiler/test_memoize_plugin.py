@@ -1660,8 +1660,8 @@ def test_client_state_setter_only_sibling_memo_initializes_state() -> None:
     )
     assert "refs['_client_state_setSibling'](\"b\")" in button_memo
     assert (
-        "const [sibling, setSibling] = useState(refs['_client_state_sibling'] ?? (\"a\"))"
-        in button_memo
+        "const [sibling, setSibling] = useState('_client_state_sibling' in refs"
+        " ? refs['_client_state_sibling'] : (\"a\"))" in button_memo
     )
     assert "refs['_client_state_setSibling'] = " in button_memo
 
