@@ -392,6 +392,7 @@ class BaseStateEventProcessor(EventProcessor):
         Args:
             root_state: The root state to rehydrate.
         """
+        from reflex.event import Event
         from reflex.state import OnLoadInternalState, State
 
         if type(root_state) is not State:
@@ -418,12 +419,23 @@ class BaseStateEventProcessor(EventProcessor):
                 root_state=root_state,
             )
             return
+        ctx = EventContext.get()
+        parent = self._futures[ctx.txid]
+        first_child = len(parent.children)
+        handler = OnLoadInternalState.event_handlers["on_load_internal"]
         await process_event(
-            handler=OnLoadInternalState.event_handlers["on_load_internal"],
+            handler=handler,
             payload={},
             state=await root_state.get_state(OnLoadInternalState),
             root_state=root_state,
         )
+        # Inline rehydration bypasses enqueue's page-load registration. Track
+        # only its children so the ordinary event remains independent.
+        load_event = Event(name=format_event_handler(handler))
+        for index in range(first_child, len(parent.children)):
+            self._supersede_previous(
+                token=ctx.token, event=load_event, tracked=parent.children[index]
+            )
 
     def _supersede_previous(
         self, *, token: str, event: Event, tracked: EventFuture
