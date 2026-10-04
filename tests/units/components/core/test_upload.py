@@ -249,6 +249,53 @@ def test_upload_files_event_spec_carries_upload_provider_app_wrap():
     )
 
 
+@pytest.mark.parametrize("upload_id", [None, "", "custom-id"])
+@pytest.mark.parametrize("streaming", [False, True])
+def test_upload_files_event_uses_shared_selection(
+    upload_id: str | None, streaming: bool
+):
+    """Upload callbacks can read selected files without a component context.
+
+    Args:
+        upload_id: Explicit upload ID or the default upload.
+        streaming: Whether the handler receives streamed chunks.
+    """
+    upload = rx.upload_files_chunk if streaming else rx.upload_files
+    handler = (
+        StreamingUploadStateTest.chunk_upload_alias_handler
+        if streaming
+        else UploadStateTest.upload_alias_handler
+    )
+    spec = upload(upload_id=upload_id).as_event_spec(cast(EventHandler, handler))
+    args = {str(name): value for name, value in spec.args}
+    files = args["files"]
+    expected_id = "default" if upload_id is None else upload_id
+    assert str(files) == f'refs["__upload_files"]?.["{expected_id}"]'
+    assert str(args["stream" if streaming else "uploads"]) == str(files)
+    data = files._get_all_var_data()
+    assert data is not None
+    assert not data.hooks
+    assert any(imp.tag == "refs" for imp in dict(data.imports)["$/utils/state"])
+
+
+def test_upload_files_preserves_dynamic_id_metadata():
+    """A dynamic upload ID retains its own imports and hooks."""
+    id_data = VarData(
+        imports={"$/upload-id": "useUploadId"},
+        hooks={"const uploadId = useUploadId();": None},
+    )
+    upload_id = Var(_js_expr="uploadId", _var_type=str, _var_data=id_data).to(str)
+    spec = rx.upload_files(upload_id=cast(Any, upload_id)).as_event_spec(
+        cast(EventHandler, UploadStateTest.upload_alias_handler)
+    )
+    args = {str(name): value for name, value in spec.args}
+    assert str(args["files"]) == 'refs["__upload_files"]?.[uploadId]'
+    data = args["files"]._get_all_var_data()
+    assert data is not None
+    assert data.hooks == id_data.hooks
+    assert dict(data.imports)["$/upload-id"] == dict(id_data.imports)["$/upload-id"]
+
+
 # Matches UPLOAD_EVENT_ARG_NAMES_KEY in reflex_base.event and the web template.
 # The constant isn't part of the module's public import surface (event/__init__.py
 # proxies attribute access through EventNamespace), so it's mirrored here.
