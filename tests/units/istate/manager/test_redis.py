@@ -304,6 +304,63 @@ async def test_modify_cancelled_persists_state(
             await task
 
 
+async def test_repeated_cancellation_waits_for_state_save(
+    state_manager_redis: StateManagerRedis,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Keep the Redis lock until a repeatedly cancelled handler finishes saving.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    manager = state_manager_redis
+    manager._oplock_enabled = False
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=RedisTestState)
+    started = asyncio.Event()
+    saving = asyncio.Event()
+    release_save = asyncio.Event()
+    original_set_state = manager.set_state
+
+    async def save(*args, **kwargs):
+        """Pause the state write while the handler is cancelled again."""
+        saving.set()
+        await release_save.wait()
+        await original_set_state(*args, **kwargs)
+
+    monkeypatch.setattr(manager, "set_state", save)
+
+    async def modify():
+        """Mutate state and suspend until superseded."""
+        async with manager.modify_state(token) as state:
+            state.count = 1
+            started.set()
+            await asyncio.Event().wait()
+
+    task = asyncio.create_task(modify())
+    try:
+        await asyncio.wait_for(started.wait(), timeout=5)
+        task.cancel("superseded")
+        await asyncio.wait_for(saving.wait(), timeout=5)
+        for _ in range(2):
+            task.cancel("shutdown")
+            await asyncio.sleep(0)
+        assert not task.done()
+        assert await manager.redis.get(manager._lock_key(token)) is not None
+        release_save.set()
+        with pytest.raises(asyncio.CancelledError, match="superseded"):
+            await task
+        persisted = await manager.get_state(token)
+        assert isinstance(persisted, RedisTestState)
+        assert persisted.count == 1
+        assert await manager.redis.get(manager._lock_key(token)) is None
+    finally:
+        release_save.set()
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+
 async def test_modify_exception_does_not_persist_state(
     state_manager_redis: StateManagerRedis,
 ):

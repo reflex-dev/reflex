@@ -539,7 +539,14 @@ class StateManagerRedis(StateManager):
             yield state
         except asyncio.CancelledError:
             # A handler may already have yielded these writes to the client.
-            await self.set_state(token, state, lock_id=lock_id, **context)
+            save = asyncio.create_task(
+                self.set_state(token, state, lock_id=lock_id, **context)
+            )
+            # Keep the lock until the save finishes, even during shutdown.
+            while not save.done():
+                with contextlib.suppress(asyncio.CancelledError):
+                    await asyncio.shield(save)
+            save.result()
             raise
         await self.set_state(token, state, lock_id=lock_id, **context)
 
