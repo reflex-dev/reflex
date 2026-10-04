@@ -116,6 +116,34 @@ def _commit_delta_records(pending: list[_DeltaRecord], delta: Delta) -> None:
         instance._was_touched = True
 
 
+def _record_snapshot(state: BaseState, snapshot: Delta) -> None:
+    """Remember uncached computed values the client holds after hydration.
+
+    Args:
+        state: The root of the hydrated state tree.
+        snapshot: The resolved full snapshot, including defaults already held
+            by a client whose initial-state hashes matched.
+    """
+    full_name = state.get_full_name()
+    subdelta = snapshot.get(full_name, {})
+    pending: list[_DeltaRecord] = []
+    for prop in state._always_dirty_computed_vars:
+        key = prop + FIELD_MARKER
+        if key in subdelta:
+            _record_or_drop_delta_value(
+                state.computed_vars[prop],
+                state,
+                subdelta[key],
+                state.router.session.client_token,
+                full_name,
+                key,
+                pending,
+            )
+    _commit_delta_records(pending, snapshot)
+    for substate in state.substates.values():
+        _record_snapshot(substate, snapshot)
+
+
 async def _resolve_delta(delta: Delta) -> Delta:
     """Await all coroutines in the delta, dropping keys that resolve to the drop sentinel.
 

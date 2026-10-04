@@ -87,6 +87,7 @@ from reflex.istate.data import (
 from reflex.istate.delta import (
     Delta,
     DeltaMapping,
+    _record_snapshot,
     _resolve_delta,
     build_delta,
     clean_state,
@@ -2265,7 +2266,9 @@ class State(BaseState):
         # Get the initial state if needed.
         ctx = EventContext.get()
         if ctx.emit_delta_impl is not None:
-            await ctx.emit_delta(delta=await _resolve_delta(self.dict()))
+            snapshot = await _resolve_delta(self.dict())
+            await ctx.emit_delta(delta=snapshot)
+            _record_snapshot(self, snapshot)
 
         # since a full dict was captured, clean any dirtiness
         self._clean()
@@ -2316,10 +2319,11 @@ class State(BaseState):
         self.is_hydrated = False
         ctx = EventContext.get()
         if ctx.emit_delta_impl is not None:
-            delta = await _resolve_delta(self.dict())
+            snapshot = delta = await _resolve_delta(self.dict())
             if hashes:
                 delta = await _diff_against_initial_state(type(self), delta, hashes)
             await ctx.emit_delta(delta=delta)
+            _record_snapshot(self, snapshot)
         self._clean()
         if not RegistrationContext.get().app.get_load_events(self.rx_router_url.path):
             self.is_hydrated = True
