@@ -1843,7 +1843,11 @@ class App(MiddlewareMixin, LifespanMixin):
         """Modify the state out of band.
 
         Args:
-            token: The token to modify the state for.
+            token: The token to modify the state for. Use
+                ``rx.BaseStateToken(ident=client_token, cls=StateClass)``.
+                Deprecated string tokens must include the state path in the
+                format ``<client_token>_<state_full_name>``; a bare client token
+                is not supported.
             background: Whether the modification is happening in a background task.
             previous_dirty_vars: Vars that are considered dirty from a previous operation.
 
@@ -1852,6 +1856,8 @@ class App(MiddlewareMixin, LifespanMixin):
 
         Raises:
             RuntimeError: If the app has not been initialized yet.
+            ValueError: If a legacy string token has no state path or its state
+                class cannot be found.
         """
         if self.event_namespace is None:
             msg = "App has not been initialized yet."

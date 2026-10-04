@@ -247,11 +247,18 @@ class BaseStateToken(StateToken["BaseState"]):
 
         console.deprecate(
             feature_name="Passing a string to modify_state",
-            reason="Use rx.BaseStateToken(token, state_cls) instead of the legacy string format",
+            reason="Use rx.BaseStateToken(ident=token, cls=state_cls) instead of the legacy string format",
             deprecation_version="0.9.0",
             removal_version="1.0",
         )
 
         client_token, state_path = _split_substate_key(legacy_token)
+        if not state_path:
+            msg = (
+                "Invalid legacy state token: missing a state path. Expected "
+                "'<client_token>_<state_full_name>'. Use "
+                "rx.BaseStateToken(ident=client_token, cls=StateClass) instead."
+            )
+            raise ValueError(msg)
         state_cls = root_state.get_class_substate(tuple(state_path.split(".")))  # type: ignore[union-attr]
         return cls(ident=client_token, cls=state_cls)
