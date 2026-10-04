@@ -1,0 +1,1 @@
+Type checkers other than pyright now read an optional model, dataclass or mapping field (`rx.Field[X | None]`) on the state class as `ObjectVar[X]`, as pyright already did, instead of `ObjectVar[X | None]` (ty) or `Never` (mypy).
