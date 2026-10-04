@@ -553,7 +553,7 @@ async with run_workflows(Session, on_idle=register):
 ```
 
 `wake` is the other half: whatever the platform reaches when that instant
-arrives calls it, and the request is held open until the worker has taken the
+arrives calls it, and the request is held open until the worker has run the
 work or has nothing left to take. Holding it open is the point on hosts that
 only give an instance CPU while it is answering a request.
 
@@ -564,8 +564,9 @@ async def wake_workflows() -> Response:
     return Response(status_code=200 if caught_up else 503)
 ```
 
-It returns True once the worker has made a pass that claimed nothing and the
-instant behind that pass has been reported. Both halves matter: the first is the
+It returns True once the worker has made a pass that claimed nothing, with none
+of the steps it took still running, and the instant behind that pass has been
+reported. Both halves matter: the first is the
 worker saying there is nothing it can take — either nothing is due, or what is
 due is held back by a limit and waiting longer would not help — and the second
 is the promise that whatever wakes this deployment has been told when to do it
