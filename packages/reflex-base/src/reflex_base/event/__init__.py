@@ -2855,34 +2855,99 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
         self: "EventCallback[Unpack[Q]]",
     ) -> "EventCallback[Unpack[Q]]": ...
 
+    # Handlers of up to four arguments get an overload per arity instead of a `self`
+    # that leaves the rest to `Unpack[Q]`, which ty does not bind to the receiver
+    # (astral-sh/ty#4657). This mitigates that ty bug. The `Unpack[Q]` overloads only
+    # cover longer handlers, so that each receiver matches one overload per number of
+    # values, and a wrong value is reported as such rather than as no overload matching.
     @overload
     def __call__(
-        self: "EventCallback[V, Unpack[Q]]", value: V | Var[V]
-    ) -> "EventCallback[Unpack[Q]]": ...
+        self: "EventCallback[V]", value: V | Var[V]
+    ) -> "EventCallback[()]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, Unpack[Q]]",
-        value: V | Var[V],
-        value2: V2 | Var[V2],
-    ) -> "EventCallback[Unpack[Q]]": ...
+        self: "EventCallback[V, V2]", value: V | Var[V]
+    ) -> "EventCallback[V2]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, V3, Unpack[Q]]",
+        self: "EventCallback[V, V2]", value: V | Var[V], value2: V2 | Var[V2]
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3]", value: V | Var[V]
+    ) -> "EventCallback[V2, V3]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3]", value: V | Var[V], value2: V2 | Var[V2]
+    ) -> "EventCallback[V3]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3]",
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
-    ) -> "EventCallback[Unpack[Q]]": ...
+    ) -> "EventCallback[()]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, V3, V4, Unpack[Q]]",
+        self: "EventCallback[V, V2, V3, V4]", value: V | Var[V]
+    ) -> "EventCallback[V2, V3, V4]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4]", value: V | Var[V], value2: V2 | Var[V2]
+    ) -> "EventCallback[V3, V4]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+    ) -> "EventCallback[V4]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4]",
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
         value4: V4 | Var[V4],
-    ) -> "EventCallback[Unpack[Q]]": ...
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, Unpack[Q]]", value: V | Var[V]
+    ) -> "EventCallback[V2, V3, V4, V5, Unpack[Q]]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, Unpack[Q]]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+    ) -> "EventCallback[V3, V4, V5, Unpack[Q]]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, Unpack[Q]]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+    ) -> "EventCallback[V4, V5, Unpack[Q]]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[V, V2, V3, V4, V5, Unpack[Q]]",
+        value: V | Var[V],
+        value2: V2 | Var[V2],
+        value3: V3 | Var[V3],
+        value4: V4 | Var[V4],
+    ) -> "EventCallback[V5, Unpack[Q]]": ...
 
     def __call__(self, *values) -> "EventCallback":  # pyright: ignore [reportInconsistentOverload]
         """Call the function with the values.

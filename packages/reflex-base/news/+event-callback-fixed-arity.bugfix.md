@@ -1,0 +1,1 @@
+Calling an event handler on the state class with its arguments, plain or as Vars, and passing a handler where a callable of its arguments is expected now type-check under ty, as they already did under pyright.
