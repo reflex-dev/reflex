@@ -285,9 +285,9 @@ def test_plotly_map_bundles(page: Page, plotly_locale_app: AppHarness):
     page.on("pageerror", lambda error: errors.append(str(error)))
     page.goto(f"{plotly_locale_app.frontend_url.rstrip('/')}/maps")
 
-    for plot_id, subplot, trace_type, locale in (
-        ("modern-map", "map", "scattermap", "de"),
-        ("legacy-map", "mapbox", "scattermapbox", "fr"),
+    for plot_id, subplot, trace_type, locale, pan_title in (
+        ("modern-map", "map", "scattermap", "de", "Verschieben"),
+        ("legacy-map", "mapbox", "scattermapbox", "fr", "Translation"),
     ):
         page.wait_for_function(
             """([id, subplot]) => {
@@ -301,6 +301,9 @@ def test_plotly_map_bundles(page: Page, plotly_locale_app: AppHarness):
         expect(plot.get_by_role("region", name="Map", exact=True)).to_be_visible()
         assert plot.evaluate("plot => plot._fullData[0].type") == trace_type
         assert plot.evaluate("plot => plot._context.locale") == locale
+        expect(
+            plot.locator('.modebar-btn[data-attr="dragmode"][data-val="pan"]')
+        ).to_have_attribute("data-title", pan_title)
 
     page.locator("#move-marker").click()
     page.wait_for_function(
