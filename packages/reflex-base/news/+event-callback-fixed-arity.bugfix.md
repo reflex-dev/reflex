@@ -1,1 +1,1 @@
-Calling an event handler on the state class with its arguments, plain or as Vars, and passing a handler where a callable of its arguments is expected now type-check under ty, as they already did under pyright.
+Calling an event handler of up to four arguments on the state class with its arguments, plain or as Vars, and passing such a handler where a callable of its arguments is expected now type-check under ty, as they already did under pyright. Calls of handlers with five or more arguments can still be misreported by ty.
