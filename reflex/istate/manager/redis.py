@@ -518,6 +518,32 @@ class StateManagerRedis(StateManager):
         return writes
 
     @contextlib.asynccontextmanager
+    async def _modify_state_with_lock(
+        self,
+        token: StateToken[TOKEN_TYPE],
+        lock_id: bytes,
+        **context: Unpack[StateModificationContext],
+    ) -> AsyncIterator[TOKEN_TYPE]:
+        """Load and save state under an existing lock, including on cancellation.
+
+        Args:
+            token: The token to modify the state for.
+            lock_id: The lock that must still be held when saving.
+            context: The state modification context.
+
+        Yields:
+            The state for the token.
+        """
+        state = await self.get_state(token)
+        try:
+            yield state
+        except asyncio.CancelledError:
+            # A handler may already have yielded these writes to the client.
+            await self.set_state(token, state, lock_id=lock_id, **context)
+            raise
+        await self.set_state(token, state, lock_id=lock_id, **context)
+
+    @contextlib.asynccontextmanager
     async def _try_modify_state(
         self, token: StateToken[TOKEN_TYPE], **context: Unpack[StateModificationContext]
     ) -> AsyncIterator[TOKEN_TYPE | None]:
@@ -533,10 +559,11 @@ class StateManagerRedis(StateManager):
         event_name = event.name if (event := context.get("event")) is not None else None
         if not self._oplock_enabled:
             # OpLock is disabled, get a fresh lock, write, and release.
-            async with self._lock(token, event_name=event_name) as lock_id:
-                state = await self.get_state(token)
+            async with (
+                self._lock(token, event_name=event_name) as lock_id,
+                self._modify_state_with_lock(token, lock_id, **context) as state,
+            ):
                 yield state
-                await self.set_state(token, state, lock_id=lock_id, **context)
             return
 
         # Opportunistically reuse existing lock.
@@ -566,10 +593,11 @@ class StateManagerRedis(StateManager):
                     logger.debug(
                         f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} has contention, not leasing"
                     )
-                async with lock_held_ctx:
-                    state = await self.get_state(token)
+                async with (
+                    lock_held_ctx,
+                    self._modify_state_with_lock(token, lock_id, **context) as state,
+                ):
                     yield state
-                    await self.set_state(token, state, lock_id=lock_id, **context)
                 return
 
             # Create the lease break task since we got the lock.
@@ -592,10 +620,13 @@ class StateManagerRedis(StateManager):
                         logger.debug(
                             f"{SMR} [{time.monotonic() - start:.3f}] {lock_key} holding lock {lock_id.decode()}, {new_lease_task=} already exited, doing single update..."
                         )
-                    async with lock_held_ctx:
-                        state = await self.get_state(token)
+                    async with (
+                        lock_held_ctx,
+                        self._modify_state_with_lock(
+                            token, lock_id, **context
+                        ) as state,
+                    ):
                         yield state
-                        await self.set_state(token, state, lock_id=lock_id, **context)
                     return
                 elif self._debug_enabled:
                     logger.debug(

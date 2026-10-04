@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
-from reflex_base.utils.exceptions import EnvironmentVarValueError
+from reflex_base.utils.exceptions import EnvironmentVarValueError, LockExpiredError
 
 from reflex.istate.manager.redis import (
     StateManagerRedis,
@@ -34,6 +34,8 @@ class RedisTestState(BaseState):
 
 class SubState1(RedisTestState):
     """A test substate for redis state manager tests."""
+
+    child_value: str = ""
 
 
 class SubState2(RedisTestState):
@@ -228,6 +230,123 @@ async def test_modify(
     )
     assert isinstance(final_state, root_state)
     assert final_state.count == 3
+
+
+@pytest.mark.parametrize(
+    "locking_path", ["disabled", "contended", "lease_ended", "cached"]
+)
+async def test_modify_cancelled_persists_state(
+    state_manager_redis: StateManagerRedis,
+    monkeypatch: pytest.MonkeyPatch,
+    locking_path: str,
+):
+    """Keep mutations and cancellation cleanup visible to the next handler.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        monkeypatch: The pytest monkeypatch fixture.
+        locking_path: The Redis locking path to exercise.
+    """
+    manager = state_manager_redis
+    manager._oplock_enabled = locking_path != "disabled"
+    if locking_path == "contended":
+        monkeypatch.setattr(manager, "_n_lock_contenders", AsyncMock(return_value=1))
+    elif locking_path == "lease_ended":
+        monkeypatch.setattr(
+            manager, "_create_lease_break_task", AsyncMock(return_value=None)
+        )
+    elif locking_path == "cached":
+        await _subscribed(manager)
+
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=RedisTestState)
+    started = asyncio.Event()
+
+    async def modify():
+        """Mutate state before cancellation and again during handler cleanup."""
+        async with manager.modify_state(token) as state:
+            state.count = 1
+            state.substates[SubState1.get_name()].child_value = "child update"
+            started.set()
+            try:
+                await asyncio.Event().wait()
+            finally:
+                state.foo = "cancelled"
+
+    task = asyncio.create_task(modify())
+    try:
+        await asyncio.wait_for(started.wait(), timeout=5)
+        task.cancel("superseded")
+        with pytest.raises(asyncio.CancelledError, match="superseded"):
+            await task
+        assert task.cancelled()
+
+        async with manager.modify_state(token) as state:
+            assert isinstance(state, RedisTestState)
+            assert state.count == 1
+            assert state.foo == "cancelled"
+            child = state.substates[SubState1.get_name()]
+            assert isinstance(child, SubState1)
+            assert child.child_value == "child update"
+            state.count += 1
+
+        # Closing flushes a cached lease; a fresh read must see persisted state.
+        await manager.close()
+        persisted = await manager.get_state(token)
+        assert isinstance(persisted, RedisTestState)
+        assert persisted.count == 2
+        assert persisted.foo == "cancelled"
+        persisted_child = persisted.substates[SubState1.get_name()]
+        assert isinstance(persisted_child, SubState1)
+        assert persisted_child.child_value == "child update"
+    finally:
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+
+async def test_modify_exception_does_not_persist_state(
+    state_manager_redis: StateManagerRedis,
+):
+    """Keep the existing write-discarding behavior for non-cancellation errors.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+    """
+    manager = state_manager_redis
+    manager._oplock_enabled = False
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=RedisTestState)
+    with pytest.raises(RuntimeError, match="handler failed"):
+        async with manager.modify_state(token) as state:
+            state.count = 1
+            msg = "handler failed"
+            raise RuntimeError(msg)
+    persisted = await manager.get_state(token)
+    assert isinstance(persisted, RedisTestState)
+    assert persisted.count == 0
+
+
+async def test_modify_cancelled_does_not_save_after_lock_expiry(
+    state_manager_redis: StateManagerRedis,
+):
+    """Cancellation must not bypass the lock fence when saving state.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+    """
+    manager = state_manager_redis
+    manager._oplock_enabled = False
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=RedisTestState)
+    async with manager.modify_state(token) as state:
+        state.count = 1
+
+    with pytest.raises(LockExpiredError):
+        async with manager.modify_state(token) as state:
+            state.count = 2
+            await manager.redis.delete(manager._lock_key(token))
+            raise asyncio.CancelledError
+    persisted = await manager.get_state(token)
+    assert isinstance(persisted, RedisTestState)
+    assert persisted.count == 1
 
 
 async def test_get_state_discards_unpicklable_state(
