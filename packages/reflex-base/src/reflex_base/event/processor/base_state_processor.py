@@ -377,6 +377,15 @@ class BaseStateEventProcessor(EventProcessor):
     frontend.
     """
 
+    @functools.cached_property
+    def _pending_hydrates(self) -> dict[str, dict[str, EventFuture]]:
+        """Hydrations cancellable on disconnect, but never by a navigation.
+
+        Returns:
+            Pending hydration futures indexed by client token and transaction id.
+        """
+        return {}
+
     async def _rehydrate(self, root_state: BaseState):
         """Rehydrate the state by calling the hydrate event handler.
 
@@ -438,7 +447,35 @@ class BaseStateEventProcessor(EventProcessor):
         boot_name, on_load_name = _connect_supersedes()
         if event.name == boot_name:
             self._cancel_older_chains((on_load_name, token), tracked.root_gen)
+            self._pending_hydrates.setdefault(token, {})[tracked.txid] = tracked
+            tracked.add_done_callback(functools.partial(self._forget_hydrate, token))
         return super()._supersede_previous(token=token, event=event, tracked=tracked)
+
+    def _forget_hydrate(self, token: str, future: EventFuture) -> None:
+        """Stop tracking a completed hydration invocation.
+
+        Its page-load descendants have their own supersession registration.
+
+        Args:
+            token: The client token.
+            future: The completed hydration future.
+        """
+        if (pending := self._pending_hydrates.get(token)) is not None:
+            pending.pop(future.txid, None)
+            if not pending:
+                del self._pending_hydrates[token]
+
+    def _on_disconnect(self, token: str) -> None:
+        """Cancel hydration and unfinished page-load chains for a disconnected client.
+
+        Args:
+            token: The disconnected client token.
+        """
+        _, on_load_name = _connect_supersedes()
+        for future in self._pending_hydrates.pop(token, {}).values():
+            future.cancel()
+        for future in self._superseded.pop((on_load_name, token), {}).values():
+            future.cancel()
 
     async def _execute_event(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler

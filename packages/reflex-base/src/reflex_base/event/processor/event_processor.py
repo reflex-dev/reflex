@@ -458,6 +458,15 @@ class EventProcessor:
         await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
         return tracked
 
+    def _on_disconnect(self, token: str) -> None:
+        """Handle a client disconnect without cancelling independent event work.
+
+        Subclasses may cancel work tied to the disconnected page's lifecycle.
+
+        Args:
+            token: The disconnected client token.
+        """
+
     async def enqueue_many(self, token: str, *events: Event) -> Sequence[EventFuture]:
         """Enqueue multiple events to be processed.
 

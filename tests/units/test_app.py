@@ -4836,6 +4836,37 @@ async def event_namespace_with_processor_mock() -> AsyncGenerator[EventNamespace
     await event_namespace._token_manager.disconnect_all()
 
 
+@pytest.mark.parametrize("owner", ["current", "replacement", "remote", "missing"])
+async def test_disconnect_only_cancels_current_local_socket(
+    event_namespace_with_processor_mock: EventNamespace,
+    owner: str,
+):
+    """A stale disconnect must not cancel a replacement connection's page load.
+
+    Args:
+        event_namespace_with_processor_mock: Namespace with a mocked processor.
+        owner: The socket currently owning the client token.
+    """
+    namespace = event_namespace_with_processor_mock
+    manager = namespace._token_manager
+    manager.sid_to_token["old-sid"] = "token"
+    if owner != "missing":
+        manager.token_to_socket["token"] = SocketRecord(
+            instance_id="remote" if owner == "remote" else manager.instance_id,
+            sid="new-sid" if owner == "replacement" else "old-sid",
+        )
+    manager.disconnect_token = AsyncMock()
+    cleanup = namespace.on_disconnect("old-sid")
+    assert cleanup is not None
+    await cleanup
+    cancel = cast(Mock, namespace.app.event_processor._on_disconnect)
+    if owner == "current":
+        cancel.assert_called_once_with("token")
+    else:
+        cancel.assert_not_called()
+    assert namespace.on_disconnect("unknown-sid") is None
+
+
 def _connect_environ(token: str) -> dict[str, Any]:
     return {
         "QUERY_STRING": f"token={token}",

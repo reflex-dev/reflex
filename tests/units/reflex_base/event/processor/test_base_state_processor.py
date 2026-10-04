@@ -22,7 +22,7 @@ from reflex_base.registry import RegistrationContext
 
 import reflex as rx
 from reflex import event
-from reflex.app import App
+from reflex.app import App, EventNamespace
 from reflex.event import Event, EventSpec
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
@@ -1805,3 +1805,172 @@ async def test_reconnect_cancels_stale_on_load_without_load_events(
     async with _read_back(real_base_state_processor, token) as root:
         assert (await root.get_state(SlowLoadState)).seen != "stale-finished"
         assert (await root.get_state(State)).is_hydrated is True
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+@pytest.mark.parametrize("self_chain", [False, True])
+async def test_disconnect_cancels_page_load_chain(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    self_chain: bool,
+):
+    """Disconnect cancels a running load even after its root handler has returned.
+
+    Args:
+        wired_app: The app sharing the processor's state manager.
+        real_base_state_processor: The real event processor.
+        token: The client token.
+        self_chain: Whether to reach the suspended handler through a self-chain.
+    """
+    started = asyncio.Event()
+    cancelled = asyncio.Event()
+    invocations = 0
+
+    class DisconnectState(State):
+        @event
+        async def load(self):
+            """Suspend a load or its self-chained successor until cancellation.
+
+            Yields:
+                A successor event or an empty update before suspending.
+            """
+            nonlocal invocations
+            invocations += 1
+            if self_chain and invocations == 1:
+                yield DisconnectState.load
+                return
+            yield
+            started.set()
+            try:
+                await asyncio.Event().wait()
+            finally:
+                cancelled.set()
+
+    wired_app.add_page(lambda: rx.text("load"), route="/", on_load=DisconnectState.load)
+    wired_app._event_processor = real_base_state_processor
+    namespace = EventNamespace("/_event", wired_app)
+    await namespace._token_manager.link_token_to_sid(token, "sid")
+
+    async with real_base_state_processor as processor:
+        stale = await processor.enqueue(
+            token, _client_event(OnLoadInternalState.on_load_internal(), _view("/"))
+        )
+        await asyncio.wait_for(started.wait(), timeout=5)
+        cleanup = namespace.on_disconnect("sid")
+        assert cleanup is not None
+        await cleanup
+        await asyncio.wait_for(cancelled.wait(), timeout=1)
+        await asyncio.wait_for(stale.wait_all(), timeout=5)
+        assert invocations == (2 if self_chain else 1)
+        # Cancellation releases the lock so a later connection can use the state.
+        async with _read_back(processor, token) as root:
+            assert await root.get_state(DisconnectState) is not None
+
+
+@pytest.mark.parametrize("disconnect", [False, True])
+async def test_disconnect_cancels_queued_hydrate(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    disconnect: bool,
+):
+    """A disconnect before hydration starts must not launch a page-load chain.
+
+    Args:
+        wired_app: The app sharing the processor's state manager.
+        real_base_state_processor: The real event processor.
+        token: The client token.
+        disconnect: Whether the client disconnects before hydration runs.
+    """
+    loads = []
+
+    class DisconnectState(State):
+        @event
+        def load(self):
+            """Record that the page-load handler ran."""
+            loads.append("loaded")
+
+    wired_app.add_page(lambda: rx.text("load"), route="/", on_load=DisconnectState.load)
+    wired_app._event_processor = real_base_state_processor
+    namespace = EventNamespace("/_event", wired_app)
+    await namespace._token_manager.link_token_to_sid(token, "sid")
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, _client_event(State.hydrate_and_load(), _view("/"))
+        )
+        if disconnect:
+            cleanup = namespace.on_disconnect("sid")
+            assert cleanup is not None
+            await cleanup
+            assert future.cancelled()
+        else:
+            await asyncio.wait_for(future.wait_all(), timeout=5)
+            await namespace._token_manager.disconnect_all()
+    assert loads == ([] if disconnect else ["loaded"])
+    assert not processor._pending_hydrates
+
+
+async def test_disconnect_preserves_independent_events(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Independent foreground and background work survives another chain's disconnect.
+
+    Args:
+        wired_app: The app sharing the processor's state manager.
+        real_base_state_processor: The real event processor.
+        token: The client token.
+    """
+    started = {name: asyncio.Event() for name in ("foreground", "background", "other")}
+    release = asyncio.Event()
+    finished = []
+
+    class IndependentState(State):
+        @event
+        async def foreground(self, name: str):
+            """Wait for release and record the named foreground invocation.
+
+            Args:
+                name: The invocation to record.
+            """
+            started[name].set()
+            await release.wait()
+            finished.append(name)
+
+        @event(background=True)
+        async def background(self):
+            """Wait for release independently of the page-load lifecycle."""
+            started["background"].set()
+            await release.wait()
+            finished.append("background")
+
+    async with real_base_state_processor as processor:
+        # Start the background event before the foreground handler holds the lock.
+        background = await processor.enqueue(
+            token, Event.from_event_type(IndependentState.background())[0]
+        )
+        await asyncio.wait_for(started["background"].wait(), timeout=5)
+        foreground = await processor.enqueue(
+            token, Event.from_event_type(IndependentState.foreground("foreground"))[0]
+        )
+        other = await processor.enqueue(
+            "other-token",
+            Event.from_event_type(IndependentState.foreground("other"))[0],
+        )
+        await asyncio.wait_for(
+            asyncio.gather(*(signal.wait() for signal in started.values())), timeout=5
+        )
+        processor._on_disconnect(token)
+        assert not any(future.cancelled() for future in (background, foreground, other))
+        release.set()
+        await asyncio.wait_for(
+            asyncio.gather(
+                *(future.wait_all() for future in (background, foreground, other))
+            ),
+            timeout=5,
+        )
+    assert sorted(finished) == ["background", "foreground", "other"]
