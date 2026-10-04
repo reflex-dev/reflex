@@ -1042,6 +1042,7 @@ def test_run_granian_backend_refuses_requests_while_the_app_is_broken(tmp_path: 
         port_queue.close()
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="Granian uses this path on Linux")
 @pytest.mark.parametrize("failure", ["import", "lifespan"])
 def test_dev_backend_reports_failure_and_recovery(tmp_path: Path, failure: str) -> None:
     """A real worker reports success only after recovering and completing startup."""
@@ -1099,6 +1100,7 @@ def app():
         Returns:
             Whether the condition became true before the deadline.
         """
+        # Wait up to 20 seconds for the expected worker status.
         deadline = time.monotonic() + 20
         while time.monotonic() < deadline:
             if predicate():
