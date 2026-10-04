@@ -108,3 +108,18 @@ def test_local_use_state_starts_from_default() -> None:
     var_data = cs._get_all_var_data()
     assert var_data is not None
     assert "const [local_seed, setLocal_seed] = useState(0)" in var_data.hooks
+
+
+def test_push_keeps_the_value_without_a_mounted_component() -> None:
+    """Before a component using the value mounts there is no setter to call.
+
+    The push then stores the value in the shared slot, which the first component
+    to mount starts its ``useState`` from.
+    """
+    cs = ClientStateVar.create("pushed", default="a")
+
+    script = str(cs.push("b").args[0][1])
+    assert (
+        "(refs['_client_state_setPushed'] ?? ((pushed) => { "
+        "refs['_client_state_pushed'] = pushed; }))(\"b\")"
+    ) in script

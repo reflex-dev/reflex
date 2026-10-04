@@ -3,7 +3,7 @@
 from collections.abc import Generator
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import ConsoleMessage, Page, expect
 
 from reflex.testing import AppHarness
 
@@ -12,6 +12,8 @@ def ClientStateApp():
     """App sharing a global client state var between sibling components."""
     import reflex as rx
 
+    pushed = rx._x.client_state(default="initial")
+
     class ClientStateAppState(rx.State):
         show: bool = False
         default_text: str = "from backend"
@@ -19,6 +21,10 @@ def ClientStateApp():
         @rx.event
         def reveal(self):
             self.show = True
+
+        @rx.event
+        def push_value(self):
+            return pushed.push("pushed")
 
     shared = rx._x.client_state(default="initial")
     backend_default = rx._x.client_state(default=ClientStateAppState.default_text)
@@ -54,10 +60,22 @@ def ClientStateApp():
             ),
         )
 
+    def push_before_mount():
+        return rx.box(
+            rx.button("push", on_click=ClientStateAppState.push_value, id="pusher"),
+            rx.button("reveal", on_click=ClientStateAppState.reveal, id="reveal"),
+            rx.cond(
+                ClientStateAppState.show,
+                rx.text(pushed.value, id="pushed-reader"),
+            ),
+            rx.text(ClientStateAppState.router.session.client_token, id="token"),
+        )
+
     app = rx.App()
     app.add_page(index)
     app.add_page(siblings)
     app.add_page(backend_default_page, route="/backend-default")
+    app.add_page(push_before_mount, route="/push-before-mount")
 
 
 @pytest.fixture(scope="module")
@@ -90,6 +108,28 @@ def _collect_page_errors(page: Page) -> list[str]:
     """
     errors: list[str] = []
     page.on("pageerror", lambda exc: errors.append(str(exc)))
+    return errors
+
+
+def _collect_script_errors(page: Page) -> list[str]:
+    """Record errors raised by scripts the backend runs on the page.
+
+    The frontend catches these and only logs them, so they never reach
+    ``pageerror``.
+
+    Args:
+        page: Playwright page.
+
+    Returns:
+        A list that is appended to as errors are logged.
+    """
+    errors: list[str] = []
+
+    def on_console(message: ConsoleMessage) -> None:
+        if message.text.startswith(("_call_script", "_call_function")):
+            errors.append(message.text)
+
+    page.on("console", on_console)
     return errors
 
 
@@ -156,6 +196,30 @@ def test_late_reader_follows_set_back_to_default(
     page.click("#resetter")
     expect(page.locator("#late-reader")).to_have_text("initial")
     assert errors == []
+
+
+def test_push_before_reader_mounts(client_state_app: AppHarness, page: Page) -> None:
+    """A backend push lands even when no component using the value is mounted.
+
+    Nothing defines the setter until such a component mounts, so the push has to
+    keep the value for the first one to mount instead of failing with
+    ``refs._client_state_set... is not a function``.
+
+    Args:
+        client_state_app: Running app harness.
+        page: Playwright page.
+    """
+    assert client_state_app.frontend_url is not None
+    errors = _collect_page_errors(page)
+    script_errors = _collect_script_errors(page)
+    page.goto(client_state_app.frontend_url.removesuffix("/") + "/push-before-mount")
+    expect(page.locator("#token")).not_to_be_empty()
+
+    page.click("#pusher")
+    page.click("#reveal")
+    expect(page.locator("#pushed-reader")).to_have_text("pushed")
+    assert errors == []
+    assert script_errors == []
 
 
 def test_setter_with_backend_default(client_state_app: AppHarness, page: Page) -> None:

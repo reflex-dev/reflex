@@ -292,6 +292,8 @@ class ClientStateVar(Var):
         """Push a value to the client state variable from the backend.
 
         The event handler must `yield` or `return` the EventSpec to trigger the event.
+        Pushing before any component using the value has mounted keeps the value
+        for the first one that mounts.
 
         Args:
             value: The value to update.
@@ -306,4 +308,10 @@ class ClientStateVar(Var):
             msg = "ClientStateVar must be global to push the value."
             raise ValueError(msg)
         value = Var.create(value)
-        return run_script(f"{_client_state_ref(self._setter_name)}({value})")
+        setter = _client_state_ref(self._setter_name)
+        shared_value = _client_state_ref(self._getter_name)
+        # Only a mounted component defines the setter, so without one keep the value
+        # in the shared slot that the first component to mount starts from.
+        return run_script(
+            f"({setter} ?? ((pushed) => {{ {shared_value} = pushed; }}))({value})"
+        )
