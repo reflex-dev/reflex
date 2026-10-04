@@ -6,6 +6,7 @@ import dataclasses
 import datetime
 import enum
 import functools
+import gc
 import inspect
 import io
 import json
@@ -1751,16 +1752,13 @@ async def test_uncached_async_computed_var_unchanged_omitted_from_delta():
     assert await aus._get_resolved_delta() == {}
 
 
-# Withholding an async var can only close the wrapper coroutine; the getter
-# coroutine it holds is then collected unawaited, which a filter cannot reach
-# and this test is not about.
-@pytest.mark.filterwarnings(
-    "ignore:coroutine '.*_awaitable_result' was never awaited:RuntimeWarning",
-)
 @pytest.mark.parametrize("mode", ["dropped", "replaced"])
 @pytest.mark.parametrize("is_async", [False, True])
 async def test_uncached_var_withheld_by_delta_override_is_resent(
-    mode: str, is_async: bool, monkeypatch: pytest.MonkeyPatch
+    mode: str,
+    is_async: bool,
+    monkeypatch: pytest.MonkeyPatch,
+    recwarn: pytest.WarningsRecorder,
 ):
     """An uncached var withheld by a `get_delta` override is sent once released.
 
@@ -1774,6 +1772,7 @@ async def test_uncached_var_withheld_by_delta_override_is_resent(
         mode: Whether the override drops the key or replaces its value.
         is_async: Whether the uncached var is an async one.
         monkeypatch: Pytest monkeypatch fixture.
+        recwarn: Fixture capturing warnings from withheld coroutines.
     """
 
     class WithheldState(BaseState):
@@ -1857,6 +1856,8 @@ async def test_uncached_var_withheld_by_delta_override_is_resent(
     if mode == "replaced":
         restored[full_name][key] = "secret-1"
     assert await state._get_resolved_delta() == restored
+    gc.collect()
+    assert not [warning for warning in recwarn if warning.category is RuntimeWarning]
 
 
 async def test_uncached_computed_var_recorded_only_once_delivered():
