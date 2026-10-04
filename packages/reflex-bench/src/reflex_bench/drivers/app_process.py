@@ -63,7 +63,7 @@ Mode = Literal["dev", "prod", "preview"]
 LOG_LINES = 2000
 TAIL_LINES = 40
 OWNER_ENV = "REFLEX_BENCH_OWNER"
-APP_LINE = re.compile(r"App running at:\s*(\S+)")
+APP_LINE = re.compile(r"(?:App|Frontend) running at:\s*(\S+)")
 BACKEND_LINE = re.compile(r"Backend running at:\s*(\S+)")
 # From 0.9.0 prod serves frontend and backend on one port; --env preview exists from 0.9.8.
 SINGLE_PORT_PROD = (0, 9)

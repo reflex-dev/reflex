@@ -388,6 +388,21 @@ def test_ready_lines_skip_announcements_that_are_not_urls():
     assert watcher.seen_at == pytest.approx(3.0)
 
 
+def test_dev_ready_lines_wait_for_backend_after_frontend():
+    """Separate frontend readiness must not mark the whole dev app ready."""
+    watcher = app_process._ReadyLines(
+        app_process._topology("dev", HEAD, backend_only=False).ready
+    )
+    watcher.feed("Frontend running at: http://localhost:13000/", 1.0)
+    assert watcher.urls == {"frontend": "http://localhost:13000"}
+    assert not watcher.done
+
+    watcher.feed("Backend running at: http://127.0.0.1:18000", 2.0)
+    assert watcher.done
+    assert watcher.urls["backend"] == "http://127.0.0.1:18000"
+    assert watcher.seen_at == pytest.approx(2.0)
+
+
 def test_ready_lines_need_every_line():
     # HEAD prod prints no backend line, which the 0.8.23 prod topology waits for.
     watcher = app_process._ReadyLines(
