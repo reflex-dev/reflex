@@ -8,8 +8,15 @@ import pytest
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
-def test_client_event_queue() -> None:
-    """Verify queue behavior and prepend/connected dispatch processing cost."""
+@pytest.mark.parametrize(
+    "script", ["client_event_queue.mjs", "client_state_updates.mjs"]
+)
+def test_client_event_queue(script: str) -> None:
+    """Verify queue processing and incoming state updates.
+
+    Args:
+        script: Runtime regression script to execute.
+    """
     tests = Path(__file__).parent
     source = (
         tests.parents[2]
@@ -19,7 +26,7 @@ def test_client_event_queue() -> None:
         [
             "node",
             "--experimental-vm-modules",
-            str(tests / "client_event_queue.mjs"),
+            str(tests / script),
             str(source),
         ],
         capture_output=True,

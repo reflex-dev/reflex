@@ -1,0 +1,1 @@
+Keep frontend updates and events working when a backend delta contains an unknown substate. Skip that substate and report it once per connection while continuing to apply known state and browser storage updates.
