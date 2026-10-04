@@ -2,10 +2,12 @@
 
 import importlib.util
 import json
+import tarfile
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+import tomlkit
 from hatchling.builders.plugin.interface import BuilderInterface
 from hatchling.builders.sdist import SdistBuilder
 from hatchling.builders.wheel import WheelBuilder
@@ -116,12 +118,13 @@ def test_package_ships_only_its_own_stubs(
     assert not config.include_path("tests/golden.pyi")
 
 
-def build_hook(root: Path, directory: Path):
+def build_hook(root: Path, directory: Path, target: str = "wheel"):
     """Load the stub-generating build hook and instantiate it against a root.
 
     Args:
         root: The project root the hook runs against.
         directory: The build output directory.
+        target: The distribution target.
 
     Returns:
         The hook's module and an instance bound to `root`.
@@ -140,9 +143,71 @@ def build_hook(root: Path, directory: Path):
             str(root), None, {"project": {"name": "reflex", "version": "0.0.0"}}
         ),
         str(directory),
-        "wheel",
+        target,
     )
     return module, hook
+
+
+@pytest.mark.parametrize("marker_exists", [False, True])
+@pytest.mark.parametrize("workspace", [False, True])
+def test_sdist_omits_workspace_metadata(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    marker_exists: bool,
+    workspace: bool,
+):
+    """Source archives must build without the checkout's workspace members.
+
+    Args:
+        tmp_path: The temporary project directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        marker_exists: Whether stub generation already ran.
+        workspace: Whether the source contains workspace settings.
+    """
+    config = tomlkit.parse((REPO_ROOT / "pyproject.toml").read_text())
+    config["project"]["version"] = "0.0.0"
+    config["project"]["dynamic"].remove("version")
+    del config["tool"]["hatch"]["version"]
+    if not workspace:
+        del config["tool"]["uv"]["sources"]
+        del config["tool"]["uv"]["workspace"]
+    pyproject = tmp_path / "pyproject.toml"
+    original = tomlkit.dumps(config)
+    pyproject.write_text(original)
+    (tmp_path / "README.md").write_text("Reflex")
+    (tmp_path / "reflex").mkdir()
+    (tmp_path / "reflex" / "__init__.pyi").write_text("# generated")
+
+    directory = tmp_path / "dist"
+    module, hook = build_hook(tmp_path, directory, "sdist")
+    monkeypatch.setattr(
+        module, "subprocess", SimpleNamespace(run=lambda *a, **kw: None)
+    )
+    if marker_exists:
+        hook.marker().touch()
+    builder = SdistBuilder(str(tmp_path))
+    monkeypatch.setattr(builder, "get_build_hooks", lambda _: {"custom": hook})
+
+    artifact = next(builder.build(directory=str(directory)))
+
+    with tarfile.open(artifact) as archive:
+        names = archive.getnames()
+        assert names.count("reflex-0.0.0/pyproject.toml") == 1
+        assert "reflex-0.0.0/reflex/__init__.pyi" in names
+        archived = archive.extractfile("reflex-0.0.0/pyproject.toml")
+        assert archived is not None
+        packaged = tomlkit.parse(archived.read().decode())
+
+    assert pyproject.read_text() == original
+    assert packaged["project"] == config["project"]
+    assert packaged["build-system"] == config["build-system"]
+    assert packaged["tool"]["hatch"] == config["tool"]["hatch"]
+    assert "sources" not in packaged["tool"]["uv"]
+    assert "workspace" not in packaged["tool"]["uv"]
+    assert (
+        packaged["tool"]["uv"]["required-version"]
+        == config["tool"]["uv"]["required-version"]
+    )
 
 
 EXPECTED_STUBS = ["reflex/__init__.pyi", "reflex/experimental/memo.pyi"]
