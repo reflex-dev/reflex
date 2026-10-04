@@ -1,6 +1,7 @@
 import numpy as np
 import plotly.graph_objects as go
 import pytest
+from pytest_mock import MockerFixture
 from reflex_base.utils.serializers import serialize, serialize_figure
 
 import reflex as rx
@@ -41,8 +42,8 @@ def test_plotly_config_option(plotly_fig: go.Figure):
     Args:
         plotly_fig: The figure to display.
     """
-    # This tests just confirm that the component can be created with a config option.
-    _ = rx.plotly(data=plotly_fig, config={"showLink": True})
+    component = rx.plotly(data=plotly_fig, config={"displaylogo": False})
+    assert '["displaylogo"] : false' in str(component._render().props["config"])
 
 
 def test_plotly_locale_option_merges_into_config(plotly_fig: go.Figure):
@@ -135,3 +136,39 @@ def test_plotly_layout_var_data_is_preserved(plotly_fig: go.Figure):
     assert var_data is not None
     assert "layout" in var_data.field_name
     assert str(layout) in str(rendered.special_props[-1])
+
+
+def test_plotly_map_imports_and_locale(plotly_fig: go.Figure):
+    """The map variant loads its own bundle alongside inherited locale support."""
+    component = rx.plotly.map(data=plotly_fig, locale="de", id="map")
+    imports = component._get_all_imports()
+
+    assert "plotly.js-map-dist-min@4.0.0" in imports
+    assert "plotly.js-locales@4.0.0" in imports
+    assert "mergician" in imports
+    assert "import('plotly.js-map-dist-min')" in component._get_dynamic_imports()
+    assert any(
+        var.tag == "createPlotlyComponent" and var.package_path == "/factory"
+        for var in imports["react-plotly.js"]
+    )
+    rendered = component._render()
+    assert '"map"' in str(rendered.props["divId"])
+    assert "_rxGetPlotlyLocaleConfig" in str(rendered.props["config"])
+
+
+def test_plotly_mapbox_deprecation_preserves_bundle(
+    plotly_fig: go.Figure, mocker: MockerFixture
+):
+    """Legacy maps warn without losing the bundle or inherited locale support."""
+    deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+    component = rx.plotly.mapbox(data=plotly_fig, locale="fr")
+
+    deprecate.assert_called_once()
+    assert deprecate.call_args.kwargs["feature_name"] == "rx.plotly.mapbox"
+    assert "rx.plotly.map" in deprecate.call_args.kwargs["reason"]
+    assert deprecate.call_args.kwargs["removal_version"] == "1.0"
+    imports = component._get_all_imports()
+    assert "plotly.js-mapbox-dist-min@3.7.0" in imports
+    assert "plotly.js-mapbox-dist-min@4.0.0" not in imports
+    assert "plotly.js-locales@4.0.0" in imports
+    assert "import('plotly.js-mapbox-dist-min')" in component._get_dynamic_imports()

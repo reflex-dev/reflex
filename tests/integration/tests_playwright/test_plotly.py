@@ -11,6 +11,7 @@ from reflex.testing import AppHarness
 def PlotlyLocaleApp():
     """App rendering a plotly figure with no locale, two locales, and a state config."""
     import plotly.graph_objects as go
+    from reflex_components_plotly.plotly import Point
 
     import reflex as rx
 
@@ -36,6 +37,37 @@ def PlotlyLocaleApp():
         @rx.event
         def change_title(self):
             self.plotly_layout = {"title": "Updated state title", "height": 240}
+
+    class PlotlyMapState(rx.State):
+        latitude: float = 37.77
+        clicks: int = 0
+
+        @rx.var
+        def map_figure(self) -> go.Figure:
+            """Build a map whose marker moves with the state.
+
+            Returns:
+                A figure with a marker at the current latitude.
+            """
+            return go.Figure(
+                go.Scattermap(
+                    lat=[self.latitude],
+                    lon=[-122.42],
+                    mode="markers",
+                    marker={"size": 24, "color": "red"},
+                )
+            )
+
+        @rx.event
+        def move_marker(self):
+            """Move the map marker without replacing the map component."""
+            self.latitude = 37.78
+
+        @rx.event
+        def click_marker(self, points: list[Point]):
+            """Record a browser click delivered with map point data."""
+            if points and points[0].get("lat") == self.latitude:
+                self.clicks += 1
 
     app = rx.App()
 
@@ -72,6 +104,44 @@ def PlotlyLocaleApp():
                 id="update_plot_title",
                 on_click=PlotlyLayoutState.change_title,
             ),
+        )
+
+    @app.add_page
+    def maps():
+        """Render modern and legacy map bundles together without external tiles.
+
+        Returns:
+            The maps and controls used to exercise updates and events.
+        """
+        map_layout = {
+            "style": "white-bg",
+            "center": {"lat": 37.77, "lon": -122.42},
+            "zoom": 10,
+        }
+        return rx.vstack(
+            rx.plotly.map(
+                data=PlotlyMapState.map_figure,
+                layout={"map": map_layout, "margin": {"l": 0, "r": 0, "t": 0, "b": 0}},
+                locale="de",
+                on_click=PlotlyMapState.click_marker,
+                id="modern-map",
+                width="600px",
+                height="300px",
+            ),
+            rx.plotly.mapbox(
+                data=go.Figure(
+                    go.Scattermapbox(lat=[37.77], lon=[-122.42], mode="markers")
+                ),
+                layout={"mapbox": map_layout},
+                locale="fr",
+                id="legacy-map",
+                width="600px",
+                height="300px",
+            ),
+            rx.button(
+                "Move marker", id="move-marker", on_click=PlotlyMapState.move_marker
+            ),
+            rx.text(PlotlyMapState.clicks, id="map-clicks"),
         )
 
 
@@ -206,3 +276,50 @@ def test_plotly_layout_titles(page: Page, plotly_locale_app: AppHarness):
     expect(page.locator("#plot_title_state .gtitle")).to_have_text(
         "Updated state title"
     )
+
+
+def test_plotly_map_bundles(page: Page, plotly_locale_app: AppHarness):
+    """Both map bundles render together with locales, updates and click events."""
+    assert plotly_locale_app.frontend_url is not None
+    errors: list[str] = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.goto(f"{plotly_locale_app.frontend_url.rstrip('/')}/maps")
+
+    for plot_id, subplot, trace_type, locale in (
+        ("modern-map", "map", "scattermap", "de"),
+        ("legacy-map", "mapbox", "scattermapbox", "fr"),
+    ):
+        page.wait_for_function(
+            """([id, subplot]) => {
+                const plot = document.getElementById(id);
+                return plot?._fullLayout?.[subplot]?._subplot?.map?.loaded();
+            }""",
+            arg=[plot_id, subplot],
+            timeout=60_000,
+        )
+        plot = page.locator(f"#{plot_id}")
+        expect(plot.get_by_role("region", name="Map", exact=True)).to_be_visible()
+        assert plot.evaluate("plot => plot._fullData[0].type") == trace_type
+        assert plot.evaluate("plot => plot._context.locale") == locale
+
+    page.locator("#move-marker").click()
+    page.wait_for_function(
+        """() => {
+            const plot = document.getElementById('modern-map');
+            const map = plot._fullLayout.map._subplot.map;
+            return plot._fullData[0].lat[0] === 37.78 && map.loaded() &&
+                map.queryRenderedFeatures(map.project([-122.42, 37.78])).length > 0;
+        }"""
+    )
+    page.locator("#modern-map").scroll_into_view_if_needed()
+    point = page.locator("#modern-map").evaluate(
+        """plot => {
+            const map = plot._fullLayout.map._subplot.map;
+            const point = map.project([-122.42, 37.78]);
+            const rect = map.getCanvas().getBoundingClientRect();
+            return {x: rect.x + point.x, y: rect.y + point.y};
+        }"""
+    )
+    page.mouse.click(point["x"], point["y"])
+    expect(page.locator("#map-clicks")).to_have_text("1")
+    assert not errors
