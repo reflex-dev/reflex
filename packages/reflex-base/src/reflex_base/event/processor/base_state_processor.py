@@ -404,38 +404,50 @@ class BaseStateEventProcessor(EventProcessor):
         if routeless and root_state.is_hydrated:
             return
 
-        await process_event(
-            handler=State.event_handlers["hydrate"],
-            payload={},
-            state=root_state,
-            root_state=root_state,
-        )
-        if routeless:
-            # No page to load, but hydration still has to finish.
+        ctx = EventContext.get()
+        # Disconnect cancels this marker without cancelling the ordinary event.
+        pending = EventFuture(txid=ctx.txid)
+        self._pending_hydrates.setdefault(ctx.token, {})[pending.txid] = pending
+        try:
             await process_event(
-                handler=State.event_handlers["set_is_hydrated"],
-                payload={"value": True},
+                handler=State.event_handlers["hydrate"],
+                payload={},
                 state=root_state,
                 root_state=root_state,
             )
-            return
-        ctx = EventContext.get()
-        parent = self._futures[ctx.txid]
-        first_child = len(parent.children)
-        handler = OnLoadInternalState.event_handlers["on_load_internal"]
-        await process_event(
-            handler=handler,
-            payload={},
-            state=await root_state.get_state(OnLoadInternalState),
-            root_state=root_state,
-        )
-        # Inline rehydration bypasses enqueue's page-load registration. Track
-        # only its children so the ordinary event remains independent.
-        load_event = Event(name=format_event_handler(handler))
-        for index in range(first_child, len(parent.children)):
-            self._supersede_previous(
-                token=ctx.token, event=load_event, tracked=parent.children[index]
+            if routeless:
+                # No page to load, but hydration still has to finish.
+                await process_event(
+                    handler=State.event_handlers["set_is_hydrated"],
+                    payload={"value": True},
+                    state=root_state,
+                    root_state=root_state,
+                )
+                return
+            if pending.cancelled():
+                return
+            parent = self._futures[ctx.txid]
+            first_child = len(parent.children)
+            handler = OnLoadInternalState.event_handlers["on_load_internal"]
+            await process_event(
+                handler=handler,
+                payload={},
+                state=await root_state.get_state(OnLoadInternalState),
+                root_state=root_state,
             )
+            # Inline rehydration bypasses enqueue's page-load registration. Track
+            # only its children so the ordinary event remains independent.
+            load_event = Event(name=format_event_handler(handler))
+            for index in range(first_child, len(parent.children)):
+                child = parent.children[index]
+                if pending.cancelled():
+                    child.cancel()
+                else:
+                    self._supersede_previous(
+                        token=ctx.token, event=load_event, tracked=child
+                    )
+        finally:
+            self._forget_hydrate(ctx.token, pending)
 
     def _supersede_previous(
         self, *, token: str, event: Event, tracked: EventFuture

@@ -1888,6 +1888,82 @@ async def test_disconnect_cancels_page_load_chain(
         assert not processor._superseded
 
 
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+@pytest.mark.parametrize("disconnect", [False, True])
+async def test_disconnect_during_inline_hydration(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    disconnect: bool,
+):
+    """A disconnect during the hydration emit prevents late page-load work.
+
+    Args:
+        wired_app: The app sharing the processor's state manager.
+        real_base_state_processor: The real event processor.
+        token: The client token.
+        disconnect: Whether to disconnect while sending the hydration update.
+    """
+    sending = asyncio.Event()
+    release = asyncio.Event()
+    invocations = []
+
+    class InlineHydrationState(State):
+        @event
+        def ordinary(self):
+            """Record that independent work still runs after hydration."""
+            invocations.append("ordinary")
+
+        @event
+        def load(self):
+            """Record whether the page load ran."""
+            invocations.append("load")
+
+    async def pause_emit(token: str, delta: Mapping[str, Mapping[str, Any]]) -> None:
+        """Pause sending the hydration snapshot.
+
+        Args:
+            token: The client token.
+            delta: The state update.
+        """
+        sending.set()
+        await release.wait()
+
+    processor = real_base_state_processor
+    assert processor._root_context is not None
+    processor._root_context = dataclasses.replace(
+        processor._root_context, emit_delta_impl=pause_emit
+    )
+    wired_app.add_page(
+        lambda: rx.text("load"), route="/", on_load=InlineHydrationState.load
+    )
+    wired_app._event_processor = processor
+    namespace = EventNamespace("/_event", wired_app)
+    await namespace._token_manager.link_token_to_sid(token, "sid")
+
+    async with processor:
+        ordinary = await processor.enqueue(
+            token, _client_event(InlineHydrationState.ordinary(), _view("/"))
+        )
+        try:
+            await asyncio.wait_for(sending.wait(), timeout=5)
+            if disconnect:
+                cleanup = namespace.on_disconnect("sid")
+                assert cleanup is not None
+                await cleanup
+                await namespace._token_manager.link_token_to_sid(token, "new-sid")
+        finally:
+            release.set()
+        await asyncio.wait_for(ordinary.wait_all(), timeout=5)
+        await asyncio.sleep(0)
+        assert not processor._pending_hydrates
+        assert not processor._superseded
+
+    assert invocations == (["ordinary"] if disconnect else ["ordinary", "load"])
+
+
 @pytest.mark.parametrize("disconnect", [False, True])
 async def test_disconnect_cancels_queued_hydrate(
     wired_app: App,
