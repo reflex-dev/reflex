@@ -1561,7 +1561,7 @@ def test_prepare_event_payload_falls_back_to_form_data_dict(caplog):
         )
     assert payload == {
         "form_data": {"tag": "b", "name": "x", "extra": "y"},
-        "count": "3",
+        "count": 3,
     }
     assert "Error transforming event payload" in caplog.text
 

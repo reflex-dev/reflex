@@ -67,13 +67,21 @@ def test_state_js_still_handles_page_lifecycle_disconnect() -> None:
     )
 
 
+def test_state_js_does_not_export_ref_based_form_helpers() -> None:
+    """Form submission no longer reads values through component refs."""
+    content = STATE_JS_TEMPLATE.read_text()
+
+    assert "export const getRefValue =" not in content
+    assert "export const getRefValues =" not in content
+
+
 @pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
 def test_merge_slot_props_handles_conditional_event_handlers() -> None:
     """Falsy handlers, direct object merges and DOM-ref routing behave per contract."""
     content = STATE_JS_TEMPLATE.read_text()
     helpers = content[
         content.index("export const mergeRefs =") : content.index(
-            "export const getRefValue ="
+            "export const spreadArraysOrObjects ="
         )
     ]
     subprocess.run(
@@ -189,10 +197,3 @@ assert.equal(encodeFormDataArgs(plain), plain);
         capture_output=True,
         text=True,
     )
-
-
-def test_state_js_keeps_ref_value_exports_for_older_form_components() -> None:
-    """Published reflex-components-core forms import these helpers from state.js."""
-    content = STATE_JS_TEMPLATE.read_text()
-    assert "export const getRefValue =" in content
-    assert "export const getRefValues =" in content

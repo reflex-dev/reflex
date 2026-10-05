@@ -1546,6 +1546,10 @@ _CONSTRAINED_SPEC_ARG = TypeVar("_CONSTRAINED_SPEC_ARG", int, str)
         (_BOUNDED_SPEC_ARG, list[str], False),
         (_CONSTRAINED_SPEC_ARG, int, True),
         (_CONSTRAINED_SPEC_ARG, str, True),
+        (_CONSTRAINED_SPEC_ARG, int | str, True),
+        (_CONSTRAINED_SPEC_ARG, int | bytes, False),
+        (_CONSTRAINED_SPEC_ARG, Any, True),
+        (_CONSTRAINED_SPEC_ARG, object, True),
         (_CONSTRAINED_SPEC_ARG, float, False),
     ],
 )
