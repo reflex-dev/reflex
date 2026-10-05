@@ -23,7 +23,7 @@ from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegistrationContext
 
 from reflex.event import Event, EventHandler
-from tests.unit_fixtures import active_tracer
+from reflex.testing.fixtures import active_tracer
 
 # Module-level log so event handlers can record what happened.
 _CALL_LOG: list[dict[str, Any]] = []

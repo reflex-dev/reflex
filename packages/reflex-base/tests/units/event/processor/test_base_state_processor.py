@@ -31,8 +31,8 @@ from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.middleware.middleware import Middleware
 from reflex.state import BaseState, OnLoadInternalState, State, StateUpdate
+from reflex.testing.fixtures import metric_points
 from reflex.utils import types as reflex_types
-from tests.unit_fixtures import metric_points
 from tests.units.mock_redis import mock_redis
 
 # Class-level registries on State that registering a substate, or installing a

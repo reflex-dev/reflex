@@ -93,11 +93,12 @@ from reflex.state import (
     StateUpdate,
     reload_state_module,
 )
+from reflex.testing import chdir
+from reflex.testing.fixtures import active_tracer, metric_points
 from reflex.utils import build
 from reflex.utils import exec as exec_utils
 from reflex.utils.token_manager import RedisTokenManager, SocketRecord
 
-from .conftest import active_tracer, chdir, metric_points
 from .states import GenState
 from .states.upload import (
     ChildFileUploadState,

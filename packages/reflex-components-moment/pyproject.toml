@@ -27,3 +27,7 @@ dependencies = ["ruff", "reflex-base"]
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning", "hatch-reflex-pyi"]
 build-backend = "hatchling.build"
+
+[tool.reflex-unit-tests]
+# Baseline from this suite alone; raise as coverage improves.
+coverage = 92

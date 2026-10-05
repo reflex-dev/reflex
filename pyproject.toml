@@ -68,6 +68,9 @@ db = [
 ]
 pydantic = ["reflex-base[pydantic]"]
 testing = [
+  "pytest >=8.2,<10",
+  "pytest-asyncio >=1.0,<2",
+  "opentelemetry-sdk >=1.30.0,<2",
   "psutil >=7.0.0,<8.0",
   "selenium >=4.0.0,<5.0",
   "uvicorn >=0.34.0,<1.0",
@@ -307,6 +310,7 @@ preview = true
 "packages/reflex-build-sdk/scripts/*.py" = ["INP001", "T201"]
 "scripts/changed_paths.py" = ["T201"]
 "scripts/unit_test_matrix.py" = ["T201"]
+"scripts/run_unit_tests.py" = ["T201"]
 "scripts/check_min_deps.py" = ["T201"]
 "scripts/check_outdated_deps.py" = ["T201"]
 "scripts/hash_examples.py" = ["T201"]
@@ -331,6 +335,8 @@ ignore-words-list = "te, TreeE, selectin"
 
 
 [tool.coverage.run]
+# An isolated suite intentionally leaves other workspace modules unimported.
+disable_warnings = ["module-not-imported"]
 source = [
   "reflex",
   "reflex_components_code",
@@ -350,6 +356,7 @@ source = [
   "reflex_otel",
   "reflex_release",
   "reflex_build_sdk",
+  "reflex_cli",
   "reflex_site_shared",
   "reflex_components_internal",
   "reflex_integrations_docs",
@@ -589,3 +596,7 @@ reflex.workspace = true
 
 [tool.uv.workspace]
 members = ["packages/*", "docs/app", "docs/package"]
+
+[tool.reflex-unit-tests]
+# Baseline from this suite alone; raise as coverage improves.
+coverage = 72

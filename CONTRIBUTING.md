@@ -54,24 +54,30 @@ Put tests next to the package whose behavior they exercise:
 - Tests of the main `reflex/` package, repository scripts, and behavior spanning multiple packages stay in `tests/units/`.
 - Integration tests stay in `tests/integration/`; prefer `tests/integration/tests_playwright/` for new browser tests.
 
-Extend existing test files where possible. Shared unit fixtures live in `tests/unit_fixtures.py`, imported by each suite's `conftest.py`; keep package-only fixtures in the package's tests.
+Extend existing test files where possible. Fixtures used by multiple suites live in `reflex.testing.fixtures`; explicitly import the ones needed by a suite in its `conftest.py`. Keep fixtures used only by one suite in that suite's `conftest.py` (or a narrower subdirectory). Avoid wildcard imports and imports from another suite's conftest. Shared helper functions should be imported directly from their defining module.
 
 Run these commands from the repository root after `uv sync`:
 
 ```bash
-# One package (append a test file or use -k to narrow the run).
-uv run pytest packages/reflex-base/tests/units
-# Main framework and cross-package unit tests.
-uv run pytest tests/units
-# Every unit suite, with the workspace coverage floor.
-uv run pytest tests/units packages/*/tests/units --cov --no-cov-on-fail --cov-report=
+# One package, enforcing its own coverage floor.
+uv run python -m scripts.run_unit_tests reflex-base
+# Main framework and cross-package tests, enforcing the reflex floor.
+uv run python -m scripts.run_unit_tests reflex
+# Every suite, run independently with its own floor.
+uv run python -m scripts.run_unit_tests all
+# Focused iteration without a coverage gate.
+uv run pytest packages/reflex-base/tests/units -k test_name
 # Integration tests (slow).
 uv run pytest tests/integration
 ```
 
 PR CI runs a package's suite when files in that package change. Test-only changes run just the owner; source and other package changes also select runtime dependents and the root suite. Shared test infrastructure, dependency configuration, and main framework changes run all suites. New `packages/*/tests/units` directories are discovered automatically. Main-branch CI always runs all suites. The `reflex-bench` suite requires Linux and is excluded from Windows package jobs.
 
-The 72% coverage floor applies to full-suite runs. If collecting coverage for one suite, use `--cov --cov-fail-under=0`, since a partial run cannot meet the workspace-wide floor. Linux CI also exercises Redis and lock mode for the root/base suites and Postgres for `reflex-workflow`. To run the Postgres tests locally, set `REFLEX_TEST_POSTGRES` to a disposable database URL (the tests clear its tables).
+Each package records its branch-coverage floor in `[tool.reflex-unit-tests].coverage` in its `pyproject.toml`. The runner reports coverage only for that package, including unimported source files, and fails below its floor. Floors start from independently measured baselines; add tests instead of lowering a floor, and raise it as coverage improves. When adding a package suite, add its floor and its import module to the root `[tool.coverage.run].source`. Pass extra pytest options after `--`, for example `uv run python -m scripts.run_unit_tests reflex-base -- -q`.
+
+Each suite saves a `.coverage.<distribution>` file containing workspace execution data. After running **all** suites, `uv run coverage combine --keep` followed by `uv run coverage report --keep-combined --fail-under=72` checks the secondary workspace floor. Do not combine stale files from earlier revisions or use combined coverage to satisfy a package floor. Full CI runs perform this aggregate check after each package has passed independently.
+
+CI also runs the root/base suites without optional database dependencies; Linux adds Redis and lock mode and Postgres for `reflex-workflow`. To run the Postgres tests locally, set `REFLEX_TEST_POSTGRES` to a disposable database URL (the tests clear its tables).
 
 #### What to unit test?
 
@@ -187,10 +193,10 @@ Once you solve a current issue or improvement to Reflex, you can make a PR, and 
 Before submitting, a pull request, ensure the following steps are taken and test passing.
 
 In your `reflex` directory run make sure all the unit tests are still passing using the following command.
-This will fail if code coverage is below 72%.
+This fails if any suite misses its package coverage floor.
 
 ```bash
-uv run pytest tests/units packages/*/tests/units --cov --no-cov-on-fail --cov-report=
+uv run python -m scripts.run_unit_tests all
 ```
 
 Next make sure all the following tests pass. This ensures that every new change has proper type checking.

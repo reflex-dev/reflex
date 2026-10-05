@@ -1,7 +1,7 @@
 """Select unit-test suites from the complete pull-request diff.
 
 Consumes the same JSON-lines file records as changed_paths.py. Main-branch runs
-use --all for a full suite with the workspace coverage floor. PRs run package
+use --all to run every package with its own coverage floor. PRs run package
 suites separately, following runtime workspace dependencies for source changes.
 """
 
@@ -118,7 +118,6 @@ def select_suites(changed: list[str], root: Path = ROOT) -> list[str]:
                 ))
                 and path
                 not in {
-                    "tests/units/conftest.py",
                     "tests/units/__init__.py",
                     "tests/units/mock_redis.py",
                 }
@@ -156,20 +155,16 @@ def matrix(
 
     Args:
         changed: Complete changed-path list.
-        all_tests: Whether to run everything together with full coverage.
+        all_tests: Whether to select every suite.
 
     Returns:
-        A matrix containing suite names, paths and coverage thresholds.
+        A matrix containing suite names and test paths.
     """
     suites = suite_paths(ROOT)
     selected = select_suites(changed) if not all_tests else sorted(suites)
     if all_tests or selected == sorted(suites):
-        return {"suite": [{"name": "all", "path": ALL_TESTS, "coverage": "72"}]}
-    return {
-        "suite": [
-            {"name": name, "path": suites[name], "coverage": "0"} for name in selected
-        ]
-    }
+        return {"suite": [{"name": "all", "path": ALL_TESTS}]}
+    return {"suite": [{"name": name, "path": suites[name]} for name in selected]}
 
 
 def main() -> None:

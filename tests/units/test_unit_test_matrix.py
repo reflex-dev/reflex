@@ -44,6 +44,7 @@ def workspace(tmp_path: Path) -> Path:
         (["packages/widget/README.md"], ["consumer", "reflex", "widget"]),
         (["packages/base/src/base.py"], ["base", "consumer", "reflex", "widget"]),
         (["tests/units/test_app.py"], ["reflex"]),
+        (["tests/units/conftest.py"], ["reflex"]),
         (["docs/guide.md", "README.md"], []),
         (["tests/integration/test_app.py"], ["reflex"]),
         (["tests/benchmarks/support/apps.py"], ["reflex"]),
@@ -67,8 +68,7 @@ def test_select_suites(workspace: Path, paths: list[str], expected: list[str]):
         [],
         ["uv.lock"],
         ["pyproject.toml"],
-        ["tests/unit_fixtures.py"],
-        ["tests/units/conftest.py"],
+        ["reflex/testing/fixtures.py"],
         ["tests/units/mock_redis.py"],
         ["tests/units/states/upload.py"],
         ["scripts/unit_test_matrix.py"],
@@ -128,9 +128,9 @@ def test_matrix_cli(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixtu
 
 
 def test_main_branch_runs_full_suite():
-    """Full-suite runs retain the existing workspace coverage floor."""
+    """Full selections use the runner that enforces each package floor."""
     assert selection.matrix([], all_tests=True) == {
-        "suite": [{"name": "all", "path": selection.ALL_TESTS, "coverage": "72"}]
+        "suite": [{"name": "all", "path": selection.ALL_TESTS}]
     }
 
 
@@ -145,12 +145,13 @@ def test_workflow_uses_selected_suites():
     assert job["if"] == "needs.changes.outputs.run == 'true'"
     assert "unit-tests" in jobs["unit-tests-gate"]["needs"]
     commands = "\n".join(step.get("run", "") for step in job["steps"])
-    assert "pytest $TEST_PATHS" in commands
-    assert "--cov-fail-under=$COVERAGE_FLOOR" in commands
+    assert "scripts.run_unit_tests $TEST_SUITE -- --no-cov" in commands
+    assert "scripts.run_unit_tests $TEST_SUITE" in commands
+    assert "COVERAGE_FLOOR" not in commands
 
 
 def test_shared_changes_use_one_full_suite_matrix():
-    """Shared edits avoid hundreds of package legs and enforce full coverage."""
+    """Shared edits run suites independently within one platform/Python job."""
     assert selection.matrix(["uv.lock"]) == selection.matrix([], all_tests=True)
 
 

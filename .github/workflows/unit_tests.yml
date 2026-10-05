@@ -63,13 +63,11 @@ jobs:
             suite:
               name: reflex-bench
               path: packages/reflex-bench/tests/units
-              coverage: "0"
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
     runs-on: ${{ matrix.os }}
     env:
-      TEST_PATHS: ${{ matrix.suite.path }}
-      COVERAGE_FLOOR: ${{ matrix.suite.coverage }}
+      TEST_SUITE: ${{ matrix.suite.name }}
       PYTHONUNBUFFERED: "1"
 
     # Service containers to run with `runner-job`
@@ -118,38 +116,47 @@ jobs:
         run: |
           export PYTHONUNBUFFERED=1
           uv pip uninstall pydantic alembic sqlalchemy sqlmodel
-          uv run --no-sync pytest $TEST_PATHS --cov --no-cov-on-fail --cov-report= --cov-fail-under=0
+          if [ "$TEST_SUITE" = all ]; then
+            uv run --no-sync python -m scripts.run_unit_tests reflex -- --no-cov
+            uv run --no-sync python -m scripts.run_unit_tests reflex-base -- --no-cov
+          else
+            uv run --no-sync python -m scripts.run_unit_tests $TEST_SUITE -- --no-cov
+          fi
           uv sync
       - name: Run unit tests
         env:
-          REFLEX_TEST_POSTGRES: ${{ matrix.os == 'ubuntu-latest' && matrix.suite.name == 'reflex-workflow' && 'postgresql://postgres:postgres@localhost:5432/reflex_workflow' || '' }}
+          REFLEX_TEST_POSTGRES: ${{ matrix.os == 'ubuntu-latest' && contains(fromJSON('["all","reflex-workflow"]'), matrix.suite.name) && 'postgresql://postgres:postgres@localhost:5432/reflex_workflow' || '' }}
         run: |
           export PYTHONUNBUFFERED=1
-          uv run pytest $TEST_PATHS --cov --no-cov-on-fail --cov-report= --cov-fail-under=$COVERAGE_FLOOR
+          uv run python -m scripts.run_unit_tests $TEST_SUITE
       - name: Run unit tests w/ redis
         if: matrix.os == 'ubuntu-latest' && contains(fromJSON('["all","reflex","reflex-base"]'), matrix.suite.name)
         run: |
           export PYTHONUNBUFFERED=1
           export REFLEX_REDIS_URL=redis://localhost:6379
-          uv run pytest $TEST_PATHS --cov --no-cov-on-fail --cov-report= --cov-fail-under=$COVERAGE_FLOOR
+          if [ "$TEST_SUITE" = all ]; then
+            uv run python -m scripts.run_unit_tests reflex
+            uv run python -m scripts.run_unit_tests reflex-base
+          else
+            uv run python -m scripts.run_unit_tests $TEST_SUITE
+          fi
       - name: Run unit tests w/ redis and OPLOCK_ENABLED
         if: matrix.os == 'ubuntu-latest' && contains(fromJSON('["all","reflex","reflex-base"]'), matrix.suite.name)
         run: |
           export PYTHONUNBUFFERED=1
           export REFLEX_REDIS_URL=redis://localhost:6379
           export REFLEX_OPLOCK_ENABLED=true
-          uv run pytest $TEST_PATHS --cov --no-cov-on-fail --cov-report= --cov-fail-under=$COVERAGE_FLOOR
-      - name: Run workflow unit tests w/ postgres
-        if: matrix.os == 'ubuntu-latest' && matrix.suite.name == 'all'
+          if [ "$TEST_SUITE" = all ]; then
+            uv run python -m scripts.run_unit_tests reflex
+            uv run python -m scripts.run_unit_tests reflex-base
+          else
+            uv run python -m scripts.run_unit_tests $TEST_SUITE
+          fi
+      - name: Combine workspace coverage
+        if: matrix.suite.name == 'all'
         run: |
-          export PYTHONUNBUFFERED=1
-          export REFLEX_TEST_POSTGRES=postgresql://postgres:postgres@localhost:5432/reflex_workflow
-          # Appended: this runs one package, and every step above replaces the
-          # coverage data rather than adding to it, so the report that follows
-          # would otherwise be of this package alone.
-          uv run pytest packages/reflex-workflow/tests/units --cov --cov-append --no-cov-on-fail --cov-report= --cov-fail-under=$COVERAGE_FLOOR
-      - name: Generate coverage report
-        run: uv run coverage html --fail-under=$COVERAGE_FLOOR
+          uv run coverage combine --keep
+          uv run coverage report --keep-combined --fail-under=72
 
   unit-tests-macos:
     timeout-minutes: 30
@@ -174,12 +181,15 @@ jobs:
         run: |
           export PYTHONUNBUFFERED=1
           uv pip uninstall pydantic alembic sqlalchemy sqlmodel
-          uv run --no-sync pytest tests/units packages/*/tests/units --cov --no-cov-on-fail --cov-report= --cov-fail-under=0
+          uv run --no-sync python -m scripts.run_unit_tests reflex -- --no-cov
+          uv run --no-sync python -m scripts.run_unit_tests reflex-base -- --no-cov
           uv sync
       - name: Run unit tests
         run: |
           export PYTHONUNBUFFERED=1
-          uv run pytest tests/units packages/*/tests/units --cov --no-cov-on-fail --cov-report=
+          uv run python -m scripts.run_unit_tests all
+          uv run coverage combine --keep
+          uv run coverage report --keep-combined --fail-under=72
 
   # The one status check the branch rules require from this workflow. Naming the
   # jobs above directly does not survive: check names follow the matrix and the

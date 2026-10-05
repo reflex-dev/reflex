@@ -19,7 +19,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.registry import RegisteredEventHandler
 
 from reflex.event import Event, EventHandler
-from tests.unit_fixtures import active_tracer, metric_points
+from reflex.testing.fixtures import active_tracer, metric_points
 
 
 def _ctx(token: str = "tok", parent_txid: str | None = None) -> EventContext:

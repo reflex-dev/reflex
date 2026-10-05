@@ -4202,7 +4202,10 @@ pydantic = [
     { name = "reflex-base", extra = ["pydantic"] },
 ]
 testing = [
+    { name = "opentelemetry-sdk" },
     { name = "psutil" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
     { name = "selenium" },
     { name = "uvicorn" },
 ]
@@ -4274,10 +4277,13 @@ requires-dist = [
     { name = "click", specifier = ">=8.2" },
     { name = "granian", extras = ["reload"], specifier = ">=2.7.4" },
     { name = "httpx", specifier = ">=0.26,<1.0" },
+    { name = "opentelemetry-sdk", marker = "extra == 'testing'", specifier = ">=1.30.0,<2" },
     { name = "packaging", specifier = ">=24.2,<27" },
     { name = "psutil", marker = "sys_platform == 'win32'", specifier = ">=7.0.0,<8.0" },
     { name = "psutil", marker = "extra == 'testing'", specifier = ">=7.0.0,<8.0" },
     { name = "pydantic", marker = "extra == 'db'", specifier = ">=2.12.0,<3.0" },
+    { name = "pytest", marker = "extra == 'testing'", specifier = ">=8.2,<10" },
+    { name = "pytest-asyncio", marker = "extra == 'testing'", specifier = ">=1.0,<2" },
     { name = "python-multipart", specifier = ">=0.0.32,<1.0" },
     { name = "python-socketio", specifier = ">=5.12.0,<6.0" },
     { name = "redis", specifier = ">=6.4,<8.0" },
