@@ -4906,12 +4906,13 @@ async def event_namespace_with_processor_mock(
     app._session_token_manager = SessionTokenManager("test", secrets=(b"s" * 32,))
     event_namespace = EventNamespace("/event", app)
     event_namespace.emit = AsyncMock()
+    token_manager = event_namespace._token_manager
     yield event_namespace
     # The token manager is backed by redis when one is configured; drop the
     # tokens these tests link so they do not show up in another test's
     # enumeration of the shared instance. Awaited rather than run in a fresh
     # loop via asyncio.run: the redis client is bound to the test's loop.
-    await event_namespace._token_manager.disconnect_all()
+    await token_manager.disconnect_all()
 
 
 def _connect_environ(token: str) -> dict[str, Any]:
@@ -5335,7 +5336,7 @@ def test_compile_releases_memo_naming_caches(
 
 @pytest.mark.asyncio
 async def test_on_connect_processes_boot_event_from_auth(
-    event_namespace: EventNamespace,
+    event_namespace_with_processor_mock: EventNamespace,
 ):
     """The hydrate event carried in the socket.io CONNECT packet is processed on connect.
 
@@ -5344,8 +5345,9 @@ async def test_on_connect_processes_boot_event_from_auth(
     first; a connect without a boot event still does.
 
     Args:
-        event_namespace: The event namespace.
+        event_namespace_with_processor_mock: The event namespace with session support.
     """
+    event_namespace = event_namespace_with_processor_mock
     event_namespace._token_manager = Mock()
     event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
     event_namespace.on_event = AsyncMock()
@@ -5359,7 +5361,7 @@ async def test_on_connect_processes_boot_event_from_auth(
         "new_sid", {"QUERY_STRING": "token=abc"}, {"event": boot_event}
     )
     event_namespace._token_manager.link_token_to_sid.assert_awaited_once_with(
-        "abc", "new_sid"
+        "abc", "new_sid", token_factory=unittest.mock.ANY
     )
     event_namespace.on_event.assert_awaited_once_with("new_sid", boot_event)
     modify_state.assert_not_called()
@@ -5377,13 +5379,14 @@ async def test_on_connect_processes_boot_event_from_auth(
 
 @pytest.mark.asyncio
 async def test_on_connect_unlinks_token_when_boot_event_fails(
-    event_namespace: EventNamespace,
+    event_namespace_with_processor_mock: EventNamespace,
 ):
     """A boot event that fails to process drops the sid/token link before refusing the connect.
 
     Args:
-        event_namespace: The event namespace.
+        event_namespace_with_processor_mock: The event namespace with session support.
     """
+    event_namespace = event_namespace_with_processor_mock
     event_namespace._token_manager = Mock()
     event_namespace._token_manager.link_token_to_sid = AsyncMock(return_value=None)
     event_namespace._token_manager.disconnect_token = AsyncMock()
@@ -5399,6 +5402,8 @@ async def test_on_connect_unlinks_token_when_boot_event_fails(
     )
     # The connection-scoped router data cached for the refused sid goes too.
     assert "new_sid" not in event_namespace._static_router_data
+    assert "new_sid" not in event_namespace._sessions
+    assert "new_sid" not in event_namespace._session_refresh_at
 
 
 def test_call_app_wraps_with_otel_asgi_middleware():
