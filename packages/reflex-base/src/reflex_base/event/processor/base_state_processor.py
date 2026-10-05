@@ -185,11 +185,7 @@ def _transform_event_payload(
     transformed = {}
     for arg, value in list(payload.items()):
         hinted_args = type_hints.get(arg, Any)
-        try:
-            transformed[arg] = _transform_event_arg(value, hinted_args)
-        except Exception as ex:
-            msg = f"Error transforming event argument '{arg}' with value '{value}' and type hint '{hinted_args}'"
-            raise ValueError(msg) from ex
+        transformed[arg] = _transform_event_arg(value, hinted_args)
     return transformed
 
 
@@ -207,12 +203,34 @@ def _prepare_event_payload(
         payload with any form data as a dict of each name's last value.
     """
     try:
-        return _transform_event_payload(payload, types.get_type_hints(fn))
+        type_hints = types.get_type_hints(fn)
     except Exception as ex:
         logger.warning(
-            f"Error transforming event payload for handler {fn.__qualname__}: {ex}"
+            "Error resolving event payload annotations for handler %s: %s",
+            fn.__qualname__,
+            ex,
         )
         return {arg: form_data_as_dict(value) for arg, value in payload.items()}
+
+    transformed = {}
+    errors = []
+    for arg, value in payload.items():
+        hinted_args = type_hints.get(arg, Any)
+        try:
+            transformed[arg] = _transform_event_arg(value, hinted_args)
+        except Exception as ex:
+            errors.append(
+                f"Error transforming event argument '{arg}' with value '{value}' "
+                f"and type hint '{hinted_args}': {ex}"
+            )
+            transformed[arg] = form_data_as_dict(value)
+    if errors:
+        logger.warning(
+            "Error transforming event payload for handler %s: %s",
+            fn.__qualname__,
+            "; ".join(errors),
+        )
+    return transformed
 
 
 async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:

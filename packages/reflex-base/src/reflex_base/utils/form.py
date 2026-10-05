@@ -188,7 +188,7 @@ class _CoercedFormField:
     # ``name[]`` entries a multi-value control such as a two-thumb slider
     # submits, unless ``name[]`` is a field of its own.
     names: tuple[str, ...]
-    # "list" takes every value, "bool" whether the last value is truthy, and
+    # "list" takes every value, "bool" whether any value is truthy, and
     # "last" the last value of a ``name[]`` field that is not a list.
     kind: Literal["list", "bool", "last"]
     # An unsubmitted list or bool field is left out unless it is required: then
