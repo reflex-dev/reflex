@@ -1,0 +1,69 @@
+{
+ "url": "http://localhost:3260/",
+ "actions": [
+  [
+   "0",
+   "wait",
+   "ok"
+  ],
+  [
+   "1",
+   "goto",
+   "ok"
+  ],
+  [
+   "2",
+   "wait",
+   "ok"
+  ],
+  [
+   "3",
+   "fill",
+   "ok"
+  ],
+  [
+   "4",
+   "fill",
+   "ok"
+  ],
+  [
+   "5",
+   "click",
+   "ok"
+  ],
+  [
+   "6",
+   "wait",
+   "ok"
+  ],
+  [
+   "7",
+   "goto",
+   "ok"
+  ],
+  [
+   "8",
+   "wait",
+   "ok"
+  ],
+  [
+   "9",
+   "dump",
+   "ok"
+  ],
+  [
+   "10",
+   "screenshot",
+   "ok"
+  ]
+ ],
+ "console": [
+  "[log] Disconnect websocket on page navigation",
+  "[verbose] [DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+  "[log] Disconnect websocket on page navigation",
+  "[log] Disconnect websocket on pagehide"
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": []
+}

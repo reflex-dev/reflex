@@ -1,0 +1,72 @@
+{
+  "results": [
+    [
+      "router_computed_var",
+      true,
+      "/qa-slot?qa=1"
+    ],
+    [
+      "slot_injects_name_onto_memo_input",
+      true,
+      "input[name=core_name] count=1"
+    ],
+    [
+      "form_input_attrs",
+      true,
+      "[{\"id\": \"core-input\", \"name\": \"core_name\", \"type\": \"text\"}]"
+    ],
+    [
+      "form_submit_delivers_field",
+      true,
+      "submitted: [('core_input', 'Ada'), ('core_name', 'Ada'), ('qa_form', None), ('submit_btn', None)]"
+    ],
+    [
+      "foreach_memo_chips_grow",
+      true,
+      "4 -> 8"
+    ],
+    [
+      "rx_cond_badge_flips",
+      true,
+      "many-badge count=1"
+    ],
+    [
+      "mantine_tags_input_reflects_state",
+      true,
+      "[\"alpha\", \"beta\", \"t2\", \"t3\"]"
+    ],
+    [
+      "event_chain_runs_both_links",
+      true,
+      "chain: one,two"
+    ],
+    [
+      "background_task_streams",
+      true,
+      "ticks: 3"
+    ],
+    [
+      "client_state_hover_counter",
+      true,
+      "hovers: 3"
+    ],
+    [
+      "spa_nav_to_dates",
+      true,
+      "mantine elements=387"
+    ],
+    [
+      "router_var_after_spa_back",
+      true,
+      "/qa-slot?qa=1"
+    ],
+    [
+      "router_var_after_hard_reload",
+      true,
+      "/qa-slot?qa=2"
+    ]
+  ],
+  "console": [],
+  "page_errors": [],
+  "net_fail": []
+}

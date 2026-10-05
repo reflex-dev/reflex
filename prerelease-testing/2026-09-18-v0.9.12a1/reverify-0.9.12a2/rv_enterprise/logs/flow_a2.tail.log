@@ -1,0 +1,146 @@
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+version 0.8.28. pass Plugin classes directly instead, e.g. 
+disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. 
+(rxconfig.py:3)
+────────────────────────────── Initializing flow ───────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized flow. Install dependencies from `requirements.txt` with `uv
+pip install -r requirements.txt` (or your preferred installer) before running 
+`uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+DeprecationWarning: reflex.page.DECORATED_PAGES has been deprecated in version 
+0.9.9. Decorated pages now live on the active RegistrationContext. Use 
+RegistrationContext.ensure_context().decorated_pages to read the list of 
+(render_fn, kwargs) entries. It will be completely removed in 1.0. 
+(flow/flow.py:2)
+DeprecationWarning: `@rx.memo` on `custom_handle` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/connection_limit.py:47)
+DeprecationWarning: `@rx.memo` on `custom_node` without explicit annotations has
+been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+`-> rx.Var[...]`). Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (flow/connection_limit.py:60)
+DeprecationWarning: `@rx.memo` on `color_selector_node` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`). Until removal, a missing return defaults to
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/custom_node.py:91)
+DeprecationWarning: `@rx.memo` on `drag_handle_node` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`). Until removal, a missing return defaults to
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/drag_handle.py:18)
+DeprecationWarning: `@rx.memo` on `button_edge` without explicit annotations has
+been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+`-> rx.Var[...]`). Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (flow/overview.py:185)
+DeprecationWarning: `@rx.memo` on `toolbar_node` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/overview.py:232)
+DeprecationWarning: `@rx.memo` on `circle_node` without explicit annotations has
+been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+`-> rx.Var[...]`). Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (flow/overview.py:260)
+DeprecationWarning: `@rx.memo` on `resizer_node` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/overview.py:276)
+DeprecationWarning: `@rx.memo` on `annotation_node` without explicit annotations
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/overview.py:307)
+DeprecationWarning: `@rx.memo` on `dimension_node` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/overview.py:342)
+DeprecationWarning: App(theme=...) has been deprecated in version 0.9.0. 
+configure `rx.plugins.RadixThemesPlugin(theme=...)` in `rxconfig.py` instead. It
+will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_enterprise/venv_a2tk/lib/python3.11/site-packages/reflex_components
+_radix/plugin.py:104)
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(flow/intersections.py:71)
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(flow/intersections.py:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 24/23 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+DeprecationWarning: reflex.page.DECORATED_PAGES has been deprecated in version 
+0.9.9. Decorated pages now live on the active RegistrationContext. Use 
+RegistrationContext.ensure_context().decorated_pages to read the list of 
+(render_fn, kwargs) entries. It will be completely removed in 1.0. 
+(flow/flow.py:2)
+DeprecationWarning: `@rx.memo` on `custom_handle` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/connection_limit.py:47)
+DeprecationWarning: `@rx.memo` on `custom_node` without explicit annotations has
+been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+`-> rx.Var[...]`). Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (flow/connection_limit.py:60)
+DeprecationWarning: `@rx.memo` on `color_selector_node` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`). Until removal, a missing return defaults to
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/custom_node.py:91)
+DeprecationWarning: `@rx.memo` on `drag_handle_node` without explicit 
+annotations has been deprecated in version 0.9.3. Add a return annotation `-> 
+rx.Component` (or `-> rx.Var[...]`). Until removal, a missing return defaults to
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/drag_handle.py:18)
+DeprecationWarning: `@rx.memo` on `button_edge` without explicit annotations has
+been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+`-> rx.Var[...]`). Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (flow/overview.py:185)
+DeprecationWarning: `@rx.memo` on `toolbar_node` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/overview.py:232)
+DeprecationWarning: `@rx.memo` on `circle_node` without explicit annotations has
+been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or 
+`-> rx.Var[...]`). Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (flow/overview.py:260)
+DeprecationWarning: `@rx.memo` on `resizer_node` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/overview.py:276)
+DeprecationWarning: `@rx.memo` on `annotation_node` without explicit annotations
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/overview.py:307)
+DeprecationWarning: `@rx.memo` on `dimension_node` without explicit annotations 
+has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` 
+(or `-> rx.Var[...]`). Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (flow/overview.py:342)
+App running at: http://localhost:3144/
+Backend running at: http://0.0.0.0:8146
+Starting frontend failed with exit code -9
+$ react-router dev --host
+  ➜  Local:   http://localhost:3144/
+  ➜  Network: http://192.0.2.2:3144/  eth0
+9:44:58 PM [vite] (ssr) connected.
+error: script "dev" was terminated by signal SIGKILL (Forced quit)
+
+
+
+Run with --loglevel debug  for the full log.

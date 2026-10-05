@@ -1,0 +1,46 @@
+pandas + sqlmodel serializer probe
+bump
+load rows
+
+tick=0
+
+steady=constant
+
+literal DataFrame
+zone
+	
+n
+
+North	1
+South	2
+East	3
+West	4
+state-computed DataFrame
+zone
+	
+n
+
+North	1
+South	2
+memo(DataFrame prop)
+zone
+	
+n
+
+North	1
+South	2
+East	3
+West	4
+ComponentState
+cs 0
+zone
+	
+n
+
+North	1
+South	2
+East	3
+West	4
+model rows (relationship serialization)
+
+no rows loaded

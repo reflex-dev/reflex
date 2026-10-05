@@ -1,0 +1,14 @@
+TRIGGERS initial clicks= 0 log= []
+REALCLICK dialog: 0 -> 1 log=["dialog"]  OK
+REALCLICK popover: 1 -> 2 log=["dialog","popover"]  OK
+REALCLICK tooltip: 2 -> 3 log=["dialog","popover","tooltip"]  OK
+REALCLICK dropdown: 3 -> 3 log=["dialog","popover","tooltip"]  NO-EVENT
+REALCLICK hovercard: 3 -> 4 log=["dialog","popover","tooltip","hovercard"]  OK
+REALCLICK dropdown(2nd): 4 -> 4
+JSCLICK dropdown: 4 -> 5 log=["dialog","popover","tooltip","hovercard","dropdown"]  handler-wired-OK
+KEYBOARD dropdown Enter: 5 -> 5 log=["dialog","popover","tooltip","hovercard","dropdown"]
+DROPDOWN menu item present after click: 1; body pointer-events=none
+DROPDOWN ancestry: ["BUTTON.rt-reset rt-BaseButton rt-r-size-2 rt-variant-solid rt-Butto", "DIV.rt-Flex", "DIV.rt-Flex rt-r-fd-row rt-r-ai-start rt-r-fw-wrap rt-r-gap-2 rx", "DIV.rt-ContainerInner"]
+DIALOG ancestry: ["BUTTON.rt-reset rt-BaseButton rt-r-size-2 rt-variant-solid rt-Butto", "DIV.rt-Flex", "DIV.rt-Flex rt-r-fd-row rt-r-ai-start rt-r-fw-wrap rt-r-gap-2 rx", "DIV.rt-ContainerInner"]
+SUBMITTED= {"full_name":"Ada Lovelace","controlled":"ctl-typed","nickname":"nick-typed","bio":"bio text","fruit":"banana","agree":"on","notify":"on","color":"green","volume":"30","the_form":"banana","field_full_name":"None","inp_name":"Ada Lovelace","inp_ctl":"ctl-typed","inp_nick":"nick-typed","inp_bio":"bio text","inp_fruit":"None","inp_agree":"True","inp_notify":"True","inp_color":"green","inp_volume":"30","btn_submit":"None"}
+CONSOLE/PAGE ERRORS (0):

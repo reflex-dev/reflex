@@ -1,0 +1,47 @@
+{
+  "app": "lorem-stream",
+  "url": "http://localhost:3460/",
+  "tag": "cold",
+  "load_seconds": 0.78,
+  "n_tasks": 3,
+  "streamed_len_after_3s": [
+    444,
+    123,
+    7,
+    1,
+    155,
+    7,
+    1,
+    162,
+    6,
+    1
+  ],
+  "n_tasks_after_toggle": 3,
+  "n_tasks_after_kill": 2,
+  "n_tasks_before_nav": 3,
+  "n_tasks_after_nav": 3,
+  "streamed_len_after_nav": [
+    488,
+    136,
+    7,
+    1,
+    186,
+    6,
+    1,
+    162,
+    6,
+    1
+  ],
+  "flow_ok": true,
+  "console_notable": [],
+  "console_errors": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": [],
+  "screenshots": [
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/lorem-stream-cold-load.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/lorem-stream-cold-streaming.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/lorem-stream-cold-after_kill.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/lorem-stream-cold-after_nav.png"
+  ]
+}

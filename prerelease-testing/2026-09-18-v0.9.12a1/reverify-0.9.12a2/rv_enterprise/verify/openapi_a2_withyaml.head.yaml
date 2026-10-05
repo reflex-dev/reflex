@@ -1,0 +1,60 @@
+components:
+  responses:
+    RateLimited:
+      description: Rate limit exceeded for this session token; retry after the `Retry-After`
+        header.
+    StreamedDelta:
+      content:
+        application/x-ndjson:
+          schema:
+            type: object
+      description: Streamed state deltas as newline-delimited JSON.
+    Unauthorized:
+      description: Missing, invalid, or expired Bearer token.
+  securitySchemes:
+    BearerToken:
+      description: 'An app-issued token identifying the session: an anonymous grant
+        from `POST /_reflex/auth/token`, or an OAuth 2.1 access token.'
+      scheme: bearer
+      type: http
+info:
+  contact:
+    email: info@reflex.dev
+    name: Reflex Maintainers
+  description: "Auto-generated API for Reflex event handlers.\n\n## Authentication\n\
+    \nAll endpoints require an **app-issued** Bearer token passed via the `Authorization`\
+    \ header \u2014 caller-invented tokens are rejected.\n\nFor an **anonymous session**\
+    \ (no user identity; only public handlers are reachable when the app enforces\
+    \ auth), request a token from `POST /_reflex/auth/token`:\n\n```\ncurl -X POST\
+    \ <server>/_reflex/auth/token\n```\n\nThe response carries `access_token` and\
+    \ `expires_in`; the token is bound to a fresh server-side session. Reuse it across\
+    \ calls to address the same session:\n\n```\nAuthorization: Bearer <access_token>\n\
+    ```\n\nFor an **authenticated session** (when the app is configured with an AuthPlugin\
+    \ + MCPPlugin), complete the app's OAuth 2.1 authorization flow \u2014 discovered\
+    \ via the MCP endpoint's protected-resource metadata \u2014 and use the issued\
+    \ access token the same way.\n\nCalls are rate limited per token; a `429` response\
+    \ carries a `Retry-After` header. The token endpoint is rate limited per client\
+    \ IP.\n\n## Pages\n\nThe following pages are defined in the app. Pages with `on_load`\
+    \ handlers automatically trigger the referenced endpoint when a user navigates\
+    \ to them.\n\n- `http://localhost:3000/index` -- on_load triggers `POST /_reflex/event/tickets___tickets____ticket_state/load_tickets`\n\
+    - `http://localhost:3000/ticket` -- on_load triggers `POST /_reflex/event/tickets___tickets____ticket_state/load_ticket_detail`"
+  license:
+    name: Apache 2.0
+    url: https://opensource.org/licenses/Apache-2.0
+  title: tickets API
+  version: 1.0.0
+openapi: 3.0.0
+paths:
+  /_reflex/event/tickets___tickets____ticket_state/apply_query:
+    post:
+      description: apply_query
+      operationId: TicketState_apply_query
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                query:
+                  type: string
+              required:
+              - query

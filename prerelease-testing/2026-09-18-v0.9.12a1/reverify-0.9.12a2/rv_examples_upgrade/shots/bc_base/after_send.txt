@@ -1,0 +1,57 @@
+2 products found
+
+(W-001) Widget
+
+Stock:42
+
+Category:tools
+
+Seller:acme
+
+Sender:qa
+
+(G-002) Gadget
+
+Stock:2
+
+Category:toys
+
+Seller:acme
+
+Sender:qa
+
+Query:
+
+Body:
+
+Clear
+Send
+
+Status: 200
+
+[
+  {
+    "code": "W-001",
+    "label": "Widget",
+    "id": 1,
+    "updated": "2026-09-21T21:34:35.637718",
+    "image": "/favicon.ico",
+    "quantity": 42,
+    "category": "tools",
+    "seller": "acme",
+    "created": "2026-09-21T21:34:35.599494",
+    "sender": "qa"
+  },
+  {
+    "code": "G-002",
+    "label": "Gadget",
+    "id": 2,
+    "updated": "2026-09-21T21:34:35.611878",
+    "image": "/favicon.ico",
+    "quantity": 2,
+    "category": "toys",
+    "seller": "acme",
+    "created": "2026-09-21T21:34:35.611878",
+    "sender": "qa"
+  }
+]

@@ -1,0 +1,143 @@
+--- /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_enterprise/work/whl95/reflex_enterprise/auth/oidc/state.py	2020-02-02 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_enterprise/work/whl96/reflex_enterprise/auth/oidc/state.py	2020-02-02 00:00:00.000000000 +0000
+@@ -20,10 +20,9 @@
+ import reflex as rx
+ from joserfc.errors import ExpiredTokenError
+ from joserfc.jwt import Token
+-from reflex.event import EventSpec, EventType, IndividualEventType
++from reflex.event import EventSpec, IndividualEventType
+ from reflex.state import Delta
+ from reflex.utils import console
+-from reflex.vars import BaseStateMeta
+ 
+ from reflex_enterprise.app import AppEnterprise
+ from reflex_enterprise.auth.audit import AuditAction, AuditOutcome, emit_audit
+@@ -56,7 +55,21 @@
+ )
+ 
+ if TYPE_CHECKING:
++    # The metaclass reflex >= 0.9.12 gives ``rx.State``. It is private, so it is
++    # imported for the type checker only: against the locked reflex the cookie
++    # metaclass below is fully typed, and on an older reflex the module does not
++    # exist, so pyright (``reportMissingImports`` is off) treats the base as
++    # unknown instead of reporting a metaclass conflict on every subclass.
++    from reflex.istate.validation import _StateMeta as _StateMetaclass
++
+     from reflex_enterprise.auth.user_state import AuthUserState
++else:
++    # At runtime, read it off the installed reflex instead: it is
++    # ``BaseStateMeta`` up to reflex 0.9.11 and a *sibling* subclass of it from
++    # 0.9.12 on. Hard-wiring ``BaseStateMeta`` makes every state built with the
++    # metaclass below raise ``TypeError: metaclass conflict`` on the newer
++    # framework, which takes down every AuthPlugin / MCPPlugin app at startup.
++    _StateMetaclass = type(rx.State)
+ 
+ logger = logging.getLogger("reflex_enterprise.auth.oidc")
+ 
+@@ -344,7 +357,7 @@
+     access_token_hash: str
+ 
+ 
+-class OIDCCookieMeta(BaseStateMeta):
++class OIDCCookieMeta(_StateMetaclass):
+     """Meta class to assign HTTPCookie descriptors to the final class."""
+ 
+     if TYPE_CHECKING:
+@@ -596,7 +609,7 @@
+ 
+     def _cookie_sync_token_update(
+         self,
+-        callback: EventType[Any] | None = None,
++        callback: IndividualEventType | list[IndividualEventType] | None = None,
+         redirect_url: str | None = None,
+     ) -> EventSpec:
+         """Queue a cookie sync from the browser and update the access token hash after."""
+@@ -1456,12 +1469,16 @@
+         }
+ 
+     @rx.event
+-    async def post_auth_message(self):
++    async def post_auth_message(self, fallback_url: str = ""):
+         """Post tokens to the opening window and close the popup.
+ 
+         Used to transfer tokens to an opener that cannot read the popup's
+         cookies or localStorage (e.g., the opener is iframed in a different
+         storage partition).
++
++        Args:
++            fallback_url: where to navigate when there is no opener to post to.
++                Omitted, the window stays put.
+         """
+         async with self._error_context("Posting auth message to opener"):
+             payload = {
+@@ -1469,7 +1486,7 @@
+                 **(await self._post_auth_message_payload()),
+             }
+             return rx.call_script(
+-                POST_MESSAGE_AND_CLOSE_POPUP(payload, self.origin, 500)
++                POST_MESSAGE_AND_CLOSE_POPUP(payload, self.origin, 500, fallback_url)
+             )
+ 
+     @rx.event
+@@ -1625,10 +1642,13 @@
+ 
+         async with self._error_context("Processing login flow", clear_last_error=True):
+             if (await self.userinfo) is not None and self.from_popup:
+-                # Already authenticated in popup: hand off tokens and close.
++                # Already authenticated in popup: hand off tokens and close. The
++                # fallback is the index rather than ``redirect_to_url``, which on
++                # this page names the popup-login route itself: a window with no
++                # opener would navigate straight back here and hand off again.
+                 return [
+                     rx.toast("You are logged in."),
+-                    self.__class__.post_auth_message,
++                    self.__class__.post_auth_message(self._index_uri()),
+                 ]
+             # Already authenticated but user clicked login again (e.g. to
+             # switch accounts): fall through to start a new OIDC flow — the
+@@ -2132,21 +2152,42 @@
+                 # user is actually authenticated -- otherwise it already logged the
+                 # failure and this redirect just clears the cookies.
+                 accepted = await self._validate_tokens()
++                # ``redirect_to_url`` cannot decide this: ``window.open`` copies the
++                # opener's session storage into the popup, so it may hold the
++                # opener's page rather than this window's. ``from_popup`` is no
++                # better as proof, since nothing ever clears it, so it only picks
++                # the script and the script asks the browser, falling back to
++                # ``redirect_url`` when there is no opener to hand to.
+                 if accepted:
+                     # Validation passed: a failure suppressed from here on is
+                     # a completion problem (e.g. the cookie-sync build), and
+                     # the trailing emission must not blame the tokens.
+                     failure_reason = "callback_completion_failed"
++                    outcome = (
++                        "handing the tokens to the popup opener"
++                        if self.from_popup
++                        else f"redirecting to {_redact_url_for_log(redirect_url)!r}"
++                    )
+                     self._logger.info(
+                         self._format_log_message(
+-                            f"Auth callback succeeded; user logged in, redirecting to "
+-                            f"{_redact_url_for_log(redirect_url)!r}."
++                            f"Auth callback succeeded; user logged in, {outcome}."
+                         )
+                     )
+                 # Build the sync event before emitting: if the build raises,
+                 # the error context suppresses it and only the trailing
+                 # ``failure`` emission fires — never a contradictory pair.
+-                sync_event = self._cookie_sync_token_update(redirect_url=redirect_url)
++                if self.from_popup:
++                    # Rejected tokens close without posting: the session is
++                    # already reset, and handing that over logs the opener out.
++                    sync_event = self._cookie_sync_token_update(
++                        callback=self.__class__.post_auth_message(redirect_url)
++                        if accepted
++                        else rx.call_script(CLOSE_POPUP(self.origin, 500, redirect_url))
++                    )
++                else:
++                    sync_event = self._cookie_sync_token_update(
++                        redirect_url=redirect_url
++                    )
+                 await self._audit(
+                     AuditAction.LOGIN_COMPLETED,
+                     AuditOutcome.SUCCESS if accepted else AuditOutcome.FAILURE,

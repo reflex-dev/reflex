@@ -1,0 +1,18 @@
+--- POST /products (Widget)
+"OK"
+HTTP 200
+--- POST /products (Gadget)
+"OK"
+HTTP 200
+--- GET /products
+[{"code":"W-001","label":"Widget","id":1,"updated":"2026-09-21T21:34:35.599494","image":"/favicon.ico","quantity":5,"category":"tools","seller":"acme","created":"2026-09-21T21:34:35.599494","sender":"qa"},{"code":"G-002","label":"Gadget","id":2,"updated":"2026-09-21T21:34:35.611878","image":"/favicon.ico","quantity":2,"category":"toys","seller":"acme","created":"2026-09-21T21:34:35.611878","sender":"qa"}]
+HTTP 200
+--- GET /products/1
+{"code":"W-001","label":"Widget","id":1,"updated":"2026-09-21T21:34:35.599494","image":"/favicon.ico","quantity":5,"category":"tools","seller":"acme","created":"2026-09-21T21:34:35.599494","sender":"qa"}
+HTTP 200
+--- PUT /products/1 (quantity 42)
+null
+HTTP 200
+--- GET /products/1 after PUT
+{"code":"W-001","label":"Widget","id":1,"updated":"2026-09-21T21:34:35.637718","image":"/favicon.ico","quantity":42,"category":"tools","seller":"acme","created":"2026-09-21T21:34:35.599494","sender":"qa"}
+HTTP 200

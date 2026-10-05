@@ -1,0 +1,98 @@
+{
+ "url": "http://localhost:3504/",
+ "actions": [
+  [
+   "0",
+   "wait",
+   "ok"
+  ],
+  [
+   "1",
+   "dump",
+   "ok"
+  ],
+  [
+   "2",
+   "fill",
+   "ok"
+  ],
+  [
+   "3",
+   "fill",
+   "ok"
+  ],
+  [
+   "4",
+   "click",
+   "ok"
+  ],
+  [
+   "5",
+   "wait",
+   "ok"
+  ],
+  [
+   "6",
+   "dump",
+   "ok"
+  ],
+  [
+   "7",
+   "screenshot",
+   "ok"
+  ],
+  [
+   "8",
+   "fill",
+   "ok"
+  ],
+  [
+   "9",
+   "click",
+   "ok"
+  ],
+  [
+   "10",
+   "wait",
+   "ok"
+  ],
+  [
+   "11",
+   "dump",
+   "ok"
+  ],
+  [
+   "12",
+   "screenshot",
+   "ok"
+  ],
+  [
+   "13",
+   "goto",
+   "ok"
+  ],
+  [
+   "14",
+   "wait",
+   "ok"
+  ],
+  [
+   "15",
+   "dump",
+   "ok"
+  ],
+  [
+   "16",
+   "screenshot",
+   "ok"
+  ]
+ ],
+ "console": [
+  "[verbose] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o",
+  "[log] Disconnect websocket on page navigation",
+  "[log] Disconnect websocket on pagehide"
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": []
+}

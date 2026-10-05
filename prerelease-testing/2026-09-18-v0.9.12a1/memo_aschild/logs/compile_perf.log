@@ -1,0 +1,4 @@
+# perf/time_compile.py : app._compile(dry_run=True, use_rich=False) x4, ~500-component page
+0.9.12a1      rep0: 0.576s  rep1: 0.470s  rep2: 0.513s  rep3: 0.472s   MEDIAN 0.493  MIN 0.470
+0.9.11.post1  rep0: 0.639s  rep1: 0.552s  rep2: 0.607s  rep3: 0.558s   MEDIAN 0.582  MIN 0.552
+# ~15% faster python-side compile on 0.9.12a1 (#7121 claim holds)

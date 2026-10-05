@@ -1,0 +1,131 @@
+########## 0.9.12a1 ##########
+{
+  "has_interpret": true,
+  "cases": {
+    "'30'": {
+      "ok": true,
+      "value": "0:00:30",
+      "total_seconds": 30.0
+    },
+    "'0'": {
+      "ok": true,
+      "value": "0:00:00",
+      "total_seconds": 0.0
+    },
+    "'500ms'": {
+      "ok": true,
+      "value": "0:00:00.500000",
+      "total_seconds": 0.5
+    },
+    "'2m'": {
+      "ok": true,
+      "value": "0:02:00",
+      "total_seconds": 120.0
+    },
+    "'1.5h'": {
+      "ok": true,
+      "value": "1:30:00",
+      "total_seconds": 5400.0
+    },
+    "'1d'": {
+      "ok": true,
+      "value": "1 day, 0:00:00",
+      "total_seconds": 86400.0
+    },
+    "'250us'": {
+      "ok": true,
+      "value": "0:00:00.000250",
+      "total_seconds": 0.00025
+    },
+    "'  45S '": {
+      "ok": true,
+      "value": "0:00:45",
+      "total_seconds": 45.0
+    },
+    "'7H'": {
+      "ok": true,
+      "value": "7:00:00",
+      "total_seconds": 25200.0
+    },
+    "'3.25'": {
+      "ok": true,
+      "value": "0:00:03.250000",
+      "total_seconds": 3.25
+    },
+    "'1e3'": {
+      "ok": false,
+      "err": "EnvironmentVarValueError: Invalid duration value: '1e3' for MY_TIMEOUT. Expected a number of seconds, optionally suffixed with one of us, ms, s, m, h, d."
+    },
+    "'abc'": {
+      "ok": false,
+      "err": "EnvironmentVarValueError: Invalid duration value: 'abc' for MY_TIMEOUT. Expected a number of seconds, optionally suffixed with one of us, ms, s, m, h, d."
+    },
+    "'5x'": {
+      "ok": false,
+      "err": "EnvironmentVarValueError: Invalid duration value: '5x' for MY_TIMEOUT. Expected a number of seconds, optionally suffixed with one of us, ms, s, m, h, d."
+    },
+    "''": {
+      "ok": true,
+      "value": "0:00:10",
+      "total_seconds": 10.0
+    },
+    "'-5'": {
+      "ok": true,
+      "value": "-1 day, 23:59:55",
+      "total_seconds": -5.0
+    },
+    "'9999999999999d'": {
+      "ok": false,
+      "err": "EnvironmentVarValueError: Invalid duration value: '9999999999999d' for MY_TIMEOUT is out of range."
+    },
+    "'10 s'": {
+      "ok": true,
+      "value": "0:00:10",
+      "total_seconds": 10.0
+    },
+    "'1,000'": {
+      "ok": false,
+      "err": "EnvironmentVarValueError: Invalid duration value: '1,000' for MY_TIMEOUT. Expected a number of seconds, optionally suffixed with one of us, ms, s, m, h, d."
+    },
+    "'0.0000001us'": {
+      "ok": true,
+      "value": "0:00:00",
+      "total_seconds": 0.0
+    }
+  },
+  "default_unset": "0:00:10",
+  "optional_''": "None",
+  "optional_'30'": "0:00:30",
+  "optional_'bad'": "EnvironmentVarValueError: Invalid duration value: 'bad' for MY_OPT. Expected a number of seconds, optionally suffixed with one of us, ms, s, m, h, d."
+}
+########## 0.9.11.post1 ##########
+      "ok": true,
+      "value": "0:00:10",
+      "total_seconds": 10.0
+    },
+    "'-5'": {
+      "ok": false,
+      "err": "ValueError: Invalid type for environment variable MY_TIMEOUT: <class 'datetime.timedelta'>. This is probably an issue in Reflex."
+    },
+    "'9999999999999d'": {
+      "ok": false,
+      "err": "ValueError: Invalid type for environment variable MY_TIMEOUT: <class 'datetime.timedelta'>. This is probably an issue in Reflex."
+    },
+    "'10 s'": {
+      "ok": false,
+      "err": "ValueError: Invalid type for environment variable MY_TIMEOUT: <class 'datetime.timedelta'>. This is probably an issue in Reflex."
+    },
+    "'1,000'": {
+      "ok": false,
+      "err": "ValueError: Invalid type for environment variable MY_TIMEOUT: <class 'datetime.timedelta'>. This is probably an issue in Reflex."
+    },
+    "'0.0000001us'": {
+      "ok": false,
+      "err": "ValueError: Invalid type for environment variable MY_TIMEOUT: <class 'datetime.timedelta'>. This is probably an issue in Reflex."
+    }
+  },
+  "default_unset": "0:00:10",
+  "optional_''": "None",
+  "optional_'30'": "ValueError: Invalid type for environment variable MY_OPT: <class 'datetime.timedelta'>. This is probably an issue in Reflex.",
+  "optional_'bad'": "ValueError: Invalid type for environment variable MY_OPT: <class 'datetime.timedelta'>. This is probably an issue in Reflex."
+}

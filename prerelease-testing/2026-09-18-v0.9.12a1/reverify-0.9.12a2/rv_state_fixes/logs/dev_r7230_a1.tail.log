@@ -1,0 +1,120 @@
+Debug: Saved lockfile
+Debug: 
+Debug: installed lucide-react@1.26.0
+Debug: installed sonner@2.0.8
+Debug: installed react-helmet@6.1.0
+Debug: installed isbot@5.2.2
+Debug: installed react-error-boundary@6.1.2
+Debug: installed socket.io-client@4.8.3
+Debug: installed @react-router/node@8.4.0
+Debug: installed mergician@2.0.2
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-router@8.4.0
+Debug: installed react@19.2.8
+Debug: installed react-dom@19.2.8
+Debug: installed @radix-ui/themes@3.3.0
+Debug: 
+Debug: 99 packages installed [85.00ms]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+reverify/rv_state_fixes/r7230_a1/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+reverify/rv_state_fixes/r7230_a1/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.29s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpa
+d/reverify/rv_state_fixes/r7230_a1/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_state_fixes/r7230_a1/assets', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_state_fixes/r7230_a1/r7230_a1', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_state_fixes/r7230_a1/CLAUDE.md', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_state_fixes/r7230_a1/AGENTS.md', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_state_fixes/r7230_a1/rxconfig.py']
+[INFO] Starting granian (main PID: 10657)
+[INFO] Listening at: http://0.0.0.0:8103
+[INFO] Spawning worker-1 with PID: 10692
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:41)
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3103/
+App running at: http://localhost:3103/
+Backend running at: http://0.0.0.0:8103
+Debug:   ➜  Network: http://192.0.2.2:3103/  eth0
+Debug: 9:45:48 PM [vite] (ssr) connected.
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:63)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:66)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:67)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:94)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:110)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:118)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:121)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:132)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:149)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:160)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:210)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:222)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:225)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:243)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:245)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:182)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:255)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(r7230_a1/r7230_a1.py:269)
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Info: Reflex app stopped.

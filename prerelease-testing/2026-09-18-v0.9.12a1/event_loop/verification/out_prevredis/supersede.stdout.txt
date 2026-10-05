@@ -1,0 +1,11 @@
+# s_supersede.py against reflex 0.9.11.post1, dev, REDIS state manager, ONE worker
+# THE BASELINE THE EXPLORER DID NOT RUN.
+[a-roots] ["A:start","A:CANCELLED","B:start","B:done"]
+[b-chains] ["chainA:root","cA:start","chainB:root","cB:start","cA:done","cB:done"]     (pre-#7168, as expected)
+[c-fanout] ["fanout:root","x:start","y:start","x:done","y:done"]
+[d-poll] mid='["poll1","poll2","poll3","poll4"]' final='["poll1",...,"poll4","poll1",...,"poll7"]'  (pre-#7168)
+[e-stale] '["slow:root","B:start","slow:enqueue","stale:start","B:done","stale:done"]'  (pre-#7168)
+[f-foreground] ["FB:start","FB:done"]          <-- IDENTICAL to 0.9.12a1: NOT a regression
+[g-mixed] ["FA:start","FA:done","B:start","B:done"]
+[h-two-clients] c1='["A:start","A:done"]' c2='["B:start","B:done"]'
+== pageerrors == []

@@ -1,0 +1,465 @@
+........................................................................ [  0%]
+........................................................................ [  1%]
+........................................................................ [  2%]
+........................................................................ [  2%]
+........................................................................ [  3%]
+........................................................................ [  4%]
+........................................................................ [  5%]
+........................................................................ [  5%]
+........................................................................ [  6%]
+........................................................................ [  7%]
+........................................................................ [  8%]
+........................................................................ [  8%]
+........................................................................ [  9%]
+........................................................................ [ 10%]
+........................................................................ [ 11%]
+........................................................................ [ 11%]
+........................................................................ [ 12%]
+........................................................................ [ 13%]
+........................................................................ [ 14%]
+........................................................................ [ 14%]
+........................................................................ [ 15%]
+........................................................................ [ 16%]
+........................................................................ [ 17%]
+........................................................................ [ 17%]
+........................................................................ [ 18%]
+........................................................................ [ 19%]
+........................................................................ [ 20%]
+........................................................................ [ 20%]
+........................................................................ [ 21%]
+........................................................................ [ 22%]
+........................................................................ [ 22%]
+........................................................................ [ 23%]
+........................................................................ [ 24%]
+........................................................................ [ 25%]
+........................................................................ [ 25%]
+........................................................................ [ 26%]
+........................................................................ [ 27%]
+........................................................................ [ 28%]
+........................................................................ [ 28%]
+........................................................................ [ 29%]
+........................................................................ [ 30%]
+........................................................................ [ 31%]
+........................................................................ [ 31%]
+........................................................................ [ 32%]
+........................................................................ [ 33%]
+........................................................................ [ 34%]
+........................................................................ [ 34%]
+........................................................................ [ 35%]
+........................................................................ [ 36%]
+........................................................................ [ 37%]
+........................................................................ [ 37%]
+........................................................................ [ 38%]
+........................................................................ [ 39%]
+........................................................................ [ 40%]
+........................................................................ [ 40%]
+........................................................................ [ 41%]
+........................................................................ [ 42%]
+........................................................................ [ 42%]
+........................................................................ [ 43%]
+........................................................................ [ 44%]
+........................................................................ [ 45%]
+........................................................................ [ 45%]
+........................................................................ [ 46%]
+........................................................................ [ 47%]
+.....................s.................................................. [ 48%]
+........................................................................ [ 48%]
+........................................................................ [ 49%]
+........................................................................ [ 50%]
+........................................................................ [ 51%]
+........................................................................ [ 51%]
+........................................................................ [ 52%]
+FFFFFFFFFFFFF........................................................... [ 53%]
+.....................................................s.................. [ 54%]
+........................................................................ [ 54%]
+........................................................................ [ 55%]
+........................................................................ [ 56%]
+........................................................................ [ 57%]
+........................................................................ [ 57%]
+........................................................................ [ 58%]
+........................................................................ [ 59%]
+........................................................................ [ 60%]
+........................................................................ [ 60%]
+........................................................................ [ 61%]
+........................................................................ [ 62%]
+........................................................................ [ 62%]
+........................................................................ [ 63%]
+........................................................................ [ 64%]
+........................................................................ [ 65%]
+.....FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF.........FFFFFFFFFF [ 65%]
+FFFFFFFFFFFFFFFFFFF.FFFFFFFFFFFFFFFFFFFFFFFFFFFFF....................... [ 66%]
+...................................................................FFFF. [ 67%]
+FFFFFFFFFFF.FF.FFFFFFFFFFFFFF....FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF..... [ 68%]
+...........FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF......................... [ 68%]
+........................................................................ [ 69%]
+........................................................................ [ 70%]
+........................................................................ [ 71%]
+........................................................................ [ 71%]
+........................................................................ [ 72%]
+........................................................................ [ 73%]
+........................................................................ [ 74%]
+........................................................................ [ 74%]
+........................................................................ [ 75%]
+........................................................................ [ 76%]
+......F.F.FF............................................................ [ 77%]
+........................................................................ [ 77%]
+........................................................................ [ 78%]
+........................................................................ [ 79%]
+........................................................................ [ 80%]
+........................................................................ [ 80%]
+........................................................................ [ 81%]
+........................................................................ [ 82%]
+.............................................ss......................... [ 83%]
+........................................................................ [ 83%]
+........................................................................ [ 84%]
+........................................................................ [ 85%]
+........................................................................ [ 85%]
+........................................................................ [ 86%]
+.........................................................sssssssss...... [ 87%]
+........................................................................ [ 88%]
+........................s............................................... [ 88%]
+........................................................................ [ 89%]
+........................................................................ [ 90%]
+........................................................................ [ 91%]
+........................................................................ [ 91%]
+........................................................................ [ 92%]
+........................................................................ [ 93%]
+..................................s..................................... [ 94%]
+........................................................................ [ 94%]
+........................................................................ [ 95%]
+.sssss.................................................................. [ 96%]
+........................................................................ [ 97%]
+........................................................................ [ 97%]
+........................................................................ [ 98%]
+........................................................................ [ 99%]
+...................................................................      [100%]
+=============================== warnings summary ===============================
+tests/units/components/test_component.py:76
+  /home/user/wt/f003/tests/units/components/test_component.py:76: PytestCollectionWarning: cannot collect test class 'TestState' because it has a __init__ constructor (from: tests/units/components/test_component.py)
+    class TestState(BaseState):
+
+tests/units/test_app.py:58
+  /home/user/wt/f003/tests/units/test_app.py:58: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient
+
+tests/units/test_state.py:142
+  /home/user/wt/f003/tests/units/test_state.py:142: PytestCollectionWarning: cannot collect test class 'TestMixin' because it has a __init__ constructor (from: tests/units/test_state.py)
+    class TestMixin(BaseState, mixin=True):
+
+packages/reflex-base/src/reflex_base/utils/types.py:710: 12 warnings
+tests/units/test_attribute_access_type.py: 40 warnings
+tests/units/test_state.py: 72 warnings
+tests/units/test_var.py: 4 warnings
+tests/units/vars/test_object.py: 24 warnings
+  /home/user/wt/f003/packages/reflex-base/src/reflex_base/utils/types.py:710: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    if hasattr(cls, "__fields__") and name in cls.__fields__:
+
+packages/reflex-base/src/reflex_base/utils/types.py:589: 5 warnings
+tests/units/test_attribute_access_type.py: 20 warnings
+tests/units/test_state.py: 26 warnings
+tests/units/test_var.py: 2 warnings
+tests/units/vars/test_object.py: 12 warnings
+  /home/user/wt/f003/packages/reflex-base/src/reflex_base/utils/types.py:589: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    hasattr(cls, "__fields__")
+
+packages/reflex-base/src/reflex_base/utils/types.py:590: 5 warnings
+tests/units/test_attribute_access_type.py: 20 warnings
+tests/units/test_state.py: 26 warnings
+tests/units/test_var.py: 2 warnings
+tests/units/vars/test_object.py: 12 warnings
+  /home/user/wt/f003/packages/reflex-base/src/reflex_base/utils/types.py:590: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    and field_name in cls.__fields__
+
+packages/reflex-base/src/reflex_base/utils/types.py:591: 5 warnings
+tests/units/test_attribute_access_type.py: 20 warnings
+tests/units/test_state.py: 26 warnings
+tests/units/test_var.py: 2 warnings
+tests/units/vars/test_object.py: 12 warnings
+  /home/user/wt/f003/packages/reflex-base/src/reflex_base/utils/types.py:591: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    and hasattr(cls.__fields__[field_name], "annotation")
+
+packages/reflex-base/src/reflex_base/utils/types.py:592: 5 warnings
+tests/units/test_attribute_access_type.py: 20 warnings
+tests/units/test_state.py: 26 warnings
+tests/units/test_var.py: 2 warnings
+tests/units/vars/test_object.py: 12 warnings
+  /home/user/wt/f003/packages/reflex-base/src/reflex_base/utils/types.py:592: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    and not isinstance(cls.__fields__[field_name].annotation, (str, ForwardRef))
+
+packages/reflex-base/src/reflex_base/utils/types.py:594: 5 warnings
+tests/units/test_attribute_access_type.py: 20 warnings
+tests/units/test_state.py: 26 warnings
+tests/units/test_var.py: 2 warnings
+tests/units/vars/test_object.py: 12 warnings
+  /home/user/wt/f003/packages/reflex-base/src/reflex_base/utils/types.py:594: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    return cls.__fields__[field_name].annotation
+
+.venv/lib/python3.14/site-packages/_pytest/python.py:124
+  /home/user/wt/f003/.venv/lib/python3.14/site-packages/_pytest/python.py:124: PytestRemovedIn10Warning: Passing a non-Collection iterable to parametrize is deprecated.
+  Test: tests/units/test_var.py::test_full_name, argvalues type: zip
+  Please convert to a list or tuple.
+  See https://docs.pytest.org/en/stable/deprecations.html#parametrize-iterators
+    metafunc.parametrize(*marker.args, **marker.kwargs, _param_mark=marker)
+
+.venv/lib/python3.14/site-packages/_pytest/python.py:124
+  /home/user/wt/f003/.venv/lib/python3.14/site-packages/_pytest/python.py:124: PytestRemovedIn10Warning: Passing a non-Collection iterable to parametrize is deprecated.
+  Test: tests/units/test_var.py::test_str, argvalues type: zip
+  Please convert to a list or tuple.
+  See https://docs.pytest.org/en/stable/deprecations.html#parametrize-iterators
+    metafunc.parametrize(*marker.args, **marker.kwargs, _param_mark=marker)
+
+tests/units/reflex_base/utils/pyi_generator/test_regression.py::test_pyi_golden[classvar_and_private.py]
+tests/units/reflex_base/utils/pyi_generator/test_regression.py::test_pyi_golden[classvar_and_private.py]
+tests/units/reflex_base/utils/pyi_generator/test_regression.py::test_pyi_golden[classvar_and_private.py]
+tests/units/reflex_base/utils/pyi_generator/test_regression.py::test_pyi_golden[classvar_and_private.py]
+tests/units/test_app.py::test_forked_workers_publish_deltas_to_the_socket_owner
+tests/units/test_app.py::test_forked_workers_publish_deltas_to_the_socket_owner
+  /root/.local/share/uv/python/cpython-3.14.7-linux-x86_64-gnu/lib/python3.14/multiprocessing/popen_fork.py:76: DeprecationWarning: This process (pid=14286) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+tests/units/test_app.py::test_initialize_with_admin_dashboard
+tests/units/test_app.py::test_admin_dashboard_routes_remain_reversible[False]
+tests/units/test_app.py::test_admin_dashboard_routes_remain_reversible[True]
+tests/units/test_app.py::test_initialize_with_custom_admin_dashboard
+tests/units/test_app.py::test_initialize_admin_dashboard_with_view_overrides
+  /home/user/wt/f003/.venv/lib/python3.14/site-packages/starlette_admin/base.py:259: UserWarning: No secret_key provided: a random one was generated. CSRF tokens and flash messages will NOT survive server restarts. Set secret_key= on Admin in production.
+    self._ensure_secret_key()
+
+tests/units/test_model.py::test_upcast_event_handler_arg[handler0-payload0]
+  /home/user/wt/f003/packages/reflex-base/src/reflex_base/event/processor/base_state_processor.py:123: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    if key in hinted_args.__fields__
+
+tests/units/test_state.py::test_uncached_var_withheld_by_delta_override_is_resent[True-dropped]
+tests/units/test_state.py::test_uncached_var_withheld_by_delta_override_is_resent[True-replaced]
+  /home/user/wt/f003/tests/units/test_state.py:1790: RuntimeWarning: coroutine 'AsyncComputedVar.__get__.<locals>._awaitable_result' was never awaited
+    value.close()
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/units/reflex_base/utils/pyi_generator/test_regression.py::test_pyi_golden[classvar_and_private.py]
+FAILED tests/units/reflex_base/utils/pyi_generator/test_regression.py::test_pyi_golden[custom_create.py]
+FAILED tests/units/reflex_base/utils/pyi_generator/test_regression.py::test_pyi_golden[inheritance.py]
+FAILED tests/units/reflex_base/utils/pyi_generator/test_regression.py::test_pyi_golden[literal_types.py]
+FAILED tests/units/reflex_base/utils/pyi_generator/test_regression.py::test_pyi_golden[module_level.py]
+FAILED tests/units/reflex_base/utils/pyi_generator/test_regression.py::test_pyi_golden[namespace_component.py]
+FAILED tests/units/reflex_base/utils/pyi_generator/test_regression.py::test_pyi_golden[simple_component.py]
+FAILED tests/units/reflex_base/utils/pyi_generator/test_regression.py::test_pyi_golden[staticmethod_namespace.py]
+FAILED tests/units/reflex_base/utils/pyi_generator/test_regression.py::test_pyi_golden[string_event_annotations.py]
+FAILED tests/units/reflex_base/utils/pyi_generator/test_regression.py::test_pyi_golden[sub_package.__init__.py]
+FAILED tests/units/reflex_base/utils/pyi_generator/test_regression.py::test_pyi_golden[sub_package.widget.py]
+FAILED tests/units/reflex_base/utils/pyi_generator/test_regression.py::test_pyi_golden[typed_event_handlers.py]
+FAILED tests/units/reflex_base/utils/pyi_generator/test_regression.py::test_pyi_golden[var_types.py]
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_history_success - Ass...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_history_as_json - Ass...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_history_no_deployments
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_history_http_error - ...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_deployment_build_logs_success
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_deployment_build_logs_with_token
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_deployment_build_logs_not_authenticated
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_deployment_build_logs_http_error
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_deployment_status_success
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_deployment_status_watch_success
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_deployment_status_http_error
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_stop_app_success - Assert...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_stop_app_failure - Assert...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_stop_app_http_error - Ass...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_start_app_success - Asser...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_start_app_failure - Asser...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_start_app_http_error - As...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_delete_app_success - Asse...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_delete_app_failure - Asse...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_delete_app_no_app_id - as...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_delete_app_http_error - A...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_delete_app_confirmation_cancelled
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_delete_app_non_interactive_skips_confirmation
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_delete_app_get_app_fails_fallback_to_unknown
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_delete_app_with_app_name_confirmation
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_delete_app_not_found_early_exit
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_logs_no_app_id - asse...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_logs_invalid_time_range
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_logs_success - Assert...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_logs_failure - Assert...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_logs_http_error - Ass...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_list_apps_no_project - As...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_list_apps_with_project - ...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_list_apps_json_output - A...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_list_apps_error - assert ...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_list_apps_empty_response
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_scale_no_args_or_config
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_scale_both_vmtype_and_regions
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_scale_args_override_config
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_scale_warn_cli_args_with_scale_type
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_scale_regions_via_config_no_scaletype
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_scale_regions_via_config_without_regions
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_scale_size_via_config_without_vmtype
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_scale_correct_post_request_cli_args[config0-scale_params0-command_args0]
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_scale_correct_post_request_cli_args[config1-scale_params1-command_args1]
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_scale_correct_post_request_cli_args[config2-scale_params2-command_args2]
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_scale_correct_post_request_config[config0-scale_params0-command_args0]
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_scale_correct_post_request_config[config1-scale_params1-command_args1]
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_logs_does_not_follow_by_default
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_logs_follow_needs_a_person_to_answer_the_prompt
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_logs_follow_pages_when_asked_interactively
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_logs_json_output - As...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_logs_json_output_never_follows
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_logs_json_output_when_empty
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_stop_app_json_output - As...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_stop_app_json_output_on_failure
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_start_app_json_output - A...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_delete_app_json_output - ...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_delete_app_json_output_on_failure
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_logs_json_output_when_unreadable
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_delete_app_json_output_when_cancelled
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_rollback_json_output
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_describe_json_output
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_deployment_build_logs_json_output
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_deployment_status_json_output
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_deployment_status_json_output_while_watching
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_scale_app_json_output - A...
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_json_output_keeps_human_messages_off_stdout
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_deployment_status_json_agrees_with_watch[deployment completed successfully-True]
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_deployment_status_json_agrees_with_watch[Deployment is running smoothly.-True]
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_deployment_status_json_agrees_with_watch[AwaitingApproval-True]
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_deployment_status_json_agrees_with_watch[build error-False]
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_deployment_status_json_agrees_with_watch[deployment failed-False]
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_deployment_status_json_agrees_with_watch[error: something went wrong-False]
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_deployment_status_json_agrees_with_watch[unable to find status for given id-False]
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_app_logs_json_output_names_the_servers_reason
+FAILED tests/units/reflex_cli/v2/test_apps.py::test_delete_app_json_output_when_app_is_gone
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_whoami_reports_identity_and_token_source
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_whoami_table_output_is_complete_and_hides_the_token
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_whoami_json_output_is_exact
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_whoami_json_reserves_stdout_for_the_document
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_whoami_prefers_the_token_option
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_whoami_without_a_token_does_not_open_a_browser
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_whoami_surfaces_the_auth_request_id
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_print_writes_the_raw_token_to_stdout
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_print_keeps_stdout_free_of_diagnostics
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_print_without_a_token_fails
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_set_validates_before_saving
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_set_reads_the_token_from_stdin[args0]
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_set_reads_the_token_from_stdin[args1]
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_set_rejects_an_empty_token[]
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_set_rejects_an_empty_token[   ]
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_set_rejects_an_empty_token[\n]
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_set_succeeds_while_the_environment_variable_is_set
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_set_reports_an_unconfirmable_write
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_set_keeps_the_old_token_when_the_new_one_is_rejected
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_set_reports_a_failed_write
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_clear_removes_the_token
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_clear_warns_when_the_env_var_still_applies
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_clear_reports_an_unreadable_config
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_clear_reports_a_non_object_config
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_clear_reports_a_failed_removal
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_requires_exactly_one_operation[args0]
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_requires_exactly_one_operation[args1]
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_requires_exactly_one_operation[args2]
+FAILED tests/units/reflex_cli/v2/test_auth.py::test_token_requires_exactly_one_operation[args3]
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_runs_script_from_source_with_cloudbuild_yaml
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_forwards_resource_flags
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_legacy_name_still_works_and_says_so
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_new_name_does_not_warn
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_resource_flags_have_defaults
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_forwards_max_instances
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_max_instances_default
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_rejects_max_less_than_min
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_allow_unauthenticated_defaults_true
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_no_allow_unauthenticated_requires_backend_support
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_no_allow_unauthenticated
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_no_env_vars_means_no_env_vars_file
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_forwards_env_flag
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_envfile_loads_dotenv
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_envfile_takes_precedence_over_env_with_warning
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_forwards_service_account
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_omits_service_account_when_unset
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_rejects_negative_min_instances
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_aborts_on_no - ...
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_propagates_script_failure
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_dry_run - Asser...
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_existing_dockerfile_in_source_is_preserved
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_requires_gcloud
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_requires_docker
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_requires_gcp_login
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_403_mentions_enterprise_tier
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_rejects_missing_fields
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_default_version_is_timestamp
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_no_interactive_skips_run_prompt
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_env_is_restricted_to_allowlist
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_deploy_requires_gcp_target_flag
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_surfaces_rewrite_failure
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_deploy_gcp_requires_gcp_project
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_json_output - A...
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_json_output_on_dry_run
+FAILED tests/units/reflex_cli/v2/test_gcp.py::test_gcp_deploy_json_output_on_script_failure
+FAILED tests/units/reflex_cli/v2/test_project.py::test_create_project_with_valid_token
+FAILED tests/units/reflex_cli/v2/test_project.py::test_create_project_with_json_output
+FAILED tests/units/reflex_cli/v2/test_project.py::test_create_project_without_token
+FAILED tests/units/reflex_cli/v2/test_project.py::test_invite_user_to_project_success
+FAILED tests/units/reflex_cli/v2/test_project.py::test_invite_user_to_project_failure
+FAILED tests/units/reflex_cli/v2/test_project.py::test_invite_user_to_project_missing_token
+FAILED tests/units/reflex_cli/v2/test_project.py::test_select_project_success
+FAILED tests/units/reflex_cli/v2/test_project.py::test_select_project_failure
+FAILED tests/units/reflex_cli/v2/test_project.py::test_select_project_valid_project_name
+FAILED tests/units/reflex_cli/v2/test_project.py::test_select_project_invalid_id
+FAILED tests/units/reflex_cli/v2/test_project.py::test_select_project_invalid_project_name
+FAILED tests/units/reflex_cli/v2/test_project.py::test_get_project_roles_with_project_id
+FAILED tests/units/reflex_cli/v2/test_project.py::test_get_project_roles_no_project_selected
+FAILED tests/units/reflex_cli/v2/test_project.py::test_get_project_roles_as_json
+FAILED tests/units/reflex_cli/v2/test_project.py::test_get_project_roles_empty_roles
+FAILED tests/units/reflex_cli/v2/test_project.py::test_get_project_role_permissions_with_role_and_project_id
+FAILED tests/units/reflex_cli/v2/test_project.py::test_get_project_role_permissions_no_project_selected
+FAILED tests/units/reflex_cli/v2/test_project.py::test_get_project_role_permissions_not_authenticated
+FAILED tests/units/reflex_cli/v2/test_project.py::test_get_project_role_permissions_as_json
+FAILED tests/units/reflex_cli/v2/test_project.py::test_get_project_role_permissions_empty_permissions
+FAILED tests/units/reflex_cli/v2/test_project.py::test_get_project_role_users_with_project_id
+FAILED tests/units/reflex_cli/v2/test_project.py::test_get_project_role_users_no_project_selected
+FAILED tests/units/reflex_cli/v2/test_project.py::test_get_project_role_users_as_json
+FAILED tests/units/reflex_cli/v2/test_project.py::test_get_project_role_users_empty_users
+FAILED tests/units/reflex_cli/v2/test_project.py::test_invite_user_to_project_json_output
+FAILED tests/units/reflex_cli/v2/test_project.py::test_select_project_json_output
+FAILED tests/units/reflex_cli/v2/test_project.py::test_get_selected_project_json_output
+FAILED tests/units/reflex_cli/v2/test_project.py::test_get_selected_project_json_output_when_none
+FAILED tests/units/reflex_cli/v2/test_project.py::test_get_selected_project_json_output_when_the_lookup_fails
+FAILED tests/units/reflex_cli/v2/test_scan.py::test_scan_success_with_violations
+FAILED tests/units/reflex_cli/v2/test_scan.py::test_scan_zip_excludes_build_dirs
+FAILED tests/units/reflex_cli/v2/test_scan.py::test_scan_no_files - assert 2 ...
+FAILED tests/units/reflex_cli/v2/test_scan.py::test_scan_renders_findings_with_markup_chars
+FAILED tests/units/reflex_cli/v2/test_scan.py::test_scan_clean_exits_zero - A...
+FAILED tests/units/reflex_cli/v2/test_scan.py::test_scan_fail_on_none_exits_zero
+FAILED tests/units/reflex_cli/v2/test_scan.py::test_scan_fail_on_critical_ignores_high
+FAILED tests/units/reflex_cli/v2/test_scan.py::test_scan_json_output - Assert...
+FAILED tests/units/reflex_cli/v2/test_scan.py::test_scan_polls_until_complete
+FAILED tests/units/reflex_cli/v2/test_scan.py::test_scan_server_error - asser...
+FAILED tests/units/reflex_cli/v2/test_scan.py::test_scan_submit_error - asser...
+FAILED tests/units/reflex_cli/v2/test_scan.py::test_scan_not_authenticated - ...
+FAILED tests/units/reflex_cli/v2/test_secrets.py::test_get_secrets_success - ...
+FAILED tests/units/reflex_cli/v2/test_secrets.py::test_get_secrets_error - As...
+FAILED tests/units/reflex_cli/v2/test_secrets.py::test_get_secrets_json_output
+FAILED tests/units/reflex_cli/v2/test_secrets.py::test_delete_secret_success
+FAILED tests/units/reflex_cli/v2/test_secrets.py::test_delete_secret_failure
+FAILED tests/units/reflex_cli/v2/test_secrets.py::test_update_secrets_with_envfile
+FAILED tests/units/reflex_cli/v2/test_secrets.py::test_update_secrets_with_envs
+FAILED tests/units/reflex_cli/v2/test_secrets.py::test_update_secrets_missing_arguments
+FAILED tests/units/reflex_cli/v2/test_secrets.py::test_update_secrets_invalid_env_format
+FAILED tests/units/reflex_cli/v2/test_secrets.py::test_update_secrets_json_output
+FAILED tests/units/reflex_cli/v2/test_secrets.py::test_update_secrets_json_output_keeps_warnings_off_stdout
+FAILED tests/units/reflex_cli/v2/test_secrets.py::test_delete_secret_json_output
+FAILED tests/units/reflex_cli/v2/test_vmtypes_regions.py::test_get_vm_types_success
+FAILED tests/units/reflex_cli/v2/test_vmtypes_regions.py::test_get_vm_types_as_json
+FAILED tests/units/reflex_cli/v2/test_vmtypes_regions.py::test_get_vm_types_empty
+FAILED tests/units/reflex_cli/v2/test_vmtypes_regions.py::test_get_vm_types_invalid_response
+FAILED tests/units/reflex_cli/v2/test_vmtypes_regions.py::test_get_vm_types_http_error
+FAILED tests/units/reflex_cli/v2/test_vmtypes_regions.py::test_get_deployment_regions_success
+FAILED tests/units/reflex_cli/v2/test_vmtypes_regions.py::test_get_deployment_regions_as_json
+FAILED tests/units/reflex_cli/v2/test_vmtypes_regions.py::test_get_deployment_regions_empty
+FAILED tests/units/reflex_cli/v2/test_vmtypes_regions.py::test_get_deployment_regions_http_error
+FAILED tests/units/reflex_cli/v2/test_vmtypes_regions.py::test_create_token_json_output
+FAILED tests/units/reflex_cli/v2/test_vmtypes_regions.py::test_generate_cloud_config_json_output
+FAILED tests/units/reflex_cli/v2/test_vmtypes_regions.py::test_generate_cloud_config_json_output_when_nothing_written
+FAILED tests/units/test_app.py::test_compile_sends_telemetry_when_enabled - a...
+FAILED tests/units/test_app.py::test_compile_reports_exception_and_reraises
+FAILED tests/units/test_app.py::test_compile_event_features_used_match_populated_app
+FAILED tests/units/test_app.py::test_compile_event_features_used_stable_across_hot_reload
+224 failed, 9471 passed, 20 skipped, 496 warnings in 129.99s (0:02:09)

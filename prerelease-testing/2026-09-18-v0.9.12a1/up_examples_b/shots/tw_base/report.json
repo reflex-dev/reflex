@@ -1,0 +1,110 @@
+{
+ "url": "http://localhost:3504/",
+ "actions": [
+  [
+   "0",
+   "wait",
+   "ok"
+  ],
+  [
+   "1",
+   "goto",
+   "ok"
+  ],
+  [
+   "2",
+   "wait",
+   "ok"
+  ],
+  [
+   "3",
+   "fill",
+   "ok"
+  ],
+  [
+   "4",
+   "fill",
+   "ok"
+  ],
+  [
+   "5",
+   "fill",
+   "ok"
+  ],
+  [
+   "6",
+   "click",
+   "ok"
+  ],
+  [
+   "7",
+   "wait",
+   "ok"
+  ],
+  [
+   "8",
+   "dump",
+   "ok"
+  ],
+  [
+   "9",
+   "screenshot",
+   "ok"
+  ],
+  [
+   "10",
+   "fill",
+   "ok"
+  ],
+  [
+   "11",
+   "click",
+   "ok"
+  ],
+  [
+   "12",
+   "wait",
+   "ok"
+  ],
+  [
+   "13",
+   "dump",
+   "ok"
+  ],
+  [
+   "14",
+   "screenshot",
+   "ok"
+  ],
+  [
+   "15",
+   "fill",
+   "ok"
+  ],
+  [
+   "16",
+   "wait",
+   "ok"
+  ],
+  [
+   "17",
+   "dump",
+   "ok"
+  ],
+  [
+   "18",
+   "screenshot",
+   "ok"
+  ]
+ ],
+ "console": [
+  "[verbose] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o",
+  "[log] Disconnect websocket on page navigation",
+  "[verbose] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o",
+  "[verbose] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o",
+  "[log] Disconnect websocket on pagehide"
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": []
+}

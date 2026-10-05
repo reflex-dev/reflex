@@ -1,0 +1,21 @@
+{
+ "label": "prev",
+ "pid": 25869,
+ "before_sigterm": [
+  "200",
+  0.0
+ ],
+ "still_alive": true,
+ "after_sigterm_8s": [
+  "CONNECTION_REFUSED",
+  0.0
+ ],
+ "after_sigterm_18s": [
+  "CONNECTION_REFUSED",
+  0.0
+ ],
+ "after_sigkill_group": [
+  "CONNECTION_REFUSED",
+  0.0
+ ]
+}

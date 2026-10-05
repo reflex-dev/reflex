@@ -1,0 +1,165 @@
+1c1
+< import React, { useContext, useMemo, useReducer, useState, createElement, useEffect } from "react"
+---
+> import { useContext, useMemo, useReducer, useRef, useState, createElement, useEffect, useLayoutEffect } from "react"
+6,27d5
+< // Disable React dev-build owner-stack capture: the per-element Error()
+< // dominates dev-mode render CPU on large pages. Costs owner frames in
+< // `React.captureOwnerStack()`; set REFLEX_REACT_OWNER_STACKS=1 to restore.
+< // Full context: https://github.com/reflex-dev/reflex/pull/6905
+< if (typeof window !== "undefined") {
+<   try {
+<     const reactInternals =
+<       React.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+<     const ownerStackCounterKey = "recentlyCreatedOwnerStacks";
+<     if (
+<       reactInternals &&
+<       typeof reactInternals[ownerStackCounterKey] === "number"
+<     ) {
+<       Object.defineProperty(reactInternals, ownerStackCounterKey, {
+<         get: () => 1e9,
+<         set: () => {},
+<         configurable: true,
+<       });
+<     }
+<   } catch {}
+< }
+< 
+29c7
+---
+70c48
+< export const isDevMode = true;
+---
+> export const isDevMode = false;
+136,139c114,121
+<   return createElement(
+<     EventLoopContext.Provider,
+<     { value: [addEventsLocal, connectErrors] },
+<     children
+---
+>   return useMemo(
+>     () =>
+>       createElement(
+>         EventLoopContext.Provider,
+>         { value: [addEventsLocal, connectErrors] },
+>         children
+>       ),
+>     [addEventsLocal, connectErrors, children],
+143,185c125,165
+< export function StateProvider({ children }) {
+<   const dispatchers = useMemo(() => {
+<     return {
+<       "reflex___state____state": dispatch_reflex___state____state,
+< "reflex___state____state.reflex___istate___dynamic____counter_cs_n1": dispatch_reflex___state____state__reflex___istate___dynamic____counter_cs_n1,
+< "reflex___state____state.reflex___istate___dynamic____counter_cs_n2": dispatch_reflex___state____state__reflex___istate___dynamic____counter_cs_n2,
+< "reflex___state____state.reflex___istate___shared____shared_state_base_internal": dispatch_reflex___state____state__reflex___istate___shared____shared_state_base_internal,
+< "reflex___state____state.reflex___state____frontend_event_exception_state": dispatch_reflex___state____state__reflex___state____frontend_event_exception_state,
+< "reflex___state____state.reflex___state____on_load_internal_state": dispatch_reflex___state____state__reflex___state____on_load_internal_state,
+< "reflex___state____state.reflex___state____update_vars_internal_state": dispatch_reflex___state____state__reflex___state____update_vars_internal_state,
+< "reflex___state____state.renderapp___renderapp____late_state": dispatch_reflex___state____state__renderapp___renderapp____late_state,
+< "reflex___state____state.renderapp___renderapp____page2_state": dispatch_reflex___state____state__renderapp___renderapp____page2_state,
+< "reflex___state____state.renderapp___renderapp____store1": dispatch_reflex___state____state__renderapp___renderapp____store1,
+< "reflex___state____state.renderapp___renderapp____store2": dispatch_reflex___state____state__renderapp___renderapp____store2,
+< "reflex___state____state.renderapp___renderapp____sub_a": dispatch_reflex___state____state__renderapp___renderapp____sub_a,
+< "reflex___state____state.renderapp___renderapp____sub_b": dispatch_reflex___state____state__renderapp___renderapp____sub_b,
+< "reflex___state____state.renderapp___renderapp____sub_c": dispatch_reflex___state____state__renderapp___renderapp____sub_c,
+< "reflex___state____state.renderapp___renderapp____sub_d": dispatch_reflex___state____state__renderapp___renderapp____sub_d,
+< "reflex___state____state.renderapp___renderapp____sub_e": dispatch_reflex___state____state__renderapp___renderapp____sub_e,
+< "reflex___state____state.renderapp___renderapp____sub_f": dispatch_reflex___state____state__renderapp___renderapp____sub_f,
+< "reflex___state____state.renderapp___renderapp____sub_g": dispatch_reflex___state____state__renderapp___renderapp____sub_g,
+< "reflex___state____state.renderapp___renderapp____sub_h": dispatch_reflex___state____state__renderapp___renderapp____sub_h,
+<     }
+<   }, [])
+---
+> // ``useLayoutEffect`` warns when rendered on the server, where no effect runs
+> // at all, so fall back to ``useEffect`` there.
+> const useIsomorphicLayoutEffect =
+>   typeof document !== "undefined" ? useLayoutEffect : useEffect;
+> 
+> // Holds the mutable substate -> dispatch registry that ``SubstateProvider``
+> // writes into and ``EventLoopProvider`` reads. The registry object identity is
+> // stable for the lifetime of the tree, so neither adding a dispatcher nor
+> // updating a substate re-renders the consumers of ``DispatchContext``.
+> const DispatchProvider = ({ children }) => {
+>   const dispatchers = useRef({});
+>   return useMemo(
+>     () =>
+>       createElement(DispatchContext, { value: dispatchers.current }, children),
+>     [children],
+>   );
+> };
+> 
+> // One provider per substate: each owns its own reducer, so a delta for one
+> // substate only re-renders its provider instead of recreating every provider.
+> const SubstateProvider = ({ children, substateName, contextName }) => {
+>   const dispatchers = useContext(DispatchContext);
+>   const [state, dispatchSubstate] = useReducer(
+>     applyDelta,
+>   );
+>   // A layout effect, not a passive one: layout effects for the whole commit
+>   // run before any passive effect, so every dispatcher is registered before
+>   // ``EventLoopProvider`` (mounted below this provider) connects the socket.
+>   // A delta naming an unregistered substate is a fatal state mismatch.
+>   useIsomorphicLayoutEffect(() => {
+>     dispatchers[substateName] = dispatchSubstate;
+>     return () => {
+>       delete dispatchers[substateName];
+>     };
+>   }, [dispatchers, dispatchSubstate, substateName]);
+>   return useMemo(
+>     () => createElement(StateContexts[contextName], { value: state }, children),
+>     [children, state, contextName],
+>   );
+> };
+187,207c167,189
+<   return (
+<     createElement(StateContexts.reflex___state____state,{value: reflex___state____state},
+< createElement(StateContexts.reflex___state____state__reflex___istate___dynamic____counter_cs_n1,{value: reflex___state____state__reflex___istate___dynamic____counter_cs_n1},
+< createElement(StateContexts.reflex___state____state__reflex___istate___dynamic____counter_cs_n2,{value: reflex___state____state__reflex___istate___dynamic____counter_cs_n2},
+< createElement(StateContexts.reflex___state____state__reflex___istate___shared____shared_state_base_internal,{value: reflex___state____state__reflex___istate___shared____shared_state_base_internal},
+< createElement(StateContexts.reflex___state____state__reflex___state____frontend_event_exception_state,{value: reflex___state____state__reflex___state____frontend_event_exception_state},
+< createElement(StateContexts.reflex___state____state__reflex___state____on_load_internal_state,{value: reflex___state____state__reflex___state____on_load_internal_state},
+< createElement(StateContexts.reflex___state____state__reflex___state____update_vars_internal_state,{value: reflex___state____state__reflex___state____update_vars_internal_state},
+< createElement(StateContexts.reflex___state____state__renderapp___renderapp____late_state,{value: reflex___state____state__renderapp___renderapp____late_state},
+< createElement(StateContexts.reflex___state____state__renderapp___renderapp____page2_state,{value: reflex___state____state__renderapp___renderapp____page2_state},
+< createElement(StateContexts.reflex___state____state__renderapp___renderapp____store1,{value: reflex___state____state__renderapp___renderapp____store1},
+< createElement(StateContexts.reflex___state____state__renderapp___renderapp____store2,{value: reflex___state____state__renderapp___renderapp____store2},
+< createElement(StateContexts.reflex___state____state__renderapp___renderapp____sub_a,{value: reflex___state____state__renderapp___renderapp____sub_a},
+< createElement(StateContexts.reflex___state____state__renderapp___renderapp____sub_b,{value: reflex___state____state__renderapp___renderapp____sub_b},
+< createElement(StateContexts.reflex___state____state__renderapp___renderapp____sub_c,{value: reflex___state____state__renderapp___renderapp____sub_c},
+< createElement(StateContexts.reflex___state____state__renderapp___renderapp____sub_d,{value: reflex___state____state__renderapp___renderapp____sub_d},
+< createElement(StateContexts.reflex___state____state__renderapp___renderapp____sub_e,{value: reflex___state____state__renderapp___renderapp____sub_e},
+< createElement(StateContexts.reflex___state____state__renderapp___renderapp____sub_f,{value: reflex___state____state__renderapp___renderapp____sub_f},
+< createElement(StateContexts.reflex___state____state__renderapp___renderapp____sub_g,{value: reflex___state____state__renderapp___renderapp____sub_g},
+< createElement(StateContexts.reflex___state____state__renderapp___renderapp____sub_h,{value: reflex___state____state__renderapp___renderapp____sub_h},
+<     createElement(DispatchContext, {value: dispatchers}, children)
+---
+> export function StateProvider({ children }) {
+>   return useMemo(
+>     () => (
+>     createElement(DispatchProvider, {},
+>     createElement(SubstateProvider, {substateName: 'reflex___state____state', contextName: 'reflex___state____state'},
+> createElement(SubstateProvider, {substateName: 'reflex___state____state.reflex___istate___dynamic____counter_cs_n1', contextName: 'reflex___state____state__reflex___istate___dynamic____counter_cs_n1'},
+> createElement(SubstateProvider, {substateName: 'reflex___state____state.reflex___istate___dynamic____counter_cs_n2', contextName: 'reflex___state____state__reflex___istate___dynamic____counter_cs_n2'},
+> createElement(SubstateProvider, {substateName: 'reflex___state____state.reflex___istate___shared____shared_state_base_internal', contextName: 'reflex___state____state__reflex___istate___shared____shared_state_base_internal'},
+> createElement(SubstateProvider, {substateName: 'reflex___state____state.reflex___state____frontend_event_exception_state', contextName: 'reflex___state____state__reflex___state____frontend_event_exception_state'},
+> createElement(SubstateProvider, {substateName: 'reflex___state____state.reflex___state____on_load_internal_state', contextName: 'reflex___state____state__reflex___state____on_load_internal_state'},
+> createElement(SubstateProvider, {substateName: 'reflex___state____state.reflex___state____update_vars_internal_state', contextName: 'reflex___state____state__reflex___state____update_vars_internal_state'},
+> createElement(SubstateProvider, {substateName: 'reflex___state____state.renderapp___renderapp____late_state', contextName: 'reflex___state____state__renderapp___renderapp____late_state'},
+> createElement(SubstateProvider, {substateName: 'reflex___state____state.renderapp___renderapp____page2_state', contextName: 'reflex___state____state__renderapp___renderapp____page2_state'},
+> createElement(SubstateProvider, {substateName: 'reflex___state____state.renderapp___renderapp____store1', contextName: 'reflex___state____state__renderapp___renderapp____store1'},
+> createElement(SubstateProvider, {substateName: 'reflex___state____state.renderapp___renderapp____store2', contextName: 'reflex___state____state__renderapp___renderapp____store2'},
+> createElement(SubstateProvider, {substateName: 'reflex___state____state.renderapp___renderapp____sub_a', contextName: 'reflex___state____state__renderapp___renderapp____sub_a'},
+> createElement(SubstateProvider, {substateName: 'reflex___state____state.renderapp___renderapp____sub_b', contextName: 'reflex___state____state__renderapp___renderapp____sub_b'},
+> createElement(SubstateProvider, {substateName: 'reflex___state____state.renderapp___renderapp____sub_c', contextName: 'reflex___state____state__renderapp___renderapp____sub_c'},
+> createElement(SubstateProvider, {substateName: 'reflex___state____state.renderapp___renderapp____sub_d', contextName: 'reflex___state____state__renderapp___renderapp____sub_d'},
+> createElement(SubstateProvider, {substateName: 'reflex___state____state.renderapp___renderapp____sub_e', contextName: 'reflex___state____state__renderapp___renderapp____sub_e'},
+> createElement(SubstateProvider, {substateName: 'reflex___state____state.renderapp___renderapp____sub_f', contextName: 'reflex___state____state__renderapp___renderapp____sub_f'},
+> createElement(SubstateProvider, {substateName: 'reflex___state____state.renderapp___renderapp____sub_g', contextName: 'reflex___state____state__renderapp___renderapp____sub_g'},
+> createElement(SubstateProvider, {substateName: 'reflex___state____state.renderapp___renderapp____sub_h', contextName: 'reflex___state____state__renderapp___renderapp____sub_h'},children
+209c191,193
+<   )
+---
+>   )),
+>     [children],
+>   );

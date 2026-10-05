@@ -1,0 +1,106 @@
+PID=18445
+prod 200 after 18s
+    "clipboard": "def greet(name: str) -> str:\n    return f\"hello {name}\"\n",
+    "submits_after_submit": "submits=1",
+    "lang": "javascript",
+    "dynamic_code_text": "def greet(name: str) -> str:\n    return f\"hello {name}\"\n",
+    "dynamic_code_text_after_theme": "def greet(name: str) -> str:\n    return f\"hello {name}\"\n",
+    "belowfold_text": "print('below the fold')\nprint('second line')",
+    "belowfold_tokens": 10
+  },
+  "misc": {
+    "md_text": "Markdown\n\nSome bold and a link.\n\na\tb\n1\t2\nx = 1\n\nInline math \n\ud835\udc65\n2\nx\n2\n and block:\n\n\u222b\n0\n1\n\ud835\udc65\n\ud835\udc51\n\ud835\udc65\n\u222b\n0\n1\n\t\u200b\n\nxdx",
+    "md_table_rows": 2,
+    "md_code_blocks": 1,
+    "table_rows": 4,
+    "table_rows_after_add": 5,
+    "table_rows_after_search": 2,
+    "seg_value": "choice=two",
+    "seg_value2": "choice=three",
+    "foreach_ids": [
+      "_R_eiqj5_",
+      "_R_eiqj5_",
+      "_R_eiqj5_"
+    ],
+    "foreach_html_for": [
+      "_R_eiqj5_",
+      "_R_eiqj5_",
+      "_R_eiqj5_"
+    ],
+    "foreach_ids_unique": false,
+    "foreach_ids_match_labels": true,
+    "memo_hook_id": "memo id: _R_fiqj5_",
+    "memo_input_id": "_R_fiqj5_",
+    "hookvar_text": "page-level use_hook_var(react,useId): _R_2giqj5_",
+    "hookvar_cond": "hookvar truthy",
+    "foreach_ids_stable": true,
+    "foreach_ids_2": [
+      "_R_eiqj5_",
+      "_R_eiqj5_",
+      "_R_eiqj5_"
+    ],
+    "badge_a11y": [
+      {
+        "aria": null,
+        "text": "Built with Reflex",
+        "title": null
+      },
+      {
+        "aria": "Built with Reflex",
+        "text": "Built with Reflex",
+        "title": null
+      },
+      {
+        "aria": "Built with Reflex",
+        "text": "Built with Reflex",
+        "title": null
+      }
+    ]
+  },
+  "nav": {
+    "url": "http://localhost:3231/sankey",
+    "sankey_rects": 0,
+    "code_copy_btns": 1,
+    "plotly_myplot": true
+  },
+  "pageerrors": [],
+  "failed_requests": [],
+  "bad_responses": []
+}
+
+--- console (errors/warnings) ---
+error | Failed to load resource: the server responded with a status of 404 (Not Found) | http://localhost:3231/sankey/
+drive exit=0
+    "SCRIPT#.",
+    "SCRIPT#_R_.",
+    "SCRIPT#.",
+    "SCRIPT#.",
+    "DIV#."
+  ],
+  "carousel_css": [
+    ".carousel .control-arrow, .carousel.carousel-slider .control-arrow { opacity: 0.4; z-index: 2; curso",
+    ".carousel .control-arrow:focus, .carousel .control-arrow:hover { opacity: 1; }",
+    ".carousel .control-arrow::before, .carousel.carousel-slider .control-arrow::before { content: \"\"; bo",
+    ".carousel .control-disabled.control-arrow { opacity: 0; cursor: inherit; display: none; }",
+    ".carousel .control-prev.control-arrow { left: 0px; }",
+    ".carousel .control-prev.control-arrow::before { border-right: 8px solid rgb(255, 255, 255); }",
+    ".carousel .control-next.control-arrow { right: 0px; }",
+    ".carousel .control-next.control-arrow::before { border-left: 8px solid rgb(255, 255, 255); }"
+  ],
+  "overlay_imgs": [
+    "/green.png",
+    "/red.png",
+    "/green.png",
+    "/red.png"
+  ],
+  "carousel_root": "<div class=\"carousel-root\"><div class=\"carousel carousel-slider\" style=\"width: 100%;\"><ul class=\"control-dots\"><li class=\"dot selected\" value=\"0\" role=\"button\" tabindex=\"0\" aria-label=\"slide item 1\"></li><li class=\"dot\" value=\"1\" role=\"button\" tabindex=\"0\" aria-label=\"slide item 2\"></li></ul><button",
+  "console": [
+    [
+      "error",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ]
+  ]
+}
+== ports after ==
+(empty=free)
+GALLERY DONE

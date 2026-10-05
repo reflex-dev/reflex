@@ -1,0 +1,64 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+────────────────────────────── Initializing vapp ───────────────────────────────
+Info: Initializing the web directory.
+Warning: Your version (0.0.0.post50.dev0+4cba00435) of reflex is out of date. 
+Upgrade to 0.9.11.post1 with 'pip install reflex --upgrade'
+Success: Initialized vapp. Install dependencies from `requirements.txt` with `uv
+pip install -r requirements.txt` (or your preferred installer) before running 
+`uv run reflex run`.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+DeprecationWarning: `@rx.memo` on `memo_row` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`item`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (vapp/vapp.py:41)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/home/user/wt/f012/packages/reflex-components-radix/src/reflex_components_radix
+/plugin.py:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:05
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3960/
+DeprecationWarning: `@rx.memo` on `memo_row` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`item`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (vapp/vapp.py:41)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+[Reflex Frontend Exception]
+ [SID: gIaxBetP04pjfVLkAAAB] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state.vapp____misc_state'. This indicates a 
+frontend/backend state mismatch. Rebuild the frontend or check that api_url 
+points to the matching backend.
+
+[Reflex Frontend Exception]
+ [SID: c4Vz7gB6oOHmIaY5AAAD] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state.vapp____misc_state'. This indicates a 
+frontend/backend state mismatch. Rebuild the frontend or check that api_url 
+points to the matching backend.
+
+[Reflex Frontend Exception]
+ [SID: N7q5MInVHDsnWL4SAAAF] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state.vapp____misc_state'. This indicates a 
+frontend/backend state mismatch. Rebuild the frontend or check that api_url 
+points to the matching backend.
+
+Info: Reflex app stopped.

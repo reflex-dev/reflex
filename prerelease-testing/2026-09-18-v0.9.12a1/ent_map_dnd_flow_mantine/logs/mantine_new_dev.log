@@ -1,0 +1,319 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+version 0.8.28. pass Plugin classes directly instead, e.g. 
+disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. 
+(rxconfig.py:5)
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/ent/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='mantine', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'disable_plugins', 'telemetry_enabled', 
+'app_name'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[], 
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.12a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+envs/ent/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/ent/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='mantine', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'disable_plugins', 'telemetry_enabled', 
+'app_name'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[], 
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket')
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.12a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+envs/ent/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────── Initializing mantine ─────────────────────────────
+Debug: Creating /root/.local/share/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /root/.local/share/reflex
+Debug: Validating frontend dependencies.
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+envs/ent/lib/python3.11/site-packages/reflex_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/ent_map_dnd_flow_mantine/mantine_new/reflex.lock/bun.lock to .web/bun.lock
+Debug: Initializing the web directory.
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/ent_map_dnd_flow_mantine/mantine_new/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/ent_map_dnd_flow_mantine/mantine_new/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 97511584737836791563895722316712757269.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.033 seconds
+Debug: Latest version of reflex: 0.9.11.post1
+Debug: Creating .gitignore
+Debug: requirements.txt already has reflex as dependency.
+Success: Initialized mantine. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3622
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8622
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3622 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3622 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3622 is not in use.
+Debug: Checking if Backend port: 8622 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8622 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8622 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/ent/lib/python3.11/site-packages/reflex_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.19s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: 
+Debug: 265 packages installed [217.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@react-router/fs-routes@8.4.0', 
+'autoprefixer@10.5.4', '@react-router/dev@8.4.0', 'postcss-import@17.0.0', 
+'vite@8.2.2', 'postcss@8.5.26', '@emotion/react@11.14.0']
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug:  - autoprefixer
+Debug:  - react-router
+Debug:  - vite
+Debug: 
+Debug: [7.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'sonner@2.0.8', '@radix-ui/themes@3.3.0', 
+'react-error-boundary@6.1.2', '@mantine/dates@8.3.9', 
+'@react-router/node@8.4.0', 'mergician@v2.0.2', 'socket.io-client@4.8.3', 
+'react-syntax-highlighter@16.1.1', 'universal-cookie@8.1.2', 'isbot@5.2.2', 
+'lucide-react@1.26.0', 'react-dom@19.2.8', 'react-helmet@6.1.0', 
+'@mantine/core@8.3.9', 'react-router@8.4.0', 'dayjs@1.11.19', 'react@19.2.8']
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: 
+Debug: [7.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/ent_map_dnd_flow_mantine/mantine_new/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/ent_map_dnd_flow_mantine/mantine_new/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.25s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpa
+d/apps/ent_map_dnd_flow_mantine/mantine_new/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/ent_map_dnd_flow_mantine/mantine_new/assets', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/ent_map_dnd_flow_mantine/mantine_new/mantine', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/ent_map_dnd_flow_mantine/mantine_new/rxconfig.py']
+[INFO] Starting granian (main PID: 18358)
+[INFO] Listening at: http://0.0.0.0:8622
+[INFO] Spawning worker-1 with PID: 18393
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3622/
+App running at: http://localhost:3622/
+Backend running at: http://0.0.0.0:8622
+Debug:   ➜  Network: http://192.0.2.2:3622/  eth0
+[INFO] Changes detected, reloading workers..
+[INFO] Added: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_map_dnd_flow_mantine/mantine_new/mantine/qa_slot.py
+[INFO] Stopping worker-1
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 18610
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/ent/lib/python3.11/site-packages/reflex_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.22s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 266 installs across 289 packages (no changes) [7.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@react-router/fs-routes@8.4.0', 
+'autoprefixer@10.5.4', '@react-router/dev@8.4.0', 'postcss-import@17.0.0', 
+'vite@8.2.2', 'postcss@8.5.26', '@emotion/react@11.14.0']
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug:  - autoprefixer
+Debug:  - react-router
+Debug:  - vite
+Debug: 
+Debug: [7.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'sonner@2.0.8', '@radix-ui/themes@3.3.0', 
+'react-error-boundary@6.1.2', '@mantine/dates@8.3.9', 
+'@react-router/node@8.4.0', 'mergician@v2.0.2', 'socket.io-client@4.8.3', 
+'react-syntax-highlighter@16.1.1', 'universal-cookie@8.1.2', 'isbot@5.2.2', 
+'lucide-react@1.26.0', 'react-dom@19.2.8', 'react-helmet@6.1.0', 
+'@mantine/core@8.3.9', 'react-router@8.4.0', 'dayjs@1.11.19', 'react@19.2.8']
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: 
+Debug: [7.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/ent_map_dnd_flow_mantine/mantine_new/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/ent_map_dnd_flow_mantine/mantine_new/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.04s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 2:14:22 AM [vite] (ssr) connected.
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_map_dnd_flow_mantine/mantine_new/mantine/qa_slot.py
+[INFO] Modified: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_map_dnd_flow_mantine/mantine_new/mantine/mantine.py
+[INFO] Stopping worker-1
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 18752
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.09s
+Process granian-worker:
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.11/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent/lib/python3.11/site-packages/granian/server/mp.py", line 92, in wrapped
+    callback = callback_loader()
+               ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent/lib/python3.11/site-packages/granian/_internal.py", line 70, in load_target
+    rv = rv()
+         ^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent/lib/python3.11/site-packages/reflex/app.py", line 791, in __call__
+    self._compile(
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent/lib/python3.11/site-packages/reflex/app.py", line 1715, in _compile
+    compiler.compile_app(
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 1325, in compile_app
+    compile_ctx.compile(
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 809, in compile
+    page_ctx = self.hooks.eval_page(
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 271, in eval_page
+    result = hook_impl(page_fn, page=page, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent/lib/python3.11/site-packages/reflex/compiler/plugins/builtin.py", line 42, in eval_page
+    component = compiler.into_component(page_fn)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 968, in into_component
+    component_called = component()
+                       ^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_map_dnd_flow_mantine/mantine_new/mantine/common.py", line 124, in inner
+    return demo_template(page)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_map_dnd_flow_mantine/mantine_new/mantine/common.py", line 86, in demo_template
+    rx.tabs.content(page(), value="example", height="fit-content"),
+                    ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_map_dnd_flow_mantine/mantine_new/mantine/qa_slot.py", line 116, in qa_slot_page
+    rx.form.control(
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_components_radix/primitives/form.py", line 112, in create
+    raise TypeError(msg)
+TypeError: Only Radix TextFieldRoot and DebounceInput are allowed as children of FormControl
+Happened while evaluating page 'qa-slot'
+[ERROR] Unexpected exit from worker-1
+Debug: error: script "dev" exited with code 143
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

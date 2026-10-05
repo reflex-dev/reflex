@@ -1,0 +1,33 @@
+mods at import: mods at import:
+mods after data import: mods after data import: PIL,numpy,pandas,plotly
+mods now: mods now: PIL,numpy,pandas,plotly
+initial dt: n
+	
+sq
+	
+label
+
+No matching records found
+after df status: status: df 4 rows | hasrows: has rows: 4
+dt text: n 	 sq 	 label  0	0	row-0 1	1	row-1 2	4	row-2 3	9	row-3
+dt cells: ['0', '0', 'row-0', '1', '1', 'row-1', '2', '4', 'row-2', '3', '9', 'row-3']
+after fig status: status: fig n=4
+plotly svg count: 13
+plotly bars: 8
+plotly title: ['squares n=4']
+after img status: status: img shade=100 | img src prefix: data:image/png;base64,iVBORw0KGgoAAAANSU | len: 230
+img natural size: [64, 64]
+after ALL status: status: img shade=125 | dt cells: ['0', '0', 'row-0', '1', '1', 'row-1', '2', '4']
+plotly title after all: ['squares n=5']
+img changed: True
+bg status: bg: bg built df+fig+img | dt cells: ['1', '1', 'bg-a', '2', '4', 'bg-b', '3', '9', 'bg-c']
+mods now after bg: mods now: PIL,numpy,pandas,plotly
+ComponentState button: cs clicks: 2
+memo caption: memoized caption
+after reload: status: status: img shade=125 | dt cells: ['1', '1', 'bg-a', '2', '4', 'bg-b']
+after reload img src len: 230
+
+=== CONSOLE err/warn ===
+PAGE ERRORS: []
+BAD RESPONSES: []
+TOTAL CONSOLE: 9

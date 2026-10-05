@@ -1,0 +1,107 @@
+{
+  "tag": "up",
+  "initial": {
+    "clicks": "0",
+    "bucket-uncached": "0",
+    "bucket-cached": "0",
+    "clicks-uncached": "0",
+    "counter-count": "0",
+    "bg-ticks": "0",
+    "legacy-path": "/extras",
+    "raw-path": "/extras",
+    "cs-value": "client-initial"
+  },
+  "bump_marks": [
+    {
+      "i": 1,
+      "clicks": "1",
+      "bucket_uncached": "0",
+      "bucket_cached": "0",
+      "frames": [
+        "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.counter___extras____extra_state\":{\"clicks_rx_state_\":1,\"clicks_uncached_rx_state_\":1,\"bucket_cached_rx_state_\":0}}}]"
+      ]
+    },
+    {
+      "i": 2,
+      "clicks": "2",
+      "bucket_uncached": "0",
+      "bucket_cached": "0",
+      "frames": [
+        "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.counter___extras____extra_state\":{\"clicks_rx_state_\":2,\"clicks_uncached_rx_state_\":2,\"bucket_cached_rx_state_\":0}}}]"
+      ]
+    },
+    {
+      "i": 3,
+      "clicks": "3",
+      "bucket_uncached": "1",
+      "bucket_cached": "1",
+      "frames": [
+        "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.counter___extras____extra_state\":{\"bucket_uncached_rx_state_\":1,\"clicks_rx_state_\":3,\"clicks_uncached_rx_state_\":3,\"bucket_cached_rx_state_\":1}}}]"
+      ]
+    },
+    {
+      "i": 4,
+      "clicks": "4",
+      "bucket_uncached": "1",
+      "bucket_cached": "1",
+      "frames": [
+        "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.counter___extras____extra_state\":{\"clicks_rx_state_\":4,\"clicks_uncached_rx_state_\":4,\"bucket_cached_rx_state_\":1}}}]"
+      ]
+    },
+    {
+      "i": 5,
+      "clicks": "5",
+      "bucket_uncached": "1",
+      "bucket_cached": "1",
+      "frames": [
+        "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.counter___extras____extra_state\":{\"clicks_rx_state_\":5,\"clicks_uncached_rx_state_\":5,\"bucket_cached_rx_state_\":1}}}]"
+      ]
+    },
+    {
+      "i": 6,
+      "clicks": "6",
+      "bucket_uncached": "2",
+      "bucket_cached": "2",
+      "frames": [
+        "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.counter___extras____extra_state\":{\"bucket_uncached_rx_state_\":2,\"clicks_rx_state_\":6,\"clicks_uncached_rx_state_\":6,\"bucket_cached_rx_state_\":2}}}]"
+      ]
+    },
+    {
+      "i": 7,
+      "clicks": "7",
+      "bucket_uncached": "2",
+      "bucket_cached": "2",
+      "frames": [
+        "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.counter___extras____extra_state\":{\"clicks_rx_state_\":7,\"clicks_uncached_rx_state_\":7,\"bucket_cached_rx_state_\":2}}}]"
+      ]
+    }
+  ],
+  "after_bumps": {
+    "clicks": "7",
+    "bucket-uncached": "2",
+    "bucket-cached": "2",
+    "clicks-uncached": "7"
+  },
+  "cond_many": 1,
+  "cs_after_set": "client-updated",
+  "toggle_a": "ON",
+  "toggle_b": "OFF",
+  "counter_after_chain": "1",
+  "bg_after_chain": "3",
+  "log_entries": [
+    "chain@7"
+  ],
+  "log_after_memo_upload": [
+    "chain@7",
+    "uploaded memo-up.txt 20b"
+  ],
+  "home_heading": "1",
+  "clicks_after_nav_back": "7",
+  "cs_after_nav_back": "client-updated",
+  "raw_path_after_nav_back": "/extras",
+  "clicks_after_direct_load": "7",
+  "raw_path_direct": "/extras",
+  "console_notable": [],
+  "page_errors": [],
+  "bad_responses": []
+}

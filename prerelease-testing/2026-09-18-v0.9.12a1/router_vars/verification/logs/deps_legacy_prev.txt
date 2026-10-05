@@ -1,0 +1,3 @@
+auto_deps True
+static {None: {'router'}}
+deps {'reflex___state____state.__main_____s': {'router'}}

@@ -1,0 +1,12 @@
+# Follow-up: after the fix
+$ uv run pytest tests/units/test_state.py -p no:randomly
+
+  /home/user/wt/f003/packages/reflex-base/src/reflex_base/utils/types.py:594: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    return cls.__fields__[field_name].annotation
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+222 passed, 203 warnings in 7.19s
+
+$ uv run pyright reflex tests
+
+0 errors, 0 warnings, 0 informations

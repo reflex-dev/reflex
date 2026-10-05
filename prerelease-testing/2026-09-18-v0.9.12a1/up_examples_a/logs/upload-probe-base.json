@@ -1,0 +1,35 @@
+{
+  "tag": "base",
+  "files_before": [
+    "beta.txt",
+    "alpha.txt"
+  ],
+  "a_count_after_upload": 2,
+  "a_texts_after_upload": [
+    "beta.txt",
+    "alpha.txt"
+  ],
+  "html_around_files": "-r-fd-row rt-r-ai-start rt-r-gap-3 rx-Stack\"><button data-accent-color=\"\" class=\"rt-reset rt-BaseButton rt-r-size-2 rt-variant-solid rt-Button\">Upload</button></div><h1 class=\"rt-Heading rt-r-size-6\">Files:</h1><div aria-valuemax=\"100\" aria-valuemin=\"0\" aria-valuenow=\"100\" aria-valuetext=\"100%\" role=\"progressbar\" data-state=\"complete\" data-value=\"100\" data-max=\"100\" class=\"rt-ProgressRoot rt-r-size-2 rt-variant-surface css-8atqhb\" style=\"--progress-value: 100;\"><div data-state=\"complete\" data-value=\"100\" data-max=\"100\" class=\"rt-ProgressIndicator\"></div></div><div class=\"rt-Flex rt-r-fd-column rt-r-ai-start rt-r-gap-3 rx-Stack\"><a data-accent-color=\"\" class=\"rt-Text rt-reset rt-Link rt-underline-auto css-1macts\" href=\"http://localhost:8460/_upload/beta.txt\">beta.txt</a><a data-accent-color=\"\" class=\"rt-Text rt-reset rt-Link rt-underline-auto css-1macts\" href=\"http://localhost:8460/_upload/alpha.txt\">alpha.txt</a></div></div></div><!--$--><script>window.__reactRouterContext.streamController.enqueue(\"[{\\\"_1\\\":2,\\\"_3\\\":-5,\\\"_4\\\":-5},\\\"loaderData\\\",{},\\\"actionData\\\",\\\"errors\\\"]\\n\");</script><!--$--><script>window.__reactRouterContext.streamController.close();</script><!--/$--><!--/$--></body></html>",
+  "a_count_after_reload": 2,
+  "a_texts_after_reload": [
+    "beta.txt",
+    "alpha.txt"
+  ],
+  "html_around_files_reload": "-r-fd-row rt-r-ai-start rt-r-gap-3 rx-Stack\"><button data-accent-color=\"\" class=\"rt-reset rt-BaseButton rt-r-size-2 rt-variant-solid rt-Button\">Upload</button></div><h1 class=\"rt-Heading rt-r-size-6\">Files:</h1><div aria-valuemax=\"100\" aria-valuemin=\"0\" aria-valuenow=\"100\" aria-valuetext=\"100%\" role=\"progressbar\" data-state=\"complete\" data-value=\"100\" data-max=\"100\" class=\"rt-ProgressRoot rt-r-size-2 rt-variant-surface css-8atqhb\" style=\"--progress-value: 100;\"><div data-state=\"complete\" data-value=\"100\" data-max=\"100\" class=\"rt-ProgressIndicator\"></div></div><div class=\"rt-Flex rt-r-fd-column rt-r-ai-start rt-r-gap-3 rx-Stack\"><a data-accent-color=\"\" class=\"rt-Text rt-reset rt-Link rt-underline-auto css-1macts\" href=\"http://localhost:8460/_upload/beta.txt\">beta.txt</a><a data-accent-color=\"\" class=\"rt-Text rt-reset rt-Link rt-underline-auto css-1macts\" href=\"http://localhost:8460/_upload/alpha.txt\">alpha.txt</a></div></div></div><!--$--><script>window.__reactRouterContext.streamController.enqueue(\"[{\\\"_1\\\":2,\\\"_3\\\":-5,\\\"_4\\\":-5},\\\"loaderData\\\",{},\\\"actionData\\\",\\\"errors\\\"]\\n\");</script><!--$--><script>window.__reactRouterContext.streamController.close();</script><!--/$--><!--/$--></body></html>",
+  "console": [
+    "[log] \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "[debug] [vite] connecting...",
+    "[debug] [vite] connected.",
+    "[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "[log] Disconnect websocket on page navigation",
+    "[log] \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "[debug] [vite] connecting...",
+    "[debug] [vite] connected.",
+    "[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "[log] Disconnect websocket on pagehide"
+  ],
+  "ws_frames_with_files": [
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"be24e90b-6727-4616-ff87-39a7b5222e26\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"_Y2HMnnb2Iu1Z3ncAAAB\"},\"headers\":{\"host\":\"localhost:8460\",\"origin\":\"http://localhost:3460\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"rHJB7P5Wvo/z1bsW4H4Lj",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"be24e90b-6727-4616-ff87-39a7b5222e26\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"ZLisj3xAsnuxQIx7AAAD\"},\"headers\":{\"host\":\"localhost:8460\",\"origin\":\"http://localhost:3460\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"sz+e+MosNUwNFvDnF/lR+"
+  ]
+}

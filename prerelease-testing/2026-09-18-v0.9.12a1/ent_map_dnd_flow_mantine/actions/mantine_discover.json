@@ -1,0 +1,7 @@
+[
+ {"goto": "/dates"},
+ {"wait": 4000},
+ {"shot": "discover_dates"},
+ {"eval": "() => {const s=new Set(); document.querySelectorAll('[class*=mantine-]').forEach(e=>e.classList.forEach(c=>{if(c.startsWith('mantine-')) s.add(c);})); return Array.from(s).sort();}"},
+ {"eval": "() => Array.from(document.querySelectorAll('.rt-Card')).map(c=>({label: c.innerText.split('\\n')[0], inputs: c.querySelectorAll('input').length, buttons: c.querySelectorAll('button').length, first_btn_class: (c.querySelector('button')||{}).className}))"}
+]

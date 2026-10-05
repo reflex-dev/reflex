@@ -1,0 +1,6 @@
+FAILED tests/units/reflex_cli/v2/test_vmtypes_regions.py::test_get_deployment_regions_empty
+FAILED tests/units/reflex_cli/v2/test_vmtypes_regions.py::test_get_deployment_regions_http_error
+FAILED tests/units/reflex_cli/v2/test_vmtypes_regions.py::test_create_token_json_output
+FAILED tests/units/reflex_cli/v2/test_vmtypes_regions.py::test_generate_cloud_config_json_output
+FAILED tests/units/reflex_cli/v2/test_vmtypes_regions.py::test_generate_cloud_config_json_output_when_nothing_written
+207 failed, 9488 passed, 20 skipped, 494 warnings in 131.51s (0:02:11)

@@ -1,0 +1,76 @@
+63,74c63,75
+<       "rx_router_page": {
+<         "host": "",
+<         "path": "/_reflex/mcp",
+<         "raw_path": "/_reflex/mcp",
+<         "full_path": "/_reflex/mcp",
+<         "full_raw_path": "/_reflex/mcp",
+<         "params": {}
+<       },
+<       "rx_router_url": {
+<         "scheme": "",
+<         "netloc": "",
+<         "o
+---
+>       "router": {
+>         "session": {
+>           "client_token": "",
+>           "client_ip": "0.0.0.0",
+>           "session_id": ""
+>         },
+>         "headers": {
+>           "host": "",
+>           "origin": "",
+>           "upgrade": "",
+>           "connection": "",
+>           "cookie": "",
+>           "pragm
+93,110c94,114
+<       "rx_router_page": {
+<         "host": "",
+<         "path": "/_reflex/mcp",
+<         "raw_path": "/_reflex/mcp?foo=bar",
+<         "full_path": "/_reflex/mcp",
+<         "full_raw_path": "/_reflex/mcp?foo=bar",
+<         "params": {
+<           "foo": "bar"
+<         }
+<       },
+<       "rx_router_url": {
+<         "scheme": "",
+<         "netloc": "",
+<         "origin": "://",
+<         "path": "/_reflex/mcp",
+<         "query": "foo=bar",
+<         "query_parameters": {
+<           "foo": "bar"
+---
+>       "router": {
+>         "session": {
+>           "client_token": "",
+>           "client_ip": "0.0.0.0",
+>           "session_id": ""
+>         },
+>         "headers": {
+>           "host": "",
+>           "origin": "",
+>           "upgrade": "",
+>           "connection": "",
+>           "cookie": "",
+>           "pragma": "",
+>           "cache_control": "",
+>           "user_agent": "",
+>           "sec_websocket_version": "",
+>           "sec_websocket_key": "",
+>           "sec_websocket_extensions": "",
+>           "accept_encoding": "",
+>           "accept_language": "",
+>           "raw_headers": {}
+112,116c116
+<         "fragment": "",
+<         "href": "/_reflex/mcp?foo=bar"
+<       }
+<     },
+<     "reflex___state____state.
+---
+>       

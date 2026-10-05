@@ -1,0 +1,41 @@
+{
+ "label": "a2_memoprod",
+ "console": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "page_errors": [],
+ "before": {
+  "badge": false,
+  "badge_text": null,
+  "badge_parent": null,
+  "toaster": false,
+  "overlay_present": true,
+  "uploads": 3,
+  "body_children": [
+   "SECTION",
+   "DIV",
+   "SCRIPT",
+   "SCRIPT",
+   "SCRIPT",
+   "SCRIPT",
+   "SCRIPT",
+   "SCRIPT#_R_",
+   "SCRIPT",
+   "SCRIPT"
+  ]
+ },
+ "after_toast": {
+  "toasts": 1,
+  "texts": [
+   "toast #1"
+  ],
+  "badge_still": false
+ }
+}

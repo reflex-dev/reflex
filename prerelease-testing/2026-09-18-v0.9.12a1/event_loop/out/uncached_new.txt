@@ -1,0 +1,87 @@
+=== hydrate frames (first 3 in) ===
+  c1 event {'delta': {'reflex___state____state': {'is_hydrated_rx_state_': False, 'rx_router_headers_rx_state_': {'host': 'localhost:8180', 'origin': 'http://localhost:3180', 'upgrade': 'websocket', 'connection': 'Upgrade', 'cookie': '', 'pragma': 'no-cache', 'cache_control': 'no-cache', 'user_agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.
+  c1 event {'delta': {'reflex___state____state.elapp___elapp___uc': {'u_async_rx_state_': 'as0', 'u_list_rx_state_': [1, 2, 3], 'u_alt_rx_state_': 'A', 'u_stable_rx_state_': 'STABLE', 'u_dict_order_rx_state_': {'a': 1, 'b': 2}, 'u_nan_rx_state_': nan, 'u_derived_rx_state_': 'd0'}, 'reflex___state____state.elapp___elapp___uc.elapp___elapp___uc_child': {'u_parent_rx_state_': 'p0'}, 'reflex___state____state.ela
+  c1 event {'delta': {'reflex___state____state': {'is_hydrated_rx_state_': True}}}
+
+=== initial rendered values ===
+  counter    = '0'
+  u_stable   = 'STABLE'
+  u_derived  = 'd0'
+  u_alt      = 'A'
+  u_nan      = 'null'
+  u_list     = '[1,2,3]'
+  u_dict     = '{"a":1,"b":2}'
+  u_async    = 'as0'
+  u_parent   = 'p0'
+  u_obj      = 'null'
+
+=== after 3x touch (unrelated var) ===
+  delta: {'reflex___state____state.elapp___elapp___uc': ['nonce_rx_state_']}
+  delta: {'reflex___state____state.elapp___elapp___uc': ['nonce_rx_state_']}
+  delta: {'reflex___state____state.elapp___elapp___uc': ['nonce_rx_state_']}
+
+=== after 2x noop ===
+
+=== bump -> counter=1 ===
+  delta: {'reflex___state____state.elapp___elapp___uc': ['counter_rx_state_', 'u_alt_rx_state_', 'u_dict_order_rx_state_'], 'reflex___state____state.elapp___elapp___uc.elapp___elapp___uc_child': ['u_parent_rx_state_']}
+  rendered: {'u_derived': 'd0', 'u_alt': 'B', 'u_async': 'as0', 'u_parent': 'p1'}
+
+=== bump -> counter=2 ===
+  delta: {'reflex___state____state.elapp___elapp___uc': ['counter_rx_state_', 'u_alt_rx_state_', 'u_dict_order_rx_state_'], 'reflex___state____state.elapp___elapp___uc.elapp___elapp___uc_child': ['u_parent_rx_state_']}
+  rendered: {'u_derived': 'd0', 'u_alt': 'A', 'u_async': 'as0', 'u_parent': 'p2'}
+
+=== bump -> counter=3 ===
+  delta: {'reflex___state____state.elapp___elapp___uc': ['counter_rx_state_', 'u_alt_rx_state_', 'u_derived_rx_state_', 'u_dict_order_rx_state_'], 'reflex___state____state.elapp___elapp___uc.elapp___elapp___uc_child': ['u_parent_rx_state_']}
+  rendered: {'u_derived': 'd1', 'u_alt': 'B', 'u_async': 'as0', 'u_parent': 'p3'}
+
+=== bump -> counter=4 ===
+  delta: {'reflex___state____state.elapp___elapp___uc': ['counter_rx_state_', 'u_alt_rx_state_', 'u_async_rx_state_', 'u_dict_order_rx_state_'], 'reflex___state____state.elapp___elapp___uc.elapp___elapp___uc_child': ['u_parent_rx_state_']}
+  rendered: {'u_derived': 'd1', 'u_alt': 'A', 'u_async': 'as1', 'u_parent': 'p4'}
+
+=== bump -> counter=5 ===
+  delta: {'reflex___state____state.elapp___elapp___uc': ['counter_rx_state_', 'u_alt_rx_state_', 'u_dict_order_rx_state_'], 'reflex___state____state.elapp___elapp___uc.elapp___elapp___uc_child': ['u_parent_rx_state_']}
+  rendered: {'u_derived': 'd1', 'u_alt': 'B', 'u_async': 'as1', 'u_parent': 'p5'}
+
+=== bump -> counter=6 ===
+  delta: {'reflex___state____state.elapp___elapp___uc': ['counter_rx_state_', 'u_alt_rx_state_', 'u_derived_rx_state_', 'u_dict_order_rx_state_'], 'reflex___state____state.elapp___elapp___uc.elapp___elapp___uc_child': ['u_parent_rx_state_']}
+  rendered: {'u_derived': 'd2', 'u_alt': 'A', 'u_async': 'as1', 'u_parent': 'p6'}
+
+=== after reset (values return to earlier values) ===
+  delta: {'reflex___state____state.elapp___elapp___uc': ['counter_rx_state_', 'nonce_rx_state_', 'u_async_rx_state_', 'u_derived_rx_state_'], 'reflex___state____state.elapp___elapp___uc.elapp___elapp___uc_child': ['u_parent_rx_state_']}
+  rendered: {'counter': '0', 'u_derived': 'd0', 'u_alt': 'A', 'u_async': 'as0'}
+
+=== after 3x bump-obj (complex -> null) ===
+  delta: {'reflex___state____state.elapp___elapp____unkeyable': ['n_rx_state_']}
+  delta: {'reflex___state____state.elapp___elapp____unkeyable': ['n_rx_state_']}
+  delta: {'reflex___state____state.elapp___elapp____unkeyable': ['n_rx_state_']}
+
+=== after hard reload (same token) ===
+  counter    = '0'
+  u_stable   = 'STABLE'
+  u_derived  = 'd0'
+  u_alt      = 'A'
+  u_async    = 'as0'
+  u_parent   = 'p0'
+
+=== second context values ===
+  counter    = '0'
+  u_stable   = 'STABLE'
+  u_derived  = 'd0'
+  u_alt      = 'A'
+  u_async    = 'as0'
+  u_parent   = 'p0'
+  c2 touch deltas: [('c2', {'reflex___state____state.elapp___elapp___uc': ['nonce_rx_state_']})]
+
+=== after client-side nav away and back ===
+  counter    = '0'
+  u_stable   = 'STABLE'
+  u_derived  = 'd0'
+  u_alt      = 'A'
+  u_async    = 'as0'
+  u_parent   = 'p0'
+
+=== console (non-benign) ===
+   [c1][log] Disconnect websocket on page navigation
+=== pageerrors ===
+=== net ===
+frames total: 61

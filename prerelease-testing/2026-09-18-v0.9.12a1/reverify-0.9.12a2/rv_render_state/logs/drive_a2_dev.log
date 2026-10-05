@@ -1,0 +1,273 @@
+{
+  "label": "a2_dev",
+  "base": "http://localhost:3180",
+  "events": [
+    {
+      "name": "bumpA_x5",
+      "delta": {
+        "A": 10,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 0,
+        "PAGE": 0,
+        "colormode": 0,
+        "componentstate": 0,
+        "dual": 10,
+        "evloop": 0,
+        "foreach_row": 0,
+        "late": 0
+      }
+    },
+    {
+      "name": "bumpC_x5",
+      "delta": {
+        "A": 0,
+        "B": 0,
+        "C": 10,
+        "D": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 0,
+        "PAGE": 0,
+        "colormode": 0,
+        "componentstate": 0,
+        "dual": 0,
+        "evloop": 0,
+        "foreach_row": 0,
+        "late": 0
+      }
+    },
+    {
+      "name": "chain_H_C_A",
+      "delta": {
+        "A": 2,
+        "B": 0,
+        "C": 2,
+        "D": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 2,
+        "PAGE": 0,
+        "colormode": 0,
+        "componentstate": 0,
+        "dual": 2,
+        "evloop": 0,
+        "foreach_row": 0,
+        "late": 0
+      }
+    },
+    {
+      "name": "componentstate_clicks",
+      "delta": {
+        "A": 0,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 0,
+        "PAGE": 0,
+        "colormode": 0,
+        "componentstate": 0,
+        "dual": 0,
+        "evloop": 0,
+        "foreach_row": 0,
+        "late": 0
+      }
+    },
+    {
+      "name": "storm_B_5s_plus_10_A_clicks",
+      "delta": {
+        "A": 20,
+        "B": 100,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 0,
+        "PAGE": 0,
+        "colormode": 0,
+        "componentstate": 0,
+        "dual": 120,
+        "evloop": 0,
+        "foreach_row": 0,
+        "late": 0
+      }
+    },
+    {
+      "name": "colormode_toggle_x4",
+      "delta": {
+        "A": 0,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 0,
+        "PAGE": 0,
+        "colormode": 8,
+        "componentstate": 0,
+        "dual": 0,
+        "evloop": 0,
+        "foreach_row": 0,
+        "late": 0
+      }
+    },
+    {
+      "name": "late_mount_and_bump",
+      "delta": {
+        "A": 0,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 0,
+        "PAGE": 0,
+        "colormode": 0,
+        "componentstate": 0,
+        "dual": 0,
+        "evloop": 0,
+        "foreach_row": 0,
+        "late": 0
+      }
+    },
+    {
+      "name": "nav_page2_and_back",
+      "delta": {
+        "A": 4,
+        "B": 4,
+        "C": 2,
+        "D": 2,
+        "E": 2,
+        "F": 2,
+        "G": 2,
+        "H": 2,
+        "PAGE": 4,
+        "PAGE2": 2,
+        "colormode": 2,
+        "componentstate": 4,
+        "dual": 4,
+        "evloop": 2,
+        "foreach_row": 600,
+        "late": 4
+      }
+    },
+    {
+      "name": "rebuild_300_rows",
+      "delta": {
+        "A": 0,
+        "B": 0,
+        "C": 0,
+        "D": 0,
+        "DYN": 0,
+        "E": 0,
+        "F": 0,
+        "G": 0,
+        "H": 0,
+        "PAGE": 0,
+        "PAGE2": 0,
+        "colormode": 0,
+        "componentstate": 0,
+        "dual": 0,
+        "evloop": 0,
+        "foreach_row": 600,
+        "late": 0
+      }
+    }
+  ],
+  "notes": [],
+  "load_seconds": 1.7,
+  "initial_recv_event_frames": 4,
+  "initial_frames_with_both_substates": 2,
+  "cs_values": [
+    "2",
+    "1"
+  ],
+  "storm_seconds": 5.78,
+  "longtasks_during_storm": [],
+  "storm_values": {
+    "A": "17",
+    "B": "51"
+  },
+  "colormode_sequence": [
+    "DARK",
+    "LIGHT",
+    "DARK",
+    "LIGHT"
+  ],
+  "cm_after_emulate_dark": "LIGHT",
+  "cm_after_emulate_light": "LIGHT",
+  "storage_before_reload": {
+    "ls": "LSVAL",
+    "ss": "SSVAL",
+    "ck": "CKVAL",
+    "cs": "CSVAL",
+    "ls_echo": "LSVAL",
+    "ck_echo": "CKVAL"
+  },
+  "late_value": "1",
+  "page2_value_after_bump": "1",
+  "page2_a_value": "17",
+  "after_nav_values": {
+    "A": "18",
+    "B": "52"
+  },
+  "console_after_storm2": [
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    }
+  ],
+  "page2_value_after_bg_storm": "11",
+  "page2_value_after_bg_storm_plus_click": "12",
+  "dyn_pid": "abc",
+  "dyn_a_value": "19",
+  "rows_rebuild_seconds": 0.058,
+  "storage_after_reload": {
+    "ls": "LSVAL",
+    "ss": "SSVAL",
+    "ck": "CKVAL",
+    "cs": "",
+    "ls_echo": "LSVAL",
+    "ss_echo": "SSVAL",
+    "ck_echo": "CKVAL"
+  },
+  "tab2_storage": {
+    "ls": "LSVAL",
+    "ss": "",
+    "ck": "CKVAL"
+  },
+  "tab2_A": "1",
+  "direct_page2_value": "1",
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": [],
+  "ws_frame_counts": {
+    "recv": 129,
+    "sent": 54
+  }
+}
+CONSOLE ERRORS: []

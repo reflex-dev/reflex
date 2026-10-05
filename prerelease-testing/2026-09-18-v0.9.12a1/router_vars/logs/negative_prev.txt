@@ -1,0 +1,159 @@
+reflex from: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/prev/lib/python3.11/site-packages/reflex/__init__.py
+reflex version: 0.9.11.post1
+======================================================================
+
+### substate declares rx_router_url: str
+   C1.rx_router_url repr: Var.__init_subclass__.<locals>.StringCastedVar(_js_expr='reflex___state____state__reflex___istate___dynamic___p1__reflex___istate___dynamic___c1.rx_router_url_rx_state_', _var_type=<class 'str'>, _var_data=None, _original=Var(_js_expr='reflex___state____state__reflex___istate___dynamic___p1__reflex___istate___dynamic___c1.rx_router_url_rx_state_', _var_type=<class 'str'>, _var_data=VarData(state='reflex___state____state.reflex___istate___dynamic___p1.reflex___istate___dynamic___c1', field_name='rx_router_url', imports=(('$/utils/context', (ImportVar(tag='StateContexts', is_default=False, alias=None, install=True, render=True, package_path='/'),)), ('react', (ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/'),))), hooks=('const reflex___state____state__reflex___istate___dynamic___p1__reflex___istate___dynamic___c1 = useContext(StateContexts.reflex___state____state__reflex___istate___dynamic___p1__reflex___istate___dynamic___c1)',), deps=(), position=None, components=(), app_wraps=((100, {"name": "StateProvider", "props": [], "children": []}), (90, {"name": "EventLoopProvider", "props": [], "children": []})))))
+  NO EXCEPTION (class created)
+
+### substate declares rx_router_session: dict
+  NO EXCEPTION (class created)
+
+### substate declares rx_router_page / headers / route_id
+  NO EXCEPTION (class created)
+
+### substate declares a base var named 'router'
+  NO EXCEPTION (class created)
+
+### computed var named 'router'
+  RAISED ComputedVarShadowsBaseVarsError: The computed var name `router_rx_state_` shadows a base var in reflex.istate.dynamic.C2; use a different name instead
+
+### substate shadows parent base var (int -> str) [issue 7074 repro]
+   Child3.x repr: 'ninety-nine' str
+   is Var? False
+  NO EXCEPTION (class created)
+
+### substate shadows parent base var (same type/default)
+   Child3b.count repr: 0 int
+  NO EXCEPTION (class created)
+
+### grandchild shadows grandparent base var
+  NO EXCEPTION (class created)
+
+### substate shadows inherited 'is_hydrated' from root State
+  NO EXCEPTION (class created)
+
+### substate shadows a parent BACKEND var (_x)
+   Child3d backend vars: ['_reflex_internal_links', '_priv']
+  NO EXCEPTION (class created)
+
+### state var named 'dirty_vars'
+  RAISED KeyError: '__module__'
+
+### state var named 'get_delta'
+  RAISED KeyError: '__module__'
+
+### state var named 'process'
+  RAISED KeyError: '__module__'
+
+### state var named 'router_data'
+  RAISED KeyError: '__module__'
+
+### state var named 'parent_state'
+  RAISED KeyError: '__module__'
+
+### state var named 'substates'
+  RAISED KeyError: '__module__'
+
+### state var named 'get_value'
+  RAISED KeyError: '__module__'
+
+### state var named 'dict'
+  RAISED KeyError: '__module__'
+
+### state var named 'set'
+  RAISED KeyError: '__module__'
+
+### state var named 'get_fields'
+  RAISED KeyError: '__module__'
+
+### state var named '_get_was_touched'
+  RAISED KeyError: '__module__'
+
+### state var named '_update_was_touched'
+  RAISED KeyError: '__module__'
+
+### state var named 'setvar'
+  RAISED KeyError: '__module__'
+
+### state var named 'reset'
+  RAISED KeyError: '__module__'
+
+### state var named 'get_name'
+  RAISED KeyError: '__module__'
+
+### state var named 'json'
+  RAISED KeyError: '__module__'
+
+### event handler named 'dirty_vars'
+  RAISED KeyError: '__module__'
+
+### event handler named 'process'
+  RAISED KeyError: '__module__'
+
+### event handler named 'get_delta'
+  RAISED KeyError: '__module__'
+
+### event handler named 'set'
+  RAISED KeyError: '__module__'
+
+### event handler named 'dict'
+  RAISED KeyError: '__module__'
+
+### event handler named 'reset'
+  RAISED KeyError: '__module__'
+
+### event handler named 'setvar'
+  RAISED KeyError: '__module__'
+
+### dynamic route arg named 'router'
+  RAISED DynamicRouteArgShadowsStateVarError: Dynamic route arg 'router' is shadowing an existing var in reflex.state.State
+
+### dynamic route arg named 'state'
+  RAISED ReflexRuntimeError: A RegistrationContext can only be associated with a single App instance. To create another App, call `.fork()` on the current RegistrationContext and set the fork as the current context before instantiating the new App; forking preserves existing state and event handler registrations, which a bare RegistrationContext() would lose.
+
+### dynamic route arg named 'dirty_vars'
+  RAISED ReflexRuntimeError: A RegistrationContext can only be associated with a single App instance. To create another App, call `.fork()` on the current RegistrationContext and set the fork as the current context before instantiating the new App; forking preserves existing state and event handler registrations, which a bare RegistrationContext() would lose.
+
+### dynamic route arg named 'rx_router_url'
+  RAISED ReflexRuntimeError: A RegistrationContext can only be associated with a single App instance. To create another App, call `.fork()` on the current RegistrationContext and set the fork as the current context before instantiating the new App; forking preserves existing state and event handler registrations, which a bare RegistrationContext() would lose.
+
+======================================================================
+SUMMARY
+ok    | substate declares rx_router_url: str |  | 
+ok    | substate declares rx_router_session: dict |  | 
+ok    | substate declares rx_router_page / headers / route_id |  | 
+ok    | substate declares a base var named 'router' |  | 
+RAISE | computed var named 'router' | ComputedVarShadowsBaseVarsError | The computed var name `router_rx_state_` shadows a base var in reflex.istate.dynamic.C2; use a different name instead
+ok    | substate shadows parent base var (int -> str) [issue 7074 repro] |  | 
+ok    | substate shadows parent base var (same type/default) |  | 
+ok    | grandchild shadows grandparent base var |  | 
+ok    | substate shadows inherited 'is_hydrated' from root State |  | 
+ok    | substate shadows a parent BACKEND var (_x) |  | 
+RAISE | state var named 'dirty_vars' | KeyError | '__module__'
+RAISE | state var named 'get_delta' | KeyError | '__module__'
+RAISE | state var named 'process' | KeyError | '__module__'
+RAISE | state var named 'router_data' | KeyError | '__module__'
+RAISE | state var named 'parent_state' | KeyError | '__module__'
+RAISE | state var named 'substates' | KeyError | '__module__'
+RAISE | state var named 'get_value' | KeyError | '__module__'
+RAISE | state var named 'dict' | KeyError | '__module__'
+RAISE | state var named 'set' | KeyError | '__module__'
+RAISE | state var named 'get_fields' | KeyError | '__module__'
+RAISE | state var named '_get_was_touched' | KeyError | '__module__'
+RAISE | state var named '_update_was_touched' | KeyError | '__module__'
+RAISE | state var named 'setvar' | KeyError | '__module__'
+RAISE | state var named 'reset' | KeyError | '__module__'
+RAISE | state var named 'get_name' | KeyError | '__module__'
+RAISE | state var named 'json' | KeyError | '__module__'
+RAISE | event handler named 'dirty_vars' | KeyError | '__module__'
+RAISE | event handler named 'process' | KeyError | '__module__'
+RAISE | event handler named 'get_delta' | KeyError | '__module__'
+RAISE | event handler named 'set' | KeyError | '__module__'
+RAISE | event handler named 'dict' | KeyError | '__module__'
+RAISE | event handler named 'reset' | KeyError | '__module__'
+RAISE | event handler named 'setvar' | KeyError | '__module__'
+RAISE | dynamic route arg named 'router' | DynamicRouteArgShadowsStateVarError | Dynamic route arg 'router' is shadowing an existing var in reflex.state.State
+RAISE | dynamic route arg named 'state' | ReflexRuntimeError | A RegistrationContext can only be associated with a single App instance. To create another App, call `.fork()` on the current RegistrationContext and set the fork as the 
+RAISE | dynamic route arg named 'dirty_vars' | ReflexRuntimeError | A RegistrationContext can only be associated with a single App instance. To create another App, call `.fork()` on the current RegistrationContext and set the fork as the 
+RAISE | dynamic route arg named 'rx_router_url' | ReflexRuntimeError | A RegistrationContext can only be associated with a single App instance. To create another App, call `.fork()` on the current RegistrationContext and set the fork as the 

@@ -1,0 +1,71 @@
+{
+ "url": "http://localhost:3261/",
+ "actions": [
+  [
+   "0",
+   "wait",
+   "ok"
+  ],
+  [
+   "1",
+   "dump",
+   "ok"
+  ],
+  [
+   "2",
+   "fill",
+   "ok"
+  ],
+  [
+   "3",
+   "click",
+   "ok"
+  ],
+  [
+   "4",
+   "wait",
+   "ok"
+  ],
+  [
+   "5",
+   "click",
+   "ok"
+  ],
+  [
+   "6",
+   "wait",
+   "ok"
+  ],
+  [
+   "7",
+   "screenshot",
+   "ok"
+  ],
+  [
+   "8",
+   "click",
+   "ok"
+  ],
+  [
+   "9",
+   "wait",
+   "ok"
+  ],
+  [
+   "10",
+   "dump",
+   "ok"
+  ],
+  [
+   "11",
+   "screenshot",
+   "ok"
+  ]
+ ],
+ "console": [
+  "[log] Disconnect websocket on pagehide"
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": []
+}

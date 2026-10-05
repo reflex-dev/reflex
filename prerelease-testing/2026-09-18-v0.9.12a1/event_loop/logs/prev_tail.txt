@@ -1,0 +1,120 @@
+    at processDispatchQueue 
+(http://localhost:3181/node_modules/.vite/deps/react-dom_client.js?v=c4cdb732:91
+67:27)
+    at 
+http://localhost:3181/node_modules/.vite/deps/react-dom_client.js?v=c4cdb732:945
+4:5
+    at batchedUpdates$1 
+(http://localhost:3181/node_modules/.vite/deps/react-dom_client.js?v=c4cdb732:20
+44:12)
+    at dispatchEventForPluginEventSystem 
+(http://localhost:3181/node_modules/.vite/deps/react-dom_client.js?v=c4cdb732:92
+40:4)
+    at dispatchEvent 
+(http://localhost:3181/node_modules/.vite/deps/react-dom_client.js?v=c4cdb732:11
+319:29)
+    at dispatchDiscreteEvent 
+(http://localhost:3181/node_modules/.vite/deps/react-dom_client.js?v=c4cdb732:11
+301:56)
+
+Debug: 2:34:47 AM [vite] (client) [Unhandled error] ReferenceError: queueEvents 
+is not defined
+Debug:  > queueEvents app_components/elapp_prev/elapp_prev.jsx:447:268
+Debug:     445 |  export const 
+Button_button_ed4d859fee80e414dae1f3d2db9d68ff_8c4bdb6c = memo(({children}) => {
+Debug:     446 |      const ref_fetoastupload = useRef(null); 
+refs["ref_fetoastupload"] = ref_fetoastupload;
+Debug:     447 |  ...action"] : ({ ["label"] : "FE-Upload", ["onClick"] : () => 
+{queueEvents([ReflexEvent("reflex___state____state.elap...
+Debug:         |                                                                
+^
+Debug:     448 |  
+Debug:     449 |  
+Debug:  > onClick node_modules/sonner/dist/index.mjs:882:73
+Debug:  > executeDispatch 
+node_modules/react-dom/cjs/react-dom-client.development.js:19116:8
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > processDispatchQueue 
+node_modules/react-dom/cjs/react-dom-client.development.js:19166:18
+Debug:  > node_modules/react-dom/cjs/react-dom-client.development.js:19767:8
+Debug:  > batchedUpdates$1 
+node_modules/react-dom/cjs/react-dom-client.development.js:3255:39
+Debug:  > dispatchEventForPluginEventSystem 
+node_modules/react-dom/cjs/react-dom-client.development.js:19320:6
+Debug:  > dispatchEvent 
+node_modules/react-dom/cjs/react-dom-client.development.js:23585:10
+Debug:  > dispatchDiscreteEvent 
+node_modules/react-dom/cjs/react-dom-client.development.js:23553:10
+Debug: 
+[Reflex Frontend Exception]
+ ReferenceError: filesById is not defined
+ReferenceError: filesById is not defined
+    at Object.onClick (eval at applyEvent 
+(http://localhost:3181/utils/state.js:370:13), <anonymous>:1:238)
+    at onClick 
+(http://localhost:3181/node_modules/.vite/deps/sonner.js?v=540a15a0:715:57)
+    at executeDispatch 
+(http://localhost:3181/node_modules/.vite/deps/react-dom_client.js?v=c4cdb732:91
+41:5)
+    at runWithFiberInDEV 
+(http://localhost:3181/node_modules/.vite/deps/react-dom_client.js?v=c4cdb732:85
+1:66)
+    at processDispatchQueue 
+(http://localhost:3181/node_modules/.vite/deps/react-dom_client.js?v=c4cdb732:91
+67:27)
+    at 
+http://localhost:3181/node_modules/.vite/deps/react-dom_client.js?v=c4cdb732:945
+4:5
+    at batchedUpdates$1 
+(http://localhost:3181/node_modules/.vite/deps/react-dom_client.js?v=c4cdb732:20
+44:12)
+    at dispatchEventForPluginEventSystem 
+(http://localhost:3181/node_modules/.vite/deps/react-dom_client.js?v=c4cdb732:92
+40:4)
+    at dispatchEvent 
+(http://localhost:3181/node_modules/.vite/deps/react-dom_client.js?v=c4cdb732:11
+319:29)
+    at dispatchDiscreteEvent 
+(http://localhost:3181/node_modules/.vite/deps/react-dom_client.js?v=c4cdb732:11
+301:56)
+
+Debug: 2:34:52 AM [vite] (client) [Unhandled error] ReferenceError: filesById is
+not defined
+Debug:  > Object.onClick utils/state.js:370:13
+Debug:     368 |          event.name == "_call_script"
+Debug:     369 |            ? eval(event.payload.javascript_code)
+Debug:     370 |            : eval(event.payload.function)();
+Debug:         |               ^
+Debug:     371 |  
+Debug:     372 |        if (event.payload.callback) {
+Debug:  > onClick node_modules/sonner/dist/index.mjs:882:73
+Debug:  > executeDispatch 
+node_modules/react-dom/cjs/react-dom-client.development.js:19116:8
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > processDispatchQueue 
+node_modules/react-dom/cjs/react-dom-client.development.js:19166:18
+Debug:  > node_modules/react-dom/cjs/react-dom-client.development.js:19767:8
+Debug:  > batchedUpdates$1 
+node_modules/react-dom/cjs/react-dom-client.development.js:3255:39
+Debug:  > dispatchEventForPluginEventSystem 
+node_modules/react-dom/cjs/react-dom-client.development.js:19320:6
+Debug:  > dispatchEvent 
+node_modules/react-dom/cjs/react-dom-client.development.js:23585:10
+Debug:  > dispatchDiscreteEvent 
+node_modules/react-dom/cjs/react-dom-client.development.js:23553:10
+Debug: 
+Debug: Cancelling the previous unfinished 
+reflex___state____state.elapp_prev___elapp_prev___ss.refresh chain for token 
+bcf20138-f373-41cd-a693-3358dbd5eede, superseded by a newer invocation.
+Debug: Cancelling the previous unfinished 
+reflex___state____state.elapp_prev___elapp_prev___ss.frefresh chain for token 
+bcf20138-f373-41cd-a693-3358dbd5eede, superseded by a newer invocation.
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!

@@ -1,0 +1,38 @@
+REFLEX /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent/lib/python3.11/site-packages/reflex/__init__.py
+Passing strings to disable_plugins has been deprecated in version 0.8.28. pass Plugin classes directly instead, e.g. disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. (rxconfig.py:3)
+`@rx.memo` on `card` without explicit annotations has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or `-> rx.Var[...]`). Until removal, a missing return defaults to `rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be completely removed in 1.0. (dnd/basic.py:23)
+`@rx.memo` on `card_foreach` without explicit annotations has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or `-> rx.Var[...]`). Until removal, a missing return defaults to `rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be completely removed in 1.0. (dnd/foreach.py:23)
+`@rx.memo` on `target_foreach` without explicit annotations has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `pos`. Until removal, a missing return defaults to `rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be completely removed in 1.0. (dnd/foreach.py:35)
+`@rx.memo` on `item_card` without explicit annotations has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `item`, `dragging`. Until removal, a missing return defaults to `rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be completely removed in 1.0. (dnd/kanban.py:270)
+`@rx.memo` on `item_card_drop_target` without explicit annotations has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `item`. Until removal, a missing return defaults to `rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be completely removed in 1.0. (dnd/kanban.py:280)
+`@rx.memo` on `item_drop_target` without explicit annotations has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `column_id`, `replace_position`, `child_before`, `child_after`. Until removal, a missing return defaults to `rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be completely removed in 1.0. (dnd/kanban.py:300)
+`@rx.memo` on `column_drop_target` without explicit annotations has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `replace_position`, `child_before`, `child_after`. Until removal, a missing return defaults to `rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be completely removed in 1.0. (dnd/kanban.py:330)
+`@rx.memo` on `kanban_column` without explicit annotations has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `col`, `dragging`. Until removal, a missing return defaults to `rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be completely removed in 1.0. (dnd/kanban.py:363)
+`@rx.memo` on `kanban_column_drop_target` without explicit annotations has been deprecated in version 0.9.3. Add a return annotation `-> rx.Component` (or `-> rx.Var[...]`) and `rx.Var[...]` annotations on parameter(s) `col`. Until removal, a missing return defaults to `rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be completely removed in 1.0. (dnd/kanban.py:408)
+Page basic is being redefined with the same component.
+Page foreach is being redefined with the same component.
+Page kanban is being redefined with the same component.
+Page index is being redefined with the same component.
+Progress: 1/17
+Progress: 2/17
+Passing base-component prop(s) `key` to `@rx.memo` `kanban_column_drop_target` without an `rx.RestProp` has been deprecated in version 0.9.3. Declare an `rx.RestProp` parameter to keep passing base props like `key` to the rendered component. It will be completely removed in 1.0. (dnd/kanban.py:442)
+Passing base-component prop(s) `key` to `@rx.memo` `item_card_drop_target` without an `rx.RestProp` has been deprecated in version 0.9.3. Declare an `rx.RestProp` parameter to keep passing base props like `key` to the rendered component. It will be completely removed in 1.0. (dnd/kanban.py:378)
+Progress: 3/17
+Progress: 4/17
+Progress: 5/17
+Implicit Radix Themes enablement has been deprecated in version 0.9.0. a Radix Themes component was detected, which enables the full Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to make this explicit, or remove Radix components to avoid loading the stylesheet. It will be completely removed in 1.0. (/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_components_radix/plugin.py:76)
+Progress: 6/17
+Progress: 7/17
+Progress: 8/17
+Progress: 9/17
+Progress: 10/17
+Progress: 11/17
+Progress: 12/17
+Progress: 13/17
+Progress: 14/17
+Progress: 14/17
+Progress: 15/17
+Progress: 16/17
+Progress: 17/17
+Progress: 18/17
+WROTE /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_map_dnd_flow_mantine/out/js_dnd_new

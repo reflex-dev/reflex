@@ -1,0 +1,1 @@
+from .boomy import app

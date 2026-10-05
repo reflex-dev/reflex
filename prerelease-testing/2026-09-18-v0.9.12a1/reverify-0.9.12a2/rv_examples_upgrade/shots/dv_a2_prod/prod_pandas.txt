@@ -1,0 +1,72 @@
+pandas + sqlmodel serializer probe
+bump
+load rows
+
+tick=0
+
+steady=constant
+
+literal DataFrame
+zone
+	
+n
+
+North	1
+South	2
+East	3
+West	4
+state-computed DataFrame
+zone
+	
+n
+
+North	1
+South	2
+memo(DataFrame prop)
+zone
+	
+n
+
+North	1
+South	2
+East	3
+West	4
+ComponentState
+cs 0
+zone
+	
+n
+
+North	1
+South	2
+East	3
+West	4
+recharts bar chart
+North
+South
+East
+West
+0
+1
+2
+3
+4
+plotly figure
+North
+South
+East
+West
+0
+1
+2
+3
+4
+plotly tick 0
+x
+y
+model rows (relationship serialization)
+
+no rows loaded
+
+Built with Reflex
+0

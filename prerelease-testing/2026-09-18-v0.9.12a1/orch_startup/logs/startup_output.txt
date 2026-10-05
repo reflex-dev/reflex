@@ -1,0 +1,32 @@
+NOTES.md
+cli
+dsc
+dsc_prev
+hrapp
+hrapp_prev
+logs
+nonode
+scripts
+shots
+dsc dirs present
+=== prev: 0.9.11.post1
+[prev] import reflex: 2 ms, 57 modules; heavy present: []
+[prev] run1: time to /ping 200 = 0.67 s; RSS (all reflex procs for this port) = 123 MB over 2 procs
+./run_startup.sh: line 16: 12905 Killed                  setsid $V/bin/reflex run --backend-only --backend-port $BP --loglevel warning > $P/logs/${tag}_run$i.log 2>&1
+[prev] run2: time to /ping 200 = 0.45 s; RSS (all reflex procs for this port) = 109 MB over 2 procs
+./run_startup.sh: line 16: 13007 Killed                  setsid $V/bin/reflex run --backend-only --backend-port $BP --loglevel warning > $P/logs/${tag}_run$i.log 2>&1
+[prev] run3: time to /ping 200 = 0.46 s; RSS (all reflex procs for this port) = 109 MB over 2 procs
+./run_startup.sh: line 16: 13059 Killed                  setsid $V/bin/reflex run --backend-only --backend-port $BP --loglevel warning > $P/logs/${tag}_run$i.log 2>&1
+[prev] port free
+=== new: 0.9.12a1
+[new] import reflex: 2 ms, 57 modules; heavy present: []
+[new] run1: time to /ping 200 = 0.67 s; RSS (all reflex procs for this port) = 121 MB over 2 procs
+./run_startup.sh: line 16: 13123 Killed                  setsid $V/bin/reflex run --backend-only --backend-port $BP --loglevel warning > $P/logs/${tag}_run$i.log 2>&1
+[new] run2: time to /ping 200 = 0.45 s; RSS (all reflex procs for this port) = 108 MB over 2 procs
+./run_startup.sh: line 16: 13203 Killed                  setsid $V/bin/reflex run --backend-only --backend-port $BP --loglevel warning > $P/logs/${tag}_run$i.log 2>&1
+[new] run3: time to /ping 200 = 0.46 s; RSS (all reflex procs for this port) = 109 MB over 2 procs
+./run_startup.sh: line 16: 13264 Killed                  setsid $V/bin/reflex run --backend-only --backend-port $BP --loglevel warning > $P/logs/${tag}_run$i.log 2>&1
+[new] port free
+STARTUP DONE
+
+[exited with code 0]

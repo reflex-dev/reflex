@@ -1,0 +1,127 @@
+1c1
+< token endpoint: 200 {"access_token": "bwuMIkoacjIbKyxDjeXJ80C5gPs6fIwJxW5umCGGOdA", "token_type": "Bearer", "expires_in": 3600, "session": "anonymous"}
+---
+> token endpoint: 200 {"access_token": "TxM72oYDIuKuLOCMxyquo_qX6n5hOtUQe0tCBvwgQkM", "token_type": "Bearer", "expires_in": 3600, "session": "anonymous"}
+109,149c109,149
+<       "rx_router_page": {
+<         "host": "",
+<         "path": "/_reflex/mcp",
+<         "raw_path": "/_reflex/mcp",
+<         "full_path": "/_reflex/mcp",
+<         "full_raw_path": "/_reflex/mcp",
+<         "params": {}
+<       },
+<       "rx_router_url": {
+<         "scheme": "",
+<         "netloc": "",
+<         "origin": "://",
+<         "path": "/_reflex/mcp",
+<         "query": "",
+<         "query_parameters": {},
+<         "fragment": "",
+<         "href": "/_reflex/mcp"
+<       },
+<       "rx_router_session": {
+<         "client_token": "ab9d10b4-3e28-41bb-80ec-e2542950e8bd",
+<         "client_ip": "0.0.0.0",
+<         "session_id": ""
+<       },
+<       "rx_router_headers": {
+<         "host": "",
+<         "origin": "",
+<         "upgrade": "",
+<         "connection": "",
+<         "cookie": "",
+<         "pragma": "",
+<         "cache_control": "",
+<         "user_agent": "",
+<         "sec_websocket_version": "",
+<         "sec_websocket_key": "",
+<         "sec_websocket_extensions": "",
+<         "accept_encoding": "",
+<         "accept_language": "",
+<         "raw_headers": {}
+<       },
+<       "rx_router_route_id": "/_reflex/mcp"
+<   
+---
+>       "router": {
+>         "session": {
+>           "client_token": "",
+>           "client_ip": "0.0.0.0",
+>           "session_id": ""
+>         },
+>         "headers": {
+>           "host": "",
+>           "origin": "",
+>           "upgrade": "",
+>           "connection": "",
+>           "cookie": "",
+>           "pragma": "",
+>           "cache_control": "",
+>           "user_agent": "",
+>           "sec_websocket_version": "",
+>           "sec_websocket_key": "",
+>           "sec_websocket_extensions": "",
+>           "accept_encoding": "",
+>           "accept_language": "",
+>           "raw_headers": {}
+>         },
+>         "page": {
+>           "host": "",
+>           "path": "/_reflex/mcp",
+>           "raw_path": "/_reflex/mcp",
+>           "full_path": "/_reflex/mcp",
+>           "full_raw_path": "/_reflex/mcp",
+>           "params": {}
+>         },
+>         "url": {
+>           "scheme": "",
+>           "netloc": "",
+>           "origin": "://",
+>           "path": "/_reflex/mcp",
+>           "query": "",
+>           "query_parameters": {},
+>           "fragment": "",
+>           "href": "/_reflex/mcp"
+>         },
+>         "route_id": "/_re
+156,157c156
+<       "uncached_marker": "c=6",
+<       "count": 6,
+---
+>       "doubled": 12,
+162c161,162
+<       "doubled": 12
+---
+>       "count": 6,
+>       "uncached_marker": "c=6"
+172,173c172
+<       "uncached_marker": "c=106",
+<       "count": 106,
+---
+>       "doubled": 212,
+179c178,179
+<       "doubled": 212
+---
+>       "count": 106,
+>       "uncached_marker": "c=106"
+189,190c189,193
+<       "greeting": "hello zoe",
+<       "name": "zoe"
+---
+>       "name": "zoe",
+>       "greeting": "hello zoe"
+>     },
+>     "reflex___state____state.mcpapp___mcpapp____counter_state": {
+>       "uncached_marker": "c=106"
+198a202,204
+>     "reflex___state____state.mcpapp___mcpapp____counter_state": {
+>       "uncached_marker": "c=106"
+>     },
+200,201c206,207
+<       "note_upper": "HI",
+<       "note": "hi"
+---
+>       "note": "hi",
+>       "note_upper": "HI"

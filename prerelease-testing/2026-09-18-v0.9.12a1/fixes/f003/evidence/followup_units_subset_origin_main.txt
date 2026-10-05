@@ -1,0 +1,22 @@
+    self.pid = os.fork()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/units/test_app.py::test_dynamic_route_var_route_change_completed_on_load
+FAILED tests/units/test_app.py::test_compile_without_radix_components_skips_radix_plugin
+FAILED tests/units/test_app.py::test_compile_hydrate_fallback_emits_hydrate_fallback
+FAILED tests/units/test_app.py::test_app_hydrate_fallback_takes_precedence_over_config
+FAILED tests/units/test_app.py::test_compile_with_radix_component_auto_enables_radix_plugin
+FAILED tests/units/test_app.py::test_compile_with_legacy_app_theme_warns_and_enables_radix_plugin
+FAILED tests/units/test_app.py::test_default_explicit_radix_plugin_adopts_legacy_app_theme
+FAILED tests/units/test_app.py::test_compile_writes_app_wrap_memo_components
+FAILED tests/units/test_app.py::test_compile_dry_run_does_not_prune_or_write_manifest
+FAILED tests/units/test_app.py::test_compile_page_is_idempotent_for_component_state
+FAILED tests/units/test_app.py::test_compile_writes_upload_files_provider_app_wrap
+FAILED tests/units/test_app.py::test_stateful_app_wrap_is_memoized - reflex_b...
+FAILED tests/units/test_app.py::test_compile_writes_upload_files_provider_via_var_app_wrap
+FAILED tests/units/test_app.py::test_recursive_memo_body_app_wraps_compile - ...
+FAILED tests/units/test_app.py::test_compile_emits_stage_spans - reflex_base....
+FAILED tests/units/test_app.py::test_compile_dry_run_preserves_stateful_marker[False]
+FAILED tests/units/test_app.py::test_compile_dry_run_preserves_stateful_marker[True]
+17 failed, 1387 passed, 10 skipped, 352 warnings in 45.63s

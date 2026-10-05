@@ -1,0 +1,14 @@
+{
+  "portal_exists": false,
+  "portal_parent": null,
+  "badge_present": true,
+  "carousel_css_rules": 0,
+  "overlay_imgs": [],
+  "carousel_root": null,
+  "gdg_overlay_any": "css-tjudwr gdg-wmyidgi",
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Cannot open Data Grid overlay editor, because portal not found.  Please add `<div id=\"portal\" />` as the last child of your `<body>`.",
+    "Cannot open Data Grid overlay editor, because portal not found.  Please add `<div id=\"portal\" />` as the last child of your `<body>`."
+  ]
+}

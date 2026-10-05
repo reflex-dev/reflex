@@ -1,0 +1,7 @@
+# s_upbtn.py (VERIFIER-ADDED control) against reflex 0.9.12a1 dev+redis, page /upbtn
+# A = documented pattern: rx.upload(id="u3") + SIBLING rx.button(on_click=UB.handle(rx.upload_files(upload_id="u3")))
+# B = same event spec on a button nested INSIDE rx.upload's children (zone u4)
+[A sibling button -> upload_files] got= ["upload_me.txt"]  pageerrors= []
+[B button inside rx.upload -> upload_files] got= ["upload_me.txt"]  pageerrors= []
+== pageerrors == []
+== net == []

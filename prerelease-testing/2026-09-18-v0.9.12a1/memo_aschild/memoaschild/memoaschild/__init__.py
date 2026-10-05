@@ -1,0 +1,1 @@
+from .memoaschild import app

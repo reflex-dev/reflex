@@ -1,0 +1,1 @@
+from .perfapp import app

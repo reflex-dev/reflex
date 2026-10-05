@@ -1,0 +1,26 @@
+{
+  "app": "counter",
+  "url": "http://localhost:3461/",
+  "tag": "prod",
+  "load_seconds": 0.08,
+  "initial_count": "0",
+  "after_3_inc": "3",
+  "after_dec": "2",
+  "after_random": "12",
+  "after_reload": "12",
+  "flow_ok": true,
+  "console_all": [
+    "[log] Disconnect websocket on page navigation",
+    "[log] Disconnect websocket on pagehide"
+  ],
+  "console_notable": [],
+  "console_errors": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": [],
+  "screenshots": [
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/counter-prod-load.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/counter-prod-interacted.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/counter-prod-after_reload.png"
+  ]
+}

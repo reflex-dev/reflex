@@ -1,0 +1,174 @@
+{
+  "label": "disk_new",
+  "steps": [
+    {
+      "token": "ece2724b-fe39-41ec-fff5-4df0b24bd2ea",
+      "manager": "StateManagerDisk",
+      "name": "loaded"
+    },
+    {
+      "ui_counter": "5",
+      "immediate": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 3,
+        "disk": null,
+        "cache": null
+      },
+      "after_3s": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 0,
+        "disk": null,
+        "cache": null
+      },
+      "name": "S1_ws_bump_x5"
+    },
+    {
+      "double_set": {
+        "ok": true,
+        "supplied": [
+          {
+            "value": "first-queued",
+            "counter": 101,
+            "queue_len": 1
+          },
+          {
+            "value": "second-queued",
+            "counter": 202,
+            "queue_len": 1
+          }
+        ]
+      },
+      "right_after": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 1,
+        "disk": null,
+        "cache": {
+          "value": "second-queued",
+          "counter": 202,
+          "api_writes": 0
+        }
+      },
+      "after_3_5s": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 0,
+        "disk": null,
+        "cache": {
+          "value": "second-queued",
+          "counter": 202,
+          "api_writes": 0
+        }
+      },
+      "name": "S2_double_set_latest_wins"
+    },
+    {
+      "set_fresh": {
+        "ok": true,
+        "manager": "StateManagerDisk"
+      },
+      "after_3_5s": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 0,
+        "disk": null,
+        "cache": {
+          "value": "fresh-persisted",
+          "counter": 999,
+          "api_writes": 0
+        }
+      },
+      "name": "S3_set_fresh_persists"
+    },
+    {
+      "poke": {
+        "status": 500,
+        "text": "Internal Server Error"
+      },
+      "disk": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 0,
+        "disk": null,
+        "cache": {
+          "value": "fresh-persisted",
+          "counter": 999,
+          "api_writes": 0
+        }
+      },
+      "ui_value_after_reload": "init",
+      "ui_api_writes_after_reload": "0",
+      "ui_counter_after_reload": "5",
+      "name": "S4_modify_state_from_api_route"
+    },
+    {
+      "ui": "20",
+      "mid_debounce": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 0,
+        "disk": null,
+        "cache": {
+          "value": "fresh-persisted",
+          "counter": 999,
+          "api_writes": 0
+        }
+      },
+      "after_3s": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 0,
+        "disk": null,
+        "cache": {
+          "value": "fresh-persisted",
+          "counter": 999,
+          "api_writes": 0
+        }
+      },
+      "name": "S5_rapid_20_sets"
+    }
+  ],
+  "token": "ece2724b-fe39-41ec-fff5-4df0b24bd2ea",
+  "console": [
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    }
+  ],
+  "page_errors": [],
+  "bad_responses": []
+}

@@ -1,0 +1,138 @@
+From 038c6132c01570642b6a43a68add3ecf70d62091 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 19 Sep 2026 17:24:20 +0000
+Subject: [PATCH 1/2] fix(auth): derive the OIDC cookie metaclass from the
+ installed State metaclass
+
+`OIDCCookieMeta` subclassed `reflex.vars.BaseStateMeta` directly. reflex
+0.9.12 (reflex-dev/reflex#7136) moved `rx.State` onto `_StateMeta`, a
+*sibling* subclass of `BaseStateMeta`, so `OIDCCookieMeta` is no longer a
+subclass of the metaclass of `OIDCAuthState`'s bases and
+
+    class OIDCAuthState(ConfigMixin, rx.State, mixin=True, metaclass=OIDCCookieMeta)
+
+raises `TypeError: metaclass conflict` at import. That kills every app
+configuring `AuthPlugin`, `MCPPlugin` or `EventHandlerAPIPlugin` at startup
+(the plugin's post_compile reaches `auth/enforcement.py`, which imports this
+module), including apps that configure no auth at all.
+
+Read the metaclass off the installed reflex instead -- `type(rx.State)` is
+`BaseStateMeta` up to 0.9.11 and `_StateMeta` from 0.9.12, so the one
+declaration works on both. Under a type checker the alias stays
+`BaseStateMeta`, keeping the `__new__` override checked. The cookie
+descriptors the metaclass stamps on a provider state are unchanged.
+
+reflex may also fix this on its side (reflex-dev/reflex#7211), but
+reflex-enterprise must not depend on that: 0.9.5 is published with
+`reflex[db] >=0.9.6` and no upper bound.
+
+Refs reflex-dev/reflex#7211
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01NeyxWsuC9hqSKq8YcEwZyY
+---
+ news/+state-metaclass-compat.bugfix.md |  6 +++++
+ reflex_enterprise/auth/oidc/state.py   | 15 ++++++++++--
+ tests/units/auth/test_oidc_state.py    | 34 ++++++++++++++++++++++++++
+ 3 files changed, 53 insertions(+), 2 deletions(-)
+ create mode 100644 news/+state-metaclass-compat.bugfix.md
+
+diff --git a/news/+state-metaclass-compat.bugfix.md b/news/+state-metaclass-compat.bugfix.md
+new file mode 100644
+index 0000000..48891eb
+--- /dev/null
++++ b/news/+state-metaclass-compat.bugfix.md
+@@ -0,0 +1,6 @@
++`OIDCAuthState` — and with it every app configuring `AuthPlugin`, `MCPPlugin`
++or `EventHandlerAPIPlugin` — imports again on reflex 0.9.12, which moved
++`rx.State` onto a new metaclass and made the OIDC cookie metaclass raise
++`TypeError: metaclass conflict` at startup. The cookie metaclass now derives
++from whatever metaclass the installed reflex gives `rx.State`; reflex 0.9.6
++through 0.9.11 are unaffected.
+diff --git a/reflex_enterprise/auth/oidc/state.py b/reflex_enterprise/auth/oidc/state.py
+index 243fe5d..7172b2d 100644
+--- a/reflex_enterprise/auth/oidc/state.py
++++ b/reflex_enterprise/auth/oidc/state.py
+@@ -23,7 +23,6 @@ from joserfc.jwt import Token
+ from reflex.event import EventSpec, IndividualEventType
+ from reflex.state import Delta
+ from reflex.utils import console
+-from reflex.vars import BaseStateMeta
+ 
+ from reflex_enterprise.app import AppEnterprise
+ from reflex_enterprise.auth.audit import AuditAction, AuditOutcome, emit_audit
+@@ -56,8 +55,20 @@ from reflex_enterprise.utils import (
+ )
+ 
+ if TYPE_CHECKING:
++    from reflex.vars import BaseStateMeta
++
+     from reflex_enterprise.auth.user_state import AuthUserState
+ 
++    # Under a type checker, ``rx.State``'s metaclass is ``BaseStateMeta``.
++    _StateMetaclass = BaseStateMeta
++else:
++    # At runtime, read it off the installed reflex instead: it is
++    # ``BaseStateMeta`` up to reflex 0.9.11 and a *sibling* subclass of it from
++    # 0.9.12 on. Hard-wiring ``BaseStateMeta`` makes every state built with the
++    # metaclass below raise ``TypeError: metaclass conflict`` on the newer
++    # framework, which takes down every AuthPlugin / MCPPlugin app at startup.
++    _StateMetaclass = type(rx.State)
++
+ logger = logging.getLogger("reflex_enterprise.auth.oidc")
+ 
+ 
+@@ -344,7 +355,7 @@ class UserinfoCacheEntry:
+     access_token_hash: str
+ 
+ 
+-class OIDCCookieMeta(BaseStateMeta):
++class OIDCCookieMeta(_StateMetaclass):
+     """Meta class to assign HTTPCookie descriptors to the final class."""
+ 
+     if TYPE_CHECKING:
+diff --git a/tests/units/auth/test_oidc_state.py b/tests/units/auth/test_oidc_state.py
+index 90ce51f..077cba9 100644
+--- a/tests/units/auth/test_oidc_state.py
++++ b/tests/units/auth/test_oidc_state.py
+@@ -2634,3 +2634,37 @@ async def test_iframe_empty_hash_report_heals_partition_instead_of_wiping_sessio
+     )
+     stub_chain_event_out_of_band.assert_not_called()
+     stub_call_event_from_computed_var.assert_not_called()
++
++
++def test_oidc_cookie_meta_composes_with_installed_state_metaclass():
++    """``OIDCCookieMeta`` must derive from whatever metaclass ``rx.State`` uses.
++
++    reflex 0.9.12 moved ``rx.State`` onto ``_StateMeta``, a *sibling* subclass
++    of ``BaseStateMeta``. A cookie metaclass hard-wired to ``BaseStateMeta`` is
++    then not a subclass of the base's metaclass, so merely importing this
++    module raises ``TypeError: metaclass conflict`` and every AuthPlugin /
++    MCPPlugin / EventHandlerAPIPlugin app dies at startup.
++    """
++    from reflex_enterprise.auth.oidc.state import OIDCCookieMeta
++
++    assert issubclass(OIDCCookieMeta, type(rx.State))
++    assert isinstance(OIDCAuthState, OIDCCookieMeta)
++
++
++@pytest.mark.parametrize(
++    "state_cls, provider",
++    [(UserinfoAuthState, "test_userinfo"), (OlderSwitchAuthState, "older_switch")],
++)
++def test_oidc_cookie_meta_assigns_partitioned_cookie_descriptors(state_cls, provider):
++    """The metaclass still stamps per-provider cookie descriptors on a provider."""
++    from reflex_enterprise.auth.cookie import HTTPCookie
++
++    for attr in (
++        "_access_token_data",
++        "_id_token",
++        "_refresh_token",
++        "_granted_scopes",
++    ):
++        cookie = getattr(state_cls, attr)
++        assert isinstance(cookie, HTTPCookie)
++        assert cookie.get_cookie_name() == f"_oidc_{provider}{attr}_partitioned"
+-- 
+2.43.0
+

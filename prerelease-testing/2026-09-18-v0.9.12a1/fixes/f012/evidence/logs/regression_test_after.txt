@@ -1,0 +1,9 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+.                                                                        [100%]
+=============================== warnings summary ===============================
+tests/units/test_app.py:58
+  /home/user/wt/f012/tests/units/test_app.py:58: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 182 deselected, 1 warning in 0.26s

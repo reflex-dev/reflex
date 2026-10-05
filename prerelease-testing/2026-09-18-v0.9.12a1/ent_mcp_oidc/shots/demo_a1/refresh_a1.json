@@ -1,0 +1,408 @@
+{
+ "label": "a1",
+ "samples": [
+  {
+   "t": 5.0,
+   "hashes": [
+    "e5f1a50b147716f040e50f656ef9ea0147e61933b61286805af38618262b74e0"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 10.0,
+   "hashes": [
+    "e5f1a50b147716f040e50f656ef9ea0147e61933b61286805af38618262b74e0"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 15.0,
+   "hashes": [
+    "e5f1a50b147716f040e50f656ef9ea0147e61933b61286805af38618262b74e0"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 20.0,
+   "hashes": [
+    "e5f1a50b147716f040e50f656ef9ea0147e61933b61286805af38618262b74e0"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 25.0,
+   "hashes": [
+    "e5f1a50b147716f040e50f656ef9ea0147e61933b61286805af38618262b74e0"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 30.0,
+   "hashes": [
+    "e5f1a50b147716f040e50f656ef9ea0147e61933b61286805af38618262b74e0"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 35.0,
+   "hashes": [
+    "e5f1a50b147716f040e50f656ef9ea0147e61933b61286805af38618262b74e0"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 40.1,
+   "hashes": [
+    "e5f1a50b147716f040e50f656ef9ea0147e61933b61286805af38618262b74e0"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 45.1,
+   "hashes": [
+    "e5f1a50b147716f040e50f656ef9ea0147e61933b61286805af38618262b74e0"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 50.1,
+   "hashes": [
+    "e5f1a50b147716f040e50f656ef9ea0147e61933b61286805af38618262b74e0"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 55.1,
+   "hashes": [
+    "e5f1a50b147716f040e50f656ef9ea0147e61933b61286805af38618262b74e0"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 60.1,
+   "hashes": [
+    "bcc4b822f944b680d40ff71b52715447830bce7cca2d2c03f3e59098389ff99c"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 65.1,
+   "hashes": [
+    "bcc4b822f944b680d40ff71b52715447830bce7cca2d2c03f3e59098389ff99c"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 70.1,
+   "hashes": [
+    "bcc4b822f944b680d40ff71b52715447830bce7cca2d2c03f3e59098389ff99c"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 75.1,
+   "hashes": [
+    "bcc4b822f944b680d40ff71b52715447830bce7cca2d2c03f3e59098389ff99c"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 80.1,
+   "hashes": [
+    "bcc4b822f944b680d40ff71b52715447830bce7cca2d2c03f3e59098389ff99c"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 85.1,
+   "hashes": [
+    "bcc4b822f944b680d40ff71b52715447830bce7cca2d2c03f3e59098389ff99c"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 90.1,
+   "hashes": [
+    "bcc4b822f944b680d40ff71b52715447830bce7cca2d2c03f3e59098389ff99c"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 95.1,
+   "hashes": [
+    "bcc4b822f944b680d40ff71b52715447830bce7cca2d2c03f3e59098389ff99c"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 100.1,
+   "hashes": [
+    "bcc4b822f944b680d40ff71b52715447830bce7cca2d2c03f3e59098389ff99c"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 105.1,
+   "hashes": [
+    "bcc4b822f944b680d40ff71b52715447830bce7cca2d2c03f3e59098389ff99c"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 110.2,
+   "hashes": [
+    "bcc4b822f944b680d40ff71b52715447830bce7cca2d2c03f3e59098389ff99c"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 115.2,
+   "hashes": [
+    "bcc4b822f944b680d40ff71b52715447830bce7cca2d2c03f3e59098389ff99c"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 120.2,
+   "hashes": [
+    "bcc4b822f944b680d40ff71b52715447830bce7cca2d2c03f3e59098389ff99c"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 125.2,
+   "hashes": [
+    "bcc4b822f944b680d40ff71b52715447830bce7cca2d2c03f3e59098389ff99c"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 130.2,
+   "hashes": [
+    "bcc4b822f944b680d40ff71b52715447830bce7cca2d2c03f3e59098389ff99c"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 135.2,
+   "hashes": [
+    "bcc4b822f944b680d40ff71b52715447830bce7cca2d2c03f3e59098389ff99c"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 140.2,
+   "hashes": [
+    "bcc4b822f944b680d40ff71b52715447830bce7cca2d2c03f3e59098389ff99c"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 145.2,
+   "hashes": [
+    "b7f2be6d907f51630fc66721b99f5ea31dc06e787c20e582f7aba193ee6de6df"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 150.2,
+   "hashes": [
+    "b7f2be6d907f51630fc66721b99f5ea31dc06e787c20e582f7aba193ee6de6df"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 155.2,
+   "hashes": [
+    "b7f2be6d907f51630fc66721b99f5ea31dc06e787c20e582f7aba193ee6de6df"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 160.2,
+   "hashes": [
+    "b7f2be6d907f51630fc66721b99f5ea31dc06e787c20e582f7aba193ee6de6df"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 165.2,
+   "hashes": [
+    "b7f2be6d907f51630fc66721b99f5ea31dc06e787c20e582f7aba193ee6de6df"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 170.3,
+   "hashes": [
+    "b7f2be6d907f51630fc66721b99f5ea31dc06e787c20e582f7aba193ee6de6df"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 175.3,
+   "hashes": [
+    "b7f2be6d907f51630fc66721b99f5ea31dc06e787c20e582f7aba193ee6de6df"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 180.3,
+   "hashes": [
+    "b7f2be6d907f51630fc66721b99f5ea31dc06e787c20e582f7aba193ee6de6df"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 185.3,
+   "hashes": [
+    "b7f2be6d907f51630fc66721b99f5ea31dc06e787c20e582f7aba193ee6de6df"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 190.3,
+   "hashes": [
+    "b7f2be6d907f51630fc66721b99f5ea31dc06e787c20e582f7aba193ee6de6df"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 195.3,
+   "hashes": [
+    "b7f2be6d907f51630fc66721b99f5ea31dc06e787c20e582f7aba193ee6de6df"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 200.3,
+   "hashes": [
+    "b7f2be6d907f51630fc66721b99f5ea31dc06e787c20e582f7aba193ee6de6df"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 205.3,
+   "hashes": [
+    "b7f2be6d907f51630fc66721b99f5ea31dc06e787c20e582f7aba193ee6de6df"
+   ],
+   "toast": false,
+   "logged_in": true
+  },
+  {
+   "t": 210.4,
+   "hashes": [
+    "966bfbc4d3dbccadf2d68f8a590f5c5f8edc35085d1e27360c1a9c15aa71d4ad"
+   ],
+   "toast": true,
+   "logged_in": true
+  }
+ ],
+ "toasts": [
+  {
+   "at": 210.3
+  }
+ ],
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "pageerrors": [],
+ "distinct_hashes": [
+  "e5f1a50b147716f040e50f656ef9ea0147e61933b61286805af38618262b74e0",
+  "bcc4b822f944b680d40ff71b52715447830bce7cca2d2c03f3e59098389ff99c",
+  "b7f2be6d907f51630fc66721b99f5ea31dc06e787c20e582f7aba193ee6de6df",
+  "966bfbc4d3dbccadf2d68f8a590f5c5f8edc35085d1e27360c1a9c15aa71d4ad"
+ ],
+ "idp_log": [
+  "03:27:50 GET /.well-known/openid-configuration",
+  "03:27:50 GET /authorize {\"client_id\": \"databricks-client\", \"redirect_uri\": \"http://localhost:5260/_reflex_oidc_databricks/authorization-code/callback\", \"scope\": \"all-apis offline_access openid email profile\", \"state\": \"eSN_QRS8T0v1lwn9VkXgBg6H55rVBqgahbaAGdfQG_mw-3S5SdHA7HbJG-Ol6M0BhJndOQxpxVY75ZM2f8Vncw\", \"code_challenge\": \"ETd8v63GpkK3ZLjfj7xMiO3wSrTFY2-Sg_l1eyKjyq8\", \"code_challenge_method\": \"S256\", \"response_type\": \"code\", \"response_mode\": \"query\"}",
+  "03:27:50 POST /token grant=authorization_code client=databricks-client keys=['code', 'code_verifier', 'grant_type', 'redirect_uri', 'scope']",
+  "03:27:50 PKCE OK (databricks-client)",
+  "03:27:50 GET /jwks",
+  "03:27:50 GET /userinfo valid=True",
+  "03:28:52 POST /token grant=refresh_token client=databricks-client keys=['grant_type', 'refresh_token', 'scope']",
+  "03:28:52 REFRESH OK (databricks-client) scope='all-apis offline_access openid email profile'",
+  "03:28:52 GET /userinfo valid=True",
+  "03:30:16 POST /token grant=refresh_token client=databricks-client keys=['grant_type', 'refresh_token', 'scope']",
+  "03:30:16 REFRESH OK (databricks-client) scope='all-apis offline_access openid email profile'",
+  "03:30:16 GET /userinfo valid=True",
+  "03:31:23 POST /token grant=refresh_token client=databricks-client keys=['grant_type', 'refresh_token', 'scope']",
+  "03:31:23 REFRESH OK (databricks-client) scope='all-apis offline_access openid email profile'",
+  "03:31:23 GET /userinfo valid=True"
+ ]
+}

@@ -1,0 +1,11 @@
+[{"dump":"home.txt"},
+ {"screenshot":"01_home.png"},
+ {"goto":"http://localhost:3500/register"},
+ {"wait":1200},
+ {"fill":["input[name=username]","alice"]},
+ {"fill":["input[name=password]","hunter2hunter2"]},
+ {"fill":["input[name=confirm_password]","hunter2hunter2"]},
+ {"click":"button:has-text('Sign up')"},
+ {"wait":2500},
+ {"dump":"after_register.txt"},
+ {"screenshot":"02_after_register.png"}]

@@ -1,0 +1,10 @@
+# FOLLOW-UP: #6946 wire savings check (/uncached probe, s_uncached.py)
+== published 0.9.12a1 (port 3921) ==
+
+-- inbound frames bytes: 15274; delta frames: 24 
+== fixed worktree, follow-up HEAD (port 3920) ==
+
+-- inbound frames bytes: 15331; delta frames: 24 
+
+# delta key sequences (byte counts stripped) compared:
+differ

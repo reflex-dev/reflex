@@ -1,0 +1,41 @@
+# reserved_scan.py output (0.9.12a1)
+reserved members on 0.9.12a1: 92
+HIT reflex_enterprise/auth/oidc/state.py OIDCAuthState get_delta FunctionDef 2529
+total hits: 1
+
+# reserved_names_probe.py — 0.9.12a1
+reflex 0.9.12a1
+  get_delta override                                 -> EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_delta` shadows a builtin State method; use a different name instead
+  get_delta override marked __override_base_method__ -> OK
+  _get_was_touched var                               -> StateValueError: State name `_get_was_touched` is reserved by BaseState; use a different name instead.
+  process() method                                   -> OK
+  dirty_vars var                                     -> StateValueError: State name `dirty_vars` is reserved by BaseState; use a different name instead.
+  get_value() method                                 -> EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_value` shadows a builtin State method; use a different name instead
+  router base var                                    -> StateValueError: State name `router` is reserved by BaseState; use a different name instead.
+  router computed var                                -> StateValueError: State name `router` is reserved by BaseState; use a different name instead.
+  add_field() method                                 -> EventHandlerShadowsBuiltInStateMethodError: The event handler name `add_field` shadows a builtin State method; use a different name instead
+  substates var                                      -> StateValueError: State name `substates` is reserved by BaseState; use a different name instead.
+  set() method                                       -> EventHandlerShadowsBuiltInStateMethodError: The event handler name `set` shadows a builtin State method; use a different name instead
+  dict() method                                      -> EventHandlerShadowsBuiltInStateMethodError: The event handler name `dict` shadows a builtin State method; use a different name instead
+
+# reserved_names_probe.py — 0.9.11.post1
+reflex 0.9.11.post1
+  get_delta override                                 -> EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_delta` shadows a builtin State method; use a different name instead
+  get_delta override marked __override_base_method__ -> OK
+  _get_was_touched var                               -> OK
+  process() method                                   -> OK
+  dirty_vars var                                     -> OK
+  get_value() method                                 -> EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_value` shadows a builtin State method; use a different name instead
+  router base var                                    -> OK
+  router computed var                                -> ComputedVarShadowsBaseVarsError: The computed var name `router_rx_state_` shadows a base var in reflex.istate.dynamic.S7; use a different name instead
+  add_field() method                                 -> OK
+  substates var                                      -> OK
+  set() method                                       -> EventHandlerShadowsBuiltInStateMethodError: The event handler name `set` shadows a builtin State method; use a different name instead
+  dict() method                                      -> EventHandlerShadowsBuiltInStateMethodError: The event handler name `dict` shadows a builtin State method; use a different name instead
+
+# mixin_get_delta_probe.py — 0.9.12a1 / 0.9.11.post1
+reflex 0.9.12a1
+FAIL: EventHandlerShadowsBuiltInStateMethodError The event handler name `get_delta` shadows a builtin State method; use a different name instead
+reflex 0.9.11.post1
+mixin with get_delta override: OK
+FAIL: EventHandlerShadowsBuiltInStateMethodError The event handler name `get_delta` shadows a builtin State method; use a different name instead

@@ -1,0 +1,30 @@
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/entprev_tk/lib/python3.11/site-packages/reflex_enterprise/plugins/api_toke
+ns.py:114)
+Debug: Using the in-memory API token store (no Redis configured). Tokens do not 
+survive restarts and are per-process; configure redis_url for multi-worker 
+deployments.
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3630/
+App running at: http://localhost:3630/
+Backend running at: http://0.0.0.0:8630
+Debug:   ➜  Network: http://192.0.2.2:3630/  eth0
+[INFO] Stopping worker-1
+[ERROR] Unexpected exit from worker-1
+Debug: error: script "dev" exited with code 143
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ➜  Local:   http://localhost:3630/
+  ➜  Network: http://192.0.2.2:3630/  eth0
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

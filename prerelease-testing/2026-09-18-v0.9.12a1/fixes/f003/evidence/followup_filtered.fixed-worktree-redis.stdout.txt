@@ -1,0 +1,19 @@
+# FOLLOW-UP browser repro: elapp /filtered, dev mode + redis state manager (redis on 8929), fixed worktree follow-up HEAD, port 3922
+  [load] n='0' secret='secret-0' visible='false'
+== bump while hidden (delta filter drops `secret`) ==
+    delta: {'reflex___state____state.elapp___elapp___fl': ['n_rx_state_']}
+  [after bump n=1] n='1' secret='secret-0' visible='false'
+== show (visible=True): secret SHOULD now be delivered as secret-1 ==
+    delta: {'reflex___state____state.elapp___elapp___fl': ['secret_rx_state_', 'visible_rx_state_']}
+  [after show] n='1' secret='secret-1' visible='true'
+== bump again (n=2) ==
+    delta: {'reflex___state____state.elapp___elapp___fl': ['n_rx_state_', 'secret_rx_state_']}
+  [after bump n=2] n='2' secret='secret-2' visible='true'
+== hide, bump (n=3), show ==
+    delta: {'reflex___state____state.elapp___elapp___fl': ['visible_rx_state_']}
+    delta: {'reflex___state____state.elapp___elapp___fl': ['n_rx_state_']}
+    delta: {'reflex___state____state.elapp___elapp___fl': ['secret_rx_state_', 'visible_rx_state_']}
+  [after 2nd round] n='3' secret='secret-3' visible='true'
+== console ==
+== pageerrors == []
+== net == []

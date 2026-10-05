@@ -1,0 +1,16 @@
+### 0.9.12a1: import reflex_enterprise.auth.oidc.state ###
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_enterprise/auth/oidc/state.py", line 381, in <module>
+    class OIDCAuthState(ConfigMixin, rx.State, mixin=True, metaclass=OIDCCookieMeta):
+TypeError: metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases
+
+### 0.9.11.post1 ###
+IMPORT OK
+
+### metaclass identity ###
+0.9.12a1 type(rx.State)= <class 'reflex.istate.validation._StateMeta'>
+0.9.12a1 reflex.vars.BaseStateMeta= <class 'reflex_base.vars.base.BaseStateMeta'>
+issubclass(BaseStateMeta, type(rx.State))= False
+0.9.11.post1 type(rx.State)= <class 'reflex_base.vars.base.BaseStateMeta'>
+0.9.11.post1 reflex.vars.BaseStateMeta= <class 'reflex_base.vars.base.BaseStateMeta'>

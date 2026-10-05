@@ -1,0 +1,21 @@
+{
+ "label": "new",
+ "pid": 25217,
+ "before_sigterm": [
+  "200",
+  0.0
+ ],
+ "still_alive": true,
+ "after_sigterm_8s": [
+  "TIMEOUT_NO_REPLY_6s",
+  6.01
+ ],
+ "after_sigterm_18s": [
+  "TIMEOUT_NO_REPLY_6s",
+  6.01
+ ],
+ "after_sigkill_group": [
+  "CONNECTION_REFUSED",
+  0.0
+ ]
+}

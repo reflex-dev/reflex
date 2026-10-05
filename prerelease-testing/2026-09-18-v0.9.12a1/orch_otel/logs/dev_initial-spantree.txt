@@ -1,0 +1,17 @@
+- reflex.compile [INTERNAL] trace=3a4b083f span=6ad87d parent=ROOT pid=spans-5393.jsonl
+  attrs {"reflex.compile.dry_run": false, "reflex.compile.trigger": "initial"}
+  - reflex.compile.pages [INTERNAL] trace=3a4b083f span=16398d parent=6ad87d pid=spans-5393.jsonl
+  - reflex.compile.install_frontend_packages [INTERNAL] trace=3a4b083f span=b3f529 parent=6ad87d pid=spans-5393.jsonl
+  - reflex.compile.write [INTERNAL] trace=3a4b083f span=35a928 parent=6ad87d pid=spans-5393.jsonl
+- reflex.compile [INTERNAL] trace=4cdc5330 span=4196cf parent=ROOT pid=spans-5429.jsonl
+  attrs {"reflex.compile.dry_run": false, "reflex.compile.trigger": "backend_startup"}
+- HTTP /_event/ [SERVER] trace=030528a2 span=6e10ba parent=ROOT pid=spans-5429.jsonl
+  attrs {"url.scheme": "ws", "server.address": "0.0.0.0:8052", "server.port": 8052, "network.protocol.version": "1.1", "url.path": "/_event/", "user_agent.original": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36", "client.address": "127.0.0.1", "client.port": 53650, "url.query": "token=REDACTED&EIO=4&transport=websocket", "http.response.status_code": 200}
+- reflex___state____state.hydrate [CONSUMER] trace=90d9a6ec span=04d090 parent=ROOT pid=spans-5429.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.hydrate", "reflex.event.background": false, "reflex.event.txid": "e0d6c49f54b5", "session.id": "6872e457ff095495", "code.function.name": "reflex.state.State.hydrate"}
+- reflex___state____state.reflex___state____on_load_internal_state.on_load_internal [CONSUMER] trace=e7b484da span=d26243 parent=ROOT pid=spans-5429.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "reflex.event.background": false, "reflex.event.txid": "55175513ea19", "session.id": "6872e457ff095495", "code.function.name": "reflex.state.OnLoadInternalState.on_load_internal"}
+- GET /otel/flush [SERVER] trace=2087120e span=ab514f parent=ROOT pid=spans-5429.jsonl
+  attrs {"url.scheme": "http", "server.address": "0.0.0.0:8052", "server.port": 8052, "network.protocol.version": "1.1", "url.path": "/otel/flush", "http.request.method": "GET", "user_agent.original": "curl/8.5.0", "client.address": "127.0.0.1", "client.port": 53656, "http.response.status_code": 200}
+
+TOTAL 9 spans, 6 roots

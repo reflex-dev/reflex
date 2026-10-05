@@ -1,0 +1,351 @@
+{
+  "label": "a2_disk",
+  "steps": [
+    {
+      "name": "D0_loaded",
+      "token": "d49e7b3b-ef35-46db-992f-0abb87e62651",
+      "ui_counter": "0",
+      "ui_value": "init",
+      "dump": {
+        "cache_keys": [
+          "d49e7b3b-ef35-46db-992f-0abb87e62651"
+        ],
+        "queue_keys": [
+          "d49e7b3b-ef35-46db-992f-0abb87e62651_reflex___state____state",
+          "d49e7b3b-ef35-46db-992f-0abb87e62651_reflex___state____state.reflex___state____on_load_internal_state"
+        ],
+        "paths_for_token": {
+          "reflex___state____state": {
+            "str": "d49e7b3b-ef35-46db-992f-0abb87e62651_reflex___state____state",
+            "cache_key": "d49e7b3b-ef35-46db-992f-0abb87e62651",
+            "path": "3d510c6ebd80c732a2dea8ab6feb2a30.pkl",
+            "exists": false
+          },
+          "reflex___state____state.diskapp___diskapp____disk_state": {
+            "str": "d49e7b3b-ef35-46db-992f-0abb87e62651_reflex___state____state.diskapp___diskapp____disk_state",
+            "cache_key": "d49e7b3b-ef35-46db-992f-0abb87e62651",
+            "path": "248f5572365e2a7cb49a5d86d60abe9b.pkl",
+            "exists": false
+          }
+        },
+        "states_dir": "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_render_state/diskapp/.states",
+        "files": []
+      }
+    },
+    {
+      "name": "D1_ws_bump_x5",
+      "ui_counter": "4",
+      "mid_debounce": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 3,
+        "disk": null,
+        "cache": {
+          "value": "init",
+          "counter": 5,
+          "api_writes": 0
+        }
+      },
+      "after_3s": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 0,
+        "disk": {
+          "value": "init",
+          "counter": 5,
+          "api_writes": 0
+        },
+        "cache": {
+          "value": "init",
+          "counter": 5,
+          "api_writes": 0
+        }
+      },
+      "dump": {
+        "cache_keys": [
+          "d49e7b3b-ef35-46db-992f-0abb87e62651"
+        ],
+        "queue_keys": [],
+        "paths_for_token": {
+          "reflex___state____state": {
+            "str": "d49e7b3b-ef35-46db-992f-0abb87e62651_reflex___state____state",
+            "cache_key": "d49e7b3b-ef35-46db-992f-0abb87e62651",
+            "path": "3d510c6ebd80c732a2dea8ab6feb2a30.pkl",
+            "exists": true
+          },
+          "reflex___state____state.diskapp___diskapp____disk_state": {
+            "str": "d49e7b3b-ef35-46db-992f-0abb87e62651_reflex___state____state.diskapp___diskapp____disk_state",
+            "cache_key": "d49e7b3b-ef35-46db-992f-0abb87e62651",
+            "path": "248f5572365e2a7cb49a5d86d60abe9b.pkl",
+            "exists": true
+          }
+        },
+        "states_dir": "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_render_state/diskapp/.states",
+        "files": [
+          "248f5572365e2a7cb49a5d86d60abe9b.pkl",
+          "3d510c6ebd80c732a2dea8ab6feb2a30.pkl"
+        ]
+      }
+    },
+    {
+      "name": "D2_debounce_latest_wins",
+      "double_set": {
+        "ok": true,
+        "supplied": [
+          {
+            "value": "first-queued",
+            "counter": 101,
+            "queue_len": 1
+          },
+          {
+            "value": "second-queued",
+            "counter": 202,
+            "queue_len": 1
+          }
+        ]
+      },
+      "right_after": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 1,
+        "disk": {
+          "value": "init",
+          "counter": 5,
+          "api_writes": 0
+        },
+        "cache": {
+          "value": "second-queued",
+          "counter": 202,
+          "api_writes": 0
+        }
+      },
+      "after_3_5s": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 0,
+        "disk": {
+          "value": "second-queued",
+          "counter": 202,
+          "api_writes": 0
+        },
+        "cache": {
+          "value": "second-queued",
+          "counter": 202,
+          "api_writes": 0
+        }
+      }
+    },
+    {
+      "name": "D3_set_fresh_persists",
+      "set_fresh": {
+        "ok": true,
+        "manager": "StateManagerDisk"
+      },
+      "after_3_5s": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 0,
+        "disk": {
+          "value": "fresh-persisted",
+          "counter": 999,
+          "api_writes": 0
+        },
+        "cache": {
+          "value": "fresh-persisted",
+          "counter": 999,
+          "api_writes": 0
+        }
+      }
+    },
+    {
+      "name": "D4_modify_state_api_route",
+      "poke": {
+        "ok": true,
+        "value": "via-modify-state",
+        "api_writes": 1
+      },
+      "ui_value_pushed_live": "via-modify-state",
+      "disk": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 0,
+        "disk": {
+          "value": "via-modify-state",
+          "counter": 999,
+          "api_writes": 1
+        },
+        "cache": {
+          "value": "via-modify-state",
+          "counter": 999,
+          "api_writes": 1
+        }
+      },
+      "ui_value_after_reload": "via-modify-state",
+      "ui_api_writes_after_reload": "1",
+      "ui_counter_after_reload": "999"
+    },
+    {
+      "name": "D5_legacy_bare_token_modify_state",
+      "response": {
+        "status": 500,
+        "text": "Internal Server Error"
+      }
+    },
+    {
+      "name": "D6_rapid_20_sets",
+      "token": "d49e7b3b-ef35-46db-992f-0abb87e62651",
+      "ui": "20",
+      "mid_debounce": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 0,
+        "disk": {
+          "value": "via-modify-state",
+          "counter": 999,
+          "api_writes": 1
+        },
+        "cache": {
+          "value": "rapid-20",
+          "counter": 20,
+          "api_writes": 1
+        }
+      },
+      "after_3s": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 0,
+        "disk": {
+          "value": "rapid-20",
+          "counter": 20,
+          "api_writes": 1
+        },
+        "cache": {
+          "value": "rapid-20",
+          "counter": 20,
+          "api_writes": 1
+        }
+      }
+    },
+    {
+      "name": "D7_survives_hot_reload",
+      "token_after": "d49e7b3b-ef35-46db-992f-0abb87e62651",
+      "ui_counter": "20",
+      "ui_value": "rapid-20",
+      "dump": {
+        "cache_keys": [
+          "d49e7b3b-ef35-46db-992f-0abb87e62651"
+        ],
+        "queue_keys": [],
+        "paths_for_token": {
+          "reflex___state____state": {
+            "str": "d49e7b3b-ef35-46db-992f-0abb87e62651_reflex___state____state",
+            "cache_key": "d49e7b3b-ef35-46db-992f-0abb87e62651",
+            "path": "3d510c6ebd80c732a2dea8ab6feb2a30.pkl",
+            "exists": true
+          },
+          "reflex___state____state.diskapp___diskapp____disk_state": {
+            "str": "d49e7b3b-ef35-46db-992f-0abb87e62651_reflex___state____state.diskapp___diskapp____disk_state",
+            "cache_key": "d49e7b3b-ef35-46db-992f-0abb87e62651",
+            "path": "248f5572365e2a7cb49a5d86d60abe9b.pkl",
+            "exists": true
+          }
+        },
+        "states_dir": "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_render_state/diskapp/.states",
+        "files": [
+          "248f5572365e2a7cb49a5d86d60abe9b.pkl",
+          "3d510c6ebd80c732a2dea8ab6feb2a30.pkl",
+          "a7ab3d5e365d72c1881c60adf3f6cd16.pkl",
+          "d631aa46f82a5282833d9c2b6e52496a.pkl",
+          "d9908999024330f53eed4aa2737b6d7a.pkl",
+          "e0d2f7c4e42491a8ca827d7b3a022d4f.pkl"
+        ]
+      }
+    },
+    {
+      "name": "D8_primed_for_kill",
+      "token": "d49e7b3b-ef35-46db-992f-0abb87e62651",
+      "ui_counter": "20",
+      "ui_value": "LAST-VALUE-BEFORE-KILL",
+      "queue": [
+        "d49e7b3b-ef35-46db-992f-0abb87e62651_reflex___state____state.diskapp___diskapp____disk_state"
+      ],
+      "disk_now": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 1,
+        "disk": {
+          "value": "rapid-20",
+          "counter": 20,
+          "api_writes": 1
+        },
+        "cache": {
+          "value": "LAST-VALUE-BEFORE-KILL",
+          "counter": 20,
+          "api_writes": 1
+        }
+      }
+    }
+  ],
+  "token": "d49e7b3b-ef35-46db-992f-0abb87e62651",
+  "kill_token": "d49e7b3b-ef35-46db-992f-0abb87e62651",
+  "console": [
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    }
+  ],
+  "page_errors": [],
+  "bad_responses": []
+}

@@ -1,0 +1,1 @@
+{"name": "reflex", "type": "module", "scripts": {"dev": "react-router dev --host", "export": "react-router build"}, "dependencies": {}, "devDependencies": {}, "overrides": {}}

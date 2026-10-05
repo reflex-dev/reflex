@@ -1,0 +1,36 @@
+##### counter / up 02:35:44
+server pid 30264 log /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/logs/counter-up.server.log venv /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/up_a
+UP after 4s
+drive exit 0
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/scripts/run_app.sh: line 16: 30264 Killed                  nohup $VENV/bin/reflex run $ARGS --loglevel debug > "$LOG" 2>&1
+##### counter / up done rc=0 02:35:57
+##### todo / up 02:35:57
+server pid 30592 log /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/logs/todo-up.server.log venv /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/up_a
+UP after 4s
+drive exit 0
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/scripts/run_app.sh: line 16: 30592 Killed                  nohup $VENV/bin/reflex run $ARGS --loglevel debug > "$LOG" 2>&1
+##### todo / up done rc=0 02:36:11
+##### clock / up 02:36:11
+server pid 31217 log /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/logs/clock-up.server.log venv /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/up_a
+UP after 4s
+drive exit 0
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/scripts/run_app.sh: line 16: 31217 Killed                  nohup $VENV/bin/reflex run $ARGS --loglevel debug > "$LOG" 2>&1
+##### clock / up done rc=0 02:36:32
+##### upload / up 02:36:32
+server pid 31446 log /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/logs/upload-up.server.log venv /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/up_a
+UP after 4s
+drive exit 0
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/scripts/run_app.sh: line 16: 31446 Killed                  nohup $VENV/bin/reflex run $ARGS --loglevel debug > "$LOG" 2>&1
+##### upload / up done rc=0 02:36:47
+##### lorem-stream / up 02:36:47
+server pid 31887 log /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/logs/lorem-stream-up.server.log venv /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/up_a
+UP after 4s
+drive exit 0
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/scripts/run_app.sh: line 16: 31887 Killed                  nohup $VENV/bin/reflex run $ARGS --loglevel debug > "$LOG" 2>&1
+##### lorem-stream / up done rc=0 02:37:07
+##### snakegame / up 02:37:07
+server pid 32142 log /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/logs/snakegame-up.server.log venv /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/up_a
+UP after 4s
+drive exit 0
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/scripts/run_app.sh: line 16: 32142 Killed                  nohup $VENV/bin/reflex run $ARGS --loglevel debug > "$LOG" 2>&1
+##### snakegame / up done rc=0 02:37:30

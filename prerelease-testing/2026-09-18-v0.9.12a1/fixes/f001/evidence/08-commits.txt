@@ -1,0 +1,2 @@
+4290548fe docs: note the router state-dict shape change from #7068
+6ab3edbc9 fix: keep BaseStateMeta as the metaclass of State

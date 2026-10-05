@@ -1,0 +1,6 @@
+# scripts/render_check.py (no server needed) - run from a neutral dir
+0.9.12a1      rx.form.message("Required")                       -> jsx(RadixFormMessage,{className:"Message "},"Required")
+0.9.12a1      rx.form.message("Required", force_match=True)     -> jsx(RadixFormMessage,{className:"Message "},"Required")
+0.9.12a1      rx.form.message(..., force_match=True, match=...) -> jsx(RadixFormMessage,{className:"Message ",forceMatch:true,match:"valueMissing"},"Required")
+0.9.11.post1  rx.form.message("Required", force_match=True)     -> jsx(RadixFormMessage,{className:"Message ",forceMatch:true},"Required")   <-- leaked to DOM
+0.9.11.post1  rx.form.message(..., force_match=True, match=...) -> jsx(RadixFormMessage,{className:"Message ",forceMatch:true,match:"valueMissing"},"Required")

@@ -1,0 +1,228 @@
+........................................................................ [  0%]
+........................................................................ [  1%]
+........................................................................ [  2%]
+........................................................................ [  3%]
+........................................................................ [  3%]
+........................................................................ [  4%]
+........................................................................ [  5%]
+........................................................................ [  6%]
+........................................................................ [  7%]
+........................................................................ [  7%]
+........................................................................ [  8%]
+........................................................................ [  9%]
+........................................................................ [ 10%]
+........................................................................ [ 11%]
+........................................................................ [ 11%]
+........................................................................ [ 12%]
+........................................................................ [ 13%]
+........................................................................ [ 14%]
+........................................................................ [ 15%]
+........................................................................ [ 15%]
+........................................................................ [ 16%]
+........................................................................ [ 17%]
+........................................................................ [ 18%]
+........................................................................ [ 19%]
+........................................................................ [ 19%]
+........................................................................ [ 20%]
+........................................................................ [ 21%]
+........................................................................ [ 22%]
+........................................................................ [ 23%]
+........................................................................ [ 23%]
+........................................................................ [ 24%]
+........................................................................ [ 25%]
+........................................................................ [ 26%]
+........................................................................ [ 26%]
+........................................................................ [ 27%]
+........................................................................ [ 28%]
+........................................................................ [ 29%]
+........................................................................ [ 30%]
+........................................................................ [ 30%]
+........................................................................ [ 31%]
+........................................................................ [ 32%]
+........................................................................ [ 33%]
+........................................................................ [ 34%]
+........................................................................ [ 34%]
+........................................................................ [ 35%]
+........................................................................ [ 36%]
+........................................................................ [ 37%]
+........................................................................ [ 38%]
+........................................................................ [ 38%]
+........................................................................ [ 39%]
+........................................................................ [ 40%]
+........................................................................ [ 41%]
+........................................................................ [ 42%]
+........................................................................ [ 42%]
+........................................................................ [ 43%]
+........................................................................ [ 44%]
+........................................................................ [ 45%]
+........................................................................ [ 46%]
+........................................................................ [ 46%]
+........................................................................ [ 47%]
+........................................................................ [ 48%]
+........................................................................ [ 49%]
+........................................................................ [ 49%]
+........................................................................ [ 50%]
+.....................s.................................................. [ 51%]
+........................................................................ [ 52%]
+........................................................................ [ 53%]
+........................................................................ [ 53%]
+........................................................................ [ 54%]
+........................................................................ [ 55%]
+........................................................................ [ 56%]
+...........................................................s............ [ 57%]
+........................................................................ [ 57%]
+........................................................................ [ 58%]
+........................................................................ [ 59%]
+........................................................................ [ 60%]
+........................................................................ [ 61%]
+........................................................................ [ 61%]
+........................................................................ [ 62%]
+........................................................................ [ 63%]
+........................................................................ [ 64%]
+........................................................................ [ 65%]
+........................................................................ [ 65%]
+........................................................................ [ 66%]
+........................................................................ [ 67%]
+........................................................................ [ 68%]
+........................................................................ [ 69%]
+........................................................................ [ 69%]
+........................................................................ [ 70%]
+........................................................................ [ 71%]
+........................................................................ [ 72%]
+........................................................................ [ 72%]
+........................................................................ [ 73%]
+........................................................................ [ 74%]
+........................................................................ [ 75%]
+........................................................................ [ 76%]
+........................................................................ [ 76%]
+........................................................................ [ 77%]
+........................................................................ [ 78%]
+........................................................................ [ 79%]
+........................................................................ [ 80%]
+........................................................................ [ 80%]
+.......................................................ss............... [ 81%]
+........................................................................ [ 82%]
+........................................................................ [ 83%]
+........................................................................ [ 84%]
+........................................................................ [ 84%]
+........................................................................ [ 85%]
+...................................................................sssss [ 86%]
+ssss.................................................................... [ 87%]
+..................................s..................................... [ 88%]
+........................................................................ [ 88%]
+........................................................................ [ 89%]
+........................................................................ [ 90%]
+........................................................................ [ 91%]
+........................................................................ [ 92%]
+........................................................................ [ 92%]
+............................................s........................... [ 93%]
+........................................................................ [ 94%]
+........................................................................ [ 95%]
+...........sssss........................................................ [ 95%]
+........................................................................ [ 96%]
+........................................................................ [ 97%]
+........................................................................ [ 98%]
+........................................................................ [ 99%]
+........................................................................ [ 99%]
+.....                                                                    [100%]
+=============================== warnings summary ===============================
+tests/units/components/test_component.py:76
+  /home/user/wt/f003/tests/units/components/test_component.py:76: PytestCollectionWarning: cannot collect test class 'TestState' because it has a __init__ constructor (from: tests/units/components/test_component.py)
+    class TestState(BaseState):
+
+tests/units/test_app.py:58
+  /home/user/wt/f003/tests/units/test_app.py:58: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient
+
+tests/units/test_state.py:142
+  /home/user/wt/f003/tests/units/test_state.py:142: PytestCollectionWarning: cannot collect test class 'TestMixin' because it has a __init__ constructor (from: tests/units/test_state.py)
+    class TestMixin(BaseState, mixin=True):
+
+packages/reflex-base/src/reflex_base/utils/types.py:710: 12 warnings
+tests/units/test_attribute_access_type.py: 40 warnings
+tests/units/test_state.py: 72 warnings
+tests/units/test_var.py: 4 warnings
+tests/units/vars/test_object.py: 24 warnings
+  /home/user/wt/f003/packages/reflex-base/src/reflex_base/utils/types.py:710: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    if hasattr(cls, "__fields__") and name in cls.__fields__:
+
+packages/reflex-base/src/reflex_base/utils/types.py:589: 5 warnings
+tests/units/test_attribute_access_type.py: 20 warnings
+tests/units/test_state.py: 26 warnings
+tests/units/test_var.py: 2 warnings
+tests/units/vars/test_object.py: 12 warnings
+  /home/user/wt/f003/packages/reflex-base/src/reflex_base/utils/types.py:589: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    hasattr(cls, "__fields__")
+
+packages/reflex-base/src/reflex_base/utils/types.py:590: 5 warnings
+tests/units/test_attribute_access_type.py: 20 warnings
+tests/units/test_state.py: 26 warnings
+tests/units/test_var.py: 2 warnings
+tests/units/vars/test_object.py: 12 warnings
+  /home/user/wt/f003/packages/reflex-base/src/reflex_base/utils/types.py:590: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    and field_name in cls.__fields__
+
+packages/reflex-base/src/reflex_base/utils/types.py:591: 5 warnings
+tests/units/test_attribute_access_type.py: 20 warnings
+tests/units/test_state.py: 26 warnings
+tests/units/test_var.py: 2 warnings
+tests/units/vars/test_object.py: 12 warnings
+  /home/user/wt/f003/packages/reflex-base/src/reflex_base/utils/types.py:591: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    and hasattr(cls.__fields__[field_name], "annotation")
+
+packages/reflex-base/src/reflex_base/utils/types.py:592: 5 warnings
+tests/units/test_attribute_access_type.py: 20 warnings
+tests/units/test_state.py: 26 warnings
+tests/units/test_var.py: 2 warnings
+tests/units/vars/test_object.py: 12 warnings
+  /home/user/wt/f003/packages/reflex-base/src/reflex_base/utils/types.py:592: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    and not isinstance(cls.__fields__[field_name].annotation, (str, ForwardRef))
+
+packages/reflex-base/src/reflex_base/utils/types.py:594: 5 warnings
+tests/units/test_attribute_access_type.py: 20 warnings
+tests/units/test_state.py: 26 warnings
+tests/units/test_var.py: 2 warnings
+tests/units/vars/test_object.py: 12 warnings
+  /home/user/wt/f003/packages/reflex-base/src/reflex_base/utils/types.py:594: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    return cls.__fields__[field_name].annotation
+
+.venv/lib/python3.14/site-packages/_pytest/python.py:124
+  /home/user/wt/f003/.venv/lib/python3.14/site-packages/_pytest/python.py:124: PytestRemovedIn10Warning: Passing a non-Collection iterable to parametrize is deprecated.
+  Test: tests/units/test_var.py::test_full_name, argvalues type: zip
+  Please convert to a list or tuple.
+  See https://docs.pytest.org/en/stable/deprecations.html#parametrize-iterators
+    metafunc.parametrize(*marker.args, **marker.kwargs, _param_mark=marker)
+
+.venv/lib/python3.14/site-packages/_pytest/python.py:124
+  /home/user/wt/f003/.venv/lib/python3.14/site-packages/_pytest/python.py:124: PytestRemovedIn10Warning: Passing a non-Collection iterable to parametrize is deprecated.
+  Test: tests/units/test_var.py::test_str, argvalues type: zip
+  Please convert to a list or tuple.
+  See https://docs.pytest.org/en/stable/deprecations.html#parametrize-iterators
+    metafunc.parametrize(*marker.args, **marker.kwargs, _param_mark=marker)
+
+tests/units/test_app.py::test_initialize_with_admin_dashboard
+tests/units/test_app.py::test_admin_dashboard_routes_remain_reversible[False]
+tests/units/test_app.py::test_admin_dashboard_routes_remain_reversible[True]
+tests/units/test_app.py::test_initialize_with_custom_admin_dashboard
+tests/units/test_app.py::test_initialize_admin_dashboard_with_view_overrides
+  /home/user/wt/f003/.venv/lib/python3.14/site-packages/starlette_admin/base.py:259: UserWarning: No secret_key provided: a random one was generated. CSRF tokens and flash messages will NOT survive server restarts. Set secret_key= on Admin in production.
+    self._ensure_secret_key()
+
+tests/units/test_app.py::test_forked_workers_publish_deltas_to_the_socket_owner
+tests/units/test_app.py::test_forked_workers_publish_deltas_to_the_socket_owner
+  /root/.local/share/uv/python/cpython-3.14.7-linux-x86_64-gnu/lib/python3.14/multiprocessing/popen_fork.py:76: DeprecationWarning: This process (pid=30252) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+tests/units/test_model.py::test_upcast_event_handler_arg[handler0-payload0]
+  /home/user/wt/f003/packages/reflex-base/src/reflex_base/event/processor/base_state_processor.py:123: PydanticDeprecatedSince20: The `__fields__` attribute is deprecated, use the `model_fields` class property instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    if key in hinted_args.__fields__
+
+tests/units/test_state.py::test_uncached_var_withheld_by_delta_override_is_resent[True-dropped]
+tests/units/test_state.py::test_uncached_var_withheld_by_delta_override_is_resent[True-replaced]
+  /home/user/wt/f003/tests/units/test_state.py:1790: RuntimeWarning: coroutine 'AsyncComputedVar.__get__.<locals>._awaitable_result' was never awaited
+    value.close()
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+9057 passed, 20 skipped, 4 deselected, 492 warnings in 129.93s (0:02:09)

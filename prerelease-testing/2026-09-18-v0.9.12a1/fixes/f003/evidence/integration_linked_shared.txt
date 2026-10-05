@@ -1,0 +1,310 @@
+FFFFsE                                                                   [100%]
+==================================== ERRORS ====================================
+_____________________ ERROR at setup of test_shared_state ______________________
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/driver_finder.py:67: in _binary_paths
+    output = SeleniumManager().binary_paths(self._to_args())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/selenium_manager.py:55: in binary_paths
+    return self._run(args)
+           ^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/selenium_manager.py:154: in _run
+    raise WebDriverException(
+E   selenium.common.exceptions.WebDriverException: Message: Unsuccessful command executed: /home/user/wt/f003/.venv/lib/python3.14/site-packages/selenium/webdriver/common/linux/selenium-manager --browser chrome --language-binding python --output json; code: 65
+E   {'code': 65, 'message': 'error sending request for url (https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json)', 'driver_path': '', 'browser_path': ''}
+
+The above exception was the direct cause of the following exception:
+tests/integration/test_shared_state.py:59: in driver
+    driver = shared_state.frontend()
+             ^^^^^^^^^^^^^^^^^^^^^^^
+reflex/testing.py:717: in frontend
+    driver = driver_clz(options=driver_options, **driver_kwargs)  # pyright: ignore [reportOptionalCall, reportArgumentType]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/chrome/webdriver.py:45: in __init__
+    super().__init__(
+.venv/lib/python3.14/site-packages/selenium/webdriver/chromium/webdriver.py:50: in __init__
+    if finder.get_browser_path():
+       ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/driver_finder.py:47: in get_browser_path
+    return self._binary_paths()["browser_path"]
+           ^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/driver_finder.py:78: in _binary_paths
+    raise NoSuchDriverException(msg) from err
+E   selenium.common.exceptions.NoSuchDriverException: Message: Unable to obtain driver for chrome; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors/driver_location
+---------------------------- Captured stdout setup -----------------------------
+───────────────────────── Initializing sharedstateapp ──────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:33453/
+
+---------------------------- Captured stderr setup -----------------------------
+INFO:     Started server process [14691]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:45213 (Press CTRL+C to quit)
+------------------------------ Captured log setup ------------------------------
+WARNING  reflex.utils.prerequisites:prerequisites.py:112 Your version (0.0.0.post50.dev0+4cba00435) of reflex is out of date. Upgrade to 0.9.11.post1 with 'pip install reflex --upgrade'
+=================================== FAILURES ===================================
+______________________________ test_linked_state _______________________________
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/driver_finder.py:67: in _binary_paths
+    output = SeleniumManager().binary_paths(self._to_args())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/selenium_manager.py:55: in binary_paths
+    return self._run(args)
+           ^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/selenium_manager.py:154: in _run
+    raise WebDriverException(
+E   selenium.common.exceptions.WebDriverException: Message: Unsuccessful command executed: /home/user/wt/f003/.venv/lib/python3.14/site-packages/selenium/webdriver/common/linux/selenium-manager --browser chrome --language-binding python --output json; code: 65
+E   {'code': 65, 'message': 'error sending request for url (https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json)', 'driver_path': '', 'browser_path': ''}
+
+The above exception was the direct cause of the following exception:
+tests/integration/test_linked_state.py:334: in test_linked_state
+    tab1 = tab_factory()
+           ^^^^^^^^^^^^^
+tests/integration/test_linked_state.py:310: in driver
+    d = linked_state.frontend()
+        ^^^^^^^^^^^^^^^^^^^^^^^
+reflex/testing.py:717: in frontend
+    driver = driver_clz(options=driver_options, **driver_kwargs)  # pyright: ignore [reportOptionalCall, reportArgumentType]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/chrome/webdriver.py:45: in __init__
+    super().__init__(
+.venv/lib/python3.14/site-packages/selenium/webdriver/chromium/webdriver.py:50: in __init__
+    if finder.get_browser_path():
+       ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/driver_finder.py:47: in get_browser_path
+    return self._binary_paths()["browser_path"]
+           ^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/driver_finder.py:78: in _binary_paths
+    raise NoSuchDriverException(msg) from err
+E   selenium.common.exceptions.NoSuchDriverException: Message: Unable to obtain driver for chrome; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors/driver_location
+---------------------------- Captured stdout setup -----------------------------
+───────────────────────── Initializing linkedstateapp ──────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:42303/
+
+---------------------------- Captured stderr setup -----------------------------
+INFO:     Started server process [14691]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:33625 (Press CTRL+C to quit)
+------------------------------ Captured log setup ------------------------------
+WARNING  reflex.utils.prerequisites:prerequisites.py:112 Your version (0.0.0.post50.dev0+4cba00435) of reflex is out of date. Upgrade to 0.9.11.post1 with 'pip install reflex --upgrade'
+--------------------------- Captured stderr teardown ---------------------------
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [14691]
+---------------------------- Captured log teardown -----------------------------
+INFO     uvicorn.error:server.py:273 Shutting down
+INFO     uvicorn.error:on.py:67 Waiting for application shutdown.
+INFO     uvicorn.error:on.py:76 Application shutdown complete.
+INFO     uvicorn.error:server.py:104 Finished server process [14691]
+___________________ test_modify_shared_state_by_shared_token ___________________
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/driver_finder.py:67: in _binary_paths
+    output = SeleniumManager().binary_paths(self._to_args())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/selenium_manager.py:55: in binary_paths
+    return self._run(args)
+           ^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/selenium_manager.py:154: in _run
+    raise WebDriverException(
+E   selenium.common.exceptions.WebDriverException: Message: Unsuccessful command executed: /home/user/wt/f003/.venv/lib/python3.14/site-packages/selenium/webdriver/common/linux/selenium-manager --browser chrome --language-binding python --output json; code: 65
+E   {'code': 65, 'message': 'error sending request for url (https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json)', 'driver_path': '', 'browser_path': ''}
+
+The above exception was the direct cause of the following exception:
+tests/integration/test_linked_state.py:563: in test_modify_shared_state_by_shared_token
+    counter_button_1, note_1 = _open_linked_tab(linked_state, tab_factory, shared_token)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/integration/test_linked_state.py:528: in _open_linked_tab
+    tab = tab_factory()
+          ^^^^^^^^^^^^^
+tests/integration/test_linked_state.py:310: in driver
+    d = linked_state.frontend()
+        ^^^^^^^^^^^^^^^^^^^^^^^
+reflex/testing.py:717: in frontend
+    driver = driver_clz(options=driver_options, **driver_kwargs)  # pyright: ignore [reportOptionalCall, reportArgumentType]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/chrome/webdriver.py:45: in __init__
+    super().__init__(
+.venv/lib/python3.14/site-packages/selenium/webdriver/chromium/webdriver.py:50: in __init__
+    if finder.get_browser_path():
+       ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/driver_finder.py:47: in get_browser_path
+    return self._binary_paths()["browser_path"]
+           ^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/driver_finder.py:78: in _binary_paths
+    raise NoSuchDriverException(msg) from err
+E   selenium.common.exceptions.NoSuchDriverException: Message: Unable to obtain driver for chrome; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors/driver_location
+---------------------------- Captured stdout setup -----------------------------
+───────────────────────── Initializing linkedstateapp ──────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:41783/
+
+---------------------------- Captured stderr setup -----------------------------
+INFO:     Started server process [14691]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:38693 (Press CTRL+C to quit)
+------------------------------ Captured log setup ------------------------------
+WARNING  reflex.utils.prerequisites:prerequisites.py:112 Your version (0.0.0.post50.dev0+4cba00435) of reflex is out of date. Upgrade to 0.9.11.post1 with 'pip install reflex --upgrade'
+--------------------------- Captured stderr teardown ---------------------------
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [14691]
+---------------------------- Captured log teardown -----------------------------
+INFO     uvicorn.error:server.py:273 Shutting down
+INFO     uvicorn.error:on.py:67 Waiting for application shutdown.
+INFO     uvicorn.error:on.py:76 Application shutdown complete.
+INFO     uvicorn.error:server.py:104 Finished server process [14691]
+_____________________ test_get_state_returns_linked_state ______________________
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/driver_finder.py:67: in _binary_paths
+    output = SeleniumManager().binary_paths(self._to_args())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/selenium_manager.py:55: in binary_paths
+    return self._run(args)
+           ^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/selenium_manager.py:154: in _run
+    raise WebDriverException(
+E   selenium.common.exceptions.WebDriverException: Message: Unsuccessful command executed: /home/user/wt/f003/.venv/lib/python3.14/site-packages/selenium/webdriver/common/linux/selenium-manager --browser chrome --language-binding python --output json; code: 65
+E   {'code': 65, 'message': 'error sending request for url (https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json)', 'driver_path': '', 'browser_path': ''}
+
+The above exception was the direct cause of the following exception:
+tests/integration/test_linked_state.py:610: in test_get_state_returns_linked_state
+    tab = tab_factory()
+          ^^^^^^^^^^^^^
+tests/integration/test_linked_state.py:310: in driver
+    d = linked_state.frontend()
+        ^^^^^^^^^^^^^^^^^^^^^^^
+reflex/testing.py:717: in frontend
+    driver = driver_clz(options=driver_options, **driver_kwargs)  # pyright: ignore [reportOptionalCall, reportArgumentType]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/chrome/webdriver.py:45: in __init__
+    super().__init__(
+.venv/lib/python3.14/site-packages/selenium/webdriver/chromium/webdriver.py:50: in __init__
+    if finder.get_browser_path():
+       ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/driver_finder.py:47: in get_browser_path
+    return self._binary_paths()["browser_path"]
+           ^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/driver_finder.py:78: in _binary_paths
+    raise NoSuchDriverException(msg) from err
+E   selenium.common.exceptions.NoSuchDriverException: Message: Unable to obtain driver for chrome; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors/driver_location
+---------------------------- Captured stdout setup -----------------------------
+───────────────────────── Initializing linkedstateapp ──────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:34443/
+
+---------------------------- Captured stderr setup -----------------------------
+INFO:     Started server process [14691]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:42385 (Press CTRL+C to quit)
+------------------------------ Captured log setup ------------------------------
+WARNING  reflex.utils.prerequisites:prerequisites.py:112 Your version (0.0.0.post50.dev0+4cba00435) of reflex is out of date. Upgrade to 0.9.11.post1 with 'pip install reflex --upgrade'
+--------------------------- Captured stderr teardown ---------------------------
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [14691]
+---------------------------- Captured log teardown -----------------------------
+INFO     uvicorn.error:server.py:273 Shutting down
+INFO     uvicorn.error:on.py:67 Waiting for application shutdown.
+INFO     uvicorn.error:on.py:76 Application shutdown complete.
+INFO     uvicorn.error:server.py:104 Finished server process [14691]
+________ test_unrelated_reset_does_not_break_shared_event_link_context _________
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/driver_finder.py:67: in _binary_paths
+    output = SeleniumManager().binary_paths(self._to_args())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/selenium_manager.py:55: in binary_paths
+    return self._run(args)
+           ^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/selenium_manager.py:154: in _run
+    raise WebDriverException(
+E   selenium.common.exceptions.WebDriverException: Message: Unsuccessful command executed: /home/user/wt/f003/.venv/lib/python3.14/site-packages/selenium/webdriver/common/linux/selenium-manager --browser chrome --language-binding python --output json; code: 65
+E   {'code': 65, 'message': 'error sending request for url (https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json)', 'driver_path': '', 'browser_path': ''}
+
+The above exception was the direct cause of the following exception:
+tests/integration/test_linked_state.py:652: in test_unrelated_reset_does_not_break_shared_event_link_context
+    tab = tab_factory()
+          ^^^^^^^^^^^^^
+tests/integration/test_linked_state.py:310: in driver
+    d = linked_state.frontend()
+        ^^^^^^^^^^^^^^^^^^^^^^^
+reflex/testing.py:717: in frontend
+    driver = driver_clz(options=driver_options, **driver_kwargs)  # pyright: ignore [reportOptionalCall, reportArgumentType]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/chrome/webdriver.py:45: in __init__
+    super().__init__(
+.venv/lib/python3.14/site-packages/selenium/webdriver/chromium/webdriver.py:50: in __init__
+    if finder.get_browser_path():
+       ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/driver_finder.py:47: in get_browser_path
+    return self._binary_paths()["browser_path"]
+           ^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/selenium/webdriver/common/driver_finder.py:78: in _binary_paths
+    raise NoSuchDriverException(msg) from err
+E   selenium.common.exceptions.NoSuchDriverException: Message: Unable to obtain driver for chrome; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors/driver_location
+---------------------------- Captured stdout setup -----------------------------
+───────────────────────── Initializing linkedstateapp ──────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:44587/
+
+---------------------------- Captured stderr setup -----------------------------
+INFO:     Started server process [14691]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:44995 (Press CTRL+C to quit)
+------------------------------ Captured log setup ------------------------------
+WARNING  reflex.utils.prerequisites:prerequisites.py:112 Your version (0.0.0.post50.dev0+4cba00435) of reflex is out of date. Upgrade to 0.9.11.post1 with 'pip install reflex --upgrade'
+--------------------------- Captured stderr teardown ---------------------------
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [14691]
+---------------------------- Captured log teardown -----------------------------
+INFO     uvicorn.error:server.py:273 Shutting down
+INFO     uvicorn.error:on.py:67 Waiting for application shutdown.
+INFO     uvicorn.error:on.py:76 Application shutdown complete.
+INFO     uvicorn.error:server.py:104 Finished server process [14691]
+=========================== short test summary info ============================
+FAILED tests/integration/test_linked_state.py::test_linked_state - selenium.c...
+FAILED tests/integration/test_linked_state.py::test_modify_shared_state_by_shared_token
+FAILED tests/integration/test_linked_state.py::test_get_state_returns_linked_state
+FAILED tests/integration/test_linked_state.py::test_unrelated_reset_does_not_break_shared_event_link_context
+ERROR tests/integration/test_shared_state.py::test_shared_state - selenium.co...
+4 failed, 1 skipped, 1 error in 17.30s

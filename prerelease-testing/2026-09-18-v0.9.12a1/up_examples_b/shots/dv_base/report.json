@@ -1,0 +1,69 @@
+{
+ "url": "http://localhost:3503/pandas",
+ "actions": [
+  [
+   "0",
+   "wait",
+   "ok"
+  ],
+  [
+   "1",
+   "dump",
+   "ok"
+  ],
+  [
+   "2",
+   "screenshot",
+   "ok"
+  ],
+  [
+   "3",
+   "click",
+   "ok"
+  ],
+  [
+   "4",
+   "wait",
+   "ok"
+  ],
+  [
+   "5",
+   "click",
+   "ok"
+  ],
+  [
+   "6",
+   "wait",
+   "ok"
+  ],
+  [
+   "7",
+   "click",
+   "ok"
+  ],
+  [
+   "8",
+   "wait",
+   "ok"
+  ],
+  [
+   "9",
+   "dump",
+   "ok"
+  ],
+  [
+   "10",
+   "screenshot",
+   "ok"
+  ]
+ ],
+ "console": [
+  "[error] Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID",
+  "[log] Disconnect websocket on pagehide"
+ ],
+ "page_errors": [],
+ "failed_requests": [
+  "GET https://fonts.googleapis.com/css?family=Inter :: net::ERR_CERT_AUTHORITY_INVALID"
+ ],
+ "http_errors": []
+}

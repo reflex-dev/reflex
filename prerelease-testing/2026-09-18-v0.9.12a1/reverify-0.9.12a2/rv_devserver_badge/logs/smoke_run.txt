@@ -1,0 +1,45 @@
+== versions
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/a2/lib/python3.11/site-packages/reflex/__init__.py 0.9.12a2
+== init
+init exit=0
+err-ish lines: 0
+== dev run
+DEVPID=1320
+200 after 20s: http://localhost:3220/
+TITLE: SmokeApp | Index
+BODY:  Welcome to Reflex! |  | Get started by editing smoke_app/smoke_app.py |  | Check out our docs!
+  did  wait: 2000
+  did  expect_text: 'Welcome to Reflex'
+  did  click: 'text=Docs'
+  did  wait: 500
+RESULT: clean
+dev drive exit=0
+ping: "pong"
+health 200
+== ports after dev
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+== dev log summary
+19:redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+36:Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+37:Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+94:'@radix-ui/themes@3.3.0', 'react-error-boundary@6.1.2', 'react-dom@19.2.8', 
+102:Debug: warn: incorrect peer dependency "react@19.3.0"
+108:Debug: installed react-error-boundary@6.1.2
+164:Debug: error: script "dev" exited with code 143
+== prod run
+PRODPID=1829
+200 after 5s: http://localhost:3221/
+TITLE: SmokeApp | Index
+BODY:  Welcome to Reflex! |  | Get started by editing smoke_app/smoke_app.py |  | Check out our docs! | Built with Reflex
+  did  wait: 2000
+  did  expect_text: 'Welcome to Reflex'
+RESULT: clean
+prod drive exit=0
+== ports after prod
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+== prod log summary
+19:redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+93:'react-dom@19.2.8', 'universal-cookie@8.1.2', 'react-error-boundary@6.1.2', 
+108:Debug: installed react-error-boundary@6.1.2
+143:Debug: build/client/assets/errorBoundaries-C2delMrB.js             36.83 kB │ 
+SMOKE DONE

@@ -1,0 +1,15 @@
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Backend running at: http://0.0.0.0:8151
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (<frozen abc>:106)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (tickets/tickets.py:54)
+Warning: Database is not initialized, run reflex db init first.
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_enterprise/venv_a2tk/lib/python3.11/site-packages/reflex_enterprise
+/plugins/api_tokens.py:114)

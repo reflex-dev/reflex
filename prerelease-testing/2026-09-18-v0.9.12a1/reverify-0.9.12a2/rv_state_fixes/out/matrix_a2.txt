@@ -1,0 +1,180 @@
+
+########## 01_initial_load_home
+  -> SENT 106B reflex___state____state.hydrate router_data={"pathname": "/", "asPath": "/"}
+  -> SENT 156B reflex___state____state.reflex___state____on_load_internal_state.on_load_internal router_data={"pathname": "/", "asPath": "/"}
+  <- DELTA 88B  ROUTER=[] routerbytes=2
+        reflex___state____state: ['is_hydrated']
+
+########## 02_event_no_route_change(bump)
+  -> SENT 134B reflex___state____state.routerlab___routerlab____state.bump router_data={"pathname": "/", "asPath": "/"}
+  <- DELTA 112B  ROUTER=[] routerbytes=2
+        routerlab___routerlab____state: ['counter']
+
+########## 03_clientside_nav_to_/items/1
+  -> SENT 189B reflex___state____state.reflex___state____on_load_internal_state.on_load_internal router_data={"pathname": "/items/1", "asPath": "/items/1", "query": {"id": "1"}}
+  <- DELTA 1334B  ROUTER=['page', 'route_id', 'url'] routerbytes=471
+        reflex___state____state: ['id', 'is_hydrated', 'rx_router_page', 'rx_router_route_id', 'rx_router_url', 'splat']
+        routerlab___routerlab____state: ['cv_auto_path', 'cv_deps_legacy_string', 'cv_deps_router_url', 'cv_deps_whole_router', 'cv_frag', 'cv_headers', 'cv_page_params', 'cv_query_params', 'cv_route_id', 'cv_session']
+        routerlab___routerlab____sub_state: ['sub_cv']
+  <- DELTA 121B  ROUTER=[] routerbytes=2
+        routerlab___routerlab____item_state: ['loaded_id']
+  <- DELTA 88B  ROUTER=[] routerbytes=2
+        reflex___state____state: ['is_hydrated']
+
+########## 04_same_route_diff_id_/items/2
+  -> SENT 189B reflex___state____state.reflex___state____on_load_internal_state.on_load_internal router_data={"pathname": "/items/2", "asPath": "/items/2", "query": {"id": "2"}}
+  <- DELTA 1289B  ROUTER=['page', 'url'] routerbytes=426
+        reflex___state____state: ['id', 'is_hydrated', 'rx_router_page', 'rx_router_url', 'splat']
+        routerlab___routerlab____state: ['cv_auto_path', 'cv_deps_legacy_string', 'cv_deps_router_url', 'cv_deps_whole_router', 'cv_frag', 'cv_headers', 'cv_page_params', 'cv_query_params', 'cv_route_id', 'cv_session']
+        routerlab___routerlab____sub_state: ['sub_cv']
+  <- DELTA 121B  ROUTER=[] routerbytes=2
+        routerlab___routerlab____item_state: ['loaded_id']
+  <- DELTA 88B  ROUTER=[] routerbytes=2
+        reflex___state____state: ['is_hydrated']
+
+########## 05_nav_to_/docs/a/b_catchall
+  -> SENT 200B reflex___state____state.reflex___state____on_load_internal_state.on_load_internal router_data={"pathname": "/docs/a/b", "asPath": "/docs/a/b", "query": {"splat": ["a", "b"]}}
+  <- DELTA 1423B  ROUTER=['page', 'route_id', 'url'] routerbytes=505
+        reflex___state____state: ['id', 'is_hydrated', 'rx_router_page', 'rx_router_route_id', 'rx_router_url', 'splat']
+        routerlab___routerlab____state: ['cv_auto_path', 'cv_deps_legacy_string', 'cv_deps_router_url', 'cv_deps_whole_router', 'cv_frag', 'cv_headers', 'cv_page_params', 'cv_query_params', 'cv_route_id', 'cv_session']
+        routerlab___routerlab____sub_state: ['sub_cv']
+
+########## 06_nav_to_/search?q=hello
+  -> SENT 198B reflex___state____state.reflex___state____on_load_internal_state.on_load_internal router_data={"pathname": "/search", "asPath": "/search?q=hello", "query": {"q": "hello"}}
+  <- DELTA 1366B  ROUTER=['page', 'route_id', 'url'] routerbytes=500
+        reflex___state____state: ['id', 'is_hydrated', 'rx_router_page', 'rx_router_route_id', 'rx_router_url', 'splat']
+        routerlab___routerlab____state: ['cv_auto_path', 'cv_deps_legacy_string', 'cv_deps_router_url', 'cv_deps_whole_router', 'cv_frag', 'cv_headers', 'cv_page_params', 'cv_query_params', 'cv_route_id', 'cv_session']
+        routerlab___routerlab____sub_state: ['sub_cv']
+
+########## 07_substate_handler_read_router
+  -> SENT 218B reflex___state____state.routerlab___routerlab____state.routerlab___routerlab____sub_state.read_router router_data={"pathname": "/search", "asPath": "/search?q=hello", "query": {"q": "hello"}}
+  <- DELTA 207B  ROUTER=[] routerbytes=2
+        routerlab___routerlab____sub_state: ['sub_note']
+
+########## 08_background_task_read_router
+  -> SENT 186B reflex___state____state.routerlab___routerlab____state.bg_read_router router_data={"pathname": "/search", "asPath": "/search?q=hello", "query": {"q": "hello"}}
+  <- DELTA 133B  ROUTER=[] routerbytes=2
+        routerlab___routerlab____state: ['nav_log']
+
+########## 09_componentstate_click
+  -> SENT 201B reflex___state____state.reflex___istate___dynamic____router_component_state_n4.click router_data={"pathname": "/search", "asPath": "/search?q=hello", "query": {"q": "hello"}}
+  <- DELTA 135B  ROUTER=[] routerbytes=2
+        reflex___istate___dynamic____router_component_state_n4: ['clicks']
+
+########## 11_back
+  -> SENT 200B reflex___state____state.reflex___state____on_load_internal_state.on_load_internal router_data={"pathname": "/docs/a/b", "asPath": "/docs/a/b", "query": {"splat": ["a", "b"]}}
+  <- DELTA 1423B  ROUTER=['page', 'route_id', 'url'] routerbytes=505
+        reflex___state____state: ['id', 'is_hydrated', 'rx_router_page', 'rx_router_route_id', 'rx_router_url', 'splat']
+        routerlab___routerlab____state: ['cv_auto_path', 'cv_deps_legacy_string', 'cv_deps_router_url', 'cv_deps_whole_router', 'cv_frag', 'cv_headers', 'cv_page_params', 'cv_query_params', 'cv_route_id', 'cv_session']
+        routerlab___routerlab____sub_state: ['sub_cv']
+
+########## 12_forward
+  -> SENT 198B reflex___state____state.reflex___state____on_load_internal_state.on_load_internal router_data={"pathname": "/search", "asPath": "/search?q=hello", "query": {"q": "hello"}}
+  <- DELTA 1366B  ROUTER=['page', 'route_id', 'url'] routerbytes=500
+        reflex___state____state: ['id', 'is_hydrated', 'rx_router_page', 'rx_router_route_id', 'rx_router_url', 'splat']
+        routerlab___routerlab____state: ['cv_auto_path', 'cv_deps_legacy_string', 'cv_deps_router_url', 'cv_deps_whole_router', 'cv_frag', 'cv_headers', 'cv_page_params', 'cv_query_params', 'cv_route_id', 'cv_session']
+        routerlab___routerlab____sub_state: ['sub_cv']
+
+########## 13_reload_on_search
+  -> SENT 148B reflex___state____state.hydrate router_data={"pathname": "/search", "asPath": "/search?q=hello", "query": {"q": "hello"}}
+  -> SENT 198B reflex___state____state.reflex___state____on_load_internal_state.on_load_internal router_data={"pathname": "/search", "asPath": "/search?q=hello", "query": {"q": "hello"}}
+  <- DELTA 88B  ROUTER=[] routerbytes=2
+        reflex___state____state: ['is_hydrated']
+
+########## 14_mutate_headers_handler
+  -> SENT 186B reflex___state____state.routerlab___routerlab____state.mutate_headers router_data={"pathname": "/search", "asPath": "/search?q=hello", "query": {"q": "hello"}}
+  <- DELTA 112B  ROUTER=[] routerbytes=2
+        routerlab___routerlab____state: ['counter']
+
+########## 15_bump_after_header_mutation
+  -> SENT 176B reflex___state____state.routerlab___routerlab____state.bump router_data={"pathname": "/search", "asPath": "/search?q=hello", "query": {"q": "hello"}}
+  <- DELTA 112B  ROUTER=[] routerbytes=2
+        routerlab___routerlab____state: ['counter']
+
+########## 16_direct_load_/items/7?x=1#frag
+  -> SENT 156B reflex___state____state.hydrate router_data={"pathname": "/items/7", "asPath": "/items/7?x=1#frag", "query": {"x": "1", "id": "7"}}
+  -> SENT 206B reflex___state____state.reflex___state____on_load_internal_state.on_load_internal router_data={"pathname": "/items/7", "asPath": "/items/7?x=1#frag", "query": {"x": "1", "id": "7"}}
+  <- DELTA 89B  ROUTER=[] routerbytes=2
+        reflex___state____state: ['is_hydrated']
+  <- DELTA 121B  ROUTER=[] routerbytes=2
+        routerlab___routerlab____item_state: ['loaded_id']
+  <- DELTA 88B  ROUTER=[] routerbytes=2
+        reflex___state____state: ['is_hydrated']
+
+########## 17_event_chain_redirect
+  -> SENT 194B reflex___state____state.routerlab___routerlab____state.chain_then_nav router_data={"pathname": "/items/7", "asPath": "/items/7?x=1#frag", "query": {"x": "1", "id": "7"}}
+  <- DELTA 113B  ROUTER=[] routerbytes=2
+        routerlab___routerlab____state: ['counter']
+  <- DELTA 144B  ROUTER=[] routerbytes=2
+        routerlab___routerlab____state: ['nav_log']
+  -> SENT 207B reflex___state____state.reflex___state____on_load_internal_state.on_load_internal router_data={"pathname": "/items/chained", "asPath": "/items/chained", "query": {"id": "chained"}}
+  <- DELTA 1361B  ROUTER=['page', 'url'] routerbytes=456
+        reflex___state____state: ['id', 'is_hydrated', 'rx_router_page', 'rx_router_url', 'splat']
+        routerlab___routerlab____state: ['cv_auto_path', 'cv_deps_legacy_string', 'cv_deps_router_url', 'cv_deps_whole_router', 'cv_frag', 'cv_headers', 'cv_page_params', 'cv_query_params', 'cv_route_id', 'cv_session']
+        routerlab___routerlab____sub_state: ['sub_cv']
+  <- DELTA 127B  ROUTER=[] routerbytes=2
+        routerlab___routerlab____item_state: ['loaded_id']
+  <- DELTA 88B  ROUTER=[] routerbytes=2
+        reflex___state____state: ['is_hydrated']
+
+########## 18_redirect_about
+  -> SENT 189B reflex___state____state.routerlab___routerlab____state.go_about router_data={"pathname": "/items/chained", "asPath": "/items/chained", "query": {"id": "chained"}}
+  -> SENT 166B reflex___state____state.reflex___state____on_load_internal_state.on_load_internal router_data={"pathname": "/about", "asPath": "/about"}
+  <- DELTA 1267B  ROUTER=['page', 'route_id', 'url'] routerbytes=440
+        reflex___state____state: ['id', 'is_hydrated', 'rx_router_page', 'rx_router_route_id', 'rx_router_url', 'splat']
+        routerlab___routerlab____state: ['cv_auto_path', 'cv_deps_legacy_string', 'cv_deps_router_url', 'cv_deps_whole_router', 'cv_frag', 'cv_headers', 'cv_page_params', 'cv_query_params', 'cv_route_id', 'cv_session']
+        routerlab___routerlab____sub_state: ['sub_cv']
+
+########## 19_onload_redirect_/items/redirectme
+  -> SENT 166B reflex___state____state.hydrate router_data={"pathname": "/items/redirectme", "asPath": "/items/redirectme", "query": {"id": "redirectme"}}
+  -> SENT 216B reflex___state____state.reflex___state____on_load_internal_state.on_load_internal router_data={"pathname": "/items/redirectme", "asPath": "/items/redirectme", "query": {"id": "redirectme"}}
+  <- DELTA 89B  ROUTER=[] routerbytes=2
+        reflex___state____state: ['is_hydrated']
+  <- DELTA 130B  ROUTER=[] routerbytes=2
+        routerlab___routerlab____item_state: ['loaded_id']
+  <- DELTA 88B  ROUTER=[] routerbytes=2
+        reflex___state____state: ['is_hydrated']
+  -> SENT 166B reflex___state____state.reflex___state____on_load_internal_state.on_load_internal router_data={"pathname": "/about", "asPath": "/about"}
+  <- DELTA 1267B  ROUTER=['page', 'route_id', 'url'] routerbytes=440
+        reflex___state____state: ['id', 'is_hydrated', 'rx_router_page', 'rx_router_route_id', 'rx_router_url', 'splat']
+        routerlab___routerlab____state: ['cv_auto_path', 'cv_deps_legacy_string', 'cv_deps_router_url', 'cv_deps_whole_router', 'cv_frag', 'cv_headers', 'cv_page_params', 'cv_query_params', 'cv_route_id', 'cv_session']
+        routerlab___routerlab____sub_state: ['sub_cv']
+
+########## 20_second_tab_load_/items/99
+  -> SENT 142B reflex___state____state.hydrate router_data={"pathname": "/items/99", "asPath": "/items/99", "query": {"id": "99"}}
+  -> SENT 192B reflex___state____state.reflex___state____on_load_internal_state.on_load_internal router_data={"pathname": "/items/99", "asPath": "/items/99", "query": {"id": "99"}}
+  <- DELTA 89B  ROUTER=[] routerbytes=2
+        reflex___state____state: ['is_hydrated']
+  <- DELTA 122B  ROUTER=[] routerbytes=2
+        routerlab___routerlab____item_state: ['loaded_id']
+  <- DELTA 88B  ROUTER=[] routerbytes=2
+        reflex___state____state: ['is_hydrated']
+
+########## 21_second_tab_nav_/about
+  -> SENT 166B reflex___state____state.reflex___state____on_load_internal_state.on_load_internal router_data={"pathname": "/about", "asPath": "/about"}
+  <- DELTA 1267B  ROUTER=['page', 'route_id', 'url'] routerbytes=440
+        reflex___state____state: ['id', 'is_hydrated', 'rx_router_page', 'rx_router_route_id', 'rx_router_url', 'splat']
+        routerlab___routerlab____state: ['cv_auto_path', 'cv_deps_legacy_string', 'cv_deps_router_url', 'cv_deps_whole_router', 'cv_frag', 'cv_headers', 'cv_page_params', 'cv_query_params', 'cv_route_id', 'cv_session']
+        routerlab___routerlab____sub_state: ['sub_cv']
+
+########## 22_second_context_load_home
+  -> SENT 106B reflex___state____state.hydrate router_data={"pathname": "/", "asPath": "/"}
+  -> SENT 156B reflex___state____state.reflex___state____on_load_internal_state.on_load_internal router_data={"pathname": "/", "asPath": "/"}
+  <- DELTA 88B  ROUTER=[] routerbytes=2
+        reflex___state____state: ['is_hydrated']
+
+########## 23_second_context_nav_item1
+  -> SENT 189B reflex___state____state.reflex___state____on_load_internal_state.on_load_internal router_data={"pathname": "/items/1", "asPath": "/items/1", "query": {"id": "1"}}
+  <- DELTA 1334B  ROUTER=['page', 'route_id', 'url'] routerbytes=471
+        reflex___state____state: ['id', 'is_hydrated', 'rx_router_page', 'rx_router_route_id', 'rx_router_url', 'splat']
+        routerlab___routerlab____state: ['cv_auto_path', 'cv_deps_legacy_string', 'cv_deps_router_url', 'cv_deps_whole_router', 'cv_frag', 'cv_headers', 'cv_page_params', 'cv_query_params', 'cv_route_id', 'cv_session']
+        routerlab___routerlab____sub_state: ['sub_cv']
+  <- DELTA 121B  ROUTER=[] routerbytes=2
+        routerlab___routerlab____item_state: ['loaded_id']
+  <- DELTA 88B  ROUTER=[] routerbytes=2
+        reflex___state____state: ['is_hydrated']
+
+########## 24_final_bump
+  -> SENT 144B reflex___state____state.routerlab___routerlab____state.bump router_data={"pathname": "/about", "asPath": "/about"}
+  <- DELTA 113B  ROUTER=[] routerbytes=2
+        routerlab___routerlab____state: ['counter']

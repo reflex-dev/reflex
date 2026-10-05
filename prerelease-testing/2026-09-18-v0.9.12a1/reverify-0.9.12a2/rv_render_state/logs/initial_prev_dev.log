@@ -1,0 +1,30 @@
+prev_dev n= 6
+  A                [4, 4, 2, 4, 2, 2]  mean=3.0
+  B                [4, 4, 2, 4, 2, 2]  mean=3.0
+  C                [2, 2, 2, 2, 2, 2]  mean=2.0
+  D                [2, 2, 2, 2, 2, 2]  mean=2.0
+  E                [2, 2, 2, 2, 2, 2]  mean=2.0
+  F                [2, 2, 2, 2, 2, 2]  mean=2.0
+  G                [2, 2, 2, 2, 2, 2]  mean=2.0
+  H                [2, 2, 2, 2, 2, 2]  mean=2.0
+  PAGE             [2, 2, 2, 2, 2, 2]  mean=2.0
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/statistics.py", line 327, in _exact_ratio
+    return (x.numerator, x.denominator)
+            ^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'numerator'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_render_state/scripts/initial_renders.py", line 26, in <module>
+    print(f"  {k:16s} {vals}  mean={statistics.mean(vals):.1f}")
+                                    ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/statistics.py", line 430, in mean
+    T, total, n = _sum(data)
+                  ^^^^^^^^^^
+  File "/usr/lib/python3.11/statistics.py", line 193, in _sum
+    for n, d in map(_exact_ratio, values):
+  File "/usr/lib/python3.11/statistics.py", line 330, in _exact_ratio
+    raise TypeError(msg)
+TypeError: can't convert type 'str' to numerator/denominator

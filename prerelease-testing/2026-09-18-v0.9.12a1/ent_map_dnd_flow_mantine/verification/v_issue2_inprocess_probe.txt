@@ -1,0 +1,27 @@
+### PREV entprev_tk
+--- state dict (top level) ---
+  reflex___state____state:
+      is_hydrated_rx_state_ = False
+      router_rx_state_ = RouterData(session=SessionData(client_token='SECRET-CLIENT-TOKEN', client_ip='0.0.0.0', se
+  reflex___state____state.reflex___state____frontend_event_exception_state:
+  reflex___state____state.reflex___state____on_load_internal_state:
+  reflex___state____state.reflex___state____update_vars_internal_state:
+  reflex___state____state.__main______probe:
+      n_rx_state_ = 0
+--- after redact_router_session() ---
+  SECRET-CLIENT-TOKEN still present at: NOWHERE (redacted ok)
+VERDICT OK
+
+### NEW ent_tk
+      rx_router_page_rx_state_ = PageData(host='', path='/tickets', raw_path='/tickets?a=1', full_path='/tickets', full_raw
+      rx_router_route_id_rx_state_ = /tickets
+      rx_router_session_rx_state_ = SessionData(client_token='SECRET-CLIENT-TOKEN', client_ip='0.0.0.0', session_id='')
+      rx_router_url_rx_state_ = URLData(scheme='', netloc='', origin='://', path='/tickets', query='a=1', query_parameters
+  reflex___state____state.reflex___state____frontend_event_exception_state:
+  reflex___state____state.reflex___state____on_load_internal_state:
+  reflex___state____state.__main______probe:
+      n_rx_state_ = 0
+  reflex___state____state.reflex___state____update_vars_internal_state:
+--- after redact_router_session() ---
+  SECRET-CLIENT-TOKEN still present at: ['.reflex___state____state.rx_router_session_rx_state_.client_token']
+VERDICT LEAK

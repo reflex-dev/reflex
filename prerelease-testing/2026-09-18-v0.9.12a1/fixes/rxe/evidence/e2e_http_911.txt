@@ -1,0 +1,8 @@
+=== FIXED on the PREVIOUS framework: worktree reflex-enterprise + reflex 0.9.11.post1 (port 8982) ===
+BEARER: <MASKED> ...(masked)
+retrieve_state status 200
+TOP KEYS: ['reflex___state____state', 'reflex___state____state.tickets___tickets____ticket_state']
+SESSION-SECRET FIELDS IN retrieve_state: NONE (redacted)
+event status 200 len 2899
+SESSION-SECRET FIELDS IN event delta: NONE (redacted)
+VERDICT OK

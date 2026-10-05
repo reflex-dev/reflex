@@ -1,0 +1,33 @@
+{
+ "label": "N2_new_dev_TERM_group",
+ "sig": "TERM",
+ "target": "group",
+ "extra": [],
+ "fp": "3380",
+ "bp": "8380",
+ "pid": 3812,
+ "pgid": 3812,
+ "ready_after_s": 1.88,
+ "READY": true,
+ "members_before": [
+  "3812:reflex",
+  "3831:bun",
+  "3833:node",
+  "3840:reflex"
+ ],
+ "exit_code": 0,
+ "exit_after_s": 0.2,
+ "survivors": [],
+ "log_has_143": [],
+ "log_has_error": [
+  "[ERROR] Unexpected exit from worker-1"
+ ],
+ "log_tail": [
+  "App running at: http://localhost:3380/",
+  "Backend running at: http://0.0.0.0:8380",
+  "[ERROR] Unexpected exit from worker-1",
+  "Info: Reflex app stopped."
+ ],
+ "ports_after": [],
+ "ports_after_force": []
+}

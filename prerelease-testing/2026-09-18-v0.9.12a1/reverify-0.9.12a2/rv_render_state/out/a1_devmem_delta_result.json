@@ -1,0 +1,279 @@
+{
+ "label": "a1_devmem",
+ "steps": [
+  {
+   "step": "after_load",
+   "values": {
+    "v_unc": "U0",
+    "v_cac": "C0",
+    "v_sunc": "S0",
+    "v_scount": "0",
+    "v_ocount": "0",
+    "v_loglen": "0",
+    "v_vis": "false",
+    "v_cs": ""
+   },
+   "delta_keys": [
+    {
+     "reflex___state____state": [
+      "is_hydrated_rx_state_",
+      "rx_router_headers_rx_state_",
+      "rx_router_page_rx_state_",
+      "rx_router_route_id_rx_state_",
+      "rx_router_session_rx_state_",
+      "rx_router_url_rx_state_"
+     ],
+     "reflex___state____update_vars_internal_state": [],
+     "reflex___istate___shared____shared_state_base_internal": [],
+     "deltaapp___deltaapp____other": [
+      "ocount_rx_state_"
+     ],
+     "deltaapp___deltaapp____root": [
+      "cached_n_rx_state_",
+      "n_rx_state_",
+      "uncached_n_rx_state_",
+      "visible_rx_state_"
+     ],
+     "deltaapp___deltaapp____sub": [
+      "count_rx_state_",
+      "log_rx_state_",
+      "running_rx_state_",
+      "sub_uncached_rx_state_"
+     ],
+     "reflex___state____frontend_event_exception_state": [],
+     "reflex___state____on_load_internal_state": []
+    },
+    {
+     "deltaapp___deltaapp____sub": [
+      "sub_uncached_rx_state_"
+     ]
+    },
+    {
+     "reflex___state____state": [
+      "is_hydrated_rx_state_"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "bump_x3",
+   "values": {
+    "v_unc": "U0",
+    "v_cac": "C3",
+    "v_sunc": "S0",
+    "v_scount": "0",
+    "v_ocount": "0",
+    "v_loglen": "0",
+    "v_vis": "false",
+    "v_cs": ""
+   },
+   "delta_keys": [
+    {
+     "deltaapp___deltaapp____root": [
+      "cached_n_rx_state_",
+      "n_rx_state_"
+     ]
+    },
+    {
+     "deltaapp___deltaapp____root": [
+      "cached_n_rx_state_",
+      "n_rx_state_"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "show",
+   "values": {
+    "v_unc": "U0",
+    "v_cac": "C3",
+    "v_sunc": "S0",
+    "v_scount": "0",
+    "v_ocount": "0",
+    "v_loglen": "0",
+    "v_vis": "true",
+    "v_cs": ""
+   },
+   "delta_keys": []
+  },
+  {
+   "step": "bump_visible",
+   "values": {
+    "v_unc": "U4",
+    "v_cac": "C4",
+    "v_sunc": "S0",
+    "v_scount": "0",
+    "v_ocount": "0",
+    "v_loglen": "0",
+    "v_vis": "true",
+    "v_cs": ""
+   },
+   "delta_keys": []
+  },
+  {
+   "step": "hide",
+   "values": {
+    "v_unc": "U4",
+    "v_cac": "C4",
+    "v_sunc": "S0",
+    "v_scount": "0",
+    "v_ocount": "0",
+    "v_loglen": "0",
+    "v_vis": "false",
+    "v_cs": ""
+   },
+   "delta_keys": []
+  },
+  {
+   "step": "bump_hidden",
+   "values": {
+    "v_unc": "U4",
+    "v_cac": "C5",
+    "v_sunc": "S0",
+    "v_scount": "0",
+    "v_ocount": "0",
+    "v_loglen": "0",
+    "v_vis": "false",
+    "v_cs": ""
+   },
+   "delta_keys": []
+  },
+  {
+   "step": "show_again",
+   "values": {
+    "v_unc": "U4",
+    "v_cac": "C5",
+    "v_sunc": "S0",
+    "v_scount": "0",
+    "v_ocount": "0",
+    "v_loglen": "0",
+    "v_vis": "true",
+    "v_cs": ""
+   },
+   "delta_keys": []
+  },
+  {
+   "step": "sbump_x2",
+   "values": {
+    "v_unc": "U4",
+    "v_cac": "C5",
+    "v_sunc": "S2",
+    "v_scount": "2",
+    "v_ocount": "0",
+    "v_loglen": "0",
+    "v_vis": "true",
+    "v_cs": ""
+   },
+   "delta_keys": [
+    {
+     "deltaapp___deltaapp____sub": [
+      "count_rx_state_",
+      "sub_uncached_rx_state_"
+     ]
+    }
+   ]
+  },
+  {
+   "step": "chain",
+   "values": {
+    "v_unc": "U6",
+    "v_cac": "C6",
+    "v_sunc": "S2",
+    "v_scount": "2",
+    "v_ocount": "1",
+    "v_loglen": "1",
+    "v_vis": "true",
+    "v_cs": ""
+   },
+   "delta_keys": []
+  },
+  {
+   "step": "storm",
+   "values": {
+    "v_unc": "U6",
+    "v_cac": "C6",
+    "v_sunc": "S7",
+    "v_scount": "7",
+    "v_ocount": "1",
+    "v_loglen": "2",
+    "v_vis": "true",
+    "v_cs": ""
+   },
+   "delta_keys": []
+  },
+  {
+   "step": "client_state",
+   "values": {
+    "v_unc": "U6",
+    "v_cac": "C6",
+    "v_sunc": "S7",
+    "v_scount": "7",
+    "v_ocount": "1",
+    "v_loglen": "2",
+    "v_vis": "true",
+    "v_cs": "CSVAL"
+   },
+   "delta_keys": []
+  },
+  {
+   "step": "after_reload",
+   "values": {
+    "v_unc": "U6",
+    "v_cac": "C6",
+    "v_sunc": "S7",
+    "v_scount": "7",
+    "v_ocount": "1",
+    "v_loglen": "2",
+    "v_vis": "true",
+    "v_cs": ""
+   },
+   "delta_keys": []
+  }
+ ],
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "page_errors": [],
+ "failed": [],
+ "bad": [],
+ "recv_frames": 31
+}

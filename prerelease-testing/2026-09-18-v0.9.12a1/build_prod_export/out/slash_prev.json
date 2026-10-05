@@ -1,0 +1,48 @@
+{
+  "label": "prev-0.9.11.post1",
+  "base": "http://localhost:3261",
+  "results": [
+    {
+      "requested": "/app/about?q=hello",
+      "http_status": 200,
+      "final_url": "http://localhost:3261/app/about/?q=hello",
+      "router_path_text": null,
+      "location_pathname": "/app/about/?q=hello",
+      "bad": []
+    },
+    {
+      "requested": "/app/apple?q=hello",
+      "http_status": 404,
+      "final_url": "http://localhost:3261/app/apple?q=hello",
+      "router_path_text": null,
+      "location_pathname": "/app/apple?q=hello",
+      "bad": [
+        [
+          "http://localhost:3261/app/apple?q=hello",
+          404
+        ]
+      ]
+    },
+    {
+      "requested": "/app/items/7?x=1",
+      "http_status": 404,
+      "final_url": "http://localhost:3261/app/items/7?x=1",
+      "router_path_text": "path: /app/items/7",
+      "location_pathname": "/app/items/7?x=1",
+      "bad": [
+        [
+          "http://localhost:3261/app/items/7?x=1",
+          404
+        ]
+      ]
+    },
+    {
+      "requested": "/app/about",
+      "http_status": 200,
+      "final_url": "http://localhost:3261/app/about/",
+      "router_path_text": null,
+      "location_pathname": "/app/about/",
+      "bad": []
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+ "label": "V_P_group",
+ "sig": "TERM",
+ "target": "group",
+ "extra": [],
+ "fp": "3887",
+ "bp": "8887",
+ "pid": 27510,
+ "pgid": 27510,
+ "ready_after_s": 2.54,
+ "READY": true,
+ "members_before": [
+  "27510:reflex",
+  "27635:bun",
+  "27637:node",
+  "27644:reflex"
+ ],
+ "exit_code": 1,
+ "exit_after_s": 0.2,
+ "survivors": [],
+ "log_has_143": [
+  "Starting frontend failed with exit code 143",
+  "error: script \"dev\" exited with code 143"
+ ],
+ "log_has_error": [
+  "[ERROR] Unexpected exit from worker-1"
+ ],
+ "log_tail": [
+  "",
+  "",
+  "Run with --loglevel debug  for the full log.",
+  "Info: Reflex app stopped."
+ ],
+ "ports_after": [],
+ "ports_after_force": []
+}

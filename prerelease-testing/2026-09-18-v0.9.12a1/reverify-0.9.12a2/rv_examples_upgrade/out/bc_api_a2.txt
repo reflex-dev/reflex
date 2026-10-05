@@ -1,0 +1,18 @@
+--- GET /products (pre-upgrade rows)
+[{"created":"2026-09-21T21:34:35.599494","image":"/favicon.ico","category":"tools","sender":"qa","updated":"2026-09-21T21:34:35.637718","id":1,"code":"W-001","label":"Widget","quantity":42,"seller":"acme"},{"created":"2026-09-21T21:36:00.723853","image":"/favicon.ico","category":"toys","sender":"qa","updated":"2026-09-21T21:36:00.723853","id":2,"code":"G-002","label":"Gadget","quantity":2,"seller":"acme"}]
+HTTP 200
+--- POST /products (Doohickey)
+"OK"
+HTTP 200
+--- GET /products/1
+{"created":"2026-09-21T21:34:35.599494","image":"/favicon.ico","category":"tools","sender":"qa","updated":"2026-09-21T21:34:35.637718","id":1,"code":"W-001","label":"Widget","quantity":42,"seller":"acme"}
+HTTP 200
+--- PUT /products/1 (quantity 99)
+null
+HTTP 200
+--- GET /products/1 after PUT
+{"created":"2026-09-21T21:34:35.599494","image":"/favicon.ico","category":"tools","sender":"qa","updated":"2026-09-21T21:43:19.993960","id":1,"code":"W-001","label":"Widget","quantity":99,"seller":"acme"}
+HTTP 200
+--- DELETE /products/3
+null
+HTTP 200

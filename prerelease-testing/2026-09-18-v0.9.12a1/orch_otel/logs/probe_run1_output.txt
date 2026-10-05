@@ -1,0 +1,38 @@
+opentelemetry-api==1.44.0 opentelemetry-exporter-otlp-proto-common==1.44.0 opentelemetry-exporter-otlp-proto-http==1.44.0 opentelemetry-sdk==1.44.0 reflex==0.9.12a1 reflex-base==0.9.12a1 reflex-otel==0.1.0 
+[exited with code 0]
+=== versions
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/otel/lib/python3.11/site-packages/reflex/__init__.py
+reflex 0.9.12a1
+[dev_initial] frontend 200 after 4s
+[dev_initial] drive exit=0 4 lines
+{"pid":5429,"dump_dir":"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/orch_otel/dumps/dev_initial","traces":true,"metrics":true,"otel_enabled":true,"asgi_middleware":"<function ReflexInstrumentor._instrument.<locals>.asgi_middleware at 0x7f53106adee0>","global_tracer_provider":"ProxyTracerProvider"}
+[dev_initial] span files: metrics-5429.jsonl spans-5393.jsonl spans-5429.jsonl 
+[dev_initial] reflex.compile spans by trigger:
+      1 "reflex.compile.trigger": "backend_startup"
+      1 "reflex.compile.trigger": "initial"
+[dev_initial] compile-tree roots + stage children (from spantree):
+1:- reflex.compile [INTERNAL] trace=3a4b083f span=6ad87d parent=ROOT pid=spans-5393.jsonl
+2:  attrs {"reflex.compile.dry_run": false, "reflex.compile.trigger": "initial"}
+3:  - reflex.compile.pages [INTERNAL] trace=3a4b083f span=16398d parent=6ad87d pid=spans-5393.jsonl
+4:  - reflex.compile.install_frontend_packages [INTERNAL] trace=3a4b083f span=b3f529 parent=6ad87d pid=spans-5393.jsonl
+5:  - reflex.compile.write [INTERNAL] trace=3a4b083f span=35a928 parent=6ad87d pid=spans-5393.jsonl
+6:- reflex.compile [INTERNAL] trace=4cdc5330 span=4196cf parent=ROOT pid=spans-5429.jsonl
+7:  attrs {"reflex.compile.dry_run": false, "reflex.compile.trigger": "backend_startup"}
+[dev_initial] orphans (parent never exported):
+9 spans; 0 orphans: []
+=== cold second run (frontend already compiled; compile still runs in the worker)
+[dev_second] frontend 200 after 0s
+[dev_second] drive exit=0 4 lines
+
+[dev_second] span files: 
+[dev_second] reflex.compile spans by trigger:
+grep: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/orch_otel/dumps/dev_second/spans-*.jsonl: No such file or directory
+[dev_second] compile-tree roots + stage children (from spantree):
+[dev_second] orphans (parent never exported):
+0 spans; 0 orphans: []
+=== export --frontend-only (in-process compile, control)
+export exit=0
+      1 "reflex.compile.trigger": "export"
+OTEL PROBE DONE
+
+[exited with code 0]

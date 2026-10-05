@@ -1,0 +1,18 @@
+{
+  "foreach_ids": [
+    "_r_0_",
+    "_r_0_",
+    "_r_0_"
+  ],
+  "foreach_label_for": [
+    "_r_0_",
+    "_r_0_",
+    "_r_0_"
+  ],
+  "memo_ids": [
+    "_r_1_",
+    "_r_2_",
+    "_r_3_"
+  ],
+  "html_ids_box": "<div class=\"rt-Flex rt-r-fd-row rt-r-ai-start rt-r-gap-3 rx-Stack\"><label class=\"foreach-label\" for=\"_r_0_\">ia</label><input class=\"foreach-input\" id=\"_r_0_\" value=\"ia\"></div><div class=\"rt-Flex rt-r-fd-row rt-r-ai-start rt-r-gap-3 rx-Stack\"><label class=\"foreach-label\" for=\"_r_0_\">ib</label><input class=\"foreach-input\" id=\"_r_0_\" value=\"ib\"></div><div class=\"rt-Flex rt-r-fd-row rt-r-ai-start rt-r-gap-3 rx-Stack\"><label class=\"foreach-label\" for=\"_r_0_\">ic</label><input class=\"foreach-input\" id=\"_r_0_\" value=\"ic\"></div>"
+}

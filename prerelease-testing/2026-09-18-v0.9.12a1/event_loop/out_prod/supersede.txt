@@ -1,0 +1,11 @@
+[a-roots] ["A:start","A:CANCELLED","B:start","B:done"]
+[b-chains] ["chainA:root","cA:start","chainB:root","cA:CANCELLED","cB:start","cB:done"]
+[c-fanout] ["fanout:root","y:start","x:start","y:done","x:done"]
+[d-poll] mid='["poll1","poll2","poll3","poll4"]' final='["poll1","poll2","poll3","poll4","poll1","poll2","poll3","poll4"]'
+[e-stale] '["slow:root","B:start","slow:enqueue","B:done"]'
+[f-foreground] ["FB:start","FB:done"]
+[g-mixed] ["FA:start","FA:done","B:start","B:done"]
+[h-two-clients] c1='["A:start","A:done"]' c2='["B:start","B:done"]'
+== console ==
+== pageerrors == []
+== net == []

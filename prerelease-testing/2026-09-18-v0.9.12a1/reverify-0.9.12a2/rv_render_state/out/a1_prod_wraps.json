@@ -1,0 +1,36 @@
+{
+ "label": "a1_prod",
+ "console": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "page_errors": [],
+ "failed": [],
+ "bad": [],
+ "wraps": {
+  "custom_wraps": [
+   "hi",
+   "zero_ish"
+  ],
+  "portal": false,
+  "badge": true,
+  "badge_text": "Built with Reflex",
+  "toaster": true,
+  "grid": false
+ },
+ "after_toast": {
+  "n": "1",
+  "toasts": 1,
+  "toast_text": [
+   "toast #1"
+  ],
+  "toaster_present": true
+ },
+ "root_html_head": "<section aria-label=\"Notifications alt+T\" tabindex=\"-1\" aria-live=\"polite\" aria-relevant=\"additions text\" aria-atomic=\"false\" data-react-aria-top-layer=\"true\"><ol dir=\"ltr\" tabindex=\"-1\" data-sonner-toaster=\"true\" data-sonner-theme=\"light\" data-y-position=\"bottom\" data-x-position=\"right\" style=\"--front-toast-height: 53.5px; --width: 356px; --gap: 14px; --offset-top: 24px; --offset-right: 24px; --offset-bottom: 24px; --offset-left: 24px; --mobile-offset-top: 16px; --mobile-offset-right: 16px; --mobile-offset-bottom: 16px; --mobile-offset-left: 16px;\"><li tabindex=\"0\" class=\"\" data-sonner-toast=\"\" data-rich-colors=\"true\" data-styled=\"true\" data-mounted=\"true\" data-promise=\"false\" data-swiped=\"false\" data-removed=\"false\" data-visible=\"true\" data-y-position=\"bottom\" data-x-position=\"right\" data-index=\"0\" data-front=\"true\" data-swiping=\"false\" data-dismissible=\"true\" data-type=\"info\" data-swipe-out=\"false\" data-expanded=\"true\" style=\"--index: 0; --toasts-before: 0; --z-index: 1; --offset: 0px; --initial-height: auto;\"><div data-icon=\"\" class=\"\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20 20\" fill=\"currentColor\" height=\"20\" width=\"20\" aria-hidden=\"true\"><path fill-rule=\"eveno"
+}

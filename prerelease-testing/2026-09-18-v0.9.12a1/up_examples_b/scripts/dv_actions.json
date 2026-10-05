@@ -1,0 +1,7 @@
+[{"wait":3000},
+ {"dump":"home.txt"},
+ {"screenshot":"01_home.png"},
+ {"click":"button:has-text('Add New Item')"},
+ {"wait":1200},
+ {"dump":"dialog.txt"},
+ {"screenshot":"02_dialog.png"}]

@@ -1,0 +1,105 @@
+{
+ "url": "http://localhost:3265/",
+ "actions": [
+  [
+   "0",
+   "wait",
+   "ok"
+  ],
+  [
+   "1",
+   "dump",
+   "ok"
+  ],
+  [
+   "2",
+   "screenshot",
+   "ok"
+  ],
+  [
+   "3",
+   "goto",
+   "ok"
+  ],
+  [
+   "4",
+   "wait",
+   "ok"
+  ],
+  [
+   "5",
+   "fill",
+   "ok"
+  ],
+  [
+   "6",
+   "fill",
+   "ok"
+  ],
+  [
+   "7",
+   "click",
+   "ok"
+  ],
+  [
+   "8",
+   "wait",
+   "ok"
+  ],
+  [
+   "9",
+   "goto",
+   "ok"
+  ],
+  [
+   "10",
+   "wait",
+   "ok"
+  ],
+  [
+   "11",
+   "dump",
+   "ok"
+  ],
+  [
+   "12",
+   "screenshot",
+   "ok"
+  ],
+  [
+   "13",
+   "goto",
+   "ok"
+  ],
+  [
+   "14",
+   "wait",
+   "ok"
+  ],
+  [
+   "15",
+   "dump",
+   "ok"
+  ],
+  [
+   "16",
+   "screenshot",
+   "ok"
+  ]
+ ],
+ "console": [
+  "[log] Disconnect websocket on page navigation",
+  "[verbose] [DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o",
+  "[log] Disconnect websocket on page navigation",
+  "[error] Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "[log] Disconnect websocket on page navigation",
+  "[error] Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "[log] Disconnect websocket on pagehide"
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": [
+  "404 GET http://localhost:3265/edit/form/1",
+  "404 GET http://localhost:3265/responses/1"
+ ]
+}

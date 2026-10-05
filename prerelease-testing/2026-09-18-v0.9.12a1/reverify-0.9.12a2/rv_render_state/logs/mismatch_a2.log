@@ -1,0 +1,43 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+App running at: http://localhost:3191/
+Backend running at: http://0.0.0.0:8191
+[Reflex Frontend Exception]
+ [SID: OLm4lfgEEzxUJGjVAAAB] State update failed: no dispatch function for 
+substate(s) 
+'reflex___state____state.renderapp___renderapp____backend_only_state'. This 
+indicates a frontend/backend state mismatch. Rebuild the frontend or check that 
+api_url points to the matching backend.
+
+[Reflex Frontend Exception]
+ [SID: Lw2dtbbccXgOnAadAAAD] State update failed: no dispatch function for 
+substate(s) 
+'reflex___state____state.renderapp___renderapp____backend_only_state'. This 
+indicates a frontend/backend state mismatch. Rebuild the frontend or check that 
+api_url points to the matching backend.
+
+Info: Reflex app stopped.

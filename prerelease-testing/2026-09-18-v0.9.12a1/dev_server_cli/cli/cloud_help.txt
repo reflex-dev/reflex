@@ -1,0 +1,23 @@
+Usage: reflex cloud [OPTIONS] COMMAND [ARGS]...
+
+  The Hosting CLI.
+
+  This CLI is used to manage the Reflex cloud hosting service. It provides
+  commands for managing apps, projects, secrets, and VM types/regions.
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  apps            Commands for managing apps.
+  config          Generate a configuration file for the cloud deployment.
+  create-token    Create a new authentication token for the hosting service.
+  gcp-standalone  Deploy a Reflex app to GCP Cloud Run yourself, outside...
+  project         Commands for managing projects.
+  providers       Commands for inspecting connected cloud providers.
+  regions         List all the regions of the hosting service.
+  scan            Run a Reflex-aware security review over your app source.
+  secrets         Commands for managing secrets.
+  token           Inspect or replace the stored Reflex Cloud access token.
+  vmtypes         Retrieve the available VM types.
+  whoami          Show which account the Reflex Cloud CLI is...

@@ -1,0 +1,26 @@
+# s_callback.py against reflex 0.9.12a1, dev (ports 3680/8680)
+[1a fe-toast action] events= ["fe-action"]  pageerrors= []
+[1b fe-toast cancel] events= ["fe-action","fe-cancel"]  pageerrors= []
+[2 fe-toast js callback] window.__alerted= True  pageerrors= []
+[3a be-toast action] events= ["be:fired","be-action"]  pageerrors= []
+[3b be-toast cancel] events= ["be:fired","be-action","be:fired","be-cancel"]  pageerrors= []
+[4a memo toast action] events= ["memo-action"]  pageerrors= []
+[4b memo toast cancel] events= ["memo-action","memo-cancel"]  pageerrors= []
+[5a component-state toast action] cshits= 1  pageerrors= []
+[5b component-state toast cancel (set_clipboard)] pageerrors= []
+   (pre-check) events after dropping on u2 = []
+[6 call_script cb -> uploadFiles] __cb_ran= 1  events= []  uploaded= []                       <-- FAIL
+[7 call_script cb -> state handler] events= ["script:from-script"]
+[8 fe-toast action -> uploadFiles] events= []  uploaded= []  pageerrors= ['[c1] PAGEERROR filesById is not defined']   <-- FAIL
+[9 be-toast action -> uploadFiles] events= []  uploaded= []  pageerrors= ['[c1] PAGEERROR filesById is not defined']   <-- FAIL
+[10 direct on_drop upload] events= ["upload:1"]  uploaded= ["upload_me.txt"]                  <-- control passes
+== console ==
+   [c1][log] _call_script ReferenceError: filesById is not defined
+    at eval (eval at applyEvent (http://localhost:3680/utils/state.js:386:15), <anonymous>:1:105)
+    at applyEvent (http://localhost:3680/utils/state.js:388:9)
+    at processEvent (http://localhost:3680/utils/state.js:537:11)
+    at queueEvents (http://localhost:3680/utils/state.js:502:9)
+    at Socket.<anonymous> (http://localhost:3680/utils/state.js:758:9)
+== pageerrors ==
+   [c1] PAGEERROR filesById is not defined
+   [c1] PAGEERROR filesById is not defined

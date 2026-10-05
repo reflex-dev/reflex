@@ -1,0 +1,235 @@
+# Follow-up: new + converted tests against UNFIXED sources
+# reflex/state.py and packages/reflex-base/src/reflex_base/vars/base.py restored from origin/main; follow-up test file kept.
+$ uv run pytest tests/units/test_state.py -p no:randomly -k 'withheld_by_delta_override or recorded_only_once_delivered or scalar_key_distinguishes or unkeyable_value_always_sent'
+
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+..FF..F                                                                  [100%]
+=================================== FAILURES ===================================
+____ test_uncached_var_withheld_by_delta_override_is_resent[False-dropped] _____
+
+mode = 'dropped', is_async = False
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f364593b9b0>
+
+    @pytest.mark.filterwarnings(
+        "ignore:coroutine '.*_awaitable_result' was never awaited:RuntimeWarning",
+    )
+    @pytest.mark.parametrize("mode", ["dropped", "replaced"])
+    @pytest.mark.parametrize("is_async", [False, True])
+    async def test_uncached_var_withheld_by_delta_override_is_resent(
+        mode: str, is_async: bool, monkeypatch: pytest.MonkeyPatch
+    ):
+        """An uncached var withheld by a `get_delta` override is sent once released.
+    
+        Downstream packages wrap `get_delta` to keep vars the current user may not
+        see out of the delta, either by dropping the key or by replacing the value
+        with a public placeholder. Neither value reaches the client, so the real one
+        has to be delivered as soon as the override stops withholding it -- even
+        though the var recomputes to the value that was withheld.
+    
+        Args:
+            mode: Whether the override drops the key or replaces its value.
+            is_async: Whether the uncached var is an async one.
+            monkeypatch: Pytest monkeypatch fixture.
+        """
+    
+        class WithheldState(BaseState):
+            n: int = 0
+    
+            @rx.var(cache=False)
+            def secret(self) -> str:
+                return f"secret-{self.n}"
+    
+        class AsyncWithheldState(BaseState):
+            n: int = 0
+    
+            @rx.var(cache=False)
+            async def secret(self) -> str:
+                return f"secret-{self.n}"
+    
+        state_cls = AsyncWithheldState if is_async else WithheldState
+        full_name = state_cls.get_full_name()
+        key = "secret" + FIELD_MARKER
+        withholding = True
+        # Bound through the base class: neither state overrides `get_delta`, and the
+        # wrapper below replaces it on both, so its `self` is only a `BaseState`.
+        original_get_delta = BaseState.get_delta
+    
+        def withholding_get_delta(self: BaseState) -> Delta:
+            delta = original_get_delta(self)
+            if not withholding:
+                return delta
+            filtered: Delta = {}
+            for name, subdelta in delta.items():
+                withheld_subdelta = dict(subdelta)
+                if key in withheld_subdelta:
+                    value = withheld_subdelta.pop(key)
+                    if inspect.iscoroutine(value):
+                        # Withheld before `_resolve_delta` could await it.
+                        value.close()
+                    if mode == "replaced":
+                        withheld_subdelta[key] = "anon"
+                if withheld_subdelta:
+                    filtered[name] = withheld_subdelta
+            return filtered
+    
+        monkeypatch.setattr(state_cls, "get_delta", withholding_get_delta)
+    
+        def expected_withheld(**other_vars: Any) -> Delta:
+            subdelta = {name + FIELD_MARKER: value for name, value in other_vars.items()}
+            if mode == "replaced":
+                subdelta[key] = "anon"
+            return {full_name: subdelta} if subdelta else {}
+    
+        state = state_cls()
+        assert await state._get_resolved_delta() == expected_withheld()
+        state._clean()
+    
+        # The value changes while it is still withheld: the client never sees it.
+        state.n = 1
+        assert await state._get_resolved_delta() == expected_withheld(n=1)
+        state._clean()
+    
+        # The override releases the var: the value the client never got is sent...
+        withholding = False
+>       assert await state._get_resolved_delta() == {full_name: {key: "secret-1"}}
+E       AssertionError: assert {} == {'reflex___is...: 'secret-1'}}
+E         
+E         Right contains 1 more item:
+E         {'reflex___istate___dynamic____withheld_state': {'secret_rx_state_': 'secret-1'}}
+E         Use -v to get more diff
+
+tests/units/test_state.py:1826: AssertionError
+____ test_uncached_var_withheld_by_delta_override_is_resent[False-replaced] ____
+
+mode = 'replaced', is_async = False
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f36462fd260>
+
+    @pytest.mark.filterwarnings(
+        "ignore:coroutine '.*_awaitable_result' was never awaited:RuntimeWarning",
+    )
+    @pytest.mark.parametrize("mode", ["dropped", "replaced"])
+    @pytest.mark.parametrize("is_async", [False, True])
+    async def test_uncached_var_withheld_by_delta_override_is_resent(
+        mode: str, is_async: bool, monkeypatch: pytest.MonkeyPatch
+    ):
+        """An uncached var withheld by a `get_delta` override is sent once released.
+    
+        Downstream packages wrap `get_delta` to keep vars the current user may not
+        see out of the delta, either by dropping the key or by replacing the value
+        with a public placeholder. Neither value reaches the client, so the real one
+        has to be delivered as soon as the override stops withholding it -- even
+        though the var recomputes to the value that was withheld.
+    
+        Args:
+            mode: Whether the override drops the key or replaces its value.
+            is_async: Whether the uncached var is an async one.
+            monkeypatch: Pytest monkeypatch fixture.
+        """
+    
+        class WithheldState(BaseState):
+            n: int = 0
+    
+            @rx.var(cache=False)
+            def secret(self) -> str:
+                return f"secret-{self.n}"
+    
+        class AsyncWithheldState(BaseState):
+            n: int = 0
+    
+            @rx.var(cache=False)
+            async def secret(self) -> str:
+                return f"secret-{self.n}"
+    
+        state_cls = AsyncWithheldState if is_async else WithheldState
+        full_name = state_cls.get_full_name()
+        key = "secret" + FIELD_MARKER
+        withholding = True
+        # Bound through the base class: neither state overrides `get_delta`, and the
+        # wrapper below replaces it on both, so its `self` is only a `BaseState`.
+        original_get_delta = BaseState.get_delta
+    
+        def withholding_get_delta(self: BaseState) -> Delta:
+            delta = original_get_delta(self)
+            if not withholding:
+                return delta
+            filtered: Delta = {}
+            for name, subdelta in delta.items():
+                withheld_subdelta = dict(subdelta)
+                if key in withheld_subdelta:
+                    value = withheld_subdelta.pop(key)
+                    if inspect.iscoroutine(value):
+                        # Withheld before `_resolve_delta` could await it.
+                        value.close()
+                    if mode == "replaced":
+                        withheld_subdelta[key] = "anon"
+                if withheld_subdelta:
+                    filtered[name] = withheld_subdelta
+            return filtered
+    
+        monkeypatch.setattr(state_cls, "get_delta", withholding_get_delta)
+    
+        def expected_withheld(**other_vars: Any) -> Delta:
+            subdelta = {name + FIELD_MARKER: value for name, value in other_vars.items()}
+            if mode == "replaced":
+                subdelta[key] = "anon"
+            return {full_name: subdelta} if subdelta else {}
+    
+        state = state_cls()
+        assert await state._get_resolved_delta() == expected_withheld()
+        state._clean()
+    
+        # The value changes while it is still withheld: the client never sees it.
+        state.n = 1
+        assert await state._get_resolved_delta() == expected_withheld(n=1)
+        state._clean()
+    
+        # The override releases the var: the value the client never got is sent...
+        withholding = False
+>       assert await state._get_resolved_delta() == {full_name: {key: "secret-1"}}
+E       AssertionError: assert {} == {'reflex___is...: 'secret-1'}}
+E         
+E         Right contains 1 more item:
+E         {'reflex___istate___dynamic____withheld_state_0': {'secret_rx_state_': 'secret-1'}}
+E         Use -v to get more diff
+
+tests/units/test_state.py:1826: AssertionError
+___________ test_uncached_computed_var_recorded_only_once_delivered ____________
+
+    async def test_uncached_computed_var_recorded_only_once_delivered():
+        """A delta that is built but never delivered does not count as sent.
+    
+        `get_delta` may be wrapped downstream by a filter that drops entries from
+        it, so only the delta returned by `_get_resolved_delta` -- what the caller
+        goes on to emit -- records the values the client has.
+        """
+    
+        class UndeliveredState(BaseState):
+            @rx.var(cache=False)
+            def v(self) -> int:
+                return 1
+    
+        us = UndeliveredState()
+        expected = {UndeliveredState.get_full_name(): {"v" + FIELD_MARKER: 1}}
+    
+        # Building a delta is not delivering it: the value is still owed.
+        assert us.get_delta() == expected
+        us._clean()
+>       assert us.get_delta() == expected
+E       AssertionError: assert {} == {'reflex___is...x_state_': 1}}
+E         
+E         Right contains 1 more item:
+E         {'reflex___istate___dynamic____undelivered_state': {'v_rx_state_': 1}}
+E         Use -v to get more diff
+
+tests/units/test_state.py:1852: AssertionError
+=============================== warnings summary ===============================
+tests/units/test_state.py:142
+  /home/user/wt/f003/tests/units/test_state.py:142: PytestCollectionWarning: cannot collect test class 'TestMixin' because it has a __init__ constructor (from: tests/units/test_state.py)
+    class TestMixin(BaseState, mixin=True):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/units/test_state.py::test_uncached_var_withheld_by_delta_override_is_resent[False-dropped]
+FAILED tests/units/test_state.py::test_uncached_var_withheld_by_delta_override_is_resent[False-replaced]
+FAILED tests/units/test_state.py::test_uncached_computed_var_recorded_only_once_delivered
+3 failed, 4 passed, 215 deselected, 1 warning in 1.02s

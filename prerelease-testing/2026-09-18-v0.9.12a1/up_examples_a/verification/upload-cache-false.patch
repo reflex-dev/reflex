@@ -1,0 +1,11 @@
+--- /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_up_examples_a/logs/upload.py.orig	2026-09-19 05:21:47.224483869 +0000
++++ /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_up_examples_a/upload/upload/upload.py	2026-09-19 05:21:47.234423113 +0000
+@@ -13,7 +13,7 @@
+     # Progress visuals
+     upload_progress: int
+ 
+-    @rx.var
++    @rx.var(cache=False)
+     def files(self) -> list[str]:
+         """Get the string representation of the uploaded files."""
+         return [

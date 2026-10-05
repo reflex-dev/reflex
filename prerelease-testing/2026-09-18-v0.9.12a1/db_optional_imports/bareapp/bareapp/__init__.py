@@ -1,0 +1,1 @@
+from .bareapp import app

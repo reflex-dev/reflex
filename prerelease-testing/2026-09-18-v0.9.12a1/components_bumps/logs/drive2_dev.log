@@ -1,0 +1,96 @@
+{
+  "badge_1280": [
+    {
+      "aria": null,
+      "text": "Built with",
+      "textContent": "Built with Reflex",
+      "labelDisplay": null,
+      "labelVisible": null,
+      "pos": "static"
+    },
+    {
+      "aria": "Built with Reflex",
+      "text": "Built with Reflex",
+      "textContent": "Built with Reflex",
+      "labelDisplay": "inline",
+      "labelVisible": true,
+      "pos": "fixed"
+    }
+  ],
+  "badge_360": [
+    {
+      "aria": null,
+      "text": "Built with",
+      "textContent": "Built with Reflex",
+      "labelDisplay": null,
+      "labelVisible": null,
+      "pos": "static"
+    },
+    {
+      "aria": "Built with Reflex",
+      "text": "",
+      "textContent": "Built with Reflex",
+      "labelDisplay": "inline",
+      "labelVisible": false,
+      "pos": "fixed"
+    }
+  ],
+  "dup_id_check": {
+    "total": 23,
+    "dups": [
+      "_r_3_"
+    ]
+  },
+  "label_resolution": [
+    {
+      "for": "_r_3_",
+      "text": "ia",
+      "targetValue": "ia"
+    },
+    {
+      "for": "_r_3_",
+      "text": "ib",
+      "targetValue": "ia"
+    },
+    {
+      "for": "_r_3_",
+      "text": "ic",
+      "targetValue": "ia"
+    }
+  ],
+  "file_input_count": 1,
+  "upload_files_text": "[\"up.txt\"]",
+  "console_err_warn": [],
+  "pageerrors": [],
+  "bad_responses": [],
+  "ssr": {
+    "/code": {
+      "status": 200,
+      "len": 3786,
+      "has_greet": false,
+      "has_below_fold": false,
+      "has_builtwith_aria": false,
+      "has_sankey_svg": false
+    },
+    "/misc": {
+      "status": 200,
+      "len": 3786,
+      "has_greet": false,
+      "has_below_fold": false,
+      "has_builtwith_aria": false,
+      "has_sankey_svg": false
+    },
+    "/sankey": {
+      "status": 200,
+      "len": 3790,
+      "has_greet": false,
+      "has_below_fold": false,
+      "has_builtwith_aria": false,
+      "has_sankey_svg": false
+    }
+  },
+  "upload_unknown_handler": {
+    "status": 400,
+    "body": "Unknown upload event handler: 'no.such.Handler'."
+  }
+}

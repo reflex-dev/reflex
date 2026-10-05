@@ -1,0 +1,48 @@
+=== 21:28:07 specs
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+reflex==0.9.12a2
+reflex-base==0.9.12a2
+reflex-build-sdk==0.0.2
+reflex-components-code==0.9.6a1
+reflex-components-core==0.9.10a1
+reflex-components-dataeditor==0.9.3a1
+reflex-components-gridjs==0.9.2a1
+reflex-components-lucide==1.0.4
+reflex-components-markdown==0.9.4a1
+reflex-components-moment==0.9.4
+reflex-components-plotly==0.9.7a1
+reflex-components-radix==0.9.10a1
+reflex-components-react-player==0.9.2
+reflex-components-recharts==0.9.4a1
+reflex-components-sonner==0.9.4a1
+reflex-docgen==0.9.5
+reflex-hosting-cli==0.1.72
+reflex-otel==0.1.0
+reflex-release==0.1.1
+=== 21:28:08 audit_pyi
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+pyi packaging audit — 19 package(s)
+
+  OK reflex                          0.9.12a2     stubs=3 (manifest: 3)
+  OK reflex-base                     0.9.12a2     stubs=0 (manifest: 0)
+  OK reflex-build-sdk                0.0.2        stubs=0 (manifest: 0)
+  OK reflex-components-code          0.9.6a1      stubs=2 (manifest: 2)
+  OK reflex-components-core          0.9.10a1     stubs=36 (manifest: 36)
+  OK reflex-components-dataeditor    0.9.3a1      stubs=1 (manifest: 1)
+  OK reflex-components-gridjs        0.9.2a1      stubs=1 (manifest: 1)
+  OK reflex-components-lucide        1.0.4        stubs=1 (manifest: 1)
+  OK reflex-components-markdown      0.9.4a1      stubs=1 (manifest: 1)
+  OK reflex-components-moment        0.9.4        stubs=1 (manifest: 1)
+  OK reflex-components-plotly        0.9.7a1      stubs=1 (manifest: 1)
+  OK reflex-components-radix         0.9.10a1     stubs=65 (manifest: 65)
+  OK reflex-components-react-player  0.9.2        stubs=3 (manifest: 3)
+  OK reflex-components-recharts      0.9.4a1      stubs=6 (manifest: 6)
+  OK reflex-components-sonner        0.9.4a1      stubs=1 (manifest: 1)
+  OK reflex-docgen                   0.9.5        stubs=0 (manifest: 0)
+  OK reflex-hosting-cli              0.1.72       stubs=0 (manifest: 0)
+  OK reflex-otel                     0.1.0        stubs=0 (manifest: 0)
+  OK reflex-release                  0.1.1        stubs=0 (manifest: 0)
+
+PASS: 122 stubs ship correctly in both wheel and sdist; no foreign stubs.
+exit=0
+=== 21:28:12 done

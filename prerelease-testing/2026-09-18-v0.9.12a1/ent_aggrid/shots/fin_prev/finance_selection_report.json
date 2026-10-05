@@ -1,0 +1,16 @@
+{
+  "checkbox_elems": 0,
+  "checkbox_inputs": 0,
+  "ticker_cell_html": "MSFT",
+  "after_row_click_selected_rows": 0,
+  "after_row_click_chart": 0,
+  "after_space_selected_rows": 0,
+  "after_space_chart": 0,
+  "headings": [
+    "Stock Market Data with AG Grid in Reflex"
+  ],
+  "console": [
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ]
+}

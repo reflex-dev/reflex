@@ -1,0 +1,15 @@
+301:Traceback (most recent call last):
+302-  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/granian/_futures.py", line 15, in future_watcher
+303-    await inner(watcher.scope, watcher.proto)
+304-  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/starlette/applications.py", line 96, in __call__
+305-    await self.middleware_stack(scope, receive, send)
+306-  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+307-    raise exc
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex/app.py", line 1842, in modify_state
+    token = BaseStateToken.from_legacy_token(token, root_state=self._state)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex/istate/manager/token.py", line 247, in from_legacy_token
+    state_cls = root_state.get_class_substate(tuple(state_path.split(".")))  # type: ignore[union-attr]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex/state.py", line 1477, in get_class_substate
+    raise ValueError(msg)

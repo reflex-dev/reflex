@@ -1,0 +1,99 @@
+{
+  "foreach_ids": [
+    "_R_2iqj5_",
+    "_R_2iqj5_",
+    "_R_2iqj5_"
+  ],
+  "foreach_labels": [
+    {
+      "for": "_R_2iqj5_",
+      "text": "ia"
+    },
+    {
+      "for": "_R_2iqj5_",
+      "text": "ib"
+    },
+    {
+      "for": "_R_2iqj5_",
+      "text": "ic"
+    }
+  ],
+  "memo_ids": [
+    "_R_7iqj5_",
+    "_R_biqj5_",
+    "_R_fiqj5_"
+  ],
+  "label_resolution": [
+    {
+      "for": "_R_2iqj5_",
+      "text": "ia",
+      "targetValue": "ia"
+    },
+    {
+      "for": "_R_2iqj5_",
+      "text": "ib",
+      "targetValue": "ia"
+    },
+    {
+      "for": "_R_2iqj5_",
+      "text": "ic",
+      "targetValue": "ia"
+    }
+  ],
+  "label_click_focus_values": [
+    "ia",
+    "ia",
+    "ia"
+  ],
+  "dup_id_check": {
+    "total": 9,
+    "dups": [
+      "_R_2iqj5_"
+    ]
+  },
+  "portal_exists": false,
+  "portal_html": null,
+  "portal_parent": null,
+  "body_children": [
+    "SECTION#.",
+    "DIV#.radix-themes css-0 light",
+    "SCRIPT#.",
+    "SCRIPT#.",
+    "SCRIPT#.",
+    "SCRIPT#.",
+    "SCRIPT#.",
+    "SCRIPT#_R_.",
+    "SCRIPT#.",
+    "SCRIPT#.",
+    "DIV#."
+  ],
+  "badge_present": true,
+  "carousel_css_rules": 40,
+  "canvas_box": {
+    "x": 16,
+    "y": 46,
+    "width": 150,
+    "height": 260
+  },
+  "overlay_imgs": [],
+  "carousel_root": null,
+  "gdg_overlay": null,
+  "console": [
+    [
+      "error",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    [
+      "log",
+      "Disconnect websocket on page navigation"
+    ],
+    [
+      "error",
+      "Cannot open Data Grid overlay editor, because portal not found.  Please add `<div id=\"portal\" />` as the last child of your `<body>`."
+    ],
+    [
+      "error",
+      "Cannot open Data Grid overlay editor, because portal not found.  Please add `<div id=\"portal\" />` as the last child of your `<body>`."
+    ]
+  ]
+}

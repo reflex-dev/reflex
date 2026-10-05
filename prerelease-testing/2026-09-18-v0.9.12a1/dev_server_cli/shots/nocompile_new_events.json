@@ -1,0 +1,201 @@
+[
+ {
+  "t": 1789792883.716,
+  "kind": "console",
+  "data": {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  }
+ },
+ {
+  "t": 1789792884.122,
+  "kind": "console",
+  "data": {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  }
+ },
+ {
+  "t": 1789792884.154,
+  "kind": "console",
+  "data": {
+   "type": "debug",
+   "text": "[vite] connected."
+  }
+ },
+ {
+  "t": 1789792884.279,
+  "kind": "console",
+  "data": {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ },
+ {
+  "t": 1789792886.355,
+  "kind": "heading",
+  "data": "dsc v4-nocompile"
+ },
+ {
+  "t": 1789792886.358,
+  "kind": "modules",
+  "data": "pid=1507 nmods=737 rss_kb=57396 present=reflex.compiler"
+ },
+ {
+  "t": 1789792887.003,
+  "kind": "count_after_3",
+  "data": "3"
+ },
+ {
+  "t": 1789792887.005,
+  "kind": "big",
+  "data": "BIG"
+ },
+ {
+  "t": 1789792887.007,
+  "kind": "memo_label",
+  "data": "memo"
+ },
+ {
+  "t": 1789792887.424,
+  "kind": "chained",
+  "data": "chained@3"
+ },
+ {
+  "t": 1789792887.443,
+  "kind": "items",
+  "data": [
+   "alpha",
+   "beta",
+   "item-3"
+  ]
+ },
+ {
+  "t": 1789792887.724,
+  "kind": "client_val",
+  "data": "2"
+ },
+ {
+  "t": 1789792887.992,
+  "kind": "cs_val",
+  "data": "1"
+ },
+ {
+  "t": 1789792889.807,
+  "kind": "bg_ticks",
+  "data": "3"
+ },
+ {
+  "t": 1789792890.795,
+  "kind": "nav_other_heading",
+  "data": "other page"
+ },
+ {
+  "t": 1789792890.797,
+  "kind": "nav_other_count",
+  "data": "3"
+ },
+ {
+  "t": 1789792891.726,
+  "kind": "nav_home_count",
+  "data": "3"
+ },
+ {
+  "t": 1789792891.73,
+  "kind": "console",
+  "data": {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  }
+ },
+ {
+  "t": 1789792891.77,
+  "kind": "console",
+  "data": {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  }
+ },
+ {
+  "t": 1789792891.793,
+  "kind": "console",
+  "data": {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  }
+ },
+ {
+  "t": 1789792891.839,
+  "kind": "console",
+  "data": {
+   "type": "debug",
+   "text": "[vite] connected."
+  }
+ },
+ {
+  "t": 1789792891.841,
+  "kind": "console",
+  "data": {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ },
+ {
+  "t": 1789792893.208,
+  "kind": "dyn_iid",
+  "data": "/item/xyz"
+ },
+ {
+  "t": 1789792893.236,
+  "kind": "console",
+  "data": {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  }
+ },
+ {
+  "t": 1789792893.267,
+  "kind": "console",
+  "data": {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  }
+ },
+ {
+  "t": 1789792893.289,
+  "kind": "console",
+  "data": {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  }
+ },
+ {
+  "t": 1789792893.295,
+  "kind": "console",
+  "data": {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ },
+ {
+  "t": 1789792893.296,
+  "kind": "console",
+  "data": {
+   "type": "debug",
+   "text": "[vite] connected."
+  }
+ },
+ {
+  "t": 1789792895.04,
+  "kind": "after_reload_count",
+  "data": "3"
+ },
+ {
+  "t": 1789792895.043,
+  "kind": "console",
+  "data": {
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ }
+]

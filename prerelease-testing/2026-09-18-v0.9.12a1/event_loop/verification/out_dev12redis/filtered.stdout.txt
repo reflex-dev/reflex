@@ -1,0 +1,19 @@
+# s_filtered.py against reflex 0.9.12a1, dev, REDIS state manager (REFLEX_REDIS_URL=redis://localhost:8695)
+  [load] n='0' secret='secret-0' visible='false'
+    delta: {'...fl': ['n_rx_state_']}
+  [after bump n=1] n='1' secret='secret-0' visible='false'
+    delta: {'...fl': ['visible_rx_state_']}
+  [after show] n='1' secret='secret-0' visible='true'          <-- STALE, same as in-memory
+    delta: {'...fl': ['n_rx_state_', 'secret_rx_state_']}
+  [after bump n=2] n='2' secret='secret-2' visible='true'
+    delta: {'...fl': ['visible_rx_state_']}
+    delta: {'...fl': ['n_rx_state_']}
+    delta: {'...fl': ['visible_rx_state_']}
+  [after 2nd round] n='3' secret='secret-2' visible='true'     <-- STALE
+
+# memo persisted in redis (one key per client token):
+$ redis-cli -p 8695 keys '*___fl' | while read k; do redis-cli -p 8695 get "$k" | strings | grep -o "__last_delta_secret[^\"]*"; done
+__last_delta_secret_rx_state_
+__last_delta_secret_rx_state_
+__last_delta_secret_rx_state_
+__last_delta_secret_rx_state_

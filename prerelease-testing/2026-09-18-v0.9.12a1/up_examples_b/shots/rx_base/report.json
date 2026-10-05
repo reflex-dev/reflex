@@ -1,0 +1,104 @@
+{
+ "url": "http://localhost:3502/",
+ "actions": [
+  [
+   "0",
+   "wait",
+   "ok"
+  ],
+  [
+   "1",
+   "screenshot",
+   "ok"
+  ],
+  [
+   "2",
+   "type",
+   "ok"
+  ],
+  [
+   "3",
+   "wait",
+   "ok"
+  ],
+  [
+   "4",
+   "dump",
+   "ok"
+  ],
+  [
+   "5",
+   "screenshot",
+   "ok"
+  ],
+  [
+   "6",
+   "kbd",
+   "ok"
+  ],
+  [
+   "7",
+   "wait",
+   "ok"
+  ],
+  [
+   "8",
+   "dump",
+   "ok"
+  ],
+  [
+   "9",
+   "screenshot",
+   "ok"
+  ],
+  [
+   "10",
+   "kbd",
+   "ok"
+  ],
+  [
+   "11",
+   "wait",
+   "ok"
+  ],
+  [
+   "12",
+   "type",
+   "ok"
+  ],
+  [
+   "13",
+   "wait",
+   "ok"
+  ],
+  [
+   "14",
+   "kbd",
+   "ok"
+  ],
+  [
+   "15",
+   "wait",
+   "ok"
+  ],
+  [
+   "16",
+   "dump",
+   "ok"
+  ],
+  [
+   "17",
+   "screenshot",
+   "ok"
+  ]
+ ],
+ "console": [
+  "[error] Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID",
+  "[log] Disconnect websocket on pagehide"
+ ],
+ "page_errors": [],
+ "failed_requests": [
+  "GET https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap :: net::ERR_CERT_AUTHORITY_INVALID"
+ ],
+ "http_errors": []
+}

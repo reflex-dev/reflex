@@ -1,0 +1,22 @@
+{
+  "url": "http://localhost:3228/",
+  "title": "Dsc | Index",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [
+    "wait: 2500",
+    "expect_text: 'dsc v5-reload'",
+    "click: '#inc'",
+    "wait: 900",
+    "click: '#add'",
+    "wait: 900"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "dsc v5-reload\n\n1\n\ninc\nadd\n\nchained@1\n\nbg\n\n0\n\nclient+\n\n0\n\nmemo\n\n1\n\ncs+\n\n0\n\nalpha\n\nbeta\n\nitem-1\n\nsmall\n\npid=9863 nmods=782 rss_kb=60792 present=reflex.compiler\n\nother\ndyn"
+}

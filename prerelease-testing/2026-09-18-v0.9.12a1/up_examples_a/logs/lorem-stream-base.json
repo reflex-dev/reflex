@@ -1,0 +1,59 @@
+{
+  "app": "lorem-stream",
+  "url": "http://localhost:3460/",
+  "tag": "base",
+  "load_seconds": 0.77,
+  "n_tasks": 3,
+  "streamed_len_after_3s": [
+    488,
+    141,
+    7,
+    1,
+    147,
+    7,
+    1,
+    196,
+    7,
+    1
+  ],
+  "n_tasks_after_toggle": 3,
+  "n_tasks_after_kill": 2,
+  "n_tasks_before_nav": 3,
+  "n_tasks_after_nav": 3,
+  "streamed_len_after_nav": [
+    580,
+    137,
+    7,
+    1,
+    184,
+    6,
+    1,
+    255,
+    6,
+    1
+  ],
+  "flow_ok": true,
+  "console_all": [
+    "[log] \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "[debug] [vite] connecting...",
+    "[debug] [vite] connected.",
+    "[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "[log] Disconnect websocket on page navigation",
+    "[log] \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "[debug] [vite] connecting...",
+    "[debug] [vite] connected.",
+    "[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "[log] Disconnect websocket on pagehide"
+  ],
+  "console_notable": [],
+  "console_errors": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": [],
+  "screenshots": [
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/lorem-stream-base-load.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/lorem-stream-base-streaming.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/lorem-stream-base-after_kill.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/lorem-stream-base-after_nav.png"
+  ]
+}

@@ -1,0 +1,22 @@
+Form Designer
+Survey A
+New Form
+Form Name
+Preview
+Responses
+Delete Form
+
+What is your name? (fullname)
+
+(optional)
+
+How old are you? (age)
+
+(optional)
+
+Where do you live? (city)
+
+(optional)
+
+Add Field
+Built with

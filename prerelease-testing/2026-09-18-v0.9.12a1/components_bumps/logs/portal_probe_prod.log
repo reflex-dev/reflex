@@ -1,0 +1,48 @@
+{
+  "portal_exists": false,
+  "portal_html": null,
+  "portal_parent": null,
+  "body_children": [
+    "SECTION#.",
+    "DIV#.radix-themes css-0 light",
+    "SCRIPT#.",
+    "SCRIPT#.",
+    "SCRIPT#.",
+    "SCRIPT#.",
+    "SCRIPT#.",
+    "SCRIPT#_R_.",
+    "SCRIPT#.",
+    "SCRIPT#.",
+    "DIV#."
+  ],
+  "carousel_css": [
+    ".carousel .control-arrow, .carousel.carousel-slider .control-arrow { opacity: 0.4; z-index: 2; curso",
+    ".carousel .control-arrow:focus, .carousel .control-arrow:hover { opacity: 1; }",
+    ".carousel .control-arrow::before, .carousel.carousel-slider .control-arrow::before { content: \"\"; bo",
+    ".carousel .control-disabled.control-arrow { opacity: 0; cursor: inherit; display: none; }",
+    ".carousel .control-prev.control-arrow { left: 0px; }",
+    ".carousel .control-prev.control-arrow::before { border-right: 8px solid rgb(255, 255, 255); }",
+    ".carousel .control-next.control-arrow { right: 0px; }",
+    ".carousel .control-next.control-arrow::before { border-left: 8px solid rgb(255, 255, 255); }"
+  ],
+  "overlay_imgs": [],
+  "carousel_root": null,
+  "console": [
+    [
+      "error",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    [
+      "error",
+      "Cannot open Data Grid overlay editor, because portal not found.  Please add `<div id=\"portal\" />` as the last child of your `<body>`."
+    ],
+    [
+      "error",
+      "Cannot open Data Grid overlay editor, because portal not found.  Please add `<div id=\"portal\" />` as the last child of your `<body>`."
+    ],
+    [
+      "error",
+      "Cannot open Data Grid overlay editor, because portal not found.  Please add `<div id=\"portal\" />` as the last child of your `<body>`."
+    ]
+  ]
+}

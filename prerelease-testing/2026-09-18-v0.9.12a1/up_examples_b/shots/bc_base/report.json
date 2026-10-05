@@ -1,0 +1,51 @@
+{
+ "url": "http://localhost:3501/",
+ "actions": [
+  [
+   "0",
+   "wait",
+   "ok"
+  ],
+  [
+   "1",
+   "dump",
+   "ok"
+  ],
+  [
+   "2",
+   "screenshot",
+   "ok"
+  ],
+  [
+   "3",
+   "expect_text",
+   "ok"
+  ],
+  [
+   "4",
+   "click",
+   "ok"
+  ],
+  [
+   "5",
+   "wait",
+   "ok"
+  ],
+  [
+   "6",
+   "dump",
+   "ok"
+  ],
+  [
+   "7",
+   "screenshot",
+   "ok"
+  ]
+ ],
+ "console": [
+  "[log] Disconnect websocket on pagehide"
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_errors": []
+}

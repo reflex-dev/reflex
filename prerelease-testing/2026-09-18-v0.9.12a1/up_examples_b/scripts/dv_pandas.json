@@ -1,0 +1,11 @@
+[{"wait":3000},
+ {"dump":"pandas.txt"},
+ {"screenshot":"03_pandas.png"},
+ {"click":"#bump"},
+ {"wait":1500},
+ {"click":"#load"},
+ {"wait":2000},
+ {"click":"#cs-btn"},
+ {"wait":1200},
+ {"dump":"pandas_after.txt"},
+ {"screenshot":"04_pandas_after.png"}]

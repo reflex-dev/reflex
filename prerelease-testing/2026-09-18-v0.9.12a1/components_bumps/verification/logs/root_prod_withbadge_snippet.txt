@@ -1,0 +1,1 @@
+MemoizedBadge_04c36749,{},jsx("div",{css:({ ["position"] : "fixed", ["top"] : 0 })

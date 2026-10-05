@@ -1,0 +1,45 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_sticky_badge_wrap_keeps_lower_priority_wrap_renderable __________
+
+mocker = <pytest_mock.plugin.MockerFixture object at 0x7fa982a830e0>
+
+    def test_sticky_badge_wrap_keeps_lower_priority_wrap_renderable(
+        mocker: MockerFixture,
+    ) -> None:
+        """The sticky badge wrap must not adopt a lower-priority wrap as its child.
+    
+        ``_app_root`` nests each lower-priority wrap inside the previous one, and
+        the badge compiles to a memo that never reads ``props.children``. A wrap
+        below it -- ``rx.data_editor`` registers its ``<div id="portal">`` at
+        priority -1 -- would therefore be emitted into the app root but never
+        reach the DOM, so the badge wrap has to keep it as a sibling.
+        """
+        conf = rx.Config(app_name="testing")
+        mocker.patch("reflex_base.config._get_config", return_value=conf)
+        app = App(theme=None, enable_state=False)
+        app._setup_sticky_badge()
+        app.extra_app_wraps[-1, "DataEditorPortal"] = lambda _: rx.el.div(id="portal")
+    
+        root_contents = compile_app_root_from_page_wraps(app, {})
+        chain = root_contents[root_contents.index("function AppWrap({children})") :]
+        badge_symbol = _find_mirrored_memo_symbol(chain, "MemoizedBadge")
+    
+        assert 'id:"portal"' in chain
+        # The badge memo renders no children, so it must be childless in the chain.
+>       assert f"jsx({badge_symbol},{{}},)" in chain
+E       assert 'jsx(MemoizedBadge_04c36749,{},)' in 'function AppWrap({children}) {\nconst ref_portal = useRef(null); refs["ref_portal"] = ref_portal;\n\n\n\nreturn (jsx(...\n  return jsx(ReflexProviders, {}, children);\n}\n\nexport default function App() {\n  return jsx(Outlet, {});\n}\n\n'
+
+tests/units/test_app.py:3058: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  reflex_base.config:config.py:637 `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+=============================== warnings summary ===============================
+tests/units/test_app.py:58
+  /home/user/wt/f012/tests/units/test_app.py:58: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/units/test_app.py::test_sticky_badge_wrap_keeps_lower_priority_wrap_renderable
+1 failed, 182 deselected, 1 warning in 0.35s

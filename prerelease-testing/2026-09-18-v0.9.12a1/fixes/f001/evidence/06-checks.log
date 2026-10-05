@@ -1,0 +1,17 @@
+### ruff check .
+All checks passed!
+
+### ruff format . (no reformat expected)
+1628 files left unchanged
+
+### pyright reflex tests
+WARNING: there is a new pyright version available (v1.1.411 -> v1.1.414).
+Please install the new version or set PYRIGHT_PYTHON_FORCE_VERSION to `latest`
+
+0 errors, 0 warnings, 0 informations
+
+### pyright packages/reflex-base/src/reflex_base/vars/base.py
+WARNING: there is a new pyright version available (v1.1.411 -> v1.1.414).
+Please install the new version or set PYRIGHT_PYTHON_FORCE_VERSION to `latest`
+
+0 errors, 0 warnings, 0 informations

@@ -1,0 +1,8 @@
+reflex: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/cb/lib/python3.11/site-packages/reflex/__init__.py
+dir(datadisplay): ['logo']
+dd.code_block -> AttributeError No reflex_components_core.datadisplay attribute code_block
+dd.data_editor -> AttributeError No reflex_components_core.datadisplay attribute data_editor
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/components_bumps/namespace_check.py", line 18, in <module>
+    from reflex.components.datadisplay import code, dataeditor
+ImportError: cannot import name 'code' from 'reflex_components_core.datadisplay' (/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/cb/lib/python3.11/site-packages/reflex_components_core/datadisplay/__init__.py)

@@ -1,0 +1,55 @@
+=== FOLLOW-UP e2e: browser-free probes ===
+
+--- pure_delta_memo.py (campaign repro, verbatim except the /envs/ assert) ---
+[published 0.9.12a1]
+reflex version: 0.9.12a1
+1 anon initial                     client receives protected var: False  delta={'reflex___state____state.__main______probe_state': {}}
+2 anon event (value changed)       client receives protected var: False  delta={'reflex___state____state.__main______probe_state': {'hits_rx_state_': 1}}
+3 after login                      client receives protected var: False  delta={'reflex___state____state.__main______probe_state': {'hits_rx_state_': 2}}
+4 after another event              client receives protected var: False  delta={'reflex___state____state.__main______probe_state': {'hits_rx_state_': 3}}
+
+EXPECTED: steps 3/4 deliver shared_label = shared=SERVER-ONLY-SECRET
+RESULT  : step3 = False  step4 = False
+
+[fixed worktree, follow-up HEAD]
+reflex version: 0.0.0.post50.dev0+4cba00435
+1 anon initial                     client receives protected var: False  delta={'reflex___state____state.__main______probe_state': {}}
+2 anon event (value changed)       client receives protected var: False  delta={'reflex___state____state.__main______probe_state': {'hits_rx_state_': 1}}
+3 after login                      client receives protected var: True   delta={'reflex___state____state.__main______probe_state': {'hits_rx_state_': 2, 'shared_label_rx_state_': 'shared=SERVER-ONLY-SECRET'}}
+4 after another event              client receives protected var: True   delta={'reflex___state____state.__main______probe_state': {'hits_rx_state_': 3, 'shared_label_rx_state_': 'shared=SERVER-ONLY-SECRET'}}
+
+EXPECTED: steps 3/4 deliver shared_label = shared=SERVER-ONLY-SECRET
+RESULT  : step3 = True  step4 = True
+
+--- probe_delta_memo.py (reviewer probe: drives _get_resolved_delta, also asserts the dedupe) ---
+[published 0.9.12a1]
+5 value changed (MUST deliver)           sync='shared=SECOND-SECRET'           async='async=SECOND-SECRET'           plain='plain=SECOND-SECRET'
+6 logged out again (withheld)            sync=None                             async=None                            plain='plain=THIRD-SECRET'
+7 login again (MUST deliver THIRD)       sync=None                             async='async=THIRD-SECRET'            plain=None
+
+  FAIL  3 delivers withheld sync value
+  PASS  3 delivers withheld async value
+  PASS  4 dedupes unchanged sync
+  PASS  4 dedupes unchanged async
+  PASS  4 dedupes unfiltered plain var
+  PASS  5 delivers changed value
+  FAIL  7 re-delivers after second withhold
+  PASS  7 re-delivers async after withhold
+
+OVERALL: FAIL
+
+[fixed worktree, follow-up HEAD]
+5 value changed (MUST deliver)           sync='shared=SECOND-SECRET'           async='async=SECOND-SECRET'           plain='plain=SECOND-SECRET'
+6 logged out again (withheld)            sync=None                             async=None                            plain='plain=THIRD-SECRET'
+7 login again (MUST deliver THIRD)       sync='shared=THIRD-SECRET'            async='async=THIRD-SECRET'            plain=None
+
+  PASS  3 delivers withheld sync value
+  PASS  3 delivers withheld async value
+  PASS  4 dedupes unchanged sync
+  PASS  4 dedupes unchanged async
+  PASS  4 dedupes unfiltered plain var
+  PASS  5 delivers changed value
+  PASS  7 re-delivers after second withhold
+  PASS  7 re-delivers async after withhold
+
+OVERALL: PASS

@@ -1,0 +1,243 @@
+{
+  "label": "disk_new2",
+  "steps": [
+    {
+      "name": "D0_loaded",
+      "token": "c4d16108-b4fa-43a4-c5f5-470cf2c3b232",
+      "ui_counter": "0",
+      "ui_value": "init",
+      "dump": {
+        "cache_keys": [
+          "c4d16108-b4fa-43a4-c5f5-470cf2c3b232"
+        ],
+        "queue_keys": [
+          "c4d16108-b4fa-43a4-c5f5-470cf2c3b232_reflex___state____state",
+          "c4d16108-b4fa-43a4-c5f5-470cf2c3b232_reflex___state____state.reflex___state____on_load_internal_state"
+        ],
+        "paths_for_token": {
+          "reflex___state____state": {
+            "str": "c4d16108-b4fa-43a4-c5f5-470cf2c3b232/reflex.state.State",
+            "cache_key": "c4d16108-b4fa-43a4-c5f5-470cf2c3b232/reflex.state.State",
+            "path": "97de393cb66e40d0d494789eab60dd1b.pkl",
+            "exists": false
+          },
+          "reflex___state____state.diskapp___diskapp____disk_state": {
+            "str": "c4d16108-b4fa-43a4-c5f5-470cf2c3b232/diskapp.diskapp.DiskState",
+            "cache_key": "c4d16108-b4fa-43a4-c5f5-470cf2c3b232/diskapp.diskapp.DiskState",
+            "path": "d22fa73a03c451175b9aa774effbae3b.pkl",
+            "exists": false
+          }
+        },
+        "states_dir": "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/render_ctx_statemgr/diskapp/.states",
+        "files": []
+      }
+    },
+    {
+      "name": "D1_ws_bump_x5",
+      "ui_counter": "4",
+      "mid_debounce": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 3,
+        "disk": null,
+        "cache": null
+      },
+      "after_3s": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 0,
+        "disk": null,
+        "cache": null
+      },
+      "dump": {
+        "cache_keys": [
+          "c4d16108-b4fa-43a4-c5f5-470cf2c3b232"
+        ],
+        "queue_keys": [],
+        "paths_for_token": {
+          "reflex___state____state": {
+            "str": "c4d16108-b4fa-43a4-c5f5-470cf2c3b232/reflex.state.State",
+            "cache_key": "c4d16108-b4fa-43a4-c5f5-470cf2c3b232/reflex.state.State",
+            "path": "97de393cb66e40d0d494789eab60dd1b.pkl",
+            "exists": false
+          },
+          "reflex___state____state.diskapp___diskapp____disk_state": {
+            "str": "c4d16108-b4fa-43a4-c5f5-470cf2c3b232/diskapp.diskapp.DiskState",
+            "cache_key": "c4d16108-b4fa-43a4-c5f5-470cf2c3b232/diskapp.diskapp.DiskState",
+            "path": "d22fa73a03c451175b9aa774effbae3b.pkl",
+            "exists": false
+          }
+        },
+        "states_dir": "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/render_ctx_statemgr/diskapp/.states",
+        "files": [
+          "89f1b606df6ac4adcdf5106076027425.pkl",
+          "f1eeaa1301013efe1984cd2441a6dc9e.pkl"
+        ]
+      }
+    },
+    {
+      "name": "D2_debounce_latest_wins",
+      "double_set": {
+        "ok": true,
+        "supplied": [
+          {
+            "value": "first-queued",
+            "counter": 101,
+            "queue_len": 1
+          },
+          {
+            "value": "second-queued",
+            "counter": 202,
+            "queue_len": 1
+          }
+        ]
+      },
+      "right_after": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 1,
+        "disk": null,
+        "cache": {
+          "value": "second-queued",
+          "counter": 202,
+          "api_writes": 0
+        }
+      },
+      "after_3_5s": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 0,
+        "disk": null,
+        "cache": {
+          "value": "second-queued",
+          "counter": 202,
+          "api_writes": 0
+        }
+      }
+    },
+    {
+      "name": "D3_set_fresh_persists",
+      "set_fresh": {
+        "ok": true,
+        "manager": "StateManagerDisk"
+      },
+      "after_3_5s": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 0,
+        "disk": null,
+        "cache": {
+          "value": "fresh-persisted",
+          "counter": 999,
+          "api_writes": 0
+        }
+      }
+    },
+    {
+      "name": "D4_modify_state_api_route",
+      "poke": {
+        "ok": true,
+        "value": "via-modify-state",
+        "api_writes": 1
+      },
+      "ui_value_pushed_live": "via-modify-state",
+      "disk": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 0,
+        "disk": null,
+        "cache": {
+          "value": "fresh-persisted",
+          "counter": 999,
+          "api_writes": 0
+        }
+      },
+      "ui_value_after_reload": "via-modify-state",
+      "ui_api_writes_after_reload": "1",
+      "ui_counter_after_reload": "5"
+    },
+    {
+      "name": "D5_legacy_bare_token_modify_state",
+      "response": {
+        "status": 500,
+        "text": "Internal Server Error"
+      }
+    },
+    {
+      "name": "D6_rapid_20_sets",
+      "token": "c4d16108-b4fa-43a4-c5f5-470cf2c3b232",
+      "ui": "20",
+      "mid_debounce": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 0,
+        "disk": null,
+        "cache": {
+          "value": "fresh-persisted",
+          "counter": 999,
+          "api_writes": 0
+        }
+      },
+      "after_3s": {
+        "manager": "StateManagerDisk",
+        "debounce": 2.0,
+        "queue_len": 0,
+        "disk": null,
+        "cache": {
+          "value": "fresh-persisted",
+          "counter": 999,
+          "api_writes": 0
+        }
+      }
+    },
+    {
+      "name": "D7_primed_for_kill",
+      "token": "c4d16108-b4fa-43a4-c5f5-470cf2c3b232",
+      "ui_counter": "13",
+      "ui_value": "rapid-13",
+      "queue": []
+    }
+  ],
+  "token": "c4d16108-b4fa-43a4-c5f5-470cf2c3b232",
+  "kill_token": "c4d16108-b4fa-43a4-c5f5-470cf2c3b232",
+  "console": [
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    }
+  ],
+  "page_errors": [],
+  "bad_responses": []
+}

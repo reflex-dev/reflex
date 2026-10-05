@@ -1,0 +1,2 @@
+42/_event,["event",{"delta":{"reflex___state____state.data_visualisation___pandas_page____pandas_state":{"tick_rx_state_":1,"frame_rx_state_":{"columns":["zone","n"],"data":[["North",1],["South",2],["East",3]]}}}}]
+42/_event,["event",{"delta":{"reflex___state____state.data_visualisation___pandas_page____pandas_state":{"tick_rx_state_":2,"frame_rx_state_":{"columns":["zone","n"],"data":[["North",1],["South",2],["East",3],["West",4]]}}}}]

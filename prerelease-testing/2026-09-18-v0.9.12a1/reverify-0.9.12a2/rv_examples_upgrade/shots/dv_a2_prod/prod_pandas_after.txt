@@ -1,0 +1,75 @@
+pandas + sqlmodel serializer probe
+bump
+load rows
+
+tick=1
+
+steady=constant
+
+literal DataFrame
+zone
+	
+n
+
+North	1
+South	2
+East	3
+West	4
+state-computed DataFrame
+zone
+	
+n
+
+North	1
+South	2
+East	3
+memo(DataFrame prop)
+zone
+	
+n
+
+North	1
+South	2
+East	3
+West	4
+ComponentState
+cs 0
+zone
+	
+n
+
+North	1
+South	2
+East	3
+West	4
+recharts bar chart
+North
+South
+East
+West
+0
+2
+4
+6
+8
+plotly figure
+North
+South
+East
+West
+0
+2
+4
+plotly tick 1
+x
+y
+model rows (relationship serialization)
+
+Andaman and Nicobar / South / 7670
+
+Andhra Pradesh / South / 2069770
+
+Arunachal Pradesh / East / 55216
+
+Built with Reflex
+8

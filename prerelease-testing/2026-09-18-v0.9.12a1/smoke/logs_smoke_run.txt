@@ -1,0 +1,77 @@
+== versions
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex/__init__.py 0.9.12a1
+== init
+init exit=0
+0
+== dev run
+200 after 10s: http://localhost:3050/
+TITLE: SmokeApp | Index
+BODY:  Welcome to Reflex! |  | Get started by editing smoke_app/smoke_app.py |  | Check out our docs!
+  did  wait: 2000
+  did  expect_text: 'Welcome to Reflex'
+  did  click: 'text=Docs'
+  did  wait: 500
+RESULT: clean
+dev drive exit=0
+"pong"
+health 200
+== dev log summary
+19:redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+36:Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+37:Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+94:'react-helmet@6.1.0', '@radix-ui/themes@3.3.0', 'react-error-boundary@6.1.2', 
+101:Debug: warn: incorrect peer dependency "react@19.3.0"
+112:Debug: installed react-error-boundary@6.1.2
+168:Debug: error: script "dev" exited with code 143
+== package.json pins
+{
+"@radix-ui/themes": "3.3.0",
+"@react-router/node": "8.4.0",
+"isbot": "5.2.2",
+"lucide-react": "1.26.0",
+"mergician": "v2.0.2",
+"react": "19.2.8",
+"react-dom": "19.2.8",
+"react-error-boundary": "6.1.2",
+"react-helmet": "6.1.0",
+"react-router": "8.4.0",
+"socket.io-client": "4.8.3",
+"sonner": "2.0.8",
+"universal-cookie": "8.1.2"
+}
+overrides {}
+== prod run
+200 after 4s: http://localhost:3051/
+TITLE: SmokeApp | Index
+BODY:  Welcome to Reflex! |  | Get started by editing smoke_app/smoke_app.py |  | Check out our docs! | Built with Reflex
+  did  wait: 2000
+  did  expect_text: 'Welcome to Reflex'
+RESULT: clean
+prod drive exit=0
+== prod log summary
+19:redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+89:'--legacy-peer-deps', 'lucide-react@1.26.0', 'react-error-boundary@6.1.2', 
+98:Debug: installed react-error-boundary@6.1.2
+142:Debug: build/client/assets/errorBoundaries-C2delMrB.js             36.83 kB │ 
+== leftover procs
+== resolution check: bare reflex==0.9.12a1 with --prerelease=allow
+ + reflex==0.9.12a1
+ + reflex-base==0.9.12a1
+ + reflex-components-code==0.9.6a1
+ + reflex-components-core==0.9.10a1
+ + reflex-components-dataeditor==0.9.3a1
+ + reflex-components-gridjs==0.9.2a1
+ + reflex-components-lucide==1.0.4
+ + reflex-components-markdown==0.9.4a1
+ + reflex-components-moment==0.9.4
+ + reflex-components-plotly==0.9.7a1
+ + reflex-components-radix==0.9.10a1
+ + reflex-components-react-player==0.9.2
+ + reflex-components-recharts==0.9.4a1
+ + reflex-components-sonner==0.9.4a1
+ + reflex-hosting-cli==0.1.72
+== resolution: pip-style without prerelease flag (should fail to find 0.9.12a1)
+ + watchfiles==1.2.0
+ + wrapt==2.3.0
+ + wsproto==1.3.2
+SMOKE DONE

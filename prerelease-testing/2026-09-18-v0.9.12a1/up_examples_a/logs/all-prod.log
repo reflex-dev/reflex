@@ -1,0 +1,30 @@
+##### counter / prod 02:43:04
+server pid 3960 log /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/logs/counter-prod.server.log venv /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/up_a
+UP after 6s
+drive exit 0
+##### counter / prod done rc=0 02:43:17
+##### todo / prod 02:43:17
+server pid 4310 log /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/logs/todo-prod.server.log venv /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/up_a
+UP after 6s
+drive exit 0
+##### todo / prod done rc=0 02:43:30
+##### clock / prod 02:43:30
+server pid 4668 log /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/logs/clock-prod.server.log venv /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/up_a
+UP after 6s
+drive exit 0
+##### clock / prod done rc=0 02:43:50
+##### upload / prod 02:43:50
+server pid 5022 log /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/logs/upload-prod.server.log venv /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/up_a
+UP after 6s
+drive exit 0
+##### upload / prod done rc=0 02:44:05
+##### lorem-stream / prod 02:44:05
+server pid 5262 log /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/logs/lorem-stream-prod.server.log venv /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/up_a
+UP after 6s
+drive exit 0
+##### lorem-stream / prod done rc=0 02:44:25
+##### snakegame / prod 02:44:25
+server pid 5496 log /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/logs/snakegame-prod.server.log venv /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/up_a
+UP after 6s
+drive exit 0
+##### snakegame / prod done rc=0 02:44:47

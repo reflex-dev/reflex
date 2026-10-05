@@ -1,0 +1,288 @@
+{
+  "label": "prod-0.9.12a1",
+  "base": "http://localhost:3260",
+  "routes": [
+    {
+      "path": "/",
+      "http_status": 404,
+      "error": "HTTPError: HTTP Error 404: Not Found",
+      "len": 9,
+      "nav_status": 404,
+      "rendered_title": "",
+      "rendered_pagemark": null,
+      "body_head": "Not Found",
+      "final_url": "http://localhost:3260/",
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ],
+      "console_all_count": 2,
+      "failed_requests": [],
+      "bad_responses": [
+        {
+          "url": "http://localhost:3260/",
+          "status": 404
+        }
+      ]
+    },
+    {
+      "path": "/apple",
+      "http_status": 404,
+      "error": "HTTPError: HTTP Error 404: Not Found",
+      "len": 9,
+      "nav_status": 404,
+      "rendered_title": "",
+      "rendered_pagemark": null,
+      "body_head": "Not Found",
+      "final_url": "http://localhost:3260/apple",
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ],
+      "console_all_count": 1,
+      "failed_requests": [],
+      "bad_responses": [
+        {
+          "url": "http://localhost:3260/apple",
+          "status": 404
+        }
+      ]
+    },
+    {
+      "path": "/apple/",
+      "http_status": 404,
+      "error": "HTTPError: HTTP Error 404: Not Found",
+      "len": 9,
+      "nav_status": 404,
+      "rendered_title": "",
+      "rendered_pagemark": null,
+      "body_head": "Not Found",
+      "final_url": "http://localhost:3260/apple/",
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ],
+      "console_all_count": 1,
+      "failed_requests": [],
+      "bad_responses": [
+        {
+          "url": "http://localhost:3260/apple/",
+          "status": 404
+        }
+      ]
+    },
+    {
+      "path": "/app",
+      "http_status": 200,
+      "len": 10000,
+      "pagemark": "index",
+      "content_encoding": null,
+      "content_type": "text/html; charset=utf-8",
+      "nav_status": 200,
+      "rendered_title": "Index Page",
+      "rendered_pagemark": "PAGEMARK:index",
+      "body_head": "index |  | PAGEMARK:index |  | index | apple | app | about | components | assets | item7 |  | counter: 0 |  | inc | bg |  | bg_ticks: 0 |  | cs-initial |  | probe |  | modules: |  | modules_len: 0 |  | Built with Reflex",
+      "final_url": "http://localhost:3260/app/",
+      "console": [],
+      "console_all_count": 0,
+      "failed_requests": [],
+      "bad_responses": []
+    },
+    {
+      "path": "/app/",
+      "http_status": 200,
+      "len": 10000,
+      "pagemark": "index",
+      "content_encoding": null,
+      "content_type": "text/html; charset=utf-8",
+      "nav_status": 200,
+      "rendered_title": "Index Page",
+      "rendered_pagemark": "PAGEMARK:index",
+      "body_head": "index |  | PAGEMARK:index |  | index | apple | app | about | components | assets | item7 |  | counter: 0 |  | inc | bg |  | bg_ticks: 0 |  | cs-initial |  | probe |  | modules: |  | modules_len: 0 |  | Built with Reflex",
+      "final_url": "http://localhost:3260/app/",
+      "console": [],
+      "console_all_count": 0,
+      "failed_requests": [],
+      "bad_responses": []
+    },
+    {
+      "path": "/appx",
+      "http_status": 404,
+      "error": "HTTPError: HTTP Error 404: Not Found",
+      "len": 9,
+      "nav_status": 404,
+      "rendered_title": "",
+      "rendered_pagemark": null,
+      "body_head": "Not Found",
+      "final_url": "http://localhost:3260/appx",
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ],
+      "console_all_count": 1,
+      "failed_requests": [],
+      "bad_responses": [
+        {
+          "url": "http://localhost:3260/appx",
+          "status": 404
+        }
+      ]
+    },
+    {
+      "path": "/app/apple",
+      "http_status": 200,
+      "len": 9459,
+      "pagemark": "apple",
+      "content_encoding": null,
+      "content_type": "text/html; charset=utf-8",
+      "nav_status": 200,
+      "rendered_title": "Apple Page",
+      "rendered_pagemark": "PAGEMARK:apple",
+      "body_head": "apple |  | PAGEMARK:apple |  | index | apple | app | about | components | assets | item7 |  | This route starts with the frontend_path text. |  | counter: 0 |  | inc | Built with Reflex",
+      "final_url": "http://localhost:3260/app/apple/",
+      "console": [],
+      "console_all_count": 0,
+      "failed_requests": [],
+      "bad_responses": []
+    },
+    {
+      "path": "/app/app",
+      "http_status": 200,
+      "len": 9176,
+      "pagemark": "app",
+      "content_encoding": null,
+      "content_type": "text/html; charset=utf-8",
+      "nav_status": 200,
+      "rendered_title": "App Page",
+      "rendered_pagemark": "PAGEMARK:app",
+      "body_head": "app |  | PAGEMARK:app |  | index | apple | app | about | components | assets | item7 |  | route named app |  | Built with Reflex",
+      "final_url": "http://localhost:3260/app/app/",
+      "console": [],
+      "console_all_count": 0,
+      "failed_requests": [],
+      "bad_responses": []
+    },
+    {
+      "path": "/app/about",
+      "http_status": 200,
+      "len": 12126,
+      "pagemark": "about",
+      "content_encoding": null,
+      "content_type": "text/html; charset=utf-8",
+      "nav_status": 200,
+      "rendered_title": "About Page",
+      "rendered_pagemark": "PAGEMARK:about",
+      "body_head": "about |  | PAGEMARK:about |  | index | apple | app | about | components | assets | item7 | Markdown heading |  | Some markdown with a link and inline code. |  | def in_markdown(): |     return \"code block inside markdown\" | 1def shiki_highlighted(x: int)",
+      "final_url": "http://localhost:3260/app/about/",
+      "console": [],
+      "console_all_count": 0,
+      "failed_requests": [],
+      "bad_responses": []
+    },
+    {
+      "path": "/app/components",
+      "http_status": 200,
+      "len": 12487,
+      "pagemark": "components",
+      "content_encoding": null,
+      "content_type": "text/html; charset=utf-8",
+      "nav_status": 200,
+      "rendered_title": "Components Page",
+      "rendered_pagemark": "PAGEMARK:components",
+      "body_head": "components |  | PAGEMARK:components |  | index | apple | app | about | components | assets | item7 |  | memo-a |  | memo = True |  | memo-b |  | memo = True |  | ComponentState idx: 0 |  | bump cs | next icon |  | rocket |  | Built with Reflex",
+      "final_url": "http://localhost:3260/app/components/",
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ],
+      "console_all_count": 1,
+      "failed_requests": [],
+      "bad_responses": [
+        {
+          "url": "http://localhost:3260/components/logo.svg",
+          "status": 404
+        }
+      ]
+    },
+    {
+      "path": "/app/assets",
+      "http_status": 200,
+      "len": 10190,
+      "pagemark": "assets",
+      "content_encoding": null,
+      "content_type": "text/html; charset=utf-8",
+      "nav_status": 200,
+      "rendered_title": "Assets Page",
+      "rendered_pagemark": "PAGEMARK:assets",
+      "body_head": "assets |  | PAGEMARK:assets |  | index | apple | app | about | components | assets | item7 |  | drop or select |  | do upload |  | no upload yet |  | inf=0 |  | ninf=0 |  | nan=0 |  | normal=0 |  | note.txt | Built with Reflex",
+      "final_url": "http://localhost:3260/app/assets/",
+      "console": [],
+      "console_all_count": 0,
+      "failed_requests": [],
+      "bad_responses": []
+    },
+    {
+      "path": "/app/items/7?x=1",
+      "http_status": 404,
+      "error": "HTTPError: HTTP Error 404: Not Found",
+      "len": 5783,
+      "nav_status": 404,
+      "rendered_title": "Item Page",
+      "rendered_pagemark": "PAGEMARK:item",
+      "body_head": "item |  | PAGEMARK:item |  | index | apple | app | about | components | assets | item7 |  | item id: 7 |  | path: /app/items/7 |  | url: \"http://localhost:3260/app/items/7?x=1\" |  | Built with Reflex",
+      "final_url": "http://localhost:3260/app/items/7?x=1",
+      "console": [
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ],
+      "console_all_count": 1,
+      "failed_requests": [],
+      "bad_responses": [
+        {
+          "url": "http://localhost:3260/app/items/7?x=1",
+          "status": 404
+        }
+      ]
+    },
+    {
+      "path": "/app/sitemap.xml",
+      "http_status": 200,
+      "len": 492,
+      "pagemark": null,
+      "content_encoding": null,
+      "content_type": "application/xml"
+    },
+    {
+      "path": "/app/components/logo.svg",
+      "http_status": 200,
+      "len": 172,
+      "pagemark": null,
+      "content_encoding": null,
+      "content_type": "image/svg+xml"
+    },
+    {
+      "path": "/app/apple/note.txt",
+      "http_status": 200,
+      "len": 58,
+      "pagemark": null,
+      "content_encoding": null,
+      "content_type": "text/plain; charset=utf-8"
+    }
+  ]
+}

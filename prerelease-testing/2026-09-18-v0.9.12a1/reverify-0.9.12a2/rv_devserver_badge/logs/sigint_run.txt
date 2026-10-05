@@ -1,0 +1,12 @@
+PID=20640
+frontend 200 after 2s
+backend /ping 200
+exit_code=0 after 1.03s
+ports_after:
+(empty above = no listener)
+log tail:
+App running at: http://localhost:3232/
+Backend running at: http://0.0.0.0:8232
+[ERROR] Unexpected exit from worker-1
+Info: Reflex app stopped.
+SIGINT TEST DONE

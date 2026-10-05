@@ -1,0 +1,108 @@
+{
+ "label": "prev",
+ "steps": [
+  {
+   "step": "tokens",
+   "a": "740afca5-fb40-48be-f50b-51ae6c45f32f",
+   "b": "77ea89a0-6608-4633-b8e7-a58facdf0efb",
+   "same": false
+  },
+  {
+   "step": "initial_a",
+   "hits": "hits=0",
+   "note_echo": "echo=top-secret",
+   "raw": "<absent:TimeoutError>"
+  },
+  {
+   "step": "initial_b",
+   "hits": "hits=0",
+   "note_echo": "echo=top-secret",
+   "raw": "<absent:TimeoutError>"
+  },
+  {
+   "step": "after_poison_a",
+   "hits": "hits=1",
+   "note_echo": "echo=FIELD-SECRET",
+   "raw": "<absent:TimeoutError>"
+  },
+  {
+   "step": "after_poison_b",
+   "hits": "hits=0",
+   "note_echo": "echo=top-secret",
+   "raw": "<absent:TimeoutError>"
+  },
+  {
+   "step": "b_after_own_event",
+   "hits": "hits=1",
+   "note_echo": "echo=top-secret",
+   "raw": "<absent:TimeoutError>"
+  },
+  {
+   "step": "b_after_second_event",
+   "hits": "hits=2",
+   "note_echo": "echo=top-secret",
+   "raw": "<absent:TimeoutError>"
+  },
+  {
+   "step": "b_after_reload",
+   "hits": "hits=2",
+   "note_echo": "echo=top-secret",
+   "raw": "<absent:TimeoutError>"
+  }
+ ],
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module"
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module"
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module"
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "pageerrors": []
+}

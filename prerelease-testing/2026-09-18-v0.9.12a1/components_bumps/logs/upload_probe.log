@@ -1,0 +1,32 @@
+[
+  {
+    "case": "unknown handler",
+    "status": 400,
+    "body": "Unknown upload event handler: 'gallery.gallery.UploadState.nope'."
+  },
+  {
+    "case": "missing handler header",
+    "status": 400,
+    "body": "Missing reflex-client-token or reflex-event-handler header."
+  },
+  {
+    "case": "missing token header",
+    "status": 400,
+    "body": "Missing reflex-client-token or reflex-event-handler header."
+  },
+  {
+    "case": "empty handler",
+    "status": 400,
+    "body": "Missing reflex-client-token or reflex-event-handler header."
+  },
+  {
+    "case": "weird handler",
+    "status": 400,
+    "body": "Unknown upload event handler: '../../etc/passwd'."
+  },
+  {
+    "case": "valid handler bad token",
+    "status": 400,
+    "body": "Unknown upload event handler: 'gallery.gallery.UploadState.handle_upload'."
+  }
+]

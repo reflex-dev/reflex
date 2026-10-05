@@ -1,0 +1,26 @@
+314-    **kw).encode(obj)
+315-          ^^^^^^^^^^^
+316-  File "/usr/lib/python3.11/json/encoder.py", line 200, in encode
+317-    chunks = self.iterencode(o, _one_shot=True)
+318-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+319-  File "/usr/lib/python3.11/json/encoder.py", line 258, in iterencode
+320-    return _iterencode(o, 0)
+321-           ^^^^^^^^^^^^^^^^^
+322-  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex/compiler/utils.py", line 266, in serialize_initial_value
+323-    return serializers.serialize(value)
+324-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+325-  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_base/utils/serializers.py", line 176, in serialize
+326-    serialized = serializer(value)
+327-                 ^^^^^^^^^^^^^^^^^
+328-  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 284, in serialize_lambda
+329-    return serialize_lambda_var(LiteralLambdaVar.create(func))
+330-                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+331-  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 244, in create
+332-    return_expr = cls._validate_and_extend_return_expr(
+333-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+334-  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 166, in _validate_and_extend_return_expr
+335-    raise ValueError(
+336:ValueError: Library @radix-ui/themes is not bundled. Use `from reflex.components.dynamic import bundle_library; bundle_library('@radix-ui/themes') to enable it it.
+279:App running at: http://localhost:4081/
+280:Backend running at: http://0.0.0.0:9081
+337:[ERROR] Unexpected exit from worker-1

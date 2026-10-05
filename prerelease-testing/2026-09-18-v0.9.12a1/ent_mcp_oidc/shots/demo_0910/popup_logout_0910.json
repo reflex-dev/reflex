@@ -1,0 +1,94 @@
+{
+ "label": "0910",
+ "steps": [
+  {
+   "step": "start",
+   "inner": "OIDC Demo\nLogin with Okta\nLogin with Databricks\nDo Nothing\nCookie Sync"
+  },
+  {
+   "step": "after_login",
+   "logged_in": true,
+   "popups": [
+    {
+     "urls": [
+      "http://localhost:5261/_reflex_oidc_okta/popup-login",
+      "http://localhost:5261/_reflex_oidc_okta/popup-login",
+      "http://localhost:5261/_reflex_oidc_okta/authorization-code/callback?code=47aAz3XWuEfelxZag",
+      "http://localhost:5261/_reflex_oidc_okta/authorization-code/callback?code=47aAz3XWuEfelxZag",
+      "http://localhost:5261/_reflex_oidc_okta/popup-login"
+     ],
+     "closed": true
+    }
+   ]
+  },
+  {
+   "step": "logout_button",
+   "count": 1
+  },
+  {
+   "step": "after_logout",
+   "logged_out": true,
+   "inner": "OIDC Demo\nLogin with Okta\nLogin with Databricks\nDo Nothing\nCookie Sync",
+   "new_popups": [
+    {
+     "urls": [
+      "http://localhost:5261/_reflex_oidc_okta/popup-logout",
+      "http://localhost:5261/_reflex_oidc_okta/popup-logout"
+     ],
+     "closed": true
+    }
+   ],
+   "all_popups_closed": true
+  }
+ ],
+ "popups": [
+  {
+   "opened_at": 1,
+   "urls": [
+    "http://localhost:5261/_reflex_oidc_okta/popup-login",
+    "http://localhost:5261/_reflex_oidc_okta/popup-login",
+    "http://localhost:5261/_reflex_oidc_okta/authorization-code/callback?code=47aAz3XWuEfelxZagTvjIQ&state=2S85u0z-FZtQp9DHfu-f2okz-PUtFJ5SonjBc1Lf8UU05hizDzY_oVDsZC5KM1sdkj8Q36Vh9yz6fbRFViTxgQ",
+    "http://localhost:5261/_reflex_oidc_okta/authorization-code/callback?code=47aAz3XWuEfelxZagTvjIQ&state=2S85u0z-FZtQp9DHfu-f2okz-PUtFJ5SonjBc1Lf8UU05hizDzY_oVDsZC5KM1sdkj8Q36Vh9yz6fbRFViTxgQ",
+    "http://localhost:5261/_reflex_oidc_okta/popup-login"
+   ]
+  },
+  {
+   "opened_at": 3,
+   "urls": [
+    "http://localhost:5261/_reflex_oidc_okta/popup-logout",
+    "http://localhost:5261/_reflex_oidc_okta/popup-logout"
+   ]
+  }
+ ],
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  }
+ ],
+ "pageerrors": []
+}

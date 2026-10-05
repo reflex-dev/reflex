@@ -1,0 +1,13 @@
+[{"wait":1500},
+ {"dump":"prod_home.txt"},
+ {"screenshot":"07_prod_home.png"},
+ {"goto":"http://localhost:3500/login"},
+ {"wait":1500},
+ {"fill":["input[name=username]","alice"]},
+ {"fill":["input[name=password]","hunter2hunter2"]},
+ {"click":"button:has-text('Sign in')"},
+ {"wait":3000},
+ {"goto":"http://localhost:3500/edit/form/2"},
+ {"wait":3000},
+ {"dump":"prod_form2.txt"},
+ {"screenshot":"08_prod_form2.png"}]

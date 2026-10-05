@@ -1,0 +1,12 @@
+[{"wait":2500},
+ {"dump":"flow_before.txt"},
+ {"fill":["input[value='products']","products/2"]},
+ {"click":"button[role=combobox]"},
+ {"wait":800},
+ {"click":"div[role=option]:has-text('DELETE')"},
+ {"wait":800},
+ {"screenshot":"10_delete_selected.png"},
+ {"click":"button:has-text('Send')"},
+ {"wait":5000},
+ {"dump":"flow_after_delete.txt"},
+ {"screenshot":"11_after_delete.png"}]

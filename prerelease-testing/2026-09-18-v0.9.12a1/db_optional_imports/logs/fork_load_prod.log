@@ -1,0 +1,28 @@
+navigated 20 contexts in 3.3s
+ELAPSED 6.0s | OK contexts: 20/20
+SAMPLE OK: [
+ {
+  "ctx": 0,
+  "names": [
+   "Ursula Le Guin",
+   "Ursula Le Guin",
+   "Stanislaw Lem"
+  ],
+  "bg": "bg: bg loaded 3 books; first author=Ursula Le Guin"
+ },
+ {
+  "ctx": 1,
+  "names": [
+   "Ursula Le Guin",
+   "Ursula Le Guin",
+   "Stanislaw Lem"
+  ],
+  "bg": "bg: bg loaded 3 books; first author=Ursula Le Guin"
+ }
+]
+NON-OK: []
+PAGE ERRORS: []
+CONSOLE ERRORS: [
+ "ctx0: Failed to load resource: the server responded with a status of 404 (Not Found)"
+]
+BAD RESPONSES: []

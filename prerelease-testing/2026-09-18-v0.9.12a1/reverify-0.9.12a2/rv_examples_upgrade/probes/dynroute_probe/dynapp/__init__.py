@@ -1,0 +1,1 @@
+from .dynapp import app

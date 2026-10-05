@@ -1,0 +1,31 @@
+--- /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_examples_upgrade/out/pkg/data_visualisation.base.json	2026-09-21 21:39:07.543638335 +0000
++++ /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_examples_upgrade/out/pkg/data_visualisation.a2.json	2026-09-21 21:44:50.693139749 +0000
+@@ -8,7 +8,7 @@
+   "dependencies": {
+     "@radix-ui/react-form": "0.1.16",
+     "@radix-ui/themes": "3.3.0",
+-    "@react-router/node": "8.3.1",
++    "@react-router/node": "8.4.0",
+     "gridjs": "6.2.0",
+     "gridjs-react": "6.1.1",
+     "isbot": "5.2.2",
+@@ -20,7 +20,7 @@
+     "react-error-boundary": "6.1.2",
+     "react-helmet": "6.1.0",
+     "react-plotly.js": "4.1.0",
+-    "react-router": "8.3.1",
++    "react-router": "8.4.0",
+     "recharts": "3.10.1",
+     "socket.io-client": "4.8.3",
+     "sonner": "2.0.8",
+@@ -28,8 +28,8 @@
+   },
+   "devDependencies": {
+     "@emotion/react": "11.14.0",
+-    "@react-router/dev": "8.3.1",
+-    "@react-router/fs-routes": "8.3.1",
++    "@react-router/dev": "8.4.0",
++    "@react-router/fs-routes": "8.4.0",
+     "autoprefixer": "10.5.4",
+     "postcss": "8.5.26",
+     "postcss-import": "17.0.0",

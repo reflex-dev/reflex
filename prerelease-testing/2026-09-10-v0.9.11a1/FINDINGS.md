@@ -974,11 +974,13 @@ running beside it as a same-machine control that had to fail first.
 | 030 | delta key ordering | verified documented/accepted behaviour (ordering differs, normalised parsed JSON is equal) |
 | 033 | `rx.moment` locale isolation | **verified fixed** in dev and prod, both component orders, relative dates and title attributes, reactive locale switching; a1 also cannot build in prod with `locale="en"` |
 
-**The one failure is not a claimed fix.** The adjacent 018 check regressed: the minimized repro
-(a state var holding a Python callable that renders a Radix component, via reflex-enterprise's
-`LiteralLambdaVar`) still loses its state on reload under a1, and under **a2 the backend worker now
-exits during startup** with `ValueError: Library @radix-ui/themes is not bundled`, so the app does
-not run at all. Deterministic, including from a cold `.web`. Smallest reproduction in
-PUBLISHED_VALIDATION_RESULTS.md.
+**The one failure is not a claimed fix.** The adjacent 018 check is still open, with its failure
+moved earlier: the minimized repro (a state var holding a Python callable that renders a Radix
+component, via reflex-enterprise's `LiteralLambdaVar`) still loses its state on reload under a1,
+and under **a2 the backend worker exits during startup** with `ValueError: Library @radix-ui/themes
+is not bundled`, so the app does not run at all. Deterministic, including from a cold `.web`.
+Raising at compile time is the better failure mode — the silent packet loss is gone — so this is
+progress rather than something to revert; the app still cannot run. Root cause and a suggested
+direction are recorded on #7096. Smallest reproduction in PUBLISHED_VALIDATION_RESULTS.md.
 
 Blocked: every hosted-documentation check — `reflex.dev` is unreachable from this container.

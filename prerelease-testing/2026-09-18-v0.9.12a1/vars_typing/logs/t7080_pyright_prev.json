@@ -1,0 +1,46 @@
+{
+    "version": "1.1.414",
+    "time": "1789785756042",
+    "generalDiagnostics": [
+        {
+            "file": "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/vars_typing/typecheck/snippet.py",
+            "severity": "error",
+            "message": "Argument of type \"None\" cannot be assigned to parameter \"use_math\" of type \"bool | Var[bool]\" in function \"__call__\"\n  Type \"None\" is not assignable to type \"bool | Var[bool]\"\n    \"None\" is not assignable to \"bool\"\n    \"None\" is not assignable to \"Var[bool]\"",
+            "range": {
+                "start": {
+                    "line": 11,
+                    "character": 37
+                },
+                "end": {
+                    "line": 11,
+                    "character": 41
+                }
+            },
+            "rule": "reportArgumentType"
+        },
+        {
+            "file": "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/vars_typing/typecheck/snippet.py",
+            "severity": "error",
+            "message": "\"sankey_chart\" is not a known attribute of module \"reflex_components_recharts\"",
+            "range": {
+                "start": {
+                    "line": 13,
+                    "character": 20
+                },
+                "end": {
+                    "line": 13,
+                    "character": 32
+                }
+            },
+            "rule": "reportAttributeAccessIssue"
+        }
+    ],
+    "summary": {
+        "filesAnalyzed": 1,
+        "errorCount": 2,
+        "warningCount": 0,
+        "informationCount": 0,
+        "timeInSec": 1.314
+    }
+}
+

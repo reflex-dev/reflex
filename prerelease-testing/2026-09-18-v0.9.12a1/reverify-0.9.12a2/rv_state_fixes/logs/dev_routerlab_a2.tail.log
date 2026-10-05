@@ -1,0 +1,120 @@
+/envs/a2/lib/python3.11/site-packages/reflex_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.28s
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(routerlab/routerlab.py:50)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 22/21 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@react-router/fs-routes@8.4.0', 'postcss@8.5.26', 
+'@emotion/react@11.14.0', 'postcss-import@17.0.0', 'vite@8.2.2', 
+'autoprefixer@10.5.4', '@react-router/dev@8.4.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: Saved lockfile
+Debug: 
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed postcss@8.5.26
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@17.0.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: 
+Debug: 128 packages installed [58.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'react-helmet@6.1.0', 'react-router@8.4.0', 
+'lucide-react@1.26.0', '@radix-ui/themes@3.3.0', 'sonner@2.0.8', 
+'react-error-boundary@6.1.2', '@react-router/node@8.4.0', 'isbot@5.2.2', 
+'mergician@v2.0.2', 'universal-cookie@8.1.2', 'react@19.2.8', 
+'socket.io-client@4.8.3', 'react-dom@19.2.8']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-helmet@6.1.0
+Debug: installed react-router@8.4.0
+Debug: installed lucide-react@1.26.0
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed sonner@2.0.8
+Debug: installed react-error-boundary@6.1.2
+Debug: installed @react-router/node@8.4.0
+Debug: installed isbot@5.2.2
+Debug: installed mergician@2.0.2
+Debug: installed universal-cookie@8.1.2
+Debug: installed react@19.2.8
+Debug: installed socket.io-client@4.8.3
+Debug: installed react-dom@19.2.8
+Debug: 
+Debug: 99 packages installed [96.00ms]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+reverify/rv_state_fixes/routerlab/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+reverify/rv_state_fixes/routerlab/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.17s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpa
+d/reverify/rv_state_fixes/routerlab/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_state_fixes/routerlab/routerlab', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/reverify/rv_state_fixes/routerlab/rxconfig.py']
+[INFO] Starting granian (main PID: 7213)
+[INFO] Listening at: http://0.0.0.0:8102
+[INFO] Spawning worker-1 with PID: 7248
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: BE Evaluating stateful page: index
+Debug: BE Evaluating stateful page: items/[id]
+Debug: BE Evaluating stateful page: docs/[[...splat]]
+Debug: BE Evaluating stateful page: search
+Debug: BE Evaluating stateful page: about
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(routerlab/routerlab.py:50)
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3102/
+App running at: http://localhost:3102/
+Backend running at: http://0.0.0.0:8102
+Debug:   ➜  Network: http://192.0.2.2:3102/  eth0
+Debug: 9:42:15 PM [vite] (ssr) connected.
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(routerlab/routerlab.py:127)
+DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+RouterData.url instead. It will be completely removed in 1.0. 
+(routerlab/routerlab.py:116)
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+Debug: error: script "dev" exited with code 143
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

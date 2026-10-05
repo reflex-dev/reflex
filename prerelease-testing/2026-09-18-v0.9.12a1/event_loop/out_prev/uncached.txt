@@ -1,0 +1,89 @@
+=== hydrate frames (first 3 in) ===
+  c1 event {'delta': {'reflex___state____state': {'is_hydrated_rx_state_': False, 'router_rx_state_': {'session': {'client_token': '1210084d-7129-4cf7-b9a5-e76c915c6128', 'client_ip': '127.0.0.1', 'session_id': 'M1kGDjKoUx1r2oZQAAAJ'}, 'headers': {'host': 'localhost:8181', 'origin': 'http://localhost:3181', 'upgrade': 'websocket', 'connection': 'Upgrade', 'cookie': '', 'pragma': 'no-cache', 'cache_control': 
+  c1 event {'delta': {'reflex___state____state.elapp_prev___elapp_prev____unkeyable': {'u_obj_rx_state_': None}, 'reflex___state____state.elapp_prev___elapp_prev___uc': {'u_alt_rx_state_': 'A', 'u_nan_rx_state_': nan, 'u_stable_rx_state_': 'STABLE', 'u_list_rx_state_': [1, 2, 3], 'u_async_rx_state_': 'as0', 'u_derived_rx_state_': 'd0', 'u_dict_order_rx_state_': {'a': 1, 'b': 2}}, 'reflex___state____state.ela
+  c1 event {'delta': {'reflex___state____state': {'is_hydrated_rx_state_': True}, 'reflex___state____state.elapp_prev___elapp_prev____unkeyable': {'u_obj_rx_state_': None}, 'reflex___state____state.elapp_prev___elapp_prev___uc': {'u_alt_rx_state_': 'A', 'u_nan_rx_state_': nan, 'u_stable_rx_state_': 'STABLE', 'u_list_rx_state_': [1, 2, 3], 'u_async_rx_state_': 'as0', 'u_derived_rx_state_': 'd0', 'u_dict_order
+
+=== initial rendered values ===
+  counter    = '0'
+  u_stable   = 'STABLE'
+  u_derived  = 'd0'
+  u_alt      = 'A'
+  u_nan      = 'null'
+  u_list     = '[1,2,3]'
+  u_dict     = '{"a":1,"b":2}'
+  u_async    = 'as0'
+  u_parent   = 'p0'
+  u_obj      = 'null'
+
+=== after 3x touch (unrelated var) ===
+  delta: {'reflex___state____state.elapp_prev___elapp_prev____unkeyable': ['u_obj_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc': ['nonce_rx_state_', 'u_alt_rx_state_', 'u_async_rx_state_', 'u_derived_rx_state_', 'u_dict_order_rx_state_', 'u_list_rx_state_', 'u_nan_rx_state_', 'u_stable_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc.elapp_prev___elapp_prev___uc_child': ['u_parent_rx_state_']}
+  delta: {'reflex___state____state.elapp_prev___elapp_prev____unkeyable': ['u_obj_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc': ['nonce_rx_state_', 'u_alt_rx_state_', 'u_async_rx_state_', 'u_derived_rx_state_', 'u_dict_order_rx_state_', 'u_list_rx_state_', 'u_nan_rx_state_', 'u_stable_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc.elapp_prev___elapp_prev___uc_child': ['u_parent_rx_state_']}
+  delta: {'reflex___state____state.elapp_prev___elapp_prev____unkeyable': ['u_obj_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc': ['nonce_rx_state_', 'u_alt_rx_state_', 'u_async_rx_state_', 'u_derived_rx_state_', 'u_dict_order_rx_state_', 'u_list_rx_state_', 'u_nan_rx_state_', 'u_stable_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc.elapp_prev___elapp_prev___uc_child': ['u_parent_rx_state_']}
+
+=== after 2x noop ===
+  delta: {'reflex___state____state.elapp_prev___elapp_prev____unkeyable': ['u_obj_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc': ['u_alt_rx_state_', 'u_async_rx_state_', 'u_derived_rx_state_', 'u_dict_order_rx_state_', 'u_list_rx_state_', 'u_nan_rx_state_', 'u_stable_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc.elapp_prev___elapp_prev___uc_child': ['u_parent_rx_state_']}
+  delta: {'reflex___state____state.elapp_prev___elapp_prev____unkeyable': ['u_obj_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc': ['u_alt_rx_state_', 'u_async_rx_state_', 'u_derived_rx_state_', 'u_dict_order_rx_state_', 'u_list_rx_state_', 'u_nan_rx_state_', 'u_stable_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc.elapp_prev___elapp_prev___uc_child': ['u_parent_rx_state_']}
+
+=== bump -> counter=1 ===
+  delta: {'reflex___state____state.elapp_prev___elapp_prev____unkeyable': ['u_obj_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc': ['counter_rx_state_', 'u_alt_rx_state_', 'u_async_rx_state_', 'u_derived_rx_state_', 'u_dict_order_rx_state_', 'u_list_rx_state_', 'u_nan_rx_state_', 'u_stable_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc.elapp_prev___elapp_prev___uc_child': ['u_parent_rx_state_']}
+  rendered: {'u_derived': 'd0', 'u_alt': 'B', 'u_async': 'as0', 'u_parent': 'p1'}
+
+=== bump -> counter=2 ===
+  delta: {'reflex___state____state.elapp_prev___elapp_prev____unkeyable': ['u_obj_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc': ['counter_rx_state_', 'u_alt_rx_state_', 'u_async_rx_state_', 'u_derived_rx_state_', 'u_dict_order_rx_state_', 'u_list_rx_state_', 'u_nan_rx_state_', 'u_stable_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc.elapp_prev___elapp_prev___uc_child': ['u_parent_rx_state_']}
+  rendered: {'u_derived': 'd0', 'u_alt': 'A', 'u_async': 'as0', 'u_parent': 'p2'}
+
+=== bump -> counter=3 ===
+  delta: {'reflex___state____state.elapp_prev___elapp_prev____unkeyable': ['u_obj_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc': ['counter_rx_state_', 'u_alt_rx_state_', 'u_async_rx_state_', 'u_derived_rx_state_', 'u_dict_order_rx_state_', 'u_list_rx_state_', 'u_nan_rx_state_', 'u_stable_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc.elapp_prev___elapp_prev___uc_child': ['u_parent_rx_state_']}
+  rendered: {'u_derived': 'd1', 'u_alt': 'B', 'u_async': 'as0', 'u_parent': 'p3'}
+
+=== bump -> counter=4 ===
+  delta: {'reflex___state____state.elapp_prev___elapp_prev____unkeyable': ['u_obj_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc': ['counter_rx_state_', 'u_alt_rx_state_', 'u_async_rx_state_', 'u_derived_rx_state_', 'u_dict_order_rx_state_', 'u_list_rx_state_', 'u_nan_rx_state_', 'u_stable_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc.elapp_prev___elapp_prev___uc_child': ['u_parent_rx_state_']}
+  rendered: {'u_derived': 'd1', 'u_alt': 'A', 'u_async': 'as1', 'u_parent': 'p4'}
+
+=== bump -> counter=5 ===
+  delta: {'reflex___state____state.elapp_prev___elapp_prev____unkeyable': ['u_obj_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc': ['counter_rx_state_', 'u_alt_rx_state_', 'u_async_rx_state_', 'u_derived_rx_state_', 'u_dict_order_rx_state_', 'u_list_rx_state_', 'u_nan_rx_state_', 'u_stable_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc.elapp_prev___elapp_prev___uc_child': ['u_parent_rx_state_']}
+  rendered: {'u_derived': 'd1', 'u_alt': 'B', 'u_async': 'as1', 'u_parent': 'p5'}
+
+=== bump -> counter=6 ===
+  delta: {'reflex___state____state.elapp_prev___elapp_prev____unkeyable': ['u_obj_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc': ['counter_rx_state_', 'u_alt_rx_state_', 'u_async_rx_state_', 'u_derived_rx_state_', 'u_dict_order_rx_state_', 'u_list_rx_state_', 'u_nan_rx_state_', 'u_stable_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc.elapp_prev___elapp_prev___uc_child': ['u_parent_rx_state_']}
+  rendered: {'u_derived': 'd2', 'u_alt': 'A', 'u_async': 'as1', 'u_parent': 'p6'}
+
+=== after reset (values return to earlier values) ===
+  delta: {'reflex___state____state.elapp_prev___elapp_prev____unkeyable': ['u_obj_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc': ['counter_rx_state_', 'nonce_rx_state_', 'u_alt_rx_state_', 'u_async_rx_state_', 'u_derived_rx_state_', 'u_dict_order_rx_state_', 'u_list_rx_state_', 'u_nan_rx_state_', 'u_stable_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc.elapp_prev___elapp_prev___uc_child': ['u_parent_rx_state_']}
+  rendered: {'counter': '0', 'u_derived': 'd0', 'u_alt': 'A', 'u_async': 'as0'}
+
+=== after 3x bump-obj (complex -> null) ===
+  delta: {'reflex___state____state.elapp_prev___elapp_prev____unkeyable': ['n_rx_state_', 'u_obj_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc': ['u_alt_rx_state_', 'u_async_rx_state_', 'u_derived_rx_state_', 'u_dict_order_rx_state_', 'u_list_rx_state_', 'u_nan_rx_state_', 'u_stable_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc.elapp_prev___elapp_prev___uc_child': ['u_parent_rx_state_']}
+  delta: {'reflex___state____state.elapp_prev___elapp_prev____unkeyable': ['n_rx_state_', 'u_obj_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc': ['u_alt_rx_state_', 'u_async_rx_state_', 'u_derived_rx_state_', 'u_dict_order_rx_state_', 'u_list_rx_state_', 'u_nan_rx_state_', 'u_stable_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc.elapp_prev___elapp_prev___uc_child': ['u_parent_rx_state_']}
+  delta: {'reflex___state____state.elapp_prev___elapp_prev____unkeyable': ['n_rx_state_', 'u_obj_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc': ['u_alt_rx_state_', 'u_async_rx_state_', 'u_derived_rx_state_', 'u_dict_order_rx_state_', 'u_list_rx_state_', 'u_nan_rx_state_', 'u_stable_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc.elapp_prev___elapp_prev___uc_child': ['u_parent_rx_state_']}
+
+=== after hard reload (same token) ===
+  counter    = '0'
+  u_stable   = 'STABLE'
+  u_derived  = 'd0'
+  u_alt      = 'A'
+  u_async    = 'as0'
+  u_parent   = 'p0'
+
+=== second context values ===
+  counter    = '0'
+  u_stable   = 'STABLE'
+  u_derived  = 'd0'
+  u_alt      = 'A'
+  u_async    = 'as0'
+  u_parent   = 'p0'
+  c2 touch deltas: [('c2', {'reflex___state____state.elapp_prev___elapp_prev____unkeyable': ['u_obj_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc': ['nonce_rx_state_', 'u_alt_rx_state_', 'u_async_rx_state_', 'u_derived_rx_state_', 'u_dict_order_rx_state_', 'u_list_rx_state_', 'u_nan_rx_state_', 'u_stable_rx_state_'], 'reflex___state____state.elapp_prev___elapp_prev___uc.elapp_prev___elapp_prev___uc_child': ['u_parent_rx_state_']})]
+
+=== after client-side nav away and back ===
+  counter    = '0'
+  u_stable   = 'STABLE'
+  u_derived  = 'd0'
+  u_alt      = 'A'
+  u_async    = 'as0'
+  u_parent   = 'p0'
+
+=== console (non-benign) ===
+   [c1][log] Disconnect websocket on page navigation
+=== pageerrors ===
+=== net ===
+frames total: 64

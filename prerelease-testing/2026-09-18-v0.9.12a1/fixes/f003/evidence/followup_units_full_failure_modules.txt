@@ -1,0 +1,7 @@
+     77 FAILED tests/units/reflex_cli/v2/test_apps.py
+     36 FAILED tests/units/reflex_cli/v2/test_gcp.py
+     29 FAILED tests/units/reflex_cli/v2/test_project.py
+     29 FAILED tests/units/reflex_cli/v2/test_auth.py
+     12 FAILED tests/units/reflex_cli/v2/test_vmtypes_regions.py
+     12 FAILED tests/units/reflex_cli/v2/test_secrets.py
+     12 FAILED tests/units/reflex_cli/v2/test_scan.py

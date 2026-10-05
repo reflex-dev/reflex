@@ -1,0 +1,40 @@
+{
+ "label": "V_P_proc",
+ "sig": "TERM",
+ "target": "proc",
+ "extra": [],
+ "fp": "3886",
+ "bp": "8886",
+ "pid": 27115,
+ "pgid": 27115,
+ "ready_after_s": 2.07,
+ "READY": true,
+ "members_before": [
+  "27115:reflex",
+  "27134:bun",
+  "27136:node",
+  "27143:reflex"
+ ],
+ "exit_code": "TIMEOUT_30s",
+ "exit_after_s": 30.08,
+ "survivors": [
+  "27115:reflex",
+  "27134:bun",
+  "27136:node"
+ ],
+ "log_has_143": [
+  "APP_MODULE_IMPORT pid=27143 marker_id=139771523372304 settings_id=139771523372304 nmods=701",
+  "SETTINGS_IMPORT module_id=139771642820928 pid=27143 import_n=0"
+ ],
+ "log_has_error": [],
+ "log_tail": [
+  "add it to the `plugins` list in your config inside of `rxconfig.py`. To disable ",
+  "this plugin, add `SitemapPlugin` to the `disable_plugins` list.",
+  "App running at: http://localhost:3886/",
+  "Backend running at: http://0.0.0.0:8886"
+ ],
+ "ports_after": [
+  "3886\tpids=27136\tnode /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_dev_server_cl"
+ ],
+ "ports_after_force": []
+}

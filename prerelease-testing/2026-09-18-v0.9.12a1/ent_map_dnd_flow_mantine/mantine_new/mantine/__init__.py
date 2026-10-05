@@ -1,0 +1,1 @@
+"""Mantine Demo app."""

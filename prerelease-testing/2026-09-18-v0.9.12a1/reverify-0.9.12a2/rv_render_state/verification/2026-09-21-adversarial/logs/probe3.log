@@ -1,0 +1,60 @@
+########## a2 ##########
+reflex from: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/a2/lib/python3.11/site-packages/reflex/__init__.py
+reflex version: 0.9.12a2
+plain override of `get_delta`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_delta` shadows a builtin State method; use a different name instead
+plain override of `get_value`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_value` shadows a builtin State method; use a different name instead
+plain override of `reset`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `reset` shadows a builtin State method; use a different name instead
+plain override of `setvar`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `setvar` shadows a builtin State method; use a different name instead
+plain override of `_clean`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `_clean` shadows a builtin State method; use a different name instead
+plain override of `_mark_dirty`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `_mark_dirty` shadows a builtin State method; use a different name instead
+---- full traceback for the plain get_delta class-body override ----
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_render_state-verify/scripts/getdelta_probe3.py", line 15, in <module>
+    class S(rx.State):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/a2/lib/python3.11/site-packages/reflex_base/vars/base.py", line 4181, in __new__
+    _validate_state_declaration(root, lookup_order, namespace)
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/a2/lib/python3.11/site-packages/reflex_base/vars/base.py", line 4129, in _validate_state_declaration
+    _validate_state_name(root, member, namespace.get(member))
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/a2/lib/python3.11/site-packages/reflex_base/vars/base.py", line 4088, in _validate_state_name
+    raise EventHandlerShadowsBuiltInStateMethodError(msg)
+reflex_base.utils.exceptions.EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_delta` shadows a builtin State method; use a different name instead
+########## shared ##########
+reflex from: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex/__init__.py
+reflex version: 0.9.12a1
+plain override of `get_delta`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_delta` shadows a builtin State method; use a different name instead
+plain override of `get_value`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_value` shadows a builtin State method; use a different name instead
+plain override of `reset`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `reset` shadows a builtin State method; use a different name instead
+plain override of `setvar`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `setvar` shadows a builtin State method; use a different name instead
+plain override of `_clean`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `_clean` shadows a builtin State method; use a different name instead
+plain override of `_mark_dirty`: EventHandlerShadowsBuiltInStateMethodError: The event handler name `_mark_dirty` shadows a builtin State method; use a different name instead
+---- full traceback for the plain get_delta class-body override ----
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_render_state-verify/scripts/getdelta_probe3.py", line 15, in <module>
+    class S(rx.State):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex/istate/validation.py", line 114, in __new__
+    _validate_state_name(member, namespace.get(member))
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex/istate/validation.py", line 64, in _validate_state_name
+    raise EventHandlerShadowsBuiltInStateMethodError(msg)
+reflex_base.utils.exceptions.EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_delta` shadows a builtin State method; use a different name instead
+########## prev ##########
+reflex from: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/prev/lib/python3.11/site-packages/reflex/__init__.py
+reflex version: 0.9.11.post1
+plain override of `get_delta`: ALLOWED
+plain override of `get_value`: ALLOWED
+plain override of `reset`: ALLOWED
+plain override of `setvar`: ALLOWED
+plain override of `_clean`: ALLOWED
+plain override of `_mark_dirty`: ALLOWED
+---- full traceback for the plain get_delta class-body override ----
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/reverify/rv_render_state-verify/scripts/getdelta_probe3.py", line 15, in <module>
+    class S(rx.State):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/prev/lib/python3.11/site-packages/reflex_base/vars/base.py", line 3929, in __new__
+    return super().__new__(cls, name, bases, namespace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen abc>", line 106, in __new__
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/prev/lib/python3.11/site-packages/reflex/state.py", line 620, in __init_subclass__
+    cls._check_overridden_methods()
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/prev/lib/python3.11/site-packages/reflex/state.py", line 1083, in _check_overridden_methods
+    raise EventHandlerShadowsBuiltInStateMethodError(msg)
+reflex_base.utils.exceptions.EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_delta` shadows a builtin State method; use a different name instead

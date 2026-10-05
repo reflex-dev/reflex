@@ -1,0 +1,19 @@
+=== CONTROL: published reflex-enterprise 0.9.5 + reflex 0.9.12a1 (metaclass shim in rxconfig.py, port 8981) ===
+BEARER: <MASKED> ...(masked)
+retrieve_state status 200
+TOP KEYS: ['reflex___state____state', 'reflex___state____state.tickets___tickets____ticket_state']
+SESSION-SECRET FIELDS IN retrieve_state: [('.reflex___state____state.rx_router_session.client_token', '<UUID-MASKED>')]
+event status 200 len 2973
+SESSION-SECRET FIELDS IN event delta: [('.reflex___state____state.rx_router_session.client_token', '<UUID-MASKED>')]
+LEAKED CLIENT TOKEN: <MASKED> ...| equals bearer? False
+polling handshake with leaked token -> 400 "Invalid transport"
+VERDICT LEAK
+
+=== FIXED: worktree reflex-enterprise + reflex 0.9.12a1 (NO shim, port 8980) ===
+BEARER: <MASKED> ...(masked)
+retrieve_state status 200
+TOP KEYS: ['reflex___state____state', 'reflex___state____state.tickets___tickets____ticket_state']
+SESSION-SECRET FIELDS IN retrieve_state: NONE (redacted)
+event status 200 len 2937
+SESSION-SECRET FIELDS IN event delta: NONE (redacted)
+VERDICT OK

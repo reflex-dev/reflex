@@ -1,0 +1,37 @@
+{
+  "app": "upload",
+  "url": "http://localhost:3460/",
+  "tag": "up",
+  "load_seconds": 0.83,
+  "selected_files_text": 2,
+  "links": [
+    "probe-base.txt",
+    "beta.txt",
+    "alpha.txt"
+  ],
+  "progress_value": "100",
+  "links_after_reload": [
+    "probe-base.txt",
+    "beta.txt",
+    "alpha.txt"
+  ],
+  "hrefs": [
+    "http://localhost:8460/_upload/probe-base.txt",
+    "http://localhost:8460/_upload/beta.txt",
+    "http://localhost:8460/_upload/alpha.txt"
+  ],
+  "fetch_status": 200,
+  "fetch_body": "probe base\n",
+  "flow_ok": true,
+  "console_notable": [],
+  "console_errors": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": [],
+  "screenshots": [
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/upload-up-load.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/upload-up-selected.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/upload-up-uploaded.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/upload-up-after_reload.png"
+  ]
+}

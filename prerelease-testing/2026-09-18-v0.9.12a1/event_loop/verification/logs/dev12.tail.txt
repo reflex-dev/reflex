@@ -1,0 +1,420 @@
+s": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.12a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+envs/shared/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3680
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8680
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3680 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3680 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3680 is not in use.
+Debug: Checking if Backend port: 8680 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8680 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8680 is not in use.
+DeprecationWarning: `@rx.memo` on `memo_toast_button` without explicit 
+annotations has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations 
+on parameter(s) `label`. Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (elapp/elapp.py:410)
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.10s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 30/29 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@tailwindcss/postcss@4.3.0', 'autoprefixer@10.5.4',
+'tailwindcss@4.3.0', 'postcss-import@17.0.0', '@react-router/dev@8.4.0', 
+'@emotion/react@11.14.0', 'vite@8.2.2', '@react-router/fs-routes@8.4.0', 
+'postcss@8.5.26', '@tailwindcss/typography@0.5.20']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [13]
+Debug: Saved lockfile
+Debug: 
+Debug: installed @tailwindcss/postcss@4.3.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed tailwindcss@4.3.0
+Debug: installed postcss-import@17.0.0
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed @emotion/react@11.14.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed postcss@8.5.26
+Debug: installed @tailwindcss/typography@0.5.20
+Debug: 
+Debug: 147 packages installed [171.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'react@19.2.8', 'isbot@5.2.2', '@radix-ui/themes@3.3.0', 
+'lucide-react@1.26.0', 'react-error-boundary@6.1.2', 'socket.io-client@4.8.3', 
+'react-dropzone@15.0.0', 'mergician@v2.0.2', 'react-router@8.4.0', 
+'universal-cookie@8.1.2', 'sonner@2.0.8', 'react-helmet@6.1.0', 
+'@react-router/node@8.4.0', 'react-dom@19.2.8']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [2]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed react@19.2.8
+Debug: installed isbot@5.2.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed lucide-react@1.26.0
+Debug: installed react-error-boundary@6.1.2
+Debug: installed socket.io-client@4.8.3
+Debug: installed react-dropzone@15.0.0
+Debug: installed mergician@2.0.2
+Debug: installed react-router@8.4.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed sonner@2.0.8
+Debug: installed react-helmet@6.1.0
+Debug: installed @react-router/node@8.4.0
+Debug: installed react-dom@19.2.8
+Debug: 
+Debug: 102 packages installed [153.00ms]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/verify_event_loop/elapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/verify_event_loop/elapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.34s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpa
+d/apps/verify_event_loop/elapp/elapp', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_event_loop/elapp/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_event_loop/elapp/assets', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_event_loop/elapp/CLAUDE.md', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_event_loop/elapp/AGENTS.md', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_event_loop/elapp/rxconfig.py']
+[INFO] Starting granian (main PID: 26455)
+[INFO] Listening at: http://0.0.0.0:8680
+[INFO] Spawning worker-1 with PID: 26498
+DeprecationWarning: `@rx.memo` on `memo_toast_button` without explicit 
+annotations has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations 
+on parameter(s) `label`. Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (elapp/elapp.py:410)
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3680/
+App running at: http://localhost:3680/
+Backend running at: http://0.0.0.0:8680
+Debug:   ➜  Network: http://192.0.2.2:3680/  eth0
+Debug: 5:28:49 AM [vite] (ssr) connected.
+[Reflex Frontend Exception]
+ ReferenceError: filesById is not defined
+ReferenceError: filesById is not defined
+    at eval (eval at applyEvent (http://localhost:3680/utils/state.js:386:15), 
+<anonymous>:1:105)
+    at applyEvent (http://localhost:3680/utils/state.js:388:9)
+    at processEvent (http://localhost:3680/utils/state.js:537:11)
+    at queueEvents (http://localhost:3680/utils/state.js:502:9)
+    at Socket.<anonymous> (http://localhost:3680/utils/state.js:758:9)
+    at Emitter.emit 
+(http://localhost:3680/node_modules/.vite/deps/socket__io-client.js?v=fcc206ff:3
+25:70)
+    at Socket.emitEvent 
+(http://localhost:3680/node_modules/.vite/deps/socket__io-client.js?v=fcc206ff:3
+146:14)
+    at Socket.onevent 
+(http://localhost:3680/node_modules/.vite/deps/socket__io-client.js?v=fcc206ff:3
+138:28)
+    at Socket.onpacket 
+(http://localhost:3680/node_modules/.vite/deps/socket__io-client.js?v=fcc206ff:3
+113:10)
+    at Emitter.emit 
+(http://localhost:3680/node_modules/.vite/deps/socket__io-client.js?v=fcc206ff:3
+25:70)
+
+[Reflex Frontend Exception]
+ ReferenceError: filesById is not defined
+ReferenceError: filesById is not defined
+    at Object.onClick 
+(http://localhost:3680/app_components/elapp/elapp.jsx:739:22)
+    at onClick 
+(http://localhost:3680/node_modules/.vite/deps/sonner.js?v=ecaa2e5c:715:57)
+    at executeDispatch 
+(http://localhost:3680/node_modules/.vite/deps/react-dom_client.js?v=ddac36f6:91
+41:5)
+    at runWithFiberInDEV 
+(http://localhost:3680/node_modules/.vite/deps/react-dom_client.js?v=ddac36f6:85
+1:66)
+    at processDispatchQueue 
+(http://localhost:3680/node_modules/.vite/deps/react-dom_client.js?v=ddac36f6:91
+67:27)
+    at 
+http://localhost:3680/node_modules/.vite/deps/react-dom_client.js?v=ddac36f6:945
+4:5
+    at batchedUpdates$1 
+(http://localhost:3680/node_modules/.vite/deps/react-dom_client.js?v=ddac36f6:20
+44:12)
+    at dispatchEventForPluginEventSystem 
+(http://localhost:3680/node_modules/.vite/deps/react-dom_client.js?v=ddac36f6:92
+40:4)
+    at dispatchEvent 
+(http://localhost:3680/node_modules/.vite/deps/react-dom_client.js?v=ddac36f6:11
+319:29)
+    at dispatchDiscreteEvent 
+(http://localhost:3680/node_modules/.vite/deps/react-dom_client.js?v=ddac36f6:11
+301:56)
+
+Debug: 5:29:41 AM [vite] (client) [Unhandled error] ReferenceError: filesById is
+not defined
+Debug:  > filesById app_components/elapp/elapp.jsx:559:358
+Debug:     557 |  const Button_button_115bace766f00f8849b808448b4c85de_0bf88b62 
+= memo(({children, ...rest}) => {
+Debug:     558 |      const ref_fetoastupload = useRef(null); 
+refs["ref_fetoastupload"] = ref_fetoastupload;
+Debug:     559 |  ...___state____state.elapp___elapp___cb.handle_upload", 
+{files:filesById?.["u2"],upload_param_name:"files",upload_id:...
+Debug:         |                                                                
+^
+Debug:     560 |  
+Debug:     561 |  
+Debug:  > onClick node_modules/sonner/dist/index.mjs:882:73
+Debug:  > executeDispatch 
+node_modules/react-dom/cjs/react-dom-client.development.js:19116:8
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > processDispatchQueue 
+node_modules/react-dom/cjs/react-dom-client.development.js:19166:18
+Debug:  > node_modules/react-dom/cjs/react-dom-client.development.js:19767:8
+Debug:  > batchedUpdates$1 
+node_modules/react-dom/cjs/react-dom-client.development.js:3255:39
+Debug:  > dispatchEventForPluginEventSystem 
+node_modules/react-dom/cjs/react-dom-client.development.js:19320:6
+Debug:  > dispatchEvent 
+node_modules/react-dom/cjs/react-dom-client.development.js:23585:10
+Debug:  > dispatchDiscreteEvent 
+node_modules/react-dom/cjs/react-dom-client.development.js:23553:10
+Debug: 
+[Reflex Frontend Exception]
+ ReferenceError: filesById is not defined
+ReferenceError: filesById is not defined
+    at Object.onClick (eval at applyEvent 
+(http://localhost:3680/utils/state.js:377:13), <anonymous>:1:226)
+    at onClick 
+(http://localhost:3680/node_modules/.vite/deps/sonner.js?v=ecaa2e5c:715:57)
+    at executeDispatch 
+(http://localhost:3680/node_modules/.vite/deps/react-dom_client.js?v=ddac36f6:91
+41:5)
+    at runWithFiberInDEV 
+(http://localhost:3680/node_modules/.vite/deps/react-dom_client.js?v=ddac36f6:85
+1:66)
+    at processDispatchQueue 
+(http://localhost:3680/node_modules/.vite/deps/react-dom_client.js?v=ddac36f6:91
+67:27)
+    at 
+http://localhost:3680/node_modules/.vite/deps/react-dom_client.js?v=ddac36f6:945
+4:5
+    at batchedUpdates$1 
+(http://localhost:3680/node_modules/.vite/deps/react-dom_client.js?v=ddac36f6:20
+44:12)
+    at dispatchEventForPluginEventSystem 
+(http://localhost:3680/node_modules/.vite/deps/react-dom_client.js?v=ddac36f6:92
+40:4)
+    at dispatchEvent 
+(http://localhost:3680/node_modules/.vite/deps/react-dom_client.js?v=ddac36f6:11
+319:29)
+    at dispatchDiscreteEvent 
+(http://localhost:3680/node_modules/.vite/deps/react-dom_client.js?v=ddac36f6:11
+301:56)
+
+Debug: 5:29:45 AM [vite] (client) [Unhandled error] ReferenceError: filesById is
+not defined
+Debug:  > Object.onClick utils/state.js:377:13
+Debug:     375 |          event.name == "_call_script"
+Debug:     376 |            ? eval(event.payload.javascript_code)
+Debug:     377 |            : eval(event.payload.function)();
+Debug:         |               ^
+Debug:     378 |  
+Debug:     379 |        if (event.payload.callback) {
+Debug:  > onClick node_modules/sonner/dist/index.mjs:882:73
+Debug:  > executeDispatch 
+node_modules/react-dom/cjs/react-dom-client.development.js:19116:8
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > processDispatchQueue 
+node_modules/react-dom/cjs/react-dom-client.development.js:19166:18
+Debug:  > node_modules/react-dom/cjs/react-dom-client.development.js:19767:8
+Debug:  > batchedUpdates$1 
+node_modules/react-dom/cjs/react-dom-client.development.js:3255:39
+Debug:  > dispatchEventForPluginEventSystem 
+node_modules/react-dom/cjs/react-dom-client.development.js:19320:6
+Debug:  > dispatchEvent 
+node_modules/react-dom/cjs/react-dom-client.development.js:23585:10
+Debug:  > dispatchDiscreteEvent 
+node_modules/react-dom/cjs/react-dom-client.development.js:23553:10
+Debug: 
+Debug: Cancelling the previous unfinished 
+reflex___state____state.elapp___elapp___ss.refresh chain for token 
+9c978627-c1c6-40c2-fd14-8ab3dad9950c, superseded by a newer invocation.
+Debug: Cancelling the previous unfinished 
+reflex___state____state.elapp___elapp___ss.refresh chain for token 
+9c978627-c1c6-40c2-fd14-8ab3dad9950c, superseded by a newer invocation.
+Debug: Cancelling the previous unfinished 
+reflex___state____state.elapp___elapp___ss.poll chain for token 
+9c978627-c1c6-40c2-fd14-8ab3dad9950c, superseded by a newer invocation.
+Debug: Dropping stale reflex___state____state.elapp___elapp___ss.refresh 
+invocation for token 9c978627-c1c6-40c2-fd14-8ab3dad9950c, already superseded by
+a newer chain.
+Debug: Cancelling the previous unfinished 
+reflex___state____state.elapp___elapp___ss.frefresh chain for token 
+9c978627-c1c6-40c2-fd14-8ab3dad9950c, superseded by a newer invocation.
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_event_loop/elapp/elapp/elapp.py
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 28230
+DeprecationWarning: `@rx.memo` on `memo_toast_button` without explicit 
+annotations has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations 
+on parameter(s) `label`. Until removal, a missing return defaults to 
+`rx.Component` and missing or bare-type parameters are coerced to `rx.Var[...]`.
+It will be completely removed in 1.0. (elapp/elapp.py:410)
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.12s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 32/31 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 249 installs across 296 packages (no changes) [7.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@tailwindcss/postcss@4.3.0', 'autoprefixer@10.5.4',
+'tailwindcss@4.3.0', 'postcss-import@17.0.0', '@react-router/dev@8.4.0', 
+'@emotion/react@11.14.0', 'vite@8.2.2', '@react-router/fs-routes@8.4.0', 
+'postcss@8.5.26', '@tailwindcss/typography@0.5.20']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 5:31:14 AM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 
+Debug: installed @tailwindcss/postcss@4.3.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed tailwindcss@4.3.0
+Debug: installed postcss-import@17.0.0
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed @emotion/react@11.14.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed postcss@8.5.26
+Debug: installed @tailwindcss/typography@0.5.20
+Debug: 
+Debug: [9.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'react@19.2.8', 'isbot@5.2.2', '@radix-ui/themes@3.3.0', 
+'lucide-react@1.26.0', 'react-error-boundary@6.1.2', 'socket.io-client@4.8.3', 
+'react-dropzone@15.0.0', 'mergician@v2.0.2', 'react-router@8.4.0', 
+'universal-cookie@8.1.2', 'sonner@2.0.8', 'react-helmet@6.1.0', 
+'@react-router/node@8.4.0', 'react-dom@19.2.8']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed react@19.2.8
+Debug: installed isbot@5.2.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed lucide-react@1.26.0
+Debug: installed react-error-boundary@6.1.2
+Debug: installed socket.io-client@4.8.3
+Debug: installed react-dropzone@15.0.0
+Debug: installed mergician@2.0.2
+Debug: installed react-router@8.4.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed sonner@2.0.8
+Debug: installed react-helmet@6.1.0
+Debug: installed @react-router/node@8.4.0
+Debug: installed react-dom@19.2.8
+Debug: 
+Debug: [7.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/verify_event_loop/elapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/verify_event_loop/elapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 5:31:14 AM [vite] (client) hmr update /app_components/elapp/elapp.jsx
+Debug: 5:31:14 AM [vite] (client) hmr update /app_components/elapp/elapp.jsx, 
+/styles/__reflex_global_styles.css?direct
+Debug: 5:31:14 AM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 5:31:14 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:31:14 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:31:14 AM [vite] (client) hmr update /utils/context.jsx, 
+/styles/__reflex_global_styles.css?direct
+Debug: 5:31:14 AM [vite] (ssr) page reload utils/context.jsx
+Debug: 5:31:14 AM [vite] (ssr) program reload
+Debug: 5:31:14 AM [react-router] Config changed.
+Debug: 5:31:14 AM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 5:31:14 AM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 5:31:14 AM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 5:31:14 AM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 5:31:14 AM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 5:31:14 AM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 5:31:14 AM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 5:31:14 AM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 5:31:14 AM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 5:31:14 AM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+[INFO] Stopping worker-1
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!

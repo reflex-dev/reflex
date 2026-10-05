@@ -1,0 +1,34 @@
+########## 0.9.12a1 ##########
+`rx._x` contains experimental features and might be removed at any time in the future.
+{
+  "python": "3.11.15",
+  "reflex": "0.9.12a1",
+  "text_in_dict_before": false,
+  "text_in_dict_after": true,
+  "cond_in_dict_after": true,
+  "sec_per_1e6_attr_access": 0.0486,
+  "bad_definitely_not_a_thing": "AttributeError: No reflex attribute definitely_not_a_thing",
+  "bad__private_missing": "AttributeError: No reflex attribute _private_missing",
+  "bad_Text": "AttributeError: No reflex attribute Text",
+  "dir_has_text": true,
+  "dir_len": 193,
+  "submodule_rx_el_div": "<class 'method'>",
+  "rx_x": "<class 'method'>"
+}
+########## 0.9.11.post1 ##########
+`rx._x` contains experimental features and might be removed at any time in the future.
+{
+  "python": "3.11.15",
+  "reflex": "0.9.11.post1",
+  "text_in_dict_before": false,
+  "text_in_dict_after": false,
+  "cond_in_dict_after": false,
+  "sec_per_1e6_attr_access": 0.9864,
+  "bad_definitely_not_a_thing": "AttributeError: No reflex attribute definitely_not_a_thing",
+  "bad__private_missing": "AttributeError: No reflex attribute _private_missing",
+  "bad_Text": "AttributeError: No reflex attribute Text",
+  "dir_has_text": true,
+  "dir_len": 193,
+  "submodule_rx_el_div": "<class 'method'>",
+  "rx_x": "<class 'method'>"
+}

@@ -1,0 +1,174 @@
+{
+  "label": "prod-lazy1",
+  "base": "http://localhost:3260",
+  "steps": [
+    {
+      "step": "index_loaded",
+      "js_requests": 14,
+      "title": "Index Page"
+    },
+    {
+      "step": "counter",
+      "text": "counter: 2"
+    },
+    {
+      "step": "bg_ticks",
+      "text": "bg_ticks: 3"
+    },
+    {
+      "step": "client_state",
+      "out": "client-state-typed"
+    },
+    {
+      "step": "module_probe",
+      "modules": "modules: granian",
+      "n": "modules_len: 1"
+    },
+    {
+      "step": "nav_components",
+      "url": "http://localhost:3260/app/components",
+      "deferred_js": 7,
+      "icon": "rocket"
+    },
+    {
+      "step": "dyn_icon_present",
+      "count": 1,
+      "html": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide\" aria"
+    },
+    {
+      "step": "dyn_icon_after_click",
+      "icon": "circle-check",
+      "html": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide\" aria"
+    },
+    {
+      "step": "component_state",
+      "idx": "ComponentState idx: 2"
+    },
+    {
+      "step": "memo_cards",
+      "n": 2
+    },
+    {
+      "step": "logo_img_natural",
+      "w": 0
+    },
+    {
+      "step": "about",
+      "has_code": true,
+      "has_md": true,
+      "shiki_spans": 45
+    },
+    {
+      "step": "upload",
+      "summary": "inf=inf ninf=-inf nan=nan normal=10.0",
+      "inf": "inf=Infinity",
+      "ninf": "ninf=-Infinity",
+      "nan": "nan=NaN",
+      "normal": "normal=10"
+    },
+    {
+      "step": "nav_apple",
+      "url": "http://localhost:3260/app/apple",
+      "mark": "PAGEMARK:apple",
+      "counter": "counter: 2"
+    },
+    {
+      "step": "apple_counter_after_inc",
+      "counter": "counter: 3"
+    },
+    {
+      "step": "apple_after_reload",
+      "url": "http://localhost:3260/app/apple/",
+      "counter": "counter: 3",
+      "mark": "PAGEMARK:apple"
+    },
+    {
+      "step": "item_direct",
+      "url": "http://localhost:3260/app/items/7?x=1",
+      "item_id": "item id: 7",
+      "path": "path: /app/items/7",
+      "rurl": "url: \"http://localhost:3260/app/items/7?x=1\""
+    },
+    {
+      "step": "second_tab_counter",
+      "counter": "counter: 0"
+    }
+  ],
+  "console": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on pagehide"
+    }
+  ],
+  "bad": [
+    {
+      "url": "http://localhost:3260/components/logo.svg",
+      "status": 404
+    },
+    {
+      "url": "http://localhost:3260/app/items/7?x=1",
+      "status": 404
+    }
+  ],
+  "failed": [],
+  "index_js_urls": [
+    "http://localhost:3260/app/assets/manifest-769b828a.js",
+    "http://localhost:3260/app/assets/rolldown-runtime-hePW80VL.js",
+    "http://localhost:3260/app/assets/errorBoundaries-DgszZuaW.js",
+    "http://localhost:3260/app/assets/components-BbwT3tis.js",
+    "http://localhost:3260/app/assets/root-BsTMtk46.js",
+    "http://localhost:3260/app/assets/Icon-06QajYlU.js",
+    "http://localhost:3260/app/assets/entry.client-BEiZQ7cB.js",
+    "http://localhost:3260/app/assets/reflex-env-C8yPkmzy.js",
+    "http://localhost:3260/app/assets/emotion-react.browser.esm-Dp6ZD0zW.js",
+    "http://localhost:3260/app/assets/createLucideIcon-kSvtcEbI.js",
+    "http://localhost:3260/app/assets/wifi-off-Bk4bO0Ou.js",
+    "http://localhost:3260/app/assets/_index-B11dLawn.js",
+    "http://localhost:3260/app/assets/esm-BqsYz-g7.js",
+    "http://localhost:3260/app/assets/bpapp-DQJeOi9v.js"
+  ],
+  "deferred_js_urls": [
+    "http://localhost:3260/app/assets/_components_._index-B4jPk6mo.js",
+    "http://localhost:3260/app/assets/check-DaW6lV5K.js",
+    "http://localhost:3260/app/assets/x-D70YsX3T.js",
+    "http://localhost:3260/app/assets/core-BIAhRHAh.js",
+    "http://localhost:3260/app/assets/index.dom-Dex_K937.js",
+    "http://localhost:3260/app/assets/python-PcNiIBxw.js",
+    "http://localhost:3260/app/assets/rocket-DvGeHSo-.js"
+  ],
+  "console_errors": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ],
+  "console_warnings": []
+}

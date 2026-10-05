@@ -1,0 +1,84 @@
+########## 0.9.12a1 ##########
+{
+  "reflex": "0.9.12a1",
+  "var_type_pet": {
+    "ok": true,
+    "js": "__main__.Cat | __main__.Dog"
+  },
+  "pet_name": {
+    "ok": true,
+    "js": "reflex___state____state____main_____s.pet_rx_state_?.[\"name\"]"
+  },
+  "pet_kind": {
+    "ok": true,
+    "js": "reflex___state____state____main_____s.pet_rx_state_?.[\"kind\"]"
+  },
+  "pet_lives": {
+    "ok": true,
+    "js": "reflex___state____state____main_____s.pet_rx_state_?.[\"lives\"]"
+  },
+  "dict_value_access": {
+    "ok": true,
+    "js": "reflex___state____state____main_____s.by_name_rx_state_?.[\"momo\"]?.[\"name\"]"
+  },
+  "list_index": {
+    "ok": true,
+    "js": "reflex___state____state____main_____s.pets_rx_state_?.at?.(0)?.[\"name\"]"
+  },
+  "match_on_kind": {
+    "ok": true,
+    "js": "(() => { switch (JSON.stringify(reflex___state____state____main_____s.pet_rx_state_?.[\"kind\"])) {case JSON.stringify(\"cat\"):  return (\"meow\");  break;case JSON."
+  },
+  "cond_on_kind": {
+    "ok": true,
+    "js": "((reflex___state____state____main_____s.pet_rx_state_?.[\"kind\"]?.valueOf?.() === \"cat\"?.valueOf?.()) ? \"c\" : \"d\")"
+  },
+  "foreach": {
+    "ok": true,
+    "js": "Array.prototype.map.call(reflex___state____state____main_____s.pets_rx_state_ ?? [],((p_rx_state_,index_ce9ccefc907bd3b8d1834cf2e94162d8)=>(jsx(RadixThemesText,"
+  },
+  "annotated_int_math": {
+    "ok": true,
+    "js": "(reflex___state____state____main_____s.limit_rx_state_ + 1)"
+  },
+  "annotated_int_type": {
+    "ok": true,
+    "js": "<class 'int'>"
+  },
+  "annotated_list_len": {
+    "ok": true,
+    "js": "reflex___state____state____main_____s.tags_rx_state_.length"
+  },
+  "annotated_list_item_upper": {
+    "ok": true,
+    "js": "reflex___state____state____main_____s.tags_rx_state_?.at?.(0).toUpperCase()"
+  },
+  "nested_annotated": {
+    "ok": true,
+    "js": "(reflex___state____state____main_____s.nested_rx_state_ * 2)"
+  },
+  "handler_annotated_arg": {
+    "ok": true,
+    "js": "EventSpec(event_actions={}, handler=EventHandler(event_actions={}, fn=<function H.take at 0x7f92646a5760>), client_handler_name='', args=((Var(_js_expr='n', _va"
+  },
+  "handler_annotated_arg_spec": {
+    "ok": true,
+    "js": "EventHandler(event_actions={}, fn=<function H.take at 0x7f92646a5760>)"
+  },
+  "issubclass_annotated_int_int": {
+    "ok": true,
+    "val": true
+  },
+  "issubclass_int_annotated_int": {
+    "ok": true,
+    "val": true
+  },
+  "resolve_alias_annotated": {
+    "ok": true,
+    "val": "__main__.Cat | __main__.Dog"
+  },
+  "get_attribute_access_type": {
+    "ok": true,
+    "val": "None"
+  }
+}

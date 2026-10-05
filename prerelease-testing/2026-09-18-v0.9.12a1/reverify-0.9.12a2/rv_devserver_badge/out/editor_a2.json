@@ -1,0 +1,17 @@
+{
+  "portal_exists": true,
+  "portal_parent": "DIV",
+  "badge_present": true,
+  "carousel_css_rules": 40,
+  "overlay_imgs": [
+    "/green.png",
+    "/red.png",
+    "/green.png",
+    "/red.png"
+  ],
+  "carousel_root": "<div class=\"carousel-root\"><div class=\"carousel carousel-slider\" style=\"width: 100%;\"><ul class=\"control-dots\"><li class=\"dot selected\" value=\"0\" role=\"button\" ",
+  "gdg_overlay_any": "css-tjudwr gdg-wmyidgi",
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "label": "lazy1",
+  "pages": {
+    "/app/": {
+      "n_requests": 16,
+      "n_js": 14,
+      "js_bytes": 1243249,
+      "n_css": 1,
+      "css_bytes": 698265,
+      "total_bytes": 1951317,
+      "gzip_responses": 16,
+      "js_urls": [
+        "Icon-06QajYlU.js",
+        "_index-B11dLawn.js",
+        "bpapp-DQJeOi9v.js",
+        "components-BbwT3tis.js",
+        "createLucideIcon-kSvtcEbI.js",
+        "emotion-react.browser.esm-Dp6ZD0zW.js",
+        "entry.client-BEiZQ7cB.js",
+        "errorBoundaries-DgszZuaW.js",
+        "esm-BqsYz-g7.js",
+        "manifest-769b828a.js",
+        "reflex-env-C8yPkmzy.js",
+        "rolldown-runtime-hePW80VL.js",
+        "root-BsTMtk46.js",
+        "wifi-off-Bk4bO0Ou.js"
+      ]
+    },
+    "/app/about": {
+      "n_requests": 21,
+      "n_js": 17,
+      "js_bytes": 1852144,
+      "n_css": 2,
+      "css_bytes": 727337,
+      "total_bytes": 2591410,
+      "gzip_responses": 20,
+      "js_urls": [
+        "Icon-06QajYlU.js",
+        "_about_._index-DEtY5mon.js",
+        "bpapp-DQJeOi9v.js",
+        "components-BbwT3tis.js",
+        "core-BIAhRHAh.js",
+        "createLucideIcon-kSvtcEbI.js",
+        "emotion-react.browser.esm-Dp6ZD0zW.js",
+        "entry.client-BEiZQ7cB.js",
+        "errorBoundaries-DgszZuaW.js",
+        "esm-BqsYz-g7.js",
+        "index.dom-Dex_K937.js",
+        "manifest-769b828a.js",
+        "python-PcNiIBxw.js",
+        "reflex-env-C8yPkmzy.js",
+        "rolldown-runtime-hePW80VL.js",
+        "root-BsTMtk46.js",
+        "wifi-off-Bk4bO0Ou.js"
+      ]
+    },
+    "/app/components": {
+      "n_requests": 24,
+      "n_js": 20,
+      "js_bytes": 1276926,
+      "n_css": 1,
+      "css_bytes": 698265,
+      "total_bytes": 1987481,
+      "gzip_responses": 20,
+      "js_urls": [
+        "Icon-06QajYlU.js",
+        "_components_._index-B4jPk6mo.js",
+        "bpapp-DQJeOi9v.js",
+        "check-DaW6lV5K.js",
+        "components-BbwT3tis.js",
+        "core-BIAhRHAh.js",
+        "createLucideIcon-kSvtcEbI.js",
+        "emotion-react.browser.esm-Dp6ZD0zW.js",
+        "entry.client-BEiZQ7cB.js",
+        "errorBoundaries-DgszZuaW.js",
+        "esm-BqsYz-g7.js",
+        "index.dom-Dex_K937.js",
+        "manifest-769b828a.js",
+        "python-PcNiIBxw.js",
+        "reflex-env-C8yPkmzy.js",
+        "rocket-DvGeHSo-.js",
+        "rolldown-runtime-hePW80VL.js",
+        "root-BsTMtk46.js",
+        "wifi-off-Bk4bO0Ou.js",
+        "x-D70YsX3T.js"
+      ]
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "app": "counter",
+  "url": "http://localhost:3460/",
+  "tag": "base",
+  "load_seconds": 0.79,
+  "initial_count": "0",
+  "after_3_inc": "3",
+  "after_dec": "2",
+  "after_random": "4",
+  "after_reload": "4",
+  "flow_ok": true,
+  "console_notable": [],
+  "console_errors": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": [],
+  "screenshots": [
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/counter-base-load.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/counter-base-interacted.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/counter-base-after_reload.png"
+  ]
+}

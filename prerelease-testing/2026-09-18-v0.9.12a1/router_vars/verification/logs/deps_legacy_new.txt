@@ -1,0 +1,3 @@
+--- class created, now inspecting deps ---
+deps: {'reflex___state____state.__main_____s': {'rx_router_page', 'rx_router_headers', 'rx_router_route_id', 'rx_router_session', 'router', 'rx_router_url'}}
+static_deps: {None: {'rx_router_page', 'rx_router_headers', 'rx_router_route_id', 'rx_router_session', 'router', 'rx_router_url'}}

@@ -1,0 +1,231 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='dbapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', 
+db_url='sqlite:///reflex.db', async_db_url=None, redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'loglevel', 'db_url', 'app_name'},
+env_file=None, state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.12a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+envs/dbi_db/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='dbapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', 
+db_url='sqlite:///reflex.db', async_db_url=None, redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3920/
+App running at: http://localhost:3920/
+Backend running at: http://0.0.0.0:8920
+Debug:   ➜  Network: http://192.0.2.2:3920/  eth0
+Debug: 5:29:51 AM [vite] (ssr) connected.
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 916, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 907, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 704, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 470, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 304, in process_event
+    events = await fn(**payload)
+             ^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_db_optional_imports/dbapp/dbapp/dbapp.py", line 109, in 
+load_authors_async
+    async with rx.asession() as session:
+               ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex/model.py", line 698, in 
+asession
+    bind=get_async_engine(url),
+         ^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex/model.py", line 165, in 
+get_async_engine
+    raise ValueError(msg)
+ValueError: No async database url configured
+
+
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 916, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 907, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 704, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 488, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 304, in process_event
+    events = await fn(**payload)
+             ^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_db_optional_imports/dbapp/dbapp/dbapp.py", line 178, in bg_load
+    async with rx.asession() as session:
+               ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex/model.py", line 698, in 
+asession
+    bind=get_async_engine(url),
+         ^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex/model.py", line 165, in 
+get_async_engine
+    raise ValueError(msg)
+ValueError: No async database url configured
+
+
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 916, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 907, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 704, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 470, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/event/processor/base_state
+_processor.py", line 304, in process_event
+    events = await fn(**payload)
+             ^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_db_optional_imports/dbapp/dbapp/dbapp.py", line 109, in 
+load_authors_async
+    async with rx.asession() as session:
+               ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex/model.py", line 698, in 
+asession
+    bind=get_async_engine(url),
+         ^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex/model.py", line 165, in 
+get_async_engine
+    raise ValueError(msg)
+ValueError: No async database url configured
+
+
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 916, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/dbi_db/lib/python3.11/site-packages/reflex_base/event/processor/event_proc
+essor.py", line 907, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
