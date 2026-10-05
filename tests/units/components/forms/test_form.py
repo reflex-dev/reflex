@@ -2,6 +2,7 @@ import logging
 from typing import Any, TypedDict, TypeVar
 
 import pytest
+from reflex_base.components.component import Component
 from reflex_base.event import EventChain, prevent_default
 from reflex_base.utils.exceptions import (
     EventHandlerArgTypeMismatchError,
@@ -9,6 +10,8 @@ from reflex_base.utils.exceptions import (
 )
 from reflex_base.utils.form import FormData
 from reflex_base.vars.base import Var
+from reflex_components_core.core.debounce import DebounceInput
+from reflex_components_core.el.elements.base import BaseHTML
 from reflex_components_core.el.elements.forms import (
     AUTO_HEIGHT_JS,
     ENTER_KEY_SUBMIT_JS,
@@ -122,6 +125,76 @@ def test_on_submit_warns_for_controls_with_only_an_id(caplog):
     assert "`name`" in caplog.text
 
 
+def _native_control(tag: str) -> Component:
+    """Create a custom component rendering a native form control.
+
+    Args:
+        tag: The native element.
+
+    Returns:
+        The component, with an id but no name.
+    """
+
+    class NativeControl(BaseHTML):
+        pass
+
+    NativeControl.tag = tag
+    return NativeControl.create(id=f"native_{tag}")
+
+
+def _opted_in_control() -> Component:
+    """Create a custom component that opts in as a form control.
+
+    Returns:
+        The component, with an id but no name.
+    """
+
+    class CustomControl(rx.Component):
+        tag = "CustomControl"
+        _is_form_control = True
+
+    return CustomControl.create(id="custom_control")
+
+
+def _memoized_control() -> Component:
+    """Create a component whose memoized type is a form control.
+
+    Returns:
+        The component, with an id but no name.
+    """
+
+    class MemoizedInput(Input):
+        _is_form_control = False
+        _wrapped_component_type = Input
+
+    return MemoizedInput.create(id="memoized_input")
+
+
+@pytest.mark.parametrize(
+    ("control", "control_id"),
+    [
+        (lambda: _native_control("input"), "native_input"),
+        (lambda: _native_control("select"), "native_select"),
+        (lambda: _native_control("textarea"), "native_textarea"),
+        (_opted_in_control, "custom_control"),
+        (_memoized_control, "memoized_input"),
+        (
+            lambda: DebounceInput.create(
+                Input.create(id="debounced_input", on_change=rx.console_log)
+            ),
+            "debounced_input",
+        ),
+    ],
+)
+def test_on_submit_warns_for_custom_controls_with_only_an_id(
+    control, control_id, caplog
+):
+    """Custom, memoized and debounced controls count as form controls."""
+    with caplog.at_level(logging.WARNING):
+        HTMLForm.create(control(), on_submit=_SubmitState.on_submit)
+    assert repr(control_id) in caplog.text
+
+
 @pytest.mark.parametrize(
     "control",
     [
@@ -129,6 +202,8 @@ def test_on_submit_warns_for_controls_with_only_an_id(caplog):
         lambda: Input.create(id="submit_input", type="submit"),
         lambda: Input.create(id=Var(_js_expr="dynamic_id", _var_type=str)),
         lambda: rx.button("Submit", id="submit_button"),
+        lambda: rx.text("Email", id="email_label"),
+        lambda: rx.box(Input.create(name="wrapped_input"), id="input_wrapper"),
         lambda: Input.create(id="disabled_input", disabled=True),
     ],
 )

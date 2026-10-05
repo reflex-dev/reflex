@@ -43,6 +43,7 @@ from reflex_components_core.el.element import Element
 from .base import BaseHTML, RawTextBaseHTML, VoidBaseHTML
 
 _DYNAMIC_FORM_FIELD = object()
+_NATIVE_FORM_CONTROL_TAGS = frozenset({"input", "select", "textarea"})
 
 
 def _handle_submit_js_template(
@@ -160,6 +161,25 @@ def _get_static_string_prop(
     if isinstance(value, Var):
         return _DYNAMIC_FORM_FIELD
     return None
+
+
+def _is_form_control_component(component: BaseComponent) -> bool:
+    """Return whether a component or its memoized type is a form control.
+
+    Custom component classes can opt in with ``_is_form_control = True``.
+
+    Args:
+        component: The component to inspect.
+
+    Returns:
+        Whether the component contributes a form field.
+    """
+    if getattr(component, "_is_form_control", False):
+        return True
+    wrapped_component_type = getattr(component, "_wrapped_component_type", None)
+    if getattr(wrapped_component_type, "_is_form_control", False):
+        return True
+    return getattr(component, "tag", None) in _NATIVE_FORM_CONTROL_TAGS
 
 
 def _format_field_list(fields: tuple[str, ...]) -> str:
@@ -364,7 +384,7 @@ class Form(BaseHTML):
         has_dynamic_names = False
 
         for component in _iter_form_components(self):
-            if component is self or not getattr(component, "_is_form_control", False):
+            if component is self or not _is_form_control_component(component):
                 continue
 
             name = _get_static_string_prop(component, "name")
@@ -390,7 +410,7 @@ class Form(BaseHTML):
         for component in _iter_form_components(self):
             if (
                 component is self
-                or not getattr(component, "_is_form_control", False)
+                or not _is_form_control_component(component)
                 or _get_static_string_prop(component, "name") is not None
                 or _get_static_string_prop(component, "type") in _VALUELESS_INPUT_TYPES
                 # A disabled control is never submitted, named or not.

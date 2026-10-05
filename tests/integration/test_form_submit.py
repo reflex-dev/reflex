@@ -12,12 +12,21 @@ from selenium.webdriver.common.keys import Keys
 
 from reflex.testing import AppHarness
 
+FORM_CONTENT_WRAPPER_ID = "form_content_wrapper"
+FORM_ID = "form_id"
 
-def FormSubmitName(form_component):
+
+def FormSubmitName(
+    form_component,
+    form_id=FORM_ID,
+    form_content_wrapper_id=FORM_CONTENT_WRAPPER_ID,
+):
     """App with a form using on_submit.
 
     Args:
         form_component: The str name of the form component to use.
+        form_id: The form element ID.
+        form_content_wrapper_id: The non-control wrapper ID.
     """
     import reflex as rx
 
@@ -51,6 +60,7 @@ def FormSubmitName(form_component):
             eval(form_component)(
                 rx.vstack(
                     rx.input(name="name_input"),
+                    rx.input(name="empty_input"),
                     rx.input(id="id_only_input", default_value="unsubmitted"),
                     rx.el.input(type="hidden", name="tag", value="a"),
                     rx.el.input(type="hidden", name="tag", value="b"),
@@ -77,9 +87,11 @@ def FormSubmitName(form_component):
                     ),
                     rx.button("Submit", type_="submit"),
                     rx.icon_button(rx.icon(tag="plus")),
+                    id=form_content_wrapper_id,
                 ),
                 on_submit=[FormState.form_submit, FormState.form_submit_all],
                 custom_attrs={"action": "/invalid"},
+                id=form_id,
             ),
             rx.text(FormState.form_data.to_string(), id="form-data"),
             rx.text(FormState.tags.to_string(), id="tags"),
@@ -190,7 +202,10 @@ async def test_submit(driver, form_submit: AppHarness):
 
     print(form_data)
 
+    assert FORM_ID not in form_data
+    assert FORM_CONTENT_WRAPPER_ID not in form_data
     assert form_data["name_input"] == "foo"
+    assert form_data["empty_input"] == ""
     assert form_data["bool_input"]
     assert form_data["bool_input2"]
     assert not form_data.get("bool_input3", False)

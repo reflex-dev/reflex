@@ -7,7 +7,7 @@ import functools
 import inspect
 import logging
 import warnings
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from enum import Enum
 from importlib.util import find_spec
 from time import perf_counter
@@ -18,17 +18,18 @@ from reflex.istate.proxy import StateProxy
 from reflex.utils import types
 from reflex_base import otel
 from reflex_base.constants import CompileVars
+from reflex_base.event import Event, EventHandler, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegisteredEventHandler
 from reflex_base.utils.form import form_data_as_dict, transform_form_data
 from reflex_base.utils.format import format_event_handler
+from reflex_base.utils.serializers import deserializers
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from reflex.event import Event, EventHandler
     from reflex.state import BaseState
 
 # Resolved once at import: find_spec on a missing package scans sys.path (~90us),
@@ -77,7 +78,6 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
     Raises:
         TypeError: If any of the events are not valid.
     """
-    from reflex.event import Event, EventHandler, EventSpec
 
     def _is_valid_type(events: Any) -> bool:
         return isinstance(events, (Event, EventHandler, EventSpec))
@@ -122,9 +122,6 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
     Raises:
         ValueError: If a string value is received for an int or float type and cannot be converted.
     """
-    from reflex.model import Model
-    from reflex.utils.serializers import deserializers
-
     value = transform_form_data(value, hinted_args)
     if hinted_args is Any:
         return value
@@ -137,6 +134,8 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
         and isinstance(hinted_args, type)
         and not types.is_generic_alias(hinted_args)  # py3.10
     ):
+        from reflex.model import Model
+
         if issubclass(hinted_args, Model):
             # Remove non-fields from the payload
             return hinted_args(**{
@@ -183,7 +182,7 @@ def _transform_event_payload(
         The transformed event payload.
     """
     transformed = {}
-    for arg, value in list(payload.items()):
+    for arg, value in payload.items():
         hinted_args = type_hints.get(arg, Any)
         try:
             transformed[arg] = _transform_event_arg(value, hinted_args)
@@ -194,23 +193,29 @@ def _transform_event_payload(
 
 
 def _prepare_event_payload(
-    fn: Callable[..., Any], payload: Mapping[str, Any]
+    handler: EventHandler, payload: Mapping[str, Any]
 ) -> dict[str, Any]:
     """Transform an event payload for a handler's annotations.
 
     Args:
-        fn: The handler function.
+        handler: The event handler.
         payload: The event payload.
 
     Returns:
         The transformed payload or, when it cannot be transformed, the original
-        payload with any form data as a dict of each name's last value.
+        payload with any form data as a dict.
     """
     try:
-        return _transform_event_payload(payload, types.get_type_hints(fn))
+        # Resolved hints are cached on the handler, empty for an unannotated one;
+        # fall back for ones that were not resolvable at registration (None),
+        # raising again if still unresolved.
+        type_hints = handler._type_hints
+        if type_hints is None:
+            type_hints = types.get_type_hints(handler.fn)
+        return _transform_event_payload(payload, type_hints)
     except Exception as ex:
         logger.warning(
-            f"Error transforming event payload for handler {fn.__qualname__}: {ex}"
+            f"Error transforming event payload for handler {handler.fn.__qualname__}: {ex}"
         )
         return {arg: form_data_as_dict(value) for arg, value in payload.items()}
 
@@ -255,8 +260,6 @@ async def chain_updates(
         handler_name: The name of the handler that yielded the events, used for error messages.
         root_state: The root state of the app, no delta emitted if omitted.
     """
-    from reflex.event import Event
-
     ctx = EventContext.get()
 
     if root_state is not None:
@@ -274,8 +277,10 @@ async def chain_updates(
             root_state._clean()
 
     # Convert valid EventHandler and EventSpec into Event
-    if fixed_events := Event.from_event_type(
-        _check_valid_yield(events, handler_name=handler_name),
+    if events is not None and (
+        fixed_events := Event.from_event_type(
+            _check_valid_yield(events, handler_name=handler_name),
+        )
     ):
         await _route_events(ctx, fixed_events)
 
@@ -329,19 +334,17 @@ async def process_event(
     Raises:
         ValueError: If a string value is received for an int or float type and cannot be converted.
     """
-    handler_name = handler.fn.__qualname__
-
-    # Get the function to process the event.
-    fn = functools.partial(handler.fn, state)
-    payload = _prepare_event_payload(handler.fn, payload)
+    fn = handler.fn
+    handler_name = fn.__qualname__
+    payload = _prepare_event_payload(handler, payload)
 
     # Handle async functions.
-    if inspect.iscoroutinefunction(fn.func):
-        events = await fn(**payload)
+    if handler._is_coroutine_function:
+        events = await fn(state, **payload)
 
     # Handle regular functions.
     else:
-        events = fn(**payload)
+        events = fn(state, **payload)
     # Handle async generators.
     if inspect.isasyncgen(events):
         async for event in events:
@@ -484,16 +487,14 @@ class BaseStateEventProcessor(EventProcessor):
         ) as state:
             if otel.enabled:
                 otel.record_state_acquired(acquire_start, event)
+            previous_router_data = state.router_data
             # Compatibility hack rehydrate the state before processing this event.
             needs_to_rehydrate = bool(
-                not state.router_data and event.name not in _hydrate_event_names()
+                not previous_router_data and event.name not in _hydrate_event_names()
             )
 
             # re-assign only when the value is set and different
-            if (
-                router_data
-                and (previous_router_data := state.router_data) != router_data
-            ):
+            if router_data and previous_router_data != router_data:
                 # only the router vars whose backing keys changed are rebuilt
                 # and re-sent; session/headers stay put across navigations.
                 merged_router_data = state._update_router_vars(
@@ -519,7 +520,7 @@ class BaseStateEventProcessor(EventProcessor):
                 return
 
             # Get the event's substate.
-            substate = await state.get_state(event.state_cls)
+            substate = await state.get_state(registered_handler.states[0])
             root_state = state._get_root_state()
 
             if needs_to_rehydrate:
