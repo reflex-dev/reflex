@@ -9,7 +9,12 @@ export async function createQueueRuntime(
     throw new Error("Unexpected frontend dependency in queue test");
   };
   const app = {
-    initialEvents: () => [],
+    initialEvents: (first) => [
+      {
+        name: "reflex___state.test.hydrate_and_load",
+        payload: first ? { hashes: { test_state: "compiled-defaults" } } : {},
+      },
+    ],
     initialState: {},
     onLoadInternalEvent: unused,
     state_name: "test_state",

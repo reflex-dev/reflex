@@ -152,12 +152,20 @@ test("cold websocket hydrates before cookie exchange completes", async () => {
       }),
   });
   assert.equal(tab.runtime.getToken(), "");
-  tab.runtime.event_queue.push({ name: "reflex___state.test.hydrate" });
   await tab.connect();
   assert.deepEqual(tab.connections, [""]);
+  assert.equal(
+    tab.socket.current.auth.event.name,
+    "reflex___state.test.hydrate_and_load",
+  );
+  assert.deepEqual(tab.socket.current.auth.event.payload.hashes, {
+    test_state: "compiled-defaults",
+  });
   assert.equal(tab.requests.length, 0);
   const { exchange } = await tab.accept("bound-tab", "signed-credential");
   assert.equal(tab.runtime.event_queue.length, 0);
+  tab.runtime.event_queue.push({ name: "reflex___state.test.after_hydrate" });
+  await tab.runtime.processEvent(tab.socket.current, () => {}, { current: {} });
   assert.equal(tab.emitted.length, 1);
   const [url, options] = tab.requests[0];
   assert.equal(url, "http://localhost:8000/prefix/_reflex/session");
@@ -239,6 +247,12 @@ test("fresh hint reconnects directly without HTTP or a lock", async () => {
   });
   await tab.connect();
   assert.deepEqual(tab.connections, ["existing-tab"]);
+  assert.equal(tab.requests.length, 0);
+  await tab.accept("existing-tab");
+  tab.socket.current.disconnect();
+  await tab.socket.current.reconnect();
+  assert.deepEqual(tab.connections, ["existing-tab", "existing-tab"]);
+  assert.equal(tab.socket.current.auth.event.payload.hashes, undefined);
   assert.equal(tab.requests.length, 0);
 });
 
