@@ -26,7 +26,6 @@ _CLI_STARTUP_DENIED_MODULES = frozenset({
     "redis",
     "reflex.app",
     "reflex.compiler",
-    "reflex.custom_components.custom_components",
     "reflex.model",
     "reflex.state",
     "reflex.utils.frontend_skeleton",
@@ -38,9 +37,6 @@ _CLI_STARTUP_DENIED_MODULES = frozenset({
     "starlette",
     "uvicorn",
 })
-_COMPONENT_HELP_DENIED_MODULES = _CLI_STARTUP_DENIED_MODULES - {
-    "reflex.custom_components.custom_components"
-}
 
 
 def _run_cli_probe(probe: str) -> dict[str, object]:
@@ -73,7 +69,6 @@ def _run_cli_probe(probe: str) -> dict[str, object]:
         (["--help"], _CLI_STARTUP_DENIED_MODULES),
         (["--version"], _CLI_STARTUP_DENIED_MODULES),
         (["run", "--help"], _CLI_STARTUP_DENIED_MODULES),
-        (["component", "--help"], _COMPONENT_HELP_DENIED_MODULES),
         (
             ["deploy", "--help"],
             _CLI_STARTUP_DENIED_MODULES - {"reflex_cli.v2.deploy"},
@@ -87,7 +82,6 @@ def _run_cli_probe(probe: str) -> dict[str, object]:
         "help",
         "version",
         "run-help",
-        "component-help",
         "deploy-help",
         "cloud-help",
     ],
@@ -228,28 +222,33 @@ print(json.dumps({
     }
 
 
-def test_component_command_registered_lazily():
-    """The component command preserves its help while loading on demand."""
-    command = reflex.cli.commands["component"]
-
-    assert isinstance(command, reflex._LazyCommand)
-    result = click.testing.CliRunner().invoke(reflex.cli, ["component", "--help"])
-
-    assert result.exit_code == 0
-    resolved_command = command._resolved_command
-    assert resolved_command is not None
-    assert command.help == resolved_command.help
-    assert "CLI for creating custom components." in result.output
+def test_component_command_is_not_registered():
+    """The custom components CLI has been removed."""
+    assert "component" not in reflex.cli.commands
 
 
-def test_lazy_command_delegates_click_introspection():
+def test_lazy_command_delegates_click_introspection(monkeypatch: pytest.MonkeyPatch):
     """Click integrations inspecting a registered command see its real metadata."""
-    command = reflex._LazyCommand(
-        "component",
-        "reflex.custom_components.custom_components:custom_components_cli",
-        help="CLI for creating custom components.",
+
+    @click.group()
+    def implementation():
+        pass
+
+    @implementation.command()
+    def build():
+        pass
+
+    monkeypatch.setattr(
+        reflex,
+        "import_module",
+        lambda name: type("Commands", (), {"implementation": implementation}),
     )
-    context = click.Context(command, info_name="component")
+    command = reflex._LazyCommand(
+        "implementation",
+        "commands:implementation",
+        help="Test command.",
+    )
+    context = click.Context(command, info_name="implementation")
 
     help_text = command.get_help(context)
     params = command.get_params(context)
@@ -520,3 +519,21 @@ def test_db_commands_with_partial_db_install_point_to_install(
     assert result.exit_code == 1
     assert "pip install reflex[db]" in caplog.text
     assert not isinstance(result.exception, ImportError)
+
+
+def test_db_commands_run_without_sqlmodel(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """Db commands run with sqlalchemy and alembic installed but not sqlmodel."""
+    from reflex.utils import prerequisites
+
+    monkeypatch.setattr(
+        reflex, "find_spec", lambda name: None if name == "sqlmodel" else object()
+    )
+    monkeypatch.setattr(prerequisites, "get_app", lambda: None)
+    monkeypatch.setattr(prerequisites, "check_db_initialized", lambda: False)
+
+    result = click.testing.CliRunner().invoke(reflex.db_cli, ["migrate"])
+
+    assert result.exit_code == 0, result.output
+    assert "pip install reflex[db]" not in caplog.text

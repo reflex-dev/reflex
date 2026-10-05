@@ -303,12 +303,10 @@ class StateManagerDisk(StateManager):
             token: The token used to identify the state object.
             substate: The substate to set.
         """
-        substate_token = token.with_cls(type(substate))
-
         if token.get_and_reset_touched_state(substate):
             pickle_state = token.serialize(substate)
             if pickle_state:
-                token_path = self.token_path(substate_token)
+                token_path = self.token_path(token.with_cls(type(substate)))
 
                 def _write() -> None:
                     try:

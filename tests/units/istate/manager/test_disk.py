@@ -334,3 +334,46 @@ async def test_populate_substates_loads_stored_substates(
     assert child.parent_state is root
     assert grandchild.parent_state is child
     await reader.close()
+
+
+@pytest.mark.asyncio
+async def test_set_state_for_substate_builds_tokens_for_written_states_only(
+    tmp_path, monkeypatch
+):
+    """Writing a tree derives a token only for the states that are written.
+
+    Args:
+        tmp_path: A temporary directory.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(prerequisites, "get_states_dir", lambda: tmp_path)
+
+    class DiskTreeParent(BaseState):
+        value: int = 0
+
+    class DiskTreeFirst(DiskTreeParent):
+        value_first: int = 0
+
+    class DiskTreeSecond(DiskTreeParent):
+        value_second: int = 0
+
+    state_manager = StateManagerDisk(_write_debounce_seconds=0)
+    token = BaseStateToken(ident="client", cls=DiskTreeParent)
+    state = await state_manager.get_state(token)
+    assert isinstance(state, DiskTreeParent)
+    assert len(state.substates) == 2
+    state.substates[DiskTreeFirst.get_name()].value_first = 1  # pyright: ignore [reportAttributeAccessIssue]
+
+    written: list[type[BaseState]] = []
+    with_cls = BaseStateToken.with_cls
+
+    def recording_with_cls(self, cls):
+        written.append(cls)
+        return with_cls(self, cls)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(BaseStateToken, "with_cls", recording_with_cls)
+        await state_manager.set_state_for_substate(token, state)
+
+    assert written == [DiskTreeFirst]
+    await state_manager.close()
