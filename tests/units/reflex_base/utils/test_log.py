@@ -1008,10 +1008,16 @@ for i in range(200):
 """
 
 
-def test_supervise_output_drains_everything_for_a_slow_consumer(tmp_path):
+@pytest.mark.parametrize("drain_max_seconds", [log._DRAIN_MAX_SECONDS, 0.05])
+def test_supervise_output_drains_everything_for_a_slow_consumer(
+    tmp_path, drain_max_seconds
+):
     """Output still in the pipes at exit reaches a consumer that reads late."""
     script = tmp_path / "burst.py"
-    script.write_text(_BURST_SCRIPT)
+    script.write_text(
+        f"from reflex_base.utils import log\n"
+        f"log._DRAIN_MAX_SECONDS = {drain_max_seconds}\n" + _BURST_SCRIPT
+    )
     with subprocess.Popen(
         [sys.executable, str(script)],
         stdout=subprocess.PIPE,
@@ -1024,6 +1030,7 @@ def test_supervise_output_drains_everything_for_a_slow_consumer(tmp_path):
             lines.append(line)
             time.sleep(0.015)
         proc.wait(timeout=30)
+    assert proc.returncode == 0
     assert len(lines) == 200
     assert json.loads(lines[-1])["message"].startswith("line 199 ")
 

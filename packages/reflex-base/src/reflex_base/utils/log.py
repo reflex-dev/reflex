@@ -272,7 +272,7 @@ _SUPERVISED_ENV_VAR = "REFLEX_OUTPUT_SUPERVISED"
 # stops waiting for descendants that still hold the pipe.
 _DRAIN_IDLE_SECONDS = 0.5
 
-# How long the supervisor drains the pipes after the child exits, at most.
+# Maximum drain time after the child exits, excluding time forwarding output.
 _DRAIN_MAX_SECONDS = 5
 
 # Line ends in child output; a lone ``\r`` ends a progress-bar update.
@@ -390,6 +390,8 @@ class _OutputPump(threading.Thread):
         self.logger_name = name
         # When the reader started waiting for data; None while it works.
         self.idle_since: float | None = None
+        # Publish completed write time and the current write's start together.
+        self._write_state: tuple[float, float | None] = (0.0, None)
 
     def run(self):
         """Forward the pipe until every writer closed it."""
@@ -420,25 +422,45 @@ class _OutputPump(threading.Thread):
             final: Whether the output ended.
         """
         data = _to_records(lines, traceback, self.level, self.logger_name, final)
+        elapsed, _ = self._write_state
+        started = time.monotonic()
+        self._write_state = (elapsed, started)
         # Keep reading when the consumer is gone: a full pipe blocks the child.
         with contextlib.suppress(OSError):
             _write_all(self.write_fd, data)
+        self._write_state = (elapsed + time.monotonic() - started, None)
 
-    def drain(self, exited_at: float):
+    def writing_elapsed(self, now: float) -> float:
+        """Measure time spent forwarding output, including a blocked write.
+
+        Args:
+            now: The current monotonic time.
+
+        Returns:
+            The cumulative time spent writing.
+        """
+        elapsed, started = self._write_state
+        return elapsed if started is None else elapsed + now - started
+
+    def drain(self, exited_at: float, writing_at_exit: float):
         """Wait until the pipe is drained after the child exited.
 
         Returns early when the reader sat idle for a while after the exit, or
-        when the drain took too long: only a descendant that outlived the
-        child still holds the pipe.
+        when the drain took too long. Time spent forwarding output does not
+        count toward the limit, so a slow consumer cannot truncate output.
 
         Args:
             exited_at: The monotonic time the child exited.
+            writing_at_exit: The cumulative write time when the child exited.
         """
         while self.is_alive():
             self.join(0.05)
             now = time.monotonic()
             idle_since = self.idle_since
-            if now - exited_at > _DRAIN_MAX_SECONDS or (
+            drain_elapsed = (
+                now - exited_at - (self.writing_elapsed(now) - writing_at_exit)
+            )
+            if drain_elapsed > _DRAIN_MAX_SECONDS or (
                 idle_since is not None
                 and now - max(idle_since, exited_at) > _DRAIN_IDLE_SECONDS
             ):
@@ -493,8 +515,9 @@ def supervise_output(args: list[str]) -> int:
             # The child gets the same interrupt and shuts down on its own.
             continue
     exited_at = time.monotonic()
-    for pump in pumps:
-        pump.drain(exited_at)
+    write_times_at_exit = [pump.writing_elapsed(exited_at) for pump in pumps]
+    for pump, writing_at_exit in zip(pumps, write_times_at_exit, strict=True):
+        pump.drain(exited_at, writing_at_exit)
     # A child killed by a signal reports -signum; shells report 128 + signum.
     return returncode if returncode >= 0 else 128 - returncode
 
