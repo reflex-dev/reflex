@@ -1,0 +1,32 @@
+{
+  "observed_utc": "2026-10-05T23:28:37.207320+00:00",
+  "reflex": "0.10.0a1",
+  "neutral_reflex_dir": "/private/tmp/reflex-pre-js-runtime-20261005",
+  "desired_bun": "1.4.2",
+  "minimum_bun": "1.4.0",
+  "neutral_bun_version": "1.4.2",
+  "original_global_bun_version": "1.4.0",
+  "profile_temporary_path_absent": true,
+  "extra_states": 1500,
+  "build": "PASS",
+  "production_start": "PASS",
+  "article_http": {
+    "status": 200,
+    "bytes": 5309
+  },
+  "root_html_contains_runtime_qa": true,
+  "entry_asset": "entry.client-qPZbTPY2.js",
+  "in_app_browser": "Unavailable during follow-up; fresh runtime independently tested with native Chrome",
+  "independent_browser": {
+    "browser": "native Chrome 154.0.8037.98",
+    "driver": "published Playwright 1.63.0",
+    "body": "Built with Reflex",
+    "page_error": "Maximum call stack size exceeded",
+    "evidence": "../../lifecycle/evidence/fresh-bun-scale/browser.json",
+    "captured_document_js_css_http_statuses": [
+      200
+    ],
+    "console_404_without_resource_url": true
+  },
+  "cleanup": "Fresh server stopped after root browser collection; no listeners on 3133/8133"
+}

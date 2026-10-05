@@ -1,0 +1,1296 @@
+{
+  "scenarios": [
+    {
+      "name": "concurrent",
+      "assertions": [
+        {
+          "selector": "#upload-status",
+          "expected": "done:first.txt",
+          "actual": "done:first.txt"
+        },
+        {
+          "selector": "#uploaded-bytes",
+          "expected": "41",
+          "actual": "41"
+        },
+        {
+          "selector": "#upload-count",
+          "expected": "1",
+          "actual": "1"
+        },
+        {
+          "selector": "#upload-status",
+          "expected": "done:second.txt",
+          "actual": "done:second.txt"
+        },
+        {
+          "selector": "#uploaded-bytes",
+          "expected": "41",
+          "actual": "41"
+        },
+        {
+          "selector": "#upload-count",
+          "expected": "1",
+          "actual": "1"
+        }
+      ],
+      "started": 15718.768352083,
+      "status": "pass",
+      "duration_seconds": 3.807
+    },
+    {
+      "name": "unrelated",
+      "assertions": [
+        {
+          "selector": "#upload-status",
+          "expected": "received:quick.txt",
+          "actual": "received:quick.txt"
+        },
+        {
+          "selector": "#upload-status",
+          "expected": "done:quick.txt",
+          "actual": "done:quick.txt"
+        },
+        {
+          "selector": "#delayed-count",
+          "expected": "0",
+          "actual": "0"
+        },
+        {
+          "selector": "#delayed-count",
+          "expected": "1",
+          "actual": "1"
+        }
+      ],
+      "started": 15722.575695375,
+      "timing_separation_seconds": 0.7573302079999849,
+      "status": "pass",
+      "duration_seconds": 3.321
+    },
+    {
+      "name": "disconnect",
+      "assertions": [
+        {
+          "selector": "#upload-status",
+          "expected": "received:slow-disconnect.txt",
+          "actual": "received:slow-disconnect.txt"
+        },
+        {
+          "selector": "#delayed-count",
+          "expected": "1",
+          "actual": "1"
+        },
+        {
+          "selector": "#ordinary-count",
+          "expected": "1",
+          "actual": "1"
+        }
+      ],
+      "started": 15725.903603875,
+      "status": "pass",
+      "duration_seconds": 3.124
+    },
+    {
+      "name": "navigation",
+      "assertions": [
+        {
+          "selector": "#upload-status",
+          "expected": "received:slow-navigation.txt",
+          "actual": "received:slow-navigation.txt"
+        },
+        {
+          "selector": "#nav-status",
+          "expected": "slow-started",
+          "actual": "slow-started"
+        },
+        {
+          "selector": "#nav-status",
+          "expected": "new-loaded",
+          "actual": "new-loaded"
+        },
+        {
+          "selector": "#upload-status",
+          "expected": "done:slow-navigation.txt",
+          "actual": "done:slow-navigation.txt"
+        }
+      ],
+      "started": 15729.028099916,
+      "status": "pass",
+      "duration_seconds": 3.384
+    },
+    {
+      "name": "recovery",
+      "assertions": [
+        {
+          "selector": "#recovered",
+          "expected": "1",
+          "actual": "1"
+        },
+        {
+          "selector": "#upload-status",
+          "expected": "recovered",
+          "actual": "recovered"
+        },
+        {
+          "selector": "#ordinary-count",
+          "expected": "1",
+          "actual": "1"
+        }
+      ],
+      "started": 15732.412367666,
+      "late_delta_separation_seconds": 0.3511794580008427,
+      "status": "pass",
+      "duration_seconds": 1.728
+    },
+    {
+      "name": "http_disconnect",
+      "assertions": [
+        {
+          "selector": "#delayed-count",
+          "expected": "1",
+          "actual": "1"
+        },
+        {
+          "selector": "#ordinary-count",
+          "expected": "1",
+          "actual": "1"
+        }
+      ],
+      "started": 15734.141666708,
+      "http_consumer": {
+        "status": 200,
+        "first_delta": {
+          "reflex___state____state.upload_probe___upload_probe____upload_state": {
+            "http_status_rx_state_": "started"
+          }
+        }
+      },
+      "status": "pass",
+      "duration_seconds": 3.22
+    },
+    {
+      "name": "tracing",
+      "assertions": [
+        {
+          "selector": "#chunk-done",
+          "expected": "done",
+          "actual": "done"
+        },
+        {
+          "selector": "#chunk-bytes",
+          "expected": "328000",
+          "actual": "328000"
+        },
+        {
+          "selector": "#api-count",
+          "expected": "1",
+          "actual": "1"
+        }
+      ],
+      "started": 15737.36197425,
+      "lineage_assertions": {
+        "chunk_txid": "26ed4bd23112",
+        "api_parent_txid": "ad656430da12",
+        "api_child_txid": "6fd17dce86ad",
+        "buffered_top_level_spans": 6
+      },
+      "status": "pass",
+      "duration_seconds": 0.993
+    }
+  ],
+  "console": [
+    {
+      "page": "concurrent-a",
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "location": {
+        "url": "http://localhost:3111/",
+        "line": 23,
+        "column": 22,
+        "lineNumber": 23,
+        "columnNumber": 22
+      }
+    },
+    {
+      "page": "concurrent-a",
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 933,
+        "column": 8,
+        "lineNumber": 933,
+        "columnNumber": 8
+      }
+    },
+    {
+      "page": "concurrent-a",
+      "type": "debug",
+      "text": "[vite] connected.",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 1046,
+        "column": 11,
+        "lineNumber": 1046,
+        "columnNumber": 11
+      }
+    },
+    {
+      "page": "concurrent-a",
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "location": {
+        "url": "http://localhost:3111/node_modules/.vite/deps/react-dom_client.js?v=2b4ac753",
+        "line": 15804,
+        "column": 48,
+        "lineNumber": 15804,
+        "columnNumber": 48
+      }
+    },
+    {
+      "page": "concurrent-b",
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "location": {
+        "url": "http://localhost:3111/",
+        "line": 23,
+        "column": 22,
+        "lineNumber": 23,
+        "columnNumber": 22
+      }
+    },
+    {
+      "page": "concurrent-b",
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 933,
+        "column": 8,
+        "lineNumber": 933,
+        "columnNumber": 8
+      }
+    },
+    {
+      "page": "concurrent-b",
+      "type": "debug",
+      "text": "[vite] connected.",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 1046,
+        "column": 11,
+        "lineNumber": 1046,
+        "columnNumber": 11
+      }
+    },
+    {
+      "page": "concurrent-b",
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "location": {
+        "url": "http://localhost:3111/node_modules/.vite/deps/react-dom_client.js?v=2b4ac753",
+        "line": 15804,
+        "column": 48,
+        "lineNumber": 15804,
+        "columnNumber": 48
+      }
+    },
+    {
+      "page": "concurrent-a",
+      "type": "log",
+      "text": "Disconnect websocket on pagehide",
+      "location": {
+        "url": "http://localhost:3111/utils/state.js",
+        "line": 788,
+        "column": 14,
+        "lineNumber": 788,
+        "columnNumber": 14
+      }
+    },
+    {
+      "page": "concurrent-b",
+      "type": "log",
+      "text": "Disconnect websocket on pagehide",
+      "location": {
+        "url": "http://localhost:3111/utils/state.js",
+        "line": 788,
+        "column": 14,
+        "lineNumber": 788,
+        "columnNumber": 14
+      }
+    },
+    {
+      "page": "unrelated-upload",
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "location": {
+        "url": "http://localhost:3111/",
+        "line": 23,
+        "column": 22,
+        "lineNumber": 23,
+        "columnNumber": 22
+      }
+    },
+    {
+      "page": "unrelated-upload",
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 933,
+        "column": 8,
+        "lineNumber": 933,
+        "columnNumber": 8
+      }
+    },
+    {
+      "page": "unrelated-upload",
+      "type": "debug",
+      "text": "[vite] connected.",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 1046,
+        "column": 11,
+        "lineNumber": 1046,
+        "columnNumber": 11
+      }
+    },
+    {
+      "page": "unrelated-upload",
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "location": {
+        "url": "http://localhost:3111/node_modules/.vite/deps/react-dom_client.js?v=2b4ac753",
+        "line": 15804,
+        "column": 48,
+        "lineNumber": 15804,
+        "columnNumber": 48
+      }
+    },
+    {
+      "page": "unrelated-ordinary",
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "location": {
+        "url": "http://localhost:3111/",
+        "line": 23,
+        "column": 22,
+        "lineNumber": 23,
+        "columnNumber": 22
+      }
+    },
+    {
+      "page": "unrelated-ordinary",
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 933,
+        "column": 8,
+        "lineNumber": 933,
+        "columnNumber": 8
+      }
+    },
+    {
+      "page": "unrelated-ordinary",
+      "type": "debug",
+      "text": "[vite] connected.",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 1046,
+        "column": 11,
+        "lineNumber": 1046,
+        "columnNumber": 11
+      }
+    },
+    {
+      "page": "unrelated-ordinary",
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "location": {
+        "url": "http://localhost:3111/node_modules/.vite/deps/react-dom_client.js?v=2b4ac753",
+        "line": 15804,
+        "column": 48,
+        "lineNumber": 15804,
+        "columnNumber": 48
+      }
+    },
+    {
+      "page": "unrelated-upload",
+      "type": "log",
+      "text": "Disconnect websocket on pagehide",
+      "location": {
+        "url": "http://localhost:3111/utils/state.js",
+        "line": 788,
+        "column": 14,
+        "lineNumber": 788,
+        "columnNumber": 14
+      }
+    },
+    {
+      "page": "unrelated-ordinary",
+      "type": "log",
+      "text": "Disconnect websocket on pagehide",
+      "location": {
+        "url": "http://localhost:3111/utils/state.js",
+        "line": 788,
+        "column": 14,
+        "lineNumber": 788,
+        "columnNumber": 14
+      }
+    },
+    {
+      "page": "disconnect-upload",
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "location": {
+        "url": "http://localhost:3111/",
+        "line": 23,
+        "column": 22,
+        "lineNumber": 23,
+        "columnNumber": 22
+      }
+    },
+    {
+      "page": "disconnect-upload",
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 933,
+        "column": 8,
+        "lineNumber": 933,
+        "columnNumber": 8
+      }
+    },
+    {
+      "page": "disconnect-upload",
+      "type": "debug",
+      "text": "[vite] connected.",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 1046,
+        "column": 11,
+        "lineNumber": 1046,
+        "columnNumber": 11
+      }
+    },
+    {
+      "page": "disconnect-upload",
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "location": {
+        "url": "http://localhost:3111/node_modules/.vite/deps/react-dom_client.js?v=2b4ac753",
+        "line": 15804,
+        "column": 48,
+        "lineNumber": 15804,
+        "columnNumber": 48
+      }
+    },
+    {
+      "page": "disconnect-other",
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "location": {
+        "url": "http://localhost:3111/",
+        "line": 23,
+        "column": 22,
+        "lineNumber": 23,
+        "columnNumber": 22
+      }
+    },
+    {
+      "page": "disconnect-other",
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 933,
+        "column": 8,
+        "lineNumber": 933,
+        "columnNumber": 8
+      }
+    },
+    {
+      "page": "disconnect-other",
+      "type": "debug",
+      "text": "[vite] connected.",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 1046,
+        "column": 11,
+        "lineNumber": 1046,
+        "columnNumber": 11
+      }
+    },
+    {
+      "page": "disconnect-other",
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "location": {
+        "url": "http://localhost:3111/node_modules/.vite/deps/react-dom_client.js?v=2b4ac753",
+        "line": 15804,
+        "column": 48,
+        "lineNumber": 15804,
+        "columnNumber": 48
+      }
+    },
+    {
+      "page": "disconnect-upload",
+      "type": "log",
+      "text": "Disconnect websocket on pagehide",
+      "location": {
+        "url": "http://localhost:3111/utils/state.js",
+        "line": 788,
+        "column": 14,
+        "lineNumber": 788,
+        "columnNumber": 14
+      }
+    },
+    {
+      "page": "disconnect-other",
+      "type": "log",
+      "text": "Disconnect websocket on pagehide",
+      "location": {
+        "url": "http://localhost:3111/utils/state.js",
+        "line": 788,
+        "column": 14,
+        "lineNumber": 788,
+        "columnNumber": 14
+      }
+    },
+    {
+      "page": "navigation",
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "location": {
+        "url": "http://localhost:3111/",
+        "line": 23,
+        "column": 22,
+        "lineNumber": 23,
+        "columnNumber": 22
+      }
+    },
+    {
+      "page": "navigation",
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 933,
+        "column": 8,
+        "lineNumber": 933,
+        "columnNumber": 8
+      }
+    },
+    {
+      "page": "navigation",
+      "type": "debug",
+      "text": "[vite] connected.",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 1046,
+        "column": 11,
+        "lineNumber": 1046,
+        "columnNumber": 11
+      }
+    },
+    {
+      "page": "navigation",
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "location": {
+        "url": "http://localhost:3111/node_modules/.vite/deps/react-dom_client.js?v=2b4ac753",
+        "line": 15804,
+        "column": 48,
+        "lineNumber": 15804,
+        "columnNumber": 48
+      }
+    },
+    {
+      "page": "navigation",
+      "type": "log",
+      "text": "Disconnect websocket on pagehide",
+      "location": {
+        "url": "http://localhost:3111/utils/state.js",
+        "line": 788,
+        "column": 14,
+        "lineNumber": 788,
+        "columnNumber": 14
+      }
+    },
+    {
+      "page": "recovery",
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "location": {
+        "url": "http://localhost:3111/",
+        "line": 23,
+        "column": 22,
+        "lineNumber": 23,
+        "columnNumber": 22
+      }
+    },
+    {
+      "page": "recovery",
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 933,
+        "column": 8,
+        "lineNumber": 933,
+        "columnNumber": 8
+      }
+    },
+    {
+      "page": "recovery",
+      "type": "debug",
+      "text": "[vite] connected.",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 1046,
+        "column": 11,
+        "lineNumber": 1046,
+        "columnNumber": 11
+      }
+    },
+    {
+      "page": "recovery",
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "location": {
+        "url": "http://localhost:3111/node_modules/.vite/deps/react-dom_client.js?v=2b4ac753",
+        "line": 15804,
+        "column": 48,
+        "lineNumber": 15804,
+        "columnNumber": 48
+      }
+    },
+    {
+      "page": "recovery",
+      "type": "log",
+      "text": "Disconnect websocket on pagehide",
+      "location": {
+        "url": "http://localhost:3111/utils/state.js",
+        "line": 788,
+        "column": 14,
+        "lineNumber": 788,
+        "columnNumber": 14
+      }
+    },
+    {
+      "page": "http-stream-owner",
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "location": {
+        "url": "http://localhost:3111/",
+        "line": 23,
+        "column": 22,
+        "lineNumber": 23,
+        "columnNumber": 22
+      }
+    },
+    {
+      "page": "http-stream-owner",
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 933,
+        "column": 8,
+        "lineNumber": 933,
+        "columnNumber": 8
+      }
+    },
+    {
+      "page": "http-stream-owner",
+      "type": "debug",
+      "text": "[vite] connected.",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 1046,
+        "column": 11,
+        "lineNumber": 1046,
+        "columnNumber": 11
+      }
+    },
+    {
+      "page": "http-stream-owner",
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "location": {
+        "url": "http://localhost:3111/node_modules/.vite/deps/react-dom_client.js?v=2b4ac753",
+        "line": 15804,
+        "column": 48,
+        "lineNumber": 15804,
+        "columnNumber": 48
+      }
+    },
+    {
+      "page": "http-stream-other",
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "location": {
+        "url": "http://localhost:3111/",
+        "line": 23,
+        "column": 22,
+        "lineNumber": 23,
+        "columnNumber": 22
+      }
+    },
+    {
+      "page": "http-stream-other",
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 933,
+        "column": 8,
+        "lineNumber": 933,
+        "columnNumber": 8
+      }
+    },
+    {
+      "page": "http-stream-other",
+      "type": "debug",
+      "text": "[vite] connected.",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 1046,
+        "column": 11,
+        "lineNumber": 1046,
+        "columnNumber": 11
+      }
+    },
+    {
+      "page": "http-stream-other",
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "location": {
+        "url": "http://localhost:3111/node_modules/.vite/deps/react-dom_client.js?v=2b4ac753",
+        "line": 15804,
+        "column": 48,
+        "lineNumber": 15804,
+        "columnNumber": 48
+      }
+    },
+    {
+      "page": "http-stream-owner",
+      "type": "log",
+      "text": "Disconnect websocket on pagehide",
+      "location": {
+        "url": "http://localhost:3111/utils/state.js",
+        "line": 788,
+        "column": 14,
+        "lineNumber": 788,
+        "columnNumber": 14
+      }
+    },
+    {
+      "page": "http-stream-other",
+      "type": "log",
+      "text": "Disconnect websocket on pagehide",
+      "location": {
+        "url": "http://localhost:3111/utils/state.js",
+        "line": 788,
+        "column": 14,
+        "lineNumber": 788,
+        "columnNumber": 14
+      }
+    },
+    {
+      "page": "tracing",
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "location": {
+        "url": "http://localhost:3111/",
+        "line": 23,
+        "column": 22,
+        "lineNumber": 23,
+        "columnNumber": 22
+      }
+    },
+    {
+      "page": "tracing",
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 933,
+        "column": 8,
+        "lineNumber": 933,
+        "columnNumber": 8
+      }
+    },
+    {
+      "page": "tracing",
+      "type": "debug",
+      "text": "[vite] connected.",
+      "location": {
+        "url": "http://localhost:3111/@vite/client",
+        "line": 1046,
+        "column": 11,
+        "lineNumber": 1046,
+        "columnNumber": 11
+      }
+    },
+    {
+      "page": "tracing",
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "location": {
+        "url": "http://localhost:3111/node_modules/.vite/deps/react-dom_client.js?v=2b4ac753",
+        "line": 15804,
+        "column": 48,
+        "lineNumber": 15804,
+        "columnNumber": 48
+      }
+    },
+    {
+      "page": "tracing",
+      "type": "log",
+      "text": "Disconnect websocket on pagehide",
+      "location": {
+        "url": "http://localhost:3111/utils/state.js",
+        "line": 788,
+        "column": 14,
+        "lineNumber": 788,
+        "columnNumber": 14
+      }
+    }
+  ],
+  "page_errors": [],
+  "requests": [
+    {
+      "page": "concurrent-a",
+      "phase": "start",
+      "url": "http://localhost:8111/_upload",
+      "time": 15721.47324975
+    },
+    {
+      "page": "concurrent-b",
+      "phase": "start",
+      "url": "http://localhost:8111/_upload",
+      "time": 15721.545204541
+    },
+    {
+      "page": "concurrent-a",
+      "phase": "finished",
+      "url": "http://localhost:8111/_upload",
+      "time": 15722.148103083,
+      "status": 200
+    },
+    {
+      "page": "concurrent-b",
+      "phase": "finished",
+      "url": "http://localhost:8111/_upload",
+      "time": 15722.202623208,
+      "status": 200
+    },
+    {
+      "page": "unrelated-upload",
+      "phase": "start",
+      "url": "http://localhost:8111/_upload",
+      "time": 15724.155875958
+    },
+    {
+      "page": "unrelated-upload",
+      "phase": "finished",
+      "url": "http://localhost:8111/_upload",
+      "time": 15724.810927083,
+      "status": 200
+    },
+    {
+      "page": "disconnect-upload",
+      "phase": "start",
+      "url": "http://localhost:8111/_upload",
+      "time": 15727.481291625
+    },
+    {
+      "page": "navigation",
+      "phase": "start",
+      "url": "http://localhost:8111/_upload",
+      "time": 15729.847312208
+    },
+    {
+      "page": "navigation",
+      "phase": "finished",
+      "url": "http://localhost:8111/_upload",
+      "time": 15732.252156708,
+      "status": 200
+    },
+    {
+      "page": "recovery",
+      "phase": "start",
+      "url": "http://localhost:8111/_upload",
+      "time": 15733.223658416
+    },
+    {
+      "page": "tracing",
+      "phase": "start",
+      "url": "http://localhost:8111/_upload",
+      "time": 15738.204226458
+    },
+    {
+      "page": "tracing",
+      "phase": "finished",
+      "url": "http://localhost:8111/_upload",
+      "time": 15738.247621916,
+      "status": 202
+    }
+  ],
+  "websocket_frames": [
+    {
+      "page": "concurrent-a",
+      "payload": "{\"type\":\"connected\"}",
+      "time": 15720.041290208
+    },
+    {
+      "page": "concurrent-a",
+      "payload": "0{\"sid\":\"roK1x59WWpd8ceLUAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+      "time": 15720.0570435
+    },
+    {
+      "page": "concurrent-a",
+      "payload": "40/_event,{\"sid\":\"LyUpmaVkSrlHy0yEAAAB\"}",
+      "time": 15720.115709208
+    },
+    {
+      "page": "concurrent-a",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"EimMTP33KckT8LG1L6mrjQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"EimMTP33KckT8LG1L6mrjQ==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3111\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3111/index\",\"full_raw_path\":\"http://localhost:3111/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"db54de4b-e11b-4613-8b6b-a700f692d7ef\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"LyUpmaVkSrlHy0yEAAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3111\",\"origin\":\"http://localhost:3111\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3111/\"}}}}]",
+      "time": 15720.116757375
+    },
+    {
+      "page": "concurrent-a",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+      "time": 15720.116804666
+    },
+    {
+      "page": "concurrent-b",
+      "payload": "{\"type\":\"connected\"}",
+      "time": 15720.843230375
+    },
+    {
+      "page": "concurrent-b",
+      "payload": "0{\"sid\":\"5xZuCo6OXgTUZ6sTAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+      "time": 15720.843391666
+    },
+    {
+      "page": "concurrent-b",
+      "payload": "40/_event,{\"sid\":\"WzATbd7lmwiOgc4ZAAAD\"}",
+      "time": 15720.90685575
+    },
+    {
+      "page": "concurrent-b",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"QsO/hxxJKGdcdtd/6HmpMA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"QsO/hxxJKGdcdtd/6HmpMA==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3111\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3111/index\",\"full_raw_path\":\"http://localhost:3111/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"8ffb63ad-2c12-4fa1-aa29-eaa61666cc8d\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"WzATbd7lmwiOgc4ZAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3111\",\"origin\":\"http://localhost:3111\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3111/\"}}}}]",
+      "time": 15720.908268833
+    },
+    {
+      "page": "concurrent-b",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+      "time": 15720.908386041
+    },
+    {
+      "page": "unrelated-upload",
+      "payload": "{\"type\":\"connected\"}",
+      "time": 15722.755245416
+    },
+    {
+      "page": "unrelated-upload",
+      "payload": "0{\"sid\":\"xPHQ7zko6kOvSc3uAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+      "time": 15722.755387791
+    },
+    {
+      "page": "unrelated-upload",
+      "payload": "40/_event,{\"sid\":\"jwQ-rgrG3Jof2HktAAAF\"}",
+      "time": 15722.817349833
+    },
+    {
+      "page": "unrelated-upload",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"WAu3W3H/7/JWcWXnSpMg7A==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"WAu3W3H/7/JWcWXnSpMg7A==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3111\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3111/index\",\"full_raw_path\":\"http://localhost:3111/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"3183d96e-9c6e-4b27-af3d-b2c46521a4e2\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"jwQ-rgrG3Jof2HktAAAF\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3111\",\"origin\":\"http://localhost:3111\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3111/\"}}}}]",
+      "time": 15722.818970458
+    },
+    {
+      "page": "unrelated-upload",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+      "time": 15722.819117041
+    },
+    {
+      "page": "unrelated-ordinary",
+      "payload": "{\"type\":\"connected\"}",
+      "time": 15723.541482833
+    },
+    {
+      "page": "unrelated-ordinary",
+      "payload": "0{\"sid\":\"qJ2NN5_ilcrdz8UeAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+      "time": 15723.541643916
+    },
+    {
+      "page": "unrelated-ordinary",
+      "payload": "40/_event,{\"sid\":\"EDSkFTQztSePMQTOAAAH\"}",
+      "time": 15723.606597083
+    },
+    {
+      "page": "unrelated-ordinary",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"a3sgm1/nKIitlMCOeZdWqA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"a3sgm1/nKIitlMCOeZdWqA==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3111\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3111/index\",\"full_raw_path\":\"http://localhost:3111/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"2d66ccf4-3c67-4c8c-cc53-c7a75d9b8c25\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"EDSkFTQztSePMQTOAAAH\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3111\",\"origin\":\"http://localhost:3111\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3111/\"}}}}]",
+      "time": 15723.607579791
+    },
+    {
+      "page": "unrelated-ordinary",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+      "time": 15723.607670375
+    },
+    {
+      "page": "unrelated-ordinary",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload_probe___upload_probe____upload_state\":{\"delayed_count_rx_state_\":1}}}]",
+      "time": 15725.568144541
+    },
+    {
+      "page": "disconnect-upload",
+      "payload": "{\"type\":\"connected\"}",
+      "time": 15726.094863083
+    },
+    {
+      "page": "disconnect-upload",
+      "payload": "0{\"sid\":\"JfwhxYLAdja460V5AAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+      "time": 15726.095159583
+    },
+    {
+      "page": "disconnect-upload",
+      "payload": "40/_event,{\"sid\":\"iXzP2wnvuhy_ldMWAAAJ\"}",
+      "time": 15726.156105125
+    },
+    {
+      "page": "disconnect-upload",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"AlNRoo0HOOfpyGlBWEnciw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"AlNRoo0HOOfpyGlBWEnciw==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3111\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3111/index\",\"full_raw_path\":\"http://localhost:3111/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"f5cf36ed-0c50-4cab-8c06-3acce785dc2b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"iXzP2wnvuhy_ldMWAAAJ\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3111\",\"origin\":\"http://localhost:3111\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3111/\"}}}}]",
+      "time": 15726.157152791
+    },
+    {
+      "page": "disconnect-upload",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+      "time": 15726.157249375
+    },
+    {
+      "page": "disconnect-other",
+      "payload": "{\"type\":\"connected\"}",
+      "time": 15726.859102541
+    },
+    {
+      "page": "disconnect-other",
+      "payload": "0{\"sid\":\"Lfxg8jJUiGY9UgzlAAAK\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+      "time": 15726.859629958
+    },
+    {
+      "page": "disconnect-other",
+      "payload": "40/_event,{\"sid\":\"D-htf0MgNQsO1RjFAAAL\"}",
+      "time": 15726.924782208
+    },
+    {
+      "page": "disconnect-other",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"1yaNL2dP/GvS6FRw0o/xNQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"1yaNL2dP/GvS6FRw0o/xNQ==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3111\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3111/index\",\"full_raw_path\":\"http://localhost:3111/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"37c47de5-cf6a-43e7-a025-3a3325640909\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"D-htf0MgNQsO1RjFAAAL\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3111\",\"origin\":\"http://localhost:3111\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3111/\"}}}}]",
+      "time": 15726.925452666
+    },
+    {
+      "page": "disconnect-other",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+      "time": 15726.925672208
+    },
+    {
+      "page": "disconnect-other",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload_probe___upload_probe____upload_state\":{\"delayed_count_rx_state_\":1}}}]",
+      "time": 15728.913671708
+    },
+    {
+      "page": "disconnect-other",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload_probe___upload_probe____upload_state\":{\"ordinary_count_rx_state_\":1}}}]",
+      "time": 15729.004629708
+    },
+    {
+      "page": "navigation",
+      "payload": "{\"type\":\"connected\"}",
+      "time": 15729.23250075
+    },
+    {
+      "page": "navigation",
+      "payload": "0{\"sid\":\"eWD2sBiDZHNQjGgLAAAM\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+      "time": 15729.232668916
+    },
+    {
+      "page": "navigation",
+      "payload": "40/_event,{\"sid\":\"_C0e9jHlQD7O4YyqAAAN\"}",
+      "time": 15729.294646333
+    },
+    {
+      "page": "navigation",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"33hzF9nA5iH8H6B1rWaItg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"33hzF9nA5iH8H6B1rWaItg==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3111\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3111/index\",\"full_raw_path\":\"http://localhost:3111/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"bc1a7633-0c5d-427c-fbe2-9632b61fed46\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"_C0e9jHlQD7O4YyqAAAN\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3111\",\"origin\":\"http://localhost:3111\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3111/\"}}}}]",
+      "time": 15729.295470958
+    },
+    {
+      "page": "navigation",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+      "time": 15729.295588166
+    },
+    {
+      "page": "navigation",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3111\",\"path\":\"/slow\",\"raw_path\":\"/slow\",\"full_path\":\"http://localhost:3111/slow\",\"full_raw_path\":\"http://localhost:3111/slow\",\"params\":{}},\"is_hydrated_rx_state_\":false,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3111\",\"origin\":\"http://localhost:3111\",\"path\":\"/slow\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3111/slow\"},\"rx_router_route_id_rx_state_\":\"/slow\"}}}]",
+      "time": 15729.987813666
+    },
+    {
+      "page": "navigation",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+      "time": 15729.98839575
+    },
+    {
+      "page": "navigation",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload_probe___upload_probe____upload_state\":{\"nav_status_rx_state_\":\"slow-started\"}}}]",
+      "time": 15729.988972291
+    },
+    {
+      "page": "navigation",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3111\",\"path\":\"/new\",\"raw_path\":\"/new\",\"full_path\":\"http://localhost:3111/new\",\"full_raw_path\":\"http://localhost:3111/new\",\"params\":{}},\"is_hydrated_rx_state_\":false,\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3111\",\"origin\":\"http://localhost:3111\",\"path\":\"/new\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3111/new\"},\"rx_router_route_id_rx_state_\":\"/new\"}}}]",
+      "time": 15730.050319291
+    },
+    {
+      "page": "navigation",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload_probe___upload_probe____upload_state\":{\"nav_status_rx_state_\":\"new-loaded\"}}}]",
+      "time": 15730.050932416
+    },
+    {
+      "page": "navigation",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+      "time": 15730.051564875
+    },
+    {
+      "page": "recovery",
+      "payload": "{\"type\":\"connected\"}",
+      "time": 15732.602287541
+    },
+    {
+      "page": "recovery",
+      "payload": "0{\"sid\":\"uVDUK9mhzzBO7HyQAAAO\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+      "time": 15732.602465458
+    },
+    {
+      "page": "recovery",
+      "payload": "40/_event,{\"sid\":\"n0FHsc7DBsaieSEHAAAP\"}",
+      "time": 15732.664248208
+    },
+    {
+      "page": "recovery",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"xBLxxH5wPag7Ime5pPk6Dw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"xBLxxH5wPag7Ime5pPk6Dw==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3111\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3111/index\",\"full_raw_path\":\"http://localhost:3111/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"a68c04a3-4b4b-49e2-dc96-42e84a823557\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"n0FHsc7DBsaieSEHAAAP\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3111\",\"origin\":\"http://localhost:3111\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3111/\"}}}}]",
+      "time": 15732.665317958
+    },
+    {
+      "page": "recovery",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+      "time": 15732.665397
+    },
+    {
+      "page": "recovery",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload_probe___upload_probe____upload_state\":{\"upload_status_rx_state_\":\"recovered\",\"recovered_rx_state_\":1}}}]",
+      "time": 15733.633407166
+    },
+    {
+      "page": "recovery",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload_probe___upload_probe____upload_state\":{\"ordinary_count_rx_state_\":1}}}]",
+      "time": 15734.068389416
+    },
+    {
+      "page": "http-stream-owner",
+      "payload": "{\"type\":\"connected\"}",
+      "time": 15734.512897458
+    },
+    {
+      "page": "http-stream-owner",
+      "payload": "0{\"sid\":\"saPNGm8thLD6WS5xAAAQ\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+      "time": 15734.513048708
+    },
+    {
+      "page": "http-stream-owner",
+      "payload": "40/_event,{\"sid\":\"17eTOhHw2MqVXJSzAAAR\"}",
+      "time": 15734.5776135
+    },
+    {
+      "page": "http-stream-owner",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"1IuSRanmT3/7/o0XPHMVEw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"1IuSRanmT3/7/o0XPHMVEw==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3111\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3111/index\",\"full_raw_path\":\"http://localhost:3111/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"21432520-b489-4d4f-8497-452e2a186de2\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"17eTOhHw2MqVXJSzAAAR\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3111\",\"origin\":\"http://localhost:3111\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3111/\"}}}}]",
+      "time": 15734.578238208
+    },
+    {
+      "page": "http-stream-owner",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+      "time": 15734.578299708
+    },
+    {
+      "page": "http-stream-other",
+      "payload": "{\"type\":\"connected\"}",
+      "time": 15735.293617708
+    },
+    {
+      "page": "http-stream-other",
+      "payload": "0{\"sid\":\"s9FEDRquT0vXFHWsAAAS\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+      "time": 15735.293874458
+    },
+    {
+      "page": "http-stream-other",
+      "payload": "40/_event,{\"sid\":\"jTM3w9F7BuRUuDLWAAAT\"}",
+      "time": 15735.36116025
+    },
+    {
+      "page": "http-stream-other",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"2yxmdUz159anvdujyhuBcg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"2yxmdUz159anvdujyhuBcg==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3111\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3111/index\",\"full_raw_path\":\"http://localhost:3111/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"9709c534-1dc6-4002-d9e7-06bc55937a8a\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"jTM3w9F7BuRUuDLWAAAT\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3111\",\"origin\":\"http://localhost:3111\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3111/\"}}}}]",
+      "time": 15735.362208041
+    },
+    {
+      "page": "http-stream-other",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+      "time": 15735.362337458
+    },
+    {
+      "page": "http-stream-other",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload_probe___upload_probe____upload_state\":{\"delayed_count_rx_state_\":1}}}]",
+      "time": 15737.253475833
+    },
+    {
+      "page": "http-stream-other",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload_probe___upload_probe____upload_state\":{\"ordinary_count_rx_state_\":1}}}]",
+      "time": 15737.328211291
+    },
+    {
+      "page": "tracing",
+      "payload": "{\"type\":\"connected\"}",
+      "time": 15737.543999291
+    },
+    {
+      "page": "tracing",
+      "payload": "0{\"sid\":\"xbHCnqIZmdRIbP61AAAU\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+      "time": 15737.544199958
+    },
+    {
+      "page": "tracing",
+      "payload": "40/_event,{\"sid\":\"uCvq-vUHCgQc7EH3AAAV\"}",
+      "time": 15737.604509208
+    },
+    {
+      "page": "tracing",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"UujCS0jIwb7h8QQDyBhmCw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8111\",\"origin\":\"http://localhost:3111\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"UujCS0jIwb7h8QQDyBhmCw==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3111\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3111/index\",\"full_raw_path\":\"http://localhost:3111/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"73ec51df-e897-4827-e1ca-f4d04ba273e2\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"uCvq-vUHCgQc7EH3AAAV\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3111\",\"origin\":\"http://localhost:3111\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3111/\"}}}}]",
+      "time": 15737.605234958
+    },
+    {
+      "page": "tracing",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+      "time": 15737.605306958
+    },
+    {
+      "page": "tracing",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload_probe___upload_probe____upload_state\":{\"chunk_bytes_rx_state_\":328000,\"chunk_done_rx_state_\":true}}}]",
+      "time": 15738.246971083
+    },
+    {
+      "page": "tracing",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.upload_probe___upload_probe____upload_state\":{\"api_count_rx_state_\":1}}}]",
+      "time": 15738.311284458
+    }
+  ],
+  "browser_version": "154.0.8037.98"
+}

@@ -1,0 +1,19 @@
+free-prod-badge-on PASS
+free-prod-badge-off PASS
+free-export-prod-badge-on PASS
+free-export-prod-badge-off PASS
+127.0.0.1 - - [05/Oct/2026 16:44:31] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 16:44:31] "GET /assets/entry.client-qPZbTPY2.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 16:44:31] "GET /assets/button-BiAz7WqF.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 16:44:31] "GET /assets/manifest-97bba89c.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 16:44:31] "GET /assets/root-B7wG90Y3.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 16:44:31] "GET /assets/errorBoundaries-BQfNx61a.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 16:44:31] "GET /assets/components-Bl0Za3ky.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 16:44:31] "GET /assets/__reflex_global_styles-NccINl-w.css HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 16:44:31] "GET /assets/_index-B195kD4K.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 16:44:31] "GET /assets/reflex-env-CXHLOk1s.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Oct/2026 16:44:31] "GET /assets/emotion-react.browser.esm-Ne-RHRfi.js HTTP/1.1" 200 -
+free-export-dev-badge-on PASS
+paid-export-prod-badge-off PASS
+rejected-prod PASS
+rejected-export PASS

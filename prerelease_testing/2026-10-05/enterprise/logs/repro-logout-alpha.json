@@ -1,0 +1,13 @@
+{
+  "url": "http://localhost:3132/profile",
+  "logout_error_visible": true,
+  "name_still_visible": true,
+  "protected_event_after_logout": {
+    "url": "http://localhost:3132/login",
+    "message": null
+  },
+  "profile_after_navigation": {
+    "url": "http://localhost:3132/login",
+    "name": null
+  }
+}

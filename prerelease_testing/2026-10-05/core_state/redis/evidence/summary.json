@@ -1,0 +1,112 @@
+{
+  "status": "passed",
+  "browser_scenarios": 7,
+  "browser_value_assertions": 79,
+  "browser_diagnostics": {
+    "console": 75,
+    "page_errors": 0,
+    "request_failures": 0,
+    "http_errors": 0
+  },
+  "oplock_scenarios": 4,
+  "rolling_deploy_scenarios": 4,
+  "missing_db_cli_commands": 4,
+  "db_cli_and_session_commands": 7,
+  "versions_added_for_sqlalchemy_only": {
+    "alembic": "1.20.0",
+    "Mako": "1.4.3",
+    "MarkupSafe": "3.0.4",
+    "SQLAlchemy": "2.1.3"
+  },
+  "installed_module_origins": {
+    "reflex": {
+      "path": "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/reflex/__init__.py",
+      "sha256": "c6182fcc4ce53fc4b7a07d8b887019c7685a88621766453a012a8a1b68940ea7"
+    },
+    "reflex.state": {
+      "path": "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/reflex/state.py",
+      "sha256": "a5a0b0061326da696da7d397859dd650dcd783f521530d38ecc3de9c45c17ef8"
+    },
+    "reflex.istate.manager.redis": {
+      "path": "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/reflex/istate/manager/redis.py",
+      "sha256": "93d67623e0ebc94b89b53aa35698be43697ea66014e7ed130752755b81726dd7"
+    },
+    "reflex.istate.manager.token": {
+      "path": "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/reflex/istate/manager/token.py",
+      "sha256": "b823b46f27d652677b81e8cfc4a14a60fe48be56ddddc7472e8deb2838b96739"
+    },
+    "reflex.model": {
+      "path": "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/reflex/model.py",
+      "sha256": "a1961d6cb896cbc5a926b937171657d62677c1fbc27c9ed477637d9abf06445a"
+    },
+    "reflex_base": {
+      "path": "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/reflex_base/__init__.py",
+      "sha256": "3adeaa12cd4e76eb2e48c30dd76d59bf4bf08a05886143a737cb9840622977d4"
+    },
+    "reflex_base.components.memo": {
+      "path": "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/reflex_base/components/memo.py",
+      "sha256": "789604eab57cbcd0b56e9076faa751ca363d9ceb892494ade88c7fc0cfb22006"
+    }
+  },
+  "source_sha256": {
+    "oplock_checks.py": "c28479edd0f0a7389bd6a021fcb9fa7d70a06f6eddb9c6b93d4fb66ec052202d",
+    "rxconfig.py": "3a7d35829bf3767a658beb75c9cc6979d8d8e51bdc969ea896e629e380d251d4",
+    "redis_probe.py": "3432bd5ed6b5cec31c44daaaac38cb105f2d4e6623bd5a85ef4ab14c77511fae",
+    "db_rxconfig.py": "98ba86498cb4e540951eb8d38e3947c708cd98af96e4feb8c054cfcce9492ddb",
+    "browser_checks.py": "ddc9094ff6c2d83ccc49313357d06548d6f55f4b05218d10e36c16f3f5b10406",
+    "summarize.py": "ae581cbd7fde2fdeb5c70f34f9a5edb3133e07a0a6e554e2db23f9c339f690d0",
+    "plain_db.py": "97a46df08a45f86e83346a837a3ce72a588cf62785249199d5d4d56243a9dfef",
+    "cleanup_bun_shell.py": "19f19916a218abc2aba814f3de9b820a2841b15c6690bf8b367d882dd310ce3e",
+    "plain_db_v2.py": "002dbf0640cc7ae21f47e28c4a6f6653678ba840ea172e1af865d9f26f62973d",
+    "db_checks.py": "a89ea64160dfb463d93827d9ec453568fbafc60f1dc0ad462955f8a01e9ac0d4",
+    "db_missing.py": "08ae0b437e046299c8b26e5f49e8b3c8823d4c3292d14e08e7c6a352a9d067e4",
+    "compatibility/worker.py": "fbcbe01756cc0e270c9ad5caf04058f0d687513b3808cd62ab21b51b4c7d28f0",
+    "compatibility/rolling_app.py": "8fa702649ef9b0ba478a214c1e07052ed2d12f64ab7faceeee924a81f904fa87",
+    "compatibility/checks.py": "2d07c4d9165721bad3be95da2a5a0f0a501352b96eb91429c967bb304ef7c82a"
+  },
+  "cleanup": {
+    "database": 5,
+    "initial_dbsize": 0,
+    "deleted_browser_keys": [
+      "0fd7f771-a6ac-46f3-c13e-94c7e4d0f295_reflex___state____state.reflex___istate___dynamic____counter_n1",
+      "0fd7f771-a6ac-46f3-c13e-94c7e4d0f295_reflex___state____state.reflex___istate___dynamic____counter_n2",
+      "0fd7f771-a6ac-46f3-c13e-94c7e4d0f295_reflex___state____state",
+      "0fd7f771-a6ac-46f3-c13e-94c7e4d0f295_reflex___state____state.redis_probe___redis_probe____redis_state.redis_probe___redis_probe____worker",
+      "0fd7f771-a6ac-46f3-c13e-94c7e4d0f295_reflex___state____state.redis_probe___redis_probe____redis_state",
+      "fa06182c-8287-436c-d4ee-b3a0ea57dc83_reflex___state____state",
+      "fa06182c-8287-436c-d4ee-b3a0ea57dc83_reflex___state____state.reflex___istate___dynamic____counter_n1",
+      "fa06182c-8287-436c-d4ee-b3a0ea57dc83_reflex___state____state.redis_probe___redis_probe____redis_state",
+      "fa06182c-8287-436c-d4ee-b3a0ea57dc83_reflex___state____state.reflex___istate___dynamic____counter_n2",
+      "d900b839-1a7b-48a9-cdc9-a17f2b79ba6c_reflex___state____state.reflex___istate___dynamic____counter_n2",
+      "d900b839-1a7b-48a9-cdc9-a17f2b79ba6c_reflex___state____state.reflex___istate___dynamic____counter_n1",
+      "d900b839-1a7b-48a9-cdc9-a17f2b79ba6c_reflex___state____state",
+      "d900b839-1a7b-48a9-cdc9-a17f2b79ba6c_reflex___state____state.redis_probe___redis_probe____redis_state",
+      "f9e70638-0625-44c3-81b3-e017b330a1d8_reflex___state____state",
+      "f9e70638-0625-44c3-81b3-e017b330a1d8_reflex___state____state.redis_probe___redis_probe____redis_state",
+      "f9e70638-0625-44c3-81b3-e017b330a1d8_reflex___state____state.reflex___istate___dynamic____counter_n2",
+      "f9e70638-0625-44c3-81b3-e017b330a1d8_reflex___state____state.reflex___istate___dynamic____counter_n1",
+      "6cb28e06-7065-47c0-f233-53f8d6490089_reflex___state____state.reflex___istate___dynamic____counter_n2",
+      "6cb28e06-7065-47c0-f233-53f8d6490089_reflex___state____state.redis_probe___redis_probe____redis_state",
+      "6cb28e06-7065-47c0-f233-53f8d6490089_reflex___state____state",
+      "6cb28e06-7065-47c0-f233-53f8d6490089_reflex___state____state.reflex___istate___dynamic____counter_n1",
+      "699d15aa-8261-47f2-f27a-e42a8b3191bc_reflex___state____state.reflex___istate___dynamic____counter_n2",
+      "699d15aa-8261-47f2-f27a-e42a8b3191bc_reflex___state____state",
+      "699d15aa-8261-47f2-f27a-e42a8b3191bc_reflex___state____state.redis_probe___redis_probe____redis_state",
+      "699d15aa-8261-47f2-f27a-e42a8b3191bc_reflex___state____state.reflex___istate___dynamic____counter_n1",
+      "aacae625-ed52-43d6-e8e3-b2900afe3bc1_reflex___state____state.redis_probe___redis_probe____redis_state",
+      "aacae625-ed52-43d6-e8e3-b2900afe3bc1_reflex___state____state.reflex___istate___dynamic____counter_n2",
+      "aacae625-ed52-43d6-e8e3-b2900afe3bc1_reflex___state____state.reflex___istate___dynamic____counter_n1",
+      "aacae625-ed52-43d6-e8e3-b2900afe3bc1_reflex___state____state",
+      "b61e56c0-dc27-49d1-8d6d-4cd1df327aa2_reflex___state____state",
+      "b61e56c0-dc27-49d1-8d6d-4cd1df327aa2_reflex___state____state.reflex___istate___dynamic____counter_n1",
+      "b61e56c0-dc27-49d1-8d6d-4cd1df327aa2_reflex___state____state.reflex___istate___dynamic____counter_n2",
+      "b61e56c0-dc27-49d1-8d6d-4cd1df327aa2_reflex___state____state.redis_probe___redis_probe____redis_state"
+    ],
+    "final_dbsize": 0,
+    "ports_closed": {
+      "3111": true,
+      "8111": true
+    },
+    "root_owned_redis_service_preserved": true
+  }
+}

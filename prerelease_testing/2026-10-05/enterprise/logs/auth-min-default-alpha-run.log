@@ -1,0 +1,1303 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='auth_min', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3132, frontend_path='', 
+backend_port=8132, backend_path='', api_url='http://localhost:8132', 
+deploy_url='http://localhost:3132', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'telemetry_enabled', 'backend_port', 
+'frontend_port', 'app_name', 'plugins'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[AuthPlugin(), MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: [PosixPath('/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-test-20261005/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: /Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: ['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun']
+Debug: Using package executer at: [['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3132 is in use.
+Debug: Checking if Frontend port: 3132 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Frontend port: 3132 is not in use.
+Debug: Checking if Backend port: 8132 is in use.
+Debug: Checking if Backend port: 8132 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Backend port: 8132 is not in use.
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.10s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 34/33 0:00:00
+Debug: Running command: ['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun', 'add', '--legacy-peer-deps', '-d', 
+'autoprefixer@10.6.1', 'postcss@8.5.29', 'postcss-import@17.0.0', 'vite@8.3.2', 
+'@emotion/react@11.14.0', '@react-router/dev@8.4.0', 
+'@react-router/fs-routes@8.4.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [99]
+Debug: Saved lockfile
+Debug: 
+Debug: installed autoprefixer@10.6.1 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.29
+Debug: installed postcss-import@17.0.0
+Debug: installed vite@8.3.2 with binaries:
+Debug:  - vite
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: 
+Debug: 127 packages installed [676.00ms]
+Debug: Running command: ['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun', 'add', '--legacy-peer-deps', 
+'react-error-boundary@6.1.6', 'lucide-react@1.26.0', 'socket.io-client@4.8.4', 
+'sonner@2.0.8', 'universal-cookie@8.1.2', 'react-helmet@6.1.0', 'isbot@5.2.2', 
+'@react-router/node@8.4.0', 'react-dom@19.3.0', 'react@19.3.0', 
+'@radix-ui/themes@3.3.0', 'react-router@8.4.0', 'mergician@v2.0.2']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [25]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-error-boundary@6.1.6
+Debug: installed lucide-react@1.26.0
+Debug: installed socket.io-client@4.8.4
+Debug: installed sonner@2.0.8
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-helmet@6.1.0
+Debug: installed isbot@5.2.2
+Debug: installed @react-router/node@8.4.0
+Debug: installed react-dom@19.3.0
+Debug: installed react@19.3.0
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-router@8.4.0
+Debug: installed mergician@2.0.2
+Debug: 
+Debug: 98 packages installed [361.00ms]
+Debug: Copying .web/bun.lock to 
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterpr
+ise/apps/auth_min/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterpr
+ise/apps/auth_min/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 1.06s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Using Granian for backend
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Reload paths: 
+['/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enter
+prise/apps/auth_min/rxconfig.py', 
+'/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterp
+rise/apps/auth_min/requirements.txt', 
+'/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterp
+rise/apps/auth_min/auth_min', 
+'/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterp
+rise/apps/auth_min/assets']
+[INFO] Starting granian (main PID: 95632)
+[INFO] Listening at: http://0.0.0.0:8132
+[INFO] Spawning worker-1 with PID: 95647
+Debug: [restart] Relaunching with --conditions=development
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+Debug:   ➜  Local:   http://localhost:3132/
+App running at: http://localhost:3132/
+Backend running at: http://0.0.0.0:8132
+Debug:   ➜  Network: http://192.168.0.105:3132/  en1
+Debug:   ➜  Network: http://100.80.29.50:3132/   utun6
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_enterprise/plugins/mcp.py:1552)
+Debug: MCPPlugin: using the in-memory OAuth store (no Redis configured). Tokens 
+do not survive restarts and are per-process; configure redis_url for 
+multi-worker deployments.
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_enterprise/plugins/api_tokens.py:114)
+Debug: Using the in-memory API token store (no Redis configured). Tokens do not 
+survive restarts and are per-process; configure redis_url for multi-worker 
+deployments.
+Debug: Registered lifespan task: _mcp_session_manager_lifespan
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[10/05/26 15:53:34] INFO     StreamableHTTP       streamable_http_manager.py:164
+                             session manager                                    
+                             started                                            
+Debug: Started lifespan task: _mcp_session_manager_lifespan as 
+asynccontextmanager
+[INFO] Started worker-1
+Debug: 3:54:36 PM [vite] (ssr) connected.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/05/26 15:54:37] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/.well-known/o                
+                             penid-configuration "HTTP/1.1 200                  
+                             OK"                                                
+                    INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9131/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/jwks                         
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     21dd47cc-a803-4c18-d29f-82196d08d08b  state.py:2162
+                             [txid=090a297335b346ca82ed37d8c052346              
+                             1] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/profile'.              
+[10/05/26 15:54:38] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9131/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     21dd47cc-a803-4c18-d29f-82196d08d08b  state.py:1722
+                             [txid=bf6a9fafaf5740769f6d220ffe0ad10              
+                             3] User initiated logout                           
+                             (from_popup=False); clearing session.              
+                    ERROR    21dd47cc-a803-4c18-d29f-82196d08d08b  state.py:1090
+                             [txid=bf6a9fafaf5740769f6d220ffe0ad10              
+                             3] Processing logout flow                          
+                             (from_popup=False) failed: type                    
+                             object 'ProfileState' has no                       
+                             attribute 'backend_vars'                           
+                             ╭─ Traceback (most recent call last─╮              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:1130 in               │              
+                             │ _error_context                    │              
+                             │                                   │              
+                             │   1127 │   │   self._logger.debug │              
+                             │   1128 │   │   exceptions = []    │              
+                             │   1129 │   │   try:               │              
+                             │ ❱ 1130 │   │   │   yield exceptio │              
+                             │   1131 │   │   except NestedExcep │              
+                             │   1132 │   │   │   exceptions.app │              
+                             │   1133 │   │   │   # No re-loggin │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:1759 in               │              
+                             │ redirect_to_logout                │              
+                             │                                   │              
+                             │   1756 │   │   │   │   # Clear to │              
+                             │   1757 │   │   │   │   # the sess │              
+                             │   1758 │   │   │   │   # redirect │              
+                             │ ❱ 1759 │   │   │   │   await self │              
+                             │   1760 │   │   │   await self._au │              
+                             │   1761 │   │   │   │   AuditActio │              
+                             │   1762 │   │   │   )              │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:847 in _reset_session │              
+                             │                                   │              
+                             │    844 │   │   client token (the  │              
+                             │    845 │   │   """                │              
+                             │    846 │   │   self._reset_auth() │              
+                             │ ❱  847 │   │   await self._reset_ │              
+                             │    848 │                          │              
+                             │    849 │   @requires_plugin(AuthP │              
+                             │    850 │   async def _reset_plugi │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/plugins │              
+                             │ /guards.py:127 in _async_guarded  │              
+                             │                                   │              
+                             │   124 │   │   │   async def _asyn │              
+                             │   125 │   │   │   │   if not has_ │              
+                             │   126 │   │   │   │   │   return  │              
+                             │ ❱ 127 │   │   │   │   return awai │              
+                             │   128 │   │   │                   │              
+                             │   129 │   │   │   return cast("Ca │              
+                             │   130                             │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:862 in                │              
+                             │ _reset_plugin_owned_state         │              
+                             │                                   │              
+                             │    859 │   │   from reflex_enterp │              
+                             │    860 │   │   from reflex_enterp │              
+                             │    861 │   │                      │              
+                             │ ❱  862 │   │   await reset_app_st │              
+                             │    863 │   │   auth_user = await  │              
+                             │    864 │   │   auth_user.reset()  │              
+                             │    865                            │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/en │              
+                             │ forcement.py:1038 in              │              
+                             │ reset_app_state                   │              
+                             │                                   │              
+                             │   1035 │   │   │   substate = awa │              
+                             │   1036 │   │   except Exception:  │              
+                             │   1037 │   │   │   continue  # fa │              
+                             │ ❱ 1038 │   │   _reset_protected(s │              
+                             │   1039                            │              
+                             │   1040                            │              
+                             │   1041 def _field_default(field:  │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/en │              
+                             │ forcement.py:1072 in              │              
+                             │ _reset_protected                  │              
+                             │                                   │              
+                             │   1069 │   │   setattr(substate,  │              
+                             │   1070 │   # Backend vars never r │              
+                             │   1071 │   # always clear them. I │              
+                             │ ❱ 1072 │   for name, value in sta │              
+                             │   1073 │   │   if name not in sta │              
+                             │   1074 │   │   │   setattr(substa │              
+                             │   1075 │   # Drop every protected │              
+                             ╰───────────────────────────────────╯              
+                             AttributeError: type object                        
+                             'ProfileState' has no attribute                    
+                             'backend_vars'                                     
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/05/26 15:54:58] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9131/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     f98491c8-b0b4-4e04-fc55-0bc46c44ade2  state.py:2162
+                             [txid=44d6807ac7b5404581843dd9ebaf002              
+                             b] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/'.                     
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth_min/auth_min/auth_min.py
+[INFO] Stopping worker-1
+[10/05/26 15:55:58] INFO     StreamableHTTP       streamable_http_manager.py:168
+                             session manager                                    
+                             shutting down                                      
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 96061
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.10s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 34/33 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 'react-error-boundary@6.1.6', 
+'sonner@2.0.8'],[],True,['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun'],[('@react-router/node', '8.4.0'), ('isbot', 
+'5.2.2'), ('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'),
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterpr
+ise/apps/auth_min/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterpr
+ise/apps/auth_min/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.00s
+Debug: [timing] Write to Disk: 0.00s
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_enterprise/plugins/mcp.py:1552)
+Debug: MCPPlugin: using the in-memory OAuth store (no Redis configured). Tokens 
+do not survive restarts and are per-process; configure redis_url for 
+multi-worker deployments.
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_enterprise/plugins/api_tokens.py:114)
+Debug: Using the in-memory API token store (no Redis configured). Tokens do not 
+survive restarts and are per-process; configure redis_url for multi-worker 
+deployments.
+Debug: Registered lifespan task: _mcp_session_manager_lifespan
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[10/05/26 15:55:59] INFO     StreamableHTTP       streamable_http_manager.py:164
+                             session manager                                    
+                             started                                            
+Debug: Started lifespan task: _mcp_session_manager_lifespan as 
+asynccontextmanager
+[INFO] Started worker-1
+Debug: 3:55:59 PM [vite] (client) hmr update 
+/app_components/auth_min/auth_min.jsx
+Debug: 3:55:59 PM [vite] (client) hmr update 
+/app_components/auth_min/auth_min.jsx
+Debug: 3:55:59 PM [vite] (client) hmr update /utils/context.jsx
+Debug: 3:55:59 PM [vite] (client) hmr update /utils/context.jsx
+Debug: 3:55:59 PM [vite] (client) hmr update /utils/context.jsx
+Debug: 3:55:59 PM [vite] (ssr) page reload utils/context.jsx
+Debug: 3:55:59 PM [vite] (ssr) program reload
+Debug: 3:55:59 PM [vite] (client) hmr update /app/routes/_index.jsx
+Debug: 3:55:59 PM [vite] (client) hmr update /app/routes/_index.jsx
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/05/26 15:56:02] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/.well-known/o                
+                             penid-configuration "HTTP/1.1 200                  
+                             OK"                                                
+                    INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9131/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/jwks                         
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     0768d1e1-bef4-4821-fdf6-0818b049ee9a  state.py:2162
+                             [txid=2a9315b89f7c4e0b989df94907b166b              
+                             a] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/profile'.              
+                    INFO     0768d1e1-bef4-4821-fdf6-0818b049ee9a  state.py:1722
+                             [txid=36d7a848ca414aca9b28f9e5a8f64fb              
+                             d] User initiated logout                           
+                             (from_popup=False); clearing session.              
+                    ERROR    0768d1e1-bef4-4821-fdf6-0818b049ee9a  state.py:1090
+                             [txid=36d7a848ca414aca9b28f9e5a8f64fb              
+                             d] Processing logout flow                          
+                             (from_popup=False) failed: type                    
+                             object 'ProfileState' has no                       
+                             attribute 'backend_vars'                           
+                             ╭─ Traceback (most recent call last─╮              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:1130 in               │              
+                             │ _error_context                    │              
+                             │                                   │              
+                             │   1127 │   │   self._logger.debug │              
+                             │   1128 │   │   exceptions = []    │              
+                             │   1129 │   │   try:               │              
+                             │ ❱ 1130 │   │   │   yield exceptio │              
+                             │   1131 │   │   except NestedExcep │              
+                             │   1132 │   │   │   exceptions.app │              
+                             │   1133 │   │   │   # No re-loggin │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:1759 in               │              
+                             │ redirect_to_logout                │              
+                             │                                   │              
+                             │   1756 │   │   │   │   # Clear to │              
+                             │   1757 │   │   │   │   # the sess │              
+                             │   1758 │   │   │   │   # redirect │              
+                             │ ❱ 1759 │   │   │   │   await self │              
+                             │   1760 │   │   │   await self._au │              
+                             │   1761 │   │   │   │   AuditActio │              
+                             │   1762 │   │   │   )              │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:847 in _reset_session │              
+                             │                                   │              
+                             │    844 │   │   client token (the  │              
+                             │    845 │   │   """                │              
+                             │    846 │   │   self._reset_auth() │              
+                             │ ❱  847 │   │   await self._reset_ │              
+                             │    848 │                          │              
+                             │    849 │   @requires_plugin(AuthP │              
+                             │    850 │   async def _reset_plugi │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/plugins │              
+                             │ /guards.py:127 in _async_guarded  │              
+                             │                                   │              
+                             │   124 │   │   │   async def _asyn │              
+                             │   125 │   │   │   │   if not has_ │              
+                             │   126 │   │   │   │   │   return  │              
+                             │ ❱ 127 │   │   │   │   return awai │              
+                             │   128 │   │   │                   │              
+                             │   129 │   │   │   return cast("Ca │              
+                             │   130                             │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:862 in                │              
+                             │ _reset_plugin_owned_state         │              
+                             │                                   │              
+                             │    859 │   │   from reflex_enterp │              
+                             │    860 │   │   from reflex_enterp │              
+                             │    861 │   │                      │              
+                             │ ❱  862 │   │   await reset_app_st │              
+                             │    863 │   │   auth_user = await  │              
+                             │    864 │   │   auth_user.reset()  │              
+                             │    865                            │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/en │              
+                             │ forcement.py:1038 in              │              
+                             │ reset_app_state                   │              
+                             │                                   │              
+                             │   1035 │   │   │   substate = awa │              
+                             │   1036 │   │   except Exception:  │              
+                             │   1037 │   │   │   continue  # fa │              
+                             │ ❱ 1038 │   │   _reset_protected(s │              
+                             │   1039                            │              
+                             │   1040                            │              
+                             │   1041 def _field_default(field:  │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/en │              
+                             │ forcement.py:1072 in              │              
+                             │ _reset_protected                  │              
+                             │                                   │              
+                             │   1069 │   │   setattr(substate,  │              
+                             │   1070 │   # Backend vars never r │              
+                             │   1071 │   # always clear them. I │              
+                             │ ❱ 1072 │   for name, value in sta │              
+                             │   1073 │   │   if name not in sta │              
+                             │   1074 │   │   │   setattr(substa │              
+                             │   1075 │   # Drop every protected │              
+                             ╰───────────────────────────────────╯              
+                             AttributeError: type object                        
+                             'ProfileState' has no attribute                    
+                             'backend_vars'                                     
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/05/26 15:56:23] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9131/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     5e18ba30-f040-4f92-dd7b-096236e62dcc  state.py:2162
+                             [txid=760ad1fe431044d18b325ef77b52945              
+                             c] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/'.                     
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/05/26 15:56:24] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9131/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     20c02481-b5b7-4d2a-aaf0-a7fa9c12df23  state.py:2162
+                             [txid=290e0d1f484f4cd0a16e28137156f3e              
+                             6] ─ Auth callback succeeded; user                 
+                             logged in, handing the tokens to the               
+                             popup opener.                                      
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.autogenerate.schemas                       
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.autogenerate.tables                        
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.autogenerate.types                         
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.autogenerate.constraints                   
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.autogenerate.defaults                      
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.autogenerate.comments                      
+                    INFO     setup plugin                          plugins.py:37
+                             alembic.ext.checkconstraint_byname                 
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_base/event/processor/event_processor.py", line 953, in _resolve_future
+    future.result()
+  File 
+"/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_base/event/processor/event_processor.py", line 942, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_base/event/processor/event_processor.py", line 741, in 
+_process_event_queue_entry
+    await self._execute_event(
+  File 
+"/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_base/event/processor/base_state_processor.py", line 514, in _execute_event
+    await process_event(
+  File 
+"/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_base/event/processor/base_state_processor.py", line 326, in process_event
+    events = await fn(state, **payload)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_enterprise/auth/oidc/state.py", line 869, in reset_auth
+    await self._reset_session()
+  File 
+"/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_enterprise/auth/oidc/state.py", line 847, in _reset_session
+    await self._reset_plugin_owned_state()
+  File 
+"/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_enterprise/plugins/guards.py", line 127, in _async_guarded
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_enterprise/auth/oidc/state.py", line 862, in _reset_plugin_owned_state
+    await reset_app_state(self)
+  File 
+"/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_enterprise/auth/enforcement.py", line 1038, in reset_app_state
+    _reset_protected(substate, overrides)
+  File 
+"/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_enterprise/auth/enforcement.py", line 1072, in _reset_protected
+    for name, value in state_cls.backend_vars.items():
+                       ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'ProfileState' has no attribute 'backend_vars'. Did 
+you mean: '_backend_vars'?
+
+
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/05/26 15:57:33] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9131/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     0badb204-2ceb-4d7d-9602-9d3fc2312c88  state.py:2162
+                             [txid=536276ac61a5485381fb189757a46f5              
+                             b] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to                          
+                             '/agent-consent?…'.                                
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+Warning: Attempting to send delta to disconnected client 
+'7ffafa7b-6336-4d54-ab2c-75fa4d6e4682'
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/05/26 15:58:21] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9131/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     b57c2542-cf35-403b-aead-1f278f9b7435  state.py:2162
+                             [txid=22a33226971f4a448709130c17be1d2              
+                             4] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/profile'.              
+                    INFO     b57c2542-cf35-403b-aead-1f278f9b7435  state.py:1722
+                             [txid=46f0868d969f4da4a474e3b66e1c5c6              
+                             5] User initiated logout                           
+                             (from_popup=False); clearing session.              
+                    ERROR    b57c2542-cf35-403b-aead-1f278f9b7435  state.py:1090
+                             [txid=46f0868d969f4da4a474e3b66e1c5c6              
+                             5] Processing logout flow                          
+                             (from_popup=False) failed: type                    
+                             object 'ProfileState' has no                       
+                             attribute 'backend_vars'                           
+                             ╭─ Traceback (most recent call last─╮              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:1130 in               │              
+                             │ _error_context                    │              
+                             │                                   │              
+                             │   1127 │   │   self._logger.debug │              
+                             │   1128 │   │   exceptions = []    │              
+                             │   1129 │   │   try:               │              
+                             │ ❱ 1130 │   │   │   yield exceptio │              
+                             │   1131 │   │   except NestedExcep │              
+                             │   1132 │   │   │   exceptions.app │              
+                             │   1133 │   │   │   # No re-loggin │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:1759 in               │              
+                             │ redirect_to_logout                │              
+                             │                                   │              
+                             │   1756 │   │   │   │   # Clear to │              
+                             │   1757 │   │   │   │   # the sess │              
+                             │   1758 │   │   │   │   # redirect │              
+                             │ ❱ 1759 │   │   │   │   await self │              
+                             │   1760 │   │   │   await self._au │              
+                             │   1761 │   │   │   │   AuditActio │              
+                             │   1762 │   │   │   )              │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:847 in _reset_session │              
+                             │                                   │              
+                             │    844 │   │   client token (the  │              
+                             │    845 │   │   """                │              
+                             │    846 │   │   self._reset_auth() │              
+                             │ ❱  847 │   │   await self._reset_ │              
+                             │    848 │                          │              
+                             │    849 │   @requires_plugin(AuthP │              
+                             │    850 │   async def _reset_plugi │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/plugins │              
+                             │ /guards.py:127 in _async_guarded  │              
+                             │                                   │              
+                             │   124 │   │   │   async def _asyn │              
+                             │   125 │   │   │   │   if not has_ │              
+                             │   126 │   │   │   │   │   return  │              
+                             │ ❱ 127 │   │   │   │   return awai │              
+                             │   128 │   │   │                   │              
+                             │   129 │   │   │   return cast("Ca │              
+                             │   130                             │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:862 in                │              
+                             │ _reset_plugin_owned_state         │              
+                             │                                   │              
+                             │    859 │   │   from reflex_enterp │              
+                             │    860 │   │   from reflex_enterp │              
+                             │    861 │   │                      │              
+                             │ ❱  862 │   │   await reset_app_st │              
+                             │    863 │   │   auth_user = await  │              
+                             │    864 │   │   auth_user.reset()  │              
+                             │    865                            │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/en │              
+                             │ forcement.py:1038 in              │              
+                             │ reset_app_state                   │              
+                             │                                   │              
+                             │   1035 │   │   │   substate = awa │              
+                             │   1036 │   │   except Exception:  │              
+                             │   1037 │   │   │   continue  # fa │              
+                             │ ❱ 1038 │   │   _reset_protected(s │              
+                             │   1039                            │              
+                             │   1040                            │              
+                             │   1041 def _field_default(field:  │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/en │              
+                             │ forcement.py:1072 in              │              
+                             │ _reset_protected                  │              
+                             │                                   │              
+                             │   1069 │   │   setattr(substate,  │              
+                             │   1070 │   # Backend vars never r │              
+                             │   1071 │   # always clear them. I │              
+                             │ ❱ 1072 │   for name, value in sta │              
+                             │   1073 │   │   if name not in sta │              
+                             │   1074 │   │   │   setattr(substa │              
+                             │   1075 │   # Drop every protected │              
+                             ╰───────────────────────────────────╯              
+                             AttributeError: type object                        
+                             'ProfileState' has no attribute                    
+                             'backend_vars'                                     
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/05/26 15:58:57] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9131/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     33294f0c-b452-4896-e9a4-530eea6ae43d  state.py:2162
+                             [txid=19aaf1ce0b544d5b8e1a337b59d7677              
+                             4] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to                          
+                             '/agent-consent?…'.                                
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+Warning: Attempting to send delta to disconnected client 
+'a26acb88-e4a7-4cbd-bfb5-f4337e7cb38a'
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/05/26 15:59:23] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9131/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     24d0b3a2-e4e7-4f4b-b278-4cb9f64eca2a  state.py:2162
+                             [txid=f706287581724dc39cf93c9ae88ca1b              
+                             a] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/profile'.              
+                    INFO     24d0b3a2-e4e7-4f4b-b278-4cb9f64eca2a  state.py:1722
+                             [txid=47449d3e0c9e4c87b6bab347ee450cb              
+                             5] User initiated logout                           
+                             (from_popup=False); clearing session.              
+                    ERROR    24d0b3a2-e4e7-4f4b-b278-4cb9f64eca2a  state.py:1090
+                             [txid=47449d3e0c9e4c87b6bab347ee450cb              
+                             5] Processing logout flow                          
+                             (from_popup=False) failed: type                    
+                             object 'ProfileState' has no                       
+                             attribute 'backend_vars'                           
+                             ╭─ Traceback (most recent call last─╮              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:1130 in               │              
+                             │ _error_context                    │              
+                             │                                   │              
+                             │   1127 │   │   self._logger.debug │              
+                             │   1128 │   │   exceptions = []    │              
+                             │   1129 │   │   try:               │              
+                             │ ❱ 1130 │   │   │   yield exceptio │              
+                             │   1131 │   │   except NestedExcep │              
+                             │   1132 │   │   │   exceptions.app │              
+                             │   1133 │   │   │   # No re-loggin │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:1759 in               │              
+                             │ redirect_to_logout                │              
+                             │                                   │              
+                             │   1756 │   │   │   │   # Clear to │              
+                             │   1757 │   │   │   │   # the sess │              
+                             │   1758 │   │   │   │   # redirect │              
+                             │ ❱ 1759 │   │   │   │   await self │              
+                             │   1760 │   │   │   await self._au │              
+                             │   1761 │   │   │   │   AuditActio │              
+                             │   1762 │   │   │   )              │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:847 in _reset_session │              
+                             │                                   │              
+                             │    844 │   │   client token (the  │              
+                             │    845 │   │   """                │              
+                             │    846 │   │   self._reset_auth() │              
+                             │ ❱  847 │   │   await self._reset_ │              
+                             │    848 │                          │              
+                             │    849 │   @requires_plugin(AuthP │              
+                             │    850 │   async def _reset_plugi │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/plugins │              
+                             │ /guards.py:127 in _async_guarded  │              
+                             │                                   │              
+                             │   124 │   │   │   async def _asyn │              
+                             │   125 │   │   │   │   if not has_ │              
+                             │   126 │   │   │   │   │   return  │              
+                             │ ❱ 127 │   │   │   │   return awai │              
+                             │   128 │   │   │                   │              
+                             │   129 │   │   │   return cast("Ca │              
+                             │   130                             │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:862 in                │              
+                             │ _reset_plugin_owned_state         │              
+                             │                                   │              
+                             │    859 │   │   from reflex_enterp │              
+                             │    860 │   │   from reflex_enterp │              
+                             │    861 │   │                      │              
+                             │ ❱  862 │   │   await reset_app_st │              
+                             │    863 │   │   auth_user = await  │              
+                             │    864 │   │   auth_user.reset()  │              
+                             │    865                            │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/en │              
+                             │ forcement.py:1038 in              │              
+                             │ reset_app_state                   │              
+                             │                                   │              
+                             │   1035 │   │   │   substate = awa │              
+                             │   1036 │   │   except Exception:  │              
+                             │   1037 │   │   │   continue  # fa │              
+                             │ ❱ 1038 │   │   _reset_protected(s │              
+                             │   1039                            │              
+                             │   1040                            │              
+                             │   1041 def _field_default(field:  │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/en │              
+                             │ forcement.py:1072 in              │              
+                             │ _reset_protected                  │              
+                             │                                   │              
+                             │   1069 │   │   setattr(substate,  │              
+                             │   1070 │   # Backend vars never r │              
+                             │   1071 │   # always clear them. I │              
+                             │ ❱ 1072 │   for name, value in sta │              
+                             │   1073 │   │   if name not in sta │              
+                             │   1074 │   │   │   setattr(substa │              
+                             │   1075 │   # Drop every protected │              
+                             ╰───────────────────────────────────╯              
+                             AttributeError: type object                        
+                             'ProfileState' has no attribute                    
+                             'backend_vars'                                     
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth_min/rxconfig.py
+[INFO] Modified: /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth_min/auth_min/auth_min.py
+[INFO] Stopping worker-1
+[10/05/26 16:00:55] INFO     StreamableHTTP       streamable_http_manager.py:168
+                             session manager                                    
+                             shutting down                                      
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 98733
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.10s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 34/33 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 'react-error-boundary@6.1.6', 
+'sonner@2.0.8'],[],True,['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun'],[('@react-router/node', '8.4.0'), ('isbot', 
+'5.2.2'), ('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'),
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterpr
+ise/apps/auth_min/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterpr
+ise/apps/auth_min/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.00s
+Debug: [timing] Write to Disk: 0.01s
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_enterprise/plugins/mcp.py:1552)
+Debug: MCPPlugin: using the in-memory OAuth store (no Redis configured). Tokens 
+do not survive restarts and are per-process; configure redis_url for 
+multi-worker deployments.
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_enterprise/plugins/api_tokens.py:114)
+Debug: Using the in-memory API token store (no Redis configured). Tokens do not 
+survive restarts and are per-process; configure redis_url for multi-worker 
+deployments.
+Debug: Registered lifespan task: _mcp_session_manager_lifespan
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[10/05/26 16:00:57] INFO     StreamableHTTP       streamable_http_manager.py:164
+                             session manager                                    
+                             started                                            
+Debug: Started lifespan task: _mcp_session_manager_lifespan as 
+asynccontextmanager
+[INFO] Started worker-1
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[10/05/26 16:01:30] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/.well-known/o                
+                             penid-configuration "HTTP/1.1 200                  
+                             OK"                                                
+                    INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9131/oauth2/token                 
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/jwks                         
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9131/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     a53c942f-4bfb-404f-8f91-b9937deb8daf  state.py:2162
+                             [txid=d0452342cb6d46d89e9eb42839f30d5              
+                             1] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to '/profile'.              
+                    INFO     a53c942f-4bfb-404f-8f91-b9937deb8daf  state.py:1722
+                             [txid=dded4cf815e04db59cc02b736110016              
+                             5] User initiated logout                           
+                             (from_popup=False); clearing session.              
+                    ERROR    a53c942f-4bfb-404f-8f91-b9937deb8daf  state.py:1090
+                             [txid=dded4cf815e04db59cc02b736110016              
+                             5] Processing logout flow                          
+                             (from_popup=False) failed: type                    
+                             object 'ProfileState' has no                       
+                             attribute 'backend_vars'                           
+                             ╭─ Traceback (most recent call last─╮              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:1130 in               │              
+                             │ _error_context                    │              
+                             │                                   │              
+                             │   1127 │   │   self._logger.debug │              
+                             │   1128 │   │   exceptions = []    │              
+                             │   1129 │   │   try:               │              
+                             │ ❱ 1130 │   │   │   yield exceptio │              
+                             │   1131 │   │   except NestedExcep │              
+                             │   1132 │   │   │   exceptions.app │              
+                             │   1133 │   │   │   # No re-loggin │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:1759 in               │              
+                             │ redirect_to_logout                │              
+                             │                                   │              
+                             │   1756 │   │   │   │   # Clear to │              
+                             │   1757 │   │   │   │   # the sess │              
+                             │   1758 │   │   │   │   # redirect │              
+                             │ ❱ 1759 │   │   │   │   await self │              
+                             │   1760 │   │   │   await self._au │              
+                             │   1761 │   │   │   │   AuditActio │              
+                             │   1762 │   │   │   )              │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:847 in _reset_session │              
+                             │                                   │              
+                             │    844 │   │   client token (the  │              
+                             │    845 │   │   """                │              
+                             │    846 │   │   self._reset_auth() │              
+                             │ ❱  847 │   │   await self._reset_ │              
+                             │    848 │                          │              
+                             │    849 │   @requires_plugin(AuthP │              
+                             │    850 │   async def _reset_plugi │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/plugins │              
+                             │ /guards.py:127 in _async_guarded  │              
+                             │                                   │              
+                             │   124 │   │   │   async def _asyn │              
+                             │   125 │   │   │   │   if not has_ │              
+                             │   126 │   │   │   │   │   return  │              
+                             │ ❱ 127 │   │   │   │   return awai │              
+                             │   128 │   │   │                   │              
+                             │   129 │   │   │   return cast("Ca │              
+                             │   130                             │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/oi │              
+                             │ dc/state.py:862 in                │              
+                             │ _reset_plugin_owned_state         │              
+                             │                                   │              
+                             │    859 │   │   from reflex_enterp │              
+                             │    860 │   │   from reflex_enterp │              
+                             │    861 │   │                      │              
+                             │ ❱  862 │   │   await reset_app_st │              
+                             │    863 │   │   auth_user = await  │              
+                             │    864 │   │   auth_user.reset()  │              
+                             │    865                            │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/en │              
+                             │ forcement.py:1038 in              │              
+                             │ reset_app_state                   │              
+                             │                                   │              
+                             │   1035 │   │   │   substate = awa │              
+                             │   1036 │   │   except Exception:  │              
+                             │   1037 │   │   │   continue  # fa │              
+                             │ ❱ 1038 │   │   _reset_protected(s │              
+                             │   1039                            │              
+                             │   1040                            │              
+                             │   1041 def _field_default(field:  │              
+                             │                                   │              
+                             │ /private/tmp/reflex-enterprise-te │              
+                             │ st-20261005/lib/python3.12/site-p │              
+                             │ ackages/reflex_enterprise/auth/en │              
+                             │ forcement.py:1072 in              │              
+                             │ _reset_protected                  │              
+                             │                                   │              
+                             │   1069 │   │   setattr(substate,  │              
+                             │   1070 │   # Backend vars never r │              
+                             │   1071 │   # always clear them. I │              
+                             │ ❱ 1072 │   for name, value in sta │              
+                             │   1073 │   │   if name not in sta │              
+                             │   1074 │   │   │   setattr(substa │              
+                             │   1075 │   # Drop every protected │              
+                             ╰───────────────────────────────────╯              
+                             AttributeError: type object                        
+                             'ProfileState' has no attribute                    
+                             'backend_vars'                                     
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth_min/auth_min/auth_min.py
+[INFO] Stopping worker-1
+[10/05/26 16:03:20] INFO     StreamableHTTP       streamable_http_manager.py:168
+                             session manager                                    
+                             shutting down                                      
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 99524
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.10s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 34/33 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 'react-error-boundary@6.1.6', 
+'sonner@2.0.8'],[],True,['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun'],[('@react-router/node', '8.4.0'), ('isbot', 
+'5.2.2'), ('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'),
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterpr
+ise/apps/auth_min/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterpr
+ise/apps/auth_min/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.00s
+Debug: [timing] Write to Disk: 0.00s
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_enterprise/plugins/mcp.py:1552)
+Debug: MCPPlugin: using the in-memory OAuth store (no Redis configured). Tokens 
+do not survive restarts and are per-process; configure redis_url for 
+multi-worker deployments.
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_enterprise/plugins/api_tokens.py:114)
+Debug: Using the in-memory API token store (no Redis configured). Tokens do not 
+survive restarts and are per-process; configure redis_url for multi-worker 
+deployments.
+Debug: Registered lifespan task: _mcp_session_manager_lifespan
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[10/05/26 16:03:22] INFO     StreamableHTTP       streamable_http_manager.py:164
+                             session manager                                    
+                             started                                            
+Debug: Started lifespan task: _mcp_session_manager_lifespan as 
+asynccontextmanager
+[INFO] Started worker-1
+Debug: 4:03:22 PM [vite] (client) hmr update /utils/context.jsx
+Debug: 4:03:22 PM [vite] (client) hmr update /utils/context.jsx
+Debug: 4:03:22 PM [vite] (client) hmr update /utils/context.jsx
+Debug: 4:03:22 PM [vite] (ssr) page reload utils/context.jsx
+Debug: 4:03:22 PM [vite] (ssr) program reload
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+[10/05/26 16:05:07] INFO     StreamableHTTP       streamable_http_manager.py:168
+                             session manager                                    
+                             shutting down                                      
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

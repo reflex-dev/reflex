@@ -1,0 +1,10 @@
+Using Python 3.13.16 environment at: reflex-alpha-core-state/venv
+Resolved 5 packages in 165ms
+Downloading sqlalchemy (2.3MiB)
+ Downloaded sqlalchemy
+Prepared 4 packages in 86ms
+Installed 4 packages in 6ms
+ + alembic==1.20.0
+ + mako==1.4.3
+ + markupsafe==3.0.4
+ + sqlalchemy==2.1.3

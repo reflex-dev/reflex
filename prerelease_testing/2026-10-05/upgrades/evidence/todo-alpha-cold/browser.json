@@ -1,0 +1,224 @@
+{
+  "url": "http://localhost:3141",
+  "console": [
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    }
+  ],
+  "page_errors": [],
+  "network": [
+    {
+      "url": "http://localhost:3141/",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/@id/__x00__virtual:react-router/browser-manifest",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/styles/__reflex_global_styles.css",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/app/entry.client.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/app/root.jsx",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/@react-router/critical.css?pathname=/",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/@id/__x00__virtual:react-router/inject-hmr-runtime",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/@id/__x00__virtual:react-router/hmr-runtime",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/@vite/client",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/components/reflex/radix_themes_color_mode_provider.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/react-router.js?v=f7ba5770",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/utils/context.jsx",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/react.js?v=f7ba5770",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/utils/theme.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/app_components/reflex/compiler/compiler.jsx",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/app_components/reflex/app.jsx",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/utils/components/Errorboundary_errorboundary_a7facd581506cbdc89fa19e0ccc9659b.jsx",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/@emotion_react.js?v=14a99640",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/utils/react-theme.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/app/_document.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/vite/dist/client/env.mjs",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/utils/state.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/@radix-ui_themes.js?v=d52c5d45",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/utils/context-registry.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/lucide-react_dist_esm_icons_wifi-off__mjs.js?v=1459b581",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/env.json?import",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/rolldown-runtime-DC62tzP2.js?v=ba241318",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/sonner.js?v=85eca0c8",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/styles/__reflex_global_styles.css?url",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/mergician.js?v=56bbd330",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/react-error-boundary.js?v=8297b11d",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/socket__io-client.js?v=bd085cfb",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/reflex.json?import",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/utils/helpers/debounce.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/universal-cookie.js?v=bdc6ad20",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/utils/helpers/json.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/utils/helpers/throttle.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/development-pvWdRfXY.js?v=ba241318",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/utils/helpers/upload.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/react-dom.js?v=f7ba5770",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/react_jsx-runtime.js?v=f7ba5770",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/createLucideIcon-DjADzllH.js?v=ba241318",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/dist-Ch4b-o_w.js?v=ba241318",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/react-router_dom.js?v=f7ba5770",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/react-dom_client.js?v=f7ba5770",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/app/routes/_index.jsx?import",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/app_components/todo/todo.jsx",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/@radix-ui_react-form.js?v=38713016",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3141/node_modules/.vite/deps/lucide-react_dist_esm_icons_check__mjs.js?v=b71fdc40",
+      "status": 200
+    }
+  ],
+  "checks": [
+    "unicode/fragment/percent add, form reset and completion"
+  ],
+  "status": "passed"
+}

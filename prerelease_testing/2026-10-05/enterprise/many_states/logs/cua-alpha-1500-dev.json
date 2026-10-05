@@ -1,0 +1,18 @@
+{
+  "observer": "Codex in-app browser via cua_repl",
+  "reflex": "0.10.0a1",
+  "extra_states": 1500,
+  "production": false,
+  "direct_navigation": "http://localhost:3133/articles/7?alpha=1500-dev",
+  "accessibility": "AXWebArea localhost:3133/articles/7?alpha=1500-dev; container Notifications alt+T",
+  "visual": "Blank white page",
+  "console_errors": [
+    {
+      "level": "error",
+      "message": "RangeError: Maximum call stack size exceeded\n    at pushComponentEffectStart (http://localhost:3133/node_modules/.vite/deps/react-dom_client.js?v=6489b5a2:3463:36)\n    at commitMutationEffectsOnFiber (http://localhost:3133/node_modules/.vite/deps/react-dom_client.js?v=6489b5a2:7842:26)\n    at recursivelyTraverseMutationEffects (http://localhost:3133/node_modules/.vite/deps/react-dom_client.js?v=6489b5a2:7839:103)\n    at commitMutationEffectsOnFiber (http://localhost:3133/node_modules/.vite/deps/react-dom_client.js?v=6489b5a2:8039:14)\n    at recursivelyTraverseMutationEffects (http://localhost:3133/node_modules/.vite/deps/react-dom_client.js?v=6489b5a2:7839:103)\n    at commitMutationEffectsOnFiber (http://localhost:3133/node_modules/.vite/deps/react-dom_client.js?v=6489b5a2:7852:6)\n    at recursivelyTraverseMutationEffects (http://localhost:3133/node_modules/.vite/deps/react-dom_client.js?v=6489b5a2:7839:103)\n    at commitMutationEffectsOnFiber (http://localhost:3133/node_modules/.vite/deps/react-dom_client.js?v=6489b5a2:8039:14)\n    at recursivelyTraverseMutationEffects (http://localhost:3133/node_modules/.vite/deps/react-dom_client.js?v=6489b5a2:7839:103)\n    at commitMutationEffectsOnFiber (http://localhost:3133/node_modules/.vite/deps/react-dom_client.js?v=6489b5a2:7852:6)",
+      "timestamp": "2026-10-05T23:17:14.213Z",
+      "url": "http://localhost:3133/node_modules/.vite/deps/react-dom_client.js?v=6489b5a2"
+    }
+  ],
+  "result": "FAIL"
+}

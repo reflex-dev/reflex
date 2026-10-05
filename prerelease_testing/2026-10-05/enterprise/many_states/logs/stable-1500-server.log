@@ -1,0 +1,146 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-baseline-20261005/lib/python3.12/site-packages/r
+eflex_base/config.py'
+Debug: Config: Config(app_name='lifecycle_app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3133, frontend_path='', 
+backend_port=8133, backend_path='', api_url='http://localhost:8133', 
+deploy_url='http://localhost:3133', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, state_manager_mode='disk', 
+redis_lock_expiration=10000, redis_lock_warning_threshold=1000, 
+redis_token_expiration=3600, _non_default_attributes={'plugins', 
+'telemetry_enabled', 'app_name', 'backend_port', 'frontend_port', 
+'state_manager_mode', 'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []}), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.12 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-baseline-20261005/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: /Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: ['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun']
+Debug: Using package executer at: [['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3133
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 3133 is in use.
+Debug: Checking if Fullstack port: 3133 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Fullstack port: 3133 is not in use.
+QA_APP_IMPORT_STDERR
+QA_APP_IMPORT_STDOUT
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: running_task
+Debug: [timing] Compile pages: 0.02s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 17/16 0:00:00
+Debug: Running command: ['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun', 'add', '--legacy-peer-deps', '-d', 
+'@emotion/react@11.14.0', 'autoprefixer@10.5.4', '@react-router/dev@8.4.0', 
+'postcss-import@17.0.0', '@react-router/fs-routes@8.4.0', 'vite@8.2.2', 
+'postcss@8.5.26']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: Saved lockfile
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed postcss-import@17.0.0
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed postcss@8.5.26
+Debug: 
+Debug: 127 packages installed [100.00ms]
+Debug: Running command: ['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun', 'add', '--legacy-peer-deps', 
+'react-error-boundary@6.1.2', 'react-dom@19.2.8', 'react-helmet@6.1.0', 
+'sonner@2.0.8', 'isbot@5.2.2', 'mergician@v2.0.2', 'react-router@8.4.0', 
+'universal-cookie@8.1.2', 'lucide-react@1.26.0', '@react-router/node@8.4.0', 
+'socket.io-client@4.8.3', '@radix-ui/themes@3.3.0', 'react@19.2.8']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-error-boundary@6.1.2
+Debug: installed react-dom@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: installed sonner@2.0.8
+Debug: installed isbot@5.2.2
+Debug: installed mergician@2.0.2
+Debug: installed react-router@8.4.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed @react-router/node@8.4.0
+Debug: installed socket.io-client@4.8.3
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react@19.2.8
+Debug: 
+Debug: 99 packages installed [131.00ms]
+Debug: Copying .web/bun.lock to 
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterpr
+ise/many_states/stable/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterpr
+ise/many_states/stable/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.25s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.2.2 building client environment for production...
+Debug: transforming...
+Debug: error: script "export" was terminated by signal SIGILL (Illegal 
+instruction)
+Creating Production Build failed with exit code -4
+$ react-router build
+Using Vite Environment API
+vite v8.2.2 building client environment for production...
+transforming...
+error: script "export" was terminated by signal SIGILL (Illegal instruction)
+
+
+
+Run with --loglevel debug  for the full log.
+Creating Production Build:  ━━━━━━━━╸                            25% 1/4 0:00:01

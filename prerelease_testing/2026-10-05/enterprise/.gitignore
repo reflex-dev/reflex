@@ -1,0 +1,7 @@
+**/.web/
+**/.states/
+**/__pycache__/
+**/*.pyc
+**/reflex.db
+**/.reflex/
+**/.gitignore.generated

@@ -1,0 +1,422 @@
+{
+  "url": "http://localhost:3142",
+  "console": [
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] css hot updated: /styles/__reflex_global_styles.css"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    }
+  ],
+  "page_errors": [],
+  "network": [
+    {
+      "url": "http://localhost:3142/",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/app/entry.client.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/app/root.jsx",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/@id/__x00__virtual:react-router/browser-manifest",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/styles/__reflex_global_styles.css",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/@react-router/critical.css?pathname=/",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/@id/__x00__virtual:react-router/hmr-runtime",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/react-router.js?v=9f81802b",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/react.js?v=9f81802b",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/components/reflex/radix_themes_color_mode_provider.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/app_components/reflex/compiler/compiler.jsx",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/utils/components/Errorboundary_errorboundary_a7facd581506cbdc89fa19e0ccc9659b.jsx",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/utils/context.jsx",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/utils/theme.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/app_components/reflex/app.jsx",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/utils/react-theme.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/@emotion_react.js?v=0e014849",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/utils/state.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/@radix-ui_themes.js?v=a7cb41ec",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/app/_document.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/rolldown-runtime-DC62tzP2.js?v=0e6a675c",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/sonner.js?v=d3f5b770",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/utils/context-registry.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/react-error-boundary.js?v=5f4fb6e0",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/lucide-react_dist_esm_icons_wifi-off__mjs.js?v=eac35e13",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/env.json?import",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/development-pvWdRfXY.js?v=0e6a675c",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/reflex.json?import",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/mergician.js?v=77cbce38",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=88234576",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/universal-cookie.js?v=c149da3f",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/utils/helpers/debounce.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/utils/helpers/json.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/utils/helpers/throttle.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/utils/helpers/upload.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/react_jsx-runtime.js?v=9f81802b",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/styles/__reflex_global_styles.css?url",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/react-dom.js?v=9f81802b",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/@id/__x00__virtual:react-router/inject-hmr-runtime",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/@vite/client",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/vite/dist/client/env.mjs",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/react-router_dom.js?v=9f81802b",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/react-dom_client.js?v=9f81802b",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/app/routes/_index.jsx?import",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/app_components/lifecycle_app/lifecycle_app.jsx",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/styles/__reflex_global_styles.css?t=1791241992745",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/app/routes/[articles].$[article_id]._index.jsx?import",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/articles/7?self=1",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/styles/__reflex_global_styles.css",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/@react-router/critical.css?pathname=/articles/7",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/@id/__x00__virtual:react-router/browser-manifest",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/app/entry.client.js",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/app/root.jsx",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/react-router.js?v=9f81802b",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/react.js?v=9f81802b",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/@radix-ui_themes.js?v=a7cb41ec",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/@emotion_react.js?v=0e014849",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/@id/__x00__virtual:react-router/inject-hmr-runtime",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/development-pvWdRfXY.js?v=0e6a675c",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/rolldown-runtime-DC62tzP2.js?v=0e6a675c",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/react_jsx-runtime.js?v=9f81802b",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/react-dom.js?v=9f81802b",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/@vite/client",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/@id/__x00__virtual:react-router/hmr-runtime",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/utils/context.jsx",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/utils/components/Errorboundary_errorboundary_a7facd581506cbdc89fa19e0ccc9659b.jsx",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/react-error-boundary.js?v=5f4fb6e0",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/utils/theme.js",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/app_components/reflex/app.jsx",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/lucide-react_dist_esm_icons_wifi-off__mjs.js?v=eac35e13",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/components/reflex/radix_themes_color_mode_provider.js",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/app_components/reflex/compiler/compiler.jsx",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/sonner.js?v=d3f5b770",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/utils/state.js",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/socket__io-client.js?v=88234576",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/mergician.js?v=77cbce38",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/universal-cookie.js?v=c149da3f",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/vite/dist/client/env.mjs",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/utils/react-theme.js",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/app/_document.js",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/utils/context-registry.js",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/env.json?import",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/reflex.json?import",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/utils/helpers/debounce.js",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/utils/helpers/json.js",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/utils/helpers/throttle.js",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/utils/helpers/upload.js",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/styles/__reflex_global_styles.css?url",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/react-dom_client.js?v=9f81802b",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/node_modules/.vite/deps/react-router_dom.js?v=9f81802b",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/app/routes/[articles].$[article_id]._index.jsx?import",
+      "status": 304
+    },
+    {
+      "url": "http://localhost:3142/app_components/lifecycle_app/lifecycle_app.jsx",
+      "status": 304
+    }
+  ],
+  "checks": [
+    "event state, subprocess output, failure and subsequent event",
+    "CSS HMR without reload or State reset; no development preload",
+    "memo route, direct navigation and self query"
+  ],
+  "status": "passed"
+}

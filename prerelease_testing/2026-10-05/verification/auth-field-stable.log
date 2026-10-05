@@ -1,0 +1,6 @@
+WARN `--no-project` was provided, but no project was found
+{"reflex_version": "0.9.12", "enterprise_version": "0.9.7a2", "reflex_origin": "/private/tmp/reflex-pre-20261005-verify-stable/lib/python3.12/site-packages/reflex/__init__.py", "enterprise_origin": "/private/tmp/reflex-pre-20261005-verify-stable/lib/python3.12/site-packages/reflex_enterprise/__init__.py"}
+{"field": "public_count", "value_type": "reflex_base.vars.base.NumberCastedVar", "rendered": true}
+{"field": "secret_count", "value_type": "reflex_base.vars.base.NumberCastedVar", "rendered": true}
+{"field": "core_count", "value_type": "reflex_base.vars.base.NumberCastedVar", "rendered": true}
+{"field": "public_simple", "value_type": "reflex_base.vars.base.NumberCastedVar", "rendered": true}

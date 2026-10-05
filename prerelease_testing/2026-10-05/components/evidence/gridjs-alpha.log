@@ -1,0 +1,254 @@
+WARN `--no-project` was provided, but no project was found
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-prerelease-components-20261005/venv/lib/python3.13/site-pac
+kages/reflex_base/config.py'
+Debug: Config: Config(app_name='gridjs_probe', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3122, frontend_path='', 
+backend_port=8122, backend_path='', api_url='http://localhost:3122', 
+deploy_url='http://localhost:3122', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-prerelease-components-20261005/runtime/b
+un/bin/bun'), frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'telemetry_enabled', 'backend_port', 'loglevel', 
+'api_url', 'app_name', 'frontend_port'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/b
+un'), '--version']
+Debug: [Reflex 0.10.0a1 with Python 3.13.0 (PATH: 
+/private/tmp/reflex-prerelease-components-20261005/venv/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3122
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 3122 is in use.
+Debug: Checking if Fullstack port: 3122 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Fullstack port: 3122 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/private/tmp/reflex-prerelease-components-20261005/venv/lib/python3.13/site-pac
+kages/reflex_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.05s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 14/13 0:00:00
+Debug: Running command: 
+['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun', 
+'install', '--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.2 (744846f84)
+Debug: 
+Debug: + @emotion/react@11.14.0
+Debug: + @react-router/dev@8.4.0
+Debug: + @react-router/fs-routes@8.4.0
+Debug: + autoprefixer@10.5.4
+Debug: + postcss@8.5.26
+Debug: + postcss-import@17.0.0
+Debug: + vite@8.2.2
+Debug: + @radix-ui/themes@3.3.0
+Debug: + @react-router/node@8.4.0
+Debug: + gridjs@6.2.0
+Debug: + gridjs-react@6.1.1
+Debug: + isbot@5.2.2
+Debug: + lucide-react@1.26.0
+Debug: + mergician@2.0.2
+Debug: + react@19.2.8
+Debug: + react-dom@19.2.8
+Debug: + react-error-boundary@6.1.2
+Debug: + react-helmet@6.1.0
+Debug: + react-router@8.4.0
+Debug: + socket.io-client@4.8.3
+Debug: + sonner@2.0.8
+Debug: + universal-cookie@8.1.2
+Debug: 
+Debug: 228 packages installed [292.00ms]
+Debug: Running command: 
+['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun', 
+'add', '--legacy-peer-deps', '-d', 'autoprefixer@10.6.1', 
+'@emotion/react@11.14.0', '@react-router/fs-routes@8.4.0', 'postcss@8.5.29', 
+'vite@8.3.2', '@react-router/dev@8.4.0', 'postcss-import@17.0.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.2 (744846f84)
+Debug: Saved lockfile
+Debug: 
+Debug: installed autoprefixer@10.6.1 with binaries:
+Debug:  - autoprefixer
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed postcss@8.5.29
+Debug: installed vite@8.3.2 with binaries:
+Debug:  - vite
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed postcss-import@17.0.0
+Debug: 
+Debug: 7 packages installed [54.00ms]
+Debug: Running command: 
+['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun', 
+'add', '--legacy-peer-deps', 'socket.io-client@4.8.4', 'sonner@2.0.8', 
+'gridjs-react@6.1.1', 'mergician@v2.0.2', 'react-router@8.4.0', 'react@19.3.0', 
+'react-helmet@6.1.0', 'universal-cookie@8.1.2', '@radix-ui/themes@3.3.0', 
+'isbot@5.2.2', '@react-router/node@8.4.0', 'gridjs@6.2.0', 
+'react-error-boundary@6.1.6', 'lucide-react@1.26.0', 'react-dom@19.3.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: Saved lockfile
+Debug: 
+Debug: installed socket.io-client@4.8.4
+Debug: installed sonner@2.0.8
+Debug: installed gridjs-react@6.1.1
+Debug: installed mergician@2.0.2
+Debug: installed react-router@8.4.0
+Debug: installed react@19.3.0
+Debug: installed react-helmet@6.1.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed isbot@5.2.2
+Debug: installed @react-router/node@8.4.0
+Debug: installed gridjs@6.2.0
+Debug: installed react-error-boundary@6.1.6
+Debug: installed lucide-react@1.26.0
+Debug: installed react-dom@19.3.0
+Debug: 
+Debug: 15 packages installed [28.00ms]
+Debug: Copying .web/bun.lock to 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/reflex.lock
+/bun.lock
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/reflex.lock
+/package.json
+Debug: [timing] Install Frontend Packages: 0.40s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: 
+['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun', 
+'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.3.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 434 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                             3.15 kB │ 
+gzip:  0.63 kB
+Debug: build/client/assets/_index-BAzSiKJt.css                      8.77 kB │ 
+gzip:  2.76 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css    698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/client/assets/reflex-env-K4JOOxCq.js                   0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/client/assets/_404_._index-BH4Lz19y.js                 0.41 kB │ 
+gzip:  0.29 kB
+Debug: build/client/assets/_index-RwvwL6pD.js                       1.95 kB │ 
+gzip:  0.88 kB
+Debug: build/client/assets/emotion-react.browser.esm-Ne-RHRfi.js   20.71 kB │ 
+gzip:  8.12 kB
+Debug: build/client/assets/errorBoundaries-CiT9mVDO.js             37.35 kB │ 
+gzip: 12.92 kB
+Debug: build/client/assets/gridjs.production.es.min-BjPkWTm2.js    53.32 kB │ 
+gzip: 16.97 kB
+Debug: build/client/assets/components-Bl0Za3ky.js                  86.82 kB │ 
+gzip: 28.73 kB
+Debug: build/client/assets/button-C5GJDj-3.js                     120.04 kB │ 
+gzip: 35.79 kB
+Debug: build/client/assets/entry.client-XSpL7cin.js               210.96 kB │ 
+gzip: 66.25 kB
+Debug: build/client/assets/root-drWd6qZl.js                       308.77 kB │ 
+gzip: 86.91 kB
+Debug: 
+Debug: ✓ built in 535ms
+Debug: vite v8.3.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 27 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 2 assets cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: build/server/assets/server-build-BAzSiKJt.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.76 kB │ 
+gzip:  0.30 kB
+Debug: build/server/assets/server-build-BAzSiKJt.css              8.77 kB │ 
+gzip:  2.76 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-K4JOOxCq.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                     47.35 kB │ 
+gzip: 14.93 kB
+Debug: 
+Debug: ✓ built in 150ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:01
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/b
+un'), 
+PosixPath('/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/
+.web/compress-static.js'), 
+PosixPath('/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/
+.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3122/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 3842)
+[INFO] Listening at: http://0.0.0.0:3122
+[INFO] Spawning worker-1 with PID: 3853
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3122
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

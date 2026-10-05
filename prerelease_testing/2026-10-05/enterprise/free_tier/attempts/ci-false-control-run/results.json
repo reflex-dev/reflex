@@ -1,0 +1,616 @@
+{
+  "provenance": {
+    "reflex_origin": "/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/reflex/__init__.py",
+    "enterprise_origin": "/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/reflex_enterprise/__init__.py",
+    "python": "/private/tmp/reflex-enterprise-test-20261005/bin/python",
+    "packages": {
+      "reflex": "0.10.0a1",
+      "reflex-base": "0.10.0a1",
+      "reflex-enterprise": "0.9.7a2",
+      "reflex-hosting-cli": "0.1.73a1",
+      "playwright": "1.55.0"
+    },
+    "api_bind": "127.0.0.1",
+    "ci_bypass": false,
+    "tier_functions_patched": false,
+    "credential_configuration_only_redirected": true
+  },
+  "results": [
+    {
+      "name": "free-prod-badge-on",
+      "tier": "Free",
+      "badge_requested": true,
+      "ci": false,
+      "command": [
+        "/Users/masenf/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-enterprise-test-20261005/bin/python",
+        "python",
+        "cli_entry.py",
+        "run",
+        "--env",
+        "prod",
+        "--frontend-port",
+        "3131",
+        "--backend-port",
+        "3131",
+        "--backend-host",
+        "127.0.0.1",
+        "--loglevel",
+        "debug"
+      ],
+      "credential_file_redirected": true,
+      "browser": {
+        "badge_visible": true,
+        "counter": "1",
+        "page_errors": [],
+        "console": []
+      },
+      "badge_restriction_warning": false,
+      "denied_message": false,
+      "http_requests": [
+        {
+          "case": "free-prod-badge-on",
+          "method": "POST",
+          "path": "/api/v1/authenticate/me",
+          "body": null,
+          "sdk_token_present": true,
+          "only_fixture_credential": true,
+          "response_tier": "Free",
+          "status": 200
+        },
+        {
+          "case": "free-prod-badge-on",
+          "method": "POST",
+          "path": "/api/v1/authenticate/me",
+          "body": null,
+          "sdk_token_present": true,
+          "only_fixture_credential": true,
+          "response_tier": "Free",
+          "status": 200
+        }
+      ],
+      "python_connections": [
+        {
+          "pid": 8196,
+          "host": "127.0.0.1",
+          "port": 61416,
+          "allowed": true
+        },
+        {
+          "pid": 8217,
+          "host": "127.0.0.1",
+          "port": 61416,
+          "allowed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "name": "free-prod-badge-off",
+      "tier": "Free",
+      "badge_requested": false,
+      "ci": false,
+      "command": [
+        "/Users/masenf/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-enterprise-test-20261005/bin/python",
+        "python",
+        "cli_entry.py",
+        "run",
+        "--env",
+        "prod",
+        "--frontend-port",
+        "3131",
+        "--backend-port",
+        "3131",
+        "--backend-host",
+        "127.0.0.1",
+        "--loglevel",
+        "debug"
+      ],
+      "credential_file_redirected": true,
+      "browser": {
+        "badge_visible": true,
+        "counter": "1",
+        "page_errors": [],
+        "console": []
+      },
+      "badge_restriction_warning": true,
+      "denied_message": false,
+      "http_requests": [
+        {
+          "case": "free-prod-badge-off",
+          "method": "POST",
+          "path": "/api/v1/authenticate/me",
+          "body": null,
+          "sdk_token_present": true,
+          "only_fixture_credential": true,
+          "response_tier": "Free",
+          "status": 200
+        },
+        {
+          "case": "free-prod-badge-off",
+          "method": "POST",
+          "path": "/api/v1/authenticate/me",
+          "body": null,
+          "sdk_token_present": true,
+          "only_fixture_credential": true,
+          "response_tier": "Free",
+          "status": 200
+        }
+      ],
+      "python_connections": [
+        {
+          "pid": 8221,
+          "host": "127.0.0.1",
+          "port": 61416,
+          "allowed": true
+        },
+        {
+          "pid": 8231,
+          "host": "127.0.0.1",
+          "port": 61416,
+          "allowed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "name": "free-export-prod-badge-on",
+      "tier": "Free",
+      "badge_requested": true,
+      "ci": false,
+      "command": [
+        "/Users/masenf/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-enterprise-test-20261005/bin/python",
+        "python",
+        "cli_entry.py",
+        "export",
+        "--env",
+        "prod",
+        "--frontend-only",
+        "--zip-dest-dir",
+        "/private/tmp/reflex-free-tier-2yp1qsn9/free-export-prod-badge-on",
+        "--loglevel",
+        "debug"
+      ],
+      "credential_file_redirected": true,
+      "exit_code": 0,
+      "export": {
+        "archive": "frontend.zip",
+        "bytes": 655959,
+        "sha256": "22a2aa6f62e0be20273dafd057872f98a40bd55b784638f6ffea469f93cd4b08",
+        "member_count": 29,
+        "badge_in_server_html": true,
+        "visible_server_text": "FreeTier | Index Badge policy QA 0 Increment Built with Reflex"
+      },
+      "badge_restriction_warning": false,
+      "denied_message": false,
+      "http_requests": [
+        {
+          "case": "free-export-prod-badge-on",
+          "method": "POST",
+          "path": "/api/v1/authenticate/me",
+          "body": null,
+          "sdk_token_present": true,
+          "only_fixture_credential": true,
+          "response_tier": "Free",
+          "status": 200
+        }
+      ],
+      "python_connections": [
+        {
+          "pid": 8234,
+          "host": "127.0.0.1",
+          "port": 61416,
+          "allowed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "name": "free-export-prod-badge-off",
+      "tier": "Free",
+      "badge_requested": false,
+      "ci": false,
+      "command": [
+        "/Users/masenf/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-enterprise-test-20261005/bin/python",
+        "python",
+        "cli_entry.py",
+        "export",
+        "--env",
+        "prod",
+        "--frontend-only",
+        "--zip-dest-dir",
+        "/private/tmp/reflex-free-tier-2yp1qsn9/free-export-prod-badge-off",
+        "--loglevel",
+        "debug"
+      ],
+      "credential_file_redirected": true,
+      "exit_code": 0,
+      "export": {
+        "archive": "frontend.zip",
+        "bytes": 655961,
+        "sha256": "6b462e54e0fc580080868b434d9635ff334167152595127784257efcb2ac333b",
+        "member_count": 29,
+        "badge_in_server_html": true,
+        "visible_server_text": "FreeTier | Index Badge policy QA 0 Increment Built with Reflex"
+      },
+      "badge_restriction_warning": true,
+      "denied_message": false,
+      "http_requests": [
+        {
+          "case": "free-export-prod-badge-off",
+          "method": "POST",
+          "path": "/api/v1/authenticate/me",
+          "body": null,
+          "sdk_token_present": true,
+          "only_fixture_credential": true,
+          "response_tier": "Free",
+          "status": 200
+        }
+      ],
+      "python_connections": [
+        {
+          "pid": 8240,
+          "host": "127.0.0.1",
+          "port": 61416,
+          "allowed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "name": "free-export-dev-badge-on",
+      "tier": "Free",
+      "badge_requested": true,
+      "ci": false,
+      "command": [
+        "/Users/masenf/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-enterprise-test-20261005/bin/python",
+        "python",
+        "cli_entry.py",
+        "export",
+        "--env",
+        "dev",
+        "--frontend-only",
+        "--zip-dest-dir",
+        "/private/tmp/reflex-free-tier-2yp1qsn9/free-export-dev-badge-on",
+        "--loglevel",
+        "debug"
+      ],
+      "credential_file_redirected": true,
+      "exit_code": 0,
+      "export": {
+        "archive": "frontend.zip",
+        "bytes": 656096,
+        "sha256": "cbed58d0c5becde4dfeaffbe6822e4ebc4e5e98e767fc62177027bd74444bfb0",
+        "member_count": 29,
+        "badge_in_server_html": true,
+        "visible_server_text": "FreeTier | Index Badge policy QA 0 Increment Built with Reflex",
+        "browser": {
+          "badge_visible": true,
+          "counter": "0",
+          "page_errors": [],
+          "console": [
+            {
+              "type": "error",
+              "text": "WebSocket connection to 'ws://127.0.0.1:8131/_event/?token=234dc9b1-7a31-4170-d53e-dc27a895f48e&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+            },
+            {
+              "type": "error",
+              "text": "WebSocket connection to 'ws://127.0.0.1:8131/_event/?token=234dc9b1-7a31-4170-d53e-dc27a895f48e&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+            },
+            {
+              "type": "error",
+              "text": "WebSocket connection to 'ws://127.0.0.1:8131/_event/?token=234dc9b1-7a31-4170-d53e-dc27a895f48e&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+            }
+          ]
+        }
+      },
+      "badge_restriction_warning": false,
+      "denied_message": false,
+      "http_requests": [
+        {
+          "case": "free-export-dev-badge-on",
+          "method": "POST",
+          "path": "/api/v1/authenticate/me",
+          "body": null,
+          "sdk_token_present": true,
+          "only_fixture_credential": true,
+          "response_tier": "Free",
+          "status": 200
+        }
+      ],
+      "python_connections": [
+        {
+          "pid": 8258,
+          "host": "127.0.0.1",
+          "port": 61416,
+          "allowed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "name": "paid-export-prod-badge-off",
+      "tier": "Enterprise",
+      "badge_requested": false,
+      "ci": false,
+      "command": [
+        "/Users/masenf/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-enterprise-test-20261005/bin/python",
+        "python",
+        "cli_entry.py",
+        "export",
+        "--env",
+        "prod",
+        "--frontend-only",
+        "--zip-dest-dir",
+        "/private/tmp/reflex-free-tier-2yp1qsn9/paid-export-prod-badge-off",
+        "--loglevel",
+        "debug"
+      ],
+      "credential_file_redirected": true,
+      "exit_code": 0,
+      "export": {
+        "archive": "frontend.zip",
+        "bytes": 650755,
+        "sha256": "bd345e4f66cc6d39e82ed2fbee178c96a611c6818d292f610b2a90f62bcf8798",
+        "member_count": 29,
+        "badge_in_server_html": false,
+        "visible_server_text": "FreeTier | Index Badge policy QA 0 Increment"
+      },
+      "badge_restriction_warning": false,
+      "denied_message": false,
+      "http_requests": [
+        {
+          "case": "paid-export-prod-badge-off",
+          "method": "POST",
+          "path": "/api/v1/authenticate/me",
+          "body": null,
+          "sdk_token_present": true,
+          "only_fixture_credential": true,
+          "response_tier": "Enterprise",
+          "status": 200
+        }
+      ],
+      "python_connections": [
+        {
+          "pid": 8266,
+          "host": "127.0.0.1",
+          "port": 61416,
+          "allowed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "name": "rejected-prod",
+      "tier": "Rejected",
+      "badge_requested": true,
+      "ci": false,
+      "command": [
+        "/Users/masenf/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-enterprise-test-20261005/bin/python",
+        "python",
+        "cli_entry.py",
+        "run",
+        "--env",
+        "prod",
+        "--frontend-port",
+        "3131",
+        "--backend-port",
+        "3131",
+        "--backend-host",
+        "127.0.0.1",
+        "--loglevel",
+        "debug"
+      ],
+      "credential_file_redirected": true,
+      "exit_code": 0,
+      "badge_restriction_warning": false,
+      "denied_message": true,
+      "http_requests": [
+        {
+          "case": "rejected-prod",
+          "method": "POST",
+          "path": "/api/v1/authenticate/me",
+          "body": null,
+          "sdk_token_present": true,
+          "only_fixture_credential": true,
+          "response_tier": "Rejected",
+          "status": 401
+        }
+      ],
+      "python_connections": [
+        {
+          "pid": 8272,
+          "host": "127.0.0.1",
+          "port": 61416,
+          "allowed": true
+        }
+      ],
+      "result": "PASS"
+    },
+    {
+      "name": "rejected-export",
+      "tier": "Rejected",
+      "badge_requested": true,
+      "ci": false,
+      "command": [
+        "/Users/masenf/.local/bin/uv",
+        "--no-config",
+        "run",
+        "--no-project",
+        "--python",
+        "/private/tmp/reflex-enterprise-test-20261005/bin/python",
+        "python",
+        "cli_entry.py",
+        "export",
+        "--env",
+        "prod",
+        "--frontend-only",
+        "--zip-dest-dir",
+        "/private/tmp/reflex-free-tier-2yp1qsn9/rejected-export",
+        "--loglevel",
+        "debug"
+      ],
+      "credential_file_redirected": true,
+      "exit_code": 0,
+      "badge_restriction_warning": false,
+      "denied_message": true,
+      "http_requests": [
+        {
+          "case": "rejected-export",
+          "method": "POST",
+          "path": "/api/v1/authenticate/me",
+          "body": null,
+          "sdk_token_present": true,
+          "only_fixture_credential": true,
+          "response_tier": "Rejected",
+          "status": 401
+        }
+      ],
+      "python_connections": [
+        {
+          "pid": 8275,
+          "host": "127.0.0.1",
+          "port": 61416,
+          "allowed": true
+        }
+      ],
+      "result": "PASS"
+    }
+  ],
+  "api_requests": [
+    {
+      "case": "free-prod-badge-on",
+      "method": "POST",
+      "path": "/api/v1/authenticate/me",
+      "body": null,
+      "sdk_token_present": true,
+      "only_fixture_credential": true,
+      "response_tier": "Free",
+      "status": 200
+    },
+    {
+      "case": "free-prod-badge-on",
+      "method": "POST",
+      "path": "/api/v1/authenticate/me",
+      "body": null,
+      "sdk_token_present": true,
+      "only_fixture_credential": true,
+      "response_tier": "Free",
+      "status": 200
+    },
+    {
+      "case": "free-prod-badge-off",
+      "method": "POST",
+      "path": "/api/v1/authenticate/me",
+      "body": null,
+      "sdk_token_present": true,
+      "only_fixture_credential": true,
+      "response_tier": "Free",
+      "status": 200
+    },
+    {
+      "case": "free-prod-badge-off",
+      "method": "POST",
+      "path": "/api/v1/authenticate/me",
+      "body": null,
+      "sdk_token_present": true,
+      "only_fixture_credential": true,
+      "response_tier": "Free",
+      "status": 200
+    },
+    {
+      "case": "free-export-prod-badge-on",
+      "method": "POST",
+      "path": "/api/v1/authenticate/me",
+      "body": null,
+      "sdk_token_present": true,
+      "only_fixture_credential": true,
+      "response_tier": "Free",
+      "status": 200
+    },
+    {
+      "case": "free-export-prod-badge-off",
+      "method": "POST",
+      "path": "/api/v1/authenticate/me",
+      "body": null,
+      "sdk_token_present": true,
+      "only_fixture_credential": true,
+      "response_tier": "Free",
+      "status": 200
+    },
+    {
+      "case": "free-export-dev-badge-on",
+      "method": "POST",
+      "path": "/api/v1/authenticate/me",
+      "body": null,
+      "sdk_token_present": true,
+      "only_fixture_credential": true,
+      "response_tier": "Free",
+      "status": 200
+    },
+    {
+      "case": "paid-export-prod-badge-off",
+      "method": "POST",
+      "path": "/api/v1/authenticate/me",
+      "body": null,
+      "sdk_token_present": true,
+      "only_fixture_credential": true,
+      "response_tier": "Enterprise",
+      "status": 200
+    },
+    {
+      "case": "rejected-prod",
+      "method": "POST",
+      "path": "/api/v1/authenticate/me",
+      "body": null,
+      "sdk_token_present": true,
+      "only_fixture_credential": true,
+      "response_tier": "Rejected",
+      "status": 401
+    },
+    {
+      "case": "rejected-export",
+      "method": "POST",
+      "path": "/api/v1/authenticate/me",
+      "body": null,
+      "sdk_token_present": true,
+      "only_fixture_credential": true,
+      "response_tier": "Rejected",
+      "status": 401
+    }
+  ]
+}

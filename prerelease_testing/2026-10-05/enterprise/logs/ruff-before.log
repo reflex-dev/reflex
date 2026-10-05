@@ -1,0 +1,111 @@
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/auth/auth.py:3:1: unsorted-imports: [*] Import block is un-sorted or un-formatted
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/auth/auth.py:11:7: undocumented-public-class: Missing docstring in public class
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/auth/auth.py:40:7: undocumented-public-class: Missing docstring in public class
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/auth/auth.py:47:9: undocumented-public-method: Missing docstring in public method
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/auth/auth.py:52:9: undocumented-public-method: Missing docstring in public method
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/auth/auth.py:56:9: undocumented-public-method: Missing docstring in public method
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/auth/auth.py:62:15: undocumented-public-method: Missing docstring in public method
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/auth/auth.py:70:15: undocumented-public-method: Missing docstring in public method
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/auth/auth.py:74:9: undocumented-public-method: Missing docstring in public method
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/auth/auth.py:80:15: undocumented-public-method: Missing docstring in public method
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/auth/auth.py:85:9: undocumented-public-method: Missing docstring in public method
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/auth/auth.py:92:15: undocumented-public-method: Missing docstring in public method
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/auth/auth.py:100:5: undocumented-public-function: Missing docstring in public function
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/auth/auth.py:121:5: undocumented-public-function: Missing docstring in public function
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/auth/auth.py:126:5: undocumented-public-function: Missing docstring in public function
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/rxconfig.py:1:1: implicit-namespace-package: File `/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/rxconfig.py` is part of an implicit namespace package. Add an `__init__.py`.
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth_min/auth_min/auth_min.py:3:1: unsorted-imports: [*] Import block is un-sorted or un-formatted
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth_min/rxconfig.py:1:1: implicit-namespace-package: File `/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth_min/rxconfig.py` is part of an implicit namespace package. Add an `__init__.py`.
+components/components.py:3:1: unsorted-imports: [*] Import block is un-sorted or un-formatted
+components/components.py:234:11: unused-async: Function `rows_endpoint` is declared `async`, but doesn't `await` or use `async` features.
+components/components.py:239:23: reimplemented-operator: Use `operator.itemgetter(sort["colId"])` instead of defining a lambda
+components/fly_to_location.py:3:1: unsorted-imports: [*] Import block is un-sorted or un-formatted
+components/fly_to_location.py:25:9: undocumented-public-method: Missing docstring in public method
+components/fly_to_location.py:32:9: undocumented-public-method: Missing docstring in public method
+components/fly_to_location.py:41:9: undocumented-public-method: Missing docstring in public method
+components/fly_to_location.py:58:5: undocumented-public-function: Missing docstring in public function
+components/map_controls.py:3:1: unsorted-imports: [*] Import block is un-sorted or un-formatted
+components/map_controls.py:13:5: unnecessary-placeholder: [*] Unnecessary `pass` statement
+components/map_controls.py:21:5: undocumented-public-function: Missing docstring in public function
+components/map_controls.py:36:13: commented-out-code: Found commented-out code
+components/map_controls.py:37:13: commented-out-code: Found commented-out code
+components/map_controls.py:44:13: commented-out-code: Found commented-out code
+components/map_controls.py:46:13: commented-out-code: Found commented-out code
+components/map_controls.py:47:13: commented-out-code: Found commented-out code
+components/map_controls.py:51:13: commented-out-code: Found commented-out code
+components/map_controls.py:53:13: commented-out-code: Found commented-out code
+components/map_controls.py:58:13: commented-out-code: Found commented-out code
+components/map_controls.py:59:13: commented-out-code: Found commented-out code
+components/map_controls.py:60:13: commented-out-code: Found commented-out code
+components/map_controls.py:61:13: commented-out-code: Found commented-out code
+components/map_controls.py:62:13: commented-out-code: Found commented-out code
+components/map_controls.py:63:13: commented-out-code: Found commented-out code
+components/map_controls.py:66:13: commented-out-code: Found commented-out code
+components/map_controls.py:67:13: commented-out-code: Found commented-out code
+components/map_controls.py:71:13: commented-out-code: Found commented-out code
+components/map_controls.py:72:13: commented-out-code: Found commented-out code
+components/map_controls.py:74:13: commented-out-code: Found commented-out code
+components/map_controls.py:75:13: commented-out-code: Found commented-out code
+components/map_controls.py:77:13: commented-out-code: Found commented-out code
+components/map_controls.py:78:13: commented-out-code: Found commented-out code
+components/map_controls.py:111:17: commented-out-code: Found commented-out code
+components/map_controls.py:112:17: commented-out-code: Found commented-out code
+components/saved_state.py:3:1: unsorted-imports: [*] Import block is un-sorted or un-formatted
+components/saved_state.py:86:9: docstring-missing-returns: `return` is not documented in docstring
+components/saved_state.py:97:5: docstring-missing-returns: `return` is not documented in docstring
+components/vector_layers.py:3:1: unsorted-imports: [*] Import block is un-sorted or un-formatted
+components/vector_layers.py:23:5: undocumented-public-function: Missing docstring in public function
+rxconfig.py:1:1: implicit-namespace-package: File `rxconfig.py` is part of an implicit namespace package. Add an `__init__.py`.
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/check_mcp.py:1:1: implicit-namespace-package: File `/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/check_mcp.py` is part of an implicit namespace package. Add an `__init__.py`.
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/check_mcp.py:15:16: missing-type-function-argument: Missing type annotation for function argument `result`
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/check_mcp.py:69:9: multiple-with-statements: Use a single `with` statement with multiple contexts instead of nested `with` statements
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/check_mcp.py:141:5: print: `print` found
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/check_mcp_oauth.py:1:1: implicit-namespace-package: File `/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/check_mcp_oauth.py` is part of an implicit namespace package. Add an `__init__.py`.
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/check_mcp_oauth.py:32:5: multiple-with-statements: [*] Use a single `with` statement with multiple contexts instead of nested `with` statements
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/check_mcp_oauth.py:138:42: unraw-re-pattern: [*] First argument to `re.compile()` is not raw string
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/check_mcp_oauth.py:140:42: unraw-re-pattern: [*] First argument to `re.compile()` is not raw string
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/check_mcp_oauth.py:142:42: unraw-re-pattern: [*] First argument to `re.compile()` is not raw string
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/check_mcp_oauth.py:221:5: print: `print` found
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth.py:1:1: implicit-namespace-package: File `/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth.py` is part of an implicit namespace package. Add an `__init__.py`.
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth.py:24:9: pytest-composite-assertion: [*] Assertion should be broken down into multiple parts
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth.py:45:29: function-uses-loop-variable: Function definition does not bind loop variable `console`
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth.py:47:48: function-uses-loop-variable: Function definition does not bind loop variable `errors`
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth.py:50:29: function-uses-loop-variable: Function definition does not bind loop variable `failures`
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth.py:70:13: print: `print` found
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth_min.py:1:1: implicit-namespace-package: File `/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth_min.py` is part of an implicit namespace package. Add an `__init__.py`.
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth_min.py:14:15: missing-type-function-argument: Missing type annotation for function argument `page`
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth_min.py:22:34: unraw-re-pattern: [*] First argument to `re.compile()` is not raw string
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth_min.py:42:29: function-uses-loop-variable: Function definition does not bind loop variable `console`
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth_min.py:44:48: function-uses-loop-variable: Function definition does not bind loop variable `errors`
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth_min.py:48:50: unraw-re-pattern: [*] First argument to `re.compile()` is not raw string
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth_min.py:59:50: unraw-re-pattern: [*] First argument to `re.compile()` is not raw string
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth_min.py:63:50: unraw-re-pattern: [*] First argument to `re.compile()` is not raw string
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth_min.py:67:50: unraw-re-pattern: [*] First argument to `re.compile()` is not raw string
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth_min.py:82:51: unraw-re-pattern: [*] First argument to `re.compile()` is not raw string
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth_min.py:102:13: print: `print` found
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_auth_min.py:103:64: single-item-membership-test: Membership test against single-item container
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_components.py:1:1: implicit-namespace-package: File `/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_components.py` is part of an implicit namespace package. Add an `__init__.py`.
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_components.py:20:5: pytest-composite-assertion: [*] Assertion should be broken down into multiple parts
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_components.py:76:29: function-uses-loop-variable: Function definition does not bind loop variable `console`
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_components.py:78:46: function-uses-loop-variable: Function definition does not bind loop variable `errors`
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_components.py:81:29: function-uses-loop-variable: Function definition does not bind loop variable `failed_requests`
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_components.py:107:13: print: `print` found
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_maps_saved_state.py:1:1: implicit-namespace-package: File `/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_maps_saved_state.py` is part of an implicit namespace package. Add an `__init__.py`.
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_maps_saved_state.py:128:21: pytest-composite-assertion: [*] Assertion should be broken down into multiple parts
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/drive_maps_saved_state.py:149:13: print: `print` found
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/mock_oidc.py:1:1: implicit-namespace-package: File `/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/mock_oidc.py` is part of an implicit namespace package. Add an `__init__.py`.
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/mock_oidc.py:35:9: print: `print` found
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/repro_auth_field.py:1:1: implicit-namespace-package: File `/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/repro_auth_field.py` is part of an implicit namespace package. Add an `__init__.py`.
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/repro_auth_field.py:3:1: unsorted-imports: [*] Import block is un-sorted or un-formatted
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/repro_auth_field.py:21:5: print: `print` found
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/repro_auth_field.py:49:9: print: `print` found
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/repro_logout.py:1:1: implicit-namespace-package: File `/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/repro_logout.py` is part of an implicit namespace package. Add an `__init__.py`.
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/repro_logout.py:22:38: unraw-re-pattern: [*] First argument to `re.compile()` is not raw string
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/repro_logout.py:24:38: unraw-re-pattern: [*] First argument to `re.compile()` is not raw string
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/repro_logout.py:62:9: print: `print` found
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/repro_oidc_scopes.py:1:1: implicit-namespace-package: File `/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/repro_oidc_scopes.py` is part of an implicit namespace package. Add an `__init__.py`.
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/repro_oidc_scopes.py:11:5: print: `print` found
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/repro_oidc_scopes.py:19:5: print: `print` found
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/repro_oidc_scopes.py:28:5: print: `print` found
+Found 109 errors.
+[*] 24 fixable with the `--fix` option (15 hidden fixes can be enabled with the `--unsafe-fixes` option).

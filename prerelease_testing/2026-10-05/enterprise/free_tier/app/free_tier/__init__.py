@@ -1,0 +1,1 @@
+"""Badge policy sample package."""

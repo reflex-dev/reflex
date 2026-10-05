@@ -1,0 +1,133 @@
+{
+  "url": "http://localhost:3142/qa",
+  "console": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    }
+  ],
+  "page_errors": [],
+  "network": [
+    {
+      "url": "http://localhost:3142/qa",
+      "status": 307
+    },
+    {
+      "url": "http://localhost:3142/qa/",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/__reflex_global_styles-BzM7ReGa.css",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/manifest-61a0dd1e.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/reflex-env-BymdDznP.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/errorBoundaries-CHtSKZHr.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/box-CPVo_yC2.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/_index-DOwRUf4E.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/emotion-react.browser.esm-Ne-RHRfi.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/lifecycle_app-BBW3hcU5.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/components-Bl0Za3ky.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/link-B9_lgs9m.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/entry.client-OAODcIKV.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/root-DSJSaTWk.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/_articles_.__article_id_._index-vCjX1PkL.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/articles/7?self=1",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/__reflex_global_styles-BzM7ReGa.css",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/manifest-61a0dd1e.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/entry.client-OAODcIKV.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/components-Bl0Za3ky.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/errorBoundaries-CHtSKZHr.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/root-DSJSaTWk.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/link-B9_lgs9m.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/reflex-env-BymdDznP.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/emotion-react.browser.esm-Ne-RHRfi.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/box-CPVo_yC2.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/_articles_.__article_id_._index-vCjX1PkL.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/lifecycle_app-BBW3hcU5.js",
+      "status": 200
+    }
+  ],
+  "checks": [
+    "event state, subprocess output, failure and subsequent event",
+    "memo route, direct navigation and self query"
+  ],
+  "status": "passed"
+}

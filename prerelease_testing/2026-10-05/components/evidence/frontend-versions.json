@@ -1,0 +1,16 @@
+{
+  "shiki": "4.5.0",
+  "@shikijs/transformers": "4.5.0",
+  "moment": "2.31.0",
+  "moment-timezone": "0.6.5",
+  "moment-duration-format": "2.3.2",
+  "@radix-ui/react-slider": "1.4.7",
+  "@radix-ui/react-progress": "1.1.16",
+  "react-dropzone": "17.0.0",
+  "react-error-boundary": "6.1.6",
+  "react": "19.3.0",
+  "vite": "8.3.2",
+  "gridjs": "6.2.0",
+  "gridjs-react": "6.1.1",
+  "recharts": "3.10.1"
+}

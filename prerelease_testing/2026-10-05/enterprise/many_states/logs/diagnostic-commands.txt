@@ -1,0 +1,20 @@
+Stable 1500 default production (from stable/):
+env -u PYTHONPATH CI=true QA_EXTRA_STATES=1500 UV_CACHE_DIR=/private/tmp/reflex-enterprise-uv-cache uv --no-config run --no-project --python /private/tmp/reflex-enterprise-baseline-20261005/bin/python reflex run --env prod --frontend-port 3133 --backend-port 3133 --loglevel debug
+Result: exit 1; underlying export command terminated by SIGILL (-4).
+
+Stable 1500 default development (from stable/):
+env -u PYTHONPATH CI=true QA_EXTRA_STATES=1500 UV_CACHE_DIR=/private/tmp/reflex-enterprise-uv-cache uv --no-config run --no-project --python /private/tmp/reflex-enterprise-baseline-20261005/bin/python reflex run --env dev --frontend-port 3133 --backend-port 8133 --loglevel debug
+Result: exit 1; frontend Bun process terminated by SIGILL.
+
+Stable 1500 development with bundled Node available (from stable/):
+env -u PYTHONPATH CI=true QA_EXTRA_STATES=1500 PATH=/Users/masenf/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:/Users/masenf/.local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin UV_CACHE_DIR=/private/tmp/reflex-enterprise-uv-cache uv --no-config run --no-project --python /private/tmp/reflex-enterprise-baseline-20261005/bin/python reflex run --env dev --frontend-port 3133 --backend-port 8133 --loglevel debug
+Result: exit 1; frontend process still terminated by SIGILL.
+
+Stable 1500 already generated frontend under Node directly (from stable/.web/):
+/Users/masenf/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node node_modules/@react-router/dev/bin.cjs dev --host
+Result: exit 132; transient startup address localhost:5173 printed, then native process ended before a browser test.
+This was a frontend-start diagnostic only; no stable 1500 browser observation is claimed.
+
+An attempted backend-only diagnostic also supplied --frontend-port and was rejected by the CLI:
+Cannot specify --frontend-port when not running frontend.
+That rejected command is not used as evidence for any framework failure.

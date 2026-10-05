@@ -1,0 +1,6 @@
+[tool.ruff]
+extend = "../../../pyproject.toml"
+
+[tool.ruff.lint]
+# These files are standalone reproduction scripts with machine-readable stdout.
+ignore = ["INP001", "T201"]

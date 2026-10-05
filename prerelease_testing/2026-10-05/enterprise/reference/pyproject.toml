@@ -1,0 +1,225 @@
+[project]
+name = "reflex-enterprise"
+dynamic = ["version"]
+description = "Package containing the paid features for Reflex. [Pro/Team/Enterprise]"
+license = "LicenseRef-Proprietary"
+readme = "README.md"
+requires-python = ">=3.10, <4.0"
+keywords = ["reflex", "python", "reflex-enterprise"]
+authors = [
+    { name = "Nikhil Rao", email = "nikhil@reflex.dev" },
+    { name = "Alek Petuskey", email = "alek@reflex.dev" },
+    { name = "Masen Furer", email = "masen@reflex.dev" },
+    { name = "Thomas Brandého", email = "thomas@reflex.dev" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "reflex[db] >=0.9.6",
+    "asgiproxy >=0.2.0",
+    "joserfc",
+    "httpx",
+    "psutil",
+]
+
+[project.optional-dependencies]
+# Extras for the `reflex_app` pytest plugin. pytest-playwright (or any other
+# browser driver) is intentionally NOT pinned here -- the plugin only hands back
+# a URL; choosing/installing a browser driver is the user's responsibility.
+testing = ["pytest>=7"]
+
+# Dependencies for the `MCPPlugin`. Kept opt-in so the MCP SDK is only pulled in
+# when a user actually enables the plugin -- installing it prints an actionable
+# error pointing at `reflex-enterprise[mcp]` when this extra is missing. The
+# floor is `1.14.0`: the built-in `reflex://` resources inject the request
+# `Context` into resource *templates* (e.g. `reflex://state/vars/{state_name}`,
+# `reflex://event/{event_name}`) to resolve the caller's session and rate-limit
+# the read, and FastMCP only stopped counting a resource's `Context` parameter as
+# a required URI parameter in 1.14.0 -- 1.13.x and earlier raise "Mismatch between
+# URI parameters and function parameters" at server construction. This floor also
+# covers the OAuth resource-server APIs (`TokenVerifier`,
+# `AuthSettings(resource_server_url=...)`, `mcp.server.transport_security`) that
+# first shipped in 1.10.0. The upper bound keeps resolution on the supported 1.x
+# `mcp.server.fastmcp` API (2.0 has a restructured module layout).
+mcp = ["mcp>=1.14.0,<2"]
+
+# Register the pytest plugin so the `reflex_app` fixture is available with no
+# conftest wiring once reflex-enterprise is installed.
+[project.entry-points.pytest11]
+reflex_app = "reflex_enterprise.testing.plugin"
+
+[project.urls]
+homepage = "https://reflex.dev/"
+documentation = "https://enterprise.reflex.dev"
+license = "https://raw.githubusercontent.com/reflex-dev/reflex/main/docs/enterprise/LICENSE"
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch]
+version.source = "uv-dynamic-versioning"
+build.hooks.custom = {}
+build.targets.wheel.force-include."CHANGELOG.md" = "reflex_enterprise/CHANGELOG.md"
+
+[tool.uv]
+# Only lock final and post releases.
+prerelease = "disallow"
+
+[tool.uv-dynamic-versioning]
+vcs = "git"
+style = "pep440"
+bump = true
+metadata = false
+# The release pipeline tags the checkout locally and builds from that tag, so a
+# release always has a tag to derive its version from (and `verify-dist` fails
+# the build if it somehow does not). The fallback only covers builds where the
+# tags are absent -- a shallow clone, or a fresh checkout without `fetch-tags`.
+fallback-version = "0.0.0dev0"
+
+[dependency-groups]
+dev = [
+    "codespell",
+    "mcp>=1.14.0,<2",
+    "oidc-provider-mock",
+    "pre-commit",
+    "pyright",
+    "pytest-asyncio",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-playwright",
+    "pytest-retry",
+    "pytest-split",
+    "pytest",
+    "ruff",
+    "uvicorn>=0.48.0",
+]
+
+[tool.ruff]
+target-version = "py310"
+output-format = "concise"
+lint.isort.split-on-trailing-comma = false
+lint.select = [
+    "ANN001",
+    "B",
+    "C4",
+    "D",
+    "E",
+    "ERA",
+    "F",
+    "FURB",
+    "I",
+    "N",
+    "PERF",
+    "PGH",
+    "PTH",
+    "RUF",
+    "SIM",
+    "T",
+    "TRY",
+    "W",
+]
+lint.ignore = [
+    "B008",
+    "D205",
+    "E501",
+    "F403",
+    "SIM115",
+    "RUF006",
+    "RUF008",
+    "RUF012",
+    "TRY0",
+]
+lint.pydocstyle.convention = "google"
+lint.allowed-confusables = ['’']
+
+[tool.ruff.lint.per-file-ignores]
+"*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]
+"**/alembic/*.py" = ["D", "ERA"]
+# N802 allows the AppHarness convention of CapCase app-factory functions.
+"tests/*.py" = ["ANN001", "D", "N802"]
+"demos/*.py" = ["ANN001", "D", "ERA"]
+".flexdown/*.py" = ["ANN001", "D", "F401"]
+"__init__.py" = ["ERA"]
+
+[tool.pyright]
+reportIncompatibleMethodOverride = false
+reportMissingImports = false
+reportInconsistentOverload = false
+reportIncompatibleVariableOverride = "warning"
+exclude = [
+    "**/alembic/*",
+    "demos/*",
+    "reflex_enterprise/components/mantine/*.pyi",
+]
+
+[tool.pytest.ini_options]
+filterwarnings = "ignore:fields may not start with an underscore:RuntimeWarning"
+asyncio_default_fixture_loop_scope = "function"
+asyncio_mode = "auto"
+
+[tool.codespell]
+skip = "*.pyi, uv.lock"
+
+[tool.reflex-release]
+# How the generated workflows invoke the release tool. Bump it and re-run
+# `uvx reflex-release@<new version> sync` to upgrade; the pull-request
+# changelog workflow fails on drift between this pin and the workflow files.
+cli-command = "uvx reflex-release@0.1.0a1"
+root-package = "reflex-enterprise"
+# Changelog dates and prerelease branch names are stamped in Pacific time so an
+# evening release is not dated tomorrow by a UTC runner.
+release-timezone = "America/Los_Angeles"
+
+[tool.towncrier]
+# One shared configuration for every package: each invocation passes
+# --dir <package path> to target a specific package's news/ directory.
+# https://towncrier.readthedocs.io/en/stable/monorepo.html
+package = ""
+name = ""
+directory = "news"
+filename = "CHANGELOG.md"
+title_format = "## {version} ({project_date})"
+issue_format = "[#{issue}](https://github.com/reflex-dev/reflex-enterprise/issues/{issue})"
+start_string = "<!-- towncrier release notes start -->\n"
+
+[[tool.towncrier.type]]
+directory = "breaking"
+name = "Breaking Changes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "deprecation"
+name = "Deprecations"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "feature"
+name = "Features"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "bugfix"
+name = "Bug Fixes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "performance"
+name = "Performance"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "docs"
+name = "Documentation"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "misc"
+name = "Miscellaneous"
+showcontent = true

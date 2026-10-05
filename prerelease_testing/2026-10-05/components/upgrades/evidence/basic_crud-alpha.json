@@ -1,0 +1,47 @@
+{
+  "app": "basic_crud",
+  "phase": "alpha",
+  "base_url": "http://localhost:3122",
+  "detail": {
+    "persisted_id": 1,
+    "created_id": 2,
+    "final_records": [
+      {
+        "label": "Survives upgrade",
+        "code": "PERSISTED",
+        "created": "2026-10-05T23:03:20.183221",
+        "quantity": 7,
+        "seller": "Ops",
+        "updated": "2026-10-05T23:03:20.183221",
+        "id": 1,
+        "image": "/favicon.ico",
+        "category": "baseline",
+        "sender": "Warehouse"
+      }
+    ]
+  },
+  "status": "passed",
+  "diagnostics": {
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      }
+    ],
+    "page_errors": [],
+    "request_failures": [],
+    "http_failures": []
+  }
+}

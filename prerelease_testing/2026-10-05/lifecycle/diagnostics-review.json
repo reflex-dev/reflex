@@ -1,0 +1,49 @@
+[
+  {
+    "file": "lifecycle/evidence/fresh-bun-scale/browser.json",
+    "console_errors": [
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      }
+    ],
+    "page_errors": [
+      "Maximum call stack size exceeded"
+    ],
+    "http_failures": []
+  },
+  {
+    "file": "lifecycle/evidence/prod/browser.json",
+    "console_errors": [
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      }
+    ],
+    "page_errors": [],
+    "http_failures": []
+  },
+  {
+    "file": "lifecycle/evidence/dev/browser.json",
+    "console_errors": [],
+    "page_errors": [],
+    "http_failures": []
+  },
+  {
+    "file": "lifecycle/evidence/prod-prefix/browser.json",
+    "console_errors": [
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      }
+    ],
+    "page_errors": [],
+    "http_failures": []
+  },
+  {
+    "file": "upgrades/evidence/todo-alpha-cold/browser.json",
+    "console_errors": [],
+    "page_errors": [],
+    "http_failures": []
+  }
+]

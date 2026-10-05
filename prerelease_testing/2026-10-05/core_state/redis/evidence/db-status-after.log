@@ -1,0 +1,5 @@
+[sqlite:///plain.sqlite]
+<base>
+  [✓] 38c7eb90e82d, empty message
+  [✓] 8e65ea2798fb (head), bare sqlalchemy evolve
+WARN `--no-project` was provided, but no project was found

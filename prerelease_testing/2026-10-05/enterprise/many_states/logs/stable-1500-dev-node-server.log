@@ -1,0 +1,120 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-baseline-20261005/lib/python3.12/site-packages/r
+eflex_base/config.py'
+Debug: Config: Config(app_name='lifecycle_app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3133, frontend_path='', 
+backend_port=8133, backend_path='', api_url='http://localhost:8133', 
+deploy_url='http://localhost:3133', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, state_manager_mode='disk', 
+redis_lock_expiration=10000, redis_lock_warning_threshold=1000, 
+redis_token_expiration=3600, _non_default_attributes={'telemetry_enabled', 
+'plugins', 'app_name', 'frontend_port', 'backend_port', 'state_manager_mode', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []}), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: 
+[PosixPath('/Users/masenf/.cache/codex-runtimes/codex-primary-runtime/dependenci
+es/node/bin/node'), '--version']
+Debug: Running command: [PosixPath('/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.12 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-baseline-20261005/bin/python)]
+Debug: [Node 24.19.0 (Minimum: 22.22.0) 
+(PATH:/Users/masenf/.cache/codex-runtimes/codex-primary-runtime/dependencies/nod
+e/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: /Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: ['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun', '/opt/homebrew/bin/npm']
+Debug: Using package executer at: [['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun'], ['/opt/homebrew/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3133 is in use.
+Debug: Checking if Frontend port: 3133 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Frontend port: 3133 is not in use.
+Debug: Checking if Backend port: 8133 is in use.
+Debug: Checking if Backend port: 8133 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Backend port: 8133 is not in use.
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+QA_APP_IMPORT_STDERR
+QA_APP_IMPORT_STDOUT
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: running_task
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Using Granian for backend
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Reload paths: 
+['/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enter
+prise/many_states/stable/rxconfig.py', 
+'/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterp
+rise/many_states/stable/lifecycle_app', 
+'/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterp
+rise/many_states/stable/requirements.txt', 
+'/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterp
+rise/many_states/stable/assets']
+[INFO] Starting granian (main PID: 2673)
+[INFO] Listening at: http://0.0.0.0:8133
+[INFO] Spawning worker-1 with PID: 2683
+QA_APP_IMPORT_STDERR
+Debug:   ➜  Local:   http://localhost:3133/
+App running at: http://localhost:3133/
+Backend running at: http://0.0.0.0:8133
+Debug:   ➜  Network: http://192.168.0.105:3133/  en1
+Debug:   ➜  Network: http://100.80.29.50:3133/   utun6
+Debug: error: script "dev" was terminated by signal SIGILL (Illegal instruction)
+Starting frontend failed with exit code -4
+$ react-router dev --host
+  ➜  Local:   http://localhost:3133/
+  ➜  Network: http://192.168.0.105:3133/  en1
+  ➜  Network: http://100.80.29.50:3133/   utun6
+error: script "dev" was terminated by signal SIGILL (Illegal instruction)
+
+
+
+Run with --loglevel debug  for the full log.
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

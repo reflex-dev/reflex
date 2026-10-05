@@ -1,0 +1,118 @@
+{
+  "status": "passed",
+  "responses": [
+    {
+      "url": "http://localhost:3142/qa/",
+      "status": 200,
+      "headers": {
+        "vary": "Accept-Encoding, Origin, Origin",
+        "content-type": "text/html; charset=utf-8",
+        "accept-ranges": "bytes",
+        "content-length": "8109",
+        "last-modified": "Mon, 05 Oct 2026 23:15:03 GMT",
+        "etag": "\"b6edf1cac1ebc4b5c362d86640f7dc51\"",
+        "server": "granian",
+        "connection": "close",
+        "date": "Mon, 05 Oct 2026 23:16:50 GMT"
+      },
+      "byte_count": 8109
+    },
+    {
+      "url": "http://localhost:3142/qa/articles/7",
+      "status": 200,
+      "headers": {
+        "vary": "Accept-Encoding, Origin, Origin",
+        "content-type": "text/html; charset=utf-8",
+        "accept-ranges": "bytes",
+        "content-length": "5354",
+        "last-modified": "Mon, 05 Oct 2026 23:15:03 GMT",
+        "etag": "\"0d1d26c1bb28a3fd018d5254e2127294\"",
+        "server": "granian",
+        "connection": "close",
+        "date": "Mon, 05 Oct 2026 23:16:50 GMT"
+      },
+      "byte_count": 5354
+    },
+    {
+      "url": "http://localhost:3142/qa/articles/7?self=1",
+      "status": 200,
+      "headers": {
+        "vary": "Accept-Encoding, Origin, Origin",
+        "content-type": "text/html; charset=utf-8",
+        "accept-ranges": "bytes",
+        "content-length": "5354",
+        "last-modified": "Mon, 05 Oct 2026 23:15:03 GMT",
+        "etag": "\"0d1d26c1bb28a3fd018d5254e2127294\"",
+        "server": "granian",
+        "connection": "close",
+        "date": "Mon, 05 Oct 2026 23:16:50 GMT"
+      },
+      "byte_count": 5354
+    },
+    {
+      "url": "http://localhost:3142/qa/unknown-qa-route",
+      "status": 404,
+      "headers": {
+        "vary": "Accept-Encoding, Origin, Origin",
+        "content-type": "text/html; charset=utf-8",
+        "accept-ranges": "bytes",
+        "content-length": "5354",
+        "last-modified": "Mon, 05 Oct 2026 23:15:03 GMT",
+        "etag": "\"0d1d26c1bb28a3fd018d5254e2127294\"",
+        "server": "granian",
+        "connection": "close",
+        "date": "Mon, 05 Oct 2026 23:16:50 GMT"
+      },
+      "byte_count": 5354
+    },
+    {
+      "url": "http://localhost:3142/qa/articles/7/extra",
+      "status": 404,
+      "headers": {
+        "vary": "Accept-Encoding, Origin, Origin",
+        "content-type": "text/html; charset=utf-8",
+        "accept-ranges": "bytes",
+        "content-length": "5354",
+        "last-modified": "Mon, 05 Oct 2026 23:15:03 GMT",
+        "etag": "\"0d1d26c1bb28a3fd018d5254e2127294\"",
+        "server": "granian",
+        "connection": "close",
+        "date": "Mon, 05 Oct 2026 23:16:50 GMT"
+      },
+      "byte_count": 5354
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/manifest-61a0dd1e.js",
+      "status": 200,
+      "headers": {
+        "vary": "Accept-Encoding, Origin, Origin",
+        "content-type": "text/javascript; charset=utf-8",
+        "accept-ranges": "bytes",
+        "content-length": "2315",
+        "last-modified": "Mon, 05 Oct 2026 23:15:02 GMT",
+        "etag": "\"f5c7ca6adebf5f1f17e1495aa90a053e\"",
+        "server": "granian",
+        "connection": "close",
+        "date": "Mon, 05 Oct 2026 23:16:50 GMT"
+      },
+      "byte_count": 2315
+    },
+    {
+      "url": "http://localhost:3142/qa/assets/manifest-61a0dd1e.js",
+      "status": 200,
+      "headers": {
+        "vary": "Accept-Encoding, Origin, Origin",
+        "content-encoding": "gzip",
+        "content-type": "text/javascript; charset=utf-8",
+        "accept-ranges": "bytes",
+        "content-length": "537",
+        "last-modified": "Mon, 05 Oct 2026 23:15:03 GMT",
+        "etag": "\"c2dba3243b558ee8cc857366190d5d12\"",
+        "server": "granian",
+        "connection": "close",
+        "date": "Mon, 05 Oct 2026 23:16:50 GMT"
+      },
+      "byte_count": 537
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "command": [
+    "git",
+    "diff",
+    "--cached",
+    "--check"
+  ],
+  "exit_code": 2,
+  "diagnostic_count": 7828,
+  "by_suffix": {
+    ".log": 7817,
+    ".http": 1,
+    ".txt": 1,
+    ".html": 8,
+    ".md": 1
+  },
+  "python_shell_toml_issues": [],
+  "markdown_issues": [
+    {
+      "file": "prerelease_testing/2026-10-05/enterprise/reference/CHANGELOG-head.md",
+      "line": 36,
+      "issue": "new blank line at EOF."
+    }
+  ],
+  "classification": "Raw logs retain emitted whitespace; changelog snapshots retain their captured bytes. No whitespace changes were applied after review."
+}

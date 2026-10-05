@@ -1,0 +1,9 @@
+Creating directory /private/tmp/reflex-alpha-core-state/plain-db-final/alembic ...  done
+Creating directory /private/tmp/reflex-alpha-core-state/plain-db-final/alembic/versions ...  done
+Generating /private/tmp/reflex-alpha-core-state/plain-db-final/alembic/script.py.mako ...  done
+Generating /private/tmp/reflex-alpha-core-state/plain-db-final/alembic/env.py ...  done
+Generating /private/tmp/reflex-alpha-core-state/plain-db-final/alembic/README ...  done
+Generating /private/tmp/reflex-alpha-core-state/plain-db-final/alembic.ini ...  done
+Please edit configuration/connection/logging settings in /private/tmp/reflex-alpha-core-state/plain-db-final/alembic.ini before proceeding.
+Generating /private/tmp/reflex-alpha-core-state/plain-db-final/alembic/versions/38c7eb90e82d_.py ...  done
+WARN `--no-project` was provided, but no project was found

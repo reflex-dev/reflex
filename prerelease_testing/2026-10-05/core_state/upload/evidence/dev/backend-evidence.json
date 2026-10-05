@@ -1,0 +1,4670 @@
+{
+  "records": [
+    {
+      "label": "upload.start",
+      "detail": "first.txt",
+      "token": "db54de4b-e11b-4613-8b6b-a700f692d7ef",
+      "txid": "931c01fb1de0",
+      "parent_txid": null,
+      "time": 15721.491698458
+    },
+    {
+      "label": "upload.handler_return",
+      "detail": "first.txt",
+      "token": "db54de4b-e11b-4613-8b6b-a700f692d7ef",
+      "txid": "931c01fb1de0",
+      "parent_txid": null,
+      "time": 15721.491920708
+    },
+    {
+      "label": "upload.tail_start",
+      "detail": "first.txt",
+      "token": "db54de4b-e11b-4613-8b6b-a700f692d7ef",
+      "txid": "126f1782c81c",
+      "parent_txid": "931c01fb1de0",
+      "time": 15721.492115
+    },
+    {
+      "label": "upload.start",
+      "detail": "second.txt",
+      "token": "8ffb63ad-2c12-4fa1-aa29-eaa61666cc8d",
+      "txid": "d8d4e59efd77",
+      "parent_txid": null,
+      "time": 15721.547890416
+    },
+    {
+      "label": "upload.handler_return",
+      "detail": "second.txt",
+      "token": "8ffb63ad-2c12-4fa1-aa29-eaa61666cc8d",
+      "txid": "d8d4e59efd77",
+      "parent_txid": null,
+      "time": 15721.548017708
+    },
+    {
+      "label": "upload.tail_start",
+      "detail": "second.txt",
+      "token": "8ffb63ad-2c12-4fa1-aa29-eaa61666cc8d",
+      "txid": "acbf761d366e",
+      "parent_txid": "d8d4e59efd77",
+      "time": 15721.54821475
+    },
+    {
+      "label": "upload.tail_end",
+      "detail": "first.txt",
+      "token": "db54de4b-e11b-4613-8b6b-a700f692d7ef",
+      "txid": "126f1782c81c",
+      "parent_txid": "931c01fb1de0",
+      "time": 15722.143932291
+    },
+    {
+      "label": "response.end",
+      "detail": "/_upload",
+      "token": "db54de4b-e11b-4613-8b6b-a700f692d7ef",
+      "time": 15722.14502125
+    },
+    {
+      "label": "response.exit",
+      "detail": "/_upload",
+      "token": "db54de4b-e11b-4613-8b6b-a700f692d7ef",
+      "time": 15722.146011666
+    },
+    {
+      "label": "upload.tail_end",
+      "detail": "second.txt",
+      "token": "8ffb63ad-2c12-4fa1-aa29-eaa61666cc8d",
+      "txid": "acbf761d366e",
+      "parent_txid": "d8d4e59efd77",
+      "time": 15722.199689458
+    },
+    {
+      "label": "response.end",
+      "detail": "/_upload",
+      "token": "8ffb63ad-2c12-4fa1-aa29-eaa61666cc8d",
+      "time": 15722.200348583
+    },
+    {
+      "label": "response.exit",
+      "detail": "/_upload",
+      "token": "8ffb63ad-2c12-4fa1-aa29-eaa61666cc8d",
+      "time": 15722.200913791
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15722.403393
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15722.403396875
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15722.411765708
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15722.411769958
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15722.424096083
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15722.424100291
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15722.431180791
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15722.431183875
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15722.574790333
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15722.574794583
+    },
+    {
+      "label": "upload.start",
+      "detail": "quick.txt",
+      "token": "3183d96e-9c6e-4b27-af3d-b2c46521a4e2",
+      "txid": "c8e0de46be98",
+      "parent_txid": null,
+      "time": 15724.158127541
+    },
+    {
+      "label": "upload.handler_return",
+      "detail": "quick.txt",
+      "token": "3183d96e-9c6e-4b27-af3d-b2c46521a4e2",
+      "txid": "c8e0de46be98",
+      "parent_txid": null,
+      "time": 15724.158316583
+    },
+    {
+      "label": "upload.tail_start",
+      "detail": "quick.txt",
+      "token": "3183d96e-9c6e-4b27-af3d-b2c46521a4e2",
+      "txid": "830ee5aac01c",
+      "parent_txid": "c8e0de46be98",
+      "time": 15724.15849825
+    },
+    {
+      "label": "delayed.start",
+      "detail": "",
+      "token": "2d66ccf4-3c67-4c8c-cc53-c7a75d9b8c25",
+      "txid": "4f6b3bd97c1a",
+      "parent_txid": null,
+      "time": 15724.26587975
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15724.274987125
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15724.274991375
+    },
+    {
+      "label": "upload.tail_end",
+      "detail": "quick.txt",
+      "token": "3183d96e-9c6e-4b27-af3d-b2c46521a4e2",
+      "txid": "830ee5aac01c",
+      "parent_txid": "c8e0de46be98",
+      "time": 15724.809657125
+    },
+    {
+      "label": "response.end",
+      "detail": "/_upload",
+      "token": "3183d96e-9c6e-4b27-af3d-b2c46521a4e2",
+      "time": 15724.809894416
+    },
+    {
+      "label": "response.exit",
+      "detail": "/_upload",
+      "token": "3183d96e-9c6e-4b27-af3d-b2c46521a4e2",
+      "time": 15724.810099666
+    },
+    {
+      "label": "delayed.end",
+      "detail": "",
+      "token": "2d66ccf4-3c67-4c8c-cc53-c7a75d9b8c25",
+      "txid": "4f6b3bd97c1a",
+      "parent_txid": null,
+      "time": 15725.566987333
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15725.856474625
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15725.856478291
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15725.864347791
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15725.8643515
+    },
+    {
+      "label": "upload.start",
+      "detail": "slow-disconnect.txt",
+      "token": "f5cf36ed-0c50-4cab-8c06-3acce785dc2b",
+      "txid": "2d3cf962f696",
+      "parent_txid": null,
+      "time": 15727.484790416
+    },
+    {
+      "label": "upload.handler_return",
+      "detail": "slow-disconnect.txt",
+      "token": "f5cf36ed-0c50-4cab-8c06-3acce785dc2b",
+      "txid": "2d3cf962f696",
+      "parent_txid": null,
+      "time": 15727.484970958
+    },
+    {
+      "label": "upload.tail_start",
+      "detail": "slow-disconnect.txt",
+      "token": "f5cf36ed-0c50-4cab-8c06-3acce785dc2b",
+      "txid": "556a3dab8de9",
+      "parent_txid": "2d3cf962f696",
+      "time": 15727.48521925
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15727.584209041
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15727.584212958
+    },
+    {
+      "label": "delayed.start",
+      "detail": "",
+      "token": "37c47de5-cf6a-43e7-a025-3a3325640909",
+      "txid": "385acae4b1c9",
+      "parent_txid": null,
+      "time": 15727.610043
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15727.61632025
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15727.616325
+    },
+    {
+      "label": "response.exit",
+      "detail": "/_upload",
+      "token": "f5cf36ed-0c50-4cab-8c06-3acce785dc2b",
+      "time": 15727.622961666
+    },
+    {
+      "label": "upload.tail_cancel",
+      "detail": "slow-disconnect.txt",
+      "token": "f5cf36ed-0c50-4cab-8c06-3acce785dc2b",
+      "txid": "556a3dab8de9",
+      "parent_txid": "2d3cf962f696",
+      "time": 15727.623098625
+    },
+    {
+      "label": "delayed.end",
+      "detail": "",
+      "token": "37c47de5-cf6a-43e7-a025-3a3325640909",
+      "txid": "385acae4b1c9",
+      "parent_txid": null,
+      "time": 15728.911237416
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15728.957582083
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15728.957593041
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15728.967360375
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15728.967368125
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15728.975719958
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15728.975725041
+    },
+    {
+      "label": "ordinary.end",
+      "detail": "",
+      "token": "37c47de5-cf6a-43e7-a025-3a3325640909",
+      "txid": "e11a38e3b268",
+      "parent_txid": null,
+      "time": 15728.992735125
+    },
+    {
+      "label": "upload.start",
+      "detail": "slow-navigation.txt",
+      "token": "bc1a7633-0c5d-427c-fbe2-9632b61fed46",
+      "txid": "81b9875d7af3",
+      "parent_txid": null,
+      "time": 15729.849178708
+    },
+    {
+      "label": "upload.handler_return",
+      "detail": "slow-navigation.txt",
+      "token": "bc1a7633-0c5d-427c-fbe2-9632b61fed46",
+      "txid": "81b9875d7af3",
+      "parent_txid": null,
+      "time": 15729.849306708
+    },
+    {
+      "label": "upload.tail_start",
+      "detail": "slow-navigation.txt",
+      "token": "bc1a7633-0c5d-427c-fbe2-9632b61fed46",
+      "txid": "f23bf322d492",
+      "parent_txid": "81b9875d7af3",
+      "time": 15729.849510541
+    },
+    {
+      "label": "nav.start",
+      "detail": "",
+      "token": "bc1a7633-0c5d-427c-fbe2-9632b61fed46",
+      "txid": "6ecacad1793c",
+      "parent_txid": "e5de25194c92",
+      "time": 15729.987914541
+    },
+    {
+      "label": "nav.cancel",
+      "detail": "",
+      "token": "bc1a7633-0c5d-427c-fbe2-9632b61fed46",
+      "txid": "6ecacad1793c",
+      "parent_txid": "e5de25194c92",
+      "time": 15730.049532916
+    },
+    {
+      "label": "nav.new",
+      "detail": "",
+      "token": "bc1a7633-0c5d-427c-fbe2-9632b61fed46",
+      "txid": "de94ae32df63",
+      "parent_txid": "66bbdb20a54e",
+      "time": 15730.050065083
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15730.059402291
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15730.059407083
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15730.066401333
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15730.066407166
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15730.072995791
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15730.073000291
+    },
+    {
+      "label": "upload.tail_end",
+      "detail": "slow-navigation.txt",
+      "token": "bc1a7633-0c5d-427c-fbe2-9632b61fed46",
+      "txid": "f23bf322d492",
+      "parent_txid": "81b9875d7af3",
+      "time": 15732.2507175
+    },
+    {
+      "label": "response.end",
+      "detail": "/_upload",
+      "token": "bc1a7633-0c5d-427c-fbe2-9632b61fed46",
+      "time": 15732.250974541
+    },
+    {
+      "label": "response.exit",
+      "detail": "/_upload",
+      "token": "bc1a7633-0c5d-427c-fbe2-9632b61fed46",
+      "time": 15732.251235166
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15732.36982725
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15732.369831583
+    },
+    {
+      "label": "upload.start",
+      "detail": "fail.txt",
+      "token": "a68c04a3-4b4b-49e2-dc96-42e84a823557",
+      "txid": "bfa2d7718da6",
+      "parent_txid": null,
+      "time": 15733.2256255
+    },
+    {
+      "label": "upload.expected_failure",
+      "detail": "fail.txt",
+      "token": "a68c04a3-4b4b-49e2-dc96-42e84a823557",
+      "txid": "bfa2d7718da6",
+      "parent_txid": null,
+      "time": 15733.276728333
+    },
+    {
+      "label": "exception.handler",
+      "detail": "RuntimeError",
+      "token": "a68c04a3-4b4b-49e2-dc96-42e84a823557",
+      "txid": "bfa2d7718da6",
+      "parent_txid": null,
+      "time": 15733.280479083
+    },
+    {
+      "label": "recovery.start",
+      "detail": "",
+      "token": "a68c04a3-4b4b-49e2-dc96-42e84a823557",
+      "txid": "504e609edf2c",
+      "parent_txid": "bfa2d7718da6",
+      "time": 15733.280845583
+    },
+    {
+      "label": "response.exit",
+      "detail": "/_upload",
+      "token": "a68c04a3-4b4b-49e2-dc96-42e84a823557",
+      "time": 15733.281212875
+    },
+    {
+      "label": "recovery.end",
+      "detail": "",
+      "token": "a68c04a3-4b4b-49e2-dc96-42e84a823557",
+      "txid": "504e609edf2c",
+      "parent_txid": "bfa2d7718da6",
+      "time": 15733.632392333
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15734.031583416
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15734.031587541
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15734.042049958
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15734.042087666
+    },
+    {
+      "label": "ordinary.end",
+      "detail": "",
+      "token": "a68c04a3-4b4b-49e2-dc96-42e84a823557",
+      "txid": "d239baa1c4f4",
+      "parent_txid": null,
+      "time": 15734.055467541
+    },
+    {
+      "label": "http.start",
+      "detail": "",
+      "token": "21432520-b489-4d4f-8497-452e2a186de2",
+      "txid": "b2b50f70e939",
+      "parent_txid": null,
+      "time": 15735.904891083
+    },
+    {
+      "label": "delayed.start",
+      "detail": "",
+      "token": "9709c534-1dc6-4002-d9e7-06bc55937a8a",
+      "txid": "b67969612642",
+      "parent_txid": null,
+      "time": 15735.950485125
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15735.963600708
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15735.963604958
+    },
+    {
+      "label": "http.response_finish",
+      "detail": "",
+      "token": "21432520-b489-4d4f-8497-452e2a186de2",
+      "time": 15735.965053041
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/stream",
+      "token": "",
+      "time": 15735.965063875
+    },
+    {
+      "label": "http.cancel",
+      "detail": "",
+      "token": "21432520-b489-4d4f-8497-452e2a186de2",
+      "txid": "b2b50f70e939",
+      "parent_txid": null,
+      "time": 15735.965146541
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15735.972276333
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15735.97228075
+    },
+    {
+      "label": "delayed.end",
+      "detail": "",
+      "token": "9709c534-1dc6-4002-d9e7-06bc55937a8a",
+      "txid": "b67969612642",
+      "parent_txid": null,
+      "time": 15737.251627291
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15737.299366708
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15737.299373791
+    },
+    {
+      "label": "ordinary.end",
+      "detail": "",
+      "token": "9709c534-1dc6-4002-d9e7-06bc55937a8a",
+      "txid": "7ec636ec501d",
+      "parent_txid": null,
+      "time": 15737.326962708
+    },
+    {
+      "label": "chunk.start",
+      "detail": "",
+      "token": "73ec51df-e897-4827-e1ca-f4d04ba273e2",
+      "txid": "26ed4bd23112",
+      "parent_txid": null,
+      "time": 15738.206406958
+    },
+    {
+      "label": "chunk.end",
+      "detail": "328000",
+      "token": "73ec51df-e897-4827-e1ca-f4d04ba273e2",
+      "txid": "26ed4bd23112",
+      "parent_txid": null,
+      "time": 15738.208111875
+    },
+    {
+      "label": "response.end",
+      "detail": "/_upload",
+      "token": "73ec51df-e897-4827-e1ca-f4d04ba273e2",
+      "time": 15738.20834975
+    },
+    {
+      "label": "response.exit",
+      "detail": "/_upload",
+      "token": "73ec51df-e897-4827-e1ca-f4d04ba273e2",
+      "time": 15738.208548958
+    },
+    {
+      "label": "api.parent",
+      "detail": "",
+      "token": "73ec51df-e897-4827-e1ca-f4d04ba273e2",
+      "txid": "ad656430da12",
+      "parent_txid": null,
+      "time": 15738.309758083
+    },
+    {
+      "label": "api.child",
+      "detail": "",
+      "token": "73ec51df-e897-4827-e1ca-f4d04ba273e2",
+      "txid": "6fd17dce86ad",
+      "parent_txid": "ad656430da12",
+      "time": 15738.310121791
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/enqueue",
+      "token": "",
+      "time": 15738.310575583
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/enqueue",
+      "token": "",
+      "time": 15738.310581208
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15738.321298958
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15738.321304666
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15738.329304791
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15738.329309458
+    },
+    {
+      "label": "response.end",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15738.336782541
+    },
+    {
+      "label": "response.exit",
+      "detail": "/api/evidence",
+      "token": "",
+      "time": 15738.336785375
+    }
+  ],
+  "spans": [
+    {
+      "name": "reflex.compile.pages",
+      "kind": "INTERNAL",
+      "span_id": "3e3c28b34cf06c70",
+      "parent_span_id": "71b474ab26ef9f12",
+      "attributes": {}
+    },
+    {
+      "name": "reflex.compile.copy_assets",
+      "kind": "INTERNAL",
+      "span_id": "00fe5748f287083e",
+      "parent_span_id": "71b474ab26ef9f12",
+      "attributes": {}
+    },
+    {
+      "name": "reflex.compile.install_frontend_packages",
+      "kind": "INTERNAL",
+      "span_id": "6ecc577edf3ff057",
+      "parent_span_id": "71b474ab26ef9f12",
+      "attributes": {}
+    },
+    {
+      "name": "reflex.compile.write",
+      "kind": "INTERNAL",
+      "span_id": "68d3c7ae0c6e9f01",
+      "parent_span_id": "71b474ab26ef9f12",
+      "attributes": {}
+    },
+    {
+      "name": "reflex.compile",
+      "kind": "INTERNAL",
+      "span_id": "71b474ab26ef9f12",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.compile.dry_run": false,
+        "reflex.compile.trigger": "hot_reload"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "b11bb6697ab32c2b",
+      "parent_span_id": "fb4af48291e9b878",
+      "attributes": {
+        "asgi.event.type": "websocket.connect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "d43a939d496200b6",
+      "parent_span_id": "fb4af48291e9b878",
+      "attributes": {
+        "asgi.event.type": "websocket.accept"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "15a08045d9f1a542",
+      "parent_span_id": "fb4af48291e9b878",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "054257841aa9b2fb",
+      "parent_span_id": "fb4af48291e9b878",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "a3de5125fe8c0989",
+      "parent_span_id": "fb4af48291e9b878",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "3c51121d4db94384",
+      "parent_span_id": "fb4af48291e9b878",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "18c917d9d7a68082",
+      "parent_span_id": "fb4af48291e9b878",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.hydrate_and_load",
+      "kind": "CONSUMER",
+      "span_id": "826cc61d5a51f8c5",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.hydrate_and_load",
+        "reflex.event.background": false,
+        "reflex.event.txid": "974feeae73d3",
+        "session.id": "2a1e83e6ea28eb3d",
+        "code.function.name": "reflex.state.State.hydrate_and_load"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "a54a4da76c47a00c",
+      "parent_span_id": "ab609ebae1f81802",
+      "attributes": {
+        "asgi.event.type": "websocket.connect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "1f8140eb05a15256",
+      "parent_span_id": "ab609ebae1f81802",
+      "attributes": {
+        "asgi.event.type": "websocket.accept"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "4f8a22e286329737",
+      "parent_span_id": "ab609ebae1f81802",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "a7e5b10344b2e2ba",
+      "parent_span_id": "ab609ebae1f81802",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "b1e3aff0f292e814",
+      "parent_span_id": "ab609ebae1f81802",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "e5086247f6a84594",
+      "parent_span_id": "ab609ebae1f81802",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "e989288b9e257e05",
+      "parent_span_id": "ab609ebae1f81802",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.hydrate_and_load",
+      "kind": "CONSUMER",
+      "span_id": "bcf61458a8205901",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.hydrate_and_load",
+        "reflex.event.background": false,
+        "reflex.event.txid": "211f5907fcc8",
+        "session.id": "f2701e115ebf8157",
+        "code.function.name": "reflex.state.State.hydrate_and_load"
+      }
+    },
+    {
+      "name": "OPTIONS /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "e27d59d2a4063e85",
+      "parent_span_id": "0f41b73f1fce204e",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "OPTIONS /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "229713a42603e397",
+      "parent_span_id": "0f41b73f1fce204e",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "OPTIONS /_upload",
+      "kind": "SERVER",
+      "span_id": "0f41b73f1fce204e",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_upload",
+        "http.url": "http://localhost:8111/_upload",
+        "http.method": "OPTIONS",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53156,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "cb6ed8e3f7d079c1",
+      "parent_span_id": "f70d8ffdb76ee527",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "8ce48d4835038302",
+      "parent_span_id": "f70d8ffdb76ee527",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "e8ddd8d5d7cee126",
+      "parent_span_id": "f70d8ffdb76ee527",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.buffered",
+      "kind": "INTERNAL",
+      "span_id": "e8f2a69040e4d2c8",
+      "parent_span_id": "f70d8ffdb76ee527",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.buffered",
+        "reflex.event.background": false,
+        "reflex.event.txid": "931c01fb1de0",
+        "session.id": "2a1e83e6ea28eb3d",
+        "code.function.name": "upload_probe.upload_probe.UploadState.buffered"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "dc374a284b8cdce1",
+      "parent_span_id": "f70d8ffdb76ee527",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "OPTIONS /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "8624232d3b3e19c3",
+      "parent_span_id": "b5caeeb08e88495f",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "OPTIONS /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "416f2ea2f4e2abe5",
+      "parent_span_id": "b5caeeb08e88495f",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "OPTIONS /_upload",
+      "kind": "SERVER",
+      "span_id": "b5caeeb08e88495f",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_upload",
+        "http.url": "http://localhost:8111/_upload",
+        "http.method": "OPTIONS",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53160,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "8a1b5616adcaf412",
+      "parent_span_id": "f2e95334c5727e45",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "b5540c2804ef4874",
+      "parent_span_id": "f2e95334c5727e45",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "256648fb4938f0b3",
+      "parent_span_id": "f2e95334c5727e45",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.buffered",
+      "kind": "INTERNAL",
+      "span_id": "f18bfa06f0a9d274",
+      "parent_span_id": "f2e95334c5727e45",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.buffered",
+        "reflex.event.background": false,
+        "reflex.event.txid": "d8d4e59efd77",
+        "session.id": "f2701e115ebf8157",
+        "code.function.name": "upload_probe.upload_probe.UploadState.buffered"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "0916907fdac73f1e",
+      "parent_span_id": "f2e95334c5727e45",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.finish_upload",
+      "kind": "INTERNAL",
+      "span_id": "f5ce92d9e79dc3b4",
+      "parent_span_id": "e8f2a69040e4d2c8",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.finish_upload",
+        "reflex.event.background": true,
+        "reflex.event.txid": "126f1782c81c",
+        "session.id": "2a1e83e6ea28eb3d",
+        "code.function.name": "upload_probe.upload_probe.UploadState.finish_upload",
+        "reflex.event.parent_txid": "931c01fb1de0"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "df205e95f8fbda31",
+      "parent_span_id": "f70d8ffdb76ee527",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "7ee5519518b16aa4",
+      "parent_span_id": "f70d8ffdb76ee527",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "POST /_upload",
+      "kind": "SERVER",
+      "span_id": "f70d8ffdb76ee527",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_upload",
+        "http.url": "http://localhost:8111/_upload",
+        "http.method": "POST",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53156,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "beeb5ccbcf03846e",
+      "parent_span_id": "f70d8ffdb76ee527",
+      "attributes": {}
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.finish_upload",
+      "kind": "INTERNAL",
+      "span_id": "ed0b1520f6774f6b",
+      "parent_span_id": "f18bfa06f0a9d274",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.finish_upload",
+        "reflex.event.background": true,
+        "reflex.event.txid": "acbf761d366e",
+        "session.id": "f2701e115ebf8157",
+        "code.function.name": "upload_probe.upload_probe.UploadState.finish_upload",
+        "reflex.event.parent_txid": "d8d4e59efd77"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "1fca93fb96a18202",
+      "parent_span_id": "f2e95334c5727e45",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "23398bd2a0c5a4bb",
+      "parent_span_id": "f2e95334c5727e45",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "POST /_upload",
+      "kind": "SERVER",
+      "span_id": "f2e95334c5727e45",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_upload",
+        "http.url": "http://localhost:8111/_upload",
+        "http.method": "POST",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53160,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "aa14fce218f4acea",
+      "parent_span_id": "f2e95334c5727e45",
+      "attributes": {}
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "aada7d7e78f482ec",
+      "parent_span_id": "20cc0323a8d7430e",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "07d9161ee6e48c6e",
+      "parent_span_id": "20cc0323a8d7430e",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "20cc0323a8d7430e",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53169,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "069007309cdac57b",
+      "parent_span_id": "f4c8825e3ae8fa2b",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "f85b1ed0ee4a01b8",
+      "parent_span_id": "f4c8825e3ae8fa2b",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "f4c8825e3ae8fa2b",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53171,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "32a96a47189059f9",
+      "parent_span_id": "5419f390422e0e07",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "60aa6e7dd33318cd",
+      "parent_span_id": "5419f390422e0e07",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "5419f390422e0e07",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53173,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "2ddd629a5af33690",
+      "parent_span_id": "916c62d2a2158aee",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "736b52896e7a9b15",
+      "parent_span_id": "916c62d2a2158aee",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "916c62d2a2158aee",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53175,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "23d173c608b55145",
+      "parent_span_id": "fb4af48291e9b878",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "8ece42733d332cd2",
+      "parent_span_id": "fb4af48291e9b878",
+      "attributes": {
+        "asgi.event.type": "websocket.disconnect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "8ae913f5df691f07",
+      "parent_span_id": "fb4af48291e9b878",
+      "attributes": {
+        "asgi.event.type": "websocket.close"
+      }
+    },
+    {
+      "name": "HTTP /_event/",
+      "kind": "SERVER",
+      "span_id": "fb4af48291e9b878",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "ws",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_event/",
+        "http.url": "ws://localhost:8111/_event/?token=db54de4b-e11b-4613-8b6b-a700f692d7ef&EIO=4&transport=websocket",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53133,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "0214420eb908476e",
+      "parent_span_id": "ab609ebae1f81802",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "9dafdb06bc3eec68",
+      "parent_span_id": "ab609ebae1f81802",
+      "attributes": {
+        "asgi.event.type": "websocket.disconnect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "a03c631ec7a2b33b",
+      "parent_span_id": "ab609ebae1f81802",
+      "attributes": {
+        "asgi.event.type": "websocket.close"
+      }
+    },
+    {
+      "name": "HTTP /_event/",
+      "kind": "SERVER",
+      "span_id": "ab609ebae1f81802",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "ws",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_event/",
+        "http.url": "ws://localhost:8111/_event/?token=8ffb63ad-2c12-4fa1-aa29-eaa61666cc8d&EIO=4&transport=websocket",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53146,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "34c96e3c81bf2c80",
+      "parent_span_id": "83b8f743a3cd93ae",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "96938db6c0f4b62a",
+      "parent_span_id": "83b8f743a3cd93ae",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "83b8f743a3cd93ae",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53177,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "2216b94c25ecb4e9",
+      "parent_span_id": "47a9b72aed5d09a3",
+      "attributes": {
+        "asgi.event.type": "websocket.connect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "d2573eafd76e0e19",
+      "parent_span_id": "47a9b72aed5d09a3",
+      "attributes": {
+        "asgi.event.type": "websocket.accept"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "429d01c94046b29f",
+      "parent_span_id": "47a9b72aed5d09a3",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "5ab770a29a9bfa32",
+      "parent_span_id": "47a9b72aed5d09a3",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "726f8ffdfc8a4a48",
+      "parent_span_id": "47a9b72aed5d09a3",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "c1dce279871deef4",
+      "parent_span_id": "47a9b72aed5d09a3",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "a2acda083f350a1a",
+      "parent_span_id": "47a9b72aed5d09a3",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.hydrate_and_load",
+      "kind": "CONSUMER",
+      "span_id": "8051de978efb9133",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.hydrate_and_load",
+        "reflex.event.background": false,
+        "reflex.event.txid": "8fd53ec4814b",
+        "session.id": "b2dbeaa091f886a3",
+        "code.function.name": "reflex.state.State.hydrate_and_load"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "95cad9c79a38ca2a",
+      "parent_span_id": "693050d5d616c0b3",
+      "attributes": {
+        "asgi.event.type": "websocket.connect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "66436aa8fb39caec",
+      "parent_span_id": "693050d5d616c0b3",
+      "attributes": {
+        "asgi.event.type": "websocket.accept"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "df517b3dbe72fd4f",
+      "parent_span_id": "693050d5d616c0b3",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "afcf2cdd83326b1b",
+      "parent_span_id": "693050d5d616c0b3",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "f7eca30ae42ee347",
+      "parent_span_id": "693050d5d616c0b3",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "fd9a5a03adfd0759",
+      "parent_span_id": "693050d5d616c0b3",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "de5cb4dd1486b453",
+      "parent_span_id": "693050d5d616c0b3",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.hydrate_and_load",
+      "kind": "CONSUMER",
+      "span_id": "b8720c9c3128ba40",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.hydrate_and_load",
+        "reflex.event.background": false,
+        "reflex.event.txid": "25e339ac8bf9",
+        "session.id": "7361bb3dd1b37fe1",
+        "code.function.name": "reflex.state.State.hydrate_and_load"
+      }
+    },
+    {
+      "name": "OPTIONS /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "487dc040cea79e75",
+      "parent_span_id": "312123e1a8382fbc",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "OPTIONS /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "6e7a07aa2b9b08dc",
+      "parent_span_id": "312123e1a8382fbc",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "OPTIONS /_upload",
+      "kind": "SERVER",
+      "span_id": "312123e1a8382fbc",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_upload",
+        "http.url": "http://localhost:8111/_upload",
+        "http.method": "OPTIONS",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53206,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "c5f1b51aa567ebb6",
+      "parent_span_id": "23b80fc8ea642113",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "360968543b99e35f",
+      "parent_span_id": "23b80fc8ea642113",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "462ad87a27141bc2",
+      "parent_span_id": "23b80fc8ea642113",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.buffered",
+      "kind": "INTERNAL",
+      "span_id": "fbb6d38985ed6aeb",
+      "parent_span_id": "23b80fc8ea642113",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.buffered",
+        "reflex.event.background": false,
+        "reflex.event.txid": "c8e0de46be98",
+        "session.id": "b2dbeaa091f886a3",
+        "code.function.name": "upload_probe.upload_probe.UploadState.buffered"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "b92c0aeef44969ba",
+      "parent_span_id": "23b80fc8ea642113",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "9dbdcaef76bc16bb",
+      "parent_span_id": "693050d5d616c0b3",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "440e7b03d3971650",
+      "parent_span_id": "2d54fd4ca548f8d0",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "4d27bc6680b1a4f1",
+      "parent_span_id": "2d54fd4ca548f8d0",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "2d54fd4ca548f8d0",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53210,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.finish_upload",
+      "kind": "INTERNAL",
+      "span_id": "208f4174e2987a4c",
+      "parent_span_id": "fbb6d38985ed6aeb",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.finish_upload",
+        "reflex.event.background": true,
+        "reflex.event.txid": "830ee5aac01c",
+        "session.id": "b2dbeaa091f886a3",
+        "code.function.name": "upload_probe.upload_probe.UploadState.finish_upload",
+        "reflex.event.parent_txid": "c8e0de46be98"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "807a648e9d3b4e79",
+      "parent_span_id": "23b80fc8ea642113",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "bd114f275631a68c",
+      "parent_span_id": "23b80fc8ea642113",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "POST /_upload",
+      "kind": "SERVER",
+      "span_id": "23b80fc8ea642113",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_upload",
+        "http.url": "http://localhost:8111/_upload",
+        "http.method": "POST",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53206,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "adcb30846a1dc9b2",
+      "parent_span_id": "23b80fc8ea642113",
+      "attributes": {}
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "0a0e5fad4f8fceeb",
+      "parent_span_id": "693050d5d616c0b3",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.delayed",
+      "kind": "CONSUMER",
+      "span_id": "078ff6e4a0ead2a7",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.delayed",
+        "reflex.event.background": false,
+        "reflex.event.txid": "4f6b3bd97c1a",
+        "session.id": "7361bb3dd1b37fe1",
+        "code.function.name": "upload_probe.upload_probe.UploadState.delayed"
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "3911a93a31f9739f",
+      "parent_span_id": "fc55747258eea415",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "099a6a3a53c3cf57",
+      "parent_span_id": "fc55747258eea415",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "fc55747258eea415",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53237,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "9de51fa5deeb065e",
+      "parent_span_id": "287adab14443363e",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "5ee9f13d65909e6b",
+      "parent_span_id": "287adab14443363e",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "287adab14443363e",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53239,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "5a1d5e54bb14b587",
+      "parent_span_id": "47a9b72aed5d09a3",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "ee0a46e2b3e71935",
+      "parent_span_id": "47a9b72aed5d09a3",
+      "attributes": {
+        "asgi.event.type": "websocket.disconnect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "f4b6041e446935ff",
+      "parent_span_id": "47a9b72aed5d09a3",
+      "attributes": {
+        "asgi.event.type": "websocket.close"
+      }
+    },
+    {
+      "name": "HTTP /_event/",
+      "kind": "SERVER",
+      "span_id": "47a9b72aed5d09a3",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "ws",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_event/",
+        "http.url": "ws://localhost:8111/_event/?token=3183d96e-9c6e-4b27-af3d-b2c46521a4e2&EIO=4&transport=websocket",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53188,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "c4e86c479d9035fb",
+      "parent_span_id": "693050d5d616c0b3",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "ce65aab1ab97a0eb",
+      "parent_span_id": "693050d5d616c0b3",
+      "attributes": {
+        "asgi.event.type": "websocket.disconnect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "562c439dc954dc4c",
+      "parent_span_id": "693050d5d616c0b3",
+      "attributes": {
+        "asgi.event.type": "websocket.close"
+      }
+    },
+    {
+      "name": "HTTP /_event/",
+      "kind": "SERVER",
+      "span_id": "693050d5d616c0b3",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "ws",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_event/",
+        "http.url": "ws://localhost:8111/_event/?token=2d66ccf4-3c67-4c8c-cc53-c7a75d9b8c25&EIO=4&transport=websocket",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53201,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "4b482964769cff81",
+      "parent_span_id": "73152aae7f572b43",
+      "attributes": {
+        "asgi.event.type": "websocket.connect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "95ad02203f8aceef",
+      "parent_span_id": "73152aae7f572b43",
+      "attributes": {
+        "asgi.event.type": "websocket.accept"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "5a0c1d11aced5b4f",
+      "parent_span_id": "73152aae7f572b43",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "d74a87b4945ca74b",
+      "parent_span_id": "73152aae7f572b43",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "956fbd11995632d0",
+      "parent_span_id": "73152aae7f572b43",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "e201d51ca58ce903",
+      "parent_span_id": "73152aae7f572b43",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "b5b743888cccdf93",
+      "parent_span_id": "73152aae7f572b43",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.hydrate_and_load",
+      "kind": "CONSUMER",
+      "span_id": "0107cbc0a8940892",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.hydrate_and_load",
+        "reflex.event.background": false,
+        "reflex.event.txid": "c40f505138ec",
+        "session.id": "81cb8815e2e0e05a",
+        "code.function.name": "reflex.state.State.hydrate_and_load"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "ad6898d0851a4404",
+      "parent_span_id": "b2d6afb52c707360",
+      "attributes": {
+        "asgi.event.type": "websocket.connect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "91a3a06407cc378a",
+      "parent_span_id": "b2d6afb52c707360",
+      "attributes": {
+        "asgi.event.type": "websocket.accept"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "b6a550e5533960c8",
+      "parent_span_id": "b2d6afb52c707360",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "950af4b85e6bb791",
+      "parent_span_id": "b2d6afb52c707360",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "cab0072fc3afb82b",
+      "parent_span_id": "b2d6afb52c707360",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "71f1b9b2d795cd46",
+      "parent_span_id": "b2d6afb52c707360",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "749b4f7cc7961e04",
+      "parent_span_id": "b2d6afb52c707360",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.hydrate_and_load",
+      "kind": "CONSUMER",
+      "span_id": "319a00098d757cd9",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.hydrate_and_load",
+        "reflex.event.background": false,
+        "reflex.event.txid": "370c03f53a2d",
+        "session.id": "9bbf9ed5225d6527",
+        "code.function.name": "reflex.state.State.hydrate_and_load"
+      }
+    },
+    {
+      "name": "OPTIONS /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "90ef8fb9f3cb0358",
+      "parent_span_id": "3504547bc287b91e",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "OPTIONS /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "3c5fcc6499b636ef",
+      "parent_span_id": "3504547bc287b91e",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "OPTIONS /_upload",
+      "kind": "SERVER",
+      "span_id": "3504547bc287b91e",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_upload",
+        "http.url": "http://localhost:8111/_upload",
+        "http.method": "OPTIONS",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53270,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "5f11e4febd29023a",
+      "parent_span_id": "2b4f76b320448011",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "c9407b5e57f4e31d",
+      "parent_span_id": "2b4f76b320448011",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "b08a9be2e85dac41",
+      "parent_span_id": "2b4f76b320448011",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.buffered",
+      "kind": "INTERNAL",
+      "span_id": "37954475953ac3eb",
+      "parent_span_id": "2b4f76b320448011",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.buffered",
+        "reflex.event.background": false,
+        "reflex.event.txid": "2d3cf962f696",
+        "session.id": "81cb8815e2e0e05a",
+        "code.function.name": "upload_probe.upload_probe.UploadState.buffered"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "12b27269d6382662",
+      "parent_span_id": "2b4f76b320448011",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "a92a26aca7fc6c04",
+      "parent_span_id": "23d0d6d92105c1d5",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "eda49d5b59e4fc04",
+      "parent_span_id": "23d0d6d92105c1d5",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "23d0d6d92105c1d5",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53274,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "a6c300d8cc561068",
+      "parent_span_id": "b2d6afb52c707360",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "a5a06a8f41f83905",
+      "parent_span_id": "a187acdd831ad713",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "07605b7be22d7d5a",
+      "parent_span_id": "a187acdd831ad713",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "a187acdd831ad713",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53276,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "87b3f86da4b690ec",
+      "parent_span_id": "73152aae7f572b43",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "87544df00e994e08",
+      "parent_span_id": "73152aae7f572b43",
+      "attributes": {
+        "asgi.event.type": "websocket.disconnect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "7bf67467bb8006ac",
+      "parent_span_id": "73152aae7f572b43",
+      "attributes": {
+        "asgi.event.type": "websocket.close"
+      }
+    },
+    {
+      "name": "HTTP /_event/",
+      "kind": "SERVER",
+      "span_id": "73152aae7f572b43",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "ws",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_event/",
+        "http.url": "ws://localhost:8111/_event/?token=f5cf36ed-0c50-4cab-8c06-3acce785dc2b&EIO=4&transport=websocket",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53252,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "da6de997fd630f23",
+      "parent_span_id": "2b4f76b320448011",
+      "attributes": {
+        "asgi.event.type": "http.disconnect"
+      }
+    },
+    {
+      "name": "POST /_upload",
+      "kind": "SERVER",
+      "span_id": "2b4f76b320448011",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_upload",
+        "http.url": "http://localhost:8111/_upload",
+        "http.method": "POST",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53270,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.finish_upload",
+      "kind": "INTERNAL",
+      "span_id": "d409d5d23f3bc302",
+      "parent_span_id": "37954475953ac3eb",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.finish_upload",
+        "reflex.event.background": true,
+        "reflex.event.txid": "556a3dab8de9",
+        "session.id": "81cb8815e2e0e05a",
+        "code.function.name": "upload_probe.upload_probe.UploadState.finish_upload",
+        "reflex.event.parent_txid": "2d3cf962f696"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "f6fb3443df440cd8",
+      "parent_span_id": "b2d6afb52c707360",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.delayed",
+      "kind": "CONSUMER",
+      "span_id": "3d7ab99383955f5e",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.delayed",
+        "reflex.event.background": false,
+        "reflex.event.txid": "385acae4b1c9",
+        "session.id": "9bbf9ed5225d6527",
+        "code.function.name": "upload_probe.upload_probe.UploadState.delayed"
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "9538d6a290abbf64",
+      "parent_span_id": "99b6843f2c24a654",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "90799b84b17b87ee",
+      "parent_span_id": "99b6843f2c24a654",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "99b6843f2c24a654",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53285,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "7e0eaa69118a8498",
+      "parent_span_id": "b67d15cbba211025",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "cd6fa027c1e32fb7",
+      "parent_span_id": "b67d15cbba211025",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "b67d15cbba211025",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53287,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "d8a95d61f8af194d",
+      "parent_span_id": "9eea9ab3eef07a58",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "a9e2eacda3dbd457",
+      "parent_span_id": "9eea9ab3eef07a58",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "9eea9ab3eef07a58",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53289,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "1cfb9cc13062f27a",
+      "parent_span_id": "b2d6afb52c707360",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "74e3a5172cc250b3",
+      "parent_span_id": "b2d6afb52c707360",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.ordinary",
+      "kind": "CONSUMER",
+      "span_id": "ea2c9685b54476a5",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.ordinary",
+        "reflex.event.background": false,
+        "reflex.event.txid": "e11a38e3b268",
+        "session.id": "9bbf9ed5225d6527",
+        "code.function.name": "upload_probe.upload_probe.UploadState.ordinary"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "2a9db65a426dc0f7",
+      "parent_span_id": "b2d6afb52c707360",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "079ebb22f3fcc57a",
+      "parent_span_id": "b2d6afb52c707360",
+      "attributes": {
+        "asgi.event.type": "websocket.disconnect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "88a1670581bc1d12",
+      "parent_span_id": "b2d6afb52c707360",
+      "attributes": {
+        "asgi.event.type": "websocket.close"
+      }
+    },
+    {
+      "name": "HTTP /_event/",
+      "kind": "SERVER",
+      "span_id": "b2d6afb52c707360",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "ws",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_event/",
+        "http.url": "ws://localhost:8111/_event/?token=37c47de5-cf6a-43e7-a025-3a3325640909&EIO=4&transport=websocket",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53265,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "5ceca7f99735c5da",
+      "parent_span_id": "3668b655bebbfdae",
+      "attributes": {
+        "asgi.event.type": "websocket.connect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "7237963d3680e0ec",
+      "parent_span_id": "3668b655bebbfdae",
+      "attributes": {
+        "asgi.event.type": "websocket.accept"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "2eb12fcb06bbbacc",
+      "parent_span_id": "3668b655bebbfdae",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "300850e2e0c40ad3",
+      "parent_span_id": "3668b655bebbfdae",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "e43bfcbb8bf9b632",
+      "parent_span_id": "3668b655bebbfdae",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "8752b88420f7c1d9",
+      "parent_span_id": "3668b655bebbfdae",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "c367b41d86ccc3f8",
+      "parent_span_id": "3668b655bebbfdae",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.hydrate_and_load",
+      "kind": "CONSUMER",
+      "span_id": "05c590d17f72a556",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.hydrate_and_load",
+        "reflex.event.background": false,
+        "reflex.event.txid": "24deb73ccbce",
+        "session.id": "603f7f3f9ac85ce2",
+        "code.function.name": "reflex.state.State.hydrate_and_load"
+      }
+    },
+    {
+      "name": "OPTIONS /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "7e8fe29468ec4221",
+      "parent_span_id": "ebaf3c471eb4fbd6",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "OPTIONS /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "b4158aa718fb1b0f",
+      "parent_span_id": "ebaf3c471eb4fbd6",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "OPTIONS /_upload",
+      "kind": "SERVER",
+      "span_id": "ebaf3c471eb4fbd6",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_upload",
+        "http.url": "http://localhost:8111/_upload",
+        "http.method": "OPTIONS",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53305,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "513c5543a1ad6af1",
+      "parent_span_id": "a71f408527456cad",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "c9c869c1f18ad721",
+      "parent_span_id": "a71f408527456cad",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "b1c3ff71478c8fa8",
+      "parent_span_id": "a71f408527456cad",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.buffered",
+      "kind": "INTERNAL",
+      "span_id": "f75ccbb5083fa5bd",
+      "parent_span_id": "a71f408527456cad",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.buffered",
+        "reflex.event.background": false,
+        "reflex.event.txid": "81b9875d7af3",
+        "session.id": "603f7f3f9ac85ce2",
+        "code.function.name": "upload_probe.upload_probe.UploadState.buffered"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "c7d36abeed4dd985",
+      "parent_span_id": "a71f408527456cad",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "f06ebf732b6aa620",
+      "parent_span_id": "3668b655bebbfdae",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "06fe786c189268a8",
+      "parent_span_id": "3668b655bebbfdae",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal",
+      "kind": "CONSUMER",
+      "span_id": "9d7a2c989ea399d1",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal",
+        "reflex.event.background": false,
+        "reflex.event.txid": "e5de25194c92",
+        "session.id": "603f7f3f9ac85ce2",
+        "code.function.name": "reflex.state.OnLoadInternalState.on_load_internal"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "0751c0bcb60d5b6b",
+      "parent_span_id": "3668b655bebbfdae",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.reflex___state____on_load_internal_state.set_is_hydrated",
+      "kind": "INTERNAL",
+      "span_id": "9a6c7fb762215ec3",
+      "parent_span_id": "9d7a2c989ea399d1",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.reflex___state____on_load_internal_state.set_is_hydrated",
+        "reflex.event.background": false,
+        "reflex.event.txid": "17be2a2ff7bf",
+        "session.id": "603f7f3f9ac85ce2",
+        "code.function.name": "reflex.state.OnLoadInternalState.set_is_hydrated",
+        "reflex.event.parent_txid": "e5de25194c92"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "2090ff8fce8090b3",
+      "parent_span_id": "3668b655bebbfdae",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "3424364d09ec8757",
+      "parent_span_id": "3668b655bebbfdae",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.nav_slow",
+      "kind": "INTERNAL",
+      "span_id": "31e7a3ce20c5e39d",
+      "parent_span_id": "9d7a2c989ea399d1",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.nav_slow",
+        "reflex.event.background": true,
+        "reflex.event.txid": "6ecacad1793c",
+        "session.id": "603f7f3f9ac85ce2",
+        "code.function.name": "upload_probe.upload_probe.UploadState.nav_slow",
+        "reflex.event.parent_txid": "e5de25194c92"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "76e6b037c3ca1820",
+      "parent_span_id": "3668b655bebbfdae",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal",
+      "kind": "CONSUMER",
+      "span_id": "8fc5144404f77745",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal",
+        "reflex.event.background": false,
+        "reflex.event.txid": "66bbdb20a54e",
+        "session.id": "603f7f3f9ac85ce2",
+        "code.function.name": "reflex.state.OnLoadInternalState.on_load_internal"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "ab2e8163cd59801f",
+      "parent_span_id": "3668b655bebbfdae",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.nav_new",
+      "kind": "INTERNAL",
+      "span_id": "03d0c34e1c9631d8",
+      "parent_span_id": "8fc5144404f77745",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.nav_new",
+        "reflex.event.background": false,
+        "reflex.event.txid": "de94ae32df63",
+        "session.id": "603f7f3f9ac85ce2",
+        "code.function.name": "upload_probe.upload_probe.UploadState.nav_new",
+        "reflex.event.parent_txid": "66bbdb20a54e"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "eb2eec457428f67a",
+      "parent_span_id": "3668b655bebbfdae",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.reflex___state____on_load_internal_state.set_is_hydrated",
+      "kind": "INTERNAL",
+      "span_id": "5267257edbf94d67",
+      "parent_span_id": "8fc5144404f77745",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.reflex___state____on_load_internal_state.set_is_hydrated",
+        "reflex.event.background": false,
+        "reflex.event.txid": "49d91bc19541",
+        "session.id": "603f7f3f9ac85ce2",
+        "code.function.name": "reflex.state.OnLoadInternalState.set_is_hydrated",
+        "reflex.event.parent_txid": "66bbdb20a54e"
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "75f66e2cf0b7df1a",
+      "parent_span_id": "705b5a45fe4e78db",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "f0f906cdf7ebb52b",
+      "parent_span_id": "705b5a45fe4e78db",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "705b5a45fe4e78db",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53309,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "f4e12da2e23fcf16",
+      "parent_span_id": "36c8b0a14b6c7cef",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "c2265cb1e23e6d03",
+      "parent_span_id": "36c8b0a14b6c7cef",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "36c8b0a14b6c7cef",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53311,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "f050c11353f38ee2",
+      "parent_span_id": "cbb7c55b6c263a03",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "12c9c1cfecd526d2",
+      "parent_span_id": "cbb7c55b6c263a03",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "cbb7c55b6c263a03",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53313,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.finish_upload",
+      "kind": "INTERNAL",
+      "span_id": "5c11e0980a005ab1",
+      "parent_span_id": "f75ccbb5083fa5bd",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.finish_upload",
+        "reflex.event.background": true,
+        "reflex.event.txid": "f23bf322d492",
+        "session.id": "603f7f3f9ac85ce2",
+        "code.function.name": "upload_probe.upload_probe.UploadState.finish_upload",
+        "reflex.event.parent_txid": "81b9875d7af3"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "0d9b58330d5e546d",
+      "parent_span_id": "a71f408527456cad",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "46e6b5e590c5206e",
+      "parent_span_id": "a71f408527456cad",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "POST /_upload",
+      "kind": "SERVER",
+      "span_id": "a71f408527456cad",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_upload",
+        "http.url": "http://localhost:8111/_upload",
+        "http.method": "POST",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53305,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "678d49aa8300a34f",
+      "parent_span_id": "a71f408527456cad",
+      "attributes": {}
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "cca54cdc82fd0aa4",
+      "parent_span_id": "41ea07f5b52cdae2",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "0225bce4b344e8cd",
+      "parent_span_id": "41ea07f5b52cdae2",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "41ea07f5b52cdae2",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53324,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "cd3657834e711bfd",
+      "parent_span_id": "3668b655bebbfdae",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "a271df6e37701bd6",
+      "parent_span_id": "3668b655bebbfdae",
+      "attributes": {
+        "asgi.event.type": "websocket.disconnect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "fca6c36e7a99b8cc",
+      "parent_span_id": "3668b655bebbfdae",
+      "attributes": {
+        "asgi.event.type": "websocket.close"
+      }
+    },
+    {
+      "name": "HTTP /_event/",
+      "kind": "SERVER",
+      "span_id": "3668b655bebbfdae",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "ws",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_event/",
+        "http.url": "ws://localhost:8111/_event/?token=bc1a7633-0c5d-427c-fbe2-9632b61fed46&EIO=4&transport=websocket",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53301,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "34476cf6e2d08fed",
+      "parent_span_id": "167bf9a54ccc8121",
+      "attributes": {
+        "asgi.event.type": "websocket.connect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "83104f7b7dc4b721",
+      "parent_span_id": "167bf9a54ccc8121",
+      "attributes": {
+        "asgi.event.type": "websocket.accept"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "c97a2f26739c5743",
+      "parent_span_id": "167bf9a54ccc8121",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "9fc3c763195e26a6",
+      "parent_span_id": "167bf9a54ccc8121",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "50b62e2a22d4ab69",
+      "parent_span_id": "167bf9a54ccc8121",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "75dc4405c168aed9",
+      "parent_span_id": "167bf9a54ccc8121",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "9fbdfe80ea93509e",
+      "parent_span_id": "167bf9a54ccc8121",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.hydrate_and_load",
+      "kind": "CONSUMER",
+      "span_id": "6709d53a8f85de7b",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.hydrate_and_load",
+        "reflex.event.background": false,
+        "reflex.event.txid": "88a566d45750",
+        "session.id": "0b56ff2b02589266",
+        "code.function.name": "reflex.state.State.hydrate_and_load"
+      }
+    },
+    {
+      "name": "OPTIONS /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "d24c2ea0837f6c70",
+      "parent_span_id": "17a8a424df2f8e5f",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "OPTIONS /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "4b8bf3accc1107a1",
+      "parent_span_id": "17a8a424df2f8e5f",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "OPTIONS /_upload",
+      "kind": "SERVER",
+      "span_id": "17a8a424df2f8e5f",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_upload",
+        "http.url": "http://localhost:8111/_upload",
+        "http.method": "OPTIONS",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53338,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "6d7e25139bdf89b2",
+      "parent_span_id": "3b457d8f57e99d47",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "8ea3103964df1aa1",
+      "parent_span_id": "3b457d8f57e99d47",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "21f757c713fef7a7",
+      "parent_span_id": "3b457d8f57e99d47",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "361557d4642e073e",
+      "parent_span_id": "3b457d8f57e99d47",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.buffered",
+      "kind": "INTERNAL",
+      "span_id": "68887988865ea9f2",
+      "parent_span_id": "3b457d8f57e99d47",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.buffered",
+        "reflex.event.background": false,
+        "reflex.event.txid": "bfa2d7718da6",
+        "session.id": "0b56ff2b02589266",
+        "code.function.name": "upload_probe.upload_probe.UploadState.buffered"
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "2cef445d5442c779",
+      "parent_span_id": "3b457d8f57e99d47",
+      "attributes": {}
+    },
+    {
+      "name": "POST /_upload",
+      "kind": "SERVER",
+      "span_id": "3b457d8f57e99d47",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_upload",
+        "http.url": "http://localhost:8111/_upload",
+        "http.method": "POST",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53338,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "dace96f74678b28a",
+      "parent_span_id": "167bf9a54ccc8121",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.recover",
+      "kind": "INTERNAL",
+      "span_id": "ce5738b87305094f",
+      "parent_span_id": "68887988865ea9f2",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.recover",
+        "reflex.event.background": true,
+        "reflex.event.txid": "504e609edf2c",
+        "session.id": "0b56ff2b02589266",
+        "code.function.name": "upload_probe.upload_probe.UploadState.recover",
+        "reflex.event.parent_txid": "bfa2d7718da6"
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "c6009ad1fd732b62",
+      "parent_span_id": "13e556c3de832b5c",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "5c36e4f6ab4a9506",
+      "parent_span_id": "13e556c3de832b5c",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "13e556c3de832b5c",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53356,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "c19c487a8f02463f",
+      "parent_span_id": "7ba1ef7fc30593b6",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "a1e9c13124e007da",
+      "parent_span_id": "7ba1ef7fc30593b6",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "7ba1ef7fc30593b6",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53358,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "01de09292bdf87b7",
+      "parent_span_id": "167bf9a54ccc8121",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "83a5b86fb9f319ff",
+      "parent_span_id": "167bf9a54ccc8121",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.ordinary",
+      "kind": "CONSUMER",
+      "span_id": "9a5faa356c1dd916",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.ordinary",
+        "reflex.event.background": false,
+        "reflex.event.txid": "d239baa1c4f4",
+        "session.id": "0b56ff2b02589266",
+        "code.function.name": "upload_probe.upload_probe.UploadState.ordinary"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "6ec5c6721fa9fe59",
+      "parent_span_id": "167bf9a54ccc8121",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "9e5e4ce7d8d470e1",
+      "parent_span_id": "167bf9a54ccc8121",
+      "attributes": {
+        "asgi.event.type": "websocket.disconnect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "bca1e2a039f53d83",
+      "parent_span_id": "167bf9a54ccc8121",
+      "attributes": {
+        "asgi.event.type": "websocket.close"
+      }
+    },
+    {
+      "name": "HTTP /_event/",
+      "kind": "SERVER",
+      "span_id": "167bf9a54ccc8121",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "ws",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_event/",
+        "http.url": "ws://localhost:8111/_event/?token=a68c04a3-4b4b-49e2-dc96-42e84a823557&EIO=4&transport=websocket",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53335,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "a1b1083cf289a10f",
+      "parent_span_id": "ce53f8900d805c8e",
+      "attributes": {
+        "asgi.event.type": "websocket.connect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "b54fd772a87e7059",
+      "parent_span_id": "ce53f8900d805c8e",
+      "attributes": {
+        "asgi.event.type": "websocket.accept"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "6878e2ec77310bd6",
+      "parent_span_id": "ce53f8900d805c8e",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "bdd6b46905608cbc",
+      "parent_span_id": "ce53f8900d805c8e",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "865f6879b69acf30",
+      "parent_span_id": "ce53f8900d805c8e",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "474b7a4431f26094",
+      "parent_span_id": "ce53f8900d805c8e",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "72a7b6190e367a34",
+      "parent_span_id": "ce53f8900d805c8e",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.hydrate_and_load",
+      "kind": "CONSUMER",
+      "span_id": "223d6f220ebfdd93",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.hydrate_and_load",
+        "reflex.event.background": false,
+        "reflex.event.txid": "20f041c39d31",
+        "session.id": "7a6415f37814bb7d",
+        "code.function.name": "reflex.state.State.hydrate_and_load"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "890dbabb0fda3150",
+      "parent_span_id": "d7310a9808be4108",
+      "attributes": {
+        "asgi.event.type": "websocket.connect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "2c43c53b39e8bc82",
+      "parent_span_id": "d7310a9808be4108",
+      "attributes": {
+        "asgi.event.type": "websocket.accept"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "d695fb3f88c45eb5",
+      "parent_span_id": "d7310a9808be4108",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "be731a96f15e391a",
+      "parent_span_id": "d7310a9808be4108",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "85b8949365597ed0",
+      "parent_span_id": "d7310a9808be4108",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "0043118ee3108c80",
+      "parent_span_id": "d7310a9808be4108",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "ade71815451fb0b7",
+      "parent_span_id": "d7310a9808be4108",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.hydrate_and_load",
+      "kind": "CONSUMER",
+      "span_id": "a2bb5693fd0fc5ea",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.hydrate_and_load",
+        "reflex.event.background": false,
+        "reflex.event.txid": "f0385afe4647",
+        "session.id": "8affc5eb4407700a",
+        "code.function.name": "reflex.state.State.hydrate_and_load"
+      }
+    },
+    {
+      "name": "POST /api/stream http send",
+      "kind": "INTERNAL",
+      "span_id": "44ea27e5a48405ff",
+      "parent_span_id": "4920c558016677fd",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "POST /api/stream http receive",
+      "kind": "INTERNAL",
+      "span_id": "fa6a042d15f65c87",
+      "parent_span_id": "4920c558016677fd",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /api/stream http send",
+      "kind": "INTERNAL",
+      "span_id": "9d969c273c281700",
+      "parent_span_id": "4920c558016677fd",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "cecdb5ab25f3c20e",
+      "parent_span_id": "d7310a9808be4108",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "0f339427457a3067",
+      "parent_span_id": "886cad7e151ed609",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "09d5e147a7816041",
+      "parent_span_id": "886cad7e151ed609",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "886cad7e151ed609",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53396,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "POST /api/stream http receive",
+      "kind": "INTERNAL",
+      "span_id": "37df1fa86a7cab94",
+      "parent_span_id": "4920c558016677fd",
+      "attributes": {
+        "asgi.event.type": "http.disconnect"
+      }
+    },
+    {
+      "name": "POST /api/stream",
+      "kind": "SERVER",
+      "span_id": "4920c558016677fd",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/stream",
+        "http.url": "http://localhost:8111/api/stream?token=21432520-b489-4d4f-8497-452e2a186de2",
+        "http.method": "POST",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53394,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.http_slow",
+      "kind": "INTERNAL",
+      "span_id": "06857bf156c520f7",
+      "parent_span_id": "4920c558016677fd",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.http_slow",
+        "reflex.event.background": false,
+        "reflex.event.txid": "b2b50f70e939",
+        "session.id": "7a6415f37814bb7d",
+        "code.function.name": "upload_probe.upload_probe.UploadState.http_slow"
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "fe0c1bdd63587f71",
+      "parent_span_id": "9e5ce6e98c14906b",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "ffdb47b4ad5700f0",
+      "parent_span_id": "9e5ce6e98c14906b",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "9e5ce6e98c14906b",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53398,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "731d2706a1dbef45",
+      "parent_span_id": "d7310a9808be4108",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.delayed",
+      "kind": "CONSUMER",
+      "span_id": "caf6a83c2f03ccfd",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.delayed",
+        "reflex.event.background": false,
+        "reflex.event.txid": "b67969612642",
+        "session.id": "8affc5eb4407700a",
+        "code.function.name": "upload_probe.upload_probe.UploadState.delayed"
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "5dc6bd225c481baf",
+      "parent_span_id": "9b80dc47d5896854",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "b30461f495bf6f17",
+      "parent_span_id": "9b80dc47d5896854",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "9b80dc47d5896854",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53402,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "1117caab1523a21e",
+      "parent_span_id": "d7310a9808be4108",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "55d01ddd1737e745",
+      "parent_span_id": "d7310a9808be4108",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.ordinary",
+      "kind": "CONSUMER",
+      "span_id": "c43302489f4fc49b",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.ordinary",
+        "reflex.event.background": false,
+        "reflex.event.txid": "7ec636ec501d",
+        "session.id": "8affc5eb4407700a",
+        "code.function.name": "upload_probe.upload_probe.UploadState.ordinary"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "d42ba76df64d014a",
+      "parent_span_id": "ce53f8900d805c8e",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "0c565c5cb699c21f",
+      "parent_span_id": "ce53f8900d805c8e",
+      "attributes": {
+        "asgi.event.type": "websocket.disconnect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "9604aaf87070b5a7",
+      "parent_span_id": "ce53f8900d805c8e",
+      "attributes": {
+        "asgi.event.type": "websocket.close"
+      }
+    },
+    {
+      "name": "HTTP /_event/",
+      "kind": "SERVER",
+      "span_id": "ce53f8900d805c8e",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "ws",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_event/",
+        "http.url": "ws://localhost:8111/_event/?token=21432520-b489-4d4f-8497-452e2a186de2&EIO=4&transport=websocket",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53374,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "2a96f3dacad762ac",
+      "parent_span_id": "d7310a9808be4108",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "7bc21cc1151c65ec",
+      "parent_span_id": "d7310a9808be4108",
+      "attributes": {
+        "asgi.event.type": "websocket.disconnect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "c5e28d5c42da8599",
+      "parent_span_id": "d7310a9808be4108",
+      "attributes": {
+        "asgi.event.type": "websocket.close"
+      }
+    },
+    {
+      "name": "HTTP /_event/",
+      "kind": "SERVER",
+      "span_id": "d7310a9808be4108",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "ws",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_event/",
+        "http.url": "ws://localhost:8111/_event/?token=9709c534-1dc6-4002-d9e7-06bc55937a8a&EIO=4&transport=websocket",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53388,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "42711d1dd15429fa",
+      "parent_span_id": "e64894e97b5c65cb",
+      "attributes": {
+        "asgi.event.type": "websocket.connect"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "4b77a1bd62a87a2a",
+      "parent_span_id": "e64894e97b5c65cb",
+      "attributes": {
+        "asgi.event.type": "websocket.accept"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "b5885a571b96a36e",
+      "parent_span_id": "e64894e97b5c65cb",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket receive",
+      "kind": "INTERNAL",
+      "span_id": "3b21f855c9772216",
+      "parent_span_id": "e64894e97b5c65cb",
+      "attributes": {
+        "http.status_code": 200,
+        "asgi.event.type": "websocket.receive"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "8552f8f3a345fe0c",
+      "parent_span_id": "e64894e97b5c65cb",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "4308258ea13e72c8",
+      "parent_span_id": "e64894e97b5c65cb",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "3795be98b04b6f5f",
+      "parent_span_id": "e64894e97b5c65cb",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.hydrate_and_load",
+      "kind": "CONSUMER",
+      "span_id": "65d26018672e3978",
+      "parent_span_id": null,
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.hydrate_and_load",
+        "reflex.event.background": false,
+        "reflex.event.txid": "c59c74906b3e",
+        "session.id": "0c13958702093d37",
+        "code.function.name": "reflex.state.State.hydrate_and_load"
+      }
+    },
+    {
+      "name": "OPTIONS /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "1760a8cdbc60731c",
+      "parent_span_id": "f084d2ef1ff90d6e",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "OPTIONS /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "6e7bd565e25f63a2",
+      "parent_span_id": "f084d2ef1ff90d6e",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "OPTIONS /_upload",
+      "kind": "SERVER",
+      "span_id": "f084d2ef1ff90d6e",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_upload",
+        "http.url": "http://localhost:8111/_upload",
+        "http.method": "OPTIONS",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53415,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "5d03e7f3a1fe7b2d",
+      "parent_span_id": "d41b20989f77639e",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "407ab3d4bbf412a9",
+      "parent_span_id": "d41b20989f77639e",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "f7d04e2c9d9a9f9d",
+      "parent_span_id": "d41b20989f77639e",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "7512e65d9f94d9e6",
+      "parent_span_id": "d41b20989f77639e",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "723808f1bf712f2a",
+      "parent_span_id": "d41b20989f77639e",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "3b7bc7c52e828843",
+      "parent_span_id": "d41b20989f77639e",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "4257dc40bf7dcbd9",
+      "parent_span_id": "d41b20989f77639e",
+      "attributes": {
+        "asgi.event.type": "http.request"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "f2b215fb6891e7d8",
+      "parent_span_id": "d41b20989f77639e",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 202
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "b0e50c973d612ba3",
+      "parent_span_id": "e64894e97b5c65cb",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.chunks",
+      "kind": "INTERNAL",
+      "span_id": "e9ce77fd9eb3dd44",
+      "parent_span_id": "d41b20989f77639e",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.chunks",
+        "reflex.event.background": true,
+        "reflex.event.txid": "26ed4bd23112",
+        "session.id": "0c13958702093d37",
+        "code.function.name": "upload_probe.upload_probe.UploadState.chunks"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "afcd2d57699bd44a",
+      "parent_span_id": "d41b20989f77639e",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "POST /_upload http send",
+      "kind": "INTERNAL",
+      "span_id": "35729cbc88940be0",
+      "parent_span_id": "d41b20989f77639e",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "POST /_upload",
+      "kind": "SERVER",
+      "span_id": "d41b20989f77639e",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/_upload",
+        "http.url": "http://localhost:8111/_upload",
+        "http.method": "POST",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53415,
+        "http.status_code": 202
+      }
+    },
+    {
+      "name": "POST /_upload http receive",
+      "kind": "INTERNAL",
+      "span_id": "87481b469ac62bd4",
+      "parent_span_id": "d41b20989f77639e",
+      "attributes": {}
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.api_parent",
+      "kind": "INTERNAL",
+      "span_id": "c462d656a428a7e0",
+      "parent_span_id": "f5994fc03ccdb6c0",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.api_parent",
+        "reflex.event.background": false,
+        "reflex.event.txid": "ad656430da12",
+        "session.id": "0c13958702093d37",
+        "code.function.name": "upload_probe.upload_probe.UploadState.api_parent"
+      }
+    },
+    {
+      "name": "HTTP /_event/ websocket send",
+      "kind": "INTERNAL",
+      "span_id": "ed2cd45b3ce7c3fa",
+      "parent_span_id": "e64894e97b5c65cb",
+      "attributes": {
+        "asgi.event.type": "websocket.send",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "reflex___state____state.upload_probe___upload_probe____upload_state.api_child",
+      "kind": "INTERNAL",
+      "span_id": "ac7d41bed0c144c4",
+      "parent_span_id": "c462d656a428a7e0",
+      "attributes": {
+        "reflex.event.name": "reflex___state____state.upload_probe___upload_probe____upload_state.api_child",
+        "reflex.event.background": false,
+        "reflex.event.txid": "6fd17dce86ad",
+        "session.id": "0c13958702093d37",
+        "code.function.name": "upload_probe.upload_probe.UploadState.api_child",
+        "reflex.event.parent_txid": "ad656430da12"
+      }
+    },
+    {
+      "name": "POST /api/enqueue http send",
+      "kind": "INTERNAL",
+      "span_id": "4f558b2690b3b140",
+      "parent_span_id": "f5994fc03ccdb6c0",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "POST /api/enqueue http send",
+      "kind": "INTERNAL",
+      "span_id": "d57e8e6059e601df",
+      "parent_span_id": "f5994fc03ccdb6c0",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "POST /api/enqueue",
+      "kind": "SERVER",
+      "span_id": "f5994fc03ccdb6c0",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/enqueue",
+        "http.url": "http://localhost:8111/api/enqueue?token=73ec51df-e897-4827-e1ca-f4d04ba273e2",
+        "http.method": "POST",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53419,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "5b1c79657feea9f6",
+      "parent_span_id": "ece88abcbcd57662",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "b1a763e27f6ba4c4",
+      "parent_span_id": "ece88abcbcd57662",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "ece88abcbcd57662",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53421,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "db7ddb019c42da38",
+      "parent_span_id": "1f738cbda8202b7d",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "84e2fa197cc15e29",
+      "parent_span_id": "1f738cbda8202b7d",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "1f738cbda8202b7d",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53423,
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "70a81eacb0f95804",
+      "parent_span_id": "9935438c3e58ca46",
+      "attributes": {
+        "asgi.event.type": "http.response.start",
+        "http.status_code": 200
+      }
+    },
+    {
+      "name": "GET /api/evidence http send",
+      "kind": "INTERNAL",
+      "span_id": "50f913ebf94f8446",
+      "parent_span_id": "9935438c3e58ca46",
+      "attributes": {
+        "asgi.event.type": "http.response.body"
+      }
+    },
+    {
+      "name": "GET /api/evidence",
+      "kind": "SERVER",
+      "span_id": "9935438c3e58ca46",
+      "parent_span_id": null,
+      "attributes": {
+        "http.scheme": "http",
+        "http.host": "0.0.0.0:8111",
+        "net.host.port": 8111,
+        "http.flavor": "1.1",
+        "http.target": "/api/evidence",
+        "http.url": "http://localhost:8111/api/evidence",
+        "http.method": "GET",
+        "http.server_name": "localhost:8111",
+        "http.user_agent": "python-httpx/0.28.1",
+        "net.peer.ip": "127.0.0.1",
+        "net.peer.port": 53425,
+        "http.status_code": 200
+      }
+    }
+  ]
+}

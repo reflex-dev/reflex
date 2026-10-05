@@ -1,0 +1,32 @@
+{
+  "overkey": {
+    "same_executable": true,
+    "source_hashes_unchanged": {
+      "rxconfig.py": true,
+      "overkey/overkey.py": true,
+      "overkey/__init__.py": true
+    },
+    "frontend_manifest_changed": true,
+    "bun_lock_changed": true,
+    "reflex_lock_hashes_stable": {
+      "reflex.lock/bun.lock": false,
+      "reflex.lock/package.json": false
+    }
+  },
+  "basic-crud": {
+    "same_executable": true,
+    "source_hashes_unchanged": {
+      "rxconfig.py": true,
+      "basic_crud/__init__.py": true,
+      "basic_crud/basic_crud.py": true,
+      "basic_crud/model.py": true,
+      "basic_crud/api.py": true
+    },
+    "frontend_manifest_changed": true,
+    "bun_lock_changed": true,
+    "reflex_lock_hashes_stable": {
+      "reflex.lock/bun.lock": false,
+      "reflex.lock/package.json": false
+    }
+  }
+}

@@ -1,0 +1,1600 @@
+WARN `--no-project` was provided, but no project was found
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-prerelease-components-20261005/venv/lib/python3.13/site-pac
+kages/reflex_base/config.py'
+Debug: Config: Config(app_name='component_dashboard', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3121, frontend_path='', 
+backend_port=8121, backend_path='', api_url='http://localhost:3121', 
+deploy_url='http://localhost:3121', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-prerelease-components-20261005/runtime/b
+un/bin/bun'), frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'backend_port', 'loglevel', 'app_name', 'api_url', 
+'frontend_port', 'plugins', 'telemetry_enabled'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[RadixThemesPlugin(theme={"name": 
+"RadixThemesTheme", "props": ["accentColor:\"blue\"", 
+"css:{...theme.styles.global[':root'], ...theme.styles.global.body}"], 
+"children": []}), SitemapPlugin(trailing_slash='preserve')], disable_plugins=[],
+transport='websocket')
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/b
+un'), '--version']
+Debug: [Reflex 0.10.0a1 with Python 3.13.0 (PATH: 
+/private/tmp/reflex-prerelease-components-20261005/venv/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3121
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 3121 is in use.
+Debug: Checking if Fullstack port: 3121 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Fullstack port: 3121 is not in use.
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.10s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 15/14 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@glideapps/glide-data-grid@6.0.3', '@radix-ui/react-progress@1.1.16', 
+'@radix-ui/react-slider@1.4.7', '@radix-ui/themes@3.3.0', 
+'@shikijs/transformers@4.5.0', 'gridjs-react@6.1.1', 'gridjs@6.2.0', 
+'lodash@4.18.1', 'lucide-react@1.26.0', 'moment-duration-format@2.3.2', 
+'moment-timezone@0.6.5', 'moment@2.31.0', 'plotly.js@3.7.0', 
+'react-dropzone@17.0.0', 'react-error-boundary@6.1.6', 'react-markdown@10.1.0', 
+'react-moment@2.0.2', 'react-player@3.4.0', 'react-plotly.js@4.1.0', 
+'react-responsive-carousel@3.2.23', 'react-syntax-highlighter@16.1.1', 
+'recharts@3.10.1', 'rehype-katex@7.0.1', 'rehype-raw@7.0.0', 
+'rehype-unwrap-images@1.0.0', 'remark-gfm@4.0.1', 'remark-math@6.0.0', 
+'shiki@4.5.0', 
+'sonner@2.0.8'],[],True,['/private/tmp/reflex-prerelease-components-20261005/run
+time/bun/bin/bun'],[('@react-router/node', '8.4.0'), ('isbot', '5.2.2'), 
+('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'), 
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/private/tmp/reflex-prerelease-components-20261005/app/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-prerelease-components-20261005/app/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.00s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: 
+['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun', 
+'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.3.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 4407 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/assets/KaTeX_Size3-Regular-CTq5MqoE.woff                    
+4.42 kB
+Debug: build/client/assets/KaTeX_Size4-Regular-Dl5lxZxV.woff2                   
+4.92 kB
+Debug: build/client/assets/KaTeX_Size2-Regular-Dy4dx90m.woff2                   
+5.20 kB
+Debug: build/client/assets/KaTeX_Size1-Regular-mCD8mA8B.woff2                   
+5.46 kB
+Debug: build/client/assets/KaTeX_Size4-Regular-BF-4gkZK.woff                    
+5.98 kB
+Debug: build/client/assets/KaTeX_Size2-Regular-oD1tc_U0.woff                    
+6.18 kB
+Debug: build/client/assets/KaTeX_Size1-Regular-C195tn64.woff                    
+6.49 kB
+Debug: build/client/assets/KaTeX_Caligraphic-Regular-Di6jR-x-.woff2             
+6.90 kB
+Debug: build/client/assets/KaTeX_Caligraphic-Bold-Dq_IR9rO.woff2                
+6.91 kB
+Debug: build/client/assets/KaTeX_Size3-Regular-DgpXs0kz.ttf                     
+7.58 kB
+Debug: build/client/assets/KaTeX_Caligraphic-Regular-CTRA-rTL.woff              
+7.65 kB
+Debug: build/client/assets/KaTeX_Caligraphic-Bold-BEiXGLvX.woff                 
+7.71 kB
+Debug: build/client/assets/KaTeX_Script-Regular-D3wIWfF6.woff2                  
+9.64 kB
+Debug: build/client/assets/KaTeX_SansSerif-Regular-DDBCnlJ7.woff2              
+10.34 kB
+Debug: build/client/assets/KaTeX_Size4-Regular-DWFBv043.ttf                    
+10.36 kB
+Debug: build/client/assets/KaTeX_Script-Regular-D5yQViql.woff                  
+10.58 kB
+Debug: build/client/assets/KaTeX_Fraktur-Regular-CTYiF6lA.woff2                
+11.31 kB
+Debug: build/client/assets/KaTeX_Fraktur-Bold-CL6g_b3V.woff2                   
+11.34 kB
+Debug: build/client/assets/KaTeX_Size2-Regular-B7gKUWhC.ttf                    
+11.50 kB
+Debug: build/client/assets/KaTeX_SansSerif-Italic-C3H0VqGB.woff2               
+12.02 kB
+Debug: build/client/assets/KaTeX_SansSerif-Bold-D1sUS0GD.woff2                 
+12.21 kB
+Debug: build/client/assets/KaTeX_Size1-Regular-Dbsnue_I.ttf                    
+12.22 kB
+Debug: build/client/assets/KaTeX_SansSerif-Regular-CS6fqUqJ.woff               
+12.31 kB
+Debug: build/client/assets/KaTeX_Caligraphic-Regular-wX97UBjC.ttf              
+12.34 kB
+Debug: build/client/assets/KaTeX_Caligraphic-Bold-ATXxdsX0.ttf                 
+12.36 kB
+Debug: build/client/assets/KaTeX_Fraktur-Regular-Dxdc4cR9.woff                 
+13.20 kB
+Debug: build/client/assets/KaTeX_Fraktur-Bold-BsDP51OF.woff                    
+13.29 kB
+Debug: build/client/assets/KaTeX_Typewriter-Regular-CO6r4hn1.woff2             
+13.56 kB
+Debug: build/client/assets/KaTeX_SansSerif-Italic-DN2j7dab.woff                
+14.11 kB
+Debug: build/client/assets/KaTeX_SansSerif-Bold-DbIhKOiC.woff                  
+14.40 kB
+Debug: build/client/assets/KaTeX_Typewriter-Regular-C0xS9mPB.woff              
+16.02 kB
+Debug: build/client/assets/KaTeX_Math-BoldItalic-CZnvNsCZ.woff2                
+16.40 kB
+Debug: build/client/assets/KaTeX_Math-Italic-t53AETM-.woff2                    
+16.44 kB
+Debug: build/client/assets/KaTeX_Script-Regular-C5JkGWo-.ttf                   
+16.64 kB
+Debug: build/client/assets/KaTeX_Main-BoldItalic-DxDJ3AOS.woff2                
+16.78 kB
+Debug: build/client/assets/KaTeX_Main-Italic-NWA7e6Wa.woff2                    
+16.98 kB
+Debug: build/client/assets/KaTeX_Math-BoldItalic-iY-2wyZ7.woff                 
+18.66 kB
+Debug: build/client/assets/KaTeX_Math-Italic-DA0__PXp.woff                     
+18.74 kB
+Debug: build/client/assets/KaTeX_Main-BoldItalic-SpSLRI95.woff                 
+19.41 kB
+Debug: build/client/assets/KaTeX_SansSerif-Regular-BNo7hRIc.ttf                
+19.43 kB
+Debug: build/client/assets/KaTeX_Fraktur-Regular-CB_wures.ttf                  
+19.57 kB
+Debug: build/client/assets/KaTeX_Fraktur-Bold-BdnERNNW.ttf                     
+19.58 kB
+Debug: build/client/assets/KaTeX_Main-Italic-BMLOBm91.woff                     
+19.67 kB
+Debug: build/client/assets/KaTeX_SansSerif-Italic-YYjJ1zSn.ttf                 
+22.36 kB
+Debug: build/client/assets/KaTeX_SansSerif-Bold-CFMepnvq.ttf                   
+24.50 kB
+Debug: build/client/assets/KaTeX_Main-Bold-Cx986IdX.woff2                      
+25.32 kB
+Debug: build/client/assets/KaTeX_Main-Regular-B22Nviop.woff2                   
+26.27 kB
+Debug: build/client/assets/KaTeX_Typewriter-Regular-D3Ib7_Hf.ttf               
+27.55 kB
+Debug: build/client/assets/KaTeX_AMS-Regular-BQhdFMY1.woff2                    
+28.07 kB
+Debug: build/client/assets/KaTeX_Main-Bold-Jm3AIy58.woff                       
+29.91 kB
+Debug: build/client/assets/KaTeX_Main-Regular-Dr94JaBh.woff                    
+30.77 kB
+Debug: build/client/assets/KaTeX_Math-BoldItalic-B3XSjfu4.ttf                  
+31.19 kB
+Debug: build/client/assets/KaTeX_Math-Italic-flOr_0UB.ttf                      
+31.30 kB
+Debug: build/client/assets/KaTeX_Main-BoldItalic-DzxPMmG6.ttf                  
+32.96 kB
+Debug: build/client/assets/KaTeX_AMS-Regular-DMm9YOAa.woff                     
+33.51 kB
+Debug: build/client/assets/KaTeX_Main-Italic-3WenGoN9.ttf                      
+33.58 kB
+Debug: build/client/assets/KaTeX_Main-Bold-waoOVXN0.ttf                        
+51.33 kB
+Debug: build/client/assets/KaTeX_Main-Regular-ypZvNtVU.ttf                     
+53.58 kB
+Debug: build/client/assets/KaTeX_AMS-Regular-DRggAlZN.ttf                      
+63.63 kB
+Debug: build/client/.vite/manifest.json                                       
+842.06 kB │ gzip:    74.28 kB
+Debug: build/client/assets/_index-D8PeZ489.css                                 
+49.07 kB │ gzip:    13.17 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css                
+698.26 kB │ gzip:    84.10 kB
+Debug: build/client/assets/emotion-memoize.esm-DsbkLwm0.js                      
+0.11 kB │ gzip:     0.11 kB
+Debug: build/client/assets/csv-DeoZPBvg.js                                      
+0.14 kB │ gzip:     0.14 kB
+Debug: build/client/assets/minus-CIzo3-Fo.js                                    
+0.14 kB │ gzip:     0.15 kB
+Debug: build/client/assets/tally-1-BmJAfAGa.js                                  
+0.14 kB │ gzip:     0.15 kB
+Debug: build/client/assets/slash-DgA--oGv.js                                    
+0.15 kB │ gzip:     0.15 kB
+Debug: build/client/assets/wifi-zero-CmwqTuK-.js                                
+0.15 kB │ gzip:     0.15 kB
+Debug: build/client/assets/check-Dm1eT2hu.js                                    
+0.15 kB │ gzip:     0.16 kB
+Debug: build/client/assets/signal-zero-CSc99PmR.js                              
+0.15 kB │ gzip:     0.15 kB
+Debug: build/client/assets/dot-Da3UlUNd.js                                      
+0.15 kB │ gzip:     0.15 kB
+Debug: build/client/assets/chevron-down-CD2wqyFK.js                             
+0.15 kB │ gzip:     0.15 kB
+Debug: build/client/assets/chevron-up-DFF28t_y.js                               
+0.15 kB │ gzip:     0.16 kB
+Debug: build/client/assets/chevron-left-C9upOAcV.js                             
+0.16 kB │ gzip:     0.16 kB
+Debug: build/client/assets/chevron-right-CwU00ch4.js                            
+0.16 kB │ gzip:     0.16 kB
+Debug: build/client/assets/circle-CXfami10.js                                   
+0.16 kB │ gzip:     0.15 kB
+Debug: build/client/assets/circle-small-CuZ0q7G4.js                             
+0.16 kB │ gzip:     0.16 kB
+Debug: build/client/assets/mountain-Dl00Bc9a.js                                 
+0.16 kB │ gzip:     0.16 kB
+Debug: build/client/assets/bluetooth-Dt0nn8Gk.js                                
+0.16 kB │ gzip:     0.17 kB
+Debug: build/client/assets/ellipse-2F19x7hj.js                                  
+0.17 kB │ gzip:     0.16 kB
+Debug: build/client/assets/fish-symbol-D7_aY5Zw.js                              
+0.17 kB │ gzip:     0.17 kB
+Debug: build/client/assets/loader-circle-B1XvJO-G.js                            
+0.17 kB │ gzip:     0.17 kB
+Debug: build/client/assets/square-C0mV9Bd9.js                                   
+0.17 kB │ gzip:     0.17 kB
+Debug: build/client/assets/navigation-IKlI7PW8.js                               
+0.17 kB │ gzip:     0.17 kB
+Debug: build/client/assets/navigation-2-D5cOxae6.js                             
+0.18 kB │ gzip:     0.17 kB
+Debug: build/client/assets/space-CA182Fxp.js                                    
+0.18 kB │ gzip:     0.17 kB
+Debug: build/client/assets/plus-I4KRL-4n.js                                     
+0.18 kB │ gzip:     0.17 kB
+Debug: build/client/assets/egg-CX4VWwVW.js                                      
+0.18 kB │ gzip:     0.17 kB
+Debug: build/client/assets/tally-2-DdGYtaBd.js                                  
+0.18 kB │ gzip:     0.16 kB
+Debug: build/client/assets/x-CyU1MYiA.js                                        
+0.18 kB │ gzip:     0.17 kB
+Debug: build/client/assets/thermometer-BPl9Rzjy.js                              
+0.18 kB │ gzip:     0.18 kB
+Debug: build/client/assets/rectangle-vertical-DS4-Wufi.js                       
+0.19 kB │ gzip:     0.17 kB
+Debug: build/client/assets/cloud-DOuXzccR.js                                    
+0.19 kB │ gzip:     0.18 kB
+Debug: build/client/assets/signal-low-C4kzGDDX.js                               
+0.19 kB │ gzip:     0.17 kB
+Debug: build/client/assets/unlink-2-CtMTvu2H.js                                 
+0.19 kB │ gzip:     0.17 kB
+Debug: build/client/assets/rectangle-horizontal-BJ3wJHke.js                     
+0.19 kB │ gzip:     0.18 kB
+Debug: build/client/assets/arrow-up-Di4jCTnk.js                                 
+0.19 kB │ gzip:     0.18 kB
+Debug: build/client/assets/code-B75otqoY.js                                     
+0.19 kB │ gzip:     0.17 kB
+Debug: build/client/assets/move-up-Cvz_Ig_o.js                                  
+0.19 kB │ gzip:     0.17 kB
+Debug: build/client/assets/terminal-BpBgn5yb.js                                 
+0.19 kB │ gzip:     0.17 kB
+Debug: build/client/assets/phi-DgldWU9o.js                                      
+0.19 kB │ gzip:     0.18 kB
+Debug: build/client/assets/move-left-ZYqhN3RG.js                                
+0.19 kB │ gzip:     0.17 kB
+Debug: build/client/assets/squircle-rHTNUQ8G.js                                 
+0.19 kB │ gzip:     0.18 kB
+Debug: build/client/assets/arrow-down-D9G4SJNq.js                               
+0.19 kB │ gzip:     0.17 kB
+Debug: build/client/assets/arrow-left-BNYNIprr.js                               
+0.19 kB │ gzip:     0.18 kB
+Debug: build/client/assets/arrow-right-K9LedSRN.js                              
+0.19 kB │ gzip:     0.18 kB
+Debug: build/client/assets/move-up-left-LLUhZCFg.js                             
+0.19 kB │ gzip:     0.18 kB
+Debug: build/client/assets/arrow-up-left-C-IPgGBy.js                            
+0.19 kB │ gzip:     0.18 kB
+Debug: build/client/assets/chevron-last-DMreZq7m.js                             
+0.19 kB │ gzip:     0.17 kB
+Debug: build/client/assets/arrow-up-right-Es8_HUWT.js                           
+0.19 kB │ gzip:     0.17 kB
+Debug: build/client/assets/chevron-first-DBwzF_6A.js                            
+0.19 kB │ gzip:     0.18 kB
+Debug: build/client/assets/move-down-BYKSoX5g.js                                
+0.19 kB │ gzip:     0.18 kB
+Debug: build/client/assets/move-up-right-CA7zVOfm.js                            
+0.19 kB │ gzip:     0.18 kB
+Debug: build/client/assets/music-3-BG5rvSJ0.js                                  
+0.19 kB │ gzip:     0.18 kB
+Debug: build/client/assets/arrow-down-left-vYd3sVqn.js                          
+0.19 kB │ gzip:     0.17 kB
+Debug: build/client/assets/clock-12-BDyhN4qv.js                                 
+0.19 kB │ gzip:     0.18 kB
+Debug: build/client/assets/clock-6-CxCPPXQW.js                                  
+0.19 kB │ gzip:     0.18 kB
+Debug: build/client/assets/move-down-left-smfncs_V.js                           
+0.19 kB │ gzip:     0.18 kB
+Debug: build/client/assets/move-right-BYwiW1FS.js                               
+0.19 kB │ gzip:     0.18 kB
+Debug: build/client/assets/arrow-down-right-DLkdWyIw.js                         
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/clock-3-MpXX6fzy.js                                  
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/clock-9-BT9Ghsgo.js                                  
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/clock-CLLF_HIb.js                                    
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/move-down-right-D4LjxrPy.js                          
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/music-2-CVRq3OMU.js                                  
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/chevrons-down-DrHNXXr6.js                            
+0.20 kB │ gzip:     0.17 kB
+Debug: build/client/assets/clock-1-D9Y7rCQi.js                                  
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/clock-2-MU-ZhLDY.js                                  
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/clock-4-CCkUIUAg.js                                  
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/clock-5-DYXe2WJP.js                                  
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/chevrons-up-CYGcAf31.js                              
+0.20 kB │ gzip:     0.17 kB
+Debug: build/client/assets/circle-minus-CASaSCyl.js                             
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/clock-7-CyipL9ZM.js                                  
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/clock-8-C038hD8U.js                                  
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/infinity-DemLX1qE.js                                 
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/chevrons-right-Bi4cZczX.js                           
+0.20 kB │ gzip:     0.17 kB
+Debug: build/client/assets/clock-10-BcCtGC3p.js                                 
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/clock-11-CdDe6cGB.js                                 
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/power-BhjQlKyh.js                                    
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/blend-E0FXk5O2.js                                    
+0.20 kB │ gzip:     0.17 kB
+Debug: build/client/assets/chevrons-down-up-BDHRmHJ3.js                         
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/chevrons-left-Bj6M5vPV.js                            
+0.20 kB │ gzip:     0.17 kB
+Debug: build/client/assets/chevrons-up-down-CKLvk2R6.js                         
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/search-DvbNDRVx.js                                   
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/trending-up-Nsv2Z2eR.js                              
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/disc-HDGwIZTl.js                                     
+0.20 kB │ gzip:     0.17 kB
+Debug: build/client/assets/gauge-C91oYwm2.js                                    
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/reply-TgJGu96Z.js                                    
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/wifi-low-CpZuEK6r.js                                 
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/bold-CwO6HJ28.js                                     
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/chevrons-left-right-BOpq2l2q.js                      
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/circle-slash-2-CDvUCBh9.js                           
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/circle-check-TDabLUuO.js                             
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/hsts-ex6XpwRW.js                                     
+0.20 kB │ gzip:     0.18 kB
+Debug: build/client/assets/trending-down-CGQxH2fq.js                            
+0.20 kB │ gzip:     0.19 kB
+Debug: build/client/assets/check-check-DDdNj3bm.js                              
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/chevrons-right-left-SGI_yYkD.js                      
+0.21 kB │ gzip:     0.18 kB
+Debug: build/client/assets/forward-DLLl36zb.js                                  
+0.21 kB │ gzip:     0.18 kB
+Debug: build/client/assets/iteration-cw-B-T0SHEd.js                             
+0.21 kB │ gzip:     0.18 kB
+Debug: build/client/assets/russian-ruble-D-3Jp8ed.js                            
+0.21 kB │ gzip:     0.18 kB
+Debug: build/client/assets/triangle-Bu1s7drl.js                                 
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/ban-Dr06TIhj.js                                      
+0.21 kB │ gzip:     0.18 kB
+Debug: build/client/assets/eclipse-EMgMLkYK.js                                  
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/circle-dot-Dt1KI9gX.js                               
+0.21 kB │ gzip:     0.17 kB
+Debug: build/client/assets/command-BPn8jTXz.js                                  
+0.21 kB │ gzip:     0.18 kB
+Debug: build/client/assets/iteration-ccw-DKt98Mps.js                            
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/mouse-BgZkwHuj.js                                    
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/user-round-CL-lUvip.js                               
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/circle-chevron-up-BldlK99f.js                        
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/chart-line-BPE33w12.js                               
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/corner-right-up-C6mSkbUD.js                          
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/rows-2-CncrhRi0.js                                   
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/zodiac-taurus-C8MkkVzz.js                            
+0.21 kB │ gzip:     0.20 kB
+Debug: build/client/assets/corner-down-left-CpR791Vp.js                         
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/corner-left-up-DvWQsrQp.js                           
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/corner-up-left-DIKCjVN_.js                           
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/crop-DPNhnz8c.js                                     
+0.21 kB │ gzip:     0.18 kB
+Debug: build/client/assets/tv-1LrZ6htL.js                                       
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/circle-chevron-down-CFibMRw2.js                      
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/circle-chevron-left-DbPVwqbj.js                      
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/circle-chevron-right-D00xps6t.js                     
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/contrast-DiNH5dot.js                                 
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/panel-top-yrMP6Uay.js                                
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/undo-qEoRnGTs.js                                     
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/columns-2-BZ21qPyN.js                                
+0.21 kB │ gzip:     0.20 kB
+Debug: build/client/assets/corner-down-right-DtbAQRen.js                        
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/corner-right-down-C0EOngPQ.js                        
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/corner-up-right-sIs-4Io2.js                          
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/panel-left-DspmE3HU.js                               
+0.21 kB │ gzip:     0.20 kB
+Debug: build/client/assets/parentheses-DQzuGhJI.js                              
+0.21 kB │ gzip:     0.18 kB
+Debug: build/client/assets/corner-left-down-GnP-Up_b.js                         
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/equal-BGOOEuCP.js                                    
+0.21 kB │ gzip:     0.18 kB
+Debug: build/client/assets/flag-triangle-left-Fw4Z5oBp.js                       
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/flag-triangle-right-B8lYzV84.js                      
+0.21 kB │ gzip:     0.20 kB
+Debug: build/client/assets/redo-BjCmlUrc.js                                     
+0.21 kB │ gzip:     0.19 kB
+Debug: build/client/assets/tv-minimal-54MnGA4h.js                               
+0.21 kB │ gzip:     0.20 kB
+Debug: build/client/assets/copyleft-BpoG7B4m.js                                 
+0.22 kB │ gzip:     0.20 kB
+Debug: build/client/assets/menu-wsIftWAK.js                                     
+0.22 kB │ gzip:     0.17 kB
+Debug: build/client/assets/panel-right-CEJGL9bc.js                              
+0.22 kB │ gzip:     0.19 kB
+Debug: build/client/assets/square-minus-Cg9BTMD3.js                             
+0.22 kB │ gzip:     0.20 kB
+Debug: build/client/assets/circle-slash-DnAHhBbe.js                             
+0.22 kB │ gzip:     0.19 kB
+Debug: build/client/assets/diff-DF3jSTcX.js                                     
+0.22 kB │ gzip:     0.18 kB
+Debug: build/client/assets/kanban-DqvGgJ4C.js                                   
+0.22 kB │ gzip:     0.18 kB
+Debug: build/client/assets/panel-bottom-CR7zRVF2.js                             
+0.22 kB │ gzip:     0.19 kB
+Debug: build/client/assets/play-SPS15qgL.js                                     
+0.22 kB │ gzip:     0.19 kB
+Debug: build/client/assets/triangle-right-BOKIxTWg.js                           
+0.22 kB │ gzip:     0.20 kB
+Debug: build/client/assets/copyright-Bhl5Aio9.js                                
+0.22 kB │ gzip:     0.20 kB
+Debug: build/client/assets/line-dot-right-horizontal-BpUi5PKr.js                
+0.22 kB │ gzip:     0.20 kB
+Debug: build/client/assets/tally-3-BtMoK8pP.js                                  
+0.22 kB │ gzip:     0.18 kB
+Debug: build/client/assets/underline-CUb3dk-r.js                                
+0.22 kB │ gzip:     0.19 kB
+Debug: build/client/assets/battery-CegZuObl.js                                  
+0.22 kB │ gzip:     0.20 kB
+Debug: build/client/assets/circle-parking-DvVoCRzW.js                           
+0.22 kB │ gzip:     0.20 kB
+Debug: build/client/assets/cylinder-B6anh6TH.js                                 
+0.22 kB │ gzip:     0.20 kB
+Debug: build/client/assets/heading-DnkdfSNf.js                                  
+0.22 kB │ gzip:     0.18 kB
+Debug: build/client/assets/dice-1-B1ZdanfG.js                                   
+0.22 kB │ gzip:     0.20 kB
+Debug: build/client/assets/book-KcLGY-Qu.js                                     
+0.22 kB │ gzip:     0.19 kB
+Debug: build/client/assets/circle-check-big-S7-f3fti.js                         
+0.22 kB │ gzip:     0.20 kB
+Debug: build/client/assets/list-filter-EnBZ9R5U.js                              
+0.22 kB │ gzip:     0.18 kB
+Debug: build/client/assets/square-check-v4VmH_PH.js                             
+0.22 kB │ gzip:     0.20 kB
+Debug: build/client/assets/user-BMuifeqi.js                                     
+0.22 kB │ gzip:     0.20 kB
+Debug: build/client/assets/line-squiggle-BW4sCJH-.js                            
+0.22 kB │ gzip:     0.21 kB
+Debug: build/client/assets/smartphone-C9hBXByi.js                               
+0.22 kB │ gzip:     0.20 kB
+Debug: build/client/assets/at-sign-Ds7wHEqw.js                                  
+0.23 kB │ gzip:     0.20 kB
+Debug: build/client/assets/circle-stop-RgtN0Lti.js                              
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/flame-CXFCW1Kr.js                                    
+0.23 kB │ gzip:     0.20 kB
+Debug: build/client/assets/slice-B1PXFzn8.js                                    
+0.23 kB │ gzip:     0.20 kB
+Debug: build/client/assets/square-dot-DhaDfUvr.js                               
+0.23 kB │ gzip:     0.20 kB
+Debug: build/client/assets/swiss-franc-z3Hqn1Rr.js                              
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/text-align-end-DyCOqOAM.js                           
+0.23 kB │ gzip:     0.18 kB
+Debug: build/client/assets/toggle-left-BtNZQkS_.js                              
+0.23 kB │ gzip:     0.20 kB
+Debug: build/client/assets/torus-DUFd2gq3.js                                    
+0.23 kB │ gzip:     0.18 kB
+Debug: build/client/assets/x-line-top-BvfocgrG.js                               
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/baseline-KCoRrjqT.js                                 
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/rotate-ccw-DNAH-C6i.js                               
+0.23 kB │ gzip:     0.20 kB
+Debug: build/client/assets/square-chevron-up-EBYY2rQ0.js                        
+0.23 kB │ gzip:     0.20 kB
+Debug: build/client/assets/venus-BsHP2vdD.js                                    
+0.23 kB │ gzip:     0.20 kB
+Debug: build/client/assets/zodiac-aries-DcCfi5fI.js                             
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/rotate-cw-B8fYAkoj.js                                
+0.23 kB │ gzip:     0.20 kB
+Debug: build/client/assets/signal-medium-CnHye2-n.js                            
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/square-radical-DEZa7G_8.js                           
+0.23 kB │ gzip:     0.21 kB
+Debug: build/client/assets/text-align-start-DEh5MSBx.js                         
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/toggle-right-k_poUMpo.js                             
+0.23 kB │ gzip:     0.20 kB
+Debug: build/client/assets/text-align-center-DcxoPYKl.js                        
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/check-line-XwFiEqc-.js                               
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/list-sort-ascending-BeBcwmCV.js                      
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/square-chevron-down-C_OvA_MQ.js                      
+0.23 kB │ gzip:     0.21 kB
+Debug: build/client/assets/square-chevron-left-Dp9HOjL9.js                      
+0.23 kB │ gzip:     0.21 kB
+Debug: build/client/assets/square-chevron-right-Z1BwTmcT.js                     
+0.23 kB │ gzip:     0.20 kB
+Debug: build/client/assets/text-align-justify-BxFSSuQt.js                       
+0.23 kB │ gzip:     0.18 kB
+Debug: build/client/assets/chart-no-axes-gantt-C7Eg7hhU.js                      
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/info-CgZXy-zP.js                                     
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/list-sort-descending-Bb_WRzHc.js                     
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/move-diagonal-DL4w7LM6.js                            
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/chart-no-axes-column-Bs2iag3d.js                     
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/lock-DTcpHCDz.js                                     
+0.23 kB │ gzip:     0.21 kB
+Debug: build/client/assets/radical-D_ej41_x.js                                  
+0.23 kB │ gzip:     0.21 kB
+Debug: build/client/assets/arrow-up-to-line-C4latjBK.js                         
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/circle-plus-DKm_A_sH.js                              
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/circle-x-C6y-ZMT5.js                                 
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/credit-card-BK4fvEf2.js                              
+0.23 kB │ gzip:     0.21 kB
+Debug: build/client/assets/move-diagonal-2-hgIBOLSV.js                          
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/redo-2-C5iAwUVr.js                                   
+0.23 kB │ gzip:     0.20 kB
+Debug: build/client/assets/square-slash-BH8ZRzkY.js                             
+0.23 kB │ gzip:     0.21 kB
+Debug: build/client/assets/zodiac-sagittarius-CyuIaw3s.js                       
+0.23 kB │ gzip:     0.20 kB
+Debug: build/client/assets/arrow-left-to-line-DQovKRsz.js                       
+0.23 kB │ gzip:     0.20 kB
+Debug: build/client/assets/code-xml-ClwlqsfQ.js                                 
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/move-vertical-BKiJDM5G.js                            
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/square-sigma-DRNj6tHI.js                             
+0.23 kB │ gzip:     0.21 kB
+Debug: build/client/assets/undo-2-Bjf7nDaF.js                                   
+0.23 kB │ gzip:     0.19 kB
+Debug: build/client/assets/arrow-down-to-line-DZqNKoeH.js                       
+0.24 kB │ gzip:     0.20 kB
+Debug: build/client/assets/arrow-up-from-line-uECE3Iz3.js                       
+0.24 kB │ gzip:     0.19 kB
+Debug: build/client/assets/cone-BYVmMYSM.js                                     
+0.24 kB │ gzip:     0.21 kB
+Debug: build/client/assets/mars-BnASVT0r.js                                     
+0.24 kB │ gzip:     0.20 kB
+Debug: build/client/assets/option-BVcuAfbd.js                                   
+0.24 kB │ gzip:     0.21 kB
+Debug: build/client/assets/rectangle-circle-DHn7-NOz.js                         
+0.24 kB │ gzip:     0.20 kB
+Debug: build/client/assets/spell-check-DjYglPO0.js                              
+0.24 kB │ gzip:     0.19 kB
+Debug: build/client/assets/square-parking-ChkWS7c5.js                           
+0.24 kB │ gzip:     0.22 kB
+Debug: build/client/assets/arrow-down-from-line-D2nm7It4.js                     
+0.24 kB │ gzip:     0.20 kB
+Debug: build/client/assets/arrow-left-from-line-CIkX_c2l.js                     
+0.24 kB │ gzip:     0.20 kB
+Debug: build/client/assets/circle-equal-DQ3evAWB.js                             
+0.24 kB │ gzip:     0.19 kB
+Debug: build/client/assets/lock-open-DFoFqlkW.js                                
+0.24 kB │ gzip:     0.21 kB
+Debug: build/client/assets/move-horizontal-ByjcSmLW.js                          
+0.24 kB │ gzip:     0.20 kB
+Debug: build/client/assets/square-activity-BWVkPLcZ.js                          
+0.24 kB │ gzip:     0.21 kB
+Debug: build/client/assets/arrow-right-to-line-BfqvI53r.js                      
+0.24 kB │ gzip:     0.20 kB
+Debug: build/client/assets/pause-c-1BvvGx.js                                    
+0.24 kB │ gzip:     0.18 kB
+Debug: build/client/assets/arrow-right-from-line-B6qdwpgx.js                    
+0.24 kB │ gzip:     0.20 kB
+Debug: build/client/assets/droplet-C6ylQSqh.js                                  
+0.24 kB │ gzip:     0.21 kB
+Debug: build/client/assets/ratio-CvnArSjc.js                                    
+0.24 kB │ gzip:     0.19 kB
+Debug: build/client/assets/asterisk-ChIJ_ZQj.js                                 
+0.24 kB │ gzip:     0.19 kB
+Debug: build/client/assets/mail-B5T7qvgJ.js                                     
+0.24 kB │ gzip:     0.22 kB
+Debug: build/client/assets/pill-D68twi_e.js                                     
+0.24 kB │ gzip:     0.20 kB
+Debug: build/client/assets/t4-vb-B7RueooY.js                                    
+0.24 kB │ gzip:     0.19 kB
+Debug: build/client/assets/tablet-CJA5c-6A.js                                   
+0.24 kB │ gzip:     0.21 kB
+Debug: build/client/assets/separator-vertical-DzAVtW4Z.js                       
+0.24 kB │ gzip:     0.19 kB
+Debug: build/client/assets/ungroup-DGx5tFpw.js                                  
+0.24 kB │ gzip:     0.19 kB
+Debug: build/client/assets/captions-DlI-lh6q.js                                 
+0.24 kB │ gzip:     0.21 kB
+Debug: build/client/assets/git-commit-vertical-BR-O1PeC.js                      
+0.24 kB │ gzip:     0.20 kB
+Debug: build/client/assets/pilcrow-Ba_39XNH.js                                  
+0.24 kB │ gzip:     0.19 kB
+Debug: build/client/assets/sigma-BjY9-lDJ.js                                    
+0.24 kB │ gzip:     0.21 kB
+Debug: build/client/assets/flask-round-BNM5fTQc.js                              
+0.24 kB │ gzip:     0.21 kB
+Debug: build/client/assets/separator-horizontal-DshfOw4M.js                     
+0.24 kB │ gzip:     0.20 kB
+Debug: build/client/assets/square-stop-CWCEQmWc.js                              
+0.24 kB │ gzip:     0.20 kB
+Debug: build/client/assets/table-2-CVh5XZA7.js                                  
+0.24 kB │ gzip:     0.20 kB
+Debug: build/client/assets/album-Mx11jx8L.js                                    
+0.24 kB │ gzip:     0.21 kB
+Debug: build/client/assets/chart-no-axes-column-decreasing-Iaj67RjZ.js          
+0.24 kB │ gzip:     0.20 kB
+Debug: build/client/assets/chart-no-axes-column-increasing-DbR8MBUM.js          
+0.24 kB │ gzip:     0.20 kB
+Debug: build/client/assets/chart-spline-BsQ93kG1.js                             
+0.24 kB │ gzip:     0.21 kB
+Debug: build/client/assets/disc-2-kGoXGtHB.js                                   
+0.24 kB │ gzip:     0.19 kB
+Debug: build/client/assets/hpkp-CZL65u9s.js                                     
+0.24 kB │ gzip:     0.21 kB
+Debug: build/client/assets/laptop-minimal-BmVuQb9z.js                           
+0.24 kB │ gzip:     0.21 kB
+Debug: build/client/assets/moon-C5oD0mD_.js                                     
+0.24 kB │ gzip:     0.22 kB
+Debug: build/client/assets/square-square-r4iNGX8V.js                            
+0.24 kB │ gzip:     0.19 kB
+Debug: build/client/assets/turkish-lira-CBwHIyRK.js                             
+0.24 kB │ gzip:     0.21 kB
+Debug: build/client/assets/arrow-up-from-dot-D5ZSZxGr.js                        
+0.24 kB │ gzip:     0.21 kB
+Debug: build/client/assets/dock-CynTrU0D.js                                     
+0.24 kB │ gzip:     0.21 kB
+Debug: build/client/assets/arrow-down-to-dot-9s4ogchZ.js                        
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/circle-arrow-down-BLWX6Jfs.js                        
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/circle-arrow-up-DWLbJ5Z_.js                          
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/dollar-sign-Bg2efNlf.js                              
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/music-Bc5fbbZg.js                                    
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/audio-waveform-DWQ3vx2U.js                           
+0.25 kB │ gzip:     0.19 kB
+Debug: build/client/assets/brackets-CeH8qd5w.js                                 
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/briefcase-BG1yFWZn.js                                
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/circle-arrow-left-BW2he9wt.js                        
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/cloud-lightning-6aDZt7WD.js                          
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/rows-3-CJYNlYOJ.js                                   
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/search-check-CUofeY0K.js                             
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/search-slash-Bszr7E4g.js                             
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/type-D4b50OOc.js                                     
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/circle-arrow-right-BRA3itBE.js                       
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/highlighter-CTEgQJeH.js                              
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/grid-2x2-DUV5STxq.js                                 
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/japanese-yen-DTWRYrQW.js                             
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/smartphone-charging-Bo1DKRru.js                      
+0.25 kB │ gzip:     0.22 kB
+Debug: build/client/assets/stretch-vertical-CdhInFiX.js                         
+0.25 kB │ gzip:     0.19 kB
+Debug: build/client/assets/circle-euro-BGI3EkCk.js                              
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/columns-3-DutHUcIL.js                                
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/reply-all-VxrNBOTS.js                                
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/zodiac-ophiuchus-DAPj4jTI.js                         
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/beaker-C63sOraD.js                                   
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/cloud-check-CVPxoJ8q.js                              
+0.25 kB │ gzip:     0.22 kB
+Debug: build/client/assets/globe-check-Si4y1RES.js                              
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/rss-Br7zhlS8.js                                      
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/square-plus-DcX9gvF7.js                              
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/stretch-horizontal-D_4Wk47-.js                       
+0.25 kB │ gzip:     0.19 kB
+Debug: build/client/assets/touchpad-Dk6y82ub.js                                 
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/undo-dot-CYAAttWT.js                                 
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/arff-DrptKHcu.js                                     
+0.25 kB │ gzip:     0.22 kB
+Debug: build/client/assets/bluetooth-off-D4D6w23j.js                            
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/circle-arrow-out-up-left-LnnuwuV1.js                 
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/ellipsis-RI0fgM8R.js                                 
+0.25 kB │ gzip:     0.18 kB
+Debug: build/client/assets/lens-concave-DJB8j8fa.js                             
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/merge-XWQ6jBiB.js                                    
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/spline-DRa86cRL.js                                   
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/target-E7l76tbM.js                                   
+0.25 kB │ gzip:     0.18 kB
+Debug: build/client/assets/airplay-CBDWxJzp.js                                  
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/battery-low-_oyn8Xjf.js                              
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/square-equal-DLTHO-Hr.js                             
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/zodiac-pisces-Dn20mko7.js                            
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/folder-DxwvnoeO.js                                   
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/git-merge-C8n3BXib.js                                
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/panels-top-left-BgpzRiYU.js                          
+0.25 kB │ gzip:     0.21 kB
+Debug: build/client/assets/square-round-corner-BAiOIL4E.js                      
+0.25 kB │ gzip:     0.20 kB
+Debug: build/client/assets/tally-4-68fKVDQA.js                                  
+0.25 kB │ gzip:     0.18 kB
+Debug: build/client/assets/git-branch-DTRhs2FZ.js                               
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/share-B-18UwFa.js                                    
+0.26 kB │ gzip:     0.20 kB
+Debug: build/client/assets/square-check-big-ByI7PCGd.js                         
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/user-round-minus-CfjLVPVv.js                         
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/bookmark-C2_c5HLH.js                                 
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/circle-arrow-out-up-right-OughyXL2.js                
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/circle-power-CAT0q6IG.js                             
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/clock-check-D8HNakmn.js                              
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/dice-2-DnLTpf5i.js                                   
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/gallery-vertical-DmoN70oY.js                         
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/library-Df33X21p.js                                  
+0.26 kB │ gzip:     0.20 kB
+Debug: build/client/assets/log-out-CcVhJrYO.js                                  
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/omega-_eSIMiAd.js                                    
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/section-C7aCY12o.js                                  
+0.26 kB │ gzip:     0.20 kB
+Debug: build/client/assets/upload-xR9Qe4Ni.js                                   
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/vote-BzFGVDBq.js                                     
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/wallet-minimal-olUp-f_j.js                           
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/divide-PaCA1M44.js                                   
+0.26 kB │ gzip:     0.20 kB
+Debug: build/client/assets/gallery-horizontal-g9P68Mer.js                       
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/log-in-DkkxC0TU.js                                   
+0.26 kB │ gzip:     0.20 kB
+Debug: build/client/assets/rainbow-Dbt9L5mM.js                                  
+0.26 kB │ gzip:     0.20 kB
+Debug: build/client/assets/square-x-B0OZaHmw.js                                 
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/text-quote-CFSPRVk2.js                               
+0.26 kB │ gzip:     0.19 kB
+Debug: build/client/assets/zodiac-leo-T9zRuMXX.js                               
+0.26 kB │ gzip:     0.23 kB
+Debug: build/client/assets/circle-arrow-out-down-left-BqJJopYN.js               
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/club-CrjWXCwv.js                                     
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/door-closed-BpDwMiSQ.js                              
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/download-DsfC5cKB.js                                 
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/hexagon-D6FR2inw.js                                  
+0.26 kB │ gzip:     0.20 kB
+Debug: build/client/assets/panels-left-bottom-DeN9mWwT.js                       
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/philippine-peso-BJfkZ3_q.js                          
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/wifi-high-uz_VS9HT.js                                
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/ear-grBDl2rX.js                                      
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/equal-approximately-B33UsVZw.js                      
+0.26 kB │ gzip:     0.19 kB
+Debug: build/client/assets/gallery-vertical-end-BiEoTSsQ.js                     
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/list-minus-BNUVw8KV.js                               
+0.26 kB │ gzip:     0.19 kB
+Debug: build/client/assets/message-square-CzOsSD-p.js                           
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/paperclip-DTb-nEry.js                                
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/heading-1-IOCbE5Ze.js                                
+0.26 kB │ gzip:     0.20 kB
+Debug: build/client/assets/mountain-snow-pzR33FWx.js                            
+0.26 kB │ gzip:     0.23 kB
+Debug: build/client/assets/panel-left-open-cZgL2OIn.js                          
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/panel-top-close-SoXATPE6.js                          
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/panel-top-open-C5POTB1E.js                           
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/panels-right-bottom-B0MNcaFD.js                      
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/presentation-T7KKhBAA.js                             
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/t4-cs-jOfVmhqK.js                                    
+0.26 kB │ gzip:     0.19 kB
+Debug: build/client/assets/user-round-check-CbZYvn51.js                         
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/voicemail-CwlCoVeK.js                                
+0.26 kB │ gzip:     0.20 kB
+Debug: build/client/assets/ellipsis-vertical-D0Vifcen.js                        
+0.26 kB │ gzip:     0.19 kB
+Debug: build/client/assets/mic-CP0ck9TY.js                                      
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/mirror-rectangular-OlS6TPF3.js                       
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/pen-Bubv07m3.js                                      
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/book-minus-CX4VhSJP.js                               
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/circle-arrow-out-down-right-UOqKZD1E.js              
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/gallery-horizontal-end-DV_FXpNe.js                   
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/panel-left-close-DEXw-f5c.js                         
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/panel-right-close-BYLsHcXE.js                        
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/pi-DBuLqIvY.js                                       
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/signal-high-D_Psi5dY.js                              
+0.26 kB │ gzip:     0.20 kB
+Debug: build/client/assets/square-arrow-down-CA4vXWca.js                        
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/square-arrow-up-kw_Y9E2s.js                          
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/square-code-Cg9tYaE7.js                              
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/annoyed-BfsyNMFq.js                                  
+0.26 kB │ gzip:     0.20 kB
+Debug: build/client/assets/circle-gauge-CiI20j3K.js                             
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/headphones-Dz7VaiJN.js                               
+0.26 kB │ gzip:     0.20 kB
+Debug: build/client/assets/history-Dnz5B1Sz.js                                  
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/panel-bottom-open-CEt7IJd0.js                        
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/panel-right-open-BQSu0qHP.js                         
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/skip-back-BavJ2IWp.js                                
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/skip-forward-BiRTeEpI.js                             
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/square-arrow-left-DYnaM_fs.js                        
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/square-arrow-up-left-WemJGN7F.js                     
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/zodiac-libra-BqheJ2LR.js                             
+0.26 kB │ gzip:     0.23 kB
+Debug: build/client/assets/disc-album-B6fOBVtW.js                               
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/list-check-C5Fg2Fi4.js                               
+0.26 kB │ gzip:     0.20 kB
+Debug: build/client/assets/maximize-2-Cua8sPyd.js                               
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/panel-bottom-close-C1reDU6c.js                       
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/shell-B3UH6pME.js                                    
+0.26 kB │ gzip:     0.21 kB
+Debug: build/client/assets/square-arrow-right-bVJzVWot.js                       
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/square-arrow-up-right-CT5j23fX.js                    
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/step-back-EXIYUIZn.js                                
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/step-forward-DKoNYoVY.js                             
+0.26 kB │ gzip:     0.22 kB
+Debug: build/client/assets/timer-Cr6kuH3z.js                                    
+0.26 kB │ gzip:     0.20 kB
+Debug: build/client/assets/ampersand-CiJ249X-.js                                
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/bed-BZUGHSTl.js                                      
+0.27 kB │ gzip:     0.20 kB
+Debug: build/client/assets/square-arrow-down-left-DDLc5wIx.js                   
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/align-vertical-space-around-BCLo1e-x.js              
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/cloudy-CJIJjY2U.js                                   
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/laptop-minimal-check-UQ5XiHzV.js                     
+0.27 kB │ gzip:     0.23 kB
+Debug: build/client/assets/minimize-2-CUqinZbJ.js                               
+0.27 kB │ gzip:     0.21 kB
+Debug: build/client/assets/redo-dot-e99bKdCY.js                                 
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/square-arrow-down-right-DakTAyfS.js                  
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/message-circle-DPlQrlE0.js                           
+0.27 kB │ gzip:     0.23 kB
+Debug: build/client/assets/popsicle-DSVmyHPZ.js                                 
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/proportions-BXGjpW-a.js                              
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/align-horizontal-space-around-BArTPytt.js            
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/globe-CxEVrxy_.js                                    
+0.27 kB │ gzip:     0.21 kB
+Debug: build/client/assets/link-2-CGWwlC8_.js                                   
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/percent-DS5cZhT8.js                                  
+0.27 kB │ gzip:     0.20 kB
+Debug: build/client/assets/square-terminal-B_LCUKCN.js                          
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/book-check-BbGPCthj.js                               
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/cloud-fog-C34t58oK.js                                
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/database-tSxnIAuZ.js                                 
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/move-3d-DJj5W8vi.js                                  
+0.27 kB │ gzip:     0.20 kB
+Debug: build/client/assets/user-check-Dcs4bJuT.js                               
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/diamond-Dz7rSSgK.js                                  
+0.27 kB │ gzip:     0.19 kB
+Debug: build/client/assets/italic-DjsrLbNa.js                                   
+0.27 kB │ gzip:     0.20 kB
+Debug: build/client/assets/lasso-DQHDEYFk.js                                    
+0.27 kB │ gzip:     0.23 kB
+Debug: build/client/assets/arrow-down-up-Bh6yIt6t.js                            
+0.27 kB │ gzip:     0.21 kB
+Debug: build/client/assets/arrow-up-down-rR1asdtC.js                            
+0.27 kB │ gzip:     0.21 kB
+Debug: build/client/assets/banknote-Capmkqek.js                                 
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/bluetooth-searching-D3FK3c29.js                      
+0.27 kB │ gzip:     0.23 kB
+Debug: build/client/assets/chart-bar-DvHu5HPv.js                                
+0.27 kB │ gzip:     0.20 kB
+Debug: build/client/assets/vibrate-BonHPn9H.js                                  
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/circle-pause-Fgy5wRaH.js                             
+0.27 kB │ gzip:     0.20 kB
+Debug: build/client/assets/equal-not-BQQ0CxHq.js                                
+0.27 kB │ gzip:     0.20 kB
+Debug: build/client/assets/square-power-Beu-6qVu.js                             
+0.27 kB │ gzip:     0.23 kB
+Debug: build/client/assets/wind-PHGr90lx.js                                     
+0.27 kB │ gzip:     0.21 kB
+Debug: build/client/assets/book-marked-D1g2LjPr.js                              
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/non-binary-CstX6QMz.js                               
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/picture-in-picture-2-Cm0a33Xf.js                     
+0.27 kB │ gzip:     0.23 kB
+Debug: build/client/assets/strikethrough-DVI4leW7.js                            
+0.27 kB │ gzip:     0.23 kB
+Debug: build/client/assets/arrow-left-right-BGzNOrx6.js                         
+0.27 kB │ gzip:     0.21 kB
+Debug: build/client/assets/arrow-right-left-DnYBQJDL.js                         
+0.27 kB │ gzip:     0.21 kB
+Debug: build/client/assets/chart-gantt--lhMJTnq.js                              
+0.27 kB │ gzip:     0.21 kB
+Debug: build/client/assets/circle-dollar-sign-Brv_nVq1.js                       
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/circle-question-mark-BQRmoi_O.js                     
+0.27 kB │ gzip:     0.23 kB
+Debug: build/client/assets/cloud-alert-bukKPjr-.js                              
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/goal-M6OXXcxV.js                                     
+0.27 kB │ gzip:     0.22 kB
+Debug: build/client/assets/mouse-left-JTVWkjt1.js                               
+0.27 kB │ gzip:     0.23 kB
+Debug: build/client/assets/video-CniKwsHt.js                                    
+0.27 kB │ gzip:     0.23 kB
+Debug: build/client/assets/zoom-out-iE618nnP.js                                 
+0.27 kB │ gzip:     0.21 kB
+Debug: build/client/assets/circle-off-DZGn6hJV.js                               
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/donut-DxKfXrTB.js                                    
+0.28 kB │ gzip:     0.23 kB
+Debug: build/client/assets/list-indent-decrease-C2kB764h.js                     
+0.28 kB │ gzip:     0.20 kB
+Debug: build/client/assets/list-indent-increase-Dz8-7ibe.js                     
+0.28 kB │ gzip:     0.20 kB
+Debug: build/client/assets/tent-N0YLEO-R.js                                     
+0.28 kB │ gzip:     0.20 kB
+Debug: build/client/assets/test-tube-D63C8oUq.js                                
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/circle-alert-7MSb-DjS.js                             
+0.28 kB │ gzip:     0.20 kB
+Debug: build/client/assets/grid-2x2-check-gYdk-de9.js                           
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/pentagon--JlCfkQE.js                                 
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/chart-column-DiDafs2K.js                             
+0.28 kB │ gzip:     0.21 kB
+Debug: build/client/assets/cloud-upload-BNTFL34e.js                             
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/compass-Cizkh21u.js                                  
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/external-link-B9qh9ZjF.js                            
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/lens-convex-CGcU_sef.js                              
+0.28 kB │ gzip:     0.21 kB
+Debug: build/client/assets/mouse-pointer-2-CMxyMblA.js                          
+0.28 kB │ gzip:     0.23 kB
+Debug: build/client/assets/sword-CZdCZ7lA.js                                    
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/circle-percent-DPDNLBZF.js                           
+0.28 kB │ gzip:     0.21 kB
+Debug: build/client/assets/lollipop-BKEa8nqb.js                                 
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/mouse-right-BKoSwGsI.js                              
+0.28 kB │ gzip:     0.24 kB
+Debug: build/client/assets/settings-2-CMj941mE.js                               
+0.28 kB │ gzip:     0.21 kB
+Debug: build/client/assets/trash-896rdMyq.js                                    
+0.28 kB │ gzip:     0.21 kB
+Debug: build/client/assets/webcam-CHar6rdT.js                                   
+0.28 kB │ gzip:     0.21 kB
+Debug: build/client/assets/archive-DVb1-RRf.js                                  
+0.28 kB │ gzip:     0.23 kB
+Debug: build/client/assets/circle-user-round-DvI-09wz.js                        
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/mars-stroke-RjleClBe.js                              
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/search-alert-DwIgsNrH.js                             
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/squares-unite-Budi8Omz.js                            
+0.28 kB │ gzip:     0.21 kB
+Debug: build/client/assets/ticket-minus-CERjK--y.js                             
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/users-round-DKIUs6ik.js                              
+0.28 kB │ gzip:     0.23 kB
+Debug: build/client/assets/flag-ChtsFvOQ.js                                     
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/git-commit-horizontal-28YJsdPe.js                    
+0.28 kB │ gzip:     0.21 kB
+Debug: build/client/assets/globe-x-DyVF4o-9.js                                  
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/pound-sterling-pGcfCNrE.js                           
+0.28 kB │ gzip:     0.21 kB
+Debug: build/client/assets/route-C44j0VTn.js                                    
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/circle-ellipsis-CgQGuwCb.js                          
+0.28 kB │ gzip:     0.20 kB
+Debug: build/client/assets/fishing-rod-DgLvoYCi.js                              
+0.28 kB │ gzip:     0.23 kB
+Debug: build/client/assets/lock-keyhole-BPPCapnS.js                             
+0.28 kB │ gzip:     0.24 kB
+Debug: build/client/assets/text-cursor-nZNQ7lkZ.js                              
+0.28 kB │ gzip:     0.21 kB
+Debug: build/client/assets/text-wrap-B25gcHtx.js                                
+0.28 kB │ gzip:     0.21 kB
+Debug: build/client/assets/chart-bar-decreasing-Bg7SrQwO.js                     
+0.28 kB │ gzip:     0.21 kB
+Debug: build/client/assets/chart-bar-increasing-DQR8CjQc.js                     
+0.28 kB │ gzip:     0.21 kB
+Debug: build/client/assets/circle-play-CzqzmRXA.js                              
+0.28 kB │ gzip:     0.23 kB
+Debug: build/client/assets/clipboard-CxUJ8NpS.js                                
+0.28 kB │ gzip:     0.23 kB
+Debug: build/client/assets/eye-COXi4vNX.js                                      
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/funnel-D6wc68kZ.js                                   
+0.28 kB │ gzip:     0.23 kB
+Debug: build/client/assets/georgian-lari-CE_4ajlo.js                            
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/link-DaBHn1kP.js                                     
+0.28 kB │ gzip:     0.21 kB
+Debug: build/client/assets/square-m-BU9AAu7W.js                                 
+0.28 kB │ gzip:     0.23 kB
+Debug: build/client/assets/square-user-round-D07Nwc0U.js                        
+0.28 kB │ gzip:     0.24 kB
+Debug: build/client/assets/table-DE3nI3DV.js                                    
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/user-minus-CWGlhbia.js                               
+0.28 kB │ gzip:     0.23 kB
+Debug: build/client/assets/waves-vertical-Dt0h4zpe.js                           
+0.28 kB │ gzip:     0.19 kB
+Debug: build/client/assets/calendar-DaTENnsZ.js                                 
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/gcode-BXEcl5qa.js                                    
+0.28 kB │ gzip:     0.24 kB
+Debug: build/client/assets/person-standing-CQ371mqe.js                          
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/search-x-RlI5htHD.js                                 
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/app-window-DiiO2uwS.js                               
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/bluetooth-connected-BJhA5wCf.js                      
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/grid-3x2-BwGRrlQp.js                                 
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/heart-D9oV6geB.js                                    
+0.28 kB │ gzip:     0.23 kB
+Debug: build/client/assets/pc-case-BGMv1ihI.js                                  
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/pyramid-TLSAVYN2.js                                  
+0.28 kB │ gzip:     0.23 kB
+Debug: build/client/assets/rectangle-goggles-BnnJ21sl.js                        
+0.28 kB │ gzip:     0.22 kB
+Debug: build/client/assets/waves-horizontal-B4wwn1hp.js                         
+0.28 kB │ gzip:     0.19 kB
+Debug: build/client/assets/zodiac-capricorn-CcfDj1Wo.js                         
+0.28 kB │ gzip:     0.23 kB
+Debug: build/client/assets/anchor-BktiD2kd.js                                   
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/heading-2-BAw1bhVE.js                                
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/map-pin-Dgm1MnG4.js                                  
+0.29 kB │ gzip:     0.24 kB
+Debug: build/client/assets/martini-BL7kBlxl.js                                  
+0.29 kB │ gzip:     0.21 kB
+Debug: build/client/assets/monitor-DC1fSVIY.js                                  
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/music-4-BFIJx-ll.js                                  
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/refrigerator-BQagRNgj.js                             
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/split-2E6Uftzp.js                                    
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/square-arrow-out-up-left-g1ViOwNp.js                 
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/ticket-check-ue-AEN-A.js                             
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/ticket-slash-CRTSPxfj.js                             
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/align-end-vertical-B3m-iuon.js                       
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/circle-user-BO_Nb0PR.js                              
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/euro-ChdmO3Ab.js                                     
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/map-pin-minus-inside-B0dTPs1Z.js                     
+0.29 kB │ gzip:     0.24 kB
+Debug: build/client/assets/weight-C9esfT1S.js                                   
+0.29 kB │ gzip:     0.24 kB
+Debug: build/client/assets/align-start-vertical-FS-mUGg7.js                     
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/bed-single-DXJwe1FD.js                               
+0.29 kB │ gzip:     0.21 kB
+Debug: build/client/assets/cloud-download-CVAOkoJl.js                           
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/handbag-CEPsFDxv.js                                  
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/rows-4-ClLs959V.js                                   
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/square-arrow-out-up-right-BKcacDpS.js                
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/square-kanban-D5v4JF30.js                            
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/utensils-Dq-DwRu1.js                                 
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/align-end-horizontal-DiozeR1n.js                     
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/chart-column-decreasing-BsoXxMng.js                  
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/chart-column-increasing-sHY0f2Aj.js                  
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/clock-alert-C0K2qiUp.js                              
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/ghost-Do_-hc38.js                                    
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/import-BN7sAP0F.js                                   
+0.29 kB │ gzip:     0.21 kB
+Debug: build/client/assets/lock-keyhole-open-CbvFrQI-.js                        
+0.29 kB │ gzip:     0.24 kB
+Debug: build/client/assets/navigation-off-BH57F7Ot.js                           
+0.29 kB │ gzip:     0.24 kB
+Debug: build/client/assets/square-menu-CrLhStju.js                              
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/tree-deciduous-rQEvLW8P.js                           
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/vegan-C0pRt7bM.js                                    
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/zap-BuXQsM9L.js                                      
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/align-start-horizontal-RWgqodcp.js                   
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/closed-caption--tP00aKE.js                           
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/navigation-2-off-DR9WL2wR.js                         
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/square-arrow-out-down-left-BTFtEae3.js               
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/square-pause-DxFUQgoO.js                             
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/test-tube-diagonal-CL6KkbnB.js                       
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/columns-4-BCmdUyBs.js                                
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/key-vbNNtXG9.js                                      
+0.29 kB │ gzip:     0.24 kB
+Debug: build/client/assets/tablets-DAASYA3l.js                                  
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/barcode-BEtH_9tp.js                                  
+0.29 kB │ gzip:     0.19 kB
+Debug: build/client/assets/brainfuck-CIuPsdNI.js                                
+0.29 kB │ gzip:     0.20 kB
+Debug: build/client/assets/case-lower-Suoi7WZI.js                               
+0.29 kB │ gzip:     0.21 kB
+Debug: build/client/assets/leaf-CZRDZLl9.js                                     
+0.29 kB │ gzip:     0.24 kB
+Debug: build/client/assets/trending-up-down-C6kDi1P2.js                         
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/triangle-alert-vQRTz9jZ.js                           
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/user-round-plus-CpohWTyZ.js                          
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/user-round-x-CapJRIKG.js                             
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/workflow-D7wDsnVj.js                                 
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/blocks-BhPdWRhM.js                                   
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/map-pin-check-inside-6LToF-5c.js                     
+0.29 kB │ gzip:     0.24 kB
+Debug: build/client/assets/radio-receiver-Z9mwhj0U.js                           
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/square-dashed-bottom-BwLdhJWL.js                     
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/tornado-DA8_4e8M.js                                  
+0.29 kB │ gzip:     0.21 kB
+Debug: build/client/assets/git-BASw3ufu.js                                      
+0.29 kB │ gzip:     0.25 kB
+Debug: build/client/assets/square-arrow-out-down-right-BKbh3yJN.js              
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/square-chart-gantt-oV4rL63z.js                       
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/square-library-DwRqSeFP.js                           
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/table-properties-6tPG4pHh.js                         
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/tally-5-Bdvp_k_G.js                                  
+0.29 kB │ gzip:     0.20 kB
+Debug: build/client/assets/app-window-mac-dJ4uiLdX.js                           
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/axis-3d-DIaTW3QD.js                                  
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/badge-DjtmY0lK.js                                    
+0.29 kB │ gzip:     0.21 kB
+Debug: build/client/assets/battery-medium-DViBZgQF.js                           
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/between-vertical-end-Dl0_DRMj.js                     
+0.29 kB │ gzip:     0.22 kB
+Debug: build/client/assets/list-plus-DzX1u-t6.js                                
+0.29 kB │ gzip:     0.21 kB
+Debug: build/client/assets/signal-D8nwWg3x.js                                   
+0.29 kB │ gzip:     0.21 kB
+Debug: build/client/assets/table-cells-split-DeA4t3a1.js                        
+0.29 kB │ gzip:     0.23 kB
+Debug: build/client/assets/align-vertical-justify-end-E8i32ozL.js               
+0.30 kB │ gzip:     0.23 kB
+Debug: build/client/assets/dice-3-Cme0V0tw.js                                   
+0.30 kB │ gzip:     0.22 kB
+Debug: build/client/assets/ice-cream-cone-CFq2JyB7.js                           
+0.30 kB │ gzip:     0.22 kB
+Debug: build/client/assets/image-Dvhs7q-5.js                                    
+0.30 kB │ gzip:     0.24 kB
+Debug: build/client/assets/monitor-check-rAS5lfNz.js                            
+0.30 kB │ gzip:     0.23 kB
+Debug: build/client/assets/scroll-Bx16sXZN.js                                   
+0.30 kB │ gzip:     0.22 kB
+Debug: build/client/assets/square-percent-DI4-1UIc.js                           
+0.30 kB │ gzip:     0.23 kB
+Debug: build/client/assets/square-user-DqIHNmho.js                              
+0.30 kB │ gzip:     0.24 kB
+Debug: build/client/assets/timer-reset-CUDcnDBW.js                              
+0.30 kB │ gzip:     0.22 kB
+Debug: build/client/assets/align-vertical-justify-start-BSTb13Ad.js             
+0.30 kB │ gzip:     0.23 kB
+Debug: build/client/assets/balloon-axdKwBM3.js                                  
+0.30 kB │ gzip:     0.22 kB
+Debug: build/client/assets/between-vertical-start-WvYA9WAF.js                   
+0.30 kB │ gzip:     0.22 kB
+Debug: build/client/assets/book-text-DdMmhoNw.js                                
+0.30 kB │ gzip:     0.23 kB
+Debug: build/client/assets/circle-pound-sterling-Dcex3sMA.js                    
+0.30 kB │ gzip:     0.23 kB
+Debug: build/client/assets/file-BHpxHIhe.js                                     
+0.30 kB │ gzip:[plugin builtin:vite-reporter] 
+Debug: (!) Some chunks are larger than 500 kB after minification. Consider:
+Debug: - Using dynamic import() to code-split the application
+Debug: - Use build.rolldownOptions.output.codeSplitting to improve chunking: 
+https://rolldown.rs/reference/OutputOptions.codeSplitting
+Debug: - Adjust chunk size limit for this warning via 
+build.chunkSizeWarningLimit.
+Debug: [33m[INEFFECTIVE_DYNAMIC_IMPORT] [0mnode_modules/recharts/es6/index.js is
+dynamically imported by 
+app_components/component_dashboard/component_dashboard.jsx but also statically 
+imported by app_components/component_dashboard/component_dashboard.jsx, dynamic 
+import will not move module into another chunk.
+Debug: 
+Debug: [33m[INEFFECTIVE_DYNAMIC_IMPORT] 
+[0mnode_modules/@glideapps/glide-data-grid/dist/esm/index.js is dynamically 
+imported by app_components/component_dashboard/component_dashboard.jsx but also 
+statically imported by 
+app_components/component_dashboard/component_dashboard.jsx, 
+utils/helpers/dataeditor.js, dynamic import will not move module into another 
+chunk.
+Debug: 
+Debug: ✓ built in 2.93s
+Debug: vite v8.3.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 32 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 61 assets cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: build/client/assets/KaTeX_AMS-Regular-BQhdFMY1.woff2
+Debug: build/client/assets/KaTeX_AMS-Regular-DMm9YOAa.woff
+Debug: build/client/assets/KaTeX_AMS-Regular-DRggAlZN.ttf
+Debug: build/client/assets/KaTeX_Caligraphic-Bold-Dq_IR9rO.woff2
+Debug: build/client/assets/KaTeX_Caligraphic-Bold-BEiXGLvX.woff
+Debug: build/client/assets/KaTeX_Caligraphic-Bold-ATXxdsX0.ttf
+Debug: build/client/assets/KaTeX_Caligraphic-Regular-Di6jR-x-.woff2
+Debug: build/client/assets/KaTeX_Caligraphic-Regular-CTRA-rTL.woff
+Debug: build/client/assets/KaTeX_Caligraphic-Regular-wX97UBjC.ttf
+Debug: build/client/assets/KaTeX_Fraktur-Bold-CL6g_b3V.woff2
+Debug: build/client/assets/KaTeX_Fraktur-Bold-BsDP51OF.woff
+Debug: build/client/assets/KaTeX_Fraktur-Bold-BdnERNNW.ttf
+Debug: build/client/assets/KaTeX_Fraktur-Regular-CTYiF6lA.woff2
+Debug: build/client/assets/KaTeX_Fraktur-Regular-Dxdc4cR9.woff
+Debug: build/client/assets/KaTeX_Fraktur-Regular-CB_wures.ttf
+Debug: build/client/assets/KaTeX_Main-Bold-Cx986IdX.woff2
+Debug: build/client/assets/KaTeX_Main-Bold-Jm3AIy58.woff
+Debug: build/client/assets/KaTeX_Main-Bold-waoOVXN0.ttf
+Debug: build/client/assets/KaTeX_Main-BoldItalic-DxDJ3AOS.woff2
+Debug: build/client/assets/KaTeX_Main-BoldItalic-SpSLRI95.woff
+Debug: build/client/assets/KaTeX_Main-BoldItalic-DzxPMmG6.ttf
+Debug: build/client/assets/KaTeX_Main-Italic-NWA7e6Wa.woff2
+Debug: build/client/assets/KaTeX_Main-Italic-BMLOBm91.woff
+Debug: build/client/assets/KaTeX_Main-Italic-3WenGoN9.ttf
+Debug: build/client/assets/KaTeX_Main-Regular-B22Nviop.woff2
+Debug: build/client/assets/KaTeX_Main-Regular-Dr94JaBh.woff
+Debug: build/client/assets/KaTeX_Main-Regular-ypZvNtVU.ttf
+Debug: build/client/assets/KaTeX_Math-BoldItalic-CZnvNsCZ.woff2
+Debug: build/client/assets/KaTeX_Math-BoldItalic-iY-2wyZ7.woff
+Debug: build/client/assets/KaTeX_Math-BoldItalic-B3XSjfu4.ttf
+Debug: build/client/assets/KaTeX_Math-Italic-t53AETM-.woff2
+Debug: build/client/assets/KaTeX_Math-Italic-DA0__PXp.woff
+Debug: build/client/assets/KaTeX_Math-Italic-flOr_0UB.ttf
+Debug: build/client/assets/KaTeX_SansSerif-Bold-D1sUS0GD.woff2
+Debug: build/client/assets/KaTeX_SansSerif-Bold-DbIhKOiC.woff
+Debug: build/client/assets/KaTeX_SansSerif-Bold-CFMepnvq.ttf
+Debug: build/client/assets/KaTeX_SansSerif-Italic-C3H0VqGB.woff2
+Debug: build/client/assets/KaTeX_SansSerif-Italic-DN2j7dab.woff
+Debug: build/client/assets/KaTeX_SansSerif-Italic-YYjJ1zSn.ttf
+Debug: build/client/assets/KaTeX_SansSerif-Regular-DDBCnlJ7.woff2
+Debug: build/client/assets/KaTeX_SansSerif-Regular-CS6fqUqJ.woff
+Debug: build/client/assets/KaTeX_SansSerif-Regular-BNo7hRIc.ttf
+Debug: build/client/assets/KaTeX_Script-Regular-D3wIWfF6.woff2
+Debug: build/client/assets/KaTeX_Script-Regular-D5yQViql.woff
+Debug: build/client/assets/KaTeX_Script-Regular-C5JkGWo-.ttf
+Debug: build/client/assets/KaTeX_Size1-Regular-mCD8mA8B.woff2
+Debug: build/client/assets/KaTeX_Size1-Regular-C195tn64.woff
+Debug: build/client/assets/KaTeX_Size1-Regular-Dbsnue_I.ttf
+Debug: build/client/assets/KaTeX_Size2-Regular-Dy4dx90m.woff2
+Debug: build/client/assets/KaTeX_Size2-Regular-oD1tc_U0.woff
+Debug: build/client/assets/KaTeX_Size2-Regular-B7gKUWhC.ttf
+Debug: build/client/assets/KaTeX_Size3-Regular-CTq5MqoE.woff
+Debug: build/client/assets/KaTeX_Size3-Regular-DgpXs0kz.ttf
+Debug: build/client/assets/KaTeX_Size4-Regular-Dl5lxZxV.woff2
+Debug: build/client/assets/KaTeX_Size4-Regular-BF-4gkZK.woff
+Debug: build/client/assets/KaTeX_Size4-Regular-DWFBv043.ttf
+Debug: build/client/assets/KaTeX_Typewriter-Regular-CO6r4hn1.woff2
+Debug: build/client/assets/KaTeX_Typewriter-Regular-C0xS9mPB.woff
+Debug: build/client/assets/KaTeX_Typewriter-Regular-D3Ib7_Hf.ttf
+Debug: build/server/assets/server-build-D8PeZ489.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/assets/KaTeX_Size3-Regular-CTq5MqoE.woff           4.42 kB
+Debug: build/server/assets/KaTeX_Size4-Regular-Dl5lxZxV.woff2          4.92 kB
+Debug: build/server/assets/KaTeX_Size2-Regular-Dy4dx90m.woff2          5.20 kB
+Debug: build/server/assets/KaTeX_Size1-Regular-mCD8mA8B.woff2          5.46 kB
+Debug: build/server/assets/KaTeX_Size4-Regular-BF-4gkZK.woff           5.98 kB
+Debug: build/server/assets/KaTeX_Size2-Regular-oD1tc_U0.woff           6.18 kB
+Debug: build/server/assets/KaTeX_Size1-Regular-C195tn64.woff           6.49 kB
+Debug: build/server/assets/KaTeX_Caligraphic-Regular-Di6jR-x-.woff2    6.90 kB
+Debug: build/server/assets/KaTeX_Caligraphic-Bold-Dq_IR9rO.woff2       6.91 kB
+Debug: build/server/assets/KaTeX_Size3-Regular-DgpXs0kz.ttf            7.58 kB
+Debug: build/server/assets/KaTeX_Caligraphic-Regular-CTRA-rTL.woff     7.65 kB
+Debug: build/server/assets/KaTeX_Caligraphic-Bold-BEiXGLvX.woff        7.71 kB
+Debug: build/server/assets/KaTeX_Script-Regular-D3wIWfF6.woff2         9.64 kB
+Debug: build/server/assets/KaTeX_SansSerif-Regular-DDBCnlJ7.woff2     10.34 kB
+Debug: build/server/assets/KaTeX_Size4-Regular-DWFBv043.ttf           10.36 kB
+Debug: build/server/assets/KaTeX_Script-Regular-D5yQViql.woff         10.58 kB
+Debug: build/server/assets/KaTeX_Fraktur-Regular-CTYiF6lA.woff2       11.31 kB
+Debug: build/server/assets/KaTeX_Fraktur-Bold-CL6g_b3V.woff2          11.34 kB
+Debug: build/server/assets/KaTeX_Size2-Regular-B7gKUWhC.ttf           11.50 kB
+Debug: build/server/assets/KaTeX_SansSerif-Italic-C3H0VqGB.woff2      12.02 kB
+Debug: build/server/assets/KaTeX_SansSerif-Bold-D1sUS0GD.woff2        12.21 kB
+Debug: build/server/assets/KaTeX_Size1-Regular-Dbsnue_I.ttf           12.22 kB
+Debug: build/server/assets/KaTeX_SansSerif-Regular-CS6fqUqJ.woff      12.31 kB
+Debug: build/server/assets/KaTeX_Caligraphic-Regular-wX97UBjC.ttf     12.34 kB
+Debug: build/server/assets/KaTeX_Caligraphic-Bold-ATXxdsX0.ttf        12.36 kB
+Debug: build/server/assets/KaTeX_Fraktur-Regular-Dxdc4cR9.woff        13.20 kB
+Debug: build/server/assets/KaTeX_Fraktur-Bold-BsDP51OF.woff           13.29 kB
+Debug: build/server/assets/KaTeX_Typewriter-Regular-CO6r4hn1.woff2    13.56 kB
+Debug: build/server/assets/KaTeX_SansSerif-Italic-DN2j7dab.woff       14.11 kB
+Debug: build/server/assets/KaTeX_SansSerif-Bold-DbIhKOiC.woff         14.40 kB
+Debug: build/server/.vite/manifest.json                               15.15 kB │
+gzip:  1.65 kB
+Debug: build/server/assets/KaTeX_Typewriter-Regular-C0xS9mPB.woff     16.02 kB
+Debug: build/server/assets/KaTeX_Math-BoldItalic-CZnvNsCZ.woff2       16.40 kB
+Debug: build/server/assets/KaTeX_Math-Italic-t53AETM-.woff2           16.44 kB
+Debug: build/server/assets/KaTeX_Script-Regular-C5JkGWo-.ttf          16.64 kB
+Debug: build/server/assets/KaTeX_Main-BoldItalic-DxDJ3AOS.woff2       16.78 kB
+Debug: build/server/assets/KaTeX_Main-Italic-NWA7e6Wa.woff2           16.98 kB
+Debug: build/server/assets/KaTeX_Math-BoldItalic-iY-2wyZ7.woff        18.66 kB
+Debug: build/server/assets/KaTeX_Math-Italic-DA0__PXp.woff            18.74 kB
+Debug: build/server/assets/KaTeX_Main-BoldItalic-SpSLRI95.woff        19.41 kB
+Debug: build/server/assets/KaTeX_SansSerif-Regular-BNo7hRIc.ttf       19.43 kB
+Debug: build/server/assets/KaTeX_Fraktur-Regular-CB_wures.ttf         19.57 kB
+Debug: build/server/assets/KaTeX_Fraktur-Bold-BdnERNNW.ttf            19.58 kB
+Debug: build/server/assets/KaTeX_Main-Italic-BMLOBm91.woff            19.67 kB
+Debug: build/server/assets/KaTeX_SansSerif-Italic-YYjJ1zSn.ttf        22.36 kB
+Debug: build/server/assets/KaTeX_SansSerif-Bold-CFMepnvq.ttf          24.50 kB
+Debug: build/server/assets/KaTeX_Main-Bold-Cx986IdX.woff2             25.32 kB
+Debug: build/server/assets/KaTeX_Main-Regular-B22Nviop.woff2          26.27 kB
+Debug: build/server/assets/KaTeX_Typewriter-Regular-D3Ib7_Hf.ttf      27.55 kB
+Debug: build/server/assets/KaTeX_AMS-Regular-BQhdFMY1.woff2           28.07 kB
+Debug: build/server/assets/KaTeX_Main-Bold-Jm3AIy58.woff              29.91 kB
+Debug: build/server/assets/KaTeX_Main-Regular-Dr94JaBh.woff           30.77 kB
+Debug: build/server/assets/KaTeX_Math-BoldItalic-B3XSjfu4.ttf         31.19 kB
+Debug: build/server/assets/KaTeX_Math-Italic-flOr_0UB.ttf             31.30 kB
+Debug: build/server/assets/KaTeX_Main-BoldItalic-DzxPMmG6.ttf         32.96 kB
+Debug: build/server/assets/KaTeX_AMS-Regular-DMm9YOAa.woff            33.51 kB
+Debug: build/server/assets/KaTeX_Main-Italic-3WenGoN9.ttf             33.58 kB
+Debug: build/server/assets/KaTeX_Main-Bold-waoOVXN0.ttf               51.33 kB
+Debug: build/server/assets/KaTeX_Main-Regular-ypZvNtVU.ttf            53.58 kB
+Debug: build/server/assets/KaTeX_AMS-Regular-DRggAlZN.ttf             63.63 kB
+Debug: build/server/assets/server-build-D8PeZ489.css                  49.07 kB │
+gzip: 13.17 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css       698.26 kB │
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-BIj2TK79.js                      0.30 kB │
+gzip:  0.20 kB
+Debug: build/server/index.js                                         137.38 kB │
+gzip: 27.13 kB
+Debug: 
+Debug: ✓ built in 187ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:03
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/b
+un'), 
+PosixPath('/private/tmp/reflex-prerelease-components-20261005/app/.web/compress-
+static.js'), 
+PosixPath('/private/tmp/reflex-prerelease-components-20261005/app/.web/build/cli
+ent'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3121/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 372)
+[INFO] Listening at: http://0.0.0.0:3121
+[INFO] Spawning worker-1 with PID: 384
+`rx._x` contains experimental features and might be removed at any time in the future.
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3121
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: BE Evaluating stateful page: index
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items

@@ -1,0 +1,1206 @@
+[
+  {
+    "package": "reflex",
+    "version": "0.10.0a1",
+    "alpha": true,
+    "ref": "origin/r/pre-2026.10.05-37378928999",
+    "source_sha": "59c675abbf6ddc973770c28f9aab22fdde675848",
+    "path": "CHANGELOG.md",
+    "changelog": "## v0.10.0a1 (2026-10-05)\n\n### Breaking Changes\n\n- Remove the `reflex component` CLI (`init`, `build`, `share`, `install`) and the `CustomComponents` constants. Wrap React libraries directly in your app as described in the wrapping React docs, and start reusable component packages from the [component template](https://github.com/reflex-dev/component-template), which builds, tests, and publishes them with standard Python tooling. ([#6425](https://github.com/reflex-dev/reflex/issues/6425))\n- A substate may now declare a var or computed var with the same name as an inherited var: it gets an independent one of its own, instead of raising `BaseVarShadowsInheritedVarError` or `ComputedVarShadowsBaseVarsError`. A dynamic route arg only conflicts with a var of the state it is installed on. Assigning an undeclared state attribute still raises `SetUndefinedStateVarError` outside of prod mode, but no longer in prod. The internal class maps `backend_vars`, `inherited_vars` and `inherited_backend_vars`, `get_skip_vars()` and the instance `_backend_vars` are removed: use `get_fields()`, whose fields know the state they belong to. States saved by this release still load in workers of the previous one, so rolling deploys sharing Redis keep working, with one exception: while old workers remain, an in-place change to a mutable backend var (like `self._items.append(x)`) made on an old worker to a state saved by this release is not persisted. Assigning backend vars, and any change to frontend vars, is unaffected. ([#7312](https://github.com/reflex-dev/reflex/issues/7312))\n\n### Features\n\n- The duration settings read by the app and the state managers take a unit suffix: `SQLALCHEMY_POOL_TIMEOUT`, `REFLEX_SOCKET_INTERVAL` and `REFLEX_SOCKET_TIMEOUT` accept values such as `2m`, and `REFLEX_AUTO_RELOAD_COOLDOWN`, `REFLEX_OPLOCK_HOLD_TIME` and `REFLEX_STATE_MANAGER_DISK_DEBOUNCE` replace the `_MS`/`_SECONDS` names, which still work with a deprecation warning until 1.0. A bare number is read as seconds. ([#7138](https://github.com/reflex-dev/reflex/issues/7138))\n- Set `REFLEX_REDIS_MAX_CONNECTIONS` to cap each Redis client's connection pool (the state manager, the token manager and the health check each use their own client). Once a pool reaches the cap, requests wait up to `REFLEX_REDIS_POOL_TIMEOUT` (default 2s, which must be above 0 and below the configured state-lock lifetime) for a free connection instead of opening new ones. ([#7179](https://github.com/reflex-dev/reflex/issues/7179))\n\n### Bug Fixes\n\n- Fixed `reflex db makemigrations`/`migrate` crashing with `CompileError` when autogenerating a migration that adds a column with a callable default (e.g. `default_factory=datetime.now` or `default=uuid.uuid4`) to an existing table; callable defaults are now evaluated before being carried as a SQL `server_default`. ([#6706](https://github.com/reflex-dev/reflex/issues/6706))\n- Serve valid dynamic-route URLs (e.g. `/articles/7`) with HTTP 200 instead of 404 when loaded directly in self-hosted prod static serving, reserving 404 for genuinely unknown paths. ([#6996](https://github.com/reflex-dev/reflex/issues/6996))\n- When a project keeps using npm because `reflex.lock/` only has `package-lock.json` (for example after a run with `REFLEX_USE_NPM=1`), Reflex now logs why and how to switch back to bun with `REFLEX_USE_NPM=0`. ([#7093](https://github.com/reflex-dev/reflex/issues/7093))\n- Reflex now checks the Node.js version before running npm, so an unsupported Node.js no longer leaves npm lockfiles behind that switch later runs to npm. ([#7210](https://github.com/reflex-dev/reflex/issues/7210))\n- Preserve ID-based form controls through automatic memoization while excluding IDs on non-controls from submissions. ([#7227](https://github.com/reflex-dev/reflex/issues/7227))\n- Avoid reinstalling frontend packages on every compile or hot reload when bun or npm only changes the formatting of `package.json`. ([#7236](https://github.com/reflex-dev/reflex/issues/7236))\n- `reflex db` commands run without the `db` extra installed now exit with the \"pip install reflex[db]\" message instead of a raw traceback. ([#7259](https://github.com/reflex-dev/reflex/issues/7259))\n- Fix `TypeError: refs._client_state_set... is not a function` when a component sets a global `rx._x.client_state` value before any component reading `.value` has mounted, such as when the reader sits behind an `rx.cond`. ([#7286](https://github.com/reflex-dev/reflex/issues/7286))\n- An editable install (`uv sync`, `pip install -e .`) no longer overwrites `.pyi` stubs that the checkout already has. A checkout missing any of them still gets them generated. ([#7303](https://github.com/reflex-dev/reflex/issues/7303))\n- In a background task on a substate, in-place changes to a mutable var inherited from a parent state (like `self.items.append(...)`) are now sent to the client and persisted. ([#7312](https://github.com/reflex-dev/reflex/issues/7312))\n- Fix stylesheet edits in `assets/` not applying in dev mode until a manual reload. The global stylesheet `<link rel=\"preload\">` is now emitted only in production builds, so Vite's CSS hot update swaps the real stylesheet link again. ([#7317](https://github.com/reflex-dev/reflex/issues/7317))\n- The memory and disk state managers now free expired session states right away instead of waiting for a garbage collection pass, and the disk state manager no longer keeps a lock for every expired session. ([#7318](https://github.com/reflex-dev/reflex/issues/7318))\n- `reflex db` commands only require `sqlalchemy` and `alembic`, so apps that use plain SQLAlchemy models without `sqlmodel` can run migrations again. ([#7322](https://github.com/reflex-dev/reflex/issues/7322))\n- A page URL with a `self` query parameter (e.g. `/post?self=1`), or a request header named `self`, no longer crashes router data parsing and leaves the page unhydrated. ([#7324](https://github.com/reflex-dev/reflex/issues/7324))\n- `reflex run` now stops its frontend on SIGTERM and SIGINT without a TTY, while keeping frontend workers in the CLI process group so a hard kill also stops them. ([#7328](https://github.com/reflex-dev/reflex/issues/7328))\n- A state stored in Redis that can no longer be unpickled, for example because a deploy moved or deleted a class held in a state var, is now replaced with a fresh state like a schema mismatch, instead of failing every event from that tab until the Redis key expires. ([#7329](https://github.com/reflex-dev/reflex/issues/7329))\n- On Windows, the development backend no longer closes its listening socket twice when it releases the port, which could close another socket that had reused the handle and make it fail with `OSError: [WinError 10038]`. ([#7348](https://github.com/reflex-dev/reflex/issues/7348))\n- `reflex run --json` now emits every output line as a JSON record: `print()` output from the app, subprocess output, and worker tracebacks (as one record with an `exception` field) no longer break the JSON-lines stream. ([#7350](https://github.com/reflex-dev/reflex/issues/7350))\n- Fix a race with `REFLEX_OPLOCK_ENABLED` where an instance could take an opportunistic lease before its Redis lock notifications were active, making other instances wait out the full hold time for the same token. ([#7372](https://github.com/reflex-dev/reflex/issues/7372))\n- Stop logging `asyncio.CancelledError: lifespan_cleanup` as an error when a running coroutine lifespan task is cancelled at backend shutdown or hot reload. ([#7392](https://github.com/reflex-dev/reflex/issues/7392))\n\n### Performance\n\n- Speed up first page loads by combining hydration with the websocket connect and sending only values that differ from compiled defaults. Reduce Redis state-tree read/write overhead and avoid repeated class metadata computation in apps with many states. ([#7064](https://github.com/reflex-dev/reflex/issues/7064))\n- Reuse unchanged memo-body analysis during module emission to reduce repeated rendering and artifact collection. ([#7123](https://github.com/reflex-dev/reflex/issues/7123))\n- Skip the linked-client fan-out on events that changed nothing shared, so an app that defines an `rx.SharedState` no longer resolves the running `App` on every event. ([#7237](https://github.com/reflex-dev/reflex/issues/7237))\n- Reading a state var is about 4x faster, and setting one about 7x faster (15x in prod mode): vars, computed vars and event handlers are now descriptors on the state class that declares them, instead of every attribute access going through `BaseState.__getattribute__`. ([#7312](https://github.com/reflex-dev/reflex/issues/7312))\n- Process events with less CPU on the backend: iterating, sorting and reading list and dataclass state values costs 25\u201375% less, and the redis state manager writes the changed states of a session in one round trip. ([#7370](https://github.com/reflex-dev/reflex/issues/7370))\n\n### Documentation\n\n- Document the dict form for `rx.toast` `action` and `cancel` props instead of referencing the non-public `ToastAction` class. ([#7327](https://github.com/reflex-dev/reflex/issues/7327))\n\n### Miscellaneous\n\n- No longer set `BUN_OPTIONS` when launching the frontend dev server; bun ignores it for the process it spawns for a package script. ([#7203](https://github.com/reflex-dev/reflex/issues/7203))\n- Allow wrapt 2.4 and 2.5, and keep SQLModel below 0.0.45 to preserve existing datetime storage behavior. ([#7424](https://github.com/reflex-dev/reflex/issues/7424))",
+    "prs": [
+      "https://github.com/reflex-dev/component-template",
+      "https://github.com/reflex-dev/reflex/issues/6425",
+      "https://github.com/reflex-dev/reflex/issues/6706",
+      "https://github.com/reflex-dev/reflex/issues/6996",
+      "https://github.com/reflex-dev/reflex/issues/7064",
+      "https://github.com/reflex-dev/reflex/issues/7093",
+      "https://github.com/reflex-dev/reflex/issues/7123",
+      "https://github.com/reflex-dev/reflex/issues/7138",
+      "https://github.com/reflex-dev/reflex/issues/7179",
+      "https://github.com/reflex-dev/reflex/issues/7203",
+      "https://github.com/reflex-dev/reflex/issues/7210",
+      "https://github.com/reflex-dev/reflex/issues/7227",
+      "https://github.com/reflex-dev/reflex/issues/7236",
+      "https://github.com/reflex-dev/reflex/issues/7237",
+      "https://github.com/reflex-dev/reflex/issues/7259",
+      "https://github.com/reflex-dev/reflex/issues/7286",
+      "https://github.com/reflex-dev/reflex/issues/7303",
+      "https://github.com/reflex-dev/reflex/issues/7312",
+      "https://github.com/reflex-dev/reflex/issues/7317",
+      "https://github.com/reflex-dev/reflex/issues/7318",
+      "https://github.com/reflex-dev/reflex/issues/7322",
+      "https://github.com/reflex-dev/reflex/issues/7324",
+      "https://github.com/reflex-dev/reflex/issues/7327",
+      "https://github.com/reflex-dev/reflex/issues/7328",
+      "https://github.com/reflex-dev/reflex/issues/7329",
+      "https://github.com/reflex-dev/reflex/issues/7348",
+      "https://github.com/reflex-dev/reflex/issues/7350",
+      "https://github.com/reflex-dev/reflex/issues/7370",
+      "https://github.com/reflex-dev/reflex/issues/7372",
+      "https://github.com/reflex-dev/reflex/issues/7392",
+      "https://github.com/reflex-dev/reflex/issues/7424"
+    ],
+    "status": "published",
+    "requires_python": "<4.0,>=3.10",
+    "requires_dist": [
+      "click>=8.2",
+      "granian[reload]>=2.7.4",
+      "httpx<1.0,>=0.26",
+      "packaging<27,>=24.2",
+      "psutil<8.0,>=7.0.0; sys_platform == \"win32\"",
+      "python-multipart<1.0,>=0.0.32",
+      "python-socketio<6.0,>=5.12.0",
+      "redis<8.0,>=6.4",
+      "reflex-base==0.10.0a1",
+      "reflex-components-code>=0.9.0",
+      "reflex-components-core>=0.9.6",
+      "reflex-components-dataeditor>=0.9.0",
+      "reflex-components-gridjs>=0.9.0",
+      "reflex-components-lucide>=0.9.0",
+      "reflex-components-markdown>=0.9.0",
+      "reflex-components-moment>=0.9.4",
+      "reflex-components-plotly>=0.9.0",
+      "reflex-components-radix>=0.9.9",
+      "reflex-components-react-player>=0.9.0",
+      "reflex-components-recharts>=0.9.0",
+      "reflex-components-sonner>=0.9.0",
+      "reflex-hosting-cli>=0.1.71",
+      "rich<16,>=13",
+      "starlette>=1.3.1",
+      "typing-extensions>=4.13.0",
+      "wrapt<2.6,>=1.17.0",
+      "alembic<2.0,>=1.15.2; extra == \"db\"",
+      "pydantic<3.0,>=2.12.0; extra == \"db\"",
+      "sqlmodel<0.0.45,>=0.0.24; extra == \"db\"",
+      "reflex-base[pydantic]; extra == \"pydantic\"",
+      "psutil<8.0,>=7.0.0; extra == \"testing\"",
+      "selenium<5.0,>=4.0.0; extra == \"testing\"",
+      "uvicorn<1.0,>=0.34.0; extra == \"testing\""
+    ],
+    "files": [
+      {
+        "filename": "reflex-0.10.0a1-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/32/38/d47d771bd72e976a6849d7dce5f79d4a2576e57095c2c8befd8575e06c40/reflex-0.10.0a1-py3-none-any.whl",
+        "size": 307741,
+        "upload_time_iso_8601": "2026-10-05T21:52:32.427779Z",
+        "yanked": false,
+        "sha256": "8f6a153935004b80a5f0eb740495c46b4e09bf5a4a0ecc98d1a4d9b7be1250f5",
+        "digest_matches": true,
+        "stub_count": 3,
+        "direct_urls": [],
+        "generated_artifacts": []
+      },
+      {
+        "filename": "reflex-0.10.0a1.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/52/84/73f9befbf4ef8f8383a18d70e00e7c333f4663fee1e38ea83e48d94ffc04/reflex-0.10.0a1.tar.gz",
+        "size": 265213,
+        "upload_time_iso_8601": "2026-10-05T21:52:33.960827Z",
+        "yanked": false,
+        "sha256": "9dd165eae7d0e163e46337c5d8aec4207f7f8f458cf0d7d255481f3d4675a220",
+        "digest_matches": true,
+        "stub_count": 3,
+        "direct_urls": [],
+        "generated_artifacts": []
+      }
+    ],
+    "stub_audit": {
+      "wheel_only": [],
+      "sdist_only": [],
+      "content_mismatch": [],
+      "wheel_names": [
+        "reflex/__init__.pyi",
+        "reflex/components/__init__.pyi",
+        "reflex/experimental/memo.pyi"
+      ]
+    }
+  },
+  {
+    "package": "reflex-base",
+    "version": "0.10.0a1",
+    "alpha": true,
+    "ref": "origin/r/pre-2026.10.05-37378928999",
+    "source_sha": "59c675abbf6ddc973770c28f9aab22fdde675848",
+    "path": "packages/reflex-base/CHANGELOG.md",
+    "changelog": "## v0.10.0a1 (2026-10-05)\n\n### Breaking Changes\n\n- Remove `reflex_base.constants.CustomComponents`, which only the removed `reflex component` CLI used. ([#6425](https://github.com/reflex-dev/reflex/issues/6425))\n- `PageContext.get()` and `CompileContext.get()` now raise `LookupError` instead of `RuntimeError` when no context is active, the same as every other `BaseContext` subclass. Compiler plugins that catch `RuntimeError` around these calls should catch `LookupError`. ([#6553](https://github.com/reflex-dev/reflex/issues/6553))\n- `reflex_base.utils.types.is_backend_base_variable` and `RESERVED_BACKEND_VAR_NAMES` are removed: whether a state var is a backend var is now a property of its `Field` in `get_fields()`. By convention, fields named with a leading `_` are backend vars. `is_mutable_type` moved to `reflex_base.utils.types` (still importable from `reflex.istate.proxy`). ([#7312](https://github.com/reflex-dev/reflex/issues/7312))\n\n### Features\n\n- `SQLALCHEMY_POOL_TIMEOUT`, `REFLEX_BACKEND_COLD_START_TIMEOUT`, `REFLEX_SOCKET_INTERVAL` and `REFLEX_SOCKET_TIMEOUT` are `timedelta` settings, so they accept a unit suffix such as `REFLEX_SOCKET_TIMEOUT=2m`. A bare number is still read as seconds, so existing values keep their meaning. ([#7138](https://github.com/reflex-dev/reflex/issues/7138))\n- `REFLEX_AUTO_RELOAD_COOLDOWN`, `REFLEX_OPLOCK_HOLD_TIME` and `REFLEX_STATE_MANAGER_DISK_DEBOUNCE` replace `REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS`, `REFLEX_OPLOCK_HOLD_TIME_MS` and `REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS`, and take a duration such as `250ms` or `5m`. The old names still work and keep counting the unit in their name, with a deprecation warning; they are removed in 1.0. ([#7138](https://github.com/reflex-dev/reflex/issues/7138))\n- Add the `REFLEX_REDIS_MAX_CONNECTIONS` and `REFLEX_REDIS_POOL_TIMEOUT` environment variables for bounding each asynchronous Redis client's connection pool. A configured cap must be at least 3 to leave room for the token manager's two pub/sub listeners and ordinary commands; the pool wait defaults to 2 seconds and must be above 0 and shorter than the state-lock lifetime. ([#7179](https://github.com/reflex-dev/reflex/issues/7179))\n- Add `Var.deep_equals()` for structural comparison of nested frontend values. ([#7208](https://github.com/reflex-dev/reflex/issues/7208))\n- `Field` is now the descriptor holding a state var's value, and `EventHandler` binds to the state that declares it when accessed on a state instance. ([#7312](https://github.com/reflex-dev/reflex/issues/7312))\n- Add `reflex_base.utils.log.supervise_output()`, which runs a command with its stdout and stderr on pipes and writes every line it and its descendants print as a JSON record; lines that already are JSON log records pass through unchanged. Output that a descendant writes after the command exits is forwarded for at most a few seconds. ([#7350](https://github.com/reflex-dev/reflex/issues/7350))\n\n### Bug Fixes\n\n- Auto-memoized `@rx.memo` wrapper names no longer repeat the wrapped memo component's tag. ([#7004](https://github.com/reflex-dev/reflex/issues/7004))\n- Deprecation warnings no longer point at a pseudo-location such as `<string>` or `<frozen importlib._bootstrap>` when the deprecated call runs inside generated or frozen code; the location now names the first real user file. ([#7138](https://github.com/reflex-dev/reflex/issues/7138))\n- Form submissions retain ID-backed controls with unset values while omitting IDs from non-controls. ([#7227](https://github.com/reflex-dev/reflex/issues/7227))\n- `Var._replace(_var_data=...)` no longer raises `TypeError: dataclasses.replace() got multiple values for keyword argument '_var_data'`. ([#7256](https://github.com/reflex-dev/reflex/issues/7256))\n- Flatten nested client event lists before dispatch and keep processing queued events after one event fails. ([#7319](https://github.com/reflex-dev/reflex/issues/7319))\n- `rx.download(data=State.var)` percent-encodes the JSON it puts in the `data:` URL, so a `#` or `%` in the data no longer truncates or corrupts the downloaded file. ([#7325](https://github.com/reflex-dev/reflex/issues/7325))\n- Negative-step slices of array and string Vars now match Python at a `-1` bound (e.g. `State.items[-1::-1]` no longer renders an empty list), and a Var step (e.g. `State.items[::State.step]`) no longer raises `RecursionError`. ([#7326](https://github.com/reflex-dev/reflex/issues/7326))\n- A state that mixes in `abc.ABC` or another `ABCMeta` class (`class MyMixin(ABC, rx.State, mixin=True)`) no longer fails with a `StateValueError` claiming `_abc_impl` is reserved by `BaseState`. ([#7339](https://github.com/reflex-dev/reflex/issues/7339))\n- Events sent while a buffered upload (or another `EventProcessor.enqueue_stream_delta` stream) is in flight are no longer chained to it: an uploading client that disconnects no longer cancels other clients' events, the upload's response no longer waits for them, and navigating during an upload cancels the previous page's unfinished `on_load` handlers again. Concurrent buffered uploads no longer hang or end each other's responses early. ([#7357](https://github.com/reflex-dev/reflex/issues/7357))\n- State changes made after a buffered upload's response has ended, such as by events a backend exception handler chains after the upload handler fails, now reach the client instead of being silently dropped. ([#7357](https://github.com/reflex-dev/reflex/issues/7357))\n- OpenTelemetry spans of top-level events enqueued during an HTTP request (a chunked upload, or a custom API route calling `app.event_processor.enqueue`) no longer carry a `reflex.event.parent_txid` naming the event processor's root context; only chained events name the event that produced them. ([#7358](https://github.com/reflex-dev/reflex/issues/7358))\n- Pages in apps with many substates no longer intermittently fail to server-render with a 500 such as `SyntaxError: Invalid regular expression: /[^a-z-]/: Stack overflow`. ([#7369](https://github.com/reflex-dev/reflex/issues/7369))\n- Calling an event handler of up to four arguments on the state class with its arguments, plain or as Vars, and passing such a handler where a callable of its arguments is expected now type-check under ty, as they already did under pyright. Calls of handlers with five or more arguments can still be misreported by ty. ([#7414](https://github.com/reflex-dev/reflex/issues/7414))\n\n### Performance\n\n- Reduce event-queue overhead when prepending events and processing events with a connected socket. ([#7053](https://github.com/reflex-dev/reflex/issues/7053))\n- Begin opening the websocket transport before React mounts, then hydrate with a single `hydrate_and_load` event sent along with the websocket connect to save a round trip. ([#7064](https://github.com/reflex-dev/reflex/issues/7064))\n- Evaluate generated passthrough memo bodies once and retain their render and artifacts so module emission does not repeat the work. ([#7123](https://github.com/reflex-dev/reflex/issues/7123))\n- Reading a cached computed var no longer re-validates its return type, and in production mode state var assignments and computed var results check only the outer type instead of walking every element. The type checks only log errors, so this changes no behavior beyond fewer element-level log messages in production. ([#7353](https://github.com/reflex-dev/reflex/issues/7353))\n- Building Vars (operations, comparisons, `rx.cond`, `rx.foreach`) is up to twice as fast, so pages that derive many Vars compile faster; the generated code is unchanged. ([#7370](https://github.com/reflex-dev/reflex/issues/7370))\n- Lower the CPU cost of every backend event: cached computed var reads, field reads and writes, event dispatch and the JSON encoding of state deltas are faster. A computed var returning a value of the wrong type is now logged once per computed value instead of on every read, and `EventHandler.is_background` and `EventHandler.supersedes` are read once per handler, so mark the function before the handler is first used. ([#7370](https://github.com/reflex-dev/reflex/issues/7370))\n\n### Miscellaneous\n\n- Add the `routes.json` manifest name constant, written at compile time so the prod static file server can tell routable SPA paths from unknown ones. ([#6996](https://github.com/reflex-dev/reflex/issues/6996))\n- Route log records from the new `reflex-workflow` package through the Reflex logger, so they follow the configured log level and sinks. ([#7288](https://github.com/reflex-dev/reflex/issues/7288))\n- Update generated apps to React 19.3, Vite 8.3.2, Socket.IO client 4.8.4, Autoprefixer 10.6.1, and PostCSS 8.5.29. Update the bundled Bun runtime to 1.4.2. ([#7424](https://github.com/reflex-dev/reflex/issues/7424))",
+    "prs": [
+      "https://github.com/reflex-dev/reflex/issues/6425",
+      "https://github.com/reflex-dev/reflex/issues/6553",
+      "https://github.com/reflex-dev/reflex/issues/6996",
+      "https://github.com/reflex-dev/reflex/issues/7004",
+      "https://github.com/reflex-dev/reflex/issues/7053",
+      "https://github.com/reflex-dev/reflex/issues/7064",
+      "https://github.com/reflex-dev/reflex/issues/7123",
+      "https://github.com/reflex-dev/reflex/issues/7138",
+      "https://github.com/reflex-dev/reflex/issues/7179",
+      "https://github.com/reflex-dev/reflex/issues/7208",
+      "https://github.com/reflex-dev/reflex/issues/7227",
+      "https://github.com/reflex-dev/reflex/issues/7256",
+      "https://github.com/reflex-dev/reflex/issues/7288",
+      "https://github.com/reflex-dev/reflex/issues/7312",
+      "https://github.com/reflex-dev/reflex/issues/7319",
+      "https://github.com/reflex-dev/reflex/issues/7325",
+      "https://github.com/reflex-dev/reflex/issues/7326",
+      "https://github.com/reflex-dev/reflex/issues/7339",
+      "https://github.com/reflex-dev/reflex/issues/7350",
+      "https://github.com/reflex-dev/reflex/issues/7353",
+      "https://github.com/reflex-dev/reflex/issues/7357",
+      "https://github.com/reflex-dev/reflex/issues/7358",
+      "https://github.com/reflex-dev/reflex/issues/7369",
+      "https://github.com/reflex-dev/reflex/issues/7370",
+      "https://github.com/reflex-dev/reflex/issues/7414",
+      "https://github.com/reflex-dev/reflex/issues/7424"
+    ],
+    "status": "published",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "packaging<27,>=24.2",
+      "platformdirs<5.0,>=4.3.7",
+      "rich<16,>=13",
+      "typing-extensions>=4.13.0",
+      "pydantic<3.0,>=2.12.0; extra == \"pydantic\""
+    ],
+    "files": [
+      {
+        "filename": "reflex_base-0.10.0a1-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/05/a0/ed06804d05f2d4aebde3a7382b45a4da704d0c05062f458378cc6f7b312b/reflex_base-0.10.0a1-py3-none-any.whl",
+        "size": 400171,
+        "upload_time_iso_8601": "2026-10-05T21:50:19.690852Z",
+        "yanked": false,
+        "sha256": "008270f301f2f31ea65ce6669e33fd6521f1430ad9b30dbde71c060dd99a827a",
+        "digest_matches": true,
+        "stub_count": 0,
+        "direct_urls": [],
+        "generated_artifacts": []
+      },
+      {
+        "filename": "reflex_base-0.10.0a1.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/f7/15/60c4ddee81c10fa5e5bb9311ec7f0bd77885bd05049ca6abff55de0e8b16/reflex_base-0.10.0a1.tar.gz",
+        "size": 369486,
+        "upload_time_iso_8601": "2026-10-05T21:50:21.428760Z",
+        "yanked": false,
+        "sha256": "2bc0e818d2adb04a035008bd0139a46bc7ab1e7b01b996bd413d8a97ff5863a5",
+        "digest_matches": true,
+        "stub_count": 0,
+        "direct_urls": [],
+        "generated_artifacts": []
+      }
+    ],
+    "stub_audit": {
+      "wheel_only": [],
+      "sdist_only": [],
+      "content_mismatch": [],
+      "wheel_names": []
+    }
+  },
+  {
+    "package": "reflex-build-sdk",
+    "version": "0.0.5",
+    "alpha": false,
+    "ref": "origin/r/pre-2026.10.05-37378928999",
+    "source_sha": "59c675abbf6ddc973770c28f9aab22fdde675848",
+    "path": "packages/reflex-build-sdk/CHANGELOG.md",
+    "changelog": "## v0.0.5 (2026-09-24)\n\n### Features\n\n- Response models carry the fields the API returns that they previously dropped: `App` gains `backend_url`, `disable_secrets`, `weekly_report_enabled`, `source_thread_id`, `unreleased_provider` and the `any_environment_*` flags; `AppDeployment` gains `strategy`, `persistent` and `screenshot_uri`; `DeploymentRecord` gains `updated_by` and `promoted_from_id`; `ProjectAppDeployment` gains `updated_at`, `updated_by` and the `vm_type_*` fields; `Project` gains the `org_*` usage fields; `ProjectApp` gains `from_builder`; `ProjectMember` gains `role_permissions`; `AppSummary` gains `disable_secrets`; and `LogRecord` gains `event_id`, `stream_id` and `revision_id`. ([#7311](https://github.com/reflex-dev/reflex/issues/7311))",
+    "prs": [
+      "https://github.com/reflex-dev/reflex/issues/7311"
+    ],
+    "status": "published",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "aiohttp<4.0,>=3.10.0; extra == \"aiohttp\"",
+      "httpx<1.0,>=0.25.1; extra == \"httpx\"",
+      "httpx2<3.0,>=2.0.0; extra == \"httpx2\""
+    ],
+    "files": [
+      {
+        "filename": "reflex_build_sdk-0.0.5-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/ee/e5/5115ee60744920d6696f1aaedb29e08caab3ef300580370dcc4d5337f87a/reflex_build_sdk-0.0.5-py3-none-any.whl",
+        "size": 111923,
+        "upload_time_iso_8601": "2026-09-24T17:56:49.258473Z",
+        "yanked": false,
+        "sha256": "dd149ca4dc2051c9b45e3d15c3adb0f568bb341d8cb2efb9ddaf692e3547aa07"
+      },
+      {
+        "filename": "reflex_build_sdk-0.0.5.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/c7/56/5283beb4e1848c9724422dfbc8c87c0f4f509a773f3fb8e4b1d09ccfd0b4/reflex_build_sdk-0.0.5.tar.gz",
+        "size": 86571,
+        "upload_time_iso_8601": "2026-09-24T17:56:50.366611Z",
+        "yanked": false,
+        "sha256": "4a102b28d0fd91b9a7f04a9af9a6142df4b78412801e3cd413da2ae64cd9bf0b"
+      }
+    ]
+  },
+  {
+    "package": "reflex-components-code",
+    "version": "0.10.0a1",
+    "alpha": true,
+    "ref": "origin/r/pre-2026.10.05-37378928999",
+    "source_sha": "59c675abbf6ddc973770c28f9aab22fdde675848",
+    "path": "packages/reflex-components-code/CHANGELOG.md",
+    "changelog": "## v0.10.0a1 (2026-10-05)\n\n### Miscellaneous\n\n- Update Shiki and its transformers to 4.5.0. ([#7424](https://github.com/reflex-dev/reflex/issues/7424))",
+    "prs": [
+      "https://github.com/reflex-dev/reflex/issues/7424"
+    ],
+    "status": "published",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "reflex-base>=0.9.0",
+      "reflex-components-core>=0.9.0",
+      "reflex-components-lucide>=0.9.0",
+      "reflex-components-radix>=0.9.0"
+    ],
+    "files": [
+      {
+        "filename": "reflex_components_code-0.10.0a1-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/c9/45/5f9269646aa4e76bb478f955ed7d02b2b54cee051d5db8b31cca36bae481/reflex_components_code-0.10.0a1-py3-none-any.whl",
+        "size": 24673,
+        "upload_time_iso_8601": "2026-10-05T21:50:04.226988Z",
+        "yanked": false,
+        "sha256": "e40f744e43923fe1020835eebafcebaf367b8054ca012de00aea98ea500de920",
+        "digest_matches": true,
+        "stub_count": 2,
+        "direct_urls": [],
+        "generated_artifacts": []
+      },
+      {
+        "filename": "reflex_components_code-0.10.0a1.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/60/2d/3a931e920b642836cd53b3a1e96515f87457e1f73d8496ce97681904336e/reflex_components_code-0.10.0a1.tar.gz",
+        "size": 20601,
+        "upload_time_iso_8601": "2026-10-05T21:50:05.329149Z",
+        "yanked": false,
+        "sha256": "34ffeb3fc775cadd15018b46c9e3dc2810e45780698868b458399d95fd571960",
+        "digest_matches": true,
+        "stub_count": 2,
+        "direct_urls": [],
+        "generated_artifacts": []
+      }
+    ],
+    "stub_audit": {
+      "wheel_only": [],
+      "sdist_only": [],
+      "content_mismatch": [],
+      "wheel_names": [
+        "reflex_components_code/code.pyi",
+        "reflex_components_code/shiki_code_block.pyi"
+      ]
+    }
+  },
+  {
+    "package": "reflex-components-core",
+    "version": "0.10.0a1",
+    "alpha": true,
+    "ref": "origin/r/pre-2026.10.05-37378928999",
+    "source_sha": "59c675abbf6ddc973770c28f9aab22fdde675848",
+    "path": "packages/reflex-components-core/CHANGELOG.md",
+    "changelog": "## v0.10.0a1 (2026-10-05)\n\n### Features\n\n- The connection banner reads `REFLEX_BACKEND_COLD_START_TIMEOUT` as a duration, so it accepts a unit suffix such as `30s`. A bare number is still read as seconds. ([#7138](https://github.com/reflex-dev/reflex/issues/7138))\n\n### Bug Fixes\n\n- Fix `rx.match` raising `ReferenceError: Can't find variable` at render when a state Var is used only in a case condition with component branches. ([#6675](https://github.com/reflex-dev/reflex/issues/6675))\n- Exclude IDs on forms and other non-controls from form submissions while preserving unset ID-backed controls and supporting custom controls marked with `_is_form_control`. ([#7227](https://github.com/reflex-dev/reflex/issues/7227))\n- Require reflex-base 0.9.12 or newer so all imported rendering APIs are available. ([#7238](https://github.com/reflex-dev/reflex/issues/7238))\n\n### Miscellaneous\n\n- Update react-dropzone to 17.0.0 and react-error-boundary to 6.1.6. ([#7424](https://github.com/reflex-dev/reflex/issues/7424))",
+    "prs": [
+      "https://github.com/reflex-dev/reflex/issues/6675",
+      "https://github.com/reflex-dev/reflex/issues/7138",
+      "https://github.com/reflex-dev/reflex/issues/7227",
+      "https://github.com/reflex-dev/reflex/issues/7238",
+      "https://github.com/reflex-dev/reflex/issues/7424"
+    ],
+    "status": "published",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "python-multipart>=0.0.21",
+      "reflex-base>=0.10.0a1",
+      "reflex-components-lucide>=0.9.0",
+      "reflex-components-sonner>=0.9.0",
+      "starlette>=0.47.0",
+      "typing-extensions>=4.0.0"
+    ],
+    "files": [
+      {
+        "filename": "reflex_components_core-0.10.0a1-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/07/96/d118ed3d229191823ba03b5965776ab2047a395c5bd5b69322d64790238a/reflex_components_core-0.10.0a1-py3-none-any.whl",
+        "size": 179813,
+        "upload_time_iso_8601": "2026-10-05T21:55:57.740681Z",
+        "yanked": false,
+        "sha256": "69a72f282b473ce2c51cbd692651783673e9da542c26d8d6e0eacab5eceafa3d",
+        "digest_matches": true,
+        "stub_count": 36,
+        "direct_urls": [],
+        "generated_artifacts": []
+      },
+      {
+        "filename": "reflex_components_core-0.10.0a1.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/2b/5e/86817a1c3132d37042cb2944c6bb13ecbfdc2fb2cedfbe2df0604befe339/reflex_components_core-0.10.0a1.tar.gz",
+        "size": 113524,
+        "upload_time_iso_8601": "2026-10-05T21:55:58.862226Z",
+        "yanked": false,
+        "sha256": "53b416295544d995d7a03e281aa2996d71f2044805aa6105ea1edf3895100001",
+        "digest_matches": true,
+        "stub_count": 36,
+        "direct_urls": [],
+        "generated_artifacts": []
+      }
+    ],
+    "stub_audit": {
+      "wheel_only": [],
+      "sdist_only": [],
+      "content_mismatch": [],
+      "wheel_names": [
+        "reflex_components_core/__init__.pyi",
+        "reflex_components_core/base/__init__.pyi",
+        "reflex_components_core/base/app_wrap.pyi",
+        "reflex_components_core/base/body.pyi",
+        "reflex_components_core/base/document.pyi",
+        "reflex_components_core/base/error_boundary.pyi",
+        "reflex_components_core/base/fragment.pyi",
+        "reflex_components_core/base/link.pyi",
+        "reflex_components_core/base/meta.pyi",
+        "reflex_components_core/base/script.pyi",
+        "reflex_components_core/base/strict_mode.pyi",
+        "reflex_components_core/core/__init__.pyi",
+        "reflex_components_core/core/auto_scroll.pyi",
+        "reflex_components_core/core/banner.pyi",
+        "reflex_components_core/core/clipboard.pyi",
+        "reflex_components_core/core/debounce.pyi",
+        "reflex_components_core/core/helmet.pyi",
+        "reflex_components_core/core/html.pyi",
+        "reflex_components_core/core/sticky.pyi",
+        "reflex_components_core/core/upload.pyi",
+        "reflex_components_core/core/window_events.pyi",
+        "reflex_components_core/datadisplay/__init__.pyi",
+        "reflex_components_core/el/__init__.pyi",
+        "reflex_components_core/el/element.pyi",
+        "reflex_components_core/el/elements/__init__.pyi",
+        "reflex_components_core/el/elements/base.pyi",
+        "reflex_components_core/el/elements/forms.pyi",
+        "reflex_components_core/el/elements/inline.pyi",
+        "reflex_components_core/el/elements/media.pyi",
+        "reflex_components_core/el/elements/metadata.pyi",
+        "reflex_components_core/el/elements/other.pyi",
+        "reflex_components_core/el/elements/scripts.pyi",
+        "reflex_components_core/el/elements/sectioning.pyi",
+        "reflex_components_core/el/elements/tables.pyi",
+        "reflex_components_core/el/elements/typography.pyi",
+        "reflex_components_core/react_router/dom.pyi"
+      ]
+    }
+  },
+  {
+    "package": "reflex-components-dataeditor",
+    "version": "0.9.3",
+    "alpha": false,
+    "ref": "origin/r/pre-2026.10.05-37378928999",
+    "source_sha": "59c675abbf6ddc973770c28f9aab22fdde675848",
+    "path": "packages/reflex-components-dataeditor/CHANGELOG.md",
+    "changelog": "## v0.9.3 (2026-09-21)\n\n### Features\n\n- Ensure `rx.data_editor` image previews include Glide Data Grid's required carousel styles. ([#7081](https://github.com/reflex-dev/reflex/issues/7081))",
+    "prs": [
+      "https://github.com/reflex-dev/reflex/issues/7081"
+    ],
+    "status": "published",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "reflex-base>=0.9.0",
+      "reflex-components-core>=0.9.0"
+    ],
+    "files": [
+      {
+        "filename": "reflex_components_dataeditor-0.9.3-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/95/25/8d87e084c6f1585a32a70329b664a9bfe22de5db326e542a4771db070ebe/reflex_components_dataeditor-0.9.3-py3-none-any.whl",
+        "size": 10845,
+        "upload_time_iso_8601": "2026-09-22T00:50:38.316575Z",
+        "yanked": true,
+        "sha256": "d78abf4ce3b9c8006afab88fa404f09057454acf9471d983f6b9e7239c6c41c7"
+      },
+      {
+        "filename": "reflex_components_dataeditor-0.9.3.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/e8/50/1920d042463b5d107f53642f8a1e4cf6461939952a45a5be5c4c7ac30740/reflex_components_dataeditor-0.9.3.tar.gz",
+        "size": 8668,
+        "upload_time_iso_8601": "2026-09-22T00:50:39.256143Z",
+        "yanked": true,
+        "sha256": "7d1f76b86ed2f4944bf4a264292c6fa477e28ac3a7d337c080d75c8681eb0e5a"
+      }
+    ]
+  },
+  {
+    "package": "reflex-components-gridjs",
+    "version": "0.10.0a1",
+    "alpha": true,
+    "ref": "origin/r/pre-2026.10.05-37378928999",
+    "source_sha": "59c675abbf6ddc973770c28f9aab22fdde675848",
+    "path": "packages/reflex-components-gridjs/CHANGELOG.md",
+    "changelog": "## v0.10.0a1 (2026-10-05)\n\n### Bug Fixes\n\n- Require reflex-base 0.9.12 or newer so all imported rendering APIs are available. ([#7238](https://github.com/reflex-dev/reflex/issues/7238))",
+    "prs": [
+      "https://github.com/reflex-dev/reflex/issues/7238"
+    ],
+    "status": "published",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "reflex-base>=0.9.12"
+    ],
+    "files": [
+      {
+        "filename": "reflex_components_gridjs-0.10.0a1-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/55/82/2bcde9b6ce067ff2b431eb963075b5e1c90e07da67e1003de92502d44ba3/reflex_components_gridjs-0.10.0a1-py3-none-any.whl",
+        "size": 4328,
+        "upload_time_iso_8601": "2026-10-05T21:50:05.328961Z",
+        "yanked": false,
+        "sha256": "5e5a119cd8f44753fb3de85d1fc60a8dbfe21b64ec45aea84f16d84de71e056e",
+        "digest_matches": true,
+        "stub_count": 1,
+        "direct_urls": [],
+        "generated_artifacts": []
+      },
+      {
+        "filename": "reflex_components_gridjs-0.10.0a1.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/2c/72/5f5bb8c6834a409ae5b550a1eb27c7dd0f3c58d595459b1ac319bd5db930/reflex_components_gridjs-0.10.0a1.tar.gz",
+        "size": 3894,
+        "upload_time_iso_8601": "2026-10-05T21:50:06.245616Z",
+        "yanked": false,
+        "sha256": "e7a8707d7c95ab736bee26201527fb9a58d551636f7f0440ef5e069189be1ae9",
+        "digest_matches": true,
+        "stub_count": 1,
+        "direct_urls": [],
+        "generated_artifacts": []
+      }
+    ],
+    "stub_audit": {
+      "wheel_only": [],
+      "sdist_only": [],
+      "content_mismatch": [],
+      "wheel_names": [
+        "reflex_components_gridjs/datatable.pyi"
+      ]
+    }
+  },
+  {
+    "package": "reflex-components-lucide",
+    "version": "1.0.4",
+    "alpha": false,
+    "ref": "origin/r/pre-2026.10.05-37378928999",
+    "source_sha": "59c675abbf6ddc973770c28f9aab22fdde675848",
+    "path": "packages/reflex-components-lucide/CHANGELOG.md",
+    "changelog": "## v1.0.4 (2026-08-28)\n\n### Miscellaneous\n\n- Internal logging migrated from the legacy console helpers to standard python `logging` per-module loggers. ([#6864](https://github.com/reflex-dev/reflex/issues/6864))",
+    "prs": [
+      "https://github.com/reflex-dev/reflex/issues/6864"
+    ],
+    "status": "published",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "reflex-base>=0.9.0"
+    ],
+    "files": [
+      {
+        "filename": "reflex_components_lucide-1.0.4-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/c4/ab/07961483335fdafae39bb29a2e54df0294c4aa850e19e84ef8fc1850da67/reflex_components_lucide-1.0.4-py3-none-any.whl",
+        "size": 20523,
+        "upload_time_iso_8601": "2026-08-28T22:24:10.634507Z",
+        "yanked": false,
+        "sha256": "2688f75468f1fa97f81e3d54e8e709c76cff8d8bc9260eb08f75b2f2b1e4b2bd"
+      },
+      {
+        "filename": "reflex_components_lucide-1.0.4.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/67/ba/baeb32fe2ffd1d8fbf8ec56e4b296acec2ae012cdd293a6b7ce5f0c750c1/reflex_components_lucide-1.0.4.tar.gz",
+        "size": 20527,
+        "upload_time_iso_8601": "2026-08-28T22:24:11.639780Z",
+        "yanked": false,
+        "sha256": "216e1f48d01220ab2df259aa7d928698b0bd0812eaacfb782b876ec425247b0a"
+      }
+    ]
+  },
+  {
+    "package": "reflex-components-markdown",
+    "version": "0.10.0a1",
+    "alpha": true,
+    "ref": "origin/r/pre-2026.10.05-37378928999",
+    "source_sha": "59c675abbf6ddc973770c28f9aab22fdde675848",
+    "path": "packages/reflex-components-markdown/CHANGELOG.md",
+    "changelog": "## v0.10.0a1 (2026-10-05)\n\n### Bug Fixes\n\n- Require reflex-base 0.9.12 or newer so all imported rendering APIs are available. ([#7238](https://github.com/reflex-dev/reflex/issues/7238))",
+    "prs": [
+      "https://github.com/reflex-dev/reflex/issues/7238"
+    ],
+    "status": "published",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "reflex-base>=0.9.12",
+      "reflex-components-code>=0.9.0",
+      "reflex-components-core>=0.9.0",
+      "reflex-components-radix>=0.9.0"
+    ],
+    "files": [
+      {
+        "filename": "reflex_components_markdown-0.10.0a1-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/29/df/95f1ca853d3f5172875f0b69ba09688a596b045aace3b97daa1fc4d30ac6/reflex_components_markdown-0.10.0a1-py3-none-any.whl",
+        "size": 9830,
+        "upload_time_iso_8601": "2026-10-05T21:50:04.092232Z",
+        "yanked": false,
+        "sha256": "32e85d35ac99053995de3df106d4d774e80d58ffab79007c228c97413ce59ee7",
+        "digest_matches": true,
+        "stub_count": 1,
+        "direct_urls": [],
+        "generated_artifacts": []
+      },
+      {
+        "filename": "reflex_components_markdown-0.10.0a1.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/c9/02/28a80e835dfaddf088d71881b5c1537812c19d50db13f76168cfced528d2/reflex_components_markdown-0.10.0a1.tar.gz",
+        "size": 8653,
+        "upload_time_iso_8601": "2026-10-05T21:50:04.869278Z",
+        "yanked": false,
+        "sha256": "13ed4f903832161f7b99ae1270661fe5772a4d467093e0b0075d3c455d9aef7a",
+        "digest_matches": true,
+        "stub_count": 1,
+        "direct_urls": [],
+        "generated_artifacts": []
+      }
+    ],
+    "stub_audit": {
+      "wheel_only": [],
+      "sdist_only": [],
+      "content_mismatch": [],
+      "wheel_names": [
+        "reflex_components_markdown/markdown.pyi"
+      ]
+    }
+  },
+  {
+    "package": "reflex-components-moment",
+    "version": "0.10.0a1",
+    "alpha": true,
+    "ref": "origin/r/pre-2026.10.05-37378928999",
+    "source_sha": "59c675abbf6ddc973770c28f9aab22fdde675848",
+    "path": "packages/reflex-components-moment/CHANGELOG.md",
+    "changelog": "## v0.10.0a1 (2026-10-05)\n\n### Miscellaneous\n\n- Update Moment to 2.31.0, moment-timezone to 0.6.5, and moment-duration-format to 2.3.2. ([#7424](https://github.com/reflex-dev/reflex/issues/7424))",
+    "prs": [
+      "https://github.com/reflex-dev/reflex/issues/7424"
+    ],
+    "status": "published",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "reflex-base>=0.9.0"
+    ],
+    "files": [
+      {
+        "filename": "reflex_components_moment-0.10.0a1-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/7b/4a/8b74ca00617d65bd2b4ae9e301b922ccb61eca734cf866b0d01b4e14261c/reflex_components_moment-0.10.0a1-py3-none-any.whl",
+        "size": 5758,
+        "upload_time_iso_8601": "2026-10-05T21:50:05.640464Z",
+        "yanked": false,
+        "sha256": "d561cb1b39f288812696418bb5cd27bed7627d0e996b1996aa32845b9edc0173",
+        "digest_matches": true,
+        "stub_count": 1,
+        "direct_urls": [],
+        "generated_artifacts": []
+      },
+      {
+        "filename": "reflex_components_moment-0.10.0a1.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/33/d0/340b1bd84a5fe3af54b0102f50c1ec9d99e074e170e296bb535c80ee9299/reflex_components_moment-0.10.0a1.tar.gz",
+        "size": 5017,
+        "upload_time_iso_8601": "2026-10-05T21:50:06.473505Z",
+        "yanked": false,
+        "sha256": "68a80905048ea18ad2af854a65c52df77086e3c331848a4a08521852ad778bb6",
+        "digest_matches": true,
+        "stub_count": 1,
+        "direct_urls": [],
+        "generated_artifacts": []
+      }
+    ],
+    "stub_audit": {
+      "wheel_only": [],
+      "sdist_only": [],
+      "content_mismatch": [],
+      "wheel_names": [
+        "reflex_components_moment/moment.pyi"
+      ]
+    }
+  },
+  {
+    "package": "reflex-components-plotly",
+    "version": "0.10.0a1",
+    "alpha": true,
+    "ref": "origin/r/pre-2026.10.05-37378928999",
+    "source_sha": "59c675abbf6ddc973770c28f9aab22fdde675848",
+    "path": "packages/reflex-components-plotly/CHANGELOG.md",
+    "changelog": "## v0.10.0a1 (2026-10-05)\n\n### Bug Fixes\n\n- Normalize string Plotly layout titles to the `{\"title\": {\"text\": \"...\"}}` format required by Plotly.js. ([#7226](https://github.com/reflex-dev/reflex/issues/7226))",
+    "prs": [
+      "https://github.com/reflex-dev/reflex/issues/7226"
+    ],
+    "status": "published",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "reflex-base>=0.9.12",
+      "reflex-components-core>=0.9.0"
+    ],
+    "files": [
+      {
+        "filename": "reflex_components_plotly-0.10.0a1-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/5b/38/e18703a80fd97dccf0b7d9ad094f93331be05b921f110465778ffb130fe0/reflex_components_plotly-0.10.0a1-py3-none-any.whl",
+        "size": 8632,
+        "upload_time_iso_8601": "2026-10-05T21:50:09.393430Z",
+        "yanked": false,
+        "sha256": "c7f9ad89efe3f80c13a992dfe23434215428a91563780a6d3fa3e782631d2499",
+        "digest_matches": true,
+        "stub_count": 1,
+        "direct_urls": [],
+        "generated_artifacts": []
+      },
+      {
+        "filename": "reflex_components_plotly-0.10.0a1.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/91/8a/2e98d2721f6a5495f948d97a6a21acbd85a8440a34500af7cacb91f87092/reflex_components_plotly-0.10.0a1.tar.gz",
+        "size": 8146,
+        "upload_time_iso_8601": "2026-10-05T21:50:10.216139Z",
+        "yanked": false,
+        "sha256": "eccd1c3b3392701127b70978825dd83c47fb5ee10a40cfb8fd2aaf5b2c87e197",
+        "digest_matches": true,
+        "stub_count": 1,
+        "direct_urls": [],
+        "generated_artifacts": []
+      }
+    ],
+    "stub_audit": {
+      "wheel_only": [],
+      "sdist_only": [],
+      "content_mismatch": [],
+      "wheel_names": [
+        "reflex_components_plotly/plotly.pyi"
+      ]
+    }
+  },
+  {
+    "package": "reflex-components-radix",
+    "version": "0.10.0a1",
+    "alpha": true,
+    "ref": "origin/r/pre-2026.10.05-37378928999",
+    "source_sha": "59c675abbf6ddc973770c28f9aab22fdde675848",
+    "path": "packages/reflex-components-radix/CHANGELOG.md",
+    "changelog": "## v0.10.0a1 (2026-10-05)\n\n### Bug Fixes\n\n- Require reflex-base 0.9.12 or newer so all imported rendering APIs are available. ([#7238](https://github.com/reflex-dev/reflex/issues/7238))\n\n### Miscellaneous\n\n- Update the Radix slider and progress dependencies to 1.4.7 and 1.1.16. ([#7424](https://github.com/reflex-dev/reflex/issues/7424))",
+    "prs": [
+      "https://github.com/reflex-dev/reflex/issues/7238",
+      "https://github.com/reflex-dev/reflex/issues/7424"
+    ],
+    "status": "published",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "reflex-base>=0.9.12",
+      "reflex-components-core>=0.9.5",
+      "reflex-components-lucide>=0.9.0"
+    ],
+    "files": [
+      {
+        "filename": "reflex_components_radix-0.10.0a1-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/96/50/c91f63a4312b6a3c95f3e311151a07a4f2e5b9c8d5ad0e7b24812f801040/reflex_components_radix-0.10.0a1-py3-none-any.whl",
+        "size": 271954,
+        "upload_time_iso_8601": "2026-10-05T21:50:07.259630Z",
+        "yanked": false,
+        "sha256": "6d0a5dcebac4363800b369ff2a69c4379681d4b6e2c6b3f707c1a91987b22d5f",
+        "digest_matches": true,
+        "stub_count": 65,
+        "direct_urls": [],
+        "generated_artifacts": []
+      },
+      {
+        "filename": "reflex_components_radix-0.10.0a1.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/a8/bd/cb3ecd7149c3e29f31708476b50ea4ffb01b361d9920eee7b0fc0e97838d/reflex_components_radix-0.10.0a1.tar.gz",
+        "size": 115734,
+        "upload_time_iso_8601": "2026-10-05T21:50:08.511795Z",
+        "yanked": false,
+        "sha256": "401bfbf64870e409d1233fcb88d0f5216af764019773aa394da067968e9ed545",
+        "digest_matches": true,
+        "stub_count": 65,
+        "direct_urls": [],
+        "generated_artifacts": []
+      }
+    ],
+    "stub_audit": {
+      "wheel_only": [],
+      "sdist_only": [],
+      "content_mismatch": [],
+      "wheel_names": [
+        "reflex_components_radix/__init__.pyi",
+        "reflex_components_radix/primitives/__init__.pyi",
+        "reflex_components_radix/primitives/accordion.pyi",
+        "reflex_components_radix/primitives/base.pyi",
+        "reflex_components_radix/primitives/dialog.pyi",
+        "reflex_components_radix/primitives/drawer.pyi",
+        "reflex_components_radix/primitives/form.pyi",
+        "reflex_components_radix/primitives/progress.pyi",
+        "reflex_components_radix/primitives/slider.pyi",
+        "reflex_components_radix/themes/__init__.pyi",
+        "reflex_components_radix/themes/base.pyi",
+        "reflex_components_radix/themes/color_mode.pyi",
+        "reflex_components_radix/themes/components/__init__.pyi",
+        "reflex_components_radix/themes/components/alert_dialog.pyi",
+        "reflex_components_radix/themes/components/aspect_ratio.pyi",
+        "reflex_components_radix/themes/components/avatar.pyi",
+        "reflex_components_radix/themes/components/badge.pyi",
+        "reflex_components_radix/themes/components/button.pyi",
+        "reflex_components_radix/themes/components/callout.pyi",
+        "reflex_components_radix/themes/components/card.pyi",
+        "reflex_components_radix/themes/components/checkbox.pyi",
+        "reflex_components_radix/themes/components/checkbox_cards.pyi",
+        "reflex_components_radix/themes/components/checkbox_group.pyi",
+        "reflex_components_radix/themes/components/context_menu.pyi",
+        "reflex_components_radix/themes/components/data_list.pyi",
+        "reflex_components_radix/themes/components/dialog.pyi",
+        "reflex_components_radix/themes/components/dropdown_menu.pyi",
+        "reflex_components_radix/themes/components/hover_card.pyi",
+        "reflex_components_radix/themes/components/icon_button.pyi",
+        "reflex_components_radix/themes/components/inset.pyi",
+        "reflex_components_radix/themes/components/popover.pyi",
+        "reflex_components_radix/themes/components/progress.pyi",
+        "reflex_components_radix/themes/components/radio.pyi",
+        "reflex_components_radix/themes/components/radio_cards.pyi",
+        "reflex_components_radix/themes/components/radio_group.pyi",
+        "reflex_components_radix/themes/components/scroll_area.pyi",
+        "reflex_components_radix/themes/components/segmented_control.pyi",
+        "reflex_components_radix/themes/components/select.pyi",
+        "reflex_components_radix/themes/components/separator.pyi",
+        "reflex_components_radix/themes/components/skeleton.pyi",
+        "reflex_components_radix/themes/components/slider.pyi",
+        "reflex_components_radix/themes/components/spinner.pyi",
+        "reflex_components_radix/themes/components/switch.pyi",
+        "reflex_components_radix/themes/components/table.pyi",
+        "reflex_components_radix/themes/components/tabs.pyi",
+        "reflex_components_radix/themes/components/text_area.pyi",
+        "reflex_components_radix/themes/components/text_field.pyi",
+        "reflex_components_radix/themes/components/tooltip.pyi",
+        "reflex_components_radix/themes/layout/__init__.pyi",
+        "reflex_components_radix/themes/layout/base.pyi",
+        "reflex_components_radix/themes/layout/box.pyi",
+        "reflex_components_radix/themes/layout/center.pyi",
+        "reflex_components_radix/themes/layout/container.pyi",
+        "reflex_components_radix/themes/layout/flex.pyi",
+        "reflex_components_radix/themes/layout/grid.pyi",
+        "reflex_components_radix/themes/layout/list.pyi",
+        "reflex_components_radix/themes/layout/section.pyi",
+        "reflex_components_radix/themes/layout/spacer.pyi",
+        "reflex_components_radix/themes/layout/stack.pyi",
+        "reflex_components_radix/themes/typography/__init__.pyi",
+        "reflex_components_radix/themes/typography/blockquote.pyi",
+        "reflex_components_radix/themes/typography/code.pyi",
+        "reflex_components_radix/themes/typography/heading.pyi",
+        "reflex_components_radix/themes/typography/link.pyi",
+        "reflex_components_radix/themes/typography/text.pyi"
+      ]
+    }
+  },
+  {
+    "package": "reflex-components-react-player",
+    "version": "0.9.2",
+    "alpha": false,
+    "ref": "origin/r/pre-2026.10.05-37378928999",
+    "source_sha": "59c675abbf6ddc973770c28f9aab22fdde675848",
+    "path": "packages/reflex-components-react-player/CHANGELOG.md",
+    "changelog": "## v0.9.2 (2026-08-28)\n\n### Miscellaneous\n\n- Internal logging migrated from the legacy console helpers to standard python `logging` per-module loggers. ([#6864](https://github.com/reflex-dev/reflex/issues/6864))",
+    "prs": [
+      "https://github.com/reflex-dev/reflex/issues/6864"
+    ],
+    "status": "published",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "reflex-base>=0.9.0",
+      "reflex-components-core>=0.9.0"
+    ],
+    "files": [
+      {
+        "filename": "reflex_components_react_player-0.9.2-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/26/c9/ac3e83ae5c4e0e5b70fba01070fac6ae197513e0e8359a1f48979ed8d5a4/reflex_components_react_player-0.9.2-py3-none-any.whl",
+        "size": 11326,
+        "upload_time_iso_8601": "2026-08-28T22:24:11.590101Z",
+        "yanked": false,
+        "sha256": "3e2d234759169d4f3b65ca3eafef1452cfce51ca190b0b318eb4129acf295a72"
+      },
+      {
+        "filename": "reflex_components_react_player-0.9.2.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/59/b5/a5c616375a4f9ef4f96240c578888bec3a95cc1c4c11cc1c0127e497df9f/reflex_components_react_player-0.9.2.tar.gz",
+        "size": 5344,
+        "upload_time_iso_8601": "2026-08-28T22:24:12.445029Z",
+        "yanked": false,
+        "sha256": "f4790a60d92412dc439c99f567525da589318be6ad80f8d5616b8fbde71e83e3"
+      }
+    ]
+  },
+  {
+    "package": "reflex-components-recharts",
+    "version": "0.10.0a1",
+    "alpha": true,
+    "ref": "origin/r/pre-2026.10.05-37378928999",
+    "source_sha": "59c675abbf6ddc973770c28f9aab22fdde675848",
+    "path": "packages/reflex-components-recharts/CHANGELOG.md",
+    "changelog": "## v0.10.0a1 (2026-10-05)\n\n### Bug Fixes\n\n- Require reflex-base 0.9.12 or newer so all imported rendering APIs are available. ([#7238](https://github.com/reflex-dev/reflex/issues/7238))\n- Allow Recharts axis tick formatters to use Reflex function vars. ([#7366](https://github.com/reflex-dev/reflex/issues/7366))",
+    "prs": [
+      "https://github.com/reflex-dev/reflex/issues/7238",
+      "https://github.com/reflex-dev/reflex/issues/7366"
+    ],
+    "status": "published",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "reflex-base>=0.9.12",
+      "reflex-components-core>=0.9.0"
+    ],
+    "files": [
+      {
+        "filename": "reflex_components_recharts-0.10.0a1-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/ab/a5/1485f7cfd8027ce25fc11dbf1dc861190a057a3268f85121b98698d4f4cd/reflex_components_recharts-0.10.0a1-py3-none-any.whl",
+        "size": 48294,
+        "upload_time_iso_8601": "2026-10-05T21:50:07.994659Z",
+        "yanked": false,
+        "sha256": "72aea8982c946672123bc705b28d7de65862d3baa0452b50f7f87b291eb9eb9e",
+        "digest_matches": true,
+        "stub_count": 6,
+        "direct_urls": [],
+        "generated_artifacts": []
+      },
+      {
+        "filename": "reflex_components_recharts-0.10.0a1.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/9c/2a/7c21dc099c8dfaf6fd2cfce875157faa4de90ef0e41c20b8c82750e28de3/reflex_components_recharts-0.10.0a1.tar.gz",
+        "size": 37860,
+        "upload_time_iso_8601": "2026-10-05T21:50:08.990914Z",
+        "yanked": false,
+        "sha256": "d50eb5bfdaa1aa4de6af5ab1e91654ee44491b1165be8ee6719ea334e455ff5f",
+        "digest_matches": true,
+        "stub_count": 6,
+        "direct_urls": [],
+        "generated_artifacts": []
+      }
+    ],
+    "stub_audit": {
+      "wheel_only": [],
+      "sdist_only": [],
+      "content_mismatch": [],
+      "wheel_names": [
+        "reflex_components_recharts/__init__.pyi",
+        "reflex_components_recharts/cartesian.pyi",
+        "reflex_components_recharts/charts.pyi",
+        "reflex_components_recharts/general.pyi",
+        "reflex_components_recharts/polar.pyi",
+        "reflex_components_recharts/recharts.pyi"
+      ]
+    }
+  },
+  {
+    "package": "reflex-components-sonner",
+    "version": "0.9.4",
+    "alpha": false,
+    "ref": "origin/r/pre-2026.10.05-37378928999",
+    "source_sha": "59c675abbf6ddc973770c28f9aab22fdde675848",
+    "path": "packages/reflex-components-sonner/CHANGELOG.md",
+    "changelog": "## v0.9.4 (2026-09-21)\n\n### Bug Fixes\n\n- Fix `rx.toast` `action` and `cancel` buttons not triggering their `on_click` events when the toast is fired from a frontend event trigger. ([#7157](https://github.com/reflex-dev/reflex/issues/7157))",
+    "prs": [
+      "https://github.com/reflex-dev/reflex/issues/7157"
+    ],
+    "status": "published",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "reflex-base>=0.9.0",
+      "reflex-components-lucide>=0.9.0"
+    ],
+    "files": [
+      {
+        "filename": "reflex_components_sonner-0.9.4-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/17/35/b569d0381faa4439c76d8ff81a8feea369b111d3fa1878a86497fafa2820/reflex_components_sonner-0.9.4-py3-none-any.whl",
+        "size": 7440,
+        "upload_time_iso_8601": "2026-09-22T00:50:35.385490Z",
+        "yanked": false,
+        "sha256": "1285edbb70e565b44aa3b5052ebe9c4a5384f850ea1b2f7286a295a6ca8a1b66"
+      },
+      {
+        "filename": "reflex_components_sonner-0.9.4.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/6f/c8/8178844df09fab4e9380d31f082dc91fc4519003e32b3a744da1437bfd18/reflex_components_sonner-0.9.4.tar.gz",
+        "size": 6144,
+        "upload_time_iso_8601": "2026-09-22T00:50:36.313046Z",
+        "yanked": false,
+        "sha256": "fc4ca7f9bbe6bf64e4b5b2eb8b95087830b5d39d7b002b9c5c7e7a028e0a1893"
+      }
+    ]
+  },
+  {
+    "package": "reflex-docgen",
+    "version": "0.10.0a1",
+    "alpha": true,
+    "ref": "origin/r/pre-2026.10.05-37378928999",
+    "source_sha": "59c675abbf6ddc973770c28f9aab22fdde675848",
+    "path": "packages/reflex-docgen/CHANGELOG.md",
+    "changelog": "## v0.10.0a1 (2026-10-05)\n\n### Bug Fixes\n\n- Recognize YAML frontmatter after a UTF-8 BOM or leading whitespace and with CRLF line endings, keeping metadata out of rendered page content and tables of contents. ([#7238](https://github.com/reflex-dev/reflex/issues/7238))",
+    "prs": [
+      "https://github.com/reflex-dev/reflex/issues/7238"
+    ],
+    "status": "published",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "griffelib>=2.0.1",
+      "mistletoe>=1.4.0",
+      "pyyaml>=6.0.3",
+      "reflex>=0.9.0",
+      "typing-inspection>=0.4.2"
+    ],
+    "files": [
+      {
+        "filename": "reflex_docgen-0.10.0a1-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/c8/03/d451ac7c7e763ff17cee0166d694bdec4eea488443b3dd687320182418e4/reflex_docgen-0.10.0a1-py3-none-any.whl",
+        "size": 27798,
+        "upload_time_iso_8601": "2026-10-05T21:50:03.262811Z",
+        "yanked": false,
+        "sha256": "ae31bc33181a5b352f945f27802662690c78894ca85e9dcf8246618b0bca201c",
+        "digest_matches": true,
+        "stub_count": 0,
+        "direct_urls": [],
+        "generated_artifacts": []
+      },
+      {
+        "filename": "reflex_docgen-0.10.0a1.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/89/16/551636cd3cdcbe34bb02856f081be4ca4427e1688327640be80db2838997/reflex_docgen-0.10.0a1.tar.gz",
+        "size": 23173,
+        "upload_time_iso_8601": "2026-10-05T21:50:04.452823Z",
+        "yanked": false,
+        "sha256": "4b2dd60074d6e315cb944f80357e1afb54550d36b4fee20ecf1c65e34c09ef98",
+        "digest_matches": true,
+        "stub_count": 0,
+        "direct_urls": [],
+        "generated_artifacts": []
+      }
+    ],
+    "stub_audit": {
+      "wheel_only": [],
+      "sdist_only": [],
+      "content_mismatch": [],
+      "wheel_names": []
+    }
+  },
+  {
+    "package": "reflex-hosting-cli",
+    "version": "0.1.73a1",
+    "alpha": true,
+    "ref": "origin/r/pre-2026.10.05-37379302664",
+    "source_sha": "24aaf63286f1a5f4aa1316e1cf0869e71c68b160",
+    "path": "packages/reflex-hosting-cli/CHANGELOG.md",
+    "changelog": "## v0.1.73a1 (2026-10-05)\n\n### Breaking Changes\n\n- Some `reflex cloud` commands changed what they report. A refused request now exits non-zero rather than printing a `\"... failed: ...\"` line and exiting 0, and `--json` writes no document on that path; `apps stop`, `apps start` and `apps delete` are the ones most likely to be scripted against, and they now report their own outcome rather than echoing the server's sentence. `vmtypes` and `regions` answered a failed request with an empty listing and exit 0, which a script could not tell from a control plane that offers neither; they exit non-zero now. `apps history --json` replaces `hostname` with the deployment's `url`, reports `vm type` as the machine's name rather than an object, and reports `timestamp` as an ISO 8601 string with an offset; `apps inspect --json` drops `hostname` from `latest_deployment` the same way, the URL carrying it already. `create-token --json` replaces `expires_in_days` with `expires_at`, an ISO 8601 string or `null`, carrying the expiry the server applied rather than the duration that was asked for. `apps logs` drops its inert `--cursor` option and its `--json` document returns every line in the window rather than one page. `project role-permissions` lists permission names rather than objects. `reflex deploy` now requires a control plane that signs upload URLs; the multipart fallback for older ones is gone, and with it the \"payload is too large (over 100MB)\" hint, which only that path could produce. And `apps status --watch --json` reports `\"success\": null` when the watch stopped before the deployment ended -- it is still running, and the command did not see how it finished -- rather than answering `true` or `false` for something it does not know. ([#7207](https://github.com/reflex-dev/reflex/issues/7207))\n\n### Bug Fixes\n\n- `reflex cloud` reports a refusal as the sentence the API wrote rather than a message of its own, and an expired token now says to run `reflex login` wherever it turns up \u2014 not only where a command started by authenticating. ([#7207](https://github.com/reflex-dev/reflex/issues/7207))\n- `reflex cloud apps delete` now exits non-zero when the app ID is not found. ([#7295](https://github.com/reflex-dev/reflex/issues/7295))\n- With `--no-interactive`, a rejected access token now fails right away with the same message `reflex cloud whoami` gives, instead of starting the browser login. ([#7298](https://github.com/reflex-dev/reflex/issues/7298))\n- Preserve a different stored access token when authentication rejects an outdated or explicitly supplied token. ([#7321](https://github.com/reflex-dev/reflex/issues/7321))\n- `reflex deploy` now consistently shows the \"Built with Reflex\" badge on apps deployed on the free tier, including apps built with earlier reflex releases. Paid plans can still hide it with `show_built_with_reflex=False`. ([#7333](https://github.com/reflex-dev/reflex/issues/7333))\n- `reflex cloud apps list`, `apps history` and `apps inspect` keep app names and app and deployment IDs whole on one line, so you can copy them from a normal-width terminal. `apps list` and `apps history` show fewer columns; `--json` still returns every field. `apps inspect` shows one field per row. Tables no longer draw cell borders. ([#7351](https://github.com/reflex-dev/reflex/issues/7351))\n- `reflex cloud secrets update` now prints a success line naming the keys it set and whether the app is rebooting, like `secrets delete` already did. Only key names are printed; values are never logged. ([#7352](https://github.com/reflex-dev/reflex/issues/7352))\n- Fail `reflex deploy` before building when an explicitly requested project does not exist or does not own the selected app. Accept equivalent UUID spellings, including uppercase and unhyphenated project IDs. ([#7355](https://github.com/reflex-dev/reflex/issues/7355))\n\n### Miscellaneous\n\n- `reflex-hosting-cli` now talks to Reflex Build through `reflex-build-sdk` rather than its own HTTP layer, so every command shares the SDK's retries, timeouts and typed errors. While the SDK is pre-1.0, where any release may change its API, the requirement is capped to the single patch line the CLI was built against, so upgrade `reflex-hosting-cli` to move to a newer SDK rather than upgrading the SDK on its own. ([#7207](https://github.com/reflex-dev/reflex/issues/7207))",
+    "prs": [
+      "https://github.com/reflex-dev/reflex/issues/7207",
+      "https://github.com/reflex-dev/reflex/issues/7295",
+      "https://github.com/reflex-dev/reflex/issues/7298",
+      "https://github.com/reflex-dev/reflex/issues/7321",
+      "https://github.com/reflex-dev/reflex/issues/7333",
+      "https://github.com/reflex-dev/reflex/issues/7351",
+      "https://github.com/reflex-dev/reflex/issues/7352",
+      "https://github.com/reflex-dev/reflex/issues/7355"
+    ],
+    "status": "published",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "click>=8.2",
+      "httpx<1.0,>=0.25.1",
+      "packaging>=24.2",
+      "platformdirs<5.0,>=3.10.0",
+      "reflex-build-sdk[httpx]!=0.0.6,<0.0.6.post,>=0.0.5",
+      "rich<16,>=13"
+    ],
+    "files": [
+      {
+        "filename": "reflex_hosting_cli-0.1.73a1-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/6d/c2/0b655a8df227f59f6a4175d8e7b91b52b4252cdf8e67abb4dccee56750f9/reflex_hosting_cli-0.1.73a1-py3-none-any.whl",
+        "size": 88844,
+        "upload_time_iso_8601": "2026-10-05T22:13:19.032129Z",
+        "yanked": false,
+        "sha256": "4ad81533a194b6692c26f35fa1f76844ecf24652f2aedc99bc3edfe41c2c0281",
+        "digest_matches": true,
+        "stub_count": 0,
+        "direct_urls": [],
+        "generated_artifacts": []
+      },
+      {
+        "filename": "reflex_hosting_cli-0.1.73a1.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/30/26/f4290e1698c039e1e3abeacb860947b0eee77d943027283bb68e794587a1/reflex_hosting_cli-0.1.73a1.tar.gz",
+        "size": 79503,
+        "upload_time_iso_8601": "2026-10-05T22:13:20.255396Z",
+        "yanked": false,
+        "sha256": "789f352a8cae2f25e8e00bf3c38092631a62f0da42878312a1a1151969d1e9d3",
+        "digest_matches": true,
+        "stub_count": 0,
+        "direct_urls": [],
+        "generated_artifacts": []
+      }
+    ],
+    "stub_audit": {
+      "wheel_only": [],
+      "sdist_only": [],
+      "content_mismatch": [],
+      "wheel_names": []
+    }
+  },
+  {
+    "package": "reflex-otel",
+    "version": "0.1.0",
+    "alpha": false,
+    "ref": "origin/r/pre-2026.10.05-37378928999",
+    "source_sha": "59c675abbf6ddc973770c28f9aab22fdde675848",
+    "path": "packages/reflex-otel/CHANGELOG.md",
+    "changelog": "## v0.1.0 (2026-09-11)\n\n### Features\n\n- Add the `reflex-otel` package: an OpenTelemetry instrumentor that turns on the framework's built-in trace points and metrics (one span per event handler run, chained events parented under the enqueuing span, frontend `traceparent` propagation, event/state/websocket metrics, compile spans) and wraps the ASGI app in the OpenTelemetry ASGI middleware. `OtelPlugin(endpoint=...)` adds browser tracing (a `traceparent` on sampled events and uploads, web vitals, React render timing) to the compiled frontend; without an endpoint nothing is exported. Failed browser exports (for example a collector without CORS) are reported through the app's `frontend_exception_handler`. ([#6227](https://github.com/reflex-dev/reflex/issues/6227))\n\n### Documentation\n\n- Correct the environment-variable setup example to select HTTP/protobuf for the installed OTLP HTTP exporter. ([#7086](https://github.com/reflex-dev/reflex/issues/7086))",
+    "prs": [
+      "https://github.com/reflex-dev/reflex/issues/6227",
+      "https://github.com/reflex-dev/reflex/issues/7086"
+    ],
+    "status": "published",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "opentelemetry-api<2.0,>=1.30.0",
+      "opentelemetry-instrumentation-asgi<1.0,>=0.49b0",
+      "opentelemetry-instrumentation<1.0,>=0.49b0",
+      "reflex-base>=0.9.11"
+    ],
+    "files": [
+      {
+        "filename": "reflex_otel-0.1.0-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/11/71/e06f8ff195f7eb762fd7ae1719bc06cc371700983083c59fb51055d1d4cf/reflex_otel-0.1.0-py3-none-any.whl",
+        "size": 14190,
+        "upload_time_iso_8601": "2026-09-11T20:42:54.200417Z",
+        "yanked": false,
+        "sha256": "a98fd362026c2901280fc2bb85f31a7fd11bead11c06de1ca0a83b2b44c13f2a"
+      },
+      {
+        "filename": "reflex_otel-0.1.0.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/72/53/30b2ad67c63a6f2e3f20e50a0b330ba8c9fd6e9d7aa3efa4549584f0133c/reflex_otel-0.1.0.tar.gz",
+        "size": 12277,
+        "upload_time_iso_8601": "2026-09-11T20:42:55.218215Z",
+        "yanked": false,
+        "sha256": "7a51dca2331ae046d620e626b45045ab678498ce6585f9977a8b05432b757e7b"
+      }
+    ]
+  },
+  {
+    "package": "reflex-release",
+    "version": "0.1.2a1",
+    "alpha": true,
+    "ref": "origin/r/pre-2026.10.05-37379302664",
+    "source_sha": "24aaf63286f1a5f4aa1316e1cf0869e71c68b160",
+    "path": "packages/reflex-release/CHANGELOG.md",
+    "changelog": "## v0.1.2a1 (2026-10-05)\n\n### Bug Fixes\n\n- Dispatch release forms keep their per-package checkboxes up to 24 packages, rather than falling back to a free-text field past 19. `workflow_dispatch` has accepted 25 inputs since December 2025. ([#7288](https://github.com/reflex-dev/reflex/issues/7288))",
+    "prs": [
+      "https://github.com/reflex-dev/reflex/issues/7288"
+    ],
+    "status": "published",
+    "requires_python": ">=3.10",
+    "requires_dist": [
+      "packaging<27,>=24.2",
+      "tomli>=2.0.1; python_version < \"3.11\"",
+      "towncrier<26,>=24.8.0",
+      "tzdata>=2024.1; sys_platform == \"win32\""
+    ],
+    "files": [
+      {
+        "filename": "reflex_release-0.1.2a1-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/b1/24/03ad0d5cafcba2b55b1b381f6dc6ebb76caa659a0945c198f3a834c2a5ef/reflex_release-0.1.2a1-py3-none-any.whl",
+        "size": 101663,
+        "upload_time_iso_8601": "2026-10-05T22:13:22.176651Z",
+        "yanked": false,
+        "sha256": "c50eb7e221a3e5c31bfb8eb1cd527bbfe1cc696f7a7a9974874b84272e0a3e66",
+        "digest_matches": true,
+        "stub_count": 0,
+        "direct_urls": [],
+        "generated_artifacts": []
+      },
+      {
+        "filename": "reflex_release-0.1.2a1.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/18/ed/4512065291d7e1ca8421785d98a8e55349b4198848b7b3500d682ab66219/reflex_release-0.1.2a1.tar.gz",
+        "size": 109089,
+        "upload_time_iso_8601": "2026-10-05T22:13:23.586866Z",
+        "yanked": false,
+        "sha256": "c0b7ffb0571941dfb7c8498a326182b5bcefe475f86759552c4a280f4be5a915",
+        "digest_matches": true,
+        "stub_count": 0,
+        "direct_urls": [],
+        "generated_artifacts": []
+      }
+    ],
+    "stub_audit": {
+      "wheel_only": [],
+      "sdist_only": [],
+      "content_mismatch": [],
+      "wheel_names": []
+    }
+  },
+  {
+    "package": "reflex-enterprise",
+    "version": "0.9.7a2",
+    "alpha": true,
+    "ref": "r/pre-2026.10.05",
+    "path": "CHANGELOG.md",
+    "changelog": "User-specified enterprise release; see enterprise report.",
+    "prs": [],
+    "status": "published",
+    "requires_python": "<4.0,>=3.10",
+    "requires_dist": [
+      "asgiproxy>=0.2.0",
+      "httpx",
+      "joserfc",
+      "psutil",
+      "reflex[db]>=0.9.6",
+      "mcp<2,>=1.14.0; extra == \"mcp\"",
+      "pytest>=7; extra == \"testing\""
+    ],
+    "files": [
+      {
+        "filename": "reflex_enterprise-0.9.7a2-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/73/19/c93511fd23950c365052acf686b1a8abe9c7fe078363136e5a81d498deee/reflex_enterprise-0.9.7a2-py3-none-any.whl",
+        "size": 469070,
+        "upload_time_iso_8601": "2026-10-05T22:36:07.751434Z",
+        "yanked": false,
+        "sha256": "1029cf42a12f47d9fa836be4ba47f0a151e830b2c466f0195089029d28dc35df",
+        "digest_matches": true,
+        "stub_count": 39,
+        "direct_urls": [],
+        "generated_artifacts": []
+      },
+      {
+        "filename": "reflex_enterprise-0.9.7a2.tar.gz",
+        "url": "https://files.pythonhosted.org/packages/ed/c1/73528cc792bc9d23455237a2789634f37674785700d99582bbcb55df2d4f/reflex_enterprise-0.9.7a2.tar.gz",
+        "size": 905490,
+        "upload_time_iso_8601": "2026-10-05T22:36:09.177119Z",
+        "yanked": false,
+        "sha256": "5f0b42e6c90fc1999aed9b4e3e99c98c37d58a172fc3d0908772af2f2ae25c42",
+        "digest_matches": true,
+        "stub_count": 39,
+        "direct_urls": [],
+        "generated_artifacts": []
+      }
+    ],
+    "stub_audit": {
+      "wheel_only": [],
+      "sdist_only": [],
+      "content_mismatch": [],
+      "wheel_names": [
+        "reflex_enterprise/__init__.pyi",
+        "reflex_enterprise/components/__init__.pyi",
+        "reflex_enterprise/components/ag_charts/base.pyi",
+        "reflex_enterprise/components/ag_grid/aggrid.pyi",
+        "reflex_enterprise/components/ag_grid/handlers.pyi",
+        "reflex_enterprise/components/ag_grid/resource.pyi",
+        "reflex_enterprise/components/dnd/dnd.pyi",
+        "reflex_enterprise/components/flow/flow.pyi",
+        "reflex_enterprise/components/highcharts/base.pyi",
+        "reflex_enterprise/components/highcharts/modules.pyi",
+        "reflex_enterprise/components/highcharts/series.pyi",
+        "reflex_enterprise/components/mantine/__init__.pyi",
+        "reflex_enterprise/components/mantine/autocomplete.pyi",
+        "reflex_enterprise/components/mantine/base.pyi",
+        "reflex_enterprise/components/mantine/collapse.pyi",
+        "reflex_enterprise/components/mantine/combobox.pyi",
+        "reflex_enterprise/components/mantine/dates.pyi",
+        "reflex_enterprise/components/mantine/json_input.pyi",
+        "reflex_enterprise/components/mantine/loading_overlay.pyi",
+        "reflex_enterprise/components/mantine/multi_select.pyi",
+        "reflex_enterprise/components/mantine/nprogress.pyi",
+        "reflex_enterprise/components/mantine/number_formatter.pyi",
+        "reflex_enterprise/components/mantine/pill.pyi",
+        "reflex_enterprise/components/mantine/pills_input.pyi",
+        "reflex_enterprise/components/mantine/ring_progress.pyi",
+        "reflex_enterprise/components/mantine/semi_circle_progress.pyi",
+        "reflex_enterprise/components/mantine/spoiler.pyi",
+        "reflex_enterprise/components/mantine/tags_input.pyi",
+        "reflex_enterprise/components/mantine/timeline.pyi",
+        "reflex_enterprise/components/mantine/tree.pyi",
+        "reflex_enterprise/components/map/base.pyi",
+        "reflex_enterprise/components/map/controls.pyi",
+        "reflex_enterprise/components/map/map_consumer.pyi",
+        "reflex_enterprise/components/map/map_container.pyi",
+        "reflex_enterprise/components/map/marker.pyi",
+        "reflex_enterprise/components/map/popup.pyi",
+        "reflex_enterprise/components/map/tile_layer.pyi",
+        "reflex_enterprise/components/map/tooltip.pyi",
+        "reflex_enterprise/components/map/vectors.pyi"
+      ]
+    }
+  }
+]

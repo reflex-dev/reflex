@@ -1,0 +1,21 @@
+[
+  {
+    "path": "/",
+    "status": 200,
+    "content_encoding": null
+  },
+  {
+    "path": "/articles/7",
+    "status": 200,
+    "content_encoding": null
+  },
+  {
+    "path": "/articles/7?self=1",
+    "status": 200,
+    "content_encoding": null
+  },
+  {
+    "path": "/truly-missing",
+    "status": 404
+  }
+]

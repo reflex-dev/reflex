@@ -1,0 +1,10 @@
+{
+  "version": "0.10.0a1",
+  "extra_states": 1000,
+  "url": "http://localhost:3133/articles/7?self=1",
+  "observation_method": "Independent Codex in-app browser through CUA, tab 2",
+  "accessibility": "Heading Article 7; Home link; Built with Reflex badge.",
+  "navigation": "Clicked Home; Runtime QA rendered with counter 0 and Increment button.",
+  "event": "Clicked Increment; counter changed to 1.",
+  "browser_errors": []
+}

@@ -1,0 +1,178 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='auth', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3132, frontend_path='', 
+backend_port=8132, backend_path='', api_url='http://localhost:8132', 
+deploy_url='http://localhost:3132', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'telemetry_enabled', 'loglevel', 
+'backend_port', 'frontend_port', 'plugins'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[AuthPlugin(), MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: [PosixPath('/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-test-20261005/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: /Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: ['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun']
+Debug: Using package executer at: [['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='auth', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3132, frontend_path='', 
+backend_port=8132, backend_path='', api_url='http://localhost:8132', 
+deploy_url='http://localhost:3132', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'telemetry_enabled', 'loglevel', 
+'backend_port', 'frontend_port', 'plugins'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[AuthPlugin(), MCPPlugin(), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: [PosixPath('/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-test-20261005/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: /Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: ['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun']
+Debug: Using package executer at: [['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+────────────────────────────── Initializing auth ───────────────────────────────
+Debug: Creating /Users/masenf/Library/Application Support/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /Users/masenf/Library/Application Support/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/reflex
+_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterpr
+ise/apps/auth/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 25916101225814233818217244213236853216.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.066 seconds
+Debug: Latest version of reflex: 0.9.12
+Debug: Creating .gitignore
+Debug: Appending reflex== to requirements.txt
+Success: Initialized auth. Install dependencies from `requirements.txt` with `uv
+pip install -r requirements.txt` (or your preferred installer) before running 
+`uv run reflex run`.
+Debug: Resetting disk state manager.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3132 is in use.
+Debug: Checking if Frontend port: 3132 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Frontend port: 3132 is not in use.
+Debug: Checking if Backend port: 8132 is in use.
+Debug: Checking if Backend port: 8132 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Backend port: 8132 is not in use.
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+Debug: [timing] Compile pages: 0.05s
+Traceback (most recent call last):
+  File "/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 427, in compile_or_validate_app
+    get_compiled_app(
+  File "/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 339, in get_compiled_app
+    app._compile(
+  File "/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/reflex/app.py", line 1734, in _compile
+    compiler.compile_app(
+  File "/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 1324, in compile_app
+    compile_ctx.compile(
+  File "/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 716, in compile
+    page_ctx = self.hooks.eval_page(
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 268, in eval_page
+    result = hook_impl(page_fn, page=page, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/reflex/compiler/plugins/builtin.py", line 42, in eval_page
+    component = compiler.into_component(page_fn)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 969, in into_component
+    component_called = component()
+                       ^^^^^^^^^^^
+  File "/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/auth/auth.py", line 115, in index
+    return surfaces()
+           ^^^^^^^^^^
+  File "/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/auth/auth.py", line 97, in surfaces
+    rx.text(FlowState.public_count, id="count"),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/reflex_components_radix/themes/base.py", line 122, in create
+    component = super().create(*children, **props)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/reflex_base/components/component.py", line 1304, in create
+    cls._validate_children(children)
+  File "/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/reflex_base/components/component.py", line 1283, in _validate_children
+    raise ChildrenTypeError(component=cls.__name__, child=child)
+reflex_base.utils.exceptions.ChildrenTypeError: Component Text received child Field(default=0, is_var=True, annotated_type=<class 'int'>) of type <class 'reflex_enterprise.auth.decorators._AuthField'>. Accepted types are other components, state vars, or primitive Python types (dict excluded).
+Happened while evaluating page 'index'

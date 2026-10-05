@@ -1,0 +1,152 @@
+{
+  "python": "/private/tmp/reflex-pre-20261005-root/bin/python",
+  "reflex": "/private/tmp/reflex-pre-20261005-root/lib/python3.12/site-packages/reflex/__init__.py",
+  "version": "0.10.0a1",
+  "cases": [
+    {
+      "fields": "    created: datetime.datetime = Field(default_factory=datetime.datetime.now)\n    score: int = Field(default=7)",
+      "commands": [
+        {
+          "args": [
+            "init"
+          ],
+          "returncode": 0,
+          "stdout": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by \ndefault, but not explicitly added to the config. If you want to use it, please \nadd it to the `plugins` list in your config inside of `rxconfig.py`. To disable \nthis plugin, add `SitemapPlugin` to the `disable_plugins` list.\nDeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly \nuse database ORM layer, like sqlalchemy or SQLModel. It will be completely \nremoved in 1.0.0. \n(/private/tmp/reflex-pre-20261005-root/lib/python3.12/site-packages/pydantic/_in\nternal/_model_construction.py:133)\nWarning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by \ndefault, but not explicitly added to the config. If you want to use it, please \nadd it to the `plugins` list in your config inside of `rxconfig.py`. To disable \nthis plugin, add `SitemapPlugin` to the `disable_plugins` list.\nCreating directory /private/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-migrations-z_9hx09_/datetime/alembic ...  done\nCreating directory /private/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-migrations-z_9hx09_/datetime/alembic/versions ...  done\nGenerating /private/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-migrations-z_9hx09_/datetime/alembic/script.py.mako ...  done\nGenerating /private/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-migrations-z_9hx09_/datetime/alembic/env.py ...  done\nGenerating /private/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-migrations-z_9hx09_/datetime/alembic/README ...  done\nGenerating /private/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-migrations-z_9hx09_/datetime/alembic.ini ...  done\nPlease edit configuration/connection/logging settings in /private/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-migrations-z_9hx09_/datetime/alembic.ini before proceeding.\nGenerating /private/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-migrations-z_9hx09_/datetime/alembic/versions/c0487f1ac118_.py ...  done\n",
+          "stderr": "WARN `--no-project` was provided, but no project was found\n"
+        },
+        {
+          "args": [
+            "makemigrations",
+            "--message",
+            "add-callable-defaults"
+          ],
+          "returncode": 0,
+          "stdout": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by \ndefault, but not explicitly added to the config. If you want to use it, please \nadd it to the `plugins` list in your config inside of `rxconfig.py`. To disable \nthis plugin, add `SitemapPlugin` to the `disable_plugins` list.\nDeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly \nuse database ORM layer, like sqlalchemy or SQLModel. It will be completely \nremoved in 1.0.0. \n(/private/tmp/reflex-pre-20261005-root/lib/python3.12/site-packages/pydantic/_in\nternal/_model_construction.py:133)\nWarning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by \ndefault, but not explicitly added to the config. If you want to use it, please \nadd it to the `plugins` list in your config inside of `rxconfig.py`. To disable \nthis plugin, add `SitemapPlugin` to the `disable_plugins` list.\nGenerating /private/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-migrations-z_9hx09_/datetime/alembic/versions/a7d9632d25a2_add_callable_defaults.py ...  done\n",
+          "stderr": "WARN `--no-project` was provided, but no project was found\n"
+        },
+        {
+          "args": [
+            "migrate"
+          ],
+          "returncode": 0,
+          "stdout": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by \ndefault, but not explicitly added to the config. If you want to use it, please \nadd it to the `plugins` list in your config inside of `rxconfig.py`. To disable \nthis plugin, add `SitemapPlugin` to the `disable_plugins` list.\nDeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly \nuse database ORM layer, like sqlalchemy or SQLModel. It will be completely \nremoved in 1.0.0. \n(/private/tmp/reflex-pre-20261005-root/lib/python3.12/site-packages/pydantic/_in\nternal/_model_construction.py:133)\nWarning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by \ndefault, but not explicitly added to the config. If you want to use it, please \nadd it to the `plugins` list in your config inside of `rxconfig.py`. To disable \nthis plugin, add `SitemapPlugin` to the `disable_plugins` list.\n",
+          "stderr": "WARN `--no-project` was provided, but no project was found\n"
+        }
+      ],
+      "success": true,
+      "orm_insert": {
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "WARN `--no-project` was provided, but no project was found\nreflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/private/tmp/reflex-pre-20261005-root/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py:133)\n`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.\n"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "label": "Existing before migration",
+          "created": "2026-10-05 16:03:48.675719",
+          "score": 7
+        },
+        {
+          "id": 2,
+          "label": "Created through ORM",
+          "created": "2026-10-05 16:03:50.021212",
+          "score": 7
+        }
+      ],
+      "rows_after": [
+        {
+          "id": 1,
+          "label": "Existing before migration",
+          "created": "2026-10-05 16:03:48.675719",
+          "score": 7
+        },
+        {
+          "id": 2,
+          "label": "Created through ORM",
+          "created": "2026-10-05 16:03:50.021212",
+          "score": 7
+        },
+        {
+          "id": 3,
+          "label": "Created after migration",
+          "created": "2026-10-05 16:03:48.675719",
+          "score": 7
+        }
+      ],
+      "revisions": {
+        "c0487f1ac118_.py": "\"\"\"empty message\n\nRevision ID: c0487f1ac118\nRevises: \nCreate Date: 2026-10-05 16:03:47.959901\n\n\"\"\"\nfrom typing import Sequence, Union\n\nfrom alembic import op\nimport sqlalchemy as sa\nimport sqlmodel\n\n# revision identifiers, used by Alembic.\nrevision: str = 'c0487f1ac118'\ndown_revision: Union[str, Sequence[str], None] = None\nbranch_labels: Union[str, Sequence[str], None] = None\ndepends_on: Union[str, Sequence[str], None] = None\n\n\ndef upgrade() -> None:\n    \"\"\"Upgrade schema.\"\"\"\n    # ### commands auto generated by Alembic - please adjust! ###\n    op.create_table('note',\n    sa.Column('id', sa.Integer(), nullable=False),\n    sa.Column('label', sqlmodel.sql.sqltypes.AutoString(), nullable=False),\n    sa.PrimaryKeyConstraint('id')\n    )\n    # ### end Alembic commands ###\n\n\ndef downgrade() -> None:\n    \"\"\"Downgrade schema.\"\"\"\n    # ### commands auto generated by Alembic - please adjust! ###\n    op.drop_table('note')\n    # ### end Alembic commands ###\n",
+        "a7d9632d25a2_add_callable_defaults.py": "\"\"\"add-callable-defaults\n\nRevision ID: a7d9632d25a2\nRevises: c0487f1ac118\nCreate Date: 2026-10-05 16:03:48.676335\n\n\"\"\"\nfrom typing import Sequence, Union\n\nfrom alembic import op\nimport sqlalchemy as sa\nimport sqlmodel\n\n# revision identifiers, used by Alembic.\nrevision: str = 'a7d9632d25a2'\ndown_revision: Union[str, Sequence[str], None] = 'c0487f1ac118'\nbranch_labels: Union[str, Sequence[str], None] = None\ndepends_on: Union[str, Sequence[str], None] = None\n\n\ndef upgrade() -> None:\n    \"\"\"Upgrade schema.\"\"\"\n    # ### commands auto generated by Alembic - please adjust! ###\n    with op.batch_alter_table('note', schema=None) as batch_op:\n        batch_op.add_column(sa.Column('created', sa.DateTime(), server_default=sa.text(\"'2026-10-05 16:03:48.675719'\"), nullable=False))\n        batch_op.add_column(sa.Column('score', sa.Integer(), server_default=sa.text('7'), nullable=False))\n\n    # ### end Alembic commands ###\n\n\ndef downgrade() -> None:\n    \"\"\"Downgrade schema.\"\"\"\n    # ### commands auto generated by Alembic - please adjust! ###\n    with op.batch_alter_table('note', schema=None) as batch_op:\n        batch_op.drop_column('score')\n        batch_op.drop_column('created')\n\n    # ### end Alembic commands ###\n"
+      }
+    },
+    {
+      "fields": "    uid: uuid.UUID = Field(default_factory=uuid.uuid4)",
+      "commands": [
+        {
+          "args": [
+            "init"
+          ],
+          "returncode": 0,
+          "stdout": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by \ndefault, but not explicitly added to the config. If you want to use it, please \nadd it to the `plugins` list in your config inside of `rxconfig.py`. To disable \nthis plugin, add `SitemapPlugin` to the `disable_plugins` list.\nDeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly \nuse database ORM layer, like sqlalchemy or SQLModel. It will be completely \nremoved in 1.0.0. \n(/private/tmp/reflex-pre-20261005-root/lib/python3.12/site-packages/pydantic/_in\nternal/_model_construction.py:133)\nWarning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by \ndefault, but not explicitly added to the config. If you want to use it, please \nadd it to the `plugins` list in your config inside of `rxconfig.py`. To disable \nthis plugin, add `SitemapPlugin` to the `disable_plugins` list.\nCreating directory /private/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-migrations-z_9hx09_/uuid/alembic ...  done\nCreating directory /private/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-migrations-z_9hx09_/uuid/alembic/versions ...  done\nGenerating /private/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-migrations-z_9hx09_/uuid/alembic/script.py.mako ...  done\nGenerating /private/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-migrations-z_9hx09_/uuid/alembic/env.py ...  done\nGenerating /private/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-migrations-z_9hx09_/uuid/alembic/README ...  done\nGenerating /private/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-migrations-z_9hx09_/uuid/alembic.ini ...  done\nPlease edit configuration/connection/logging settings in /private/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-migrations-z_9hx09_/uuid/alembic.ini before proceeding.\nGenerating /private/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-migrations-z_9hx09_/uuid/alembic/versions/108c328cd220_.py ...  done\n",
+          "stderr": "WARN `--no-project` was provided, but no project was found\n"
+        },
+        {
+          "args": [
+            "makemigrations",
+            "--message",
+            "add-callable-defaults"
+          ],
+          "returncode": 0,
+          "stdout": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by \ndefault, but not explicitly added to the config. If you want to use it, please \nadd it to the `plugins` list in your config inside of `rxconfig.py`. To disable \nthis plugin, add `SitemapPlugin` to the `disable_plugins` list.\nDeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly \nuse database ORM layer, like sqlalchemy or SQLModel. It will be completely \nremoved in 1.0.0. \n(/private/tmp/reflex-pre-20261005-root/lib/python3.12/site-packages/pydantic/_in\nternal/_model_construction.py:133)\nWarning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by \ndefault, but not explicitly added to the config. If you want to use it, please \nadd it to the `plugins` list in your config inside of `rxconfig.py`. To disable \nthis plugin, add `SitemapPlugin` to the `disable_plugins` list.\nGenerating /private/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-migrations-z_9hx09_/uuid/alembic/versions/f9d261b93413_add_callable_defaults.py ...  done\n",
+          "stderr": "WARN `--no-project` was provided, but no project was found\n"
+        },
+        {
+          "args": [
+            "migrate"
+          ],
+          "returncode": 0,
+          "stdout": "Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by \ndefault, but not explicitly added to the config. If you want to use it, please \nadd it to the `plugins` list in your config inside of `rxconfig.py`. To disable \nthis plugin, add `SitemapPlugin` to the `disable_plugins` list.\nDeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly \nuse database ORM layer, like sqlalchemy or SQLModel. It will be completely \nremoved in 1.0.0. \n(/private/tmp/reflex-pre-20261005-root/lib/python3.12/site-packages/pydantic/_in\nternal/_model_construction.py:133)\nWarning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by \ndefault, but not explicitly added to the config. If you want to use it, please \nadd it to the `plugins` list in your config inside of `rxconfig.py`. To disable \nthis plugin, add `SitemapPlugin` to the `disable_plugins` list.\n",
+          "stderr": "WARN `--no-project` was provided, but no project was found\n"
+        }
+      ],
+      "success": true,
+      "orm_insert": {
+        "returncode": 0,
+        "stdout": "",
+        "stderr": "WARN `--no-project` was provided, but no project was found\nreflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (/private/tmp/reflex-pre-20261005-root/lib/python3.12/site-packages/pydantic/_internal/_model_construction.py:133)\n`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.\n"
+      },
+      "rows": [
+        {
+          "id": 1,
+          "label": "Existing before migration",
+          "uid": "a40ae19ac7bb465585bb88989023e259"
+        },
+        {
+          "id": 2,
+          "label": "Created through ORM",
+          "uid": "fee2d4104450497db27efaa18c101e11"
+        }
+      ],
+      "rows_after": [
+        {
+          "id": 1,
+          "label": "Existing before migration",
+          "uid": "a40ae19ac7bb465585bb88989023e259"
+        },
+        {
+          "id": 2,
+          "label": "Created through ORM",
+          "uid": "fee2d4104450497db27efaa18c101e11"
+        },
+        {
+          "id": 3,
+          "label": "Created after migration",
+          "uid": "a40ae19ac7bb465585bb88989023e259"
+        }
+      ],
+      "revisions": {
+        "f9d261b93413_add_callable_defaults.py": "\"\"\"add-callable-defaults\n\nRevision ID: f9d261b93413\nRevises: 108c328cd220\nCreate Date: 2026-10-05 16:03:51.532743\n\n\"\"\"\nfrom typing import Sequence, Union\n\nfrom alembic import op\nimport sqlalchemy as sa\nimport sqlmodel\n\n# revision identifiers, used by Alembic.\nrevision: str = 'f9d261b93413'\ndown_revision: Union[str, Sequence[str], None] = '108c328cd220'\nbranch_labels: Union[str, Sequence[str], None] = None\ndepends_on: Union[str, Sequence[str], None] = None\n\n\ndef upgrade() -> None:\n    \"\"\"Upgrade schema.\"\"\"\n    # ### commands auto generated by Alembic - please adjust! ###\n    with op.batch_alter_table('note', schema=None) as batch_op:\n        batch_op.add_column(sa.Column('uid', sa.Uuid(), server_default=sa.text(\"'a40ae19ac7bb465585bb88989023e259'\"), nullable=False))\n\n    # ### end Alembic commands ###\n\n\ndef downgrade() -> None:\n    \"\"\"Downgrade schema.\"\"\"\n    # ### commands auto generated by Alembic - please adjust! ###\n    with op.batch_alter_table('note', schema=None) as batch_op:\n        batch_op.drop_column('uid')\n\n    # ### end Alembic commands ###\n",
+        "108c328cd220_.py": "\"\"\"empty message\n\nRevision ID: 108c328cd220\nRevises: \nCreate Date: 2026-10-05 16:03:50.814611\n\n\"\"\"\nfrom typing import Sequence, Union\n\nfrom alembic import op\nimport sqlalchemy as sa\nimport sqlmodel\n\n# revision identifiers, used by Alembic.\nrevision: str = '108c328cd220'\ndown_revision: Union[str, Sequence[str], None] = None\nbranch_labels: Union[str, Sequence[str], None] = None\ndepends_on: Union[str, Sequence[str], None] = None\n\n\ndef upgrade() -> None:\n    \"\"\"Upgrade schema.\"\"\"\n    # ### commands auto generated by Alembic - please adjust! ###\n    op.create_table('note',\n    sa.Column('id', sa.Integer(), nullable=False),\n    sa.Column('label', sqlmodel.sql.sqltypes.AutoString(), nullable=False),\n    sa.PrimaryKeyConstraint('id')\n    )\n    # ### end Alembic commands ###\n\n\ndef downgrade() -> None:\n    \"\"\"Downgrade schema.\"\"\"\n    # ### commands auto generated by Alembic - please adjust! ###\n    op.drop_table('note')\n    # ### end Alembic commands ###\n"
+      }
+    }
+  ]
+}

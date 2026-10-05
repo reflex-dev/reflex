@@ -1,0 +1,61 @@
+{
+  "url": "http://localhost:3133/articles/7?bun=1.4.2",
+  "console": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ],
+  "page_errors": [
+    "Maximum call stack size exceeded"
+  ],
+  "network": [
+    {
+      "url": "http://localhost:3133/articles/7?bun=1.4.2",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3133/assets/__reflex_global_styles-BzM7ReGa.css",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3133/assets/manifest-11d10639.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3133/assets/components-Bl0Za3ky.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3133/assets/entry.client-qPZbTPY2.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3133/assets/errorBoundaries-BQfNx61a.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3133/assets/box-DvPlEb2L.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3133/assets/reflex-env-Fdqlyajw.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3133/assets/emotion-react.browser.esm-Ne-RHRfi.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3133/assets/root-CQdmyKkV.js",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:3133/assets/link-DXUKUfhr.js",
+      "status": 200
+    }
+  ],
+  "body": "Built with Reflex",
+  "browser_version": "154.0.8037.98",
+  "stack_overflow_observed": true
+}

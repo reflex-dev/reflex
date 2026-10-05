@@ -1,0 +1,12 @@
+{
+  "versions": {
+    "reflex": "0.9.12",
+    "reflex-base": "0.9.12",
+    "reflex-components-gridjs": "0.9.2.post1"
+  },
+  "reflex": "/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-venv/lib/python3.13/site-packages/reflex/__init__.py",
+  "console": [],
+  "page_errors": [],
+  "stage": "clear-search",
+  "table": "Gamma12Beta9"
+}

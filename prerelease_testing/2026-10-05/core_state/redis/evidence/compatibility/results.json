@@ -1,0 +1,101 @@
+{
+  "database": 5,
+  "scenarios": [
+    {
+      "name": "New pickle -> old read and frontend/backend assignments -> new read",
+      "status": "passed",
+      "schema": "04ef95f0365473b9d40e3c96406ebd28",
+      "snapshot": {
+        "count": 13,
+        "label": "assigned",
+        "values": [
+          3,
+          4
+        ],
+        "secret": 17,
+        "items": [
+          "assigned"
+        ],
+        "checksum": 38
+      }
+    },
+    {
+      "name": "Old worker frontend mutable mutation on a new pickle persists",
+      "status": "passed",
+      "snapshot": {
+        "count": 13,
+        "label": "assigned",
+        "values": [
+          3,
+          4,
+          8
+        ],
+        "secret": 17,
+        "items": [
+          "assigned"
+        ],
+        "checksum": 46
+      }
+    },
+    {
+      "name": "Advertised old-worker in-place mutable backend exception reproduced",
+      "status": "expected limitation",
+      "old_in_memory": {
+        "count": 7,
+        "label": "persisted seed",
+        "values": [
+          1,
+          2
+        ],
+        "secret": 11,
+        "items": [
+          "saved",
+          "inplace"
+        ],
+        "checksum": 22
+      },
+      "new_persisted": {
+        "count": 7,
+        "label": "persisted seed",
+        "values": [
+          1,
+          2
+        ],
+        "secret": 11,
+        "items": [
+          "saved"
+        ],
+        "checksum": 22
+      }
+    },
+    {
+      "name": "Old pickle -> new read and assignments -> old read",
+      "status": "passed",
+      "schema": "04ef95f0365473b9d40e3c96406ebd28",
+      "snapshot": {
+        "count": 13,
+        "label": "assigned",
+        "values": [
+          3,
+          4
+        ],
+        "secret": 17,
+        "items": [
+          "assigned"
+        ],
+        "checksum": 38
+      }
+    }
+  ],
+  "tokens": [
+    "alpha-rolling-96cdbb2b-06e3-448e-ae24-1f71bebb9372",
+    "alpha-rolling-6acb2f4a-fbff-4fc5-b248-d880d56617ff",
+    "alpha-rolling-de83ab68-deb2-40bc-97fe-cec437c8f422"
+  ],
+  "status": "passed",
+  "cleaned_keys": [
+    "alpha-rolling-96cdbb2b-06e3-448e-ae24-1f71bebb9372_reflex___state____state.rolling_app____rolling",
+    "alpha-rolling-6acb2f4a-fbff-4fc5-b248-d880d56617ff_reflex___state____state.rolling_app____rolling",
+    "alpha-rolling-de83ab68-deb2-40bc-97fe-cec437c8f422_reflex___state____state.rolling_app____rolling"
+  ]
+}

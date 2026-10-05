@@ -1,0 +1,337 @@
+WARN `--no-project` was provided, but no project was found
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-venv/lib/pytho
+n3.13/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='gridjs_probe', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3122, frontend_path='', 
+backend_port=8122, backend_path='', api_url='http://localhost:3122', 
+deploy_url='http://localhost:3122', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-prerelease-components-20261005/runtime/b
+un/bin/bun'), frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'telemetry_enabled', 'loglevel', 
+'frontend_port', 'backend_port', 'api_url'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/b
+un'), '--version']
+Debug: [Reflex 0.9.12 with Python 3.13.0 (PATH: 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-venv/bin/python
+)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-venv/lib/pytho
+n3.13/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='gridjs_probe', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3122, frontend_path='', 
+backend_port=8122, backend_path='', api_url='http://localhost:3122', 
+deploy_url='http://localhost:3122', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-prerelease-components-20261005/runtime/b
+un/bin/bun'), frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'telemetry_enabled', 'loglevel', 
+'frontend_port', 'backend_port', 'api_url'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/b
+un'), '--version']
+Debug: [Reflex 0.9.12 with Python 3.13.0 (PATH: 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-venv/bin/python
+)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+────────────────────────── Initializing gridjs_probe ───────────────────────────
+Debug: Creating /private/tmp/reflex-prerelease-components-20261005/runtime
+Debug: Ensuring reflex installation id.
+Debug: Creating /private/tmp/reflex-prerelease-components-20261005/runtime
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/b
+un'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-venv/lib/python
+3.13/site-packages/reflex_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Copying 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/reflex.lock
+/bun.lock to .web/bun.lock
+Debug: Initializing the web directory.
+Debug: Copying .web/bun.lock to 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/reflex.lock
+/bun.lock
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/reflex.lock
+/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Project hash is already set to 229867552760995064002145699758859882617.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.068 seconds
+Debug: Latest version of reflex: 0.9.12
+Debug: Creating .gitignore
+Debug: requirements.txt already has reflex as dependency.
+Success: Initialized gridjs_probe. Install dependencies from `requirements.txt` 
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3122
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 3122 is in use.
+Debug: Checking if Fullstack port: 3122 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Fullstack port: 3122 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-venv/lib/pytho
+n3.13/site-packages/reflex_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.05s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 14/13 0:00:00
+Debug: Running command: 
+['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun', 
+'install', '--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.2 (744846f84)
+Debug: 
+Debug: + @emotion/react@11.14.0
+Debug: + @react-router/dev@8.4.0
+Debug: + @react-router/fs-routes@8.4.0
+Debug: + autoprefixer@10.6.1
+Debug: + postcss@8.5.29
+Debug: + postcss-import@17.0.0
+Debug: + vite@8.3.2
+Debug: + @radix-ui/themes@3.3.0
+Debug: + @react-router/node@8.4.0
+Debug: + gridjs@6.2.0
+Debug: + gridjs-react@6.1.1
+Debug: + isbot@5.2.2
+Debug: + lucide-react@1.26.0
+Debug: + mergician@2.0.2
+Debug: + react@19.3.0
+Debug: + react-dom@19.3.0
+Debug: + react-error-boundary@6.1.6
+Debug: + react-helmet@6.1.0
+Debug: + react-router@8.4.0
+Debug: + socket.io-client@4.8.4
+Debug: + sonner@2.0.8
+Debug: + universal-cookie@8.1.2
+Debug: 
+Debug: 228 packages installed [221.00ms]
+Debug: Running command: 
+['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun', 
+'add', '--legacy-peer-deps', '-d', '@react-router/dev@8.4.0', 
+'@react-router/fs-routes@8.4.0', 'autoprefixer@10.5.4', 'vite@8.2.2', 
+'postcss@8.5.26', '@emotion/react@11.14.0', 'postcss-import@17.0.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [13]
+Debug: Saved lockfile
+Debug: 
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed postcss@8.5.26
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@17.0.0
+Debug: 
+Debug: 7 packages installed [490.00ms]
+Debug: Running command: 
+['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun', 
+'add', '--legacy-peer-deps', 'react-dom@19.2.8', 'socket.io-client@4.8.3', 
+'isbot@5.2.2', 'react-router@8.4.0', 'react-helmet@6.1.0', 
+'@react-router/node@8.4.0', 'universal-cookie@8.1.2', '@radix-ui/themes@3.3.0', 
+'react-error-boundary@6.1.2', 'lucide-react@1.26.0', 'gridjs-react@6.1.1', 
+'mergician@v2.0.2', 'gridjs@6.2.0', 'react@19.2.8', 'sonner@2.0.8']
+Debug: Installing frontend packages
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [5]
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-dom@19.2.8
+Debug: installed socket.io-client@4.8.3
+Debug: installed isbot@5.2.2
+Debug: installed react-router@8.4.0
+Debug: installed react-helmet@6.1.0
+Debug: installed @react-router/node@8.4.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-error-boundary@6.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed gridjs-react@6.1.1
+Debug: installed mergician@2.0.2
+Debug: installed gridjs@6.2.0
+Debug: installed react@19.2.8
+Debug: installed sonner@2.0.8
+Debug: 
+Debug: 15 packages installed [140.00ms]
+Debug: Copying .web/bun.lock to 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/reflex.lock
+/bun.lock
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/reflex.lock
+/package.json
+Debug: [timing] Install Frontend Packages: 0.88s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: 
+['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun', 
+'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.2.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 434 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                             3.15 kB │ 
+gzip:  0.63 kB
+Debug: build/client/assets/_index-BAzSiKJt.css                      8.77 kB │ 
+gzip:  2.76 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css    698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/client/assets/reflex-env-K4JOOxCq.js                   0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/client/assets/_404_._index-DEKlLv-N.js                 0.41 kB │ 
+gzip:  0.29 kB
+Debug: build/client/assets/_index-Bz8dQaIP.js                       1.95 kB │ 
+gzip:  0.88 kB
+Debug: build/client/assets/emotion-react.browser.esm-BUuhssUM.js   20.71 kB │ 
+gzip:  8.12 kB
+Debug: build/client/assets/errorBoundaries-nvrENZa2.js             36.84 kB │ 
+gzip: 12.80 kB
+Debug: build/client/assets/gridjs.production.es.min-f-F-XAUf.js    53.32 kB │ 
+gzip: 16.97 kB
+Debug: build/client/assets/components-DzQT6F3y.js                  86.48 kB │ 
+gzip: 28.62 kB
+Debug: build/client/assets/button-Qkn0Bppo.js                     118.46 kB │ 
+gzip: 35.19 kB
+Debug: build/client/assets/entry.client-CrLM0Z8o.js               182.40 kB │ 
+gzip: 57.73 kB
+Debug: build/client/assets/root-DDajL729.js                       308.59 kB │ 
+gzip: 86.89 kB
+Debug: 
+Debug: ✓ built in 548ms
+Debug: vite v8.2.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 27 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 2 assets cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: build/server/assets/server-build-BAzSiKJt.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.76 kB │ 
+gzip:  0.30 kB
+Debug: build/server/assets/server-build-BAzSiKJt.css              8.77 kB │ 
+gzip:  2.76 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-K4JOOxCq.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                     45.69 kB │ 
+gzip: 14.32 kB
+Debug: 
+Debug: ✓ built in 151ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:01
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/b
+un'), 
+PosixPath('/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/
+.web/compress-static.js'), 
+PosixPath('/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/
+.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3122/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 4169)
+[INFO] Listening at: http://0.0.0.0:3122
+[INFO] Spawning worker-1 with PID: 4181
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3122
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

@@ -1,0 +1,18 @@
+{
+  "phase": "initial production dashboard run",
+  "observed_console": [
+    {
+      "type": "error",
+      "text": "[Grid.js] [ERROR]: TypeError: Cannot read properties of undefined (reading 'length')"
+    },
+    {
+      "type": "error",
+      "text": "[Grid.js] [ERROR]: TypeError: Cannot read properties of undefined (reading 'length')"
+    }
+  ],
+  "page_errors": [],
+  "request_failures": [],
+  "http_failures": [],
+  "visible_table_flow": "passed",
+  "followup": "Final full-dashboard rerun and minimal stable dev/prod plus alpha prod table runs were clean; not reproduced or classified as a regression."
+}

@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "side_effect": "Published Reflex's fresh Bun installation appended a persistent PATH block to ~/.zshrc",
+  "owned_runtime": "/private/tmp/reflex-alpha-core-state/runtime/bun",
+  "removed_bytes": 114,
+  "removed_lines": [
+    "",
+    "# bun",
+    "export BUN_INSTALL=\"/private/tmp/reflex-alpha-core-state/runtime/bun\"",
+    "export PATH=\"$BUN_INSTALL/bin:$PATH\""
+  ],
+  "before_sha256": "869d120faf9b523c5fc676466c8a497fcded6a7a53ab55bf7f528455bc5c0a30",
+  "after_sha256": "aff082d34182c66c9e8b37e7519bf0d9a38b815a13d4e2835781748814fc8b8c",
+  "preserved_unrelated_content": true,
+  "remaining_owned_runtime_references_in_shell_files": 0,
+  "checked_shell_files": [
+    ".zshrc",
+    ".zprofile",
+    ".bash_profile",
+    ".profile"
+  ]
+}

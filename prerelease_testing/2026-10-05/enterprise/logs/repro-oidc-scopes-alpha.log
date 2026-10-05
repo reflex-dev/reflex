@@ -1,0 +1,11 @@
+{"reflex": "0.10.0a1", "enterprise": "0.9.7a2"}
+{"backend_vars": false, "base_vars": true, "computed_vars": true}
+Traceback (most recent call last):
+  File "/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth_min/../../repro_oidc_scopes.py", line 18, in <module>
+    main()
+  File "/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth_min/../../repro_oidc_scopes.py", line 13, in main
+    GenericOIDCAuthState._set_extra_scopes(["offline_access"])
+  File "/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/reflex_enterprise/auth/oidc/state.py", line 496, in _set_extra_scopes
+    current = cls.backend_vars.get(key, cls._requested_scopes)
+              ^^^^^^^^^^^^^^^^
+AttributeError: type object 'GenericOIDCAuthState' has no attribute 'backend_vars'. Did you mean: '_backend_vars'?

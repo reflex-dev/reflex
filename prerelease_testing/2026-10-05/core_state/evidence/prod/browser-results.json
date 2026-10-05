@@ -1,0 +1,897 @@
+{
+  "scenarios": [
+    {
+      "name": "dashboard",
+      "assertions": [
+        {
+          "selector": "#parent-count",
+          "expected": "2",
+          "actual": "2"
+        },
+        {
+          "selector": "#parent-computed",
+          "expected": "4",
+          "actual": "4"
+        },
+        {
+          "selector": "#child-count",
+          "expected": "10",
+          "actual": "10"
+        },
+        {
+          "selector": "#child-computed",
+          "expected": "30",
+          "actual": "30"
+        },
+        {
+          "selector": "#child-count",
+          "expected": "11",
+          "actual": "11"
+        },
+        {
+          "selector": "#child-computed",
+          "expected": "33",
+          "actual": "33"
+        },
+        {
+          "selector": "#parent-count",
+          "expected": "2",
+          "actual": "2"
+        },
+        {
+          "selector": "#parent-count",
+          "expected": "3",
+          "actual": "3"
+        },
+        {
+          "selector": "#parent-computed",
+          "expected": "6",
+          "actual": "6"
+        },
+        {
+          "selector": "#child-count",
+          "expected": "11",
+          "actual": "11"
+        },
+        {
+          "selector": "#parent-count",
+          "expected": "4",
+          "actual": "4"
+        },
+        {
+          "selector": "#parent-computed",
+          "expected": "8",
+          "actual": "8"
+        },
+        {
+          "selector": "#worker-done",
+          "expected": "2",
+          "actual": "2"
+        },
+        {
+          "selector": "#parent-items",
+          "expected": "[\"seed\",\"alpha\",\"beta\"]",
+          "actual": "[\"seed\",\"alpha\",\"beta\"]"
+        },
+        {
+          "selector": "#parent-audit",
+          "expected": "2",
+          "actual": "2"
+        },
+        {
+          "selector": "#a-count",
+          "expected": "2",
+          "actual": "2"
+        },
+        {
+          "selector": "#a-checksum",
+          "expected": "5",
+          "actual": "5"
+        },
+        {
+          "selector": "#b-count",
+          "expected": "0",
+          "actual": "0"
+        },
+        {
+          "selector": "#b-checksum",
+          "expected": "0",
+          "actual": "0"
+        },
+        {
+          "selector": "#b-count",
+          "expected": "1",
+          "actual": "1"
+        },
+        {
+          "selector": "#b-checksum",
+          "expected": "2",
+          "actual": "2"
+        },
+        {
+          "selector": "#a-count",
+          "expected": "2",
+          "actual": "2"
+        },
+        {
+          "selector": "#reverse-items",
+          "expected": "[5,4,3,2,1]",
+          "actual": "[5,4,3,2,1]"
+        },
+        {
+          "selector": "#empty-reverse",
+          "expected": "[]",
+          "actual": "[]"
+        },
+        {
+          "selector": "#var-slice",
+          "expected": "[5,4,3]",
+          "actual": "[5,4,3]"
+        },
+        {
+          "selector": "#slice-length",
+          "expected": "5",
+          "actual": "5"
+        },
+        {
+          "selector": "#reverse-text",
+          "expected": "olleh",
+          "actual": "olleh"
+        },
+        {
+          "selector": "#slice-length",
+          "expected": "3",
+          "actual": "3"
+        },
+        {
+          "selector": "#var-slice",
+          "expected": "[]",
+          "actual": "[]"
+        },
+        {
+          "selector": "#var-slice",
+          "expected": "[5,4,3]",
+          "actual": "[5,4,3]"
+        },
+        {
+          "selector": "#deep-equality",
+          "expected": "equal",
+          "actual": "equal"
+        },
+        {
+          "selector": "#deep-equality",
+          "expected": "different",
+          "actual": "different"
+        },
+        {
+          "selector": "#nested-value",
+          "expected": "{\"a\":[1,2,4],\"b\":[3]}",
+          "actual": "{\"a\":[1,2,4],\"b\":[3]}"
+        },
+        {
+          "selector": "#nested-first",
+          "expected": "1",
+          "actual": "1"
+        },
+        {
+          "selector": "#nested-second",
+          "expected": "1",
+          "actual": "1"
+        },
+        {
+          "selector": "#nested-first",
+          "expected": "2",
+          "actual": "2"
+        },
+        {
+          "download": "escaped.json",
+          "value": {
+            "text": "hash# percent% caf\u00e9"
+          }
+        },
+        {
+          "selector": "#parent-count",
+          "expected": "4",
+          "actual": "4"
+        },
+        {
+          "selector": "#child-count",
+          "expected": "11",
+          "actual": "11"
+        },
+        {
+          "selector": "#parent-items",
+          "expected": "[\"seed\",\"alpha\",\"beta\"]",
+          "actual": "[\"seed\",\"alpha\",\"beta\"]"
+        },
+        {
+          "selector": "#parent-audit",
+          "expected": "2",
+          "actual": "2"
+        },
+        {
+          "selector": "#a-count",
+          "expected": "2",
+          "actual": "2"
+        }
+      ],
+      "started": 1791240712.206783,
+      "status": "pass",
+      "duration_seconds": 2.034
+    },
+    {
+      "name": "client",
+      "assertions": [
+        {
+          "selector": "#client-reader",
+          "expected": "clicked before mount",
+          "actual": "clicked before mount"
+        },
+        {
+          "selector": "#client-reader",
+          "expected": "clicked before mount",
+          "actual": "clicked before mount"
+        },
+        {
+          "selector": "#received-client",
+          "expected": "typed client",
+          "actual": "typed client"
+        },
+        {
+          "selector": "#client-a-count",
+          "expected": "1",
+          "actual": "1"
+        },
+        {
+          "selector": "#client-a-checksum",
+          "expected": "2",
+          "actual": "2"
+        },
+        {
+          "selector": "#client-b-count",
+          "expected": "0",
+          "actual": "0"
+        }
+      ],
+      "started": 1791240714.241195,
+      "status": "pass",
+      "duration_seconds": 1.015
+    },
+    {
+      "name": "shared",
+      "assertions": [
+        {
+          "selector": "#shared-count",
+          "expected": "0",
+          "actual": "0"
+        },
+        {
+          "selector": "#shared-count",
+          "expected": "0",
+          "actual": "0"
+        },
+        {
+          "selector": "#shared-count",
+          "expected": "1",
+          "actual": "1"
+        },
+        {
+          "selector": "#shared-messages",
+          "expected": "[\"message-1\"]",
+          "actual": "[\"message-1\"]"
+        },
+        {
+          "selector": "#shared-audit",
+          "expected": "1",
+          "actual": "1"
+        },
+        {
+          "selector": "#shared-count",
+          "expected": "1",
+          "actual": "1"
+        },
+        {
+          "selector": "#shared-messages",
+          "expected": "[\"message-1\"]",
+          "actual": "[\"message-1\"]"
+        },
+        {
+          "selector": "#shared-audit",
+          "expected": "1",
+          "actual": "1"
+        },
+        {
+          "selector": "#private-count",
+          "expected": "1",
+          "actual": "1"
+        },
+        {
+          "selector": "#private-count",
+          "expected": "0",
+          "actual": "0"
+        },
+        {
+          "selector": "#shared-count",
+          "expected": "2",
+          "actual": "2"
+        },
+        {
+          "selector": "#shared-messages",
+          "expected": "[\"message-1\",\"message-2\"]",
+          "actual": "[\"message-1\",\"message-2\"]"
+        },
+        {
+          "selector": "#shared-audit",
+          "expected": "2",
+          "actual": "2"
+        },
+        {
+          "selector": "#shared-count",
+          "expected": "2",
+          "actual": "2"
+        },
+        {
+          "selector": "#shared-messages",
+          "expected": "[\"message-1\",\"message-2\"]",
+          "actual": "[\"message-1\",\"message-2\"]"
+        },
+        {
+          "selector": "#shared-audit",
+          "expected": "2",
+          "actual": "2"
+        },
+        {
+          "selector": "#shared-count",
+          "expected": "2",
+          "actual": "2"
+        },
+        {
+          "selector": "#shared-count",
+          "expected": "0",
+          "actual": "0"
+        },
+        {
+          "selector": "#shared-audit",
+          "expected": "0",
+          "actual": "0"
+        },
+        {
+          "selector": "#shared-count",
+          "expected": "3",
+          "actual": "3"
+        },
+        {
+          "selector": "#shared-count",
+          "expected": "0",
+          "actual": "0"
+        },
+        {
+          "selector": "#shared-count",
+          "expected": "3",
+          "actual": "3"
+        },
+        {
+          "selector": "#shared-audit",
+          "expected": "3",
+          "actual": "3"
+        }
+      ],
+      "started": 1791240715.257018,
+      "status": "pass",
+      "duration_seconds": 2.12
+    }
+  ],
+  "console": [
+    {
+      "page": "context-0",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "location": {
+        "url": "http://localhost:3112/favicon.ico",
+        "line": 0,
+        "column": 0,
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    },
+    {
+      "page": "context-0",
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "location": {
+        "url": "http://localhost:3112/assets/text-field-BiwG8N6y.js",
+        "line": 1,
+        "column": 11226,
+        "lineNumber": 1,
+        "columnNumber": 11226
+      }
+    },
+    {
+      "page": "context-3",
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "location": {
+        "url": "http://localhost:3112/assets/text-field-BiwG8N6y.js",
+        "line": 1,
+        "column": 11226,
+        "lineNumber": 1,
+        "columnNumber": 11226
+      }
+    }
+  ],
+  "page_errors": [],
+  "request_failures": [],
+  "http_errors": [],
+  "websocket_frames": [
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "0{\"sid\":\"gXsf8sKhBvz7nrGWAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+    },
+    {
+      "page": "context-0",
+      "direction": "sent",
+      "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"4ddbbc80d5b32e5a\",\"b084fc0c68f7c73a\",\"051fa77e89edc88a\",\"b175f7912615bb4e\",\"fcdea68e36f9d7ce\",\"d69c91f498243c09\",\"f129ca1f495d9af9\",\"f129ca1f495d9af9\",\"f129ca1f495d9af9\",\"f129ca1f495d9af9\",\"bf21a9e8fbc5a384\",\"9ea8208e92af7f82\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?self=1\",\"query\":{\"self\":\"1\"}}}}"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "40/_event,{\"sid\":\"fi5_Qcl5NamUO9E5AAAB\"}"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"hlMaJnKyF3+ifp9fTw7wtw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"hlMaJnKyF3+ifp9fTw7wtw==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/index\",\"raw_path\":\"/?self=1\",\"full_path\":\"http://localhost:3112/index\",\"full_raw_path\":\"http://localhost:3112/?self=1\",\"params\":{\"self\":\"1\"}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"f87ac054-cb61-4c49-e37e-dbbcaa784b15\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"fi5_Qcl5NamUO9E5AAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/\",\"query\":\"self=1\",\"query_parameters\":{\"self\":\"1\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/?self=1\"}}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.core_probe___core_probe____parent.core_probe___core_probe____child.increment_child\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?self=1\",\"query\":{\"self\":\"1\"}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_probe___core_probe____parent.core_probe___core_probe____child\":{\"doubled_rx_state_\":33,\"count_rx_state_\":11}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.core_probe___core_probe____parent.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?self=1\",\"query\":{\"self\":\"1\"}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_probe___core_probe____parent\":{\"doubled_rx_state_\":6,\"count_rx_state_\":3}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.core_probe___core_probe____parent.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?self=1\",\"query\":{\"self\":\"1\"}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_probe___core_probe____parent\":{\"doubled_rx_state_\":8,\"count_rx_state_\":4}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.core_probe___core_probe____parent.core_probe___core_probe____worker.append_background\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?self=1\",\"query\":{\"self\":\"1\"}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_probe___core_probe____parent\":{\"audit_count_rx_state_\":1,\"items_rx_state_\":[\"seed\",\"alpha\"]},\"reflex___state____state.core_probe___core_probe____parent.core_probe___core_probe____worker\":{\"done_rx_state_\":1}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_probe___core_probe____parent\":{\"audit_count_rx_state_\":2,\"items_rx_state_\":[\"seed\",\"alpha\",\"beta\"]},\"reflex___state____state.core_probe___core_probe____parent.core_probe___core_probe____worker\":{\"done_rx_state_\":2}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____counter_n1.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?self=1\",\"query\":{\"self\":\"1\"}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____counter_n1\":{\"count_rx_state_\":1,\"checksum_rx_state_\":2}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____counter_n1.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?self=1\",\"query\":{\"self\":\"1\"}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____counter_n1\":{\"count_rx_state_\":2,\"checksum_rx_state_\":5}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____counter_n2.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?self=1\",\"query\":{\"self\":\"1\"}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____counter_n2\":{\"count_rx_state_\":1,\"checksum_rx_state_\":2}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.core_probe___core_probe____dashboard.set_step\",\"payload\":{\"value\":2},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?self=1\",\"query\":{\"self\":\"1\"}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_probe___core_probe____dashboard\":{\"step_rx_state_\":2}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.core_probe___core_probe____dashboard.set_step\",\"payload\":{\"value\":-1},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?self=1\",\"query\":{\"self\":\"1\"}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_probe___core_probe____dashboard\":{\"step_rx_state_\":-1}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.core_probe___core_probe____dashboard.mutate_nested\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?self=1\",\"query\":{\"self\":\"1\"}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_probe___core_probe____dashboard\":{\"left_rx_state_\":{\"a\":[1,2,4],\"b\":[3]}}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.core_probe___core_probe____dashboard.first\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?self=1\",\"query\":{\"self\":\"1\"}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.core_probe___core_probe____dashboard.second\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?self=1\",\"query\":{\"self\":\"1\"}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_probe___core_probe____dashboard\":{\"nested_first_rx_state_\":1}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_probe___core_probe____dashboard\":{\"nested_second_rx_state_\":1}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.core_probe___core_probe____dashboard.first\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?self=1\",\"query\":{\"self\":\"1\"}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_probe___core_probe____dashboard\":{\"nested_first_rx_state_\":2}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "sent",
+      "payload": "41/_event,"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "0{\"sid\":\"62ej_I1OjfivEX44AAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+    },
+    {
+      "page": "context-0",
+      "direction": "sent",
+      "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"4ddbbc80d5b32e5a\",\"b084fc0c68f7c73a\",\"051fa77e89edc88a\",\"b175f7912615bb4e\",\"fcdea68e36f9d7ce\",\"d69c91f498243c09\",\"f129ca1f495d9af9\",\"f129ca1f495d9af9\",\"f129ca1f495d9af9\",\"f129ca1f495d9af9\",\"bf21a9e8fbc5a384\",\"9ea8208e92af7f82\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/?self=1\",\"query\":{\"self\":\"1\"}}}}"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "40/_event,{\"sid\":\"8HmZ0I3d-k2ACCVPAAAD\"}"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"1AHoiYoTR1XSRVaQTU3i9Q==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"1AHoiYoTR1XSRVaQTU3i9Q==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/index\",\"raw_path\":\"/?self=1\",\"full_path\":\"http://localhost:3112/index\",\"full_raw_path\":\"http://localhost:3112/?self=1\",\"params\":{\"self\":\"1\"}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"f87ac054-cb61-4c49-e37e-dbbcaa784b15\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"8HmZ0I3d-k2ACCVPAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/\",\"query\":\"self=1\",\"query_parameters\":{\"self\":\"1\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/?self=1\"}},\"reflex___state____state.core_probe___core_probe____dashboard\":{\"left_rx_state_\":{\"a\":[1,2,4],\"b\":[3]},\"nested_first_rx_state_\":2,\"nested_second_rx_state_\":1},\"reflex___state____state.core_probe___core_probe____parent\":{\"audit_count_rx_state_\":2,\"count_rx_state_\":4,\"doubled_rx_state_\":8,\"items_rx_state_\":[\"seed\",\"alpha\",\"beta\"]},\"reflex___state____state.core_probe___core_probe____parent.core_probe___core_probe____worker\":{\"done_rx_state_\":2},\"reflex___state____state.core_probe___core_probe____parent.core_probe___core_probe____child\":{\"count_rx_state_\":11,\"doubled_rx_state_\":33},\"reflex___state____state.reflex___istate___dynamic____counter_n1\":{\"checksum_rx_state_\":5,\"count_rx_state_\":2},\"reflex___state____state.reflex___istate___dynamic____counter_n2\":{\"checksum_rx_state_\":2,\"count_rx_state_\":1}}}]"
+    },
+    {
+      "page": "context-0",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+    },
+    {
+      "page": "context-1",
+      "direction": "received",
+      "payload": "0{\"sid\":\"aNZcUc6Y0kSvO-B5AAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+    },
+    {
+      "page": "context-1",
+      "direction": "sent",
+      "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"4ddbbc80d5b32e5a\",\"b084fc0c68f7c73a\",\"051fa77e89edc88a\",\"b175f7912615bb4e\",\"fcdea68e36f9d7ce\",\"d69c91f498243c09\",\"f129ca1f495d9af9\",\"f129ca1f495d9af9\",\"f129ca1f495d9af9\",\"f129ca1f495d9af9\",\"bf21a9e8fbc5a384\",\"9ea8208e92af7f82\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/client/\",\"asPath\":\"/client/\"}}}"
+    },
+    {
+      "page": "context-1",
+      "direction": "received",
+      "payload": "40/_event,{\"sid\":\"10xdiG8TRpuTwx90AAAF\"}"
+    },
+    {
+      "page": "context-1",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"0GkJhO9F5vlVNH5sCL+r0Q==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"0GkJhO9F5vlVNH5sCL+r0Q==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/client\",\"raw_path\":\"/client/\",\"full_path\":\"http://localhost:3112/client\",\"full_raw_path\":\"http://localhost:3112/client/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/client\",\"rx_router_session_rx_state_\":{\"client_token\":\"9c221c21-e9d8-433e-b838-f80644633b82\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"10xdiG8TRpuTwx90AAAF\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/client/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3112/client/\"}}}}]"
+    },
+    {
+      "page": "context-1",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+    },
+    {
+      "page": "context-1",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.core_probe___core_probe____dashboard.reveal\",\"router_data\":{\"pathname\":\"/client/\",\"asPath\":\"/client/\"}}]"
+    },
+    {
+      "page": "context-1",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_probe___core_probe____dashboard\":{\"show_reader_rx_state_\":true}}}]"
+    },
+    {
+      "page": "context-1",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.core_probe___core_probe____dashboard.hide\",\"router_data\":{\"pathname\":\"/client/\",\"asPath\":\"/client/\"}}]"
+    },
+    {
+      "page": "context-1",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_probe___core_probe____dashboard\":{\"show_reader_rx_state_\":false}}}]"
+    },
+    {
+      "page": "context-1",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.core_probe___core_probe____dashboard.reveal\",\"router_data\":{\"pathname\":\"/client/\",\"asPath\":\"/client/\"}}]"
+    },
+    {
+      "page": "context-1",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_probe___core_probe____dashboard\":{\"show_reader_rx_state_\":true}}}]"
+    },
+    {
+      "page": "context-1",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.core_probe___core_probe____dashboard.receive_client\",\"payload\":{\"value\":\"typed client\"},\"router_data\":{\"pathname\":\"/client/\",\"asPath\":\"/client/\"}}]"
+    },
+    {
+      "page": "context-1",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.core_probe___core_probe____dashboard\":{\"received_client_rx_state_\":\"typed client\"}}}]"
+    },
+    {
+      "page": "context-1",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___dynamic____counter_n3.increment\",\"router_data\":{\"pathname\":\"/client/\",\"asPath\":\"/client/\"}}]"
+    },
+    {
+      "page": "context-1",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____counter_n3\":{\"count_rx_state_\":1,\"checksum_rx_state_\":2}}}]"
+    },
+    {
+      "page": "context-2",
+      "direction": "received",
+      "payload": "0{\"sid\":\"Qvrt_PjpcifPcU52AAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+    },
+    {
+      "page": "context-2",
+      "direction": "sent",
+      "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"4ddbbc80d5b32e5a\",\"b084fc0c68f7c73a\",\"051fa77e89edc88a\",\"b175f7912615bb4e\",\"fcdea68e36f9d7ce\",\"d69c91f498243c09\",\"f129ca1f495d9af9\",\"f129ca1f495d9af9\",\"f129ca1f495d9af9\",\"f129ca1f495d9af9\",\"bf21a9e8fbc5a384\",\"9ea8208e92af7f82\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/shared/\",\"asPath\":\"/shared/?room=core-room-1791240715257020000\",\"query\":{\"room\":\"core-room-1791240715257020000\"}}}}"
+    },
+    {
+      "page": "context-2",
+      "direction": "received",
+      "payload": "40/_event,{\"sid\":\"ZnWqBYDovTNrPaUvAAAH\"}"
+    },
+    {
+      "page": "context-2",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_session_rx_state_\":{\"client_token\":\"9d01df70-266e-49e8-8b8a-52bc4975d42b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"ZnWqBYDovTNrPaUvAAAH\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"}}}}]"
+    },
+    {
+      "page": "context-2",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+    },
+    {
+      "page": "context-2",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room.join\",\"router_data\":{\"pathname\":\"/shared/\",\"asPath\":\"/shared/?room=core-room-1791240715257020000\",\"query\":{\"room\":\"core-room-1791240715257020000\"}}}]"
+    },
+    {
+      "page": "context-2",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_session_rx_state_\":{\"client_token\":\"9d01df70-266e-49e8-8b8a-52bc4975d42b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"ZnWqBYDovTNrPaUvAAAH\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room\":{\"audit_count_rx_state_\":0,\"messages_rx_state_\":[],\"count_rx_state_\":0}}}]"
+    },
+    {
+      "page": "context-3",
+      "direction": "received",
+      "payload": "0{\"sid\":\"DcQy9Met24lyDL0JAAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+    },
+    {
+      "page": "context-3",
+      "direction": "sent",
+      "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"4ddbbc80d5b32e5a\",\"b084fc0c68f7c73a\",\"051fa77e89edc88a\",\"b175f7912615bb4e\",\"fcdea68e36f9d7ce\",\"d69c91f498243c09\",\"f129ca1f495d9af9\",\"f129ca1f495d9af9\",\"f129ca1f495d9af9\",\"f129ca1f495d9af9\",\"bf21a9e8fbc5a384\",\"9ea8208e92af7f82\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/shared/\",\"asPath\":\"/shared/?room=core-room-1791240715257020000\",\"query\":{\"room\":\"core-room-1791240715257020000\"}}}}"
+    },
+    {
+      "page": "context-3",
+      "direction": "received",
+      "payload": "40/_event,{\"sid\":\"Gdlc4uW8wZcyl5gUAAAJ\"}"
+    },
+    {
+      "page": "context-3",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"q1zrNOPWgo1fXiMQ5VXRWQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"q1zrNOPWgo1fXiMQ5VXRWQ==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_session_rx_state_\":{\"client_token\":\"2e54d4ad-5678-44ea-84e6-5ff8f2fb9101\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Gdlc4uW8wZcyl5gUAAAJ\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"}}}}]"
+    },
+    {
+      "page": "context-3",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+    },
+    {
+      "page": "context-3",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room.join\",\"router_data\":{\"pathname\":\"/shared/\",\"asPath\":\"/shared/?room=core-room-1791240715257020000\",\"query\":{\"room\":\"core-room-1791240715257020000\"}}}]"
+    },
+    {
+      "page": "context-2",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_session_rx_state_\":{\"client_token\":\"9d01df70-266e-49e8-8b8a-52bc4975d42b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"ZnWqBYDovTNrPaUvAAAH\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room\":{\"audit_count_rx_state_\":0,\"messages_rx_state_\":[],\"count_rx_state_\":0}}}]"
+    },
+    {
+      "page": "context-2",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room.increment\",\"router_data\":{\"pathname\":\"/shared/\",\"asPath\":\"/shared/?room=core-room-1791240715257020000\",\"query\":{\"room\":\"core-room-1791240715257020000\"}}}]"
+    },
+    {
+      "page": "context-2",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_session_rx_state_\":{\"client_token\":\"9d01df70-266e-49e8-8b8a-52bc4975d42b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"ZnWqBYDovTNrPaUvAAAH\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room\":{\"audit_count_rx_state_\":1,\"messages_rx_state_\":[\"message-1\"],\"count_rx_state_\":1}}}]"
+    },
+    {
+      "page": "context-3",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"q1zrNOPWgo1fXiMQ5VXRWQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"q1zrNOPWgo1fXiMQ5VXRWQ==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_session_rx_state_\":{\"client_token\":\"2e54d4ad-5678-44ea-84e6-5ff8f2fb9101\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Gdlc4uW8wZcyl5gUAAAJ\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room\":{\"audit_count_rx_state_\":0,\"messages_rx_state_\":[],\"count_rx_state_\":0}}}]"
+    },
+    {
+      "page": "context-3",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"q1zrNOPWgo1fXiMQ5VXRWQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"q1zrNOPWgo1fXiMQ5VXRWQ==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_session_rx_state_\":{\"client_token\":\"2e54d4ad-5678-44ea-84e6-5ff8f2fb9101\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Gdlc4uW8wZcyl5gUAAAJ\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room\":{\"audit_count_rx_state_\":1,\"messages_rx_state_\":[\"message-1\"],\"count_rx_state_\":1}}}]"
+    },
+    {
+      "page": "context-2",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.core_probe___core_probe____dashboard.first\",\"router_data\":{\"pathname\":\"/shared/\",\"asPath\":\"/shared/?room=core-room-1791240715257020000\",\"query\":{\"room\":\"core-room-1791240715257020000\"}}}]"
+    },
+    {
+      "page": "context-3",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"q1zrNOPWgo1fXiMQ5VXRWQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"q1zrNOPWgo1fXiMQ5VXRWQ==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_session_rx_state_\":{\"client_token\":\"2e54d4ad-5678-44ea-84e6-5ff8f2fb9101\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Gdlc4uW8wZcyl5gUAAAJ\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room\":{\"audit_count_rx_state_\":1,\"messages_rx_state_\":[\"message-1\"],\"count_rx_state_\":1}}}]"
+    },
+    {
+      "page": "context-2",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_session_rx_state_\":{\"client_token\":\"9d01df70-266e-49e8-8b8a-52bc4975d42b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"ZnWqBYDovTNrPaUvAAAH\"}},\"reflex___state____state.core_probe___core_probe____dashboard\":{\"nested_first_rx_state_\":1}}}]"
+    },
+    {
+      "page": "context-3",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room.increment\",\"router_data\":{\"pathname\":\"/shared/\",\"asPath\":\"/shared/?room=core-room-1791240715257020000\",\"query\":{\"room\":\"core-room-1791240715257020000\"}}}]"
+    },
+    {
+      "page": "context-2",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_session_rx_state_\":{\"client_token\":\"9d01df70-266e-49e8-8b8a-52bc4975d42b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"ZnWqBYDovTNrPaUvAAAH\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room\":{\"audit_count_rx_state_\":2,\"messages_rx_state_\":[\"message-1\",\"message-2\"],\"count_rx_state_\":2}}}]"
+    },
+    {
+      "page": "context-3",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"q1zrNOPWgo1fXiMQ5VXRWQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"q1zrNOPWgo1fXiMQ5VXRWQ==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_session_rx_state_\":{\"client_token\":\"2e54d4ad-5678-44ea-84e6-5ff8f2fb9101\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Gdlc4uW8wZcyl5gUAAAJ\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room\":{\"audit_count_rx_state_\":2,\"messages_rx_state_\":[\"message-1\",\"message-2\"],\"count_rx_state_\":2}}}]"
+    },
+    {
+      "page": "context-3",
+      "direction": "sent",
+      "payload": "41/_event,"
+    },
+    {
+      "page": "context-3",
+      "direction": "received",
+      "payload": "0{\"sid\":\"qJuakNeST6QKwK0wAAAK\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+    },
+    {
+      "page": "context-3",
+      "direction": "sent",
+      "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"4ddbbc80d5b32e5a\",\"b084fc0c68f7c73a\",\"051fa77e89edc88a\",\"b175f7912615bb4e\",\"fcdea68e36f9d7ce\",\"d69c91f498243c09\",\"f129ca1f495d9af9\",\"f129ca1f495d9af9\",\"f129ca1f495d9af9\",\"f129ca1f495d9af9\",\"bf21a9e8fbc5a384\",\"9ea8208e92af7f82\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/shared/\",\"asPath\":\"/shared/?room=core-room-1791240715257020000\",\"query\":{\"room\":\"core-room-1791240715257020000\"}}}}"
+    },
+    {
+      "page": "context-3",
+      "direction": "received",
+      "payload": "40/_event,{\"sid\":\"BVUalbxcXiHiDsNaAAAL\"}"
+    },
+    {
+      "page": "context-3",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"8QyNh4RH7qlEhSbceZfRzA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"8QyNh4RH7qlEhSbceZfRzA==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_session_rx_state_\":{\"client_token\":\"2e54d4ad-5678-44ea-84e6-5ff8f2fb9101\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"BVUalbxcXiHiDsNaAAAL\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room\":{\"audit_count_rx_state_\":2,\"count_rx_state_\":2,\"messages_rx_state_\":[\"message-1\",\"message-2\"]}}}]"
+    },
+    {
+      "page": "context-3",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+    },
+    {
+      "page": "context-2",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_session_rx_state_\":{\"client_token\":\"9d01df70-266e-49e8-8b8a-52bc4975d42b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"ZnWqBYDovTNrPaUvAAAH\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room\":{\"audit_count_rx_state_\":2,\"messages_rx_state_\":[\"message-1\",\"message-2\"],\"count_rx_state_\":2}}}]"
+    },
+    {
+      "page": "context-3",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room.leave\",\"router_data\":{\"pathname\":\"/shared/\",\"asPath\":\"/shared/?room=core-room-1791240715257020000\",\"query\":{\"room\":\"core-room-1791240715257020000\"}}}]"
+    },
+    {
+      "page": "context-2",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_session_rx_state_\":{\"client_token\":\"9d01df70-266e-49e8-8b8a-52bc4975d42b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"ZnWqBYDovTNrPaUvAAAH\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room\":{\"audit_count_rx_state_\":2,\"messages_rx_state_\":[\"message-1\",\"message-2\"],\"count_rx_state_\":2}}}]"
+    },
+    {
+      "page": "context-3",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"8QyNh4RH7qlEhSbceZfRzA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"8QyNh4RH7qlEhSbceZfRzA==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_session_rx_state_\":{\"client_token\":\"2e54d4ad-5678-44ea-84e6-5ff8f2fb9101\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"BVUalbxcXiHiDsNaAAAL\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room\":{\"audit_count_rx_state_\":2,\"messages_rx_state_\":[\"message-1\",\"message-2\"],\"count_rx_state_\":2}}}]"
+    },
+    {
+      "page": "context-3",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"8QyNh4RH7qlEhSbceZfRzA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"8QyNh4RH7qlEhSbceZfRzA==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_session_rx_state_\":{\"client_token\":\"2e54d4ad-5678-44ea-84e6-5ff8f2fb9101\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"BVUalbxcXiHiDsNaAAAL\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"}},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.core_probe___core_probe____dashboard\":{\"choice_rx_state_\":\"go\",\"default_text_rx_state_\":\"backend default\",\"end_rx_state_\":-4,\"items_rx_state_\":[1,2,3,4,5],\"left_rx_state_\":{\"a\":[1,2],\"b\":[3]},\"nested_first_rx_state_\":0,\"nested_second_rx_state_\":0,\"payload_rx_state_\":{\"text\":\"hash# percent% caf\u00e9\"},\"received_client_rx_state_\":\"\",\"right_rx_state_\":{\"b\":[3],\"a\":[1,2]},\"show_reader_rx_state_\":false,\"start_rx_state_\":-1,\"step_rx_state_\":-1,\"text_rx_state_\":\"hello\"},\"reflex___state____state.core_probe___core_probe____parent\":{\"audit_count_rx_state_\":0,\"count_rx_state_\":2,\"doubled_rx_state_\":4,\"items_rx_state_\":[\"seed\"]},\"reflex___state____state.core_probe___core_probe____parent.core_probe___"
+    },
+    {
+      "page": "context-3",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+    },
+    {
+      "page": "context-2",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room.increment\",\"router_data\":{\"pathname\":\"/shared/\",\"asPath\":\"/shared/?room=core-room-1791240715257020000\",\"query\":{\"room\":\"core-room-1791240715257020000\"}}}]"
+    },
+    {
+      "page": "context-2",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_session_rx_state_\":{\"client_token\":\"9d01df70-266e-49e8-8b8a-52bc4975d42b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"ZnWqBYDovTNrPaUvAAAH\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room\":{\"audit_count_rx_state_\":3,\"messages_rx_state_\":[\"message-1\",\"message-2\",\"message-3\"],\"count_rx_state_\":3}}}]"
+    },
+    {
+      "page": "context-3",
+      "direction": "sent",
+      "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room.join\",\"router_data\":{\"pathname\":\"/shared/\",\"asPath\":\"/shared/?room=core-room-1791240715257020000\",\"query\":{\"room\":\"core-room-1791240715257020000\"}}}]"
+    },
+    {
+      "page": "context-2",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"UXZ2pau9HXKyZqD6RluONw==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_session_rx_state_\":{\"client_token\":\"9d01df70-266e-49e8-8b8a-52bc4975d42b\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"ZnWqBYDovTNrPaUvAAAH\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room\":{\"audit_count_rx_state_\":3,\"messages_rx_state_\":[\"message-1\",\"message-2\",\"message-3\"],\"count_rx_state_\":3}}}]"
+    },
+    {
+      "page": "context-3",
+      "direction": "received",
+      "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"8QyNh4RH7qlEhSbceZfRzA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"8QyNh4RH7qlEhSbceZfRzA==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36\"}},\"rx_router_route_id_rx_state_\":\"/shared\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3112\",\"origin\":\"http://localhost:3112\",\"path\":\"/shared/\",\"query\":\"room=core-room-1791240715257020000\",\"query_parameters\":{\"room\":\"core-room-1791240715257020000\"},\"fragment\":\"\",\"href\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\"},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3112\",\"path\":\"/shared\",\"raw_path\":\"/shared/?room=core-room-1791240715257020000\",\"full_path\":\"http://localhost:3112/shared\",\"full_raw_path\":\"http://localhost:3112/shared/?room=core-room-1791240715257020000\",\"params\":{\"room\":\"core-room-1791240715257020000\"}},\"rx_router_session_rx_state_\":{\"client_token\":\"2e54d4ad-5678-44ea-84e6-5ff8f2fb9101\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"BVUalbxcXiHiDsNaAAAL\"}},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal.core_probe___core_probe____room\":{\"audit_count_rx_state_\":3,\"messages_rx_state_\":[\"message-1\",\"message-2\",\"message-3\"],\"count_rx_state_\":3}}}]"
+    }
+  ]
+}

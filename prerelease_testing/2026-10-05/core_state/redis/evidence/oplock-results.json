@@ -1,0 +1,102 @@
+{
+  "database": 5,
+  "scenarios": [
+    {
+      "name": "Real subscription confirmation withheld: single update immediately persists and releases",
+      "count": 1,
+      "elapsed_seconds": 0.0033,
+      "subscriber_ready": false,
+      "leases": 0,
+      "redis_lock_remaining": false
+    },
+    {
+      "name": "Actual acknowledgement permits opportunistic lease",
+      "count": 2,
+      "subscriber_ready": true,
+      "leases": 1
+    },
+    {
+      "name": "Second manager's real keyspace contention cancels first manager's 5-second lease",
+      "count": 3,
+      "elapsed_seconds": 0.0027
+    },
+    {
+      "name": "30 contending operations preserve every increment and backend mutation",
+      "returned_counts": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33
+      ],
+      "persisted_count": 33,
+      "persisted_audit": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33
+      ],
+      "elapsed_seconds": 0.0116,
+      "remaining_lock": false,
+      "cleaned_keys": [
+        "alpha-oplock-50efeae2-ee83-4c05-99d6-65bddf9508e2_reflex___state____state.redis_probe___redis_probe____redis_state"
+      ]
+    }
+  ],
+  "token": "alpha-oplock-50efeae2-ee83-4c05-99d6-65bddf9508e2",
+  "status": "passed"
+}

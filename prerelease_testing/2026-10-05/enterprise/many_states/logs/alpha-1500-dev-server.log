@@ -1,0 +1,175 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/refle
+x_base/config.py'
+Debug: Config: Config(app_name='lifecycle_app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3133, frontend_path='', 
+backend_port=8133, backend_path='', api_url='http://localhost:8133', 
+deploy_url='http://localhost:3133', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, state_manager_mode='disk', 
+redis_lock_expiration=10000, redis_lock_warning_threshold=1000, 
+redis_token_expiration=3600, _non_default_attributes={'state_manager_mode', 
+'telemetry_enabled', 'backend_port', 'plugins', 'frontend_port', 'loglevel', 
+'app_name'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []}), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun'), '--version']
+Debug: [Reflex 0.10.0a1 with Python 3.12.1 (PATH: 
+/private/tmp/reflex-enterprise-test-20261005/bin/python)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: /Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: ['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun']
+Debug: Using package executer at: [['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3133 is in use.
+Debug: Checking if Frontend port: 3133 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Frontend port: 3133 is not in use.
+Debug: Checking if Backend port: 8133 is in use.
+Debug: Checking if Backend port: 8133 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Backend port: 8133 is not in use.
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+QA_APP_IMPORT_STDERR
+QA_APP_IMPORT_STDOUT
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: running_task
+Debug: [timing] Compile pages: 0.02s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 17/16 0:00:00
+Debug: Using cached value for _install_frontend_packages with payload: 
+['@radix-ui/themes@3.3.0', 'lucide-react@1.26.0', 'react-error-boundary@6.1.6', 
+'sonner@2.0.8'],[],True,['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun'],[('@react-router/node', '8.4.0'), ('isbot', 
+'5.2.2'), ('mergician', 'v2.0.2'), ('react', '19.3.0'), ('react-dom', '19.3.0'),
+('react-helmet', '6.1.0'), ('react-router', '8.4.0'), ('socket.io-client', 
+'4.8.4'), ('universal-cookie', '8.1.2')],[('@emotion/react', '11.14.0'), 
+('@react-router/dev', '8.4.0'), ('@react-router/fs-routes', '8.4.0'), 
+('autoprefixer', '10.6.1'), ('postcss', '8.5.29'), ('postcss-import', '17.0.0'),
+('vite', '8.3.2')],[]
+Debug: Copying .web/bun.lock to 
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterpr
+ise/many_states/alpha/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterpr
+ise/many_states/alpha/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.00s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Using Granian for backend
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/Users/masenf/Library/Application 
+Support/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Reload paths: 
+['/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enter
+prise/many_states/alpha/rxconfig.py', 
+'/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterp
+rise/many_states/alpha/lifecycle_app', 
+'/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterp
+rise/many_states/alpha/requirements.txt', 
+'/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterp
+rise/many_states/alpha/assets']
+[INFO] Starting granian (main PID: 3089)
+[INFO] Listening at: http://0.0.0.0:8133
+[INFO] Spawning worker-1 with PID: 3098
+QA_APP_IMPORT_STDERR
+Debug: [restart] Relaunching with --conditions=development
+QA_APP_IMPORT_STDOUT
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: running_task
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: running_task as coroutine
+QA_LIFESPAN_STARTED
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3133/
+App running at: http://localhost:3133/
+Backend running at: http://0.0.0.0:8133
+Debug:   ➜  Network: http://192.168.0.105:3133/  en1
+Debug:   ➜  Network: http://100.80.29.50:3133/   utun6
+Debug: 4:17:13 PM [vite] (ssr) connected.
+Debug: [BABEL] Note: The code generator has deoptimised the styling of 
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterpr
+ise/many_states/alpha/.web/utils/context.jsx as it exceeds the max of 500KB.
+Debug: 4:17:14 PM [vite] (client) [Unhandled error] RangeError: Maximum call 
+stack size exceeded
+Debug:  > pushComponentEffectStart 
+node_modules/react-dom/cjs/react-dom-client.development.js:6110:13
+Debug:  > commitMutationEffectsOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15798:28
+Debug:  > recursivelyTraverseMutationEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15794:10
+Debug:  > commitMutationEffectsOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:16293:10
+Debug:  > recursivelyTraverseMutationEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15794:10
+Debug:  > commitMutationEffectsOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15819:10
+Debug:  > recursivelyTraverseMutationEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15794:10
+Debug:  > commitMutationEffectsOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:16293:10
+Debug:  > recursivelyTraverseMutationEffects 
+node_modules/react-dom/cjs/react-dom-client.development.js:15794:10
+Debug:  > commitMutationEffectsOnFiber 
+node_modules/react-dom/cjs/react-dom-client.development.js:15819:10
+Debug: 
+[INFO] Stopping worker-1
+Debug: Canceling lifespan task: <Task pending 
+name='reflex_lifespan_task|running_task|1791242211.114744' coro=<running_task() 
+running at 
+/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterpr
+ise/many_states/alpha/lifecycle_app/lifecycle_app.py:89> wait_for=<Future 
+pending cb=[Task.task_wakeup()]> cb=[_report_task_result() at 
+/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/reflex
+/app_mixins/lifespan.py:48]>
+QA_LIFESPAN_CANCELLED
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

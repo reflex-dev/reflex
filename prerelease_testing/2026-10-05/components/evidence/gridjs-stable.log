@@ -1,0 +1,585 @@
+WARN `--no-project` was provided, but no project was found
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-venv/lib/pytho
+n3.13/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='gridjs_probe', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3122, frontend_path='', 
+backend_port=8122, backend_path='', api_url='http://localhost:8122', 
+deploy_url='http://localhost:3122', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-prerelease-components-20261005/runtime/b
+un/bin/bun'), frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'api_url', 'loglevel', 'backend_port', 'frontend_port',
+'telemetry_enabled', 'app_name'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/b
+un'), '--version']
+Debug: [Reflex 0.9.12 with Python 3.13.0 (PATH: 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-venv/bin/python
+)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-venv/lib/pytho
+n3.13/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='gridjs_probe', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=3122, frontend_path='', 
+backend_port=8122, backend_path='', api_url='http://localhost:8122', 
+deploy_url='http://localhost:3122', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/private/tmp/reflex-prerelease-components-20261005/runtime/b
+un/bin/bun'), frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'api_url', 'loglevel', 'backend_port', 'frontend_port',
+'telemetry_enabled', 'app_name'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/b
+un'), '--version']
+Debug: [Reflex 0.9.12 with Python 3.13.0 (PATH: 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-venv/bin/python
+)]
+Debug: [Node None (Minimum: 22.22.0) (PATH:None)]
+Debug: [Bun 1.4.2 (Minimum: 1.4.0) (PATH: 
+/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun)]
+Debug: [OS Darwin Darwin Kernel Version 27.0.0: Tue Aug 11 21:20:40 PDT 2026; 
+root:xnu-13432.1.9~1/RELEASE_ARM64_T6020]
+Debug: Using package installer at: 
+['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun']
+Debug: Using package executer at: 
+[['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+────────────────────────── Initializing gridjs_probe ───────────────────────────
+Debug: Creating /private/tmp/reflex-prerelease-components-20261005/runtime
+Debug: Ensuring reflex installation id.
+Debug: Creating /private/tmp/reflex-prerelease-components-20261005/runtime
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: 
+[PosixPath('/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/b
+un'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-venv/lib/python
+3.13/site-packages/reflex_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/reflex.lock
+/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 229867552760995064002145699758859882617.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.056 seconds
+Debug: Latest version of reflex: 0.9.12
+Debug: Creating .gitignore
+Debug: Appending reflex== to requirements.txt
+Success: Initialized gridjs_probe. Install dependencies from `requirements.txt` 
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3122 is in use.
+Debug: Checking if Frontend port: 3122 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Frontend port: 3122 is not in use.
+Debug: Checking if Backend port: 8122 is in use.
+Debug: Checking if Backend port: 8122 is in use for families: 
+[<AddressFamily.AF_INET: 2>, <AddressFamily.AF_INET6: 30>].
+Debug: Backend port: 8122 is not in use.
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-venv/lib/pytho
+n3.13/site-packages/reflex_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.38s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 14/13 0:00:00
+Debug: Running command: 
+['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun', 
+'add', '--legacy-peer-deps', '-d', 'postcss@8.5.26', 'autoprefixer@10.5.4', 
+'postcss-import@17.0.0', '@emotion/react@11.14.0', '@react-router/dev@8.4.0', 
+'@react-router/fs-routes@8.4.0', 'vite@8.2.2']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: Saved lockfile
+Debug: 
+Debug: installed postcss@8.5.26
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss-import@17.0.0
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: 
+Debug: 127 packages installed [132.00ms]
+Debug: Running command: 
+['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun', 
+'add', '--legacy-peer-deps', 'mergician@v2.0.2', 'isbot@5.2.2', 'gridjs@6.2.0', 
+'@radix-ui/themes@3.3.0', 'gridjs-react@6.1.1', 'react-dom@19.2.8', 
+'react-router@8.4.0', '@react-router/node@8.4.0', 'universal-cookie@8.1.2', 
+'react-error-boundary@6.1.2', 'react@19.2.8', 'sonner@2.0.8', 
+'react-helmet@6.1.0', 'socket.io-client@4.8.3', 'lucide-react@1.26.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.2 (744846f84)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [1]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed mergician@2.0.2
+Debug: installed isbot@5.2.2
+Debug: installed gridjs@6.2.0
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed gridjs-react@6.1.1
+Debug: installed react-dom@19.2.8
+Debug: installed react-router@8.4.0
+Debug: installed @react-router/node@8.4.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-error-boundary@6.1.2
+Debug: installed react@19.2.8
+Debug: installed sonner@2.0.8
+Debug: installed react-helmet@6.1.0
+Debug: installed socket.io-client@4.8.3
+Debug: installed lucide-react@1.26.0
+Debug: 
+Debug: 102 packages installed [262.00ms]
+Debug: Copying .web/bun.lock to 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/reflex.lock
+/bun.lock
+Debug: Copying .web/package.json to 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/reflex.lock
+/package.json
+Debug: [timing] Install Frontend Packages: 0.41s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Using Granian for backend
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: 
+['/private/tmp/reflex-prerelease-components-20261005/runtime/bun/bin/bun', 
+'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Reload paths: 
+['/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/rxconfig.
+py', 
+'/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/requiremen
+ts.txt', 
+'/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/gridjs_pro
+be']
+[INFO] Starting granian (main PID: 2963)
+[INFO] Listening at: http://0.0.0.0:8122
+[INFO] Spawning worker-1 with PID: 2973
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: [restart] Relaunching with --conditions=development
+Debug:   ➜  Local:   http://localhost:3122/
+App running at: http://localhost:3122/
+Backend running at: http://0.0.0.0:8122
+Debug:   ➜  Network: http://192.168.0.105:3122/  en1
+Debug:   ➜  Network: http://100.80.29.50:3122/   utun6
+Debug: 4:16:52 PM [vite] (ssr) connected.
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: 4:17:52 PM [vite] (client) hmr update /app/root.jsx
+Debug: 4:17:52 PM [vite] (client) hmr update /app/root.jsx
+Debug: 4:17:52 PM [vite] (client) hmr update /app/root.jsx
+Debug: 4:17:52 PM [vite] (ssr) page reload app/root.jsx
+Debug: 4:17:52 PM [vite] (ssr) program reload
+Debug: 4:17:52 PM [vite] (client) page reload 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/app/_d
+ocument.js
+Debug: 4:17:52 PM [vite] (client) page reload 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/app/_d
+ocument.js
+Debug: 4:17:52 PM [vite] (client) page reload app/_document.js
+Debug: 4:17:52 PM [vite] (ssr) page reload app/_document.js
+Debug: 4:17:52 PM [vite] (client) page reload 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/app/en
+try.client.js
+Debug: 4:17:52 PM [vite] (client) page reload app/entry.client.js
+Debug: 4:17:52 PM [vite] (client) hmr update /app/routes/_index.jsx
+Debug: 4:17:52 PM [vite] (client) hmr update /app/routes/_index.jsx
+Debug: 4:17:52 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:52 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:52 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:52 PM [vite] (ssr) page reload reflex.json
+Debug: 4:17:52 PM [vite] (ssr) An error happened during full reload
+Debug: Failed to load url /app/root.jsx (resolved id: 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/app/ro
+ot.jsx) in  virtual:react-router/server-build. Does the file exist?
+Debug: Error: Failed to load url /app/root.jsx (resolved id: 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/app/ro
+ot.jsx) in  virtual:react-router/server-build. Does the file exist?
+Debug:     at loadAndTransform 
+(/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/node_
+modules/vite/dist/node/chunks/node.js:20660:35)
+Debug:     at processTicksAndRejections (native)
+Debug: 4:17:52 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:52 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:52 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:52 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:52 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:52 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:52 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:52 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:52 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:52 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:52 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:52 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:52 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:52 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:53 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:53 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:53 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:53 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:53 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:53 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:53 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:53 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:53 PM [vite] (client) page reload 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/app/en
+try.client.js
+Debug: 4:17:53 PM [vite] (client) page reload app/entry.client.js
+Debug: 4:17:53 PM [vite] vite-plugin-safari-cachebust.js changed, restarting 
+server...
+Debug: 4:17:53 PM [vite] (client) page reload 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/utils/
+react-theme.js
+Debug: 4:17:53 PM [vite] (client) page reload 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/utils/
+react-theme.js
+Debug: 4:17:53 PM [vite] (client) page reload utils/react-theme.js
+Debug: 4:17:53 PM [vite] (ssr) page reload utils/react-theme.js
+Debug: 4:17:53 PM [vite] (client) page reload 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/utils/
+context-registry.js
+Debug: 4:17:53 PM [vite] (client) page reload 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/utils/
+context-registry.js
+Debug: 4:17:53 PM [vite] (client) page reload utils/context-registry.js
+Debug: 4:17:53 PM [vite] (ssr) page reload utils/context-registry.js
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (ssr) page reload utils/state.js
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (ssr) page reload utils/helpers/upload.js
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (ssr) page reload utils/helpers/debounce.js
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (ssr) page reload utils/helpers/throttle.js
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (ssr) page reload utils/helpers/json.js
+Debug: 4:17:53 PM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 4:17:53 PM [vite] (client) page reload 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/compon
+ents/reflex/radix_themes_color_mode_provider.js
+Debug: 4:17:53 PM [vite] (client) page reload 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/compon
+ents/reflex/radix_themes_color_mode_provider.js
+Debug: 4:17:53 PM [vite] (client) page reload 
+components/reflex/radix_themes_color_mode_provider.js
+Debug: 4:17:53 PM [vite] (ssr) page reload 
+components/reflex/radix_themes_color_mode_provider.js
+Debug: 4:17:53 PM [vite] vite.config.js changed, restarting server...
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/reflex/app.jsx, /app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (ssr) page reload reflex.json
+Debug: 4:17:53 PM [vite] (client) hmr update /app_components/reflex/app.jsx, 
+/utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update /app_components/reflex/app.jsx, 
+/utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update /app_components/reflex/app.jsx, 
+/utils/context.jsx, 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx, /app_components/reflex/compiler/compiler.jsx, 
+/app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (ssr) page reload env.json
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update /utils/context.jsx
+Debug: 4:17:53 PM [vite] (ssr) page reload utils/context.jsx
+Debug: 4:17:53 PM [vite] (client) page reload 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/utils/
+theme.js
+Debug: 4:17:53 PM [vite] (client) page reload 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/utils/
+theme.js
+Debug: 4:17:53 PM [vite] (client) page reload utils/theme.js
+Debug: 4:17:53 PM [vite] (ssr) page reload utils/theme.js
+Debug: 4:17:53 PM [vite] (client) hmr update 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx
+Debug: 4:17:53 PM [vite] (client) hmr update 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx
+Debug: 4:17:53 PM [vite] (client) hmr update 
+/utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+sx
+Debug: 4:17:53 PM [vite] (ssr) page reload 
+utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.js
+x
+Debug: 4:17:53 PM [vite] (client) hmr update 
+/styles/__reflex_global_styles.css?direct
+Debug: 4:17:53 PM [vite] (client) page reload 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/styles
+/__reflex_global_styles.css
+Debug: 4:17:53 PM [vite] (client) page reload 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/styles
+/__reflex_global_styles.css
+Debug: 4:17:53 PM [vite] (client) page reload styles/__reflex_global_styles.css
+Debug: 4:17:53 PM [vite] (ssr) page reload styles/__reflex_global_styles.css
+Debug: 4:17:53 PM [vite] (client) hmr update /app_components/reflex/app.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update /app_components/reflex/app.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update /app_components/reflex/app.jsx
+Debug: 4:17:53 PM [vite] (ssr) page reload app_components/reflex/app.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update 
+/app_components/reflex/compiler/compiler.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update 
+/app_components/reflex/compiler/compiler.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update 
+/app_components/reflex/compiler/compiler.jsx
+Debug: 4:17:53 PM [vite] (ssr) page reload 
+app_components/reflex/compiler/compiler.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update 
+/app_components/gridjs_probe/gridjs_probe.jsx
+Debug: 4:17:53 PM [vite] (client) hmr update 
+/app_components/gridjs_probe/gridjs_probe.jsx
+Debug: vite.config.js (2:28) [33m[UNRESOLVED_IMPORT] [0mCould not resolve 
+'@react-router/dev/vite' in vite.config.js
+Debug:    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m vite.config.js:2:29 
+[38;5;246m][0m
+Debug:    [38;5;246m│[0m
+Debug:  [38;5;246m2 │[0m 
+[38;5;249mi[0m[38;5;249mm[0m[38;5;249mp[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249m
+t[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249ma[0m[38;5;249mc[0m[38;5;249mt[0m[38;5;2
+49mR[0m[38;5;249mo[0m[38;5;249mu[0m[38;5;249mt[0m[38;5;249me[0m[38;5;249mr[0m[38
+;5;249m [0m[38;5;249m}[0m[38;5;249m 
+[0m[38;5;249mf[0m[38;5;249mr[0m[38;5;249mo[0m[38;5;249mm[0m[38;5;249m 
+[0m"@react-router/dev/vite"[38;5;249m;[0m
+Debug:  [38;5;240m  │[0m                             ────────────┬─────────── 
+Debug:  [38;5;240m  │[0m                                         ╰─────────────
+Module not found, treating it as an external dependency
+Debug: [38;5;246m───╯[0m
+Debug: 
+Debug: vite.config.js (3:29) [33m[UNRESOLVED_IMPORT] [0mCould not resolve 'vite'
+in vite.config.js
+Debug:    [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m vite.config.js:3:30 
+[38;5;246m][0m
+Debug:    [38;5;246m│[0m
+Debug:  [38;5;246m3 │[0m 
+[38;5;249mi[0m[38;5;249mm[0m[38;5;249mp[0m[38;5;249mo[0m[38;5;249mr[0m[38;5;249m
+t[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m 
+[0m[38;5;249md[0m[38;5;249me[0m[38;5;249mf[0m[38;5;249mi[0m[38;5;249mn[0m[38;5;2
+49me[0m[38;5;249mC[0m[38;5;249mo[0m[38;5;249mn[0m[38;5;249mf[0m[38;5;249mi[0m[38
+;5;249mg[0m[38;5;249m [0m[38;5;249m}[0m[38;5;249m 
+[0m[38;5;249mf[0m[38;5;249mr[0m[38;5;249mo[0m[38;5;249mm[0m[38;5;249m 
+[0m"vite"[38;5;249m;[0m
+Debug:  [38;5;240m  │[0m                              ───┬──  
+Debug:  [38;5;240m  │[0m                                 ╰──── Module not found,
+treating it as an external dependency
+Debug: [38;5;246m───╯[0m
+Debug: 
+Debug: 4:17:53 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:53 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:53 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:53 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:53 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: 4:17:53 PM [react-router] Could not find a root route module in the app 
+directory as "app/root.tsx"
+Debug: failed to load config from 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/vite.c
+onfig.js
+Debug: 4:17:53 PM [vite] Cannot find package 'react-router' imported from 
+/Users/masenf/.bun/install/cache/@react-router/dev@8.4.0@@@1/dist/vite.js
+Debug: 4:17:53 PM [vite] server restart failed
+Debug: 4:17:53 PM [vite] (client) page reload 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/reflex
+.json
+Debug: 4:17:53 PM [vite] (client) page reload 
+/private/tmp/reflex-prerelease-components-20261005/gridjs-stable-app/.web/reflex
+.json
+Debug: 4:17:53 PM [vite] (client) page reload reflex.json
+Debug: 4:17:53 PM [vite] (ssr) page reload reflex.json
+Debug: error: script "dev" exited with code 143
+Info: Reflex app stopped.

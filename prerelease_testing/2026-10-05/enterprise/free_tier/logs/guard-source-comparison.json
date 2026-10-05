@@ -1,0 +1,26 @@
+{
+  "a1": {
+    "version": "0.9.7a1",
+    "wheel_url": "https://files.pythonhosted.org/packages/50/ae/2acf17036ec339ac38719e8e634aad8b508c6a3007b2433d1a0bdf0448c5/reflex_enterprise-0.9.7a1-py3-none-any.whl",
+    "wheel_sha256": "54161bac2113f42dfa385cda55faa820088e44be08901f0dab4f4fecbc584f51",
+    "guard": {
+      "first_line": 104,
+      "last_line": 121,
+      "source": "    def _check_login(self):\n        \"\"\"Check if the user is logged in.\n\n        Raises:\n            RuntimeError: If the user is not logged in.\n        \"\"\"\n        current_tier = get_user_tier()\n        if (\n            current_tier == \"anonymous\"\n            and not environment.REFLEX_BACKEND_ONLY.get()\n            and not environment.CI.get()\n        ):\n            msg = (\n                \"`reflex-enterprise` is free to use but you must be logged in. \"\n                \"Run `reflex login` or set the environment variable REFLEX_ACCESS_TOKEN with your token.\"\n            )\n            console.error(msg)\n            exit()",
+      "exit_without_status": true
+    }
+  },
+  "a2": {
+    "version": "0.9.7a2",
+    "installed_path": "/private/tmp/reflex-enterprise-test-20261005/lib/python3.12/site-packages/reflex_enterprise/app.py",
+    "module_sha256": "f06352465a5678745265f5396fe6948337d66d3cdd4e4f97d2fb7dea33c309be",
+    "guard": {
+      "first_line": 106,
+      "last_line": 123,
+      "source": "    def _check_login(self):\n        \"\"\"Check if the user is logged in.\n\n        Raises:\n            RuntimeError: If the user is not logged in.\n        \"\"\"\n        current_tier = get_user_tier()\n        if (\n            current_tier == \"anonymous\"\n            and not environment.REFLEX_BACKEND_ONLY.get()\n            and not environment.CI.get()\n        ):\n            msg = (\n                \"`reflex-enterprise` is free to use but you must be logged in. \"\n                \"Run `reflex login` or set the environment variable REFLEX_ACCESS_TOKEN with your token.\"\n            )\n            console.error(msg)\n            exit()",
+      "exit_without_status": true
+    }
+  },
+  "a1_executed": false,
+  "classification": "Denial exit without a status already existed in published a1 source."
+}

@@ -1,0 +1,119 @@
+{
+  "dev": {
+    "browser_version": "154.0.8037.98",
+    "scenarios": [
+      {
+        "name": "concurrent",
+        "status": "pass",
+        "duration_seconds": 3.807
+      },
+      {
+        "name": "unrelated",
+        "status": "pass",
+        "duration_seconds": 3.321,
+        "timing_separation_seconds": 0.7573302079999849
+      },
+      {
+        "name": "disconnect",
+        "status": "pass",
+        "duration_seconds": 3.124
+      },
+      {
+        "name": "navigation",
+        "status": "pass",
+        "duration_seconds": 3.384
+      },
+      {
+        "name": "recovery",
+        "status": "pass",
+        "duration_seconds": 1.728,
+        "late_delta_separation_seconds": 0.3511794580008427
+      },
+      {
+        "name": "http_disconnect",
+        "status": "pass",
+        "duration_seconds": 3.22
+      },
+      {
+        "name": "tracing",
+        "status": "pass",
+        "duration_seconds": 0.993,
+        "lineage_assertions": {
+          "chunk_txid": "26ed4bd23112",
+          "api_parent_txid": "ad656430da12",
+          "api_child_txid": "6fd17dce86ad",
+          "buffered_top_level_spans": 6
+        }
+      }
+    ],
+    "visible_assertions": 25,
+    "page_errors": [],
+    "console_errors": [],
+    "failed_requests": []
+  },
+  "prod": {
+    "browser_version": "154.0.8037.98",
+    "scenarios": [
+      {
+        "name": "concurrent",
+        "status": "pass",
+        "duration_seconds": 2.571
+      },
+      {
+        "name": "unrelated",
+        "status": "pass",
+        "duration_seconds": 3.162,
+        "timing_separation_seconds": 0.7633056670001679
+      },
+      {
+        "name": "disconnect",
+        "status": "pass",
+        "duration_seconds": 2.932
+      },
+      {
+        "name": "navigation",
+        "status": "pass",
+        "duration_seconds": 3.294
+      },
+      {
+        "name": "recovery",
+        "status": "pass",
+        "duration_seconds": 1.624,
+        "late_delta_separation_seconds": 0.3512525000005553
+      },
+      {
+        "name": "http_disconnect",
+        "status": "pass",
+        "duration_seconds": 2.802
+      },
+      {
+        "name": "tracing",
+        "status": "pass",
+        "duration_seconds": 0.894,
+        "lineage_assertions": {
+          "chunk_txid": "6546ddcc67ff",
+          "api_parent_txid": "af98d14bf727",
+          "api_child_txid": "78843fa4b143",
+          "buffered_top_level_spans": 6
+        }
+      }
+    ],
+    "visible_assertions": 25,
+    "page_errors": [],
+    "console_errors": [
+      {
+        "page": "concurrent-a",
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "location": {
+          "url": "http://localhost:3112/favicon.ico",
+          "line": 0,
+          "column": 0,
+          "lineNumber": 0,
+          "columnNumber": 0
+        }
+      }
+    ],
+    "failed_requests": []
+  }
+}

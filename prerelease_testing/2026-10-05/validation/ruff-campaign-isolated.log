@@ -1,0 +1,683 @@
+WARN `--no-project` was provided, but no project was found
+I001 [*] Import block is un-sorted or un-formatted
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/components/upgrades/source/basic_crud/basic_crud/api.py:3:1
+   |
+ 1 |   """API methods to handle products."""
+ 2 |
+ 3 | / import json
+ 4 | | from datetime import datetime, timezone
+ 5 | |
+ 6 | | from fastapi import APIRouter, Request
+ 7 | | from fastapi.exceptions import HTTPException
+ 8 | |
+ 9 | | import reflex as rx
+10 | |
+11 | | from .model import Product
+   | |__________________________^
+help: Organize imports
+  |
+5 |
+6 + import reflex as rx
+7 | from fastapi import APIRouter, Request
+8 | from fastapi.exceptions import HTTPException
+  -
+  - import reflex as rx
+9 |
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/components/upgrades/source/basic_crud/basic_crud/basic_crud.py:3:1
+   |
+ 1 |   """Welcome to Reflex! This file outlines the steps to create a basic app."""
+ 2 |
+ 3 | / import asyncio
+ 4 | | import json
+ 5 | |
+ 6 | | from fastapi import FastAPI
+ 7 | | import httpx
+ 8 | | from sqlmodel import select
+ 9 | |
+10 | | import reflex as rx
+11 | |
+12 | | from .api import product_router
+13 | | from .model import Product
+   | |__________________________^
+14 |
+15 |   DEFAULT_BODY = """{
+   |
+help: Organize imports
+   |
+5  |
+   - from fastapi import FastAPI
+6  | import httpx
+   - from sqlmodel import select
+   -
+7  | import reflex as rx
+8  + from fastapi import FastAPI
+9  + from sqlmodel import select
+10 |
+   |
+
+B905 `zip()` without an explicit `strict=` parameter
+   --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/components/upgrades/source/overkey/overkey/overkey.py:199:44
+    |
+197 |         correct_letters_count = sum(
+198 |             letter == expected_letter
+199 |             for letter, expected_letter in zip(user_input, current_paragraph)
+    |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+200 |         )
+201 |         self.wpm = (correct_letters_count / self.time_limit) * 60 / 5
+    |
+help: Add explicit value for parameter `strict=`
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth/auth/auth.py:3:1
+  |
+1 |   """Upstream AuthFlowApp, lifted to module scope for CLI execution."""
+2 |
+3 | / import reflex_enterprise as rxe
+4 | | from reflex_enterprise.auth import AuthUserState
+5 | | from reflex_enterprise.auth.types import EventAuthContext, VarAuthContext
+6 | |
+7 | | import reflex as rx
+  | |___________________^
+help: Organize imports
+  |
+2 |
+3 + import reflex as rx
+4 | import reflex_enterprise as rxe
+5 | from reflex_enterprise.auth import AuthUserState
+6 | from reflex_enterprise.auth.types import EventAuthContext, VarAuthContext
+  -
+  - import reflex as rx
+7 |
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/auth_min/auth_min/auth_min.py:3:1
+  |
+1 |   """OIDC/profile compatibility checks independent of the rxe.field failure."""
+2 |
+3 | / import reflex_enterprise as rxe
+4 | | from reflex_enterprise.auth import AuthUserState
+5 | | from reflex_enterprise.auth.oidc.state import GenericOIDCAuthState
+6 | |
+7 | | import reflex as rx
+  | |___________________^
+help: Organize imports
+  |
+2 |
+3 + import reflex as rx
+4 | import reflex_enterprise as rxe
+5 | from reflex_enterprise.auth import AuthUserState
+6 | from reflex_enterprise.auth.oidc.state import GenericOIDCAuthState
+  -
+  - import reflex as rx
+7 |
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/components/components/components.py:3:1
+   |
+ 1 |   """Exercise the public Python wrapper against real AG Grid packages."""
+ 2 |
+ 3 | / import json
+ 4 | | from typing import Any, Literal
+ 5 | |
+ 6 | | import reflex_enterprise as rxe
+ 7 | | from reflex_enterprise.components.ag_grid.aggrid import (
+ 8 | |     CellValueChangedEventSpec,
+ 9 | |     FilterChangedEvent,
+10 | | )
+11 | | from reflex_enterprise.components.ag_grid.datasource import Datasource, SSRMDatasource
+12 | | from starlette.applications import Starlette
+13 | | from starlette.requests import Request
+14 | | from starlette.responses import JSONResponse
+15 | | from starlette.routing import Route
+16 | |
+17 | | import reflex as rx
+18 | |
+19 | | from .fly_to_location import fly_to_location
+20 | | from .map_controls import map_controls
+21 | | from .saved_state import grid_state_serialization_advanced_page
+22 | | from .vector_layers import vector_layers
+   | |________________________________________^
+23 |
+24 |   __all__ = [
+   |
+help: Organize imports
+   |
+5  |
+6  + import reflex as rx
+7  | import reflex_enterprise as rxe
+--------------------------------------------------------------------------------
+16 | from starlette.routing import Route
+   -
+   - import reflex as rx
+17 |
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/components/components/fly_to_location.py:3:1
+   |
+ 1 |   """Map demo showing how to fly to different locations."""
+ 2 |
+ 3 | / import reflex_enterprise as rxe
+ 4 | | from reflex_enterprise.components.map.types import (
+ 5 | |     LatLng,
+ 6 | |     ZoomLevelsChangeEvent,
+ 7 | |     latlng,
+ 8 | |     locate_options,
+ 9 | | )
+10 | |
+11 | | import reflex as rx
+12 | |
+13 | | from .common import demo
+   | |________________________^
+help: Organize imports
+   |
+2  |
+3  + import reflex as rx
+4  | import reflex_enterprise as rxe
+--------------------------------------------------------------------------------
+10 | )
+   -
+   - import reflex as rx
+11 |
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/components/components/map_controls.py:3:1
+  |
+1 |   """Map demo showcasing different map controls."""
+2 |
+3 | / import reflex_enterprise as rxe
+4 | | from reflex_enterprise.components.map.types import latlng
+5 | |
+6 | | import reflex as rx
+7 | |
+8 | | from .common import demo
+  | |________________________^
+help: Organize imports
+  |
+2 |
+3 + import reflex as rx
+4 | import reflex_enterprise as rxe
+5 | from reflex_enterprise.components.map.types import latlng
+  -
+  - import reflex as rx
+6 |
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/components/components/saved_state.py:3:1
+   |
+ 1 |   """Grid State Serialization Example."""
+ 2 |
+ 3 | / import json
+ 4 | | from typing import Any
+ 5 | |
+ 6 | | import reflex_enterprise as rxe
+ 7 | |
+ 8 | | import reflex as rx
+ 9 | |
+10 | | from .common import demo
+   | |________________________^
+11 |
+12 |   column_defs = [
+   |
+help: Organize imports
+  |
+5 |
+  - import reflex_enterprise as rxe
+  -
+6 | import reflex as rx
+7 + import reflex_enterprise as rxe
+8 |
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/apps/components/components/vector_layers.py:3:1
+  |
+1 |   """Map demo showcasing vector layers."""
+2 |
+3 | / import reflex_enterprise as rxe
+4 | | from reflex_enterprise.components.map.types import LatLng, latlng, latlng_bounds
+5 | |
+6 | | import reflex as rx
+7 | |
+8 | | from .common import demo
+  | |________________________^
+help: Organize imports
+  |
+2 |
+3 + import reflex as rx
+4 | import reflex_enterprise as rxe
+5 | from reflex_enterprise.components.map.types import LatLng, latlng, latlng_bounds
+  -
+  - import reflex as rx
+6 |
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/reference/demos__ag_grid__ag_grid__ag_grid.py:3:1
+   |
+ 1 |   """AG Grid Demo."""
+ 2 |
+ 3 | / import reflex as rx
+ 4 | |
+ 5 | | import reflex_enterprise as rxe
+ 6 | |
+ 7 | | from .aligned_grids import aligned_grids_page
+ 8 | | from .cell_selection import cell_selection_page
+ 9 | | from .common import DemoState, demo
+10 | | from .editable import editable_page
+11 | | from .fill_handle import fill_handle_page
+12 | | from .formatters import formatter_page
+13 | | from .grid_state_serialization import grid_state_serialization_simple_page
+14 | | from .grid_state_serialization_advanced import grid_state_serialization_advanced_page
+15 | | from .integrated_charts import integrated_chart_page
+16 | | from .master_detail import master_detail_page
+17 | | from .model_wrapper_customized import model_page_auth
+18 | | from .model_wrapper_simple import model_page
+19 | | from .model_wrapper_ssrm import model_page_ssrm
+20 | | from .pivot import pivot_page
+21 | | from .selected_items import selected_items_example
+22 | | from .state_grid import state_grid_page
+23 | | from .tree import tree_example
+   | |______________________________^
+24 |
+25 |   __all__ = [
+   |
+help: Organize imports
+  |
+3 | import reflex as rx
+  -
+4 | import reflex_enterprise as rxe
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/reference/demos__ag_grid__ag_grid__grid_state_serialization_advanced.py:3:1
+   |
+ 1 |   """Grid State Serialization Example."""
+ 2 |
+ 3 | / import json
+ 4 | | from typing import Any
+ 5 | |
+ 6 | | import pandas as pd
+ 7 | | import reflex as rx
+ 8 | |
+ 9 | | import reflex_enterprise as rxe
+10 | |
+11 | | from .common import demo
+   | |________________________^
+12 |
+13 |   data_url = "https://raw.githubusercontent.com/ag-grid/ag-grid/7c05eef061914758b1f7334f0d54fa1c578d0c9d/documentation/ag-grid-docs/pu…
+   |
+help: Organize imports
+  |
+7 | import reflex as rx
+  -
+8 | import reflex_enterprise as rxe
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/reference/demos__ag_grid__ag_grid__integrated_charts.py:3:1
+   |
+ 1 |   """Example of handling grid selection events and displaying selected items in a separate panel."""
+ 2 |
+ 3 | / import pandas as pd
+ 4 | | import reflex as rx
+ 5 | |
+ 6 | | import reflex_enterprise as rxe
+ 7 | |
+ 8 | | from .common import demo
+   | |________________________^
+ 9 |
+10 |   df = pd.read_csv(
+   |
+help: Organize imports
+  |
+4 | import reflex as rx
+  -
+5 | import reflex_enterprise as rxe
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/reference/demos__ag_grid__ag_grid__master_detail.py:3:1
+  |
+1 |   """Master Detail Demo for AG Grid."""
+2 |
+3 | / import reflex as rx
+4 | |
+5 | | import reflex_enterprise as rxe
+6 | |
+7 | | from .common import demo
+  | |________________________^
+8 |
+9 |   # Static column definitions (non-Var)
+  |
+help: Organize imports
+  |
+3 | import reflex as rx
+  -
+4 | import reflex_enterprise as rxe
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/reference/demos__ag_grid__ag_grid__model_wrapper_ssrm.py:3:1
+   |
+ 1 |   """Demo of a customized ModelWrapper with auth state."""
+ 2 |
+ 3 | / import asyncio
+ 4 | | from typing import Any
+ 5 | |
+ 6 | | import reflex as rx
+ 7 | |
+ 8 | | import reflex_enterprise as rxe
+ 9 | | from reflex_enterprise.components.ag_grid.datasource import SSRMDatasourceRequestParams
+10 | |
+11 | | from .common import demo
+12 | | from .model_wrapper_customized import AuthState
+13 | | from .model_wrapper_simple import Friend
+   | |________________________________________^
+help: Organize imports
+  |
+6 | import reflex as rx
+  -
+7 | import reflex_enterprise as rxe
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/reference/demos__map__map__fly_to_location.py:3:1
+   |
+ 1 |   """Map demo showing how to fly to different locations."""
+ 2 |
+ 3 | / import reflex as rx
+ 4 | |
+ 5 | | import reflex_enterprise as rxe
+ 6 | | from reflex_enterprise.components.map.types import (
+ 7 | |     LatLng,
+ 8 | |     ZoomLevelsChangeEvent,
+ 9 | |     latlng,
+10 | |     locate_options,
+11 | | )
+12 | |
+13 | | from .common import demo
+   | |________________________^
+help: Organize imports
+  |
+3 | import reflex as rx
+  -
+4 | import reflex_enterprise as rxe
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/reference/demos__map__map__map.py:3:1
+   |
+ 1 |   """Leaflet Map Demos for Reflex Enterprise."""
+ 2 |
+ 3 | / import reflex as rx
+ 4 | |
+ 5 | | import reflex_enterprise as rxe
+ 6 | |
+ 7 | | from .common import DemoState, demo
+ 8 | | from .fly_to_location import fly_to_location
+ 9 | | from .map_controls import map_controls
+10 | | from .vector_layers import vector_layers
+   | |________________________________________^
+11 |
+12 |   __all__ = [
+   |
+help: Organize imports
+  |
+3 | import reflex as rx
+  -
+4 | import reflex_enterprise as rxe
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/reference/demos__map__map__map_controls.py:3:1
+  |
+1 |   """Map demo showcasing different map controls."""
+2 |
+3 | / import reflex as rx
+4 | |
+5 | | import reflex_enterprise as rxe
+6 | | from reflex_enterprise.components.map.types import latlng
+7 | |
+8 | | from .common import demo
+  | |________________________^
+help: Organize imports
+  |
+3 | import reflex as rx
+  -
+4 | import reflex_enterprise as rxe
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/reference/demos__map__map__vector_layers.py:3:1
+  |
+1 |   """Map demo showcasing vector layers."""
+2 |
+3 | / import reflex as rx
+4 | |
+5 | | import reflex_enterprise as rxe
+6 | | from reflex_enterprise.components.map.types import LatLng, latlng, latlng_bounds
+7 | |
+8 | | from .common import demo
+  | |________________________^
+help: Organize imports
+  |
+3 | import reflex as rx
+  -
+4 | import reflex_enterprise as rxe
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/reference/demos__oidc__oidc__oidc.py:1:1
+   |
+ 1 | / import logging
+ 2 | | from typing import ClassVar
+ 3 | |
+ 4 | | import aiohttp
+ 5 | | import reflex as rx
+ 6 | |
+ 7 | | import reflex_enterprise as rxe
+ 8 | | from reflex_enterprise.auth.cookie import HTTPCookie
+ 9 | | from reflex_enterprise.auth.oidc.state import OIDCAuthState
+10 | | from reflex_enterprise.auth.oidc.types import AsyncHTTPClientProtocol
+11 | | from reflex_enterprise.utils import chain_event_out_of_band
+   | |___________________________________________________________^
+12 |
+13 |   logging.basicConfig(
+   |
+help: Organize imports
+  |
+5 | import reflex as rx
+  -
+6 | import reflex_enterprise as rxe
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/reference/reflex_enterprise__plugins__auth.py:27:5
+   |
+26 |   if TYPE_CHECKING:
+27 | /     from typing import Protocol, TypedDict
+28 | |
+29 | |     from reflex.components.component import Component
+30 | |     from typing_extensions import Unpack
+31 | |
+32 | |     from reflex_enterprise.auth.audit import AuditHook
+33 | |     from reflex_enterprise.auth.oidc.state import OIDCAuthState
+34 | |     from reflex_enterprise.auth.types import AuthValue
+   | |______________________________________________________^
+35 |
+36 |       class PageBuilderContext(TypedDict):
+   |
+help: Organize imports
+   |
+29 |     from reflex.components.component import Component
+   -     from typing_extensions import Unpack
+   -
+30 |     from reflex_enterprise.auth.audit import AuditHook
+31 |     from reflex_enterprise.auth.oidc.state import OIDCAuthState
+32 |     from reflex_enterprise.auth.types import AuthValue
+33 +     from typing_extensions import Unpack
+34 |
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/reference/reflex_enterprise__plugins__auth.py:286:9
+    |
+284 |           context doesn't know yet are added.
+285 |           """
+286 | /         from reflex_base.registry import RegistrationContext
+287 | |
+288 | |         from reflex_enterprise.auth.oidc.state import IsIframedState
+289 | |         from reflex_enterprise.auth.page_guard import PageGuardState
+290 | |         from reflex_enterprise.auth.replay import PendingEventState
+291 | |         from reflex_enterprise.auth.routes import AuthRouteState
+292 | |         from reflex_enterprise.auth.user_state import AuthUserState
+    | |___________________________________________________________________^
+293 |
+294 |           reg_ctx = RegistrationContext.ensure_context()
+    |
+help: Organize imports
+    |
+286 |         from reflex_base.registry import RegistrationContext
+    -
+287 |         from reflex_enterprise.auth.oidc.state import IsIframedState
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+   --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/reference/reflex_enterprise__plugins__auth.py:386:9
+    |
+384 |           protect each other's states.
+385 |           """
+386 | /         from reflex_base.registry import RegistrationContext
+387 | |
+388 | |         from reflex_enterprise.auth.enforcement import (
+389 | |             default_protect_state,
+390 | |             install_delta_filter,
+391 | |         )
+    | |_________^
+392 |
+393 |           for state_cls in RegistrationContext.get().base_states.values():
+    |
+help: Organize imports
+    |
+386 |         from reflex_base.registry import RegistrationContext
+    -
+387 |         from reflex_enterprise.auth.enforcement import (
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/reference/tests__integration__ag_grid_app__ag_grid_app__ag_grid_app.py:3:1
+   |
+ 1 |   """Exercise the public Python wrapper against real AG Grid packages."""
+ 2 |
+ 3 | / import json
+ 4 | | from typing import Any, Literal
+ 5 | |
+ 6 | | import reflex as rx
+ 7 | | from starlette.applications import Starlette
+ 8 | | from starlette.requests import Request
+ 9 | | from starlette.responses import JSONResponse
+10 | | from starlette.routing import Route
+11 | |
+12 | | import reflex_enterprise as rxe
+13 | | from reflex_enterprise.components.ag_grid.aggrid import (
+14 | |     CellValueChangedEventSpec,
+15 | |     FilterChangedEvent,
+16 | | )
+17 | | from reflex_enterprise.components.ag_grid.datasource import Datasource, SSRMDatasource
+   | |______________________________________________________________________________________^
+18 |
+19 |   ROWS = [
+   |
+help: Organize imports
+   |
+6  | import reflex as rx
+   - from starlette.applications import Starlette
+   - from starlette.requests import Request
+   - from starlette.responses import JSONResponse
+   - from starlette.routing import Route
+   -
+7  | import reflex_enterprise as rxe
+--------------------------------------------------------------------------------
+12 | from reflex_enterprise.components.ag_grid.datasource import Datasource, SSRMDatasource
+13 + from starlette.applications import Starlette
+14 + from starlette.requests import Request
+15 + from starlette.responses import JSONResponse
+16 + from starlette.routing import Route
+17 |
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/reference/tests__integration__ag_grid_app__test_ag_grid.py:3:1
+   |
+ 1 |   """AG Grid regressions driven through the installed reflex_app pytest fixture."""
+ 2 |
+ 3 | / import csv
+ 4 | | import io
+ 5 | | import json
+ 6 | | import re
+ 7 | |
+ 8 | | import pytest
+ 9 | | from playwright.sync_api import Locator, Page, expect
+10 | |
+11 | | from reflex_enterprise.testing import ReflexApp
+   | |_______________________________________________^
+help: Organize imports
+   |
+9  | from playwright.sync_api import Locator, Page, expect
+   -
+10 | from reflex_enterprise.testing import ReflexApp
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/reference/tests__integration__test_auth_flow.py:70:5
+   |
+68 |   def AuthFlowApp():
+69 |       """App exercising every ``auth=`` surface (plugin via rxconfig)."""
+70 | /     import reflex as rx
+71 | |
+72 | |     import reflex_enterprise as rxe
+73 | |     from reflex_enterprise.auth import AuthUserState
+74 | |     from reflex_enterprise.auth.types import EventAuthContext, VarAuthContext
+   | |_____________________________________________________________________________^
+75 |
+76 |       # A sibling state the ASYNC checks reach via get_state, proving a check can
+   |
+help: Organize imports
+   |
+70 |     import reflex as rx
+   -
+71 |     import reflex_enterprise as rxe
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> /Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/repro_auth_field.py:3:1
+  |
+1 |   """Reproduce enterprise auth fields failing to become state vars on Reflex 0.10."""
+2 |
+3 | / import importlib.metadata
+4 | | import json
+5 | |
+6 | | import reflex_enterprise as rxe
+7 | |
+8 | | import reflex as rx
+  | |___________________^
+help: Organize imports
+  |
+5 |
+  - import reflex_enterprise as rxe
+  -
+6 | import reflex as rx
+7 + import reflex_enterprise as rxe
+8 |
+  |
+
+Found 27 errors.
+[*] 26 fixable with the `--fix` option (1 hidden fix can be enabled with the `--unsafe-fixes` option).

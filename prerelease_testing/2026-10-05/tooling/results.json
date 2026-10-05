@@ -1,0 +1,398 @@
+{
+  "provenance": {
+    "python": "/private/tmp/reflex-pre-20261005-root/bin/python",
+    "reflex": "/private/tmp/reflex-pre-20261005-root/lib/python3.12/site-packages/reflex/__init__.py",
+    "versions": {
+      "reflex": "0.10.0a1",
+      "reflex-base": "0.10.0a1",
+      "reflex-docgen": "0.10.0a1",
+      "reflex-hosting-cli": "0.1.73a1",
+      "reflex-release": "0.1.2a1"
+    }
+  },
+  "release": [
+    {
+      "package_count": 19,
+      "input_count": 20,
+      "checkbox_count": 19,
+      "generate": {
+        "args": [
+          "reflex-release",
+          "--root",
+          "/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-tool-fixtures-v7jwd6at/release-19",
+          "init"
+        ],
+        "returncode": 0,
+        "stdout": "[tool.reflex-release] already configured; leaving it untouched.\nadded [tool.towncrier] to pyproject.toml\nnews directory ready: packages/sample-00/news\nnews directory ready: packages/sample-01/news\nnews directory ready: packages/sample-02/news\nnews directory ready: packages/sample-03/news\nnews directory ready: packages/sample-04/news\nnews directory ready: packages/sample-05/news\nnews directory ready: packages/sample-06/news\nnews directory ready: packages/sample-07/news\nnews directory ready: packages/sample-08/news\nnews directory ready: packages/sample-09/news\nnews directory ready: packages/sample-10/news\nnews directory ready: packages/sample-11/news\nnews directory ready: packages/sample-12/news\nnews directory ready: packages/sample-13/news\nnews directory ready: packages/sample-14/news\nnews directory ready: packages/sample-15/news\nnews directory ready: packages/sample-16/news\nnews directory ready: packages/sample-17/news\nnews directory ready: packages/sample-18/news\nwrote .github/workflows/changelog.yml\nwrote .github/workflows/dispatch_release.yml\nwrote .github/workflows/release_from_changelog.yml\nwrote .github/workflows/publish.yml\n\nWarning: the workflows invoke this tool unpinned (`uvx reflex-release`), so the release path resolves whatever version is newest at run time. Pin it: set cli-command to `uvx reflex-release@<version>` and re-run sync.\n\nRemaining setup (GitHub settings, once per repository):\n  1. Create the `pypi` environment and add required reviewers. Every\n     upload waits for one of them to approve it, so that list is who\n     can release.\n  2. Configure PyPI trusted publishing for each distribution:\n     workflow `publish.yml`, environment `pypi`. Naming the\n     environment is what makes the approval gate load-bearing: without\n     it, any job in publish.yml can mint an upload token.\n  3. Enable 'Allow GitHub Actions to create and approve pull requests'\n     in Settings -> Actions -> General.\n  4. Create the `skip-changelog` and `changelog-version-edit` labels.\n  5. Protect `main` and restrict who may push\n     `r/pre-**`, `r/hotfix/**` and `release/**`\n     to maintainers plus the github-actions[bot] app.\n  6. Give every package a version derived from git tags (see the README\n     section 'Tag-derived versions').\n\nRead the README's 'Security model' section before the first release:\nbranch rules are only enforced if a ruleset restricts who may create\nthe publishing branches.\n\nThen cut a release from the Actions tab: Dispatch release.\n",
+        "stderr": "WARN `--no-project` was provided, but no project was found\n"
+      },
+      "check": {
+        "args": [
+          "reflex-release",
+          "--root",
+          "/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-tool-fixtures-v7jwd6at/release-19",
+          "sync",
+          "--check"
+        ],
+        "returncode": 0,
+        "stdout": "All 4 scaffolded workflows are up to date.\n",
+        "stderr": "WARN `--no-project` was provided, but no project was found\n"
+      }
+    },
+    {
+      "package_count": 20,
+      "input_count": 21,
+      "checkbox_count": 20,
+      "generate": {
+        "args": [
+          "reflex-release",
+          "--root",
+          "/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-tool-fixtures-v7jwd6at/release-20",
+          "init"
+        ],
+        "returncode": 0,
+        "stdout": "[tool.reflex-release] already configured; leaving it untouched.\nadded [tool.towncrier] to pyproject.toml\nnews directory ready: packages/sample-00/news\nnews directory ready: packages/sample-01/news\nnews directory ready: packages/sample-02/news\nnews directory ready: packages/sample-03/news\nnews directory ready: packages/sample-04/news\nnews directory ready: packages/sample-05/news\nnews directory ready: packages/sample-06/news\nnews directory ready: packages/sample-07/news\nnews directory ready: packages/sample-08/news\nnews directory ready: packages/sample-09/news\nnews directory ready: packages/sample-10/news\nnews directory ready: packages/sample-11/news\nnews directory ready: packages/sample-12/news\nnews directory ready: packages/sample-13/news\nnews directory ready: packages/sample-14/news\nnews directory ready: packages/sample-15/news\nnews directory ready: packages/sample-16/news\nnews directory ready: packages/sample-17/news\nnews directory ready: packages/sample-18/news\nnews directory ready: packages/sample-19/news\nwrote .github/workflows/changelog.yml\nwrote .github/workflows/dispatch_release.yml\nwrote .github/workflows/release_from_changelog.yml\nwrote .github/workflows/publish.yml\n\nWarning: the workflows invoke this tool unpinned (`uvx reflex-release`), so the release path resolves whatever version is newest at run time. Pin it: set cli-command to `uvx reflex-release@<version>` and re-run sync.\n\nRemaining setup (GitHub settings, once per repository):\n  1. Create the `pypi` environment and add required reviewers. Every\n     upload waits for one of them to approve it, so that list is who\n     can release.\n  2. Configure PyPI trusted publishing for each distribution:\n     workflow `publish.yml`, environment `pypi`. Naming the\n     environment is what makes the approval gate load-bearing: without\n     it, any job in publish.yml can mint an upload token.\n  3. Enable 'Allow GitHub Actions to create and approve pull requests'\n     in Settings -> Actions -> General.\n  4. Create the `skip-changelog` and `changelog-version-edit` labels.\n  5. Protect `main` and restrict who may push\n     `r/pre-**`, `r/hotfix/**` and `release/**`\n     to maintainers plus the github-actions[bot] app.\n  6. Give every package a version derived from git tags (see the README\n     section 'Tag-derived versions').\n\nRead the README's 'Security model' section before the first release:\nbranch rules are only enforced if a ruleset restricts who may create\nthe publishing branches.\n\nThen cut a release from the Actions tab: Dispatch release.\n",
+        "stderr": "WARN `--no-project` was provided, but no project was found\n"
+      },
+      "check": {
+        "args": [
+          "reflex-release",
+          "--root",
+          "/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-tool-fixtures-v7jwd6at/release-20",
+          "sync",
+          "--check"
+        ],
+        "returncode": 0,
+        "stdout": "All 4 scaffolded workflows are up to date.\n",
+        "stderr": "WARN `--no-project` was provided, but no project was found\n"
+      }
+    },
+    {
+      "package_count": 24,
+      "input_count": 25,
+      "checkbox_count": 24,
+      "generate": {
+        "args": [
+          "reflex-release",
+          "--root",
+          "/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-tool-fixtures-v7jwd6at/release-24",
+          "init"
+        ],
+        "returncode": 0,
+        "stdout": "[tool.reflex-release] already configured; leaving it untouched.\nadded [tool.towncrier] to pyproject.toml\nnews directory ready: packages/sample-00/news\nnews directory ready: packages/sample-01/news\nnews directory ready: packages/sample-02/news\nnews directory ready: packages/sample-03/news\nnews directory ready: packages/sample-04/news\nnews directory ready: packages/sample-05/news\nnews directory ready: packages/sample-06/news\nnews directory ready: packages/sample-07/news\nnews directory ready: packages/sample-08/news\nnews directory ready: packages/sample-09/news\nnews directory ready: packages/sample-10/news\nnews directory ready: packages/sample-11/news\nnews directory ready: packages/sample-12/news\nnews directory ready: packages/sample-13/news\nnews directory ready: packages/sample-14/news\nnews directory ready: packages/sample-15/news\nnews directory ready: packages/sample-16/news\nnews directory ready: packages/sample-17/news\nnews directory ready: packages/sample-18/news\nnews directory ready: packages/sample-19/news\nnews directory ready: packages/sample-20/news\nnews directory ready: packages/sample-21/news\nnews directory ready: packages/sample-22/news\nnews directory ready: packages/sample-23/news\nwrote .github/workflows/changelog.yml\nwrote .github/workflows/dispatch_release.yml\nwrote .github/workflows/release_from_changelog.yml\nwrote .github/workflows/publish.yml\n\nWarning: the workflows invoke this tool unpinned (`uvx reflex-release`), so the release path resolves whatever version is newest at run time. Pin it: set cli-command to `uvx reflex-release@<version>` and re-run sync.\n\nRemaining setup (GitHub settings, once per repository):\n  1. Create the `pypi` environment and add required reviewers. Every\n     upload waits for one of them to approve it, so that list is who\n     can release.\n  2. Configure PyPI trusted publishing for each distribution:\n     workflow `publish.yml`, environment `pypi`. Naming the\n     environment is what makes the approval gate load-bearing: without\n     it, any job in publish.yml can mint an upload token.\n  3. Enable 'Allow GitHub Actions to create and approve pull requests'\n     in Settings -> Actions -> General.\n  4. Create the `skip-changelog` and `changelog-version-edit` labels.\n  5. Protect `main` and restrict who may push\n     `r/pre-**`, `r/hotfix/**` and `release/**`\n     to maintainers plus the github-actions[bot] app.\n  6. Give every package a version derived from git tags (see the README\n     section 'Tag-derived versions').\n\nRead the README's 'Security model' section before the first release:\nbranch rules are only enforced if a ruleset restricts who may create\nthe publishing branches.\n\nThen cut a release from the Actions tab: Dispatch release.\n",
+        "stderr": "WARN `--no-project` was provided, but no project was found\n"
+      },
+      "check": {
+        "args": [
+          "reflex-release",
+          "--root",
+          "/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-tool-fixtures-v7jwd6at/release-24",
+          "sync",
+          "--check"
+        ],
+        "returncode": 0,
+        "stdout": "All 4 scaffolded workflows are up to date.\n",
+        "stderr": "WARN `--no-project` was provided, but no project was found\n"
+      }
+    },
+    {
+      "package_count": 25,
+      "input_count": 2,
+      "checkbox_count": 0,
+      "generate": {
+        "args": [
+          "reflex-release",
+          "--root",
+          "/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-tool-fixtures-v7jwd6at/release-25",
+          "init"
+        ],
+        "returncode": 0,
+        "stdout": "[tool.reflex-release] already configured; leaving it untouched.\nadded [tool.towncrier] to pyproject.toml\nnews directory ready: packages/sample-00/news\nnews directory ready: packages/sample-01/news\nnews directory ready: packages/sample-02/news\nnews directory ready: packages/sample-03/news\nnews directory ready: packages/sample-04/news\nnews directory ready: packages/sample-05/news\nnews directory ready: packages/sample-06/news\nnews directory ready: packages/sample-07/news\nnews directory ready: packages/sample-08/news\nnews directory ready: packages/sample-09/news\nnews directory ready: packages/sample-10/news\nnews directory ready: packages/sample-11/news\nnews directory ready: packages/sample-12/news\nnews directory ready: packages/sample-13/news\nnews directory ready: packages/sample-14/news\nnews directory ready: packages/sample-15/news\nnews directory ready: packages/sample-16/news\nnews directory ready: packages/sample-17/news\nnews directory ready: packages/sample-18/news\nnews directory ready: packages/sample-19/news\nnews directory ready: packages/sample-20/news\nnews directory ready: packages/sample-21/news\nnews directory ready: packages/sample-22/news\nnews directory ready: packages/sample-23/news\nnews directory ready: packages/sample-24/news\nwrote .github/workflows/changelog.yml\nwrote .github/workflows/dispatch_release.yml\nwrote .github/workflows/release_from_changelog.yml\nwrote .github/workflows/publish.yml\n\nWarning: the workflows invoke this tool unpinned (`uvx reflex-release`), so the release path resolves whatever version is newest at run time. Pin it: set cli-command to `uvx reflex-release@<version>` and re-run sync.\n\nRemaining setup (GitHub settings, once per repository):\n  1. Create the `pypi` environment and add required reviewers. Every\n     upload waits for one of them to approve it, so that list is who\n     can release.\n  2. Configure PyPI trusted publishing for each distribution:\n     workflow `publish.yml`, environment `pypi`. Naming the\n     environment is what makes the approval gate load-bearing: without\n     it, any job in publish.yml can mint an upload token.\n  3. Enable 'Allow GitHub Actions to create and approve pull requests'\n     in Settings -> Actions -> General.\n  4. Create the `skip-changelog` and `changelog-version-edit` labels.\n  5. Protect `main` and restrict who may push\n     `r/pre-**`, `r/hotfix/**` and `release/**`\n     to maintainers plus the github-actions[bot] app.\n  6. Give every package a version derived from git tags (see the README\n     section 'Tag-derived versions').\n\nRead the README's 'Security model' section before the first release:\nbranch rules are only enforced if a ruleset restricts who may create\nthe publishing branches.\n\nThen cut a release from the Actions tab: Dispatch release.\n",
+        "stderr": "WARN `--no-project` was provided, but no project was found\n"
+      },
+      "check": {
+        "args": [
+          "reflex-release",
+          "--root",
+          "/var/folders/pv/g28d3zp12nj__rqlk45cmwnc0000gn/T/reflex-tool-fixtures-v7jwd6at/release-25",
+          "sync",
+          "--check"
+        ],
+        "returncode": 0,
+        "stdout": "All 4 scaffolded workflows are up to date.\n",
+        "stderr": "WARN `--no-project` was provided, but no project was found\n"
+      }
+    }
+  ],
+  "docgen": [
+    {
+      "prefix": "''",
+      "newline": "'\\n'",
+      "document": "Document(frontmatter=FrontMatter(components=(), only_low_level=False, title='Metadata title', component_previews=(), description='SEO description', image='/social.png', metadata={'title': 'Metadata title', 'description': 'SEO description', 'image': '/social.png'}), blocks=(HeadingBlock(level=1, children=(TextSpan(text='Visible heading'),)), TextBlock(children=(TextSpan(text='Visible body'),))))"
+    },
+    {
+      "prefix": "'\\ufeff'",
+      "newline": "'\\n'",
+      "document": "Document(frontmatter=FrontMatter(components=(), only_low_level=False, title='Metadata title', component_previews=(), description='SEO description', image='/social.png', metadata={'title': 'Metadata title', 'description': 'SEO description', 'image': '/social.png'}), blocks=(HeadingBlock(level=1, children=(TextSpan(text='Visible heading'),)), TextBlock(children=(TextSpan(text='Visible body'),))))"
+    },
+    {
+      "prefix": "' \\n\\t'",
+      "newline": "'\\r\\n'",
+      "document": "Document(frontmatter=FrontMatter(components=(), only_low_level=False, title='Metadata title', component_previews=(), description='SEO description', image='/social.png', metadata={'title': 'Metadata title', 'description': 'SEO description', 'image': '/social.png'}), blocks=(HeadingBlock(level=1, children=(TextSpan(text='Visible heading'),)), TextBlock(children=(TextSpan(text='Visible body'),))))"
+    },
+    {
+      "prefix": "'\\ufeff \\r\\n'",
+      "newline": "'\\r\\n'",
+      "document": "Document(frontmatter=FrontMatter(components=(), only_low_level=False, title='Metadata title', component_previews=(), description='SEO description', image='/social.png', metadata={'title': 'Metadata title', 'description': 'SEO description', 'image': '/social.png'}), blocks=(HeadingBlock(level=1, children=(TextSpan(text='Visible heading'),)), TextBlock(children=(TextSpan(text='Visible body'),))))"
+    }
+  ],
+  "hosting": [
+    {
+      "args": [
+        "python",
+        "/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/tooling/cli_entry.py",
+        "cloud",
+        "apps",
+        "start",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "{\"app_id\": \"11111111-1111-4111-8111-111111111111\", \"started\": true, \"message\": \"app started\"}\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "scenario": "success",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex-enterprise"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/start"
+        }
+      ]
+    },
+    {
+      "args": [
+        "python",
+        "/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/tooling/cli_entry.py",
+        "cloud",
+        "apps",
+        "stop",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "{\"app_id\": \"11111111-1111-4111-8111-111111111111\", \"stopped\": true, \"message\": \"app stopped\"}\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "scenario": "success",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex-enterprise"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/stop"
+        }
+      ]
+    },
+    {
+      "args": [
+        "python",
+        "/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/tooling/cli_entry.py",
+        "cloud",
+        "apps",
+        "start",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nFixture policy refuses this request\n",
+      "scenario": "refused",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex-enterprise"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/start"
+        }
+      ]
+    },
+    {
+      "args": [
+        "python",
+        "/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/tooling/cli_entry.py",
+        "cloud",
+        "apps",
+        "stop",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nFixture policy refuses this request\n",
+      "scenario": "refused",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex-enterprise"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/stop"
+        }
+      ]
+    },
+    {
+      "args": [
+        "python",
+        "/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/tooling/cli_entry.py",
+        "cloud",
+        "vmtypes",
+        "--json"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nFixture policy refuses this request\n",
+      "scenario": "refused",
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/deployments/vm_types"
+        }
+      ]
+    },
+    {
+      "args": [
+        "python",
+        "/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/tooling/cli_entry.py",
+        "cloud",
+        "regions",
+        "--json"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nFixture policy refuses this request\n",
+      "scenario": "refused",
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/v1/deployments/regions"
+        }
+      ]
+    },
+    {
+      "args": [
+        "python",
+        "/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/tooling/cli_entry.py",
+        "cloud",
+        "apps",
+        "delete",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 1,
+      "stdout": "{\"app_id\": \"11111111-1111-4111-8111-111111111111\", \"deleted\": false, \"message\": \"No application found with ID '11111111-1111-4111-8111-111111111111'\"}\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nNo application found with ID '11111111-1111-4111-8111-111111111111'\n",
+      "scenario": "missing",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex-enterprise"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111"
+        }
+      ]
+    },
+    {
+      "args": [
+        "python",
+        "/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/tooling/cli_entry.py",
+        "cloud",
+        "apps",
+        "list",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nThe access token from the REFLEX_ACCESS_TOKEN environment variable was rejected:\naccess denied (auth request id: 8e6daccff8314b64be4d75235d50e5d4)\n",
+      "scenario": "expired",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex-enterprise"
+        }
+      ],
+      "login_hint_present": false
+    },
+    {
+      "args": [
+        "python",
+        "/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/tooling/cli_entry.py",
+        "cloud",
+        "apps",
+        "stop",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "WARN `--no-project` was provided, but no project was found\nYou are not authenticated. Run `reflex login` to authenticate.\n",
+      "scenario": "expires_after_auth",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex-enterprise"
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/stop"
+        }
+      ],
+      "login_hint_present": true
+    },
+    {
+      "args": [
+        "python",
+        "/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/tooling/cli_entry.py",
+        "cloud",
+        "apps",
+        "logs",
+        "11111111-1111-4111-8111-111111111111",
+        "--json",
+        "--no-interactive"
+      ],
+      "returncode": 0,
+      "stdout": "{\"app_id\": \"11111111-1111-4111-8111-111111111111\", \"entries\": [{\"ns\": 1791203696000000000, \"timestamp\": \"2026-10-05T12:34:56Z\", \"name\": \"qa-app\", \"message\": \"first\", \"details\": null, \"log_level\": null, \"region\": null, \"deployment_id\": null, \"event_id\": null, \"stream_id\": null, \"revision_id\": null}, {\"ns\": 1791203696000000000, \"timestamp\": \"2026-10-05T12:34:56Z\", \"name\": \"qa-app\", \"message\": \"second\", \"details\": null, \"log_level\": null, \"region\": null, \"deployment_id\": null, \"event_id\": null, \"stream_id\": null, \"revision_id\": null}], \"cursor\": null, \"error\": null}\n",
+      "stderr": "WARN `--no-project` was provided, but no project was found\n",
+      "scenario": "success",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/api/v1/authenticate/me?source=reflex-enterprise"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/logsv2?order=newest_first"
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/apps/11111111-1111-4111-8111-111111111111/logsv2?order=newest_first&cursor=next-page"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "mode": "dev",
+  "status": "pass",
+  "checks": [
+    "Independent base/backend/computed shadows; base-to-computed and computed-to-base shadows; inherited handler binds owner; inherited mutable value reaches owner",
+    "ABC state mixin composes; abstract methods remain enforced; explicit reserved _abc_impl is rejected",
+    "Published-alpha per-state pickle round trips retain independent values; restoring the parent link reconnects inherited mutable ownership",
+    "PageContext.get and CompileContext.get raise LookupError without an active context",
+    "Development undeclared-attribute guard rejects a typo"
+  ],
+  "source": "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/reflex/__init__.py"
+}

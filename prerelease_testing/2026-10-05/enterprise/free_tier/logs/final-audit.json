@@ -1,0 +1,69 @@
+{
+  "all_eight_pass": true,
+  "driver_exit": 0,
+  "real_sdk_http_requests": 10,
+  "python_connect_events": 10,
+  "all_python_connect_events_loopback": true,
+  "guard_context_records": 33,
+  "all_ci_and_harness_absent": true,
+  "ports": {
+    "3131": {
+      "listener_present": false,
+      "lsof_exit": 1,
+      "output": "",
+      "stderr": ""
+    },
+    "8131": {
+      "listener_present": false,
+      "lsof_exit": 1,
+      "output": "",
+      "stderr": ""
+    },
+    "3132": {
+      "listener_present": false,
+      "lsof_exit": 1,
+      "output": "",
+      "stderr": ""
+    },
+    "8132": {
+      "listener_present": false,
+      "lsof_exit": 1,
+      "output": "",
+      "stderr": ""
+    },
+    "3133": {
+      "listener_present": false,
+      "lsof_exit": 1,
+      "output": "",
+      "stderr": ""
+    },
+    "8133": {
+      "listener_present": false,
+      "lsof_exit": 1,
+      "output": "",
+      "stderr": ""
+    },
+    "9131": {
+      "listener_present": false,
+      "lsof_exit": 1,
+      "output": "",
+      "stderr": ""
+    }
+  },
+  "credential_files_removed": true,
+  "temporary_credentials_parent_removed": true,
+  "neutral_bun_profile_suffix_absent": true,
+  "free_tier_profile_suffix_absent": true,
+  "python_ast_parsed": [
+    "compare_guard_source.py",
+    "drive.py",
+    "app/rxconfig.py",
+    "app/cli_entry.py",
+    "app/fixture_setup.py",
+    "app/free_tier/__init__.py",
+    "app/free_tier/free_tier.py"
+  ],
+  "framework_changes": false,
+  "app_cwd": "/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/enterprise/free_tier/app",
+  "neutral_copy_rerun_performed": false
+}

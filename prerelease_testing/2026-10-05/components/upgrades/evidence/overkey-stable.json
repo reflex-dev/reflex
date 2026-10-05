@@ -1,0 +1,67 @@
+{
+  "app": "overkey",
+  "phase": "stable",
+  "base_url": "http://localhost:3122",
+  "status": "failed",
+  "error": "Locator expected to have Value ''\nActual value: course end \nCall log:\n  - Expect \"to_have_value\" with timeout 5000ms\n  - waiting for locator(\"input\").first\n    9 \u00d7 locator resolved to <input value=\"course end\" class=\"css-1cekago\"/>\n      - unexpected value \"course end\"\n",
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/components/upgrades/browser_flows.py\", line 117, in main\n    result[\"detail\"] = {\"overkey\": overkey, \"basic_crud\": basic_crud}[app_name](page, context, base_url, backend_url)\n                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/components/upgrades/browser_flows.py\", line 38, in overkey\n    expect(page.locator(\"input\").first).to_have_value(\"\")\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^\n  File \"/private/tmp/reflex-prerelease-components-20261005/stable-venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py\", line 19893, in to_have_value\n    self._sync(self._impl_obj.to_have_value(value=value, timeout=timeout))\n    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-components-20261005/stable-venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py\", line 115, in _sync\n    return task.result()\n           ~~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-components-20261005/stable-venv/lib/python3.13/site-packages/playwright/_impl/_assertions.py\", line 481, in to_have_value\n    await self._expect_impl(\n    ...<5 lines>...\n    )\n  File \"/private/tmp/reflex-prerelease-components-20261005/stable-venv/lib/python3.13/site-packages/playwright/_impl/_assertions.py\", line 85, in _expect_impl\n    raise AssertionError(\n        f\"{out_message}\\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}\"\n    )\nAssertionError: Locator expected to have Value ''\nActual value: course end \nCall log:\n  - Expect \"to_have_value\" with timeout 5000ms\n  - waiting for locator(\"input\").first\n    9 \u00d7 locator resolved to <input value=\"course end\" class=\"css-1cekago\"/>\n      - unexpected value \"course end\"\n\n",
+  "diagnostics": {
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connecting..."
+      },
+      {
+        "type": "debug",
+        "text": "[vite] connected."
+      },
+      {
+        "type": "info",
+        "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      },
+      {
+        "type": "log",
+        "text": "Timer already started"
+      },
+      {
+        "type": "log",
+        "text": "Timer already started"
+      },
+      {
+        "type": "log",
+        "text": "Timer already started"
+      },
+      {
+        "type": "log",
+        "text": "Timer already started"
+      },
+      {
+        "type": "log",
+        "text": "Timer already started"
+      },
+      {
+        "type": "log",
+        "text": "Timer already started"
+      },
+      {
+        "type": "log",
+        "text": "Timer already started"
+      },
+      {
+        "type": "log",
+        "text": "Timer already started"
+      },
+      {
+        "type": "log",
+        "text": "Timer already started"
+      }
+    ],
+    "page_errors": [],
+    "request_failures": [],
+    "http_failures": []
+  }
+}

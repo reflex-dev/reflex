@@ -1,0 +1,13 @@
+{
+  "observer": "Codex in-app browser via cua_repl",
+  "reflex": "0.9.12",
+  "extra_states": 1000,
+  "production": true,
+  "runtime": "Clean .web/reflex.lock/.states generated only by stable; previous alpha tabs closed",
+  "direct_navigation": "http://localhost:3133/articles/7?stable=1000-clean",
+  "article_accessibility": "heading Article 7; link Home; link Built with Reflex",
+  "home_accessibility": "heading Runtime QA; counter 0; button Increment; button Fail event; button Child output; link Article seven; text CSS witness",
+  "increment_result": "counter changed from 0 to 1",
+  "console_errors": [],
+  "result": "PASS"
+}

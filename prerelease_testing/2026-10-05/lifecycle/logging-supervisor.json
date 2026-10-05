@@ -1,0 +1,39 @@
+{
+  "python": "/private/tmp/reflex-pre-20261005-root/bin/python",
+  "import_origin": "/private/tmp/reflex-pre-20261005-root/lib/python3.12/site-packages/reflex_base/__init__.py",
+  "returncode": 1,
+  "records": [
+    {
+      "timestamp": "2026-10-05T23:14:08.990460+00:00",
+      "level": "info",
+      "logger": "stdout",
+      "message": "QA_UNICODE_STDOUT #100% \u2713"
+    },
+    {
+      "timestamp": "2026-10-05T00:00:00+00:00",
+      "level": "info",
+      "logger": "fixture",
+      "message": "QA_ALREADY_JSON"
+    },
+    {
+      "timestamp": "2026-10-05T23:14:09.115612+00:00",
+      "level": "info",
+      "logger": "stdout",
+      "message": "QA_LATE_DESCENDANT"
+    },
+    {
+      "timestamp": "2026-10-05T23:14:08.990722+00:00",
+      "level": "warning",
+      "logger": "stderr",
+      "message": "QA_STDERR"
+    },
+    {
+      "timestamp": "2026-10-05T23:14:08.992632+00:00",
+      "level": "error",
+      "logger": "stderr",
+      "message": "RuntimeError: QA_WORKER_TRACEBACK",
+      "exception": "Traceback (most recent call last):\n  File \"/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/lifecycle/logging_probe.py\", line 52, in <module>\n    main()\n  File \"/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/lifecycle/logging_probe.py\", line 32, in main\n    raise RuntimeError(\"QA_WORKER_TRACEBACK\")\nRuntimeError: QA_WORKER_TRACEBACK\n"
+    }
+  ],
+  "status": "passed"
+}

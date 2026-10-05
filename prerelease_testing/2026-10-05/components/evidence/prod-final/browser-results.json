@@ -1,0 +1,112 @@
+{
+  "base_url": "http://localhost:3121",
+  "browser": "143.0.7499.4",
+  "results": [
+    {
+      "name": "state-match-componentstate",
+      "status": "passed",
+      "detail": {
+        "alpha": "1",
+        "beta": "0"
+      }
+    },
+    {
+      "name": "markdown-shiki-lucide",
+      "status": "passed",
+      "detail": null
+    },
+    {
+      "name": "shiki-default-transformer",
+      "status": "failed",
+      "error": "Locator expected to be visible\nActual value: None\nError: element(s) not found \nCall log:\n  - Expect \"to_be_visible\" with timeout 5000ms\n  - waiting for locator(\"#shiki-default .highlighted\")\n",
+      "traceback": "Traceback (most recent call last):\n  File \"/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/components/browser_checks.py\", line 73, in check\n    detail = action()\n  File \"/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/components/browser_checks.py\", line 134, in default_transformer\n    expect(page.locator(\"#shiki-default .highlighted\")).to_be_visible()\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-components-20261005/venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py\", line 20529, in to_be_visible\n    self._sync(self._impl_obj.to_be_visible(visible=visible, timeout=timeout))\n    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/reflex-prerelease-components-20261005/venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py\", line 115, in _sync\n    return task.result()\n           ~~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-components-20261005/venv/lib/python3.13/site-packages/playwright/_impl/_assertions.py\", line 765, in to_be_visible\n    await self._expect_impl(\n    ...<5 lines>...\n    )\n  File \"/private/tmp/reflex-prerelease-components-20261005/venv/lib/python3.13/site-packages/playwright/_impl/_assertions.py\", line 85, in _expect_impl\n    raise AssertionError(\n        f\"{out_message}\\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}\"\n    )\nAssertionError: Locator expected to be visible\nActual value: None\nError: element(s) not found \nCall log:\n  - Expect \"to_be_visible\" with timeout 5000ms\n  - waiting for locator(\"#shiki-default .highlighted\")\n\n"
+    },
+    {
+      "name": "plotly-initial-titles",
+      "status": "passed",
+      "detail": [
+        "Static string title",
+        "Object title retained",
+        "Revenue overview"
+      ]
+    },
+    {
+      "name": "state-functionvar-memo-chart-update",
+      "status": "passed",
+      "detail": {
+        "ticks": "AprMay\u20ac0\u20ac55\u20ac110\u20ac165\u20ac220",
+        "title": "Updated revenue"
+      }
+    },
+    {
+      "name": "client-state",
+      "status": "passed",
+      "detail": null
+    },
+    {
+      "name": "form-id-filter-custom-control-copy-button",
+      "status": "passed",
+      "detail": {
+        "contact": "shipping@example.com",
+        "custom_control": "custom-value",
+        "empty_control": "",
+        "notes": "Ready for dispatch"
+      }
+    },
+    {
+      "name": "radix-slider-progress",
+      "status": "passed",
+      "detail": "100"
+    },
+    {
+      "name": "radix-primitive-progress-accessibility",
+      "status": "failed",
+      "error": "Locator expected to have attribute '100'\nActual value: None \nCall log:\n  - Expect \"to_have_attribute\" with timeout 5000ms\n  - waiting for locator(\"#primitive-progress\")\n    9 \u00d7 locator resolved to <div data-max=\"100\" aria-valuemin=\"0\" role=\"progressbar\" aria-valuemax=\"100\" class=\"Root css-rch9dh\" id=\"primitive-progress\" data-state=\"indeterminate\">\u2026</div>\n      - unexpected value \"null\"\n",
+      "traceback": "Traceback (most recent call last):\n  File \"/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/components/browser_checks.py\", line 73, in check\n    detail = action()\n  File \"/Users/masenf/.codex/worktrees/48e6/reflex/prerelease_testing/2026-10-05/components/browser_checks.py\", line 246, in primitive_progress_accessibility\n    expect(page.locator(\"#primitive-progress\")).to_have_attribute(\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^\n        \"aria-valuenow\", \"100\"\n        ^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/private/tmp/reflex-prerelease-components-20261005/venv/lib/python3.13/site-packages/playwright/sync_api/_generated.py\", line 19408, in to_have_attribute\n    self._sync(\n    ~~~~~~~~~~^\n        self._impl_obj.to_have_attribute(\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n            name=name, value=value, ignoreCase=ignore_case, timeout=timeout\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        )\n        ^\n    )\n    ^\n  File \"/private/tmp/reflex-prerelease-components-20261005/venv/lib/python3.13/site-packages/playwright/_impl/_sync_base.py\", line 115, in _sync\n    return task.result()\n           ~~~~~~~~~~~^^\n  File \"/private/tmp/reflex-prerelease-components-20261005/venv/lib/python3.13/site-packages/playwright/_impl/_assertions.py\", line 266, in to_have_attribute\n    await self._expect_impl(\n    ...<7 lines>...\n    )\n  File \"/private/tmp/reflex-prerelease-components-20261005/venv/lib/python3.13/site-packages/playwright/_impl/_assertions.py\", line 85, in _expect_impl\n    raise AssertionError(\n        f\"{out_message}\\nActual value: {actual}{error_message} {format_call_log(result.get('log'))}\"\n    )\nAssertionError: Locator expected to have attribute '100'\nActual value: None \nCall log:\n  - Expect \"to_have_attribute\" with timeout 5000ms\n  - waiting for locator(\"#primitive-progress\")\n    9 \u00d7 locator resolved to <div data-max=\"100\" aria-valuemin=\"0\" role=\"progressbar\" aria-valuemax=\"100\" class=\"Root css-rch9dh\" id=\"primitive-progress\" data-state=\"indeterminate\">\u2026</div>\n      - unexpected value \"null\"\n\n"
+    },
+    {
+      "name": "moment-locales-duration",
+      "status": "passed",
+      "detail": [
+        "Thursday 14 March 2024",
+        "jeudi 14 mars 2024",
+        "30 mins"
+      ]
+    },
+    {
+      "name": "dropzone-upload-roundtrip",
+      "status": "passed",
+      "detail": [
+        {
+          "bytes": 8,
+          "name": "dispatch.txt"
+        },
+        {
+          "bytes": 5,
+          "name": "stock.txt"
+        }
+      ]
+    },
+    {
+      "name": "sonner-action-state",
+      "status": "passed",
+      "detail": null
+    },
+    {
+      "name": "gridjs-dataeditor",
+      "status": "passed",
+      "detail": "{\"position\": [0, 0], \"value\": \"Gamma\"}"
+    },
+    {
+      "name": "react-player-local-audio",
+      "status": "passed",
+      "detail": null
+    }
+  ],
+  "diagnostics": {
+    "console": [],
+    "page_errors": [],
+    "request_failures": [],
+    "http_failures": []
+  }
+}

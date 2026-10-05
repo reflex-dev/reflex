@@ -1,0 +1,35 @@
+{
+  "modules": {
+    "sqlalchemy": false,
+    "alembic": false,
+    "sqlmodel": false,
+    "pydantic": false
+  },
+  "commands": [
+    {
+      "command": "init",
+      "returncode": 1,
+      "guidance": "reflex[db]",
+      "traceback": false
+    },
+    {
+      "command": "migrate",
+      "returncode": 1,
+      "guidance": "reflex[db]",
+      "traceback": false
+    },
+    {
+      "command": "makemigrations",
+      "returncode": 1,
+      "guidance": "reflex[db]",
+      "traceback": false
+    },
+    {
+      "command": "status",
+      "returncode": 1,
+      "guidance": "reflex[db]",
+      "traceback": false
+    }
+  ],
+  "status": "passed"
+}

@@ -1,0 +1,93 @@
+[
+  {
+    "package": "reflex",
+    "expected_count": 3,
+    "actual_count": 3,
+    "missing": [],
+    "unexpected": []
+  },
+  {
+    "package": "reflex-base",
+    "expected_count": 0,
+    "actual_count": 0,
+    "missing": [],
+    "unexpected": []
+  },
+  {
+    "package": "reflex-components-code",
+    "expected_count": 2,
+    "actual_count": 2,
+    "missing": [],
+    "unexpected": []
+  },
+  {
+    "package": "reflex-components-core",
+    "expected_count": 36,
+    "actual_count": 36,
+    "missing": [],
+    "unexpected": []
+  },
+  {
+    "package": "reflex-components-gridjs",
+    "expected_count": 1,
+    "actual_count": 1,
+    "missing": [],
+    "unexpected": []
+  },
+  {
+    "package": "reflex-components-markdown",
+    "expected_count": 1,
+    "actual_count": 1,
+    "missing": [],
+    "unexpected": []
+  },
+  {
+    "package": "reflex-components-moment",
+    "expected_count": 1,
+    "actual_count": 1,
+    "missing": [],
+    "unexpected": []
+  },
+  {
+    "package": "reflex-components-plotly",
+    "expected_count": 1,
+    "actual_count": 1,
+    "missing": [],
+    "unexpected": []
+  },
+  {
+    "package": "reflex-components-radix",
+    "expected_count": 65,
+    "actual_count": 65,
+    "missing": [],
+    "unexpected": []
+  },
+  {
+    "package": "reflex-components-recharts",
+    "expected_count": 6,
+    "actual_count": 6,
+    "missing": [],
+    "unexpected": []
+  },
+  {
+    "package": "reflex-docgen",
+    "expected_count": 0,
+    "actual_count": 0,
+    "missing": [],
+    "unexpected": []
+  },
+  {
+    "package": "reflex-hosting-cli",
+    "expected_count": 0,
+    "actual_count": 0,
+    "missing": [],
+    "unexpected": []
+  },
+  {
+    "package": "reflex-release",
+    "expected_count": 0,
+    "actual_count": 0,
+    "missing": [],
+    "unexpected": []
+  }
+]

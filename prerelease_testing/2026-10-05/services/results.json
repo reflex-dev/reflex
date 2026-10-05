@@ -1,0 +1,75 @@
+{
+  "python": "/private/tmp/reflex-pre-20261005-root/bin/python",
+  "reflex": "/private/tmp/reflex-pre-20261005-root/lib/python3.12/site-packages/reflex/__init__.py",
+  "version": "0.10.0a1",
+  "durations": [
+    {
+      "name": "SQLALCHEMY_POOL_TIMEOUT",
+      "input": "2m",
+      "seconds": 120.0
+    },
+    {
+      "name": "REFLEX_SOCKET_INTERVAL",
+      "input": "250ms",
+      "seconds": 0.25
+    },
+    {
+      "name": "REFLEX_SOCKET_TIMEOUT",
+      "input": "3",
+      "seconds": 3.0
+    },
+    {
+      "name": "REFLEX_BACKEND_COLD_START_TIMEOUT",
+      "input": "1.5m",
+      "seconds": 90.0
+    },
+    {
+      "name": "REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS",
+      "input": "350",
+      "seconds": 0.35
+    },
+    {
+      "name": "REFLEX_OPLOCK_HOLD_TIME_MS",
+      "input": "550",
+      "seconds": 0.55
+    },
+    {
+      "name": "REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS",
+      "input": "2.5",
+      "seconds": 2.5
+    },
+    {
+      "legacy_and_new": true,
+      "seconds": 0.75
+    }
+  ],
+  "redis": {
+    "ping_operations": 100,
+    "max_connections": 3,
+    "waiter_recovered": true,
+    "timeout_seconds": 0.20151929200073937,
+    "timeout_error": "No connection available.",
+    "invalid_configuration": [
+      {
+        "settings": {
+          "REFLEX_REDIS_MAX_CONNECTIONS": "2"
+        },
+        "error": "REFLEX_REDIS_MAX_CONNECTIONS must be at least 3 when set."
+      },
+      {
+        "settings": {
+          "REFLEX_REDIS_MAX_CONNECTIONS": "3",
+          "REFLEX_REDIS_POOL_TIMEOUT": "0"
+        },
+        "error": "REFLEX_REDIS_POOL_TIMEOUT must be greater than 0 and shorter than the configured redis_lock_expiration."
+      },
+      {
+        "settings": {
+          "REFLEX_REDIS_MAX_CONNECTIONS": "3",
+          "REFLEX_REDIS_POOL_TIMEOUT": "10s"
+        },
+        "error": "REFLEX_REDIS_POOL_TIMEOUT must be greater than 0 and shorter than the configured redis_lock_expiration."
+      }
+    ]
+  }
+}

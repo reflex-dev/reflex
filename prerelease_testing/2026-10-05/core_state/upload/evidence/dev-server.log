@@ -1,0 +1,110 @@
+WARN `--no-project` was provided, but no project was found
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 17/16 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:3111/
+Backend running at: http://0.0.0.0:8111
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 17/16 0:00:00
+[ERROR] Application callable raised an exception
+Traceback (most recent call last):
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/granian/_futures.py", line 15, in future_watcher
+    await inner(watcher.scope, watcher.proto)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/opentelemetry/instrumentation/asgi/__init__.py", line 779, in __call__
+    await self.app(scope, otel_receive, otel_send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 149, in simple_response
+    await self.app(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/reflex/app.py", line 360, in __call__
+    await self.app(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/routing.py", line 697, in app
+    await route.handle(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/routing.py", line 457, in handle
+    await self.app(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/upload/upload_probe/upload_probe.py", line 79, in wrapped
+    await asgi_app(scope, receive, observed_send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 149, in simple_response
+    await self.app(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/routing.py", line 697, in app
+    await route.handle(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/routing.py", line 457, in handle
+    await self.app(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 149, in simple_response
+    await self.app(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/routing.py", line 697, in app
+    await route.handle(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/routing.py", line 282, in handle
+    await self.app(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/routing.py", line 65, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/routing.py", line 63, in app
+    await response(scope, receive, send)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/reflex_base/utils/streaming_response.py", line 103, in __call__
+    with _collapse_excgroups():
+  File "/opt/homebrew/Cellar/python@3.13/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/reflex_base/utils/streaming_response.py", line 58, in _collapse_excgroups
+    raise collapsed_exc
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/anyio/_core/_tasks.py", line 327, in _run_coro
+    retval = await self._coro
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/reflex_base/utils/streaming_response.py", line 107, in wrap
+    await func()
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/starlette/responses.py", line 252, in stream_response
+    async for chunk in self.body_iterator:
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/reflex_components_core/core/_upload.py", line 671, in _ndjson_updates
+    async for delta in app.event_processor.enqueue_stream_delta(token, event):
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/reflex_base/event/processor/event_processor.py", line 560, in enqueue_stream_delta
+    await task_future.wait_all()
+  File "/private/tmp/reflex-alpha-core-state/venv/lib/python3.13/site-packages/reflex_base/event/processor/future.py", line 102, in wait_all
+    result = await self
+RuntimeError: expected upload recovery probe

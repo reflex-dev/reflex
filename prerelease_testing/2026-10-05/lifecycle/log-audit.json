@@ -1,0 +1,35 @@
+[
+  {
+    "file": "prod-normal-json.log",
+    "json_records": 112,
+    "uv_wrapper_output": [
+      "WARN `--no-project` was provided, but no project was found"
+    ],
+    "intentional_event_errors": 2,
+    "package_install_cache_reused": true,
+    "lifespan_cancel_marker": true,
+    "unexpected_errors": []
+  },
+  {
+    "file": "dev-json.log",
+    "json_records": 141,
+    "uv_wrapper_output": [
+      "WARN `--no-project` was provided, but no project was found"
+    ],
+    "intentional_event_errors": 1,
+    "package_install_cache_reused": true,
+    "lifespan_cancel_marker": true,
+    "unexpected_errors": []
+  },
+  {
+    "file": "prod-prefix-json.log",
+    "json_records": 110,
+    "uv_wrapper_output": [
+      "WARN `--no-project` was provided, but no project was found"
+    ],
+    "intentional_event_errors": 1,
+    "package_install_cache_reused": true,
+    "lifespan_cancel_marker": true,
+    "unexpected_errors": []
+  }
+]
