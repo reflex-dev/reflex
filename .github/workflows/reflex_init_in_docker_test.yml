@@ -34,7 +34,7 @@ jobs:
           paths-ignore: |
             **/*.md
             docs/**
-            docker-examples/**
+            docker-example/**
             .github/**
             .devcontainer/**
             .claude/**

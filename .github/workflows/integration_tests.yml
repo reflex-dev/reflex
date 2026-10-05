@@ -50,7 +50,7 @@ jobs:
           paths-ignore: |
             **/*.md
             docs/**
-            docker-examples/**
+            docker-example/**
             .github/**
             .devcontainer/**
             .claude/**
@@ -64,7 +64,7 @@ jobs:
         id: docs
         with:
           paths-ignore: |
-            docker-examples/**
+            docker-example/**
             .github/**
             .devcontainer/**
             .claude/**

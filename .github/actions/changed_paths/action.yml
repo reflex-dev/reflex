@@ -54,11 +54,14 @@ runs:
               python3 "$evaluate"
           )
         elif [ "$EVENT_NAME" = push ] && [ -n "${BEFORE//0/}" ]; then
-          files=$(gh api "repos/$REPO/compare/$BEFORE...$AFTER" --jq "(.files // [])[] | $names")
+          # A force push can leave the previous commit unreachable, so the
+          # compare fails: run rather than fail the gate on main.
+          if ! files=$(gh api "repos/$REPO/compare/$BEFORE...$AFTER" --jq "(.files // [])[] | $names"); then
+            echo "::notice::Cannot compare $BEFORE...$AFTER; running every job"
+            changed=true
           # The compare API lists at most 300 files, so a list that long may be
           # truncated: run rather than skip on the files it leaves out.
-          count=$(grep -c . <<<"$files" || true)
-          if [ "$count" -ge 300 ]; then
+          elif [ "$(grep -c . <<<"$files" || true)" -ge 300 ]; then
             changed=true
           else
             changed=$(python3 "$evaluate" <<<"$files")
