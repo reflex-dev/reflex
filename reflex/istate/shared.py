@@ -16,7 +16,7 @@ from typing_extensions import Self
 
 from reflex.istate.delta import _suppress_delta_recording
 from reflex.istate.manager.token import BaseStateToken
-from reflex.state import BaseState, State, _override_base_method
+from reflex.state import BaseState, OnLoadInternalState, State, _override_base_method
 
 logger = logging.getLogger(__name__)
 
@@ -189,7 +189,7 @@ class SharedStateBaseInternal(State):
             Event(
                 name=get_hydrate_event(self._get_root_state()),
             ),
-            State.set_is_hydrated(True),
+            OnLoadInternalState.set_is_hydrated(True),
         ]
 
     async def _resolve_linked_state(

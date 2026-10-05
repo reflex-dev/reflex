@@ -12,6 +12,25 @@ STATE_JS_TEMPLATE = (
 )
 
 
+def test_socket_startup_lifecycle() -> None:
+    """Execute the frontend startup and reconnect tests against the real template."""
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js is required for the frontend runtime tests")
+    result = subprocess.run(
+        [
+            node,
+            "--experimental-vm-modules",
+            str(Path(__file__).with_name("state_js.test.mjs")),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
 def test_state_js_does_not_register_deprecated_unload_listener() -> None:
     """The template must not register the deprecated `unload` event listener.
 
@@ -45,6 +64,43 @@ def test_state_js_still_handles_page_lifecycle_disconnect() -> None:
     )
     assert 'addEventListener("beforeunload"' in content, (
         "state.js should keep its `beforeunload` listener as a disconnect fallback."
+    )
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
+def test_get_ref_value_preserves_empty_and_unset_controls() -> None:
+    """Form fields retain falsy values and serialize unset refs as null."""
+    content = STATE_JS_TEMPLATE.read_text()
+    helper = content[
+        content.index("export const getRefValue =") : content.index(
+            "export const getRefValues ="
+        )
+    ]
+    subprocess.run(
+        [
+            "node",
+            "--input-type=module",
+            "--eval",
+            helper
+            + """
+import assert from 'node:assert/strict';
+for (const value of ['', 0, false, 'filled']) {
+  const result = getRefValue({current: {value}});
+  assert.equal(result, value);
+}
+for (const ref of [undefined, {current: null},
+                   {current: {querySelector: () => null}}]) {
+  assert.equal(JSON.stringify({field: getRefValue(ref)}), '{"field":null}');
+}
+assert.equal(getRefValue({current: {
+  querySelector: () => ({value: 'selected'})
+}}), 'selected');
+assert.equal(getRefValue({current: {type: 'checkbox', checked: false}}), false);
+""",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
     )
 
 
