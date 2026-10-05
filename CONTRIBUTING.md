@@ -133,6 +133,13 @@ a release branch — never by tagging manually. The pieces:
    failed or rejected publish leaves no tag behind — fix the problem on top of
    the changelog bump and the next push retries automatically.
 
+Before approval, the post-build hook checks generated type stubs and installs
+every wheel and sdist with its published dependencies in a separate temporary
+environment. Installation runs outside the checkout with uv configuration and
+caches disabled. A missing distribution format or failed installation stops
+publication. To run the installation check locally after building, use
+`DIST_DIR=dist uv run --no-config --script scripts/verify_install.py`.
+
 **The release workflows are generated.** `dispatch_release.yml`,
 `release_from_changelog.yml`, `publish.yml`, `changelog.yml` and
 `auto_release_internal.yml` are rendered by
