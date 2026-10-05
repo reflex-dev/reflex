@@ -1,0 +1,1 @@
+Fix a race with `REFLEX_OPLOCK_ENABLED` where an instance could take an opportunistic lease before its Redis lock notifications were active, making other instances wait out the full hold time for the same token.

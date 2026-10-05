@@ -52,7 +52,6 @@ from .config import (
     RequirementsTxt,
     UvLock,
 )
-from .custom_components import CustomComponents
 from .event import ClientErrorType, Endpoint, EventTriggers, SocketEvent
 from .installer import Bun, Node, PackageJson
 from .route import (
@@ -60,6 +59,12 @@ from .route import (
     ROUTER,
     ROUTER_DATA,
     ROUTER_DATA_INCLUDE,
+    ROUTER_HEADERS,
+    ROUTER_PAGE,
+    ROUTER_ROUTE_ID,
+    ROUTER_SESSION,
+    ROUTER_URL,
+    ROUTER_VARS,
     DefaultPage,
     Page404,
     RouteArgType,
@@ -86,6 +91,12 @@ __all__ = [
     "ROUTER",
     "ROUTER_DATA",
     "ROUTER_DATA_INCLUDE",
+    "ROUTER_HEADERS",
+    "ROUTER_PAGE",
+    "ROUTER_ROUTE_ID",
+    "ROUTER_SESSION",
+    "ROUTER_URL",
+    "ROUTER_VARS",
     "ROUTE_NOT_FOUND",
     "SESSION_STORAGE",
     "SETTER_PREFIX",
@@ -98,7 +109,6 @@ __all__ = [
     "CompileVars",
     "ComponentName",
     "Config",
-    "CustomComponents",
     "DefaultPage",
     "DefaultPorts",
     "Dirs",

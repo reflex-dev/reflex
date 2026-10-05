@@ -93,4 +93,4 @@ cp AGENTS.md /path/to/your/reflex-project/AGENTS.md
 
 - [Reflex Agent Skills](/docs/ai/integrations/skills/) provide reusable workflows that the file references by name.
 - [Reflex MCP](/docs/ai/integrations/mcp-overview/) provides structured documentation lookup at runtime.
-- The [llms.txt index](/llms.txt) gives a broad map of the documentation in one file.
+- The [llms.txt index](https://reflex.dev/docs/llms.txt) gives a broad map of the documentation in one file.

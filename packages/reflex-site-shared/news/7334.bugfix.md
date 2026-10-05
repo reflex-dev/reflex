@@ -1,0 +1,1 @@
+Post documentation feedback to the Slack channel named by `SLACK_DOCS_FEEDBACK_CHANNEL` through the bot token in `SLACK_BOT_TOKEN`, and confirm delivery to the reader, instead of silently discarding it.

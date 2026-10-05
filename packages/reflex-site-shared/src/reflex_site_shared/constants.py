@@ -5,13 +5,14 @@ import os
 CHANGELOG_URL = "https://reflex.dev/docs/changelog/"
 CONTRIBUTING_URL = "https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md"
 DISCUSSIONS_URL = "https://github.com/orgs/reflex-dev/discussions"
-GITHUB_STARS = 28000
+GITHUB_STARS = 28_881
 GITHUB_URL = "https://github.com/reflex-dev/reflex"
 GITHUB_ORG_URL = "https://github.com/reflex-dev"
-XY_GITHUB_STARS = 1400
+XY_GITHUB_STARS = 1_829
 XY_GITHUB_URL = "https://github.com/reflex-dev/xy"
 JOBS_BOARD_URL = "https://www.ycombinator.com/companies/reflex/jobs"
 REFLEX_ASSETS_CDN = "https://web.reflex-assets.dev/"
+OG_IMAGE_URL = f"{REFLEX_ASSETS_CDN}previews/og_reflex.webp"
 SCREENSHOT_BUCKET = "https://pub-c14a5dcf674640a6b73fded32bad72ca.r2.dev/"
 REFLEX_BUILD_URL = os.getenv("REFLEX_BUILD_URL", "https://build.reflex.dev/")
 REFLEX_BUILD_LOGIN_URL = f"{REFLEX_BUILD_URL.rstrip('/')}/login"
@@ -35,8 +36,10 @@ TWITTER_CREATOR = "@getreflex"
 
 API_BASE_URL_LOOPS: str = "https://app.loops.so/api/v1"
 REFLEX_DEV_WEB_NEWSLETTER_FORM_WEBHOOK_URL: str = "https://hkdk.events/t0qopjbznnp2fr"
-REFLEX_DEV_WEB_GENERAL_FORM_FEEDBACK_WEBHOOK_URL: str = os.environ.get(
-    "REFLEX_DEV_WEB_GENERAL_FORM_FEEDBACK_WEBHOOK_URL", ""
+SLACK_BOT_TOKEN: str = os.environ.get("SLACK_BOT_TOKEN", "")
+SLACK_DOCS_FEEDBACK_CHANNEL: str = os.environ.get("SLACK_DOCS_FEEDBACK_CHANNEL", "")
+SLACK_INTEGRATION_REQUEST_CHANNEL: str = os.environ.get(
+    "SLACK_INTEGRATION_REQUEST_CHANNEL", ""
 )
 RECENT_BLOGS_API_URL: str = os.environ.get(
     "RECENT_BLOGS_API_URL", "https://reflex.dev/blog-api/api/v1/recent-blogs"

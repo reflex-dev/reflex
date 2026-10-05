@@ -1,10 +1,13 @@
 """Tests for the standard logging pipeline in reflex_base.utils.log."""
 
+import contextlib
 import json
 import logging
 import os
+import signal
 import subprocess
 import sys
+import time
 from pathlib import Path
 from unittest import mock
 
@@ -206,6 +209,19 @@ def test_configure_removes_file_handler_when_full_logging_is_disabled(monkeypatc
         logging.getLogger("reflex").removeHandler(handler)
 
 
+def test_ensure_configured_tracks_full_logging_mode(monkeypatch):
+    """Changing full logging mode through the worker path updates sinks."""
+    handler = logging.NullHandler()
+    monkeypatch.setattr(log, "_file_handler", lambda: handler)
+    monkeypatch.setenv("REFLEX_ENABLE_FULL_LOGGING", "true")
+    log.ensure_configured()
+    assert handler in logging.getLogger("reflex").handlers
+
+    monkeypatch.setenv("REFLEX_ENABLE_FULL_LOGGING", "false")
+    log.ensure_configured()
+    assert handler not in logging.getLogger("reflex").handlers
+
+
 def test_set_log_level_env_propagation(monkeypatch):
     """Changing the level exports REFLEX_LOGLEVEL for subprocesses."""
     import os
@@ -279,19 +295,75 @@ def test_deprecate_dedupes_and_renders(capsys):
     assert "removed in 1.0" in out
 
 
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "<string>",
+        "<frozen importlib._bootstrap>",
+        "<frozen importlib._bootstrap_external>",
+    ],
+)
+def test_generated_code_is_never_a_user_call_site(filename: str):
+    """Code the interpreter generated has a pseudo-name, not a path.
+
+    Args:
+        filename: The pseudo-filename the generated code object carries.
+    """
+    assert log._is_framework_filename(filename)
+
+
+@pytest.mark.parametrize("filename", ["<stdin>", "<ipython-input-3-a1b2c3d4>"])
+def test_an_interactive_call_site_is_still_reported(filename: str):
+    """A REPL line and a notebook cell are the user's own code.
+
+    They are bracketed like generated code but are exactly the location a
+    deprecation should name, so the rule must not swallow them.
+
+    Args:
+        filename: The pseudo-filename an interactive session carries.
+    """
+    assert not log._is_framework_filename(filename)
+
+
+def test_an_ordinary_path_is_still_classified_by_location(tmp_path):
+    """The rule must not swallow a real file outside the framework.
+
+    Args:
+        tmp_path: pytest temporary directory fixture.
+    """
+    assert not log._is_framework_filename(str(tmp_path / "app.py"))
+
+
+def test_deprecate_skips_frames_compiled_from_strings(capsys):
+    """A `<string>` code object is not a user call site, so the location skips it."""
+    namespace: dict[str, object] = {}
+    exec(
+        "def emit():\n"
+        "    log.deprecate(feature_name='StringFeature', reason='Use x.',"
+        " deprecation_version='0.1.0', removal_version='1.0')\n",
+        {"log": log},
+        namespace,
+    )
+    namespace["emit"]()  # pyright: ignore[reportCallIssue]
+    out, _ = capsys.readouterr()
+    assert "<string>" not in out
+    assert "test_log.py" in out
+
+
 def test_deprecate_json_extras(monkeypatch, capsys):
     """Deprecations carry structured metadata in JSON mode."""
     monkeypatch.setenv("REFLEX_LOG_JSON", "true")
     log.configure()
     log.deprecate(
         feature_name="JsonFeature",
-        reason="Use something else.",
+        reason="Use [bold]something else[/bold].",
         deprecation_version="0.1.0",
         removal_version="1.0",
     )
     out, _ = capsys.readouterr()
     record = json.loads(out)
     assert record["feature_name"] == "JsonFeature"
+    assert "[bold]" not in record["message"]
     assert record["deprecation_version"] == "0.1.0"
     assert record["removal_version"] == "1.0"
     assert record["kind"] == "deprecation"
@@ -364,14 +436,10 @@ def test_console_debug_progress_preserves_file_log(monkeypatch):
     )
 
 
-def test_console_deprecate_preserves_rich_print_kwargs(monkeypatch):
-    """The legacy deprecation helper retains its Rich print contract."""
-    rich_print = mock.Mock()
-    monkeypatch.setattr(console, "print", rich_print)
-    monkeypatch.setattr(console, "should_use_log_file_console", lambda: False)
-    monkeypatch.setattr(
-        console, "_get_first_non_framework_frame", lambda: None, raising=False
-    )
+def test_console_deprecate_delegates_to_log(monkeypatch):
+    """The public console deprecation helper uses the shared log pipeline."""
+    log_deprecate = mock.Mock()
+    monkeypatch.setattr(log, "deprecate", log_deprecate)
 
     console.deprecate(
         feature_name="OldFeature",
@@ -382,12 +450,35 @@ def test_console_deprecate_preserves_rich_print_kwargs(monkeypatch):
         markup=False,
     )
 
-    rich_print.assert_called_once_with(
-        "[yellow]DeprecationWarning: OldFeature has been deprecated in version "
-        "0.9.9. Use NewFeature. It will be completely removed in 1.0.[/yellow]",
-        level="warning",
+    log_deprecate.assert_called_once_with(
+        feature_name="OldFeature",
+        reason="Use NewFeature.",
+        deprecation_version="0.9.9",
+        removal_version="1.0",
+        dedupe=False,
         markup=False,
     )
+
+
+def test_deprecate_preserves_rich_print_kwargs(monkeypatch):
+    """Legacy Rich options are passed through the shared logging pipeline."""
+    rich_console = mock.Mock()
+    monkeypatch.setattr(log, "_console", rich_console)
+
+    console.deprecate(
+        feature_name="RichFeature",
+        reason="[bold]Use something else[/bold].",
+        deprecation_version="0.9.9",
+        removal_version="1.0",
+        dedupe=False,
+        markup=False,
+        soft_wrap=True,
+    )
+
+    print_kwargs = rich_console.print.call_args.kwargs
+    assert print_kwargs["markup"] is False
+    assert print_kwargs["soft_wrap"] is True
+    assert "[bold]Use something else[/bold]" in rich_console.print.call_args.args[0]
 
 
 def test_console_print_json_mode(monkeypatch, capsys):
@@ -803,3 +894,299 @@ def test_reset_releases_the_reservation():
     log.reserve_stdout()
     log._reset()
     assert log.is_stdout_reserved() is False
+
+
+_SUPERVISED_SCRIPT = """
+import logging
+import multiprocessing
+import os
+import subprocess
+import sys
+
+from reflex_base.utils import log
+
+
+def crash():
+    raise RuntimeError("boom")
+
+
+if __name__ == "__main__":
+    log.enable_managed_logging()
+    if not log.is_output_supervised():
+        sys.exit(log.supervise_output([sys.executable, __file__]))
+    print("from print")
+    os.write(1, b"from os.write\\n")
+    sys.stderr.write("from stderr\\n")
+    subprocess.run([sys.executable, "-c", "print('from child')"], check=True)
+    subprocess.run(
+        [sys.executable, "-c", "import json; print(json.dumps({'passed': 1}))"],
+        check=True,
+    )
+    record = '{"level": "info", "logger": "child", "message": "passed"}'
+    subprocess.run([sys.executable, "-c", f"print({record!r})"], check=True)
+    sys.stderr.write("Traceback (most recent call last):\\n  File \\"x.py\\"\\n")
+    sys.stderr.write('{"level": "error", "logger": "other", "message": "mid"}\\n')
+    sys.stderr.write("KeyError: 'interleaved'\\n")
+    logging.getLogger("reflex").info("from logger")
+    worker = multiprocessing.get_context("spawn").Process(target=crash)
+    worker.start()
+    worker.join()
+    print("\\u2713 unicode")
+    print("partial line", end="")
+    sys.exit(3)
+"""
+
+
+def _run_script(tmp_path: Path, source: str, **kwargs) -> subprocess.CompletedProcess:
+    """Run a Python script in JSON mode.
+
+    Args:
+        tmp_path: The directory for the script.
+        source: The script source.
+        kwargs: Extra arguments for subprocess.run.
+
+    Returns:
+        The completed process, with bytes output.
+    """
+    script = tmp_path / "script.py"
+    script.write_text(source)
+    env = {**kwargs.pop("env", os.environ), "REFLEX_LOG_JSON": "true"}
+    return subprocess.run(
+        [sys.executable, str(script)],
+        capture_output=True,
+        env=env,
+        cwd=tmp_path,
+        timeout=60,
+        **kwargs,
+    )
+
+
+def test_supervise_output_turns_every_line_into_json(tmp_path):
+    """Everything the command and its descendants print reaches the streams as JSON."""
+    result = _run_script(tmp_path, _SUPERVISED_SCRIPT)
+
+    assert result.returncode == 3, result.stderr
+    out = [json.loads(line) for line in result.stdout.splitlines()]
+    err = [json.loads(line) for line in result.stderr.splitlines()]
+    assert sorted(r["message"] for r in out if r.get("logger") == "stdout") == [
+        "from child",
+        "from os.write",
+        "from print",
+        "partial line",
+        # JSON that is not a log record is wrapped like any other line.
+        '{"passed": 1}',
+        "\u2713 unicode",
+    ]
+    assert {"level": "info", "logger": "child", "message": "passed"} in out
+    assert {"level": "error", "logger": "other", "message": "mid"} in err
+    assert [r["message"] for r in out if r.get("logger") == "reflex"] == ["from logger"]
+    assert {
+        "logger": "stderr",
+        "level": "warning",
+        "message": "from stderr",
+    }.items() <= err[0].items()
+    interleaved, crash = [r for r in err if "exception" in r]
+    assert interleaved["message"] == "KeyError: 'interleaved'"
+    assert interleaved["exception"] == (
+        "Traceback (most recent call last):\n  File \"x.py\"\nKeyError: 'interleaved'\n"
+    )
+    assert crash["level"] == "error"
+    assert crash["message"] == "RuntimeError: boom"
+    assert crash["exception"].startswith("Traceback (most recent call last):")
+    assert 'raise RuntimeError("boom")' in crash["exception"]
+
+
+_BURST_SCRIPT = """
+import sys
+
+from reflex_base.utils import log
+
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+for i in range(200):
+    print(f"line {i:03d} " + "x" * 1000)
+"""
+
+
+def test_supervise_output_drains_everything_for_a_slow_consumer(tmp_path):
+    """Output still in the pipes at exit reaches a consumer that reads late."""
+    script = tmp_path / "burst.py"
+    script.write_text(_BURST_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+    ) as proc:
+        assert proc.stdout is not None
+        lines = []
+        # A consumer slower than the writer keeps the pipes full at exit.
+        for line in proc.stdout:
+            lines.append(line)
+            time.sleep(0.015)
+        proc.wait(timeout=30)
+    assert len(lines) == 200
+    assert json.loads(lines[-1])["message"].startswith("line 199 ")
+
+
+_LINGERING_SCRIPT = """
+import subprocess
+import sys
+
+from reflex_base.utils import log
+
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+sleeper = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
+print(sleeper.pid)
+"""
+
+
+def test_supervise_output_does_not_wait_for_lingering_descendants(tmp_path):
+    """A descendant that outlives the command and holds the pipe does not block exit."""
+    start = time.monotonic()
+    result = _run_script(tmp_path, _LINGERING_SCRIPT)
+    elapsed = time.monotonic() - start
+    [record] = [json.loads(line) for line in result.stdout.splitlines()]
+    with contextlib.suppress(OSError):
+        os.kill(int(record["message"]), signal.SIGTERM)
+    assert result.returncode == 0, result.stderr
+    assert elapsed < 10
+
+
+_SIGTERM_SCRIPT = """
+import sys
+import time
+
+from reflex_base.utils import log
+
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+print("ready")
+time.sleep(30)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="SIGTERM is POSIX-only")
+def test_supervise_output_forwards_sigterm(tmp_path):
+    """Terminating the supervisor terminates the command and reports the signal."""
+    script = tmp_path / "sigterm.py"
+    script.write_text(_SIGTERM_SCRIPT)
+    with subprocess.Popen(
+        [sys.executable, str(script)],
+        stdout=subprocess.PIPE,
+        env={**os.environ, "REFLEX_LOG_JSON": "true"},
+    ) as proc:
+        assert proc.stdout is not None
+        assert json.loads(proc.stdout.readline())["message"] == "ready"
+        proc.send_signal(signal.SIGTERM)
+        assert proc.wait(timeout=10) == 128 + signal.SIGTERM
+
+
+def test_output_pump_survives_a_gone_consumer():
+    """The reader keeps draining the child when its consumer closed the stream."""
+    child_read, child_write = os.pipe()
+    out_read, out_write = os.pipe()
+    os.close(out_read)
+    os.write(child_write, b"plain\nTraceback (most recent call last):\n  File 'x'\n")
+    os.close(child_write)
+    pump = log._OutputPump(child_read, out_write, "info", "stdout")
+    pump.run()
+    os.close(out_write)
+
+
+_ENCODING_SCRIPT = """
+import os
+import sys
+
+from reflex_base.utils import log
+
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+print("gr\\u00fc\\u00dfe")
+sys.stdout.flush()
+os.write(1, b"10%\\r50%\\r100%\\r\\n")
+"""
+
+
+def test_supervise_output_decodes_utf8_and_splits_progress(tmp_path):
+    """Non-ASCII survives any PYTHONIOENCODING, and carriage-return updates are lines."""
+    result = _run_script(
+        tmp_path, _ENCODING_SCRIPT, env={**os.environ, "PYTHONIOENCODING": "latin-1"}
+    )
+    assert result.returncode == 0, result.stderr
+    assert [json.loads(line)["message"] for line in result.stdout.splitlines()] == [
+        "grüße",
+        "10%",
+        "50%",
+        "100%",
+    ]
+
+
+_CHATTY_LINGERING_SCRIPT = """
+import subprocess
+import sys
+
+from reflex_base.utils import log
+
+if not log.is_output_supervised():
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+chatter = subprocess.Popen([
+    sys.executable,
+    "-c",
+    "import time\\nfor _ in range(600):\\n    print('tick', flush=True)\\n    time.sleep(0.05)",
+])
+print(chatter.pid)
+"""
+
+
+def test_supervise_output_does_not_wait_for_a_chatty_descendant(tmp_path):
+    """A descendant that keeps writing after the command exits does not block exit."""
+    start = time.monotonic()
+    result = _run_script(tmp_path, _CHATTY_LINGERING_SCRIPT)
+    elapsed = time.monotonic() - start
+    # The descendant can print before the command prints its PID.
+    [pid] = [
+        int(record["message"])
+        for record in map(json.loads, result.stdout.splitlines())
+        if record["message"].isdigit()
+    ]
+    with contextlib.suppress(OSError):
+        os.kill(pid, signal.SIGTERM)
+    assert result.returncode == 0, result.stderr
+    assert elapsed < 15
+
+
+_CHILD_ENV_SCRIPT = """
+import os
+import sys
+
+from reflex_base.utils import log
+
+if not log.is_output_supervised():
+    # Not os.getppid() in the child: a Windows venv python.exe is a launcher
+    # that runs the real interpreter as its own child.
+    os.environ["TEST_SUPERVISOR_PID"] = str(os.getpid())
+    sys.exit(log.supervise_output([sys.executable, __file__]))
+print(os.environ[log._SUPERVISED_ENV_VAR] == os.environ["TEST_SUPERVISOR_PID"])
+print(sys.stdout.write_through)
+print(sys.stdout.encoding, sys.stdout.errors)
+"""
+
+
+def test_supervise_output_child_environment(tmp_path):
+    """The child gets the supervisor PID, keeps user buffering and error handler, and writes UTF-8."""
+    result = _run_script(
+        tmp_path,
+        _CHILD_ENV_SCRIPT,
+        env={
+            **os.environ,
+            "PYTHONUNBUFFERED": "",
+            "PYTHONIOENCODING": "latin-1:backslashreplace",
+        },
+    )
+    assert result.returncode == 0, result.stderr
+    assert [json.loads(line)["message"] for line in result.stdout.splitlines()] == [
+        "True",
+        "False",
+        "utf-8 backslashreplace",
+    ]

@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, Mock
 from redis.asyncio import Redis
 from redis.typing import EncodableT, KeyT
 
+from reflex.istate.manager.redis import _FENCED_SAVE_SCRIPT
 from reflex.utils import prerequisites
 
 WRONGTYPE_MESSAGE = "WRONGTYPE Operation against a key holding the wrong kind of value"
@@ -60,6 +61,20 @@ def mock_redis() -> Redis:
     async def mock_get(key: KeyT):  # noqa: RUF029
         _expire_keys()
         return keys.get(_key_bytes(key))
+
+    async def mock_mget(requested_keys: list[KeyT]):
+        """Read keys in request order, including missing values.
+
+        Args:
+            requested_keys: The keys to read.
+
+        Returns:
+            The stored values, or None for missing keys.
+        """
+        # Let concurrent tasks run, as they would during the real Redis IO.
+        await asyncio.sleep(0)
+        _expire_keys()
+        return [keys.get(_key_bytes(key)) for key in requested_keys]
 
     async def mock_set(  # noqa: RUF029
         key: KeyT,
@@ -142,39 +157,67 @@ def mock_redis() -> Redis:
             return True
         return False
 
-    def pipeline():
-        pipeline_mock = Mock()
-        results = []
+    class _Pipeline:
+        def __init__(self):
+            self.results = []
 
-        def get_pipeline(key: KeyT):
-            results.append(redis_mock.get(key=key))
-
-        def set_pipeline(
+        def set(
+            self,
             key: KeyT,
             value: EncodableT,
             ex: int | None = None,
             px: int | None = None,
             nx: bool = False,
         ):
-            results.append(redis_mock.set(key=key, value=value, ex=ex, px=px, nx=nx))
+            self.results.append(
+                redis_mock.set(key=key, value=value, ex=ex, px=px, nx=nx)
+            )
 
-        def sadd_pipeline(key: KeyT, value: EncodableT):
-            results.append(redis_mock.sadd(key=key, value=value))
+        def get(self, key: KeyT):
+            self.results.append(redis_mock.get(key=key))
 
-        def pexpire_pipeline(key: KeyT, px: int, xx: bool = False):
-            results.append(redis_mock.pexpire(key=key, px=px, xx=xx))
+        def sadd(self, key: KeyT, value: EncodableT):
+            self.results.append(redis_mock.sadd(key=key, value=value))
 
-        async def execute():
-            _expire_keys()
-            return await asyncio.gather(*results)
+        def pexpire(self, key: KeyT, px: int, xx: bool = False):
+            self.results.append(redis_mock.pexpire(key=key, px=px, xx=xx))
 
-        pipeline_mock.get = get_pipeline
-        pipeline_mock.set = set_pipeline
-        pipeline_mock.sadd = sadd_pipeline
-        pipeline_mock.pexpire = pexpire_pipeline
-        pipeline_mock.execute = execute
+        async def execute(self):
+            results = await asyncio.gather(*self.results)
+            self.results = []
+            return results
 
-        return pipeline_mock
+    def pipeline(transaction: bool = True):
+        return _Pipeline()
+
+    async def mock_eval(script: str, numkeys: int, *keys_and_args: Any) -> Any:
+        """Emulate the one script the redis state manager runs.
+
+        It is the fenced save: check the lock held in KEYS[1] against ARGV[1],
+        write the remaining keys with the expiration in ARGV[2], and return
+        the lock's PTTL, or None without writing when the lock is not held.
+
+        Args:
+            script: The Lua source, which must be the fenced save script.
+            numkeys: How many leading entries of keys_and_args are keys.
+            keys_and_args: The keys followed by the arguments.
+
+        Returns:
+            The lock's PTTL after writing, or None when nothing was written.
+
+        Raises:
+            NotImplementedError: If the script is not the fenced save script.
+        """
+        if script != _FENCED_SAVE_SCRIPT:
+            msg = "mock_redis only emulates the state manager's fenced save script."
+            raise NotImplementedError(msg)
+        lock_key, *state_keys = keys_and_args[:numkeys]
+        lock_id, expiration, *payloads = keys_and_args[numkeys:]
+        if await redis_mock.get(lock_key) != lock_id:
+            return None
+        for key, payload in zip(state_keys, payloads, strict=True):
+            await redis_mock.set(key, payload, ex=int(expiration))
+        return await redis_mock.pttl(lock_key)
 
     async def pttl(key: KeyT) -> int:  # noqa: RUF029
         _expire_keys()
@@ -187,6 +230,8 @@ def mock_redis() -> Redis:
     async def pubsub():
         watch_patterns = {}
         event_log_pointer = 0
+        # Subscribe confirmations not yet delivered by listen().
+        pending_confirmations: list[dict[str, Any]] = []
 
         async def psubscribe(  # noqa: RUF029
             *patterns: str,
@@ -195,22 +240,28 @@ def mock_redis() -> Redis:
             nonlocal event_log_pointer, watch_patterns
             event_log_pointer = len(event_log) - 1
 
-            for pattern in patterns:
-                watch_patterns[pattern] = None
-                _event_log_append_notify({
-                    "channel": b"psubscribe",
-                    "data": pattern.encode(),
-                })
-            for pattern, handler in handlers.items():
+            for pattern, handler in (
+                *((pattern, None) for pattern in patterns),
+                *handlers.items(),
+            ):
                 watch_patterns[pattern] = handler
+                pending_confirmations.append({
+                    "type": "psubscribe",
+                    "pattern": None,
+                    "channel": pattern.encode(),
+                    "data": len(watch_patterns),
+                })
                 _event_log_append_notify({
                     "channel": b"psubscribe",
                     "data": pattern.encode(),
                 })
 
-        async def listen() -> AsyncGenerator[dict[str, Any] | None, None]:
+        async def listen() -> AsyncGenerator[dict[str, Any], None]:
             nonlocal event_log_pointer
             while True:
+                # Like redis-py, deliver subscribe confirmations as messages.
+                while pending_confirmations:
+                    yield pending_confirmations.pop(0)
                 if event_log_pointer >= len(event_log):
                     await event_log_new_events.wait()
                     event_log_new_events.clear()
@@ -223,11 +274,14 @@ def mock_redis() -> Redis:
                         if handler is not None:
                             res = handler(event)
                             if asyncio.iscoroutine(res):
-                                res = await res
-                            # Yields None to indicate handled
-                            yield None
+                                await res
                         else:
-                            yield event
+                            yield {
+                                "type": "pmessage",
+                                "pattern": pattern.encode(),
+                                "channel": event["channel"],
+                                "data": event["data"],
+                            }
 
         pubsub_mock = AsyncMock()
         pubsub_mock.psubscribe = psubscribe
@@ -236,6 +290,7 @@ def mock_redis() -> Redis:
 
     redis_mock = AsyncMock(spec=Redis)
     redis_mock.get = mock_get
+    redis_mock.mget = mock_mget
     redis_mock.set = mock_set
     redis_mock.delete = mock_delete
     redis_mock.getdel = mock_getdel
@@ -244,6 +299,7 @@ def mock_redis() -> Redis:
     redis_mock.scard = mock_scard
     redis_mock.pexpire = mock_pexpire
     redis_mock.pipeline = pipeline
+    redis_mock.eval = mock_eval
     redis_mock.pttl = pttl
     redis_mock.pubsub = pubsub
     redis_mock.config_set = AsyncMock()

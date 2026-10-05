@@ -112,6 +112,20 @@ def _persisted_lockfile_implies_npm() -> bool:
     ).exists()
 
 
+@functools.cache
+def _log_implicit_npm_notice(root_dir: Path) -> None:
+    """Say once per lock directory why npm is preferred without REFLEX_USE_NPM.
+
+    Args:
+        root_dir: The ``reflex.lock/`` directory holding the npm lockfile.
+    """
+    logger.info(
+        f"Preferring npm because {root_dir.name}/ has {constants.Node.LOCKFILE_PATH} "
+        f"and no {constants.Bun.LOCKFILE_PATH}. "
+        "Run once with REFLEX_USE_NPM=0 to switch this project back to bun."
+    )
+
+
 def prefer_npm_over_bun() -> bool:
     """Check if npm should be preferred over bun.
 
@@ -129,7 +143,10 @@ def prefer_npm_over_bun() -> bool:
     explicit = environment.REFLEX_USE_NPM.getenv()
     if explicit is not None:
         return explicit
-    return _persisted_lockfile_implies_npm()
+    if _persisted_lockfile_implies_npm():
+        _log_implicit_npm_notice(Path.cwd() / constants.Bun.ROOT_LOCKFILE_DIR)
+        return True
+    return False
 
 
 def get_nodejs_compatible_package_managers(
@@ -356,6 +373,35 @@ def validate_bun(bun_path: Path | None = None):
             )
 
 
+def _is_npm(package_manager: str) -> bool:
+    """Whether a package manager executable is npm.
+
+    Args:
+        package_manager: The package manager executable path.
+
+    Returns:
+        Whether the executable is npm.
+    """
+    return Path(package_manager).stem.lower() == "npm"
+
+
+def _require_supported_node_for_npm(uses_npm: bool) -> None:
+    """Exit when npm will run but the installed node version is unsupported.
+
+    Args:
+        uses_npm: Whether npm is the package manager that will run.
+
+    Raises:
+        SystemExit: If npm will run and the node version is unsupported.
+    """
+    if not uses_npm or check_node_version():
+        return
+    logger.error(
+        f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {get_node_version()}",
+    )
+    raise SystemExit(1)
+
+
 def validate_frontend_dependencies(init: bool = True):
     """Validate frontend dependencies to ensure they meet requirements.
 
@@ -365,19 +411,16 @@ def validate_frontend_dependencies(init: bool = True):
     Raises:
         SystemExit: If the package manager is invalid.
     """
-    if not init:
-        try:
-            get_js_package_executor(raise_on_none=True)
-        except FileNotFoundError as e:
-            logger.error(f"Failed to find a valid package manager due to {e}.")
-            raise SystemExit(1) from None
-
-    if prefer_npm_over_bun() and not check_node_version():
-        node_version = get_node_version()
-        logger.error(
-            f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
-        )
-        raise SystemExit(1)
+    if init:
+        # Bun may not be installed yet, so only an explicit npm preference is final.
+        _require_supported_node_for_npm(prefer_npm_over_bun())
+        return
+    try:
+        executor = get_js_package_executor(raise_on_none=True)
+    except FileNotFoundError as e:
+        logger.error(f"Failed to find a valid package manager due to {e}.")
+        raise SystemExit(1) from None
+    _require_supported_node_for_npm(_is_npm(executor[0][0]))
 
 
 def remove_existing_bun_installation():
@@ -585,21 +628,24 @@ def _pinned_args_from_constants(deps: dict[str, str]) -> set[str]:
 
 def _frontend_packages_cache_payload(
     packages: set[str],
-    config: Config,
+    development_dependencies: set[str],
+    frozen_lockfile: bool,
     install_package_managers: Sequence[str],
 ) -> str:
     """Cache fingerprint for frontend package installs.
 
     Args:
         packages: Custom packages requested by the caller.
-        config: The active Reflex config.
+        development_dependencies: Development packages requested by plugins.
+        frozen_lockfile: Whether bun should enforce the existing lockfile.
         install_package_managers: The package manager paths in priority order.
 
     Returns:
         Stable fingerprint string for the cached procedure.
     """
     return (
-        f"{sorted(packages)!r},{config.json()},{list(install_package_managers)!r},"
+        f"{sorted(packages)!r},{sorted(development_dependencies)!r},"
+        f"{frozen_lockfile!r},{list(install_package_managers)!r},"
         f"{sorted(constants.PackageJson.DEPENDENCIES.items())!r},"
         f"{sorted(constants.PackageJson.DEV_DEPENDENCIES.items())!r},"
         f"{sorted(constants.PackageJson.OVERRIDES.items())!r}"
@@ -612,7 +658,8 @@ def _frontend_packages_cache_payload(
 )
 def _install_frontend_packages(
     packages: set[str],
-    config: Config,
+    development_dependencies: set[str],
+    frozen_lockfile: bool,
     install_package_managers: Sequence[str],
 ):
     """Installs the base and custom frontend packages.
@@ -637,7 +684,8 @@ def _install_frontend_packages(
     Args:
         packages: Custom packages requested by the caller (from
             ``Config.frontend_packages`` and inferred component imports).
-        config: The active Reflex config.
+        development_dependencies: Development packages requested by plugins.
+        frozen_lockfile: Whether bun should enforce the existing lockfile.
         install_package_managers: The package manager paths in priority
             order (primary plus fallbacks).
 
@@ -667,13 +715,6 @@ def _install_frontend_packages(
         env=env,
     )
 
-    # Resolve plugin-contributed deps up front so we know the full needed
-    # set before deciding which entries in package.json are stale.
-    development_deps: set[str] = set()
-    for plugin in config.plugins:
-        development_deps.update(plugin.get_frontend_development_dependencies())
-        packages.update(plugin.get_frontend_dependencies())
-
     wanted_dep_names = set(constants.PackageJson.DEPENDENCIES.keys()) | {
         _extract_package_name(p) for p in packages
     }
@@ -684,7 +725,7 @@ def _install_frontend_packages(
     # add calls.
     wanted_dev_dep_names = (
         set(constants.PackageJson.DEV_DEPENDENCIES.keys())
-        | {_extract_package_name(p) for p in development_deps}
+        | {_extract_package_name(p) for p in development_dependencies}
     ) - wanted_dep_names
     needed_names = wanted_dep_names | wanted_dev_dep_names
 
@@ -717,7 +758,7 @@ def _install_frontend_packages(
         frontend_skeleton.get_web_lockfile_path(name).exists()
         for name in frontend_skeleton.LOCKFILE_NAMES
     ):
-        _run_initial_install(primary_package_manager, env, config.frozen_lockfile)
+        _run_initial_install(primary_package_manager, env, frozen_lockfile)
 
     # Framework overrides are withheld while the persisted package.json is
     # restored so the frozen install above sees exactly the file that produced
@@ -725,7 +766,9 @@ def _install_frontend_packages(
     overrides_changed = frontend_skeleton.update_package_json_overrides()
 
     pinned_packages, unpinned_packages = _split_by_version_specifier(packages)
-    pinned_dev_deps, unpinned_dev_deps = _split_by_version_specifier(development_deps)
+    pinned_dev_deps, unpinned_dev_deps = _split_by_version_specifier(
+        development_dependencies
+    )
 
     # Skip unpinned entries that already appear in the correct section so
     # the package manager doesn't churn the previously resolved version.
@@ -786,6 +829,50 @@ def install_frontend_packages(packages: set[str], config: Config):
     install_package_managers = tuple(
         get_nodejs_compatible_package_managers(raise_on_none=True)
     )
+    # Check before any lockfile sync: a rejected npm install must not persist npm lockfiles.
+    _require_supported_node_for_npm(_is_npm(install_package_managers[0]))
+    packages = set(packages)
+    development_dependencies: set[str] = set()
+    for plugin in config.plugins:
+        development_dependencies.update(plugin.get_frontend_development_dependencies())
+        packages.update(plugin.get_frontend_dependencies())
+
     _sync_root_lockfiles_for_frontend_install()
-    _install_frontend_packages(set(packages), config, install_package_managers)
+    _install_frontend_packages(
+        packages,
+        development_dependencies,
+        config.frozen_lockfile,
+        install_package_managers,
+    )
+    _drop_lockfile_of_other_package_manager(install_package_managers[0])
     frontend_skeleton.sync_web_lockfiles_to_root()
+
+
+def _drop_lockfile_of_other_package_manager(primary_package_manager: str) -> None:
+    """Remove the other manager's lockfile from ``.web`` and ``reflex.lock/``.
+
+    Stale lockfiles can select the wrong manager or break frozen installs.
+    Preserve both for unknown executable names, including custom bun binaries.
+
+    Args:
+        primary_package_manager: The package manager that ran the install.
+    """
+    stem = Path(primary_package_manager).stem.lower()
+    if stem == "bun":
+        stale_lockfile = constants.Node.LOCKFILE_PATH
+    elif stem == "npm":
+        stale_lockfile = constants.Bun.LOCKFILE_PATH
+    else:
+        logger.debug(
+            f"Not pruning lockfiles: cannot tell which package manager {primary_package_manager!r} is."
+        )
+        return
+    for stale_path in (
+        frontend_skeleton.get_web_lockfile_path(stale_lockfile),
+        frontend_skeleton.get_root_lockfile_path(stale_lockfile),
+    ):
+        if stale_path.exists():
+            logger.debug(
+                f"Removing {stale_path}: it belongs to the package manager that did not run."
+            )
+            path_ops.rm(stale_path)

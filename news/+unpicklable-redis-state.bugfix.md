@@ -1,0 +1,1 @@
+A state stored in Redis that can no longer be unpickled, for example because a deploy moved or deleted a class held in a state var, is now replaced with a fresh state like a schema mismatch, instead of failing every event from that tab until the Redis key expires.
