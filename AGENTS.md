@@ -14,11 +14,13 @@ Use `uv` for everything — never bare `python` or `python3`.
 
 ```
 uv sync                                                          # install deps
-uv run pytest tests/units --cov --no-cov-on-fail --cov-report=   # unit tests (>=72% coverage)
+uv run pytest tests/units packages/*/tests --cov --no-cov-on-fail --cov-report=  # all unit tests (>=72% coverage)
+uv run pytest packages/reflex-base/tests                         # one package
+uv run pytest tests/units                                        # framework and cross-package tests
 uv run pytest tests/integration                                  # integration tests (slow)
 uv run ruff check .                                              # lint
 uv run ruff format .                                             # format
-uv run pyright reflex tests                                      # type check
+uv run pyright reflex tests packages/*/tests                                      # type check
 uv run python scripts/check_min_deps.py                          # validate each package's declared minimum dep versions (pyright in isolated min-version envs; workspace siblings resolve from locally built wheels, all other deps from PyPI). CI passes --wheelhouse instead, reusing the build jobs' artifacts
 uv run python scripts/check_min_deps.py --check-dev-pins [pkg]    # fail if pkg (default: all) declares an unpublishable *.dev dependency pin (the publish workflow runs the same gate via `reflex-release check-dev-pins`)
 uv run reflex-release sync                                       # regenerate the release workflows after editing [tool.reflex-release] or the reflex-release templates
@@ -31,7 +33,9 @@ uv run pre-commit run --all-files                                # all pre-commi
 ```
 reflex/                 # main framework package (app, state, compiler, components, utils, istate)
 packages/               # workspace sub-packages (reflex-base, reflex-components-*, reflex-docgen, reflex-components-internal)
-tests/units/            # unit tests, mirrors source tree
+packages/<name>/tests/ # tests owned by that subpackage
+tests/units/            # main framework and cross-package unit tests
+tests/unit_fixtures.py  # shared unit-test fixtures
 tests/integration/      # Selenium integration tests (run in dev+prod modes)
   tests_playwright/     # Playwright integration tests (preferred for new tests)
 tests/benchmarks/       # performance benchmarks
@@ -55,8 +59,12 @@ docs/                   # documentation site (separate workspace member)
 
 - Write comprehensive tests for new/changed features; extend existing test files where possible.
 - Test functions at module level, not wrapped in classes.
-- **Unit tests:** `tests/units/`, run with `uv run pytest tests/units`.
-  - unit tests should primarily cover a single module, and should be named accordingly, including subdirectories (e.g. `tests/units/istate/test_manager.py` for `reflex/istate/manager.py`). For subpackages, also include the corresponding path below `src/` (e.g. `tests/units/reflex_base/event/test_context.py` for `packages/reflex-base/src/reflex_base/event/context.py`).
+- **Unit tests:** put package-specific tests under `packages/<distribution>/tests/<module>_tests/`, mirroring the source module's subdirectories. For example, `packages/reflex-base/tests/reflex_base_tests/event/test_context.py` covers `packages/reflex-base/src/reflex_base/event/context.py`. Use unique `<module>_tests` package names and `__init__.py` files so helpers can be imported and identically named test files collect together.
+  - Keep tests of `reflex/`, repository tooling, and behavior that spans packages in `tests/units/`. Using `rx.State` or another component as an input does not by itself make a test cross-package; put tests with the behavior they primarily exercise.
+  - Run commands from the repository root after `uv sync`. Run a package with `uv run pytest packages/<distribution>/tests`, the root suite with `uv run pytest tests/units`, or everything with `uv run pytest tests/units packages/*/tests`. Append a file path or `-k` to narrow a run.
+  - Shared fixtures live in `tests/unit_fixtures.py` and are imported by each suite's `conftest.py`; package-only fixtures belong in that package's tests. Do not import fixtures from another package's tests.
+  - PR CI discovers package test directories automatically. Test-only changes run their owning suite; other package changes also run runtime dependents and the root cross-package suite. Shared fixtures, dependency configuration, test tooling, and `reflex/` changes run everything. Keep `scripts/unit_test_matrix.py` and its tests up to date when adding shared test infrastructure.
+  - The 72% workspace coverage floor applies to full-suite runs, including main-branch CI. Partial suites collect coverage with `--cov-fail-under=0`; their coverage cannot be compared to the workspace floor. Redis and lock-mode reruns cover the root and base suites; the workflow suite runs with Postgres on Linux. The `reflex-bench` suite only collects on Linux and is excluded from Windows package jobs.
 - **Integration tests:** prefer Playwright (`tests/integration/tests_playwright/`). Integration tests are slow — extend existing test apps rather than creating new ones for trivial functionality. Multiple test cases sharing one app is fine.
 
 ### Integration test patterns
@@ -208,7 +216,7 @@ if TYPE_CHECKING:
 Before submitting:
 1. Tests pass with adequate coverage
 2. `uv run ruff check .` and `uv run ruff format .` clean
-3. `uv run pyright reflex tests` passes
+3. `uv run pyright reflex tests packages/*/tests` passes
 4. `pyi_hashes.json` updated if components changed
 5. Documentation updated if user-facing behavior changed
 6. News fragment added for user-facing changes

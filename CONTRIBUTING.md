@@ -48,7 +48,30 @@ All the changes you make to the repository will be reflected in your running app
 
 Any feature or significant change added should be accompanied with unit tests.
 
-Within the 'test' directory of Reflex you can add to a test file already there or create a new test python file if it doesn't fit into the existing layout.
+Put tests next to the package whose behavior they exercise:
+
+- Subpackage tests live in `packages/<distribution>/tests/<module>_tests/`, with subdirectories matching the source. For example, `packages/reflex-base/tests/reflex_base_tests/event/test_context.py` tests `reflex_base/event/context.py`. Keep the test package name unique and include `__init__.py` files so test helpers remain importable.
+- Tests of the main `reflex/` package, repository scripts, and behavior spanning multiple packages stay in `tests/units/`.
+- Integration tests stay in `tests/integration/`; prefer `tests/integration/tests_playwright/` for new browser tests.
+
+Extend existing test files where possible. Shared unit fixtures live in `tests/unit_fixtures.py`, imported by each suite's `conftest.py`; keep package-only fixtures in the package's tests.
+
+Run these commands from the repository root after `uv sync`:
+
+```bash
+# One package (append a test file or use -k to narrow the run).
+uv run pytest packages/reflex-base/tests
+# Main framework and cross-package unit tests.
+uv run pytest tests/units
+# Every unit suite, with the workspace coverage floor.
+uv run pytest tests/units packages/*/tests --cov --no-cov-on-fail --cov-report=
+# Integration tests (slow).
+uv run pytest tests/integration
+```
+
+PR CI runs a package's suite when files in that package change. Test-only changes run just the owner; source and other package changes also select runtime dependents and the root suite. Shared test infrastructure, dependency configuration, and main framework changes run all suites. New `packages/*/tests` directories are discovered automatically. Main-branch CI always runs all suites. The `reflex-bench` suite requires Linux and is excluded from Windows package jobs.
+
+The 72% coverage floor applies to full-suite runs. If collecting coverage for one suite, use `--cov --cov-fail-under=0`, since a partial run cannot meet the workspace-wide floor. Linux CI also exercises Redis and lock mode for the root/base suites and Postgres for `reflex-workflow`. To run the Postgres tests locally, set `REFLEX_TEST_POSTGRES` to a disposable database URL (the tests clear its tables).
 
 #### What to unit test?
 
@@ -167,14 +190,14 @@ In your `reflex` directory run make sure all the unit tests are still passing us
 This will fail if code coverage is below 72%.
 
 ```bash
-uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
+uv run pytest tests/units packages/*/tests --cov --no-cov-on-fail --cov-report=
 ```
 
 Next make sure all the following tests pass. This ensures that every new change has proper type checking.
 
 ```bash
 uv run ruff check .
-uv run pyright reflex tests
+uv run pyright reflex tests packages/*/tests
 ```
 
 Finally, run `ruff` to format your code.

@@ -209,7 +209,7 @@ reportIncompatibleMethodOverride = false
 [tool.ruff]
 target-version = "py310"
 output-format = "concise"
-extend-exclude = ["tests/units/reflex_base/utils/pyi_generator/golden"]
+extend-exclude = ["packages/reflex-base/tests/reflex_base_tests/utils/pyi_generator/golden"]
 lint.isort.split-on-trailing-comma = false
 lint.select = ["ALL"]
 lint.ignore = [
@@ -268,7 +268,7 @@ preview = true
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/*.py" = [
+"**/tests/**/*.py" = [
   "ANN001",
   "D100",
   "D103",
@@ -295,14 +295,15 @@ preview = true
   "EM102",
   "RET504",
 ]
-"tests/units/reflex_cli/**/*.py" = ["DOC201", "PT006", "RUF052"]
+"packages/reflex-hosting-cli/tests/reflex_cli_tests/**/*.py" = ["DOC201", "PT006", "RUF052"]
 # Generated from async comprehensions, which have no list() equivalent.
-"tests/units/reflex_build_sdk/_sync/**/*.py" = ["C416"]
+"packages/reflex-build-sdk/tests/reflex_build_sdk_tests/_sync/**/*.py" = ["C416"]
 "*/.templates/apps/blank/code/*" = ["INP001"]
 "*/blank.py" = ["I001"]
 "docs/package/scripts/*.py" = ["INP001"]
 "packages/reflex-build-sdk/scripts/*.py" = ["INP001", "T201"]
 "scripts/changed_paths.py" = ["T201"]
+"scripts/unit_test_matrix.py" = ["T201"]
 "scripts/check_min_deps.py" = ["T201"]
 "scripts/check_outdated_deps.py" = ["T201"]
 "scripts/hash_examples.py" = ["T201"]
@@ -311,6 +312,7 @@ preview = true
 ".claude/skills/*/scripts/*.py" = ["T201"]
 
 [tool.pytest.ini_options]
+pythonpath = ["."]
 filterwarnings = "ignore:fields may not start with an underscore:RuntimeWarning"
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"

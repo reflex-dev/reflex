@@ -18,7 +18,7 @@ import click
 
 # Through the CLI's own shim, not reflex_base directly: the hosting CLI has to
 # import against a reflex-base that predates these functions, which is what
-# tests/units/reflex_cli/utils/test_log.py pins.
+# packages/reflex-hosting-cli/tests/reflex_cli_tests/utils/test_log.py pins.
 from reflex_cli.utils import log
 
 # The spellings that ask for JSON on the command line, and the one that
