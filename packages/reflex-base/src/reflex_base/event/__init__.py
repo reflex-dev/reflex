@@ -503,7 +503,8 @@ def _on_owner(fn: Callable, state: type) -> Callable:
     elif inspect.isgeneratorfunction(fn):
 
         def on_owner_sync_gen(self: Any, *args: Any, **kwargs: Any) -> Any:
-            yield from fn(_owner_state(self, state), *args, **kwargs)
+            # The value a generator handler returns is an event to run, too.
+            return (yield from fn(_owner_state(self, state), *args, **kwargs))  # noqa: B901
 
         on_owner = on_owner_sync_gen
     else:

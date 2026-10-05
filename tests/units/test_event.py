@@ -273,6 +273,7 @@ async def test_inherited_handler_binds_like_its_function():
         def gen_handler(self):
             self.value += 1
             yield
+            return "returned"  # noqa: B901
 
         async def async_gen_handler(self):
             self.value += 1
@@ -295,8 +296,11 @@ async def test_inherited_handler_binds_like_its_function():
 
     child.sync_handler(1)
     await child.async_handler(2)
-    for _ in child.gen_handler():
-        pass
+    gen = child.gen_handler()
+    next(gen)
+    with pytest.raises(StopIteration) as stop:
+        next(gen)
+    assert stop.value.value == "returned"
     async for _ in child.async_gen_handler():
         pass
     assert parent.value == 5
