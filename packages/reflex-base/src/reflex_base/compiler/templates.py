@@ -211,6 +211,50 @@ def app_root_template(
         f'    "{lib_path}": {lib_alias},' for lib_alias, lib_path in window_libraries
     ])
 
+    from reflex_base import ssr
+
+    if ssr.is_enabled():
+        ssr_imports = (
+            'import { useLoaderData } from "react-router";\n'
+            'import { getBackendURL } from "$/utils/state";\n'
+            'import { SSRStateContext } from "$/utils/context";\n'
+            'import env from "$/env.json";'
+        )
+        ssr_loader = """
+export async function loader({ request }) {
+  // Fetch on_load-hydrated state from the Python /_ssr_data endpoint so the
+  // server-rendered HTML already contains real data.
+  try {
+    const res = await fetch(getBackendURL(env.SSR_DATA), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(request.headers.get("cookie") ? { Cookie: request.headers.get("cookie") } : {}),
+      },
+      body: JSON.stringify({
+        path: new URL(request.url).pathname,
+        headers: Object.fromEntries(request.headers),
+      }),
+    });
+    if (res.ok) return res.json();
+  } catch (e) {
+    console.error("SSR data fetch failed:", e);
+  }
+  return { state: null };
+}
+"""
+        layout_body = (
+            "const loaderData = useLoaderData();\n"
+            "  const ssrState = loaderData?.state ?? null;\n"
+            "  return jsx(AppLayout, {}, "
+            "jsx(SSRStateContext.Provider, {value: ssrState}, "
+            "jsx(ReflexProviders, {}, children)));"
+        )
+    else:
+        ssr_imports = ""
+        ssr_loader = ""
+        layout_body = "return jsx(AppLayout, {}, jsx(ReflexProviders, {}, children));"
+
     window_imports_effect = f"""useEffect(() => {{
     // Make contexts and state objects available globally for dynamic eval'd components
     window.__reflex = {{
@@ -256,11 +300,12 @@ import {{ defaultColorMode }} from "$/utils/context";
 import {{ ThemeProvider }} from '$/utils/react-theme';
 import {{ Layout as AppLayout }} from './_document';
 import {{ Outlet }} from 'react-router';
+{ssr_imports}
 {import_window_libraries}
 {lazy_imports_setup}
 
 {custom_code_str}
-
+{ssr_loader}
 function ReflexProviders({{children}}) {{
   {window_imports_effect}
 
@@ -276,7 +321,7 @@ return ({_RenderUtils.render(render)})
 }}
 
 export function Layout({{children}}) {{
-  return jsx(AppLayout, {{}}, jsx(ReflexProviders, {{}}, children));
+  {layout_body}
 }}
 
 // Used by entry.client.js when mount_target is configured: skips the document
@@ -335,6 +380,9 @@ def context_template(
     Returns:
         Rendered context file content as string.
     """
+    from reflex_base import ssr
+
+    ssr_enabled = ssr.is_enabled()
     initial_state = initial_state or {}
     if initial_state_json is None:
         initial_state_json = json_dumps(initial_state)
@@ -416,6 +464,15 @@ export const initialEvents = () => []
         for state_name in initial_state
     )
 
+    if ssr_enabled:
+        ssr_context_str = "export const SSRStateContext = createContext(null);"
+        ssr_state_hook = "const ssrState = useContext(SSRStateContext);"
+        substate_initial = "ssrState?.[substateName] ?? initialState[substateName]"
+    else:
+        ssr_context_str = ""
+        ssr_state_hook = ""
+        substate_initial = "initialState[substateName]"
+
     disable_owner_stacks_str = (
         r"""
 // Disable React dev-build owner-stack capture: the per-element Error()
@@ -444,7 +501,7 @@ if (typeof window !== "undefined") {
         else ""
     )
 
-    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useReducer, useRef, useState, createElement, useEffect, useLayoutEffect }} from "react"
+    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ {"createContext, " if ssr_enabled else ""}useContext, useMemo, useReducer, useRef, useState, createElement, useEffect, useLayoutEffect }} from "react"
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
 import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, getStateContext, registerApp, eventLoop }} from "$/utils/context-registry"
 import {{ jsx }} from "@emotion/react";
@@ -455,6 +512,7 @@ export const initialStateHashes = {"[]" if not initial_state_hashes else json_du
 
 export const defaultColorMode = {default_color_mode}
 export const StateContexts = {{{state_contexts_str}}};
+{ssr_context_str}
 export const clientStorage = {"{}" if client_storage is None else json.dumps(client_storage)}
 
 {state_str}
@@ -558,9 +616,10 @@ const DispatchProvider = ({{ children }}) => {{
 // substate only re-renders its provider instead of recreating every provider.
 const SubstateProvider = ({{ children, substateName, contextName }}) => {{
   const dispatchers = useContext(DispatchContext);
+  {ssr_state_hook}
   const [state, dispatchSubstate] = useReducer(
     applyDelta,
-    initialState[substateName],
+    {substate_initial},
   );
   // A layout effect, not a passive one: layout effects for the whole commit
   // run before any passive effect, so every dispatcher is registered before
@@ -598,12 +657,13 @@ function ClientStateProvider({{ children }}) {{
 // a second render level per substate, and the server renderer recurses once per
 // level, so with many substates rendering a page can exhaust the stack.
 function ServerStateProvider({{ children }}) {{
+  {ssr_state_hook}
   let tree = children;
   for (let i = SUBSTATES.length - 1; i >= 0; i--) {{
     const [substateName, contextName] = SUBSTATES[i];
     tree = createElement(
       StateContexts[contextName],
-      {{ value: initialState[substateName] }},
+      {{ value: {substate_initial} }},
       tree,
     );
   }}
