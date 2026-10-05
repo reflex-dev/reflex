@@ -129,10 +129,11 @@ def test_on_submit_warns_for_controls_with_only_an_id(caplog):
         lambda: Input.create(id="submit_input", type="submit"),
         lambda: Input.create(id=Var(_js_expr="dynamic_id", _var_type=str)),
         lambda: rx.button("Submit", id="submit_button"),
+        lambda: Input.create(id="disabled_input", disabled=True),
     ],
 )
 def test_on_submit_does_not_warn_for_submitted_or_valueless_controls(control, caplog):
-    """Named controls, buttons and dynamic ids need no warning."""
+    """Named, disabled and value-less controls and dynamic ids need no warning."""
     with caplog.at_level(logging.WARNING):
         HTMLForm.create(control(), on_submit=_SubmitState.on_submit)
     assert "`name`" not in caplog.text

@@ -393,6 +393,13 @@ class Form(BaseHTML):
                 or not getattr(component, "_is_form_control", False)
                 or _get_static_string_prop(component, "name") is not None
                 or _get_static_string_prop(component, "type") in _VALUELESS_INPUT_TYPES
+                # A disabled control is never submitted, named or not.
+                or (
+                    isinstance(
+                        disabled := getattr(component, "disabled", None), LiteralVar
+                    )
+                    and disabled._decode() is True
+                )
             ):
                 continue
             control_id = _get_static_string_prop(component, "id")
