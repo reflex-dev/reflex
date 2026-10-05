@@ -245,6 +245,7 @@ const createSocket = (endpoint, transports, token) =>
     protocols: [reflexEnvironment.version],
     autoUnref: false,
     autoConnect: false,
+    withCredentials: true,
     query: { token },
     reconnection: false,
   });
