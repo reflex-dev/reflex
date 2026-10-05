@@ -2,7 +2,7 @@
 
 import pickle
 from collections.abc import Mapping
-from typing import Any, Generic, TypedDict, TypeVar
+from typing import Annotated, Any, Generic, TypedDict, TypeVar
 
 import pytest
 import typing_extensions
@@ -470,6 +470,11 @@ def test_transform_form_data_bracketed_names_to_form_data(hint: Any):
     )
     assert form_data["range[]"] == "80"
     assert form_data.getlist("range[]") == ["20", "80"]
+
+
+def test_transform_form_data_with_unhashable_annotation():
+    """An annotation that cannot be cached is still read."""
+    assert _transform(Annotated[dict, {"unhashable": True}]) == _transform(dict)
 
 
 @pytest.mark.parametrize("hint", [Any, dict, dict[str, Any]])

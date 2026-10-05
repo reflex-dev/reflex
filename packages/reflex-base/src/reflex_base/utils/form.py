@@ -305,6 +305,28 @@ def _form_data_entries(value: Any) -> list | None:
     return value.get(FORM_DATA_ENTRIES_KEY) if isinstance(value, dict) else None
 
 
+@functools.cache
+def _form_data_annotation(hinted_args: Any) -> tuple[type[FormData] | None, Any]:
+    """Find what an event argument's annotation asks of form data.
+
+    Cached, since every Mapping event argument is checked against its annotation.
+
+    Args:
+        hinted_args: The type hint for the argument.
+
+    Returns:
+        The FormData class the annotation names, if any, and otherwise the
+        TypedDict it names, if any.
+    """
+    hinted_args = types.resolve_type_alias(hinted_args)
+    if types.is_union(hinted_args):
+        hinted_args = types.value_inside_optional(hinted_args)
+    hinted_type = get_origin(hinted_args) or hinted_args
+    if isinstance(hinted_type, type) and issubclass(hinted_type, FormData):
+        return hinted_type, None
+    return None, hinted_args if is_typeddict(hinted_type) else None
+
+
 def transform_form_data(value: Any, hinted_args: Any) -> Any:
     """Build an event argument's form data for the argument's annotation.
 
@@ -320,21 +342,22 @@ def transform_form_data(value: Any, hinted_args: Any) -> Any:
     entries = _form_data_entries(value)
     if entries is None and not isinstance(value, Mapping):
         return value
-    hinted_args = types.resolve_type_alias(hinted_args)
-    if types.is_union(hinted_args):
-        hinted_args = types.value_inside_optional(hinted_args)
-    hinted_type = get_origin(hinted_args) or hinted_args
-    if isinstance(hinted_type, type) and issubclass(hinted_type, FormData):
-        if isinstance(value, hinted_type):
+    try:
+        form_data_type, typed_dict = _form_data_annotation(hinted_args)
+    except TypeError:
+        # An unhashable annotation, such as Annotated with a dict as metadata.
+        form_data_type, typed_dict = _form_data_annotation.__wrapped__(hinted_args)
+    if form_data_type is not None:
+        if isinstance(value, form_data_type):
             return value
-        return hinted_type(value if entries is None else entries)
-    if entries is None:
-        if isinstance(value, FormData) and is_typeddict(hinted_type):
-            return _form_data_as_typed_dict(value, hinted_args)
-        return value
-    if is_typeddict(hinted_type):
-        return _form_data_as_typed_dict(FormData(entries), hinted_args)
-    return _form_data_dict(entries)
+        return form_data_type(value if entries is None else entries)
+    if entries is not None:
+        if typed_dict is not None:
+            return _form_data_as_typed_dict(FormData(entries), typed_dict)
+        return _form_data_dict(entries)
+    if typed_dict is not None and isinstance(value, FormData):
+        return _form_data_as_typed_dict(value, typed_dict)
+    return value
 
 
 def form_data_as_dict(value: Any) -> Any:

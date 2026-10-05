@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterator
 from functools import partial
 from hashlib import md5
@@ -88,6 +89,31 @@ def on_submit_mapping_event(
         The form data payload.
     """
     return (form_data,)
+
+
+logger = logging.getLogger(__name__)
+
+# Input types that submit no value of their own.
+_VALUELESS_INPUT_TYPES = frozenset({"button", "image", "reset", "submit"})
+
+
+def _form_data_param_name(event: EventSpec) -> str | None:
+    """Find the handler parameter an event passes the submitted form data to.
+
+    Args:
+        event: An event of a form's on_submit chain.
+
+    Returns:
+        The parameter's name, or None when the event takes no form data.
+    """
+    return next(
+        (
+            param._js_expr
+            for param, value in event.args
+            if isinstance(value, Var) and value._js_expr == FORM_DATA._js_expr
+        ),
+        None,
+    )
 
 
 def _iter_form_components(component: BaseComponent) -> Iterator[BaseComponent]:
@@ -281,6 +307,7 @@ class Form(BaseHTML):
         props["handle_submit_unique_name"] = ""
         form = super().create(*children, **props)
         form._validate_on_submit_typed_dict_fields()  # pyright: ignore[reportAttributeAccessIssue]
+        form._warn_unnamed_form_controls()  # pyright: ignore[reportAttributeAccessIssue]
         form.handle_submit_unique_name = md5(  # pyright: ignore[reportAttributeAccessIssue]
             str(form._get_all_hooks()).encode("utf-8")
         ).hexdigest()
@@ -348,6 +375,35 @@ class Form(BaseHTML):
 
         return form_keys, has_dynamic_names
 
+    def _warn_unnamed_form_controls(self) -> None:
+        """Warn about controls with a static ``id`` but no ``name``.
+
+        Form data used to include such controls by their ``id``; it no longer
+        does, so a handler would miss their values.
+        """
+        on_submit = self.event_triggers.get(EventTriggers.ON_SUBMIT)
+        if not isinstance(on_submit, EventChain) or not any(
+            isinstance(event, EventSpec) and _form_data_param_name(event)
+            for event in on_submit.events
+        ):
+            return
+        for component in _iter_form_components(self):
+            if (
+                component is self
+                or not getattr(component, "_is_form_control", False)
+                or _get_static_string_prop(component, "name") is not None
+                or _get_static_string_prop(component, "type") in _VALUELESS_INPUT_TYPES
+            ):
+                continue
+            control_id = _get_static_string_prop(component, "id")
+            if isinstance(control_id, str):
+                logger.warning(
+                    f"The form control with id {control_id!r} has no `name`, so "
+                    "its value is not included in the form data. Set "
+                    f"`name={control_id!r}` to submit it.",
+                    extra={"dedupe": True},
+                )
+
     def _validate_on_submit_typed_dict_fields(self) -> None:
         """Validate statically knowable form fields against TypedDict submit handlers.
 
@@ -363,14 +419,7 @@ class Form(BaseHTML):
         for event in on_submit.events:
             if not isinstance(event, EventSpec):
                 return
-            form_data_param_name = next(
-                (
-                    param._js_expr
-                    for param, value in event.args
-                    if isinstance(value, Var) and value._js_expr == FORM_DATA._js_expr
-                ),
-                None,
-            )
+            form_data_param_name = _form_data_param_name(event)
             if form_data_param_name is None:
                 continue
 

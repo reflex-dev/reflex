@@ -103,6 +103,48 @@ def test_on_submit_rejects_typed_dict_with_unresolved_field_types():
         )
 
 
+class _SubmitState(rx.State):
+    @rx.event
+    def on_submit(self, form_data: dict):
+        pass
+
+
+def test_on_submit_warns_for_controls_with_only_an_id(caplog):
+    """A control with a static id but no name is no longer submitted, so warn."""
+    with caplog.at_level(logging.WARNING):
+        HTMLForm.create(
+            Input.create(id="only_id_input"),
+            rx.checkbox(id="only_id_checkbox"),
+            on_submit=_SubmitState.on_submit,
+        )
+    assert "only_id_input" in caplog.text
+    assert "only_id_checkbox" in caplog.text
+    assert "`name`" in caplog.text
+
+
+@pytest.mark.parametrize(
+    "control",
+    [
+        lambda: Input.create(id="named_input", name="named_input"),
+        lambda: Input.create(id="submit_input", type="submit"),
+        lambda: Input.create(id=Var(_js_expr="dynamic_id", _var_type=str)),
+        lambda: rx.button("Submit", id="submit_button"),
+    ],
+)
+def test_on_submit_does_not_warn_for_submitted_or_valueless_controls(control, caplog):
+    """Named controls, buttons and dynamic ids need no warning."""
+    with caplog.at_level(logging.WARNING):
+        HTMLForm.create(control(), on_submit=_SubmitState.on_submit)
+    assert "`name`" not in caplog.text
+
+
+def test_form_without_form_data_handler_does_not_warn(caplog):
+    """A form whose submit handler takes no form data has nothing to miss."""
+    with caplog.at_level(logging.WARNING):
+        HTMLForm.create(Input.create(id="unsubmitted_input"))
+    assert "unsubmitted_input" not in caplog.text
+
+
 def test_on_submit_typed_dict_ignores_dynamic_ids():
     """A dynamic id cannot contribute a form_data key, so validation still runs."""
 
