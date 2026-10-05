@@ -1,5 +1,6 @@
 """Tests for reflex.experimental.client_state."""
 
+import re
 from typing import cast
 
 import pytest
@@ -102,6 +103,22 @@ def test_global_use_state_starts_from_shared_value(
     var_data = cs._get_all_var_data()
     assert var_data is not None
     assert f"const [seeded, setSeeded] = useState({initial_value})" in var_data.hooks
+
+
+def test_global_use_state_checks_the_slot_it_reads() -> None:
+    """The ``in refs`` check names the same ``refs`` slot that the value is read from.
+
+    If the two drifted apart, the check would always be false and every reader
+    mounting after a set would silently start from the default again.
+    """
+    cs = ClientStateVar.create("keyed", default=0)
+
+    var_data = cs._get_all_var_data()
+    assert var_data is not None
+    use_state = next(hook for hook in var_data.hooks if "useState(" in hook)
+    match = re.search(r"useState\((.+) in refs \? refs\[(.+)\] : \(0\)\)$", use_state)
+    assert match is not None, use_state
+    assert match.group(1) == match.group(2)
 
 
 def test_local_use_state_starts_from_default() -> None:

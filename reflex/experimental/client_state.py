@@ -22,6 +22,18 @@ _refs_import = {
 }
 
 
+def _client_state_key(var_name: str) -> str:
+    """Get the key of a ClientStateVar's slot in the global ``refs`` object.
+
+    Args:
+        var_name: The name of the variable.
+
+    Returns:
+        The key under which ``refs`` holds the ClientStateVar ref slot.
+    """
+    return f"_client_state_{var_name}"
+
+
 def _client_state_ref(var_name: str) -> Var:
     """Get the ref accessor Var for a ClientStateVar.
 
@@ -33,7 +45,7 @@ def _client_state_ref(var_name: str) -> Var:
         ``refs`` import from ``$/utils/state``.
     """
     return Var(
-        _js_expr=f"refs['_client_state_{var_name}']",
+        _js_expr=f"refs[{_client_state_key(var_name)!r}]",
         _var_data=VarData(imports=_refs_import),
     )
 
@@ -139,7 +151,7 @@ class ClientStateVar(Var):
             # default would swallow a later set back to the default. A set or pushed
             # null is a value too, so only a missing slot falls back to the default.
             initial_value = (
-                f"'_client_state_{var_name}' in refs ? {var_ref!s} : ({initial_value})"
+                f"{_client_state_key(var_name)!r} in refs ? {var_ref!s} : ({initial_value})"
                 if initial_value
                 else str(var_ref)
             )
