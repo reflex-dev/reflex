@@ -2169,6 +2169,7 @@ def create_passthrough_component_memo(
         # reachable on the page-level wrapper via the plugin's
         # ``_get_all_refs`` delegation back to the source component.
         new_component.children = [hole_bare]
+        object.__setattr__(new_component, "_form_control_source", component)
         # Compile-time walkers that need the real subtree (notably
         # ``Form._get_form_refs`` collecting id-based input refs into the
         # generated ``handleSubmit`` JS) call ``self._get_all_refs()`` while

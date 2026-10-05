@@ -9,7 +9,7 @@ import types
 import warnings
 from base64 import b64encode
 from collections.abc import Callable, Mapping, Sequence
-from functools import lru_cache, partial
+from functools import cached_property, lru_cache, partial
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -613,16 +613,27 @@ class EventHandler(EventActionsMixin):
         """
         return Annotated[cls, args_spec]
 
-    @property
+    @cached_property
     def is_background(self) -> bool:
         """Whether the event handler is a background task.
+
+        Read on the first access, so the function has to be marked before then.
 
         Returns:
             True if the event handler is marked as a background task.
         """
         return getattr(self.fn, BACKGROUND_TASK_MARKER, False)
 
-    @property
+    @cached_property
+    def _is_coroutine_function(self) -> bool:
+        """Whether the handler function is a coroutine function.
+
+        Returns:
+            True if calling the handler function returns a coroutine.
+        """
+        return inspect.iscoroutinefunction(self.fn)
+
+    @cached_property
     def supersedes(self) -> bool:
         """Whether a newer invocation supersedes an older one.
 
@@ -638,6 +649,7 @@ class EventHandler(EventActionsMixin):
         Cancellation is cooperative: a handler that never yields to the event
         loop runs to completion, and only its not-yet-started chained events
         are skipped.
+        Read on the first access, so the function has to be marked before then.
 
         Returns:
             True if the event handler is marked as superseding.
