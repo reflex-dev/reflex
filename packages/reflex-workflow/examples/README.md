@@ -31,5 +31,5 @@ deliveries are exercised rather than described.
 Run them against a Postgres the tests may wipe:
 
 ```bash
-REFLEX_TEST_POSTGRES=postgresql://postgres@127.0.0.1:5432/workflow_examples uv run pytest packages/reflex-workflow/tests/reflex_workflow_tests/examples
+REFLEX_TEST_POSTGRES=postgresql://postgres@127.0.0.1:5432/workflow_examples uv run pytest packages/reflex-workflow/tests/units/examples
 ```

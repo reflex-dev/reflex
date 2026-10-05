@@ -22,8 +22,8 @@ ROOT = Path(__file__).resolve().parents[3]
 DIRECTORIES = {
     ROOT / "packages/reflex-build-sdk/src/reflex_build_sdk/_async": ROOT
     / "packages/reflex-build-sdk/src/reflex_build_sdk/_sync",
-    ROOT / "packages/reflex-build-sdk/tests/reflex_build_sdk_tests/_async": ROOT
-    / "packages/reflex-build-sdk/tests/reflex_build_sdk_tests/_sync",
+    ROOT / "packages/reflex-build-sdk/tests/units/_async": ROOT
+    / "packages/reflex-build-sdk/tests/units/_sync",
 }
 
 Substitutions = list[tuple[re.Pattern[str], str]]
@@ -69,16 +69,15 @@ GENERATED_BY = "by packages/reflex-build-sdk/scripts/unasync.py. Do not edit."
 # The trees searched for generated files that are no longer generated.
 GENERATED_ROOTS = (
     ROOT / "packages/reflex-build-sdk/src",
-    ROOT / "packages/reflex-build-sdk/tests/reflex_build_sdk_tests",
+    ROOT / "packages/reflex-build-sdk/tests/units",
 )
 
 # Source file -> generated file, for files generated with TO_HTTPX2.
 FILES = {
     ROOT / "packages/reflex-build-sdk/src/reflex_build_sdk/transports/_httpx.py": ROOT
     / "packages/reflex-build-sdk/src/reflex_build_sdk/transports/_httpx2.py",
-    ROOT
-    / "packages/reflex-build-sdk/tests/reflex_build_sdk_tests/transports/test_httpx.py": ROOT
-    / "packages/reflex-build-sdk/tests/reflex_build_sdk_tests/transports/test_httpx2.py",
+    ROOT / "packages/reflex-build-sdk/tests/units/transports/test_httpx.py": ROOT
+    / "packages/reflex-build-sdk/tests/units/transports/test_httpx2.py",
 }
 
 

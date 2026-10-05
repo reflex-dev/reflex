@@ -14,8 +14,8 @@ Use `uv` for everything — never bare `python` or `python3`.
 
 ```
 uv sync                                                          # install deps
-uv run pytest tests/units packages/*/tests --cov --no-cov-on-fail --cov-report=  # all unit tests (>=72% coverage)
-uv run pytest packages/reflex-base/tests                         # one package
+uv run pytest tests/units packages/*/tests/units --cov --no-cov-on-fail --cov-report=  # all unit tests (>=72% coverage)
+uv run pytest packages/reflex-base/tests/units                         # one package
 uv run pytest tests/units                                        # framework and cross-package tests
 uv run pytest tests/integration                                  # integration tests (slow)
 uv run ruff check .                                              # lint
@@ -33,7 +33,7 @@ uv run pre-commit run --all-files                                # all pre-commi
 ```
 reflex/                 # main framework package (app, state, compiler, components, utils, istate)
 packages/               # workspace sub-packages (reflex-base, reflex-components-*, reflex-docgen, reflex-components-internal)
-packages/<name>/tests/ # tests owned by that subpackage
+packages/<name>/tests/units/ # tests owned by that subpackage
 tests/units/            # main framework and cross-package unit tests
 tests/unit_fixtures.py  # shared unit-test fixtures
 tests/integration/      # Selenium integration tests (run in dev+prod modes)
@@ -59,9 +59,9 @@ docs/                   # documentation site (separate workspace member)
 
 - Write comprehensive tests for new/changed features; extend existing test files where possible.
 - Test functions at module level, not wrapped in classes.
-- **Unit tests:** put package-specific tests under `packages/<distribution>/tests/<module>_tests/`, mirroring the source module's subdirectories. For example, `packages/reflex-base/tests/reflex_base_tests/event/test_context.py` covers `packages/reflex-base/src/reflex_base/event/context.py`. Use unique `<module>_tests` package names and `__init__.py` files so helpers can be imported and identically named test files collect together.
+- **Unit tests:** put package-specific tests under `packages/<distribution>/tests/units/`, mirroring the source module's subdirectories. For example, `packages/reflex-base/tests/units/event/test_context.py` covers `packages/reflex-base/src/reflex_base/event/context.py`. Keep `__init__.py` files in unit-test directories and use relative imports for package-local helpers. The root pytest configuration uses importlib mode and namespace-package resolution so identically named suites can collect together.
   - Keep tests of `reflex/`, repository tooling, and behavior that spans packages in `tests/units/`. Using `rx.State` or another component as an input does not by itself make a test cross-package; put tests with the behavior they primarily exercise.
-  - Run commands from the repository root after `uv sync`. Run a package with `uv run pytest packages/<distribution>/tests`, the root suite with `uv run pytest tests/units`, or everything with `uv run pytest tests/units packages/*/tests`. Append a file path or `-k` to narrow a run.
+  - Run commands from the repository root after `uv sync`. Run a package with `uv run pytest packages/<distribution>/tests/units`, the root suite with `uv run pytest tests/units`, or everything with `uv run pytest tests/units packages/*/tests/units`. Append a file path or `-k` to narrow a run.
   - Shared fixtures live in `tests/unit_fixtures.py` and are imported by each suite's `conftest.py`; package-only fixtures belong in that package's tests. Do not import fixtures from another package's tests.
   - PR CI discovers package test directories automatically. Test-only changes run their owning suite; other package changes also run runtime dependents and the root cross-package suite. Shared fixtures, dependency configuration, test tooling, and `reflex/` changes run everything. Keep `scripts/unit_test_matrix.py` and its tests up to date when adding shared test infrastructure.
   - The 72% workspace coverage floor applies to full-suite runs, including main-branch CI. Partial suites collect coverage with `--cov-fail-under=0`; their coverage cannot be compared to the workspace floor. Redis and lock-mode reruns cover the root and base suites; the workflow suite runs with Postgres on Linux. The `reflex-bench` suite only collects on Linux and is excluded from Windows package jobs.
@@ -144,9 +144,11 @@ merge waits on it.
 
 User-facing changes need a news fragment in the `news/` directory of each
 package they touch (the repo root's `news/` for `reflex`), named
-`<PR number>.<type>.md`, or `+<slug>.<type>.md` before the PR number is known.
-Types: `breaking`, `deprecation`, `feature`, `bugfix`, `performance`, `docs`,
-`misc`.
+`+<slug>.<type>.md`. Putting the PR number in the name (`<PR number>.<type>.md`)
+is optional: the release process renames an orphan fragment when it can identify
+the PR that added it, so its entry links to that PR. Don't push a commit just to
+rename one. Types: `breaking`, `deprecation`, `feature`, `bugfix`,
+`performance`, `docs`, `misc`.
 
 Write for external downstream users, not for reviewers. Every entry links to
 its PR, so motivation, narrative, and implementation details belong in the PR

@@ -33,7 +33,7 @@ NOT_SELECTED = [
     "packages/reflex-components-core/src/reflex_components_core/el/element.pyi",
     "packages/reflex-components-lucide/src/reflex_components_lucide/icon.pyi",
     "packages/reflex-base/src/reflex_base/.templates/web/components/reflex/color_mode.js",
-    "packages/reflex-base/tests/reflex_base_tests/utils/pyi_generator/golden/var_types.pyi",
+    "packages/reflex-base/tests/units/utils/pyi_generator/golden/var_types.pyi",
     "docs/app/docs.py",
 ]
 

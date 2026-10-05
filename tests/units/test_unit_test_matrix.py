@@ -29,7 +29,7 @@ def workspace(tmp_path: Path) -> Path:
         "other": [],
     }.items():
         package = tmp_path / "packages" / name
-        (package / "tests").mkdir(parents=True)
+        (package / "tests" / "units").mkdir(parents=True)
         (package / "pyproject.toml").write_text(
             f'[project]\nname = "{name}"\ndependencies = {json.dumps(dependencies)}\n'
         )
@@ -110,9 +110,9 @@ def test_dependency_cycles_terminate(workspace: Path):
 def test_repository_suites():
     """Every package with tests is discoverable and a leaf test stays local."""
     suites = selection.suite_paths(selection.ROOT)
-    assert suites["reflex-base"] == "packages/reflex-base/tests"
+    assert suites["reflex-base"] == "packages/reflex-base/tests/units"
     assert selection.select_suites([
-        "packages/reflex-build-sdk/tests/reflex_build_sdk_tests/test_base.py"
+        "packages/reflex-build-sdk/tests/units/test_base.py"
     ]) == ["reflex-build-sdk"]
     assert "reflex-components-core" in selection.select_suites([
         "packages/reflex-base/src/reflex_base/vars/base.py"

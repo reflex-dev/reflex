@@ -21,7 +21,7 @@ except ModuleNotFoundError:  # Python 3.10.
 from scripts.changed_paths import changed_files
 
 ROOT = Path(__file__).resolve().parents[1]
-ALL_TESTS = "tests/units packages/*/tests"
+ALL_TESTS = "tests/units packages/*/tests/units"
 
 
 def suite_paths(root: Path) -> dict[str, str]:
@@ -36,10 +36,10 @@ def suite_paths(root: Path) -> dict[str, str]:
     return {
         "reflex": "tests/units",
         **{
-            tomllib.loads((path.parent / "pyproject.toml").read_text())["project"][
-                "name"
-            ]: path.relative_to(root).as_posix()
-            for path in sorted((root / "packages").glob("*/tests"))
+            tomllib.loads((path.parent.parent / "pyproject.toml").read_text())[
+                "project"
+            ]["name"]: path.relative_to(root).as_posix()
+            for path in sorted((root / "packages").glob("*/tests/units"))
         },
     }
 

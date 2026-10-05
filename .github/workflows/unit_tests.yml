@@ -62,7 +62,7 @@ jobs:
           - os: windows-latest
             suite:
               name: reflex-bench
-              path: packages/reflex-bench/tests
+              path: packages/reflex-bench/tests/units
               coverage: "0"
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
@@ -147,7 +147,7 @@ jobs:
           # Appended: this runs one package, and every step above replaces the
           # coverage data rather than adding to it, so the report that follows
           # would otherwise be of this package alone.
-          uv run pytest packages/reflex-workflow/tests/reflex_workflow_tests --cov --cov-append --no-cov-on-fail --cov-report= --cov-fail-under=$COVERAGE_FLOOR
+          uv run pytest packages/reflex-workflow/tests/units --cov --cov-append --no-cov-on-fail --cov-report= --cov-fail-under=$COVERAGE_FLOOR
       - name: Generate coverage report
         run: uv run coverage html --fail-under=$COVERAGE_FLOOR
 
@@ -174,12 +174,12 @@ jobs:
         run: |
           export PYTHONUNBUFFERED=1
           uv pip uninstall pydantic alembic sqlalchemy sqlmodel
-          uv run --no-sync pytest tests/units packages/*/tests --cov --no-cov-on-fail --cov-report= --cov-fail-under=0
+          uv run --no-sync pytest tests/units packages/*/tests/units --cov --no-cov-on-fail --cov-report= --cov-fail-under=0
           uv sync
       - name: Run unit tests
         run: |
           export PYTHONUNBUFFERED=1
-          uv run pytest tests/units packages/*/tests --cov --no-cov-on-fail --cov-report=
+          uv run pytest tests/units packages/*/tests/units --cov --no-cov-on-fail --cov-report=
 
   # The one status check the branch rules require from this workflow. Naming the
   # jobs above directly does not survive: check names follow the matrix and the

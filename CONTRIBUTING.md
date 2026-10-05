@@ -50,7 +50,7 @@ Any feature or significant change added should be accompanied with unit tests.
 
 Put tests next to the package whose behavior they exercise:
 
-- Subpackage tests live in `packages/<distribution>/tests/<module>_tests/`, with subdirectories matching the source. For example, `packages/reflex-base/tests/reflex_base_tests/event/test_context.py` tests `reflex_base/event/context.py`. Keep the test package name unique and include `__init__.py` files so test helpers remain importable.
+- Subpackage tests live in `packages/<distribution>/tests/units/`, with subdirectories matching the source. For example, `packages/reflex-base/tests/units/event/test_context.py` tests `reflex_base/event/context.py`. Keep `__init__.py` files in unit-test directories and use relative imports for package-local helpers. The root pytest configuration uses importlib mode and namespace-package resolution to collect identically named suites together.
 - Tests of the main `reflex/` package, repository scripts, and behavior spanning multiple packages stay in `tests/units/`.
 - Integration tests stay in `tests/integration/`; prefer `tests/integration/tests_playwright/` for new browser tests.
 
@@ -60,16 +60,16 @@ Run these commands from the repository root after `uv sync`:
 
 ```bash
 # One package (append a test file or use -k to narrow the run).
-uv run pytest packages/reflex-base/tests
+uv run pytest packages/reflex-base/tests/units
 # Main framework and cross-package unit tests.
 uv run pytest tests/units
 # Every unit suite, with the workspace coverage floor.
-uv run pytest tests/units packages/*/tests --cov --no-cov-on-fail --cov-report=
+uv run pytest tests/units packages/*/tests/units --cov --no-cov-on-fail --cov-report=
 # Integration tests (slow).
 uv run pytest tests/integration
 ```
 
-PR CI runs a package's suite when files in that package change. Test-only changes run just the owner; source and other package changes also select runtime dependents and the root suite. Shared test infrastructure, dependency configuration, and main framework changes run all suites. New `packages/*/tests` directories are discovered automatically. Main-branch CI always runs all suites. The `reflex-bench` suite requires Linux and is excluded from Windows package jobs.
+PR CI runs a package's suite when files in that package change. Test-only changes run just the owner; source and other package changes also select runtime dependents and the root suite. Shared test infrastructure, dependency configuration, and main framework changes run all suites. New `packages/*/tests/units` directories are discovered automatically. Main-branch CI always runs all suites. The `reflex-bench` suite requires Linux and is excluded from Windows package jobs.
 
 The 72% coverage floor applies to full-suite runs. If collecting coverage for one suite, use `--cov --cov-fail-under=0`, since a partial run cannot meet the workspace-wide floor. Linux CI also exercises Redis and lock mode for the root/base suites and Postgres for `reflex-workflow`. To run the Postgres tests locally, set `REFLEX_TEST_POSTGRES` to a disposable database URL (the tests clear its tables).
 
@@ -85,7 +85,7 @@ Each PR that changes the source of a published package must add a news fragment 
 
 **Where:** add the fragment under the affected package's `news/` directory. For the main `reflex` package, that's the repo-root `news/`. For sub-packages it's `packages/<name>/news/`.
 
-**Filename:** `<pr-or-issue-number>.<type>.md`, where `<type>` is one of:
+**Filename:** `+<slug>.<type>.md` (an [orphan fragment](https://towncrier.readthedocs.io/en/stable/cli.html#towncrier-create)), or `<pr-or-issue-number>.<type>.md` if you prefer, where `<type>` is one of:
 
 | Type | When to use |
 | --- | --- |
@@ -102,12 +102,12 @@ Each PR that changes the source of a published package must add a news fragment 
 **Create a fragment from the CLI:**
 
 ```bash
-uv run reflex-release create --package reflex-components-lucide 1234.feature.md
+uv run reflex-release create --package reflex-components-lucide +lucide-icons.feature.md
 ```
 
 Drop `--package` for a fragment against the main `reflex` package.
 
-If you don't yet know the PR number, use an [orphan fragment](https://towncrier.readthedocs.io/en/stable/cli.html#towncrier-create) (`+.feature.md`). Renaming it after opening the PR is nice, but not required: the release workflow renames any orphan fragment that made it to `main` after the PR that merged it, so the changelog entry still links to it.
+**The PR number is optional.** You don't need to know it, or rename the fragment after opening the PR: the release workflow renames every orphan fragment that made it to `main` after the PR that merged it, so the changelog entry still links to it.
 
 **Skipping the fragment check:** for PRs that are genuinely not user-facing (CI-only tweaks, script fixes, test-only changes), apply the `skip-changelog` label on the PR to bypass the changelog CI check.
 
@@ -190,7 +190,7 @@ In your `reflex` directory run make sure all the unit tests are still passing us
 This will fail if code coverage is below 72%.
 
 ```bash
-uv run pytest tests/units packages/*/tests --cov --no-cov-on-fail --cov-report=
+uv run pytest tests/units packages/*/tests/units --cov --no-cov-on-fail --cov-report=
 ```
 
 Next make sure all the following tests pass. This ensures that every new change has proper type checking.
