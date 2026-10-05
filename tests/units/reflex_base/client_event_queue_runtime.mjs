@@ -3,7 +3,7 @@ import { SourceTextModule, SyntheticModule } from "node:vm";
 /** Evaluate the complete frontend module with isolated dependency stubs. */
 export async function createQueueRuntime(
   source,
-  { uploadFiles, throttle, io, env, browser } = {},
+  { uploadFiles, throttle, io, env, browser, initialState = {} } = {},
 ) {
   const unused = () => {
     throw new Error("Unexpected frontend dependency in queue test");
@@ -15,7 +15,7 @@ export async function createQueueRuntime(
         payload: first ? { hashes: { test_state: "compiled-defaults" } } : {},
       },
     ],
-    initialState: {},
+    initialState,
     onLoadInternalEvent: unused,
     state_name: "test_state",
     exception_state_name: "test_exception_state",

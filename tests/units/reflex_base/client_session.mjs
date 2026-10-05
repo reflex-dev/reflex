@@ -36,12 +36,14 @@ async function browserSession({
   localStorage = storage(),
   sessionStorage = storage(),
   webLocks,
+  warm = false,
   eventURL = "ws://localhost:8000/prefix/_event",
 } = {}) {
   const callbacks = new Map();
   const timeouts = new Map();
   const errors = [];
   const connections = [];
+  const warmups = [];
   const requests = [];
   const emitted = [];
   const uploads = [];
@@ -76,15 +78,31 @@ async function browserSession({
     uploadFiles: (...args) => uploads.push(args),
     browser: {
       window,
-      document: { addEventListener() {}, removeEventListener() {} },
+      document: {
+        cookie: "",
+        visibilityState: "visible",
+        addEventListener() {},
+        removeEventListener() {},
+      },
       localStorage,
       sessionStorage,
     },
-    env: { EVENT: eventURL },
+    env: { EVENT: eventURL, TRANSPORT: "websocket" },
+    initialState: warm
+      ? { test_state: {}, test_exception_state: {} }
+      : undefined,
     io: (_url, options) => {
       const current = {
         connected: false,
-        io: { opts: options, encoder: {}, decoder: {} },
+        io: {
+          opts: options,
+          encoder: {},
+          decoder: {},
+          open(callback) {
+            warmups.push(options.query.token);
+            callback();
+          },
+        },
         on: (event, callback) => callbacks.set(event, callback),
         emit: (event, payload) => emitted.push([event, payload]),
         connect() {
@@ -107,6 +125,7 @@ async function browserSession({
     callbacks,
     timeouts,
     connections,
+    warmups,
     requests,
     emitted,
     uploads,
@@ -237,6 +256,7 @@ test("fresh hint reconnects directly without HTTP or a lock", async () => {
   await first.connect();
   await (await first.accept("existing-tab", "credential")).exchange;
   const tab = await browserSession({
+    warm: true,
     localStorage: first.localStorage,
     sessionStorage: first.sessionStorage,
     webLocks: {
@@ -245,6 +265,9 @@ test("fresh hint reconnects directly without HTTP or a lock", async () => {
       },
     },
   });
+  await tick();
+  assert.deepEqual(tab.warmups, ["existing-tab"]);
+  assert.deepEqual(tab.connections, []);
   await tab.connect();
   assert.deepEqual(tab.connections, ["existing-tab"]);
   assert.equal(tab.requests.length, 0);
@@ -254,6 +277,15 @@ test("fresh hint reconnects directly without HTTP or a lock", async () => {
   assert.deepEqual(tab.connections, ["existing-tab", "existing-tab"]);
   assert.equal(tab.socket.current.auth.event.payload.hashes, undefined);
   assert.equal(tab.requests.length, 0);
+});
+
+test("cold transport cannot capture cookies before the session lock", async () => {
+  const tab = await browserSession({ warm: true, webLocks: locks() });
+  await tick();
+  assert.deepEqual(tab.warmups, []);
+  await tab.connect();
+  assert.deepEqual(tab.connections, [""]);
+  await (await tab.accept("bound-tab", "credential")).exchange;
 });
 
 test("cookie-wins exchange adopts its token and reconnects the provisional socket", async () => {
