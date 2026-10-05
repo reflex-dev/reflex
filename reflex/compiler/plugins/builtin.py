@@ -461,14 +461,26 @@ def default_page_plugins(
     *,
     style: ComponentStyle | None = None,
     plugins: Sequence[Plugin] = (),
+    auto_memoize: bool = True,
 ) -> tuple[Plugin, ...]:
-    """Return the default compiler plugin ordering for page compilation."""
-    from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
+    """Return the default compiler plugin ordering for page compilation.
 
+    Args:
+        style: The app style to apply, if any.
+        plugins: Plugins that run before the defaults.
+        auto_memoize: Whether to wrap stateful components in memo components.
+
+    Returns:
+        The ordered page compiler plugins.
+    """
     chain: list[Plugin] = [*plugins, DefaultPagePlugin()]
     if style is not None:
         chain.append(ApplyStylePlugin(style=style))
-    chain.extend((DefaultCollectorPlugin(), MemoizeStatefulPlugin()))
+    chain.append(DefaultCollectorPlugin())
+    if auto_memoize:
+        from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
+
+        chain.append(MemoizeStatefulPlugin())
     return tuple(chain)
 
 

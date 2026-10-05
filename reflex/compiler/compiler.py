@@ -1312,7 +1312,11 @@ def compile_app(
         app=app,
         pages=list(app._unevaluated_pages.values()),
         hooks=CompilerHooks(
-            plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
+            plugins=default_page_plugins(
+                style=app.style,
+                plugins=compiler_plugins,
+                auto_memoize=config.auto_memoize,
+            )
         ),
     )
 

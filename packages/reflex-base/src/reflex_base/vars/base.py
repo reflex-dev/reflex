@@ -3703,7 +3703,7 @@ def get_uuid_string_var() -> Var:
             f"$/{constants.Dirs.STATE_PATH}": ImportVar(tag="generateUUID"),
             "react": "useMemo",
         },
-        hooks={f"const {unique_uuid_var} = useMemo(generateUUID, [])": None},
+        hooks={f"const {unique_uuid_var} = useMemo(() => generateUUID(), [])": None},
     )
 
     return Var(

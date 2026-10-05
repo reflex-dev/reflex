@@ -1,0 +1,1 @@
+Add the experimental `auto_memoize` option (`REFLEX_AUTO_MEMOIZE`). Set `auto_memoize=False` together with `react_compiler=True` to let React Compiler memoize whole pages instead of Reflex's generated memo wrappers, which also shortens compilation. Disabling both options logs a warning.
