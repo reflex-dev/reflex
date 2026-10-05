@@ -14,11 +14,12 @@ pytestmark = pytest.mark.skipif(shutil.which("uv") is None, reason="uv is requir
 
 
 @pytest.fixture
-def distributions(tmp_path: Path) -> Path:
-    """Create a wheel and an independently buildable sdist without dependencies.
+def distributions(tmp_path: Path, request: pytest.FixtureRequest) -> Path:
+    """Create a wheel and an independently buildable sdist.
 
     Args:
         tmp_path: The temporary test directory.
+        request: Whether to include an unavailable dependency in both artifacts.
 
     Returns:
         The directory containing both distributions.
@@ -26,11 +27,15 @@ def distributions(tmp_path: Path) -> Path:
     dist_dir = tmp_path / "dist"
     dist_dir.mkdir()
     wheel_name = "install_check-1.0-py3-none-any.whl"
+    metadata = "Metadata-Version: 2.3\nName: install-check\nVersion: 1.0\n"
+    if getattr(request, "param", False):
+        missing = tmp_path / "missing_dependency-1.0-py3-none-any.whl"
+        metadata += f"Requires-Dist: missing-dependency @ {missing.as_uri()}\n"
     with zipfile.ZipFile(dist_dir / wheel_name, "w") as wheel:
         wheel.writestr("install_check.py", "VALUE = 1\n")
         wheel.writestr(
             "install_check-1.0.dist-info/METADATA",
-            "Metadata-Version: 2.3\nName: install-check\nVersion: 1.0\n",
+            metadata,
         )
         wheel.writestr(
             "install_check-1.0.dist-info/WHEEL",
@@ -60,12 +65,18 @@ def distributions(tmp_path: Path) -> Path:
     return dist_dir
 
 
+@pytest.mark.parametrize(
+    "distributions",
+    [False, True],
+    indirect=True,
+    ids=["no-dependencies", "unavailable-dependency"],
+)
 def test_installs_both_distributions(
     distributions: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ):
-    """Both artifacts must install even when inherited uv settings prohibit builds.
+    """Both artifacts install without resolving unavailable runtime dependencies.
 
     Args:
         distributions: The built wheel and sdist.
@@ -73,6 +84,7 @@ def test_installs_both_distributions(
         capsys: The output capture fixture.
     """
     monkeypatch.setenv("UV_NO_BUILD", "1")
+    monkeypatch.setenv("UV_NO_DEPS", "false")
     monkeypatch.setenv("DIST_DIR", str(distributions))
     assert verify_install.main() == 0
     output = capsys.readouterr().out
@@ -124,28 +136,6 @@ def test_checks_every_artifact(distributions: Path, monkeypatch: pytest.MonkeyPa
         monkeypatch: The pytest monkeypatch fixture.
     """
     (distributions / "install_check-2.0.tar.gz").write_bytes(b"broken archive")
-    monkeypatch.setenv("DIST_DIR", str(distributions))
-    assert verify_install.main() == 1
-
-
-def test_resolves_dependencies(distributions: Path, monkeypatch: pytest.MonkeyPatch):
-    """An unsatisfied dependency must fail even if UV_NO_DEPS is inherited.
-
-    Args:
-        distributions: The built wheel and sdist.
-        monkeypatch: The pytest monkeypatch fixture.
-    """
-    missing = distributions / "missing_dependency-1.0-py3-none-any.whl"
-    wheel = next(distributions.glob("*.whl"))
-    with zipfile.ZipFile(wheel) as archive:
-        files = {name: archive.read(name) for name in archive.namelist()}
-    files["install_check-1.0.dist-info/METADATA"] += (
-        f"Requires-Dist: missing-dependency @ {missing.as_uri()}\n".encode()
-    )
-    with zipfile.ZipFile(wheel, "w") as archive:
-        for name, content in files.items():
-            archive.writestr(name, content)
-    monkeypatch.setenv("UV_NO_DEPS", "1")
     monkeypatch.setenv("DIST_DIR", str(distributions))
     assert verify_install.main() == 1
 

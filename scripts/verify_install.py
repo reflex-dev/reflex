@@ -1,8 +1,9 @@
 """Install each release artifact independently before allowing publication.
 
 Run from the publish workflow's post-build hook with DIST_DIR in the environment.
-Use published dependencies, fresh virtual environments outside the checkout and
-no uv cache or configuration so a working wheel cannot mask a broken sdist.
+Use fresh virtual environments outside the checkout with no uv cache or
+configuration so a working wheel cannot mask a broken sdist. Skip runtime
+dependencies because their required versions may not be published yet.
 """
 
 # /// script
@@ -18,7 +19,7 @@ from pathlib import Path
 
 
 def install_artifact(artifact: Path) -> None:
-    """Install one archive and its dependencies in an isolated environment.
+    """Install one archive without runtime dependencies in an isolated environment.
 
     Args:
         artifact: The absolute path to a wheel or source distribution.
@@ -43,7 +44,15 @@ def install_artifact(artifact: Path) -> None:
             check=True,
         )
         subprocess.run(
-            [*uv, "pip", "install", "--python", str(python), str(artifact)],
+            [
+                *uv,
+                "pip",
+                "install",
+                "--no-deps",
+                "--python",
+                str(python),
+                str(artifact),
+            ],
             cwd=directory,
             env=env,
             check=True,
