@@ -32,7 +32,7 @@ class Moment(NoSSRComponent, MemoizationLeaf):
     tag: str | None = "Moment"
     is_default = True
     library: str | None = "react-moment@2.0.2"
-    lib_dependencies: list[str] = ["moment@2.30.1"]
+    lib_dependencies: list[str] = ["moment@2.31.0"]
 
     interval: Var[int] = field(
         doc="How often the date update (how often time update / 0 to disable)."
@@ -110,10 +110,13 @@ class Moment(NoSSRComponent, MemoizationLeaf):
 
     tz: Var[str] = field(doc="Display the date in the given timezone.")
 
-    locale: Var[str] = field(doc="The locale to use when rendering.")
+    locale: Var[str] = field(
+        default=Var.create("en"),
+        doc="The locale for this component. Defaults to English independently of other Moment components.",
+    )
 
     on_change: EventHandler[passthrough_event_spec(str)] = field(
-        doc="Fires when the date changes."
+        doc="Fires when the component mounts and when the date changes, including when interval is 0. React Strict Mode can invoke the mount event twice in development."
     )
 
     def add_imports(self) -> ImportDict:
@@ -125,14 +128,16 @@ class Moment(NoSSRComponent, MemoizationLeaf):
         imports = {}
 
         if isinstance(self.locale, LiteralVar):
-            imports[""] = f"moment/locale/{self.locale._var_value}"
+            # English is built into Moment and has no separate locale module.
+            if self.locale._var_value != "en":
+                imports[""] = f"moment/locale/{self.locale._var_value}"
         elif self.locale is not None:
             # If the user is using a variable for the locale, we can't know the
             # value at compile time so import all locales available.
             imports[""] = "moment/min/locales"
         if self.tz is not None:
-            imports["moment-timezone@0.6.3"] = ""
+            imports["moment-timezone@0.6.5"] = ""
         if self.duration is not None or self.duration_from_now is not None:
-            imports["moment-duration-format@2.2.2"] = ImportVar(tag=None)
+            imports["moment-duration-format@2.3.2"] = ImportVar(tag=None)
 
         return imports

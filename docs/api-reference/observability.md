@@ -27,8 +27,13 @@ exactly as `opentelemetry-instrument` would:
 
 ```bash
 OTEL_SERVICE_NAME=my_app OTEL_TRACES_EXPORTER=otlp OTEL_METRICS_EXPORTER=otlp \
-OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318 reflex run
+  OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
+  OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318 reflex run
 ```
+
+The protocol setting selects the HTTP exporter installed above for both traces
+and metrics. Without it, `otlp` defaults to gRPC and requires the separate gRPC
+exporter package.
 
 To build the providers yourself, pass them instead:
 `instrument(tracer_provider=..., meter_provider=...)`, from a module that is

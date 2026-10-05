@@ -2,6 +2,7 @@ import reflex as rx
 from reflex.utils.format import to_snake_case, to_title_case
 from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 
+from reflex_docs.docgen_pipeline import render_markdown
 from reflex_docs.pages.docs.metadata import truncate_meta_description
 from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
 
@@ -55,29 +56,46 @@ def get_preview_asset(name: str, section: str) -> tuple[str, str]:
 
 def component_card(name: str, link: str, section: str) -> rx.Component:
     preview_section, preview_name = get_preview_asset(name, section)
+
+    def preview_src(mode: str) -> str:
+        """Resolve locally bundled previews or existing CDN artwork.
+
+        Args:
+            mode: Color mode for the preview.
+
+        Returns:
+            Image asset URL.
+        """
+        path = f"components_previews/{preview_section}/{mode}/{preview_name}.svg"
+        if (preview_section, preview_name) == ("charts", "treemap"):
+            return rx.asset(path)
+        return f"{REFLEX_ASSETS_CDN}{path}"
+
     return rx.link(
         rx.box(
             rx.image(
-                src=f"{REFLEX_ASSETS_CDN}components_previews/{preview_section}/light/{preview_name}.svg",
+                src=preview_src("light"),
                 loading="lazy",
                 alt=f"Image preview of {name}",
+                style={"filter": "grayscale(1)"},
                 class_name="object-contain object-center h-full w-full dark:hidden",
             ),
             rx.image(
-                src=f"{REFLEX_ASSETS_CDN}components_previews/{preview_section}/dark/{preview_name}.svg",
+                src=preview_src("dark"),
                 loading="lazy",
                 alt=f"Image preview of {name}",
+                style={"filter": "grayscale(1) brightness(1.8)"},
                 class_name="object-contain object-center h-full w-full dark:block hidden",
             ),
             rx.box(
                 rx.text(
                     get_display_name(name),
-                    class_name="truncate font-base text-secondary-12",
+                    class_name="truncate font-base text-foreground",
                 ),
-                rx.icon("chevron-right", size=14, class_name="!text-secondary-9"),
+                rx.icon("chevron-right", size=14, class_name="!text-subtle-foreground"),
                 class_name="bottom-0 absolute flex flex-row justify-between w-full px-4 py-2 items-center",
             ),
-            class_name="rounded-xl border overflow-hidden relative box-border shadow-large bg-secondary-2 hover:bg-secondary-3 transition-bg border-secondary-5",
+            class_name="aspect-[320/232] rounded-xl border overflow-hidden relative box-border shadow-large bg-muted hover:bg-accent transition-bg border-border",
         ),
         href=link,
     )
@@ -115,6 +133,31 @@ def create_previews(
         )
 
         component_list = get_component_list(type)
+        if component_category == "State":
+            return rx.box(
+                h1_comp(text="State"),
+                render_markdown(
+                    "Reflex state connects your components to application data. "
+                    "Store values in an `rx.State` class, pass its vars to component "
+                    "props, and update those values from event handlers.\n\n"
+                    "## Start with state and events\n\n"
+                    "- [State overview](/docs/state/overview/): define application "
+                    "state and connect it to your interface.\n"
+                    "- [Base vars](/docs/vars/base-vars/): store typed values that "
+                    "components can display.\n"
+                    "- [Computed vars](/docs/vars/computed-vars/): derive values "
+                    "from existing state.\n"
+                    "- [Events](/docs/events/events-overview/): update state in "
+                    "response to user interactions.\n\n"
+                    "## Build reusable interactive components\n\n"
+                    "Use [component state](/docs/state-structure/component-state/) "
+                    "when each instance needs its own data. Use "
+                    "[conditional rendering](/docs/components/conditional-rendering/) "
+                    "and [rendering iterables](/docs/components/rendering-iterables/) "
+                    "to make your interface respond to state changes."
+                ),
+                class_name="flex flex-col w-full mb-10",
+            )
         return rx.box(
             rx.box(
                 h1_comp(text=get_display_name(component_category)),
@@ -209,7 +252,7 @@ core_components_dict = {
     },
     "state": {
         "path": "state",
-        "description": "Components that help with state, such as state variables, state hooks, and state management. These are useful for creating responsive and interactive user interfaces.",
+        "description": "Connect Reflex components to Python state, typed vars, computed values, and event handlers. Find guides for reusable interactive components and dynamic rendering.",
         "component_category": "State",
     },
 }

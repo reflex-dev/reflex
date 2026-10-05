@@ -13,20 +13,22 @@ from importlib.util import find_spec
 from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
-from reflex.istate.data import RouterData
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import types
 from reflex_base import otel
+from reflex_base.constants import CompileVars
+from reflex_base.event import Event, EventHandler, EventSpec
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
+from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegisteredEventHandler
 from reflex_base.utils.format import format_event_handler
+from reflex_base.utils.serializers import deserializers
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from reflex.event import Event, EventHandler
     from reflex.state import BaseState
 
 # Resolved once at import: find_spec on a missing package scans sys.path (~90us),
@@ -38,10 +40,28 @@ else:
 
 
 @functools.lru_cache(maxsize=1)
-def _hydrate_event_name():
+def _hydrate_event_names() -> frozenset[str]:
     from reflex.state import State
 
-    return format_event_handler(State.event_handlers["hydrate"])
+    return frozenset(
+        format_event_handler(State.event_handlers[name])
+        for name in (CompileVars.HYDRATE, CompileVars.HYDRATE_AND_LOAD)
+    )
+
+
+@functools.lru_cache(maxsize=1)
+def _connect_supersedes() -> tuple[str, str]:
+    """The (re)connect event and the page-load event whose chain it cancels.
+
+    Returns:
+        The full event names of ``hydrate_and_load`` and ``on_load_internal``.
+    """
+    from reflex.state import OnLoadInternalState, State
+
+    return (
+        format_event_handler(State.event_handlers[CompileVars.HYDRATE_AND_LOAD]),
+        format_event_handler(OnLoadInternalState.event_handlers["on_load_internal"]),
+    )
 
 
 def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
@@ -57,7 +77,6 @@ def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
     Raises:
         TypeError: If any of the events are not valid.
     """
-    from reflex.event import Event, EventHandler, EventSpec
 
     def _is_valid_type(events: Any) -> bool:
         return isinstance(events, (Event, EventHandler, EventSpec))
@@ -102,9 +121,6 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
     Raises:
         ValueError: If a string value is received for an int or float type and cannot be converted.
     """
-    from reflex.model import Model
-    from reflex.utils.serializers import deserializers
-
     if hinted_args is Any:
         return value
     if types.is_union(hinted_args):
@@ -116,6 +132,8 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
         and isinstance(hinted_args, type)
         and not types.is_generic_alias(hinted_args)  # py3.10
     ):
+        from reflex.model import Model
+
         if issubclass(hinted_args, Model):
             # Remove non-fields from the payload
             return hinted_args(**{
@@ -162,7 +180,7 @@ def _transform_event_payload(
         The transformed event payload.
     """
     transformed = {}
-    for arg, value in list(payload.items()):
+    for arg, value in payload.items():
         hinted_args = type_hints.get(arg, Any)
         try:
             transformed[arg] = _transform_event_arg(value, hinted_args)
@@ -212,8 +230,6 @@ async def chain_updates(
         handler_name: The name of the handler that yielded the events, used for error messages.
         root_state: The root state of the app, no delta emitted if omitted.
     """
-    from reflex.event import Event
-
     ctx = EventContext.get()
 
     if root_state is not None:
@@ -231,8 +247,10 @@ async def chain_updates(
             root_state._clean()
 
     # Convert valid EventHandler and EventSpec into Event
-    if fixed_events := Event.from_event_type(
-        _check_valid_yield(events, handler_name=handler_name),
+    if events is not None and (
+        fixed_events := Event.from_event_type(
+            _check_valid_yield(events, handler_name=handler_name),
+        )
     ):
         await _route_events(ctx, fixed_events)
 
@@ -286,13 +304,16 @@ async def process_event(
     Raises:
         ValueError: If a string value is received for an int or float type and cannot be converted.
     """
-    handler_name = handler.fn.__qualname__
-
-    # Get the function to process the event.
-    fn = functools.partial(handler.fn, state)
+    fn = handler.fn
+    handler_name = fn.__qualname__
 
     try:
-        type_hints = types.get_type_hints(handler.fn)
+        # Resolved hints are cached on the handler, empty for an unannotated one;
+        # fall back for ones that were not resolvable at registration (None),
+        # raising again if still unresolved.
+        type_hints = handler._type_hints
+        if type_hints is None:
+            type_hints = types.get_type_hints(fn)
         payload = _transform_event_payload(payload, type_hints)
     except Exception as ex:
         # No transformation was possible, continue with the original payload
@@ -301,12 +322,12 @@ async def process_event(
         )
 
     # Handle async functions.
-    if inspect.iscoroutinefunction(fn.func):
-        events = await fn(**payload)
+    if handler._is_coroutine_function:
+        events = await fn(state, **payload)
 
     # Handle regular functions.
     else:
-        events = fn(**payload)
+        events = fn(state, **payload)
     # Handle async generators.
     if inspect.isasyncgen(events):
         async for event in events:
@@ -397,6 +418,30 @@ class BaseStateEventProcessor(EventProcessor):
             root_state=root_state,
         )
 
+    def _supersede_previous(
+        self, *, token: str, event: Event, tracked: EventFuture
+    ) -> bool:
+        """Apply supersession, with a (re)connect obsoleting the pending page load.
+
+        Enqueuing ``hydrate_and_load`` cancels the token's unfinished
+        ``on_load_internal`` chain the way a navigation does, before the
+        hydrate waits for the state lock that chain may hold. The hydrate is
+        not registered as superseding itself: a navigation enqueued while it
+        waits must not cancel the state snapshot it is about to send.
+
+        Args:
+            token: The client token associated with the event.
+            event: The event being enqueued.
+            tracked: The future of the event being enqueued.
+
+        Returns:
+            True if the event should be queued, False if it was dropped.
+        """
+        boot_name, on_load_name = _connect_supersedes()
+        if event.name == boot_name:
+            self._cancel_older_chains((on_load_name, token), tracked.root_gen)
+        return super()._supersede_previous(token=token, event=event, tracked=tracked)
+
     async def _execute_event(
         self, *, entry: EventQueueEntry, registered_handler: RegisteredEventHandler
     ) -> None:
@@ -425,18 +470,24 @@ class BaseStateEventProcessor(EventProcessor):
         ) as state:
             if otel.enabled:
                 otel.record_state_acquired(acquire_start, event)
+            previous_router_data = state.router_data
             # Compatibility hack rehydrate the state before processing this event.
             needs_to_rehydrate = bool(
-                not state.router_data and event.name != _hydrate_event_name()
+                not previous_router_data and event.name not in _hydrate_event_names()
             )
 
             # re-assign only when the value is set and different
-            if router_data and state.router_data != router_data:
-                # assignment will recurse into substates and force recalculation of
-                # dependent ComputedVar (dynamic route variables)
-                state.router_data = router_data
-                if state.router != (router := RouterData.from_router_data(router_data)):
-                    state.router = router
+            if router_data and previous_router_data != router_data:
+                # only the router vars whose backing keys changed are rebuilt
+                # and re-sent; session/headers stay put across navigations.
+                merged_router_data = state._update_router_vars(
+                    router_data, previous_router_data
+                )
+                # Store what it merged, not the payload, so a partial payload
+                # does not drop the keys it omits. Only on a real change: the
+                # assignment dirties router_data and marks the state touched.
+                if merged_router_data != previous_router_data:
+                    state.router_data = merged_router_data
 
             # Preprocess the event.
             if (
@@ -452,7 +503,7 @@ class BaseStateEventProcessor(EventProcessor):
                 return
 
             # Get the event's substate.
-            substate = await state.get_state(event.state_cls)
+            substate = await state.get_state(registered_handler.states[0])
             root_state = state._get_root_state()
 
             if needs_to_rehydrate:

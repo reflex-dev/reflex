@@ -9,7 +9,7 @@ from hashlib import md5
 from typing import Any, ClassVar, Literal, get_origin, get_type_hints
 
 from reflex_base.components.component import BaseComponent, Component, field
-from reflex_base.components.tags.tag import Tag
+from reflex_base.components.tags.tag import CommonTag
 from reflex_base.constants import Dirs, EventTriggers
 from reflex_base.event import (
     FORM_DATA,
@@ -39,6 +39,7 @@ from reflex_components_core.el.element import Element
 from .base import BaseHTML, RawTextBaseHTML, VoidBaseHTML
 
 _DYNAMIC_FORM_FIELD = object()
+_NATIVE_FORM_CONTROL_TAGS = frozenset({"input", "select", "textarea"})
 
 
 def _handle_submit_js_template(
@@ -64,7 +65,10 @@ def _handle_submit_js_template(
     const handleSubmit_{handle_submit_unique_name} = useCallback((ev) => {{
         const $form = ev.target
         ev.preventDefault()
-        const {form_data} = {{...Object.fromEntries(new FormData($form).entries()), ...{field_ref_mapping}}};
+        const {form_data} = {{
+            ...Object.fromEntries(new FormData($form).entries()),
+            ...{field_ref_mapping}
+        }};
 
         ({on_submit_event_chain}(ev));
 
@@ -98,6 +102,10 @@ def _iter_form_components(component: BaseComponent) -> Iterator[BaseComponent]:
     Yields:
         The component and its nested component descendants.
     """
+    form_control_source = getattr(component, "_form_control_source", None)
+    if isinstance(form_control_source, BaseComponent):
+        yield from _iter_form_components(form_control_source)
+        return
     yield component
     for child in component.children:
         if isinstance(child, BaseComponent):
@@ -133,6 +141,42 @@ def _get_static_string_prop(
     if isinstance(value, Var):
         return _DYNAMIC_FORM_FIELD
     return None
+
+
+def _is_form_control_component(component: BaseComponent) -> bool:
+    """Return whether a component or its memoized type is a form control.
+
+    Custom component classes can opt in with ``_is_form_control = True``.
+
+    Args:
+        component: The component to inspect.
+
+    Returns:
+        Whether the component contributes a form field.
+    """
+    if getattr(component, "_is_form_control", False):
+        return True
+    wrapped_component_type = getattr(component, "_wrapped_component_type", None)
+    if getattr(wrapped_component_type, "_is_form_control", False):
+        return True
+    return getattr(component, "tag", None) in _NATIVE_FORM_CONTROL_TAGS
+
+
+def _get_form_control_refs(component: BaseComponent) -> set[str]:
+    """Collect refs belonging to form controls in a component subtree.
+
+    Args:
+        component: The component tree to inspect.
+
+    Returns:
+        The refs owned by form controls.
+    """
+    return {
+        ref
+        for child in _iter_form_components(component)
+        if isinstance(child, Component) and _is_form_control_component(child)
+        if (ref := child.get_ref()) is not None
+    }
 
 
 def _get_required_typed_dict_fields(typed_dict_type: type[Any]) -> frozenset[str]:
@@ -347,7 +391,7 @@ class Form(BaseHTML):
             )
         ]
 
-    def _render(self) -> Tag:
+    def _render(self) -> CommonTag:
         render_tag = super()._render()
         if EventTriggers.ON_SUBMIT in self.event_triggers:
             render_tag = render_tag.add_props(**{
@@ -359,9 +403,11 @@ class Form(BaseHTML):
         return render_tag
 
     def _get_form_refs(self) -> dict[str, Any]:
-        # Send all the input refs to the handler.
+        form_control_refs = _get_form_control_refs(self)
         form_refs = {}
         for ref in self._get_all_refs():
+            if ref not in form_control_refs:
+                continue
             # when ref start with refs_ it's an array of refs, so we need different method
             # to collect data
             if ref.startswith("refs_"):
@@ -388,7 +434,7 @@ class Form(BaseHTML):
         has_dynamic_identifiers = False
 
         for component in _iter_form_components(self):
-            if component is self or not getattr(component, "_is_form_control", False):
+            if component is self or not _is_form_control_component(component):
                 continue
 
             name = _get_static_string_prop(component, "name")

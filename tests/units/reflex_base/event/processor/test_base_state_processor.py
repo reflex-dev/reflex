@@ -12,7 +12,7 @@ from typing import Any, cast
 import pytest
 import pytest_asyncio
 from opentelemetry.trace import SpanKind, StatusCode
-from reflex_base import otel
+from reflex_base import constants, otel
 from reflex_base.constants import CompileVars, RouteVar
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
@@ -31,6 +31,7 @@ from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.middleware.middleware import Middleware
 from reflex.state import BaseState, OnLoadInternalState, State, StateUpdate
+from reflex.utils import types as reflex_types
 from tests.units.conftest import metric_points
 from tests.units.mock_redis import mock_redis
 
@@ -44,7 +45,6 @@ _STATE_REGISTRIES = (
     "_always_dirty_computed_vars",
     "_always_dirty_substates",
     "_interval_computed_var_names",
-    "_fast_attr_names",
 )
 
 
@@ -120,7 +120,6 @@ def _isolate_state_class_registries(clean_registration_context: RegistrationCont
             delattr(State, name)
         for cls in _state_tree(State):
             cls.vars.pop(name, None)
-            cls.inherited_vars.pop(name, None)
     for name, value in snapshot.items():
         _restore_registry(State, name, value)
 
@@ -1338,3 +1337,517 @@ async def test_execute_event_records_state_acquire_duration(
         for p in metric_points(otel_metrics, otel.METRIC_STATE_ACQUIRE_DURATION)
     }
     assert Event.from_event_type(AcquireState.noop())[0].name in names
+
+
+async def test_unannotated_handler_reuses_its_resolved_type_hints(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A handler without annotations does not resolve its type hints again per event.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+
+    class UnannotatedState(State):
+        count: int = 0
+
+        @event
+        def bump(self):
+            self.count += 1
+
+    # Resolved at registration, to an empty mapping.
+    assert UnannotatedState.event_handlers["bump"]._type_hints == {}
+    resolved: list[Any] = []
+    get_type_hints = reflex_types.get_type_hints
+
+    def recording_get_type_hints(obj: Any) -> dict[str, Any]:
+        resolved.append(obj)
+        return get_type_hints(obj)
+
+    # The module the processor resolves type hints through.
+    monkeypatch.setattr(reflex_types, "get_type_hints", recording_get_type_hints)
+    async with real_base_state_processor as processor:
+        for _ in range(2):
+            await processor.enqueue(
+                token, Event.from_event_type(UnannotatedState.bump())[0]
+            )
+        await processor.join(1)
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(UnannotatedState)).count == 2
+    assert resolved == []
+
+
+async def test_no_op_partial_router_data_leaves_the_state_untouched(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+    token: str,
+):
+    """A payload that merges to what is already there must not touch the state.
+
+    A partial router_data (only the navigation keys, as `fix_events` produces)
+    is never equal to the full dict the state holds, so it reaches the merge.
+    If it merges to the same thing, nothing moved: assigning it anyway would
+    dirty router_data, mark the state touched, and persist it for an event
+    that changed nothing.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List of deltas captured from the processor.
+        token: The client token.
+    """
+
+    class NoOpRouterState(State):
+        n: int = 0
+
+        @event
+        def bump(self):
+            self.n += 1
+
+    full_view = {
+        "pathname": "/a",
+        "asPath": "/a",
+        "query": {},
+        "token": token,
+        "sid": "sid1",
+        "ip": "127.0.0.1",
+        "headers": {"origin": "http://localhost:3000"},
+    }
+    # Same navigation, but carrying only the keys a chained event keeps.
+    navigation_only = {"pathname": "/a", "asPath": "/a", "query": {}}
+
+    def client_event(router_data: dict[str, Any]) -> Event:
+        return dataclasses.replace(
+            Event.from_event_type(NoOpRouterState.bump())[0], router_data=router_data
+        )
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, client_event(full_view))
+        await processor.join(10)
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    state._was_touched = False
+    emitted_deltas.clear()
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, client_event(navigation_only))
+        await processor.join(10)
+
+    # The connection-scoped data survived the partial payload...
+    assert state.router_data["headers"] == full_view["headers"]
+    assert state.rx_router_session.client_token == token
+    # ...and nothing about the router was re-sent or marked dirty.
+    assert not any(
+        key.removesuffix(FIELD_MARKER) in constants.ROUTER_VARS
+        for _token, delta in emitted_deltas
+        for key in delta.get(State.get_full_name(), {})
+    )
+    assert not state._was_touched
+
+
+async def test_navigation_delta_elides_connection_scoped_router_vars(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+    token: str,
+):
+    """A navigation only re-sends the navigation-scoped router vars.
+
+    Session and headers cannot change without going through a reconnect, so
+    re-shipping them in the delta of every client event is pure overhead.
+    The router is stored in per-field base vars precisely so that a
+    navigation marks only page/url/route_id dirty; a reconnect (new sid)
+    marks only the session dirty.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List of deltas captured from the processor.
+        token: The client token.
+    """
+
+    class NavState(State):
+        n: int = 0
+
+        @event
+        def bump(self):
+            self.n += 1
+
+    headers = {"origin": "http://localhost:3000", "user-agent": "test-agent"}
+
+    def view(path: str, sid: str = "sid1") -> dict[str, Any]:
+        return {
+            "pathname": path,
+            "asPath": path,
+            "query": {},
+            "token": token,
+            "sid": sid,
+            "ip": "127.0.0.1",
+            "headers": headers,
+        }
+
+    def client_event(router_data: dict[str, Any]) -> Event:
+        return dataclasses.replace(
+            Event.from_event_type(NavState.bump())[0], router_data=router_data
+        )
+
+    def router_vars_in_deltas() -> set[str]:
+        return {
+            key.removesuffix(FIELD_MARKER)
+            for _token, delta in emitted_deltas
+            for key in delta.get(State.get_full_name(), {})
+            if key.removesuffix(FIELD_MARKER) in constants.ROUTER_VARS
+        }
+
+    async def run_event(router_data: dict[str, Any]) -> None:
+        emitted_deltas.clear()
+        async with real_base_state_processor as processor:
+            await processor.enqueue(token, client_event(router_data))
+            await processor.join(10)
+
+    # First event on the connection populates every router var.
+    await run_event(view("/a"))
+    assert router_vars_in_deltas() == {
+        "rx_router_session",
+        "rx_router_headers",
+        "rx_router_page",
+        "rx_router_url",
+        "rx_router_route_id",
+    }
+
+    # A navigation only re-sends the navigation-scoped vars.
+    await run_event(view("/b"))
+    assert router_vars_in_deltas() == {
+        "rx_router_page",
+        "rx_router_url",
+        "rx_router_route_id",
+    }
+
+    # An event without a route change re-sends no router vars at all.
+    await run_event(view("/b"))
+    assert router_vars_in_deltas() == set()
+
+    # A reconnect (new sid, same headers) re-sends only the session.
+    await run_event(view("/b", sid="sid2"))
+    assert router_vars_in_deltas() == {"rx_router_session"}
+
+
+def _boot_event(name: str, payload: dict[str, Any]) -> Event:
+    return Event(
+        name=name,
+        payload=payload,
+        router_data={"pathname": "/", "asPath": "/", "query": {}},
+    )
+
+
+async def test_hydrate_and_load_single_lock_cycle(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """One hydrate_and_load event resets/applies client storage, snapshots, and queues on_load.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+
+    class CookieState(State):
+        flavor: str = rx.Cookie("plain")
+        loads: int = 0
+
+        @event
+        def on_load_handler(self):
+            self.loads += 1
+
+    wired_app.add_page(
+        lambda: rx.text(CookieState.flavor),
+        route="/",
+        on_load=CookieState.on_load_handler,
+    )
+    wired_app._compile_page("index")
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+    cookie_key = f"{CookieState.get_full_name()}.flavor{FIELD_MARKER}"
+    state_name = State.get_full_name()
+    hydrated_key = CompileVars.IS_HYDRATED + FIELD_MARKER
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, _boot_event(boot_name, {"vars": {cookie_key: "chocolate"}})
+        )
+        await future.wait_all()
+
+    # Snapshot (not hydrated, browser cookie applied), the on_load chain, hydrated.
+    snapshot = emitted_deltas[0][1]
+    assert snapshot[state_name][hydrated_key] is False
+    assert snapshot[CookieState.get_full_name()]["flavor" + FIELD_MARKER] == "chocolate"
+    assert snapshot[CookieState.get_full_name()]["loads" + FIELD_MARKER] == 0
+    assert [d for _, d in emitted_deltas[1:]] == [
+        {state_name: {hydrated_key: False}},
+        {CookieState.get_full_name(): {"loads" + FIELD_MARKER: 1}},
+        {state_name: {hydrated_key: True}},
+    ]
+
+    # The next hydrate resets the cookie var when the browser no longer sends
+    # it, and the on_load chain runs again.
+    emitted_deltas.clear()
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(token, _boot_event(boot_name, {}))
+        await future.wait_all()
+    snapshot = emitted_deltas[0][1]
+    assert snapshot[CookieState.get_full_name()]["flavor" + FIELD_MARKER] == "plain"
+    assert emitted_deltas[2][1] == {
+        CookieState.get_full_name(): {"loads" + FIELD_MARKER: 2}
+    }
+
+
+async def test_hydrate_and_load_diffs_against_compiled_defaults(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """With matching initialState hashes only vars that differ from the defaults are sent.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+    from reflex.compiler.utils import compile_state
+    from reflex.state import state_snapshot_hashes
+
+    class CookieState(State):
+        flavor: str = rx.Cookie("plain")
+        loads: int = 0
+        ratio: float = 1.0
+        ordered: dict[str, int] = {"alpha": 1, "beta": 2}
+
+        @event
+        def set_python_equal_values(self):
+            # Python-equal to the defaults, but JSON-distinct: key order is
+            # observable, e.g. in rx.foreach.
+            self.ratio = 1
+            self.ordered = {"beta": 2, "alpha": 1}
+
+    wired_app.add_page(lambda: rx.text(CookieState.flavor), route="/")
+    wired_app._compile_page("index")
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+    cookie_key = f"{CookieState.get_full_name()}.flavor{FIELD_MARKER}"
+    state_name = State.get_full_name()
+    compiled = compile_state(State)
+    hashes = state_snapshot_hashes(compiled)
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token,
+            _boot_event(
+                boot_name, {"vars": {cookie_key: "chocolate"}, "hashes": hashes}
+            ),
+        )
+        await future.wait_all()
+
+    snapshot = emitted_deltas[0][1]
+    # Only the navigation router vars and the changed cookie var differ from
+    # the compiled defaults.
+    assert set(snapshot) == {state_name, CookieState.get_full_name()}
+    assert set(snapshot[state_name]) == {
+        var + FIELD_MARKER
+        for var in ("rx_router_page", "rx_router_url", "rx_router_route_id")
+    }
+    assert snapshot[CookieState.get_full_name()] == {
+        "flavor" + FIELD_MARKER: "chocolate"
+    }
+
+    # Values that are Python-equal but serialize differently are still sent.
+    emitted_deltas.clear()
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(
+                token, Event.from_event_type(CookieState.set_python_equal_values())[0]
+            )
+        ).wait_all()
+        emitted_deltas.clear()
+        future = await processor.enqueue(
+            token, _boot_event(boot_name, {"hashes": hashes})
+        )
+        await future.wait_all()
+    snapshot = emitted_deltas[0][1]
+    assert snapshot[CookieState.get_full_name()]["ratio" + FIELD_MARKER] == 1
+    assert list(snapshot[CookieState.get_full_name()]["ordered" + FIELD_MARKER]) == [
+        "beta",
+        "alpha",
+    ]
+
+    # Hashes compiled against a different set of states (a different names
+    # digest) fall back to the full snapshot.
+    emitted_deltas.clear()
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, _boot_event(boot_name, {"hashes": ["0" * 16, *hashes[1:]]})
+        )
+        await future.wait_all()
+    snapshot = emitted_deltas[0][1]
+    assert "loads" + FIELD_MARKER in snapshot[CookieState.get_full_name()]
+
+    # A matching names digest with a truncated hash list is malformed and
+    # also falls back to the full snapshot instead of failing the event.
+    emitted_deltas.clear()
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, _boot_event(boot_name, {"hashes": hashes[:-1]})
+        )
+        await future.wait_all()
+    snapshot = emitted_deltas[0][1]
+    assert "loads" + FIELD_MARKER in snapshot[CookieState.get_full_name()]
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_navigation_does_not_cancel_the_hydrate_snapshot(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A navigation queued while hydrate_and_load waits for the lock still gets the snapshot.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+
+    class CounterState(State):
+        count: int = 0
+        loads: list[str] = []
+
+        @event
+        def increment(self):
+            self.count += 1
+
+        @event
+        def load_a(self):
+            self.loads = [*self.loads, "a"]
+
+        @event
+        def load_b(self):
+            self.loads = [*self.loads, "b"]
+
+    wired_app.add_page(lambda: rx.text("a"), route="/", on_load=CounterState.load_a)
+    wired_app.add_page(
+        lambda: rx.text("b"), route="/page-b", on_load=CounterState.load_b
+    )
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+    count_key = "count" + FIELD_MARKER
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+
+    async with real_base_state_processor as processor:
+        await _send(
+            processor, token, _client_event(CounterState.increment(), _view("/"))
+        )
+        emitted_deltas.clear()
+
+        # Hold the lock so the navigation is queued before the hydrate runs.
+        async with root_ctx.state_manager.modify_state(
+            BaseStateToken(ident=token, cls=State)
+        ):
+            hydrate = await processor.enqueue(token, _boot_event(boot_name, {}))
+            navigation = await processor.enqueue(
+                token,
+                _client_event(OnLoadInternalState.on_load_internal(), _view("/page-b")),
+            )
+        await asyncio.wait_for(navigation.wait_all(), timeout=10)
+        await asyncio.wait_for(hydrate.wait_all(), timeout=10)
+
+    assert any(
+        delta.get(CounterState.get_full_name(), {}).get(count_key) == 1
+        for _, delta in emitted_deltas
+    ), "the hydrate snapshot carrying the persisted count was never sent"
+    async with _read_back(real_base_state_processor, token) as root:
+        # "a" is from the first event's rehydrate; the reload's stale on_load
+        # work is dropped in favor of the navigation.
+        assert (await root.get_state(CounterState)).loads == ["a", "b"]
+        assert (await root.get_state(State)).is_hydrated is True
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "redis"], indirect=True
+)
+async def test_reconnect_cancels_stale_on_load_without_load_events(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A reconnect on a page without on_load handlers still cancels the stale on_load chain.
+
+    Reloading onto a page with no on_load handlers while the previous page's
+    on_load chain is still running must cancel that chain, as a navigation
+    does, so its stale work cannot change the session after the reload is
+    hydrated.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    started = asyncio.Event()
+    cancelled = asyncio.Event()
+
+    class SlowLoadState(State):
+        seen: str = ""
+
+        @event
+        async def slow_load(self):
+            self.seen = "started"
+            yield
+            # The state lock stays held through the sleep, so the reconnect's
+            # hydrate can only get past it by cancelling this chain on enqueue.
+            started.set()
+            try:
+                await asyncio.sleep(10)
+            except asyncio.CancelledError:
+                cancelled.set()
+                raise
+            self.seen = "stale-finished"
+
+    wired_app.add_page(
+        lambda: rx.text("slow"), route="/", on_load=SlowLoadState.slow_load
+    )
+    wired_app.add_page(lambda: rx.text("plain"), route="/plain")
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+
+    async with real_base_state_processor as processor:
+        stale = await processor.enqueue(
+            token, _client_event(OnLoadInternalState.on_load_internal(), _view("/"))
+        )
+        await asyncio.wait_for(started.wait(), timeout=5)
+        reconnect = await processor.enqueue(
+            token, Event(name=boot_name, payload={}, router_data=_view("/plain"))
+        )
+        await asyncio.wait_for(cancelled.wait(), timeout=5)
+        await asyncio.wait_for(reconnect.wait_all(), timeout=10)
+        assert stale.done()
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(SlowLoadState)).seen != "stale-finished"
+        assert (await root.get_state(State)).is_hydrated is True

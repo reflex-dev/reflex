@@ -1,4 +1,6 @@
 import json
+import shutil
+import subprocess
 from collections.abc import Callable
 from typing import Any, cast
 
@@ -19,6 +21,7 @@ from reflex_base.event import (
     on_submit_event,
     on_submit_string_event,
 )
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, log
 from reflex_base.utils.exceptions import (
     EventHandlerArgTypeMismatchError,
@@ -114,7 +117,39 @@ def test_call_event_handler():
 
     handler = EventHandler(fn=fn_with_args)
     with pytest.raises(TypeError):
-        handler(test_fn)
+        # Optional packages can register serializers for Python functions.
+        handler(object())
+
+
+def test_format_event_client_handler_name():
+    """client_handler_name must land in the fourth ReflexEvent slot, after event_actions."""
+
+    def handle_upload(files):
+        pass
+
+    handle_upload.__qualname__ = "handle_upload"
+
+    handler = EventHandler(fn=handle_upload)
+    event_spec = EventSpec(
+        handler=handler,
+        client_handler_name="uploadFiles",
+        args=((Var(_js_expr="files"), Var(_js_expr="filesById")),),
+    )
+    assert (
+        format.format_event(event_spec)
+        == 'ReflexEvent("handle_upload", {files:filesById}, {}, "uploadFiles")'
+    )
+
+    event_spec = EventSpec(
+        handler=handler,
+        event_actions={"debounce": 300},
+        client_handler_name="uploadFiles",
+        args=((Var(_js_expr="files"), Var(_js_expr="filesById")),),
+    )
+    assert (
+        format.format_event(event_spec)
+        == 'ReflexEvent("handle_upload", {files:filesById}, {"debounce": 300}, "uploadFiles")'
+    )
 
 
 def test_call_event_handler_partial():
@@ -587,6 +622,49 @@ def test_remove_local_storage():
         format.format_event(spec)
         == 'ReflexEvent("_remove_local_storage", {key:"testkey"})'
     )
+
+
+def _download_var_data_url() -> Var:
+    """Build the data: URL an ``rx.download`` of a list-typed Var produces.
+
+    Returns:
+        The ``url`` argument of the download event.
+    """
+    data = Var(_js_expr="data", _var_type=list[dict[str, str]]).guess_type()
+    return rx.download(data=data, filename="data.json").args[0][1]
+
+
+def test_download_var_data_is_percent_encoded():
+    """A Var passed as download data is percent-encoded into its data: URL."""
+    assert str(_download_var_data_url()) == (
+        '(pyAnd(((typeof(data))?.valueOf?.() === "string"?.valueOf?.()), '
+        '() => (data.startsWith("data:"))) ? data : '
+        '("data:text/plain,"+(encodeURIComponent((JSON.stringify(data))))))'
+    )
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is unavailable")
+def test_download_var_data_url_keeps_hash_and_percent():
+    """The downloaded bytes are exactly the JSON, even with ``#`` or ``%`` in it.
+
+    Unencoded, a ``#`` ends the data: URL there (the rest of the file is lost)
+    and ``%XX`` sequences are percent-decoded.
+    """
+    rows = [{"address": "12 Main St #4", "note": "100%25 sure"}]
+    script = (
+        "const pyAnd = (a, b) => (a ? b() : a);\n"
+        f"const data = {json.dumps(rows)};\n"
+        f"fetch({_download_var_data_url()!s})"
+        ".then((r) => r.text()).then((t) => process.stdout.write(t));\n"
+    )
+    result = subprocess.run(
+        ["node", "-e", script],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=30,
+    )
+    assert result.stdout == json.dumps(rows, separators=(",", ":"))
 
 
 def test_event_actions():
@@ -1367,3 +1445,90 @@ def test_arg_mismatch_warning_renders_brackets_verbatim(capsys, monkeypatch):
         log._reset()
     assert "expects (dict[str, typing.Any]) -> () but got (dict[str, str]) -> ()" in out
     assert "\\" not in out
+
+
+def test_event_chain_cache_lives_on_the_registration_context(
+    forked_registration_context: RegistrationContext,
+):
+    """Bound chains are shared per context and leave the handler stateless."""
+
+    class ChainState(BaseState):
+        @event
+        def handler(self):
+            pass
+
+    def args_spec():
+        return ()
+
+    chain = EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+    with forked_registration_context.fork():
+        forked = EventChain.create(
+            ChainState.handler, args_spec=args_spec, key="on_click"
+        )
+        assert forked is not chain
+        assert (
+            EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+            is forked
+        )
+    assert (
+        EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+        is chain
+    )
+
+    def retains(value: Any) -> bool:
+        if isinstance(value, dict):
+            value = tuple(value.values())
+        if isinstance(value, (tuple, list)):
+            return any(retains(item) for item in value)
+        return value is chain
+
+    assert not any(retains(value) for value in vars(ChainState.handler).values())
+
+
+def test_event_chain_create_shares_chains_bound_from_one_handler():
+    """A handler bound to one trigger yields one chain for every call site."""
+
+    class ChainState(BaseState):
+        @event
+        def handler(self):
+            pass
+
+    def args_spec():
+        return ()
+
+    chain = EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+    assert isinstance(chain, EventChain)
+    assert (
+        EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+        is chain
+    )
+    assert (
+        EventChain.create(ChainState.handler, args_spec=args_spec, key="on_blur")
+        is not chain
+    )
+    assert (
+        EventChain.create(ChainState.handler, args_spec=lambda: (), key="on_click")
+        is not chain
+    )
+    with_actions = EventChain.create(
+        ChainState.handler, args_spec=args_spec, key="on_click", event_actions={"x": 1}
+    )
+    assert with_actions is not chain
+    # The event_actions call above must not replace the cached chain.
+    assert (
+        EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+        is chain
+    )
+    bound_chains = RegistrationContext.ensure_context()._bound_event_chains
+    cached = len(bound_chains)
+    assert (
+        EventChain.create(
+            ChainState.handler.prevent_default, args_spec=args_spec, key="on_click"
+        )
+        is not chain
+    )
+    assert len(bound_chains) == cached
+    assert (
+        EventChain.create([ChainState.handler], args_spec=args_spec, key="on_click")
+        is not chain
+    )
