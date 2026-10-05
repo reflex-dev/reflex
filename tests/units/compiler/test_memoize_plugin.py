@@ -1908,7 +1908,7 @@ def test_moment_uses_react_moment_2_props_and_dependencies() -> None:
     """The wrapper exposes the react-moment 2.x props and dependencies."""
     assert Moment.library == "react-moment@2.0.2"
     assert Moment.lib_dependencies == [
-        "moment@2.30.1",
+        "moment@2.31.0",
     ]
 
     moment = Moment.create(
@@ -1924,10 +1924,10 @@ def test_moment_uses_react_moment_2_props_and_dependencies() -> None:
         "2026-08-30",
         duration_from_now=True,
     )
-    assert duration_from_now.add_imports()["moment-duration-format@2.2.2"] == ImportVar(
+    assert duration_from_now.add_imports()["moment-duration-format@2.3.2"] == ImportVar(
         tag=None
     )
-    assert "moment-duration-format@2.2.2" not in moment.add_imports()
+    assert "moment-duration-format@2.3.2" not in moment.add_imports()
 
 
 def test_moment_memo_body_renders_text_interpolation_not_bare_component() -> None:
