@@ -1,3 +1,10 @@
+## v0.10.0a1 (2026-10-05)
+
+### Bug Fixes
+
+- Require reflex-base 0.9.12 or newer so all imported rendering APIs are available. ([#7238](https://github.com/reflex-dev/reflex/issues/7238))
+
+
 ## v0.9.4.post1 (2026-09-21)
 
 ### Bug Fixes

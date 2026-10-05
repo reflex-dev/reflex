@@ -1,3 +1,10 @@
+## v0.10.0a1 (2026-10-05)
+
+### Miscellaneous
+
+- Update Shiki and its transformers to 4.5.0. ([#7424](https://github.com/reflex-dev/reflex/issues/7424))
+
+
 ## v0.9.6 (2026-09-21)
 
 ### Bug Fixes

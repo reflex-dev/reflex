@@ -1,3 +1,56 @@
+## v0.10.0a1 (2026-10-05)
+
+### Breaking Changes
+
+- Remove the `reflex component` CLI (`init`, `build`, `share`, `install`) and the `CustomComponents` constants. Wrap React libraries directly in your app as described in the wrapping React docs, and start reusable component packages from the [component template](https://github.com/reflex-dev/component-template), which builds, tests, and publishes them with standard Python tooling. ([#6425](https://github.com/reflex-dev/reflex/issues/6425))
+- A substate may now declare a var or computed var with the same name as an inherited var: it gets an independent one of its own, instead of raising `BaseVarShadowsInheritedVarError` or `ComputedVarShadowsBaseVarsError`. A dynamic route arg only conflicts with a var of the state it is installed on. Assigning an undeclared state attribute still raises `SetUndefinedStateVarError` outside of prod mode, but no longer in prod. The internal class maps `backend_vars`, `inherited_vars` and `inherited_backend_vars`, `get_skip_vars()` and the instance `_backend_vars` are removed: use `get_fields()`, whose fields know the state they belong to. States saved by this release still load in workers of the previous one, so rolling deploys sharing Redis keep working, with one exception: while old workers remain, an in-place change to a mutable backend var (like `self._items.append(x)`) made on an old worker to a state saved by this release is not persisted. Assigning backend vars, and any change to frontend vars, is unaffected. ([#7312](https://github.com/reflex-dev/reflex/issues/7312))
+
+### Features
+
+- The duration settings read by the app and the state managers take a unit suffix: `SQLALCHEMY_POOL_TIMEOUT`, `REFLEX_SOCKET_INTERVAL` and `REFLEX_SOCKET_TIMEOUT` accept values such as `2m`, and `REFLEX_AUTO_RELOAD_COOLDOWN`, `REFLEX_OPLOCK_HOLD_TIME` and `REFLEX_STATE_MANAGER_DISK_DEBOUNCE` replace the `_MS`/`_SECONDS` names, which still work with a deprecation warning until 1.0. A bare number is read as seconds. ([#7138](https://github.com/reflex-dev/reflex/issues/7138))
+- Set `REFLEX_REDIS_MAX_CONNECTIONS` to cap each Redis client's connection pool (the state manager, the token manager and the health check each use their own client). Once a pool reaches the cap, requests wait up to `REFLEX_REDIS_POOL_TIMEOUT` (default 2s, which must be above 0 and below the configured state-lock lifetime) for a free connection instead of opening new ones. ([#7179](https://github.com/reflex-dev/reflex/issues/7179))
+
+### Bug Fixes
+
+- Fixed `reflex db makemigrations`/`migrate` crashing with `CompileError` when autogenerating a migration that adds a column with a callable default (e.g. `default_factory=datetime.now` or `default=uuid.uuid4`) to an existing table; callable defaults are now evaluated before being carried as a SQL `server_default`. ([#6706](https://github.com/reflex-dev/reflex/issues/6706))
+- Serve valid dynamic-route URLs (e.g. `/articles/7`) with HTTP 200 instead of 404 when loaded directly in self-hosted prod static serving, reserving 404 for genuinely unknown paths. ([#6996](https://github.com/reflex-dev/reflex/issues/6996))
+- When a project keeps using npm because `reflex.lock/` only has `package-lock.json` (for example after a run with `REFLEX_USE_NPM=1`), Reflex now logs why and how to switch back to bun with `REFLEX_USE_NPM=0`. ([#7093](https://github.com/reflex-dev/reflex/issues/7093))
+- Reflex now checks the Node.js version before running npm, so an unsupported Node.js no longer leaves npm lockfiles behind that switch later runs to npm. ([#7210](https://github.com/reflex-dev/reflex/issues/7210))
+- Preserve ID-based form controls through automatic memoization while excluding IDs on non-controls from submissions. ([#7227](https://github.com/reflex-dev/reflex/issues/7227))
+- Avoid reinstalling frontend packages on every compile or hot reload when bun or npm only changes the formatting of `package.json`. ([#7236](https://github.com/reflex-dev/reflex/issues/7236))
+- `reflex db` commands run without the `db` extra installed now exit with the "pip install reflex[db]" message instead of a raw traceback. ([#7259](https://github.com/reflex-dev/reflex/issues/7259))
+- Fix `TypeError: refs._client_state_set... is not a function` when a component sets a global `rx._x.client_state` value before any component reading `.value` has mounted, such as when the reader sits behind an `rx.cond`. ([#7286](https://github.com/reflex-dev/reflex/issues/7286))
+- An editable install (`uv sync`, `pip install -e .`) no longer overwrites `.pyi` stubs that the checkout already has. A checkout missing any of them still gets them generated. ([#7303](https://github.com/reflex-dev/reflex/issues/7303))
+- In a background task on a substate, in-place changes to a mutable var inherited from a parent state (like `self.items.append(...)`) are now sent to the client and persisted. ([#7312](https://github.com/reflex-dev/reflex/issues/7312))
+- Fix stylesheet edits in `assets/` not applying in dev mode until a manual reload. The global stylesheet `<link rel="preload">` is now emitted only in production builds, so Vite's CSS hot update swaps the real stylesheet link again. ([#7317](https://github.com/reflex-dev/reflex/issues/7317))
+- The memory and disk state managers now free expired session states right away instead of waiting for a garbage collection pass, and the disk state manager no longer keeps a lock for every expired session. ([#7318](https://github.com/reflex-dev/reflex/issues/7318))
+- `reflex db` commands only require `sqlalchemy` and `alembic`, so apps that use plain SQLAlchemy models without `sqlmodel` can run migrations again. ([#7322](https://github.com/reflex-dev/reflex/issues/7322))
+- A page URL with a `self` query parameter (e.g. `/post?self=1`), or a request header named `self`, no longer crashes router data parsing and leaves the page unhydrated. ([#7324](https://github.com/reflex-dev/reflex/issues/7324))
+- `reflex run` now stops its frontend on SIGTERM and SIGINT without a TTY, while keeping frontend workers in the CLI process group so a hard kill also stops them. ([#7328](https://github.com/reflex-dev/reflex/issues/7328))
+- A state stored in Redis that can no longer be unpickled, for example because a deploy moved or deleted a class held in a state var, is now replaced with a fresh state like a schema mismatch, instead of failing every event from that tab until the Redis key expires. ([#7329](https://github.com/reflex-dev/reflex/issues/7329))
+- On Windows, the development backend no longer closes its listening socket twice when it releases the port, which could close another socket that had reused the handle and make it fail with `OSError: [WinError 10038]`. ([#7348](https://github.com/reflex-dev/reflex/issues/7348))
+- `reflex run --json` now emits every output line as a JSON record: `print()` output from the app, subprocess output, and worker tracebacks (as one record with an `exception` field) no longer break the JSON-lines stream. ([#7350](https://github.com/reflex-dev/reflex/issues/7350))
+- Fix a race with `REFLEX_OPLOCK_ENABLED` where an instance could take an opportunistic lease before its Redis lock notifications were active, making other instances wait out the full hold time for the same token. ([#7372](https://github.com/reflex-dev/reflex/issues/7372))
+- Stop logging `asyncio.CancelledError: lifespan_cleanup` as an error when a running coroutine lifespan task is cancelled at backend shutdown or hot reload. ([#7392](https://github.com/reflex-dev/reflex/issues/7392))
+
+### Performance
+
+- Speed up first page loads by combining hydration with the websocket connect and sending only values that differ from compiled defaults. Reduce Redis state-tree read/write overhead and avoid repeated class metadata computation in apps with many states. ([#7064](https://github.com/reflex-dev/reflex/issues/7064))
+- Reuse unchanged memo-body analysis during module emission to reduce repeated rendering and artifact collection. ([#7123](https://github.com/reflex-dev/reflex/issues/7123))
+- Skip the linked-client fan-out on events that changed nothing shared, so an app that defines an `rx.SharedState` no longer resolves the running `App` on every event. ([#7237](https://github.com/reflex-dev/reflex/issues/7237))
+- Reading a state var is about 4x faster, and setting one about 7x faster (15x in prod mode): vars, computed vars and event handlers are now descriptors on the state class that declares them, instead of every attribute access going through `BaseState.__getattribute__`. ([#7312](https://github.com/reflex-dev/reflex/issues/7312))
+- Process events with less CPU on the backend: iterating, sorting and reading list and dataclass state values costs 25–75% less, and the redis state manager writes the changed states of a session in one round trip. ([#7370](https://github.com/reflex-dev/reflex/issues/7370))
+
+### Documentation
+
+- Document the dict form for `rx.toast` `action` and `cancel` props instead of referencing the non-public `ToastAction` class. ([#7327](https://github.com/reflex-dev/reflex/issues/7327))
+
+### Miscellaneous
+
+- No longer set `BUN_OPTIONS` when launching the frontend dev server; bun ignores it for the process it spawns for a package script. ([#7203](https://github.com/reflex-dev/reflex/issues/7203))
+- Allow wrapt 2.4 and 2.5, and keep SQLModel below 0.0.45 to preserve existing datetime storage behavior. ([#7424](https://github.com/reflex-dev/reflex/issues/7424))
+
+
 ## v0.9.12 (2026-09-21)
 
 ### Breaking Changes

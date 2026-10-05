@@ -1,3 +1,52 @@
+## v0.10.0a1 (2026-10-05)
+
+### Breaking Changes
+
+- Remove `reflex_base.constants.CustomComponents`, which only the removed `reflex component` CLI used. ([#6425](https://github.com/reflex-dev/reflex/issues/6425))
+- `PageContext.get()` and `CompileContext.get()` now raise `LookupError` instead of `RuntimeError` when no context is active, the same as every other `BaseContext` subclass. Compiler plugins that catch `RuntimeError` around these calls should catch `LookupError`. ([#6553](https://github.com/reflex-dev/reflex/issues/6553))
+- `reflex_base.utils.types.is_backend_base_variable` and `RESERVED_BACKEND_VAR_NAMES` are removed: whether a state var is a backend var is now a property of its `Field` in `get_fields()`. By convention, fields named with a leading `_` are backend vars. `is_mutable_type` moved to `reflex_base.utils.types` (still importable from `reflex.istate.proxy`). ([#7312](https://github.com/reflex-dev/reflex/issues/7312))
+
+### Features
+
+- `SQLALCHEMY_POOL_TIMEOUT`, `REFLEX_BACKEND_COLD_START_TIMEOUT`, `REFLEX_SOCKET_INTERVAL` and `REFLEX_SOCKET_TIMEOUT` are `timedelta` settings, so they accept a unit suffix such as `REFLEX_SOCKET_TIMEOUT=2m`. A bare number is still read as seconds, so existing values keep their meaning. ([#7138](https://github.com/reflex-dev/reflex/issues/7138))
+- `REFLEX_AUTO_RELOAD_COOLDOWN`, `REFLEX_OPLOCK_HOLD_TIME` and `REFLEX_STATE_MANAGER_DISK_DEBOUNCE` replace `REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS`, `REFLEX_OPLOCK_HOLD_TIME_MS` and `REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS`, and take a duration such as `250ms` or `5m`. The old names still work and keep counting the unit in their name, with a deprecation warning; they are removed in 1.0. ([#7138](https://github.com/reflex-dev/reflex/issues/7138))
+- Add the `REFLEX_REDIS_MAX_CONNECTIONS` and `REFLEX_REDIS_POOL_TIMEOUT` environment variables for bounding each asynchronous Redis client's connection pool. A configured cap must be at least 3 to leave room for the token manager's two pub/sub listeners and ordinary commands; the pool wait defaults to 2 seconds and must be above 0 and shorter than the state-lock lifetime. ([#7179](https://github.com/reflex-dev/reflex/issues/7179))
+- Add `Var.deep_equals()` for structural comparison of nested frontend values. ([#7208](https://github.com/reflex-dev/reflex/issues/7208))
+- `Field` is now the descriptor holding a state var's value, and `EventHandler` binds to the state that declares it when accessed on a state instance. ([#7312](https://github.com/reflex-dev/reflex/issues/7312))
+- Add `reflex_base.utils.log.supervise_output()`, which runs a command with its stdout and stderr on pipes and writes every line it and its descendants print as a JSON record; lines that already are JSON log records pass through unchanged. Output that a descendant writes after the command exits is forwarded for at most a few seconds. ([#7350](https://github.com/reflex-dev/reflex/issues/7350))
+
+### Bug Fixes
+
+- Auto-memoized `@rx.memo` wrapper names no longer repeat the wrapped memo component's tag. ([#7004](https://github.com/reflex-dev/reflex/issues/7004))
+- Deprecation warnings no longer point at a pseudo-location such as `<string>` or `<frozen importlib._bootstrap>` when the deprecated call runs inside generated or frozen code; the location now names the first real user file. ([#7138](https://github.com/reflex-dev/reflex/issues/7138))
+- Form submissions retain ID-backed controls with unset values while omitting IDs from non-controls. ([#7227](https://github.com/reflex-dev/reflex/issues/7227))
+- `Var._replace(_var_data=...)` no longer raises `TypeError: dataclasses.replace() got multiple values for keyword argument '_var_data'`. ([#7256](https://github.com/reflex-dev/reflex/issues/7256))
+- Flatten nested client event lists before dispatch and keep processing queued events after one event fails. ([#7319](https://github.com/reflex-dev/reflex/issues/7319))
+- `rx.download(data=State.var)` percent-encodes the JSON it puts in the `data:` URL, so a `#` or `%` in the data no longer truncates or corrupts the downloaded file. ([#7325](https://github.com/reflex-dev/reflex/issues/7325))
+- Negative-step slices of array and string Vars now match Python at a `-1` bound (e.g. `State.items[-1::-1]` no longer renders an empty list), and a Var step (e.g. `State.items[::State.step]`) no longer raises `RecursionError`. ([#7326](https://github.com/reflex-dev/reflex/issues/7326))
+- A state that mixes in `abc.ABC` or another `ABCMeta` class (`class MyMixin(ABC, rx.State, mixin=True)`) no longer fails with a `StateValueError` claiming `_abc_impl` is reserved by `BaseState`. ([#7339](https://github.com/reflex-dev/reflex/issues/7339))
+- Events sent while a buffered upload (or another `EventProcessor.enqueue_stream_delta` stream) is in flight are no longer chained to it: an uploading client that disconnects no longer cancels other clients' events, the upload's response no longer waits for them, and navigating during an upload cancels the previous page's unfinished `on_load` handlers again. Concurrent buffered uploads no longer hang or end each other's responses early. ([#7357](https://github.com/reflex-dev/reflex/issues/7357))
+- State changes made after a buffered upload's response has ended, such as by events a backend exception handler chains after the upload handler fails, now reach the client instead of being silently dropped. ([#7357](https://github.com/reflex-dev/reflex/issues/7357))
+- OpenTelemetry spans of top-level events enqueued during an HTTP request (a chunked upload, or a custom API route calling `app.event_processor.enqueue`) no longer carry a `reflex.event.parent_txid` naming the event processor's root context; only chained events name the event that produced them. ([#7358](https://github.com/reflex-dev/reflex/issues/7358))
+- Pages in apps with many substates no longer intermittently fail to server-render with a 500 such as `SyntaxError: Invalid regular expression: /[^a-z-]/: Stack overflow`. ([#7369](https://github.com/reflex-dev/reflex/issues/7369))
+- Calling an event handler of up to four arguments on the state class with its arguments, plain or as Vars, and passing such a handler where a callable of its arguments is expected now type-check under ty, as they already did under pyright. Calls of handlers with five or more arguments can still be misreported by ty. ([#7414](https://github.com/reflex-dev/reflex/issues/7414))
+
+### Performance
+
+- Reduce event-queue overhead when prepending events and processing events with a connected socket. ([#7053](https://github.com/reflex-dev/reflex/issues/7053))
+- Begin opening the websocket transport before React mounts, then hydrate with a single `hydrate_and_load` event sent along with the websocket connect to save a round trip. ([#7064](https://github.com/reflex-dev/reflex/issues/7064))
+- Evaluate generated passthrough memo bodies once and retain their render and artifacts so module emission does not repeat the work. ([#7123](https://github.com/reflex-dev/reflex/issues/7123))
+- Reading a cached computed var no longer re-validates its return type, and in production mode state var assignments and computed var results check only the outer type instead of walking every element. The type checks only log errors, so this changes no behavior beyond fewer element-level log messages in production. ([#7353](https://github.com/reflex-dev/reflex/issues/7353))
+- Building Vars (operations, comparisons, `rx.cond`, `rx.foreach`) is up to twice as fast, so pages that derive many Vars compile faster; the generated code is unchanged. ([#7370](https://github.com/reflex-dev/reflex/issues/7370))
+- Lower the CPU cost of every backend event: cached computed var reads, field reads and writes, event dispatch and the JSON encoding of state deltas are faster. A computed var returning a value of the wrong type is now logged once per computed value instead of on every read, and `EventHandler.is_background` and `EventHandler.supersedes` are read once per handler, so mark the function before the handler is first used. ([#7370](https://github.com/reflex-dev/reflex/issues/7370))
+
+### Miscellaneous
+
+- Add the `routes.json` manifest name constant, written at compile time so the prod static file server can tell routable SPA paths from unknown ones. ([#6996](https://github.com/reflex-dev/reflex/issues/6996))
+- Route log records from the new `reflex-workflow` package through the Reflex logger, so they follow the configured log level and sinks. ([#7288](https://github.com/reflex-dev/reflex/issues/7288))
+- Update generated apps to React 19.3, Vite 8.3.2, Socket.IO client 4.8.4, Autoprefixer 10.6.1, and PostCSS 8.5.29. Update the bundled Bun runtime to 1.4.2. ([#7424](https://github.com/reflex-dev/reflex/issues/7424))
+
+
 ## v0.9.12 (2026-09-21)
 
 ### Features

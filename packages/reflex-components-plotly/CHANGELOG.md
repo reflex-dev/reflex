@@ -1,3 +1,10 @@
+## v0.10.0a1 (2026-10-05)
+
+### Bug Fixes
+
+- Normalize string Plotly layout titles to the `{"title": {"text": "..."}}` format required by Plotly.js. ([#7226](https://github.com/reflex-dev/reflex/issues/7226))
+
+
 ## v0.9.7 (2026-09-21)
 
 ### Bug Fixes
