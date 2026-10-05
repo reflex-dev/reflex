@@ -3366,11 +3366,49 @@ def test_app_root_rejects_wrap_that_drops_children() -> None:
         def render(self) -> dict:
             return {"name": self.tag, "children": []}
 
-    with pytest.raises(ValueError, match="must render its children"):
+    with pytest.raises(ValueError, match="must render child wrap"):
         app._app_root({
             (2, "Swallow"): Swallow.create(),
             (1, "Lower"): rx.el.div("lower"),
         })
+
+
+def test_app_root_rejects_identical_existing_child() -> None:
+    """An existing identical child must not hide a dropped app wrap child."""
+    app = App(theme=None, enable_state=False)
+
+    class ExistingChild(Component):
+        tag = "ExistingChild"
+
+        def render(self) -> dict:
+            return {"name": self.tag, "children": []}
+
+    class Swallow(Component):
+        tag = "Swallow"
+
+        def render(self) -> dict:
+            return {
+                "name": self.tag,
+                "children": [ExistingChild.create().render()],
+            }
+
+    with pytest.raises(ValueError, match="must render child wrap"):
+        app._app_root({
+            (2, "Swallow"): Swallow.create(ExistingChild.create()),
+            (1, "ExistingChild"): ExistingChild.create(),
+        })
+
+
+def test_app_root_accepts_wrap_that_renders_children() -> None:
+    """A Fragment wrap can render sibling content and continue the chain."""
+    app = App(theme=None, enable_state=False)
+
+    root = app._app_root({
+        (2, "Wrapper"): rx.fragment(rx.el.div("sibling")),
+        (1, "Lower"): rx.el.div("lower"),
+    })
+
+    assert root.render()["children"][1]["children"][0]["contents"] == '"lower"'
 
 
 def test_get_frontend_packages_maps_subpath_imports_to_installable_package_names(

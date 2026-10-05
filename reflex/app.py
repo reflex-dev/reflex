@@ -379,27 +379,25 @@ def _is_location_specifier(specifier: str) -> bool:
     )
 
 
-def _contains_rendered_component(rendered: Any, target: dict[str, Any]) -> bool:
-    """Check whether a rendered tree contains a specific component render.
+def _count_rendered_component(rendered: Any, target: dict[str, Any]) -> int:
+    """Count occurrences of a rendered component in a rendered tree.
 
     Args:
         rendered: The rendered component tree to inspect.
         target: The rendered child component to find.
 
     Returns:
-        Whether the target appears in the rendered tree.
+        The number of occurrences of the target in the rendered tree.
     """
-    if rendered is target:
-        return True
+    count = 0
     if isinstance(rendered, dict):
-        if repr(rendered) == repr(target):
-            return True
-        return any(
-            _contains_rendered_component(value, target) for value in rendered.values()
+        count += rendered == target
+        count += sum(
+            _count_rendered_component(value, target) for value in rendered.values()
         )
-    if isinstance(rendered, (list, tuple)):
-        return any(_contains_rendered_component(value, target) for value in rendered)
-    return False
+    elif isinstance(rendered, (list, tuple)):
+        count += sum(_count_rendered_component(value, target) for value in rendered)
+    return count
 
 
 @dataclasses.dataclass()
@@ -1619,13 +1617,16 @@ class App(MiddlewareMixin, LifespanMixin):
             child = copy.deepcopy(app_wrappers[key])
             probe_parent = copy.deepcopy(parent)
             probe_child = copy.deepcopy(child)
+            baseline = probe_parent.render()
             probe_parent.children.append(probe_child)
-            parent._clear_compile_caches()
+            probe_parent._clear_compile_caches()
             child_render = probe_child.render()
-            if not _contains_rendered_component(probe_parent.render(), child_render):
+            if _count_rendered_component(probe_parent.render(), child_render) <= (
+                _count_rendered_component(baseline, child_render)
+            ):
                 message = (
-                    f"App wrap {parent.tag or type(parent).__name__!r} "
-                    f"({key[0]}, {key[1]!r}) must render its children. "
+                    f"App wrap {parent.tag or type(parent).__name__!r} must render "
+                    f"child wrap ({key[0]}, {key[1]!r}). "
                     "Wrap sibling content in a Fragment so the app-wrap chain "
                     "can continue."
                 )
