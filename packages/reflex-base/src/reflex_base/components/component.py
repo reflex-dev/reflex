@@ -2141,7 +2141,11 @@ class Component(BaseComponent, ABC):
 
     @staticmethod
     def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
-        """Get the app wrap components for the component.
+        """Get app wraps required by the component.
+
+        App wraps are nested by priority and must render their children. A wrap
+        that renders sibling content should use a Fragment around that content
+        so the lower-priority wrap remains reachable.
 
         Returns:
             The app wrap components.

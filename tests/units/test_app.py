@@ -3356,6 +3356,23 @@ def test_app_wrap_priority(
     assert expected.split(",") == function_app_definition.split(",")
 
 
+def test_app_root_rejects_wrap_that_drops_children() -> None:
+    """App wraps must render the next lower-priority wrap as a child."""
+    app = App(theme=None, enable_state=False)
+
+    class Swallow(Component):
+        tag = "Swallow"
+
+        def render(self) -> dict:
+            return {"name": self.tag, "children": []}
+
+    with pytest.raises(ValueError, match="must render its children"):
+        app._app_root({
+            (2, "Swallow"): Swallow.create(),
+            (1, "Lower"): rx.el.div("lower"),
+        })
+
+
 def test_get_frontend_packages_maps_subpath_imports_to_installable_package_names(
     mocker: MockerFixture,
 ):

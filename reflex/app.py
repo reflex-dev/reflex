@@ -379,6 +379,29 @@ def _is_location_specifier(specifier: str) -> bool:
     )
 
 
+def _contains_rendered_component(rendered: Any, target: dict[str, Any]) -> bool:
+    """Check whether a rendered tree contains a specific component render.
+
+    Args:
+        rendered: The rendered component tree to inspect.
+        target: The rendered child component to find.
+
+    Returns:
+        Whether the target appears in the rendered tree.
+    """
+    if rendered is target:
+        return True
+    if isinstance(rendered, dict):
+        if repr(rendered) == repr(target):
+            return True
+        return any(
+            _contains_rendered_component(value, target) for value in rendered.values()
+        )
+    if isinstance(rendered, (list, tuple)):
+        return any(_contains_rendered_component(value, target) for value in rendered)
+    return False
+
+
 @dataclasses.dataclass()
 class App(MiddlewareMixin, LifespanMixin):
     """The main Reflex app that encapsulates the backend and frontend.
@@ -405,7 +428,7 @@ class App(MiddlewareMixin, LifespanMixin):
         style: The [global style](https://reflex.dev/docs/styling/overview/#global-styles) for the app.
         stylesheets: A list of URLs to [stylesheets](https://reflex.dev/docs/styling/custom-stylesheets/) to include in the app.
         reset_style: Whether to include CSS reset for margin and padding. Defaults to True.
-        app_wraps: App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component.
+        app_wraps: App wraps to be applied to the whole app. Expected to be a dictionary of (order, name) to a function that takes whether the state is enabled and optionally returns a component. Every returned wrap must render its children; use a Fragment when a wrap also renders sibling content.
         extra_app_wraps: Extra app wraps to be applied to the whole app.
         head_components: Components to add to the head of every page.
         sio: The Socket.IO AsyncServer instance.
@@ -1594,7 +1617,21 @@ class App(MiddlewareMixin, LifespanMixin):
 
         def reducer(parent: Component, key: tuple[int, str]) -> Component:
             child = copy.deepcopy(app_wrappers[key])
+            probe_parent = copy.deepcopy(parent)
+            probe_child = copy.deepcopy(child)
+            probe_parent.children.append(probe_child)
+            parent._clear_compile_caches()
+            child_render = probe_child.render()
+            if not _contains_rendered_component(probe_parent.render(), child_render):
+                message = (
+                    f"App wrap {parent.tag or type(parent).__name__!r} "
+                    f"({key[0]}, {key[1]!r}) must render its children. "
+                    "Wrap sibling content in a Fragment so the app-wrap chain "
+                    "can continue."
+                )
+                raise ValueError(message)
             parent.children.append(child)
+            parent._clear_compile_caches()
             return child
 
         functools.reduce(
