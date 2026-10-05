@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import logging
+import signal
 import sys
 from collections.abc import Callable
+from contextlib import contextmanager
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
+from types import FrameType
 from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 import click
@@ -397,6 +400,23 @@ def _compile_app_worker(
         otel.flush()
 
 
+@contextmanager
+def _frontend_sigterm_handler(enabled: bool):
+    """Exit cleanly on SIGTERM for a frontend-only run."""
+    if not enabled:
+        yield
+        return
+
+    def stop_frontend(signum: int, frame: FrameType | None) -> None:
+        raise SystemExit(0)
+
+    previous = signal.signal(signal.SIGTERM, stop_frontend)
+    try:
+        yield
+    finally:
+        signal.signal(signal.SIGTERM, previous)
+
+
 def _run_dev(
     running_mode: constants.RunningMode,
     frontend_port: int | None,
@@ -437,21 +457,45 @@ def _run_dev(
             running_mode.has_backend(),
         ))
 
-    # Start the frontend and backend.
-    with processes.run_concurrently_context(*commands):
-        # In dev mode, run the backend on the main thread.
-        if running_mode.has_backend() and backend_port:
-            exec.run_backend(
-                backend_host,
-                int(backend_port),
-                config.loglevel.subprocess_level(),
-                running_mode.has_frontend(),
-            )
-            # The windows uvicorn bug workaround
-            # https://github.com/reflex-dev/reflex/issues/2335
-            if constants.IS_WINDOWS and exec.frontend_process:
-                # Sends SIGTERM in windows
-                exec.kill(exec.frontend_process.pid)
+    with exec._frontend_process_lock:
+        exec._frontend_shutting_down = False
+        exec.frontend_process = None
+
+    frontend_only = running_mode.has_frontend() and not running_mode.has_backend()
+
+    def stop_frontend() -> None:
+        with exec._frontend_process_lock:
+            exec._frontend_shutting_down = True
+            if (process := exec.frontend_process) is not None:
+                if process.poll() is None:
+                    process.terminate()
+                exec.frontend_process = None
+
+    try:
+        with (
+            _frontend_sigterm_handler(frontend_only and sys.platform != "win32"),
+            processes.run_concurrently_context(
+                *commands, interrupt_on_failure=not frontend_only
+            ) as tasks,
+        ):
+            try:
+                if frontend_only and tasks:
+                    tasks[0].result()
+                elif running_mode.has_backend() and backend_port:
+                    exec.run_backend(
+                        backend_host,
+                        int(backend_port),
+                        config.loglevel.subprocess_level(),
+                        running_mode.has_frontend(),
+                    )
+                    # The windows uvicorn bug workaround
+                    # https://github.com/reflex-dev/reflex/issues/2335
+                    if constants.IS_WINDOWS and exec.frontend_process:
+                        exec.kill(exec.frontend_process.pid)
+            finally:
+                stop_frontend()
+    finally:
+        stop_frontend()
 
 
 def _run_preview(running_mode: constants.RunningMode, port: int, host: str):
@@ -949,7 +993,7 @@ def logout():
     logout(get_config().loglevel)
 
 
-_DB_PACKAGES = ("sqlalchemy", "alembic", "sqlmodel", "pydantic")
+_DB_PACKAGES = ("sqlalchemy", "alembic")
 
 
 @click.group

@@ -32,7 +32,7 @@ class Moment(NoSSRComponent, MemoizationLeaf):
     tag: str | None = "Moment"
     is_default = True
     library: str | None = "react-moment@2.0.2"
-    lib_dependencies: list[str] = ["moment@2.30.1"]
+    lib_dependencies: list[str] = ["moment@2.31.0"]
 
     interval: Var[int] = field(
         doc="How often the date update (how often time update / 0 to disable)."
@@ -136,8 +136,8 @@ class Moment(NoSSRComponent, MemoizationLeaf):
             # value at compile time so import all locales available.
             imports[""] = "moment/min/locales"
         if self.tz is not None:
-            imports["moment-timezone@0.6.3"] = ""
+            imports["moment-timezone@0.6.5"] = ""
         if self.duration is not None or self.duration_from_now is not None:
-            imports["moment-duration-format@2.2.2"] = ImportVar(tag=None)
+            imports["moment-duration-format@2.3.2"] = ImportVar(tag=None)
 
         return imports

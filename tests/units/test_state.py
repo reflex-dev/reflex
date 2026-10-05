@@ -41,6 +41,7 @@ from reflex_base.utils.exceptions import (
     SetUndefinedStateVarError,
     StateSchemaMismatchError,
     StateSerializationError,
+    StateTooLargeError,
     StateValueError,
     UnretrievableVarValueError,
 )
@@ -1282,6 +1283,51 @@ def test_not_dirty_computed_var_from_var(
     assert interdependent_state.get_delta() == {
         interdependent_state.get_full_name(): {"x" + FIELD_MARKER: 5},
     }
+
+
+def test_mark_dirty_computed_vars_walks_chain_from_vars_with_dependents() -> None:
+    """Only the names that have dependents start the invalidation, and it runs through the chain."""
+
+    class ChainState(BaseState):
+        a: int = 0
+        b: int = 0
+
+        @rx.var
+        def from_a(self) -> int:
+            return self.a
+
+        @rx.var
+        def from_from_a(self) -> int:
+            return self.from_a + 1
+
+        @rx.var
+        def standalone(self) -> int:
+            return self.b
+
+    state = ChainState()
+    assert (state.from_from_a, state.standalone) == (1, 0)
+    state.dirty_vars.clear()
+
+    # Neither name has a dependent: nothing to invalidate.
+    state._mark_dirty_computed_vars(("b_unused", "from_from_a"))
+    assert state.dirty_vars == set()
+
+    # A name without a dependent does not stop the ones with.
+    state._mark_dirty_computed_vars(iter(("b_unused", "a")))
+    assert state.dirty_vars == {"from_a", "from_from_a"}
+    cached = {
+        name
+        for name, cvar in ChainState.computed_vars.items()
+        if cvar._cache_attr in vars(state)
+    }
+    assert cached == {"standalone"}
+
+    # Without names, all the dirty vars are walked.
+    assert state.from_from_a == 1
+    state.dirty_vars.clear()
+    state.dirty_vars.add("b")
+    state._mark_dirty_computed_vars()
+    assert state.dirty_vars == {"b", "standalone"}
 
 
 def test_dirty_computed_var_from_var(interdependent_state: InterdependentState) -> None:
@@ -5702,6 +5748,26 @@ def test_get_value(key_factory, expected_result, should_raise):
         assert state.dirty_vars == initial_dirty_vars
 
 
+def test_get_value_through_a_state_proxy(
+    grandchild_state: GrandchildState,
+    attached_mock_event_context: EventContext,
+):
+    """A StateProxy reads field values with get_value outside of its context.
+
+    Args:
+        grandchild_state: A grandchild state.
+        attached_mock_event_context: The event context the proxy takes its token from.
+    """
+    grandchild_state.value2 = "own"
+    proxy = StateProxy(grandchild_state)
+
+    assert proxy.get_value("value2") == "own"
+    assert proxy.get_value("value") == grandchild_state.value
+    array = proxy.get_value("array")
+    assert not isinstance(array, MutableProxy)
+    assert array == [1, 2, 3.15]
+
+
 def test_init_mixin() -> None:
     """Ensure that State mixins can not be instantiated directly."""
 
@@ -6609,3 +6675,104 @@ def test_previous_release_pickle_keys_are_reserved():
 
         class ClashingState(BaseState):
             _backend_vars: dict = {}  # pyright: ignore[reportIncompatibleVariableOverride]
+
+
+def test_setstate_drops_inherited_fields():
+    """The value of an inherited field lives on the parent state, not on the substate."""
+
+    class InheritedFieldParent(BaseState):
+        shared: int = 1
+
+    class InheritedFieldChild(InheritedFieldParent):
+        own: int = 2
+
+    child = InheritedFieldChild(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    child.__setstate__({
+        "shared": 5,
+        "own": 3,
+        "parent_state": None,
+        "dirty_vars": set(),
+        "_backend_vars": {},
+    })
+
+    assert child.__dict__ == {"own": 3}
+
+
+@pytest.mark.parametrize("mode", ["off", "warn", "raise"])
+def test_serialize_applies_the_perf_mode_set_at_call_time(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, mode: str
+):
+    """The state size limit follows REFLEX_PERF_MODE as it is when a state is serialized.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: Pytest log capture fixture.
+        mode: The performance mode to serialize with.
+    """
+    import reflex.state as state_module
+
+    class SizeLimitParent(BaseState):
+        payload: str = ""
+
+    class SizeLimitChild(SizeLimitParent):
+        pass
+
+    parent = SizeLimitParent(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    parent.payload = "x" * 4096
+    assert parent.substates
+    monkeypatch.setattr(state_module, "TOO_LARGE_SERIALIZED_STATE", 1024)
+    monkeypatch.setattr(state_module, "_WARNED_ABOUT_STATE_SIZE", set())
+    monkeypatch.setenv("REFLEX_PERF_MODE", mode)
+
+    with caplog.at_level(logging.WARNING):
+        if mode == "raise":
+            with pytest.raises(StateTooLargeError):
+                parent._serialize()
+        else:
+            # The second call is silent: each state is only warned about once.
+            assert parent._serialize() == parent._serialize()
+
+    warnings = [r for r in caplog.records if "serializes to" in r.getMessage()]
+    assert len(warnings) == (1 if mode == "warn" else 0)
+
+
+def test_cached_computed_var_timestamp_is_only_stored_with_an_interval():
+    """Only a computed var with an interval reads its timestamp, so only it is pickled with one."""
+
+    class TimestampState(BaseState):
+        count: int = 1
+
+        @computed_var(cache=True)
+        def plain(self) -> int:
+            return self.count
+
+        @computed_var(cache=True, interval=datetime.timedelta(hours=1))
+        def timed(self) -> int:
+            return self.count
+
+        @computed_var(cache=True)
+        async def plain_async(self) -> int:
+            return self.count
+
+        @computed_var(cache=True, interval=datetime.timedelta(hours=1))
+        async def timed_async(self) -> int:
+            return self.count
+
+    state = TimestampState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert (state.plain, state.timed) == (1, 1)
+    assert (
+        asyncio.run(cast(Any, state.plain_async)),
+        asyncio.run(cast(Any, state.timed_async)),
+    ) == (1, 1)
+
+    computed_vars = TimestampState.computed_vars
+    for name in ("plain", "timed", "plain_async", "timed_async"):
+        assert computed_vars[name]._cache_attr in state.__dict__
+    assert computed_vars["timed"]._last_updated_attr in state.__dict__
+    assert computed_vars["timed_async"]._last_updated_attr in state.__dict__
+    assert computed_vars["plain"]._last_updated_attr not in state.__dict__
+    assert computed_vars["plain_async"]._last_updated_attr not in state.__dict__
+
+    # The cache and the interval timestamp survive a trip through redis.
+    restored = BaseState._deserialize(state._serialize())
+    assert restored.__dict__ == state.__dict__
