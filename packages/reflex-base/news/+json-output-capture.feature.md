@@ -1,0 +1,1 @@
+Add `reflex_base.utils.log.supervise_output()`, which runs a command with its stdout and stderr on pipes and writes every line it and its descendants print as a JSON record; lines that already are JSON log records pass through unchanged. Output that a descendant writes after the command exits is forwarded for at most a few seconds.

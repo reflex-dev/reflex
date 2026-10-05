@@ -2,9 +2,11 @@
 
 import asyncio
 import dataclasses
+import gc
 import pickle
 import subprocess
 import sys
+import weakref
 from asyncio import CancelledError
 from collections.abc import Mapping
 from contextlib import asynccontextmanager
@@ -25,6 +27,7 @@ from reflex.istate.proxy import (
     MutableProxy,
     ReadOnlyStateProxy,
     StateProxy,
+    _proxy_class,
     is_mutable_type,
 )
 from reflex.state import BaseState
@@ -319,6 +322,133 @@ async def test_router_proxy_mutable_context(
     ]
     async with state_manager.modify_state(state_token) as root:
         assert root.router._page.params == {"x": "after"}
+
+
+class InheritedListState(BaseState):
+    """A root state storing a list var its substate inherits."""
+
+    items: list[int] = []
+
+    @rx.event
+    def add_item(self, value: int):
+        """Append to the list.
+
+        Args:
+            value: The value to append.
+        """
+        self.items.append(value)
+
+
+class InheritedListSubState(InheritedListState):
+    """A substate changing the inherited list from a background task."""
+
+
+class RedeclaringState(BaseState):
+    """A root state whose handler writes a var its substate redeclares."""
+
+    count: int = 0
+
+    @rx.event
+    def bump(self):
+        """Increment the count."""
+        self.count += 1
+
+
+class RedeclaringSubState(RedeclaringState):
+    """A substate with a count of its own."""
+
+    count: int = 10
+
+
+@pytest.mark.asyncio
+async def test_inherited_mutable_var_marks_its_owner(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+) -> None:
+    """An in-place change to an inherited var through a StateProxy dirties the state storing it.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+        emitted_deltas: The captured state updates.
+    """
+    state_token = BaseStateToken(ident=token, cls=InheritedListSubState)
+    async with state_manager.modify_state(state_token) as root:
+        proxy = StateProxy(
+            root.get_substate(InheritedListSubState.get_full_name().split("."))
+        )
+
+    with pytest.raises(ImmutableStateError):
+        proxy.items.append(0)
+    async with proxy:
+        proxy.items.append(1)
+
+    assert emitted_deltas == [
+        (token, {InheritedListState.get_full_name(): {"items" + FIELD_MARKER: [1]}}),
+    ]
+    async with state_manager.modify_state(state_token) as root:
+        assert root.items == [1]  # pyright: ignore [reportAttributeAccessIssue]
+
+
+@pytest.mark.asyncio
+async def test_inherited_handler_is_guarded_by_the_proxy(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+) -> None:
+    """An inherited event handler called through a StateProxy runs on the proxy.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+    """
+    state_token = BaseStateToken(ident=token, cls=InheritedListSubState)
+    async with state_manager.modify_state(state_token) as root:
+        proxy = StateProxy(
+            root.get_substate(InheritedListSubState.get_full_name().split("."))
+        )
+
+    with pytest.raises(ImmutableStateError):
+        proxy.add_item(0)
+    async with proxy:
+        proxy.add_item(1)
+    async with state_manager.modify_state(state_token) as root:
+        assert root.items == [1]  # pyright: ignore [reportAttributeAccessIssue]
+
+
+@pytest.mark.asyncio
+async def test_inherited_handler_runs_on_its_state(
+    token: str,
+    state_manager: StateManager,
+    attached_mock_event_context: EventContext,
+) -> None:
+    """An inherited event handler called through a StateProxy writes its own state's vars.
+
+    Args:
+        token: The client token.
+        state_manager: The state manager to exercise.
+        attached_mock_event_context: The attached event context.
+    """
+    state_token = BaseStateToken(ident=token, cls=RedeclaringSubState)
+    async with state_manager.modify_state(state_token) as root:
+        proxy = StateProxy(
+            root.get_substate(RedeclaringSubState.get_full_name().split("."))
+        )
+
+    async with proxy:
+        proxy.bump()
+    # A handler taken before entering runs on the state reloaded by entering.
+    bump = proxy.bump
+    async with proxy:
+        bump()
+    async with state_manager.modify_state(state_token) as root:
+        assert root.count == 2  # pyright: ignore [reportAttributeAccessIssue]
+        substate = root.get_substate(RedeclaringSubState.get_full_name().split("."))
+        assert substate.count == 10  # pyright: ignore [reportAttributeAccessIssue]
 
 
 @pytest.mark.asyncio
@@ -1032,6 +1162,25 @@ def test_dataclass_proxy_class_omits_absent_metadata() -> None:
     assert not hasattr(proxy_cls, "__match_args__")
 
 
+def test_proxy_class_caches_only_dataclass_proxy_classes() -> None:
+    """The class generated for a dataclass is reused per base, and other types stay collectable."""
+    assert _proxy_class(MutableProxy, TaggedModel) is _proxy_class(
+        MutableProxy, TaggedModel
+    )
+    immutable_cls = _proxy_class(ImmutableMutableProxy, TaggedModel)
+    assert issubclass(immutable_cls, ImmutableMutableProxy)
+    assert immutable_cls is _proxy_class(ImmutableMutableProxy, TaggedModel)
+
+    class RuntimeList(list):
+        pass
+
+    assert _proxy_class(MutableProxy, RuntimeList) is MutableProxy
+    runtime_list = weakref.ref(RuntimeList)
+    del RuntimeList
+    gc.collect()
+    assert runtime_list() is None
+
+
 def test_dataclass_proxy_class_copies_no_behavior() -> None:
     """Only metadata is copied: everything else resolves through the wrapped object."""
     model = SlottedModel(tag="instance", ls=[1])
@@ -1160,12 +1309,10 @@ def test_interval_computed_vars_resolve_through_state_proxy(
     assert IntervalState._interval_computed_var_names == frozenset({"timed"})
 
 
-def test_fast_path_skips_names_a_subclass_defines():
-    """A subclass defining a fast-pathed framework name keeps the full lookup for it.
+def test_subclass_overrides_a_framework_method():
+    """A marked override of a BaseState method is what the state instance uses.
 
-    The fast path bypasses var resolution, so it must not apply to a name the
-    state itself defines (here a marked override of a BaseState method). The
-    class is a detached root (not a substate of ``State``) so the shadowed
+    The class is a detached root (not a substate of ``State``) so the shadowed
     method never reaches the framework paths that other tests exercise on the
     shared state tree.
     """
@@ -1185,8 +1332,5 @@ def test_fast_path_skips_names_a_subclass_defines():
             "get_value": get_value,
         },
     )
-    assert "get_value" in BaseState._fast_attr_names
-    assert "get_value" not in ShadowState._fast_attr_names
-    assert "dirty_vars" in ShadowState._fast_attr_names
     state = ShadowState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     assert state.get_value("k") == "shadow:k"
