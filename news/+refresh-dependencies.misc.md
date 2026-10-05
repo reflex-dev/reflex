@@ -1,1 +1,1 @@
-Update backend dependency minimums for Reflex 0.10.0, including Starlette 1.7, Granian 2.8.3, Pydantic 2.13.5, and SQLModel 0.0.44. Keep SQLModel below 0.0.45 to preserve existing datetime storage behavior.
+Allow wrapt 2.4 and 2.5, and keep SQLModel below 0.0.45 to preserve existing datetime storage behavior.
