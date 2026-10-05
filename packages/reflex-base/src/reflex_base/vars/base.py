@@ -120,6 +120,9 @@ class VarSubclassEntry:
 
 _var_subclasses: list[VarSubclassEntry] = []
 _var_literal_subclasses: list[tuple[type[LiteralVar], VarSubclassEntry]] = []
+# Var type -> the ToOperation class ``Var.guess_type`` casts such a var to. Only
+# plain registry conversions are kept. Reset whenever the registry changes.
+_to_operation_by_var_type: dict[GenericType, type[ToOperation]] = {}
 # Exact value type -> the literal class claiming it, or None when no literal
 # class does. Reset whenever a literal subclass registers.
 _literal_var_by_type: dict[type, type[LiteralVar] | None] = {}
@@ -223,6 +226,7 @@ def _clear_var_subclass_lookup_caches() -> None:
     _var_subclass_for_conversion.cache_clear()
     _var_subclass_matching_python_types.cache_clear()
     _var_subclass_for_var_output.cache_clear()
+    _to_operation_by_var_type.clear()
 
 
 def _register_var_subclass_entry(entry: VarSubclassEntry) -> None:
@@ -1157,8 +1161,6 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         Returns:
             The converted var.
         """
-        from .object import ObjectVar
-
         fixed_output_type = get_origin(output) or output
 
         # If the first argument is a python type, we map it to the corresponding Var type.
@@ -1169,28 +1171,32 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if fixed_output_type is None:
             return get_to_operation(NoneVar).create(self)  # pyright: ignore [reportReturnType]
 
+        is_class = isinstance(output, type)
+        if (
+            is_class
+            and (output_entry := _var_subclass_for_var_output(output)) is not None
+        ):
+            current_var_type = self._var_type
+            if current_var_type is Any:
+                new_var_type = var_type
+            else:
+                new_var_type = var_type or current_var_type
+            return output_entry.to_var_subclass.create(  # pyright: ignore [reportReturnType]
+                value=self, _var_type=new_var_type
+            )
+
+        from .object import ObjectVar
+
         # Handle fixed_output_type being Base or a dataclass.
         if can_use_in_object_var(output):
             return self.to(ObjectVar, output)
 
-        if isinstance(output, type):
-            output_entry = _var_subclass_for_var_output(output)
-            if output_entry is not None:
-                current_var_type = self._var_type
-                if current_var_type is Any:
-                    new_var_type = var_type
-                else:
-                    new_var_type = var_type or current_var_type
-                return output_entry.to_var_subclass.create(  # pyright: ignore [reportReturnType]
-                    value=self, _var_type=new_var_type
-                )
-
-            # If we can't determine the first argument, we just replace the _var_type.
-            if not safe_issubclass(output, Var) or var_type is None:
-                return dataclasses.replace(
-                    self,
-                    _var_type=output,
-                )
+        # If we can't determine the first argument, we just replace the _var_type.
+        if is_class and (not safe_issubclass(output, Var) or var_type is None):
+            return dataclasses.replace(
+                self,
+                _var_type=output,
+            )
 
         # We couldn't determine the output type to be any other Var type, so we replace the _var_type.
         if var_type is not None:
@@ -1225,9 +1231,16 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         Raises:
             TypeError: If the type is not supported for guessing.
         """
+        var_type = self._var_type
+        try:
+            to_operation = _to_operation_by_var_type.get(var_type)
+        except TypeError:  # An unhashable type is no key.
+            to_operation = None
+        if to_operation is not None:
+            return to_operation.create(value=self, _var_type=var_type)  # pyright: ignore [reportReturnType]
+
         from .object import ObjectVar
 
-        var_type = self._var_type
         if var_type is None:
             return self.to(None)
         if var_type is NoReturn:
@@ -1256,7 +1269,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
 
             union_entry = _var_subclass_matching_python_types(tuple(fixed_inner_types))
             if union_entry is not None:
-                return self.to(union_entry.var_subclass, self._var_type)
+                return self._to_guessed(union_entry)
 
             if can_use_in_object_var(var_type):
                 return self.to(ObjectVar, self._var_type)
@@ -1276,12 +1289,32 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
 
         guessed_entry = _var_subclass_matching_python_types((fixed_type,))
         if guessed_entry is not None:
-            return self.to(guessed_entry.var_subclass, self._var_type)
+            return self._to_guessed(guessed_entry)
 
         if can_use_in_object_var(fixed_type):
             return self.to(ObjectVar, self._var_type)
 
         return self
+
+    def _to_guessed(self, entry: VarSubclassEntry) -> Var:
+        """Convert the var to the Var subclass guessed for its type.
+
+        Args:
+            entry: The registry entry matching the var's type.
+
+        Returns:
+            The converted var.
+        """
+        converted = self.to(entry.var_subclass, self._var_type)
+        if (
+            isinstance(converted, ToOperation)
+            and converted._original is self
+            and converted._var_type is self._var_type
+        ):
+            # A plain cast depends on the var type alone, so remember its class.
+            with contextlib.suppress(TypeError):  # An unhashable type is no key.
+                _to_operation_by_var_type[self._var_type] = type(converted)
+        return converted
 
     @staticmethod
     def _get_setter_name_for_name(
@@ -1714,9 +1747,12 @@ class ToOperation:
         Returns:
             The attribute of the var.
         """
+        if name == "_js_expr":
+            return self._original._js_expr
+
         from .object import ObjectVar
 
-        if isinstance(self, ObjectVar) and name != "_js_expr":
+        if isinstance(self, ObjectVar):
             return ObjectVar.__getattr__(self, name)
         return getattr(self._original, name)
 
@@ -1845,13 +1881,18 @@ class LiteralVar(Var[VAR_TYPE]):
         Raises:
             TypeError: If the value is not a supported type for LiteralVar.
         """
-        from .object import LiteralObjectVar
-        from .sequence import ArrayVar, LiteralStringVar
+        if (literal_subclass := _literal_var_by_type.get(type(value))) is not None:
+            return literal_subclass.create(value, _var_data=_var_data)
 
         if isinstance(value, Var):
             if _var_data is None:
                 return value
             return value._replace(merge_var_data=_var_data)
+
+        # Importing these registers the literal classes, which the first lookup needs
+        # (EMPTY_VAR_STR is built while base.py is still loading).
+        from .object import LiteralObjectVar
+        from .sequence import ArrayVar, LiteralStringVar
 
         if (literal_subclass := _literal_var_for(value)) is not None:
             return literal_subclass.create(value, _var_data=_var_data)
@@ -2112,19 +2153,22 @@ def var_operation(  # pyright: ignore [reportInconsistentOverload]
 
     @functools.wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> Var[T]:
-        args_vars = {
-            func_args[i]: (LiteralVar.create(arg) if not isinstance(arg, Var) else arg)
-            for i, arg in enumerate(args)
-        }
-        kwargs_vars = {
-            key: LiteralVar.create(value) if not isinstance(value, Var) else value
-            for key, value in kwargs.items()
-        }
+        args_vars = [
+            arg if isinstance(arg, Var) else LiteralVar.create(arg) for arg in args
+        ]
+        op_args = tuple(zip(func_args, args_vars))  # noqa: B905  (strict=False costs a kwargs dict per call)
+        kwargs_vars: dict[str, Var] = {}
+        if kwargs:
+            kwargs_vars = {
+                key: value if isinstance(value, Var) else LiteralVar.create(value)
+                for key, value in kwargs.items()
+            }
+            op_args += tuple(kwargs_vars.items())
 
         return CustomVarOperation.create(
             name=func.__name__,
-            args=tuple(list(args_vars.items()) + list(kwargs_vars.items())),
-            return_var=func(*args_vars.values(), **kwargs_vars),  # pyright: ignore [reportCallIssue, reportReturnType]
+            args=op_args,
+            return_var=func(*args_vars, **kwargs_vars),  # pyright: ignore [reportCallIssue, reportReturnType]
         ).guess_type()
 
     return wrapper
@@ -2194,28 +2238,33 @@ class cached_property:  # noqa: N801
         if self._attrname is None:
             self._attrname = name
             self._cached_field_name = "_reflex_cache_" + name
-            cached_field_name = self._cached_field_name
 
-            original_del = getattr(owner, "__del__", None)
+            # One __del__ per owner covers the cached properties of its bases too,
+            # rather than a chain with one link per property.
+            previous_del = getattr(owner, "__del__", None)
+            cached_field_names = (
+                *getattr(previous_del, "cached_field_names", ()),
+                self._cached_field_name,
+            )
+            original_del = getattr(previous_del, "original_del", previous_del)
 
-            def delete_property(this: Any):
-                """Delete the cached property.
+            def delete_properties(this: Any):
+                """Delete the cached properties.
 
                 Args:
-                    this: The object to delete the cached property from.
+                    this: The object to delete the cached properties from.
                 """
-                try:
-                    unique_id = object.__getattribute__(this, cached_field_name)
-                except AttributeError:
-                    if original_del is not None:
-                        original_del(this)
-                    return
-                GLOBAL_CACHE.pop(unique_id, None)
+                cache_keys = this.__dict__
+                for cached_field_name in cached_field_names:
+                    if (unique_id := cache_keys.get(cached_field_name)) is not None:
+                        GLOBAL_CACHE.pop(unique_id, None)
 
                 if original_del is not None:
                     original_del(this)
 
-            owner.__del__ = delete_property
+            delete_properties.cached_field_names = cached_field_names  # pyright: ignore [reportFunctionMemberAccess]
+            delete_properties.original_del = original_del  # pyright: ignore [reportFunctionMemberAccess]
+            owner.__del__ = delete_properties
 
         elif name != self._attrname:
             msg = (
@@ -2444,6 +2493,10 @@ class FakeComputedVarBaseClass(property):
 # Marker for a value that has no delta key. Compared by identity and never stored
 # on a state instance, so it is safe from serialization round trips.
 _UNKEYABLE_VALUE: Final = object()
+
+# Marker for a computed var without a cached value. Private, so unlike
+# `dataclasses.MISSING` no computed value can be it.
+_NOT_CACHED: Final = object()
 
 # Types whose instances are immutable and cheap to compare directly. float is
 # deliberately absent: NaN is not equal to itself, so floats are keyed by their
@@ -2720,7 +2773,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
         return type(self)(**field_values)
 
-    @property
+    @functools.cached_property
     def _cache_attr(self) -> str:
         """The attribute used to cache the value on the instance.
 
@@ -2729,7 +2782,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         """
         return f"__cached_{self._js_expr}"
 
-    @property
+    @functools.cached_property
     def _last_updated_attr(self) -> str:
         """The attribute used to store the last updated timestamp.
 
@@ -2738,7 +2791,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         """
         return f"__last_updated_{self._js_expr}"
 
-    @property
+    @functools.cached_property
     def _last_delta_key_attr(self) -> str:
         """The attribute used to store the key of the last value sent in a delta.
 
@@ -2865,7 +2918,7 @@ class ComputedVar(Var[RETURN_TYPE]):
     @overload
     def __get__(self, instance: BaseState, owner: type) -> RETURN_TYPE: ...
 
-    def __get__(self, instance: BaseState | None, owner: type):
+    def __get__(self, instance: Any, owner: type):
         """Get the ComputedVar value.
 
         If the value is already cached on the instance, return the cached value.
@@ -2893,22 +2946,29 @@ class ComputedVar(Var[RETURN_TYPE]):
                 existing_var=self,
             )
 
-        instance = self._owner_instance(instance)
+        owner_cls = self._owner
+        if owner_cls is not None and type(instance) is not owner_cls:
+            instance = _owner_state(instance, owner_cls)
         if not self._cache:
             value = self.fget(instance)
             self._check_deprecated_return_type(instance, value)
             return value
+
         # handle caching
-        if hasattr(instance, self._cache_attr) and not self.needs_update(instance):
-            return getattr(instance, self._cache_attr)
-        value = self.fget(instance)
-        # Set cache attr on state instance.
-        setattr(instance, self._cache_attr, value)
-        # Ensure the computed var gets serialized to redis.
-        instance._was_touched = True
-        # Set the last updated timestamp on the state instance.
-        setattr(instance, self._last_updated_attr, datetime.datetime.now())
-        self._check_deprecated_return_type(instance, value)
+        cache = instance.__dict__
+        cache_attr = self._cache_attr
+        value = cache.get(cache_attr, _NOT_CACHED)
+        if value is _NOT_CACHED or (
+            self._update_interval is not None and self.needs_update(instance)
+        ):
+            # Set cache attr on state instance.
+            value = cache[cache_attr] = self.fget(instance)
+            # Ensure the computed var gets serialized to redis.
+            instance._was_touched = True
+            if self._update_interval is not None:
+                # Only needs_update reads the last updated timestamp.
+                cache[self._last_updated_attr] = datetime.datetime.now()
+            self._check_deprecated_return_type(instance, value)
         return value
 
     def __set_name__(self, owner: type[BaseState], name: str) -> None:
@@ -2934,8 +2994,23 @@ class ComputedVar(Var[RETURN_TYPE]):
             return instance
         return _owner_state(instance, owner)
 
+    @functools.cached_property
+    def _plain_types(self) -> frozenset[Any]:
+        """The classes whose instances match the return type without the full type check.
+
+        Returns:
+            The classes that take no arguments in the return type, or in the members of a union.
+        """
+        return _plain_types_of(self._var_type)
+
     def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
-        if not _isinstance(
+        """Log an error if a computed value does not match the return type.
+
+        Args:
+            instance: The state instance the value was computed for.
+            value: The computed value.
+        """
+        if type(value) not in self._plain_types and not _isinstance(
             value, self._var_type, nested=_type_check_depth(), treat_var_as_type=False
         ):
             logger.error(
@@ -3000,8 +3075,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         Args:
             instance: the state instance that needs to recompute the value.
         """
-        with contextlib.suppress(AttributeError):
-            delattr(instance, self._cache_attr)
+        instance.__dict__.pop(self._cache_attr, None)  # pyright: ignore [reportAttributeAccessIssue]
 
     def add_dependency(self, objclass: type[BaseState], dep: Var):
         """Explicitly add a dependency to the ComputedVar.
@@ -3183,7 +3257,7 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
         instance = self._owner_instance(instance)
         if not self._cache:
 
-            async def _awaitable_result(instance: BaseState = instance) -> RETURN_TYPE:
+            async def _awaitable_result(instance: Any = instance) -> RETURN_TYPE:
                 value = await self.fget(instance)
                 self._check_deprecated_return_type(instance, value)
                 return value
@@ -3191,17 +3265,21 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
             return _awaitable_result()
 
         # handle caching
-        async def _awaitable_result(instance: BaseState = instance) -> RETURN_TYPE:
-            if hasattr(instance, self._cache_attr) and not self.needs_update(instance):
-                return getattr(instance, self._cache_attr)
-            value = await self.fget(instance)
-            # Set cache attr on state instance.
-            setattr(instance, self._cache_attr, value)
-            # Ensure the computed var gets serialized to redis.
-            instance._was_touched = True
-            # Set the last updated timestamp on the state instance.
-            setattr(instance, self._last_updated_attr, datetime.datetime.now())
-            self._check_deprecated_return_type(instance, value)
+        async def _awaitable_result(instance: Any = instance) -> RETURN_TYPE:
+            cache = instance.__dict__
+            cache_attr = self._cache_attr
+            value = cache.get(cache_attr, _NOT_CACHED)
+            if value is _NOT_CACHED or (
+                self._update_interval is not None and self.needs_update(instance)
+            ):
+                # Set cache attr on state instance.
+                value = cache[cache_attr] = await self.fget(instance)
+                # Ensure the computed var gets serialized to redis.
+                instance._was_touched = True
+                if self._update_interval is not None:
+                    # Only needs_update reads the last updated timestamp.
+                    cache[self._last_updated_attr] = datetime.datetime.now()
+                self._check_deprecated_return_type(instance, value)
             return value
 
         return _awaitable_result()
@@ -3826,6 +3904,26 @@ _RESERVED_FIELD_ATTRS = frozenset({
     "_var",
 })
 
+# Exact types of values that are never wrapped in a MutableProxy. Checking them
+# first spares the is_mutable_type lookup on most field reads.
+_SCALAR_TYPES: Final = frozenset({str, int, float, bool, type(None)})
+
+
+def _plain_types_of(type_: Any) -> frozenset[Any]:
+    """Get the classes whose instances match a type without the full type check.
+
+    Args:
+        type_: The type, possibly a union.
+
+    Returns:
+        The classes that take no arguments in the type, or in the members of a union.
+    """
+    return frozenset(
+        arg
+        for arg in (get_args(type_) if types.is_union(type_) else (type_,))
+        if isinstance(arg, type) and not get_args(arg)
+    )
+
 
 def _owner_state(state: Any, owner: type) -> Any:
     """Get the instance holding an attribute bound to a state class.
@@ -3954,12 +4052,7 @@ class Field(Generic[FIELD_TYPE]):
         self._name = name
         self._backend = not self.is_var or name.startswith("_")
         self._tracked = hasattr(owner, "_mark_dirty")
-        type_ = self.outer_type_
-        self._plain_types = frozenset(
-            arg
-            for arg in (get_args(type_) if types.is_union(type_) else (type_,))
-            if isinstance(arg, type) and not get_args(arg)
-        )
+        self._plain_types = _plain_types_of(self.outer_type_)
 
     def _replace(self, **kwargs: Any) -> Self:
         """Derive an unbound field of the same class, with some arguments replaced.
@@ -4026,6 +4119,26 @@ class Field(Generic[FIELD_TYPE]):
             return f"Field(default={self.default!r}, is_var={self.is_var}{annotated_type_str})"
         return f"Field(default_factory={self.default_factory!r}, is_var={self.is_var}{annotated_type_str})"
 
+    def _get_raw(self, instance: Any) -> FIELD_TYPE | None:
+        """Get the value on a state instance, never wrapped in a proxy.
+
+        Args:
+            instance: The state instance the field is read on.
+
+        Returns:
+            The value of the field.
+        """
+        state = (
+            instance
+            if type(instance) is self._owner
+            else _owner_state(instance, self._owner)  # pyright: ignore[reportArgumentType]
+        )
+        try:
+            return state.__dict__[self._name]
+        except KeyError:
+            value = state.__dict__[self._name] = self.default_value()
+            return value
+
     def __set__(self, instance: Any, value: FIELD_TYPE):
         """Set the value, marking the field dirty.
 
@@ -4066,7 +4179,9 @@ class Field(Generic[FIELD_TYPE]):
             state: The state instance holding the field.
         """
         state.dirty_vars.add(self._name)
-        state._was_touched = True
+        if not state._was_touched:
+            # Assigning goes through the state's __setattr__ hook in dev mode.
+            state._was_touched = True
         state._mark_dirty((self._name,))
 
     @overload
@@ -4181,7 +4296,12 @@ class Field(Generic[FIELD_TYPE]):
             value = state.__dict__[self._name]
         except KeyError:
             value = state.__dict__[self._name] = self.default_value()
-        if self._tracked and self.is_var and is_mutable_type(type(value)):
+        if (
+            (value_type := type(value)) not in _SCALAR_TYPES
+            and self._tracked
+            and self.is_var
+            and is_mutable_type(value_type)
+        ):
             return self._proxy(wrapped=value, state=state, field_name=self._name)
         return value
 

@@ -1,0 +1,1 @@
+Process events with less CPU on the backend: iterating, sorting and reading list and dataclass state values costs 25–75% less, and the redis state manager writes the changed states of a session in one round trip.
