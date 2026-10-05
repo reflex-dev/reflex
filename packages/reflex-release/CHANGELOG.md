@@ -1,3 +1,10 @@
+## v0.1.2a1 (2026-10-05)
+
+### Bug Fixes
+
+- Dispatch release forms keep their per-package checkboxes up to 24 packages, rather than falling back to a free-text field past 19. `workflow_dispatch` has accepted 25 inputs since December 2025. ([#7288](https://github.com/reflex-dev/reflex/issues/7288))
+
+
 ## v0.1.1 (2026-09-11)
 
 ### Bug Fixes
