@@ -1602,7 +1602,7 @@ export const mergeSlotProps = (injectedProps, ownProps, refProp) => {
  */
 export const getRefValue = (ref) => {
   if (!ref || !ref.current) {
-    return;
+    return null;
   }
   if (ref.current.type == "checkbox") {
     return ref.current.checked; // chakra
@@ -1617,10 +1617,10 @@ export const getRefValue = (ref) => {
   } else {
     //querySelector(":checked") is needed to get value from radio_group
     return (
-      ref.current.value ||
+      ref.current.value ??
       (ref.current.querySelector &&
-        ref.current.querySelector(":checked") &&
-        ref.current.querySelector(":checked")?.value)
+        ref.current.querySelector(":checked")?.value) ??
+      null
     );
   }
 };
