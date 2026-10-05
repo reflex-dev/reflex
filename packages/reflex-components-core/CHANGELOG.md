@@ -1,3 +1,20 @@
+## v0.10.0a1 (2026-10-05)
+
+### Features
+
+- The connection banner reads `REFLEX_BACKEND_COLD_START_TIMEOUT` as a duration, so it accepts a unit suffix such as `30s`. A bare number is still read as seconds. ([#7138](https://github.com/reflex-dev/reflex/issues/7138))
+
+### Bug Fixes
+
+- Fix `rx.match` raising `ReferenceError: Can't find variable` at render when a state Var is used only in a case condition with component branches. ([#6675](https://github.com/reflex-dev/reflex/issues/6675))
+- Exclude IDs on forms and other non-controls from form submissions while preserving unset ID-backed controls and supporting custom controls marked with `_is_form_control`. ([#7227](https://github.com/reflex-dev/reflex/issues/7227))
+- Require reflex-base 0.9.12 or newer so all imported rendering APIs are available. ([#7238](https://github.com/reflex-dev/reflex/issues/7238))
+
+### Miscellaneous
+
+- Update react-dropzone to 17.0.0 and react-error-boundary to 6.1.6. ([#7424](https://github.com/reflex-dev/reflex/issues/7424))
+
+
 ## v0.9.10.post1 (2026-09-21)
 
 ### Bug Fixes
