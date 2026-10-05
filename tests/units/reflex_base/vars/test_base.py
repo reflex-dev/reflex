@@ -1,7 +1,11 @@
 """Tests for reflex_base.vars.base state metaclass field handling."""
 
 import dataclasses
+import datetime
+import enum
 import gc
+import logging
+import os
 import pickle
 import subprocess
 import sys
@@ -10,10 +14,14 @@ import traceback
 import typing
 import weakref
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
+from pathlib import Path
 from typing import Any, ClassVar, Literal, TypeVar
 
 import pytest
+from reflex_base import constants
 from reflex_base.constants import RouteArgType
+from reflex_base.environment import _load_dotenv_from_files, environment
 from reflex_base.utils import serializers
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 from reflex_base.utils.imports import ImportVar
@@ -31,6 +39,7 @@ from reflex_base.vars.base import (
     VarData,
     _global_vars,
     _linearize_bases,
+    _type_check_depth,
     cached_property,
     cached_property_no_lock,
     computed_var,
@@ -43,6 +52,7 @@ from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
 from typing_extensions import Self, TypeAliasType, TypeVarTuple, Unpack
 
+from reflex.istate.proxy import MutableProxy
 from reflex.state import BaseState, State, _override_base_method
 
 _MARKER_ATTR = "_marker"
@@ -505,6 +515,88 @@ def test_literal_var_dispatch_follows_later_registrations():
         del base._var_literal_subclasses[literal_subclasses:]
         base._clear_var_subclass_lookup_caches()
         base._literal_var_by_type.clear()
+
+
+def test_guess_type_dispatch_follows_later_registrations():
+    """A Var subclass registered after a guess wins the next guess for its type."""
+
+    class Tags(list):
+        """A list type no Var subclass claims yet."""
+
+    from reflex_base.vars import base
+
+    var_subclasses = len(base._var_subclasses)
+    tags = Var(_js_expr="tags", _var_type=Tags)
+    try:
+        assert isinstance(tags.guess_type(), ArrayVar)
+        assert isinstance(tags.guess_type(), ArrayVar)
+
+        class TagsVar(ArrayVar, python_types=Tags):
+            """A Var holding tags."""
+
+        assert isinstance(tags.guess_type(), TagsVar)
+    finally:
+        del base._var_subclasses[var_subclasses:]
+        base._clear_var_subclass_lookup_caches()
+
+
+def test_guess_type_with_an_unhashable_var_type():
+    """A var type that cannot be a cache key is still guessed."""
+    var = Var(_js_expr="x", _var_type=typing.Annotated[int, []])
+    assert isinstance(var.guess_type(), NumberVar)
+    assert isinstance(var.guess_type(), NumberVar)
+
+
+def test_cached_property_releases_entries_across_a_hierarchy():
+    """Every cached property of a class and its bases is released with the instance."""
+
+    class Base:
+        @cached_property
+        def first(self) -> list[int]:
+            return [1]
+
+    class Child(Base):
+        @cached_property
+        def second(self) -> list[int]:
+            return [2]
+
+        @cached_property
+        def never_read(self) -> list[int]:
+            return [3]
+
+    child = Child()
+    assert child.first == [1]
+    assert child.second == [2]
+    keys = [
+        child.__dict__["_reflex_cache_first"],
+        child.__dict__["_reflex_cache_second"],
+    ]
+    assert all(key in GLOBAL_CACHE for key in keys)
+    del child
+    gc.collect()
+    assert not any(key in GLOBAL_CACHE for key in keys)
+
+
+def test_cached_property_keeps_running_an_inherited_del():
+    """A __del__ the owner inherits still runs after its cached entries are released."""
+    deleted = []
+
+    class Base:
+        def __del__(self):
+            deleted.append(type(self).__name__)
+
+    class Child(Base):
+        @cached_property
+        def value(self) -> list[int]:
+            return [1]
+
+    child = Child()
+    assert child.value == [1]
+    key = child.__dict__["_reflex_cache_value"]
+    del child
+    gc.collect()
+    assert deleted == ["Child"]
+    assert key not in GLOBAL_CACHE
 
 
 def _operand_with_var_data() -> NumberVar[int]:
@@ -1223,3 +1315,451 @@ def test_classvar_over_inherited_field_is_not_a_field():
 
     assert Child.get_fields()["count"] is Parent.get_fields()["count"]
     assert "count" not in Child.base_vars
+
+
+def test_computed_var_type_mismatch_is_logged_once_per_value(
+    caplog: pytest.LogCaptureFixture,
+):
+    """A computed value of the wrong type is reported when computed, not on each read.
+
+    Args:
+        caplog: The log capture fixture.
+    """
+
+    class MismatchState(BaseState):
+        count: int = 0
+
+        @computed_var
+        def cached(self) -> int:
+            return str(self.count)  # pyright: ignore [reportReturnType]
+
+        @computed_var(cache=False)
+        def uncached(self) -> int:
+            return str(self.count)  # pyright: ignore [reportReturnType]
+
+    state = MismatchState()
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        assert [state.cached for _ in range(3)] == ["0"] * 3
+        assert len(caplog.records) == 1
+        assert "MismatchState.cached" in caplog.text
+        state.count = 1
+        assert state.cached == "1"
+        assert len(caplog.records) == 2
+        caplog.clear()
+        assert [state.uncached for _ in range(3)] == ["1"] * 3
+        assert len(caplog.records) == 3
+
+
+async def test_async_computed_var_type_mismatch_is_logged_once_per_value(
+    caplog: pytest.LogCaptureFixture,
+):
+    """An async computed value of the wrong type is reported when computed, not on each read.
+
+    Args:
+        caplog: The log capture fixture.
+    """
+
+    class AsyncMismatchState(BaseState):
+        count: int = 0
+
+        @computed_var
+        async def cached(self) -> int:
+            return str(self.count)  # pyright: ignore [reportReturnType]
+
+        @computed_var(cache=False)
+        async def uncached(self) -> int:
+            return str(self.count)  # pyright: ignore [reportReturnType]
+
+    state = AsyncMismatchState()
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        for _ in range(3):
+            assert await state.cached == "0"  # pyright: ignore [reportGeneralTypeIssues]
+        assert len(caplog.records) == 1
+        state.count = 1
+        assert await state.cached == "1"  # pyright: ignore [reportGeneralTypeIssues]
+        assert len(caplog.records) == 2
+        caplog.clear()
+        for _ in range(3):
+            assert await state.uncached == "1"  # pyright: ignore [reportGeneralTypeIssues]
+        assert len(caplog.records) == 3
+
+
+@pytest.mark.parametrize(
+    ("annotation", "value", "mismatch"),
+    [
+        (int, 1, False),
+        (int, "1", True),
+        (bool, 1, True),
+        (float, 1, False),
+        (float, "1", True),
+        (int | None, None, False),
+        (int | None, "1", True),
+        (list[int], [1], False),
+        (list[int], ["1"], True),
+        (dict[str, int], {"a": 1}, False),
+        (dict[str, int], {"a": "1"}, True),
+    ],
+)
+def test_computed_var_return_type_check(
+    annotation: Any,
+    value: Any,
+    mismatch: bool,
+    caplog: pytest.LogCaptureFixture,
+    clean_registration_context,
+):
+    """A computed value is checked against the return type, plain classes included.
+
+    Args:
+        annotation: The return type of the computed var.
+        value: The value it computes.
+        mismatch: Whether the value does not match the return type.
+        caplog: The log capture fixture.
+        clean_registration_context: An isolated state registry.
+    """
+
+    def compute(self):
+        return value
+
+    state_cls = type(
+        "ReturnTypeState",
+        (BaseState,),
+        {
+            "__module__": __name__,
+            "compute": computed_var(compute, return_type=annotation, auto_deps=False),
+        },
+    )
+    state = state_cls()
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        assert state.compute == value  # pyright: ignore [reportAttributeAccessIssue]
+    assert bool(caplog.records) is mismatch
+
+
+def test_computed_var_update_time_is_only_kept_for_interval_vars():
+    """Only a computed var with an update interval stores when it was last computed."""
+    calls = 0
+
+    class TimedState(BaseState):
+        count: int = 0
+
+        @computed_var
+        def plain(self) -> int:
+            return self.count
+
+        @computed_var(interval=datetime.timedelta(seconds=30))
+        def timed(self) -> int:
+            nonlocal calls
+            calls += 1
+            return self.count
+
+    state = TimedState()
+    plain, timed = TimedState.computed_vars["plain"], TimedState.computed_vars["timed"]
+    assert (state.plain, state.timed) == (0, 0)
+    assert plain._last_updated_attr not in vars(state)
+    assert timed._last_updated_attr in vars(state)
+    assert not plain.needs_update(state)
+    assert not timed.needs_update(state)
+
+    # The cached value is served until the interval has elapsed.
+    assert (state.timed, calls) == (0, 1)
+    vars(state)[timed._last_updated_attr] -= datetime.timedelta(seconds=31)
+    assert timed.needs_update(state)
+    assert (state.timed, calls) == (0, 2)
+    assert not timed.needs_update(state)
+
+
+def test_computed_var_mark_dirty_drops_only_the_cached_value():
+    """Marking a computed var dirty drops its cached value, whether there is one or not."""
+
+    class DirtyState(BaseState):
+        count: int = 1
+
+        @computed_var
+        def doubled(self) -> int:
+            return self.count * 2
+
+    state = DirtyState()
+    doubled = DirtyState.computed_vars["doubled"]
+    doubled.mark_dirty(state)
+    assert doubled._cache_attr not in vars(state)
+    assert state.doubled == 2
+    assert vars(state)[doubled._cache_attr] == 2
+    doubled.mark_dirty(state)
+    doubled.mark_dirty(state)
+    assert doubled._cache_attr not in vars(state)
+    assert state.doubled == 2
+
+
+def test_computed_var_caches_a_missing_value():
+    """A computed var returning `dataclasses.MISSING` is cached like any other value."""
+    calls = 0
+
+    class MissingValueState(BaseState):
+        @computed_var
+        def missing(self) -> object:
+            nonlocal calls
+            calls += 1
+            return dataclasses.MISSING
+
+    state = MissingValueState()
+    assert state.missing is dataclasses.MISSING
+    state._was_touched = False
+    assert state.missing is dataclasses.MISSING
+    assert calls == 1
+    assert not state._was_touched
+
+
+async def test_async_computed_var_caches_a_missing_value():
+    """An async computed var returning `dataclasses.MISSING` is cached like any other value."""
+    calls = 0
+
+    class AsyncMissingValueState(BaseState):
+        @computed_var
+        async def missing(self) -> object:
+            nonlocal calls
+            calls += 1
+            return dataclasses.MISSING
+
+    state = AsyncMissingValueState()
+    assert await state.missing is dataclasses.MISSING  # pyright: ignore [reportGeneralTypeIssues]
+    state._was_touched = False
+    assert await state.missing is dataclasses.MISSING  # pyright: ignore [reportGeneralTypeIssues]
+    assert calls == 1
+    assert not state._was_touched
+
+
+class _Flavor(enum.IntEnum):
+    SWEET = 1
+
+
+class _Label(str):
+    pass
+
+
+class _Items(list):
+    pass
+
+
+@dataclasses.dataclass
+class _Point:
+    x: int = 0
+
+
+@pytest.mark.parametrize(
+    ("annotation", "value"),
+    [
+        (int, 1),
+        (str, "a"),
+        (float, 1.5),
+        (bool, True),
+        (int | None, None),
+        (_Flavor, _Flavor.SWEET),
+        (_Label, _Label("a")),
+    ],
+    ids=repr,
+)
+def test_field_read_leaves_immutable_values_unwrapped(annotation: Any, value: Any):
+    """A field holding an immutable value reads back that very value.
+
+    Args:
+        annotation: The type of the field.
+        value: The value to store.
+    """
+    state_cls = type(
+        "ImmutableReadState",
+        (BaseState,),
+        {
+            "__module__": __name__,
+            "__annotations__": {"item": annotation},
+            "item": value,
+        },
+    )
+    state = state_cls()
+    state.item = value  # pyright: ignore [reportAttributeAccessIssue]
+    assert state.item is value  # pyright: ignore [reportAttributeAccessIssue]
+
+
+@pytest.mark.parametrize(
+    ("annotation", "value"),
+    [
+        (list[int], [1]),
+        (dict[str, int], {"a": 1}),
+        (set[int], {1}),
+        (_Items, _Items([1])),
+        (_Point, _Point(1)),
+    ],
+    ids=repr,
+)
+def test_field_read_wraps_mutable_values(annotation: Any, value: Any):
+    """A field holding a mutable value reads back a proxy of it.
+
+    Args:
+        annotation: The type of the field.
+        value: The value to store.
+    """
+    state_cls = type(
+        "MutableReadState",
+        (BaseState,),
+        {"__module__": __name__, "__annotations__": {"item": annotation}},
+    )
+    state = state_cls()
+    state.item = value  # pyright: ignore [reportAttributeAccessIssue]
+    assert isinstance(state.item, MutableProxy)  # pyright: ignore [reportAttributeAccessIssue]
+    assert state.item.__wrapped__ is value  # pyright: ignore [reportAttributeAccessIssue]
+
+
+def test_cached_computed_var_checks_return_type_on_recompute_only(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A cached computed var validates its return type only when it recomputes."""
+
+    class CheckedState(BaseState):
+        items: list[int] = [1, 2, 3]
+
+        @computed_var
+        def doubled(self) -> list[int]:
+            return [i * 2 for i in self.items]
+
+    checked = []
+    original = CheckedState.computed_vars["doubled"]._check_deprecated_return_type
+    monkeypatch.setattr(
+        type(CheckedState.computed_vars["doubled"]),
+        "_check_deprecated_return_type",
+        lambda self, instance, value: (
+            checked.append(value) or original(instance, value)
+        ),
+    )
+    state = CheckedState()
+
+    assert state.doubled == [2, 4, 6]
+    assert state.doubled == [2, 4, 6]
+    assert checked == [[2, 4, 6]]
+
+    state.items = [5]
+    assert state.doubled == [10]
+    assert checked == [[2, 4, 6], [10]]
+
+
+@pytest.fixture
+def restore_env_mode() -> Iterator[None]:
+    """Restore REFLEX_ENV_MODE and the cached type check depth after a test.
+
+    Yields:
+        None.
+    """
+    original = os.environ.get(environment.REFLEX_ENV_MODE.name)
+    yield
+    if original is None:
+        os.environ.pop(environment.REFLEX_ENV_MODE.name, None)
+    else:
+        os.environ[environment.REFLEX_ENV_MODE.name] = original
+    _type_check_depth.cache_clear()
+
+
+@pytest.mark.usefixtures("restore_env_mode")
+def test_type_check_depth_follows_env_mode_set():
+    """Setting REFLEX_ENV_MODE re-resolves the cached type check depth."""
+    environment.REFLEX_ENV_MODE.set(constants.Env.DEV)
+    assert _type_check_depth() == 1
+    environment.REFLEX_ENV_MODE.set(constants.Env.PROD)
+    assert _type_check_depth() == 0
+    environment.REFLEX_ENV_MODE.set(None)
+    assert _type_check_depth() == 1
+
+
+@pytest.mark.usefixtures("restore_env_mode")
+def test_type_check_depth_follows_env_mode_from_env_file(tmp_path: Path):
+    """Loading an env file that sets REFLEX_ENV_MODE re-resolves the depth.
+
+    Args:
+        tmp_path: Pytest temporary directory.
+    """
+    environment.REFLEX_ENV_MODE.set(constants.Env.DEV)
+    assert _type_check_depth() == 1
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        f"{environment.REFLEX_ENV_MODE.name}={constants.Env.PROD.value}\n"
+    )
+    _load_dotenv_from_files([env_file])
+    assert _type_check_depth() == 0
+
+
+@pytest.mark.usefixtures("restore_env_mode")
+@pytest.mark.parametrize(
+    ("env_mode", "element_error_logged"),
+    [(constants.Env.DEV, True), (constants.Env.PROD, False)],
+)
+def test_state_var_type_check_depth_follows_env_mode(
+    caplog: pytest.LogCaptureFixture,
+    env_mode: constants.Env,
+    element_error_logged: bool,
+):
+    """Prod mode checks only the outer type of assigned and computed values.
+
+    Args:
+        caplog: Pytest log capture fixture.
+        env_mode: The REFLEX_ENV_MODE value.
+        element_error_logged: Whether a wrong element type is reported.
+    """
+
+    class DepthState(BaseState):
+        items: list[int] = []
+        wrong_elements: list[str] = []
+
+        @computed_var
+        def as_ints(self) -> list[int]:
+            return self.wrong_elements  # pyright: ignore[reportReturnType]
+
+    environment.REFLEX_ENV_MODE.set(env_mode)
+    state = DepthState()
+
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        state.items = ["a"]  # pyright: ignore[reportAttributeAccessIssue]
+        state.wrong_elements = ["b"]
+        _ = state.as_ints
+    name = type(state).__name__
+    messages = [r.getMessage() for r in caplog.records]
+    assert any(f"{name}.items" in m for m in messages) is element_error_logged
+    assert any(f"{name}.as_ints" in m for m in messages) is element_error_logged
+
+    caplog.clear()
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        state.items = "not a list"  # pyright: ignore[reportAttributeAccessIssue]
+    assert any(f"{name}.items" in r.getMessage() for r in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_cached_async_computed_var_checks_return_type_on_recompute_only(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A cached async computed var validates its return type only when it recomputes.
+
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+
+    class AsyncCheckedState(BaseState):
+        items: list[int] = [1, 2, 3]
+
+        @computed_var
+        async def doubled(self) -> list[int]:
+            return [i * 2 for i in self.items]
+
+    cvar = AsyncCheckedState.computed_vars["doubled"]
+    checked = []
+    original = cvar._check_deprecated_return_type
+    monkeypatch.setattr(
+        type(cvar),
+        "_check_deprecated_return_type",
+        lambda self, instance, value: (
+            checked.append(value) or original(instance, value)
+        ),
+    )
+    state = AsyncCheckedState()
+
+    assert await state.doubled == [2, 4, 6]
+    assert await state.doubled == [2, 4, 6]
+    assert checked == [[2, 4, 6]]
+
+    state.items = [5]
+    assert await state.doubled == [10]
+    assert checked == [[2, 4, 6], [10]]

@@ -15,6 +15,7 @@ source = "uv-dynamic-versioning"
 [tool.uv-dynamic-versioning]
 pattern-prefix = "reflex-components-gridjs-"
 fallback-version = "0.0.0dev0"
+bump = true
 
 [tool.hatch.build]
 # Include uncommitted pyi stubs generated for this package.

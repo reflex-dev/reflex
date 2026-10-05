@@ -52,7 +52,7 @@ from reflex_bench.stats import unit_family
 if TYPE_CHECKING:
     from reflex_bench.context import Context
 
-SUITES = ("smoke", "pr", "daily", "all", "selftest")
+SUITES = ("smoke", "pr", "daily", "macro", "all", "selftest")
 SELFTEST_SUITE = "selftest"
 # ``all`` is implicit: every benchmark except the self-tests.
 _DECLARABLE_SUITES = tuple(suite for suite in SUITES if suite != "all")
