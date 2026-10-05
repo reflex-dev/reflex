@@ -3,7 +3,7 @@
 import dataclasses
 from unittest import mock
 
-from reflex_base.event.context import EventContext
+from reflex_base.event.context import EventContext, StateLocks
 
 
 def test_fork_creates_child(mock_root_event_context: EventContext):
@@ -98,3 +98,44 @@ async def test_emit_event_noop_when_no_impl():
         emit_event_impl=None,
     )
     await ctx.emit_event()
+
+
+def test_state_locks_index_held_roots():
+    """The held roots are indexed by identity through nested holds, releases and replacements."""
+    locks = StateLocks()
+    outer, inner, replacement = object(), object(), object()
+
+    previous = locks.hold("token", outer, None)
+    assert previous is None
+    assert locks.holds(outer)
+
+    # A nested hold of the token covers its new root until released.
+    nested = locks.hold("token", inner, None)
+    assert nested == (outer, None)
+    assert locks.holds(inner)
+    assert not locks.holds(outer)
+
+    locks.replace_root(inner, replacement)
+    assert locks.holds(replacement)
+    assert not locks.holds(inner)
+    assert locks.held["token"] == (replacement, None)
+
+    locks.release("token", nested)
+    assert locks.holds(outer)
+    assert not locks.holds(replacement)
+
+    locks.release("token", previous)
+    assert not locks.held
+    assert not locks.held_roots
+
+
+def test_state_locks_nested_hold_of_the_same_root():
+    """Releasing a nested hold of the same root keeps the outer hold."""
+    locks = StateLocks()
+    root = object()
+    previous = locks.hold("token", root, None)
+    nested = locks.hold("token", root, None)
+    locks.release("token", nested)
+    assert locks.holds(root)
+    locks.release("token", previous)
+    assert not locks.holds(root)

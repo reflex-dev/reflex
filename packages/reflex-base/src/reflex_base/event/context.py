@@ -86,12 +86,15 @@ class StateLocks:
         default_factory=dict
     )
 
+    # The token of each locked tree, by the id of its root state.
+    held_roots: dict[int, str] = dataclasses.field(default_factory=dict)
+
     # Whether a state lock was taken by entering a state (`async with state`).
     entered: bool = False
 
     # The states entered in this context, by id and entering task: how many
-    # times, the lock taken entering it (None if held already) and the context
-    # var token to reset.
+    # times, the exit stack releasing the lock taken entering it (None if held
+    # already) and the instance of the state in the locked tree.
     entered_states: dict[tuple[int, Any], list[Any]] = dataclasses.field(
         default_factory=dict
     )
@@ -105,7 +108,53 @@ class StateLocks:
         Returns:
             True if the lock on the tree is held.
         """
-        return any(locked is root for locked, _ in self.held.values())
+        return id(root) in self.held_roots
+
+    def hold(
+        self, token: str, root: Any, task: asyncio.Task | None
+    ) -> tuple[Any, asyncio.Task | None] | None:
+        """Record the lock on a token's tree as held.
+
+        Args:
+            token: The locked token.
+            root: The root state of the tree.
+            task: The task that took the lock.
+
+        Returns:
+            What was held for the token before, to restore on release.
+        """
+        previous = self.held.get(token)
+        if previous is not None:
+            del self.held_roots[id(previous[0])]
+        self.held[token] = (root, task)
+        self.held_roots[id(root)] = token
+        return previous
+
+    def release(
+        self, token: str, previous: tuple[Any, asyncio.Task | None] | None
+    ) -> None:
+        """Record the lock on a token's tree as released.
+
+        Args:
+            token: The released token.
+            previous: What was held for the token before, returned by hold().
+        """
+        root, _ = self.held.pop(token)
+        self.held_roots.pop(id(root), None)
+        if previous is not None:
+            self.held[token] = previous
+            self.held_roots[id(previous[0])] = token
+
+    def replace_root(self, old: Any, new: Any) -> None:
+        """Make the lock held on a tree cover a new root state taking its place.
+
+        Args:
+            old: The root state being replaced.
+            new: The root state replacing it.
+        """
+        if (token := self.held_roots.pop(id(old), None)) is not None:
+            self.held[token] = (new, self.held[token][1])
+            self.held_roots[id(new)] = token
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True, slots=True, eq=False)
@@ -177,16 +226,12 @@ class EventContext(BaseContext):
         try:
             async with modify(token, **context) as root:
                 root._event_context = self
-                held = self.state_locks.held
-                previous = held.get(token.ident)
-                held[token.ident] = (root, asyncio.current_task())
+                locks = self.state_locks
+                previous = locks.hold(token.ident, root, asyncio.current_task())
                 try:
                     yield root
                 finally:
-                    if previous is None:
-                        held.pop(token.ident, None)
-                    else:
-                        held[token.ident] = previous
+                    locks.release(token.ident, previous)
         finally:
             if reset is not None:
                 self._context_var.reset(reset)

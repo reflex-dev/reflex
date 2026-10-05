@@ -9,7 +9,7 @@ import types
 import warnings
 from base64 import b64encode
 from collections.abc import Callable, Mapping, Sequence
-from functools import lru_cache, partial
+from functools import cache, lru_cache, partial, wraps
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -472,21 +472,47 @@ class EventActionsMixin:
         )
 
 
-def _call_on_owner(
-    instance: "BaseState", handler: "EventHandler", /, *args: Any, **kwargs: Any
-) -> Any:
-    """Call an inherited event handler on the ancestor of a state declaring it.
+@cache
+def _on_owner(fn: Callable, state: type) -> Callable:
+    """Wrap an inherited event handler function to run on the ancestor declaring it.
+
+    The ancestor is found when called, as entering the state may have reloaded
+    its tree since the handler was accessed. The wrapper is the same kind of
+    function as the handler, with its name.
 
     Args:
-        instance: The state the handler was accessed on.
-        handler: The handler.
-        *args: The positional arguments of the call.
-        **kwargs: The keyword arguments of the call.
+        fn: The handler function.
+        state: The state class declaring the handler.
 
     Returns:
-        The return value of the handler.
+        A function taking the state the handler was accessed on as ``self``.
     """
-    return handler.fn(_owner_state(instance, handler.state), *args, **kwargs)  # pyright: ignore[reportArgumentType]
+    if inspect.iscoroutinefunction(fn):
+
+        async def on_owner_co(self: Any, *args: Any, **kwargs: Any) -> Any:
+            return await fn(_owner_state(self, state), *args, **kwargs)
+
+        on_owner = on_owner_co
+    elif inspect.isasyncgenfunction(fn):
+
+        async def on_owner_gen(self: Any, *args: Any, **kwargs: Any) -> Any:
+            async for value in fn(_owner_state(self, state), *args, **kwargs):
+                yield value
+
+        on_owner = on_owner_gen
+    elif inspect.isgeneratorfunction(fn):
+
+        def on_owner_sync_gen(self: Any, *args: Any, **kwargs: Any) -> Any:
+            yield from fn(_owner_state(self, state), *args, **kwargs)
+
+        on_owner = on_owner_sync_gen
+    else:
+
+        def on_owner_fn(self: Any, *args: Any, **kwargs: Any) -> Any:
+            return fn(_owner_state(self, state), *args, **kwargs)
+
+        on_owner = on_owner_fn
+    return wraps(fn)(on_owner)
 
 
 def _no_chain_background_task(state: "BaseState", fn: Callable) -> Callable:
@@ -683,9 +709,7 @@ class EventHandler(EventActionsMixin):
             )
         if type(instance) is self.state:
             return types.MethodType(self.fn, instance)
-        # An inherited handler runs on the ancestor declaring it, found when
-        # called: entering the state may have reloaded its tree since.
-        return partial(_call_on_owner, instance, self)
+        return types.MethodType(_on_owner(self.fn, self.state), instance)
 
     def __call__(self, *args: Any, **kwargs: Any) -> "EventSpec":
         """Pass arguments to the handler to get an event spec.

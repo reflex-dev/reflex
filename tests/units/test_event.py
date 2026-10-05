@@ -1,3 +1,4 @@
+import inspect
 import json
 import shutil
 import subprocess
@@ -255,6 +256,53 @@ def test_state_event_handler_type_hints_are_stable_after_class_patch():
 
     call_event_handler(handler(), args_spec)
     assert handler.prevent_default._type_hints is handler._type_hints
+
+
+async def test_inherited_handler_binds_like_its_function():
+    """An inherited handler accessed on a substate keeps its kind and name, and runs on its state."""
+
+    class BindParent(BaseState):
+        value: int = 0
+
+        def sync_handler(self, amount: int):
+            self.value += amount
+
+        async def async_handler(self, amount: int):
+            self.value += amount
+
+        def gen_handler(self):
+            self.value += 1
+            yield
+
+        async def async_gen_handler(self):
+            self.value += 1
+            yield
+
+    class BindChild(BindParent):
+        pass
+
+    parent = BindParent()  # pyright: ignore[reportCallIssue]
+    child = cast("BindParent", parent.substates[BindChild.get_name()])
+    for name in ("sync_handler", "async_handler", "gen_handler", "async_gen_handler"):
+        bound = getattr(child, name)
+        assert inspect.ismethod(bound)
+        assert bound.__self__ is child
+        assert bound.__name__ == name
+    assert not inspect.iscoroutinefunction(child.sync_handler)
+    assert inspect.iscoroutinefunction(child.async_handler)
+    assert inspect.isgeneratorfunction(child.gen_handler)
+    assert inspect.isasyncgenfunction(child.async_gen_handler)
+
+    child.sync_handler(1)
+    await child.async_handler(2)
+    for _ in child.gen_handler():
+        pass
+    async for _ in child.async_gen_handler():
+        pass
+    assert parent.value == 5
+
+    with pytest.raises(ValueError, match="non-async"):
+        await rx.run_in_thread(child.async_handler)  # pyright: ignore[reportArgumentType]
 
 
 def test_state_event_handler_caches_unresolved_type_hints():

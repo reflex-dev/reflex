@@ -1969,36 +1969,42 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
                 raise ImmutableStateError(msg)
             entry[0] += 1
             return self
-        from reflex.istate.manager.token import BaseStateToken
-
-        held = ctx.state_locks.held.get(ctx.token)
-        lock = reset = None
-        if held is not None and held[1] is asyncio.current_task():
-            live_root = held[0]
-        else:
-            reset = EventContext.set(ctx) if ctx is not current else None
-            lock = ctx.modify_state(BaseStateToken(ident=ctx.token, cls=type(self)))
-            try:
-                live_root = await lock.__aenter__()
-            except BaseException:
-                if reset is not None:
-                    EventContext.reset(reset)
-                raise
-        try:
-            live = await live_root.get_state(type(self))
-        except BaseException:
-            # Nothing entered: release what was taken for it.
-            if lock is not None:
-                await lock.__aexit__(*sys.exc_info())
-            if reset is not None:
-                EventContext.reset(reset)
-            raise
-        if lock is not None:
-            ctx.state_locks.entered = True
+        live, lock = await self._enter_tree(ctx, activate=ctx is not current)
         if live is not self:
             self._take_place_of(live)
-        entered[key] = [1, lock, reset, live]
+        entered[key] = [1, lock, live]
         return self
+
+    async def _enter_tree(
+        self, ctx: EventContext, activate: bool
+    ) -> tuple[Self, contextlib.AsyncExitStack | None]:
+        """Get the instance of this state in the tree locked for an event context.
+
+        Takes the lock and reloads the tree, unless this task holds it already.
+
+        Args:
+            ctx: The event context to lock the tree for.
+            activate: Whether to make the context the active one while locked.
+
+        Returns:
+            The instance of this state in the locked tree, and the exit stack
+            releasing the lock taken for it (None if held already).
+        """
+        held = ctx.state_locks.held.get(ctx.token)
+        if held is not None and held[1] is asyncio.current_task():
+            return await held[0].get_state(type(self)), None
+        from reflex.istate.manager.token import BaseStateToken
+
+        async with contextlib.AsyncExitStack() as stack:
+            if activate:
+                stack.callback(EventContext.reset, EventContext.set(ctx))
+            live_root = await stack.enter_async_context(
+                ctx.modify_state(BaseStateToken(ident=ctx.token, cls=type(self)))
+            )
+            live = await live_root.get_state(type(self))
+            ctx.state_locks.entered = True
+            # Entered: the lock is released when the state is exited.
+            return live, stack.pop_all()
 
     async def __aexit__(self, *exc_info: Any) -> None:
         """Release the lock taken by entering the state, emitting the changes made.
@@ -2016,7 +2022,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
         if entry[0]:
             return
         del ctx.state_locks.entered_states[key]
-        _, lock, reset, live = entry
+        _, lock, live = entry
         if live is not self:
             # Hand the place back to the loaded instance, which the state
             # manager saves; this state keeps the values it had.
@@ -2030,11 +2036,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             if delta:
                 await ctx.emit_delta(delta)
         finally:
-            try:
-                await lock.__aexit__(*exc_info)
-            finally:
-                if reset is not None:
-                    EventContext.reset(reset)
+            await lock.__aexit__(*exc_info)
 
     def _take_place_of(self, other: BaseState) -> None:
         """Take the place of another instance of this state in its tree, with its values.
@@ -2056,10 +2058,7 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             self.parent_state.substates[self.get_name()] = self
         elif (ctx := self._event_context) is not None:
             # The lock held on the tree covers its new root.
-            held = ctx.state_locks.held
-            for token, (root, task) in held.items():
-                if root is other:
-                    held[token] = (self, task)
+            ctx.state_locks.replace_root(other, self)
 
     def __getstate__(self):
         """Get the state for redis serialization.
