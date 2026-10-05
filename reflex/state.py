@@ -1124,6 +1124,19 @@ class BaseState(EvenMoreBasicBaseState, state_root=True):
             )
             raise BaseVarShadowsInheritedVarError(msg)
 
+        for name in parent_fields:
+            if not name.startswith("_") or name not in cls.__dict__:
+                continue
+            value = cls.__dict__[name]
+            if _is_descriptor(value):
+                continue
+            msg = (
+                f"The var `{name}` in {cls.__module__}.{cls.__name__} shadows a var "
+                f"inherited from {parent_state.__module__}.{parent_state.__name__}; "
+                "use a different name instead"
+            )
+            raise BaseVarShadowsInheritedVarError(msg)
+
     @classmethod
     @_cache_per_class
     def get_parent_state(cls) -> type[BaseState] | None:

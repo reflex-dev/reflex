@@ -6401,6 +6401,34 @@ def test_unannotated_backend_var_shadowing_inherited_var_raises() -> None:
             _shadowed_value = 2
 
 
+def test_valued_class_var_shadowing_inherited_var_raises() -> None:
+    """A valued ClassVar cannot mask an inherited backend var."""
+
+    class ShadowParent(BaseState):
+        _shadowed_value: int = 1
+
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="_shadowed_value"):
+
+        class ShadowChild(ShadowParent):
+            _shadowed_value: ClassVar[int] = 2  # pyright: ignore[reportIncompatibleVariableOverride]
+
+
+def test_callable_without_descriptor_shadowing_inherited_var_raises() -> None:
+    """A callable without descriptor behavior cannot mask an inherited backend var."""
+
+    class ShadowParent(BaseState):
+        _shadowed_value: int = 1
+
+    class CallableValue:
+        def __call__(self) -> int:
+            return 2
+
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="_shadowed_value"):
+
+        class ShadowChild(ShadowParent):
+            _shadowed_value = CallableValue()  # pyright: ignore[reportAssignmentType]
+
+
 def test_backend_var_shadowing_with_supported_descriptors_is_allowed() -> None:
     """Supported descriptors can replace an inherited backend var."""
 
