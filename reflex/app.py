@@ -379,27 +379,6 @@ def _is_location_specifier(specifier: str) -> bool:
     )
 
 
-def _count_rendered_component(rendered: Any, target: dict[str, Any]) -> int:
-    """Count occurrences of a rendered component in a rendered tree.
-
-    Args:
-        rendered: The rendered component tree to inspect.
-        target: The rendered child component to find.
-
-    Returns:
-        The number of occurrences of the target in the rendered tree.
-    """
-    count = 0
-    if isinstance(rendered, dict):
-        count += rendered == target
-        count += sum(
-            _count_rendered_component(value, target) for value in rendered.values()
-        )
-    elif isinstance(rendered, (list, tuple)):
-        count += sum(_count_rendered_component(value, target) for value in rendered)
-    return count
-
-
 @dataclasses.dataclass()
 class App(MiddlewareMixin, LifespanMixin):
     """The main Reflex app that encapsulates the backend and frontend.
@@ -1615,22 +1594,6 @@ class App(MiddlewareMixin, LifespanMixin):
 
         def reducer(parent: Component, key: tuple[int, str]) -> Component:
             child = copy.deepcopy(app_wrappers[key])
-            probe_parent = copy.deepcopy(parent)
-            probe_child = copy.deepcopy(child)
-            baseline = probe_parent.render()
-            probe_parent.children.append(probe_child)
-            probe_parent._clear_compile_caches()
-            child_render = probe_child.render()
-            if _count_rendered_component(probe_parent.render(), child_render) <= (
-                _count_rendered_component(baseline, child_render)
-            ):
-                message = (
-                    f"App wrap {parent.tag or type(parent).__name__!r} must render "
-                    f"child wrap ({key[0]}, {key[1]!r}). "
-                    "Wrap sibling content in a Fragment so the app-wrap chain "
-                    "can continue."
-                )
-                raise ValueError(message)
             parent.children.append(child)
             parent._clear_compile_caches()
             return child
