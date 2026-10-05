@@ -2087,11 +2087,21 @@ def _check_event_args_subclass_of_callback(
                 if isinstance(provided_type, TypeVar):
                     # A generic spec arg takes on the callback's type within its
                     # bound, or as one of its constraints.
-                    compare_result = callback_param_type is Any or any(
-                        typehint_issubclass(callback_param_type, admitted)
-                        or typehint_issubclass(admitted, callback_param_type)
-                        for admitted in provided_type.__constraints__
-                        or (provided_type.__bound__ or Any,)
+                    admitted_types = provided_type.__constraints__ or (
+                        provided_type.__bound__ or Any,
+                    )
+                    callback_types = (
+                        get_args(callback_param_type)
+                        if get_origin(callback_param_type) in (Union, types.UnionType)
+                        else (callback_param_type,)
+                    )
+                    compare_result = callback_param_type is Any or all(
+                        any(
+                            typehint_issubclass(callback_type, admitted)
+                            or typehint_issubclass(admitted, callback_type)
+                            for admitted in admitted_types
+                        )
+                        for callback_type in callback_types
                     )
                 else:
                     compare_result = typehint_issubclass(
