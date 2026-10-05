@@ -68,6 +68,9 @@ db = [
 ]
 pydantic = ["reflex-base[pydantic]"]
 testing = [
+  "pytest >=8.2,<10",
+  "pytest-asyncio >=1.0,<2",
+  "opentelemetry-sdk >=1.30.0,<2",
   "psutil >=7.0.0,<8.0",
   "selenium >=4.0.0,<5.0",
   "uvicorn >=0.34.0,<1.0",
@@ -210,7 +213,7 @@ reportIncompatibleMethodOverride = false
 [tool.ruff]
 target-version = "py310"
 output-format = "concise"
-extend-exclude = ["tests/units/reflex_base/utils/pyi_generator/golden"]
+extend-exclude = ["packages/reflex-base/tests/units/utils/pyi_generator/golden"]
 lint.isort.split-on-trailing-comma = false
 lint.select = ["ALL"]
 lint.ignore = [
@@ -269,7 +272,7 @@ preview = true
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/*.py" = [
+"**/tests/**/*.py" = [
   "ANN001",
   "D100",
   "D103",
@@ -280,6 +283,8 @@ preview = true
   "T",
   "N",
 ]
+# Hyphenated distribution directories need relative imports between test helpers.
+"packages/*/tests/**/*.py" = ["TID252"]
 "benchmarks/*.py" = ["ANN001", "D100", "D103", "D104", "B018", "PERF", "T", "N"]
 # A benchmark is a script: it prints its results and is run, not imported.
 "packages/*/benchmarks/*.py" = ["INP", "PERF", "T", "ASYNC240"]
@@ -296,14 +301,16 @@ preview = true
   "EM102",
   "RET504",
 ]
-"tests/units/reflex_cli/**/*.py" = ["DOC201", "PT006", "RUF052"]
+"packages/reflex-hosting-cli/tests/units/**/*.py" = ["DOC201", "PT006", "RUF052"]
 # Generated from async comprehensions, which have no list() equivalent.
-"tests/units/reflex_build_sdk/_sync/**/*.py" = ["C416"]
+"packages/reflex-build-sdk/tests/units/_sync/**/*.py" = ["C416"]
 "*/.templates/apps/blank/code/*" = ["INP001"]
 "*/blank.py" = ["I001"]
 "docs/package/scripts/*.py" = ["INP001"]
 "packages/reflex-build-sdk/scripts/*.py" = ["INP001", "T201"]
 "scripts/changed_paths.py" = ["T201"]
+"scripts/unit_test_matrix.py" = ["T201"]
+"scripts/run_unit_tests.py" = ["T201"]
 "scripts/check_min_deps.py" = ["T201"]
 "scripts/check_outdated_deps.py" = ["T201"]
 "scripts/hash_examples.py" = ["T201"]
@@ -312,6 +319,9 @@ preview = true
 ".claude/skills/*/scripts/*.py" = ["T201"]
 
 [tool.pytest.ini_options]
+pythonpath = ["."]
+addopts = "--import-mode=importlib"
+consider_namespace_packages = true
 filterwarnings = "ignore:fields may not start with an underscore:RuntimeWarning"
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
@@ -325,6 +335,8 @@ ignore-words-list = "te, TreeE, selectin"
 
 
 [tool.coverage.run]
+# An isolated suite intentionally leaves other workspace modules unimported.
+disable_warnings = ["module-not-imported"]
 source = [
   "reflex",
   "reflex_components_code",
@@ -344,6 +356,7 @@ source = [
   "reflex_otel",
   "reflex_release",
   "reflex_build_sdk",
+  "reflex_cli",
   "reflex_site_shared",
   "reflex_components_internal",
   "reflex_integrations_docs",
@@ -583,3 +596,7 @@ reflex.workspace = true
 
 [tool.uv.workspace]
 members = ["packages/*", "docs/app", "docs/package"]
+
+[tool.reflex-unit-tests]
+# Baseline from this suite alone; raise as coverage improves.
+coverage = 72

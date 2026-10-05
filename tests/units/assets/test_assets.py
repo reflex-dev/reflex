@@ -22,6 +22,8 @@ from reflex.assets import (
     remove_stale_external_asset_symlinks,
 )
 
+_MODULE_ASSET_PATH = __name__.replace(".", "/")
+
 
 def _asset_hash(path: Path) -> str:
     """Return the expected short content hash for an asset."""
@@ -55,13 +57,14 @@ def test_shared_asset(mock_asset_path: Path) -> None:
     # The asset function copies a file to the app's external assets directory.
     asset = rx.asset(path="custom_script.js", shared=True, subfolder="subfolder")
     assert (
-        asset == f"/external/test_assets/subfolder/custom_script.js?v={expected_hash}"
+        asset
+        == f"/external/{_MODULE_ASSET_PATH}/subfolder/custom_script.js?v={expected_hash}"
     )
     result_file = Path(
         mock_asset_path,
         "assets",
         "external",
-        "test_assets",
+        _MODULE_ASSET_PATH,
         "subfolder",
         "custom_script.js",
     )
@@ -72,9 +75,9 @@ def test_shared_asset(mock_asset_path: Path) -> None:
 
     # Test the asset function without a subfolder.
     asset = rx.asset(path="custom_script.js", shared=True)
-    assert asset == f"/external/test_assets/custom_script.js?v={expected_hash}"
+    assert asset == f"/external/{_MODULE_ASSET_PATH}/custom_script.js?v={expected_hash}"
     result_file = Path(
-        mock_asset_path, "assets", "external", "test_assets", "custom_script.js"
+        mock_asset_path, "assets", "external", _MODULE_ASSET_PATH, "custom_script.js"
     )
     assert result_file.exists()
 
@@ -96,7 +99,7 @@ _REAL_SYMLINK = os.symlink
 def _shared_dst_file(mock_asset_path: Path) -> Path:
     """Return the symlink `rx.asset(shared=True)` creates for this test module.
 
-    The `test_assets` component is the calling module's name, which is what
+    The module path is derived from this test module's qualified name, which is what
     `asset()` derives the external subfolder from.
 
     Args:
@@ -109,7 +112,7 @@ def _shared_dst_file(mock_asset_path: Path) -> Path:
         mock_asset_path
         / constants.Dirs.APP_ASSETS
         / constants.Dirs.EXTERNAL_APP_ASSETS
-        / "test_assets"
+        / _MODULE_ASSET_PATH
         / "custom_script.js"
     )
 
@@ -191,7 +194,8 @@ def test_shared_asset_survives_concurrent_removal(
     asset = rx.asset(path="custom_script.js", shared=True)
 
     assert (
-        asset == f"/external/test_assets/custom_script.js?v={_asset_hash(source_file)}"
+        asset
+        == f"/external/{_MODULE_ASSET_PATH}/custom_script.js?v={_asset_hash(source_file)}"
     )
     assert dst_file.is_symlink()
     assert dst_file.resolve() == source_file.resolve()
@@ -649,7 +653,7 @@ def test_asset_hash_uses_timestamp_when_file_never_stabilizes(
             self.open_calls += 1
             return io.BytesIO(str(self.open_calls).encode())
 
-    monkeypatch.setattr(assets_module.time, "time", lambda: 1234.5)
+    monkeypatch.setattr("reflex.assets.time.time", lambda: 1234.5)
 
     result = assets_module._short_content_hash(cast(Path, _ChangingPath()))
 
@@ -681,9 +685,12 @@ def test_asset_importable_path_shared(mock_asset_path: Path) -> None:
     """A shared asset path exposes an `importable_path` prefixed with $/public."""
     asset = rx.asset(path="custom_script.js", shared=True)
     expected_hash = _asset_hash(Path(__file__).parent / "custom_script.js")
-    assert asset == f"/external/test_assets/custom_script.js?v={expected_hash}"
+    assert asset == f"/external/{_MODULE_ASSET_PATH}/custom_script.js?v={expected_hash}"
     assert isinstance(asset, AssetPathStr)
-    assert asset.importable_path == "$/public/external/test_assets/custom_script.js"
+    assert (
+        asset.importable_path
+        == f"$/public/external/{_MODULE_ASSET_PATH}/custom_script.js"
+    )
 
 
 def test_asset_importable_path_with_frontend_path(

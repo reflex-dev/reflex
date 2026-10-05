@@ -40,3 +40,7 @@ packages = ["src/reflex_bench"]
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
+
+[tool.reflex-unit-tests]
+# Baseline from this suite alone; raise as coverage improves.
+coverage = 91

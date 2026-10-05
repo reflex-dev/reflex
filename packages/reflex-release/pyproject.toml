@@ -39,3 +39,7 @@ packages = ["src/reflex_release"]
 # publish from being built by a backend that moved under us.
 requires = ["hatchling == 1.31.0", "uv-dynamic-versioning == 0.14.0"]
 build-backend = "hatchling.build"
+
+[tool.reflex-unit-tests]
+# Baseline from this suite alone; raise as coverage improves.
+coverage = 92

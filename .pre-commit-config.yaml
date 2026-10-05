@@ -49,7 +49,7 @@ repos:
     description: Regenerate the synchronous reflex-build-sdk client and tests from the asynchronous source
     entry: uv run --no-sync python packages/reflex-build-sdk/scripts/unasync.py
     language: system
-    files: ^(packages/reflex-build-sdk/src/reflex_build_sdk/|packages/reflex-build-sdk/scripts/unasync\.py$|tests/units/reflex_build_sdk/)
+    files: ^(packages/reflex-build-sdk/src/reflex_build_sdk/|packages/reflex-build-sdk/scripts/unasync\.py$|packages/reflex-build-sdk/tests/units/)
     pass_filenames: false
     require_serial: true
 - repo: local

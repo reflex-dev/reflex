@@ -10,7 +10,7 @@ import pytest
 from pytest_mock import MockerFixture
 from reflex_base.config import Config
 from reflex_base.plugins.sitemap import SitemapPlugin
-from reflex_base.telemetry_context import TelemetryContext
+from reflex_base.telemetry_context import _KNOWN_FEATURES, TelemetryContext
 
 import reflex as rx
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
@@ -340,7 +340,7 @@ def test_collect_features_used_emits_every_known_key():
         _fake_config(),
         [],
     )
-    for name in telemetry_accounting._KNOWN_FEATURES:
+    for name in _KNOWN_FEATURES:
         assert name in features, name
 
 

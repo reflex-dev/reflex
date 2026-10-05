@@ -1,31 +1,18 @@
-"""Test fixtures."""
+"""Fixtures for the framework and cross-package unit suite."""
 
 import collections
 import dataclasses
 import enum
 import platform
 import sys
-import traceback
-import uuid
-from collections.abc import AsyncGenerator, Generator, Mapping
+from collections.abc import AsyncGenerator, Generator
 from types import ModuleType
-from typing import Any
-from unittest import mock
 
 import pytest
 import pytest_asyncio
-from opentelemetry import trace
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import InMemoryMetricReader
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
-from reflex_base import otel
 from reflex_base.components.memo import MEMOS
-from reflex_base.event import Event, EventSpec
 from reflex_base.event.context import EventContext
-from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
-from reflex_base.registry import RegistrationContext
+from reflex_base.event.processor import BaseStateEventProcessor
 
 from reflex.app import App
 from reflex.istate.manager import StateManager
@@ -34,27 +21,25 @@ from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.model import ModelRegistry
 from reflex.testing import chdir
-from reflex.utils import prerequisites
+from reflex.testing.fixtures import _isolate_app_in_context as _isolate_app_in_context
+from reflex.testing.fixtures import app_module_mock as app_module_mock
+from reflex.testing.fixtures import (
+    clean_registration_context as clean_registration_context,
+)
+from reflex.testing.fixtures import emitted_deltas as emitted_deltas
+from reflex.testing.fixtures import emitted_events as emitted_events
+from reflex.testing.fixtures import (
+    forked_registration_context as forked_registration_context,
+)
+from reflex.testing.fixtures import (
+    mock_base_state_event_processor_obj as mock_base_state_event_processor_obj,
+)
+from reflex.testing.fixtures import mock_root_event_context as mock_root_event_context
+from reflex.testing.fixtures import otel_exporter as otel_exporter
+from reflex.testing.fixtures import otel_metrics as otel_metrics
+from reflex.testing.fixtures import otel_sdk as otel_sdk
+from reflex.testing.fixtures import token as token
 from tests.units.mock_redis import mock_redis
-
-from .states.upload import SubUploadState, UploadState
-
-
-@pytest.fixture(autouse=True)
-def _isolate_app_in_context() -> Generator[None, None, None]:
-    """Reset the App slot on the active RegistrationContext between tests.
-
-    A RegistrationContext can only host one App instance, but unit tests
-    repeatedly instantiate `rx.App`, so we clear `_app` around each test
-    while keeping other registrations shared (matching prior behavior).
-
-    Yields:
-        None.
-    """
-    ctx = RegistrationContext.ensure_context()
-    object.__setattr__(ctx, "_app", None)
-    yield
-    object.__setattr__(ctx, "_app", None)
 
 
 @pytest.fixture
@@ -65,41 +50,6 @@ def app() -> App:
         The app.
     """
     return App()
-
-
-@pytest.fixture
-def app_module_mock(monkeypatch) -> mock.Mock:
-    """Mock the app module.
-
-    This overwrites prerequisites.get_app to return the mock for the app module.
-
-    To use this in your test, assign `app_module_mock.app = rx.App(...)`.
-
-    Args:
-        monkeypatch: pytest monkeypatch fixture.
-
-    Returns:
-        The mock for the main app module.
-    """
-    app_module_mock = mock.Mock()
-    get_app_mock = mock.Mock(return_value=app_module_mock)
-    monkeypatch.setattr(prerequisites, "get_app", get_app_mock)
-    return app_module_mock
-
-
-@pytest.fixture
-def mock_app(app_module_mock: mock.Mock, app: App) -> App:
-    """A mocked dummy app per test.
-
-    Args:
-        app_module_mock: The mock for the main app module.
-        app: A default App instance.
-
-    Returns:
-        The mock app instance.
-    """
-    app_module_mock.app = app
-    return app
 
 
 @pytest.fixture(scope="session")
@@ -113,26 +63,6 @@ def windows_platform() -> bool:
 
 
 @pytest.fixture
-def upload_sub_state_event_spec():
-    """Create an event Spec for a substate.
-
-    Returns:
-        Event Spec.
-    """
-    return EventSpec(handler=SubUploadState.handle_upload, upload=True)  # pyright: ignore [reportCallIssue]
-
-
-@pytest.fixture
-def upload_event_spec():
-    """Create an event Spec for a multi-upload base state.
-
-    Returns:
-        Event Spec.
-    """
-    return EventSpec(handler=UploadState.handle_upload1, upload=True)  # pyright: ignore [reportCallIssue]
-
-
-@pytest.fixture
 def base_config_values() -> dict:
     """Get base config values.
 
@@ -140,30 +70,6 @@ def base_config_values() -> dict:
         Dictionary of base config values
     """
     return {"app_name": "app"}
-
-
-@pytest.fixture
-def base_db_config_values() -> dict:
-    """Get base DBConfig values.
-
-    Returns:
-        Dictionary of base db config values
-    """
-    return {"database": "db"}
-
-
-@pytest.fixture
-def sqlite_db_config_values(base_db_config_values) -> dict:
-    """Get sqlite DBConfig values.
-
-    Args:
-        base_db_config_values: Base DBConfig fixture.
-
-    Returns:
-        Dictionary of sqlite DBConfig values
-    """
-    base_db_config_values["engine"] = "sqlite"
-    return base_db_config_values
 
 
 @pytest.fixture
@@ -229,16 +135,6 @@ def tmp_working_dir(tmp_path):
     working_dir.mkdir()
     with chdir(working_dir):
         yield working_dir
-
-
-@pytest.fixture
-def token() -> str:
-    """Create a token.
-
-    Returns:
-        A fresh/unique token string.
-    """
-    return str(uuid.uuid4())
 
 
 @pytest.fixture
@@ -322,141 +218,6 @@ async def state_manager(
 
 
 @pytest.fixture
-def mock_event_processor_obj() -> EventProcessor:
-    """Create an event processor.
-
-    Returns:
-        A fresh event processor.
-    """
-
-    def handle_backend_exception(ex: Exception) -> None:
-        raise ex
-
-    return EventProcessor(
-        backend_exception_handler=handle_backend_exception, graceful_shutdown_timeout=1
-    )
-
-
-@pytest.fixture
-def mock_base_state_event_processor_obj(
-    monkeypatch: pytest.MonkeyPatch,
-) -> BaseStateEventProcessor:
-    """Create a BaseState event processor.
-
-    Args:
-        monkeypatch: pytest monkeypatch fixture.
-
-    Returns:
-        A fresh BaseState event processor.
-    """
-    monkeypatch.setattr(BaseStateEventProcessor, "_rehydrate", mock.AsyncMock())
-
-    def handle_backend_exception(ex: Exception) -> None:
-        formatted_exc = "\n".join(traceback.format_exception(ex))
-        pytest.fail(f"Event processor raised an unexpected exception:\n{formatted_exc}")
-
-    return BaseStateEventProcessor(
-        backend_exception_handler=handle_backend_exception, graceful_shutdown_timeout=1
-    )
-
-
-@pytest.fixture
-def emitted_deltas() -> list[tuple[str, Mapping[str, Mapping[str, Any]]]]:
-    """Create a list to store emitted deltas.
-
-    Returns:
-        A list to store emitted deltas.
-    """
-    return []
-
-
-@pytest.fixture
-def emitted_events() -> list[tuple[str, tuple[Event, ...]]]:
-    """Create a list to store emitted events.
-
-    Returns:
-        A list to store emitted events.
-    """
-    return []
-
-
-@pytest_asyncio.fixture
-async def mock_root_event_context(
-    mock_base_state_event_processor_obj: BaseStateEventProcessor,
-    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
-    emitted_events: list[tuple[str, tuple[Event, ...]]],
-) -> AsyncGenerator[EventContext]:
-    """Create a mock event context.
-
-    Args:
-        mock_base_state_event_processor_obj: The mock event processor to use for the context's enqueue implementation.
-        emitted_deltas: The list to store emitted deltas.
-        emitted_events: The list to store emitted events.
-
-    Yields:
-        A mock event context.
-    """
-
-    async def emit_delta_impl(  # noqa: RUF029
-        token: str, delta: Mapping[str, Mapping[str, Any]]
-    ) -> None:
-        """Mock emit delta implementation that records emitted deltas.
-
-        Args:
-            token: The client token to emit the delta to.
-            delta: The delta to emit.
-        """
-        emitted_deltas.append((token, delta))
-
-    async def emit_event_impl(token: str, *events: Event) -> None:  # noqa: RUF029
-        """Mock emit event implementation that records emitted events.
-
-        Args:
-            token: The client token to emit the events to.
-            events: The events to emit.
-        """
-        emitted_events.append((token, events))
-
-    state_manager = StateManagerMemory()
-    yield EventContext(
-        token="",
-        state_manager=state_manager,
-        enqueue_impl=mock_base_state_event_processor_obj.enqueue_many,
-        emit_delta_impl=emit_delta_impl,
-        emit_event_impl=emit_event_impl,
-    )
-    await state_manager.close()
-
-
-@pytest.fixture
-def mock_event_processor(
-    mock_root_event_context: EventContext, mock_event_processor_obj: EventProcessor
-) -> EventProcessor:
-    """Create an event processor with a mock root context.
-
-    Set the mock context as the task's current context, and set the processor's
-    root context to the mock context.
-
-    Events can be queued against the processor via `await
-    mock_event_processor.enqueue(token, *events)`.
-
-    The `state_manager` fixture is used by the `mock_root_event_context` so any
-    updates will be reflected in the context's state manager, and any deltas or
-    frontend events can be checked via the context's `emitted_deltas` and
-    `emitted_events` attributes.
-
-    Args:
-        mock_root_event_context: The mock event context to use as the root context for the processor.
-        mock_event_processor_obj: The mock event processor to use for the processor's enqueue implementation.
-
-    Returns:
-        An un-started event processor with a mock root context.
-    """
-    mock_event_processor_obj._root_context = mock_root_event_context
-    return mock_event_processor_obj
-
-
-@pytest.fixture
 def mock_base_state_event_processor(
     mock_root_event_context: EventContext,
     mock_base_state_event_processor_obj: BaseStateEventProcessor,
@@ -522,34 +283,6 @@ async def attached_mock_base_state_event_processor(
 
 
 @pytest.fixture
-def forked_registration_context() -> Generator[RegistrationContext, None, None]:
-    """Fork the registration context and attach it.
-
-    Sets the forked context as the current registration context for the duration
-    of the test, then resets it afterwards.
-
-    Yields:
-        The forked RegistrationContext.
-    """
-    with RegistrationContext.get().fork() as ctx:
-        yield ctx
-
-
-@pytest.fixture
-def clean_registration_context() -> Generator[RegistrationContext, None, None]:
-    """Create and attach a clean registration context.
-
-    Sets the new context as the current registration context for the duration
-    of the test, then resets it afterwards.
-
-    Yields:
-        The clean RegistrationContext.
-    """
-    with RegistrationContext() as ctx:
-        yield ctx
-
-
-@pytest.fixture
 def preserve_memo_registries():
     """Save and restore the global memo registry around a test.
 
@@ -562,83 +295,3 @@ def preserve_memo_registries():
     finally:
         MEMOS.clear()
         MEMOS.update(memos)
-
-
-@pytest.fixture
-def otel_sdk() -> Generator[
-    tuple[InMemorySpanExporter, InMemoryMetricReader], None, None
-]:
-    """Enable the reflex_base.otel trace points and metrics against in-memory sinks.
-
-    Yields:
-        The span exporter and the metric reader.
-    """
-    exporter = InMemorySpanExporter()
-    tracer_provider = TracerProvider()
-    tracer_provider.add_span_processor(SimpleSpanProcessor(exporter))
-    reader = InMemoryMetricReader()
-    otel.enable(
-        tracer_provider=tracer_provider,
-        meter_provider=MeterProvider(metric_readers=[reader]),
-    )
-    try:
-        yield exporter, reader
-    finally:
-        otel.disable()
-
-
-@pytest.fixture
-def otel_exporter(otel_sdk) -> InMemorySpanExporter:
-    """The in-memory span exporter of the enabled otel_sdk.
-
-    Args:
-        otel_sdk: The enabled sinks.
-
-    Returns:
-        The span exporter.
-    """
-    return otel_sdk[0]
-
-
-@pytest.fixture
-def otel_metrics(otel_sdk) -> InMemoryMetricReader:
-    """The in-memory metric reader of the enabled otel_sdk.
-
-    Args:
-        otel_sdk: The enabled sinks.
-
-    Returns:
-        The metric reader.
-    """
-    return otel_sdk[1]
-
-
-def active_tracer() -> trace.Tracer:
-    """The tracer bound by the enabled otel_sdk fixture.
-
-    Returns:
-        The tracer.
-    """
-    return otel._tracer
-
-
-def metric_points(reader: InMemoryMetricReader, name: str) -> list:
-    """Collect the data points recorded for one metric.
-
-    Args:
-        reader: The in-memory reader to collect from.
-        name: The metric name.
-
-    Returns:
-        The data points, in recording order.
-    """
-    data = reader.get_metrics_data()
-    assert data is not None
-    return [
-        point
-        for rm in data.resource_metrics
-        for sm in rm.scope_metrics
-        for metric in sm.metrics
-        if metric.name == name
-        for point in metric.data.data_points
-    ]

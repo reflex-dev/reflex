@@ -1,1 +1,0 @@
-"""Datadisplay component tests."""

@@ -7,8 +7,6 @@ concurrency:
 on:
   push:
     branches: ["main"]
-    paths-ignore:
-      - "**/*.md"
   pull_request:
     branches: ["main"]
 
@@ -20,26 +18,36 @@ defaults:
     shell: bash
 
 jobs:
-  # This filter cannot live on the pull_request trigger: a workflow that a path
-  # filter skips never reports its checks at all, so a branch rule requiring
-  # them blocks the merge forever. Filtered out here, the jobs below skip
-  # instead, and a skipped job reports as a pass.
   changes:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: read
     outputs:
-      run: ${{ steps.filter.outputs.changed }}
+      run: ${{ steps.filter.outputs.run }}
+      matrix: ${{ steps.filter.outputs.matrix }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: ./.github/actions/changed_paths
-        id: filter
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
-          paths-ignore: |
-            **/*.md
+          python-version: "3.12"
+      - id: filter
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          if [ -z "$PR_NUMBER" ]; then
+            uv run --no-project python -m scripts.unit_test_matrix --all >> "$GITHUB_OUTPUT"
+          else
+            # The full PR diff, including previous names, rather than just its last push.
+            gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" \
+              --jq '.[] | {filename, previous_filename} | tojson' |
+              uv run --no-project python -m scripts.unit_test_matrix >> "$GITHUB_OUTPUT"
+          fi
 
   unit-tests:
     needs: changes
@@ -48,15 +56,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        suite: ${{ fromJSON(needs.changes.outputs.matrix).suite }}
+        # This suite intentionally collects nothing outside Linux.
+        exclude:
+          - os: windows-latest
+            suite:
+              name: reflex-bench
+              path: packages/reflex-bench/tests/units
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
     runs-on: ${{ matrix.os }}
+    env:
+      TEST_SUITE: ${{ matrix.suite.name }}
+      PYTHONUNBUFFERED: "1"
 
     # Service containers to run with `runner-job`
     services:
       # Label used to access the service container
       redis:
-        image: ${{ matrix.os == 'ubuntu-latest' && 'redis' || '' }}
+        image: ${{ matrix.os == 'ubuntu-latest' && contains(fromJSON('["all","reflex","reflex-base"]'), matrix.suite.name) && 'redis' || '' }}
         # Set health checks to wait until redis has started
         options: >-
           --health-cmd "redis-cli ping"
@@ -71,7 +89,7 @@ jobs:
       # collected. Sixteen because that is the oldest the engine is reviewed
       # against, so a newer server's leniency cannot hide anything.
       postgres:
-        image: ${{ matrix.os == 'ubuntu-latest' && 'postgres:16' || '' }}
+        image: ${{ matrix.os == 'ubuntu-latest' && contains(fromJSON('["all","reflex-workflow"]'), matrix.suite.name) && 'postgres:16' || '' }}
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: reflex_workflow
@@ -94,39 +112,51 @@ jobs:
           run-uv-sync: true
 
       - name: Run unit tests without db dependencies
+        if: contains(fromJSON('["all","reflex","reflex-base"]'), matrix.suite.name)
         run: |
           export PYTHONUNBUFFERED=1
           uv pip uninstall pydantic alembic sqlalchemy sqlmodel
-          uv run --no-sync pytest tests/units --cov --no-cov-on-fail --cov-report= --cov-fail-under=0
+          if [ "$TEST_SUITE" = all ]; then
+            uv run --no-sync python -m scripts.run_unit_tests reflex -- --no-cov
+            uv run --no-sync python -m scripts.run_unit_tests reflex-base -- --no-cov
+          else
+            uv run --no-sync python -m scripts.run_unit_tests $TEST_SUITE -- --no-cov
+          fi
           uv sync
       - name: Run unit tests
+        env:
+          REFLEX_TEST_POSTGRES: ${{ matrix.os == 'ubuntu-latest' && contains(fromJSON('["all","reflex-workflow"]'), matrix.suite.name) && 'postgresql://postgres:postgres@localhost:5432/reflex_workflow' || '' }}
         run: |
           export PYTHONUNBUFFERED=1
-          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
+          uv run python -m scripts.run_unit_tests $TEST_SUITE
       - name: Run unit tests w/ redis
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: matrix.os == 'ubuntu-latest' && contains(fromJSON('["all","reflex","reflex-base"]'), matrix.suite.name)
         run: |
           export PYTHONUNBUFFERED=1
           export REFLEX_REDIS_URL=redis://localhost:6379
-          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
+          if [ "$TEST_SUITE" = all ]; then
+            uv run python -m scripts.run_unit_tests reflex
+            uv run python -m scripts.run_unit_tests reflex-base
+          else
+            uv run python -m scripts.run_unit_tests $TEST_SUITE
+          fi
       - name: Run unit tests w/ redis and OPLOCK_ENABLED
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: matrix.os == 'ubuntu-latest' && contains(fromJSON('["all","reflex","reflex-base"]'), matrix.suite.name)
         run: |
           export PYTHONUNBUFFERED=1
           export REFLEX_REDIS_URL=redis://localhost:6379
           export REFLEX_OPLOCK_ENABLED=true
-          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
-      - name: Run workflow unit tests w/ postgres
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+          if [ "$TEST_SUITE" = all ]; then
+            uv run python -m scripts.run_unit_tests reflex
+            uv run python -m scripts.run_unit_tests reflex-base
+          else
+            uv run python -m scripts.run_unit_tests $TEST_SUITE
+          fi
+      - name: Combine workspace coverage
+        if: matrix.suite.name == 'all'
         run: |
-          export PYTHONUNBUFFERED=1
-          export REFLEX_TEST_POSTGRES=postgresql://postgres:postgres@localhost:5432/reflex_workflow
-          # Appended: this runs one package, and every step above replaces the
-          # coverage data rather than adding to it, so the report that follows
-          # would otherwise be of this package alone.
-          uv run pytest tests/units/reflex_workflow --cov --cov-append --no-cov-on-fail --cov-report=
-      - name: Generate coverage report
-        run: uv run coverage html
+          uv run coverage combine --keep
+          uv run coverage report --keep-combined --fail-under=72
 
   unit-tests-macos:
     timeout-minutes: 30
@@ -151,12 +181,15 @@ jobs:
         run: |
           export PYTHONUNBUFFERED=1
           uv pip uninstall pydantic alembic sqlalchemy sqlmodel
-          uv run --no-sync pytest tests/units --cov --no-cov-on-fail --cov-report= --cov-fail-under=0
+          uv run --no-sync python -m scripts.run_unit_tests reflex -- --no-cov
+          uv run --no-sync python -m scripts.run_unit_tests reflex-base -- --no-cov
           uv sync
       - name: Run unit tests
         run: |
           export PYTHONUNBUFFERED=1
-          uv run pytest tests/units --cov --no-cov-on-fail --cov-report=
+          uv run python -m scripts.run_unit_tests all
+          uv run coverage combine --keep
+          uv run coverage report --keep-combined --fail-under=72
 
   # The one status check the branch rules require from this workflow. Naming the
   # jobs above directly does not survive: check names follow the matrix and the
