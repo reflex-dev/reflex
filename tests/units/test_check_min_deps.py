@@ -434,7 +434,7 @@ def test_build_wheelhouse_builds_every_source_once(
     fake_run = _FakeRun(
         built={
             # Both satisfy what the root package declares, so neither is rebuilt.
-            "reflex-base": "0.9.12.post1.dev0+abc1234",
+            "reflex-base": "0.9.13.dev1+abc1234",
             "reflex-hosting-cli": "0.1.71.post1.dev0+abc1234",
         }
     )
@@ -451,7 +451,7 @@ def test_build_wheelhouse_builds_every_source_once(
     )
     assert detail is None
     assert check_min_deps._workspace_pins(package, versions)[0] == [
-        "reflex-base==0.9.12.post1.dev0+abc1234",
+        "reflex-base==0.9.13.dev1+abc1234",
         "reflex-hosting-cli==0.1.71.post1.dev0+abc1234",
     ]
 
