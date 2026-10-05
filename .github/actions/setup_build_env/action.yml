@@ -49,6 +49,4 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
-        # Concurrent sdist builds (e.g. numpy/pandas on cp315) can hold the
-        # uv cache lock longer than the default 300s.
-        UV_LOCK_TIMEOUT: "900"
+        UV_LOCK_TIMEOUT: ${{ inputs.python-version == '3.15' && '900' || '300' }}
