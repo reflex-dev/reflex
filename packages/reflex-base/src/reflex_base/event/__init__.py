@@ -71,6 +71,8 @@ from reflex_base.vars.object import ObjectVar
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from reflex_components_core.core._upload import UploadChunkIterator, UploadFile
+
     from reflex.state import BaseState
 
     BASE_STATE = TypeVar("BASE_STATE", bound=BaseState)
@@ -2854,6 +2856,18 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
     def __call__(
         self: "EventCallback[Unpack[Q]]",
     ) -> "EventCallback[Unpack[Q]]": ...
+
+    # An upload spec stands in for the files, or the chunks, that reflex uploads to the
+    # handler. Only as the handler's sole argument: bound args next to it aren't typed.
+    @overload
+    def __call__(
+        self: "EventCallback[list[UploadFile]]", value: FileUpload
+    ) -> "EventCallback[()]": ...
+
+    @overload
+    def __call__(
+        self: "EventCallback[UploadChunkIterator]", value: UploadFilesChunk
+    ) -> "EventCallback[()]": ...
 
     @overload
     def __call__(
