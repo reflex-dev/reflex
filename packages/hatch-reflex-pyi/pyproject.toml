@@ -20,6 +20,7 @@ source = "uv-dynamic-versioning"
 [tool.uv-dynamic-versioning]
 pattern-prefix = "hatch-reflex-pyi-"
 fallback-version = "0.0.0dev0"
+bump = true
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]
