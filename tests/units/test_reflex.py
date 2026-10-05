@@ -519,3 +519,21 @@ def test_db_commands_with_partial_db_install_point_to_install(
     assert result.exit_code == 1
     assert "pip install reflex[db]" in caplog.text
     assert not isinstance(result.exception, ImportError)
+
+
+def test_db_commands_run_without_sqlmodel(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+):
+    """Db commands run with sqlalchemy and alembic installed but not sqlmodel."""
+    from reflex.utils import prerequisites
+
+    monkeypatch.setattr(
+        reflex, "find_spec", lambda name: None if name == "sqlmodel" else object()
+    )
+    monkeypatch.setattr(prerequisites, "get_app", lambda: None)
+    monkeypatch.setattr(prerequisites, "check_db_initialized", lambda: False)
+
+    result = click.testing.CliRunner().invoke(reflex.db_cli, ["migrate"])
+
+    assert result.exit_code == 0, result.output
+    assert "pip install reflex[db]" not in caplog.text
