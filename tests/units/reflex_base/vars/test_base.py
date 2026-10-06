@@ -23,7 +23,12 @@ from reflex_base import constants
 from reflex_base.constants import RouteArgType
 from reflex_base.environment import _load_dotenv_from_files, environment
 from reflex_base.utils import serializers
-from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
+from reflex_base.utils.exceptions import (
+    BackendVarFormatError,
+    ReflexRuntimeError,
+    StateValueError,
+    UntypedVarError,
+)
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
 from reflex_base.vars.base import (
@@ -1302,6 +1307,85 @@ def test_backend_field_is_not_type_checked():
     model = Model()  # pyright: ignore[reportCallIssue]
     model._value = 1
     assert model._value == 1
+
+
+@pytest.mark.parametrize("name", ["_secret", "bookkeeping"])
+def test_backend_field_format_raises(name: str):
+    """Formatting a backend var raises instead of embedding its repr.
+
+    Args:
+        name: The backend field to format, underscore-prefixed or is_var=False.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+        bookkeeping: int = field(default=0, is_var=False)
+
+    with pytest.raises(
+        BackendVarFormatError, match=rf"Backend var 'Model\.{name}' exists only"
+    ):
+        f"{getattr(Model, name)}px"
+
+
+def test_mixin_field_format_raises():
+    """A mixin's frontend field has no Var, and the error says to use the including state."""
+
+    class Mixin(EvenMoreBasicBaseState, mixin=True):
+        count: int = 0
+
+    with pytest.raises(
+        BackendVarFormatError, match=r"Var 'Mixin\.count' is declared on a mixin state"
+    ):
+        f"{Mixin.count}"
+
+
+def test_unbound_field_format_raises():
+    """An unbound field has no Var to format, and the error shows its definition."""
+    with pytest.raises(
+        BackendVarFormatError,
+        match=r"^Field\(default=0, is_var=True, annotated_type=typing.Any\) has no",
+    ):
+        f"{field(default=0)}"
+
+
+def test_untyped_var_item_access_reports_backend_var_key():
+    """Indexing an untyped Var with a backend var names the key, not a format error."""
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+
+    with pytest.raises(UntypedVarError, match=r"access the item 'Field\(default=42"):
+        Var(_js_expr="x")[Model._secret]  # pyright: ignore[reportIndexIssue]
+
+
+def test_backend_field_literal_var_reports_repr():
+    """Creating a LiteralVar from a backend var reports its repr, not a format error."""
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+
+    with pytest.raises(
+        TypeError, match=r"Tried to create a LiteralVar from Field\(default=42"
+    ):
+        LiteralVar.create(Model._secret)
+
+
+def test_mistyped_backend_field_value_logs_repr(caplog: pytest.LogCaptureFixture):
+    """Assigning a backend var to a typed field logs its repr and stores it.
+
+    Args:
+        caplog: The log capture fixture.
+    """
+
+    class Model(EvenMoreBasicBaseState):
+        _secret: int = 42
+        count: int = 0
+
+    model = Model()  # pyright: ignore[reportCallIssue]
+    with caplog.at_level(logging.ERROR, logger="reflex_base.vars.base"):
+        model.count = Model._secret  # pyright: ignore[reportAttributeAccessIssue]
+    assert "but got Field(default=42" in caplog.text
+    assert model.__dict__["count"] is Model._secret
 
 
 def test_classvar_over_inherited_field_is_not_a_field():

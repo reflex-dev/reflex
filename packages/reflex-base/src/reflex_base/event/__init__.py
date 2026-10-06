@@ -750,7 +750,7 @@ class EventHandler(EventActionsMixin):
             try:
                 payload.append((Var(_js_expr=fn_arg), LiteralVar.create(arg)))
             except TypeError as e:
-                msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
+                msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg!r} of type {type(arg)}."
                 raise EventHandlerTypeError(msg) from e
 
         if upload_event_spec is not None:
@@ -873,7 +873,7 @@ class EventSpec(EventActionsMixin):
             for arg in args:
                 values.append(LiteralVar.create(value=arg))  # noqa: PERF401, RUF100
         except TypeError as e:
-            msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
+            msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg!r} of type {type(arg)}."
             raise EventHandlerTypeError(msg) from e
         new_payload = tuple(zip(fn_args, values, strict=False))
         return self.with_args(self.args + new_payload)
@@ -1035,7 +1035,7 @@ class EventChain(EventActionsMixin):
                     # Call the lambda to get the event chain.
                     events.extend(call_event_fn(v, args_spec, key=key))
                 else:
-                    msg = f"Invalid event: {v}"
+                    msg = f"Invalid event: {v!s}"
                     raise ValueError(msg)
 
         # If the input is a callable, create an event chain.
@@ -1044,7 +1044,7 @@ class EventChain(EventActionsMixin):
 
         # Otherwise, raise an error.
         else:
-            msg = f"Invalid event chain: {value}"
+            msg = f"Invalid event chain: {value!s}"
             raise ValueError(msg)
 
         # Add args to the event specs if necessary.
@@ -1443,7 +1443,7 @@ class FileUpload:
                     on_upload_progress, self.on_upload_progress_args_spec
                 )
             else:
-                msg = f"{on_upload_progress} is not a valid event handler."
+                msg = f"{on_upload_progress!s} is not a valid event handler."
                 raise ValueError(msg)
             if isinstance(events, Var):
                 msg = f"{on_upload_progress} cannot return a var {events}."
@@ -2494,7 +2494,7 @@ def call_event_fn(
             if isinstance(e, VarOperationCall):
                 hint = " Hint: use `fn.partial(...)` instead of calling the FunctionVar directly."
             msg = (
-                f"Invalid event chain for {key}: {fn} -> {e}: A lambda inside an EventChain "
+                f"Invalid event chain for {key}: {fn} -> {e!s}: A lambda inside an EventChain "
                 "list must return `EventSpec | EventHandler | EventChain | EventVar | FunctionVar` "
                 "or a heterogeneous sequence of these types. "
                 f"Got: {type(e)}.{hint}"
