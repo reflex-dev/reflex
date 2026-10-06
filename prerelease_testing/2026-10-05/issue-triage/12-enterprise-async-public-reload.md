@@ -1,0 +1,47 @@
+With published `reflex-enterprise==0.9.7a3` and Reflex/base `0.10.0a1`, a protected async computed value displays correctly on an authenticated page, but remains at its initial placeholder after full navigation/reload on a public page. The identical reduced app passes on published Reflex/base `0.9.12` with the same enterprise wheel.
+
+This is an independently reproduced alpha/stable compatibility difference, **not proven newly introduced by a3**. The a2 alpha auth app could not compile because of the previously reported field compatibility defect. This remaining computed-value behavior is separate from the cookie/field-wrapper cases in #244.
+
+### Reproduce
+
+Use the saved [small app and browser driver](https://github.com/reflex-dev/reflex/tree/5e949cac0af6ee10ed89f625a7395793a7a66a4b/prerelease_testing/2026-10-05/enterprise/a3/auth-stable/narrow-alpha), [local mock OIDC provider](https://github.com/reflex-dev/reflex/blob/5e949cac0af6ee10ed89f625a7395793a7a66a4b/prerelease_testing/2026-10-05/enterprise/a3/auth-stable/mock_oidc.py) and [complete startup instructions](https://github.com/reflex-dev/reflex/blob/5e949cac0af6ee10ed89f625a7395793a7a66a4b/prerelease_testing/2026-10-05/enterprise/a3/auth-stable/README.md#reproduction). Copy only fixture source into a neutral directory. Install published PyPI packages into an isolated UV environment; do not install the framework from the testing checkout.
+
+The app uses ordinary core State fields, AuthPlugin and an awaited sibling-State authorization check, without enterprise field wrappers or MCP:
+
+```python
+class OrgState(rx.State):
+    admin_group: str = "admins"
+
+async def is_admin(ctx: VarAuthContext) -> bool:
+    org = await ctx.auth_user_state.get_state(OrgState)
+    return org.admin_group in (ctx.auth_user_state.userinfo.get("groups") or [])
+
+class ProbeState(rx.State):
+    secret: str = "initial-secret"
+
+    @rxe.var(auth=is_admin, initial_value="async-admin-placeholder")
+    async def async_view(self) -> str:
+        return "async-admin-data"
+```
+
+Both the protected `/dashboard` and public `@rxe.page(route="/", auth=False)` display `ProbeState.async_view`, a synchronous protected computed getter and Alice's identity.
+
+1. Start the mock provider on port 9151 and the app in development on frontend 3152/backend 8152, using the saved OIDC environment/configuration.
+2. Visit `/dashboard`, select Login with Generic, and sign in as Alice (admin).
+3. Confirm the authenticated dashboard displays `async-admin-data`.
+4. Fully navigate to public `/`, then reload the page. Observe immediately and after 1, 5 and 15 seconds.
+5. Expected: `async-admin-data` remains visible because Alice is still authenticated and authorized.
+6. Actual on alpha: `async-admin-placeholder` persists. Synchronous protected `computed:initial-secret`, the ordinary field and `Alice Admin` remain correct.
+7. Run the identical app/config source with the saved stable graph: the async value remains correct throughout.
+
+The reusable `drive_reload.py alpha` now asserts restoration after writing observations; its executed observation-only predecessor is also preserved. The tested app/config source is identical between the actual alpha/stable runs.
+
+### Environment and evidence
+
+- macOS arm64; CPython 3.12.1; Bun 1.4.2; Playwright 1.55.0 / Chromium 140.0.7339.16.
+- [Exact alpha graph](https://github.com/reflex-dev/reflex/blob/5e949cac0af6ee10ed89f625a7395793a7a66a4b/prerelease_testing/2026-10-05/enterprise/a3/requirements-alpha-lock.txt) and [stable graph](https://github.com/reflex-dev/reflex/blob/5e949cac0af6ee10ed89f625a7395793a7a66a4b/prerelease_testing/2026-10-05/enterprise/a3/auth-stable/requirements-resolved.txt). Provenance confirms isolated site-packages imports and no checkout/editable installations. These full graphs have additional dependency differences, so this control does not identify the single package causing the behavior.
+- Reduced app: **alpha fails 3/3; identical stable app passes 3/3**. [Alpha observations](https://github.com/reflex-dev/reflex/blob/5e949cac0af6ee10ed89f625a7395793a7a66a4b/prerelease_testing/2026-10-05/enterprise/a3/auth-stable/narrow-alpha/evidence/reload-alpha.json), [stable observations](https://github.com/reflex-dev/reflex/blob/5e949cac0af6ee10ed89f625a7395793a7a66a4b/prerelease_testing/2026-10-05/enterprise/a3/auth-stable/narrow-alpha/evidence/reload-stable.json).
+- Full retained auth suite: **alpha 21/22, stable 22/22**; failing alpha case is `test_protected_vars_survive_reload_on_public_page`. [Alpha suite and independent repeats](https://github.com/reflex-dev/reflex/blob/5e949cac0af6ee10ed89f625a7395793a7a66a4b/prerelease_testing/2026-10-05/enterprise/a3/auth-alpha/REPORT.md).
+- No page exceptions, HTTP error responses or backend traceback accompany the reduced failure. Its driver does not record request-failure events; the full auth driver's aborted cookie-sync requests remain separately recorded.
+
+No framework fix or generated-code workaround was applied. This report establishes development-mode local OIDC behavior, not external IdP or production/multi-worker behavior.

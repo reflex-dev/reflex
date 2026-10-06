@@ -14,7 +14,8 @@ That evidence is retained. [Numbered findings and exact repros](FINDINGS.md)
 distinguish resolved blockers, remaining compatibility failures and older defects.
 
 [Issue triage](issue-triage/README.md) records the user-supplied enterprise
-references, filed issues for findings 4–8, and the instruction to ignore 9–10.
+references, filed issues for findings 4–8 and 12–14, and the instruction to
+ignore 9–10.
 
 All 14 announced alphas have published PyPI wheels and sdists. Their downloaded
 bytes match PyPI SHA256 digests. Wheel and sdist `.pyi` names/content match;

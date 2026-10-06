@@ -1,7 +1,7 @@
 # User-directed issue triage
 
 Issue bodies link to the immutable testing commit
-`08f29b1d278dd9380ecaebdd0b028c17d7abab1b`. The five new reports were filed after
+`08f29b1d278dd9380ecaebdd0b028c17d7abab1b`. The first five reports were filed after
 checking for matching existing issues, preserving the campaign's classification
 and limitations. No framework fixes or comments on existing enterprise threads
 were made.
@@ -19,6 +19,9 @@ were made.
 | 9 — Changelog links | Ignore, as requested; evidence retained |
 | 10 — Unique UUID backfill | Ignore, as requested; evidence retained |
 | 11 — Enterprise denial exit status | Not included in the user's filing request; no issue created |
+| 12 — Async protected var on public navigation/reload | Filed [enterprise #252](https://github.com/reflex-dev/reflex-enterprise/issues/252); [submitted body](12-enterprise-async-public-reload.md) |
+| 13 — Combined iframe login/pending event replay | Filed [enterprise #253](https://github.com/reflex-dev/reflex-enterprise/issues/253); [submitted body](13-enterprise-iframe-pending-replay.md) |
+| 14 — Production MCP default URL | Filed [enterprise #254](https://github.com/reflex-dev/reflex-enterprise/issues/254); [submitted body](14-enterprise-production-mcp-route.md) |
 
 The supplied #242 and #243 are PRs. #243 covers both scope setup and backend-field
 logout cleanup. #244 tracks other remaining Reflex 0.10 cookie/field-wrapper
@@ -28,7 +31,12 @@ No unpublished implementation was installed or tested during this triage.
 
 The subsequent [published a3 validation](../enterprise/a3/REPORT.md) independently
 confirms fields, scopes and logout pass. It also tests HTTP-only cookie
-compatibility and records new residual findings 12–14. No additional issue or
-external comment was submitted during that rerun.
+compatibility and records new residual findings 12–14. The user subsequently
+authorized filing those three enterprise findings. Their issue bodies link to
+immutable a3 testing commit `5e949cac0af6ee10ed89f625a7395793a7a66a4b` and preserve
+the alpha/stable and a2/a3 distinctions. All 14 existing enterprise issues,
+including closed issues, were checked first; no matching report was found.
+Each new issue's title, URL, open state and body were verified after creation.
+No existing-thread comments or framework fixes were made.
 
 [Filing record](filing-record.json) retains exact repositories, titles and URLs.

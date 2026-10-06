@@ -73,6 +73,11 @@ No real account, external identity provider or production cloud API was changed.
 Historical finding 11 also persists: rejected production/export credentials
 block the operation but exit 0. No new issues or external comments were filed
 during this rerun; the user's earlier disposition remains in issue triage.
+The user subsequently requested filing findings 12–14; those are now
+[enterprise #252](https://github.com/reflex-dev/reflex-enterprise/issues/252),
+[#253](https://github.com/reflex-dev/reflex-enterprise/issues/253) and
+[#254](https://github.com/reflex-dev/reflex-enterprise/issues/254), respectively.
+Submitted bodies and verification are saved in the central issue-triage record.
 
 ## Evidence and reproduction
 

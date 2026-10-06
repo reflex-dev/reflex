@@ -6,7 +6,8 @@ and 9–10 are ignored as requested. The original evidence remains below.
 
 The [published enterprise a3 rerun](enterprise/a3/REPORT.md) confirms findings
 **1–3 resolved** in the tested alpha combination. New observations are appended
-as 12–14; no new issues or external comments were filed during the rerun.
+as 12–14 and subsequently filed as enterprise issues #252–254 at the user's
+request. No framework fixes were attempted.
 
 ## Confirmed a2 release regressions, resolved in a3
 
@@ -184,8 +185,11 @@ as 12–14; no new issues or external comments were filed during the rerun.
     The slash variant is a diagnostic and does not convert the default-route
     failure into a pass. [Repro, wire comparison and production contexts](enterprise/a3/components/REPORT.md).
 
-No new issues or external comments were filed for 12–14. Historical finding 11
-also reproduces in the [a3 Free-tier matrix](enterprise/a3/free_tier/REPORT.md).
+Findings 12–14 are filed as [enterprise #252](https://github.com/reflex-dev/reflex-enterprise/issues/252),
+[#253](https://github.com/reflex-dev/reflex-enterprise/issues/253) and
+[#254](https://github.com/reflex-dev/reflex-enterprise/issues/254), respectively.
+Historical finding 11 also reproduces in the [a3 Free-tier matrix](enterprise/a3/free_tier/REPORT.md)
+and remains outside the user's issue-filing requests.
 
 ## Triage and rerun guidance
 

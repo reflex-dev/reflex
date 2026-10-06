@@ -40,6 +40,39 @@
       "body_file": "8-hosting-expiry-guidance.md",
       "create_exit_code": 0,
       "url": "https://github.com/reflex-dev/reflex/issues/7432"
+    },
+    {
+      "finding": 12,
+      "repo": "reflex-dev/reflex-enterprise",
+      "title": "Protected async computed vars remain at placeholders on public navigation/reload with Reflex 0.10",
+      "body_file": "12-enterprise-async-public-reload.md",
+      "create_exit_code": 0,
+      "url": "https://github.com/reflex-dev/reflex-enterprise/issues/252",
+      "verified_state": "OPEN",
+      "verified_body_matches": true,
+      "evidence_commit": "5e949cac0af6ee10ed89f625a7395793a7a66a4b"
+    },
+    {
+      "finding": 13,
+      "repo": "reflex-dev/reflex-enterprise",
+      "title": "Iframe popup login leaves a pending protected event on the embedded login page",
+      "body_file": "13-enterprise-iframe-pending-replay.md",
+      "create_exit_code": 0,
+      "url": "https://github.com/reflex-dev/reflex-enterprise/issues/253",
+      "verified_state": "OPEN",
+      "verified_body_matches": true,
+      "evidence_commit": "5e949cac0af6ee10ed89f625a7395793a7a66a4b"
+    },
+    {
+      "finding": 14,
+      "repo": "reflex-dev/reflex-enterprise",
+      "title": "Documented MCP endpoint returns HTTP 405 on full-stack production without trailing slash",
+      "body_file": "14-enterprise-production-mcp-route.md",
+      "create_exit_code": 0,
+      "url": "https://github.com/reflex-dev/reflex-enterprise/issues/254",
+      "verified_state": "OPEN",
+      "verified_body_matches": true,
+      "evidence_commit": "5e949cac0af6ee10ed89f625a7395793a7a66a4b"
     }
   ],
   "existing_references": [
@@ -63,5 +96,35 @@
   ],
   "not_requested": [
     11
-  ]
+  ],
+  "followup_campaign_commit": "5e949cac0af6ee10ed89f625a7395793a7a66a4b",
+  "enterprise_followup_duplicate_check": {
+    "repo": "reflex-dev/reflex-enterprise",
+    "state": "all",
+    "limit": 150,
+    "returned_count": 14,
+    "inspected_issue_numbers": [
+      245,
+      244,
+      234,
+      230,
+      229,
+      228,
+      227,
+      226,
+      225,
+      215,
+      96,
+      25,
+      17,
+      16
+    ],
+    "matching_issues": [],
+    "related_distinct_issues": [
+      230,
+      234,
+      244,
+      245
+    ]
+  }
 }
