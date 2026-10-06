@@ -1,0 +1,30 @@
+[
+ {
+  "connect_sent_before_click": true,
+  "item_trace": [
+   "id=1|path=/items/1|url=http://localhost:3227/items/1",
+   "id=2|path=/items/2|url=http://localhost:3227/items/2"
+  ]
+ },
+ {
+  "connect_sent_before_click": true,
+  "item_trace": [
+   "id=1|path=/items/1|url=http://localhost:3227/items/1",
+   "id=2|path=/items/2|url=http://localhost:3227/items/2"
+  ]
+ },
+ {
+  "connect_sent_before_click": true,
+  "item_trace": [
+   "id=1|path=/items/1|url=http://localhost:3227/items/1",
+   "id=2|path=/items/2|url=http://localhost:3227/items/2"
+  ]
+ },
+ {
+  "connect_sent_before_click": true,
+  "item_trace": [
+   "id=1|path=/items/1|url=http://localhost:3227/items/1",
+   "id=2|path=/items/2|url=http://localhost:3227/items/2"
+  ]
+ }
+]

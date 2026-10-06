@@ -3,7 +3,10 @@
 Published packages under test: `reflex==0.10.0a1` (alpha) vs `reflex==0.9.12` (stable baseline). Everything
 was installed from PyPI into the prebuilt read-only venvs `$SB/envs/alpha` and `$SB/envs/stable`.
 Nothing came from the checkout. Browser: Playwright 1.63 with Chromium `/opt/pw-browsers/chromium` (`$SB/envs/driver`).
-Date: 2026-10-06. Every scenario ran end-to-end in a real browser, in dev and prod, on both versions.
+Date: 2026-10-06. Everything ran end-to-end in a real browser on both versions:
+* the s1–s13 suite in dev and prod;
+* reconnect, redis, latency and pre-connect-navigation tests in prod;
+* the hot-reload test in dev.
 
 `SB=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad` (adjust to your scratch
 root). The work dir was `$SB/apps/hydration/`. All artifacts are copied here.
@@ -16,7 +19,8 @@ root). The work dir was `$SB/apps/hydration/`. All artifacts are copied here.
 | F2 | A single localStorage value over the 1 MB socket buffer causes an endless reconnect storm: about 35–39 websocket connects/s, about 1 GB uploaded in 22 s, the page never hydrates, no UI error, and no server log on alpha. | no, both versions |
 | F3 | Redis + prod: one of 9 alpha multi-worker (redis, 9-worker) stops had a granian/pyo3 panic during shutdown. The following reconnect got `new_token` and fresh state. In clean restarts state and token survive (alpha 4/4, stable 4/4). | unknown (flaky; same granian 2.8.4 on both) |
 | F4 | #7357 verified fixed: while another client's buffered upload is in flight, a navigation now supersedes the previous page's slow `on_load`. On 0.9.12 the stale on_load ran to completion (dev and prod). | fix confirmed |
-| F5 | Performance: the boot sends 1 frame out instead of 3 and about 36% fewer inbound bytes (3019 vs 4716). On localhost, connect-to-hydrated is about 3.5–4.5 ms faster (median 9.0–9.5 vs 12.5–14.0 ms). End-to-end time-to-hydrated is within noise (189.5 vs 200 ms on `/other`, 191 vs 191.5 ms on `/`, interleaved n=20). The reload "flash of compiled default" window is shorter in prod (61 ms vs 135 ms in one sample). | improvement (small, as expected on localhost) |
+| F5 | Performance claim confirmed. With 80 ms RTT (`drivers/latency_proxy.py`, interleaved n=12), alpha reaches hydrated **158–180 ms sooner**: `/other` 570.5 vs 728.5 ms, `/` 500 vs 679.5 ms. CONNECT-to-hydrated is 91 vs 178–183 ms (one RTT saved), and the CONNECT is sent about one RTT earlier (warm socket). The boot sends 1 frame out instead of 3 and about 36% fewer inbound bytes (3019 vs 4716). On localhost only the few-ms connect-to-hydrated slice differs (9 vs 12.5–14 ms; end-to-end within noise). The reload flash of compiled defaults is shorter in prod (61 vs 135 ms, one sample). | improvement |
+| F6 | **Client-side navigation before the websocket CONNECT is sent runs the page the user LEFT's on_load.** The boot `hydrate_and_load` carries router data captured when `connect()` ran at mount. 0.9.12 instead ran the new page's on_load twice and never the old one. | **YES** (new failure mode; 0.9.12 had a different, pre-existing double-run) |
 
 Everything else in the brief behaves identically on both versions (details below).
 
@@ -41,6 +45,8 @@ Everything else in the brief behaves identically on both versions (details below
   * `preconnect_click.py`: holds the backend websocket 2.5 s with `route_web_socket` and clicks before the CONNECT.
   * `hmr_desync.py`: dev hot reload with the memory manager while a tab is open.
   * `ab_timing.py`: interleaved A/B first-load timing against two prod servers.
+  * `prenav_test.py`: client-side navigation while the websocket is held (F6).
+  * `prenav_natural.py`: the same without the hold, behind `latency_proxy.py`, a TCP proxy adding a fixed one-way delay.
   * `mini_writeback_check.py`, `waitsrv.py`.
 
 ### Ports
@@ -51,6 +57,7 @@ Everything else in the brief behaves identically on both versions (details below
 * stable prod: 3223 (single port)
 * mini app prod: alpha 3224, stable 3225
 * redis: 8239
+* 80 ms-RTT proxies: 3226 → 3221 (alpha) and 3227 → 3223 (stable); the servers were started with `REFLEX_API_URL=http://localhost:3226` and `:3227`
 
 ### Rerun commands
 
@@ -72,6 +79,14 @@ $NP $SB/envs/driver/bin/python $H/drivers/redis_restart_loop.py alpha 3221 4
 # interleaved timing (two prod servers briefly)
 $H/srv.sh start ab-alpha alpha prod 3221 3221; $H/srv.sh start ab-stable stable prod 3223 3223
 $NP $SB/envs/driver/bin/python $H/drivers/ab_timing.py http://localhost:3221 alpha http://localhost:3223 stable 20 /other out.json
+# F6 (one prod server at a time): navigation before the websocket CONNECT
+$H/srv.sh start alpha-prenav alpha prod 3221 3221
+$NP $SB/envs/driver/bin/python $H/drivers/prenav_test.py http://localhost:3221 alpha-prod prenav_alpha.json 2000
+$H/srv.sh stop alpha-prenav    # then the same with stable on 3223
+# click before CONNECT / dev hot reload (dev servers; memory manager for the HMR test)
+$NP $SB/envs/driver/bin/python $H/drivers/preconnect_click.py http://localhost:3220 alpha-dev out.json 2500
+$H/srv.sh start alpha-dev-hmr alpha dev 3220 8220 REFLEX_STATE_MANAGER_MODE=memory
+$NP $SB/envs/driver/bin/python $H/drivers/hmr_desync.py http://localhost:3220 $H/run/alpha-dev-hmr/hydapp/hydapp.py hmr_alpha.json
 ```
 
 The driver guard is `sys.executable` = driver venv. Each app server runs `$SB/envs/<alpha|stable>/bin/reflex` from
@@ -182,6 +197,25 @@ The same happens in the full app, in dev and prod (s1b, `reconnect-alpha-memory/
 
 **Fix idea:** never diff out the root `is_hydrated` (or send it explicitly in the boot delta), or make the frontend skip client-storage writes for the boot delta.
 
+## F6: navigation before the socket CONNECT → the left page's on_load runs (alpha) / the new page's on_load runs twice (0.9.12)
+
+`drivers/prenav_test.py` (results `results/prenav_{alpha,stable}.json`, backend traces `logs/*-prenav-1.hydtrace.log`)
+holds the backend websocket for 2 s with Playwright `route_web_socket`. In prod, it loads `/slow` (or `/items/1`) and clicks
+the client-side link to `/other` (or `/items/2`) before the CONNECT is sent.
+
+| start → target | 0.10.0a1 backend trace | 0.9.12 backend trace |
+|---|---|---|
+| `/slow` → `/other` | `slow_load run1 step1`, then `other_load#1`. The left page's on_load starts, its first delta (`slow_progress=1`) lands on `/other`, and the rest is cancelled | `other_load#1`, `other_load#2` (new page's on_load twice) |
+| `/items/1` → `/items/2` | `item_load id=1` (`path=/items/1`, run after the user left), then `item_load id=2` | `item_load id=2` twice |
+
+Both versions reproduced 2/2. The page ends on the right URL and hydrated on both.
+
+* **Cause (alpha):** `state.js` `connect()` sets `socket.current.auth = bootAuth(true)` once, when the event loop mounts. `withRouterData` therefore snapshots the location at mount, and the CONNECT packet (sent after the engine.io handshake) still names the old page. The backend hydrates as that page and chains its `on_load_internal`. That chain runs before the navigation's `on_load_internal` arrives one round trip later, which can then only supersede what is still unfinished. 0.9.12 attached router data at send time, after connect, so the queued boot `hydrate`+`on_load_internal` and the navigation's `on_load_internal` both named the new page.
+* **Impact:** side effects of an on_load (record a view, start a job, mark something read) run for a page the user already left, and its early deltas render on the new page.
+* **Window:** clicking a link before the websocket handshake completes, i.e. slow mobile RTT, a backend slow to accept websocket connections, or a cold start.
+* **Fix idea:** make `auth` a function (socket.io calls it at connect time) or refresh `socket.current.auth` from the location effect while not yet connected.
+* **Natural reproduction check:** `drivers/prenav_natural.py` ran behind the 80 ms RTT `latency_proxy.py` (4 runs per version), clicking `/items/2` as soon as React had hydrated the link. The CONNECT had already been sent every time on both versions, so both behaved identically (`id=1` then `id=2`). The window needs the websocket handshake to lag behind page interactivity, e.g. a backend slow to accept websocket connections, a cold start or scale-from-zero while the prerendered frontend is already served, or a slow websocket proxy. `route_web_socket` simulates exactly that.
+
 ## F2: oversized localStorage value → endless reconnect storm (pre-existing)
 
 * Set `localStorage['hyd_big']='x'.repeat(1200000)`, then reload (s5; `results/s5_storm_summary.json`). Alpha puts the 1.2 MB value in the socket.io CONNECT packet. Engine.IO's `maxPayload` is 1,000,000 (`REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE`), so the server closes the connection, and the `disconnect` handler reconnects immediately with no backoff.
@@ -218,7 +252,7 @@ The same happens in the full app, in dev and prod (s1b, `reconnect-alpha-memory/
 ## NOT covered
 
 * Build-env ≠ runtime-env defaults (`reflex export` frontend with a backend started separately under different env). The hash mismatch path itself is exercised by `Sub` and `Defaults`.
-* Real network latency (only localhost; the round-trip saving shows up only as the few-ms connect-to-hydrated slice).
+* Real network conditions beyond a fixed 80 ms RTT proxy (no bandwidth cap, loss or mobile profiles).
 * bfcache restore.
 * Multiple browsers.
 * Frequency of the F3 panic beyond 16 multi-worker stops (9 alpha, 7 stable).
