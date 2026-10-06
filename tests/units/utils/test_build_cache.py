@@ -256,7 +256,10 @@ def test_failed_post_build_is_retried(cached_build):
 @pytest.mark.skipif(os.name == "nt", reason="Cache and fork require POSIX")
 def test_snapshot_of_killed_build_is_discarded(cached_build):
     """A build killed before publishing cannot leave its snapshot behind for good."""
-    web, config, _ = cached_build
+    web, config, process = cached_build
+    build.build()
+    page = web / "app/page.js"
+    page.write_text("changed")
 
     class KillingPlugin(Plugin):
         def post_build(self, **context):
@@ -272,7 +275,10 @@ def test_snapshot_of_killed_build_is_discarded(cached_build):
     assert killed.exitcode == -signal.SIGKILL
     cache = web / "reflex.build-cache"
     assert len(list(cache.glob("pending-*"))) == 1
+    # Reverted inputs hit the cache, which never snapshots the new output.
+    page.write_text("original")
     build.build()
+    assert process.call_count == 1
     assert [path.name for path in cache.iterdir()] == ["current"]
 
 
