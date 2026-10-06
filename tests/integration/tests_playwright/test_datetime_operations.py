@@ -1,5 +1,4 @@
 from collections.abc import Generator
-from datetime import UTC
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -8,7 +7,7 @@ from reflex.testing import AppHarness
 
 
 def DatetimeOperationsApp():
-    from datetime import date, datetime, timedelta, timezone
+    from datetime import UTC, date, datetime, timedelta, timezone
 
     import reflex as rx
 
