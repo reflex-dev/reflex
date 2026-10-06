@@ -1,0 +1,6 @@
+27,28c27,28
+< reflex==0.9.12
+< reflex-base==0.9.12
+---
+> reflex==0.10.0a1
+> reflex-base==0.10.0a1

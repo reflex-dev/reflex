@@ -1,0 +1,6 @@
+  Attempting uninstall: reflex
+    Found existing installation: reflex 0.9.12
+    Uninstalling reflex-0.9.12:
+      Successfully uninstalled reflex-0.9.12
+
+Successfully installed reflex-0.10.0a1 reflex-base-0.10.0a1

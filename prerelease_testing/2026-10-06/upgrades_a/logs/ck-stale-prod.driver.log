@@ -1,0 +1,31 @@
+[PASS   ] A: old version tab set up (Europe/Paris, ticking): ['7', ':', '20', ':', '24', 'PM']->['7', ':', '20', ':', '26', 'PM']
+A_before {'marker': 'old-tab-1791307224104', 'select': 'Europe/Paris', 'digital': ['7', ':', '20', ':', '26', 'PM'], 'switch': 'checked', 'body_tail': '7\n:\n20\n:\n26\nPM\nEurope/Paris\nBuilt with Reflex', 'toasts': [], 'url': 'http://localhost:3147/'}
+READY; waiting for 'down'
+B_server_down {'marker': 'old-tab-1791307224104', 'select': 'Europe/Paris', 'digital': ['7', ':', '20', ':', '32', 'PM'], 'switch': 'checked', 'body_tail': 'Cannot connect to server: websocket error.\nCheck if server is reachable at ws://localhost:3147/_event\n7\n:\n20\n:\n32\nPM\nEurope/Paris\nBuilt with Reflex', 'toasts': ['Cannot connect to server: websocket error.\nCheck if server is reachable at ws://localhost:3147/_event'], 'url': 'http://localhost:3147/'}
+waiting for 'up'
+C_after_up {'marker': 'old-tab-1791307224104', 'select': 'Europe/Paris', 'digital': ['7', ':', '20', ':', '49', 'PM'], 'switch': 'checked', 'body_tail': '7\n:\n20\n:\n49\nPM\nEurope/Paris\nBuilt with Reflex', 'toasts': [], 'url': 'http://localhost:3147/'}
+[ANOMALY] C: did the old tab reload itself after the new server came up?: marker=old-tab-1791307224104
+[PASS   ] C: clock state after reconnect (was ticking before upgrade): ticking=False ['7', ':', '20', ':', '49', 'PM']->['7', ':', '20', ':', '49', 'PM']
+[PASS   ] D: zone change from the (possibly stale) tab reaches the new backend: ['2', ':', '20', ':', '49', 'AM']
+[FAIL   ] D: switch toggle from the tab drives the bg task on the new backend: switch checked->unchecked ticking False->False
+D_interact {'marker': 'old-tab-1791307224104', 'select': 'Asia/Tokyo', 'digital': ['2', ':', '20', ':', '49', 'AM'], 'switch': 'unchecked', 'body_tail': '2\n:\n20\n:\n49\nAM\nAsia/Tokyo\nBuilt with Reflex', 'toasts': [], 'url': 'http://localhost:3147/'}
+E_after_manual_reload {'marker': None, 'select': 'Asia/Tokyo', 'digital': ['2', ':', '21', ':', '22', 'AM'], 'switch': 'unchecked', 'body_tail': '2\n:\n21\n:\n22\nAM\nAsia/Tokyo\nBuilt with Reflex', 'toasts': [], 'url': 'http://localhost:3147/'}
+[PASS   ] E: zone cookie survives the upgrade in the same browser session: select=Asia/Tokyo expected=Asia/Tokyo cookie={'reflex___state____state.clock___clock____state.zone_rx_state_': 'Asia%2FTokyo'}
+[PASS   ] E: on_load reset switch to off after reload: unchecked
+[ANOMALY] console: no unexpected errors/warnings + no page errors: [{"page": "main", "t": 9.711, "type": "error", "text": "WebSocket connection to 'ws://localhost:3147/_event/?token=c948fe92-aafd-4d74-f390-c2611b3e2eb7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"}, {"page": "main", "t": 9.917, "type": "error", "text": "WebSocket connection to 'ws://localhost:3147/_event/?token=c948fe92-aafd-4d74-f390-c2611b3e2
+[PASS   ] network: no unexpected failed/4xx/5xx requests: []
+
+== ck-stale-prod: {'pass': 6, 'fail': 1, 'anomaly': 2, 'skipped': 0}  console_total=14 unexpected_console=13 page_errors=0 bad_requests=0 (unexpected 0) ws_frames=78
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3147/_event/?token=c948fe92-aafd-4d74-f390-c2611b3e2eb7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3147/_event/?token=c948fe92-aafd-4d74-f390-c2611b3e2eb7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3147/_event/?token=c948fe92-aafd-4d74-f390-c2611b3e2eb7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3147/_event/?token=c948fe92-aafd-4d74-f390-c2611b3e2eb7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3147/_event/?token=c948fe92-aafd-4d74-f390-c2611b3e2eb7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3147/_event/?token=c948fe92-aafd-4d74-f390-c2611b3e2eb7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3147/_event/?token=c948fe92-aafd-4d74-f390-c2611b3e2eb7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3147/_event/?token=c948fe92-aafd-4d74-f390-c2611b3e2eb7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3147/_event/?token=c948fe92-aafd-4d74-f390-c2611b3e2eb7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3147/_event/?token=c948fe92-aafd-4d74-f390-c2611b3e2eb7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3147/_event/?token=c948fe92-aafd-4d74-f390-c2611b3e2eb7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3147/_event/?token=c948fe92-aafd-4d74-f390-c2611b3e2eb7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+  UNEXPECTED CONSOLE: error WebSocket connection to 'ws://localhost:3147/_event/?token=c948fe92-aafd-4d74-f390-c2611b3e2eb7&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED

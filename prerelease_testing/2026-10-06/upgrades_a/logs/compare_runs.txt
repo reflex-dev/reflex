@@ -1,0 +1,63 @@
+#### fd/fd-base-full fd/fd-up-up fd/fd-cold-up fdpip/fdpip-mixed-up
+fd-base-full             checks={'pass': 16, 'anomaly': 3} console=56 page_errors=0 bad_req=0
+fd-up-up                 checks={'pass': 10, 'anomaly': 2} console=36 page_errors=0 bad_req=0
+fd-cold-up               checks={'pass': 10, 'anomaly': 3} console=36 page_errors=0 bad_req=0
+fdpip-mixed-up           checks={'pass': 10, 'anomaly': 3} console=36 page_errors=0 bad_req=0
+   X X X X error: %o  %s  %s  Error: `FormMessage` must be used within `FormField` or specify the `name` pro
+check-status differences fd-base-full -> fd-up-up: {'editor lists 4 fields after reload': ('pass', None), 'create form: debounced name input creates form + redirect': ('pass', None), 'add field color: rx.call_script focused newest option input': ('pass', None)
+check-status differences fd-base-full -> fd-cold-up: {'editor lists 4 fields after reload': ('pass', None), 'create form: debounced name input creates form + redirect': ('pass', None), 'add field color: rx.call_script focused newest option input': ('pass', Non
+check-status differences fd-base-full -> fdpip-mixed-up: {'editor lists 4 fields after reload': ('pass', None), 'create form: debounced name input creates form + redirect': ('pass', None), 'add field color: rx.call_script focused newest option input': ('pass',
+#### fd/fd-base-entry fd/fd-up-entry fdpip/fdpip-mixed-entry fd/fd-up-prod-entry
+fd-base-entry            checks={'pass': 13, 'fail': 1, 'anomaly': 1} console=25 page_errors=0 bad_req=0
+fd-up-entry              checks={'pass': 14, 'anomaly': 1} console=25 page_errors=0 bad_req=0
+fdpip-mixed-entry        checks={'pass': 14, 'anomaly': 1} console=25 page_errors=0 bad_req=0
+fd-up-prod-entry         checks={'pass': 15} console=3 page_errors=0 bad_req=0
+   X X X . error: <%s> cannot contain a nested %s. See this log for the ancestor stack trace. button <button
+   X X X . error: In HTML, %s cannot be a descendant of <%s>. This will cause a hydration error.%s <button> 
+   X X X . error: Received `%s` for a non-boolean attribute `%s`.  If you want to write it to the DOM, pass 
+   X X X . error: The pseudo class ":first-child" is potentially unsafe when doing server-side rendering. Tr
+check-status differences fd-base-entry -> fd-up-entry: {'rx.Cookie client_token set in browser': ('fail', 'pass')}
+check-status differences fd-base-entry -> fdpip-mixed-entry: {'rx.Cookie client_token set in browser': ('fail', 'pass')}
+check-status differences fd-base-entry -> fd-up-prod-entry: {'console: no unexpected errors/warnings + no page errors': ('anomaly', 'pass'), 'rx.Cookie client_token set in browser': ('fail', 'pass')}
+#### rx/rx-base rx/rx-up rx/rx-cold rx/rx-up-prod
+rx-base                  checks={'pass': 19} console=14 page_errors=0 bad_req=0
+rx-up                    checks={'pass': 19} console=14 page_errors=0 bad_req=0
+rx-cold                  checks={'pass': 19} console=14 page_errors=0 bad_req=0
+rx-up-prod               checks={'pass': 18, 'anomaly': 1} console=3 page_errors=0 bad_req=0
+   . . . X error: Failed to load resource: the server responded with a status of 404 (Not Found)
+check-status differences rx-base -> rx-up: none
+check-status differences rx-base -> rx-cold: none
+check-status differences rx-base -> rx-up-prod: {'console: no unexpected errors/warnings + no page errors': ('pass', 'anomaly')}
+#### gh/gh-up gh/gh-cold3 gh/gh-up-prod2
+gh-up                    checks={'pass': 12, 'anomaly': 2} console=21 page_errors=0 bad_req=0
+gh-cold3                 checks={'pass': 12, 'anomaly': 2} console=21 page_errors=0 bad_req=0
+gh-up-prod2              checks={'pass': 13, 'anomaly': 1} console=3 page_errors=0 bad_req=0
+   X X . error: You provided a `value` prop to a form field without an `onChange` handler. This will rende
+check-status differences gh-up -> gh-cold3: none
+check-status differences gh-up -> gh-up-prod2: {'console: no unexpected errors/warnings + no page errors': ('anomaly', 'pass')}
+#### ck/ck-base ck/ck-up ck/ck-cold
+ck-base                  checks={'pass': 17} console=14 page_errors=0 bad_req=0
+ck-up                    checks={'pass': 17} console=14 page_errors=0 bad_req=0
+ck-cold                  checks={'pass': 17} console=14 page_errors=0 bad_req=0
+check-status differences ck-base -> ck-up: none
+check-status differences ck-base -> ck-cold: none
+#### counter/counter-base counter/counter-up counter/counter-cold
+counter-base             checks={'pass': 8} console=9 page_errors=0 bad_req=0
+counter-up               checks={'pass': 8} console=9 page_errors=0 bad_req=0
+counter-cold             checks={'pass': 8} console=9 page_errors=0 bad_req=0
+check-status differences counter-base -> counter-up: none
+check-status differences counter-base -> counter-cold: none
+#### traversal/traversal-base traversal/traversal-up traversal/traversal-cold
+traversal-base           checks={'pass': 13} console=9 page_errors=0 bad_req=0
+traversal-up             checks={'pass': 13} console=9 page_errors=0 bad_req=0
+traversal-cold           checks={'pass': 13} console=9 page_errors=0 bad_req=0
+check-status differences traversal-base -> traversal-up: none
+check-status differences traversal-base -> traversal-cold: none
+#### json-tree/json-tree-base json-tree/json-tree-up json-tree/json-tree-cold json-tree/json-tree-up-prod
+json-tree-base           checks={'pass': 8} console=9 page_errors=0 bad_req=0
+json-tree-up             checks={'pass': 8} console=9 page_errors=0 bad_req=0
+json-tree-cold           checks={'pass': 8} console=9 page_errors=0 bad_req=0
+json-tree-up-prod        checks={'pass': 8} console=1 page_errors=0 bad_req=0
+check-status differences json-tree-base -> json-tree-up: none
+check-status differences json-tree-base -> json-tree-cold: none
+check-status differences json-tree-base -> json-tree-up-prod: none

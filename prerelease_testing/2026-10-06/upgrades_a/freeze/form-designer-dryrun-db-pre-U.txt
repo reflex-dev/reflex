@@ -1,0 +1,36 @@
+Using Python 3.12.3 environment at: envs/upgrades_a-form-designer
+Resolved 51 packages in 317ms
+Would download 16 packages
+Would uninstall 15 packages
+Would install 16 packages
+ - pydantic==2.13.5
+ + pydantic==2.14.0b2
+ - pydantic-core==2.46.5
+ + pydantic-core==2.49.0
+ - reflex==0.9.12
+ + reflex==0.10.0a1
+ - reflex-base==0.9.12
+ + reflex-base==0.10.0a1
+ + reflex-build-sdk==0.0.5
+ - reflex-components-code==0.9.6
+ + reflex-components-code==0.10.0a1
+ - reflex-components-core==0.9.10.post1
+ + reflex-components-core==0.10.0a1
+ - reflex-components-gridjs==0.9.2.post1
+ + reflex-components-gridjs==0.10.0a1
+ - reflex-components-markdown==0.9.4.post1
+ + reflex-components-markdown==0.10.0a1
+ - reflex-components-moment==0.9.4
+ + reflex-components-moment==0.10.0a1
+ - reflex-components-plotly==0.9.7
+ + reflex-components-plotly==0.10.0a1
+ - reflex-components-radix==0.9.10.post1
+ + reflex-components-radix==0.10.0a1
+ - reflex-components-recharts==0.9.4.post1
+ + reflex-components-recharts==0.10.0a1
+ - reflex-hosting-cli==0.1.72
+ + reflex-hosting-cli==0.1.73a1
+ - sqlmodel==0.0.47
+ + sqlmodel==0.0.44
+ - wrapt==2.3.0
+ + wrapt==2.5.0

@@ -1,0 +1,16 @@
+=== write+read with sqlmodel 0.0.47 (venv upgrades_a-form-designer: reflex 0.10.0a1 after plain -U, sqlmodel left at 0.9.12's 0.0.47)
+sqlmodel 0.0.47 column type: UTCDateTime()
+naive write: REJECTED -> StatementError (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annotate the field with NaiveDatetime for naive storage
+read aware-utc@0.0.47             -> datetime.datetime(2026, 10, 6, 17, 0, tzinfo=datetime.timezone.utc) isoformat=2026-10-06T17:00:00+00:00 | compare-with-aware-now OK (True)
+raw sqlite: [('aware-utc@0.0.47', '2026-10-06 17:00:00.000000')]
+=== read the same rows with sqlmodel 0.0.44 (shared venv alpha: fresh reflex[db]==0.10.0a1)
+sqlmodel 0.0.44 column type: DateTime()
+read aware-utc@0.0.47             -> datetime.datetime(2026, 10, 6, 17, 0) isoformat=2026-10-06T17:00:00 | compare-with-aware-now TypeError: can't compare offset-naive and offset-aware datetimes
+raw sqlite: [('aware-utc@0.0.47', '2026-10-06 17:00:00.000000')]
+=== write with 0.0.44 into the same table (naive accepted)
+sqlmodel 0.0.44 column type: DateTime()
+naive write: accepted
+read aware-utc@0.0.47             -> datetime.datetime(2026, 10, 6, 17, 0) isoformat=2026-10-06T17:00:00 | compare-with-aware-now TypeError: can't compare offset-naive and offset-aware datetimes
+read aware-utc@0.0.44             -> datetime.datetime(2026, 10, 6, 17, 0) isoformat=2026-10-06T17:00:00 | compare-with-aware-now TypeError: can't compare offset-naive and offset-aware datetimes
+read naive@0.0.44                 -> datetime.datetime(2026, 10, 6, 17, 0) isoformat=2026-10-06T17:00:00 | compare-with-aware-now TypeError: can't compare offset-naive and offset-aware datetimes
+raw sqlite: [('aware-utc@0.0.47', '2026-10-06 17:00:00.000000'), ('aware-utc@0.0.44', '2026-10-06 17:00:00.000000'), ('naive@0.0.44', '2026-10-06 17:00:00.000000')]
