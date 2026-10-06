@@ -53,7 +53,7 @@ def _lock_descriptor(descriptor: int, *, unlock: bool = False) -> None:
         while True:
             try:
                 msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)
-            except OSError as error:  # noqa: PERF203 - retry a contended OS lock
+            except OSError as error:
                 if error.errno != errno.EACCES:
                     raise
                 # Poll every 100 ms; builds can exceed LK_LOCK's ten-second limit.
