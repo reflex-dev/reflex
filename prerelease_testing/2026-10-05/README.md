@@ -1,9 +1,11 @@
 # Published prerelease exploration — October 5, 2026
 
-**Latest release gate: HOLD for two blockers: enterprise #245's logout-recovery
-security weakness and newly introduced mixed-version Redis mutation loss.**
-Failed application cleanup can preserve protected state across an account
-change; an old worker loses backend mutations on alpha-saved state. The two a3
+**Latest release gate: HOLD for one blocker: enterprise #245's conditional
+logout-recovery security weakness, freshly reproduced on the published a4
+wheel without manually clearing cookies.** Failed application cleanup can
+preserve protected state across an account change. Mixed-version workers and
+downgrades are explicitly unsupported under the maintainer's forward-only
+upgrade policy; finding 16 is no longer a blocker. The two a3
 auth problems now pass: 36/36 auth browser cases, including
 repeated public reloads and iframe pending replay. Cookie and Free-tier checks
 also pass. See the [a4 combined gate, patch guidance and evidence](enterprise/a4/REPORT.md).
@@ -67,7 +69,7 @@ The migration fragment links to unrelated issue #6706; its implementing PR is
 
 | Exploration | Outcome and reusable report |
 | --- | --- |
-| Combined payload with enterprise a4 | Auth fixes validated; security and rolling-upgrade persistence blockers remain; [a4 report](enterprise/a4/REPORT.md) |
+| Combined payload with enterprise a4 | Auth fixes validated; one conditional security blocker freshly reproduced; mixed-version workers are unsupported; [a4 report](enterprise/a4/REPORT.md) |
 | Enterprise a3 follow-up: auth, cookies, grid/maps, OAuth/anonymous MCP and Free-tier guards | Three a2 blockers resolved; async public reload and additional limits remain; [a3 report](enterprise/a3/REPORT.md) |
 | State descriptors, shadowing, inherited events/background mutation, ABC, mode guards, contexts, memo/ComponentState/client State, shared/private state, deep equality, slicing, download and event recovery | 71 browser assertions in each of dev/prod plus backend checks; [core report](core_state/README.md) |
 | Buffered/chunked uploads, HTTP event streams, concurrent clients/uploads, disconnect/navigation cancellation, recovery after response closure and actual OTel lineage | All seven scenarios in each mode, with 25 visible assertions plus timing/transport/span checks; [upload report](core_state/upload/README.md) |

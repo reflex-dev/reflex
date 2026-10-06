@@ -1,0 +1,4 @@
+{"case": "normal", "completed": true, "logout_error": false, "previous_record_visible": false, "previous_cache_visible": false, "same_client_token": true, "failure": null}
+{"case": "frontend", "completed": true, "logout_error": true, "previous_record_visible": true, "previous_cache_visible": false, "same_client_token": true, "failure": null}
+{"case": "backend", "completed": true, "logout_error": true, "previous_record_visible": false, "previous_cache_visible": true, "same_client_token": true, "failure": null}
+WARN `--no-project` was provided, but no project was found

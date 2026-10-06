@@ -1,0 +1,51 @@
+{
+  "fresh_package_files_match": 157,
+  "exact_alpha_graph_unchanged": true,
+  "completed_browser_cases": 3,
+  "manually_cleared_cookies": false,
+  "normal_control": {
+    "private_frontend_retained": false,
+    "private_backend_retained": false
+  },
+  "frontend_failure_private_data_retained": true,
+  "backend_failure_private_data_retained": true,
+  "anonymous_action_records": 0,
+  "next_identity_action_records": 3,
+  "saved_source_matches_executed_source": [
+    "source/app/rxconfig.py",
+    "source/app/security_probe/__init__.py",
+    "source/app/security_probe/security_probe.py",
+    "source/drive_recheck.py",
+    "source/mock_oidc.py",
+    "source/retained_driver.py",
+    "source/validate.py"
+  ],
+  "owned_ports_closed": true,
+  "historical_manifests_unchanged": [
+    {
+      "manifest": "auth/source-hashes.json",
+      "base": "auth",
+      "files": 44,
+      "errors": []
+    },
+    {
+      "manifest": "security/sha256.json",
+      "base": "security",
+      "files": 50,
+      "errors": []
+    },
+    {
+      "manifest": "components/source-sha256.json",
+      "base": "components/source",
+      "files": 25,
+      "errors": []
+    },
+    {
+      "manifest": "rolling/sha256.json",
+      "base": "rolling",
+      "files": 58,
+      "errors": []
+    }
+  ],
+  "interpretation": "One conditional security blocker remains; the mixed-version worker finding is an expected unsupported configuration under the maintainer clarification."
+}

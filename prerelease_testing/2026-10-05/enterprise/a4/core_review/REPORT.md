@@ -1,12 +1,13 @@
 # Independent review of original core coverage and findings 4–11
 
-**Final root gate adjudication:** a subsequent fresh stable-only/mixed/alpha-only
-[Redis comparison](../rolling/REPORT.md) confirms the advertised #7312
-mutable-backend exception loses a previously working mutation only in the mixed
-case. The user's newly introduced criterion makes it finding 16 and a release
-blocker. This supersedes the initial nonblocking disposition of that documented
-exception below; documentation is not an explicit waiver. Findings 4–11 retain
-their separate classifications.
+**Latest root gate adjudication:** the fresh stable-only/mixed/alpha-only
+[Redis comparison](../rolling/REPORT.md) remains valid evidence, but the
+maintainer has explicitly clarified that mixed versions and downgrades are
+unsupported across the minor state-format change. Finding 16 is now an expected
+unsupported configuration and is removed from blockers; this supersedes the
+root's previous blocker classification. See [the latest disposition](../rolling/DISPOSITION.md).
+Findings 4–11 retain their separate classifications. The remaining conditional
+security blocker has [fresh published-a4 evidence](../logout-recheck/REPORT.md).
 
 The original nonenterprise campaign and its linked descriptions support functional compatibility within the recorded scopes. Findings 5–11 do not establish a newly introduced, critical or demonstrably weak-security blocker. Finding 4 originally lacked a working stable comparison at 1,500 States; the separately executed [a4 bounded comparison](../scale/REPORT.md) now demonstrates this failure class on stable too. This component lane found no additional unclassified blocker. The release decision must separately include the independent [auth fault/security lane](../security/REPORT.md); passing component checks do not resolve its confidential-state finding.
 

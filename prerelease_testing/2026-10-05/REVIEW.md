@@ -1,10 +1,12 @@
 # Adversarial artifact review
 
 The [a4 release-gate review](enterprise/a4/REVIEW.md) adds the independent
-logout-recovery security assessment and fresh rolling-upgrade controls.
-Current gate: HOLD for findings 15–16. A documented newly introduced persistence
-regression remains a blocker under the user's rule; earlier coverage passes
-must not silently waive it. Historical review text below is retained.
+historical security assessment and fresh rolling-upgrade controls, followed by
+the root's [fresh published-wheel logout recheck](enterprise/a4/logout-recheck/REPORT.md).
+Current gate: HOLD for finding 15 only. Its conditional retained-state result
+reproduces without manual cookie clearing. The maintainer explicitly excludes
+mixed workers/downgrades across the minor state-format change; finding 16 is
+now an expected unsupported configuration. Historical review text below is retained.
 
 The [a3 follow-up review](enterprise/a3/REVIEW.md) records additional reusable
 driver limits and exact diagnostic allowances. The a3 Free-tier rerun uses a

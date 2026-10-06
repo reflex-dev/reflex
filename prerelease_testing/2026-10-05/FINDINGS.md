@@ -9,9 +9,11 @@ The [published enterprise a3 rerun](enterprise/a3/REPORT.md) confirms findings
 as 12–14 and subsequently filed as enterprise issues #252–254 at the user's
 request. No framework fixes were attempted.
 
-**Current a4 release gate: HOLD for findings 15–16: the demonstrated security
-weakness tracked in enterprise #245 and a newly introduced rolling-upgrade
-persistence regression.** Findings 12–13 now pass; the
+**Current a4 release gate: HOLD for finding 15: the conditional security
+weakness tracked in enterprise #245, freshly reproduced on the current PyPI
+wheel without manually clearing cookies.** Finding 16 is now an expected
+unsupported configuration under the maintainer's explicit forward-only upgrade
+policy. Findings 12–13 now pass; the
 user deferred finding 14. The [combined a4 reassessment](enterprise/a4/REPORT.md)
 applies the user's gate: newly introduced, critical, or demonstrably weak
 security requiring a pre-release fix. Known noncritical preexisting defects
@@ -224,9 +226,13 @@ and remains outside the user's issue-filing requests.
     Both frontend and backend private-state cases show the weakness; a normal
     logout control clears the data. Anonymous protected actions remain blocked.
     This is an account-boundary confidentiality problem, not a claimed anonymous
-    authentication bypass. The completed handoff cleared browser cookies and
-    restored the application dependency before the next login; an uninterrupted
-    handoff without that step and an older baseline were not completed. The
+    authentication bypass. A fresh exact PyPI installation matches all 157
+    enterprise package files in the current published a4 wheel. The new normal
+    control and both factory-failure cases complete without manually clearing
+    cookies, using ordinary OIDC login and explicit reload with a checked new
+    identity. The application dependency is restored before the next login;
+    both failure cases still retain the corresponding private data. An older
+    security baseline was not run. The
     introducing version is unestablished, but demonstrated weak security meets
     the user's blocker rule independently of regression status.
 
@@ -237,11 +243,15 @@ and remains outside the user's issue-filing requests.
     another identity is admitted, and cover exceptional logout/account changes
     in browser and backend regression tests. Continuing other resets or simply
     clearing cookies is insufficient. No patch or external issue/comment was
-    made in this reassessment. [Defensive report and evidence](enterprise/a4/security/REPORT.md),
-    [independent evidence review](enterprise/a4/security/REVIEW.md).
+    made in this reassessment. [Fresh published-wheel report and evidence](enterprise/a4/logout-recheck/REPORT.md)
+    supersede the earlier cookie-clearing limitation. The published handler
+    catches a whole State reset error and re-raises after processing other
+    States; it does not restore the failed field or finish that State's cleanup.
+    [Original defensive report](enterprise/a4/security/REPORT.md) and
+    [earlier independent review](enterprise/a4/security/REVIEW.md) remain historical.
 
-16. **P1 — An old Redis worker silently loses backend mutations on alpha-saved
-    State during a rolling upgrade.** Nine fresh workers on disposable Redis
+16. **Expected unsupported configuration — Mixed old/new Redis workers lose
+    backend mutations on alpha-saved State.** Nine fresh workers on disposable Redis
     compare identical app source across published 0.9.12 and 0.10.0a1:
     stable→stable→stable and alpha→alpha→alpha both persist a backend-list
     append, while alpha→stable→alpha loses it. The mixed old worker sees the
@@ -250,14 +260,13 @@ and remains outside the user's issue-filing requests.
     [Exact controls, source and raw persistence evidence](enterprise/a4/rolling/REPORT.md)
     retain the result and isolated 104/91-package graphs.
 
-    The #7312 changelog advertises this exception. It is still newly introduced
-    loss of previously working persistence and therefore meets the user's
-    blocker criterion; documentation is not an explicit waiver. The repair must
-    preserve backward-compatible mutable-backend wrapping/dirty tracking when
-    old workers deserialize new State, with fresh-worker stable-only, mixed and
-    alpha-only persistence regressions. Avoiding mixed workers or using full
-    reassignment mitigates deployment exposure but is not a tested framework
-    fix. No source fix or external issue/comment was made here.
+    The maintainer explicitly clarified that the minor-version state-format
+    change supports forward-only upgrades; downgrades and mixed workers are
+    unsupported. This test exercises that unsupported configuration, so the
+    prior blocker classification is withdrawn. No repair is requested for that
+    path. [Latest disposition](enterprise/a4/rolling/DISPOSITION.md) supersedes
+    the sealed historical report's classification without altering evidence.
+    No source fix or external issue/comment was made here.
 
 ## Triage and rerun guidance
 

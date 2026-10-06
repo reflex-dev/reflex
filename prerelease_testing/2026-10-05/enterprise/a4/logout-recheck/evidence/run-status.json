@@ -1,0 +1,23 @@
+{
+  "started_at_utc": "2026-10-06T05:22:39.742236+00:00",
+  "initial_ports_closed": [
+    3152,
+    8152,
+    9151
+  ],
+  "driver_exit": 0,
+  "completed_cases": 3,
+  "all_cases_completed": true,
+  "security_failure_observed": true,
+  "final_ports": {
+    "3152": {
+      "closed": true
+    },
+    "8152": {
+      "closed": true
+    },
+    "9151": {
+      "closed": true
+    }
+  }
+}

@@ -1,29 +1,29 @@
 {
-  "file_count": 1493,
-  "bytes": 33404109,
+  "file_count": 1522,
+  "bytes": 33651299,
   "suffixes": {
     "": 19,
     ".css": 9,
     ".html": 16,
     ".http": 1,
     ".ico": 2,
-    ".json": 341,
-    ".jsonl": 98,
+    ".json": 349,
+    ".jsonl": 99,
     ".lock": 2,
-    ".log": 326,
-    ".md": 72,
+    ".log": 331,
+    ".md": 76,
     ".pickle": 22,
-    ".png": 145,
-    ".py": 364,
+    ".png": 148,
+    ".py": 371,
     ".sh": 2,
     ".toml": 2,
-    ".txt": 72
+    ".txt": 73
   },
   "validation_counts": {
-    "json_documents": 341,
-    "python_syntax": 364,
-    "jsonl_records": 275,
-    "jsonl_files": 98
+    "json_documents": 349,
+    "python_syntax": 371,
+    "jsonl_records": 278,
+    "jsonl_files": 99
   },
   "parse_errors": [],
   "missing_central_document_links": [],

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "git",
+    "diff",
+    "--cached",
+    "--check"
+  ],
+  "exit_code": 2,
+  "diagnostic_count": 614,
+  "by_suffix": {
+    ".log": 614
+  },
+  "source_or_document_issues": [],
+  "classification": "Only emitted whitespace in captured runtime logs is retained unchanged."
+}

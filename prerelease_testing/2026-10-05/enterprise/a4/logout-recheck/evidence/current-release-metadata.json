@@ -1,0 +1,201 @@
+{
+  "project": "reflex-enterprise",
+  "source": "https://pypi.org/pypi/reflex-enterprise/json",
+  "last_serial": 41865505,
+  "stable_info_version": "0.9.6",
+  "observed_during": "2026-10-06 UTC logout follow-up",
+  "observed_0_9_7_releases": {
+    "0.9.7a1": [
+      {
+        "comment_text": null,
+        "core-metadata": {
+          "sha256": "b806184121d50c13a2d8b5cfe209961ab3a58143ad7a9797a37be840099d197e"
+        },
+        "digests": {
+          "blake2b_256": "50ae2acf17036ec339ac38719e8e634aad8b508c6a3007b2433d1a0bdf0448c5",
+          "md5": "d642b9430462692b7dd8a85a696970a8",
+          "sha256": "54161bac2113f42dfa385cda55faa820088e44be08901f0dab4f4fecbc584f51"
+        },
+        "downloads": -1,
+        "filename": "reflex_enterprise-0.9.7a1-py3-none-any.whl",
+        "has_sig": false,
+        "md5_digest": "d642b9430462692b7dd8a85a696970a8",
+        "packagetype": "bdist_wheel",
+        "python_version": "py3",
+        "requires_python": "<4.0,>=3.10",
+        "size": 468732,
+        "upload_time": "2026-10-05T19:17:24",
+        "upload_time_iso_8601": "2026-10-05T19:17:24.779262Z",
+        "url": "https://files.pythonhosted.org/packages/50/ae/2acf17036ec339ac38719e8e634aad8b508c6a3007b2433d1a0bdf0448c5/reflex_enterprise-0.9.7a1-py3-none-any.whl",
+        "yanked": false,
+        "yanked_reason": null
+      },
+      {
+        "comment_text": null,
+        "core-metadata": false,
+        "digests": {
+          "blake2b_256": "0abe180c168fa1f3375d560cd5cb84bab07de496d7a7526ff0042e2698eb49f6",
+          "md5": "94debf7f6eab9e7ccc2d694af79a272f",
+          "sha256": "b2d2034796d33331f2a7198cdc514b00ee723e7ece763bc5c844f3758e66df75"
+        },
+        "downloads": -1,
+        "filename": "reflex_enterprise-0.9.7a1.tar.gz",
+        "has_sig": false,
+        "md5_digest": "94debf7f6eab9e7ccc2d694af79a272f",
+        "packagetype": "sdist",
+        "python_version": "source",
+        "requires_python": "<4.0,>=3.10",
+        "size": 904734,
+        "upload_time": "2026-10-05T19:17:26",
+        "upload_time_iso_8601": "2026-10-05T19:17:26.349611Z",
+        "url": "https://files.pythonhosted.org/packages/0a/be/180c168fa1f3375d560cd5cb84bab07de496d7a7526ff0042e2698eb49f6/reflex_enterprise-0.9.7a1.tar.gz",
+        "yanked": false,
+        "yanked_reason": null
+      }
+    ],
+    "0.9.7a2": [
+      {
+        "comment_text": null,
+        "core-metadata": {
+          "sha256": "46d0475e06814228647ba640725d02a1ae6911c6e5a21a75c5d86883bde2decf"
+        },
+        "digests": {
+          "blake2b_256": "7319c93511fd23950c365052acf686b1a8abe9c7fe078363136e5a81d498deee",
+          "md5": "0117ead4da7153c5e241b38c5117724c",
+          "sha256": "1029cf42a12f47d9fa836be4ba47f0a151e830b2c466f0195089029d28dc35df"
+        },
+        "downloads": -1,
+        "filename": "reflex_enterprise-0.9.7a2-py3-none-any.whl",
+        "has_sig": false,
+        "md5_digest": "0117ead4da7153c5e241b38c5117724c",
+        "packagetype": "bdist_wheel",
+        "python_version": "py3",
+        "requires_python": "<4.0,>=3.10",
+        "size": 469070,
+        "upload_time": "2026-10-05T22:36:07",
+        "upload_time_iso_8601": "2026-10-05T22:36:07.751434Z",
+        "url": "https://files.pythonhosted.org/packages/73/19/c93511fd23950c365052acf686b1a8abe9c7fe078363136e5a81d498deee/reflex_enterprise-0.9.7a2-py3-none-any.whl",
+        "yanked": false,
+        "yanked_reason": null
+      },
+      {
+        "comment_text": null,
+        "core-metadata": false,
+        "digests": {
+          "blake2b_256": "edc173528cc792bc9d23455237a2789634f37674785700d99582bbcb55df2d4f",
+          "md5": "f84fe10ec395df7853fbb6aacb25fa48",
+          "sha256": "5f0b42e6c90fc1999aed9b4e3e99c98c37d58a172fc3d0908772af2f2ae25c42"
+        },
+        "downloads": -1,
+        "filename": "reflex_enterprise-0.9.7a2.tar.gz",
+        "has_sig": false,
+        "md5_digest": "f84fe10ec395df7853fbb6aacb25fa48",
+        "packagetype": "sdist",
+        "python_version": "source",
+        "requires_python": "<4.0,>=3.10",
+        "size": 905490,
+        "upload_time": "2026-10-05T22:36:09",
+        "upload_time_iso_8601": "2026-10-05T22:36:09.177119Z",
+        "url": "https://files.pythonhosted.org/packages/ed/c1/73528cc792bc9d23455237a2789634f37674785700d99582bbcb55df2d4f/reflex_enterprise-0.9.7a2.tar.gz",
+        "yanked": false,
+        "yanked_reason": null
+      }
+    ],
+    "0.9.7a3": [
+      {
+        "comment_text": null,
+        "core-metadata": {
+          "sha256": "f89d4ad8d97b8a1a3b448599e4d5725b84437f611b35d198ac1a5674a7f71fc0"
+        },
+        "digests": {
+          "blake2b_256": "6b7c09f2f8b8ac4ce56df89e40d87d82c9c56ae09e685d8d9a2c73725a9e8b58",
+          "md5": "59a1ce25964e9208f8148eb4e0b8b003",
+          "sha256": "2e79a132e8425ec76e3fb9bf09a8c2062bcb69c84a2eb823a34910882fa381c3"
+        },
+        "downloads": -1,
+        "filename": "reflex_enterprise-0.9.7a3-py3-none-any.whl",
+        "has_sig": false,
+        "md5_digest": "59a1ce25964e9208f8148eb4e0b8b003",
+        "packagetype": "bdist_wheel",
+        "python_version": "py3",
+        "requires_python": "<4.0,>=3.10",
+        "size": 471370,
+        "upload_time": "2026-10-06T00:33:25",
+        "upload_time_iso_8601": "2026-10-06T00:33:25.332632Z",
+        "url": "https://files.pythonhosted.org/packages/6b/7c/09f2f8b8ac4ce56df89e40d87d82c9c56ae09e685d8d9a2c73725a9e8b58/reflex_enterprise-0.9.7a3-py3-none-any.whl",
+        "yanked": false,
+        "yanked_reason": null
+      },
+      {
+        "comment_text": null,
+        "core-metadata": false,
+        "digests": {
+          "blake2b_256": "3e896709fde7fd9bd6bdfa3b3db6b1dcf4b3fcf5e3a813f4f6ac59a41652d02a",
+          "md5": "3037fc6cd117382680385ff7a9359478",
+          "sha256": "f58bfba4b7f735e37cb53c4f74510eea03aef0fc50375ed3de066c1bd6acc191"
+        },
+        "downloads": -1,
+        "filename": "reflex_enterprise-0.9.7a3.tar.gz",
+        "has_sig": false,
+        "md5_digest": "3037fc6cd117382680385ff7a9359478",
+        "packagetype": "sdist",
+        "python_version": "source",
+        "requires_python": "<4.0,>=3.10",
+        "size": 910252,
+        "upload_time": "2026-10-06T00:33:26",
+        "upload_time_iso_8601": "2026-10-06T00:33:26.584838Z",
+        "url": "https://files.pythonhosted.org/packages/3e/89/6709fde7fd9bd6bdfa3b3db6b1dcf4b3fcf5e3a813f4f6ac59a41652d02a/reflex_enterprise-0.9.7a3.tar.gz",
+        "yanked": false,
+        "yanked_reason": null
+      }
+    ],
+    "0.9.7a4": [
+      {
+        "comment_text": null,
+        "core-metadata": {
+          "sha256": "d641055b0e235b740d51eb65395f4daf46239de12c411b46266c99eeca8c20f9"
+        },
+        "digests": {
+          "blake2b_256": "708e51caa54a24e3a3f64db5b3e03a7255c5164e7bb723f03f4e5525bf0cd314",
+          "md5": "a9694943e51c34d2f6133a403b47549f",
+          "sha256": "a1c8d0e7977b6a39590dd8dcaa423bc486666d7fdd79134de4ffee6afb1b3638"
+        },
+        "downloads": -1,
+        "filename": "reflex_enterprise-0.9.7a4-py3-none-any.whl",
+        "has_sig": false,
+        "md5_digest": "a9694943e51c34d2f6133a403b47549f",
+        "packagetype": "bdist_wheel",
+        "python_version": "py3",
+        "requires_python": "<4.0,>=3.10",
+        "size": 471696,
+        "upload_time": "2026-10-06T04:37:42",
+        "upload_time_iso_8601": "2026-10-06T04:37:42.227171Z",
+        "url": "https://files.pythonhosted.org/packages/70/8e/51caa54a24e3a3f64db5b3e03a7255c5164e7bb723f03f4e5525bf0cd314/reflex_enterprise-0.9.7a4-py3-none-any.whl",
+        "yanked": false,
+        "yanked_reason": null
+      },
+      {
+        "comment_text": null,
+        "core-metadata": false,
+        "digests": {
+          "blake2b_256": "f7ee01aef0eaa2af4feb2b6fed2f0270349c901fbcfaddecc0a83486a93ebbe7",
+          "md5": "80e70808a6aca3f02937ef275071b2db",
+          "sha256": "40abf79e22e7a9dce6fccfaaafdc0e7c30745f4ed605b224351b6a57321fb86c"
+        },
+        "downloads": -1,
+        "filename": "reflex_enterprise-0.9.7a4.tar.gz",
+        "has_sig": false,
+        "md5_digest": "80e70808a6aca3f02937ef275071b2db",
+        "packagetype": "sdist",
+        "python_version": "source",
+        "requires_python": "<4.0,>=3.10",
+        "size": 913969,
+        "upload_time": "2026-10-06T04:37:43",
+        "upload_time_iso_8601": "2026-10-06T04:37:43.741584Z",
+        "url": "https://files.pythonhosted.org/packages/f7/ee/01aef0eaa2af4feb2b6fed2f0270349c901fbcfaddecc0a83486a93ebbe7/reflex_enterprise-0.9.7a4.tar.gz",
+        "yanked": false,
+        "yanked_reason": null
+      }
+    ]
+  }
+}

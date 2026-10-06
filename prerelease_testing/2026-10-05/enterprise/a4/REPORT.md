@@ -1,7 +1,10 @@
 # Combined prerelease gate after enterprise 0.9.7a4
 
-**HOLD: two blockers remain: enterprise #245's demonstrated security weakness,
-and newly introduced mixed-version Redis persistence loss.** The two reported
+**HOLD: one blocker remains: enterprise #245's conditional security weakness,
+freshly reproduced on the current published a4 wheel without manually clearing
+browser cookies.** Mixed-version workers and downgrades are explicitly
+unsupported under the maintainer's forward-only policy; finding 16 is no longer
+a blocker. The two reported
 a3 authentication failures now pass. No other new or critical blocker was
 established by the reassessment. The outstanding MCP URL
 trailing-slash issue is explicitly deferred to the next release by the user.
@@ -22,14 +25,25 @@ is sufficient to hold release under the security criterion, even though its
 introducing version is not established. It is tracked in the already-open
 [enterprise #245](https://github.com/reflex-dev/reflex-enterprise/issues/245).
 
-The completed handoff cleared browser cookies and restored the app dependency
-before the next ordinary OIDC login. A fresh page and independently reviewed
-observations establish data re-delivery beyond stale DOM. A handoff without
-that intervention and an older baseline were not completed. Anonymous protected
-actions remained denied; no anonymous authorization bypass is claimed. The
+After the maintainer challenged the evidence, a completely fresh PyPI
+installation was checked against the current a4 wheel: all 157 enterprise
+package files match. The new normal/frontend/backend cases all complete, using
+normal OIDC logins and explicit page reloads with a checked new identity.
+**No browser cookies are manually cleared.** The app dependency recovers before
+the next login. Both failure cases still retain the corresponding private data;
+the normal control clears both stores. Anonymous protected actions remain
+denied. The [fresh report, provenance and observations](logout-recheck/REPORT.md)
+supersede the older cookie-clearing limitation; the original
 [defensive report](security/REPORT.md) and [independent review](security/REVIEW.md)
-retain the evidence and exact limits; this report intentionally omits exploit
-instructions.
+remain historical evidence.
+
+The published try/except exists: `reset_app_state` catches a whole State's reset
+failure, continues other States and then re-raises. The failed field's factory
+has not produced a replacement value, and the failed State's remaining cleanup
+does not finish. The raised error also interrupts later normalized-user cleanup.
+Continuing other States therefore does not complete restoration of the failed
+State. This is conditional confidentiality failure, not an anonymous bypass or
+a demonstrated newly introduced a4 regression.
 
 Recommended patch requirements:
 
@@ -50,7 +64,7 @@ Recommended patch requirements:
 These are patch requirements, not a prescribed untested implementation. No
 framework fix or new external issue/comment was made in this task.
 
-## Newly introduced rolling-upgrade blocker
+## Unsupported mixed-version worker configuration
 
 Fresh real-Redis controls confirm backend-list mutations persist for both
 stable-only and alpha-only workers, but are silently lost when an old worker
@@ -61,14 +75,12 @@ graphs, and all owned Redis keys/services are cleaned afterward.
 [The controlled report](rolling/REPORT.md) retains provenance, source,
 dirty-state/snapshot observations, pickle hashes and all three comparisons.
 
-The #7312 changelog explicitly describes this exception. It is nevertheless
-newly introduced loss of previously working persistence during rolling upgrades,
-and the user's criterion does not waive documented regressions. It is finding
-16 and a release blocker independently of the security issue. The patch should
-restore backward-compatible mutable-backend tracking for old workers reading
-new State, then verify stable-only, mixed and alpha-only persistence with fresh
-workers. Avoiding worker-version overlap or replacing whole values mitigates
-the rollout exposure but is not a validated framework repair.
+The maintainer subsequently clarified that the state-format change supports
+forward-only upgrades; downgrades and mixed old/new workers are unsupported.
+The mixed alpha→stable→alpha test exercises that unsupported configuration.
+Finding 16 is therefore removed from blockers, and no repair is requested for
+that path. [The latest disposition](rolling/DISPOSITION.md) supersedes the
+classification in the sealed historical report without changing its evidence.
 
 ## Payload, isolation and coverage
 
@@ -113,8 +125,8 @@ CI/harness/offline bypasses absent. No real cloud account/provider was modified.
 | Enterprise grid/maps/storage/fonts | 15 grid plus 7 map/storage/font cases pass in each of dev/prod; [component evidence](components/REPORT.md) |
 | PR #251 formatter demo recipe | Inline/State/API renderer cases 3/3 in each mode; full export archive/bundle integrity passes; [export evidence](components/results-summary.json) |
 | Bounded core scale comparison | Alpha works at 1,200 where stable fails; both fail at 1,300; [scale report](scale/REPORT.md) |
-| Fresh rolling-upgrade Redis controls | Stable-only and alpha-only persist; mixed workers lose backend mutation; [rolling report](rolling/REPORT.md) |
-| Exceptional logout cleanup | Confidential-state isolation fails; security release blocker |
+| Fresh rolling-upgrade Redis controls | Stable-only and alpha-only persist; mixed-worker loss is expected in an unsupported configuration; [disposition](rolling/DISPOSITION.md) |
+| Exceptional logout cleanup | Fresh current-wheel normal control passes; both factory-failure cases retain private data without manual cookie clearing; [security blocker](logout-recheck/REPORT.md) |
 
 ## Remaining nonblockers and review limits
 
@@ -148,6 +160,6 @@ not comprehensively validated by these local runs.
 The [adversarial artifact review](REVIEW.md) records concrete driver limitations.
 Owned services are stopped and cleanup evidence is retained. Reusable apps,
 drivers, exact graphs and raw results are committed to the existing testing
-branch. The release should remain held until #245's fail-closed recovery and
-the rolling-upgrade persistence regression are patched and revalidated; this
-testing task does not implement either patch.
+branch. The release should remain held until #245's failed-cleanup isolation is
+patched and revalidated. The unsupported mixed-version path is not a blocker;
+this testing task implements no framework patch.

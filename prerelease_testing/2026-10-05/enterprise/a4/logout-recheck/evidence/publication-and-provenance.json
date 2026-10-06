@@ -1,0 +1,474 @@
+{
+  "checked_at_utc": "2026-10-06T05:22:39.687405+00:00",
+  "executable": "/private/tmp/reflex-enterprise-a4-20261005-logout-recheck-venv/bin/python",
+  "origins": {
+    "reflex": "/private/tmp/reflex-enterprise-a4-20261005-logout-recheck-venv/lib/python3.12/site-packages/reflex/__init__.py",
+    "reflex_base": "/private/tmp/reflex-enterprise-a4-20261005-logout-recheck-venv/lib/python3.12/site-packages/reflex_base/__init__.py",
+    "reflex_enterprise": "/private/tmp/reflex-enterprise-a4-20261005-logout-recheck-venv/lib/python3.12/site-packages/reflex_enterprise/__init__.py"
+  },
+  "graph": [
+    {
+      "name": "aiohappyeyeballs",
+      "version": "2.7.1"
+    },
+    {
+      "name": "aiohttp",
+      "version": "3.14.3"
+    },
+    {
+      "name": "aiosignal",
+      "version": "1.4.0"
+    },
+    {
+      "name": "alembic",
+      "version": "1.20.0"
+    },
+    {
+      "name": "annotated-types",
+      "version": "0.8.0"
+    },
+    {
+      "name": "anyio",
+      "version": "4.15.1"
+    },
+    {
+      "name": "asgiproxy",
+      "version": "0.2.0"
+    },
+    {
+      "name": "attrs",
+      "version": "26.1.0"
+    },
+    {
+      "name": "Authlib",
+      "version": "1.8.0"
+    },
+    {
+      "name": "bidict",
+      "version": "0.24.1"
+    },
+    {
+      "name": "blinker",
+      "version": "1.9.0"
+    },
+    {
+      "name": "certifi",
+      "version": "2026.7.22"
+    },
+    {
+      "name": "cffi",
+      "version": "2.1.1"
+    },
+    {
+      "name": "click",
+      "version": "8.5.0"
+    },
+    {
+      "name": "cryptography",
+      "version": "50.0.1"
+    },
+    {
+      "name": "Flask",
+      "version": "3.1.3"
+    },
+    {
+      "name": "frozenlist",
+      "version": "1.8.0"
+    },
+    {
+      "name": "granian",
+      "version": "2.8.3"
+    },
+    {
+      "name": "greenlet",
+      "version": "3.5.6"
+    },
+    {
+      "name": "griffelib",
+      "version": "2.3.0"
+    },
+    {
+      "name": "h11",
+      "version": "0.16.0"
+    },
+    {
+      "name": "htpy",
+      "version": "26.5.1"
+    },
+    {
+      "name": "httpcore",
+      "version": "1.0.9"
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1"
+    },
+    {
+      "name": "httpx-sse",
+      "version": "0.4.3"
+    },
+    {
+      "name": "idna",
+      "version": "3.20"
+    },
+    {
+      "name": "iniconfig",
+      "version": "2.3.0"
+    },
+    {
+      "name": "itsdangerous",
+      "version": "2.2.0"
+    },
+    {
+      "name": "Jinja2",
+      "version": "3.1.6"
+    },
+    {
+      "name": "joserfc",
+      "version": "1.7.5"
+    },
+    {
+      "name": "jsonschema",
+      "version": "4.26.0"
+    },
+    {
+      "name": "jsonschema-specifications",
+      "version": "2025.9.1"
+    },
+    {
+      "name": "Mako",
+      "version": "1.4.3"
+    },
+    {
+      "name": "markdown-it-py",
+      "version": "4.2.0"
+    },
+    {
+      "name": "MarkupSafe",
+      "version": "3.0.3"
+    },
+    {
+      "name": "mcp",
+      "version": "1.30.0"
+    },
+    {
+      "name": "mdurl",
+      "version": "0.1.2"
+    },
+    {
+      "name": "mistletoe",
+      "version": "1.6.0"
+    },
+    {
+      "name": "multidict",
+      "version": "6.9.1"
+    },
+    {
+      "name": "numpy",
+      "version": "2.5.3"
+    },
+    {
+      "name": "oidc-provider-mock",
+      "version": "0.4.2"
+    },
+    {
+      "name": "packaging",
+      "version": "26.3"
+    },
+    {
+      "name": "pandas",
+      "version": "2.3.3"
+    },
+    {
+      "name": "platformdirs",
+      "version": "4.12.1"
+    },
+    {
+      "name": "playwright",
+      "version": "1.55.0"
+    },
+    {
+      "name": "pluggy",
+      "version": "1.6.0"
+    },
+    {
+      "name": "propcache",
+      "version": "0.5.4"
+    },
+    {
+      "name": "psutil",
+      "version": "7.2.2"
+    },
+    {
+      "name": "pycparser",
+      "version": "3.0"
+    },
+    {
+      "name": "pydantic",
+      "version": "2.13.5"
+    },
+    {
+      "name": "pydantic-settings",
+      "version": "2.15.0"
+    },
+    {
+      "name": "pydantic_core",
+      "version": "2.46.5"
+    },
+    {
+      "name": "pyee",
+      "version": "13.0.1"
+    },
+    {
+      "name": "Pygments",
+      "version": "2.21.0"
+    },
+    {
+      "name": "PyJWT",
+      "version": "2.15.1"
+    },
+    {
+      "name": "pytest",
+      "version": "8.4.2"
+    },
+    {
+      "name": "python-dateutil",
+      "version": "2.9.0.post0"
+    },
+    {
+      "name": "python-dotenv",
+      "version": "1.2.3"
+    },
+    {
+      "name": "python-engineio",
+      "version": "4.14.0"
+    },
+    {
+      "name": "python-multipart",
+      "version": "0.0.32"
+    },
+    {
+      "name": "python-socketio",
+      "version": "5.17.0"
+    },
+    {
+      "name": "pytz",
+      "version": "2026.4"
+    },
+    {
+      "name": "PyYAML",
+      "version": "6.0.3"
+    },
+    {
+      "name": "redis",
+      "version": "7.4.1"
+    },
+    {
+      "name": "referencing",
+      "version": "0.37.0"
+    },
+    {
+      "name": "reflex",
+      "version": "0.10.0a1"
+    },
+    {
+      "name": "reflex-base",
+      "version": "0.10.0a1"
+    },
+    {
+      "name": "reflex-build-sdk",
+      "version": "0.0.5"
+    },
+    {
+      "name": "reflex-components-code",
+      "version": "0.10.0a1"
+    },
+    {
+      "name": "reflex-components-core",
+      "version": "0.10.0a1"
+    },
+    {
+      "name": "reflex-components-dataeditor",
+      "version": "0.9.2"
+    },
+    {
+      "name": "reflex-components-gridjs",
+      "version": "0.10.0a1"
+    },
+    {
+      "name": "reflex-components-lucide",
+      "version": "1.0.4"
+    },
+    {
+      "name": "reflex-components-markdown",
+      "version": "0.10.0a1"
+    },
+    {
+      "name": "reflex-components-moment",
+      "version": "0.10.0a1"
+    },
+    {
+      "name": "reflex-components-plotly",
+      "version": "0.10.0a1"
+    },
+    {
+      "name": "reflex-components-radix",
+      "version": "0.10.0a1"
+    },
+    {
+      "name": "reflex-components-react-player",
+      "version": "0.9.2"
+    },
+    {
+      "name": "reflex-components-recharts",
+      "version": "0.10.0a1"
+    },
+    {
+      "name": "reflex-components-sonner",
+      "version": "0.9.4"
+    },
+    {
+      "name": "reflex-docgen",
+      "version": "0.10.0a1"
+    },
+    {
+      "name": "reflex-enterprise",
+      "version": "0.9.7a4"
+    },
+    {
+      "name": "reflex-hosting-cli",
+      "version": "0.1.73a1"
+    },
+    {
+      "name": "reflex-release",
+      "version": "0.1.2a1"
+    },
+    {
+      "name": "rich",
+      "version": "15.0.0"
+    },
+    {
+      "name": "rpds-py",
+      "version": "2026.6.3"
+    },
+    {
+      "name": "ruff",
+      "version": "0.16.4"
+    },
+    {
+      "name": "simple-websocket",
+      "version": "1.1.0"
+    },
+    {
+      "name": "six",
+      "version": "1.17.0"
+    },
+    {
+      "name": "SQLAlchemy",
+      "version": "2.0.54"
+    },
+    {
+      "name": "sqlmodel",
+      "version": "0.0.44"
+    },
+    {
+      "name": "sse-starlette",
+      "version": "3.5.0"
+    },
+    {
+      "name": "starlette",
+      "version": "1.7.0"
+    },
+    {
+      "name": "towncrier",
+      "version": "25.8.0"
+    },
+    {
+      "name": "typing-inspection",
+      "version": "0.4.4"
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0"
+    },
+    {
+      "name": "tzdata",
+      "version": "2026.4"
+    },
+    {
+      "name": "uvicorn",
+      "version": "0.54.0"
+    },
+    {
+      "name": "watchfiles",
+      "version": "1.3.0"
+    },
+    {
+      "name": "websockets",
+      "version": "17.1"
+    },
+    {
+      "name": "Werkzeug",
+      "version": "3.1.9"
+    },
+    {
+      "name": "wrapt",
+      "version": "2.5.0"
+    },
+    {
+      "name": "wsproto",
+      "version": "1.3.2"
+    },
+    {
+      "name": "yarl",
+      "version": "1.25.1"
+    }
+  ],
+  "no_direct_url_installations": true,
+  "wheel": {
+    "filename": "reflex_enterprise-0.9.7a4-py3-none-any.whl",
+    "sha256": "a1c8d0e7977b6a39590dd8dcaa423bc486666d7fdd79134de4ffee6afb1b3638",
+    "url": "https://files.pythonhosted.org/packages/70/8e/51caa54a24e3a3f64db5b3e03a7255c5164e7bb723f03f4e5525bf0cd314/reflex_enterprise-0.9.7a4-py3-none-any.whl",
+    "uploaded_at_utc": "2026-10-06T04:37:42.227171Z"
+  },
+  "installed_package_files_compared": 157,
+  "installed_package_byte_mismatches": [],
+  "enforcement_sha256": "e4a0bb54a515e63b3b1e7d25292ffc111ab68d8d6bd9107d8eda0b3acda6d0c6",
+  "restoration_functions": {
+    "reset_app_state": {
+      "file": "/private/tmp/reflex-enterprise-a4-20261005-logout-recheck-venv/lib/python3.12/site-packages/reflex_enterprise/auth/enforcement.py",
+      "start_line": 1019,
+      "end_line": 1058,
+      "try_blocks": 2,
+      "source": "async def reset_app_state(state: \"BaseState\") -> None:\n    \"\"\"Reset only the authed surface of each non-exempt state (called on logout).\n\n    A user's session data must not survive into the next user logging in on the\n    same client token, but state the developer opted public via\n    ``rxe.field(auth=False)`` / ``rxe.var(auth=False)`` is not part of the\n    authenticated session and is preserved. Per non-exempt state this resets the\n    protected (``auth`` is not ``False``) base vars and drops the protected\n    computed-var caches, and always resets server-only backend vars (they never\n    reach the client and have no ``auth=False`` opt-out).\n\n    Exempt framework/provider states are skipped \u2014 their tokens are cleared\n    separately by ``_reset_auth``. The protection map holds exactly the\n    non-exempt states (the sweep registers every tree node), so resetting each\n    entry in place covers the whole app without recursion.\n\n    Args:\n        state: Any state instance off the current event's state tree.\n\n    Raises:\n        Exception: A state failed to reset, after the remaining states have\n            also been attempted.\n    \"\"\"\n    first_reset_error: Exception | None = None\n    for state_cls, overrides in _PROTECTION.items():\n        try:\n            substate = await state.get_state(state_cls)\n        except Exception:\n            continue  # fail closed: an unloadable state just stays as-is\n        try:\n            _reset_protected(substate, overrides)\n        except Exception as exc:\n            logger.exception(\n                \"Failed to reset protected state %s\", state_cls.get_full_name()\n            )\n            if first_reset_error is None:\n                first_reset_error = exc\n    # Finish clearing other states, but do not silently report a successful reset.\n    if first_reset_error is not None:\n        raise first_reset_error"
+    },
+    "_field_default": {
+      "file": "/private/tmp/reflex-enterprise-a4-20261005-logout-recheck-venv/lib/python3.12/site-packages/reflex_enterprise/auth/enforcement.py",
+      "start_line": 1061,
+      "end_line": 1072,
+      "try_blocks": 0,
+      "source": "def _field_default(field: Any) -> Any:\n    \"\"\"Materialize a field's declared default for assignment to a state instance.\n\n    Args:\n        field: The field whose default to resolve.\n\n    Returns:\n        The factory-called default, or a deep copy of the static default.\n    \"\"\"\n    if field.default_factory is not None:\n        return field.default_factory()\n    return copy.deepcopy(field.default)"
+    },
+    "_reset_protected": {
+      "file": "/private/tmp/reflex-enterprise-a4-20261005-logout-recheck-venv/lib/python3.12/site-packages/reflex_enterprise/auth/enforcement.py",
+      "start_line": 1075,
+      "end_line": 1123,
+      "try_blocks": 0,
+      "source": "def _reset_protected(substate: \"BaseState\", overrides: dict[str, AuthValue]) -> None:\n    \"\"\"Reset one state's protected base vars + backend vars to their defaults.\n\n    Args:\n        substate: The state instance to reset in place.\n        overrides: The recorded protection entry for the state's class.\n    \"\"\"\n    state_cls = type(substate)\n    fields = state_cls.get_fields()\n    # Protected base vars revert to their declared defaults; public (auth=False)\n    # fields survive the logout.\n    for name in state_cls.base_vars:\n        if _auth_for(state_cls, overrides, name) is False:\n            continue\n        setattr(substate, name, _field_default(fields[name]))\n    # Backend vars never reach the client and have no auth=False opt-out, so\n    # always clear them. Inherited ones are reset on the state that owns them.\n    for name in get_backend_var_names(state_cls, own_only=True):\n        value = (\n            copy.deepcopy(get_backend_var_default(state_cls, name))\n            if _HAS_BACKEND_VARS\n            else _field_default(fields[name])\n        )\n        setattr(substate, name, value)\n    # Drop every protected cached computed var: setting a base var only\n    # invalidates computed vars through the dependency graph, so a cached one with\n    # no tracked dependency on a reset var keeps a stale value that would leak to\n    # the next user on this client token. Then, for the ones that HAVE an anonymous\n    # placeholder, also mark them dirty so this client's post-logout delta\n    # re-delivers them and the filter swaps in the placeholder -- blanking the\n    # authed value rather than leaving it rendered until a rehydrate. A protected\n    # computed var WITHOUT a placeholder (no ``initial_value``) is dropped by the\n    # filter regardless, so forcing it into the delta would only recompute the\n    # getter to discard the result -- wasted work, and a getter that cannot run\n    # against the reset state would needlessly break the logout delta; it is left\n    # to recompute lazily on next access. Public (auth=False) caches are untouched.\n    dirtied_computed = False\n    for name, cvar in state_cls.computed_vars.items():\n        if _auth_for(state_cls, overrides, name) is False:\n            continue\n        cvar.mark_dirty(instance=substate)\n        if _anon_placeholder(state_cls, name) is not _NO_PLACEHOLDER:\n            substate.dirty_vars.add(name)\n            dirtied_computed = True\n    # A substate whose only resets are computed vars (no base/backend vars set\n    # above) was never marked dirty via ``setattr``; propagate so its delta is\n    # included. ``_mark_dirty`` is a no-op for propagation on a standalone inst.\n    if dirtied_computed:\n        substate._mark_dirty()"
+    },
+    "_reset_session": {
+      "file": "/private/tmp/reflex-enterprise-a4-20261005-logout-recheck-venv/lib/python3.12/site-packages/reflex_enterprise/auth/oidc/state.py",
+      "start_line": 838,
+      "end_line": 848,
+      "try_blocks": 0,
+      "source": "    async def _reset_session(self):\n        \"\"\"Clear this provider's tokens and reset non-exempt app state.\n\n        The single deauthentication chokepoint: every logout / expiry / token\n        failure path funnels here so a user's app state never outlives their\n        tokens. Without it, the per-client state (and cached computed vars)\n        would survive a logout and leak to the next user logging in on the same\n        client token (the Reflex client token outlives the OIDC session).\n        \"\"\"\n        self._reset_auth()\n        await self._reset_plugin_owned_state()"
+    },
+    "_reset_plugin_owned_state": {
+      "file": "/private/tmp/reflex-enterprise-a4-20261005-logout-recheck-venv/lib/python3.12/site-packages/reflex_enterprise/auth/oidc/state.py",
+      "start_line": 851,
+      "end_line": 865,
+      "try_blocks": 0,
+      "source": "    async def _reset_plugin_owned_state(self) -> None:\n        \"\"\"Reset the deauthentication state the ``AuthPlugin`` owns.\n\n        The half of ``_reset_session`` that reaches outside this provider: the\n        app-state sweep and ``AuthUserState`` both belong to the plugin, while\n        clearing this provider's own cookies does not. Split out so the\n        plugin-presence guard sits on a definition of its own \u2014 the provider\n        still clears its cookies in an app with no ``AuthPlugin``.\n        \"\"\"\n        from reflex_enterprise.auth.enforcement import reset_app_state\n        from reflex_enterprise.auth.user_state import AuthUserState\n\n        await reset_app_state(self)\n        auth_user = await self.get_state(AuthUserState)\n        auth_user.reset()"
+    }
+  }
+}

@@ -8,15 +8,12 @@
       "issue": "https://github.com/reflex-dev/reflex-enterprise/issues/245",
       "summary": "Failed protected-state logout cleanup can preserve confidential State across authenticated identities.",
       "introduction": "not established; security criterion independently satisfied",
-      "evidence": "security/REPORT.md"
-    },
-    {
-      "finding": 16,
-      "category": "newly introduced regression",
-      "change": "https://github.com/reflex-dev/reflex/pull/7312",
-      "summary": "Mixed-version Redis workers silently lose in-place mutable backend changes to alpha-saved State.",
-      "evidence": "rolling/REPORT.md",
-      "documented_caveat_is_not_user_waiver": true
+      "evidence": "logout-recheck/REPORT.md",
+      "fresh_published_wheel_files_matched": 157,
+      "browser_cookies_manually_cleared": false,
+      "ordinary_logout_control": "passed",
+      "frontend_backend_factory_failure_cases": "retained private data after next authenticated login and reload",
+      "anonymous_protected_mutations": 0
     }
   ],
   "resolved": [
@@ -39,6 +36,14 @@
     10,
     11
   ],
+  "expected_unsupported_configurations": [
+    {
+      "finding": 16,
+      "policy": "Maintainer explicitly supports forward-only cross-minor upgrades; downgrades and mixed-version workers are unsupported.",
+      "evidence": "rolling/REPORT.md",
+      "superseding_disposition": "rolling/DISPOSITION.md"
+    }
+  ],
   "new_runs": {
     "auth_browser_cases": 36,
     "cookie_groups_per_graph": 6,
@@ -47,7 +52,8 @@
     "map_storage_font_cases_per_mode": 7,
     "formatter_cases_per_mode": 3,
     "formatter_export_integrity": "passed",
-    "rolling_persistence_fresh_workers": 9
+    "rolling_persistence_fresh_workers": 9,
+    "fresh_current_wheel_logout_recheck_cases": 3
   },
   "reused_core_tooling_packages": 13,
   "source_installs": false,

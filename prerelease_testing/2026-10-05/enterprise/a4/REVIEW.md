@@ -1,21 +1,23 @@
 # Adversarial review of the a4 release-gate artifacts
 
-The release conclusion is HOLD for the confirmed fail-closed confidentiality
-gap in enterprise #245 and newly introduced rolling-upgrade persistence loss.
-Fix verification and ordinary-case passes do not remove these independently
-observed blockers. Source fixes were not attempted.
+The release conclusion is HOLD for one conditional confidentiality gap in
+enterprise #245, freshly reproduced on the published a4 wheel. Mixed-version
+workers/downgrades are now explicitly unsupported under the maintainer's policy
+and no longer block release. Source fixes were not attempted.
 An independent auth agent reviewed the logout evidence and installed cleanup
 code; the root reviewed raw classifications and the assembled reports.
 
-1. **Security evidence is conditional.** Each frontend/backend factory-failure
-   case ran once, followed by browser-cookie clearing and app-dependency recovery
-   before the next legitimate login. New identity assertions, a fresh document,
-   screenshots and server delivery observations support actual retained-state
-   disclosure; exact wire-frame order relative to identity assertion is not
-   proven. Anonymous mutation remained denied. Do not label this an anonymous
-   bypass, universal account switch failure or newly introduced a4 regression.
-   The criteria still make demonstrated weak security a blocker independently
-   of introduction. [Independent review](security/REVIEW.md) states the boundary.
+1. **Security evidence is conditional and now refreshed.** A completely fresh
+   published-a4 installation matches all 157 enterprise wheel files. The new
+   ordinary control and two factory-failure cases each run once, with app
+   dependency recovery before login and **no manual cookie clearing**. A checked
+   new identity, explicit reload, visually reviewed screenshots and independent
+   action log support retained-data disclosure. Anonymous mutations remain
+   denied. Do not label this an anonymous bypass, universal account-switch
+   failure or newly introduced a4 regression. The root-reviewed
+   [fresh report](logout-recheck/REPORT.md) supersedes the older intervention
+   limitation; [the earlier independent review](security/REVIEW.md) is preserved
+   as historical evidence, not represented as reviewing this new run.
 2. **The extra security MCP driver did not complete.** It assumed an MCP
    transport-session identifier that the SDK did not return. Some negative
    checks completed; the cross-bearer comparison and final Bob SDK read did not.
@@ -49,12 +51,12 @@ code; the root reviewed raw classifications and the assembled reports.
    entitlement, production auth or sustained load path. CI bypass is disclosed
    for ordinary auth/root samples; entitlement guards are active in the separate
    production/export matrix.
-7. **Documented regressions are not implicitly waived.** The original Redis
-   report marked mixed-version mutable-backend loss as an advertised limitation.
-   Fresh stable-only and alpha-only persistence controls pass while the mixed
-   case loses the update. Under the user's newly introduced criterion this is
-   a blocker, regardless of its changelog warning. This final gate adjudication
-   supersedes the initial component-lane disposition of that exception.
+7. **The maintainer's support policy changes the Redis disposition.** Fresh
+   stable-only and alpha-only controls pass while alpha→stable→alpha loses the
+   update. The maintainer explicitly says mixed versions and downgrades are
+   unsupported across the minor state-format change. Finding 16 is now an
+   expected unsupported configuration, not a release blocker. Its sealed
+   historical report remains intact, with [a superseding disposition](rolling/DISPOSITION.md).
 
 Validation parses saved Python/JSON/JSONL, checks local report links, source
 manifests and generated-file exclusions, and runs published Ruff on the sources.

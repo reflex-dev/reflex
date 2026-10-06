@@ -1,0 +1,17 @@
+{
+  "scope": "Only fictional local-provider credentials; URLs and diagnostics otherwise retained. Unredacted runtime logs are not committed.",
+  "files": {
+    "server.log": {
+      "synthetic_jwt_replacements": 0,
+      "sensitive_query_replacements": 0
+    },
+    "provider.log": {
+      "synthetic_jwt_replacements": 1,
+      "sensitive_query_replacements": 1
+    },
+    "driver.log": {
+      "synthetic_jwt_replacements": 0,
+      "sensitive_query_replacements": 0
+    }
+  }
+}

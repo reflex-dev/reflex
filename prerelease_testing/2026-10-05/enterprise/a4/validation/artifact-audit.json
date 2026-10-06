@@ -1,13 +1,13 @@
 {
-  "file_count": 495,
+  "file_count": 524,
   "counts": {
-    "markdown": 17,
-    "python": 127,
-    "json": 132,
-    "jsonl_records": 94,
-    "jsonl": 25
+    "markdown": 21,
+    "python": 134,
+    "json": 140,
+    "jsonl_records": 97,
+    "jsonl": 26
   },
-  "bytes": 14133099,
+  "bytes": 14379290,
   "errors": [],
   "scope": "Syntax, evidence parsing, all local Markdown targets and generated-file exclusions; sample apps are not imported."
 }
