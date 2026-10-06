@@ -556,8 +556,8 @@ reflex-components-recharts = false
 reflex-components-sonner = false
 reflex-enterprise = false
 reflex-hosting-cli = false
-# Third-party, but 0.2.0, the release it needs (module renamed to yjson, no
-# subprocess environment leak), is inside the window. Remove after 2026-10-13.
+# Third-party, but 0.3.1, the release it needs (classify hook, module named yjson,
+# no subprocess environment leak), is inside the window. Remove after 2026-10-13.
 yjson = false
 
 [tool.uv.sources]

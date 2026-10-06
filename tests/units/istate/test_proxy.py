@@ -1334,3 +1334,19 @@ def test_subclass_overrides_a_framework_method():
     )
     state = ShadowState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     assert state.get_value("k") == "shadow:k"
+
+
+def test_mutable_proxy_native_plan_unwraps(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A proxy's native plan returns the wrapped object, which encodes the same."""
+    pytest.importorskip("yjson")
+    from reflex_base.utils import format
+    from reflex_base.utils.serializers import _native_plan
+
+    proxy = _dataclass_proxy(TaggedModel(ls=[{"tag": 1}]))
+    unwrap = _native_plan(type(proxy))
+    assert callable(unwrap)
+    assert unwrap(proxy) is proxy.__wrapped__
+    payload = {"rows": [proxy, proxy]}
+    with_plans = format.json_dumps(payload)
+    monkeypatch.setattr(format, "_classify", None)
+    assert with_plans == format.json_dumps(payload)

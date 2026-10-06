@@ -21,6 +21,7 @@ from reflex_base.event import Event
 from reflex_base.event.context import EventContext
 from reflex_base.utils.exceptions import ImmutableStateError
 from reflex_base.utils.serializers import (
+    _NATIVE_SERIALIZER_PLANS,
     _dataclass_serializer,
     get_serializer,
     serializer,
@@ -1118,6 +1119,13 @@ def serialize_mutable_proxy(mp: MutableProxy):
         if serialize_wrapped is None:
             return obj
     return serialize_wrapped(obj)
+
+
+# The wrapped object encodes to what serialize_mutable_proxy returns for it.
+# wrapt's C getter skips MutableProxy's Python __getattr__ hook.
+_NATIVE_SERIALIZER_PLANS[serialize_mutable_proxy] = inspect.getattr_static(
+    MutableProxy, "__wrapped__"
+).__get__
 
 
 _orig_json_encoder_default = json.JSONEncoder.default

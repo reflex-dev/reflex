@@ -703,6 +703,7 @@ def format_library_name(library_fullname: str | dict[str, Any]) -> str:
 
 
 _serialize: Callable[[Any], Any] | None = None
+_classify: Callable[[type], Any] | None = None
 
 
 def _get_serialize() -> Callable[[Any], Any]:
@@ -715,11 +716,12 @@ def _get_serialize() -> Callable[[Any], Any]:
     Returns:
         The ``serializers.serialize`` callable.
     """
-    global _serialize
+    global _serialize, _classify
     if _serialize is None:
         from reflex_base.utils import serializers
 
         _serialize = serializers.serialize
+        _classify = serializers._native_plan
     return _serialize
 
 
@@ -767,9 +769,12 @@ def json_dumps(
         and separators == _COMPACT_SEPARATORS
         and kwargs.keys() <= {"default"}
     ):
-        return yjson.dumps_socket(
-            obj, default=kwargs.get("default") or _get_serialize()
-        ).decode()
+        serialize = _get_serialize()
+        default = kwargs.get("default") or serialize
+        # The registry-aware plan only stands in for the stock serializer; a
+        # caller's own default sees every value.
+        classify = _classify if default is serialize else None
+        return yjson.dumps_socket(obj, default=default, classify=classify).decode()
     if not kwargs and (separators is None or isinstance(separators, tuple)):
         return _get_json_encoder(separators).encode(obj)
 
