@@ -258,3 +258,57 @@ def test_app_harness_reload_forgets_states_of_every_app_module(tmp_path, monkeyp
 
     assert name not in rx.State._always_dirty_substates
     assert widget_state not in rx.State.get_substates()
+
+
+def _harness_state(module: str) -> type:
+    """Define a state class whose ``__module__`` is the given module.
+
+    Args:
+        module: The module name.
+
+    Returns:
+        The state class.
+    """
+    import reflex as rx
+
+    return type("HarnessPackageState", (rx.State,), {"__module__": module})
+
+
+def test_app_harness_reload_forgets_states_of_the_package_module(tmp_path, monkeypatch):
+    """Reloading drops the states of the app package's own ``__init__``.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        monkeypatch: pytest monkeypatch fixture
+    """
+    import reflex as rx
+
+    monkeypatch.setitem(sys.modules, "harnesspkg", ModuleType("harnesspkg"))
+    state = _harness_state("harnesspkg")
+
+    AppHarness.create(root=tmp_path, app_name="harnesspkg")._reload_state_module()
+
+    assert state not in rx.State.get_substates()
+
+
+def test_app_harness_reload_forgets_states_of_a_custom_app_module_package(
+    tmp_path, monkeypatch
+):
+    """Reloading follows the package of the imported app module, not the app name.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        monkeypatch: pytest monkeypatch fixture
+    """
+    import reflex as rx
+
+    monkeypatch.setitem(sys.modules, "customapp", ModuleType("customapp"))
+    monkeypatch.setitem(sys.modules, "customapp.main", ModuleType("customapp.main"))
+    monkeypatch.setitem(sys.modules, "customapp.states", ModuleType("customapp.states"))
+    state = _harness_state("customapp.states")
+    harness = AppHarness.create(root=tmp_path, app_name="harnessapp")
+    harness.app_module = sys.modules["customapp.main"]
+
+    harness._reload_state_module()
+
+    assert state not in rx.State.get_substates()

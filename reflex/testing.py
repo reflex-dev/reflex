@@ -322,8 +322,13 @@ class AppHarness:
 
     def _reload_state_module(self):
         """Forget the states of every module of the app's package, so they never reach the next app."""
-        package = f"{self.app_name}."
-        for module in [name for name in sys.modules if name.startswith(package)]:
+        package = (
+            self.app_module.__name__ if self.app_module else self.app_name
+        ).partition(".")[0]
+        prefix = f"{package}."
+        for module in [
+            name for name in sys.modules if name == package or name.startswith(prefix)
+        ]:
             reload_state_module(module=module)
 
     def _get_backend_shutdown_handler(self):
