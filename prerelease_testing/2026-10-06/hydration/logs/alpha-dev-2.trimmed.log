@@ -1,0 +1,21 @@
+# trimmed from alpha-dev-2.log (96 lines); kept lines matching: HYDTRACE|Warning|WARNING|Error|ERROR|Traceback|panicked|Expected field|Deprecat|Exception|^\s+File |raise |Stopping|Stopped|Starting granian|Listening|Spawning|Resetting|new_token|Cancelling the previous|Dropping stale|superseded|RUST_BACKTRACE|Cannot drop|App running|Backend running|Reflex app stopped|state_manager_mode
+
+18: state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+40: Debug: Resetting disk state manager.
+59: Traceback (most recent call last):
+60:   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 427, in compile_or_validate_app
+62:   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha/lib/python3.12/site-packages/reflex/utils/prerequisites.py", line 339, in get_compiled_app
+64:   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha/lib/python3.12/site-packages/reflex/app.py", line 1734, in _compile
+66:   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 1324, in compile_app
+68:   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 716, in compile
+71:   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha/lib/python3.12/site-packages/reflex_base/plugins/compiler.py", line 268, in eval_page
+74:   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha/lib/python3.12/site-packages/reflex/compiler/plugins/builtin.py", line 42, in eval_page
+77:   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha/lib/python3.12/site-packages/reflex/compiler/compiler.py", line 969, in into_component
+80:   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/hydration/run/alpha-dev/hydapp/hydapp.py", line 580, in nested
+82:   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha/lib/python3.12/site-packages/reflex_components_radix/themes/base.py", line 122, in create
+85:   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha/lib/python3.12/site-packages/reflex_base/components/component.py", line 1319, in create
+88:   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha/lib/python3.12/site-packages/reflex_base/components/component.py", line 1334, in _create
+90:   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha/lib/python3.12/site-packages/reflex_base/components/component.py", line 1016, in _post_init
+93:   File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha/lib/python3.12/site-packages/reflex_base/event/__init__.py", line 1039, in create
+94:     raise ValueError(msg)
+95: ValueError: Invalid event: [EventHandler(event_actions={}, fn=<function State.nested_a at 0x7ff1558f4ae0>), [EventHandler(event_actions={}, fn=<function State.nested_b at 0x7ff1558f4b80>)]]

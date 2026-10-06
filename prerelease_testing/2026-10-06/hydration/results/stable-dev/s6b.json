@@ -1,0 +1,35 @@
+{
+ "link": {
+  "progress_at_nav": "2",
+  "progress_after_7s": "2",
+  "trace": [
+   "slow_load run1 step1",
+   "slow_load run1 step2",
+   "other_load#1 path=/other"
+  ],
+  "hyd": "H:yes"
+ },
+ "back": {
+  "progress_at_back": "1",
+  "progress_after_7s": "1",
+  "trace": [
+   "slow_load run2 step1",
+   "other_load#2 path=/other"
+  ],
+  "hyd": "H:yes"
+ },
+ "forward_completes": true,
+ "checks": {
+  "link_cancels": true,
+  "back_cancels": true,
+  "forward_completes": true
+ },
+ "status": "pass",
+ "duration_s": 23.8,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

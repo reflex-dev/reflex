@@ -1,0 +1,78 @@
+{
+ "checks": {
+  "redir_direct": true,
+  "redir_client": true,
+  "bgload": true,
+  "raise_page_usable": true,
+  "multi_order": true,
+  "script": true,
+  "lsload_saw_browser_value": true,
+  "lsload_client_nav": true
+ },
+ "redir_direct": {
+  "url": "http://localhost:3223/other",
+  "other_count": "1",
+  "trace": [
+   "redirect_load",
+   "other_load#1 path=/other"
+  ],
+  "hyd": "H:yes"
+ },
+ "redir_client": {
+  "url": "http://localhost:3223/other",
+  "other_count": "2",
+  "hyd": "H:yes"
+ },
+ "bgload": {
+  "hydrated": true,
+  "t_hydrated_s": 0.14,
+  "done": true,
+  "t_done_s": 1.61,
+  "timeline": [
+   [
+    29,
+    "idle"
+   ],
+   [
+    92,
+    "started"
+   ],
+   [
+    1592,
+    "done"
+   ]
+  ]
+ },
+ "raise": {
+  "hydrated": true,
+  "hyd_flag": "H:yes",
+  "counter_before_after": [
+   "0",
+   "1"
+  ],
+  "screenshot": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/hydration/results/stable-prod/shots/s6_raise.png"
+ },
+ "multi": {
+  "order": [
+   "A(ls=ls-from-browser)",
+   "B(root_ls=ls-from-browser,sub_ls=sub-ls-default)"
+  ],
+  "sub_saw": "root_ls=ls-from-browser"
+ },
+ "script": "42",
+ "lsload": {
+  "val": "lsl-from-browser",
+  "saw": [
+   "saw=lsl-from-browser"
+  ]
+ },
+ "lsload_client_nav_saw": "saw=lsl-changed-before-nav",
+ "status": "pass",
+ "duration_s": 7.5,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

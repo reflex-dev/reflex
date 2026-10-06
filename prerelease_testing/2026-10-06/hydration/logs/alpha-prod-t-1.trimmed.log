@@ -1,0 +1,62 @@
+# trimmed from alpha-prod-t-1.log (386 lines); kept lines matching: HYDTRACE|Warning|WARNING|Error|ERROR|Traceback|panicked|Expected field|Deprecat|Exception|^\s+File |raise |Stopping|Stopped|Starting granian|Listening|Spawning|Resetting|new_token|Cancelling the previous|Dropping stale|superseded|RUST_BACKTRACE|Cannot drop|App running|Backend running|Reflex app stopped|state_manager_mode
+
+18: state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+55: state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+111: Debug: Resetting disk state manager.
+287: Debug: Prerender (html): /raise -> build/client/raise/index.html
+323: App running at: http://0.0.0.0:3221/
+325: [INFO] Starting granian (main PID: 21628)
+326: [INFO] Listening at: http://0.0.0.0:3221
+327: [INFO] Spawning worker-1 with PID: 21783
+330: HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+332: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+333: type '<class 'reflex.istate.storage.Cookie'>'.
+334: HYDTRACE 1791308957.579 5ddcda88 other_load#1 path=/other/
+335: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+336: type '<class 'reflex.istate.storage.Cookie'>'.
+337: HYDTRACE 1791308958.405 10d76e8c other_load#1 path=/other/
+338: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+339: type '<class 'reflex.istate.storage.Cookie'>'.
+340: HYDTRACE 1791308959.372 5f177e66 other_load#1 path=/other/
+341: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+342: type '<class 'reflex.istate.storage.Cookie'>'.
+343: HYDTRACE 1791308960.036 b78ea4ce other_load#1 path=/other/
+344: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+345: type '<class 'reflex.istate.storage.Cookie'>'.
+346: HYDTRACE 1791308960.716 3af4f8c5 other_load#1 path=/other/
+347: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+348: type '<class 'reflex.istate.storage.Cookie'>'.
+349: HYDTRACE 1791308961.468 8ba940a2 other_load#1 path=/other/
+350: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+351: type '<class 'reflex.istate.storage.Cookie'>'.
+352: HYDTRACE 1791308962.228 6c69b962 other_load#1 path=/other/
+353: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+354: type '<class 'reflex.istate.storage.Cookie'>'.
+355: HYDTRACE 1791308962.980 73bcd5f7 other_load#1 path=/other/
+356: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+357: type '<class 'reflex.istate.storage.Cookie'>'.
+358: HYDTRACE 1791308963.906 5ae386ec other_load#1 path=/other/
+359: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+360: type '<class 'reflex.istate.storage.Cookie'>'.
+361: HYDTRACE 1791308964.890 40aefb4e other_load#1 path=/other/
+362: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+363: type '<class 'reflex.istate.storage.Cookie'>'.
+364: HYDTRACE 1791308965.606 cb826a0d other_load#1 path=/other/
+365: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+366: type '<class 'reflex.istate.storage.Cookie'>'.
+367: HYDTRACE 1791308966.371 d7a3fc68 other_load#1 path=/other/
+368: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+369: type '<class 'reflex.istate.storage.Cookie'>'.
+370: HYDTRACE 1791308967.166 5b6f5677 other_load#1 path=/other/
+371: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+372: type '<class 'reflex.istate.storage.Cookie'>'.
+373: HYDTRACE 1791308967.940 8516a3d4 other_load#1 path=/other/
+374: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+375: type '<class 'reflex.istate.storage.Cookie'>'.
+376: HYDTRACE 1791308968.793 8316e6ee other_load#1 path=/other/
+377: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+378: type '<class 'reflex.istate.storage.Cookie'>'.
+379: HYDTRACE 1791308969.913 f33e0668 other_load#1 path=/other/
+381: [INFO] Stopping worker-1
+384: [INFO] Stopped worker-1
+386: Info: Reflex app stopped.

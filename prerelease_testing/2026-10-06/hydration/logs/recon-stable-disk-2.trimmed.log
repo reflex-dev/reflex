@@ -1,0 +1,16 @@
+# trimmed from recon-stable-disk-2.log (274 lines); kept lines matching: HYDTRACE|Warning|WARNING|Error|ERROR|Traceback|panicked|Expected field|Deprecat|Exception|^\s+File |raise |Stopping|Stopped|Starting granian|Listening|Spawning|Resetting|new_token|Cancelling the previous|Dropping stale|superseded|RUST_BACKTRACE|Cannot drop|App running|Backend running|Reflex app stopped|state_manager_mode
+
+18: state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+40: Debug: Resetting disk state manager.
+215: Debug: Prerender (html): /raise -> build/client/raise/index.html
+251: App running at: http://0.0.0.0:3223/
+253: [INFO] Starting granian (main PID: 30333)
+254: [INFO] Listening at: http://0.0.0.0:3223
+255: [INFO] Spawning worker-1 with PID: 30399
+258: HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+260: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+261: type '<class 'reflex.istate.storage.Cookie'>'.
+262: HYDTRACE 1791307452.357 5ff52661 index_load#1 ls=ls-A|sync=sync-A|ss=ss-A|ck=ck-A|int='5'|same=same-value|big=0|sub_ls=sub-ls-S1|sub_ck=sub-ck-S1|clean_ls=clean-default|hyd=False
+264: [INFO] Stopping worker-1
+272: [INFO] Stopped worker-1
+274: Info: Reflex app stopped.

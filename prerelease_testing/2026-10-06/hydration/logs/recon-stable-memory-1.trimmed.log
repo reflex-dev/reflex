@@ -1,0 +1,23 @@
+# trimmed from recon-stable-memory-1.log (349 lines); kept lines matching: HYDTRACE|Warning|WARNING|Error|ERROR|Traceback|panicked|Expected field|Deprecat|Exception|^\s+File |raise |Stopping|Stopped|Starting granian|Listening|Spawning|Resetting|new_token|Cancelling the previous|Dropping stale|superseded|RUST_BACKTRACE|Cannot drop|App running|Backend running|Reflex app stopped|state_manager_mode
+
+4: Debug: Overriding config value state_manager_mode with env var 
+20: state_manager_mode=<StateManagerMode.MEMORY: 'memory'>, 
+23: 'state_manager_mode', 'telemetry_enabled', 'api_url', 'plugins', 'loglevel', 
+57: state_manager_mode=<StateManagerMode.MEMORY: 'memory'>, 
+60: 'state_manager_mode', 'telemetry_enabled', 'api_url', 'plugins', 'loglevel', 
+113: Debug: Resetting disk state manager.
+289: Debug: Prerender (html): /raise -> build/client/raise/index.html
+325: App running at: http://0.0.0.0:3223/
+327: [INFO] Starting granian (main PID: 28105)
+328: [INFO] Listening at: http://0.0.0.0:3223
+329: [INFO] Spawning worker-1 with PID: 28181
+332: HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+334: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+335: type '<class 'reflex.istate.storage.Cookie'>'.
+336: HYDTRACE 1791307237.823 3a36b82c index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+337: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+338: type '<class 'reflex.istate.storage.Cookie'>'.
+339: HYDTRACE 1791307239.597 1378aea4 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+341: [INFO] Stopping worker-1
+347: [INFO] Stopped worker-1
+349: Info: Reflex app stopped.

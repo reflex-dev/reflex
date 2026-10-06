@@ -1,0 +1,222 @@
+{
+ "300000_hydrated": true,
+ "300000_time_to_hydrated_s": 0.26,
+ "300000_big_len": "300000",
+ "300000_ws_opens": 2,
+ "300000_ws_closes": 1,
+ "300000_hyd_flag": "H:yes",
+ "300000_screenshot": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/hydration/results/stable-dev/shots/s5_big_300000.png",
+ "300000_frames_head": [
+  {
+   "t": 0.441,
+   "dir": "in",
+   "kind": "eio",
+   "len": 108
+  },
+  {
+   "t": 0.441,
+   "dir": "out",
+   "kind": "connect",
+   "len": 10
+  },
+  {
+   "t": 0.446,
+   "dir": "in",
+   "kind": "connect",
+   "len": 40,
+   "boot": null,
+   "boot_payload_keys": []
+  },
+  {
+   "t": 0.446,
+   "dir": "out",
+   "kind": "event",
+   "len": 106,
+   "name": "reflex___state____state.hydrate",
+   "payload_keys": []
+  },
+  {
+   "t": 0.446,
+   "dir": "out",
+   "kind": "event",
+   "len": 156,
+   "name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal",
+   "payload_keys": []
+  },
+  {
+   "t": 0.455,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 4209
+  },
+  {
+   "t": 0.456,
+   "dir": "in",
+   "kind": "event",
+   "len": 89,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 0.456,
+   "dir": "in",
+   "kind": "event",
+   "len": 311,
+   "delta": {
+    "hydapp___hydapp____state": [
+     "load_count_rx_state_",
+     "trace_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 0.456,
+   "dir": "in",
+   "kind": "event",
+   "len": 88,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 0.598,
+   "dir": "out",
+   "kind": "disconnect",
+   "len": 10
+  },
+  {
+   "t": 0.794,
+   "dir": "in",
+   "kind": "eio",
+   "len": 108
+  },
+  {
+   "t": 0.795,
+   "dir": "out",
+   "kind": "connect",
+   "len": 10
+  }
+ ],
+ "1200000_hydrated": false,
+ "1200000_time_to_hydrated_s": null,
+ "1200000_big_len": "0",
+ "1200000_ws_opens": 747,
+ "1200000_ws_closes": 746,
+ "1200000_hyd_flag": "H:no",
+ "1200000_screenshot": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/hydration/results/stable-dev/shots/s5_big_1200000.png",
+ "1200000_frames_head": [
+  {
+   "t": 2.945,
+   "dir": "in",
+   "kind": "eio",
+   "len": 108
+  },
+  {
+   "t": 2.946,
+   "dir": "out",
+   "kind": "connect",
+   "len": 10
+  },
+  {
+   "t": 2.947,
+   "dir": "in",
+   "kind": "connect",
+   "len": 40,
+   "boot": null,
+   "boot_payload_keys": []
+  },
+  {
+   "t": 2.947,
+   "dir": "out",
+   "kind": "event",
+   "len": 106,
+   "name": "reflex___state____state.hydrate",
+   "payload_keys": []
+  },
+  {
+   "t": 2.947,
+   "dir": "out",
+   "kind": "event",
+   "len": 156,
+   "name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal",
+   "payload_keys": []
+  },
+  {
+   "t": 2.955,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 4209
+  },
+  {
+   "t": 2.958,
+   "dir": "in",
+   "kind": "event",
+   "len": 89,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 2.958,
+   "dir": "in",
+   "kind": "event",
+   "len": 311,
+   "delta": {
+    "hydapp___hydapp____state": [
+     "load_count_rx_state_",
+     "trace_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 2.958,
+   "dir": "in",
+   "kind": "event",
+   "len": 88,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 3.109,
+   "dir": "out",
+   "kind": "disconnect",
+   "len": 10
+  },
+  {
+   "t": 3.278,
+   "dir": "in",
+   "kind": "eio",
+   "len": 108
+  },
+  {
+   "t": 3.278,
+   "dir": "out",
+   "kind": "connect",
+   "len": 10
+  }
+ ],
+ "status": "pass",
+ "duration_s": 25.2,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

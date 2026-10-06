@@ -1,0 +1,75 @@
+{
+ "tokens": [
+  "484e12f3-ffd3-4155-8034-b3d862e2921d",
+  "a3f1afa7-ed4b-4c07-ef8c-d86150877874"
+ ],
+ "a_shows": true,
+ "b_received_sync": true,
+ "a_received_js_write": true,
+ "b_counter_after_a_inc": "0",
+ "b_after_reload": "js-set-in-B",
+ "b_counter_after_close_a": "1",
+ "dup_token_initial_copy": "a3f1afa7-ed4b-4c07-ef8c-d86150877874",
+ "dup_token_after": "c9f9f1c1-5509-40af-be28-27524f147fd0",
+ "b_token_after": "a3f1afa7-ed4b-4c07-ef8c-d86150877874",
+ "dup_counter": "0",
+ "dup_counter_after_inc": "1",
+ "b_counter_after_dup_inc": "1",
+ "frames_dup": [
+  {
+   "t": 5.173,
+   "dir": "in",
+   "kind": "eio",
+   "len": 108
+  },
+  {
+   "t": 5.173,
+   "dir": "out",
+   "kind": "connect",
+   "len": 10
+  },
+  {
+   "t": 5.18,
+   "dir": "in",
+   "kind": "event",
+   "len": 62,
+   "sio_event": "new_token"
+  },
+  {
+   "t": 5.184,
+   "dir": "in",
+   "kind": "connect",
+   "len": 40,
+   "boot": null,
+   "boot_payload_keys": []
+  },
+  {
+   "t": 5.184,
+   "dir": "out",
+   "kind": "event",
+   "len": 106,
+   "name": "reflex___state____state.hydrate",
+   "payload_keys": []
+  },
+  {
+   "t": 5.184,
+   "dir": "out",
+   "kind": "event",
+   "len": 268,
+   "name": "reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal",
+   "payload_keys": [
+    "vars"
+   ]
+  }
+ ],
+ "new_ctx_counter": "0",
+ "new_ctx_ls_sync": "sync-default",
+ "status": "pass",
+ "duration_s": 8.2,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

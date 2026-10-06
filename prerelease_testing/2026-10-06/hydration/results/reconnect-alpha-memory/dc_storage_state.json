@@ -1,0 +1,1 @@
+{"cookies": [{"name": "hyd_sub_ck", "value": "sub-ck-default", "domain": "localhost", "path": "/", "expires": 1791307716.932449, "httpOnly": false, "secure": false, "sameSite": "Lax"}], "origins": [{"origin": "http://localhost:3221", "localStorage": [{"name": "theme", "value": "system"}, {"name": "hyd_sub_ls", "value": "sub-ls-default"}]}]}

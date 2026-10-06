@@ -1,0 +1,94 @@
+{
+ "runs": [
+  {
+   "dcl_ms": 39,
+   "load_ms": 86,
+   "first_out_ms": 150,
+   "first_delta_ms": 160,
+   "hydrated_ms": 162,
+   "frames_out": 3,
+   "frames_in": 5,
+   "bytes_in": 4716,
+   "bytes_out": 296,
+   "n_in_before_yes": null
+  },
+  {
+   "dcl_ms": 83,
+   "load_ms": 112,
+   "first_out_ms": 198,
+   "first_delta_ms": 209,
+   "hydrated_ms": 214,
+   "frames_out": 3,
+   "frames_in": 5,
+   "bytes_in": 4716,
+   "bytes_out": 296,
+   "n_in_before_yes": null
+  },
+  {
+   "dcl_ms": 68,
+   "load_ms": 123,
+   "first_out_ms": 224,
+   "first_delta_ms": 235,
+   "hydrated_ms": 237,
+   "frames_out": 3,
+   "frames_in": 5,
+   "bytes_in": 4716,
+   "bytes_out": 296,
+   "n_in_before_yes": null
+  },
+  {
+   "dcl_ms": 204,
+   "load_ms": 216,
+   "first_out_ms": 293,
+   "first_delta_ms": 304,
+   "hydrated_ms": 307,
+   "frames_out": 3,
+   "frames_in": 5,
+   "bytes_in": 4716,
+   "bytes_out": 296,
+   "n_in_before_yes": null
+  },
+  {
+   "dcl_ms": 79,
+   "load_ms": 93,
+   "first_out_ms": 186,
+   "first_delta_ms": 200,
+   "hydrated_ms": 207,
+   "frames_out": 3,
+   "frames_in": 5,
+   "bytes_in": 4716,
+   "bytes_out": 296,
+   "n_in_before_yes": null
+  },
+  {
+   "dcl_ms": 130,
+   "load_ms": 152,
+   "first_out_ms": 255,
+   "first_delta_ms": 270,
+   "hydrated_ms": 283,
+   "frames_out": 3,
+   "frames_in": 5,
+   "bytes_in": 4716,
+   "bytes_out": 296,
+   "n_in_before_yes": null
+  }
+ ],
+ "median_excl_first": {
+  "dcl_ms": 83,
+  "first_out_ms": 224,
+  "first_delta_ms": 235,
+  "hydrated_ms": 237,
+  "frames_out": 3,
+  "frames_in": 5,
+  "bytes_in": 4716,
+  "bytes_out": 296
+ },
+ "status": "pass",
+ "duration_s": 4.2,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

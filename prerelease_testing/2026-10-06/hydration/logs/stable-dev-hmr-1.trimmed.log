@@ -1,0 +1,55 @@
+# trimmed from stable-dev-hmr-1.log (433 lines); kept lines matching: HYDTRACE|Warning|WARNING|Error|ERROR|Traceback|panicked|Expected field|Deprecat|Exception|^\s+File |raise |Stopping|Stopped|Starting granian|Listening|Spawning|Resetting|new_token|Cancelling the previous|Dropping stale|superseded|RUST_BACKTRACE|Cannot drop|App running|Backend running|Reflex app stopped|state_manager_mode
+
+4: Debug: Overriding config value state_manager_mode with env var 
+20: state_manager_mode=<StateManagerMode.MEMORY: 'memory'>, 
+23: 'app_name', 'state_manager_mode', 'loglevel', 'telemetry_enabled', 
+57: state_manager_mode=<StateManagerMode.MEMORY: 'memory'>, 
+60: 'app_name', 'state_manager_mode', 'loglevel', 'telemetry_enabled', 
+113: Debug: Resetting disk state manager.
+207: [INFO] Starting granian (main PID: 20221)
+208: [INFO] Listening at: http://0.0.0.0:8222
+209: [INFO] Spawning worker-1 with PID: 20255
+214: HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+217: App running at: http://localhost:3222/
+218: Backend running at: http://0.0.0.0:8222
+221: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+222: type '<class 'reflex.istate.storage.Cookie'>'.
+223: HYDTRACE 1791308886.568 f57d51e2 bg_load started
+224: HYDTRACE 1791308888.071 f57d51e2 bg_load done
+227: [INFO] Stopping worker-1
+233: [INFO] Stopped worker-1
+234: [INFO] Spawning worker-1 with PID: 20606
+300: HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+307: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+308: type '<class 'reflex.istate.storage.Cookie'>'.
+315: /utils/components/Errorboundary_errorboundary_f3503550cc626882edc0335b9ae43737.j
+317: Debug: Cancelling the previous unfinished 
+318: reflex___state____state.reflex___state____on_load_internal_state.on_load_interna
+319: l chain for token f57d51e2-3f12-432e-f62b-026935b3ebe3, superseded by a newer 
+321: HYDTRACE 1791308889.588 f57d51e2 bg_load started
+322: HYDTRACE 1791308891.091 f57d51e2 bg_load done
+323: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+324: type '<class 'reflex.istate.storage.Cookie'>'.
+325: HYDTRACE 1791308915.167 f57d51e2 bg_load started
+328: [INFO] Stopping worker-1
+334: [INFO] Stopped worker-1
+335: [INFO] Spawning worker-1 with PID: 21012
+401: HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+408: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+409: type '<class 'reflex.istate.storage.Cookie'>'.
+410: HYDTRACE 1791308920.063 2cf33408 clickfast_load begin
+411: HYDTRACE 1791308921.064 2cf33408 clickfast_load end
+412: HYDTRACE 1791308921.410 2cf33408 cf_click always loaded=True hyd=True
+413: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+414: type '<class 'reflex.istate.storage.Cookie'>'.
+415: HYDTRACE 1791308926.067 60b6c7e1 clickfast_load begin
+416: HYDTRACE 1791308927.068 60b6c7e1 clickfast_load end
+417: HYDTRACE 1791308927.069 60b6c7e1 cf_click always loaded=True hyd=True
+418: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+419: type '<class 'reflex.istate.storage.Cookie'>'.
+420: HYDTRACE 1791308931.719 8842968d clickfast_load begin
+421: HYDTRACE 1791308932.720 8842968d clickfast_load end
+422: HYDTRACE 1791308932.721 8842968d cf_click always loaded=True hyd=True
+423: [INFO] Stopping worker-1
+430: [INFO] Stopped worker-1
+433: Info: Reflex app stopped.

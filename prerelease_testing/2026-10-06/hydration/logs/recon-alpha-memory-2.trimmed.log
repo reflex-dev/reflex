@@ -1,0 +1,24 @@
+# trimmed from recon-alpha-memory-2.log (236 lines); kept lines matching: HYDTRACE|Warning|WARNING|Error|ERROR|Traceback|panicked|Expected field|Deprecat|Exception|^\s+File |raise |Stopping|Stopped|Starting granian|Listening|Spawning|Resetting|new_token|Cancelling the previous|Dropping stale|superseded|RUST_BACKTRACE|Cannot drop|App running|Backend running|Reflex app stopped|state_manager_mode
+
+4: Debug: Overriding config value state_manager_mode with env var 
+20: state_manager_mode=<StateManagerMode.MEMORY: 'memory'>, 
+23: 'api_url', 'plugins', 'state_manager_mode', 'loglevel', 'app_name', 
+43: Debug: Resetting disk state manager.
+178: Debug: Prerender (html): /raise -> build/client/raise/index.html
+214: App running at: http://0.0.0.0:3221/
+216: [INFO] Starting granian (main PID: 26985)
+217: [INFO] Listening at: http://0.0.0.0:3221
+218: [INFO] Spawning worker-1 with PID: 27148
+221: HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+223: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+224: type '<class 'reflex.istate.storage.Cookie'>'.
+225: HYDTRACE 1791307130.367 b764d043 index_load#1 ls=ls-A|sync=sync-A|ss=ss-A|ck=ck-A|int='5'|same=same-value|big=0|sub_ls=sub-ls-S1|sub_ck=sub-ck-S1|clean_ls=clean-default|hyd=False
+226: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+227: type '<class 'reflex.istate.storage.Cookie'>'.
+228: HYDTRACE 1791307203.931 8bacb259 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+229: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+230: type '<class 'reflex.istate.storage.Cookie'>'.
+231: HYDTRACE 1791307205.099 55f4565c index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-NEWDEFAULT|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+233: [INFO] Stopping worker-1
+234: [INFO] Stopped worker-1
+236: Info: Reflex app stopped.

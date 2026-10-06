@@ -1,0 +1,49 @@
+# trimmed from rloop-stable-3.log (371 lines); kept lines matching: HYDTRACE|Warning|WARNING|Error|ERROR|Traceback|panicked|Expected field|Deprecat|Exception|^\s+File |raise |Stopping|Stopped|Starting granian|Listening|Spawning|Resetting|new_token|Cancelling the previous|Dropping stale|superseded|RUST_BACKTRACE|Cannot drop|App running|Backend running|Reflex app stopped|state_manager_mode
+
+19: state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+42: Debug: Resetting disk state manager.
+217: Debug: Prerender (html): /raise -> build/client/raise/index.html
+253: App running at: http://0.0.0.0:3223/
+255: [WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 workers and tune threads configuration instead
+256: [INFO] Starting granian (main PID: 6928)
+257: [INFO] Listening at: http://0.0.0.0:3223
+258: [INFO] Spawning worker-1 with PID: 7032
+259: [INFO] Spawning worker-2 with PID: 7034
+260: [INFO] Spawning worker-3 with PID: 7036
+261: [INFO] Spawning worker-4 with PID: 7038
+262: [INFO] Spawning worker-5 with PID: 7040
+263: [INFO] Spawning worker-6 with PID: 7042
+264: [INFO] Spawning worker-7 with PID: 7044
+267: HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+269: [INFO] Spawning worker-8 with PID: 7046
+272: HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+274: [INFO] Spawning worker-9 with PID: 7052
+277: HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+281: HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+285: HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+289: HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+293: HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+297: HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+301: HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+303: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+304: type '<class 'reflex.istate.storage.Cookie'>'.
+305: HYDTRACE 1791307950.366 807bc518 index_load#3 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+307: [INFO] Stopping worker-2
+308: [INFO] Stopping worker-1
+314: [INFO] Stopping worker-4
+320: [INFO] Stopping worker-5
+326: [INFO] Stopping worker-8
+327: [INFO] Stopping worker-3
+338: [INFO] Stopping worker-6
+339: [INFO] Stopping worker-9
+345: [INFO] Stopped worker-1
+346: [INFO] Stopped worker-2
+347: [INFO] Stopped worker-3
+348: [INFO] Stopped worker-4
+349: [INFO] Stopping worker-7
+355: [INFO] Stopped worker-5
+361: [INFO] Stopped worker-6
+367: [INFO] Stopped worker-7
+368: [INFO] Stopped worker-8
+369: [INFO] Stopped worker-9
+371: Info: Reflex app stopped.

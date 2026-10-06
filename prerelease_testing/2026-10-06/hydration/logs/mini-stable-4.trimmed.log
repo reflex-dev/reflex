@@ -1,0 +1,11 @@
+# trimmed from mini-stable-4.log (191 lines); kept lines matching: HYDTRACE|Warning|WARNING|Error|ERROR|Traceback|panicked|Expected field|Deprecat|Exception|^\s+File |raise |Stopping|Stopped|Starting granian|Listening|Spawning|Resetting|new_token|Cancelling the previous|Dropping stale|superseded|RUST_BACKTRACE|Cannot drop|App running|Backend running|Reflex app stopped|state_manager_mode
+
+18: state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+40: Debug: Resetting disk state manager.
+178: App running at: http://0.0.0.0:3225/
+180: [INFO] Starting granian (main PID: 18017)
+181: [INFO] Listening at: http://0.0.0.0:3225
+182: [INFO] Spawning worker-1 with PID: 18120
+186: [INFO] Stopping worker-1
+189: [INFO] Stopped worker-1
+191: Info: Reflex app stopped.

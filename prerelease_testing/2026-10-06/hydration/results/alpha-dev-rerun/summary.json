@@ -1,0 +1,9 @@
+{
+ "s7": {
+  "status": "pass",
+  "console_err_warn": 0,
+  "pageerrors": 0,
+  "failed": 0,
+  "http_errors": 0
+ }
+}

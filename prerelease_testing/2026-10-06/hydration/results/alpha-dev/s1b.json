@@ -1,0 +1,91 @@
+{
+ "hydrated": true,
+ "storage_after_first_load": {
+  "local": {
+   "theme": "system",
+   "hyd_sub_ls": "sub-ls-default",
+   "last_compiled_theme": "system"
+  },
+  "session": {
+   "hyd_sub_ss": "sub-ss-default",
+   "token": "a9fae1a3-7e18-407d-c3e3-121a695608ad"
+  },
+  "cookie": "hyd_sub_ck=sub-ck-default"
+ },
+ "client_storage_written_on_first_load": {
+  "local": [
+   "hyd_sub_ls"
+  ],
+  "session": [
+   "hyd_sub_ss"
+  ],
+  "cookie": [
+   "hyd_sub_ck"
+  ]
+ },
+ "frames": [
+  {
+   "t": 0.319,
+   "dir": "in",
+   "kind": "eio",
+   "len": 108
+  },
+  {
+   "t": 0.496,
+   "dir": "out",
+   "kind": "connect-trunc",
+   "len": 404
+  },
+  {
+   "t": 0.503,
+   "dir": "in",
+   "kind": "connect-trunc",
+   "len": 40
+  },
+  {
+   "t": 0.505,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 2512
+  },
+  {
+   "t": 0.506,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 89
+  },
+  {
+   "t": 0.506,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 311
+  },
+  {
+   "t": 0.506,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 88
+  }
+ ],
+ "storage_after_reload": {
+  "local": {
+   "theme": "system",
+   "hyd_sub_ls": "sub-ls-default",
+   "last_compiled_theme": "system"
+  },
+  "session": {
+   "hyd_sub_ss": "sub-ss-default",
+   "token": "a9fae1a3-7e18-407d-c3e3-121a695608ad",
+   "react-router-scroll-positions": "{\"default\":0}"
+  },
+  "cookie": "hyd_sub_ck=sub-ck-default"
+ },
+ "status": "anomaly",
+ "duration_s": 3.1,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

@@ -1,0 +1,96 @@
+{
+ "alpha-dev/300000": {
+  "ws_opens": 2,
+  "window_s": 0.3,
+  "opens_per_s": 6.3,
+  "bytes_sent_MB": 0.3,
+  "first_out_frames": [
+   "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\": (len 404)",
+   "41/_event, (len 10)",
+   "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\" (len 300808)"
+  ]
+ },
+ "alpha-dev/1200000": {
+  "ws_opens": 866,
+  "window_s": 22.2,
+  "opens_per_s": 39.1,
+  "bytes_sent_MB": 1038.5,
+  "first_out_frames": [
+   "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\": (len 404)",
+   "41/_event, (len 10)",
+   "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\" (len 1200808)",
+   "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\" (len 1200531)"
+  ]
+ },
+ "stable-dev/300000": {
+  "ws_opens": 2,
+  "window_s": 0.4,
+  "opens_per_s": 5.6,
+  "bytes_sent_MB": 0.3,
+  "first_out_frames": [
+   "40/_event, (len 10)",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\" (len 106)",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_sta (len 156)",
+   "41/_event, (len 10)"
+  ]
+ },
+ "stable-dev/1200000": {
+  "ws_opens": 754,
+  "window_s": 22.2,
+  "opens_per_s": 33.9,
+  "bytes_sent_MB": 904.0,
+  "first_out_frames": [
+   "40/_event, (len 10)",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\" (len 106)",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_sta (len 156)",
+   "41/_event, (len 10)"
+  ]
+ },
+ "alpha-prod/300000": {
+  "ws_opens": 2,
+  "window_s": 0.2,
+  "opens_per_s": 8.6,
+  "bytes_sent_MB": 0.3,
+  "first_out_frames": [
+   "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\": (len 404)",
+   "41/_event, (len 10)",
+   "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\" (len 300808)"
+  ]
+ },
+ "alpha-prod/1200000": {
+  "ws_opens": 819,
+  "window_s": 21.9,
+  "opens_per_s": 37.4,
+  "bytes_sent_MB": 982.0,
+  "first_out_frames": [
+   "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\": (len 404)",
+   "41/_event, (len 10)",
+   "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\" (len 1200808)",
+   "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"vars\":{\" (len 1200531)"
+  ]
+ },
+ "stable-prod/300000": {
+  "ws_opens": 2,
+  "window_s": 0.2,
+  "opens_per_s": 12.7,
+  "bytes_sent_MB": 0.3,
+  "first_out_frames": [
+   "40/_event, (len 10)",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\" (len 106)",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_sta (len 156)",
+   "41/_event, (len 10)"
+  ]
+ },
+ "stable-prod/1200000": {
+  "ws_opens": 753,
+  "window_s": 22.0,
+  "opens_per_s": 34.2,
+  "bytes_sent_MB": 902.8,
+  "first_out_frames": [
+   "40/_event, (len 10)",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\" (len 106)",
+   "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_sta (len 156)",
+   "41/_event, (len 10)"
+  ]
+ }
+}

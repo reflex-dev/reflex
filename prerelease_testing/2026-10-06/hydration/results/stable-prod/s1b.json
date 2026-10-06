@@ -1,0 +1,116 @@
+{
+ "hydrated": true,
+ "storage_after_first_load": {
+  "local": {
+   "theme": "system"
+  },
+  "session": {
+   "token": "d3fa81bc-8590-4508-9b31-37549b307067"
+  },
+  "cookie": ""
+ },
+ "client_storage_written_on_first_load": {
+  "local": [],
+  "session": [],
+  "cookie": []
+ },
+ "frames": [
+  {
+   "t": 0.242,
+   "dir": "in",
+   "kind": "eio",
+   "len": 108
+  },
+  {
+   "t": 0.242,
+   "dir": "out",
+   "kind": "connect",
+   "len": 10
+  },
+  {
+   "t": 0.246,
+   "dir": "in",
+   "kind": "connect",
+   "len": 40,
+   "boot": null,
+   "boot_payload_keys": []
+  },
+  {
+   "t": 0.246,
+   "dir": "out",
+   "kind": "event",
+   "len": 106,
+   "name": "reflex___state____state.hydrate",
+   "payload_keys": []
+  },
+  {
+   "t": 0.246,
+   "dir": "out",
+   "kind": "event",
+   "len": 156,
+   "name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal",
+   "payload_keys": []
+  },
+  {
+   "t": 0.252,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 4209
+  },
+  {
+   "t": 0.254,
+   "dir": "in",
+   "kind": "event",
+   "len": 89,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 0.255,
+   "dir": "in",
+   "kind": "event",
+   "len": 311,
+   "delta": {
+    "hydapp___hydapp____state": [
+     "load_count_rx_state_",
+     "trace_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 0.255,
+   "dir": "in",
+   "kind": "event",
+   "len": 88,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  }
+ ],
+ "storage_after_reload": {
+  "local": {
+   "theme": "system"
+  },
+  "session": {
+   "token": "d3fa81bc-8590-4508-9b31-37549b307067",
+   "react-router-scroll-positions": "{\"nakouvs1mp4\":0}"
+  },
+  "cookie": ""
+ },
+ "status": "pass",
+ "duration_s": 2.8,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

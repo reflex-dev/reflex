@@ -1,0 +1,51 @@
+{
+ "label": "stable-dev",
+ "hold_ms": 2500,
+ "runs": [
+  {
+   "flag_at_click": "H:no",
+   "socket_connected_before_click": false,
+   "cf_log": [
+    "load",
+    "click-always(loaded=True,hyd=True)"
+   ],
+   "sent": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/clickfast\",\"asPath\":\"/clickfast\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/clickfast\",\"asPath\":\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydapp___hydapp____state.cf_click\",\"payload\":{\"which\":\"always\"},\"router_data\":{\"pathname\":\"/clickfast\",\"asPa"
+   ],
+   "console_errors": []
+  },
+  {
+   "flag_at_click": "H:no",
+   "socket_connected_before_click": false,
+   "cf_log": [
+    "load",
+    "click-always(loaded=True,hyd=True)"
+   ],
+   "sent": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/clickfast\",\"asPath\":\"/clickfast\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/clickfast\",\"asPath\":\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydapp___hydapp____state.cf_click\",\"payload\":{\"which\":\"always\"},\"router_data\":{\"pathname\":\"/clickfast\",\"asPa"
+   ],
+   "console_errors": []
+  },
+  {
+   "flag_at_click": "H:no",
+   "socket_connected_before_click": false,
+   "cf_log": [
+    "load",
+    "click-always(loaded=True,hyd=True)"
+   ],
+   "sent": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/clickfast\",\"asPath\":\"/clickfast\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/clickfast\",\"asPath\":\"",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydapp___hydapp____state.cf_click\",\"payload\":{\"which\":\"always\"},\"router_data\":{\"pathname\":\"/clickfast\",\"asPa"
+   ],
+   "console_errors": []
+  }
+ ]
+}

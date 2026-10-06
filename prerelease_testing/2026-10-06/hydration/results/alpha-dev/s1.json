@@ -1,0 +1,236 @@
+{
+ "checks": {
+  "ui_set_applied": true,
+  "values_restored": {
+   "ls-plain": true,
+   "ls-sync": true,
+   "ss-val": true,
+   "ck-val": true,
+   "sub-ls": true,
+   "sub-ck": true,
+   "box-a-ls": true,
+   "box-b-ls": true,
+   "ls-same": true
+  },
+  "on_load_saw_restored": true
+ },
+ "hydrated_first": true,
+ "first_load_trace": "index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False",
+ "storage_after_first_load": {
+  "local": {
+   "theme": "system",
+   "hyd_sub_ls": "sub-ls-default",
+   "last_compiled_theme": "system"
+  },
+  "session": {
+   "hyd_sub_ss": "sub-ss-default",
+   "token": "f4ed190c-906d-466c-a6f0-bdc46d95e35e"
+  },
+  "cookie": "hyd_sub_ck=sub-ck-default"
+ },
+ "values_first": {
+  "ls-plain": "ls-default",
+  "ls-sync": "sync-default",
+  "ss-val": "ss-default",
+  "ck-val": "ck-default",
+  "ck-int": "5",
+  "ck-int-plus": "51",
+  "ls-same": "same-value",
+  "sub-ls": "sub-ls-default",
+  "sub-ck": "sub-ck-default",
+  "sub-ss": "sub-ss-default",
+  "clean-ls": "clean-default",
+  "clean-ck": "clean-ck-default",
+  "box-a-ls": "box-default",
+  "box-b-ls": "box-default",
+  "sub-uuid": "3b50c40cae8e4faf8ae329b6c5d0af5c"
+ },
+ "storage_after_set": {
+  "local": {
+   "theme": "system",
+   "hyd_sync": "sync-A",
+   "reflex___state____state.hydapp___hydapp____state.ls_plain_rx_state_": "ls-A",
+   "hyd_sub_ls": "sub-ls-S1",
+   "reflex___state____state.reflex___istate___dynamic____storage_box_n1.box_ls_rx_state_": "box-a-set",
+   "last_compiled_theme": "system"
+  },
+  "session": {
+   "hyd_sub_ss": "sub-ss-default",
+   "token": "f4ed190c-906d-466c-a6f0-bdc46d95e35e",
+   "reflex___state____state.hydapp___hydapp____state.ss_val_rx_state_": "ss-A"
+  },
+  "cookie": "reflex___state____state.hydapp___hydapp____state.ck_val_rx_state_=ck-A; hyd_sub_ck=sub-ck-S1"
+ },
+ "hydrated_reload": true,
+ "values_reload": {
+  "ls-plain": "ls-A",
+  "ls-sync": "sync-A",
+  "ss-val": "ss-A",
+  "ck-val": "ck-A",
+  "ls-same": "same-value",
+  "sub-ls": "sub-ls-S1",
+  "sub-ck": "sub-ck-S1",
+  "clean-ls": "clean-default",
+  "box-a-ls": "box-a-set",
+  "box-b-ls": "box-default",
+  "load-count": "2"
+ },
+ "reload_trace": "index_load#2 ls=ls-A|sync=sync-A|ss=ss-A|ck=ck-A|int='5'|same=same-value|big=0|sub_ls=sub-ls-S1|sub_ck=sub-ck-S1|clean_ls=clean-default|hyd=False",
+ "timeline_reload_ls_plain": [
+  [
+   52,
+   null
+  ],
+  [
+   202,
+   "ls-A"
+  ]
+ ],
+ "timeline_reload_hyd": [
+  [
+   52,
+   null
+  ],
+  [
+   202,
+   "H:yes"
+  ]
+ ],
+ "frames": [
+  {
+   "t": 1.279,
+   "dir": "in",
+   "kind": "eio",
+   "len": 108
+  },
+  {
+   "t": 1.415,
+   "dir": "out",
+   "kind": "connect-trunc",
+   "len": 404
+  },
+  {
+   "t": 1.422,
+   "dir": "in",
+   "kind": "connect-trunc",
+   "len": 40
+  },
+  {
+   "t": 1.426,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 2512
+  },
+  {
+   "t": 1.427,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 89
+  },
+  {
+   "t": 1.427,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 311
+  },
+  {
+   "t": 1.427,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 88
+  },
+  {
+   "t": 1.549,
+   "dir": "out",
+   "kind": "event-trunc",
+   "len": 156
+  },
+  {
+   "t": 1.559,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 193
+  },
+  {
+   "t": 1.595,
+   "dir": "out",
+   "kind": "event-trunc",
+   "len": 177
+  },
+  {
+   "t": 1.606,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 169
+  },
+  {
+   "t": 1.628,
+   "dir": "out",
+   "kind": "event-trunc",
+   "len": 178
+  },
+  {
+   "t": 1.639,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 158
+  },
+  {
+   "t": 2.262,
+   "dir": "out",
+   "kind": "disconnect",
+   "len": 10
+  },
+  {
+   "t": 2.394,
+   "dir": "in",
+   "kind": "eio",
+   "len": 108
+  },
+  {
+   "t": 2.425,
+   "dir": "out",
+   "kind": "connect-trunc",
+   "len": 1213
+  },
+  {
+   "t": 2.428,
+   "dir": "in",
+   "kind": "connect-trunc",
+   "len": 40
+  },
+  {
+   "t": 2.433,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 3214
+  },
+  {
+   "t": 2.433,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 89
+  },
+  {
+   "t": 2.433,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 459
+  },
+  {
+   "t": 2.433,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 88
+  }
+ ],
+ "screenshot": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/hydration/results/alpha-dev/shots/s1_after_reload.png",
+ "status": "pass",
+ "duration_s": 2.6,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

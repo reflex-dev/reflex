@@ -1,0 +1,118 @@
+{
+ "hydrated": true,
+ "storage_after_first_load": {
+  "local": {
+   "theme": "system",
+   "last_compiled_theme": "system"
+  },
+  "session": {
+   "token": "0c37448a-ae33-4571-89a2-f3e70a025623"
+  },
+  "cookie": ""
+ },
+ "client_storage_written_on_first_load": {
+  "local": [],
+  "session": [],
+  "cookie": []
+ },
+ "frames": [
+  {
+   "t": 0.87,
+   "dir": "in",
+   "kind": "eio",
+   "len": 108
+  },
+  {
+   "t": 0.871,
+   "dir": "out",
+   "kind": "connect",
+   "len": 10
+  },
+  {
+   "t": 0.879,
+   "dir": "in",
+   "kind": "connect",
+   "len": 40,
+   "boot": null,
+   "boot_payload_keys": []
+  },
+  {
+   "t": 0.879,
+   "dir": "out",
+   "kind": "event",
+   "len": 106,
+   "name": "reflex___state____state.hydrate",
+   "payload_keys": []
+  },
+  {
+   "t": 0.879,
+   "dir": "out",
+   "kind": "event",
+   "len": 156,
+   "name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal",
+   "payload_keys": []
+  },
+  {
+   "t": 0.891,
+   "dir": "in",
+   "kind": "event-trunc",
+   "len": 4209
+  },
+  {
+   "t": 0.891,
+   "dir": "in",
+   "kind": "event",
+   "len": 89,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 0.891,
+   "dir": "in",
+   "kind": "event",
+   "len": 311,
+   "delta": {
+    "hydapp___hydapp____state": [
+     "load_count_rx_state_",
+     "trace_rx_state_"
+    ]
+   },
+   "events": []
+  },
+  {
+   "t": 0.891,
+   "dir": "in",
+   "kind": "event",
+   "len": 88,
+   "delta": {
+    "reflex___state____state": [
+     "is_hydrated_rx_state_"
+    ]
+   },
+   "events": []
+  }
+ ],
+ "storage_after_reload": {
+  "local": {
+   "theme": "system",
+   "last_compiled_theme": "system"
+  },
+  "session": {
+   "token": "0c37448a-ae33-4571-89a2-f3e70a025623",
+   "react-router-scroll-positions": "{\"default\":0}"
+  },
+  "cookie": ""
+ },
+ "status": "pass",
+ "duration_s": 3.7,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

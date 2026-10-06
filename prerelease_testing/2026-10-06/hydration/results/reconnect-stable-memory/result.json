@@ -1,0 +1,285 @@
+{
+ "venv": "stable",
+ "manager": "memory",
+ "startup_s": 9.2,
+ "dc_phaseA_sub_ls": "sub-ls-default",
+ "dc_phaseA_storage": {
+  "local": {
+   "theme": "system"
+  },
+  "session": {
+   "token": "3a36b82c-03f3-44c1-a217-155f3617bce0"
+  },
+  "cookie": ""
+ },
+ "before": {
+  "counter": "3",
+  "ls-plain": "ls-A",
+  "sub-ls": "sub-ls-S1",
+  "sub-uuid": "4ca0ae483df0480d8cedaa096c65adf1",
+  "load-count": "1"
+ },
+ "while_down": {
+  "hyd": "H:yes",
+  "counter": "3",
+  "screenshot": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/hydration/results/reconnect-stable-memory/while_down.png",
+  "body_has_connection_msg": "Cannot connect to server: websocket error.\nCheck if server is reachable at ws://localhost:3223/_event\nindex\nhome\nother\nredir\nbgload\nraise\nslow\nmulti\nscript\nitem1\nitem2\ndocsab\ndocsroot\nlsload\ndefaults\nclickfast\ngate\nupload\nnested\n\nH:yes\n\n3\n\nincrement\n\n[\"index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|"
+ },
+ "restart_s": 6.2,
+ "after_restart": {
+  "counter": "0",
+  "ls-plain": "ls-A",
+  "sub-ls": "sub-ls-S1",
+  "sub-uuid": "065235cbbc66408f8ff40d3e1544b782",
+  "load-count": "1",
+  "hyd-flag": "H:yes",
+  "rehydrated_in_s": null,
+  "token_same": true,
+  "trace_tail": [
+   "index_load#1 ls=ls-A|sync=sync-A|ss=ss-A|ck=ck-A|int='5'|same=same-value|big=0|sub_ls=sub-ls-S1|sub_ck=sub-ck-S1|clean_ls=clean-default|hyd=False"
+  ],
+  "boot_events_sent": [
+   {
+    "t": 23.839,
+    "dir": "out",
+    "kind": "connect",
+    "len": 10
+   }
+  ],
+  "frames": [
+   {
+    "t": 23.839,
+    "dir": "in",
+    "kind": "eio",
+    "len": 108
+   },
+   {
+    "t": 23.839,
+    "dir": "out",
+    "kind": "connect",
+    "len": 10
+   },
+   {
+    "t": 23.842,
+    "dir": "in",
+    "kind": "connect",
+    "len": 40,
+    "boot": null,
+    "boot_payload_keys": []
+   },
+   {
+    "t": 23.842,
+    "dir": "out",
+    "kind": "event",
+    "len": 106,
+    "name": "reflex___state____state.hydrate",
+    "payload_keys": []
+   },
+   {
+    "t": 23.843,
+    "dir": "out",
+    "kind": "event",
+    "len": 696,
+    "name": "reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal",
+    "payload_keys": [
+     "vars"
+    ]
+   },
+   {
+    "t": 23.843,
+    "dir": "out",
+    "kind": "event",
+    "len": 156,
+    "name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal",
+    "payload_keys": []
+   },
+   {
+    "t": 23.849,
+    "dir": "in",
+    "kind": "event-trunc",
+    "len": 4408
+   },
+   {
+    "t": 24.235,
+    "dir": "in",
+    "kind": "event",
+    "len": 331,
+    "delta": {
+     "hydapp___hydapp____state": [
+      "ck_val_rx_state_",
+      "ls_plain_rx_state_",
+      "ls_sync_rx_state_",
+      "ss_val_rx_state_"
+     ],
+     "hydapp___hydapp____sub": [
+      "sub_ck_rx_state_",
+      "sub_ls_rx_state_"
+     ]
+    },
+    "events": []
+   },
+   {
+    "t": 24.237,
+    "dir": "in",
+    "kind": "event",
+    "len": 89,
+    "delta": {
+     "reflex___state____state": [
+      "is_hydrated_rx_state_"
+     ]
+    },
+    "events": []
+   },
+   {
+    "t": 24.237,
+    "dir": "in",
+    "kind": "event",
+    "len": 277,
+    "delta": {
+     "hydapp___hydapp____state": [
+      "load_count_rx_state_",
+      "trace_rx_state_"
+     ]
+    },
+    "events": []
+   },
+   {
+    "t": 24.237,
+    "dir": "in",
+    "kind": "event",
+    "len": 88,
+    "delta": {
+     "reflex___state____state": [
+      "is_hydrated_rx_state_"
+     ]
+    },
+    "events": []
+   },
+   {
+    "t": 48.855,
+    "dir": "in",
+    "kind": "eio",
+    "len": 1
+   },
+   {
+    "t": 48.855,
+    "dir": "out",
+    "kind": "eio",
+    "len": 1
+   },
+   {
+    "t": 73.88,
+    "dir": "in",
+    "kind": "eio",
+    "len": 1
+   },
+   {
+    "t": 73.88,
+    "dir": "out",
+    "kind": "eio",
+    "len": 1
+   }
+  ],
+  "hyd_series_tail": [
+   [
+    178,
+    "H:no"
+   ],
+   [
+    277,
+    "H:yes"
+   ],
+   [
+    12320,
+    "H:no"
+   ],
+   [
+    12709,
+    "H:yes"
+   ]
+  ],
+  "counter_after_click": "1"
+ },
+ "offline": {
+  "hyd_while_offline": "H:yes",
+  "ws_events": [],
+  "after_online": {
+   "counter": "1",
+   "ls-plain": "ls-A",
+   "load-count": "1",
+   "hyd-flag": "H:yes"
+  },
+  "load_count_before": "1",
+  "frames": [],
+  "counter_after_click": "2"
+ },
+ "dc_phaseB_returning_visitor_sub_ls": "sub-ls-NEWDEFAULT",
+ "dc_phaseB_fresh_visitor_sub_ls": "sub-ls-NEWDEFAULT",
+ "anomalies": {
+  "console_err_warn": [
+   {
+    "tag": "main",
+    "t": 14.36,
+    "type": "error",
+    "text": "WebSocket connection to 'ws://localhost:3223/_event/?token=1378aea4-28e2-400e-8583-bbcd0de6a348&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   },
+   {
+    "tag": "main",
+    "t": 14.36,
+    "type": "error",
+    "text": "WebSocket connection to 'ws://localhost:3223/_event/?token=1378aea4-28e2-400e-8583-bbcd0de6a348&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   },
+   {
+    "tag": "main",
+    "t": 14.361,
+    "type": "error",
+    "text": "WebSocket connection to 'ws://localhost:3223/_event/?token=1378aea4-28e2-400e-8583-bbcd0de6a348&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   },
+   {
+    "tag": "main",
+    "t": 14.361,
+    "type": "error",
+    "text": "WebSocket connection to 'ws://localhost:3223/_event/?token=1378aea4-28e2-400e-8583-bbcd0de6a348&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   },
+   {
+    "tag": "main",
+    "t": 14.805,
+    "type": "error",
+    "text": "WebSocket connection to 'ws://localhost:3223/_event/?token=1378aea4-28e2-400e-8583-bbcd0de6a348&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   },
+   {
+    "tag": "main",
+    "t": 15.807,
+    "type": "error",
+    "text": "WebSocket connection to 'ws://localhost:3223/_event/?token=1378aea4-28e2-400e-8583-bbcd0de6a348&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   },
+   {
+    "tag": "main",
+    "t": 17.01,
+    "type": "error",
+    "text": "WebSocket connection to 'ws://localhost:3223/_event/?token=1378aea4-28e2-400e-8583-bbcd0de6a348&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   },
+   {
+    "tag": "main",
+    "t": 23.7,
+    "type": "error",
+    "text": "WebSocket connection to 'ws://localhost:3223/_event/?token=1378aea4-28e2-400e-8583-bbcd0de6a348&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   },
+   {
+    "tag": "main",
+    "t": 23.7,
+    "type": "error",
+    "text": "WebSocket connection to 'ws://localhost:3223/_event/?token=1378aea4-28e2-400e-8583-bbcd0de6a348&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   },
+   {
+    "tag": "main",
+    "t": 23.701,
+    "type": "error",
+    "text": "WebSocket connection to 'ws://localhost:3223/_event/?token=1378aea4-28e2-400e-8583-bbcd0de6a348&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+   }
+  ],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

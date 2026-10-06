@@ -1,0 +1,207 @@
+{
+ "contexts": [
+  {
+   "shown": {
+    "d-session-id": "67ed0a36748b459e8166986a47a2fe5d",
+    "d-created": "\"2026-10-06 17:16:43.406035\"",
+    "d-fixed-dt": "\"2020-01-02 03:04:05\"",
+    "d-env": "env-unset",
+    "d-items": "[\"base\",\"import-mutated\",\"lifespan-mutated\"]",
+    "d-mapping": "{\"b\":2,\"a\":1}",
+    "d-point": "{\"x\":1,\"y\":2}",
+    "d-flt": "1",
+    "d-pid": "23912",
+    "d-summary": "n=3 env=env-unset sum=3 pt=3"
+   },
+   "backend": {
+    "session_id": "67ed0a36748b459e8166986a47a2fe5d",
+    "created": "2026-10-06 17:16:43.406035",
+    "env_val": "env-unset",
+    "items": [
+     "base",
+     "import-mutated",
+     "lifespan-mutated"
+    ],
+    "mapping": {
+     "b": 2,
+     "a": 1
+    },
+    "pid_default": "23912",
+    "summary": "n=3 env=env-unset sum=3 pt=3",
+    "shared_now": [
+     "base",
+     "import-mutated",
+     "lifespan-mutated"
+    ]
+   },
+   "first_paint": {
+    "d-session-id": "2d5863655de34106a6f89e76b84af454",
+    "d-items": "[\"base\",\"import-mutated\"]",
+    "d-pid": "23912",
+    "d-env": "env-unset",
+    "d-summary": "n=2 env=env-unset sum=3 pt=3"
+   },
+   "mismatch": {},
+   "frames": [
+    {
+     "t": 0.333,
+     "dir": "in",
+     "kind": "eio",
+     "len": 108
+    },
+    {
+     "t": 0.333,
+     "dir": "out",
+     "kind": "connect",
+     "len": 10
+    },
+    {
+     "t": 0.337,
+     "dir": "in",
+     "kind": "connect",
+     "len": 40,
+     "boot": null,
+     "boot_payload_keys": []
+    },
+    {
+     "t": 0.337,
+     "dir": "out",
+     "kind": "event",
+     "len": 124,
+     "name": "reflex___state____state.hydrate",
+     "payload_keys": []
+    },
+    {
+     "t": 0.337,
+     "dir": "out",
+     "kind": "event",
+     "len": 174,
+     "name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal",
+     "payload_keys": []
+    },
+    {
+     "t": 0.338,
+     "dir": "in",
+     "kind": "event-trunc",
+     "len": 4254
+    }
+   ],
+   "timeline_session": [
+    [
+     124,
+     "2d5863655de34106a6f89e76b84af454"
+    ],
+    [
+     252,
+     "67ed0a36748b459e8166986a47a2fe5d"
+    ]
+   ]
+  },
+  {
+   "shown": {
+    "d-session-id": "2a2b6857ebc947c782c9d3c3b85021eb",
+    "d-created": "\"2026-10-06 17:16:45.193017\"",
+    "d-fixed-dt": "\"2020-01-02 03:04:05\"",
+    "d-env": "env-unset",
+    "d-items": "[\"base\",\"import-mutated\",\"lifespan-mutated\"]",
+    "d-mapping": "{\"b\":2,\"a\":1}",
+    "d-point": "{\"x\":1,\"y\":2}",
+    "d-flt": "1",
+    "d-pid": "23912",
+    "d-summary": "n=3 env=env-unset sum=3 pt=3"
+   },
+   "backend": {
+    "session_id": "2a2b6857ebc947c782c9d3c3b85021eb",
+    "created": "2026-10-06 17:16:45.193017",
+    "env_val": "env-unset",
+    "items": [
+     "base",
+     "import-mutated",
+     "lifespan-mutated"
+    ],
+    "mapping": {
+     "b": 2,
+     "a": 1
+    },
+    "pid_default": "23912",
+    "summary": "n=3 env=env-unset sum=3 pt=3",
+    "shared_now": [
+     "base",
+     "import-mutated",
+     "lifespan-mutated"
+    ]
+   },
+   "first_paint": {
+    "d-session-id": "2d5863655de34106a6f89e76b84af454",
+    "d-items": "[\"base\",\"import-mutated\"]",
+    "d-pid": "23912",
+    "d-env": "env-unset",
+    "d-summary": "n=2 env=env-unset sum=3 pt=3"
+   },
+   "mismatch": {},
+   "frames": [
+    {
+     "t": 2.117,
+     "dir": "in",
+     "kind": "eio",
+     "len": 108
+    },
+    {
+     "t": 2.118,
+     "dir": "out",
+     "kind": "connect",
+     "len": 10
+    },
+    {
+     "t": 2.122,
+     "dir": "in",
+     "kind": "connect",
+     "len": 40,
+     "boot": null,
+     "boot_payload_keys": []
+    },
+    {
+     "t": 2.122,
+     "dir": "out",
+     "kind": "event",
+     "len": 124,
+     "name": "reflex___state____state.hydrate",
+     "payload_keys": []
+    },
+    {
+     "t": 2.122,
+     "dir": "out",
+     "kind": "event",
+     "len": 174,
+     "name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal",
+     "payload_keys": []
+    },
+    {
+     "t": 2.133,
+     "dir": "in",
+     "kind": "event-trunc",
+     "len": 4254
+    }
+   ],
+   "timeline_session": [
+    [
+     104,
+     "2d5863655de34106a6f89e76b84af454"
+    ],
+    [
+     216,
+     "2a2b6857ebc947c782c9d3c3b85021eb"
+    ]
+   ]
+  }
+ ],
+ "distinct_session_ids": true,
+ "status": "pass",
+ "duration_s": 3.6,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

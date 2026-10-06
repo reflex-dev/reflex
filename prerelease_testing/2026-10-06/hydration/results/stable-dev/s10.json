@@ -1,0 +1,48 @@
+{
+ "runs": [
+  {
+   "flag_at_click": "H:no",
+   "log": [
+    "load",
+    "click-always(loaded=True,hyd=True)"
+   ],
+   "log_after_gated": [
+    "load",
+    "click-always(loaded=True,hyd=True)",
+    "click-gated(loaded=True,hyd=True)"
+   ]
+  },
+  {
+   "flag_at_click": "H:no",
+   "log": [
+    "load",
+    "click-always(loaded=True,hyd=True)"
+   ],
+   "log_after_gated": [
+    "load",
+    "click-always(loaded=True,hyd=True)",
+    "click-gated(loaded=True,hyd=True)"
+   ]
+  },
+  {
+   "flag_at_click": "H:no",
+   "log": [
+    "load",
+    "click-always(loaded=True,hyd=True)"
+   ],
+   "log_after_gated": [
+    "load",
+    "click-always(loaded=True,hyd=True)",
+    "click-gated(loaded=True,hyd=True)"
+   ]
+  }
+ ],
+ "status": "anomaly",
+ "duration_s": 11.9,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

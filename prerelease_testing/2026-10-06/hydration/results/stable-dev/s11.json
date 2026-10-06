@@ -1,0 +1,25 @@
+{
+ "upload_started": true,
+ "y": {
+  "progress_at_nav": "2",
+  "progress_after": "4",
+  "trace": [
+   "slow_load run1 step1",
+   "slow_load run1 step2",
+   "slow_load run1 step3",
+   "slow_load run1 step4",
+   "slow_load run1 finished",
+   "other_load#1 path=/other"
+  ]
+ },
+ "upload_done": true,
+ "same_client_note": "upload handler holds the token's lock (non-background), so same-client nav waits for it",
+ "status": "fail",
+ "duration_s": 10.4,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

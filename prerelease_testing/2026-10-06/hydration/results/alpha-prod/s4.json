@@ -1,0 +1,26 @@
+{
+ "before": {
+  "ck-int": "5",
+  "ck-int-plus": "51"
+ },
+ "hydrated": true,
+ "after": {
+  "ck-int": "abc",
+  "ck-int-plus": "abc1"
+ },
+ "int_plus_one_trace": "int_plus_one raised TypeError: can only concatenate str (not \"int\") to str",
+ "numeric_cookie": {
+  "ck-int": "41",
+  "ck-int-plus": "411",
+  "trace": "int_plus_one raised TypeError: can only concatenate str (not \"int\") to str"
+ },
+ "screenshot": "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/hydration/results/alpha-prod/shots/s4_wrong_type_cookie.png",
+ "status": "anomaly",
+ "duration_s": 2.6,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

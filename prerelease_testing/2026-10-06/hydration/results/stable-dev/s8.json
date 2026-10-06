@@ -1,0 +1,207 @@
+{
+ "contexts": [
+  {
+   "shown": {
+    "d-session-id": "0814c23fdf13405c93c1d6100773f984",
+    "d-created": "\"2026-10-06 17:11:14.630776\"",
+    "d-fixed-dt": "\"2020-01-02 03:04:05\"",
+    "d-env": "env-unset",
+    "d-items": "[\"base\",\"import-mutated\",\"lifespan-mutated\"]",
+    "d-mapping": "{\"b\":2,\"a\":1}",
+    "d-point": "{\"x\":1,\"y\":2}",
+    "d-flt": "1",
+    "d-pid": "17894",
+    "d-summary": "n=3 env=env-unset sum=3 pt=3"
+   },
+   "backend": {
+    "session_id": "0814c23fdf13405c93c1d6100773f984",
+    "created": "2026-10-06 17:11:14.630776",
+    "env_val": "env-unset",
+    "items": [
+     "base",
+     "import-mutated",
+     "lifespan-mutated"
+    ],
+    "mapping": {
+     "b": 2,
+     "a": 1
+    },
+    "pid_default": "17894",
+    "summary": "n=3 env=env-unset sum=3 pt=3",
+    "shared_now": [
+     "base",
+     "import-mutated",
+     "lifespan-mutated"
+    ]
+   },
+   "first_paint": {
+    "d-session-id": null,
+    "d-items": null,
+    "d-pid": null,
+    "d-env": null,
+    "d-summary": null
+   },
+   "mismatch": {},
+   "frames": [
+    {
+     "t": 0.498,
+     "dir": "in",
+     "kind": "eio",
+     "len": 108
+    },
+    {
+     "t": 0.498,
+     "dir": "out",
+     "kind": "connect",
+     "len": 10
+    },
+    {
+     "t": 0.501,
+     "dir": "in",
+     "kind": "connect",
+     "len": 40,
+     "boot": null,
+     "boot_payload_keys": []
+    },
+    {
+     "t": 0.501,
+     "dir": "out",
+     "kind": "event",
+     "len": 122,
+     "name": "reflex___state____state.hydrate",
+     "payload_keys": []
+    },
+    {
+     "t": 0.501,
+     "dir": "out",
+     "kind": "event",
+     "len": 172,
+     "name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal",
+     "payload_keys": []
+    },
+    {
+     "t": 0.509,
+     "dir": "in",
+     "kind": "event-trunc",
+     "len": 4250
+    }
+   ],
+   "timeline_session": [
+    [
+     92,
+     null
+    ],
+    [
+     467,
+     "0814c23fdf13405c93c1d6100773f984"
+    ]
+   ]
+  },
+  {
+   "shown": {
+    "d-session-id": "b6d655f396fc4e208f232bbbb8218a0a",
+    "d-created": "\"2026-10-06 17:11:16.653113\"",
+    "d-fixed-dt": "\"2020-01-02 03:04:05\"",
+    "d-env": "env-unset",
+    "d-items": "[\"base\",\"import-mutated\",\"lifespan-mutated\"]",
+    "d-mapping": "{\"b\":2,\"a\":1}",
+    "d-point": "{\"x\":1,\"y\":2}",
+    "d-flt": "1",
+    "d-pid": "17894",
+    "d-summary": "n=3 env=env-unset sum=3 pt=3"
+   },
+   "backend": {
+    "session_id": "b6d655f396fc4e208f232bbbb8218a0a",
+    "created": "2026-10-06 17:11:16.653113",
+    "env_val": "env-unset",
+    "items": [
+     "base",
+     "import-mutated",
+     "lifespan-mutated"
+    ],
+    "mapping": {
+     "b": 2,
+     "a": 1
+    },
+    "pid_default": "17894",
+    "summary": "n=3 env=env-unset sum=3 pt=3",
+    "shared_now": [
+     "base",
+     "import-mutated",
+     "lifespan-mutated"
+    ]
+   },
+   "first_paint": {
+    "d-session-id": null,
+    "d-items": null,
+    "d-pid": null,
+    "d-env": null,
+    "d-summary": null
+   },
+   "mismatch": {},
+   "frames": [
+    {
+     "t": 2.516,
+     "dir": "in",
+     "kind": "eio",
+     "len": 108
+    },
+    {
+     "t": 2.516,
+     "dir": "out",
+     "kind": "connect",
+     "len": 10
+    },
+    {
+     "t": 2.525,
+     "dir": "in",
+     "kind": "connect",
+     "len": 40,
+     "boot": null,
+     "boot_payload_keys": []
+    },
+    {
+     "t": 2.526,
+     "dir": "out",
+     "kind": "event",
+     "len": 122,
+     "name": "reflex___state____state.hydrate",
+     "payload_keys": []
+    },
+    {
+     "t": 2.526,
+     "dir": "out",
+     "kind": "event",
+     "len": 172,
+     "name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal",
+     "payload_keys": []
+    },
+    {
+     "t": 2.543,
+     "dir": "in",
+     "kind": "event-trunc",
+     "len": 4250
+    }
+   ],
+   "timeline_session": [
+    [
+     80,
+     null
+    ],
+    [
+     505,
+     "b6d655f396fc4e208f232bbbb8218a0a"
+    ]
+   ]
+  }
+ ],
+ "distinct_session_ids": true,
+ "status": "pass",
+ "duration_s": 4.0,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

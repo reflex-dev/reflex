@@ -1,0 +1,21 @@
+{
+ "after_list": [
+  "a",
+  "b",
+  "c"
+ ],
+ "after_fail_then_ok": [
+  "a",
+  "b",
+  "c",
+  "c"
+ ],
+ "status": "pass",
+ "duration_s": 3.1,
+ "anomalies": {
+  "console_err_warn": [],
+  "pageerrors": [],
+  "failed": [],
+  "http_errors": []
+ }
+}

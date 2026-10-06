@@ -1,0 +1,219 @@
+{
+ "console": [
+  {
+   "tag": "s11x",
+   "t": 9.91,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  },
+  {
+   "tag": "s11y",
+   "t": 9.979,
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "http_errors": [],
+ "ws_events": [
+  {
+   "tag": "s11x",
+   "t": 0.276,
+   "ev": "open",
+   "url": "ws://localhost:3221/_event/?token=63ffd50e-5b6c-47ac-8220-0d08e76602cd&EIO=4&transport=websocket"
+  },
+  {
+   "tag": "s11y",
+   "t": 0.755,
+   "ev": "open",
+   "url": "ws://localhost:3221/_event/?token=00a9dd92-d1cd-4e2a-d29d-d0111cc274cd&EIO=4&transport=websocket"
+  }
+ ],
+ "ws_frames": [
+  {
+   "tag": "s11x",
+   "t": 0.303,
+   "wall": 1791306876904.751,
+   "dir": "in",
+   "len": 108,
+   "p": "0{\"sid\":\"v0EMcVp-FSCZ5bMhAAN4\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "tag": "s11x",
+   "t": 0.338,
+   "wall": 1791306876939.614,
+   "dir": "out",
+   "len": 418,
+   "p": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"930fadbda7aef0c7\",\"711d0d85b26c973b\",\"5dcec70f14652f08\",\"30faa97466b75591\",\"a471d7b0a64f41e2\",\"8aceae7a70a77669\",\"43c609c6f8fd8a63\",\"8787a34a6f03d634\",\"01ff95d7cd1e5b28\",\"01ff95d7cd1e5b28\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/upload/\",\"asPath\":\"/upload/\"}}}"
+  },
+  {
+   "tag": "s11x",
+   "t": 0.34,
+   "wall": 1791306876941.647,
+   "dir": "in",
+   "len": 40,
+   "p": "40/_event,{\"sid\":\"hYKbVzIw2cuDGA1iAAN5\"}"
+  },
+  {
+   "tag": "s11x",
+   "t": 0.342,
+   "wall": 1791306876942.985,
+   "dir": "in",
+   "len": 2543,
+   "p": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3221\",\"origin\":\"http://localhost:3221\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"SgpkckJLpoOlZdIbjWDGhQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3221\",\"origin\":\"http://localhost:3221\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"SgpkckJLpoOlZdIbjWDGhQ==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3221\",\"path\":\"/upload\",\"raw_path\":\"/upload/\",\"full_path\":\"http://localhost:3221/upload\",\"full_raw_path\":\"http://localhost:3221/upload/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/upload\",\"rx_router_session_rx_state_\":{\"client_token\":\"63ffd50e-5b6c-47ac-8220-0d08e76602cd\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"hYKbVzIw2cuDGA1iAAN5\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3221\",\"origin\":\"http://localhost:3221\",\"path\":\"/upload/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3221/upload/\"}},\"reflex___state____state.hydapp___hydapp____state.hydapp___hydapp____sub\":{\"sub_ck_rx_state_\":\"sub-ck-default\",\"sub_ls_rx_state_\":\"sub-ls-default\",\"sub_saw_rx_state_\":\"\",\"sub_ss_rx_state_\":\"sub-ss-default\",\"sub_uuid_rx_state_\":\"78529db30cab47dea7f4c5472ae3f6c3\"},\"reflex___state____state.hydapp___hydapp____state.hydapp___hydapp____defaults\":{\"created_rx_state_\":\"2026-10-06 17:14:36.938471\",\"env_val_rx_state_\":\"env-unset\",\"fixed_dt_rx_state_\":\"2020-01-02 03:04:05\",\"flt_rx_state_\":1.0,\"items_rx_state_\":[\"base\",\"import-mutated\",\"lifespan-mutated\"],\"mapping_rx_state_\":{\"b\":2,\"a\":1},\"pid_default_rx_state_\":\"21189\",\"point_rx_state_\":{\"x\":1,\"y\":2},\"session_id_rx_state_\":\"3b35611019034c148d1e91f572fc4090\",\"summary_rx_state_\":\"n=3 env=env-unset sum=3 pt=3\"}}}]"
+  },
+  {
+   "tag": "s11x",
+   "t": 0.342,
+   "wall": 1791306876943.3914,
+   "dir": "in",
+   "len": 88,
+   "p": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "tag": "s11y",
+   "t": 0.792,
+   "wall": 1791306877392.877,
+   "dir": "in",
+   "len": 108,
+   "p": "0{\"sid\":\"qRMk5FokT1u5uVIzAAN6\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "tag": "s11y",
+   "t": 0.842,
+   "wall": 1791306877443.6965,
+   "dir": "out",
+   "len": 414,
+   "p": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"930fadbda7aef0c7\",\"711d0d85b26c973b\",\"5dcec70f14652f08\",\"30faa97466b75591\",\"a471d7b0a64f41e2\",\"8aceae7a70a77669\",\"43c609c6f8fd8a63\",\"8787a34a6f03d634\",\"01ff95d7cd1e5b28\",\"01ff95d7cd1e5b28\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/slow/\",\"asPath\":\"/slow/\"}}}"
+  },
+  {
+   "tag": "s11y",
+   "t": 0.849,
+   "wall": 1791306877450.3215,
+   "dir": "in",
+   "len": 40,
+   "p": "40/_event,{\"sid\":\"u_V0fF6piHeNwFYrAAN7\"}"
+  },
+  {
+   "tag": "s11y",
+   "t": 0.853,
+   "wall": 1791306877454.3838,
+   "dir": "in",
+   "len": 2529,
+   "p": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:3221\",\"origin\":\"http://localhost:3221\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"iOevo1KZDM+hS64Ph9fGmA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:3221\",\"origin\":\"http://localhost:3221\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"iOevo1KZDM+hS64Ph9fGmA==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3221\",\"path\":\"/slow\",\"raw_path\":\"/slow/\",\"full_path\":\"http://localhost:3221/slow\",\"full_raw_path\":\"http://localhost:3221/slow/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/slow\",\"rx_router_session_rx_state_\":{\"client_token\":\"00a9dd92-d1cd-4e2a-d29d-d0111cc274cd\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"u_V0fF6piHeNwFYrAAN7\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3221\",\"origin\":\"http://localhost:3221\",\"path\":\"/slow/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3221/slow/\"}},\"reflex___state____state.hydapp___hydapp____state.hydapp___hydapp____sub\":{\"sub_ck_rx_state_\":\"sub-ck-default\",\"sub_ls_rx_state_\":\"sub-ls-default\",\"sub_saw_rx_state_\":\"\",\"sub_ss_rx_state_\":\"sub-ss-default\",\"sub_uuid_rx_state_\":\"2bccedbe9e4e41c1a30a6fbfdada0158\"},\"reflex___state____state.hydapp___hydapp____state.hydapp___hydapp____defaults\":{\"created_rx_state_\":\"2026-10-06 17:14:37.445089\",\"env_val_rx_state_\":\"env-unset\",\"fixed_dt_rx_state_\":\"2020-01-02 03:04:05\",\"flt_rx_state_\":1.0,\"items_rx_state_\":[\"base\",\"import-mutated\",\"lifespan-mutated\"],\"mapping_rx_state_\":{\"b\":2,\"a\":1},\"pid_default_rx_state_\":\"21189\",\"point_rx_state_\":{\"x\":1,\"y\":2},\"session_id_rx_state_\":\"e61e67dece6f440a98709dc0b6a663ec\",\"summary_rx_state_\":\"n=3 env=env-unset sum=3 pt=3\"}}}]"
+  },
+  {
+   "tag": "s11y",
+   "t": 0.853,
+   "wall": 1791306877454.6042,
+   "dir": "in",
+   "len": 89,
+   "p": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "tag": "s11y",
+   "t": 0.853,
+   "wall": 1791306877454.728,
+   "dir": "in",
+   "len": 179,
+   "p": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.hydapp___hydapp____state\":{\"slow_progress_rx_state_\":1,\"trace_rx_state_\":[\"slow_load run1 step1\"],\"slow_runs_rx_state_\":1}}}]"
+  },
+  {
+   "tag": "s11y",
+   "t": 2.848,
+   "wall": 1791306879449.4211,
+   "dir": "in",
+   "len": 178,
+   "p": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.hydapp___hydapp____state\":{\"slow_progress_rx_state_\":2,\"trace_rx_state_\":[\"slow_load run1 step1\",\"slow_load run1 step2\"]}}}]"
+  },
+  {
+   "tag": "s11y",
+   "t": 3.265,
+   "wall": 1791306879865.856,
+   "dir": "out",
+   "len": 519,
+   "p": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.hydapp___hydapp____state.hydapp___hydapp____sub.sub_ck_rx_state_\":\"sub-ck-default\",\"reflex___state____state.hydapp___hydapp____state.hydapp___hydapp____sub.sub_ls_rx_state_\":\"sub-ls-default\",\"reflex___state____state.hydapp___hydapp____state.hydapp___hydapp____sub.sub_ss_rx_state_\":\"sub-ss-default\"}},\"router_data\":{\"pathname\":\"/other\",\"asPath\":\"/other\"}}]"
+  },
+  {
+   "tag": "s11y",
+   "t": 3.265,
+   "wall": 1791306879865.9521,
+   "dir": "out",
+   "len": 166,
+   "p": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/other\",\"asPath\":\"/other\"}}]"
+  },
+  {
+   "tag": "s11y",
+   "t": 3.268,
+   "wall": 1791306879869.3914,
+   "dir": "in",
+   "len": 721,
+   "p": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"splat_rx_state_\":[],\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3221\",\"path\":\"/other\",\"raw_path\":\"/other\",\"full_path\":\"http://localhost:3221/other\",\"full_raw_path\":\"http://localhost:3221/other\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/other\",\"id_rx_state_\":\"\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3221\",\"origin\":\"http://localhost:3221\",\"path\":\"/other\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3221/other\"}},\"reflex___state____state.hydapp___hydapp____state.hydapp___hydapp____sub\":{\"sub_ss_rx_state_\":\"sub-ss-default\",\"sub_ck_rx_state_\":\"sub-ck-default\",\"sub_ls_rx_state_\":\"sub-ls-default\"}}}]"
+  },
+  {
+   "tag": "s11y",
+   "t": 3.268,
+   "wall": 1791306879869.668,
+   "dir": "in",
+   "len": 89,
+   "p": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "tag": "s11y",
+   "t": 3.268,
+   "wall": 1791306879869.7954,
+   "dir": "in",
+   "len": 203,
+   "p": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.hydapp___hydapp____state\":{\"trace_rx_state_\":[\"slow_load run1 step1\",\"slow_load run1 step2\",\"other_load#1 path=/other\"],\"other_count_rx_state_\":1}}}]"
+  },
+  {
+   "tag": "s11y",
+   "t": 3.269,
+   "wall": 1791306879869.866,
+   "dir": "in",
+   "len": 88,
+   "p": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "tag": "s11x",
+   "t": 9.865,
+   "wall": 1791306886466.1858,
+   "dir": "out",
+   "len": 517,
+   "p": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.hydapp___hydapp____state.hydapp___hydapp____sub.sub_ck_rx_state_\":\"sub-ck-default\",\"reflex___state____state.hydapp___hydapp____state.hydapp___hydapp____sub.sub_ls_rx_state_\":\"sub-ls-default\",\"reflex___state____state.hydapp___hydapp____state.hydapp___hydapp____sub.sub_ss_rx_state_\":\"sub-ss-default\"}},\"router_data\":{\"pathname\":\"/slow\",\"asPath\":\"/slow\"}}]"
+  },
+  {
+   "tag": "s11x",
+   "t": 9.865,
+   "wall": 1791306886466.359,
+   "dir": "out",
+   "len": 164,
+   "p": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/slow\",\"asPath\":\"/slow\"}}]"
+  },
+  {
+   "tag": "s11x",
+   "t": 9.867,
+   "wall": 1791306886468.8015,
+   "dir": "in",
+   "len": 714,
+   "p": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"splat_rx_state_\":[],\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3221\",\"path\":\"/slow\",\"raw_path\":\"/slow\",\"full_path\":\"http://localhost:3221/slow\",\"full_raw_path\":\"http://localhost:3221/slow\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/slow\",\"id_rx_state_\":\"\",\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3221\",\"origin\":\"http://localhost:3221\",\"path\":\"/slow\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3221/slow\"}},\"reflex___state____state.hydapp___hydapp____state.hydapp___hydapp____sub\":{\"sub_ss_rx_state_\":\"sub-ss-default\",\"sub_ck_rx_state_\":\"sub-ck-default\",\"sub_ls_rx_state_\":\"sub-ls-default\"}}}]"
+  },
+  {
+   "tag": "s11x",
+   "t": 9.87,
+   "wall": 1791306886470.8672,
+   "dir": "in",
+   "len": 89,
+   "p": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "tag": "s11x",
+   "t": 9.87,
+   "wall": 1791306886471.552,
+   "dir": "in",
+   "len": 179,
+   "p": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.hydapp___hydapp____state\":{\"slow_progress_rx_state_\":1,\"trace_rx_state_\":[\"slow_load run1 step1\"],\"slow_runs_rx_state_\":1}}}]"
+  }
+ ]
+}

@@ -1,0 +1,24 @@
+# trimmed from recon-stable-memory-2.log (281 lines); kept lines matching: HYDTRACE|Warning|WARNING|Error|ERROR|Traceback|panicked|Expected field|Deprecat|Exception|^\s+File |raise |Stopping|Stopped|Starting granian|Listening|Spawning|Resetting|new_token|Cancelling the previous|Dropping stale|superseded|RUST_BACKTRACE|Cannot drop|App running|Backend running|Reflex app stopped|state_manager_mode
+
+4: Debug: Overriding config value state_manager_mode with env var 
+20: state_manager_mode=<StateManagerMode.MEMORY: 'memory'>, 
+23: 'state_manager_mode', 'disable_plugins', 'telemetry_enabled', 'plugins', 
+43: Debug: Resetting disk state manager.
+218: Debug: Prerender (html): /raise -> build/client/raise/index.html
+254: App running at: http://0.0.0.0:3223/
+256: [INFO] Starting granian (main PID: 28443)
+257: [INFO] Listening at: http://0.0.0.0:3223
+258: [INFO] Spawning worker-1 with PID: 28586
+261: HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+263: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+264: type '<class 'reflex.istate.storage.Cookie'>'.
+265: HYDTRACE 1791307252.029 1378aea4 index_load#1 ls=ls-A|sync=sync-A|ss=ss-A|ck=ck-A|int='5'|same=same-value|big=0|sub_ls=sub-ls-S1|sub_ck=sub-ck-S1|clean_ls=clean-default|hyd=False
+266: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+267: type '<class 'reflex.istate.storage.Cookie'>'.
+268: HYDTRACE 1791307325.233 3ec0e47b index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-NEWDEFAULT|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+269: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+270: type '<class 'reflex.istate.storage.Cookie'>'.
+271: HYDTRACE 1791307326.379 2d36470a index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-NEWDEFAULT|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+273: [INFO] Stopping worker-1
+279: [INFO] Stopped worker-1
+281: Info: Reflex app stopped.

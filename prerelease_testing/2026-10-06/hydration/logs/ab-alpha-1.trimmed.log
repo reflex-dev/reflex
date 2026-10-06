@@ -1,0 +1,140 @@
+# trimmed from ab-alpha-1.log (462 lines); kept lines matching: HYDTRACE|Warning|WARNING|Error|ERROR|Traceback|panicked|Expected field|Deprecat|Exception|^\s+File |raise |Stopping|Stopped|Starting granian|Listening|Spawning|Resetting|new_token|Cancelling the previous|Dropping stale|superseded|RUST_BACKTRACE|Cannot drop|App running|Backend running|Reflex app stopped|state_manager_mode
+
+18: state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+54: state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+109: Debug: Resetting disk state manager.
+285: Debug: Prerender (html): /raise -> build/client/raise/index.html
+321: App running at: http://0.0.0.0:3221/
+323: [INFO] Starting granian (main PID: 23810)
+324: [INFO] Listening at: http://0.0.0.0:3221
+325: [INFO] Spawning worker-1 with PID: 24152
+328: HYDTRACE lifespan mutated SHARED_ITEMS=['base', 'import-mutated', 'lifespan-mutated']
+330: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+331: type '<class 'reflex.istate.storage.Cookie'>'.
+332: HYDTRACE 1791309028.789 4ddd9b7d other_load#1 path=/other/
+333: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+334: type '<class 'reflex.istate.storage.Cookie'>'.
+335: HYDTRACE 1791309030.886 e3f7451b other_load#1 path=/other/
+336: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+337: type '<class 'reflex.istate.storage.Cookie'>'.
+338: HYDTRACE 1791309032.626 8e4ae9f9 other_load#1 path=/other/
+339: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+340: type '<class 'reflex.istate.storage.Cookie'>'.
+341: HYDTRACE 1791309033.131 7e3dd6eb other_load#1 path=/other/
+342: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+343: type '<class 'reflex.istate.storage.Cookie'>'.
+344: HYDTRACE 1791309034.613 b36e4ef2 other_load#1 path=/other/
+345: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+346: type '<class 'reflex.istate.storage.Cookie'>'.
+347: HYDTRACE 1791309035.173 73b3d033 other_load#1 path=/other/
+348: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+349: type '<class 'reflex.istate.storage.Cookie'>'.
+350: HYDTRACE 1791309037.206 9a7dd3a4 other_load#1 path=/other/
+351: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+352: type '<class 'reflex.istate.storage.Cookie'>'.
+353: HYDTRACE 1791309037.670 955dd924 other_load#1 path=/other/
+354: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+355: type '<class 'reflex.istate.storage.Cookie'>'.
+356: HYDTRACE 1791309039.157 5dc8a519 other_load#1 path=/other/
+357: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+358: type '<class 'reflex.istate.storage.Cookie'>'.
+359: HYDTRACE 1791309039.646 325573ea other_load#1 path=/other/
+360: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+361: type '<class 'reflex.istate.storage.Cookie'>'.
+362: HYDTRACE 1791309041.154 1f6de49b other_load#1 path=/other/
+363: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+364: type '<class 'reflex.istate.storage.Cookie'>'.
+365: HYDTRACE 1791309041.748 d9f4558f other_load#1 path=/other/
+366: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+367: type '<class 'reflex.istate.storage.Cookie'>'.
+368: HYDTRACE 1791309043.746 d93f6d89 other_load#1 path=/other/
+369: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+370: type '<class 'reflex.istate.storage.Cookie'>'.
+371: HYDTRACE 1791309044.393 bf4077cc other_load#1 path=/other/
+372: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+373: type '<class 'reflex.istate.storage.Cookie'>'.
+374: HYDTRACE 1791309046.052 10ff8a81 other_load#1 path=/other/
+375: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+376: type '<class 'reflex.istate.storage.Cookie'>'.
+377: HYDTRACE 1791309046.540 6eb268c3 other_load#1 path=/other/
+378: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+379: type '<class 'reflex.istate.storage.Cookie'>'.
+380: HYDTRACE 1791309048.035 7be7af88 other_load#1 path=/other/
+381: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+382: type '<class 'reflex.istate.storage.Cookie'>'.
+383: HYDTRACE 1791309048.518 4b046f15 other_load#1 path=/other/
+384: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+385: type '<class 'reflex.istate.storage.Cookie'>'.
+386: HYDTRACE 1791309049.952 5379a811 other_load#1 path=/other/
+387: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+388: type '<class 'reflex.istate.storage.Cookie'>'.
+389: HYDTRACE 1791309050.429 dc4352a5 other_load#1 path=/other/
+390: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+391: type '<class 'reflex.istate.storage.Cookie'>'.
+392: HYDTRACE 1791309051.925 22addd48 other_load#1 path=/other/
+393: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+394: type '<class 'reflex.istate.storage.Cookie'>'.
+395: HYDTRACE 1791309053.216 26247a41 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+396: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+397: type '<class 'reflex.istate.storage.Cookie'>'.
+398: HYDTRACE 1791309054.271 6533ef44 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+399: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+400: type '<class 'reflex.istate.storage.Cookie'>'.
+401: HYDTRACE 1791309055.855 7ab186ca index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+402: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+403: type '<class 'reflex.istate.storage.Cookie'>'.
+404: HYDTRACE 1791309056.485 f4796bdc index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+405: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+406: type '<class 'reflex.istate.storage.Cookie'>'.
+407: HYDTRACE 1791309058.264 2e429575 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+408: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+409: type '<class 'reflex.istate.storage.Cookie'>'.
+410: HYDTRACE 1791309058.798 4d9884de index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+411: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+412: type '<class 'reflex.istate.storage.Cookie'>'.
+413: HYDTRACE 1791309060.418 5c72b30f index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+414: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+415: type '<class 'reflex.istate.storage.Cookie'>'.
+416: HYDTRACE 1791309060.893 f6201989 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+417: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+418: type '<class 'reflex.istate.storage.Cookie'>'.
+419: HYDTRACE 1791309062.415 1e26f7b9 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+420: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+421: type '<class 'reflex.istate.storage.Cookie'>'.
+422: HYDTRACE 1791309062.910 7ae4e5a8 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+423: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+424: type '<class 'reflex.istate.storage.Cookie'>'.
+425: HYDTRACE 1791309064.379 8f87d229 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+426: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+427: type '<class 'reflex.istate.storage.Cookie'>'.
+428: HYDTRACE 1791309064.879 74fda346 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+429: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+430: type '<class 'reflex.istate.storage.Cookie'>'.
+431: HYDTRACE 1791309066.455 3831796e index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+432: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+433: type '<class 'reflex.istate.storage.Cookie'>'.
+434: HYDTRACE 1791309066.942 c8523b7e index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+435: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+436: type '<class 'reflex.istate.storage.Cookie'>'.
+437: HYDTRACE 1791309068.424 2c26cb4c index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+438: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+439: type '<class 'reflex.istate.storage.Cookie'>'.
+440: HYDTRACE 1791309068.887 031ffdff index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+441: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+442: type '<class 'reflex.istate.storage.Cookie'>'.
+443: HYDTRACE 1791309070.330 3f778aab index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+444: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+445: type '<class 'reflex.istate.storage.Cookie'>'.
+446: HYDTRACE 1791309070.815 40306fdd index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+447: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+448: type '<class 'reflex.istate.storage.Cookie'>'.
+449: HYDTRACE 1791309072.617 4a60ba1a index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+450: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+451: type '<class 'reflex.istate.storage.Cookie'>'.
+452: HYDTRACE 1791309073.322 cac777e5 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+453: Expected field 'State.ck_int' to receive type '<class 'int'>', but got '5' of 
+454: type '<class 'reflex.istate.storage.Cookie'>'.
+455: HYDTRACE 1791309074.907 1ca49807 index_load#1 ls=ls-default|sync=sync-default|ss=ss-default|ck=ck-default|int='5'|same=same-value|big=0|sub_ls=sub-ls-default|sub_ck=sub-ck-default|clean_ls=clean-default|hyd=False
+457: [INFO] Stopping worker-1
+460: [INFO] Stopped worker-1
+462: Info: Reflex app stopped.
