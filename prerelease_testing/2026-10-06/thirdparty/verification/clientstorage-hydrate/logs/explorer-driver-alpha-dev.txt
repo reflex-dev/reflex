@@ -1,0 +1,3 @@
+RESULT tp_ls_cv='bad' ui='ls_cv=bad' cv='cv_check=cleared-in-computed-var' after_2nd_reload_tp_ls_cv='bad'
+RESULT tp_ls_cv='bad' ui='ls_cv=bad' cv='cv_check=cleared-in-computed-var' after_2nd_reload_tp_ls_cv='bad'
+RESULT tp_ls_cv='bad' ui='ls_cv=bad' cv='cv_check=cleared-in-computed-var' after_2nd_reload_tp_ls_cv='bad'

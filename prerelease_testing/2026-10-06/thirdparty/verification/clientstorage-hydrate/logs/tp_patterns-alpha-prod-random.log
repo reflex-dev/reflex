@@ -1,0 +1,15 @@
+DeprecationWarning: state_auto_setters has been deprecated in version 0.9.0. 
+auto setters will be removed; use explicit event handlers instead. It will be 
+completely removed in 1.0. (rxconfig.py:3)
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 25/24 0:00:00
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:05
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3605/
+Warning: Page index is being redefined with the same component.
+Warning: Page storage is being redefined with the same component.
+Warning: Page mixins is being redefined with the same component.
+Warning: Page inherit is being redefined with the same component.
+Warning: Page classattr is being redefined with the same component.
+Warning: Page background is being redefined with the same component.
+Info: Reflex app stopped.

@@ -330,3 +330,95 @@ NOTES: The #7138 fix works: an exec'd call names the user line on alpha (0.9.12:
 ROOT_CAUSE_GUESS: reflex_base/utils/log.py:1019-1058, where _exclude_paths_from_frame_info does not exclude pydantic or sqlmodel. The warning is emitted from reflex/model.py:555 via __init_subclass__ (:580), called from pydantic ModelMetaclass.__new__, itself called from sqlmodel/main.py:619. Exclude both roots, or attribute the warning to the class definition site.
 MINIMAL_REPRO: a user script containing class M(rx.Model, table=True): x: int = 0. Alpha warns "(.../pydantic/_internal/_model_construction.py:133)"; 0.9.12 warns "(<frozen abc>:106)". Script: verification/classattr/scripts/derive_d/derive_d.py <venv> model_here|exec|direct.
 ```
+
+## VERIFICATION — client-storage rewritten during hydration
+
+Independent verifier. Artifacts: `verification/clientstorage-hydrate/` (my own app `apps/cvstore`, drivers, start/sweep scripts, seed probe, driver summaries and server logs in `logs/`, websocket captures in `frames/`). Venvs: shared `$SB/envs/alpha` (0.10.0a1) and `$SB/envs/stable` (0.9.12) for the plain apps. For reflex-google-auth 0.2.0 I built my own venvs from PyPI: `$SB/envs/verify_thirdparty_1-galpha` (reflex 0.10.0a1) and `-gstable` (reflex 0.9.12), both without pydantic. Ports 3604-3607 / 8604-8607, one server at a time. All servers were stopped afterwards.
+
+**Verdict: confirmed, but the regression is narrower than reported.** On 0.10.0a1 the computed-var rewrite never reaches the browser on a full page load or reconnect: 100% of server processes, dev and prod. On 0.9.12 it already failed for a hash-seed-dependent share of server processes: about half for simple states and about 14% for reflex-google-auth's state. The explorer's statement that 0.9.12 clears it deterministically ("5/5") is wrong. With `PYTHONHASHSEED=4`, reflex 0.9.12 shows the explorer's exact failure on the explorer's own app and driver, in both dev and prod (`tp_ls_cv='bad' ui='ls_cv=bad' cv='cv_check=cleared-in-computed-var'`). `PYTHONHASHSEED` 1, 2 and 3 all happen to be "fresh" seeds for tp_patterns' var names; the first stale one is 4. The release turns an intermittent failure into a permanent one.
+
+### Repro of the written steps
+I copied `apps/tp_patterns` unchanged and ran `drivers/drive_storage_only.py` plus `drive_tp_ws.py` (the same flow with websocket capture). The written repro was enough; the only gap is that NOTES never says how "seed" was applied.
+
+| run | result |
+|---|---|
+| alpha dev, unseeded (3 runs) | `tp_ls_cv='bad' ui='ls_cv=bad'`, cv says cleared: **FAIL** |
+| alpha prod, unseeded / `PYTHONHASHSEED=0` | FAIL / FAIL |
+| stable dev, unseeded (3 runs, one process) / seed 1 / **seed 4** | PASS / PASS / **FAIL** (identical to alpha) |
+| stable prod, seed 0 / **seed 4** | PASS / **FAIL** |
+
+Wire evidence (`frames/tp-*-ws.json`, decode with `drivers/decode_frames.py <file> reload store_state`):
+- alpha sends one CONNECT packet `40/_event,{"event":{"name":"reflex___state____state.hydrate_and_load","payload":{"vars":{"…store_state.ls_cv_rx_state_":"bad"},"hashes":[…]}}}`. The snapshot it gets back holds `{"cv_check_rx_state_":"cleared-in-computed-var","ls_cv_rx_state_":"bad"}`, which contradicts itself. No later frame carries `ls_cv`.
+- stable seed 4: the `update_vars_internal` delta is `{"ls_cv_rx_state_":"bad","cv_check_rx_state_":"cleared-in-computed-var"}`, stale because `ls_cv` was serialized first. With seed 1 it is `{"cv_check…":"cleared…","ls_cv_rx_state_":""}`.
+
+### Own minimal app (`apps/cvstore`, identical source on both versions)
+Each variant has its own state and storage key. The driver (`drivers/drive_cvstore.py`) sets the key to `bad`, reloads, then runs the steps in the table below. A `probe` event copies the backend's value into a plain var (`seen=backend …`), so backend truth is visible without relying on the delta under test. FAIL means that after the reload the browser storage and the UI hold `bad` while the backend holds `''`. Seed 0 is "stale" for every computed-var variant on the per-event delta path, and seed 4 is "fresh" for all of them (verified in the worker with `drivers/drive_diag.py`).
+
+| variant | alpha dev s0 / s4 | alpha prod s0 / s4 | stable dev s0 / s4 | stable prod s0 / s4 |
+|---|---|---|---|---|
+| (a) cached cv clears `rx.LocalStorage` (direct `rx.State` subclass) | FAIL / FAIL | FAIL / FAIL | FAIL / PASS | FAIL / PASS |
+| (b) uncached cv clears LocalStorage | FAIL / FAIL | – / FAIL | FAIL / PASS | – / PASS |
+| (c) `on_load` clears LocalStorage + Cookie + SessionStorage | PASS / PASS | PASS / PASS | PASS / PASS | PASS / PASS |
+| (d) clicked event clears LocalStorage + Cookie + SessionStorage | PASS / PASS | PASS / PASS | PASS / PASS | PASS / PASS |
+| (e1) cached cv clears `rx.Cookie` | FAIL / FAIL | – / FAIL | FAIL / PASS | – / PASS |
+| (e2) cached cv clears `rx.SessionStorage` | FAIL / FAIL | – / FAIL | FAIL / PASS | – / PASS |
+| (f) cached cv on a SUBSTATE clears its own LocalStorage | FAIL / FAIL | – / FAIL | FAIL / PASS | – / PASS |
+| (g) cached cv sets a DIFFERENT plain var | FAIL / FAIL | – / FAIL | FAIL / FAIL | – / FAIL |
+| (h1) after a FAIL: the next ordinary event fixes the browser | no / no | no / no | no / n.a. | no / n.a. |
+| (h2) after a FAIL: a client-side navigation (link out and back) fixes it | no / **yes** | no / yes | no / n.a. | no / n.a. |
+| (h3) after a FAIL: a second full reload fixes it | no | no | no | no |
+
+Seed sweep of (a), dev, seeds 0-7 (`bin/seed_sweep.sh`; `logs/seed-sweep-*.txt`):
+- alpha: reload FAILs on 8/8 seeds. Navigation heals it on seeds 1, 4, 5 and 6.
+- stable: FAILs on seeds 0, 2, 3 and 7, and PASSes on 1, 4, 5 and 6.
+- All 8 stable outcomes match the offline prediction from set iteration order.
+
+The offline model (`probes/seed_scan_probe.py`, `logs/seed-scan-stable-0-63.txt`) has 0.9.12 stale on 34/64 seeds for (a)'s var names, 32/64 for tp_patterns and 9/64 for a GoogleAuthState-shaped state.
+
+Answers to the specific questions:
+- **(c) is not affected.** `hydrate_and_load` sends the snapshot (with the browser's `bad`), then `on_load_internal` triggers `on_load` as a separate event. Its delta `{"…c_on_load":{"ck_rx_state_":"","ls_rx_state_":"","ss_rx_state_":"", …}}` has no root `is_hydrated:false`, so the frontend writes the cleared values to storage (`frames/cvstore/alpha-dev-seed4-c.json`).
+- **(g) fails on both versions, for every seed.** A write a computed var makes to a var that was not already dirty never enters the in-flight delta, and is then `_clean()`ed. The UI shows `plain=initial` while the backend holds `set-by-cv`, until the next full snapshot.
+- **(h): no self-heal on ordinary events** (the var is no longer dirty). A full reload re-sends `bad` and fails again. A client-side navigation still uses `update_vars_internal`, so it heals only on "fresh" seeds.
+
+### reflex-google-auth 0.2.0 (upstream demo copied from `apps/google_auth_demo`; `drivers/drive_gauth.py`, `bin/gauth_sweep.sh`)
+- alpha dev: the bogus `token_response_json` survives full reloads of `/protected` and `/` on 8/8 runs (seeds 0, 1, 2, 3, 4, 5, 10 and unseeded). The first client-side navigation clears it except on seeds 4 and 10.
+- stable dev: it is cleared on reload on 9/11 seeds and kept on **seeds 4 and 10**, the two seeds in 0-10 that the offline model predicted. Frames: the `update_vars_internal` delta lists `token_response_json` = BOGUS first.
+- Both versions: `/protected` never unlocks (`token_is_valid` stays False), and the server prints `Error verifying token: MalformedError(...)` on each load. No auth bypass.
+- On alpha the hydrate snapshot also ships values derived from the rejected token (`access_token:"ya29.bogus"`, `id_token`, `scopes`) while the backend holds `''`.
+- Even on a passing 0.9.12 seed the delta carried `id_token_json` derived from the bogus token.
+
+### Mechanism (published alpha source under `$SB/envs/alpha/lib/python3.12/site-packages`)
+1. `reflex/state.py:2339-2352` `hydrate_and_load`: resets client storage (2339), applies the browser values (2341 → `_apply_client_storage_vars`, `setattr` at 2526), sets `is_hydrated=False` (2345), runs `delta = await _resolve_delta(self.dict())` (2348), diffs against compiled defaults (2350), emits (2351), then calls **`self._clean()` (2352)**.
+2. `reflex/state.py:1975-1996` `BaseState.dict()` reads base vars (1975-1977) **before** it evaluates computed vars (1991-1996). The computed var's assignment therefore lands after `ls` was captured, and it only adds `ls` to `dirty_vars`.
+3. `_clean()` (state.py:1928-1930 → `reflex/istate/delta.py:303-313` `clean_state`) wipes that dirty mark. Neither the chained delta (`reflex_base/event/processor/base_state_processor.py:243`) nor any later delta ever carries the new value. The browser keeps the old value and re-sends it on every load.
+4. Even a value placed in a full snapshot would not be persisted: `applyClientStorageDelta` (`reflex_base/.templates/web/utils/state.js:1045-1059`) skips client-storage writes when the root delta has `is_hydrated_rx_state_ === false`. Reconnect snapshots carry that flag. The first-load diffed snapshot drops it because it equals the default.
+5. The pre-existing half: per-event deltas iterate a `set` (alpha `reflex/istate/delta.py:226,236-237`; 0.9.12 `reflex/state.py:2462-2477`), and `chain_updates` cleans afterwards (alpha `base_state_processor.py:243-247`; 0.9.12 `226-230`). A computed var's write reaches the client only if the written var is iterated after the computed var, and never if the var was not dirty beforehand. 0.9.12 applied browser values in the separate `update_vars_internal` event (`state.py:3070`) through this path, which is the hash-seed coin flip. Alpha still uses this path for client-side navigations.
+
+PR #7064 (via GitHub MCP) merged `hydrate`, `update_vars_internal` and `on_load_internal` into one `hydrate_and_load` event and adds the diff against compiled defaults. Neither its description nor its 24 review threads mention computed vars that write state.
+
+**Supported pattern?** `docs/vars/computed_vars.md` (release branch) says only "Computed vars have values derived from other properties on the backend". No doc forbids or blesses assignments inside a computed var, and the requested grep found nothing on side effects. Given (g) and the 0.9.12 coin flip, the pattern was never reliable. It still matters: reflex-google-auth 0.2.0 depends on it, and on 0.9.12 it worked for most server processes (~86%). On 0.10.0a1 it never works on page load.
+
+Suggested fix directions (not implemented):
+- (i) In `hydrate_and_load`, flush the vars dirtied during `self.dict()` in a follow-up delta that is not marked `is_hydrated=False`, instead of `_clean()`ing them.
+- (ii) More generally, rebuild deltas to a fixed point while new dirty vars appear. This also fixes (g) and the old coin flip.
+- (iii) Or document that computed vars must not assign state, and move reflex-google-auth's token cleanup into an event.
+
+Secondary observations:
+- (b) on alpha: the uncached computed var's own UI value also stays stale (`cleared-by-uncached-cv`) after later events. The snapshot path does not update the per-client "last sent" record of uncached computed vars. The record left by the first load (`check:"value=''"`) makes `_record_or_drop_delta_value` withhold the recomputed `value=''` as unchanged (`frames/cvstore/alpha-dev-seed4-b.json`). Same root cause.
+- `[ERROR] Unexpected exit from worker-1` also appears on **alpha dev** when the process group is SIGTERMed (my logs and the explorer's `logs/tp_patterns-alpha-seed1.log`), not only on 0.9.12. Alpha prod stops cleanly. This is shutdown noise from the kill method and unrelated to this issue.
+- Method pitfall: `python -I`/`-E` makes Python ignore `PYTHONHASHSEED`. My first offline scan used `-I` and was discarded; run `probes/seed_scan_probe.py` without it.
+
+### Rerun
+```bash
+SB=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad; V=$PWD/verification/clientstorage-hydrate
+W=$SB/apps/verify_thirdparty_1   # the bin/*.sh scripts expect W/{pids,logs,out,drivers,apps/<venv>/<app>}
+mkdir -p $W/{pids,logs,out,drivers} && cp $V/bin/*.sh $W/ && cp $V/drivers/*.py $W/drivers/
+for e in alpha stable; do mkdir -p $W/apps/$e && cp -r $V/apps/cvstore $W/apps/$e/; done
+PYTHONHASHSEED=4 $W/start.sh alpha  $W/apps/alpha/cvstore  3604 8604 $W/logs/a.log && $W/wait_up.sh http://localhost:3604/ 400 $W/pids/cvstore-alpha.pid
+cd $W/drivers && NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 $SB/envs/driver/bin/python drive_cvstore.py http://localhost:3604 $W/out x a   # FAIL
+$W/stop.sh $W/pids/cvstore-alpha.pid
+PYTHONHASHSEED=4 $W/start.sh stable $W/apps/stable/cvstore 3606 8606 $W/logs/s.log   # same driver: PASS; with PYTHONHASHSEED=0: FAIL like alpha
+# prod: REFLEX_API_URL=http://localhost:3605 PYTHONHASHSEED=4 $W/start.sh alpha $W/apps/alpha/cvstore 3605 3605 $W/logs/p.log --env prod
+# explorer's app on 0.9.12 failing: PYTHONHASHSEED=4 + apps/tp_patterns + drivers/drive_storage_only.py
+# seed sweeps: $W/seed_sweep.sh <alpha|stable> <fp> <bp> a 0 1 2 3 ; google-auth: $W/gauth_sweep.sh <galpha|gstable> <fp> <bp> 0 4 10
+```

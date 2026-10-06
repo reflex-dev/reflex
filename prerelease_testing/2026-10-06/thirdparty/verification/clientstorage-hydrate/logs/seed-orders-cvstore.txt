@@ -1,0 +1,8 @@
+seed 0 a/b/f/g(ls,check): STALE  e_cookie(ck,check): STALE  e_session(ss,check): STALE  tp(ls_cv,cv_check): FRESH
+seed 1 a/b/f/g(ls,check): FRESH  e_cookie(ck,check): FRESH  e_session(ss,check): STALE  tp(ls_cv,cv_check): FRESH
+seed 2 a/b/f/g(ls,check): STALE  e_cookie(ck,check): FRESH  e_session(ss,check): STALE  tp(ls_cv,cv_check): FRESH
+seed 3 a/b/f/g(ls,check): STALE  e_cookie(ck,check): STALE  e_session(ss,check): STALE  tp(ls_cv,cv_check): FRESH
+seed 4 a/b/f/g(ls,check): FRESH  e_cookie(ck,check): FRESH  e_session(ss,check): FRESH  tp(ls_cv,cv_check): STALE
+seed 5 a/b/f/g(ls,check): FRESH  e_cookie(ck,check): FRESH  e_session(ss,check): FRESH  tp(ls_cv,cv_check): STALE
+seed 6 a/b/f/g(ls,check): FRESH  e_cookie(ck,check): STALE  e_session(ss,check): FRESH  tp(ls_cv,cv_check): FRESH
+seed 7 a/b/f/g(ls,check): STALE  e_cookie(ck,check): FRESH  e_session(ss,check): FRESH  tp(ls_cv,cv_check): STALE

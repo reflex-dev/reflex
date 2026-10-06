@@ -1,0 +1,7 @@
+SUMMARY stable-dev-seed1 a:
+   reload            [l=''] var='var=' check='check=cleared-by-cached-cv' seen='seen=' noop_count='noop=0'
+   probe             [l=''] var='var=' check='check=cleared-by-cached-cv' seen="seen=backend ls=''" noop_count='noop=0'
+   noop-event        [l=''] var='var=' check='check=cleared-by-cached-cv' seen="seen=backend ls=''" noop_count='noop=1'
+   after-client-nav  [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   reload2           [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'
+   reload2-probe     [l=''] var='var=' check="check=value=''" seen="seen=backend ls=''" noop_count='noop=1'

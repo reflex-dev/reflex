@@ -1,0 +1,22 @@
+GAUTH gstable-seed0 {"keys_before": ["last_compiled_theme", "theme"], "after_reload": "", "protected_unlocked": false, "after_reload_index": "", "after_client_nav": "", "after_reload2": ""}
+   server 'Error verifying token' lines: 1
+GAUTH gstable-seed1 {"keys_before": ["last_compiled_theme", "theme"], "after_reload": "", "protected_unlocked": false, "after_reload_index": "", "after_client_nav": "", "after_reload2": ""}
+   server 'Error verifying token' lines: 1
+GAUTH gstable-seed2 {"keys_before": ["last_compiled_theme", "theme"], "after_reload": "", "protected_unlocked": false, "after_reload_index": "", "after_client_nav": "", "after_reload2": ""}
+   server 'Error verifying token' lines: 1
+GAUTH gstable-seed3 {"keys_before": ["last_compiled_theme", "theme"], "after_reload": "", "protected_unlocked": false, "after_reload_index": "", "after_client_nav": "", "after_reload2": ""}
+   server 'Error verifying token' lines: 1
+GAUTH gstable-seed4 {"keys_before": ["last_compiled_theme", "theme"], "after_reload": "BOGUS", "protected_unlocked": false, "after_reload_index": "BOGUS", "after_client_nav": "BOGUS", "after_reload2": "BOGUS"}
+   server 'Error verifying token' lines: 4
+GAUTH gstable-seed5 {"keys_before": ["last_compiled_theme", "theme"], "after_reload": "", "protected_unlocked": false, "after_reload_index": "", "after_client_nav": "", "after_reload2": ""}
+   server 'Error verifying token' lines: 1
+GAUTH gstable-seed6 {"keys_before": ["last_compiled_theme", "theme"], "after_reload": "", "protected_unlocked": false, "after_reload_index": "", "after_client_nav": "", "after_reload2": ""}
+   server 'Error verifying token' lines: 1
+GAUTH gstable-seed7 {"keys_before": ["last_compiled_theme", "theme"], "after_reload": "", "protected_unlocked": false, "after_reload_index": "", "after_client_nav": "", "after_reload2": ""}
+   server 'Error verifying token' lines: 1
+GAUTH gstable-seed8 {"keys_before": ["last_compiled_theme", "theme"], "after_reload": "", "protected_unlocked": false, "after_reload_index": "", "after_client_nav": "", "after_reload2": ""}
+   server 'Error verifying token' lines: 1
+GAUTH gstable-seed9 {"keys_before": ["last_compiled_theme", "theme"], "after_reload": "", "protected_unlocked": false, "after_reload_index": "", "after_client_nav": "", "after_reload2": ""}
+   server 'Error verifying token' lines: 1
+GAUTH gstable-seed10 {"keys_before": ["last_compiled_theme", "theme"], "after_reload": "BOGUS", "protected_unlocked": false, "after_reload_index": "BOGUS", "after_client_nav": "BOGUS", "after_reload2": "BOGUS"}
+   server 'Error verifying token' lines: 3
