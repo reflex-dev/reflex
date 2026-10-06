@@ -4132,13 +4132,14 @@ class Field(Generic[FIELD_TYPE]):
             VarTypeError: Always; the field has no frontend value.
         """
         qualname = f"{self._owner.__name__}.{self._name}" if self._owner else "field"
-        if self._backend:
+        if self._name.startswith("_"):
             msg = (
                 f"Backend var '{qualname}' cannot be used in an f-string: backend"
                 " vars (prefixed with '_') exist only on the server and have no"
                 " frontend value. Use a regular var instead."
             )
         else:
+            # Declared with is_var=False, or not bound to a state at all.
             msg = f"Field '{qualname}' has no frontend var to format into an f-string."
         raise VarTypeError(msg)
 

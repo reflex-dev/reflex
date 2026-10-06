@@ -1313,9 +1313,13 @@ def test_backend_field_in_fstring_raises():
 
     class Model(EvenMoreBasicBaseState):
         _secret: int = 42
+        bookkeeping: int = field(default=0, is_var=False)
 
     with pytest.raises(VarTypeError, match=r"Backend var 'Model._secret'"):
         f"{Model._secret}px"
+    # A bookkeeping field (is_var=False) is backend too, but not underscore-prefixed.
+    with pytest.raises(VarTypeError, match=r"Field 'Model.bookkeeping' has no"):
+        f"{Model.bookkeeping}"
 
 
 def test_classvar_over_inherited_field_is_not_a_field():
