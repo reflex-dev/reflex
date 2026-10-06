@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import multiprocessing
 import os
+import signal
 from pathlib import Path
 
 import pytest
@@ -250,6 +251,29 @@ def test_failed_post_build_is_retried(cached_build):
     config.plugins = []
     build.build()
     assert process.call_count == 2
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Cache and fork require POSIX")
+def test_snapshot_of_killed_build_is_discarded(cached_build):
+    """A build killed before publishing cannot leave its snapshot behind for good."""
+    web, config, _ = cached_build
+
+    class KillingPlugin(Plugin):
+        def post_build(self, **context):
+            os.kill(os.getpid(), signal.SIGKILL)
+
+    def killed_build():
+        config.plugins = [KillingPlugin()]
+        build.build()
+
+    killed = multiprocessing.get_context("fork").Process(target=killed_build)
+    killed.start()
+    killed.join(10)
+    assert killed.exitcode == -signal.SIGKILL
+    cache = web / "reflex.build-cache"
+    assert len(list(cache.glob("pending-*"))) == 1
+    build.build()
+    assert [path.name for path in cache.iterdir()] == ["current"]
 
 
 @pytest.mark.skipif(os.name == "nt", reason="Cache uses POSIX change timestamps")

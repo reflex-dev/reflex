@@ -354,6 +354,9 @@ class _FrontendBuildCache:
         """Copy pristine Vite output before post-build hooks can mutate it."""
         try:
             self.directory.mkdir(exist_ok=True)
+            # Under the build lock, other pending snapshots belong to killed builds.
+            for abandoned in self.directory.glob("pending-*"):
+                shutil.rmtree(abandoned, ignore_errors=True)
             self.pending = Path(tempfile.mkdtemp(prefix="pending-", dir=self.directory))
             source = self.web_dir / constants.Dirs.BUILD_DIR
             output_digest = _tree_digest(source)
