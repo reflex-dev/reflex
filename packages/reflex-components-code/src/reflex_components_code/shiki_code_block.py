@@ -513,28 +513,14 @@ class ShikiJsTransformer(ShikiBaseTransformers):
         })
     )
 
-    def __init__(self, **kwargs):
-        """Initialize the transformer.
-
-        Args:
-            kwargs: Kwargs to initialize the props.
-
-        """
-        fns = kwargs.pop("fns", None)
-        style = kwargs.pop("style", None)
-        if fns:
-            kwargs["fns"] = [
-                (
-                    FunctionStringVar.create(x)
-                    if not isinstance(x, FunctionStringVar)
-                    else x
-                )
-                for x in fns
-            ]
-
-        if style:
-            kwargs["style"] = Style(style)
-        super().__init__(**kwargs)
+    def __post_init__(self):
+        """Convert user-supplied fns and style to their var and Style types."""
+        self.fns = [
+            (FunctionStringVar.create(x) if not isinstance(x, FunctionStringVar) else x)
+            for x in self.fns
+        ]
+        if self.style is not None:
+            self.style = Style(self.style)
 
 
 class ShikiCodeBlock(Component, MarkdownComponentMap):

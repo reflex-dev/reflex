@@ -156,6 +156,18 @@ def test_create_shiki_high_level_code_block(
         assert len(component.children) == 1
 
 
+def test_shiki_high_level_code_block_use_transformers():
+    """use_transformers should render and import the default shikijs transformers."""
+    component = ShikiHighLevelCodeBlock.create(
+        "print('x') # [!code highlight]", use_transformers=True
+    )
+    code_block_component = component.children[0]
+
+    assert "transformerNotationHighlight()" in str(code_block_component)
+    assert "@shikijs/transformers@4.5.0" in code_block_component._get_all_imports()
+    assert component.style[".highlighted"]
+
+
 @pytest.mark.parametrize(
     ("children", "props"),
     [
