@@ -174,6 +174,24 @@ def test_lockstep_without_publish_last_remains_symmetric(repo: Path) -> None:
     assert config.lockstep_partners("widget-core") == ("mypkg",)
 
 
+def test_publish_last_members_need_only_the_early_members(repo: Path) -> None:
+    (repo / "packages" / "widget-peer").mkdir()
+    (repo / "packages" / "widget-peer" / "pyproject.toml").write_text(
+        '[project]\nname = "widget-peer"\n'
+    )
+    write_config(
+        repo,
+        'root-package = "mypkg"\npackages-dir = "packages"\n\n'
+        "[[tool.reflex-release.lockstep]]\n"
+        'members = ["mypkg", "widget-core", "widget-peer"]\n'
+        'publish-last = ["mypkg", "widget-peer"]\npin-exact = true\n',
+    )
+    config = load_config(repo)
+    assert config.lockstep_partners("mypkg") == ("widget-core",)
+    assert config.lockstep_partners("widget-peer") == ("widget-core",)
+    assert config.exact_pin_targets("widget-peer") == ("widget-core",)
+
+
 def test_empty_latest_release_package_disables_the_badge(
     config: Config, repo: Path
 ) -> None:

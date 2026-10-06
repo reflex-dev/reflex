@@ -252,32 +252,44 @@ def test_plan_selecting_a_dependency_does_not_select_publish_last(
     }
 
 
-@pytest.mark.parametrize("selection", ["mypkg", "mypkg,widget-core"])
-@pytest.mark.parametrize("blocked_partner", [False, True])
-def test_plan_publish_last_uses_an_identical_already_published_partner(
-    config: Config,
-    repo: Path,
-    outputs: Outputs,
-    selection: str,
-    blocked_partner: bool,
+def test_plan_publish_last_reuses_the_partner_tag_at_its_version(
+    config: Config, repo: Path, outputs: Outputs
 ) -> None:
-    """A dependent reuses the matching tag despite newer sibling work."""
+    """A dependent takes the matching tag even though the sibling has moved on."""
     write_lockstep(repo)
     reloaded = load_config(repo)
     set_changelog(reloaded, "mypkg", "## 1.1.0a1\n\nOld.\n")
     set_changelog(reloaded, "widget-core", "## 1.1.0a3\n\nNewer.\n")
     git(repo, "tag", "widget-core-v1.1.0a2")
     git(repo, "tag", "widget-core-v1.1.0a3")
-    if blocked_partner:
-        pyproject = reloaded.package_path("widget-core") / "pyproject.toml"
-        pyproject.write_text(
-            pyproject.read_text() + 'dependencies = ["third-party >= 9.9.9.dev1"]\n'
-        )
+    # The sibling's current pins do not matter: its tagged metadata is what ships.
+    pyproject = reloaded.package_path("widget-core") / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text() + 'dependencies = ["third-party >= 9.9.9.dev1"]\n'
+    )
 
-    commands.cmd_plan(reloaded, "continued-prerelease", selection)
+    commands.cmd_plan(reloaded, "continued-prerelease", "mypkg")
 
     assert {r["package"]: r["next"] for r in json.loads(outputs()["releases"])} == {
         "mypkg": "1.1.0a2"
+    }
+
+
+def test_plan_selected_early_member_advances_beside_a_reusing_dependent(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """Selecting both plans each from its own baseline."""
+    write_lockstep(repo)
+    reloaded = load_config(repo)
+    set_changelog(reloaded, "mypkg", "## 1.1.0a1\n\nOld.\n")
+    set_changelog(reloaded, "widget-core", "## 1.1.0a2\n\nNewer.\n")
+    git(repo, "tag", "widget-core-v1.1.0a2")
+
+    commands.cmd_plan(reloaded, "continued-prerelease", "mypkg,widget-core")
+
+    assert {r["package"]: r["next"] for r in json.loads(outputs()["releases"])} == {
+        "mypkg": "1.1.0a2",
+        "widget-core": "1.1.0a3",
     }
 
 
@@ -308,7 +320,21 @@ def test_plan_requires_a_matching_tag_when_a_partner_has_advanced(
     set_changelog(reloaded, "widget-core", "## 1.1.0a3\n\nNewer.\n")
     git(repo, "tag", "widget-core-v1.1.0a3")
 
-    with pytest.raises(ReleaseError, match=r"matching.*tag"):
+    with pytest.raises(ReleaseError, match=r"already at v1\.1\.0a3"):
+        commands.cmd_plan(reloaded, "continued-prerelease", "mypkg")
+
+
+def test_plan_rejects_reusing_a_tag_the_declared_requirement_excludes(
+    config: Config, repo: Path, outputs: Outputs
+) -> None:
+    """A floor raised past the reusable sibling version stops the plan."""
+    write_lockstep(repo)
+    reloaded = dev_pin(repo, "widget-core >= 1.1.0a3.dev0")
+    set_changelog(reloaded, "mypkg", "## 1.1.0a1\n\nOld.\n")
+    set_changelog(reloaded, "widget-core", "## 1.1.0a2\n\nNew.\n")
+    git(repo, "tag", "widget-core-v1.1.0a2")
+
+    with pytest.raises(ReleaseError, match="does not satisfy"):
         commands.cmd_plan(reloaded, "continued-prerelease", "mypkg")
 
 
@@ -661,7 +687,7 @@ def test_prepare_publish_will_not_auto_bump_a_non_internal_package(
 def test_prepare_publish_requires_a_materialized_lockstep_partner(
     config: Config, repo: Path, outputs: Outputs
 ) -> None:
-    write_lockstep(repo)
+    write_lockstep(repo, publish_last=False)
     reloaded = load_config(repo)
     set_changelog(
         reloaded, "mypkg", "## v1.2.0 (2026-01-01)\n\nNo significant changes.\n"
@@ -670,10 +696,9 @@ def test_prepare_publish_requires_a_materialized_lockstep_partner(
         commands.cmd_prepare_publish(reloaded, "mypkg", "1.2.0", "main")
 
 
-def test_prepare_publish_allows_a_lockstep_dependency_without_publish_last(
+def test_prepare_publish_allows_an_early_member_without_its_dependent(
     config: Config, repo: Path, outputs: Outputs
 ) -> None:
-    """An early member can build and publish without the dependent."""
     write_lockstep(repo)
     reloaded = load_config(repo)
     set_changelog(reloaded, "widget-core", "## 1.2.0\n\nNew.\n")
@@ -692,7 +717,7 @@ def test_prepare_publish_last_requires_a_published_partner(
     for package in ("mypkg", "widget-core"):
         set_changelog(reloaded, package, "## 1.2.0\n\nNew.\n")
 
-    with pytest.raises(ReleaseError, match=r"already.*tagged"):
+    with pytest.raises(ReleaseError, match="not tagged yet"):
         commands.cmd_prepare_publish(reloaded, "mypkg", "1.2.0", "main")
 
     git(repo, "tag", "widget-core-v1.2.0")
@@ -700,25 +725,24 @@ def test_prepare_publish_last_requires_a_published_partner(
     assert outputs()["skipped"] == "false"
 
 
-def test_prepare_publish_does_not_serialize_unpinned_publish_last_peers(
+def test_prepare_publish_last_members_do_not_wait_for_each_other(
     config: Config, repo: Path, outputs: Outputs
 ) -> None:
-    """Parallel late members without exact peer pins can build in the same batch."""
+    """Two publish-last members need the early member's tag, not one another's."""
     peer = repo / "packages" / "widget-peer"
     peer.mkdir()
     (peer / "pyproject.toml").write_text('[project]\nname = "widget-peer"\n')
-    write_lockstep(repo, publish_last=False)
+    write_lockstep(repo)
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
         pyproject.read_text().replace(
-            'members = ["mypkg", "widget-core"]',
+            'members = ["mypkg", "widget-core"]\npublish-last = ["mypkg"]',
             'members = ["mypkg", "widget-core", "widget-peer"]\n'
             'publish-last = ["mypkg", "widget-peer"]',
         )
     )
     reloaded = load_config(repo)
-    for package in ("mypkg", "widget-core", "widget-peer"):
-        set_changelog(reloaded, package, "## 1.2.0\n\nNew.\n")
+    set_changelog(reloaded, "mypkg", "## 1.2.0\n\nNew.\n")
     git(repo, "tag", "widget-core-v1.2.0")
 
     commands.cmd_prepare_publish(reloaded, "mypkg", "1.2.0", "main")
@@ -1725,9 +1749,8 @@ def test_plan_holds_back_a_whole_lockstep_group(
         commands.cmd_plan(reloaded, "release-minor", "")
 
 
-@pytest.mark.parametrize("selection", ["", "mypkg", "mypkg,widget-core"])
 def test_plan_holds_back_publish_last_without_holding_back_its_dependency(
-    config: Config, repo: Path, outputs: Outputs, selection: str
+    config: Config, repo: Path, outputs: Outputs
 ) -> None:
     """A dependent's blockers leave its early sibling eligible for release."""
     write_lockstep(repo)
@@ -1735,9 +1758,22 @@ def test_plan_holds_back_publish_last_without_holding_back_its_dependency(
     fragment(reloaded, "mypkg", "1.feature.md")
     fragment(reloaded, "widget-core", "2.feature.md")
 
-    commands.cmd_plan(reloaded, "release-minor", selection)
+    commands.cmd_plan(reloaded, "release-minor", "")
 
     assert [r["package"] for r in json.loads(outputs()["releases"])] == ["widget-core"]
+
+
+@pytest.mark.parametrize("selection", ["mypkg", "mypkg,widget-core"])
+def test_plan_rejects_an_explicitly_selected_blocked_dependent(
+    config: Config, repo: Path, outputs: Outputs, selection: str
+) -> None:
+    """Asking for a package that cannot release is an error, not a silent drop."""
+    write_lockstep(repo)
+    reloaded = dev_pin(repo, "third-party >= 9.9.9.dev1")
+    fragment(reloaded, "widget-core", "2.feature.md")
+
+    with pytest.raises(ReleaseError, match="no published version satisfies"):
+        commands.cmd_plan(reloaded, "release-minor", selection)
 
 
 def test_plan_holds_back_publish_last_when_its_dependency_is_blocked(
@@ -1772,11 +1808,10 @@ def test_plan_does_not_republish_a_matching_partner_of_a_blocked_dependent(
         commands.cmd_plan(reloaded, "continued-prerelease", "")
 
 
-@pytest.mark.parametrize("selection", ["", "mypkg,widget-core"])
 def test_plan_blocked_dependent_does_not_cancel_a_requested_sibling_release(
-    config: Config, repo: Path, outputs: Outputs, selection: str
+    config: Config, repo: Path, outputs: Outputs
 ) -> None:
-    """An early sibling with its own selection or news still advances independently."""
+    """An early sibling with news of its own still advances from its baseline."""
     write_lockstep(repo)
     reloaded = dev_pin(repo, "third-party >= 9.9.9.dev1")
     set_changelog(reloaded, "mypkg", "## 1.1.0a1\n\nOld.\n")
@@ -1785,28 +1820,10 @@ def test_plan_blocked_dependent_does_not_cancel_a_requested_sibling_release(
     fragment(reloaded, "mypkg", "1.feature.md")
     fragment(reloaded, "widget-core", "2.feature.md")
 
-    commands.cmd_plan(reloaded, "continued-prerelease", selection)
+    commands.cmd_plan(reloaded, "continued-prerelease", "")
 
     assert {r["package"]: r["next"] for r in json.loads(outputs()["releases"])} == {
         "widget-core": "1.1.0a3"
-    }
-
-
-def test_plan_ignores_a_blocked_dependents_inapplicable_action(
-    config: Config, repo: Path, outputs: Outputs
-) -> None:
-    """A held member's action mismatch does not block an early sibling's train."""
-    write_lockstep(repo)
-    reloaded = dev_pin(repo, "third-party >= 9.9.9.dev1")
-    set_changelog(reloaded, "mypkg", "## 1.1.0a1\n\nOld.\n")
-    set_changelog(reloaded, "widget-core", "## 1.0.0\n\nOld.\n")
-    fragment(reloaded, "mypkg", "1.feature.md")
-    fragment(reloaded, "widget-core", "2.feature.md")
-
-    commands.cmd_plan(reloaded, "new-prerelease-minor", "")
-
-    assert {r["package"]: r["next"] for r in json.loads(outputs()["releases"])} == {
-        "widget-core": "1.1.0a1"
     }
 
 

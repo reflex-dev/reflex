@@ -16,9 +16,9 @@ classifiers = [
     "Programming Language :: Python :: 3.15",
 ]
 dependencies = [
-    "reflex-base >= 0.10.0a2.dev10",
-    "reflex-components-lucide >= 1.0.5.dev252",
-    "reflex-components-sonner >= 0.9.5.dev102",
+    "reflex-base >= 0.10.0a2.dev0",
+    "reflex-components-lucide >= 1.0.5.dev0",
+    "reflex-components-sonner >= 0.9.5.dev0",
     "python_multipart >= 0.0.21",
     "starlette >= 0.47.0",
     "typing_extensions >= 4.0.0",

@@ -20,9 +20,8 @@ name: Release from changelog
 # materializes alphas on r/pre-* branches).
 #
 # Lockstep packages that pin their siblings exactly publish strictly after
-# every other package in the batch; detect fails closed if a lockstep
-# invariant is broken for a dependent. Early members can publish independently;
-# their matching tags may already exist when the dependent publishes later.
+# every other package in the batch, once those siblings are tagged; detect
+# fails closed if a lockstep invariant is broken.
 #
 # workflow_dispatch exists so the Dispatch release workflow can trigger a
 # check on a branch it just pushed (pushes made with GITHUB_TOKEN do not fire

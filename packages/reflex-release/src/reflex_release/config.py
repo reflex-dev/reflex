@@ -119,15 +119,16 @@ class CustomBuild:
 
 @dataclasses.dataclass(frozen=True)
 class LockstepGroup:
-    """Packages whose dependent releases require identical sibling versions.
+    """Packages that release at one version.
 
     Attributes:
         members: The package names in the group (at least two).
-        publish_last: Members scheduled after the early members have uploaded
-            and tagged — used when they depend on their siblings at an exact
-            version. Other members can release independently.
-        pin_exact: Whether each ``publish_last`` member's requirement on its
-            siblings is rewritten to ``== <version>`` before building.
+        publish_last: Members that publish only after the other members are
+            uploaded and tagged at the same version — used when they depend on
+            those siblings at an exact version. Without it, every member
+            releases together; with it, the other members release on their own.
+        pin_exact: Whether each ``publish_last`` member's requirement on the
+            other members is rewritten to ``== <version>`` before building.
     """
 
     members: tuple[str, ...]
@@ -465,19 +466,23 @@ class Config:
         )
 
     def lockstep_partners(self, package: str) -> tuple[str, ...]:
-        """Return the siblings a package requires at the identical version.
+        """Return the siblings a package needs released at its own version.
 
         Args:
             package: The package name.
 
         Returns:
-            The other group members, or an empty tuple for an independent
-            package or an early member of a group with ``publish-last``.
+            Every other member of a group without ``publish-last``; the early
+            members for a ``publish-last`` member; otherwise an empty tuple.
         """
         group = self.lockstep_group(package)
-        if group is None or (group.publish_last and package not in group.publish_last):
+        if group is None:
             return ()
-        return tuple(member for member in group.members if member != package)
+        if not group.publish_last:
+            return tuple(member for member in group.members if member != package)
+        if package not in group.publish_last:
+            return ()
+        return tuple(m for m in group.members if m not in group.publish_last)
 
     def publishes_last(self, package: str) -> bool:
         """Return whether a package must publish after its lockstep siblings.
@@ -502,9 +507,9 @@ class Config:
             package's ``pyproject.toml``, or an empty tuple.
         """
         group = self.lockstep_group(package)
-        if group is None or not group.pin_exact or package not in group.publish_last:
+        if group is None or not group.pin_exact:
             return ()
-        return tuple(member for member in group.members if member != package)
+        return self.lockstep_partners(package)
 
     def custom_build_for(self, package: str) -> CustomBuild | None:
         """Return the repository-supplied workflow that builds a package.

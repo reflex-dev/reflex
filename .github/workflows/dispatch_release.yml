@@ -12,8 +12,8 @@ name: Dispatch release
 # Selecting no package auto-selects the ones to release: those with pending
 # news fragments — or, for release-from-prerelease, those whose changelog is
 # topped by an alpha (the train's fragments are already consumed). Lockstep
-# groups without publish-last share one checkbox. Groups with publish-last
-# offer separate checkboxes so their early members can release independently.
+# groups without publish-last share one checkbox: their members only ever
+# release together. With publish-last, each member has its own.
 #
 # Materializing also lifts each released package's unshippable dependency
 # floors — a *.dev pin, and a prerelease pin when the version is final — to the

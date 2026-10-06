@@ -173,7 +173,8 @@ class DispatchInput:
         input_id: The ``workflow_dispatch`` input name.
         description: The label GitHub shows next to the checkbox.
         packages: The packages the checkbox selects — more than one for a
-            group without ``publish-last``, whose members release together.
+            lockstep group without ``publish-last``, whose members only ever
+            release together.
     """
 
     input_id: str
@@ -196,8 +197,10 @@ def _input_id(package: str) -> str:
 def dispatch_inputs(config: Config) -> list[DispatchInput]:
     """List the package checkboxes the Dispatch release workflow offers.
 
-    Groups without ``publish-last`` share a checkbox. Directional groups offer
-    separate checkboxes so their early members can be released independently.
+    Lockstep members that only ever release together share one checkbox;
+    offering them separately would invite a selection the planner has to
+    silently widen anyway. Members of a ``publish-last`` group release
+    separately, so each gets its own.
 
     Args:
         config: The repository configuration.
@@ -212,9 +215,9 @@ def dispatch_inputs(config: Config) -> list[DispatchInput]:
             continue
         group = config.lockstep_group(package)
         partners = (
-            config.lockstep_partners(package)
-            if group is not None and not group.publish_last
-            else ()
+            ()
+            if group is not None and group.publish_last
+            else config.lockstep_partners(package)
         )
         covered.add(package)
         covered.update(partners)

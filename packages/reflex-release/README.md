@@ -179,55 +179,54 @@ you called it) and the directory name under `packages/` for the rest.
 
 ### Lockstep packages
 
-Packages whose dependent releases require identical sibling versions — typically
-because one pins the other exactly — form a lockstep group:
+Packages that release at one version — typically because one pins the other
+exactly — form a lockstep group:
 
 ```toml
 [[tool.reflex-release.lockstep]]
 members = ["mypkg", "mypkg-base"]
-# Members that publish only after every other member is uploaded and tagged.
+# Members that publish only after the others are uploaded and tagged.
 publish-last = ["mypkg"]
-# Rewrite each publish-last member's requirement on its siblings to
+# Rewrite each publish-last member's requirement on the others to
 # "== <version>" before building.
 pin-exact = true
 ```
 
-With `publish-last`, each member gets its own *Dispatch release* checkbox:
+Without `publish-last`, the members only ever release together: they share one
+*Dispatch release* checkbox, selecting one selects all, their next version
+comes from the highest baseline among them, and an unsatisfiable dependency
+pin in one holds back the whole group.
 
-- early members can materialize and publish independently, using their own
-  version baseline; selecting `mypkg-base` does not select `mypkg`;
-- selecting `mypkg` includes the siblings it needs at the identical version.
-  The selected `publish-last` members determine that version. A sibling already
-  tagged at it is left out of materialization, even if its newest release is
-  newer. For example, after base publishes `1.2.0a2`, a dependent still at
-  `1.2.0a1` can continue to `1.2.0a2` using that existing base release;
-- an unsatisfiable dependency pin holds back the dependent while its early
-  siblings can still release, including when the dependent was explicitly
-  selected. A blocked early sibling also holds back dependents that need it;
+With `publish-last`, each member gets its own checkbox and the group is
+directional:
+
+- an early member (`mypkg-base`) releases on its own, from its own baseline;
+- a `publish-last` member (`mypkg`) advances from its own baseline and needs
+  every early member tagged at the new version. One already tagged there is
+  reused — after base publishes `1.2.0a2`, `mypkg` at `1.2.0a1` continues to
+  `1.2.0a2` on that release even if base has moved on since. Otherwise the
+  early member is planned at the same version, unless its changelog is already
+  past it, which stops the plan;
 - `release_from_changelog` publishes `publish-last` members after the rest of
-  the batch succeeds. Detection requires each matching sibling version to be
-  in the same batch or already tagged; `prepare-publish` requires early siblings
-  and all exact-pin targets to be tagged before the dependent builds, including
-  for a manual publish dispatch;
-- a sibling newly included by the dependent gets a changelog section even with
-  no news fragments. An advanced sibling without the required matching tag
-  stops planning: finish publishing that version before releasing its dependent.
+  the batch, and `prepare-publish` refuses to build one until every early
+  member's tag exists, so a manual publish dispatch cannot run ahead either;
+- `publish-last` members do not need each other; each pins the early members
+  only.
 
-This allows dependency-first phases: publish base, wait for its tag, then
-materialize and publish the components that use it, and finally the dependent.
-Each phase lifts its dev floors to versions tagged by earlier phases. Wait for
-each phase's uploads and tags before dispatching the next. When starting a new
-alpha train with `new-prerelease-*`, use the branch returned by that dispatch
-for subsequent phases.
+This is what dependency-first phases rest on: publish base, wait for its tag,
+then the packages that need it, and the dependent last. Each phase lifts its
+`.dev` floors to the versions tagged by the phases before it.
 
-Without `publish-last`, the group keeps one checkbox, selecting one member
-selects all of them, and the highest baseline determines their shared target.
-An unsatisfiable pin holds back the whole group.
+In either kind of group, a member dragged in by its sibling still gets its
+changelog section, holding towncrier's "No significant changes." placeholder,
+and detection **fails closed** if a member's changelog is bumped without the
+siblings it needs being tagged or in the same batch.
 
 `pin-exact` rewrites the requirement in the publishing package's
-`pyproject.toml` at build time only; it is never committed.
-The matching version must satisfy the declared dependency bounds; an existing
-tag cannot override a newer floor or an excluded version.
+`pyproject.toml` at build time only; it is never committed. The pinned version
+must satisfy the requirement as declared — planning and the build both check,
+so a floor raised past the sibling version a release would reuse stops it
+before anything is materialized.
 
 ### Dependency pins across a release
 
@@ -298,11 +297,10 @@ the lock.
 
 A floor nothing published satisfies has nowhere to go, and the package is
 **held back** rather than materialized into a version that could never be
-published — auto-selected packages are dropped from the batch and listed in the
-run summary, along with lockstep dependents that require them. An explicitly
-selected one fails the dispatch, except for a `publish-last` member whose early
-siblings can still release. Release the depended-on package first and the next
-release lifts the pin by itself.
+published — auto-selected packages are dropped from the batch, together with
+the lockstep partners that need them, and listed in the run summary; an
+explicitly selected one fails the dispatch. Release the depended-on package
+first and the next release lifts the pin by itself.
 
 Two things are deliberately left alone: a floor on a lockstep sibling that
 `pin-exact` rewrites at build time anyway, and a *prerelease* floor on a
@@ -641,11 +639,11 @@ review-sensitive field.
 ## Cutting a release
 
 Run **Dispatch release** from the Actions tab. Each package gets its own
-checkbox, generated from your configuration. A lockstep group without
-`publish-last` shares one checkbox; a group with `publish-last` offers separate
-checkboxes for dependency-first phases.
-Selecting nothing auto-selects: packages with pending news fragments, or — for
-`release-from-prerelease` — packages whose changelog is topped by an alpha.
+checkbox, generated from your configuration; a lockstep group without
+`publish-last` gets a single checkbox covering all its members, since they only
+ever release together. Selecting nothing auto-selects: packages with pending
+news fragments, or — for `release-from-prerelease` — packages whose changelog is
+topped by an alpha.
 
 Because the checkboxes are generated, **adding or removing a package changes
 `dispatch_release.yml`** — run `reflex-release sync` and commit it with the new

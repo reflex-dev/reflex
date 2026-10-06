@@ -1,1 +1,1 @@
-Allow early members of a `publish-last` lockstep group to release independently, including when a dependent is held back by unsatisfiable pins. Dependents still pin siblings to the identical version and can reuse matching versions published in an earlier phase, provided those versions satisfy the declared dependency bounds.
+Let the early members of a `publish-last` lockstep group release on their own. A `publish-last` member reuses a sibling tag at its version when one exists, and its exact pins are checked against the declared requirement at plan time.
