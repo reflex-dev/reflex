@@ -426,7 +426,7 @@ class ShikiJsTransformer(ShikiBaseTransformers):
     library: str = "@shikijs/transformers@4.5.0"
     fns: list[FunctionStringVar] = dataclasses.field(
         default_factory=lambda: [
-            FunctionStringVar.create(fn) for fn in SHIKIJS_TRANSFORMER_FNS
+            FunctionStringVar.create(fn) for fn in sorted(SHIKIJS_TRANSFORMER_FNS)
         ]
     )
     style: Style | None = dataclasses.field(
@@ -517,7 +517,7 @@ class ShikiJsTransformer(ShikiBaseTransformers):
         """Convert user-supplied fns and style to their var and Style types."""
         self.fns = [
             (FunctionStringVar.create(x) if not isinstance(x, FunctionStringVar) else x)
-            for x in self.fns
+            for x in self.fns or []
         ]
         if self.style is not None:
             self.style = Style(self.style)
