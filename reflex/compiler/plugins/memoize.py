@@ -87,6 +87,43 @@ def _subtree_has_reactive_data(
     return result
 
 
+def _subtree_requires_shared_scope(
+    component: Component,
+    scope_owners: dict[str, set[int]],
+    _seen: set[int] | None = None,
+) -> None:
+    """Collect components using each local hook scope in a subtree.
+
+    Args:
+        component: Subtree root to scan.
+        scope_owners: Scope-key to component-identity mapping being populated.
+        _seen: Component identities already visited through children or Vars.
+    """
+    if _seen is None:
+        _seen = set()
+    component_id = id(component)
+    if component_id in _seen:
+        return
+    _seen.add(component_id)
+
+    for var in component._get_vars(include_children=False):
+        var_data = var._get_all_var_data()
+        if var_data is None:
+            continue
+        for key in var_data.shared_scope_keys:
+            scope_owners.setdefault(key, set()).add(component_id)
+        for embedded in var_data.components:
+            if isinstance(embedded, Component):
+                _subtree_requires_shared_scope(embedded, scope_owners, _seen)
+
+    for child in component.children:
+        if isinstance(child, Component):
+            _subtree_requires_shared_scope(child, scope_owners, _seen)
+    for prop_component in component._get_components_in_props():
+        if isinstance(prop_component, Component):
+            _subtree_requires_shared_scope(prop_component, scope_owners, _seen)
+
+
 def _component_subtree_is_reactive(
     component: Component, _cache: dict[int, bool]
 ) -> bool:
@@ -264,6 +301,15 @@ class MemoizeStatefulPlugin(Plugin):
             return None
         if not isinstance(comp, Component):
             return None
+        root = page_context.root_component
+        if comp is root or page_context._owned.get(id(root)) is comp:
+            scope_owners: dict[str, set[int]] = {}
+            _subtree_requires_shared_scope(comp, scope_owners)
+            if any(len(owners) > 1 for owners in scope_owners.values()):
+                # Local client-state setters are bare React setters. Keep their
+                # readers and setters in the same component scope.
+                page_context.memoize_suppressor_stack.append(id(comp))
+                return None
         if page_context.memoize_suppressor_stack:
             return None
         strategy = get_memoization_strategy(comp)

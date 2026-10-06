@@ -354,6 +354,9 @@ class VarData:
         default_factory=tuple
     )
 
+    # Hook scopes that must remain together across every use of the same Var.
+    shared_scope_keys: tuple[str, ...] = ()
+
     def __init__(
         self,
         state: str = "",
@@ -365,6 +368,7 @@ class VarData:
         components: Iterable[BaseComponent] | None = None,
         app_wraps: Iterable[tuple[int, BaseComponent]] | None = None,
         field_dependencies: Mapping[str, Iterable[str]] | None = None,
+        shared_scope_keys: Iterable[str] | None = None,
     ):
         """Initialize the var data.
 
@@ -384,6 +388,8 @@ class VarData:
                 and ``field_name`` are the shorthand for a single state with a
                 single field. Keyword-only in practice: it trails the older
                 parameters so positional callers of those are unaffected.
+            shared_scope_keys: Identifiers for hook scopes that must stay
+                together across every use of this var.
         """
         if isinstance(hooks, str):
             hooks = [hooks]
@@ -403,6 +409,11 @@ class VarData:
         object.__setattr__(self, "position", position or None)
         object.__setattr__(self, "components", tuple(components or []))
         object.__setattr__(self, "app_wraps", tuple(app_wraps or []))
+        object.__setattr__(
+            self,
+            "shared_scope_keys",
+            tuple(dict.fromkeys(shared_scope_keys or ())),
+        )
 
         if hooks and any(hooks.values()):
             # Merge our dependencies first, so they can be referenced.
@@ -419,6 +430,11 @@ class VarData:
                 object.__setattr__(self, "position", merged_var_data.position)
                 object.__setattr__(self, "components", merged_var_data.components)
                 object.__setattr__(self, "app_wraps", merged_var_data.app_wraps)
+                object.__setattr__(
+                    self,
+                    "shared_scope_keys",
+                    merged_var_data.shared_scope_keys,
+                )
 
     @property
     def state(self) -> str:
@@ -539,6 +555,13 @@ class VarData:
             app_wraps=tuple(
                 (priority, wrapper) for (priority, _tag), wrapper in app_wraps.items()
             ),
+            shared_scope_keys=tuple(
+                dict.fromkeys(
+                    key
+                    for var_data in all_var_datas
+                    for key in var_data.shared_scope_keys
+                )
+            ),
         )
 
     def __bool__(self) -> bool:
@@ -555,6 +578,7 @@ class VarData:
             or self.position
             or self.components
             or self.app_wraps
+            or self.shared_scope_keys
         )
 
     @functools.cached_property
@@ -586,6 +610,7 @@ class VarData:
                 (priority, component.tag or type(component).__name__)
                 for priority, component in self.app_wraps
             ),
+            self.shared_scope_keys,
         )
 
     def __eq__(self, other: object) -> bool:

@@ -1663,6 +1663,31 @@ def test_client_state_setter_only_sibling_memo_initializes_state() -> None:
     assert "refs['_client_state_setSibling'] = " in button_memo
 
 
+def test_local_client_state_keeps_sibling_components_in_page_scope() -> None:
+    """Local client-state readers and setters must share their React scope."""
+    from reflex.experimental.client_state import ClientStateVar
+
+    local = ClientStateVar.create("local_sibling", default="initial", global_ref=False)
+
+    def page() -> Component:
+        return rx.box(
+            rx.text(local.value),
+            rx.el.button("set", on_click=local.set_value("changed")),
+        )
+
+    ctx, page_ctx = _compile_single_page(page)
+    page_output = page_ctx.output_code or ""
+
+    assert not ctx.memoize_wrappers, (
+        "Page-local client state cannot be split across memo components. "
+        f"Got wrappers: {list(ctx.memoize_wrappers)}"
+    )
+    assert (
+        'const [local_sibling, setLocal_sibling] = useState("initial")' in page_output
+    )
+    assert 'setLocal_sibling("changed")' in page_output
+
+
 def test_debounce_input_memo_renders_react_debounce_wrapper() -> None:
     """``rx.input(value=..., on_change=..., debounce_timeout=N)`` memoizes via DebounceInput.
 
