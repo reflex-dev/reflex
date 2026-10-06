@@ -18,6 +18,7 @@ from typing import (
     Literal,
     NoReturn,
     Protocol,
+    Self,
     TypeVar,
     Union,
     get_args,
@@ -27,7 +28,6 @@ from typing import (
 )
 
 from typing_extensions import (
-    Self,
     TypeAliasType,
     TypedDict,
     TypeVarTuple,
@@ -2844,7 +2844,7 @@ V4 = TypeVar("V4")
 V5 = TypeVar("V5")
 
 
-class EventCallback(Generic[Unpack[P]], EventActionsMixin):
+class EventCallback(Generic[*P], EventActionsMixin):
     """A descriptor that wraps a function to be used as an event."""
 
     if TYPE_CHECKING:
@@ -2864,8 +2864,8 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
 
     @overload
     def __call__(
-        self: "EventCallback[Unpack[Q]]",
-    ) -> "EventCallback[Unpack[Q]]": ...
+        self: "EventCallback[*Q]",
+    ) -> "EventCallback[*Q]": ...
 
     # Handlers of up to four arguments get an overload per arity instead of a `self`
     # that leaves the rest to `Unpack[Q]`, which ty does not bind to the receiver
@@ -2934,32 +2934,32 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, V3, V4, V5, Unpack[Q]]", value: V | Var[V]
-    ) -> "EventCallback[V2, V3, V4, V5, Unpack[Q]]": ...
+        self: "EventCallback[V, V2, V3, V4, V5, *Q]", value: V | Var[V]
+    ) -> "EventCallback[V2, V3, V4, V5, *Q]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, V3, V4, V5, Unpack[Q]]",
+        self: "EventCallback[V, V2, V3, V4, V5, *Q]",
         value: V | Var[V],
         value2: V2 | Var[V2],
-    ) -> "EventCallback[V3, V4, V5, Unpack[Q]]": ...
+    ) -> "EventCallback[V3, V4, V5, *Q]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, V3, V4, V5, Unpack[Q]]",
+        self: "EventCallback[V, V2, V3, V4, V5, *Q]",
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
-    ) -> "EventCallback[V4, V5, Unpack[Q]]": ...
+    ) -> "EventCallback[V4, V5, *Q]": ...
 
     @overload
     def __call__(
-        self: "EventCallback[V, V2, V3, V4, V5, Unpack[Q]]",
+        self: "EventCallback[V, V2, V3, V4, V5, *Q]",
         value: V | Var[V],
         value2: V2 | Var[V2],
         value3: V3 | Var[V3],
         value4: V4 | Var[V4],
-    ) -> "EventCallback[V5, Unpack[Q]]": ...
+    ) -> "EventCallback[V5, *Q]": ...
 
     def __call__(self, *values) -> "EventCallback":  # pyright: ignore [reportInconsistentOverload]
         """Call the function with the values.
@@ -2974,8 +2974,8 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
 
     @overload
     def __get__(
-        self: "EventCallback[Unpack[P]]", instance: None, owner: Any
-    ) -> "EventCallback[Unpack[P]]": ...
+        self: "EventCallback[*P]", instance: None, owner: Any
+    ) -> "EventCallback[*P]": ...
 
     @overload
     def __get__(self, instance: Any, owner: Any) -> "Callable[[Unpack[P]]]": ...
@@ -2996,7 +2996,7 @@ class EventCallback(Generic[Unpack[P]], EventActionsMixin):
         return partial(self.func, instance)
 
 
-class LambdaEventCallback(Protocol[Unpack[P]]):
+class LambdaEventCallback(Protocol[*P]):
     """A protocol for a lambda event callback."""
 
     __code__: types.CodeType
@@ -3034,7 +3034,7 @@ ARGS = TypeVarTuple("ARGS")
 
 LAMBDA_OR_STATE = TypeAliasType(
     "LAMBDA_OR_STATE",
-    LambdaEventCallback[Unpack[ARGS]] | EventCallback[Unpack[ARGS]],
+    LambdaEventCallback[*ARGS] | EventCallback[*ARGS],
     type_params=(ARGS,),
 )
 
@@ -3046,13 +3046,13 @@ BASIC_EVENT_TYPES = TypeAliasType(
 
 IndividualEventType = TypeAliasType(
     "IndividualEventType",
-    LAMBDA_OR_STATE[Unpack[ARGS]] | BASIC_EVENT_TYPES,
+    LAMBDA_OR_STATE[*ARGS] | BASIC_EVENT_TYPES,
     type_params=(ARGS,),
 )
 
 EventType = TypeAliasType(
     "EventType",
-    ItemOrList[LAMBDA_OR_STATE[Unpack[ARGS]] | BASIC_EVENT_TYPES],
+    ItemOrList[LAMBDA_OR_STATE[*ARGS] | BASIC_EVENT_TYPES],
     type_params=(ARGS,),
 )
 
@@ -3135,9 +3135,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> (
-        "Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]"
-    ): ...
+    ) -> "Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[*P]]": ...
 
     @overload
     def __new__(
@@ -3151,7 +3149,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> EventCallback[Unpack[P]]: ...
+    ) -> EventCallback[*P]: ...
 
     def __new__(
         cls,
@@ -3164,7 +3162,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-    ) -> "EventCallback[Unpack[P]] | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]":
+    ) -> "EventCallback[*P] | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[*P]]":
         """Wrap a function to be used as an event.
 
         Args:
@@ -3217,7 +3215,7 @@ class EventNamespace:
 
         def wrapper(
             func: "Callable[[BASE_STATE, Unpack[P]], T]",
-        ) -> EventCallback[Unpack[P]]:
+        ) -> EventCallback[*P]:
             if background is True:
                 if not inspect.iscoroutinefunction(
                     func

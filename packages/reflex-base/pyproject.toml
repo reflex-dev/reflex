@@ -6,7 +6,7 @@ license.text = "Apache-2.0"
 readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
   "packaging >=24.2,<27",
   "rich >=13,<16",

@@ -6,7 +6,7 @@ license.text = "Apache-2.0"
 readme = "README.md"
 authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
   "opentelemetry-api >=1.30.0,<2.0",
   "opentelemetry-instrumentation >=0.49b0,<1.0",

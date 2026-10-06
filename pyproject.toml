@@ -18,7 +18,7 @@ maintainers = [
 ]
 readme = "README.md"
 keywords = ["web", "framework"]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.11,<4.0"
 dependencies = [
   "click >=8.2",
   "granian[reload] >=2.7.4",
@@ -52,7 +52,6 @@ classifiers = [
   "Development Status :: 4 - Beta",
   "License :: OSI Approved :: Apache Software License",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -208,7 +207,7 @@ exclude = [
 reportIncompatibleMethodOverride = false
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 output-format = "concise"
 extend-exclude = ["tests/units/reflex_base/utils/pyi_generator/golden"]
 lint.isort.split-on-trailing-comma = false
@@ -220,6 +219,8 @@ lint.ignore = [
   "ANN2",
   "ANN4",
   "ARG",
+  # Timeouts are explicit parameters of the testing and state-manager APIs.
+  "ASYNC109",
   # Background event handlers hold `async with self` across `yield` by design.
   "ASYNC119",
   "BLE",
@@ -259,6 +260,9 @@ lint.ignore = [
   "TD",
   "TRY0",
   "TRY400", # User-facing errors deliberately omit tracebacks; debug logs carry diagnostics where appropriate.
+  # `StrEnum` renders members as their value where `(str, Enum)` renders
+  # `Cls.NAME`; these enums rely on the latter in `str()` and f-strings.
+  "UP042",
 ]
 lint.pydocstyle.convention = "google"
 lint.flake8-bugbear.extend-immutable-calls = [
