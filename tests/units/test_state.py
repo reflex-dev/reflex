@@ -4,8 +4,10 @@ import asyncio
 import copy
 import dataclasses
 import datetime
+import enum
 import functools
 import inspect
+import io
 import json
 import logging
 import math
@@ -13,9 +15,10 @@ import os
 import pickle
 import sys
 import threading
+from collections import namedtuple
 from collections.abc import AsyncGenerator, Callable, Mapping
 from textwrap import dedent
-from types import MethodType
+from types import MethodType, ModuleType
 from typing import Any, ClassVar, Literal, TypeVar, cast
 from unittest.mock import AsyncMock, Mock
 
@@ -36,7 +39,9 @@ from reflex_base.utils.exceptions import (
     LockExpiredError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
+    StateSchemaMismatchError,
     StateSerializationError,
+    StateTooLargeError,
     StateValueError,
     UnretrievableVarValueError,
 )
@@ -68,6 +73,7 @@ from reflex.state import (
     ImmutableStateError,
     OnLoadInternalState,
     State,
+    state_snapshot_hashes,
 )
 from reflex.testing import chdir
 from reflex.utils import prerequisites
@@ -530,6 +536,41 @@ def test_get_parent_state():
     assert ChildState.get_parent_state() == TestState
     assert ChildState2.get_parent_state() == TestState
     assert GrandchildState.get_parent_state() == ChildState
+
+
+def test_state_names_remain_cached_for_large_apps(mocker: MockerFixture):
+    """Walking more than 128 states must not evict their immutable class names.
+
+    Args:
+        mocker: The mock fixture.
+    """
+    states = [
+        type(f"CachedNameState{i}", (BaseState,), {"__module__": __name__})
+        for i in range(200)
+    ]
+    names = [state.get_full_name() for state in states]
+    snake_case = mocker.patch(
+        "reflex.state.format.to_snake_case", wraps=format.to_snake_case
+    )
+
+    assert [state.get_full_name() for state in states] == names
+    snake_case.assert_not_called()
+
+
+def test_substate_does_not_read_metadata_its_parent_cached():
+    """A substate defined after its parent cached its metadata computes its own."""
+    parent = type("CachedMetaParentState", (BaseState,), {"__module__": __name__})
+    parent_name = parent.get_name()
+    parent_full_name = parent.get_full_name()
+    assert parent.get_parent_state() is None
+    assert parent.get_root_state() is parent
+
+    child = type("CachedMetaChildState", (parent,), {"__module__": __name__})
+
+    assert child.get_name() != parent_name
+    assert child.get_full_name() == f"{parent_full_name}.{child.get_name()}"
+    assert child.get_parent_state() is parent
+    assert child.get_root_state() is parent
 
 
 def test_get_substates():
@@ -1242,6 +1283,51 @@ def test_not_dirty_computed_var_from_var(
     assert interdependent_state.get_delta() == {
         interdependent_state.get_full_name(): {"x" + FIELD_MARKER: 5},
     }
+
+
+def test_mark_dirty_computed_vars_walks_chain_from_vars_with_dependents() -> None:
+    """Only the names that have dependents start the invalidation, and it runs through the chain."""
+
+    class ChainState(BaseState):
+        a: int = 0
+        b: int = 0
+
+        @rx.var
+        def from_a(self) -> int:
+            return self.a
+
+        @rx.var
+        def from_from_a(self) -> int:
+            return self.from_a + 1
+
+        @rx.var
+        def standalone(self) -> int:
+            return self.b
+
+    state = ChainState()
+    assert (state.from_from_a, state.standalone) == (1, 0)
+    state.dirty_vars.clear()
+
+    # Neither name has a dependent: nothing to invalidate.
+    state._mark_dirty_computed_vars(("b_unused", "from_from_a"))
+    assert state.dirty_vars == set()
+
+    # A name without a dependent does not stop the ones with.
+    state._mark_dirty_computed_vars(iter(("b_unused", "a")))
+    assert state.dirty_vars == {"from_a", "from_from_a"}
+    cached = {
+        name
+        for name, cvar in ChainState.computed_vars.items()
+        if cvar._cache_attr in vars(state)
+    }
+    assert cached == {"standalone"}
+
+    # Without names, all the dirty vars are walked.
+    assert state.from_from_a == 1
+    state.dirty_vars.clear()
+    state.dirty_vars.add("b")
+    state._mark_dirty_computed_vars()
+    assert state.dirty_vars == {"b", "standalone"}
 
 
 def test_dirty_computed_var_from_var(interdependent_state: InterdependentState) -> None:
@@ -2653,7 +2739,8 @@ async def test_state_manager_lock_warning_threshold_contend(
         # When Oplock is enabled, we don't warn when lock is held too long.
         assert not lock_warnings
     else:
-        assert len(lock_warnings) == 7
+        # One warning per state-tree save, not one per substate.
+        assert len(lock_warnings) == 1
 
 
 class CopyingAsyncMock(AsyncMock):
@@ -5425,6 +5512,78 @@ def test_fallback_pickle():
         _ = state3._serialize()
 
 
+class AppObjectState(BaseState):
+    """A root state holding instances of app-defined classes."""
+
+    _value: Any = None
+
+
+@pytest.mark.parametrize(
+    "breakage",
+    [
+        "module_removed",
+        "class_removed",
+        "enum_member_removed",
+        "namedtuple_field_added",
+        "truncated",
+    ],
+)
+@pytest.mark.parametrize("use_fp", [False, True])
+def test_deserialize_unreadable_state_raises_schema_mismatch(
+    breakage: str,
+    use_fp: bool,
+    app_classes_module: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A stored state that can no longer be unpickled is treated as a schema mismatch.
+
+    Args:
+        breakage: How the stored state became unreadable.
+        use_fp: Whether to deserialize from a file object instead of bytes.
+        app_classes_module: The module of app classes held in the state.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    module = app_classes_module
+    state = AppObjectState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state._value = [module.Entry("a"), module.Color.BLUE, module.Point(1, 2)]
+    data = state._serialize()
+    assert isinstance(BaseState._deserialize(data=data), AppObjectState)
+
+    if breakage == "module_removed":
+        monkeypatch.delitem(sys.modules, module.__name__)
+    elif breakage == "class_removed":
+        monkeypatch.delattr(module, "Entry")
+    elif breakage == "enum_member_removed":
+        monkeypatch.setattr(
+            module, "Color", enum.Enum("Color", {"RED": "red"}, module=module.__name__)
+        )
+    elif breakage == "namedtuple_field_added":
+        monkeypatch.setattr(
+            module, "Point", namedtuple("Point", "x y z", module=module.__name__)
+        )
+    else:
+        data = data[: len(data) // 2]
+
+    with pytest.raises(StateSchemaMismatchError):
+        if use_fp:
+            BaseState._deserialize(fp=io.BytesIO(data))
+        else:
+            BaseState._deserialize(data=data)
+
+
+@pytest.mark.parametrize(
+    "kwargs", [{}, {"data": b"", "fp": io.BytesIO()}], ids=["neither", "both"]
+)
+def test_deserialize_requires_exactly_one_source(kwargs: dict[str, Any]):
+    """Passing neither or both of data and fp is a caller error, not a schema mismatch.
+
+    Args:
+        kwargs: The arguments passed to _deserialize.
+    """
+    with pytest.raises(ValueError, match="Only one of"):
+        BaseState._deserialize(**kwargs)
+
+
 def test_typed_state() -> None:
     class TypedState(rx.State):
         field: rx.Field[str] = rx.field("")
@@ -5587,6 +5746,26 @@ def test_get_value(key_factory, expected_result, should_raise):
         initial_dirty_vars = copy.copy(state.dirty_vars)
         state.get_value(key)
         assert state.dirty_vars == initial_dirty_vars
+
+
+def test_get_value_through_a_state_proxy(
+    grandchild_state: GrandchildState,
+    attached_mock_event_context: EventContext,
+):
+    """A StateProxy reads field values with get_value outside of its context.
+
+    Args:
+        grandchild_state: A grandchild state.
+        attached_mock_event_context: The event context the proxy takes its token from.
+    """
+    grandchild_state.value2 = "own"
+    proxy = StateProxy(grandchild_state)
+
+    assert proxy.get_value("value2") == "own"
+    assert proxy.get_value("value") == grandchild_state.value
+    array = proxy.get_value("array")
+    assert not isinstance(array, MutableProxy)
+    assert array == [1, 2, 3.15]
 
 
 def test_init_mixin() -> None:
@@ -6121,6 +6300,8 @@ async def test_on_load_internal_supersedes_previous_navigation(
     """
     assert OnLoadInternalState.event_handlers["on_load_internal"].supersedes
     assert not State.event_handlers["hydrate"].supersedes
+    # A navigation must not cancel the snapshot of a pending hydrate.
+    assert not State.event_handlers["hydrate_and_load"].supersedes
 
     app = app_module_mock.app = App(_state=State)
     app._state_manager = mock_root_event_context.state_manager
@@ -6169,6 +6350,19 @@ async def test_on_load_internal_supersedes_previous_navigation(
         # The fresh navigation completes without waiting behind the stale chain.
         await asyncio.wait_for(current.wait_all(), timeout=5)
         assert stale.done()
+
+
+def test_state_snapshot_hashes_keep_dict_key_order():
+    """Defaults that differ only in dict key order render differently, so hash differently."""
+    var_name = f"ordered{FIELD_MARKER}"
+    names_digest, ordered_hash = state_snapshot_hashes({
+        "state": {var_name: {"alpha": 1, "beta": 2}}
+    })
+    reordered_names_digest, reordered_hash = state_snapshot_hashes({
+        "state": {var_name: {"beta": 2, "alpha": 1}}
+    })
+    assert reordered_names_digest == names_digest
+    assert reordered_hash != ordered_hash
 
 
 _ALIAS_ITEM = TypeVar("_ALIAS_ITEM")
@@ -6481,3 +6675,104 @@ def test_previous_release_pickle_keys_are_reserved():
 
         class ClashingState(BaseState):
             _backend_vars: dict = {}  # pyright: ignore[reportIncompatibleVariableOverride]
+
+
+def test_setstate_drops_inherited_fields():
+    """The value of an inherited field lives on the parent state, not on the substate."""
+
+    class InheritedFieldParent(BaseState):
+        shared: int = 1
+
+    class InheritedFieldChild(InheritedFieldParent):
+        own: int = 2
+
+    child = InheritedFieldChild(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    child.__setstate__({
+        "shared": 5,
+        "own": 3,
+        "parent_state": None,
+        "dirty_vars": set(),
+        "_backend_vars": {},
+    })
+
+    assert child.__dict__ == {"own": 3}
+
+
+@pytest.mark.parametrize("mode", ["off", "warn", "raise"])
+def test_serialize_applies_the_perf_mode_set_at_call_time(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, mode: str
+):
+    """The state size limit follows REFLEX_PERF_MODE as it is when a state is serialized.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        caplog: Pytest log capture fixture.
+        mode: The performance mode to serialize with.
+    """
+    import reflex.state as state_module
+
+    class SizeLimitParent(BaseState):
+        payload: str = ""
+
+    class SizeLimitChild(SizeLimitParent):
+        pass
+
+    parent = SizeLimitParent(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    parent.payload = "x" * 4096
+    assert parent.substates
+    monkeypatch.setattr(state_module, "TOO_LARGE_SERIALIZED_STATE", 1024)
+    monkeypatch.setattr(state_module, "_WARNED_ABOUT_STATE_SIZE", set())
+    monkeypatch.setenv("REFLEX_PERF_MODE", mode)
+
+    with caplog.at_level(logging.WARNING):
+        if mode == "raise":
+            with pytest.raises(StateTooLargeError):
+                parent._serialize()
+        else:
+            # The second call is silent: each state is only warned about once.
+            assert parent._serialize() == parent._serialize()
+
+    warnings = [r for r in caplog.records if "serializes to" in r.getMessage()]
+    assert len(warnings) == (1 if mode == "warn" else 0)
+
+
+def test_cached_computed_var_timestamp_is_only_stored_with_an_interval():
+    """Only a computed var with an interval reads its timestamp, so only it is pickled with one."""
+
+    class TimestampState(BaseState):
+        count: int = 1
+
+        @computed_var(cache=True)
+        def plain(self) -> int:
+            return self.count
+
+        @computed_var(cache=True, interval=datetime.timedelta(hours=1))
+        def timed(self) -> int:
+            return self.count
+
+        @computed_var(cache=True)
+        async def plain_async(self) -> int:
+            return self.count
+
+        @computed_var(cache=True, interval=datetime.timedelta(hours=1))
+        async def timed_async(self) -> int:
+            return self.count
+
+    state = TimestampState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert (state.plain, state.timed) == (1, 1)
+    assert (
+        asyncio.run(cast(Any, state.plain_async)),
+        asyncio.run(cast(Any, state.timed_async)),
+    ) == (1, 1)
+
+    computed_vars = TimestampState.computed_vars
+    for name in ("plain", "timed", "plain_async", "timed_async"):
+        assert computed_vars[name]._cache_attr in state.__dict__
+    assert computed_vars["timed"]._last_updated_attr in state.__dict__
+    assert computed_vars["timed_async"]._last_updated_attr in state.__dict__
+    assert computed_vars["plain"]._last_updated_attr not in state.__dict__
+    assert computed_vars["plain_async"]._last_updated_attr not in state.__dict__
+
+    # The cache and the interval timestamp survive a trip through redis.
+    restored = BaseState._deserialize(state._serialize())
+    assert restored.__dict__ == state.__dict__

@@ -209,6 +209,8 @@ class EventProcessor:
 
         self._root_context = EventContext(
             token="",
+            # Belongs to no event: the events forked from it are top-level.
+            txid="",
             parent_txid=None,
             state_manager=state_manager,
             enqueue_impl=self.enqueue_many,
@@ -400,18 +402,22 @@ class EventProcessor:
             already enqueued it, the returned future is already cancelled and
             the event is dropped.
         """
+        # The event's router_data is bound before the entry exists, so entry.ctx
+        # is what the handler, the task metadata, and every event it yields all read.
         if ev_ctx is None:
             try:
-                ev_ctx = EventContext.get().fork(token=token)
+                ev_ctx = EventContext.get().fork(
+                    token=token, router_data=event.router_data
+                )
             except LookupError as le:
                 if self._root_context is not None:
-                    ev_ctx = self._root_context.fork(token=token)
+                    ev_ctx = self._root_context.fork(
+                        token=token, router_data=event.router_data
+                    )
                 else:
                     msg = "Event processor is not running, call .start(...) first."
                     raise RuntimeError(msg) from le
-        if event.router_data:
-            # Bound before the entry exists, so entry.ctx is what the handler,
-            # the task metadata, and every event it yields all read.
+        elif event.router_data:
             ev_ctx = dataclasses.replace(ev_ctx, router_data=event.router_data)
         queue = self._ensure_queue_task()
         txid = ev_ctx.txid
@@ -517,10 +523,10 @@ class EventProcessor:
         task_future = await self.enqueue(
             token,
             event,
-            # A fresh context rather than a copy of the root: every top-level
-            # event names the root context's txid as its parent, so tracking
-            # this event under that txid would chain them all to this stream.
-            # Its txid is new and, as a top-level event, it has no parent.
+            # A fresh context rather than a copy of the root, which has no txid:
+            # this event needs one of its own, so the events it chains find its
+            # future and concurrent streams stay apart. As a top-level event,
+            # it has no parent.
             ev_ctx=type(root)(
                 token=token,
                 state_manager=root.state_manager,
@@ -577,7 +583,7 @@ class EventProcessor:
                 # reusing the txid can chain recovery events normally.
                 return
             # Not checking future.all_done() to avoid waiting for grandchildren here.
-            if not all(c.done() for c in future.children):
+            if (children := future.children) and not all(c.done() for c in children):
                 return
             parent = future.parent
             self._futures.pop(future.txid, None)
@@ -634,13 +640,7 @@ class EventProcessor:
                 tracked.cancel()
                 return False
             if tracked.root_gen > current_gen:
-                logger.debug(
-                    f"Cancelling the previous unfinished {event.name} chain for "
-                    f"token {token}, superseded by a newer invocation."
-                )
-                for previous in slot.values():
-                    previous.cancel()
-                slot.clear()
+                self._cancel_older_chains(key, tracked.root_gen)
             elif key in tracked.covered_supersede_keys:
                 # Same chain, and an ancestor invocation is already
                 # registered: cancelling that ancestor cascades here, so
@@ -652,6 +652,27 @@ class EventProcessor:
         tracked.supersede_key = key
         tracked.covered_supersede_keys |= {key}
         return True
+
+    def _cancel_older_chains(self, key: tuple[str, str], root_gen: int) -> None:
+        """Cancel the unfinished superseding chains registered under ``key``.
+
+        Only chains from a root generation older than ``root_gen`` are
+        cancelled; the slot is left alone when its chains are at least as new.
+
+        Args:
+            key: The (event name, token) the chains are registered under.
+            root_gen: The root generation of the chain superseding them.
+        """
+        slot = self._superseded.get(key)
+        if not slot or root_gen <= next(iter(slot.values())).root_gen:
+            return
+        logger.debug(
+            f"Cancelling the previous unfinished {key[0]} chain for token "
+            f"{key[1]}, superseded by a newer invocation."
+        )
+        for previous in slot.values():
+            previous.cancel()
+        slot.clear()
 
     def _on_future_done(self, future: EventFuture) -> None:  # type: ignore[override]
         """Callback invoked when an enqueued future completes.
@@ -744,7 +765,7 @@ class EventProcessor:
         coro = self._process_event_queue_entry(
             entry=entry, registered_handler=registered_handler
         )
-        name = f"reflex_event|{entry.event.name}|{entry.ctx.token}|{time.time()}"
+        name = f"reflex_event|{entry.event.name}|{entry.ctx.token}|{entry.ctx.txid}"
         loop = asyncio.get_running_loop()
         if (
             sys.version_info >= (3, 12)
@@ -917,14 +938,14 @@ class EventProcessor:
             True if a backend exception handler task was spawned and now owns
             the future's lifecycle, False otherwise.
         """
-        from reflex.utils import telemetry
-
         try:
             result = task.result()
         except asyncio.CancelledError:
             if future is not None and not future.done():
                 future.cancel()
         except Exception as ex:
+            from reflex.utils import telemetry
+
             if future is not None and not future.done():
                 future.set_exception(ex)
                 with contextlib.suppress(BaseException):
