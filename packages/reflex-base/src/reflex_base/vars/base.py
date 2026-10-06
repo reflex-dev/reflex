@@ -4700,6 +4700,21 @@ class BaseStateMeta(ABCMeta):
         # from; its namespace is reserved for the whole hierarchy.
         _reflex_state_root: BaseStateMeta
 
+    def __setattr__(cls, name: str, value: Any) -> None:
+        """Update backend defaults without replacing their field descriptors.
+
+        Args:
+            name: The class attribute being assigned.
+            value: Its new value.
+        """
+        declared = cls.__fields__.get(name)
+        if declared is not None and declared._backend and not isinstance(value, Field):
+            defaults = _default_arguments(value)
+            declared.default = defaults["default"]
+            declared.default_factory = defaults["default_factory"]
+            return
+        super().__setattr__(name, value)
+
     def __new__(
         cls,
         name: str,

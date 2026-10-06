@@ -63,6 +63,86 @@ from reflex.state import BaseState, State, _override_base_method
 _MARKER_ATTR = "_marker"
 
 
+@pytest.mark.parametrize("mutable", [False, True])
+def test_backend_class_assignment_preserves_field(mutable: bool):
+    """Changing a backend default preserves its descriptor and instance tracking.
+
+    Args:
+        mutable: Whether the default is mutable.
+    """
+
+    class ConfigState(BaseState):
+        _value: Any = None
+
+    declared = ConfigState.get_fields()["_value"]
+    original = ConfigState()
+    assert original._value is None
+    replacement = ["configured"] if mutable else "configured"
+    ConfigState._value = replacement
+    assert ConfigState.__dict__["_value"] is declared
+    assert original._value is None
+
+    first = ConfigState()
+    second = ConfigState()
+    assert first._value == second._value == replacement
+    restored = ConfigState()
+    restored.__setstate__(pickle.loads(pickle.dumps(first.__getstate__())))
+    assert restored._value == replacement
+
+    first._clean()
+    first._value = "changed"
+    assert "_value" in first.dirty_vars
+    assert first._was_touched
+    first.reset()
+    assert first._value == replacement
+    if mutable:
+        first._value.append("session-only")
+        assert second._value == replacement == ["configured"]
+
+
+def test_backend_class_assignment_replaces_default_factory():
+    """A class assignment replaces a factory without evaluating it."""
+    calls = []
+
+    def factory():
+        """Count default-factory evaluations.
+
+        Returns:
+            The original default.
+        """
+        calls.append(True)
+        return "old"
+
+    class ConfigState(BaseState):
+        _value: Any = field(default_factory=factory, is_var=False)
+
+    ConfigState._value = "new"
+    assert calls == []
+    assert ConfigState()._value == "new"
+    assert calls == []
+
+
+def test_backend_class_assignment_inherited_field_and_classvar():
+    """Assignments update the owning field, while ClassVars remain ordinary attrs."""
+
+    class Parent(BaseState):
+        _value: str = "old"
+        _config: ClassVar[str] = "old"
+
+    class Child(Parent):
+        pass
+
+    declared = Parent.get_fields()["_value"]
+    Child._value = "new"
+    assert "_value" not in Child.__dict__
+    assert Child.get_fields()["_value"] is declared
+    assert Parent()._value == "new"
+    assert Child()._value == "new"
+    Child._config = "child"
+    assert Parent._config == "old"
+    assert Child._config == "child"
+
+
 def test_custom_field_attr_survives_annotated_rebuild():
     """A custom attribute on an annotated Field survives a rebuild."""
     f = field("x")

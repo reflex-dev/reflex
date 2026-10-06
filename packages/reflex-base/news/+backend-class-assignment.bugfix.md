@@ -1,0 +1,1 @@
+Class-level assignment to a backend var now updates its default without replacing the field descriptor, preserving instance writes, reset, and state persistence. Existing instances keep values they have already initialized.

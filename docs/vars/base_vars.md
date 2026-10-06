@@ -101,6 +101,30 @@ client.
 For example, a backend-only var is used to store a large data structure which is
 then paged to the frontend using cached vars.
 
+Read and write a backend var through a state instance, such as `self._token`.
+Reading `MyState._token` through the class returns its field descriptor. Assigning
+to `MyState._token` updates the field's default for values that have not yet been
+initialized and for `reset()`; it does not change values already stored on an
+instance. Mutable defaults are copied for each instance. For an inherited backend
+var, the default belongs to the state that declared the field, so changing it
+through a subclass also changes that declaring state's default.
+
+For configuration shared by all sessions, declare a `ClassVar` instead:
+
+```python
+from typing import ClassVar
+
+
+class MyState(rx.State):
+    _endpoint: ClassVar[str] = "https://example.com/api"
+    _token: str = ""
+
+
+MyState._endpoint = "https://example.com/v2"
+```
+
+`ClassVar` values are ordinary class attributes and are not part of session state.
+
 ```python demo exec
 import numpy as np
 
