@@ -1,1 +1,1 @@
-Require `reflex-base >= 0.9.12`. Image cells (`type="image"`) are rendered by the data editor cell helper that `reflex-base` ships, which only learned the image kind in 0.9.12, so the older declared floor let a resolver pair this package with a `reflex-base` whose grid silently fails to render image columns.
+Require `reflex-base >= 0.9.12` so image columns render correctly in data editor grids.
