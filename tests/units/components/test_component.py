@@ -793,6 +793,16 @@ def test_component_create_backend_var_child(test_component):
         test_component.create(BackendChildState._secret)
 
 
+def test_component_create_backend_var_prop():
+    """A backend var passed to a typed prop reports its repr, not a format error."""
+
+    class BackendPropState(BaseState):
+        _size: str = "3"
+
+    with pytest.raises(TypeError, match=r"got value Field\(default='3'"):
+        rx.heading("x", size=BackendPropState._size)  # pyright: ignore[reportArgumentType]
+
+
 @pytest.mark.parametrize(
     ("element", "expected"),
     [

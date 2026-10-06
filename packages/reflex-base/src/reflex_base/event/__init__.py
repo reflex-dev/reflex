@@ -750,7 +750,7 @@ class EventHandler(EventActionsMixin):
             try:
                 payload.append((Var(_js_expr=fn_arg), LiteralVar.create(arg)))
             except TypeError as e:
-                msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
+                msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg!r} of type {type(arg)}."
                 raise EventHandlerTypeError(msg) from e
 
         if upload_event_spec is not None:
@@ -873,7 +873,7 @@ class EventSpec(EventActionsMixin):
             for arg in args:
                 values.append(LiteralVar.create(value=arg))  # noqa: PERF401, RUF100
         except TypeError as e:
-            msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg} of type {type(arg)}."
+            msg = f"Arguments to event handlers must be Vars or JSON-serializable. Got {arg!r} of type {type(arg)}."
             raise EventHandlerTypeError(msg) from e
         new_payload = tuple(zip(fn_args, values, strict=False))
         return self.with_args(self.args + new_payload)

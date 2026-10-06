@@ -999,7 +999,9 @@ class Component(BaseComponent, ABC):
                     expected_type = types.get_field_type(type(self), key)
 
                 if not satisfies_type_hint(value, expected_type):
-                    value_name = value._js_expr if isinstance(value, Var) else value
+                    value_name = (
+                        value._js_expr if isinstance(value, Var) else repr(value)
+                    )
 
                     additional_info = (
                         " You can call `.bool()` on the value to convert it to a boolean."
