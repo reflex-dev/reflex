@@ -10,6 +10,7 @@ import zipfile
 from collections.abc import Sequence
 from pathlib import Path
 
+from packaging.requirements import Requirement
 from packaging.version import InvalidVersion, Version
 
 from .actions import ReleaseError, fail
@@ -144,9 +145,8 @@ def verify_dist(
 def pin_exact(pyproject: Path, dependency: str, version: Version) -> None:
     """Rewrite a lower-bound requirement on a dependency to an exact pin.
 
-    Lockstep packages release together at one version, so a package that
-    publishes last must depend on exactly the sibling version published
-    alongside it rather than on a floor that a future release would satisfy.
+    A package that publishes last depends on the identical sibling version,
+    whether it was published in this batch or an earlier phase.
 
     Args:
         pyproject: The ``pyproject.toml`` of the package being built.
@@ -169,6 +169,9 @@ def pin_exact(pyproject: Path, dependency: str, version: Version) -> None:
             f'expected exactly one "{dependency} <specifier>" requirement in '
             f"{pyproject}, found {len(matches)}"
         )
+    requirement = Requirement(matches[0].group(0)[1:-1])
+    if not requirement.specifier.contains(version, prereleases=True):
+        fail(f"{dependency} v{version} does not satisfy {requirement}")
     new_pin = f'"{dependency}{matches[0]["extras"] or ""} == {version}"'
     pyproject.write_text(
         text.replace(matches[0].group(0), new_pin, 1), encoding="utf-8"

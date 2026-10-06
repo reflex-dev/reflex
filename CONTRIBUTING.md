@@ -115,16 +115,18 @@ a release branch — never by tagging manually. The pieces:
      `release-from-prerelease` collapses the accumulated alpha sections into
      one final-version section — alpha headings never ship in a final
      changelog.
-   - `reflex` and `reflex-base` are a lockstep pair and share one checkbox:
-     selecting it releases both at the same version. The checkboxes are
-     generated from the package list, so adding or removing a package means
+   - `reflex` and `reflex-base` are a directional lockstep pair with separate
+     checkboxes: base can release independently, while Reflex requires the
+     identical base version, published in the same batch or an earlier phase.
+     The checkboxes are generated from the package list, so adding or removing
+     a package means
      re-running `uv run reflex-release sync`.
 2. **Release from changelog** (`release_from_changelog.yml`) runs on every push
    to `main`, `r/pre-*`, and `r/hotfix/**`: any package whose newest changelog
    version has no git tag gets built and queued for publishing. Final
    (non-alpha) versions only publish from `main` or `r/hotfix/**`; alphas only
-   from `r/pre-*`/`r/hotfix/**`. `reflex` and `reflex-base` are checked as a
-   lockstep pair and `reflex` publishes only after the rest of the batch.
+   from `r/pre-*`/`r/hotfix/**`. Base can publish independently; `reflex` publishes
+   only after the rest of the batch and requires its matching base tag.
 3. **Publish to PyPI** (`publish.yml`, also manually dispatchable with a
    package + version) validates and builds without privileges, then **waits
    for a human to approve the `pypi` environment deployment** — every upload,

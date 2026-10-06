@@ -159,11 +159,19 @@ def test_lockstep_helpers(config: Config, repo: Path) -> None:
     )
     reloaded = load_config(repo)
     assert reloaded.lockstep_partners("mypkg") == ("widget-core",)
-    assert reloaded.lockstep_partners("widget-core") == ("mypkg",)
+    assert reloaded.lockstep_partners("widget-core") == ()
     assert reloaded.publishes_last("mypkg")
     assert not reloaded.publishes_last("widget-core")
     assert reloaded.exact_pin_targets("mypkg") == ("widget-core",)
     assert reloaded.exact_pin_targets("widget-core") == ()
+
+
+def test_lockstep_without_publish_last_remains_symmetric(repo: Path) -> None:
+    """Groups without publication ordering still require all their partners."""
+    write_lockstep(repo, publish_last=False)
+    config = load_config(repo)
+    assert config.lockstep_partners("mypkg") == ("widget-core",)
+    assert config.lockstep_partners("widget-core") == ("mypkg",)
 
 
 def test_empty_latest_release_package_disables_the_badge(

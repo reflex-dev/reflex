@@ -19,7 +19,7 @@ dependencies = [
     "griffelib >= 2.0.1",
     "mistletoe >= 1.4.0",
     "pyyaml >= 6.0.3",
-    "reflex >= 0.9.0",
+    "reflex >= 0.10.0a2.dev10",
     "typing-inspection>=0.4.2",
 ]
 

@@ -12,7 +12,8 @@ name: Dispatch release
 # Selecting no package auto-selects the ones to release: those with pending
 # news fragments — or, for release-from-prerelease, those whose changelog is
 # topped by an alpha (the train's fragments are already consumed). Lockstep
-# groups share one checkbox: their members only ever release together.
+# groups without publish-last share one checkbox. Groups with publish-last
+# offer separate checkboxes so their early members can release independently.
 #
 # Materializing also lifts each released package's unshippable dependency
 # floors — a *.dev pin, and a prerelease pin when the version is final — to the
@@ -75,11 +76,15 @@ on:
           - release-minor
           - release-major
       reflex:
-        description: "reflex (with reflex-base)"
+        description: "reflex"
         type: boolean
         default: false
       hatch_reflex_pyi:
         description: "hatch-reflex-pyi"
+        type: boolean
+        default: false
+      reflex_base:
+        description: "reflex-base"
         type: boolean
         default: false
       reflex_build_sdk:
@@ -186,8 +191,9 @@ jobs:
           # Each unselected package contributes an empty string, so selecting
           # nothing leaves PACKAGES blank and the planner auto-selects.
           PACKAGES: >-
-            ${{ inputs.reflex && 'reflex,reflex-base' || '' }}
+            ${{ inputs.reflex && 'reflex' || '' }}
             ${{ inputs.hatch_reflex_pyi && 'hatch-reflex-pyi' || '' }}
+            ${{ inputs.reflex_base && 'reflex-base' || '' }}
             ${{ inputs.reflex_build_sdk && 'reflex-build-sdk' || '' }}
             ${{ inputs.reflex_components_code && 'reflex-components-code' || '' }}
             ${{ inputs.reflex_components_core && 'reflex-components-core' || '' }}

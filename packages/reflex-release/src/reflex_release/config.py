@@ -119,13 +119,13 @@ class CustomBuild:
 
 @dataclasses.dataclass(frozen=True)
 class LockstepGroup:
-    """A set of packages that must always release together at the same version.
+    """Packages whose dependent releases require identical sibling versions.
 
     Attributes:
         members: The package names in the group (at least two).
-        publish_last: Members that publish only after every other member of the
-            group has been uploaded and tagged — used when they depend on their
-            siblings at an exact version.
+        publish_last: Members scheduled after the early members have uploaded
+            and tagged — used when they depend on their siblings at an exact
+            version. Other members can release independently.
         pin_exact: Whether each ``publish_last`` member's requirement on its
             siblings is rewritten to ``== <version>`` before building.
     """
@@ -458,24 +458,24 @@ class Config:
             package: The package name.
 
         Returns:
-            The group, or None when the package releases independently.
+            The group, or None when the package does not belong to one.
         """
         return next(
             (group for group in self.lockstep if package in group.members), None
         )
 
     def lockstep_partners(self, package: str) -> tuple[str, ...]:
-        """Return the packages that must release alongside a package.
+        """Return the siblings a package requires at the identical version.
 
         Args:
             package: The package name.
 
         Returns:
-            The other members of the package's lockstep group, or an empty
-            tuple.
+            The other group members, or an empty tuple for an independent
+            package or an early member of a group with ``publish-last``.
         """
         group = self.lockstep_group(package)
-        if group is None:
+        if group is None or (group.publish_last and package not in group.publish_last):
             return ()
         return tuple(member for member in group.members if member != package)
 
