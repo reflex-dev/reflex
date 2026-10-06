@@ -19,6 +19,13 @@ The identical minimal app was run through the public production CLI on fresh env
 
 The initial failure is retained in [default-endpoint evidence](evidence/prod-default-endpoint/logs/mcp-http.json). The working slash run remains a diagnostic, and is not counted as a default production endpoint pass.
 
+The subsequent [published Reflex 0.9.12 control](routing/stable-0.9.12/REPORT.md)
+also reproduces the bare-route 405 with enterprise a3, including a valid bearer.
+The slash route returns 401 for invalid credentials and 200 for a valid token;
+published MCP SDK initialization/list-tools passes there. App/config source is
+byte-identical to the alpha comparison. This is also present on stable Reflex;
+enterprise a2 on stable was not tested.
+
 ## Exact execution boundary
 
 - Fresh `/private/tmp/reflex-enterprise-a3-20261005-components` venv, Python 3.12.1. The retained enterprise requirements graph changed only a2 to published PyPI a3. [requirements-lock.txt](requirements-lock.txt), [a2 baseline graph](requirements-a2-baseline.txt), [provenance.json](provenance.json). `uv pip check` validated all 104 packages.

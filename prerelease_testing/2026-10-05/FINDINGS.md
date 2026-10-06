@@ -182,6 +182,11 @@ request. No framework fixes were attempted.
     mutation/redaction tests. Fresh minimal public-CLI a2/a3 comparisons with
     otherwise identical 104-package alpha graphs reproduce this boundary on
     both versions. This is **preexisting in the tested a2/core-alpha combination**.
+    A subsequent [published Reflex 0.9.12 control](enterprise/a3/components/routing/stable-0.9.12/REPORT.md)
+    also reproduces 405 with enterprise a3, even for a valid issued bearer.
+    The slash route returns 200 and passes MCP SDK initialization/tool listing.
+    This failure therefore also occurs on stable; enterprise a2 on stable was
+    not tested, and the introducing release remains unidentified.
     The slash variant is a diagnostic and does not convert the default-route
     failure into a pass. [Repro, wire comparison and production contexts](enterprise/a3/components/REPORT.md).
 

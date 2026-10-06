@@ -1,0 +1,126 @@
+{
+  "versions": {
+    "reflex": "0.9.12",
+    "reflex-base": "0.9.12",
+    "reflex-enterprise": "0.9.7a3"
+  },
+  "responses": [
+    {
+      "method": "POST",
+      "path": "/_reflex/mcp",
+      "bearer_case": "missing",
+      "status": 405,
+      "body": "Method Not Allowed",
+      "location": null
+    },
+    {
+      "method": "POST",
+      "path": "/_reflex/mcp",
+      "bearer_case": "fabricated",
+      "status": 405,
+      "body": "Method Not Allowed",
+      "location": null
+    },
+    {
+      "method": "POST",
+      "path": "/_reflex/mcp",
+      "bearer_case": "issued",
+      "status": 405,
+      "body": "Method Not Allowed",
+      "location": null
+    },
+    {
+      "method": "POST",
+      "path": "/_reflex/mcp/",
+      "bearer_case": "missing",
+      "status": 401,
+      "body": "{\"error\": \"invalid_token\", \"error_description\": \"Authentication required\"}",
+      "location": null
+    },
+    {
+      "method": "POST",
+      "path": "/_reflex/mcp/",
+      "bearer_case": "fabricated",
+      "status": 401,
+      "body": "{\"error\": \"invalid_token\", \"error_description\": \"Authentication required\"}",
+      "location": null
+    },
+    {
+      "method": "POST",
+      "path": "/_reflex/mcp/",
+      "bearer_case": "issued",
+      "status": 200,
+      "body": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":\"2025-03-26\",\"capabilities\":{\"experimental\":{},\"prompts\":{\"listChanged\":false},\"resources\":{\"subscribe\":false,\"listChanged\":false},\"tools\":{\"listChanged\":false}},\"serverInfo\":{\"name\":\"mcp_probe MCP\",\"version\":\"1.30.0\"},\"instructions\":\"# mcp_probe MCP (v1.0.0)\\n\\nMCP access to the Reflex app **mcp_probe** and its 1 event handler(s).\\n\\nThe app is served at http://localhost:3131.\\n\\n## Authentication\\n\\nRequests require an app-issued Bearer token. For an anonymous session (no user identity; only public surfaces when the app enforces auth), POST to the app's token endpoint `/_reflex/auth/token` and use the returned `access_token` as your Bearer token. The session is server-generated and bound to the token; reuse the token across calls to address the same session.\\n\\n## Tools\\n\\n- `search_events(query)` -- Search the app's event handlers; returns each handler's name (for queue_event) and payload schema.\\n- `queue_event(event_name, payload, query)` -- Apply an event to your session: event_name + payload (the handler's parameters) + optional query (a JSON object of query parameters, e.g. the dynamic route variables listed below). Returns the resulting state delta -- or, for a file-upload handler, out-of-band upload directions (files must be POSTed to the MCP upload endpoint separately).\\n\\n## Resources\\n\\nIntrospect and read the app over `reflex://` resources:\\n\\n- `reflex://state` -- list the exposed state names.\\n- `reflex://event` -- enumerate the event handlers; `reflex://event/<event_name>` -- one handler's full schema.\\n- `reflex://state/events/<state_name>` -- the event handlers on a state.\\n- `reflex://state/vars/<state_name>` -- the resolved `.dict()` rooted at a state (cached frontend + computed var values); read the root `reflex___state____state` for the whole app.\\n- `reflex://state/vars/<state_name>/<var_name>` -- a single var's live value (a computed var is marked dirty and recomputed).\\n\\nExposed states (for the `<state_name>` above):\\n\\n- `reflex___state____state`\\n- `reflex___state____state.mcp_probe___mcp_probe____state`\\n\\nCall search_events (or read `reflex://event`) to find an event and its payload schema, queue_event to apply it to your session, then read `reflex://state/vars/<state_name>` to inspect the resulting state.\\n\\n## Pages\\n\\n- `http://localhost:3131/index`\"}}",
+      "location": null
+    }
+  ],
+  "completed": true,
+  "account_port": 61332,
+  "browser": {
+    "console": [],
+    "page_errors": [],
+    "http_errors": [],
+    "failed_requests": [],
+    "ready": true,
+    "body": "MCP routing probe\n\n0\n\nBuilt with Reflex",
+    "browser_version": "140.0.7339.16"
+  },
+  "token_endpoint": {
+    "status": 200,
+    "keys": [
+      "access_token",
+      "expires_in",
+      "session",
+      "token_type"
+    ],
+    "session": "anonymous"
+  },
+  "sdk": [
+    {
+      "path": "/_reflex/mcp",
+      "responses": [
+        {
+          "method": "POST",
+          "url": "http://127.0.0.1:3131/_reflex/mcp",
+          "status": 405,
+          "location": null
+        }
+      ],
+      "passed": false,
+      "traceback": "  + Exception Group Traceback (most recent call last):\n  |   File \"/private/tmp/reflex-enterprise-mcp-stable-20261005/validate.py\", line 82, in sdk_probe\n  |     async with streamable_http_client(BASE + path, http_client=client) as (\n  |   File \"/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py\", line 231, in __aexit__\n  |     await self.gen.athrow(value)\n  |   File \"/private/tmp/reflex-enterprise-mcp-stable-20261005-venv/lib/python3.12/site-packages/mcp/client/streamable_http.py\", line 672, in streamable_http_client\n  |     async with anyio.create_task_group() as tg:\n  |   File \"/private/tmp/reflex-enterprise-mcp-stable-20261005-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py\", line 847, in __aexit__\n  |     raise BaseExceptionGroup(\n  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)\n  +-+---------------- 1 ----------------\n    | Traceback (most recent call last):\n    |   File \"/private/tmp/reflex-enterprise-mcp-stable-20261005-venv/lib/python3.12/site-packages/anyio/_core/_tasks.py\", line 327, in _run_coro\n    |     retval = await self._coro\n    |              ^^^^^^^^^^^^^^^^\n    |   File \"/private/tmp/reflex-enterprise-mcp-stable-20261005-venv/lib/python3.12/site-packages/mcp/client/streamable_http.py\", line 583, in handle_request_async\n    |     await self._handle_post_request(ctx)\n    |   File \"/private/tmp/reflex-enterprise-mcp-stable-20261005-venv/lib/python3.12/site-packages/mcp/client/streamable_http.py\", line 381, in _handle_post_request\n    |     response.raise_for_status()\n    |   File \"/private/tmp/reflex-enterprise-mcp-stable-20261005-venv/lib/python3.12/site-packages/httpx/_models.py\", line 829, in raise_for_status\n    |     raise HTTPStatusError(message, request=request, response=self)\n    | httpx.HTTPStatusError: Client error '405 Method Not Allowed' for url 'http://127.0.0.1:3131/_reflex/mcp'\n    | For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/405\n    +------------------------------------\n"
+    },
+    {
+      "path": "/_reflex/mcp/",
+      "responses": [
+        {
+          "method": "POST",
+          "url": "http://127.0.0.1:3131/_reflex/mcp/",
+          "status": 200,
+          "location": null
+        },
+        {
+          "method": "POST",
+          "url": "http://127.0.0.1:3131/_reflex/mcp/",
+          "status": 202,
+          "location": null
+        },
+        {
+          "method": "POST",
+          "url": "http://127.0.0.1:3131/_reflex/mcp/",
+          "status": 200,
+          "location": null
+        }
+      ],
+      "passed": true,
+      "protocol_version": "2025-11-25",
+      "tools": [
+        "search_events",
+        "queue_event"
+      ]
+    }
+  ],
+  "cleanup": {
+    "server_exit": 0,
+    "account_exit": 0
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "versions": {
+    "reflex": "0.9.12",
+    "reflex-base": "0.9.12",
+    "reflex-enterprise": "0.9.7a3"
+  },
+  "completed": true,
+  "reproduced_on_stable": true,
+  "responses": [
+    {
+      "method": "POST",
+      "path": "/_reflex/mcp",
+      "bearer_case": "missing",
+      "status": 405,
+      "location": null
+    },
+    {
+      "method": "POST",
+      "path": "/_reflex/mcp",
+      "bearer_case": "fabricated",
+      "status": 405,
+      "location": null
+    },
+    {
+      "method": "POST",
+      "path": "/_reflex/mcp",
+      "bearer_case": "issued",
+      "status": 405,
+      "location": null
+    },
+    {
+      "method": "POST",
+      "path": "/_reflex/mcp/",
+      "bearer_case": "missing",
+      "status": 401,
+      "location": null
+    },
+    {
+      "method": "POST",
+      "path": "/_reflex/mcp/",
+      "bearer_case": "fabricated",
+      "status": 401,
+      "location": null
+    },
+    {
+      "method": "POST",
+      "path": "/_reflex/mcp/",
+      "bearer_case": "issued",
+      "status": 200,
+      "location": null
+    }
+  ],
+  "sdk": [
+    {
+      "path": "/_reflex/mcp",
+      "responses": [
+        {
+          "method": "POST",
+          "url": "http://127.0.0.1:3131/_reflex/mcp",
+          "status": 405,
+          "location": null
+        }
+      ],
+      "passed": false
+    },
+    {
+      "path": "/_reflex/mcp/",
+      "responses": [
+        {
+          "method": "POST",
+          "url": "http://127.0.0.1:3131/_reflex/mcp/",
+          "status": 200,
+          "location": null
+        },
+        {
+          "method": "POST",
+          "url": "http://127.0.0.1:3131/_reflex/mcp/",
+          "status": 202,
+          "location": null
+        },
+        {
+          "method": "POST",
+          "url": "http://127.0.0.1:3131/_reflex/mcp/",
+          "status": 200,
+          "location": null
+        }
+      ],
+      "passed": true,
+      "protocol_version": "2025-11-25",
+      "tools": [
+        "search_events",
+        "queue_event"
+      ]
+    }
+  ],
+  "browser": {
+    "console": [],
+    "page_errors": [],
+    "http_errors": [],
+    "failed_requests": [],
+    "ready": true,
+    "body": "MCP routing probe\n\n0\n\nBuilt with Reflex",
+    "browser_version": "140.0.7339.16"
+  },
+  "guard_context_count": 7,
+  "local_account_requests": 2,
+  "installed_distributions": 91,
+  "app_config_identical": true,
+  "all_ports_closed": true
+}

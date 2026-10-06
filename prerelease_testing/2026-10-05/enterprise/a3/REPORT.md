@@ -69,6 +69,10 @@ No real account, external identity provider or production cloud API was changed.
    the same 405/401 boundary on a2 and a3 with otherwise identical alpha graphs.
    This is preexisting in the tested a2/core-alpha combination. The trailing
    slash is a diagnostic variant, not a fix or a passing default-route result.
+   A later [fresh Reflex 0.9.12 control](components/routing/stable-0.9.12/REPORT.md)
+   reproduces the bare-route 405 with enterprise a3 for missing, fabricated and
+   valid issued bearers. The slash route authenticates and passes SDK
+   initialization/tool listing. The failure also occurs on stable Reflex.
 
 Historical finding 11 also persists: rejected production/export credentials
 block the operation but exit 0. No new issues or external comments were filed
