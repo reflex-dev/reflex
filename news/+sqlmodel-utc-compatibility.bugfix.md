@@ -1,0 +1,1 @@
+Allow SQLModel 0.0.45 and later so upgrading `reflex[db]` does not downgrade SQLModel or break migrations using `UTCDateTime`. See the [datetime upgrade guide](https://reflex.dev/docs/database/tables/#datetimes-and-sqlmodel-upgrades) to retain naive storage or adopt UTC-aware datetimes.

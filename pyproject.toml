@@ -63,8 +63,7 @@ classifiers = [
 db = [
   "alembic >=1.15.2,<2.0",
   "pydantic >=2.12.0,<3.0",
-  # 0.0.45 changes datetime columns to UTC and rejects existing naive values.
-  "sqlmodel >=0.0.24,<0.0.45",
+  "sqlmodel >=0.0.24",
 ]
 pydantic = ["reflex-base[pydantic]"]
 testing = [

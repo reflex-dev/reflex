@@ -32,6 +32,44 @@ It is not currently possible to create a table without a primary key.
 
 ## Advanced Column Types
 
+### Datetimes and SQLModel upgrades
+
+`reflex[db]` supports SQLModel 0.0.45 and later without downgrading an existing
+installation. From SQLModel 0.0.45, a plain `datetime` field uses `UTCDateTime`:
+database writes require timezone-aware values, and reads return UTC-aware values,
+including on SQLite. Migrations generated with these versions reference
+`sqlmodel.sql.sqltypes.UTCDateTime()` and require SQLModel 0.0.45 or later when
+they run. Keep the SQLModel version used to generate migrations in your deployment
+dependencies; for example, `sqlmodel>=0.0.45` if a migration uses `UTCDateTime`.
+
+For existing apps that store naive datetimes, declare the SQLAlchemy type
+explicitly to preserve that behavior across SQLModel versions:
+
+```python
+from datetime import datetime
+
+from sqlalchemy import DateTime
+from sqlmodel import Field
+
+
+class Post(rx.Model, table=True):
+    created_at: datetime = Field(
+        default_factory=datetime.now,
+        sa_type=DateTime(timezone=False),
+    )
+```
+
+On SQLModel 0.0.45 or later, Pydantic's `NaiveDatetime` annotation also selects
+naive storage. For UTC storage, use aware producers such as
+`datetime.now(timezone.utc)`, and update comparisons, query parameters, and
+database defaults to use aware values. Changing the Python field type does not
+convert existing database values: determine the timezone of stored data and
+apply a database-specific migration before adopting UTC storage. Follow
+[SQLModel's datetime upgrade guide](https://sqlmodel.tiangolo.com/advanced/datetime/#upgrade-existing-applications)
+for the PostgreSQL, SQLite, and MySQL migration details.
+
+### Explicit column types
+
 SQLModel automatically maps basic python types to SQLAlchemy column types, but
 for more advanced use cases, it is possible to define the column type using
 `sqlalchemy` directly. For example, we can add a last updated timestamp to the
