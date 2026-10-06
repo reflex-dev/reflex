@@ -1,0 +1,10 @@
+# dtapp/dtapp.py State.load was reordered between runs (documented in NOTES VERIFICATION):
+#   runs dt-0912*, dt-a1-inplace  : ORIGINAL order (ages computed first, then self.posts = rows)
+#   run  dt-a1-inplace-display    : REORDERED (self.posts = rows first) so the rows still render when the
+#                                   comparison raises; on sqlmodel 0.0.47 nothing raises, so the order is irrelevant there.
+-        now = datetime.now(timezone.utc)
+-        self.ages = [...]
+-        self.posts = rows
++        self.posts = rows  # assigned first: still sent to the client if the comparison below raises
++        now = datetime.now(timezone.utc)
++        self.ages = [...]

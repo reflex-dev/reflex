@@ -1,0 +1,146 @@
+# sqlmodel 0.0.44 (reflex[db]==0.10.0a1) vs 0.0.47 (reflex[db]==0.9.12 today), from the installed wheels
+--- 0.0.44/sql/sqltypes.py
++++ 0.0.47/sql/sqltypes.py
+@@ -1,7 +1,52 @@
++from datetime import datetime, timedelta, timezone
+ from typing import Any, cast
+ 
+ from sqlalchemy import types
+ from sqlalchemy.engine.interfaces import Dialect
++from sqlalchemy.sql.operators import OperatorType
++
++
++class UTCDateTime(types.TypeDecorator[datetime]):
++    """Store aware datetimes and return them in UTC."""
++
++    impl = types.DateTime
++    cache_ok = True
++
++    def __init__(self) -> None:
++        super().__init__(timezone=True)
++
++    def __repr__(self) -> str:
++        return "UTCDateTime()"
++
++    def coerce_compared_value(
++        self, op: OperatorType | None, value: Any
++    ) -> types.TypeEngine[Any]:
++        if isinstance(value, timedelta):
++            return types.Interval()
++        return self
++
++    def process_bind_param(
++        self, value: datetime | None, dialect: Dialect
++    ) -> datetime | None:
++        if value is None:
++            return None
++        if value.utcoffset() is None:
++            raise ValueError(
++                "Datetime values must have timezone information. "
++                "Use datetime.now(timezone.utc), or annotate the field with "
++                "NaiveDatetime for naive storage."
++            )
++        return value.astimezone(timezone.utc)
++
++    def process_result_value(
++        self, value: datetime | None, dialect: Dialect
++    ) -> datetime | None:
++        if value is None:
++            return None
++        if value.utcoffset() is None:
++            # Databases without timezone support store UTC without an offset.
++            return value.replace(tzinfo=timezone.utc)
++        return value.astimezone(timezone.utc)
+ 
+ 
+ class AutoString(types.TypeDecorator):
+@@ -11,6 +56,6 @@
+ 
+     def load_dialect_impl(self, dialect: Dialect) -> "types.TypeEngine[Any]":
+         impl = cast(types.String, self.impl)
+-        if impl.length is None and dialect.name == "mysql":
++        if impl.length is None and dialect.name in {"mysql", "mariadb"}:
+             return dialect.type_descriptor(types.String(self.mysql_default_length))
+         return super().load_dialect_impl(dialect)
+--- 0.0.44/main.py
++++ 0.0.47/main.py
+@@ -24,7 +24,7 @@
+     overload,
+ )
+ 
+-from pydantic import BaseModel, Discriminator, EmailStr
++from pydantic import AwareDatetime, BaseModel, Discriminator, EmailStr, NaiveDatetime
+ from pydantic.fields import FieldInfo as PydanticFieldInfo
+ from sqlalchemy import (
+     Boolean,
+@@ -74,7 +74,7 @@
+     sqlmodel_init,
+     sqlmodel_validate,
+ )
+-from .sql.sqltypes import AutoString
++from .sql.sqltypes import AutoString, UTCDateTime
+ 
+ if TYPE_CHECKING:
+     from pydantic._internal._model_construction import ModelMetaclass as ModelMetaclass
+@@ -754,8 +754,10 @@
+         return Boolean
+     if issubclass(type_, int):
+         return Integer
+-    if issubclass(type_, datetime):
+-        return DateTime
++    if issubclass(type_, (datetime, AwareDatetime, NaiveDatetime)):
++        if issubclass(type_, cast(type, NaiveDatetime)):
++            return DateTime(timezone=False)
++        return UTCDateTime()
+     if issubclass(type_, date):
+         return Date
+     if issubclass(type_, timedelta):
+--- 0.0.44/__init__.py
++++ 0.0.47/__init__.py
+@@ -1,4 +1,4 @@
+-__version__ = "0.0.44"
++__version__ = "0.0.47"
+ 
+ # Re-export from Pydantic
+ from pydantic import Discriminator as Discriminator
+@@ -145,3 +145,4 @@
+ from .sql.expression import type_coerce as type_coerce
+ from .sql.expression import within_group as within_group
+ from .sql.sqltypes import AutoString as AutoString
++from .sql.sqltypes import UTCDateTime as UTCDateTime
+--- 0.0.44/.agents/skills/sqlmodel/SKILL.md
++++ 0.0.47/.agents/skills/sqlmodel/SKILL.md
+@@ -36,6 +36,33 @@
+ 
+ Use non-table `SQLModel` classes for create/update/public API schemas instead of mixing request/response-only fields into table models.
+ 
++## Datetimes
++
++In SQLModel `0.0.45` and newer, use `datetime` for timestamp fields. SQLModel automatically selects `UTCDateTime`, which normalizes aware values to UTC when writing and returns aware UTC datetimes when reading, including with SQLite and MySQL/MariaDB.
++
++Do not add `sa_type=DateTime(timezone=True)` or `sa_column=Column(DateTime(timezone=True))` just to enable timezone support. These overrides bypass SQLModel's UTC processing. If an explicit column type is needed, import `UTCDateTime` from `sqlmodel`.
++
++For generated timestamps on Python 3.11 and newer:
++
++```python
++from datetime import UTC, datetime
++
++from sqlmodel import Field, SQLModel
++
++
++class Event(SQLModel, table=True):
++    id: int | None = Field(default=None, primary_key=True)
++    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
++```
++
++On Python 3.10, import `timezone` instead of `UTC` and use `lambda: datetime.now(timezone.utc)`.
++
++- Supply aware datetimes for writes, updates, and query filters. Avoid `datetime.now()` without a timezone and `datetime.utcnow()` for UTC timestamps. Naive database parameters are rejected when the statement executes.
++- Use Pydantic's `AwareDatetime` when input validation must reject naive values. It uses the same UTC storage. Validate table-model input with `Model.model_validate(data)`. Direct table-model construction currently skips Pydantic validation, and plain `datetime` validation accepts naive values.
++- Use Pydantic's `NaiveDatetime` for intentional naive storage. It selects `DateTime(timezone=False)` and requires naive values during Pydantic validation.
++
++When upgrading existing applications, follow the [datetime migration guide](https://sqlmodel.tiangolo.com/advanced/datetime/#upgrade-existing-applications). Changing the model does not alter existing columns or convert historical data.
++
+ ## Sessions and Queries
+ 
+ Open sessions directly with the engine:

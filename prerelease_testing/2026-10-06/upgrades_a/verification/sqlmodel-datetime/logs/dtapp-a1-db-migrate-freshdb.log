@@ -1,0 +1,50 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. 
+(/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+/envs/verify_upgrades_a_0-dtapp/lib/python3.12/site-packages/pydantic/_internal/
+_model_construction.py:133)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_upgrades_a_0-dtapp/bin/reflex", line 10, in <module>
+    sys.exit(cli())
+             ^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_upgrades_a_0-dtapp/lib/python3.12/site-packages/click/core.py", line 1631, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_upgrades_a_0-dtapp/lib/python3.12/site-packages/click/core.py", line 1552, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_upgrades_a_0-dtapp/lib/python3.12/site-packages/click/core.py", line 2032, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_upgrades_a_0-dtapp/lib/python3.12/site-packages/click/core.py", line 2032, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_upgrades_a_0-dtapp/lib/python3.12/site-packages/click/core.py", line 1415, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_upgrades_a_0-dtapp/lib/python3.12/site-packages/click/core.py", line 910, in invoke
+    return callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_upgrades_a_0-dtapp/lib/python3.12/site-packages/reflex/reflex.py", line 1064, in migrate
+    model.migrate()
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_upgrades_a_0-dtapp/lib/python3.12/site-packages/reflex/model.py", line 511, in migrate
+    _alembic_upgrade(connection=connection)
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_upgrades_a_0-dtapp/lib/python3.12/site-packages/reflex/model.py", line 484, in _alembic_upgrade
+    env.run_migrations()
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_upgrades_a_0-dtapp/lib/python3.12/site-packages/alembic/runtime/environment.py", line 970, in run_migrations
+    self.get_context().run_migrations(**kw)
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_upgrades_a_0-dtapp/lib/python3.12/site-packages/alembic/runtime/migration.py", line 616, in run_migrations
+    step.migration_fn(**kw)
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_upgrades_a_0/dtapp-freshdb/alembic/versions/9b68327541da_.py", line 27, in upgrade
+    sa.Column('created_at', sqlmodel.sql.sqltypes.UTCDateTime(), nullable=False),
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'sqlmodel.sql.sqltypes' has no attribute 'UTCDateTime'

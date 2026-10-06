@@ -1,0 +1,31 @@
+--- sqlmodel 0.0.47 / pydantic 2.13.5 / reflex 0.9.12
+   column type: UTCDateTime()
+OK    AwareDatetime field
+   column type: DateTime()
+OK    NaiveDatetime field
+   ok <class 'sqlmodel.sql.sqltypes.UTCDateTime'>
+OK    from sqlmodel import UTCDateTime
+   column type: DateTime()
+OK    sa_type=DateTime(timezone=False)
+--- sqlmodel 0.0.44 / pydantic 2.14.0b2 / reflex 0.10.0a1
+FAIL  AwareDatetime field: ValueError: <class 'pydantic.types.AwareDatetime'> has no matching SQLAlchemy type
+FAIL  NaiveDatetime field: ValueError: <class 'pydantic.types.NaiveDatetime'> has no matching SQLAlchemy type
+FAIL  from sqlmodel import UTCDateTime: ImportError: cannot import name 'UTCDateTime' from 'sqlmodel' (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_upgrades_a_0-alpha
+   column type: DateTime()
+OK    sa_type=DateTime(timezone=False)
+--- sqlmodel 0.0.44 / pydantic 2.13.5 / reflex 0.10.0a1
+FAIL  AwareDatetime field: ValueError: <class 'pydantic.types.AwareDatetime'> has no matching SQLAlchemy type
+FAIL  NaiveDatetime field: ValueError: <class 'pydantic.types.NaiveDatetime'> has no matching SQLAlchemy type
+FAIL  from sqlmodel import UTCDateTime: ImportError: cannot import name 'UTCDateTime' from 'sqlmodel' (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_upgrades_a_0-alpha
+OK    sa_type=DateTime(timezone=False)
+--- sqlmodel 0.0.44 / pydantic 2.13.5 / reflex 0.9.12
+FAIL  AwareDatetime field: ValueError: <class 'pydantic.types.AwareDatetime'> has no matching SQLAlchemy type
+FAIL  NaiveDatetime field: ValueError: <class 'pydantic.types.NaiveDatetime'> has no matching SQLAlchemy type
+FAIL  from sqlmodel import UTCDateTime: ImportError: cannot import name 'UTCDateTime' from 'sqlmodel' (/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/verify_upgrades_a_0-s0912
+OK    sa_type=DateTime(timezone=False)
+--- sqlmodel 0.0.47 / pydantic 2.13.5 / reflex 0.10.0a1
+OK    AwareDatetime field
+OK    NaiveDatetime field
+   ok <class 'sqlmodel.sql.sqltypes.UTCDateTime'>
+OK    from sqlmodel import UTCDateTime
+OK    sa_type=DateTime(timezone=False)

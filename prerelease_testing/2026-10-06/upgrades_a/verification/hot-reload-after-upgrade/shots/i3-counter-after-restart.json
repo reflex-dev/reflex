@@ -1,0 +1,279 @@
+{
+ "tag": "i3-counter-after-restart",
+ "results": [
+  {
+   "name": "counter: initial 0",
+   "status": "pass",
+   "detail": "0",
+   "t": 2.695
+  },
+  {
+   "name": "counter: 3x Increment -> 3",
+   "status": "pass",
+   "detail": "3",
+   "t": 3.077
+  },
+  {
+   "name": "counter: Decrement -> 2",
+   "status": "pass",
+   "detail": "2",
+   "t": 3.37
+  },
+  {
+   "name": "counter: Randomize -> 0..100",
+   "status": "pass",
+   "detail": "17",
+   "t": 4.403
+  },
+  {
+   "name": "counter: value survives reload (same tab token)",
+   "status": "pass",
+   "detail": "17 vs 17",
+   "t": 4.851
+  },
+  {
+   "name": "counter: colour-mode button flips theme",
+   "status": "pass",
+   "detail": "light -> dark",
+   "t": 4.961
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 5.183
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 5.183
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 2.113,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 2.286,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 2.354,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 2.534,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 4.514,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 4.583,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 4.661,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 4.74,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 4.747,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 2.353,
+   "dir": "open",
+   "payload": "ws://localhost:8640/_event/?token=9a877a53-782b-4467-a5a8-7042d0360b13&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 2.354,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"imR99U5Urv7E2dzHAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 2.586,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"c2d392e2c8cf1ebf\",\"b084fc0c68f7c73a\",\"ee0a50c258153c28\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 2.591,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"Dn0NQPlV5MqYWWS3AAAB\"}"
+  },
+  {
+   "page": "main",
+   "t": 2.598,
+   "dir": "in",
+   "len": 1754,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8640\",\"origin\":\"http://localhost:3640\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"eteWb4PtMPxANzGWOMj+CA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8640\",\"origin\":\"http://localhost:3640\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"eteWb4PtMPxANzGWOMj+CA==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3640\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3640/index\",\"full_raw_path\":\"http://localhost:3640/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"9a877a53-782b-4467-a5a8-7042d0360b13\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Dn0NQPlV5MqYWWS3AAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3640\",\"origin\":\"http://localhost:3640\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3640/\"}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.598,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.723,
+   "dir": "out",
+   "len": 135,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.counter___counter____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.729,
+   "dir": "in",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.counter___counter____state\":{\"count_rx_state_\":1}}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.773,
+   "dir": "out",
+   "len": 135,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.counter___counter____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.783,
+   "dir": "in",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.counter___counter____state\":{\"count_rx_state_\":2}}}]"
+  },
+  {
+   "page": "main",
+   "t": 2.817,
+   "dir": "out",
+   "len": 135,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.counter___counter____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.071,
+   "dir": "in",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.counter___counter____state\":{\"count_rx_state_\":3}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.106,
+   "dir": "out",
+   "len": 135,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.counter___counter____state.decrement\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.361,
+   "dir": "in",
+   "len": 106,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.counter___counter____state\":{\"count_rx_state_\":2}}}]"
+  },
+  {
+   "page": "main",
+   "t": 3.386,
+   "dir": "out",
+   "len": 132,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.counter___counter____state.random\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.393,
+   "dir": "in",
+   "len": 107,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.counter___counter____state\":{\"count_rx_state_\":17}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.514,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 4.52,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 4.731,
+   "dir": "open",
+   "payload": "ws://localhost:8640/_event/?token=9a877a53-782b-4467-a5a8-7042d0360b13&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 4.745,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"n7mdRgqhLnIQ8nUeAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 4.791,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"c2d392e2c8cf1ebf\",\"b084fc0c68f7c73a\",\"ee0a50c258153c28\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 4.82,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"I53nSJtl12RHAuKSAAAD\"}"
+  },
+  {
+   "page": "main",
+   "t": 4.82,
+   "dir": "in",
+   "len": 1830,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8640\",\"origin\":\"http://localhost:3640\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"pjhoQTBXoeP+H3a1+Hvt8w==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8640\",\"origin\":\"http://localhost:3640\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"pjhoQTBXoeP+H3a1+Hvt8w==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3640\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3640/index\",\"full_raw_path\":\"http://localhost:3640/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"9a877a53-782b-4467-a5a8-7042d0360b13\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"I53nSJtl12RHAuKSAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3640\",\"origin\":\"http://localhost:3640\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3640/\"}},\"reflex___state____state.counter___counter____state\":{\"count_rx_state_\":17}}}]"
+  },
+  {
+   "page": "main",
+   "t": 4.821,
+   "dir": "in",
+   "len": 88,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+  }
+ ],
+ "notes": {}
+}

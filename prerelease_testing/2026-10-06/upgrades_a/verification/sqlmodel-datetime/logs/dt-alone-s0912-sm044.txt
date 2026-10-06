@@ -1,0 +1,29 @@
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (<frozen abc>:106)
+### write with reflex 0.9.12 / sqlmodel 0.0.44 / pydantic 2.13.5
+  plain    column type: DateTime()
+  rxplain  column type: DateTime()
+  rxtz     column type: DateTime(timezone=True)
+  write plain    awareUTC@0.0.44 : accepted
+  write plain    aware+02@0.0.44 : accepted
+  write plain    naive@0.0.44    : accepted
+  write rxplain  awareUTC@0.0.44 : accepted
+  write rxplain  aware+02@0.0.44 : accepted
+  write rxplain  naive@0.0.44    : accepted
+  write rxtz     awareUTC@0.0.44 : accepted
+  write rxtz     aware+02@0.0.44 : accepted
+  write rxtz     naive@0.0.44    : accepted
+  read plain    awareUTC@0.0.44  -> naive 2026-10-06T17:00:00        serialize()='2026-10-06 17:00:00'        | < aware now: TypeError(can't compare offset-naive and offset-aware datetimes) | < naive now: OK(True) | sqlite text '2026-10-06 17:00:00.000000'
+  read plain    aware+02@0.0.44  -> naive 2026-10-06T19:00:00        serialize()='2026-10-06 19:00:00'        | < aware now: TypeError(can't compare offset-naive and offset-aware datetimes) | < naive now: OK(False) | sqlite text '2026-10-06 19:00:00.000000'
+  read plain    naive@0.0.44     -> naive 2026-10-06T17:00:00        serialize()='2026-10-06 17:00:00'        | < aware now: TypeError(can't compare offset-naive and offset-aware datetimes) | < naive now: OK(True) | sqlite text '2026-10-06 17:00:00.000000'
+  read rxplain  awareUTC@0.0.44  -> naive 2026-10-06T17:00:00        serialize()='2026-10-06 17:00:00'        | < aware now: TypeError(can't compare offset-naive and offset-aware datetimes) | < naive now: OK(True) | sqlite text '2026-10-06 17:00:00.000000'
+  read rxplain  aware+02@0.0.44  -> naive 2026-10-06T19:00:00        serialize()='2026-10-06 19:00:00'        | < aware now: TypeError(can't compare offset-naive and offset-aware datetimes) | < naive now: OK(False) | sqlite text '2026-10-06 19:00:00.000000'
+  read rxplain  naive@0.0.44     -> naive 2026-10-06T17:00:00        serialize()='2026-10-06 17:00:00'        | < aware now: TypeError(can't compare offset-naive and offset-aware datetimes) | < naive now: OK(True) | sqlite text '2026-10-06 17:00:00.000000'
+  read rxtz     awareUTC@0.0.44  -> naive 2026-10-06T17:00:00        serialize()='2026-10-06 17:00:00'        | < aware now: TypeError(can't compare offset-naive and offset-aware datetimes) | < naive now: OK(True) | sqlite text '2026-10-06 17:00:00.000000'
+  read rxtz     aware+02@0.0.44  -> naive 2026-10-06T19:00:00        serialize()='2026-10-06 19:00:00'        | < aware now: TypeError(can't compare offset-naive and offset-aware datetimes) | < naive now: OK(False) | sqlite text '2026-10-06 19:00:00.000000'
+  read rxtz     naive@0.0.44     -> naive 2026-10-06T17:00:00        serialize()='2026-10-06 17:00:00'        | < aware now: TypeError(can't compare offset-naive and offset-aware datetimes) | < naive now: OK(True) | sqlite text '2026-10-06 17:00:00.000000'
+  where plain    at > aware 2026-10-06T00:00Z -> 3 rows
+  where plain    at > naive 2026-10-06T00:00  -> 3 rows
+  where rxplain  created_at > aware 2026-10-06T00:00Z -> 3 rows
+  where rxplain  created_at > naive 2026-10-06T00:00  -> 3 rows
+  where rxtz     created_at > aware 2026-10-06T00:00Z -> 3 rows
+  where rxtz     created_at > naive 2026-10-06T00:00  -> 3 rows

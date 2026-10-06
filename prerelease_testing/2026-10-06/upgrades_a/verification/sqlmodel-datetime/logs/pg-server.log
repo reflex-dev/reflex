@@ -1,0 +1,17 @@
+2026-10-06 18:12:51.580 UTC [2767] LOG:  starting PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit
+2026-10-06 18:12:51.580 UTC [2767] LOG:  listening on IPv4 address "127.0.0.1", port 8643
+2026-10-06 18:12:51.580 UTC [2767] LOG:  Unix-domain socket path "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_upgrades_a_0/pg/sock/.s.PGSQL.8643" is too long (maximum 107 bytes)
+2026-10-06 18:12:51.580 UTC [2767] WARNING:  could not create Unix-domain socket in directory "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_upgrades_a_0/pg/sock"
+2026-10-06 18:12:51.581 UTC [2767] FATAL:  could not create any Unix-domain sockets
+2026-10-06 18:12:51.582 UTC [2767] LOG:  database system is shut down
+2026-10-06 18:13:00.800 UTC [3180] LOG:  starting PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit
+2026-10-06 18:13:00.800 UTC [3180] LOG:  listening on IPv4 address "127.0.0.1", port 8643
+2026-10-06 18:13:00.803 UTC [3183] LOG:  database system was shut down at 2026-10-06 18:12:43 UTC
+2026-10-06 18:13:00.808 UTC [3180] LOG:  database system is ready to accept connections
+2026-10-06 18:13:46.091 UTC [3180] LOG:  received fast shutdown request
+2026-10-06 18:13:46.091 UTC [3180] LOG:  aborting any active transactions
+2026-10-06 18:13:46.094 UTC [3180] LOG:  background worker "logical replication launcher" (PID 3186) exited with exit code 1
+2026-10-06 18:13:46.096 UTC [3181] LOG:  shutting down
+2026-10-06 18:13:46.097 UTC [3181] LOG:  checkpoint starting: shutdown immediate
+2026-10-06 18:13:46.199 UTC [3181] LOG:  checkpoint complete: wrote 2802 buffers (17.1%); 0 WAL file(s) added, 0 removed, 1 recycled; write=0.031 s, sync=0.069 s, total=0.103 s; sync files=923, longest=0.016 s, average=0.001 s; distance=12934 kB, estimate=12934 kB; lsn=0/2190D60, redo lsn=0/2190D60
+2026-10-06 18:13:46.207 UTC [3180] LOG:  database system is shut down

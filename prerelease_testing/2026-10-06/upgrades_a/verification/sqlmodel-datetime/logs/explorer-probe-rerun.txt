@@ -1,0 +1,13 @@
+=== explorer probe verbatim: write with fresh reflex[db]==0.9.12 venv (verify_upgrades_a_0-stabledb)
+sqlmodel 0.0.47 column type: UTCDateTime()
+naive write: REJECTED -> StatementError (builtins.ValueError) Datetime values must have timezone information. Use datetime.now(timezone.utc), or annotate the field with NaiveDatetime for naive storage
+read aware-utc@0.0.47             -> datetime.datetime(2026, 10, 6, 17, 0, tzinfo=datetime.timezone.utc) isoformat=2026-10-06T17:00:00+00:00 | compare-with-aware-now OK (True)
+raw sqlite: [('aware-utc@0.0.47', '2026-10-06 17:00:00.000000')]
+=== read with shared alpha venv
+sqlmodel 0.0.44 column type: DateTime()
+read aware-utc@0.0.47             -> datetime.datetime(2026, 10, 6, 17, 0) isoformat=2026-10-06T17:00:00 | compare-with-aware-now TypeError: can't compare offset-naive and offset-aware datetimes
+raw sqlite: [('aware-utc@0.0.47', '2026-10-06 17:00:00.000000')]
+=== read with fresh alpha venv (verify_upgrades_a_0-alphadb)
+sqlmodel 0.0.44 column type: DateTime()
+read aware-utc@0.0.47             -> datetime.datetime(2026, 10, 6, 17, 0) isoformat=2026-10-06T17:00:00 | compare-with-aware-now TypeError: can't compare offset-naive and offset-aware datetimes
+raw sqlite: [('aware-utc@0.0.47', '2026-10-06 17:00:00.000000')]

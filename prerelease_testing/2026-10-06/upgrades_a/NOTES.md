@@ -352,3 +352,178 @@ logs/                   server logs (all runs), driver logs, db dumps, migrate/m
                         sqlmodel probe output
 shots/<app>/            <tag>.json (checks + console + network + ws frames) and selected screenshots
 ```
+
+## VERIFICATION
+
+Independent verifier `verify_upgrades_a_0`, 2026-10-06. Scope: I-1 in full, plus a sanity check of I-3 (does a restart
+fully resolve it, and is the resulting state sane). Every venv is fresh from PyPI (`uv 0.11.32 --no-config`, cwd=`$SB`,
+Python 3.12.3) under `$SB/envs/verify_upgrades_a_0-*`. Work dir `$SB/apps/verify_upgrades_a_0/`, ports 3640/8640 (apps)
+and 8643 (a private PostgreSQL 16 cluster). Artifacts: `verification/sqlmodel-datetime/` (scripts, logs, shots, `dtapp/`
+source including its generated alembic migration) and `verification/hot-reload-after-upgrade/`.
+
+### I-1: the written repro reproduces exactly
+
+`logs/explorer-probe-rerun.txt` runs `scripts/sqlmodel_datetime_probe.py` verbatim. It writes with a fresh
+`reflex[db]==0.9.12` venv and reads with both the shared `$SB/envs/alpha` and a fresh alpha venv. The output is identical to
+`logs/sqlmodel-probe.txt`: 0.0.47 reads `tzinfo=utc`, 0.0.44 reads naive, and comparing against an aware now raises
+`TypeError`.
+
+**Resolution today** (`logs/venv-*.install.log`):
+
+| command (fresh venv unless noted) | sqlmodel / pydantic |
+|---|---|
+| `uv pip install 'reflex[db]==0.9.12'` | **0.0.47** / 2.13.5 |
+| `uv pip install --prerelease=allow 'reflex[db]==0.10.0a1'` | **0.0.44** / 2.14.0b2 |
+| `uv pip install 'reflex[db]==0.10.0a1'` (no flag) | fails: `reflex-base==0.10.0a1` pre-release not enabled |
+| `pip install 'reflex[db]==0.10.0a1'` (pip 26.2.1, no `--pre`) | **0.0.44** / 2.13.5 (reflex and reflex-base on the alpha, components on 0.9.x) |
+| `pip install --pre 'reflex[db]==0.10.0a1'` | **0.0.44** / 2.14.0b2 |
+| from a pip `reflex[db]==0.9.12` env: `pip install [-U] 'reflex[db]==0.10.0a1'`, or uv `--prerelease=allow 'reflex[db]==0.10.0a1'` | 0.0.47 → **0.0.44** |
+| from that env: `pip install -U 'reflex==0.10.0a1'` or uv `--prerelease=allow -U 'reflex==0.10.0a1'` (no extra) | stays 0.0.47 |
+| simulated pre-2026-09-21 env (`reflex[db]==0.9.11` + sqlmodel 0.0.44): `pip install -U 'reflex[db]==0.9.12'`, `pip install -U 'reflex[db]'`, `uv pip install 'reflex[db]==0.9.12'` | **stays 0.0.44** (pip's only-if-needed strategy; uv without `-U`) |
+| same env: `uv pip install -U 'reflex[db]==0.9.12'` | 0.0.44 → 0.0.47 |
+| `uv pip compile`: `reflex[db]==0.10.0a1` + `sqlmodel>=0.0.45` | unsatisfiable |
+| `uv pip compile`: `reflex==0.10.0a1` + `reflex-local-auth` + `sqlmodel>=0.0.45` | resolves, but silently picks **reflex-local-auth 0.4.0**, the last release that does not require `reflex[db]` |
+
+`pip check` and `uv pip check` both report OK for reflex 0.10.0a1 + sqlmodel 0.0.47 + reflex-local-auth 0.5.0 (which
+requires `reflex[db]>=0.8.1`), so no checker catches the out-of-range sqlmodel. PyPI upload times: sqlmodel 0.0.44
+2026-09-21T16:02Z, **0.0.45 21:51Z**, 0.0.46 2026-09-22T09:38Z, 0.0.47 2026-09-23T17:31Z; reflex 0.9.12a2
+2026-09-21T21:20Z, **0.9.12 2026-09-22T00:53Z**. Published metadata: `reflex-0.9.12.dist-info/METADATA:52`
+`sqlmodel<0.1,>=0.0.24; extra == 'db'`; `reflex-0.10.0a1.dist-info/METADATA:52` `sqlmodel<0.0.45,>=0.0.24; extra == 'db'`.
+The `v0.9.12` tag's `uv.lock` holds sqlmodel 0.0.39 (7-day `exclude-newer`), so 0.9.12 was never CI-tested on ≥0.0.45.
+
+Correction to the claim: "every `reflex[db]==0.9.12` install resolved ≥0.0.45" holds for every **fresh** resolution
+(new venvs, Docker or CI builds without a lockfile, `uv pip install -U`). It does not hold for pip in-place upgrades,
+`uv pip install` without `-U`, or locked projects; those kept ≤0.0.44.
+
+**What sqlmodel 0.0.45 changed** (diff of the installed wheels, `logs/sqlmodel-0.0.44-vs-0.0.47.diff`; GitHub access
+to fastapi/sqlmodel and its docs site are blocked here):
+- 0.0.44 `sqlmodel/main.py:757` maps `datetime` to `DateTime`.
+- 0.0.47 `main.py:757-760` maps `datetime` and `AwareDatetime` to the new `UTCDateTime()`, and `NaiveDatetime` to
+  `DateTime(timezone=False)`.
+- `UTCDateTime` (`sqlmodel/sql/sqltypes.py:9-49`) has `impl=DateTime(timezone=True)`. It raises `ValueError` on naive bind
+  values, which covers WHERE clauses too. It converts aware values to UTC on write and attaches UTC to tz-less DB values
+  on read.
+- The SKILL.md bundled in the wheel documents this and points to sqlmodel's datetime upgrade guide.
+
+**PR #7424** (GitHub MCP): "Lock SQLModel to 0.0.44 and cap it below 0.0.45. The newer default UTC storage rejects
+existing naive datetime values; the existing migration test reproduced the break." The fragment type is `misc`. The
+pyproject comment reads "Keep naive datetime defaults working until a compatibility path is available." Nothing
+discusses environments where 0.9.12 already resolved ≥0.0.45.
+
+**SQLite matrix** (`scripts/dt_matrix_probe.py`, `logs/dt-matrix.txt`, `logs/dt-alone-*.txt`). Three tables:
+SQLModel `at: datetime`, `rx.Model` `created_at: datetime`, and `rx.Model` with
+`sa_column=Column(DateTime(timezone=True))`. Three written values: aware 17:00Z, aware 19:00+02:00 (the same instant),
+and naive 17:00. Both directions were run (A: 0.9.12 writes, alpha reads and writes, 0.9.12 re-reads; B: the reverse),
+plus each version alone:
+
+| column | write under 0.0.47 | write under 0.0.44 | read under 0.0.47 | read under 0.0.44 |
+|---|---|---|---|---|
+| plain `datetime` (SQLModel or `rx.Model`, identical) | naive **rejected** (`StatementError ... must have timezone information`); aware stored as UTC | everything accepted; **aware +02:00 stored as wall clock `19:00`** (offset dropped) | **aware** UTC (a 0.0.44-written +02 row reads `19:00+00:00`, 2 h wrong) | **naive** |
+| `sa_column=Column(DateTime(timezone=True))` | everything accepted, +02 stored as `19:00` | same | naive | naive |
+
+- Stored bytes: SQLite TEXT `'2026-10-06 17:00:00.000000'` is byte-identical for UTC-instant values whichever version
+  wrote them. The only difference is aware non-UTC input: 0.0.47 normalizes it to `17:00`, 0.0.44 writes `19:00`.
+- Comparisons: values read under 0.0.47 compare with an aware now but raise `TypeError` against a naive now; 0.0.44 is
+  the reverse.
+- Filters: `where(col > naive)` raises under 0.0.47 and is accepted under 0.0.44.
+- Frontend: reflex serializes with `str(dt)` (`reflex_base/utils/serializers.py:450`), so `+00:00` disappears under
+  0.0.44.
+- Isolation: reflex 0.9.12 + sqlmodel 0.0.44 matches 0.10.0a1 + 0.0.44 exactly, and 0.10.0a1 + 0.0.47 matches
+  0.9.12 + 0.0.47. pydantic 2.13.5 vs 2.14.0b2 makes no difference. **The behavior depends only on the sqlmodel version;
+  the alpha's sole contribution is the cap that forces 0.0.44.**
+
+**PostgreSQL 16** (private cluster, `scripts/dt_matrix_probe_pg.py`, `logs/dt-matrix-postgres.txt`). Tables created
+under 0.0.47 are `timestamp with time zone`. After the downgrade, psycopg2 still returns **aware** values: `+00:00` with
+the server-default UTC session, `13:00-04:00` with session TZ America/New_York. Comparisons with an aware now keep
+working, and naive writes are accepted again (interpreted in the session TZ). **The claimed naive-read flip is
+SQLite-only (and presumably MySQL); on Postgres it does not happen for tables created under 0.9.12.** Tables created
+under 0.0.44 are `timestamp without time zone`, which read naive under 0.0.44 and aware under 0.0.47.
+
+**Real app, in-place upgrade, Chromium in America/New_York** (`dtapp/`, `scripts/drive_dtapp.py`, `shots/dt-*`,
+`logs/dtapp-*`). The model is `Post(rx.Model)` with `created_at: datetime`. `on_load=State.load` computes
+`datetime.now(timezone.utc) - p.created_at`, and there are Add aware and Add naive buttons.
+- **0.9.12 + 0.0.47** (`dt-0912c`): rows render as `2026-10-06 18:00:59.471870+00:00` and `rx.moment` shows
+  `14:00 -04:00`. Add aware works. **Add naive raises a toast "StatementError: (builtins.ValueError) Datetime values must
+  have timezone information…" and no row is written.** That is the breakage the cap removes for naive-datetime code.
+- **Upgrade:** `uv pip install --prerelease=allow -U 'reflex[db]==0.10.0a1'` (0.0.47 → 0.0.44). In place,
+  `reflex db migrate` and `reflex db makemigrations` both exit 0 as no-ops; reflex autogenerate passes
+  `compare_type=False` (`reflex/model.py:448`).
+- **0.10.0a1 + 0.0.44** (`dt-a1-inplace`): page load raises a toast "TypeError: can't subtract offset-naive and
+  offset-aware datetimes" and the list is empty. Every Add shows the same toast, although the rows are persisted. There
+  are 4 tracebacks in `logs/dtapp-a1-run.server.log`.
+- **Display** (`dt-a1-inplace-display`, with `load` reordered so the rows still render; see
+  `dtapp/load-order-change.diff`; on 0.0.47 nothing raises, so the order is irrelevant there): the same row now shows
+  `2026-10-06 18:00:59.471870` and `rx.moment` shows `18:00 -04:00`. **Every displayed timestamp shifts by the viewer's
+  UTC offset** (4 h in New York).
+
+**Hard breaks the original report missed** (they don't depend on the database):
+1. **Migrations.** `reflex db init` on 0.9.12 + 0.0.47 generated `alembic/versions/9b68327541da_.py` containing
+   `sa.Column('created_at', sqlmodel.sql.sqltypes.UTCDateTime(), nullable=False)`. After upgrading to
+   `reflex[db]==0.10.0a1`, `reflex db migrate` on a **fresh database** (new deploy, CI, a teammate's clone) fails with
+   `AttributeError: module 'sqlmodel.sql.sqltypes' has no attribute 'UTCDateTime'` (rc 1), leaving only an empty
+   `alembic_version` table (`logs/dtapp-a1-db-migrate-freshdb.log`). Controls on the same copy: 0.9.12 + 0.0.47 rc 0;
+   0.10.0a1 + 0.0.47 rc 0; 0.9.12 + 0.0.44 rc 1.
+2. **Model declarations that sqlmodel ≥0.0.45 documents** (`scripts/sqlmodel_guidance_probe.py`,
+   `logs/sqlmodel-guidance-probe.txt`). Under 0.0.44, `at: AwareDatetime` and `at: NaiveDatetime` raise
+   `ValueError: <class 'pydantic.types.AwareDatetime'> has no matching SQLAlchemy type` at class creation, and
+   `from sqlmodel import UTCDateTime` raises `ImportError`, so the app no longer imports. Only `sa_type=` or `sa_column=`
+   with an explicit `DateTime(...)` works on both versions.
+
+**Populations.**
+- **Protected by the cap:** code written for naive datetimes (`datetime.now()`, `utcnow()`, naive filters), i.e.
+  reflex[db]'s whole pre-2026-09-21 history. On 0.9.12 that code breaks at its next fresh resolution, as `dt-0912c`
+  shows.
+- **Broken by the cap:** environments that resolved ≥0.0.45 under 0.9.12 and rely on it:
+  - on SQLite: TypeErrors in handlers, lost `+00:00`, displays shifted by the viewer's offset, and aware non-UTC writes
+    silently stored as wall clock;
+  - on any database: migrations rendered with `UTCDateTime()` fail on a fresh DB, and `AwareDatetime`/`NaiveDatetime`/
+    `UTCDateTime` declarations fail to import.
+
+  These users cannot keep `reflex[db]` and opt out of the cap: the resolution is unsatisfiable, or reflex-local-auth
+  silently drops to 0.4.0.
+- **Unaffected either way:** the canonical reflex-examples (`form-designer`, `basic_crud`), which use explicit
+  `sa_column=Column(DateTime(timezone=True))`.
+
+**Decision: (b), with action required before 0.10.0 final.** The cap is a deliberate, documented, defensible choice,
+not a coding defect. It restores the semantics reflex[db] always had and that 0.9.12's CI tested. However:
+- the changelog's "preserve existing datetime storage behavior" is wrong for every environment that resolved
+  `reflex[db]==0.9.12` fresh;
+- the fragment is filed as `misc`, not `breaking`;
+- the hard failures above need at least a documented recipe. For example: replace `sqlmodel.sql.sqltypes.UTCDateTime()`
+  in migrations with `sa.DateTime(timezone=True)`; replace `AwareDatetime`/`NaiveDatetime` columns with
+  `sa_type=DateTime(...)`; or drop `[db]` and depend on `sqlmodel>=0.0.45` directly.
+
+Severity medium: alpha only, limited to db-extra users with plain `datetime` fields whose environment resolved ≥0.0.45,
+and a workaround exists. It is a regression for that population.
+
+**Side observation (not triaged).** In `shots/dt-a1-inplace-display.json`, when a chained handler raises
+(`add_aware` → `return State.load` → TypeError), the partial `posts` delta is not delivered with that event's error
+toast. It arrives with the next event's delta (frames at t=20.18 vs 23.92). The same failure inside the initial
+`on_load` does deliver it (t=1.35). Worth a separate look at exception-path delta flushing.
+
+### I-3 sanity check (`verification/hot-reload-after-upgrade/`)
+
+Repro as written, using a counter copy, venv `verify_upgrades_a_0-counterlive`, ports 3640/8640:
+- **Baseline:** 0.9.12 drive 8/8.
+- **Upgrade under the running server:** `uv pip install --prerelease=allow -U 'reflex==0.10.0a1'`. `/ping` stays 200
+  until the next edit.
+- **Edit 1:** the granian worker, forked from the 0.9.12 CLI, imports the 0.10.0a1 file
+  `reflex/istate/manager/disk.py:14`. Its `from reflex_base.environment import state_manager_disk_debounce` runs
+  against the already-loaded 0.9.12 module, so it fails with `ImportError`, followed by
+  `[ERROR] Unexpected exit from worker-1`, and `/ping` returns 000. Edit 2 repeats it. **Reproduced.**
+- **Restart:** stopping needed SIGTERM then kill on the 0.9.12 CLI, its known shutdown behavior. The new server was UP
+  in 6 s: lockfiles restored, frozen install, then `bun add` to the new pins. Drive 8/8 (`i3-counter-after-restart`).
+  Edit 3 hot-reloads cleanly (`/ping` 200, cached frontend install).
+- **State after restart:**
+  - `.web/package.json` is JSON-identical to the explorer's cold 0.10.0a1 build (`pkg/counter-cold.web.package.json`);
+  - `reflex.lock/{package.json,bun.lock}` is byte-identical to `.web/`;
+  - `.web/reflex.json` reports `0.10.0a1`;
+  - the `.web` file set equals the cold build's, plus react-router dev typegen files written by the new server.
+
+**Restart fully resolves it and leaves no stale state.** The crash happens inside the old CLI's process, so 0.10.0a1
+cannot prevent it for this transition. It is not a regression.
+
+### Cleanup
+
+The dtapp servers (0.9.12 and 0.10.0a1), the counter-live servers (0.9.12 and after restart), the private Postgres,
+and every Chromium instance are stopped. `lsof` shows ports 3640-3643 and 8640-8643 free.

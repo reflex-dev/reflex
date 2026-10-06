@@ -1,0 +1,368 @@
+{
+ "tag": "dt-a1-inplace-display",
+ "results": [
+  {
+   "name": "initial on_load handler completed",
+   "status": "fail",
+   "detail": "idle",
+   "t": 20.113
+  },
+  {
+   "name": "add aware persisted a row and reloaded the list",
+   "status": "fail",
+   "detail": "{'status': 'added aware', 'rows': ['1 |  | aware |  | 2026-10-06 18:00:59.471870 |  | 2026-10-06 18:00 -04:00', '2 |  | aware |  | 2026-10-06 18:01:43.935168 |  | 2026-10-06 18:01 -04:00', '3 |  | aware |  | 2026-10-06 18:02:16.906526 |  | 2026-10-06 18:02 -04:00', '4 |  | aware |  | 2026-10-06 18:03:38.782793 |  | 2026-10-06 18:03 -04:00', '5 |  | naive |  | 2026-10-06 18:03:42.503312 |  | 2026-10-06 18:03 -04:00'], 'ages': [], 'toasts_seen_so_far': [\"An error occurred. | TypeError: can't subtract offset-naive and offset-aware datetimes | See logs for details.\"]}",
+   "t": 23.865
+  },
+  {
+   "name": "add naive persisted a row and reloaded the list",
+   "status": "fail",
+   "detail": "{'status': 'added naive', 'rows': ['1 |  | aware |  | 2026-10-06 18:00:59.471870 |  | 2026-10-06 18:00 -04:00', '2 |  | aware |  | 2026-10-06 18:01:43.935168 |  | 2026-10-06 18:01 -04:00', '3 |  | aware |  | 2026-10-06 18:02:16.906526 |  | 2026-10-06 18:02 -04:00', '4 |  | aware |  | 2026-10-06 18:03:38.782793 |  | 2026-10-06 18:03 -04:00', '5 |  | naive |  | 2026-10-06 18:03:42.503312 |  | 2026-10-06 18:03 -04:00', '6 |  | aware |  | 2026-10-06 18:04:49.664495 |  | 2026-10-06 18:04 -04:00'], 'ages': [], 'toasts_seen_so_far': [\"An error occurred. | TypeError: can't subtract offset-naive and offset-aware datetimes | See logs for details.\"]}",
+   "t": 27.621
+  },
+  {
+   "name": "on_load after reload completed",
+   "status": "fail",
+   "detail": "{'status': 'added naive', 'rows': ['1 |  | aware |  | 2026-10-06 18:00:59.471870 |  | 2026-10-06 18:00 -04:00', '2 |  | aware |  | 2026-10-06 18:01:43.935168 |  | 2026-10-06 18:01 -04:00', '3 |  | aware |  | 2026-10-06 18:02:16.906526 |  | 2026-10-06 18:02 -04:00', '4 |  | aware |  | 2026-10-06 18:03:38.782793 |  | 2026-10-06 18:03 -04:00', '5 |  | naive |  | 2026-10-06 18:03:42.503312 |  | 2026-10-06 18:03 -04:00', '6 |  | aware |  | 2026-10-06 18:04:49.664495 |  | 2026-10-06 18:04 -04:00', '7 |  | naive |  | 2026-10-06 18:04:53.409285 |  | 2026-10-06 18:04 -04:00'], 'ages': [], 'toasts_seen_so_far': [\"An error occurred. | TypeError: can't subtract offset-naive and offset-aware datetimes | See logs for details.\"]}",
+   "t": 31.607
+  },
+  {
+   "name": "no error dialogs",
+   "status": "pass",
+   "detail": "[]",
+   "t": 31.607
+  },
+  {
+   "name": "no error toasts",
+   "status": "fail",
+   "detail": "[\"An error occurred. | TypeError: can't subtract offset-naive and offset-aware datetimes | See logs for details.\"]",
+   "t": 31.607
+  },
+  {
+   "name": "console: no unexpected errors/warnings + no page errors",
+   "status": "pass",
+   "detail": "[]",
+   "t": 31.739
+  },
+  {
+   "name": "network: no unexpected failed/4xx/5xx requests",
+   "status": "pass",
+   "detail": "[]",
+   "t": 31.74
+  }
+ ],
+ "console": [
+  {
+   "page": "main",
+   "t": 0.806,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 1.03,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 1.092,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 1.245,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "page": "main",
+   "t": 27.628,
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "page": "main",
+   "t": 27.68,
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "page": "main",
+   "t": 27.719,
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "page": "main",
+   "t": 27.768,
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "page": "main",
+   "t": 27.768,
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "page_errors": [],
+ "bad_requests": [],
+ "ws_frames": [
+  {
+   "page": "main",
+   "t": 1.066,
+   "dir": "open",
+   "payload": "ws://localhost:8640/_event/?token=e7372fd9-c85e-4508-b64f-b3bb2c99e4f9&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 1.093,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"RVvfjpogsLF2XiZTAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 1.307,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"20730cebccca1a40\",\"b084fc0c68f7c73a\",\"4e6b48422b7396dd\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 1.313,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"Z6K9ukjfrx3pG7J-AAAB\"}"
+  },
+  {
+   "page": "main",
+   "t": 1.327,
+   "dir": "in",
+   "len": 1754,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8640\",\"origin\":\"http://localhost:3640\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"qiI2OVpBmye8txtPZbLzWg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8640\",\"origin\":\"http://localhost:3640\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"qiI2OVpBmye8txtPZbLzWg==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3640\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3640/index\",\"full_raw_path\":\"http://localhost:3640/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"e7372fd9-c85e-4508-b64f-b3bb2c99e4f9\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"Z6K9ukjfrx3pG7J-AAAB\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3640\",\"origin\":\"http://localhost:3640\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3640/\"}}}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.327,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.351,
+   "dir": "in",
+   "len": 494,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.dtapp___dtapp____state\":{\"posts_rx_state_\":[{\"id\":1,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:00:59.471870\"},{\"id\":2,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:01:43.935168\"},{\"id\":3,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:02:16.906526\"},{\"id\":4,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:03:38.782793\"},{\"id\":5,\"title\":\"naive\",\"created_at\":\"2026-10-06 18:03:42.503312\"}]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 1.358,
+   "dir": "in",
+   "len": 541,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"TypeError: can't subtract offset-naive and offset-aware datetimes\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}]}]"
+  },
+  {
+   "page": "main",
+   "t": 20.169,
+   "dir": "out",
+   "len": 131,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.dtapp___dtapp____state.add_aware\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 20.178,
+   "dir": "in",
+   "len": 115,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dtapp___dtapp____state\":{\"status_rx_state_\":\"added aware\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 20.187,
+   "dir": "in",
+   "len": 541,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"TypeError: can't subtract offset-naive and offset-aware datetimes\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}]}]"
+  },
+  {
+   "page": "main",
+   "t": 23.91,
+   "dir": "out",
+   "len": 131,
+   "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.dtapp___dtapp____state.add_naive\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  },
+  {
+   "page": "main",
+   "t": 23.919,
+   "dir": "in",
+   "len": 537,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dtapp___dtapp____state\":{\"posts_rx_state_\":[{\"id\":1,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:00:59.471870\"},{\"id\":2,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:01:43.935168\"},{\"id\":3,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:02:16.906526\"},{\"id\":4,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:03:38.782793\"},{\"id\":5,\"title\":\"naive\",\"created_at\":\"2026-10-06 18:03:42.503312\"},{\"id\":6,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:04:49.664495\"}],\"status_rx_state_\":\"added naive\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 23.925,
+   "dir": "in",
+   "len": 541,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"TypeError: can't subtract offset-naive and offset-aware datetimes\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}]}]"
+  },
+  {
+   "page": "main",
+   "t": 27.534,
+   "dir": "in",
+   "len": 1,
+   "payload": "2"
+  },
+  {
+   "page": "main",
+   "t": 27.534,
+   "dir": "out",
+   "len": 1,
+   "payload": "3"
+  },
+  {
+   "page": "main",
+   "t": 27.63,
+   "dir": "out",
+   "len": 10,
+   "payload": "41/_event,"
+  },
+  {
+   "page": "main",
+   "t": 27.63,
+   "dir": "close",
+   "payload": ""
+  },
+  {
+   "page": "main",
+   "t": 27.753,
+   "dir": "open",
+   "payload": "ws://localhost:8640/_event/?token=e7372fd9-c85e-4508-b64f-b3bb2c99e4f9&EIO=4&transport=websocket"
+  },
+  {
+   "page": "main",
+   "t": 27.769,
+   "dir": "in",
+   "len": 108,
+   "payload": "0{\"sid\":\"tkMJ2_gcPBm5dt5bAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+  },
+  {
+   "page": "main",
+   "t": 27.796,
+   "dir": "out",
+   "len": 271,
+   "payload": "40/_event,{\"event\":{\"name\":\"reflex___state____state.hydrate_and_load\",\"payload\":{\"hashes\":[\"20730cebccca1a40\",\"b084fc0c68f7c73a\",\"4e6b48422b7396dd\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\",\"bf21a9e8fbc5a384\"]},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}}"
+  },
+  {
+   "page": "main",
+   "t": 27.799,
+   "dir": "in",
+   "len": 40,
+   "payload": "40/_event,{\"sid\":\"8seELkGypXaZrl5eAAAD\"}"
+  },
+  {
+   "page": "main",
+   "t": 27.804,
+   "dir": "in",
+   "len": 2327,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8640\",\"origin\":\"http://localhost:3640\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"onHMyGeQhZTS2YDy06lQdA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8640\",\"origin\":\"http://localhost:3640\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"onHMyGeQhZTS2YDy06lQdA==\",\"sec-websocket-protocol\":\"0.10.0a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"rx_router_page_rx_state_\":{\"host\":\"http://localhost:3640\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:3640/index\",\"full_raw_path\":\"http://localhost:3640/\",\"params\":{}},\"rx_router_route_id_rx_state_\":\"/index\",\"rx_router_session_rx_state_\":{\"client_token\":\"e7372fd9-c85e-4508-b64f-b3bb2c99e4f9\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"8seELkGypXaZrl5eAAAD\"},\"rx_router_url_rx_state_\":{\"scheme\":\"http\",\"netloc\":\"localhost:3640\",\"origin\":\"http://localhost:3640\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:3640/\"}},\"reflex___state____state.dtapp___dtapp____state\":{\"posts_rx_state_\":[{\"id\":1,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:00:59.471870\"},{\"id\":2,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:01:43.935168\"},{\"id\":3,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:02:16.906526\"},{\"id\":4,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:03:38.782793\"},{\"id\":5,\"title\":\"naive\",\"created_at\":\"2026-10-06 18:03:42.503312\"},{\"id\":6,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:04:49.664495\"},{\"id\":7,\"title\":\"naive\",\"created_at\":\"2026-10-06 18:04:53.409285\"}],\"status_rx_state_\":\"added naive\"}}}]"
+  },
+  {
+   "page": "main",
+   "t": 27.805,
+   "dir": "in",
+   "len": 89,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+  },
+  {
+   "page": "main",
+   "t": 27.805,
+   "dir": "in",
+   "len": 628,
+   "payload": "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.dtapp___dtapp____state\":{\"posts_rx_state_\":[{\"id\":1,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:00:59.471870\"},{\"id\":2,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:01:43.935168\"},{\"id\":3,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:02:16.906526\"},{\"id\":4,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:03:38.782793\"},{\"id\":5,\"title\":\"naive\",\"created_at\":\"2026-10-06 18:03:42.503312\"},{\"id\":6,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:04:49.664495\"},{\"id\":7,\"title\":\"naive\",\"created_at\":\"2026-10-06 18:04:53.409285\"}]}}}]"
+  },
+  {
+   "page": "main",
+   "t": 27.81,
+   "dir": "in",
+   "len": 541,
+   "payload": "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"TypeError: can't subtract offset-naive and offset-aware datetimes\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}]}]"
+  }
+ ],
+ "notes": {
+  "dialogs": [],
+  "01_initial_load": {
+   "status": "idle",
+   "rows": [
+    "1 |  | aware |  | 2026-10-06 18:00:59.471870 |  | 2026-10-06 18:00 -04:00",
+    "2 |  | aware |  | 2026-10-06 18:01:43.935168 |  | 2026-10-06 18:01 -04:00",
+    "3 |  | aware |  | 2026-10-06 18:02:16.906526 |  | 2026-10-06 18:02 -04:00",
+    "4 |  | aware |  | 2026-10-06 18:03:38.782793 |  | 2026-10-06 18:03 -04:00",
+    "5 |  | naive |  | 2026-10-06 18:03:42.503312 |  | 2026-10-06 18:03 -04:00"
+   ],
+   "ages": [],
+   "toasts_seen_so_far": [
+    "An error occurred. | TypeError: can't subtract offset-naive and offset-aware datetimes | See logs for details."
+   ]
+  },
+  "02_add_aware": {
+   "status": "added aware",
+   "rows": [
+    "1 |  | aware |  | 2026-10-06 18:00:59.471870 |  | 2026-10-06 18:00 -04:00",
+    "2 |  | aware |  | 2026-10-06 18:01:43.935168 |  | 2026-10-06 18:01 -04:00",
+    "3 |  | aware |  | 2026-10-06 18:02:16.906526 |  | 2026-10-06 18:02 -04:00",
+    "4 |  | aware |  | 2026-10-06 18:03:38.782793 |  | 2026-10-06 18:03 -04:00",
+    "5 |  | naive |  | 2026-10-06 18:03:42.503312 |  | 2026-10-06 18:03 -04:00"
+   ],
+   "ages": [],
+   "toasts_seen_so_far": [
+    "An error occurred. | TypeError: can't subtract offset-naive and offset-aware datetimes | See logs for details."
+   ]
+  },
+  "03_add_naive": {
+   "status": "added naive",
+   "rows": [
+    "1 |  | aware |  | 2026-10-06 18:00:59.471870 |  | 2026-10-06 18:00 -04:00",
+    "2 |  | aware |  | 2026-10-06 18:01:43.935168 |  | 2026-10-06 18:01 -04:00",
+    "3 |  | aware |  | 2026-10-06 18:02:16.906526 |  | 2026-10-06 18:02 -04:00",
+    "4 |  | aware |  | 2026-10-06 18:03:38.782793 |  | 2026-10-06 18:03 -04:00",
+    "5 |  | naive |  | 2026-10-06 18:03:42.503312 |  | 2026-10-06 18:03 -04:00",
+    "6 |  | aware |  | 2026-10-06 18:04:49.664495 |  | 2026-10-06 18:04 -04:00"
+   ],
+   "ages": [],
+   "toasts_seen_so_far": [
+    "An error occurred. | TypeError: can't subtract offset-naive and offset-aware datetimes | See logs for details."
+   ]
+  },
+  "04_after_reload": {
+   "status": "added naive",
+   "rows": [
+    "1 |  | aware |  | 2026-10-06 18:00:59.471870 |  | 2026-10-06 18:00 -04:00",
+    "2 |  | aware |  | 2026-10-06 18:01:43.935168 |  | 2026-10-06 18:01 -04:00",
+    "3 |  | aware |  | 2026-10-06 18:02:16.906526 |  | 2026-10-06 18:02 -04:00",
+    "4 |  | aware |  | 2026-10-06 18:03:38.782793 |  | 2026-10-06 18:03 -04:00",
+    "5 |  | naive |  | 2026-10-06 18:03:42.503312 |  | 2026-10-06 18:03 -04:00",
+    "6 |  | aware |  | 2026-10-06 18:04:49.664495 |  | 2026-10-06 18:04 -04:00",
+    "7 |  | naive |  | 2026-10-06 18:04:53.409285 |  | 2026-10-06 18:04 -04:00"
+   ],
+   "ages": [],
+   "toasts_seen_so_far": [
+    "An error occurred. | TypeError: can't subtract offset-naive and offset-aware datetimes | See logs for details."
+   ]
+  },
+  "toasts": [
+   "An error occurred. | TypeError: can't subtract offset-naive and offset-aware datetimes | See logs for details."
+  ],
+  "error_frames": [
+   "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"TypeError: can't subtract offset-naive and offset-aware datetimes\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}]}]",
+   "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"TypeError: can't subtract offset-naive and offset-aware datetimes\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}]}]",
+   "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"TypeError: can't subtract offset-naive and offset-aware datetimes\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}]}]",
+   "42/_event,[\"event\",{\"events\":[{\"name\":\"_call_function\",\"router_data\":{},\"payload\":{\"function\":\"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\\\"error\\\"](\\\"An error occurred.\\\", ({ [\\\"description\\\"] : \\\"TypeError: can't subtract offset-naive and offset-aware datetimes\\\\nSee logs for details.\\\", [\\\"position\\\"] : \\\"top-center\\\", [\\\"id\\\"] : \\\"backend_error\\\", [\\\"style\\\"] : ({ [\\\"width\\\"] : \\\"500px\\\", [\\\"whiteSpace\\\"] : \\\"pre-wrap\\\" }) }))) : (window.alert(\\\"An error occurred.\\\".replaceAll(\\\"<br/>\\\", \\\"\\\\n\\\")))))\",\"callback\":null}}]}]"
+  ],
+  "created_at_frames": [
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true},\"reflex___state____state.dtapp___dtapp____state\":{\"posts_rx_state_\":[{\"id\":1,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:00:59.471870\"},{\"id\":2,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:01:43.935168\"},{\"id\":3,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:02:16.906526\"},{\"id\":4,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:03:38.782793\"},{\"id\":5,\"title\":\"naive\",\"created_at\":\"2026-10-06 18:03:42.503312\"}]}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.dtapp___dtapp____state\":{\"posts_rx_state_\":[{\"id\":1,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:00:59.471870\"},{\"id\":2,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:01:43.935168\"},{\"id\":3,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:02:16.906526\"},{\"id\":4,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:03:38.782793\"},{\"id\":5,\"title\":\"naive\",\"created_at\":\"2026-10-06 18:03:42.503312\"},{\"id\":6,\"title\":\"aware\",\"created_at\":\"2026-10-06 18:04:49.664495\"}],\"status_rx_state_\":\"added naive\"}}}]",
+   "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8640\",\"origin\":\"http://localhost:3640\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"onHMyGeQhZTS2YDy06lQdA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:8640\",\"origin\":\"http://localhost:3640\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate;"
+  ]
+ }
+}
