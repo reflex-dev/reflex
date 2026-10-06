@@ -48,5 +48,3 @@ runs:
       run: uv sync
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      env:
-        UV_LOCK_TIMEOUT: ${{ inputs.python-version == '3.15' && '900' || '300' }}
