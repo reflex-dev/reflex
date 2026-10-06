@@ -541,7 +541,7 @@ export function EventLoopProvider({{ children }}) {{
 const useIsomorphicLayoutEffect =
   typeof document !== "undefined" ? useLayoutEffect : useEffect;
 
-// Holds the mutable substate -> dispatch registry that ``SubstateProvider``
+// Holds the mutable substate -> dispatch registry that ``ClientStateProvider``
 // writes into and ``EventLoopProvider`` reads. The registry object identity is
 // stable for the lifetime of the tree, so neither adding a dispatcher nor
 // updating a substate re-renders the consumers of ``DispatchContext``.
@@ -554,49 +554,67 @@ const DispatchProvider = ({{ children }}) => {{
   );
 }};
 
-// One provider per substate: each owns its own reducer, so a delta for one
-// substate only re-renders its provider instead of recreating every provider.
-const SubstateProvider = ({{ children, substateName, contextName }}) => {{
-  const dispatchers = useContext(DispatchContext);
-  const [state, dispatchSubstate] = useReducer(
-    applyDelta,
-    initialState[substateName],
-  );
-  // A layout effect, not a passive one: layout effects for the whole commit
-  // run before any passive effect, so every dispatcher is registered before
-  // ``EventLoopProvider`` (mounted below this provider) connects the socket.
-  // A delta naming an unregistered substate is a fatal state mismatch.
-  useIsomorphicLayoutEffect(() => {{
-    dispatchers[substateName] = dispatchSubstate;
-    return () => {{
-      delete dispatchers[substateName];
-    }};
-  }}, [dispatchers, dispatchSubstate, substateName]);
-  return useMemo(
-    () => createElement(StateContexts[contextName], {{ value: state }}, children),
-    [children, state, contextName],
-  );
-}};
-
 // ``[substateName, contextName]`` for every substate, outermost first.
 const SUBSTATES = [{substates_str}
 ];
 
 function ClientStateProvider({{ children }}) {{
+  const dispatchers = useContext(DispatchContext);
+  const [state, dispatchState] = useReducer(
+    (state, action) => ({{
+      ...state,
+      [action.substateName]: applyDelta(
+        state[action.substateName],
+        action.delta,
+      ),
+    }}),
+    initialState,
+  );
+
+  // A layout effect, not a passive one: layout effects for the whole commit
+  // run before any passive effect, so every dispatcher is registered before
+  // ``EventLoopProvider`` (mounted below this provider) connects the socket.
+  // A delta naming an unregistered substate is a fatal state mismatch.
+  useIsomorphicLayoutEffect(() => {{
+    const registeredSubstates = [];
+    for (const [substateName] of SUBSTATES) {{
+      const dispatchSubstate = (delta) =>
+        dispatchState({{ substateName, delta }});
+      dispatchers[substateName] = dispatchSubstate;
+      registeredSubstates.push(substateName);
+    }}
+    return () => {{
+      for (const substateName of registeredSubstates) {{
+        delete dispatchers[substateName];
+      }}
+    }};
+  }}, [dispatchers, dispatchState]);
+
   return useMemo(() => {{
     let tree = children;
     for (let i = SUBSTATES.length - 1; i >= 0; i--) {{
       const [substateName, contextName] = SUBSTATES[i];
-      tree = createElement(SubstateProvider, {{ substateName, contextName }}, tree);
+      tree = createElement(
+        StateContexts[contextName],
+        {{ value: state[substateName] }},
+        tree,
+      );
     }}
-    return createElement(DispatchProvider, {{}}, tree);
-  }}, [children]);
+    return tree;
+  }}, [children, state]);
+}}
+
+function BrowserStateProvider({{ children }}) {{
+  return createElement(
+    DispatchProvider,
+    {{}},
+    createElement(ClientStateProvider, {{}}, children),
+  );
 }}
 
 // The server renders once and never applies a delta, so it provides the
-// initial state through bare context providers. ``SubstateProvider`` would add
-// a second render level per substate, and the server renderer recurses once per
-// level, so with many substates rendering a page can exhaust the stack.
+// initial state through bare context providers. The client keeps its reducer
+// in one component, while the server renderer only needs the contexts.
 function ServerStateProvider({{ children }}) {{
   let tree = children;
   for (let i = SUBSTATES.length - 1; i >= 0; i--) {{
@@ -611,7 +629,9 @@ function ServerStateProvider({{ children }}) {{
 }}
 
 export const StateProvider =
-  typeof document === "undefined" ? ServerStateProvider : ClientStateProvider;"""
+  typeof document === "undefined"
+    ? ServerStateProvider
+    : BrowserStateProvider;"""
 
 
 def component_template(component: Component):

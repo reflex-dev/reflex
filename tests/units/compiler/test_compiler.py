@@ -1754,11 +1754,10 @@ def _render_two_substate_context() -> str:
 
 
 def test_context_template_one_provider_per_substate():
-    """Each substate gets its own provider so one delta re-renders one context.
+    """Each substate gets its own context so one delta re-renders one context.
 
-    A single provider owning every reducer means any delta recreates every
-    ``StateContexts`` element; nesting one ``SubstateProvider`` per substate
-    keeps the untouched providers memoized.
+    The shared reducer preserves object identity for untouched substates, so
+    their context consumers do not re-render.
     """
     rendered = _render_two_substate_context()
 
@@ -1768,17 +1767,31 @@ def test_context_template_one_provider_per_substate():
         "  ['reflex___state____state__sub', 'reflex___state____state__sub'],\n"
         "];" in rendered
     )
-    # The reducers live in SubstateProvider; the client provider only composes.
+    # The client provider owns the reducer and only composes context providers.
     client = rendered[
         rendered.index("function ClientStateProvider") : rendered.index(
             "function ServerStateProvider"
         )
     ]
-    assert "useReducer" not in client
-    assert "createElement(SubstateProvider, { substateName, contextName }, tree)" in (
-        client
-    )
-    assert "createElement(DispatchProvider, {}, tree)" in client
+    assert "useReducer(" in client
+    assert "StateContexts[contextName]," in client
+    assert "createElement(DispatchProvider, {}, tree)" not in client
+
+
+def test_context_template_client_state_provider_does_not_nest_substate_components():
+    """The client tree has only one React element level per substate."""
+    rendered = _render_two_substate_context()
+
+    client = rendered[
+        rendered.index("function ClientStateProvider") : rendered.index(
+            "function ServerStateProvider"
+        )
+    ]
+
+    assert "const SubstateProvider" not in rendered
+    assert client.count("useReducer(") == 1
+    assert "dispatchers[substateName]" in client
+    assert "StateContexts[contextName]," in client
 
 
 def test_context_template_server_state_provider_is_flat():
@@ -1800,7 +1813,9 @@ def test_context_template_server_state_provider_is_flat():
     )
     assert rendered.rstrip().endswith(
         "export const StateProvider =\n"
-        '  typeof document === "undefined" ? ServerStateProvider : ClientStateProvider;'
+        '  typeof document === "undefined"\n'
+        "    ? ServerStateProvider\n"
+        "    : BrowserStateProvider;"
     )
 
 
