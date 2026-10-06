@@ -1,0 +1,38 @@
+{
+ "fstring_label": "label=Field(default='label-const', is_var=True, annotated_type=<class 'str'>)",
+ "cs_btn_label": "+Field(default=5, is_var=True, annotated_type=<class 'int'>)",
+ "cs_count_after_click": "5",
+ "1_show": {
+  "shown": "key='sk_live'",
+  "log": "key='sk_live'"
+ },
+ "2_show_after_3.5s": {
+  "shown": "key=None",
+  "log": "key='sk_live' | key=None"
+ },
+ "3_set_instance": {
+  "shown": "key=None",
+  "log": "key='sk_live' | key=None"
+ },
+ "4_show": {
+  "shown": "key=None",
+  "log": "key='sk_live' | key=None | key=None"
+ },
+ "5_reset": {
+  "shown": "",
+  "log": "reset-done"
+ },
+ "6_show": {
+  "shown": "key=None",
+  "log": "reset-done | key=None"
+ },
+ "7_after_reload": {
+  "shown": "key=None",
+  "log": "reset-done | key=None"
+ },
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "log: Disconnect websocket on page navigation"
+ ],
+ "bad_responses": []
+}

@@ -1,0 +1,3 @@
+class-level: ["'label'", '16', "{'a': 1}", "'x'"]
+rx.text(S._KEY): jsx(RadixThemesText,{as:"p"},"label")
+rx.icon('x', size=S._N): jsx(LucideX,{size:16},)

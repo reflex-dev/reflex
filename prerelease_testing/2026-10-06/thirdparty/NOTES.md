@@ -182,3 +182,151 @@ stable: class 'sk_test_123' False | instance (fresh) None True          | instan
 - Interaction for reflex-audio-capture (lamejs CDN), reflex-monaco (jsdelivr CDN) and reflex-google-recaptcha-v2 (google.com): this sandbox's browser cannot reach those CDNs.
 - reflex-chakra and reflex-ag-grid (community) do not import on either version, so they could not be rendered.
 - Python versions other than 3.12, and redis-backed runs. F3 was shown with plain `pickle`, the same mechanism the disk and redis managers use.
+
+## VERIFICATION — class-level backend attributes
+
+Independent verifier, 2026-10-06. Covers headline findings 1 (claim A), 3 (claim B), 4 (claim C) and 6 (claim D). I did not read the explorer's transcript. Work dir: `$SB/apps/verify_thirdparty_0/`. Ports: 3600/8600 (dev), 3601 (prod, single port) and redis on 8603. All servers and redis were stopped afterwards; a `/proc/net/tcp` check shows nothing listening on 3600-3603/8600-8603. Scripts, logs, screenshots and the e2e app are in `verification/classattr/` (`scripts/`, `logs/`, `out/`, `e2e_app/`, `bin/`). Every script asserts the venv it runs in. Run them from a scratch copy, never from inside the checkout:
+
+```bash
+SB=/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad
+V=/home/user/reflex/prerelease_testing/2026-10-06/thirdparty/verification/classattr
+mkdir -p $SB/apps/x && cp -r $V/scripts/. $SB/apps/x/ && cd $SB/apps/x
+for v in alpha stable; do for m in dev prod; do REFLEX_ENV_MODE=$m $SB/envs/$v/bin/python derive_a.py $v; done; done   # also derive_b.py, derive_b_reset.py, derive_workarounds.py
+$SB/envs/{alpha,stable}/bin/python derive_c.py {alpha,stable}
+cd derive_d && $SB/envs/alpha/bin/python -u derive_d.py alpha <direct|exec|model_here|model_import|both_models|memo|env>   # one scenario per process
+$SB/envs/thirdparty-{alpha,stable}/bin/python derive_a_dynoselect.py thirdparty-{alpha,stable}
+```
+
+### 1. Written repros re-run as-is
+I copied `probes/quick_classattr.py`, `classassign_pickle_probe.py` and `clerk_probe.py` to a neutral directory and ran them on `alpha` (pydantic 2.14.0b2), `thirdparty-alpha` (pydantic 2.13.5), `stable` and `thirdparty-stable`; `clerk_probe.py` only on the two thirdparty venvs. The output matched `logs/probe-*.txt` exactly on every venv (`verification/classattr/logs/orig-*.txt`). The written repro is sufficient. One caveat: NOTES says to run the probes "from `probes/`". That directory is inside the `/home/user/reflex` checkout, so copy the probes out first.
+
+### 2. Claim A: which declaration patterns changed
+Source: `scripts/derive_a.py`, log `logs/derive_a.txt`. Dev and prod gave identical results on each version.
+
+| Declaration on an `rx.State` | Class-level read on 0.9.12 | Class-level read on 0.10.0a1 | Changed? |
+|---|---|---|---|
+| `_X = "label"`, `_N = 16`, `_D = {...}` (unannotated backend) | the value | `Field(default=...)` | **yes** |
+| `_x: str = "label"` (annotated backend) | the value | `Field` | **yes** |
+| backend var declared in a `mixin=True` state, read via the mixin or the using state | the value | `Field` | **yes** |
+| backend var inherited by a substate (`Child._inh`) | the value | `Field` | **yes** |
+| reads via `cls._x` in a classmethod, `type(self)._x`, `self.__class__._x` | the value | `Field` | **yes** |
+| `_x: str = rx.field("v")` / `_x = rx.field("v")` | **`None`** (0.9.12 `Field.__get__` is a typing stub with no body, stable `reflex_base/vars/base.py:3925-3931`) | `Field` | neither returns the value; truthiness flips False to True |
+| `_X: ClassVar[str] = "v"` and `X: ClassVar[str] = "v"` | the value (not a field) | the value (not a field) | no |
+| `KEY = "label"` (unannotated, public) | a frontend `StringCastedVar`; it **is** a state var on both versions, and `KEY_rx_state_` is in `dict()` sent to the client | same | no |
+| `pub: str = "v"` | Var | Var | no |
+| instance read `self._x` | the value | the value | no |
+
+Effects of the alpha behaviour at the Python level: `S._X == "label"` is False; `f"{S._X}"` gives `"Field(default='label', ...)"`; `S._N + 1` and `S._D["a"]` raise TypeError; `bool(S._fld)` is True. In `rx.ComponentState.get_component`, `f"+{cls._step}"` silently renders `+Field(default=5, is_var=True, ...)` (`logs/derive_a_componentstate.txt`). `rx.foreach(Counter._OPTIONS, ...)` raises `TypeError: Unsupported type ... Field for LiteralVar`.
+
+Real browser (`e2e_app/`, Chromium, dev and prod with redis): alpha renders `label=Field(default='label-const', ...)` and a button labelled `+Field(default=5, ...)`, with no error in the server log or the console (`out/alpha-dev.png`, `out/alpha-prod-redis.png`). 0.9.12 renders `label=label-const` and `+5`. Instance reads work on both versions (counter goes to 5).
+
+Mechanism (alpha site-packages):
+- `reflex_base/vars/base.py:4737-4738`: `namespace.update(own_fields)` installs each Field as the class attribute.
+- `base.py:4273-4274` (`Field.__get__`): `if instance is None: return self if self._var is None else self._var`. Backend fields never get a `_var`, so the docstring at `:4269` ("The Var (or this field, if it has none) for class access") describes exactly this.
+- 0.9.12's `BaseStateMeta.__new__` built `own_fields` but never put them in the namespace (stable `base.py:4287-4291`). The raw value stayed the class attribute, and instances read backend vars from `_backend_vars` (stable `reflex/state.py:869-873`, `:1955-1957`).
+
+Intended? Nothing says so.
+- The PR #7312 body, its five news fragments (`news/+field-descriptors.{breaking,performance}.md`, `news/+inherited-var-proxy.bugfix.md`, `packages/reflex-base/news/+field-descriptors.{breaking,feature}.md`), its docs edits (`docs/state/overview.md`, `docs/state_structure/overview.md`) and all its review threads are silent on class-level reads of backend vars.
+- Epic #7302 only says "Class access returns the `Var`".
+- The 0.10.0a1 CHANGELOGs only say "`Field` is now the descriptor holding a state var's value".
+- `docs/` on the release branch never mentions `ClassVar`.
+- The only related review thread was greptile's "ClassVar becomes state field" ("Class access no longer behaves as a class constant"), and it was fixed. That suggests class constants were meant to keep working.
+
+So this is an undocumented side effect, not a documented design. The org did know about it: reflex-enterprise 0.9.7a4 ships `_compat.get_backend_var_default` / `set_backend_var_default` ("Update a backend-var default without replacing a field descriptor") and declares every class-level static as `ClassVar`. The behaviour is still present on `origin/main` 62a56ba7f (2026-10-06): `base.py:4274` is unchanged and no commit has touched `base.py` or `state.py` since the release branch.
+
+The previous campaign's `2026-10-05/core_state` covered descriptor ownership, shadowing and pickling, but always read backend vars on **instances** (`owner._private`, `shadow._private`). It never read or assigned one at class level, so this was a real coverage gap.
+
+Workarounds, identical on both versions and modes (`logs/derive_workarounds.txt`):
+- `_KEY: ClassVar[str | None]`: class read, class assignment, fresh-instance read, pickle round trip and `rx.text(W._KEY)` are all consistent.
+- `S.get_fields()[name].default_value()` reads a declared backend default.
+
+### 3. Claim A: real-world prevalence (`logs/wheel-grep-raw.txt`)
+I grepped all 37 wheels in `$SB/downloads/wheels` with `unzip -p` (no extraction or execution) for `(cls|<Name>|self.__class__|type(self))._<name>` and classified each hit:
+- **Affected:** reflex-clerk 1.0.3 reads and assigns the annotated `_secret_key`, `_jwt_public_keys`, `_clerk_api_client` and `_fetch_user` at class level (`clerk_provider.py:122-168,180,396`). reflex-dynoselect 0.1.0 reads the unannotated `_KEY_LABEL`, `_KEY_KEYWORDS`, `_icon_size`, `_DEFAULT` and `_COLOR_PLACEHOLDER` in a ComponentState (`dynoselect.py:85-180`), and assigns to the declared `_raw_options: list[...]` with `component.State._raw_options = options` (`:443`, which is claim B).
+- **Not affected:**
+  - reflex-ag-grid 0.0.11: `_grid_component` and `_model_class` are `ClassVar`, and the package fails to import on both versions anyway.
+  - reflex-enterprise 0.9.7a4: uses `ClassVar` plus the `_compat` shim.
+  - Every `reflex_components_*`, `reflex_hosting_cli` and `reflex_chakra` hit is a Component or helper classmethod, or `Var._js_expr`.
+  - `reflex_dynoselect.options.Option._SEARCH_DELIMITER` is on a `dict` subclass, not a State.
+- reflex-examples (158 `.py` files) has 0 hits, and the release docs have 0 (the only hits are `PropDocsState._create_setter(...)` method calls).
+- Caveat on the named packages: both are already broken on 0.9.12 for other reasons. reflex-dynoselect, re-checked here (`logs/derive_a_dynoselect.txt`): alpha fails at `dynoselect.py:172` with `VarTypeError ... ObjectCastedVar, Field`. 0.9.12 fails at `:192` (`set_search_phrase` missing) and, with `REFLEX_STATE_AUTO_SETTERS=true`, at `:188` with `EventFnArgMismatchError on_open_auto_focus`. reflex-clerk's route already fails in the browser on 0.9.12, per this cluster's table. Also, the clerk change fails **closed**: with a `Field` as the key set, `jwt.decode` cannot verify anything, so this is not an auth bypass. The real exposure is user code, including the silent `f"{cls._X}"` and truthiness cases.
+
+### 4. Claim B: class-level assignment to a declared backend var
+Re-derived with `scripts/derive_b.py`, `scripts/derive_b_reset.py` and the e2e app.
+
+On alpha, after `Cfg._key = "sk_live"` (declared `_key: str | None = None`), `type(Cfg.__dict__["_key"])` goes from `Field` to `str`, while `get_fields()["_key"]` is still `Field(default=None)`. Then:
+- A fresh instance reads `'sk_live'`.
+- **The same live instance** reads `None` right after `pickle.dumps(inst)`. `__getstate__` (`reflex/state.py:2046-2052`) writes `f.default_value()` into `vars(self)`, the live instance dict, and with no data descriptor left that entry shadows the class attribute.
+- The unpickled copy reads `None`.
+
+New consequences the explorer did not report:
+- **Dev mode:** an instance write `self._key = ...` raises `SetUndefinedStateVarError`. The dev-only guard at `state.py:1474-1506` passes only names backed by a data descriptor (`_has_data_descriptor`, `:347-362`), and a `str` has none. `self.reset()` raises the same error, because it calls `setattr` for every own field (`:1512-1515`).
+- **Prod mode** (no guard): the write lands in the instance dict but is not dirty-tracked (`dirty_vars=[]`, `_was_touched=False`). The redis manager persists only touched states (`reflex/istate/manager/redis.py:514`), so the write is lost.
+
+On 0.9.12 the class attribute changes, but instances always read the declared default (`None`), writes are dirty-tracked and `reset()` works, in both modes.
+
+Real server and Chromium (`e2e_app/`, `out/*.json`, `logs/e2e-*.log`):
+
+| step | alpha dev (default disk manager) | alpha prod + redis | 0.9.12 dev | 0.9.12 prod + redis |
+|---|---|---|---|---|
+| `show` | `key='sk_live'` | `key='sk_live'` | `key=None` | `key=None` |
+| `show` 3.5 s later, no reload | **`key=None`** (debounced disk save flipped the live instance) | **`key=None`** (state reloaded from redis) | `key=None` | `key=None` |
+| `set_instance` then `show` | **server `SetUndefinedStateVarError`**; `key=None` | no error, **write lost**; `key=None` | `key='set-on-instance'` | `key='set-on-instance'` |
+| `reset` | **server `SetUndefinedStateVarError`** (no `reset-done`) | ok | ok | ok |
+
+Supported pattern? No. Nothing in the release branch's docs or tests assigns a declared non-ClassVar var on the class. The framework tests that assign at class level declare the attribute `ClassVar`: `BackgroundTaskState._started` (test_state.py:2994), `OnLoadCancelState._gates` (:6274) and `Table._data` (:6055, assigned at :6085). The requested grep `git grep -n "_secret_key\|cls\._" origin/r/pre-2026.10.05-37378928999 -- tests/units/test_state.py` returns only `cls._data = data` (ClassVar) and two `state_cls._var_dependencies` / `_potentially_dirty_states` framework internals.
+
+### 5. Claim C: `PageContext.get()` outside a context
+`scripts/derive_c.py`: alpha raises `LookupError: <ContextVar name='PageContext' at 0x...>` (same for CompileContext). 0.9.12 raised `RuntimeError: No active PageContext is attached to the current context.`. But **0.9.12's `EventContext.get()` already raised the identical bare-repr `LookupError`**. PR #6553 consolidated PageContext and CompileContext onto `BaseContext` on purpose. The reflex-base 0.10.0a1 CHANGELOG lists it as a breaking change ("now raise `LookupError` instead of `RuntimeError` ... the same as every other `BaseContext` subclass ... should catch `LookupError`"), and the previous campaign asserted it as a pass (`core_state/backend_checks.py:181-184`). Only the friendlier message text was lost: alpha `reflex_base/context/base.py:38-47` returns `cls._context_var.get()` directly.
+
+### 6. Claim D: deprecation locations
+Source: `scripts/derive_d/`, logs `logs/derive_d.txt` and `logs/derive_d_stack.txt`. One scenario per process, because warnings are deduped per feature and location.
+
+| deprecated call made from user code | 0.10.0a1 location | 0.9.12 location |
+|---|---|---|
+| direct `rx.Var.create([1,2]).foreach(...)` | `derive_d.py:18` | `derive_d.py:18` |
+| the same call inside `exec(...)` | `derive_d.py:20` (the line with the `exec`) | `<string>:2` |
+| `@rx.memo` without annotations | `derive_d.py:32` | same |
+| `REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS=1` + `state_manager_disk_debounce()` | `derive_d.py:42` | n/a (no such function) |
+| `class M(rx.Model, table=True)` in the script, in an imported user module, or in a package (`reflex_magic_link_auth`) | `pydantic/_internal/_model_construction.py:133` (pydantic 2.14.0b2) / `:156` (2.13.5) | `<frozen abc>:106` |
+| two models in two user files, one process | one warning only (same pydantic location, deduped) | one warning only (`<frozen abc>:106`) |
+
+So the #7138 fix works: `<string>` and `<frozen ...>` frames are skipped (`reflex_base/utils/log.py:1082`). The gap is specific to `rx.Model` subclassing. The frame chain is user file → `sqlmodel/main.py:619` → `pydantic/_internal/_model_construction.py` (`ModelMetaclass.__new__`) → `<frozen abc>:106` → `reflex/model.py:580` `__init_subclass__` → `:555`. `_exclude_paths_from_frame_info` (`log.py:1019-1058`) excludes only click, reflex, typing_extensions, socketio, granian, reflex_base and the stdlib, so pydantic and then sqlmodel count as "user" frames. This is not a regression: both versions are wrong, alpha's location is a real file and 0.9.12's is a pseudo-file.
+
+### Verdicts
+```
+ISSUE: A. Class-level read of a backend State var returns the Field descriptor instead of its value
+CONFIRMED: true
+REGRESSION: yes
+SEVERITY: high
+NOTES: Reproduced from the written probes on 4 venvs and with my own derivation in dev and prod. Changed: unannotated and annotated backend vars, including ones from mixins, inherited by substates, or read via cls/type(self)/self.__class__. Unchanged: ClassVar (the value on both versions), unannotated public KEY = ... (a frontend Var on both), instance reads. rx.field() backend vars read as None on 0.9.12 and Field on alpha. Real browser: silent "label=Field(default=...)" and "+Field(default=5, ...)" UI text in dev and prod, no error. Undocumented: not in PR #7312, its fragments, docs, reviews, epic #7302 or the CHANGELOG, and reflex-enterprise needed a private _compat shim. Still on main 62a56ba7f. Package impact is narrower than claimed: only reflex-clerk and reflex-dynoselect use the pattern, both already broken on 0.9.12 for other reasons, and the clerk change fails closed (no auth bypass). The main risk is user code: silent wrong text, equality and truthiness, plus loud ChildrenTypeError, TypeError and VarTypeError at compile time, with no deprecation path.
+ROOT_CAUSE_GUESS: reflex_base/vars/base.py:4737-4738 (namespace.update(own_fields)) makes the Field the class attribute, and Field.__get__ at base.py:4273-4274 returns self when _var is None, which is always true for backend fields. 0.9.12's BaseStateMeta.__new__ (stable base.py:4287-4291) left the raw value on the class. Fix direction: for class access of a backend field, return default_value() (with a deprecation warning) or document a ClassVar migration. Audit internal getattr(cls, name) callers that expect a Field.
+MINIMAL_REPRO: class S(rx.State): _KEY = "label" ; then print(repr(S._KEY)) and print(rx.text(f"{S._KEY}")). Alpha prints Field(default='label', ...) and renders the Field repr; 0.9.12 prints 'label'. Scripts: verification/classattr/scripts/derive_a.py <venv>; e2e: e2e_app + drive_classattr.py.
+```
+```
+ISSUE: B. Class-level assignment to a declared backend var replaces its descriptor: inconsistent reads, dev-mode SetUndefinedStateVarError on instance writes and reset(), lost writes in prod
+CONFIRMED: true
+REGRESSION: yes
+SEVERITY: medium
+NOTES: Confirmed as claimed (fresh instance sees the class value, a pickled one the default), and it goes further. The live instance flips to the default as soon as it is serialized: in a default dev app the debounced disk save flips it within about 2 s with no reload. After the replacement, instance writes raise SetUndefinedStateVarError in dev, and so does State.reset(). In prod the writes are not dirty-tracked, so redis drops them. All of this was shown in Chromium with a real disk or redis manager. On 0.9.12 the class assignment was silently ignored for instances, consistently and without breakage. The pattern is unsupported and undocumented (framework tests use ClassVar for class-assigned statics), but reflex-clerk (set_fetch_user_on_auth, _secret_key) and reflex-dynoselect (_raw_options) use it. Kept at medium because it needs that unsupported pattern.
+ROOT_CAUSE_GUESS: BaseStateMeta (base.py:4656-4746) has no __setattr__, so cls._x = v replaces the Field data descriptor in the class __dict__ while __fields__ keeps the old Field. __getstate__ (reflex/state.py:2046-2054) then writes the stale default into vars(self). The dev __setattr__ guard (state.py:1489-1504) rejects the name because _has_data_descriptor (state.py:347-362) is False, which also breaks reset() (state.py:1512-1515). Prod writes skip Field.__set__ and _mark_dirty, and redis.py:514 persists only touched states. Fix direction: a metaclass __setattr__ that updates the Field default for declared field names (as reflex-enterprise _compat.set_backend_var_default does), or raises a clear error.
+MINIMAL_REPRO: class C(rx.State): _k: str | None = None ; C._k = "sk" ; s = rx.State(_reflex_internal_init=True).get_substate(C.get_full_name().split(".")[1:]) ; print(s._k) ; pickle.dumps(s) ; print(s._k) ; s._k = "x". Alpha prints 'sk' then None and the write raises in dev; 0.9.12 prints None, None and the write works. Scripts: verification/classattr/scripts/derive_b.py and derive_b_reset.py (run with REFLEX_ENV_MODE=dev and prod); e2e: e2e_app.
+```
+```
+ISSUE: C. PageContext.get()/CompileContext.get() outside a context raise LookupError whose message is only the ContextVar repr
+CONFIRMED: true
+REGRESSION: no
+SEVERITY: low
+NOTES: Reproduced. The type change is intentional and documented (PR #6553; reflex-base 0.10.0a1 CHANGELOG breaking entry with migration advice), and the previous campaign asserted it as a pass. The bare-repr message is identical to what EventContext.get() already raised on 0.9.12. Only the friendlier text for these two contexts was lost. The ContextVar repr still names the context. UX nit, not a release blocker.
+ROOT_CAUSE_GUESS: reflex_base/context/base.py:38-47, where BaseContext.get() returns cls._context_var.get() directly. 0.9.12 had a custom RuntimeError in reflex_base/plugins/compiler.py:600-614. Optional polish: catch LookupError and re-raise LookupError(f"No active {cls.__name__} is attached to the current context.").
+MINIMAL_REPRO: $SB/envs/alpha/bin/python -c "import reflex; from reflex_base.plugins.compiler import PageContext; PageContext.get()" (from a neutral dir). Script: verification/classattr/scripts/derive_c.py.
+```
+```
+ISSUE: D. rx.Model subclass deprecation warning location points into pydantic instead of the user's model file
+CONFIRMED: true
+REGRESSION: no
+SEVERITY: low
+NOTES: The #7138 fix works: an exec'd call names the user line on alpha (0.9.12: <string>:2), and direct calls, @rx.memo and the superseded env var all name the user line. Only rx.Model subclassing is wrong: it reports pydantic/_internal/_model_construction.py:133 or :156 (depending on pydantic version) on alpha versus <frozen abc>:106 on 0.9.12. Both are wrong, so this is not a regression. Because dedupe is keyed on the location, a second model file produces no warning on either version. The CHANGELOG claim "the location now names the first real user file" does not hold for this one case.
+ROOT_CAUSE_GUESS: reflex_base/utils/log.py:1019-1058, where _exclude_paths_from_frame_info does not exclude pydantic or sqlmodel. The warning is emitted from reflex/model.py:555 via __init_subclass__ (:580), called from pydantic ModelMetaclass.__new__, itself called from sqlmodel/main.py:619. Exclude both roots, or attribute the warning to the class definition site.
+MINIMAL_REPRO: a user script containing class M(rx.Model, table=True): x: int = 0. Alpha warns "(.../pydantic/_internal/_model_construction.py:133)"; 0.9.12 warns "(<frozen abc>:106)". Script: verification/classattr/scripts/derive_d/derive_d.py <venv> model_here|exec|direct.
+```

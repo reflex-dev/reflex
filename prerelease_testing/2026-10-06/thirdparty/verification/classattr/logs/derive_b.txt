@@ -1,0 +1,48 @@
+################ alpha dev
+reflex 0.10.0a1  REFLEX_ENV_MODE=dev
+before: type(Cfg.__dict__['_key']) = Field
+after : type(Cfg.__dict__['_key']) = str | Cfg._key = 'sk_live'
+get_fields()['_key'] still: Field(default=None, is_var=True, annotated_type=str | None)
+fresh instance a._key                  : 'sk_live' | a._brand_new: 'plain'
+SAME instance a._key after pickle.dumps: None | '_key' in vars(a): True
+unpickled b._key                       : None
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_thirdparty_0/derive/derive_b.py", line 48, in <module>
+    c._key = "set-on-instance"
+    ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/alpha/lib/python3.12/site-packages/reflex/state.py", line 1504, in __setattr__
+    raise SetUndefinedStateVarError(msg)
+reflex_base.utils.exceptions.SetUndefinedStateVarError: The state variable '_key' has not been defined in 'Cfg'. All state variables must be declared before they can be set.
+################ alpha prod
+reflex 0.10.0a1  REFLEX_ENV_MODE=prod
+before: type(Cfg.__dict__['_key']) = Field
+after : type(Cfg.__dict__['_key']) = str | Cfg._key = 'sk_live'
+get_fields()['_key'] still: Field(default=None, is_var=True, annotated_type=str | None)
+fresh instance a._key                  : 'sk_live' | a._brand_new: 'plain'
+SAME instance a._key after pickle.dumps: None | '_key' in vars(a): True
+unpickled b._key                       : None
+instance write c._key='set-on-instance': dirty_vars= [] | touched= False
+control write d.hits+=1                : dirty_vars= ['hits'] | touched= True
+control backend write (descriptor kept): dirty_vars= ['_undeclared_ok'] | touched= True
+################ stable dev
+reflex 0.9.12  REFLEX_ENV_MODE=dev
+before: type(Cfg.__dict__['_key']) = NoneType
+after : type(Cfg.__dict__['_key']) = str | Cfg._key = 'sk_live'
+get_fields()['_key'] still: Field(default=None, is_var=True, annotated_type=str | None)
+fresh instance a._key                  : None | a._brand_new: 'plain'
+SAME instance a._key after pickle.dumps: None | '_key' in vars(a): True
+unpickled b._key                       : None
+instance write c._key='set-on-instance': dirty_vars= ['_key'] | touched= True
+control write d.hits+=1                : dirty_vars= ['hits'] | touched= True
+control backend write (descriptor kept): dirty_vars= ['_undeclared_ok'] | touched= True
+################ stable prod
+reflex 0.9.12  REFLEX_ENV_MODE=prod
+before: type(Cfg.__dict__['_key']) = NoneType
+after : type(Cfg.__dict__['_key']) = str | Cfg._key = 'sk_live'
+get_fields()['_key'] still: Field(default=None, is_var=True, annotated_type=str | None)
+fresh instance a._key                  : None | a._brand_new: 'plain'
+SAME instance a._key after pickle.dumps: None | '_key' in vars(a): True
+unpickled b._key                       : None
+instance write c._key='set-on-instance': dirty_vars= ['_key'] | touched= True
+control write d.hits+=1                : dirty_vars= ['hits'] | touched= True
+control backend write (descriptor kept): dirty_vars= ['_undeclared_ok'] | touched= True

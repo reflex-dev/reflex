@@ -1,0 +1,133 @@
+reflex_ag_grid-0.0.11-py3-none-any:reflex_ag_grid/wrapper.py:237:        comp.State._grid_component = comp
+reflex_ag_grid-0.0.11-py3-none-any:reflex_ag_grid/wrapper.py:238:        comp.State._add_data_route()
+reflex_ag_grid-0.0.11-py3-none-any:reflex_ag_grid/wrapper.py:394:                rx.dialog.title(f"Add new {cls._model_class.__name__}"),
+reflex_ag_grid-0.0.11-py3-none-any:reflex_ag_grid/wrapper.py:398:                            cls._add_dialog_field(field.name, field.type_)
+reflex_ag_grid-0.0.11-py3-none-any:reflex_ag_grid/wrapper.py:399:                            for field in cls._model_class.__fields__.values()
+reflex_ag_grid-0.0.11-py3-none-any:reflex_ag_grid/wrapper.py:423:            cls._delete_button(),
+reflex_ag_grid-0.0.11-py3-none-any:reflex_ag_grid/wrapper.py:424:            cls._add_dialog(),
+reflex_ag_grid-0.0.11-py3-none-any:reflex_ag_grid/wrapper.py:432:        comp.State._model_class = model_class
+reflex_ag_grid-0.0.11-py3-none-any:reflex_ag_grid/wrapper.py:434:            comp.State._top_toolbar(),
+reflex_chakra-0.8.2.post1-py3-none-any:reflex_chakra/components/forms/pininput.py:81:            PinInputField._unsafe_create(children=[])._get_all_imports(),
+reflex_clerk-1.0.3-py3-none-any:reflex_clerk/lib/clerk_provider.py:122:        if cls._secret_key is None:
+reflex_clerk-1.0.3-py3-none-any:reflex_clerk/lib/clerk_provider.py:124:                cls._secret_key = os.environ['CLERK_SECRET_KEY']
+reflex_clerk-1.0.3-py3-none-any:reflex_clerk/lib/clerk_provider.py:126:        return cls._secret_key
+reflex_clerk-1.0.3-py3-none-any:reflex_clerk/lib/clerk_provider.py:132:        if not cls._jwt_public_keys:
+reflex_clerk-1.0.3-py3-none-any:reflex_clerk/lib/clerk_provider.py:134:                cls._jwt_public_keys = list(map(json.loads, os.environ['CLERK_JWT_PUBLIC_KEYS'].split(',')))
+reflex_clerk-1.0.3-py3-none-any:reflex_clerk/lib/clerk_provider.py:136:                cls._jwt_public_keys = cls._clerk_api_client.get_jwks().dict()['keys']
+reflex_clerk-1.0.3-py3-none-any:reflex_clerk/lib/clerk_provider.py:137:        return cls._jwt_public_keys
+reflex_clerk-1.0.3-py3-none-any:reflex_clerk/lib/clerk_provider.py:143:        if cls._clerk_api_client is None:
+reflex_clerk-1.0.3-py3-none-any:reflex_clerk/lib/clerk_provider.py:144:            cls._clerk_api_client = clerk_client.get_client(cls.secret_key)
+reflex_clerk-1.0.3-py3-none-any:reflex_clerk/lib/clerk_provider.py:145:        return cls._clerk_api_client
+reflex_clerk-1.0.3-py3-none-any:reflex_clerk/lib/clerk_provider.py:168:        cls._fetch_user = fetch_user
+reflex_clerk-1.0.3-py3-none-any:reflex_clerk/lib/clerk_provider.py:180:        if not ClerkState._jwt_public_keys:
+reflex_clerk-1.0.3-py3-none-any:reflex_clerk/lib/clerk_provider.py:396:            ClerkState._secret_key = props['secret_key']
+reflex_components_code-0.9.6-py3-none-any:reflex_components_code/shiki_code_block.py:765:            props["language"] = cls._map_languages(language)
+reflex_components_code-0.9.6-py3-none-any:reflex_components_code/shiki_code_block.py:773:            cls._map_themes(theme)
+reflex_components_code-0.9.6-py3-none-any:reflex_components_code/shiki_code_block.py:791:                        set_clipboard(cls._strip_transformer_triggers(code)),
+reflex_components_core-0.9.10.post1-py3-none-any:reflex_components_core/base/bare.py:75:            return cls._unsafe_create(children=[], contents=contents)
+reflex_components_core-0.9.10.post1-py3-none-any:reflex_components_core/base/bare.py:80:        return cls._unsafe_create(children=[], contents=contents)
+reflex_components_core-0.9.10.post1-py3-none-any:reflex_components_core/core/cond.py:81:            cls._create(
+reflex_components_core-0.9.10.post1-py3-none-any:reflex_components_core/core/foreach.py:108:        component = cls._create(
+reflex_components_core-0.9.10.post1-py3-none-any:reflex_components_core/core/markdown_component_map.py:53:        explicit_return = explicit_return or cls._explicit_return
+reflex_components_core-0.9.10.post1-py3-none-any:reflex_components_core/core/markdown_component_map.py:69:        return ["node", _CHILDREN._js_expr, _PROPS_SPREAD._js_expr]
+reflex_components_core-0.9.10.post1-py3-none-any:reflex_components_core/core/match.py:51:        match_cond_var = cls._create_condition_var(cond)
+reflex_components_core-0.9.10.post1-py3-none-any:reflex_components_core/core/match.py:52:        cases, default = cls._process_cases(list(cases))
+reflex_components_core-0.9.10.post1-py3-none-any:reflex_components_core/core/match.py:53:        match_cases = cls._process_match_cases(cases)
+reflex_components_core-0.9.10.post1-py3-none-any:reflex_components_core/core/match.py:55:        match_cases = cls._validate_return_types(match_cases)
+reflex_components_core-0.9.10.post1-py3-none-any:reflex_components_core/core/match.py:61:        return cls._create_match_cond_var_or_component(
+reflex_components_core-0.9.10.post1-py3-none-any:reflex_components_core/core/match.py:107:                cls._create_case_var_with_var_data(default_return)
+reflex_components_core-0.9.10.post1-py3-none-any:reflex_components_core/core/match.py:168:                conditions_vars.append(cls._create_case_var_with_var_data(condition))
+reflex_components_core-0.9.10.post1-py3-none-any:reflex_components_core/core/match.py:171:                cls._create_case_var_with_var_data(return_value)
+reflex_components_core-0.9.10.post1-py3-none-any:reflex_components_core/core/match.py:243:                cls._create(
+reflex_components_core-0.9.10.post1-py3-none-any:reflex_components_core/core/upload.py:347:                            cls._update_arg_tuple_for_on_drop(arg_value)
+reflex_components_core-0.9.10.post1-py3-none-any:reflex_components_core/el/elements/forms.py:423:                    if isinstance(value, Var) and value._js_expr == FORM_DATA._js_expr
+reflex_components_markdown-0.9.4.post1-py3-none-any:reflex_components_markdown/markdown.py:263:            component_map_hash=cls._component_map_hash(component_map),
+reflex_components_markdown-0.9.4.post1-py3-none-any:reflex_components_markdown/markdown.py:331:const {{node: childNode, className, children: components, {_PROPS_SPREAD._js_expr}}} = {_REST._js_expr}.children.props;
+reflex_components_markdown-0.9.4.post1-py3-none-any:reflex_components_markdown/markdown.py:332:const {_CHILDREN._js_expr} = String(Array.isArray(components) ? components.join('\\n') : components).replace(/\\n$/, '');
+reflex_components_markdown-0.9.4.post1-py3-none-any:reflex_components_markdown/markdown.py:341:            fn_args=["node", _REST_SPREAD._js_expr],
+reflex_components_radix-0.9.10.post1-py3-none-any:reflex_components_radix/themes/components/progress.py:75:            style = style | cls._color_selector(color)
+reflex_components_recharts-0.9.4.post1-py3-none-any:reflex_components_recharts/charts.py:98:        cls._ensure_valid_dimension("width", width)
+reflex_components_recharts-0.9.4.post1-py3-none-any:reflex_components_recharts/charts.py:99:        cls._ensure_valid_dimension("height", height)
+reflex_components_recharts-0.9.4.post1-py3-none-any:reflex_components_recharts/general.py:333:        return Component._get_style(self)
+reflex_dynoselect-0.1.0-py3-none-any:reflex_dynoselect/dynoselect.py:85:            option[cls._KEY_LABEL].lower().contains(cls.search_phrase.lower()) |
+reflex_dynoselect-0.1.0-py3-none-any:reflex_dynoselect/dynoselect.py:86:            option[cls._KEY_KEYWORDS].lower().contains(cls.search_phrase.lower())
+reflex_dynoselect-0.1.0-py3-none-any:reflex_dynoselect/dynoselect.py:93:        comps = [rx.icon(icon, size=cls._icon_size, **props)] + comps if icon else comps
+reflex_dynoselect-0.1.0-py3-none-any:reflex_dynoselect/dynoselect.py:120:        cls.get_fields()["selected"].default = default_option or cls._DEFAULT
+reflex_dynoselect-0.1.0-py3-none-any:reflex_dynoselect/dynoselect.py:146:                    option[cls._KEY_LABEL], 
+reflex_dynoselect-0.1.0-py3-none-any:reflex_dynoselect/dynoselect.py:172:                        cls.selected[cls._KEY_LABEL] == "",
+reflex_dynoselect-0.1.0-py3-none-any:reflex_dynoselect/dynoselect.py:176:                            color=cls._COLOR_PLACEHOLDER, 
+reflex_dynoselect-0.1.0-py3-none-any:reflex_dynoselect/dynoselect.py:180:                            f"{cls.selected[cls._KEY_LABEL]}", icon, weight=weight
+reflex_dynoselect-0.1.0-py3-none-any:reflex_dynoselect/dynoselect.py:443:    component.State._raw_options = options
+reflex_dynoselect-0.1.0-py3-none-any:reflex_dynoselect/options/__init__.py:58:        return cls._SEARCH_DELIMITER.join(tokens)
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/vars.py:244:            return_expr = cls._validate_and_extend_return_expr(
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/cookie.py:369:        type(self)._sync_tasks.add(t)
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/cookie.py:370:        t.add_done_callback(type(self)._sync_tasks.discard)
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/cookie.py:376:        if cls._has_registered_handlers:
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/cookie.py:384:        cls._has_registered_handlers = True
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/cookie.py:442:            cls._get_sync_javascript_code(
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/decorators.py:140:    # (BaseState._copy_fn), which drops the tag just set but shares the code
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/decorators.py:142:    # TODO: removable once reflex's ``BaseState._copy_fn`` carries the source
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/decorators.py:269:            # Tag the getter: the State metaclass keeps the getter as ComputedVar._fget,
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/enforcement.py:186:# getters/handlers via FunctionType (``BaseState._copy_fn``), dropping that tag;
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/enforcement.py:189:# TODO: this belongs in reflex — if ``BaseState._copy_fn`` copied the source
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/enforcement.py:246:    ``AuthPlugin._wire_runtime()`` and ``register_routes()`` before the
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/enforcement.py:879:    documents. The persisted ``AuthUserState._userinfo`` then survives, and the
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/enforcement.py:949:    was already baked by ``App._compile()``. Creating states at that point makes
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/replay.py:123:                # Replay-once id (see ``PendingEventState._last_replayed_id``).
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/user_state.py:6:(written by ``OIDCAuthState._populate_auth_user_state`` after a successful token
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/user_state.py:7:exchange, cleared by ``OIDCAuthState._reset_session`` on logout/expiry). The
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/config.py:77:        if cls._auth_callback_route is not None:
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/config.py:78:            return cls._auth_callback_route
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/config.py:79:        return cls._with_provider_prefix("/authorization-code/callback")
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/config.py:84:        return cls._with_provider_prefix("/popup-login")
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/config.py:89:        return cls._with_provider_prefix("/popup-logout")
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/state.py:592:                    self.__class__._on_refresh_access_token
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/state.py:593:                    is not OIDCAuthState._on_refresh_access_token
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/state.py:594:                    or self.__class__._on_access_token_change
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/state.py:595:                    is not OIDCAuthState._on_access_token_change
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/state.py:2211:        do_refresh = HTTPCookie._get_sync_javascript_code().then(
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/state.py:2552:        cls._register_auth_endpoints()
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/state.py:2693:        return cls._with_hydrated(
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/state.py:2711:        return cls._with_hydrated(
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/state.py:2745:        cls._register_auth_endpoints(app)
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/state.py:2763:        if app is None and cls._has_registered_endpoints:
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/state.py:2773:        cls._has_registered_endpoints = True
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/state.py:2775:        if cls._auth_callback_route is None:
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/state.py:2778:                route=cls._authorization_code_endpoint(),
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/state.py:2784:            reserve_agent_hidden_route(app, cls._authorization_code_endpoint())
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/state.py:2787:            route=cls._popup_login_endpoint(),
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/state.py:2798:            route=cls._popup_logout_endpoint(),
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/state.py:2810:        reserve_agent_hidden_route(app, cls._popup_login_endpoint())
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/auth/oidc/state.py:2811:        reserve_agent_hidden_route(app, cls._popup_logout_endpoint())
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/aggrid.py:258:            AgGrid._handle_camelcase_props({key: value})
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/aggrid.py:1989:        props = cls._handle_camelcase_props(props)
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/aggrid.py:2005:        props = cls._handle_hierarchical_data(
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/aggrid.py:2015:        props = cls._handle_theme(props)
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/aggrid.py:2048:        for clz in cls._iter_parent_classes_with_method("get_modules"):
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/aggrid.py:2063:        for clz in cls._iter_parent_classes_with_method("_format_props"):
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/wrapper.py:256:        _props = cls._default_grid_props()
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/wrapper.py:280:        comp.State._grid_component = comp  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/wrapper.py:281:        comp.State._add_data_route()  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/wrapper.py:338:        if cls._model_class is None:
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/wrapper.py:340:        field = cls._model_class.__fields__[fname]
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/wrapper.py:348:        return [{"colId": pkf, "sort": "asc"} for pkf in cls._primary_key]
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/wrapper.py:473:        if not cls._model_class:
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/wrapper.py:480:                rx.dialog.title(f"Add new {cls._model_class.__name__}"),
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/wrapper.py:484:                            cls._add_dialog_field(
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/wrapper.py:490:                            for field_name, field in cls._model_class.__fields__.items()
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/wrapper.py:491:                            if field_name not in cls._primary_key
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/wrapper.py:514:            cls._delete_button(),
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/wrapper.py:515:            cls._add_dialog(),
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/wrapper.py:523:        cls._model_class = model_class  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/wrapper.py:524:        cls._primary_key = tuple(  # pyright: ignore [reportAttributeAccessIssue]
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/wrapper.py:540:            comp.State._top_toolbar(),  # pyright: ignore [reportAttributeAccessIssue]
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/ag_grid/wrapper.py:589:        row_id_parts = [f"${{params.data['{key}']}}" for key in cls._primary_key]
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/highcharts/series.py:64:                for trigger, hc_name in cls._SERIES_EVENT_MAPPING.items()
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/highcharts/series.py:101:            for trigger_name, hc_name in cls._SERIES_EVENT_MAPPING.items()
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/map/base.py:154:                for trigger_name, leaflet_name in cls._LAYER_EVENT_MAPPING.items()
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/components/map/base.py:161:            for trigger_name, leaflet_name in cls._LAYER_EVENT_MAPPING.items()
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/plugins/auth.py:403:        ``ConfigMixin._get_config_value``). That fallback is a single-provider
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/plugins/guards.py:27:  being buried mid-body (``OIDCAuthState._reset_session``, which always clears
+reflex_enterprise-0.9.7a4-py3-none-any:reflex_enterprise/plugins/mcp_auth/store.py:683:        if version < cls._MIN_REDIS_VERSION:
+reflex_hosting_cli-0.1.73a1-py3-none-any:reflex_cli/core/config.py:227:            data = cls._filter_dict(data)
+reflex_hosting_cli-0.1.73a1-py3-none-any:reflex_cli/core/config.py:277:            data = cls._filter_dict(data)

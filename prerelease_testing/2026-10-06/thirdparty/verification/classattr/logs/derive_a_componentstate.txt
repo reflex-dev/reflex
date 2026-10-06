@@ -1,0 +1,6 @@
+#### alpha
+Counter.create() button label (f-string of cls._step): {  })))], [_e], ({  }))))},"+Field(default=5, is_var=True, annotated_type=<class 'int'>)")
+rx.foreach(Counter._OPTIONS, rx.text): EXC TypeError: Unsupported type <class 'reflex_base.vars.base.Field'> for LiteralVar. Tried to create a LiteralVar from Field(default_factory=functools.partial(<func
+#### stable
+Counter.create() button label (f-string of cls._step): e.reflex___istate___dynamic____counter_n1.incr", ({  }), ({  })))], [_e], ({  }))))},"+5")
+rx.foreach(Counter._OPTIONS, rx.text): Array.prototype.map.call(["a", "b"] ?? [],((children_rx_state_,props_rx_state_)=>(jsx(RadixThemesText,{as:"p",key:props_rx_state_},children_rx_state_)

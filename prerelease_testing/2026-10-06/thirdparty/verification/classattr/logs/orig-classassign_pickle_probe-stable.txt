@@ -1,0 +1,4 @@
+class-level      : 'sk_test_123' False
+instance (fresh) : None True
+instance (pickle): None True
+get_fields has _secret_key: True

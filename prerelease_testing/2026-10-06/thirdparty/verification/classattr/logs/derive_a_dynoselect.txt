@@ -1,0 +1,13 @@
+#### thirdparty-alpha
+EXC VarTypeError: Unsupported Operand type(s) for []: ObjectCastedVar, Field
+  at reflex_dynoselect/dynoselect.py:172: cls.selected[cls._KEY_LABEL] == "",
+#### thirdparty-stable
+EXC AttributeError: type object 'Dynoselect_n1' has no attribute 'set_search_phrase'
+  at reflex_dynoselect/dynoselect.py:192: on_change=cls.set_search_phrase,
+#### thirdparty-alpha REFLEX_STATE_AUTO_SETTERS=true
+EXC VarTypeError: Unsupported Operand type(s) for []: ObjectCastedVar, Field
+  at reflex_dynoselect/dynoselect.py:172: cls.selected[cls._KEY_LABEL] == "",
+#### thirdparty-stable REFLEX_STATE_AUTO_SETTERS=true
+EXC EventFnArgMismatchError: Event on_open_auto_focus only provides 0 arguments, but <function Dynoselect.get_component.<locals>.<lambda> at 0x7f1dceeed760> requires at least 1 arguments to be passed to the event handler.
+See https://reflex.dev/docs
+  at reflex_dynoselect/dynoselect.py:188: rx.popover.content(

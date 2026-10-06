@@ -1,0 +1,15 @@
+/tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/envs/thirdparty-stable/lib/python3.12/site-packages/reflex_clerk/lib/clerk_provider.py:8: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import jwt, JoseError, JWTClaims
+ClerkState._jwt_public_keys (class): list []
+ClerkState._secret_key (class, before provider): NoneType None
+ClerkState.secret_key (class property, no key configured): NoneType None
+clerk_provider() WITHOUT secret key (should raise ValueError): EXC ValueError: ClerkProvider requires a secret_key.  You can set this by passing it as a keyword argument to the clerk_provider component or by setting the CLERK_SECRET_KEY environment variable.
+
+This can be found in your Clerk Dashboar
+clerk_provider(secret_key=...): str 'Fragment'
+ClerkState.secret_key after provider: str 'sk_test_123'
+ClerkState.jwt_public_keys (class property): EXC ProxyError: HTTPSConnectionPool(host='api.clerk.com', port=443): Max retries exceeded with url: /v1/jwks (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connection failed: 403 Forbidden')))
+No Clerk JWT public keys found. Skipping Clerk session set.
+set_clerk_session('not-a-jwt') on instance: NoneType None
+instance.is_signed_in / auth_error: tuple (False, None)

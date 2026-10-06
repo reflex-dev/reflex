@@ -1,0 +1,18 @@
+#### alpha
+  framework=False  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_thirdparty_0/derive_d/derive_d_stack.py:28 in <module>
+  framework=False  sqlmodel/main.py:619 in __new__
+  framework=False  pydantic/_internal/_model_construction.py:133 in __new__
+  framework=True   <frozen abc>:106 in __new__
+  framework=True   reflex/model.py:580 in __init_subclass__
+  framework=True   reflex/model.py:555 in _warn_about_model_deprecation
+  framework=True   reflex_base/utils/console.py:311 in deprecate
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (derive_d_stack.py:22)
+#### stable
+  framework=False  /tmp/claude-0/-home-user-reflex/bd1e0d91-2710-5ba9-a996-a9166a939428/scratchpad/apps/verify_thirdparty_0/derive_d/derive_d_stack.py:28 in <module>
+  framework=False  sqlmodel/main.py:619 in __new__
+  framework=False  pydantic/_internal/_model_construction.py:156 in __new__
+  framework=False  <frozen abc>:106 in __new__
+  framework=True   reflex/model.py:576 in __init_subclass__
+  framework=True   reflex/model.py:551 in _warn_about_model_deprecation
+  framework=True   reflex_base/utils/console.py:311 in deprecate
+reflex.Model has been deprecated in version 0.9.2. Directly use database ORM layer, like sqlalchemy or SQLModel. It will be completely removed in 1.0.0. (derive_d_stack.py:22)
