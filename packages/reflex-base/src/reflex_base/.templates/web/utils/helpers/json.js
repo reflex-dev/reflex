@@ -1,72 +1,64 @@
-// Python's json.dumps emits bare Infinity/-Infinity/NaN tokens (invalid JSON).
-// Rewrite them so JSON.parse accepts the payload: 1e999 / -1e999 overflow to
-// ±Infinity, while NaN, which has no JSON literal, becomes a sentinel string
-// revived back to NaN after parsing.
-// The alternation consumes whole string literals first, so tokens inside them
-// are left alone, and a bare token is only rewritten where JSON permits a value
-// (document start, or after ':', ',' or '['). A token anywhere else leaves the
-// payload malformed for JSON.parse to reject, which the streaming upload parser
-// relies on to tell a partial chunk from a complete one.
-const NAN_SENTINEL_PREFIX = "__reflex_nan";
-const NAN_SENTINEL = `${NAN_SENTINEL_PREFIX}__`;
+// Sentinels for non-finite floats, emitted by reflex_base.utils.format and
+// restored by the reviver below. Colliding user strings arrive escaped; the
+// reviver strips one escape level. Keep in sync with that module.
+const SENTINEL_PREFIX = "__reflex_";
+const NAN_SENTINEL = "__reflex_nan__";
+const INF_SENTINEL = "__reflex_inf__";
+const NEG_INF_SENTINEL = "__reflex_neg_inf__";
+const SENTINEL_ESCAPE_PREFIX = "__reflex_esc__";
+
+const reviveNonFiniteFloats = (_k, v) => {
+  if (typeof v !== "string" || !v.startsWith(SENTINEL_PREFIX)) return v;
+  if (v === NAN_SENTINEL) return NaN;
+  if (v === INF_SENTINEL) return Infinity;
+  if (v === NEG_INF_SENTINEL) return -Infinity;
+  if (v.startsWith(SENTINEL_ESCAPE_PREFIX))
+    return v.slice(SENTINEL_ESCAPE_PREFIX.length);
+  return v;
+};
+
+// The backend emits bare Infinity/-Infinity/NaN tokens (invalid JSON) wherever
+// it serializes non-finite floats with stdlib json. Rewrite them to sentinels
+// outside string literals. The alternation matches whole string literals first
+// (passed through unchanged), guaranteeing bare-token matches only land in
+// numeric positions. A token followed by ':' is a key no serializer produces,
+// so it is left alone for JSON.parse to reject rather than turned into one.
 const NON_FINITE_FLOAT_RE =
-  /"(?:[^"\\]|\\.)*"|(^\s*|[:,[]\s*)(-?Infinity|NaN)\b/g;
-
-// Reviving by string value would also convert a genuine string equal to the
-// sentinel, so the placeholder has to be absent from the payload. Probing
-// longer candidates one at a time rescans the payload per attempt, and a run
-// of N underscores contains a run of every shorter length, so a single such
-// string costs a full scan per underscore. Instead derive a trailing run one
-// longer than the longest in the payload: it cannot appear, and one pass finds
-// it. Reached only when the default collides.
-const UNDERSCORE = "_".charCodeAt(0);
-const uniqueNanSentinel = (str) => {
-  if (!str.includes(NAN_SENTINEL)) {
-    return NAN_SENTINEL;
-  }
-  let longestRun = 0;
-  let run = 0;
-  for (let i = 0; i < str.length; i++) {
-    run = str.charCodeAt(i) === UNDERSCORE ? run + 1 : 0;
-    if (run > longestRun) {
-      longestRun = run;
-    }
-  }
-  return NAN_SENTINEL_PREFIX + "_".repeat(longestRun + 1);
+  /"(?:[^"\\]|\\.)*"|(?:-?\bInfinity\b|\bNaN\b)(?!\s*:)/g;
+const NON_FINITE_REPLACEMENTS = {
+  Infinity: `"${INF_SENTINEL}"`,
+  "-Infinity": `"${NEG_INF_SENTINEL}"`,
+  NaN: `"${NAN_SENTINEL}"`,
 };
-
-const parseNonFiniteFloats = (str) => {
-  const sentinel = uniqueNanSentinel(str);
-  const replacements = {
-    Infinity: "1e999",
-    "-Infinity": "-1e999",
-    NaN: `"${sentinel}"`,
-  };
-  return JSON.parse(
-    // A string literal match leaves both groups undefined; note that `prefix`
-    // is legitimately empty at the start of the document.
-    str.replace(NON_FINITE_FLOAT_RE, (match, prefix, token) =>
-      prefix === undefined ? match : prefix + replacements[token],
-    ),
-    (_k, v) => (v === sentinel ? NaN : v),
+const rewriteBareNonFiniteFloats = (str) =>
+  str.replace(NON_FINITE_FLOAT_RE, (match) =>
+    match[0] === '"' ? match : NON_FINITE_REPLACEMENTS[match],
   );
-};
 
 /**
- * Parse a JSON payload, tolerating the bare non-finite float tokens that
- * python's json.dumps emits.
+ * Parse a JSON payload that may encode non-finite floats.
  *
- * The rewrite only runs when plain parsing fails, so well-formed payloads take
- * the native fast path.
+ * Passing a reviver disables the engine's fast JSON parser (~4-12x slower), so
+ * only pay for it when a sentinel can actually appear in the payload. Bare
+ * NaN/Infinity tokens make the first parse throw; they are rewritten to
+ * sentinels and parsed again on retry.
  *
- * @param str The payload to parse.
- * @returns The parsed value.
- * @throws {SyntaxError} If the payload is not parseable either way.
+ * @param {string} str - the JSON payload to parse
+ * @returns the parsed value
+ * @throws {SyntaxError} if the payload is not valid JSON either way
  */
 export const parseJson = (str) => {
   try {
-    return JSON.parse(str);
-  } catch {
-    return parseNonFiniteFloats(str);
+    return str.includes(SENTINEL_PREFIX)
+      ? JSON.parse(str, reviveNonFiniteFloats)
+      : JSON.parse(str);
+  } catch (e) {
+    // Bare tokens are the only recoverable failure, so a payload the rewrite
+    // leaves untouched is simply malformed -- report the original error rather
+    // than paying for a second parse. Partial upload chunks hit this on every
+    // progress event.
+    const rewritten = rewriteBareNonFiniteFloats(str);
+    if (rewritten === str) throw e;
+    return JSON.parse(rewritten, reviveNonFiniteFloats);
   }
 };

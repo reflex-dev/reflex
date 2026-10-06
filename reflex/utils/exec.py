@@ -89,7 +89,7 @@ def get_package_json_and_hash(package_json_path: Path) -> tuple[PackageJson, str
     Returns:
         A tuple containing the content of package.json as a dictionary and its SHA-256 hash.
     """
-    with package_json_path.open("r") as file:
+    with package_json_path.open("r", encoding="utf-8") as file:
         json_data = json.load(file)
 
     # Calculate the hash
@@ -397,7 +397,7 @@ def get_routes_manifest_router() -> Callable[[str], str | None] | None:
 
     manifest = get_web_dir() / constants.Dirs.ROUTES_MANIFEST
     try:
-        routes = json.loads(manifest.read_text())
+        routes = json.loads(manifest.read_text(encoding="utf-8"))
     except OSError:
         return None
     except ValueError as err:
