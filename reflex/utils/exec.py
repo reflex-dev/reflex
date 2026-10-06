@@ -11,6 +11,7 @@ import logging
 import os
 import platform
 import re
+import signal
 import socket
 import subprocess
 import sys
@@ -887,6 +888,11 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
             granian_watcher = wrk._watcher
 
             def watcher():
+                inner = getattr(wrk, "inner", None)
+                if not constants.IS_WINDOWS and inner is not None:
+                    inner.join()
+                    if getattr(inner, "exitcode", None) == -signal.SIGTERM:
+                        wrk.interrupt_by_parent = True
                 granian_watcher()
                 self._release_socket_unless_served(wrk, spawn_count)
 

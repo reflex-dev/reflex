@@ -4,6 +4,7 @@ import builtins
 import logging
 import multiprocessing
 import os
+import signal
 import socket
 import sys
 import time
@@ -678,13 +679,24 @@ def _dev_granian_supervisor(mocker: MockerFixture, tmp_path: Path, port: int):
     granian_server = pytest.importorskip("granian.server")
     servers: list[Any] = []
 
+    class FakeInner:
+        def __init__(self):
+            self.exitcode = None
+            self.joined = False
+
+        def join(self):
+            self.joined = True
+
     class FakeWorker:
         def __init__(self):
             self.interrupt_by_parent = False
             self.alive = True
+            self.inner = FakeInner()
+            self.interrupt_by_parent_when_watched = None
 
         def _watcher(self):
             """Stand in for granian's watcher body, which joins the process."""
+            self.interrupt_by_parent_when_watched = self.interrupt_by_parent
 
         def is_alive(self):
             return self.alive
@@ -771,6 +783,35 @@ def test_run_granian_backend_keeps_socket_across_worker_restart(
         assert not _port_is_bindable(port)
     finally:
         server._close_shared_socket()
+
+
+def test_run_granian_backend_treats_group_sigterm_as_parent_shutdown(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """A worker terminated by group SIGTERM is intentional during shutdown."""
+    server = _dev_granian_supervisor(mocker, tmp_path, _free_port())
+    mocker.patch.object(exec_utils.constants, "IS_WINDOWS", False)
+    worker = _spawn_supervisor_worker(server)
+    worker.inner.exitcode = -signal.SIGTERM
+
+    worker._watcher()
+
+    assert worker.inner.joined is True
+    assert worker.interrupt_by_parent_when_watched is True
+
+
+def test_run_granian_backend_keeps_unexpected_worker_exit_unmarked(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Non-SIGTERM worker exits retain Granian's unexpected-exit handling."""
+    server = _dev_granian_supervisor(mocker, tmp_path, _free_port())
+    mocker.patch.object(exec_utils.constants, "IS_WINDOWS", False)
+    worker = _spawn_supervisor_worker(server)
+    worker.inner.exitcode = -signal.SIGINT
+
+    worker._watcher()
+
+    assert worker.interrupt_by_parent_when_watched is False
 
 
 def test_run_granian_backend_rebinds_socket_for_the_next_worker(
